@@ -138,12 +138,14 @@ class _TestCommon:
             assert_array_equal(dat == 0, (datsp == 0).todense())
             assert_array_equal(dat == 1, (datsp == 1).todense())
 
+        msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
+        fails = not (self.__class__ == TestBSR or self.__class__ == TestCSC or
+                     self.__class__ == TestCSR)
         for dtype in self.checked_dtypes:
-            fails = not (self.__class__ == TestBSR or
-                         self.__class__ == TestCSC or
-                         self.__class__ == TestCSR)
-            msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-            yield dec.skipif(fails, msg)(check), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.skipif(fails, msg)(check), dtype
 
     def test_ne(self):
         def check(dtype):
@@ -172,12 +174,14 @@ class _TestCommon:
             assert_array_equal(0 != dat, (0 != datsp).todense())
             assert_array_equal(1 != dat, (1 != datsp).todense())
 
+        msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
+        fails = not (self.__class__ == TestBSR or self.__class__ == TestCSC or
+                     self.__class__ == TestCSR)
         for dtype in self.checked_dtypes:
-            fails = not (self.__class__ == TestBSR or
-                         self.__class__ == TestCSC or
-                         self.__class__ == TestCSR)
-            msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-            yield dec.skipif(fails, msg)(check), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.skipif(fails, msg)(check), dtype
 
     def test_lt(self):
         def check(dtype):
@@ -235,16 +239,21 @@ class _TestCommon:
             # dense rhs fails
             assert_array_equal(dat < datsp2, datsp < dat2)
 
+        msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
+        fails = not (self.__class__ == TestBSR or self.__class__ == TestCSC or
+                     self.__class__ == TestCSR)
         for dtype in self.checked_dtypes:
-            fails = not (self.__class__ == TestBSR or
-                         self.__class__ == TestCSC or
-                         self.__class__ == TestCSR)
-            msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-            yield dec.skipif(fails, msg)(check), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.skipif(fails, msg)(check), dtype
 
+        msg = "Dense rhs is not supported for inequalities."
         for dtype in self.checked_dtypes:
-            msg = "Dense rhs is not supported for inequalities."
-            yield dec.knownfailureif(True, msg)(check_fail), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.knownfailureif(True, msg)(check_fail), dtype
 
     def test_gt(self):
         def check(dtype):
@@ -301,16 +310,21 @@ class _TestCommon:
             # dense rhs fails
             assert_array_equal(dat > datsp2, datsp > dat2)
 
+        msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
+        fails = not (self.__class__ == TestBSR or self.__class__ == TestCSC or
+                     self.__class__ == TestCSR)
         for dtype in self.checked_dtypes:
-            fails = not (self.__class__ == TestBSR or
-                         self.__class__ == TestCSC or
-                         self.__class__ == TestCSR)
-            msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-            yield dec.skipif(fails, msg)(check), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.skipif(fails, msg)(check), dtype
 
+        msg = "Dense rhs is not supported for inequalities."
         for dtype in self.checked_dtypes:
-            msg = "Dense rhs is not supported for inequalities."
-            yield dec.knownfailureif(True, msg)(check_fail), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.knownfailureif(True, msg)(check_fail), dtype
 
     def test_le(self):
         def check(dtype):
@@ -365,16 +379,21 @@ class _TestCommon:
             # dense rhs fails
             assert_array_equal(dat <= datsp2, datsp <= dat2)
 
+        msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
+        fails = not (self.__class__ == TestBSR or self.__class__ == TestCSC or
+                     self.__class__ == TestCSR)
         for dtype in self.checked_dtypes:
-            fails = not (self.__class__ == TestBSR or
-                         self.__class__ == TestCSC or
-                         self.__class__ == TestCSR)
-            msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-            yield dec.skipif(fails, msg)(check), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.skipif(fails, msg)(check), dtype
 
+        msg = "Dense rhs is not supported for inequalities."
         for dtype in self.checked_dtypes:
-            msg = "Dense rhs is not supported for inequalities."
-            yield dec.knownfailureif(True, msg)(check_fail), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.knownfailureif(True, msg)(check_fail), dtype
 
     def test_ge(self):
         def check(dtype):
@@ -430,16 +449,21 @@ class _TestCommon:
             # dense rhs fails
             assert_array_equal(dat >= datsp2, datsp >= dat2)
 
+        msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
+        fails = not (self.__class__ == TestBSR or self.__class__ == TestCSC or
+                     self.__class__ == TestCSR)
         for dtype in self.checked_dtypes:
-            fails = not (self.__class__ == TestBSR or
-                         self.__class__ == TestCSC or
-                         self.__class__ == TestCSR)
-            msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-            yield dec.skipif(fails, msg)(check), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.skipif(fails, msg)(check), dtype
 
+        msg = "Dense rhs is not supported for inequalities."
         for dtype in self.checked_dtypes:
-            msg = "Dense rhs is not supported for inequalities."
-            yield dec.knownfailureif(True, msg)(check_fail), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.knownfailureif(True, msg)(check_fail), dtype
 
     def test_empty(self):
         # create empty matrices
@@ -569,17 +593,20 @@ class _TestCommon:
             yield check, dtype
 
     def test_expm(self):
-        M = array([[1, 0, 2], [0, 0, 3], [-4, 5, 6]], float)
-        sM = self.spmatrix(M, shape=(3,3), dtype=float)
-        Mexp = scipy.linalg.expm(M)
-        sMexp = expm(sM).todense()
-        assert_array_almost_equal((sMexp - Mexp), zeros((3, 3)))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
 
-        N = array([[3., 0., 1.], [0., 2., 0.], [0., 0., 0.]])
-        sN = self.spmatrix(N, shape=(3,3), dtype=float)
-        Nexp = scipy.linalg.expm(N)
-        sNexp = expm(sN).todense()
-        assert_array_almost_equal((sNexp - Nexp), zeros((3, 3)))
+            M = array([[1, 0, 2], [0, 0, 3], [-4, 5, 6]], float)
+            sM = self.spmatrix(M, shape=(3,3), dtype=float)
+            Mexp = scipy.linalg.expm(M)
+            sMexp = expm(sM).todense()
+            assert_array_almost_equal((sMexp - Mexp), zeros((3, 3)))
+
+            N = array([[3., 0., 1.], [0., 2., 0.], [0., 0., 0.]])
+            sN = self.spmatrix(N, shape=(3,3), dtype=float)
+            Nexp = scipy.linalg.expm(N)
+            sNexp = expm(sN).todense()
+            assert_array_almost_equal((sNexp - Nexp), zeros((3, 3)))
 
     def test_inv(self):
         def check(dtype):
@@ -588,7 +615,9 @@ class _TestCommon:
             sMinv = inv(sM)
             assert_array_almost_equal(sMinv.dot(sM).todense(), np.eye(3))
         for dtype in [float]:
-            yield check, dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield check, dtype
 
     def test_from_array(self):
         A = array([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
@@ -1270,40 +1299,44 @@ class _TestInplaceArithmetic:
 
 class _TestGetSet:
     def test_getelement(self):
-        D = array([[1,0,0],
-                   [4,3,0],
-                   [0,2,0],
-                   [0,0,0]])
-        A = self.spmatrix(D)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            D = array([[1,0,0],
+                       [4,3,0],
+                       [0,2,0],
+                       [0,0,0]])
+            A = self.spmatrix(D)
 
-        M,N = D.shape
+            M,N = D.shape
 
-        for i in range(-M, M):
-            for j in range(-N, N):
-                assert_equal(A[i,j], D[i,j])
+            for i in range(-M, M):
+                for j in range(-N, N):
+                    assert_equal(A[i,j], D[i,j])
 
-        for ij in [(0,3),(-1,3),(4,0),(4,3),(4,-1), (1, 2, 3)]:
-            assert_raises((IndexError, TypeError), A.__getitem__, ij)
+            for ij in [(0,3),(-1,3),(4,0),(4,3),(4,-1), (1, 2, 3)]:
+                assert_raises((IndexError, TypeError), A.__getitem__, ij)
 
     def test_setelement(self):
-        A = self.spmatrix((3,4))
-        A[0, 0] = 0  # bug 870
-        A[1, 2] = 4.0
-        A[0, 1] = 3
-        A[2, 0] = 2.0
-        A[0,-1] = 8
-        A[-1,-2] = 7
-        A[0, 1] = 5
-        assert_array_equal(A.todense(),[[0,5,0,8],[0,0,4,0],[2,0,7,0]])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            A = self.spmatrix((3,4))
+            A[0, 0] = 0  # bug 870
+            A[1, 2] = 4.0
+            A[0, 1] = 3
+            A[2, 0] = 2.0
+            A[0,-1] = 8
+            A[-1,-2] = 7
+            A[0, 1] = 5
+            assert_array_equal(A.todense(),[[0,5,0,8],[0,0,4,0],[2,0,7,0]])
 
-        for ij in [(0,4),(-1,4),(3,0),(3,4),(3,-1)]:
-            assert_raises(IndexError, A.__setitem__, ij, 123.0)
+            for ij in [(0,4),(-1,4),(3,0),(3,4),(3,-1)]:
+                assert_raises(IndexError, A.__setitem__, ij, 123.0)
 
-        for v in [[1,2,3], array([1,2,3])]:
-            assert_raises(ValueError, A.__setitem__, (0,0), v)
+            for v in [[1,2,3], array([1,2,3])]:
+                assert_raises(ValueError, A.__setitem__, (0,0), v)
 
-        for v in [3j]:
-            assert_raises(TypeError, A.__setitem__, (0,0), v)
+            for v in [3j]:
+                assert_raises(TypeError, A.__setitem__, (0,0), v)
 
     def test_scalar_assign_2(self):
         n, m = (5, 10)
@@ -1318,16 +1351,20 @@ class _TestGetSet:
         # [i,j]
         for i, j in [(2, 3), (-1, 8), (-1, -2), (array(-1), -2), (-1, array(-2)),
                      (array(-1), array(-2))]:
-            _test_set(i, j, 1)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                _test_set(i, j, 1)
 
     def test_index_scalar_assign(self):
-        A = self.spmatrix((5, 5))
-        B = np.zeros((5, 5))
-        for C in [A, B]:
-            C[0,1] = 1
-            C[3,0] = 4
-            C[3,0] = 9
-        assert_array_equal(A.toarray(), B)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            A = self.spmatrix((5, 5))
+            B = np.zeros((5, 5))
+            for C in [A, B]:
+                C[0,1] = 1
+                C[3,0] = 4
+                C[3,0] = 9
+            assert_array_equal(A.toarray(), B)
 
 
 class _TestSolve:
@@ -1533,15 +1570,19 @@ class _TestSlicing:
 
 class _TestSlicingAssign:
     def test_slice_scalar_assign(self):
-        A = self.spmatrix((5, 5))
-        B = np.zeros((5, 5))
-        for C in [A, B]:
-            C[0:1,1] = 1
-            C[3:0,0] = 4
-            C[3:4,0] = 9
-            C[0,4:] = 1
-            C[3::-1,4:] = 9
-        assert_array_equal(A.toarray(), B)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            A = self.spmatrix((5, 5))
+            B = np.zeros((5, 5))
+            for C in [A, B]:
+                C[0:1,1] = 1
+                C[3:0,0] = 4
+                C[3:4,0] = 9
+                C[0,4:] = 1
+                C[3::-1,4:] = 9
+            assert_array_equal(A.toarray(), B)
 
     def test_slice_assign_2(self):
         n, m = (5, 10)
@@ -1556,88 +1597,96 @@ class _TestSlicingAssign:
         # [i,1:2]
         for i, j in [(2, slice(3)), (2, slice(None, 10, 4)), (2, slice(5, -2)),
                      (array(2), slice(5, -2))]:
-            _test_set(i, j)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                _test_set(i, j)
 
     def test_self_self_assignment(self):
         # Tests whether a row of one lil_matrix can be assigned to
         # another.
-        B = self.spmatrix((4,3))
-        B[0,0] = 2
-        B[1,2] = 7
-        B[2,1] = 3
-        B[3,0] = 10
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            B = self.spmatrix((4,3))
+            B[0,0] = 2
+            B[1,2] = 7
+            B[2,1] = 3
+            B[3,0] = 10
 
-        A = B / 10
-        B[0,:] = A[0,:]
-        assert_array_equal(A[0,:].A, B[0,:].A)
+            A = B / 10
+            B[0,:] = A[0,:]
+            assert_array_equal(A[0,:].A, B[0,:].A)
 
-        A = B / 10
-        B[:,:] = A[:1,:1]
-        assert_equal(A[0,0], B[3,2])
+            A = B / 10
+            B[:,:] = A[:1,:1]
+            assert_equal(A[0,0], B[3,2])
 
-        A = B / 10
-        B[:-1,0] = A[0,:].T
-        assert_array_equal(A[0,:].A.T, B[:-1,0].A)
+            A = B / 10
+            B[:-1,0] = A[0,:].T
+            assert_array_equal(A[0,:].A.T, B[:-1,0].A)
 
     def test_slice_assignment(self):
-        B = self.spmatrix((4,3))
-        B[0,0] = 5
-        B[1,2] = 3
-        B[2,1] = 7
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            B = self.spmatrix((4,3))
+            B[0,0] = 5
+            B[1,2] = 3
+            B[2,1] = 7
 
-        expected = array([[10,0,0],
-                          [0,0,6],
-                          [0,14,0],
-                          [0,0,0]])
+            expected = array([[10,0,0],
+                              [0,0,6],
+                              [0,14,0],
+                              [0,0,0]])
 
-        B[:,:] = B+B
-        assert_array_equal(B.todense(),expected)
+            B[:,:] = B+B
+            assert_array_equal(B.todense(),expected)
 
-        block = [[1,0],[0,4]]
-        B[:2,:2] = csc_matrix(array(block))
-        assert_array_equal(B.todense()[:2,:2],block)
+            block = [[1,0],[0,4]]
+            B[:2,:2] = csc_matrix(array(block))
+            assert_array_equal(B.todense()[:2,:2],block)
 
     def test_set_slice(self):
-        A = self.spmatrix((5,10))
-        B = matrix(zeros((5,10), float))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            A = self.spmatrix((5,10))
+            B = matrix(zeros((5,10), float))
 
-        s_ = np.s_
-        slices = [s_[:2], s_[1:2], s_[3:], s_[3::2],
-                  s_[8:3:-1], s_[4::-2], s_[:5:-1],
-                  0, 1, s_[:], s_[1:5], -1, -2, -5,
-                  array(-1), np.int8(-3)]
+            s_ = np.s_
+            slices = [s_[:2], s_[1:2], s_[3:], s_[3::2],
+                      s_[8:3:-1], s_[4::-2], s_[:5:-1],
+                      0, 1, s_[:], s_[1:5], -1, -2, -5,
+                      array(-1), np.int8(-3)]
 
-        for j, a in enumerate(slices):
-            A[a] = j
-            B[a] = j
-            assert_array_equal(A.todense(), B, repr(a))
+            for j, a in enumerate(slices):
+                A[a] = j
+                B[a] = j
+                assert_array_equal(A.todense(), B, repr(a))
 
-        for i, a in enumerate(slices):
-            for j, b in enumerate(slices):
-                A[a,b] = 10*i + 1000*(j+1)
-                B[a,b] = 10*i + 1000*(j+1)
-                assert_array_equal(A.todense(), B, repr((a, b)))
+            for i, a in enumerate(slices):
+                for j, b in enumerate(slices):
+                    A[a,b] = 10*i + 1000*(j+1)
+                    B[a,b] = 10*i + 1000*(j+1)
+                    assert_array_equal(A.todense(), B, repr((a, b)))
 
-        A[0, 1:10:2] = xrange(1,10,2)
-        B[0, 1:10:2] = xrange(1,10,2)
-        assert_array_equal(A.todense(), B)
-        A[1:5:2,0] = np.array(range(1,5,2))[:,None]
-        B[1:5:2,0] = np.array(range(1,5,2))[:,None]
-        assert_array_equal(A.todense(), B)
+            A[0, 1:10:2] = xrange(1,10,2)
+            B[0, 1:10:2] = xrange(1,10,2)
+            assert_array_equal(A.todense(), B)
+            A[1:5:2,0] = np.array(range(1,5,2))[:,None]
+            B[1:5:2,0] = np.array(range(1,5,2))[:,None]
+            assert_array_equal(A.todense(), B)
 
-        # The next commands should raise exceptions
-        assert_raises(ValueError, A.__setitem__, (0, 0), list(range(100)))
-        assert_raises(ValueError, A.__setitem__, (0, 0), arange(100))
-        assert_raises(ValueError, A.__setitem__, (0, slice(None)),
-                      list(range(100)))
-        assert_raises(ValueError, A.__setitem__, (slice(None), 1),
-                      list(range(100)))
-        assert_raises(ValueError, A.__setitem__, (slice(None), 1), A.copy())
-        assert_raises(ValueError, A.__setitem__,
-                      ([[1, 2, 3], [0, 3, 4]], [1, 2, 3]), [1, 2, 3, 4])
-        assert_raises(ValueError, A.__setitem__,
-                      ([[1, 2, 3], [0, 3, 4], [4, 1, 3]],
-                       [[1, 2, 4], [0, 1, 3]]), [2, 3, 4])
+            # The next commands should raise exceptions
+            assert_raises(ValueError, A.__setitem__, (0, 0), list(range(100)))
+            assert_raises(ValueError, A.__setitem__, (0, 0), arange(100))
+            assert_raises(ValueError, A.__setitem__, (0, slice(None)),
+                          list(range(100)))
+            assert_raises(ValueError, A.__setitem__, (slice(None), 1),
+                          list(range(100)))
+            assert_raises(ValueError, A.__setitem__, (slice(None), 1), A.copy())
+            assert_raises(ValueError, A.__setitem__,
+                          ([[1, 2, 3], [0, 3, 4]], [1, 2, 3]), [1, 2, 3, 4])
+            assert_raises(ValueError, A.__setitem__,
+                          ([[1, 2, 3], [0, 3, 4], [4, 1, 3]],
+                           [[1, 2, 4], [0, 1, 3]]), [2, 3, 4])
 
 
 class _TestFancyIndexing:
@@ -1815,9 +1864,11 @@ class _TestFancyIndexing:
 
 class _TestFancyIndexingAssign:
     def test_bad_index_assign(self):
-        A = self.spmatrix(np.zeros([5, 5]))
-        assert_raises((IndexError, ValueError, TypeError), A.__setitem__, "foo", 2)
-        assert_raises((IndexError, ValueError, TypeError), A.__setitem__, (2, "foo"), 5)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            A = self.spmatrix(np.zeros([5, 5]))
+            assert_raises((IndexError, ValueError, TypeError), A.__setitem__, "foo", 2)
+            assert_raises((IndexError, ValueError, TypeError), A.__setitem__, (2, "foo"), 5)
 
     def test_fancy_indexing_set(self):
         n, m = (5, 10)
@@ -1829,50 +1880,54 @@ class _TestFancyIndexingAssign:
             B[i, j] = 1
             assert_array_almost_equal(A.todense(), B)
         # [1:2,1:2]
-        for i, j in [((2, 3, 4), slice(None, 10, 4)),
-                     (np.arange(3), slice(5, -2)),
-                     (slice(2, 5), slice(5, -2))]:
-            _test_set_slice(i, j)
-        for i, j in [(np.arange(3), np.arange(3)), ((0, 3, 4), (1, 2, 4))]:
-            _test_set_slice(i, j)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            for i, j in [((2, 3, 4), slice(None, 10, 4)),
+                         (np.arange(3), slice(5, -2)),
+                         (slice(2, 5), slice(5, -2))]:
+                _test_set_slice(i, j)
+            for i, j in [(np.arange(3), np.arange(3)), ((0, 3, 4), (1, 2, 4))]:
+                _test_set_slice(i, j)
 
     def test_sequence_assignment(self):
-        A = self.spmatrix((4,3))
-        B = self.spmatrix(eye(3,4))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            A = self.spmatrix((4,3))
+            B = self.spmatrix(eye(3,4))
 
-        i0 = [0,1,2]
-        i1 = (0,1,2)
-        i2 = array(i0)
+            i0 = [0,1,2]
+            i1 = (0,1,2)
+            i2 = array(i0)
 
-        A[0,i0] = B[i0,0].T
-        A[1,i1] = B[i1,1].T
-        A[2,i2] = B[i2,2].T
-        assert_array_equal(A.todense(),B.T.todense())
+            A[0,i0] = B[i0,0].T
+            A[1,i1] = B[i1,1].T
+            A[2,i2] = B[i2,2].T
+            assert_array_equal(A.todense(),B.T.todense())
 
-        # column slice
-        A = self.spmatrix((2,3))
-        A[1,1:3] = [10,20]
-        assert_array_equal(A.todense(), [[0,0,0],[0,10,20]])
+            # column slice
+            A = self.spmatrix((2,3))
+            A[1,1:3] = [10,20]
+            assert_array_equal(A.todense(), [[0,0,0],[0,10,20]])
 
-        # row slice
-        A = self.spmatrix((3,2))
-        A[1:3,1] = [[10],[20]]
-        assert_array_equal(A.todense(), [[0,0],[0,10],[0,20]])
+            # row slice
+            A = self.spmatrix((3,2))
+            A[1:3,1] = [[10],[20]]
+            assert_array_equal(A.todense(), [[0,0],[0,10],[0,20]])
 
-        # both slices
-        A = self.spmatrix((3,3))
-        B = asmatrix(np.zeros((3,3)))
-        for C in [A, B]:
-            C[[0,1,2], [0,1,2]] = [4,5,6]
-        assert_array_equal(A.toarray(), B)
+            # both slices
+            A = self.spmatrix((3,3))
+            B = asmatrix(np.zeros((3,3)))
+            for C in [A, B]:
+                C[[0,1,2], [0,1,2]] = [4,5,6]
+            assert_array_equal(A.toarray(), B)
 
-        # both slices (2)
-        A = self.spmatrix((4, 3))
-        A[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
-        assert_almost_equal(A.sum(), 6)
-        B = asmatrix(np.zeros((4, 3)))
-        B[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
-        assert_array_equal(A.todense(), B)
+            # both slices (2)
+            A = self.spmatrix((4, 3))
+            A[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
+            assert_almost_equal(A.sum(), 6)
+            B = asmatrix(np.zeros((4, 3)))
+            B[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
+            assert_array_equal(A.todense(), B)
 
 
 class _TestFancyMultidim:
@@ -1951,10 +2006,12 @@ class _TestFancyMultidimAssign:
             B[i, j] = 1
             assert_array_almost_equal(A.todense(), B)
         # [[[1, 2], [1, 2]], [1, 2]]
-        for i, j in [(np.array([[1, 2], [1, 3]]), [1, 3]),
-                        (np.array([0, 4]), [[0, 3], [1, 2]]),
-                        ([[1, 2, 3], [0, 2, 4]], [[0, 4, 3], [4, 1, 2]])]:
-            _test_set_slice(i, j)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            for i, j in [(np.array([[1, 2], [1, 3]]), [1, 3]),
+                            (np.array([0, 4]), [[0, 3], [1, 2]]),
+                            ([[1, 2, 3], [0, 2, 4]], [[0, 4, 3], [4, 1, 2]])]:
+                _test_set_slice(i, j)
 
     def test_fancy_assign_list(self):
         np.random.seed(1234)
@@ -2460,12 +2517,14 @@ class TestDOK(sparse_test_class(slicing=False,
         assert_array_equal(D.A, E.A)
 
     def test_add_nonzero(self):
-        A = self.spmatrix((3,2))
-        A[0,1] = -10
-        A[2,0] = 20
-        A = A + 10
-        B = matrix([[10, 0], [10, 10], [30, 10]])
-        assert_array_equal(A.todense(), B)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            A = self.spmatrix((3,2))
+            A[0,1] = -10
+            A[2,0] = 20
+            A = A + 10
+            B = matrix([[10, 0], [10, 10], [30, 10]])
+            assert_array_equal(A.todense(), B)
 
     def test_convert(self):
         # Test provided by Andrew Straw.  Fails in SciPy <= r1477.

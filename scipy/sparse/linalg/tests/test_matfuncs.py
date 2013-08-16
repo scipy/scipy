@@ -9,6 +9,8 @@ from __future__ import division, print_function, absolute_import
 
 import math
 
+import warnings
+
 import numpy as np
 from numpy import array, eye, dot, sqrt, double, exp, random
 from numpy.linalg import matrix_power
@@ -16,7 +18,7 @@ from numpy.testing import (TestCase, run_module_suite,
         assert_allclose, assert_, assert_array_almost_equal,
         assert_array_almost_equal_nulp)
 
-from scipy.sparse import csc_matrix
+from scipy.sparse import csc_matrix, SparseEfficiencyWarning
 from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg.matfuncs import (expm,
         ProductOperator, MatrixPowerOperator,
@@ -67,18 +69,22 @@ class TestExpM(TestCase):
     def test_padecases_dtype_sparse_float(self):
         # float32 and complex64 lead to errors in spsolve/UMFpack
         dtype = np.float64
-        for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
-            a = scale * speye(3, 3, dtype=dtype, format='csc')
-            e = exp(scale) * eye(3, dtype=dtype)
-            assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
+                a = scale * speye(3, 3, dtype=dtype, format='csc')
+                e = exp(scale) * eye(3, dtype=dtype)
+                assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
 
     def test_padecases_dtype_sparse_complex(self):
         # float32 and complex64 lead to errors in spsolve/UMFpack
         dtype = np.complex128
-        for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
-            a = scale * speye(3, 3, dtype=dtype, format='csc')
-            e = exp(scale) * eye(3, dtype=dtype)
-            assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
+                a = scale * speye(3, 3, dtype=dtype, format='csc')
+                e = exp(scale) * eye(3, dtype=dtype)
+                assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
 
     def test_logm_consistency(self):
         random.seed(1234)
