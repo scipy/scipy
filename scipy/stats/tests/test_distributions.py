@@ -19,6 +19,7 @@ from numpy import typecodes, array
 from scipy import special
 import scipy.stats as stats
 from scipy.stats.distributions import argsreduce
+from scipy import special
 from scipy.special import xlogy
 
 
@@ -482,6 +483,36 @@ class TestPoisson(TestCase):
         val = stats.poisson(0.5).rvs(3)
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
+
+    def test_pmf_basic(self):
+        # Basic case
+        ln2 = np.log(2)
+        vals = stats.poisson.pmf([0, 1, 2], ln2)
+        expected = [0.5, ln2/2, ln2**2/4]
+        assert_allclose(vals, expected)
+
+    def test_pmf_broadcasting(self):
+        k = np.array([0, 1, 2, 3])
+        mu = k.reshape(-1, 1)
+        vals = stats.poisson.pmf(k, mu)
+        expected = mu**k * np.exp(-mu) / special.gamma(k + 1)
+        assert_allclose(vals, expected)
+
+    def test_mu_zero(self):
+        # Edge case: mu=0.
+        # In this case, the distribution should behave like
+        # the distribution rv_discrete(values=([0], [1]))
+        vals = stats.poisson.pmf([0, 1, 2], 0)
+        assert_array_equal(vals, [1, 0, 0])
+
+        vals = stats.poisson.cdf([0, 1, 2], 0)
+        assert_array_equal(vals, [1, 1, 1])
+
+        vals = stats.poisson.sf([0, 1, 2], 0)
+        assert_array_equal(vals, [0, 0, 0])
+
+        vals = stats.poisson.ppf([0, 0.25, 0.75, 1], 0)
+        assert_array_equal(vals, [-1, 0, 0, 0])
 
 
 class TestZipf(TestCase):

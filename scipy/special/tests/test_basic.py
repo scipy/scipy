@@ -644,9 +644,15 @@ class TestCephes(TestCase):
 
     def test_pdtr(self):
         cephes.pdtr(0,1)
+        # Edge case: m = 0.
+        val = cephes.pdtr([0, 1, 2], 0.0)
+        assert_array_equal(val, [1, 1, 1])
 
     def test_pdtrc(self):
         cephes.pdtrc(0,1)
+        # Edge case: m = 0.
+        val = cephes.pdtrc([0, 1, 2], 0.0)
+        assert_array_equal(val, [0, 0, 0])
 
     def test_pdtri(self):
         warn_ctx = WarningManager()
@@ -659,6 +665,9 @@ class TestCephes(TestCase):
 
     def test_pdtrik(self):
         cephes.pdtrik(0.5,1)
+        # Edge case: m = 0
+        k = cephes.pdtrik([0.25, 0.75], 0)
+        assert_array_equal(k, [0, 0])
 
     def test_pro_ang1(self):
         cephes.pro_ang1(1,1,1,0)

@@ -6810,8 +6810,8 @@ class rv_discrete(rv_generic):
         cond = cond0 & cond1
         output = valarray(shape(cond),value=self.badvalue,typecode='d')
         # output type 'd' to handle nin and inf
-        place(output,(q == 0)*(cond == cond), self.a-1)
-        place(output,cond2,self.b)
+        place(output,(q == 0)*(cond == cond), asarray(self.a-1).flat)
+        place(output, cond2, asarray(self.b).flat)
         if any(cond):
             goodargs = argsreduce(cond, *((q,)+args+(loc,)))
             loc, goodargs = goodargs[-1], goodargs[:-1]
@@ -6852,8 +6852,8 @@ class rv_discrete(rv_generic):
         # same problem as with ppf; copied from ppf and changed
         output = valarray(shape(cond),value=self.badvalue,typecode='d')
         # output type 'd' to handle nin and inf
-        place(output,(q == 0)*(cond == cond), self.b)
-        place(output,cond2,self.a-1)
+        place(output,(q == 0)*(cond == cond), asarray(self.b).flat)
+        place(output, cond2, asarray(self.a-1).flat)
 
         # call place only if at least 1 valid argument
         if any(cond):
@@ -7571,11 +7571,17 @@ class poisson_gen(rv_discrete):
     %(example)s
 
     """
+    # Override rv_discrete._argcheck to allow mu == 0.
+    def _argcheck(self, mu):
+        mu = asarray(mu)
+        self.b = np.where(mu > 0, inf, 0)
+        return mu >= 0
+
     def _rvs(self, mu):
         return mtrand.poisson(mu, self._size)
 
     def _logpmf(self, k, mu):
-        Pk = k*log(mu)-gamln(k+1) - mu
+        Pk = special.xlogy(k, mu) - gamln(k + 1) - mu
         return Pk
 
     def _pmf(self, k, mu):
