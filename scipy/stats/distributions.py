@@ -7598,7 +7598,7 @@ class poisson_gen(rv_discrete):
     def _stats(self, mu):
         var = mu
         tmp = asarray(mu)
-        g1 = 1.0 / tmp
+        g1 = sqrt(1.0 / tmp)
         g2 = 1.0 / tmp
         return mu, var, g1, g2
 poisson = poisson_gen(name="poisson", longname='A Poisson')
