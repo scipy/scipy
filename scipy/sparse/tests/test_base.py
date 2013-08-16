@@ -143,7 +143,10 @@ class _TestCommon:
                          self.__class__ == TestCSC or
                          self.__class__ == TestCSR)
             msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-            yield dec.skipif(fails, msg)(check), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.skipif(fails, msg)(check), dtype
 
     def test_ne(self):
         def check(dtype):
@@ -177,7 +180,10 @@ class _TestCommon:
                          self.__class__ == TestCSC or
                          self.__class__ == TestCSR)
             msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-            yield dec.skipif(fails, msg)(check), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.skipif(fails, msg)(check), dtype
 
     def test_lt(self):
         def check(dtype):
@@ -240,11 +246,17 @@ class _TestCommon:
                          self.__class__ == TestCSC or
                          self.__class__ == TestCSR)
             msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-            yield dec.skipif(fails, msg)(check), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.skipif(fails, msg)(check), dtype
 
         for dtype in self.checked_dtypes:
             msg = "Dense rhs is not supported for inequalities."
-            yield dec.knownfailureif(True, msg)(check_fail), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.knownfailureif(True, msg)(check_fail), dtype
 
     def test_gt(self):
         def check(dtype):
@@ -306,11 +318,17 @@ class _TestCommon:
                          self.__class__ == TestCSC or
                          self.__class__ == TestCSR)
             msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-            yield dec.skipif(fails, msg)(check), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.skipif(fails, msg)(check), dtype
 
         for dtype in self.checked_dtypes:
             msg = "Dense rhs is not supported for inequalities."
-            yield dec.knownfailureif(True, msg)(check_fail), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.knownfailureif(True, msg)(check_fail), dtype
 
     def test_le(self):
         def check(dtype):
@@ -370,11 +388,17 @@ class _TestCommon:
                          self.__class__ == TestCSC or
                          self.__class__ == TestCSR)
             msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-            yield dec.skipif(fails, msg)(check), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.skipif(fails, msg)(check), dtype
 
         for dtype in self.checked_dtypes:
             msg = "Dense rhs is not supported for inequalities."
-            yield dec.knownfailureif(True, msg)(check_fail), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.knownfailureif(True, msg)(check_fail), dtype
 
     def test_ge(self):
         def check(dtype):
@@ -435,11 +459,17 @@ class _TestCommon:
                          self.__class__ == TestCSC or
                          self.__class__ == TestCSR)
             msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-            yield dec.skipif(fails, msg)(check), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.skipif(fails, msg)(check), dtype
 
         for dtype in self.checked_dtypes:
             msg = "Dense rhs is not supported for inequalities."
-            yield dec.knownfailureif(True, msg)(check_fail), dtype
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=np.ComplexWarning)
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                yield dec.knownfailureif(True, msg)(check_fail), dtype
 
     def test_empty(self):
         # create empty matrices
