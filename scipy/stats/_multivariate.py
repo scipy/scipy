@@ -128,7 +128,8 @@ def _pinv_1d(v, eps=1e-5):
     return np.array([0 if abs(x) < eps else 1/x for x in v], dtype=float)
 
 
-def _psd_pinv_decomposed_log_pdet(mat, eps=1e-5):
+def _psd_pinv_decomposed_log_pdet(mat, cond=None, rcond=None, 
+                                  check_finite=True):
     """
     Compute a decomposition of the pseudo-inverse and the logarithm of
     the pseudo-determinant of a symmetric positive semi-definite
@@ -145,8 +146,15 @@ def _psd_pinv_decomposed_log_pdet(mat, eps=1e-5):
     ----------
     mat : array_like
         Input array of shape (`m`, `n`)
-    eps : float, optional
-        Threshold below which a singular value is considered to be zero.
+    cond, rcond : float or None
+        Cutoff for 'small' singular values.
+        Eigenvalues smaller than ``rcond*largest_eigenvalue``
+        are considered zero.
+        If None or -1, suitable machine precision is used.
+    check_finite : boolean, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -155,23 +163,38 @@ def _psd_pinv_decomposed_log_pdet(mat, eps=1e-5):
     log_pdet : float
         Logarithm of the pseudo-determinant of the matrix.
 
-    Notes
-    -----
-    The expression for the pseudo-determinant in terms of singular values
-    rather than eigenvalues is only valid for matrices that are
-    symmetric positive semi-definite, but we do not check this.
-
     """
     # Compute the symmetric eigendecomposition.
     # The input covariance matrix is required to be real symmetric
     # and positive semidefinite which implies that its eigenvalues
     # are all real and non-negative,
     # but clip them anyway to avoid numerical issues.
+
+    # TODO: the code to set cond/rcond is identical to that in 
+    # scipy.linalg.{pinvh, pinv2} and if/when this function is subsumed
+    # into scipy.linalg it should probably be shared between all of
+    # these routines.
+
+    if check_finite:
+        mat = np.asarray_chkfinite(mat)
+    else:
+        mat = np.asarray(mat)
+
     s, u = scipy.linalg.eigh(mat)
     s = np.maximum(s, 0)
+
+    if rcond is not None:
+        cond = rcond
+    if cond in [None,-1]:
+        t = u.dtype.char.lower()
+        factor = {'f': 1E3, 'd': 1E6}
+        cond = factor[t] * np.finfo(t).eps
+
+    eps = cond * np.max(abs(s))
     s_pinv = _pinv_1d(s, eps)
     U = np.multiply(u, np.sqrt(s_pinv))
-    log_pdet = np.sum(np.log(s[s > eps]))
+    log_pdet = np.sum(np.log(s[abs(s) > eps]))
+
     return U, log_pdet
 
 
