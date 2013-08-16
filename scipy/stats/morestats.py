@@ -970,7 +970,7 @@ def levene(*args,**kwds):
     elif center == 'mean':
         func = lambda x: np.mean(x, axis=0)
     else:  # center == 'trimmed'
-        args = tuple(stats.trimboth(arg, proportiontocut) for arg in args)
+        args = tuple(stats.trimboth(np.sort(arg), proportiontocut) for arg in args)
         func = lambda x: np.mean(x, axis=0)
 
     for j in range(k):
