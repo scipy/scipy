@@ -59,7 +59,11 @@ cdef inline void free(setlist_t *setlist):
     for j in xrange(setlist.n):
         libc.stdlib.free(<void*>setlist.sets[j])
     libc.stdlib.free(<void*>setlist.sets)
+    libc.stdlib.free(<void*>setlist.sizes)
+    libc.stdlib.free(<void*>setlist.alloc_sizes)
     setlist.sets = NULL
+    setlist.sizes = NULL
+    setlist.alloc_sizes = NULL
     setlist.n = 0
 
 cdef inline int add(setlist_t *setlist, int n, int value) nogil:
