@@ -700,6 +700,49 @@ class spmatrix(object):
         else:
             return np.zeros(self.shape, dtype=self.dtype, order=order)
 
+    def __numpy_ufunc__(*args, **kwargs):
+        """Method for compatibility with NumPy's ufuncs and dot
+        functions.
+        """
+        self = args[0]
+        func = args[1]
+        method = args[2]
+        pos = args[3]
+        inputs = args[4]
+
+        without_self = list(inputs)
+        del without_self[pos]
+        without_self = tuple(without_self)
+
+        # Associative operations
+        if np.multiply == func:
+            return self.multiply(*without_self)
+
+        elif np.add == func:
+            return self.__add__(*without_self)
+
+        # Non-associative operations
+        elif np.dot == func:
+            if pos == 0:
+                return self.__mul__(inputs[1])
+            else:
+                return self.__rmul__(inputs[0])
+
+        elif np.subtract == func:
+            if pos == 0:
+                return self.__sub__(inputs[1])
+            else:
+                return self.__rsub__(inputs[0])
+
+        elif (np.divide == func) or (np.true_divide == func):
+            if pos == 0:
+                return self.__div__(inputs[1])
+            else:
+                return NotImplemented
+
+        else:
+            return NotImplemented
+
 
 def isspmatrix(x):
     return isinstance(x, spmatrix)
