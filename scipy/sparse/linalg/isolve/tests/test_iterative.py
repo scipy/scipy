@@ -4,6 +4,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 
 from numpy.testing import TestCase, assert_equal, assert_array_equal, \
@@ -12,7 +14,7 @@ from numpy.testing import TestCase, assert_equal, assert_array_equal, \
 from numpy import zeros, ones, arange, array, abs, max, ones, eye, iscomplexobj
 from numpy.linalg import cond
 from scipy.linalg import norm
-from scipy.sparse import spdiags, csr_matrix
+from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres
@@ -284,40 +286,42 @@ class TestQMR(TestCase):
     def test_leftright_precond(self):
         """Check that QMR works with left and right preconditioners"""
 
-        from scipy.sparse.linalg.dsolve import splu
-        from scipy.sparse.linalg.interface import LinearOperator
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            from scipy.sparse.linalg.dsolve import splu
+            from scipy.sparse.linalg.interface import LinearOperator
 
-        n = 100
+            n = 100
 
-        dat = ones(n)
-        A = spdiags([-2*dat, 4*dat, -dat], [-1,0,1],n,n)
-        b = arange(n,dtype='d')
+            dat = ones(n)
+            A = spdiags([-2*dat, 4*dat, -dat], [-1,0,1],n,n)
+            b = arange(n,dtype='d')
 
-        L = spdiags([-dat/2, dat], [-1,0], n, n)
-        U = spdiags([4*dat, -dat], [0,1], n, n)
+            L = spdiags([-dat/2, dat], [-1,0], n, n)
+            U = spdiags([4*dat, -dat], [0,1], n, n)
 
-        L_solver = splu(L)
-        U_solver = splu(U)
+            L_solver = splu(L)
+            U_solver = splu(U)
 
-        def L_solve(b):
-            return L_solver.solve(b)
+            def L_solve(b):
+                return L_solver.solve(b)
 
-        def U_solve(b):
-            return U_solver.solve(b)
+            def U_solve(b):
+                return U_solver.solve(b)
 
-        def LT_solve(b):
-            return L_solver.solve(b,'T')
+            def LT_solve(b):
+                return L_solver.solve(b,'T')
 
-        def UT_solve(b):
-            return U_solver.solve(b,'T')
+            def UT_solve(b):
+                return U_solver.solve(b,'T')
 
-        M1 = LinearOperator((n,n), matvec=L_solve, rmatvec=LT_solve)
-        M2 = LinearOperator((n,n), matvec=U_solve, rmatvec=UT_solve)
+            M1 = LinearOperator((n,n), matvec=L_solve, rmatvec=LT_solve)
+            M2 = LinearOperator((n,n), matvec=U_solve, rmatvec=UT_solve)
 
-        x,info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
+            x,info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
 
-        assert_equal(info,0)
-        assert_normclose(A*x, b, tol=1e-8)
+            assert_equal(info,0)
+            assert_normclose(A*x, b, tol=1e-8)
 
 
 class TestGMRES(TestCase):

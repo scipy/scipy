@@ -67,32 +67,36 @@ class TestLinsolve(TestCase):
         assert_array_almost_equal(x, x2.todense())
 
     def test_non_square(self):
-        # A is not square.
-        A = ones((3, 4))
-        b = ones((4, 1))
-        assert_raises(ValueError, spsolve, A, b)
-        # A2 and b2 have incompatible shapes.
-        A2 = csc_matrix(eye(3))
-        b2 = array([1.0, 2.0])
-        assert_raises(ValueError, spsolve, A2, b2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            # A is not square.
+            A = ones((3, 4))
+            b = ones((4, 1))
+            assert_raises(ValueError, spsolve, A, b)
+            # A2 and b2 have incompatible shapes.
+            A2 = csc_matrix(eye(3))
+            b2 = array([1.0, 2.0])
+            assert_raises(ValueError, spsolve, A2, b2)
 
     def test_example_comparison(self):
-        row = array([0,0,1,2,2,2])
-        col = array([0,2,2,0,1,2])
-        data = array([1,2,3,-4,5,6])
-        sM = csr_matrix((data,(row,col)), shape=(3,3), dtype=float)
-        M = sM.todense()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            row = array([0,0,1,2,2,2])
+            col = array([0,2,2,0,1,2])
+            data = array([1,2,3,-4,5,6])
+            sM = csr_matrix((data,(row,col)), shape=(3,3), dtype=float)
+            M = sM.todense()
 
-        row = array([0,0,1,1,0,0])
-        col = array([0,2,1,1,0,0])
-        data = array([1,1,1,1,1,1])
-        sN = csr_matrix((data, (row,col)), shape=(3,3), dtype=float)
-        N = sN.todense()
+            row = array([0,0,1,1,0,0])
+            col = array([0,2,1,1,0,0])
+            data = array([1,1,1,1,1,1])
+            sN = csr_matrix((data, (row,col)), shape=(3,3), dtype=float)
+            N = sN.todense()
 
-        sX = spsolve(sM, sN)
-        X = scipy.linalg.solve(M, N)
+            sX = spsolve(sM, sN)
+            X = scipy.linalg.solve(M, N)
 
-        assert_array_almost_equal(X, sX.todense())
+            assert_array_almost_equal(X, sX.todense())
 
 
 class TestSplu(object):
@@ -104,19 +108,23 @@ class TestSplu(object):
         random.seed(1234)
 
     def test_splu_smoketest(self):
-        # Check that splu works at all
-        x = random.rand(self.n)
-        lu = splu(self.A)
-        r = self.A*lu.solve(x)
-        assert_(abs(x - r).max() < 1e-13)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            # Check that splu works at all
+            x = random.rand(self.n)
+            lu = splu(self.A)
+            r = self.A*lu.solve(x)
+            assert_(abs(x - r).max() < 1e-13)
 
     def test_spilu_smoketest(self):
-        # Check that spilu works at all
-        x = random.rand(self.n)
-        lu = spilu(self.A, drop_tol=1e-2, fill_factor=5)
-        r = self.A*lu.solve(x)
-        assert_(abs(x - r).max() < 1e-2)
-        assert_(abs(x - r).max() > 1e-5)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            # Check that spilu works at all
+            x = random.rand(self.n)
+            lu = spilu(self.A, drop_tol=1e-2, fill_factor=5)
+            r = self.A*lu.solve(x)
+            assert_(abs(x - r).max() < 1e-2)
+            assert_(abs(x - r).max() > 1e-5)
 
     def test_splu_nnz0(self):
         A = csc_matrix((5,5), dtype='d')
