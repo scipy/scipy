@@ -368,11 +368,6 @@ class TestMood(TestCase):
         assert_raises(ValueError, stats.mood, [1], [])
 
 
-def test_oneway_bad_arg():
-    """Raise ValueError is fewer than two args are given."""
-    assert_raises(ValueError, stats.oneway, [1])
-
-
 def test_wilcoxon_bad_arg():
     """Raise ValueError when two args of different lengths are given or
        zero_method is unknwon"""
