@@ -308,7 +308,7 @@ class multivariate_normal_gen(object):
     def __init__(self):
         self.__doc__ = doccer.docformat(self.__doc__, docdict_params)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, mean=None, cov=1):
         """
         Create a frozen multivariate normal distribution.
 
@@ -316,7 +316,7 @@ class multivariate_normal_gen(object):
 
         """
 
-        return multivariate_normal_frozen(*args, **kwargs)
+        return multivariate_normal_frozen(mean, cov)
 
     def _logpdf(self, x, mean, prec_U, log_det_cov):
         """
