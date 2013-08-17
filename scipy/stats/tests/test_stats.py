@@ -2387,6 +2387,7 @@ class Test_Trim(object):
         assert_equal(stats.trim_mean([5,4,3,1,2,0], 2/6.), 2.5)
 
         # check axis argument
+        np.random.seed(1234)
         a = np.random.randint(20, size=(5, 6, 4, 7))
         for axis in [0, 1, 2, 3, -1]:
             res1 = stats.trim_mean(a, 2/6., axis=axis)
