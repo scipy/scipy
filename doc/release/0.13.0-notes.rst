@@ -21,14 +21,21 @@ This release requires Python 2.6, 2.7 or 3.1-3.3 and NumPy 1.5.1 or greater.
 New features
 ============
 
-``scipy.optimize`` improvements
--------------------------------
+``scipy.integrate`` improvements
+--------------------------------
 
-Trust-region unconstrained minimization algorithms
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The ``minimize`` function gained two trust-region solvers for unconstrained
-minimization: ``dogleg`` and ``trust-ncg``. These provide an alternative to
-traditional line search algorithms already present in ``scipy.optimize``.
+N-dimensional numerical integration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A new function `scipy.integrate.nquad`, which provides N-dimensional
+integration functionality with a more flexible interface than ``dblquad`` and
+``tplquad``, has been added.
+
+``dopri*`` improvements
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The intermediate results from the ``dopri`` family of ODE solvers can now be
+accessed by a *solout* callback function.
 
 
 ``scipy.linalg`` improvements
@@ -49,26 +56,30 @@ Polar decomposition
 A new function `scipy.linalg.polar`, to compute the polar decomposition 
 of a matrix, was added.
 
-
 BLAS level 3 functions
 ^^^^^^^^^^^^^^^^^^^^^^
 
 The BLAS functions ``symm``, ``syrk``, ``syr2k``, ``hemm``, ``herk`` and
 ``her2k`` are now wrapped in `scipy.linalg`.
 
-
 Matrix functions
 ^^^^^^^^^^^^^^^^
 
-Several matrix function algorithms have been implemented or updated
-following detailed descriptions in recent papers of Nick Higham
-and his co-authors.
-These include
-the matrix square root (``sqrtm``),
-the matrix logarithm (``logm``),
-the matrix exponential (``expm``)
-and its Frechet derivative (``expm_frechet``),
-and fractional matrix powers (``fractional_matrix_power``).
+Several matrix function algorithms have been implemented or updated following
+detailed descriptions in recent papers of Nick Higham and his co-authors.
+These include the matrix square root (``sqrtm``), the matrix logarithm
+(``logm``), the matrix exponential (``expm``) and its Frechet derivative
+(``expm_frechet``), and fractional matrix powers (``fractional_matrix_power``).
+
+
+``scipy.optimize`` improvements
+-------------------------------
+
+Trust-region unconstrained minimization algorithms
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``minimize`` function gained two trust-region solvers for unconstrained
+minimization: ``dogleg`` and ``trust-ncg``.
 
 
 ``scipy.sparse`` improvements
@@ -77,9 +88,9 @@ and fractional matrix powers (``fractional_matrix_power``).
 Boolean comparisons and sparse matrices
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-All sparse matrix types now support boolean data, and boolean operations.
-So if we have two sparse matrices `A` and `B`, they can be compared in all the
-expected ways: `A < B`, `A >= B`, `A != B`, etc. And return sparse matrices.
+All sparse matrix types now support boolean data, and boolean operations.  Two
+sparse matrices `A` and `B` can be compared in all the expected ways `A < B`,
+`A >= B`, `A != B`, producing similar results as dense Numpy arrays.
 Comparisons with dense matrices and scalars are also supported. 
 
 CSR and CSC fancy indexing
@@ -89,27 +100,36 @@ Compressed sparse row and column sparse matrix types now support fancy indexing
 with boolean matrices, slices, and lists. So where A is a (CSC or CSR) sparse
 matrix, you can do things like::
 
-    >>> A[A > 0.5] = 1  # Since Boolean sparse matrices work!
-
+    >>> A[A > 0.5] = 1  # since Boolean sparse matrices work
     >>> A[:2, :3] = 2
-
     >>> A[[1,2], 2] = 3
 
 
 ``scipy.sparse.linalg`` improvements
 ------------------------------------
 
-The new function ``onenormest``
-provides a lower bound of the 1-norm of a linear operator
-and has been implemented according to Higham and Tisseur (2000).
-This function is not only useful for sparse matrices,
-but can also be used to estimate the norm of
-products or powers of dense matrices without explictly building the
-intermediate matrix.
+The new function ``onenormest`` provides a lower bound of the 1-norm of a
+linear operator and has been implemented according to Higham and Tisseur
+(2000).  This function is not only useful for sparse matrices, but can also be
+used to estimate the norm of products or powers of dense matrices without
+explictly building the intermediate matrix.
 
 The multiplicative action of the matrix exponential of a linear operator
-(``expm_multiply``) has been implemented following the description
-in Al-Mohy and Higham (2011).
+(``expm_multiply``) has been implemented following the description in Al-Mohy
+and Higham (2011).
+
+
+``scipy.spatial`` improvements
+------------------------------
+
+The vertices of a `ConvexHull` can now be accessed via the `vertices` attribute,
+which gives proper orientation in 2-D.
+
+
+``scipy.signal`` improvements
+-----------------------------
+
+Cosine window function `scipy.signal.cosine` was added.
 
 
 ``scipy.special`` improvements
@@ -120,19 +140,12 @@ These functions can simplify and speed up code that has to calculate
 ``x * log(y)`` and give 0 when ``x == 0``.
 
 
-N-dimensional numerical integration
------------------------------------
-
-A new function `scipy.integrate.nquad`, which provides N-dimensional
-integration functionality with a more flexible interface than ``dblquad`` and
-``tplquad``, has been added.
-
-
 Unformatted Fortran file reader
 -------------------------------
 
 A new class `scipy.io.FortranFile` which facilitates reading unformatted
 sequential files written by Fortran code.
+
 
 B-spline derivatives and antiderivatives
 ----------------------------------------
@@ -149,6 +162,11 @@ class-based FITPACK interface as ``UnivariateSpline.derivative`` and
 
 Distributions now allow using keyword parameters in addition to
 positional parameters in all methods.
+
+`scipy.stats.power_divergence` function has been added for Cressie-Read
+power divergence statistic and goodness of fit test.
+
+`scipy.stats.mood` now accepts multidimensional input.
 
 
 Deprecated features
@@ -186,6 +204,7 @@ Deprecated ``radon`` function removed
 The ``misc.radon`` function, which was deprecated in scipy 0.11.0, has been
 removed.  Users can find a more full-featured ``radon`` function in
 scikit-image.
+
 
 Removed deprecated keywords ``xa`` and ``xb`` from ``stats.distributions``
 --------------------------------------------------------------------------
