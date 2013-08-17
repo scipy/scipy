@@ -338,9 +338,9 @@ double *loss;
 		goto done;
 	    /* If power series fails, then apply AMS55 #15.3.6 */
 	    q = hys2f1(a, b, 1.0 - d, s, &err);
-	    q *= gamma(d) / (gamma(c - a) * gamma(c - b));
+	    q *= exp(lgam(d) - lgam(c - a) - lgam(c - b));
 	    r = pow(s, d) * hys2f1(c - a, c - b, d + 1.0, s, &err1);
-	    r *= gamma(-d) / (gamma(a) * gamma(b));
+	    r *= exp(lgam(-d) - lgam(a) - lgam(b));
 	    y = q + r;
 
 	    q = fabs(q);	/* estimate cancellation error */
