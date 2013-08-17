@@ -322,16 +322,21 @@ class multivariate_normal_gen(object):
         """
         Parameters
         ----------
-        x : array_like
+        x : ndarray
             Points at which to evaluate the log of the probability
             density function
-        mean : array_like
+        mean : ndarray
             Mean of the distribution
-        prec_U : array_like
+        prec_U : ndarray
             A decomposition such that np.dot(prec_U, prec_U.T)
             is the precision matrix, i.e. inverse of the covariance matrix.
         log_det_cov : float
             Logarithm of the determinant of the covariance matrix
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be 
+        called directly; use 'logpdf' instead.
 
         """
         dim = x.shape[-1]
