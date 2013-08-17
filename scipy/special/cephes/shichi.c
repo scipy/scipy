@@ -497,6 +497,7 @@ static unsigned short C2[] = {
 #endif
 
 
+static double hyp3f0(double a1, double a2, double a3, double z);
 
 /* Sine and cosine integrals */
 
@@ -506,7 +507,7 @@ int shichi(x, si, ci)
 double x;
 double *si, *ci;
 {
-    double k, z, c, s, a;
+    double k, z, c, s, a, b;
     short sign;
 
     if (x < 0.0) {
@@ -526,10 +527,12 @@ double *si, *ci;
     if (x >= 8.0)
 	goto chb;
 
+    if (x >= 88.0)
+	goto asymp;
+
     z = x * x;
 
     /*     Direct power series expansion   */
-
     a = 1.0;
     s = 1.0;
     c = 0.0;
@@ -549,8 +552,8 @@ double *si, *ci;
     goto done;
 
 
-  chb:
-
+chb:
+    /* Chebyshev series expansions */
     if (x < 18.0) {
 	a = (576.0 / x - 52.0) / 10.0;
 	k = exp(x) / x;
@@ -566,15 +569,28 @@ double *si, *ci;
 	c = k * chbevl(a, C2, 24);
 	goto done;
     }
-    else {
-	if (sign)
-	    *si = -NPY_INFINITY;
-	else
-	    *si = NPY_INFINITY;
-	*ci = NPY_INFINITY;
-	return (0);
+
+asymp:
+    if (x > 1000) {
+        *si = NPY_INFINITY;
+        *ci = NPY_INFINITY;
     }
-  done:
+    else {
+        /* Asymptotic expansions
+         * http://functions.wolfram.com/GammaBetaErf/CoshIntegral/06/02/
+         * http://functions.wolfram.com/GammaBetaErf/SinhIntegral/06/02/0001/
+         */
+        a = hyp3f0(0.5, 1, 1, 4.0/(x*x));
+        b = hyp3f0(1, 1, 1.5, 4.0/(x*x));
+        *si = cosh(x)/x * a + sinh(x)/(x*x) * b;
+        *ci = sinh(x)/x * a + cosh(x)/(x*x) * b;
+    }
+    if (sign) {
+        *si = -*si;
+    }
+    return 0;
+
+done:
     if (sign)
 	s = -s;
 
@@ -582,4 +598,42 @@ double *si, *ci;
 
     *ci = NPY_EULER + log(x) + c;
     return (0);
+}
+
+
+/*
+ * Evaluate 3F0(a1, a2, a3; z)
+ *
+ * The series is only asymptotic, so this requires z large enough.
+ */
+static double hyp3f0(double a1, double a2, double a3, double z)
+{
+    int n, maxiter;
+    double err, sum, term, m;
+
+    m = pow(z, -1.0/3);
+    if (m < 50) {
+        maxiter = m;
+    }
+    else {
+        maxiter = 50;
+    }
+
+    term = 1.0;
+    sum = term;
+    for (n = 0; n < maxiter; ++n) {
+        term *= (a1 + n) * (a2 + n) * (a3 + n) * z / (n + 1);
+        sum += term;
+        if (fabs(term) < 1e-13 * fabs(sum) || term == 0) {
+            break;
+        }
+    }
+
+    err = fabs(term);
+
+    if (err > 1e-13 * fabs(sum)) {
+        return NPY_NAN;
+    }
+
+    return sum;
 }
