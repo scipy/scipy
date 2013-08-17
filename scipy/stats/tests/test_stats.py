@@ -1025,14 +1025,6 @@ class TestScoreatpercentile(TestCase):
         assert_raises(ValueError, stats.scoreatpercentile, [1], -1)
 
 
-class TestCMedian(TestCase):
-    def test_basic(self):
-        data = [1,2,3,1,5,3,6,4,3,2,4,3,5,2.0]
-        assert_almost_equal(stats.cmedian(data,5),3.2916666666666665)
-        assert_almost_equal(stats.cmedian(data,3),3.083333333333333)
-        assert_almost_equal(stats.cmedian(data),3.0020020020020022)
-
-
 class TestMode(TestCase):
     def test_basic(self):
         data1 = [3,5,1,10,23,3,2,6,8,6,10,6]

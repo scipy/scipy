@@ -212,6 +212,12 @@ are deprecated. All users should use the numerically more robust
 `scipy.stats.oneway` is deprecated; `scipy.stats.f_oneway` should be used
 instead.
 
+`scipy.stats.glm` is deprecated.  `scipy.stats.ttest_ind` is an equivalent
+function; more full-featured general (and generalized) linear model
+implementations can be found in statsmodels.
+
+`scipy.stats.cmedian` is deprecated; ``numpy.median`` should be used instead.
+
 
 Backwards incompatible changes
 ==============================
