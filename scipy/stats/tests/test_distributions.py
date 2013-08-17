@@ -483,6 +483,11 @@ class TestPoisson(TestCase):
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
+    def test_stats(self):
+        mu = 16.0
+        result = stats.poisson.stats(mu, moments='mvsk')
+        assert_allclose(result, [mu, mu, np.sqrt(1.0/mu), 1.0/mu])
+
 
 class TestZipf(TestCase):
     def test_rvs(self):
