@@ -95,6 +95,29 @@ cdef void loop_f_f__As_f_f(char **args, np.npy_intp *dims, np.npy_intp *steps, v
         op0 += steps[1]
     sf_error.check_fpe(func_name)
 
+cdef void loop_d_ddi_d_As_ddl_dd(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+    cdef np.npy_intp i, n = dims[0]
+    cdef void *func = (<void**>data)[0]
+    cdef char *func_name = <char*>(<void**>data)[1]
+    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3], *op1 = args[4]
+    cdef double ov0
+    cdef double ov1
+    for i in range(n):
+        if <int>(<long*>ip2)[0] == (<long*>ip2)[0]:
+            ov0 = (<double(*)(double, double, int, double *) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <int>(<long*>ip2)[0], &ov1)
+        else:
+            sf_error.error(func_name, sf_error.DOMAIN, "invalid input argument")
+            ov0 = <double>NPY_NAN
+            ov1 = <double>NPY_NAN
+        (<double *>op0)[0] = <double>ov0
+        (<double *>op1)[0] = <double>ov1
+        ip0 += steps[0]
+        ip1 += steps[1]
+        ip2 += steps[2]
+        op0 += steps[3]
+        op1 += steps[4]
+    sf_error.check_fpe(func_name)
+
 cdef void loop_i_ddddd_dd_As_ddddd_dd(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
@@ -143,6 +166,20 @@ cdef void loop_i_d_dd_As_d_dd(char **args, np.npy_intp *dims, np.npy_intp *steps
         ip0 += steps[0]
         op0 += steps[1]
         op1 += steps[2]
+    sf_error.check_fpe(func_name)
+
+cdef void loop_D_DD__As_DD_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+    cdef np.npy_intp i, n = dims[0]
+    cdef void *func = (<void**>data)[0]
+    cdef char *func_name = <char*>(<void**>data)[1]
+    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef double complex ov0
+    for i in range(n):
+        ov0 = (<double complex(*)(double complex, double complex) nogil>func)(<double complex>(<double complex*>ip0)[0], <double complex>(<double complex*>ip1)[0])
+        (<double complex *>op0)[0] = <double complex>ov0
+        ip0 += steps[0]
+        ip1 += steps[1]
+        op0 += steps[2]
     sf_error.check_fpe(func_name)
 
 cdef void loop_D_D__As_D_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
@@ -220,21 +257,21 @@ cdef void loop_i_d_DDDD_As_f_FFFF(char **args, np.npy_intp *dims, np.npy_intp *s
         op3 += steps[4]
     sf_error.check_fpe(func_name)
 
-cdef void loop_i_d_dddd_As_f_ffff(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_i_D_DDDD_As_F_FFFF(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
     cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2], *op2 = args[3], *op3 = args[4]
-    cdef double ov0
-    cdef double ov1
-    cdef double ov2
-    cdef double ov3
+    cdef double complex ov0
+    cdef double complex ov1
+    cdef double complex ov2
+    cdef double complex ov3
     for i in range(n):
-        (<int(*)(double, double *, double *, double *, double *) nogil>func)(<double>(<float*>ip0)[0], &ov0, &ov1, &ov2, &ov3)
-        (<float *>op0)[0] = <float>ov0
-        (<float *>op1)[0] = <float>ov1
-        (<float *>op2)[0] = <float>ov2
-        (<float *>op3)[0] = <float>ov3
+        (<int(*)(double complex, double complex *, double complex *, double complex *, double complex *) nogil>func)(<double complex>(<float complex*>ip0)[0], &ov0, &ov1, &ov2, &ov3)
+        (<float complex *>op0)[0] = <float complex>ov0
+        (<float complex *>op1)[0] = <float complex>ov1
+        (<float complex *>op2)[0] = <float complex>ov2
+        (<float complex *>op3)[0] = <float complex>ov3
         ip0 += steps[0]
         op0 += steps[1]
         op1 += steps[2]
@@ -296,15 +333,15 @@ cdef void loop_d_ddd__As_fff_f(char **args, np.npy_intp *dims, np.npy_intp *step
         op0 += steps[3]
     sf_error.check_fpe(func_name)
 
-cdef void loop_D_dD__As_fF_F(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_d_dd__As_ff_f(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
     cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
-    cdef double complex ov0
+    cdef double ov0
     for i in range(n):
-        ov0 = (<double complex(*)(double, double complex) nogil>func)(<double>(<float*>ip0)[0], <double complex>(<float complex*>ip1)[0])
-        (<float complex *>op0)[0] = <float complex>ov0
+        ov0 = (<double(*)(double, double) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0])
+        (<float *>op0)[0] = <float>ov0
         ip0 += steps[0]
         ip1 += steps[1]
         op0 += steps[2]
@@ -509,18 +546,27 @@ cdef void loop_D_Dld__As_Dld_D(char **args, np.npy_intp *dims, np.npy_intp *step
         op0 += steps[3]
     sf_error.check_fpe(func_name)
 
-cdef void loop_D_DD__As_DD_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_d_ddi_d_As_ffl_ff(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
-    cdef double complex ov0
+    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3], *op1 = args[4]
+    cdef double ov0
+    cdef double ov1
     for i in range(n):
-        ov0 = (<double complex(*)(double complex, double complex) nogil>func)(<double complex>(<double complex*>ip0)[0], <double complex>(<double complex*>ip1)[0])
-        (<double complex *>op0)[0] = <double complex>ov0
+        if <int>(<long*>ip2)[0] == (<long*>ip2)[0]:
+            ov0 = (<double(*)(double, double, int, double *) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0], <int>(<long*>ip2)[0], &ov1)
+        else:
+            sf_error.error(func_name, sf_error.DOMAIN, "invalid input argument")
+            ov0 = <double>NPY_NAN
+            ov1 = <double>NPY_NAN
+        (<float *>op0)[0] = <float>ov0
+        (<float *>op1)[0] = <float>ov1
         ip0 += steps[0]
         ip1 += steps[1]
-        op0 += steps[2]
+        ip2 += steps[2]
+        op0 += steps[3]
+        op1 += steps[4]
     sf_error.check_fpe(func_name)
 
 cdef void loop_i_dd_dd_As_ff_ff(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
@@ -734,21 +780,21 @@ cdef void loop_D_ddD__As_ffF_F(char **args, np.npy_intp *dims, np.npy_intp *step
         op0 += steps[3]
     sf_error.check_fpe(func_name)
 
-cdef void loop_i_D_DDDD_As_F_FFFF(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_i_d_dddd_As_f_ffff(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
     cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2], *op2 = args[3], *op3 = args[4]
-    cdef double complex ov0
-    cdef double complex ov1
-    cdef double complex ov2
-    cdef double complex ov3
+    cdef double ov0
+    cdef double ov1
+    cdef double ov2
+    cdef double ov3
     for i in range(n):
-        (<int(*)(double complex, double complex *, double complex *, double complex *, double complex *) nogil>func)(<double complex>(<float complex*>ip0)[0], &ov0, &ov1, &ov2, &ov3)
-        (<float complex *>op0)[0] = <float complex>ov0
-        (<float complex *>op1)[0] = <float complex>ov1
-        (<float complex *>op2)[0] = <float complex>ov2
-        (<float complex *>op3)[0] = <float complex>ov3
+        (<int(*)(double, double *, double *, double *, double *) nogil>func)(<double>(<float*>ip0)[0], &ov0, &ov1, &ov2, &ov3)
+        (<float *>op0)[0] = <float>ov0
+        (<float *>op1)[0] = <float>ov1
+        (<float *>op2)[0] = <float>ov2
+        (<float *>op3)[0] = <float>ov3
         ip0 += steps[0]
         op0 += steps[1]
         op1 += steps[2]
@@ -845,15 +891,15 @@ cdef void loop_i_dd_dddd_As_dd_dddd(char **args, np.npy_intp *dims, np.npy_intp 
         op3 += steps[5]
     sf_error.check_fpe(func_name)
 
-cdef void loop_d_dd__As_ff_f(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_D_dD__As_fF_F(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
     cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
-    cdef double ov0
+    cdef double complex ov0
     for i in range(n):
-        ov0 = (<double(*)(double, double) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0])
-        (<float *>op0)[0] = <float>ov0
+        ov0 = (<double complex(*)(double, double complex) nogil>func)(<double>(<float*>ip0)[0], <double complex>(<float complex*>ip1)[0])
+        (<float complex *>op0)[0] = <float complex>ov0
         ip0 += steps[0]
         ip1 += steps[1]
         op0 += steps[2]
@@ -1019,6 +1065,12 @@ cdef void loop_d_ld__As_ld_d(char **args, np.npy_intp *dims, np.npy_intp *steps,
 from lambertw cimport lambertw_scalar as _func_lambertw_scalar
 ctypedef double complex _proto_lambertw_scalar_t(double complex, long, double) nogil
 cdef _proto_lambertw_scalar_t *_proto_lambertw_scalar_t_var = &_func_lambertw_scalar
+cdef extern from "_ufuncs_defs.h":
+    cdef double _func_struve_asymp_large_z "struve_asymp_large_z"(double, double, int, double *) nogil
+cdef extern from "_ufuncs_defs.h":
+    cdef double _func_struve_bessel_series "struve_bessel_series"(double, double, int, double *) nogil
+cdef extern from "_ufuncs_defs.h":
+    cdef double _func_struve_power_series "struve_power_series"(double, double, int, double *) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef int _func_airy_wrap "airy_wrap"(double, double *, double *, double *, double *) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -1440,7 +1492,7 @@ cdef extern from "_ufuncs_defs.h":
 cdef extern from "_ufuncs_defs.h":
     cdef int _func_modified_fresnel_plus_wrap "modified_fresnel_plus_wrap"(double, double complex *, double complex *) nogil
 cdef extern from "_ufuncs_defs.h":
-    cdef double _func_modstruve_wrap "modstruve_wrap"(double, double) nogil
+    cdef double _func_struve_l "struve_l"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_nbdtr "nbdtr"(int, int, double) nogil
 from _legacy cimport nbdtr_unsafe as _func_nbdtr_unsafe
@@ -1574,7 +1626,7 @@ cdef extern from "_ufuncs_defs.h":
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_cdft2_wrap "cdft2_wrap"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
-    cdef double _func_struve_wrap "struve_wrap"(double, double) nogil
+    cdef double _func_struve_h "struve_h"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_tandg "tandg"(double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -1632,6 +1684,84 @@ ufunc__lambertw_ptr[2*1+1] = <void*>(<char*>"_lambertw")
 ufunc__lambertw_data[0] = &ufunc__lambertw_ptr[2*0]
 ufunc__lambertw_data[1] = &ufunc__lambertw_ptr[2*1]
 _lambertw = np.PyUFunc_FromFuncAndData(ufunc__lambertw_loops, ufunc__lambertw_data, ufunc__lambertw_types, 2, 3, 1, 0, "_lambertw", ufunc__lambertw_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__struve_asymp_large_z_loops[2]
+cdef void *ufunc__struve_asymp_large_z_ptr[4]
+cdef void *ufunc__struve_asymp_large_z_data[2]
+cdef char ufunc__struve_asymp_large_z_types[10]
+cdef char *ufunc__struve_asymp_large_z_doc = (
+    "Function for testing struve & modstruve")
+ufunc__struve_asymp_large_z_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ffl_ff
+ufunc__struve_asymp_large_z_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ddl_dd
+ufunc__struve_asymp_large_z_types[0] = <char>NPY_FLOAT
+ufunc__struve_asymp_large_z_types[1] = <char>NPY_FLOAT
+ufunc__struve_asymp_large_z_types[2] = <char>NPY_LONG
+ufunc__struve_asymp_large_z_types[3] = <char>NPY_FLOAT
+ufunc__struve_asymp_large_z_types[4] = <char>NPY_FLOAT
+ufunc__struve_asymp_large_z_types[5] = <char>NPY_DOUBLE
+ufunc__struve_asymp_large_z_types[6] = <char>NPY_DOUBLE
+ufunc__struve_asymp_large_z_types[7] = <char>NPY_LONG
+ufunc__struve_asymp_large_z_types[8] = <char>NPY_DOUBLE
+ufunc__struve_asymp_large_z_types[9] = <char>NPY_DOUBLE
+ufunc__struve_asymp_large_z_ptr[2*0] = <void*>_func_struve_asymp_large_z
+ufunc__struve_asymp_large_z_ptr[2*0+1] = <void*>(<char*>"_struve_asymp_large_z")
+ufunc__struve_asymp_large_z_ptr[2*1] = <void*>_func_struve_asymp_large_z
+ufunc__struve_asymp_large_z_ptr[2*1+1] = <void*>(<char*>"_struve_asymp_large_z")
+ufunc__struve_asymp_large_z_data[0] = &ufunc__struve_asymp_large_z_ptr[2*0]
+ufunc__struve_asymp_large_z_data[1] = &ufunc__struve_asymp_large_z_ptr[2*1]
+_struve_asymp_large_z = np.PyUFunc_FromFuncAndData(ufunc__struve_asymp_large_z_loops, ufunc__struve_asymp_large_z_data, ufunc__struve_asymp_large_z_types, 2, 3, 2, 0, "_struve_asymp_large_z", ufunc__struve_asymp_large_z_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__struve_bessel_series_loops[2]
+cdef void *ufunc__struve_bessel_series_ptr[4]
+cdef void *ufunc__struve_bessel_series_data[2]
+cdef char ufunc__struve_bessel_series_types[10]
+cdef char *ufunc__struve_bessel_series_doc = (
+    "Function for testing struve & modstruve")
+ufunc__struve_bessel_series_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ffl_ff
+ufunc__struve_bessel_series_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ddl_dd
+ufunc__struve_bessel_series_types[0] = <char>NPY_FLOAT
+ufunc__struve_bessel_series_types[1] = <char>NPY_FLOAT
+ufunc__struve_bessel_series_types[2] = <char>NPY_LONG
+ufunc__struve_bessel_series_types[3] = <char>NPY_FLOAT
+ufunc__struve_bessel_series_types[4] = <char>NPY_FLOAT
+ufunc__struve_bessel_series_types[5] = <char>NPY_DOUBLE
+ufunc__struve_bessel_series_types[6] = <char>NPY_DOUBLE
+ufunc__struve_bessel_series_types[7] = <char>NPY_LONG
+ufunc__struve_bessel_series_types[8] = <char>NPY_DOUBLE
+ufunc__struve_bessel_series_types[9] = <char>NPY_DOUBLE
+ufunc__struve_bessel_series_ptr[2*0] = <void*>_func_struve_bessel_series
+ufunc__struve_bessel_series_ptr[2*0+1] = <void*>(<char*>"_struve_bessel_series")
+ufunc__struve_bessel_series_ptr[2*1] = <void*>_func_struve_bessel_series
+ufunc__struve_bessel_series_ptr[2*1+1] = <void*>(<char*>"_struve_bessel_series")
+ufunc__struve_bessel_series_data[0] = &ufunc__struve_bessel_series_ptr[2*0]
+ufunc__struve_bessel_series_data[1] = &ufunc__struve_bessel_series_ptr[2*1]
+_struve_bessel_series = np.PyUFunc_FromFuncAndData(ufunc__struve_bessel_series_loops, ufunc__struve_bessel_series_data, ufunc__struve_bessel_series_types, 2, 3, 2, 0, "_struve_bessel_series", ufunc__struve_bessel_series_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__struve_power_series_loops[2]
+cdef void *ufunc__struve_power_series_ptr[4]
+cdef void *ufunc__struve_power_series_data[2]
+cdef char ufunc__struve_power_series_types[10]
+cdef char *ufunc__struve_power_series_doc = (
+    "Function for testing struve & modstruve")
+ufunc__struve_power_series_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ffl_ff
+ufunc__struve_power_series_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ddl_dd
+ufunc__struve_power_series_types[0] = <char>NPY_FLOAT
+ufunc__struve_power_series_types[1] = <char>NPY_FLOAT
+ufunc__struve_power_series_types[2] = <char>NPY_LONG
+ufunc__struve_power_series_types[3] = <char>NPY_FLOAT
+ufunc__struve_power_series_types[4] = <char>NPY_FLOAT
+ufunc__struve_power_series_types[5] = <char>NPY_DOUBLE
+ufunc__struve_power_series_types[6] = <char>NPY_DOUBLE
+ufunc__struve_power_series_types[7] = <char>NPY_LONG
+ufunc__struve_power_series_types[8] = <char>NPY_DOUBLE
+ufunc__struve_power_series_types[9] = <char>NPY_DOUBLE
+ufunc__struve_power_series_ptr[2*0] = <void*>_func_struve_power_series
+ufunc__struve_power_series_ptr[2*0+1] = <void*>(<char*>"_struve_power_series")
+ufunc__struve_power_series_ptr[2*1] = <void*>_func_struve_power_series
+ufunc__struve_power_series_ptr[2*1+1] = <void*>(<char*>"_struve_power_series")
+ufunc__struve_power_series_data[0] = &ufunc__struve_power_series_ptr[2*0]
+ufunc__struve_power_series_data[1] = &ufunc__struve_power_series_ptr[2*1]
+_struve_power_series = np.PyUFunc_FromFuncAndData(ufunc__struve_power_series_loops, ufunc__struve_power_series_data, ufunc__struve_power_series_types, 2, 3, 2, 0, "_struve_power_series", ufunc__struve_power_series_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_airy_loops[4]
 cdef void *ufunc_airy_ptr[8]
@@ -5919,9 +6049,9 @@ ufunc_modstruve_types[2] = <char>NPY_FLOAT
 ufunc_modstruve_types[3] = <char>NPY_DOUBLE
 ufunc_modstruve_types[4] = <char>NPY_DOUBLE
 ufunc_modstruve_types[5] = <char>NPY_DOUBLE
-ufunc_modstruve_ptr[2*0] = <void*>_func_modstruve_wrap
+ufunc_modstruve_ptr[2*0] = <void*>_func_struve_l
 ufunc_modstruve_ptr[2*0+1] = <void*>(<char*>"modstruve")
-ufunc_modstruve_ptr[2*1] = <void*>_func_modstruve_wrap
+ufunc_modstruve_ptr[2*1] = <void*>_func_struve_l
 ufunc_modstruve_ptr[2*1+1] = <void*>(<char*>"modstruve")
 ufunc_modstruve_data[0] = &ufunc_modstruve_ptr[2*0]
 ufunc_modstruve_data[1] = &ufunc_modstruve_ptr[2*1]
@@ -7419,9 +7549,9 @@ ufunc_struve_types[2] = <char>NPY_FLOAT
 ufunc_struve_types[3] = <char>NPY_DOUBLE
 ufunc_struve_types[4] = <char>NPY_DOUBLE
 ufunc_struve_types[5] = <char>NPY_DOUBLE
-ufunc_struve_ptr[2*0] = <void*>_func_struve_wrap
+ufunc_struve_ptr[2*0] = <void*>_func_struve_h
 ufunc_struve_ptr[2*0+1] = <void*>(<char*>"struve")
-ufunc_struve_ptr[2*1] = <void*>_func_struve_wrap
+ufunc_struve_ptr[2*1] = <void*>_func_struve_h
 ufunc_struve_ptr[2*1+1] = <void*>(<char*>"struve")
 ufunc_struve_data[0] = &ufunc_struve_ptr[2*0]
 ufunc_struve_data[1] = &ufunc_struve_ptr[2*1]

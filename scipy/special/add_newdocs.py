@@ -1572,3 +1572,19 @@ add_newdoc("scipy.special", "zetac",
     """
     y=zetac(x) returns 1.0 - the Riemann zeta function: sum(k**(-x), k=2..inf)
     """)
+
+add_newdoc("scipy.special", "_struve_asymp_large_z",
+    """
+    Function for testing struve & modstruve
+    """)
+
+add_newdoc("scipy.special", "_struve_power_series",
+    """
+    Function for testing struve & modstruve
+    """)
+
+add_newdoc("scipy.special", "_struve_bessel_series",
+    """
+    Function for testing struve & modstruve
+    """)
+

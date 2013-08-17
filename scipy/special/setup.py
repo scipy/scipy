@@ -27,7 +27,7 @@ def configuration(parent_package='',top_path=None):
         define_macros.append(('_USE_MATH_DEFINES',None))
 
     curdir = os.path.abspath(os.path.dirname(__file__))
-    inc_dirs = [get_python_inc()]
+    inc_dirs = [get_python_inc(), os.path.join(curdir, "c_misc")]
     if inc_dirs[0] != get_python_inc(plat_specific=1):
         inc_dirs.append(get_python_inc(plat_specific=1))
     inc_dirs.insert(0, get_numpy_include_dirs())
@@ -64,7 +64,7 @@ def configuration(parent_package='',top_path=None):
                                   "c_misc/misc.h", "cephes/mconf.h", "cephes/cephes_names.h"],
                          sources=['_ufuncs.c', 'sf_error.c', '_logit.c.src',
                                   "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c"],
-                         include_dirs=[curdir],
+                         include_dirs=[curdir] + inc_dirs,
                          define_macros=define_macros,
                          extra_info=get_info("npymath"))
 
