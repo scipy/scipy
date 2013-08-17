@@ -9,6 +9,7 @@
 from __future__ import division, print_function, absolute_import
 
 import sys
+import warnings
 from collections import namedtuple
 
 from numpy.testing import TestCase, assert_, assert_equal, \
@@ -1532,19 +1533,21 @@ class TestPowerDivergence(object):
         assert_array_equal(p, np.vstack((p0, p1)))
 
     def test_empty_cases(self):
-        for case in power_div_empty_cases:
-            yield (self.check_power_divergence,
-                   case.f_obs, case.f_exp, case.ddof, case.axis,
-                   "pearson", case.chi2)
-            yield (self.check_power_divergence,
-                   case.f_obs, case.f_exp, case.ddof, case.axis,
-                   "log-likelihood", case.log)
-            yield (self.check_power_divergence,
-                   case.f_obs, case.f_exp, case.ddof, case.axis,
-                   "mod-log-likelihood", case.mod_log)
-            yield (self.check_power_divergence,
-                   case.f_obs, case.f_exp, case.ddof, case.axis,
-                   "cressie-read", case.cr)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            for case in power_div_empty_cases:
+                yield (self.check_power_divergence,
+                       case.f_obs, case.f_exp, case.ddof, case.axis,
+                       "pearson", case.chi2)
+                yield (self.check_power_divergence,
+                       case.f_obs, case.f_exp, case.ddof, case.axis,
+                       "log-likelihood", case.log)
+                yield (self.check_power_divergence,
+                       case.f_obs, case.f_exp, case.ddof, case.axis,
+                       "mod-log-likelihood", case.mod_log)
+                yield (self.check_power_divergence,
+                       case.f_obs, case.f_exp, case.ddof, case.axis,
+                       "cressie-read", case.cr)
 
 
 def test_chisquare_masked_arrays():
