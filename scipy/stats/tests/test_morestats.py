@@ -145,6 +145,7 @@ class TestLevene(TestCase):
     def test_trimmed2(self):
         x = [1.2, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 100.0]
         y = [0.0, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 200.0]
+        np.random.seed(1234)
         x2 = np.random.permutation(x)
 
         # Use center='trimmed'
@@ -159,6 +160,7 @@ class TestLevene(TestCase):
 
     def test_equal_mean_median(self):
         x = np.linspace(-1,1,21)
+        np.random.seed(1234)
         x2 = np.random.permutation(x)
         y = x**3
         W1, pval1 = stats.levene(x, y, center='mean')
