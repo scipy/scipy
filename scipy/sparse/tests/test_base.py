@@ -1572,8 +1572,6 @@ class _TestSlicingAssign:
     def test_slice_scalar_assign(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
             A = self.spmatrix((5, 5))
             B = np.zeros((5, 5))
             for C in [A, B]:
