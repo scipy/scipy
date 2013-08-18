@@ -9,19 +9,24 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info
     config = Configuration('optimize',parent_package, top_path)
 
-    config.add_library('minpack',sources=[join('minpack','*f')])
+    minpack_src = [join('minpack','*f')]
+    config.add_library('minpack',sources=minpack_src)
     config.add_extension('_minpack',
                          sources=['_minpackmodule.c'],
                          libraries=['minpack'],
-                         depends=["minpack.h","__minpack.h"])
+                         depends=(["minpack.h","__minpack.h"]
+                                  + minpack_src))
 
+    rootfind_src = [join('Zeros','*.c')]
+    rootfind_hdr = [join('Zeros','zeros.h')]
     config.add_library('rootfind',
-                       sources=[join('Zeros','*.c')],
-                       headers=[join('Zeros','zeros.h')])
+                       sources=rootfind_src,
+                       headers=rootfind_hdr)
 
     config.add_extension('_zeros',
                          sources=['zeros.c'],
-                         libraries=['rootfind'])
+                         libraries=['rootfind'],
+                         depends=(rootfind_src + rootfind_hdr))
 
     lapack = get_info('lapack_opt')
     sources = ['lbfgsb.pyf', 'lbfgsb.f', 'linpack.f', 'timer.f']
