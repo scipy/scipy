@@ -96,6 +96,8 @@
 
 extern double MACHEP;
 
+extern int sgngam;
+
 static double hyt2f1(double a, double b, double c, double x, double *loss);
 static double hys2f1(double a, double b, double c, double x, double *loss);
 static double hyp2f1ra(double a, double b, double c, double x,
@@ -297,9 +299,9 @@ static double hyt2f1(a, b, c, x, loss)
 double a, b, c, x;
 double *loss;
 {
-    double p, q, r, s, t, y, d, err, err1;
+    double p, q, r, s, t, y, w, d, err, err1;
     double ax, id, d1, d2, e, y1;
-    int i, aid;
+    int i, aid, sign;
 
     int ia, ib, neg_int_a = 0, neg_int_b = 0;
 
@@ -338,9 +340,23 @@ double *loss;
 		goto done;
 	    /* If power series fails, then apply AMS55 #15.3.6 */
 	    q = hys2f1(a, b, 1.0 - d, s, &err);
-	    q *= gamma(d) / (gamma(c - a) * gamma(c - b));
+            sign = 1;
+            w = lgam(d);
+            sign *= sgngam;
+            w -= lgam(c-a);
+            sign *= sgngam;
+            w -= lgam(c-b);
+            sign *= sgngam;
+	    q *= sign * exp(w);
 	    r = pow(s, d) * hys2f1(c - a, c - b, d + 1.0, s, &err1);
-	    r *= gamma(-d) / (gamma(a) * gamma(b));
+            sign = 1;
+            w = lgam(-d);
+            sign *= sgngam;
+            w -= lgam(a);
+            sign *= sgngam;   
+            w -= lgam(b);
+            sign *= sgngam;
+	    r *= sign * exp(w);
 	    y = q + r;
 
 	    q = fabs(q);	/* estimate cancellation error */
