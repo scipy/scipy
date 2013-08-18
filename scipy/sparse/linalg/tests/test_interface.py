@@ -41,6 +41,8 @@ class TestLinearOperator(TestCase):
         for matvecs in get_matvecs(self.A):
             A = interface.LinearOperator(**matvecs)
 
+            assert_(A.args == ())
+
             assert_equal(A.matvec(np.array([1,2,3])), [14,32])
             assert_equal(A.matvec(np.array([[1],[2],[3]])), [[14],[32]])
             assert_equal(A * np.array([1,2,3]), [14,32])
@@ -67,6 +69,11 @@ class TestLinearOperator(TestCase):
             assert_equal((-A)*[[1],[1],[1]], [[-6],[-15]])
             assert_equal((A-A)*[1,1,1], [0,0])
             assert_equal((A-A)*[[1],[1],[1]], [[0],[0]])
+
+            z = A+A
+            assert_(len(z.args) == 2 and z.args[0] is A and z.args[1] is A)
+            z = 2*A
+            assert_(len(z.args) == 2 and z.args[0] is A and z.args[1] == 2)
 
             assert_(isinstance(A.matvec(np.array([1,2,3])), np.ndarray))
             assert_(isinstance(A.matvec(np.array([[1],[2],[3]])), np.ndarray))
@@ -110,6 +117,9 @@ class TestLinearOperator(TestCase):
 
             assert_raises(ValueError, lambda: A+B)
             assert_raises(ValueError, lambda: A**2)
+
+            z = A*B
+            assert_(len(z.args) == 2 and z.args[0] is A and z.args[1] is B)
 
         for matvecsC in get_matvecs(self.C):
             C = interface.LinearOperator(**matvecsC)
