@@ -228,7 +228,7 @@ class LinearOperator(object):
             return NotImplemented
 
     def __sub__(self, x):
-        return self + (-x)
+        return self.__add__(-x)
 
     def __repr__(self):
         M,N = self.shape
