@@ -1052,7 +1052,10 @@ def binom_test(x,n=None,p=0.5):
 
     d = distributions.binom.pmf(x,n,p)
     rerr = 1+1e-7
-    if (x < p*n):
+    if (x == p*n):
+        # special case as shortcut, would also be handled by `else` below
+        pval = 1.
+    elif (x < p*n):
         i = np.arange(np.ceil(p*n),n+1)
         y = np.sum(distributions.binom.pmf(i,n,p) <= d*rerr,axis=0)
         pval = distributions.binom.cdf(x,n,p) + distributions.binom.sf(n-y,n,p)
