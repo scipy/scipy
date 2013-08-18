@@ -415,12 +415,14 @@ class multivariate_normal_frozen(object):
         self.dim, self.mean, self.cov = _process_parameters(None, mean, cov)
         self.prec_U, self._log_det_cov = _psd_pinv_decomposed_log_pdet(self.cov)
 
+        self._mnorm = multivariate_normal_gen()
+
     def logpdf(self, x):
         # TODO: the output processing below can be made into a generator
         # just as for the multivariate_normal class.
         x = _process_quantiles(x, self.dim)
-        out = multivariate_normal._logpdf(x, self.mean, self.prec_U,
-                                          self._log_det_cov).squeeze()
+        out = self._mnorm._logpdf(x, self.mean, self.prec_U,
+                                  self._log_det_cov).squeeze()
         if out.ndim == 0:
             out = out[()]
         return out
