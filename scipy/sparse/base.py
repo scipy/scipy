@@ -371,8 +371,7 @@ class spmatrix(object):
                 return self.tocsr().__truediv__(other)
 
     def __rtruediv__(self, other):
-        # should 1 / spmatrix invert it ?
-        return NotImplementedError
+        return NotImplemented
 
     def __div__(self, other):
         # Always do true division
@@ -700,41 +699,36 @@ class spmatrix(object):
         else:
             return np.zeros(self.shape, dtype=self.dtype, order=order)
 
-    def __numpy_ufunc__(*args, **kwargs):
+    def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
         """Method for compatibility with NumPy's ufuncs and dot
         functions.
         """
-        self = args[0]
-        func = args[1]
-        method = args[2]
-        pos = args[3]
-        inputs = args[4]
 
         without_self = list(inputs)
         del without_self[pos]
         without_self = tuple(without_self)
 
         # Associative operations
-        if np.multiply == func:
+        if func is np.multiply:
             return self.multiply(*without_self)
 
-        elif np.add == func:
+        elif func is np.add:
             return self.__add__(*without_self)
 
         # Non-associative operations
-        elif np.dot == func:
+        elif func is np.dot:
             if pos == 0:
                 return self.__mul__(inputs[1])
             else:
                 return self.__rmul__(inputs[0])
 
-        elif np.subtract == func:
+        elif func is np.subtract:
             if pos == 0:
                 return self.__sub__(inputs[1])
             else:
                 return self.__rsub__(inputs[0])
 
-        elif (np.divide == func) or (np.true_divide == func):
+        elif (func is np.divide) or (func is np.true_divide):
             if pos == 0:
                 return self.__div__(inputs[1])
             else:
