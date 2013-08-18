@@ -182,50 +182,44 @@ class LinearOperator(object):
         return self*x
 
     def __mul__(self, x):
-        try:
-            if isinstance(x, LinearOperator):
-                return _ProductLinearOperator(self, x)
-            elif np.isscalar(x):
-                return _ScaledLinearOperator(self, x)
-            else:
-                x = np.asarray(x)
+        if isinstance(x, LinearOperator):
+            return _ProductLinearOperator(self, x)
+        elif np.isscalar(x):
+            return _ScaledLinearOperator(self, x)
+        else:
+            x = np.asarray(x)
 
-                if x.ndim == 1 or x.ndim == 2 and x.shape[1] == 1:
-                    return self.matvec(x)
-                elif x.ndim == 2:
-                    return self.matmat(x)
-                else:
-                    raise ValueError('expected rank-1 or rank-2 array or matrix')
-        except ValueError:
-            return NotImplemented
+            if x.ndim == 1 or x.ndim == 2 and x.shape[1] == 1:
+                return self.matvec(x)
+            elif x.ndim == 2:
+                return self.matmat(x)
+            else:
+                raise ValueError('expected rank-1 or rank-2 array or matrix')
 
     def dot(self, other):
         # modeled after scipy.sparse.base.dot
         return self * other
 
     def __rmul__(self, x):
-        try:
+        if np.isscalar(x):
             return _ScaledLinearOperator(self, x)
-        except ValueError:
+        else:
             return NotImplemented
 
     def __pow__(self, p):
-        try:
+        if np.isscalar(p):
             return _PowerLinearOperator(self, p)
-        except ValueError:
+        else:
             return NotImplemented
 
     def __add__(self, x):
-        try:
+        if isinstance(x, LinearOperator):
             return _SumLinearOperator(self, x)
-        except ValueError:
+        else:
             return NotImplemented
 
     def __neg__(self):
-        try:
-            return _ScaledLinearOperator(self, -1)
-        except ValueError:
-            return NotImplemented
+        return _ScaledLinearOperator(self, -1)
 
     def __sub__(self, x):
         return self.__add__(-x)

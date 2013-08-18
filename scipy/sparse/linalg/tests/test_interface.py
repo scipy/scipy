@@ -92,8 +92,8 @@ class TestLinearOperator(TestCase):
             assert_raises(ValueError, A.matvec, np.array([[1],[2]]))
             assert_raises(ValueError, A.matvec, np.array([[1],[2],[3],[4]]))
 
-            assert_raises(TypeError, lambda: A*A)
-            assert_raises(TypeError, lambda: A**2)
+            assert_raises(ValueError, lambda: A*A)
+            assert_raises(ValueError, lambda: A**2)
 
         for matvecsA, matvecsB in product(get_matvecs(self.A),
                                           get_matvecs(self.B)):
@@ -108,8 +108,8 @@ class TestLinearOperator(TestCase):
 
             assert_(isinstance(A*B, interface._ProductLinearOperator))
 
-            assert_raises(TypeError, lambda: A+B)
-            assert_raises(TypeError, lambda: A**2)
+            assert_raises(ValueError, lambda: A+B)
+            assert_raises(ValueError, lambda: A**2)
 
         for matvecsC in get_matvecs(self.C):
             C = interface.LinearOperator(**matvecsC)
