@@ -199,11 +199,7 @@ def _psd_pinv_decomposed_log_pdet(mat, cond=None, rcond=None,
 
 
 _doc_default_callparams = \
-"""Parameters
-----------
-x : array_like
-    Quantiles, with the last axis of `x` denoting the components.
-mean : array_like, optional
+"""mean : array_like, optional
     Mean of the distribution (default zero)
 cov : array_like, optional
     Covariance matrix of the distribution (default one)
@@ -217,15 +213,10 @@ diagonal entries for the covariance matrix, or a two-dimensional
 array_like.
 """
 
-_doc_frozen_callparams = \
-"""Parameters
-----------
-x : array_like
-    Quantiles, with the last axis of `x` denoting the components.
-"""
+_doc_frozen_callparams = ""
 
 _doc_frozen_callparams_note = \
-"""See class definition for a detailed description of `x`."""
+"""See class definition for a detailed description of parameters."""
 
 docdict_params = {
     '_doc_default_callparams': _doc_default_callparams,
@@ -253,7 +244,13 @@ class multivariate_normal_gen(object):
         Probability density function.
     logpdf(x, mean=None, cov=1)
         Log of the probability density function.
+    rvs(mean=None, cov=1)
+        Draw random samples from a multivariate normal distribution.
 
+    Parameters
+    ----------
+    x : array_like
+        Quantiles, with the last axis of `x` denoting the components.
     %(_doc_default_callparams)s
 
     Alternatively, the object may be called (as a function) to fix the mean
@@ -349,6 +346,10 @@ class multivariate_normal_gen(object):
         """
         Log of the multivariate normal probability density function.
 
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
         %(_doc_default_callparams)s
 
         Notes
@@ -369,6 +370,10 @@ class multivariate_normal_gen(object):
         """
         Multivariate normal probability density function.
 
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
         %(_doc_default_callparams)s
 
         Notes
@@ -383,6 +388,33 @@ class multivariate_normal_gen(object):
         """
         prec_U, log_det_cov = _psd_pinv_decomposed_log_pdet(cov)
         return np.exp(self._logpdf(x, mean, prec_U, log_det_cov))
+
+    def rvs(self, mean=None, cov=1, size=1):
+        """
+        Draw random samples from a multivariate normal distribution.
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+        size : integer, optional
+            Number of samples to draw (default 1).
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random variates of size (`size`, `N`), where `N` is the
+            dimension of the random variable.
+
+        """
+        dim, mean, cov = _process_parameters(None, mean, cov)
+        out = np.random.multivariate_normal(mean, cov, size).squeeze()
+        if out.ndim == 0:
+            out = out[()]
+        return out
 
 multivariate_normal = multivariate_normal_gen()
 
@@ -430,10 +462,13 @@ class multivariate_normal_frozen(object):
     def pdf(self, x):
         return np.exp(self.logpdf(x))
 
+    def rvs(self, size=1):
+        return self._mnorm.rvs(self.mean, self.cov, size)
+
 
 # Set frozen generator docstrings from corresponding docstrings in
 # multivariate_normal_gen and fill in default strings in class docstrings
-for name in ['logpdf', 'pdf']:
+for name in ['logpdf', 'pdf', 'rvs']:
     method = multivariate_normal_gen.__dict__[name]
     method_frozen = multivariate_normal_frozen.__dict__[name]
     method_frozen.__doc__ = doccer.docformat(method.__doc__, docdict_noparams)
