@@ -187,15 +187,15 @@ can be calculated as
 
 >>> from scipy import integrate
 >>> N = 5
->>> def f(x, t):
+>>> def f(t, x):
 >>>    return np.exp(-x*t) / t**N
->>> integrate.nquad(f, [[0, np.inf],[1, np.inf]])
+>>> integrate.nquad(f, [[1, np.inf],[0, np.inf]])
 (0.20000000000002294, 1.2239614263187945e-08)
 
 Note that the order of arguments for `f` must match the order of the
-integration bounds; i.e. integration with respect to :math:`x` is on the
-interval :math:`[0, \infty]` and integration with respect to :math:`t` is on
-the interval :math:`[1, \infty]`.
+integration bounds; i.e. the inner integral with respect to :math:`t` is on
+the interval :math:`[1, \infty]` and the outer integral with respect to
+:math:`x` is on the interval :math:`[0, \infty]`.
 
 Non-constant integration bounds can be treated in a similar manner; the
 example from above
