@@ -639,6 +639,7 @@ class BivariateSpline(_BivariateSplineBase):
     the rectangle ``[xb, xe] * [yb, ye]`` calculated from a given set
     of data points ``(x, y, z)``.
 
+    This class is meant to be subclassed, not instantiated directly.
     To construct these splines, call either `SmoothBivariateSpline` or
     `LSQBivariateSpline`.
 
