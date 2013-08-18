@@ -324,7 +324,7 @@ class _PowerLinearOperator(LinearOperator):
                 _get_dtype([A]))
 
     def _power(self, fun, x):
-        res = x.copy()
+        res = np.array(x, copy=True)
         for i in range(self.args[1]):
             res = fun(res)
         return res

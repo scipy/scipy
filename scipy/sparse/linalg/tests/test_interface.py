@@ -53,9 +53,16 @@ class TestLinearOperator(TestCase):
             assert_equal(A.dot(np.matrix([[1],[2],[3]])), [[14],[32]])
 
             assert_equal((2*A)*[1,1,1], [12,30])
+            assert_equal((2*A).rmatvec([1,1]), [10, 14, 18])
             assert_equal((2*A)*[[1],[1],[1]], [[12],[30]])
+            assert_equal((2*A).matmat([[1],[1],[1]]), [[12],[30]])
+            assert_equal((A*2)*[1,1,1], [12,30])
+            assert_equal((A*2)*[[1],[1],[1]], [[12],[30]])
+            assert_equal((2j*A)*[1,1,1], [12j,30j])
             assert_equal((A+A)*[1,1,1], [12, 30])
+            assert_equal((A+A).rmatvec([1,1]), [10, 14, 18])
             assert_equal((A+A)*[[1],[1],[1]], [[12], [30]])
+            assert_equal((A+A).matmat([[1],[1],[1]]), [[12], [30]])
             assert_equal((-A)*[1,1,1], [-6,-15])
             assert_equal((-A)*[[1],[1],[1]], [[-6],[-15]])
             assert_equal((A-A)*[1,1,1], [0,0])
@@ -73,9 +80,12 @@ class TestLinearOperator(TestCase):
             assert_(isinstance(A.dot(np.matrix([[1],[2],[3]])), np.ndarray))
 
             assert_(isinstance(2*A, interface._ScaledLinearOperator))
+            assert_(isinstance(2j*A, interface._ScaledLinearOperator))
             assert_(isinstance(A+A, interface._SumLinearOperator))
             assert_(isinstance(-A, interface._ScaledLinearOperator))
             assert_(isinstance(A-A, interface._SumLinearOperator))
+
+            assert_((2j*A).dtype == np.complex_)
 
             assert_raises(ValueError, A.matvec, np.array([1,2]))
             assert_raises(ValueError, A.matvec, np.array([1,2,3,4]))
@@ -92,6 +102,9 @@ class TestLinearOperator(TestCase):
 
             assert_equal((A*B)*[1,1], [50,113])
             assert_equal((A*B)*[[1],[1]], [[50],[113]])
+            assert_equal((A*B).matmat([[1],[1]]), [[50],[113]])
+
+            assert_equal((A*B).rmatvec([1,1]), [71,92])
 
             assert_(isinstance(A*B, interface._ProductLinearOperator))
 
@@ -102,6 +115,8 @@ class TestLinearOperator(TestCase):
             C = interface.LinearOperator(**matvecsC)
 
             assert_equal((C**2)*[1,1], [17,37])
+            assert_equal((C**2).rmatvec([1,1]), [22,32])
+            assert_equal((C**2).matmat([[1],[1]]), [[17],[37]])
 
             assert_(isinstance(C**2, interface._PowerLinearOperator))
 
