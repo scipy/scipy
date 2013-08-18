@@ -1057,7 +1057,7 @@ def binom_test(x,n=None,p=0.5):
         y = np.sum(distributions.binom.pmf(i,n,p) <= d*rerr,axis=0)
         pval = distributions.binom.cdf(x,n,p) + distributions.binom.sf(n-y,n,p)
     else:
-        i = np.arange(np.floor(p*n))
+        i = np.arange(np.floor(p*n) + 1)
         y = np.sum(distributions.binom.pmf(i,n,p) <= d*rerr,axis=0)
         pval = distributions.binom.cdf(y-1,n,p) + distributions.binom.sf(x-1,n,p)
 
