@@ -132,8 +132,8 @@ This last example shows that multiple integration can be handled using
 repeated calls to :func:`quad`. 
 
 
-General multiple integration (:func:`dblquad`, :func:`tplquad`)
----------------------------------------------------------------
+General multiple integration (:func:`dblquad`, :func:`tplquad`, :func:`nquad`)
+------------------------------------------------------------------------------
 
 The mechanics for double and triple integration have been wrapped up into the
 functions :obj:`dblquad` and :obj:`tplquad`. These functions take the function
@@ -159,7 +159,7 @@ As example for non-constant limits consider the integral
 
 .. math::
 
-    I=\int_{0}^{1/2}\int_{1}^{1-2x} x y \, dx\, dy=\frac{1}{96}.
+    I=\int_{y=0}^{1/2}\int_{x=0}^{1-2y} x y \, dx\, dy=\frac{1}{96}.
 
 
 This integral can be evaluated using the expression below (Note the use of the
@@ -170,6 +170,53 @@ non-constant lambda functions for the upper limit of the inner integral):
 >>> area
 (0.010416666666666668, 1.1564823173178715e-16)
 
+
+For n-fold integration, scipy provides the function :obj:`nquad`. The
+integration bounds are an iterable object: either a list of constant bounds,
+or a list of functions for the non-constant integration bounds. The order of
+integration (and therefore the bounds) is from the innermost integral to the
+outermost one.
+
+The integral from above
+
+.. math::
+
+    I_{n}=\int_{0}^{\infty}\int_{1}^{\infty}\frac{e^{-xt}}{t^{n}}\, dt\, dx=\frac{1}{n}
+
+can be calculated as
+
+>>> from scipy import integrate
+>>> N = 5
+>>> def f(t, x):
+>>>    return np.exp(-x*t) / t**N
+>>> integrate.nquad(f, [[1, np.inf],[0, np.inf]])
+(0.20000000000002294, 1.2239614263187945e-08)
+
+Note that the order of arguments for `f` must match the order of the
+integration bounds; i.e. the inner integral with respect to :math:`t` is on
+the interval :math:`[1, \infty]` and the outer integral with respect to
+:math:`x` is on the interval :math:`[0, \infty]`.
+
+Non-constant integration bounds can be treated in a similar manner; the
+example from above
+
+.. math::
+
+    I=\int_{y=0}^{1/2}\int_{x=0}^{1-2y} x y \, dx\, dy=\frac{1}{96}.
+
+can be evaluated by means of
+
+>>> from scipy import integrate
+>>> def f(x,y):
+>>>     return x*y
+>>> def bounds_y():
+>>>     return [0, 0.5]
+>>> def bounds_x(y):
+>>>     return [0, 1-2*y]
+>>> integrate.nquad(f, [bounds_x, bounds_y])
+(0.010416666666666668, 4.101620128472366e-16)
+
+which is the same result as before.
 
 Gaussian quadrature
 -------------------
