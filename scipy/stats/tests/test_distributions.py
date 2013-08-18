@@ -1600,7 +1600,7 @@ class TestSubclassingExplicitShapes(TestCase):
 
         dist = _dist_gen(shapes='')
         assert_equal(dist.pdf(0.5), stats.norm.pdf(0.5))
-        
+
 
 class TestSubclassingNoShapes(TestCase):
     """Construct a distribution w/o explicit shapes parameter and test it."""

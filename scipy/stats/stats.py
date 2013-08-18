@@ -3847,7 +3847,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 
 def ks_2samp(data1, data2):
     """
-    Computes the Kolmogorov-Smirnof statistic on 2 samples.
+    Computes the Kolmogorov-Smirnov statistic on 2 samples.
 
     This is a two-sided test for the null hypothesis that 2 independent samples
     are drawn from the same continuous distribution.

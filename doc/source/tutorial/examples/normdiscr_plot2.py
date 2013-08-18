@@ -16,7 +16,7 @@ gridint = grid
 normdiscrete = stats.rv_discrete(
                         values=(gridint, np.round(probs, decimals=7)),
                         name='normdiscrete')
-   
+
 n_sample = 500
 np.random.seed(87655678) #fix the seed for replicability
 rvs = normdiscrete.rvs(size=n_sample)

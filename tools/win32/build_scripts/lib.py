@@ -54,7 +54,7 @@ def parse_verstring(lines):
             else:
                 rc = 0
             break
-            
+
     if not version:
         raise ValueError("Error parsing %s" % "".join(lines))
 
