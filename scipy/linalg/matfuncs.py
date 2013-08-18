@@ -147,7 +147,7 @@ def expm3(A, q=20):
     A : (N, N) array_like
         Matrix to be exponentiated
     q : int
-        Order of the Taylor series
+        Order of the Taylor series used is `q-1`
 
     Returns
     -------
