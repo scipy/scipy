@@ -146,14 +146,14 @@ def _psd_pinv_decomposed_log_pdet(mat, cond=None, rcond=None,
     ----------
     mat : array_like
         Input array of shape (`m`, `n`)
-    lower : bool, optional
-        Whether the pertinent array data is taken from the lower or upper
-        triangle of `mat`. (Default: lower)
     cond, rcond : float or None
         Cutoff for 'small' singular values.
         Eigenvalues smaller than ``rcond*largest_eigenvalue``
         are considered zero.
         If None or -1, suitable machine precision is used.
+    lower : bool, optional
+        Whether the pertinent array data is taken from the lower or upper
+        triangle of `mat`. (Default: lower)
     check_finite : boolean, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
