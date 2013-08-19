@@ -129,26 +129,41 @@ which gives proper orientation in 2-D.
 ``scipy.signal`` improvements
 -----------------------------
 
-Cosine window function `scipy.signal.cosine` was added.
+The cosine window function `scipy.signal.cosine` was added.
 
 
 ``scipy.special`` improvements
 ------------------------------
 
-New function `scipy.special.xlogy` and `scipy.special.xlog1py` were added.
+New functions `scipy.special.xlogy` and `scipy.special.xlog1py` were added.
 These functions can simplify and speed up code that has to calculate 
 ``x * log(y)`` and give 0 when ``x == 0``.
 
 
-Unformatted Fortran file reader
--------------------------------
+``scipy.io`` improvements
+-------------------------
 
-A new class `scipy.io.FortranFile` which facilitates reading unformatted
+Unformatted Fortran file reader
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The new class `scipy.io.FortranFile` facilitates reading unformatted
 sequential files written by Fortran code.
 
+``scipy.io.wavfile`` enhancements
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+`scipy.io.wavfile.write` now accepts a file buffer. Previously it only
+accepted a filename.
+
+`scipy.io.wavfile.read` and `scipy.io.wavfile.write` can now handle floating
+point WAV files.
+
+
+``scipy.interpolate`` improvements
+----------------------------------
 
 B-spline derivatives and antiderivatives
-----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 `scipy.interpolate.splder` and `scipy.interpolate.splantider` functions 
 for computing B-splines that represent derivatives and antiderivatives
@@ -163,10 +178,18 @@ class-based FITPACK interface as ``UnivariateSpline.derivative`` and
 Distributions now allow using keyword parameters in addition to
 positional parameters in all methods.
 
-`scipy.stats.power_divergence` function has been added for Cressie-Read
-power divergence statistic and goodness of fit test.
+The function `scipy.stats.power_divergence` has been added for the
+Cressie-Read power divergence statistic and goodness of fit test.
+Included in this family of statistics is the "G-test"
+(http://en.wikipedia.org/wiki/G-test).
 
 `scipy.stats.mood` now accepts multidimensional input.
+
+An option was added to `scipy.stats.wilcoxon` for continuity correction.
+
+`scipy.stats.chisquare` now has an `axis` argument.
+
+`scipy.stats.mstats.chisquare` now has `axis` and `ddof` arguments.
 
 
 Deprecated features
