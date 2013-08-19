@@ -2398,7 +2398,22 @@ def trim_mean(a, proportiontocut, axis=0):
     array([  1.5,   5.5,   9.5,  13.5,  17.5])
 
     """
-    newa = trimboth(np.sort(a, axis), proportiontocut, axis=axis)
+    a = np.asarray(a)
+    if axis is None:
+        nobs = a.size
+    else:
+        nobs = a.shape[axis]
+    lowercut = int(proportiontocut * nobs)
+    uppercut = nobs - lowercut - 1
+    if (lowercut > uppercut):
+        raise ValueError("Proportion too big.")
+
+    try:
+        atmp = np.partition(a, (lowercut, uppercut), axis)
+    except AttributeError:
+        atmp = np.sort(a, axis)
+
+    newa = trimboth(atmp, proportiontocut, axis=axis)
     return np.mean(newa, axis=axis)
 
 
