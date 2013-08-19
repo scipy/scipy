@@ -4,7 +4,8 @@ Test functions for multivariate normal distributions.
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import run_module_suite, assert_allclose, assert_equal
+from numpy.testing import (
+        run_module_suite, assert_allclose, assert_equal, assert_raises)
 
 import numpy
 import numpy as np
@@ -162,6 +163,23 @@ def test_pseudodet_pinv():
     # Check that the pseudo-determinant of the pseudo-inverse
     # agrees with 1 / pseudo-determinant
     assert_allclose(-log_pdet, log_pdet_pinv)
+
+
+def test_exception_nonsquare_cov():
+    cov = [[1, 2, 3], [4, 5, 6]]
+    assert_raises(ValueError, _psd_pinv_decomposed_log_pdet, cov)
+
+
+def test_exception_nonfinite_cov():
+    cov_nan = [[1, 0], [0, np.nan]]
+    assert_raises(ValueError, _psd_pinv_decomposed_log_pdet, cov_nan)
+    cov_inf = [[1, 0], [0, np.inf]]
+    assert_raises(ValueError, _psd_pinv_decomposed_log_pdet, cov_inf)
+
+
+def test_exception_non_psd_cov():
+    cov = [[1, 0], [0, -1]]
+    assert_raises(ValueError, _psd_pinv_decomposed_log_pdet, cov)
 
 
 def test_R_values():

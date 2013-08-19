@@ -129,7 +129,7 @@ def _pinv_1d(v, eps=1e-5):
 
 
 def _psd_pinv_decomposed_log_pdet(mat, cond=None, rcond=None, 
-                                  check_finite=True):
+                                  lower=True, check_finite=True):
     """
     Compute a decomposition of the pseudo-inverse and the logarithm of
     the pseudo-determinant of a symmetric positive semi-definite
@@ -146,6 +146,9 @@ def _psd_pinv_decomposed_log_pdet(mat, cond=None, rcond=None,
     ----------
     mat : array_like
         Input array of shape (`m`, `n`)
+    lower : bool, optional
+        Whether the pertinent array data is taken from the lower or upper
+        triangle of `mat`. (Default: lower)
     cond, rcond : float or None
         Cutoff for 'small' singular values.
         Eigenvalues smaller than ``rcond*largest_eigenvalue``
@@ -175,13 +178,9 @@ def _psd_pinv_decomposed_log_pdet(mat, cond=None, rcond=None,
     # into scipy.linalg it should probably be shared between all of
     # these routines.
 
-    if check_finite:
-        mat = np.asarray_chkfinite(mat)
-    else:
-        mat = np.asarray(mat)
-
-    s, u = scipy.linalg.eigh(mat)
-    s = np.maximum(s, 0)
+    # Note that eigh takes care of array conversion, chkfinite,
+    # and assertion that the matrix is square.
+    s, u = scipy.linalg.eigh(mat, lower=lower, check_finite=check_finite)
 
     if rcond is not None:
         cond = rcond
@@ -189,11 +188,14 @@ def _psd_pinv_decomposed_log_pdet(mat, cond=None, rcond=None,
         t = u.dtype.char.lower()
         factor = {'f': 1E3, 'd': 1E6}
         cond = factor[t] * np.finfo(t).eps
-
     eps = cond * np.max(abs(s))
+
+    if np.min(s) < -eps:
+        raise ValueError('the covariance matrix must be positive semidefinite')
+
     s_pinv = _pinv_1d(s, eps)
     U = np.multiply(u, np.sqrt(s_pinv))
-    log_pdet = np.sum(np.log(s[abs(s) > eps]))
+    log_pdet = np.sum(np.log(s[s > eps]))
 
     return U, log_pdet
 
