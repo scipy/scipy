@@ -41,7 +41,8 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_arpack',
                          sources='arpack.pyf.src',
                          libraries=['arpack_scipy'],
-                         extra_info=lapack_opt
+                         extra_info=lapack_opt,
+                         depends=arpack_sources,
                          )
 
     config.add_data_dir('tests')

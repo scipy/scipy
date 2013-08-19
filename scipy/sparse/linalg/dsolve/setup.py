@@ -24,6 +24,7 @@ def configuration(parent_package='',top_path=None):
     superlu_src = join(dirname(__file__), 'SuperLU', 'SRC')
 
     sources = list(glob.glob(join(superlu_src, '*.c')))
+    headers = list(glob.glob(join(superlu_src, '*.h')))
     if os.name == 'nt' and ('FPATH' in os.environ or 'MKLROOT' in os.environ):
         # when using MSVC + MKL, lsame is already in MKL
         sources.remove(join(superlu_src, 'lsame.c'))
@@ -40,6 +41,7 @@ def configuration(parent_package='',top_path=None):
                                     '_superlu_utils.c',
                                     '_superluobject.c'],
                          libraries=['superlu_src'],
+                         depends=(sources + headers),
                          extra_info=lapack_opt,
                          )
 
