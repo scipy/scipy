@@ -1565,7 +1565,7 @@ def test_chisquare_masked_arrays():
                                                      mobs.count(axis=0) - 1))
 
     g, p = stats.power_divergence(mobs, lambda_='log-likelihood')
-    mat.assert_array_equal(g, expected_g)
+    mat.assert_array_almost_equal(g, expected_g, decimal=15)
     mat.assert_array_almost_equal(p, stats.chisqprob(expected_g,
                                                      mobs.count(axis=0) - 1))
 
@@ -1576,7 +1576,7 @@ def test_chisquare_masked_arrays():
                                                   mobs.T.count(axis=1) - 1))
 
     g, p = stats.power_divergence(mobs.T, axis=1, lambda_="log-likelihood")
-    mat.assert_array_equal(g, expected_g)
+    mat.assert_array_almost_equal(g, expected_g, decimal=15)
     mat.assert_array_almost_equal(p, stats.chisqprob(expected_g,
                                                      mobs.count(axis=0) - 1))
 
