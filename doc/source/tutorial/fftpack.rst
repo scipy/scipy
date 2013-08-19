@@ -95,7 +95,6 @@ The example plots the FFT of the sum of two sines.
     >>> plt.grid()
     >>> plt.show()
 
-..   :caption: FFT-Plot of the sum of two sines
 
 The FFT input signal is inherently truncated. This truncation can be modelled
 as multiplication of an inifinte signal with a rectangular window function. In
@@ -127,9 +126,6 @@ truncated illustrative purposes).
     >>> plt.legend(['FFT', 'FFT w. window'])
     >>> plt.grid()
     >>> plt.show()
-
-..   :caption: FFT-Plot of the sum of two sines with window functions.
-
 
 
 In case the sequence x is complex-valued, the spectrum is no longer symmetric.
@@ -170,9 +166,6 @@ asymmetric spectrum.
     >>> plt.plot(xf, 1.0/N * np.abs(yplot))
     >>> plt.grid()
     >>> plt.show()
-
-..   :caption: FFT-Plot of the sum of two sines
-
 
 
 The function :func:`rfft` calculates the FFT of a real sequence and outputs
@@ -221,30 +214,28 @@ The example below demonstrates a 2-dimensional IFFT and plots the resulting
     >>> xf[0, 5] = 1
     >>> xf[0, N-5] = 1
     >>> Z = ifftn(xf)
-    >>> ax1.imshow(xf, cmap=cm.binary)
+    >>> ax1.imshow(xf, cmap=cm.Reds)
     >>> ax4.imshow(np.real(Z), cmap=cm.binary)
     >>> xf = np.zeros((N, N))
     >>> xf[5, 0] = 1
     >>> xf[N-5, 0] = 1
     >>> Z = ifftn(xf)
-    >>> ax2.imshow(xf, cmap=cm.binary)
+    >>> ax2.imshow(xf, cmap=cm.Reds)
     >>> ax5.imshow(np.real(Z), cmap=cm.binary)
     >>> xf = np.zeros((N, N))
     >>> xf[5, 10] = 1
     >>> xf[N-5, N-10] = 1
     >>> Z = ifftn(xf)
-    >>> ax3.imshow(xf, cmap=cm.binary)
+    >>> ax3.imshow(xf, cmap=cm.Reds)
     >>> ax6.imshow(np.real(Z), cmap=cm.binary)
     >>> plt.show()
 
-..   :caption: 2-dimensional FFT example
 
+.. FFT convolution
+.. _______________
 
-FFT convolution
-_______________
-
-scipy.fftpack.convolve performs a convolution of two one-dimensional
-arrays in frequency domain.
+.. scipy.fftpack.convolve performs a convolution of two one-dimensional
+.. arrays in frequency domain.
 
 
 
@@ -357,10 +348,10 @@ and normalizations.
 Example
 _______
 
-The DCT exhibits the "energy compaction property", meaning that only the first
-few DCT coefficients have significant magnitude. Zeroing out the other
-coefficients leads to a small reconstruction error, a fact which is exploited
-in lossy signal compression (e.g. JPEG compression).
+The DCT exhibits the "energy compaction property", meaning that for many
+signals only the first few DCT coefficients have significant magnitude.
+Zeroing out the other coefficients leads to a small reconstruction error, a
+fact which is exploited in lossy signal compression (e.g. JPEG compression).
 
 The example below shows a signal x and two reconstructions (:math:`x_{20}` and
 :math:`x_{15}`)from the signal's DCT coefficients. The signal :math:`x_{20}`
@@ -379,11 +370,11 @@ provides a five-fold compression rate.
     >>> x = np.exp(-t/3)*np.cos(2*t)
     >>> y = dct(x, norm='ortho')
     >>> window = np.zeros(N)
-    >>> window[:25] = 1
+    >>> window[:20] = 1
     >>> yr = idct(y*window, norm='ortho')
     >>> sum(abs(x-yr)**2) / sum(abs(x)**2)
     0.0010901402257
-    >>> plt.plot(t, x, 'bx')
+    >>> plt.plot(t, x, '-bx')
     >>> plt.plot(t, yr, 'ro')
     >>> window = np.zeros(N)
     >>> window[:15] = 1
