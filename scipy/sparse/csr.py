@@ -274,10 +274,6 @@ class csr_matrix(_cs_matrix, IndexMixin):
         # If all else fails, try elementwise
         row, col = self._index_to_arrays(row, col)
 
-        if row.size == 0 or col.size == 0:
-            raise ValueError("Slice returns a size 0 matrix which is not "
-            "supported by sparse matrices.")
-
         return self.__class__([[self._get_single_element(iii, jjj) for
                                 iii, jjj in zip(ii, jj)] for ii, jj in
                                zip(row.tolist(), col.tolist())])
@@ -358,9 +354,6 @@ class csr_matrix(_cs_matrix, IndexMixin):
                 row_indices = abs(row_indices[::-1])
 
             shape = (1, int(np.ceil(float(stop - start) / stride)))
-            if 0 in shape:
-                raise ValueError("Slice returns a size 0 matrix which is not "
-                "supported by sparse matrices.")
 
             row_slice = csr_matrix((row_data, row_indices, row_indptr),
                                    shape=shape)
@@ -396,9 +389,10 @@ class csr_matrix(_cs_matrix, IndexMixin):
                 raise TypeError('expected slice or scalar')
 
         def check_bounds(i0, i1, num):
-            if not (0 <= i0 < num) or not (0 < i1 <= num) or not (i0 < i1):
+            if not (0 <= i0 <= num) or not (0 <= i1 <= num) or not (i0 <= i1):
                 raise IndexError(
-                      "index out of bounds: 0<=%d<%d, 0<=%d<%d, %d<%d" %
+                      "index out of bounds: 0 <= %d <= %d, 0 <= %d <= %d,"
+                       " %d <= %d" %
                       (i0, num, i1, num, i0, i1))
 
         i0, i1 = process_slice(row_slice, M)
