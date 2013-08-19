@@ -446,6 +446,8 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
         k.update({names.pop(): a.pop()})
         v = [meth(x, *a, **k) for meth in meths]
         npt.assert_array_equal(vals, v)
+        npt.assert_equal(distfn.moment(3, *a, **k),
+                         distfn.moment(3, *shape_args))
 
     # unknown arguments should not go through:
     k.update({'kaboom': 42})

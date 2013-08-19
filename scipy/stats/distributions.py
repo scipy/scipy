@@ -1684,8 +1684,7 @@ class rv_continuous(rv_generic):
             arguments relevant for a given distribution.
 
         """
-        loc = kwds.get('loc', 0)
-        scale = kwds.get('scale', 1)
+        args, loc, scale = self._parse_args(*args, **kwds)
         if not (self._argcheck(*args) and (scale > 0)):
             return nan
         if (floor(n) != n):
