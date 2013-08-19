@@ -14,6 +14,7 @@ Integrating functions, given function object
    quad          -- General purpose integration
    dblquad       -- General purpose double integration
    tplquad       -- General purpose triple integration
+   nquad         -- General purpose n-dimensional integration
    fixed_quad    -- Integrate func(x) using Gaussian quadrature of order n
    quadrature    -- Integrate with given tolerance using Gaussian quadrature
    romberg       -- Integrate func using Romberg integration
