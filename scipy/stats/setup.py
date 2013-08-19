@@ -10,14 +10,15 @@ def configuration(parent_package='',top_path=None):
 
     config.add_data_dir('tests')
 
-    config.add_library('statlib',
-                       sources=[join('statlib', '*.f')])
+    statlib_src = [join('statlib', '*.f')]
+    config.add_library('statlib', sources=statlib_src)
 
     # add statlib module
     config.add_extension('statlib',
         sources=['statlib.pyf'],
         f2py_options=['--no-wrap-functions'],
         libraries=['statlib'],
+        depends=statlib_src
     )
 
     # add vonmises_cython module
