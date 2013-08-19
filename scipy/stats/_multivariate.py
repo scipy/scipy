@@ -137,10 +137,7 @@ def _psd_pinv_decomposed_log_pdet(mat, cond=None, rcond=None,
 
     The pseudo-determinant of a matrix is defined as the product of
     the non-zero eigenvalues, and coincides with the usual determinant
-    for a full matrix. For reasons of efficiency, we (implicitly)
-    assume that the matrix is symmetric positive semi-definite and use
-    the non-zero singular values to compute the pseudo-determinant,
-    rather than the eigenvalues.
+    for a full matrix.
 
     Parameters
     ----------
@@ -267,9 +264,7 @@ class multivariate_normal_gen(object):
     -----
     %(_doc_callparams_note)s
 
-    The covariance matrix `cov` must be a (symmetric) positive
-    semi-definite matrix, but `multivariate_normal` will not check for
-    this explicitly. The determinant and inverse of `cov` are computed
+    The determinant and inverse of `cov` are computed
     as the pseudo-determinant and pseudo-inverse, respectively, so
     that `cov` does not need to have full rank.
 
