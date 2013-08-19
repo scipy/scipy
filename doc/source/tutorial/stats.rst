@@ -59,8 +59,8 @@ call:
 We can list all methods and properties of the distribution with
 ``dir(norm)``.  As it turns out, some of the methods are private
 methods although they are not named as such (their name does not start
-with a leading underscore), for example ``veccdf`` or ``xa`` and
-``xb`` are only available for internal calculation.
+with a leading underscore), for example ``veccdf``, are only available
+for internal calculation.
 
 To obtain the `real` main methods, we list the methods of the frozen
 distribution. (We explain the meaning of a `frozen` distribution
