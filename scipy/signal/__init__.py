@@ -176,6 +176,7 @@ Window functions
    bohman            -- Bohman window
    boxcar            -- Boxcar window
    chebwin           -- Dolph-Chebyshev window
+   cosine            -- Cosine window
    flattop           -- Flat top window
    gaussian          -- Gaussian window
    general_gaussian  -- Generalized Gaussian window
