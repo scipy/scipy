@@ -264,7 +264,8 @@ class multivariate_normal_gen(object):
     -----
     %(_doc_callparams_note)s
 
-    The determinant and inverse of `cov` are computed
+    The covariance matrix `cov` must be a (symmetric) positive
+    semi-definite matrix. The determinant and inverse of `cov` are computed
     as the pseudo-determinant and pseudo-inverse, respectively, so
     that `cov` does not need to have full rank.
 
