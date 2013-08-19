@@ -21,6 +21,8 @@ from scipy.integrate import romb
 
 
 def test_scalar_values():
+    np.random.seed(1234)
+
     # When evaluated on scalar data, the pdf should return a scalar
     x, mean, cov = 1.5, 1.7, 2.5
     pdf = multivariate_normal.pdf(x, mean, cov)
@@ -36,6 +38,7 @@ def test_scalar_values():
 
 def test_logpdf():
     # Check that the log of the pdf is in fact the logpdf
+    np.random.seed(1234)
     x = np.random.randn(5)
     mean = np.random.randn(5)
     cov = np.abs(np.random.randn(5))
@@ -72,6 +75,7 @@ def test_large_pseudo_determinant():
 
 
 def test_broadcasting():
+    np.random.seed(1234)
     n = 4
 
     # Construct a random covariance matrix.
@@ -130,6 +134,7 @@ def test_marginalization():
 
 def test_frozen():
     # The frozen distribution should agree with the regular one
+    np.random.seed(1234)
     x = np.random.randn(5)
     mean = np.random.randn(5)
     cov = np.abs(np.random.randn(5))
@@ -142,7 +147,8 @@ def test_frozen():
 def test_pseudodet_pinv():
     # Make sure that pseudo-inverse and pseudo-det agree on cutoff
 
-    # Assemble covariance matrix with large and small eigenvalues
+    # Assemble random covariance matrix with large and small eigenvalues
+    np.random.seed(1234)
     n = 7
     x = np.random.randn(n, n)
     cov = np.dot(x, x.T)
