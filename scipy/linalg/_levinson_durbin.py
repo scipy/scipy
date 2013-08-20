@@ -46,10 +46,6 @@ def solve_toeplitz(c, r=None, y=None):
            http://en.wikipedia.org/wiki/Levinson_recursion
 
     """
-
-    #TODO special-case symmetric toeplitz
-    #TODO multiple simultaneous rhs using B instead of y
-
     # This block has been copied from the linalg.toeplitz construction function.
     c = np.asarray(c).ravel()
     if r is None:
@@ -61,15 +57,13 @@ def solve_toeplitz(c, r=None, y=None):
     if y is None:
         raise ValueError('missing rhs')
     y = np.asarray(y)
-    if y.ndim != 1:
-        raise NotImplementedError('the rhs must be one-dimensional')
     N = y.shape[0]
 
     # Check that the Toeplitz representation makes sense
     # and is compatible with the rhs shape.
     if c.shape != r.shape:
         raise ValueError('expected the Toeplitz matrix to be square')
-    if c.shape != y.shape:
+    if c.shape != (N,):
         raise ValueError('the rhs shape is incompatible with the matrix shape')
 
     # If the diagonal is zero, then the Levinson-Durbin implementation fails.
@@ -94,21 +88,22 @@ def solve_toeplitz(c, r=None, y=None):
     # Initialize the forward, backward, and solution vectors.
     f_prev = np.zeros(N, dtype=mytype)
     b_prev = np.zeros(N, dtype=mytype)
-    x_prev = np.zeros(N, dtype=mytype)
+    x_prev = np.zeros(y.shape, dtype=mytype)
     f = np.zeros(N, dtype=mytype)
     b = np.zeros(N, dtype=mytype)
-    x = np.zeros(N, dtype=mytype)
+    x = np.zeros(y.shape, dtype=mytype)
     f[0] = 1 / c[0]
     b[0] = 1 / c[0]
     x[0] = y[0] / c[0]
 
     # Compute forward, backward, and solution vectors recursively.
+    # The tensordot shenanigans is for multiple rhs.
     for n in range(1, N):
         f, f_prev = f_prev, f
         b, b_prev = b_prev, b
         x, x_prev = x_prev, x
         eps_f = np.dot(c[n:0:-1], f_prev[:n])
-        eps_x = np.dot(c[n:0:-1], x_prev[:n])
+        eps_x = np.tensordot(c[n:0:-1], x_prev[:n], 1)
         eps_b = np.dot(r[1:n+1], b_prev[:n])
         f.fill(0)
         b.fill(0)
@@ -127,7 +122,7 @@ def solve_toeplitz(c, r=None, y=None):
         f[1:n+1] -= coeff * eps_f * b_prev[:n]
         b[1:n+1] += coeff * b_prev[:n]
         b[:n] -= coeff * eps_b * f_prev[:n]
-        x[:n+1] = x_prev[:n+1] + (y[n] - eps_x) * b[:n+1]
+        x[:n+1] = x_prev[:n+1] + np.tensordot(b[:n+1], (y[n] - eps_x), 0)
 
     return x
 

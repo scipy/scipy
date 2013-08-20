@@ -7,8 +7,10 @@ Test functions for linalg._levinson_durbin module
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import run_module_suite, assert_allclose, assert_raises
 import scipy.linalg
+
+from numpy.testing import (
+        run_module_suite, assert_equal, assert_allclose, assert_raises)
 
 
 def test_solve_equivalence():
@@ -33,6 +35,19 @@ def test_solve_equivalence():
         # Check equivalence when the column is provided but not the row.
         actual = scipy.linalg.solve_toeplitz(c, y=y)
         desired = scipy.linalg.solve(scipy.linalg.toeplitz(c), y)
+        assert_allclose(actual, desired)
+
+
+def test_multiple_rhs():
+    np.random.seed(1234)
+    c = np.random.randn(4)
+    r = np.random.randn(4)
+    for yshape in ((4,), (4, 3), (4, 3, 2)):
+        y = np.random.randn(*yshape)
+        actual = scipy.linalg.solve_toeplitz(c, r=r, y=y)
+        desired = scipy.linalg.solve(scipy.linalg.toeplitz(c, r=r), y)
+        assert_equal(actual.shape, yshape)
+        assert_equal(desired.shape, yshape)
         assert_allclose(actual, desired)
 
 
