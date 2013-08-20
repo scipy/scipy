@@ -1624,6 +1624,31 @@ class _TestSlicing:
             for j, b in enumerate(slices):
                 yield check_2, a, b
 
+    def test_ellipsis_slicing(self):
+        b = asmatrix(arange(50).reshape(5,10))
+        a = self.spmatrix(b)
+
+        assert_array_equal(a[...].A, b[...].A)
+        assert_array_equal(a[...,].A, b[...,].A)
+
+        assert_array_equal(a[..., ...].A, b[..., ...].A)
+        assert_array_equal(a[1, ...].A, b[1, ...].A)
+        assert_array_equal(a[..., 1].A, b[..., 1].A)
+        assert_array_equal(a[1:, ...].A, b[1:, ...].A)
+        assert_array_equal(a[..., 1:].A, b[..., 1:].A)
+
+        assert_array_equal(a[..., ..., ...].A, b[..., ..., ...].A)
+        assert_array_equal(a[1, ..., ...].A, b[1, ..., ...].A)
+        assert_array_equal(a[1:, ..., ...].A, b[1:, ..., ...].A)
+        assert_array_equal(a[..., ..., 1:].A, b[..., ..., 1:].A)
+        assert_array_equal(a[1:, 1, ...].A, b[1:, 1, ...].A)
+        assert_array_equal(a[1, ..., 1:].A, b[1, ..., 1:].A)
+        # These return ints
+        assert_equal(a[1, 1, ...], b[1, 1, ...])
+        assert_equal(a[1, ..., 1], b[1, ..., 1])
+        # Bug in NumPy's slicing
+        assert_array_equal(a[..., ..., 1].A, b[..., ..., 1].A.reshape((5,1)))
+
 
 class _TestSlicingAssign:
     def test_slice_scalar_assign(self):
