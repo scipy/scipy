@@ -1247,28 +1247,32 @@ class _TestCommon:
     #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
 
     def test_size_zero_matrix_arithmetic(self):
-        """Test basic matrix arithmatic with shapes like (0,0), (10,0),
-        (0, 3), etc."""
+        # Test basic matrix arithmatic with shapes like (0,0), (10,0),
+        # (0, 3), etc.
         mat = np.matrix([])
         a = mat.reshape((0, 0))
         b = mat.reshape((0, 1))
         c = mat.reshape((0, 5))
         d = mat.reshape((1, 0))
         e = mat.reshape((5, 0))
+        f = np.matrix(np.ones([5, 5]))
 
         asp = self.spmatrix(a)
         bsp = self.spmatrix(b)
         csp = self.spmatrix(c)
         dsp = self.spmatrix(d)
         esp = self.spmatrix(e)
+        fsp = self.spmatrix(f)
 
         # matrix product.
         assert_array_equal(asp.dot(asp).A, np.dot(a, a).A)
         assert_array_equal(bsp.dot(dsp).A, np.dot(b, d).A)
         assert_array_equal(dsp.dot(bsp).A, np.dot(d, b).A)
         assert_array_equal(csp.dot(esp).A, np.dot(c, e).A)
+        assert_array_equal(csp.dot(fsp).A, np.dot(c, f).A)
         assert_array_equal(esp.dot(csp).A, np.dot(e, c).A)
         assert_array_equal(dsp.dot(csp).A, np.dot(d, c).A)
+        assert_array_equal(fsp.dot(esp).A, np.dot(f, e).A)
 
         # bad matrix products
         assert_raises(ValueError, dsp.dot, e)
@@ -1300,12 +1304,20 @@ class _TestCommon:
         assert_raises(ValueError, asp.__add__, dsp)
         assert_raises(ValueError, bsp.__add__, asp)
 
-    def test_size_zero_creation(self):
-        """Try creating size zero matrices in several different ways."""
-        # create from size zero dense
-        # create from shape tuple
-        # create from row, col?
-        pass
+    def test_size_zero_conversions(self):
+        mat = np.matrix([])
+        a = mat.reshape((0, 0))
+        b = mat.reshape((0, 5))
+        c = mat.reshape((5, 0))
+
+        for m in [a, b, c]:
+            spm = self.spmatrix(m)
+            assert_array_equal(spm.tocoo().A, m)
+            assert_array_equal(spm.tocsr().A, m)
+            assert_array_equal(spm.tocsc().A, m)
+            assert_array_equal(spm.tolil().A, m)
+            assert_array_equal(spm.todok().A, m)
+            assert_array_equal(spm.tobsr().A, m)
 
 
 class _TestInplaceArithmetic:
