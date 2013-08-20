@@ -118,6 +118,10 @@ The multiplicative action of the matrix exponential of a linear operator
 (``expm_multiply``) has been implemented following the description in Al-Mohy
 and Higham (2011).
 
+Abstract linear operators (`scipy.sparse.linalg.LinearOperator`) can now be
+multiplied, added to each other, and exponentiated, producing new linear
+operators. This enables easier construction of composite linear operations.
+
 
 ``scipy.spatial`` improvements
 ------------------------------
