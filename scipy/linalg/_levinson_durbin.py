@@ -26,12 +26,12 @@ def solve_toeplitz(c, r=None, y=None):
         The first column of the Toeplitz matrix.
     r : 1d array_like, optional
         The first row of the Toeplitz matrix.
-    y : 1d array_like
+    y : array_like
         The rhs of the matrix equation.
 
     Returns
     -------
-    x : 1d ndarray
+    x : ndarray
         The solution of the matrix equation (T x = y).
 
     Notes
