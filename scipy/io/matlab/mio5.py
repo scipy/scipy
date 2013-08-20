@@ -797,7 +797,7 @@ class MatFile5Writer(object):
                  unicode_strings=False,
                  global_vars=None,
                  long_field_names=False,
-                 oned_as=None):
+                 oned_as='row'):
         ''' Initialize writer for matlab 5 format files
 
         Parameters
@@ -817,13 +817,6 @@ class MatFile5Writer(object):
         else:
             self.global_vars = []
         self.long_field_names = long_field_names
-        # deal with deprecations
-        if oned_as is None:
-            warnings.warn("Using oned_as default value ('row') "
-                          "This default has changed from 'column' "
-                          "in scipy versions < 0.13",
-                          UserWarning, stacklevel=2)
-            oned_as = 'row'
         self.oned_as = oned_as
         self._matrix_writer = None
 
