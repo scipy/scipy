@@ -120,6 +120,8 @@ Alex Griffing for expm 2009, expm_multiply, expm_frechet,
     implementations, plus bugfixes.
 Nils Werner for signal windowing and wavfile-writing improvements.
 Kenneth L. Ho for the wrapper around the Interpolative Decomposition code.
+Juan Luis Cano for refactorings in lti, sparse docs improvements and some
+    trivial fixes.
 
 
 Institutions
