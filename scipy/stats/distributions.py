@@ -6986,8 +6986,7 @@ class rv_discrete(rv_generic):
             scale parameter (default=1)
 
         """
-        loc = kwds.get('loc', 0)
-        scale = kwds.get('scale', 1)
+        args, loc, scale = self._parse_args(*args, **kwds)
         if not (self._argcheck(*args) and (scale > 0)):
             return nan
         if (floor(n) != n):

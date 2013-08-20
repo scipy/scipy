@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import warnings
 import inspect
 
 import numpy as np
@@ -446,8 +447,12 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
         k.update({names.pop(): a.pop()})
         v = [meth(x, *a, **k) for meth in meths]
         npt.assert_array_equal(vals, v)
-        npt.assert_equal(distfn.moment(3, *a, **k),
-                         distfn.moment(3, *shape_args))
+        if not 'n' in k.keys():
+            # `n` is first parameter of moment(), so can't be used as named arg
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                npt.assert_equal(distfn.moment(3, *a, **k),
+                                 distfn.moment(3, *shape_args))
 
     # unknown arguments should not go through:
     k.update({'kaboom': 42})
