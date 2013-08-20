@@ -1246,6 +1246,67 @@ class _TestCommon:
     #    dense_dot_sparse = dot(self.datsp, b)
     #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
 
+    def test_size_zero_matrix_arithmetic(self):
+        """Test basic matrix arithmatic with shapes like (0,0), (10,0),
+        (0, 3), etc."""
+        mat = np.matrix([])
+        a = mat.reshape((0, 0))
+        b = mat.reshape((0, 1))
+        c = mat.reshape((0, 5))
+        d = mat.reshape((1, 0))
+        e = mat.reshape((5, 0))
+
+        asp = self.spmatrix(a)
+        bsp = self.spmatrix(b)
+        csp = self.spmatrix(c)
+        dsp = self.spmatrix(d)
+        esp = self.spmatrix(e)
+
+        # matrix product.
+        assert_array_equal(asp.dot(asp).A, np.dot(a, a).A)
+        assert_array_equal(bsp.dot(dsp).A, np.dot(b, d).A)
+        assert_array_equal(dsp.dot(bsp).A, np.dot(d, b).A)
+        assert_array_equal(csp.dot(esp).A, np.dot(c, e).A)
+        assert_array_equal(esp.dot(csp).A, np.dot(e, c).A)
+        assert_array_equal(dsp.dot(csp).A, np.dot(d, c).A)
+
+        # bad matrix products
+        assert_raises(ValueError, dsp.dot, e)
+        assert_raises(ValueError, asp.dot, d)
+
+        # elemente-wise multiplication
+        assert_array_equal(asp.multiply(asp).A, np.multiply(a, a).A)
+        assert_array_equal(bsp.multiply(bsp).A, np.multiply(b, b).A)
+        assert_array_equal(dsp.multiply(dsp).A, np.multiply(d, d).A)
+
+        assert_array_equal(asp.multiply(a).A, np.multiply(a, a).A)
+        assert_array_equal(bsp.multiply(b).A, np.multiply(b, b).A)
+        assert_array_equal(dsp.multiply(d).A, np.multiply(d, d).A)
+
+        assert_array_equal(asp.multiply(6).A, np.multiply(a, 6).A)
+        assert_array_equal(bsp.multiply(6).A, np.multiply(b, 6).A)
+        assert_array_equal(dsp.multiply(6).A, np.multiply(d, 6).A)
+
+        # bad element-wise multiplication
+        assert_raises(ValueError, asp.multiply, c)
+        assert_raises(ValueError, esp.multiply, c)
+
+        # Addition
+        assert_array_equal(asp.__add__(asp).A, a.__add__(a).A)
+        assert_array_equal(bsp.__add__(bsp).A, b.__add__(b).A)
+        assert_array_equal(dsp.__add__(dsp).A, d.__add__(d).A)
+
+        # bad addition
+        assert_raises(ValueError, asp.__add__, dsp)
+        assert_raises(ValueError, bsp.__add__, asp)
+
+    def test_size_zero_creation(self):
+        """Try creating size zero matrices in several different ways."""
+        # create from size zero dense
+        # create from shape tuple
+        # create from row, col?
+        pass
+
 
 class _TestInplaceArithmetic:
     def test_imul_scalar(self):
@@ -1509,10 +1570,6 @@ class _TestSlicing:
                   0, 1, s_[:], s_[1:5], -1, -2, -5,
                   array(-1), np.int8(-3)]
 
-        # These slices would return a size zero spares matrix which is
-        # currently unsupported.
-        bad_slices = [s_[:5:-1]]
-
         def check_1(a):
             x = A[a]
             y = B[a]
@@ -1524,15 +1581,8 @@ class _TestSlicing:
                 else:
                     assert_array_equal(x.todense(), y, repr(a))
 
-        fail = False
-        msg = ("This slice returns a size 0 sparse matrix which is currently "
-               "unsupported.")
         for j, a in enumerate(slices):
-            if a in bad_slices:
-                fail = True
-            else:
-                fail = False
-            yield dec.knownfailureif(fail, msg)(check_1), a
+            yield check_1, a
 
         def check_2(a, b):
             # Indexing np.matrix with 0-d arrays seems to be broken,
@@ -1558,14 +1608,9 @@ class _TestSlicing:
                 else:
                     assert_array_equal(x.todense(), y, repr((a, b)))
 
-        fail = False
         for i, a in enumerate(slices):
             for j, b in enumerate(slices):
-                if (a in bad_slices) or (b in bad_slices):
-                    fail = True
-                else:
-                    fail = False
-                yield dec.knownfailureif(fail, msg)(check_2), a, b
+                yield check_2, a, b
 
 
 class _TestSlicingAssign:
