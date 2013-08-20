@@ -105,6 +105,8 @@ def expm(A, q=None):
     return scipy.sparse.linalg.expm(A)
 
 
+# deprecated, but probably should be left there in the long term
+@np.deprecate(new_name="expm")
 def expm2(A):
     """
     Compute the matrix exponential using eigenvalue decomposition.
@@ -134,6 +136,8 @@ def expm2(A):
         return r.astype(t)
 
 
+# deprecated, but probably should be left there in the long term
+@np.deprecate(new_name="expm")
 def expm3(A, q=20):
     """
     Compute the matrix exponential using Taylor series.
@@ -143,7 +147,7 @@ def expm3(A, q=20):
     A : (N, N) array_like
         Matrix to be exponentiated
     q : int
-        Order of the Taylor series
+        Order of the Taylor series used is `q-1`
 
     Returns
     -------

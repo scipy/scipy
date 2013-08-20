@@ -199,6 +199,13 @@ An option was added to `scipy.stats.wilcoxon` for continuity correction.
 Deprecated features
 ===================
 
+``expm2`` and ``expm3``
+-----------------------
+
+The matrix exponential functions `scipy.linalg.expm2` and `scipy.linalg.expm3`
+are deprecated. All users should use the numerically more robust
+`scipy.linalg.expm` function instead.
+
 
 Backwards incompatible changes
 ==============================
