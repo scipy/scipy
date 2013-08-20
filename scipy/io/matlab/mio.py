@@ -5,10 +5,6 @@ Module for reading and writing matlab (TM) .mat files
 
 from __future__ import division, print_function, absolute_import
 
-import os
-import sys
-import warnings
-
 import numpy as np
 
 from scipy.lib.six import string_types
@@ -19,49 +15,6 @@ from .mio5 import MatFile5Reader, MatFile5Writer
 
 __all__ = ['find_mat_file', 'mat_reader_factory', 'loadmat', 'savemat',
            'whosmat']
-
-@np.deprecate(message='find_mat_file will be removed in the next '
-              'version of scipy')
-@docfiller
-def find_mat_file(file_name, appendmat=True):
-    ''' Try to find .mat file on system path
-
-    Parameters
-    ----------
-    file_name : str
-       file name for mat file
-    %(append_arg)s
-
-    Returns
-    -------
-    full_name : string
-       possibly modified name after path search
-    '''
-    warnings.warn('Searching for mat files on python system path will be ' +
-                  'removed in next version of scipy',
-                   DeprecationWarning, stacklevel=2)
-    if appendmat and file_name.endswith(".mat"):
-        file_name = file_name[:-4]
-    if os.sep in file_name:
-        full_name = file_name
-        if appendmat:
-            full_name = file_name + ".mat"
-    else:
-        full_name = None
-        junk, file_name = os.path.split(file_name)
-        for path in [os.curdir] + list(sys.path):
-            test_name = os.path.join(path, file_name)
-            if appendmat:
-                test_name += ".mat"
-            try:
-                fid = open(test_name,'rb')
-                fid.close()
-                full_name = test_name
-                break
-            except IOError:
-                pass
-    return full_name
-
 
 def _open_file(file_like, appendmat):
     ''' Open `file_like` and return as file-like object '''

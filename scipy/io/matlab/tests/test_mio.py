@@ -31,8 +31,7 @@ import scipy.sparse as SP
 
 import scipy.io.matlab.byteordercodes as boc
 from scipy.io.matlab.miobase import matdims, MatWriteError
-from scipy.io.matlab.mio import (find_mat_file, mat_reader_factory, loadmat,
-                                 savemat, whosmat)
+from scipy.io.matlab.mio import (mat_reader_factory, loadmat, savemat, whosmat)
 from scipy.io.matlab.mio5 import (MatlabObject, MatFile5Writer, MatFile5Reader,
                                   MatlabFunction, varmats_from_mat)
 
@@ -439,19 +438,16 @@ def test_mat73():
 
 
 def test_warnings():
+    # This test is an echo of the previous behavior, which was to raise a
+    # warning if the user triggered a search for mat files on the Python system
+    # path.  We can remove the test in the next version after upcoming (0.13)
     fname = pjoin(test_data_path, 'testdouble_7.1_GLNX86.mat')
-    warn_ctx = WarningManager()
-    warn_ctx.__enter__()
-    try:
+    with warnings.catch_warnings():
         warnings.simplefilter('error')
         # This should not generate a warning
         mres = loadmat(fname, struct_as_record=True)
         # This neither
         mres = loadmat(fname, struct_as_record=False)
-        # This should - because of deprecated system path search
-        assert_raises(DeprecationWarning, find_mat_file, fname)
-    finally:
-        warn_ctx.__exit__()
 
 
 def test_regression_653():
