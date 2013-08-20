@@ -72,19 +72,32 @@ def solve_toeplitz(c, r=None, y=None):
     if c.shape != y.shape:
         raise ValueError('the rhs shape is incompatible with the matrix shape')
 
+    # If the diagonal is zero, then the Levinson-Durbin implementation fails.
+    if not c[0]:
+        raise np.linalg.LinAlgError(
+                'the scipy implementation of the Levinson-Durbin algorithm '
+                'fails when the main diagonal is zero')
+
     # Key relating entries of the toeplitz matrix to entries of c, r,
     # assuming n is a positive integer less than N:
     # M[0, 0] == c[0]
     # M[n, :n] == c[n:0:-1]
     # M[0, 1:n+1] == r[1:n+1]
 
+    # If any of the input arrays are complex then use complex dtype.
+    # Otherwise use real dtype.
+    if any(np.iscomplexobj(obj) for obj in (c, r, y)):
+        mytype = np.complex128
+    else:
+        mytype = np.float64
+
     # Initialize the forward, backward, and solution vectors.
-    f_prev = np.zeros_like(y)
-    b_prev = np.zeros_like(y)
-    x_prev = np.zeros_like(y)
-    f = np.zeros_like(y)
-    b = np.zeros_like(y)
-    x = np.zeros_like(y)
+    f_prev = np.zeros(N, dtype=mytype)
+    b_prev = np.zeros(N, dtype=mytype)
+    x_prev = np.zeros(N, dtype=mytype)
+    f = np.zeros(N, dtype=mytype)
+    b = np.zeros(N, dtype=mytype)
+    x = np.zeros(N, dtype=mytype)
     f[0] = 1 / c[0]
     b[0] = 1 / c[0]
     x[0] = y[0] / c[0]
@@ -100,7 +113,16 @@ def solve_toeplitz(c, r=None, y=None):
         f.fill(0)
         b.fill(0)
         x.fill(0)
-        coeff = 1 / (1 - eps_f * eps_b)
+        denom = 1 - eps_f * eps_b
+
+        # Complain if the denominator is exactly zero.
+        # For better numerical stability, maybe use a different algorithm.
+        if not denom:
+            raise np.linalg.LinAlgError(
+                    'the Levinson-Durbin algorithm '
+                    'failed to solve the matrix equation')
+
+        coeff = 1 / denom
         f[:n] += coeff * f_prev[:n]
         f[1:n+1] -= coeff * eps_f * b_prev[:n]
         b[1:n+1] += coeff * b_prev[:n]
