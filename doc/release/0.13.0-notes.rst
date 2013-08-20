@@ -247,6 +247,21 @@ Removed deprecated keywords ``xa`` and ``xb`` from ``stats.distributions``
 The keywords ``xa`` and ``xb``, which were deprecated since 0.11.0, have
 been removed from the distributions in ``scipy.stats``.
 
+Changes to MATLAB file readers / writers
+----------------------------------------
+
+The major change is that 1D arrays in numpy now become row vectors (shape 1, N)
+when saved to a MATLAB 5 format file.  Previously 1D arrays saved as column
+vectors (N, 1).  This is to harmonize the behavior of writing MATLAB 4 and 5
+formats, and adapt to the defaults of numpy and MATLAB - for example
+``np.atleast_2d`` returns 1D arrays as row vectors.
+
+Trying to save arrays of greater than 2 dimensions in MATLAB 4 format now raises
+an error instead of silently reshaping the array as 2D.
+
+``scipy.io.loadmat('afile')`` used to look for `afile` on the Python system path
+(``sys.path``); now ``loadmat`` only looks in the current directory for a
+relative path filename.
 
 Other changes
 =============
