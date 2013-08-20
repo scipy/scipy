@@ -360,13 +360,26 @@ class spmatrix(object):
 
     def __truediv__(self, other):
         if isscalarlike(other):
-            return self * (1./other)
+            if np.can_cast(self.dtype, np.float_):
+                return self.astype(np.float_) * (1./other)
+            else:
+                return self * (1./other)
         else:
-            return self.tocsr().__truediv__(other)
+            if np.can_cast(self.dtype, np.float_):
+                return self.astype(np.float_).tocsr().__truediv__(other)
+            else:
+                return self.tocsr().__truediv__(other)
+
+    def __rtruediv__(self, other):
+        return NotImplemented
 
     def __div__(self, other):
         # Always do true division
         return self.__truediv__(other)
+
+    def __rdiv__(self, other):
+        # Always do true division
+        return self.__rtruediv__(other)
 
     def __neg__(self):
         return -self.tocsr()
@@ -685,6 +698,44 @@ class spmatrix(object):
             return out
         else:
             return np.zeros(self.shape, dtype=self.dtype, order=order)
+
+    def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
+        """Method for compatibility with NumPy's ufuncs and dot
+        functions.
+        """
+
+        without_self = list(inputs)
+        del without_self[pos]
+        without_self = tuple(without_self)
+
+        # Associative operations
+        if func is np.multiply:
+            return self.multiply(*without_self)
+
+        elif func is np.add:
+            return self.__add__(*without_self)
+
+        # Non-associative operations
+        elif func is np.dot:
+            if pos == 0:
+                return self.__mul__(inputs[1])
+            else:
+                return self.__rmul__(inputs[0])
+
+        elif func is np.subtract:
+            if pos == 0:
+                return self.__sub__(inputs[1])
+            else:
+                return self.__rsub__(inputs[0])
+
+        elif (func is np.divide) or (func is np.true_divide):
+            if pos == 0:
+                return self.__div__(inputs[1])
+            else:
+                return NotImplemented
+
+        else:
+            return NotImplemented
 
 
 def isspmatrix(x):
