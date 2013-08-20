@@ -82,6 +82,7 @@ def configuration(parent_package='',top_path=None):
                          )
 
     # _interpolative:
+    print('Splitting linalg.interpolative Fortran source files')
     fnames = split_fortran_files(join(os.path.split(
                                           os.path.abspath(__file__))[0],
                                       'src', 'id_dist', 'src'))

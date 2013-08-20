@@ -58,6 +58,9 @@ def split_fortran_files(source_dir):
     This function is useful for code that can't be compiled with g77 because of
     type casting errors which do work with gfortran.
 
+    Created files are named: ``original_name + '_subr_i' + '.f'``, with ``i``
+    starting at zero and ending at ``num_subroutines_in_file - 1``.
+
     """
     def split_file(fname):
         with open(fname, 'r') as f:
@@ -73,7 +76,7 @@ def split_fortran_files(source_dir):
             new_fnames = []
             num_files = len(subs)
             for nfile in range(num_files):
-                new_fname = fname[:-2] + '_' + str(nfile) + '.f'
+                new_fname = fname[:-2] + '_subr_' + str(nfile) + '.f'
                 new_fnames.append(new_fname)
                 with open(new_fname, 'w') as fn:
                     if nfile + 1 == num_files:
@@ -83,7 +86,9 @@ def split_fortran_files(source_dir):
 
         return new_fnames
 
-    source_fnames = glob.glob(os.path.join(source_dir, '*.f'))
+    exclude_pattern = re.compile('_subr_[0-9]')
+    source_fnames = [f for f in glob.glob(os.path.join(source_dir, '*.f'))
+                             if not exclude_pattern.search(f)]
     fnames = []
     for source_fname in source_fnames:
         created_files = split_file(source_fname)
