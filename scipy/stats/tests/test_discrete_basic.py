@@ -72,9 +72,9 @@ def test_discrete_basic():
         seen.add(distname)
         distfn = getattr(stats,distname)
         locscale_defaults = (0,)
-        meths = [distfn.pmf, distfn.logpmf, distfn.cdf, distfn.logcdf, 
+        meths = [distfn.pmf, distfn.logpmf, distfn.cdf, distfn.logcdf,
                  distfn.logsf]
-        # make sure arguments are within support 
+        # make sure arguments are within support
         spec_k = {'randint': 11, 'hypergeom': 4, 'bernoulli': 0, }
         k = spec_k.get(distname, 1)
         yield check_named_args, distfn, k, arg, locscale_defaults, meths
@@ -306,10 +306,10 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     npt.assert_(signature.keywords is None)
     npt.assert_(signature.defaults == defaults)
 
-    shape_argnames = signature.args[1:-len(defaults)]  # self, a, b, loc=0, scale=1 
+    shape_argnames = signature.args[1:-len(defaults)]  # self, a, b, loc=0, scale=1
     if distfn.shapes:
         shapes_ = distfn.shapes.replace(',', ' ').split()
-    else: 
+    else:
         shapes_ = ''
     npt.assert_(len(shapes_) == distfn.numargs)
     npt.assert_(len(shapes_) == len(shape_argnames))
@@ -325,6 +325,10 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
         k.update({names.pop(): a.pop()})
         v = [meth(x, *a, **k) for meth in meths]
         npt.assert_array_equal(vals, v)
+        if not 'n' in k.keys():
+            # `n` is first parameter of moment(), so can't be used as named arg
+            npt.assert_equal(distfn.moment(3, *a, **k),
+                             distfn.moment(3, *shape_args))
 
     # unknown arguments should not go through:
     k.update({'kaboom': 42})
