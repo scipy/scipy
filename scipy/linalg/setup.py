@@ -86,6 +86,7 @@ def configuration(parent_package='',top_path=None):
     fnames = split_fortran_files(join(os.path.split(
                                           os.path.abspath(__file__))[0],
                                       'src', 'id_dist', 'src'))
+    fnames = [join('src', 'id_dist', 'src', f) for f in fnames]
     config.add_extension('_interpolative', fnames + ["interpolative.pyf"],
                          extra_info = lapack_opt
                          )

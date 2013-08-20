@@ -51,7 +51,8 @@ def split_fortran_files(source_dir):
     Returns
     -------
     fnames : list of str
-        List of absolute paths to files that were created.
+        List of file names (not including any path) that were created
+        in `source_dir`.
 
     Notes
     -----
@@ -93,6 +94,7 @@ def split_fortran_files(source_dir):
     for source_fname in source_fnames:
         created_files = split_file(source_fname)
         if created_files is not None:
-            fnames.append(created_files)
+            for cfile in created_files:
+                fnames.append(os.path.split(cfile)[1])
 
     return fnames
