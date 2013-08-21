@@ -300,6 +300,7 @@ one patch to this release, names in alphabetical order):
 * Matthew Brett
 * Christian Brodbeck +
 * Per Brodtkorb +
+* Christian Brueffer +
 * Lars Buitinck
 * Evgeni Burovski +
 * Tim Cera
@@ -308,6 +309,7 @@ one patch to this release, names in alphabetical order):
 * Dražen Lučanin +
 * Alexander J. Dunlap +
 * endolith
+* André Gaul +
 * Ralf Gommers
 * Alex Griffing +
 * Blake Griffith +
@@ -329,6 +331,7 @@ one patch to this release, names in alphabetical order):
 * Wendy Liu +
 * Clemens Novak +
 * Takuya Oshima +
+* Josef Perktold
 * Illia Polosukhin +
 * Przemek Porebski +
 * Steve Richardson +
@@ -342,6 +345,7 @@ one patch to this release, names in alphabetical order):
 * Louis Thibault +
 * Tomas Tomecek +
 * John Travers
+* Richard Tsai +
 * Jacob Vanderplas
 * Patrick Varilly
 * Pauli Virtanen
@@ -352,6 +356,6 @@ one patch to this release, names in alphabetical order):
 * Nathan Woods +
 * Tony S. Yu +
 
-A total of 59 people contributed to this release.
+A total of 63 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 

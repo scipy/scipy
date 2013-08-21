@@ -18,10 +18,6 @@ paver bootstrap
 source bootstrap/bin/activate
 python setupegg.py install
 
-# we need to copy Sphinx extensions from the numpy source tree
-mkdir doc/sphinxext
-cp -R ../numpy/doc/sphinxext/ doc/sphinxext/
-
 # build docs
 paver pdf
 
@@ -42,7 +38,6 @@ paver dmg -p 2.7  # 32/64-bit version
 
 paver bdist_superpack -p 2.7
 paver bdist_superpack -p 2.6
-paver bdist_superpack -p 3.1
 paver bdist_superpack -p 3.2
 paver bdist_superpack -p 3.3
 
