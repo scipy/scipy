@@ -9,6 +9,7 @@
 from __future__ import division, print_function, absolute_import
 
 import random
+import warnings
 
 import numpy as np
 from numpy import array, identity, dot, sqrt, double
@@ -536,19 +537,23 @@ class TestFractionalMatrixPower(TestCase):
 
 class TestExpM(TestCase):
     def test_zero(self):
-        a = array([[0.,0],[0,0]])
-        assert_array_almost_equal(expm(a),[[1,0],[0,1]])
-        assert_array_almost_equal(expm2(a),[[1,0],[0,1]])
-        assert_array_almost_equal(expm3(a),[[1,0],[0,1]])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            a = array([[0.,0],[0,0]])
+            assert_array_almost_equal(expm(a),[[1,0],[0,1]])
+            assert_array_almost_equal(expm2(a),[[1,0],[0,1]])
+            assert_array_almost_equal(expm3(a),[[1,0],[0,1]])
 
     def test_consistency(self):
-        a = array([[0.,1],[-1,0]])
-        assert_array_almost_equal(expm(a), expm2(a))
-        assert_array_almost_equal(expm(a), expm3(a))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            a = array([[0.,1],[-1,0]])
+            assert_array_almost_equal(expm(a), expm2(a))
+            assert_array_almost_equal(expm(a), expm3(a))
 
-        a = array([[1j,1],[-1,-2j]])
-        assert_array_almost_equal(expm(a), expm2(a))
-        assert_array_almost_equal(expm(a), expm3(a))
+            a = array([[1j,1],[-1,-2j]])
+            assert_array_almost_equal(expm(a), expm2(a))
+            assert_array_almost_equal(expm(a), expm3(a))
 
 
 class TestExpmFrechet(TestCase):
