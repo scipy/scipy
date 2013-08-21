@@ -215,5 +215,40 @@ def test_R_values():
     assert_allclose(pdf, r_pdf, atol=1e-10)
 
 
+def test_rvs_shape():
+    # Check that rvs parses the mean and covariance correctly, and returns
+    # an array of the right shape
+    N = 300; d = 4
+    sample = multivariate_normal.rvs(mean=np.zeros(d), cov=1, size=N)
+    assert(sample.shape == (N, d))
+
+    sample = multivariate_normal.rvs(mean=None,
+                                     cov=np.array([[2, .1], [.1, 1]]),
+                                     size=N)
+    assert(sample.shape == (N, 2))
+
+    u = multivariate_normal(mean=0, cov=1)
+    sample = u.rvs(N)
+    assert(sample.shape == (N, ))
+
+
+def test_large_sample():
+    # Generate large sample and compare sample mean and sample covariance
+    # with mean and covariance matrix.
+
+    np.random.seed(2846)
+
+    n = 3
+    mean = np.random.randn(n)
+    M = np.random.randn(n, n)
+    cov = np.dot(M, M.T)
+    size = 5000
+
+    sample = multivariate_normal.rvs(mean, cov, size)
+
+    assert_allclose(numpy.cov(sample.T), cov, rtol=1e-1)
+    assert_allclose(sample.mean(0), mean, rtol=1e-1)
+
+
 if __name__ == "__main__":
     run_module_suite()
