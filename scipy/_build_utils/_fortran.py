@@ -64,13 +64,13 @@ def split_fortran_files(source_dir):
 
     """
     def split_file(fname):
-        with open(fname, 'r') as f:
+        with open(fname, 'rb') as f:
             lines = f.readlines()
             subs = []
             # find lines with SUBROUTINE statements
             for ix, line in enumerate(lines):
-                if (line.find('SUBROUTINE') >= 0 or
-                    line.find('subroutine') >= 0) and not line[0] == 'C':
+                if (re.match(b'^\\s+subroutine', line, re.I) and
+                                            not line[0] in b'Cc!'):
                     subs.append(ix)
 
             # write out one file per subroutine
@@ -79,7 +79,7 @@ def split_fortran_files(source_dir):
             for nfile in range(num_files):
                 new_fname = fname[:-2] + '_subr_' + str(nfile) + '.f'
                 new_fnames.append(new_fname)
-                with open(new_fname, 'w') as fn:
+                with open(new_fname, 'wb') as fn:
                     if nfile + 1 == num_files:
                         fn.writelines(lines[subs[nfile]:])
                     else:
@@ -89,12 +89,12 @@ def split_fortran_files(source_dir):
 
     exclude_pattern = re.compile('_subr_[0-9]')
     source_fnames = [f for f in glob.glob(os.path.join(source_dir, '*.f'))
-                             if not exclude_pattern.search(f)]
+                             if not exclude_pattern.search(os.path.basename(f))]
     fnames = []
     for source_fname in source_fnames:
         created_files = split_file(source_fname)
         if created_files is not None:
             for cfile in created_files:
-                fnames.append(os.path.split(cfile)[1])
+                fnames.append(os.path.basename(cfile))
 
     return fnames
