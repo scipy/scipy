@@ -145,19 +145,26 @@ class TestLevene(TestCase):
     def test_trimmed2(self):
         x = [1.2, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 100.0]
         y = [0.0, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 200.0]
+        np.random.seed(1234)
+        x2 = np.random.permutation(x)
+
         # Use center='trimmed'
-        W1, pval1 = stats.levene(x, y, center='trimmed', proportiontocut=0.125)
+        W0, pval0 = stats.levene(x, y, center='trimmed', proportiontocut=0.125)
+        W1, pval1 = stats.levene(x2, y, center='trimmed', proportiontocut=0.125)
         # Trim the data here, and use center='mean'
         W2, pval2 = stats.levene(x[1:-1], y[1:-1], center='mean')
         # Result should be the same.
+        assert_almost_equal(W0, W2)
         assert_almost_equal(W1, W2)
         assert_almost_equal(pval1, pval2)
 
     def test_equal_mean_median(self):
         x = np.linspace(-1,1,21)
+        np.random.seed(1234)
+        x2 = np.random.permutation(x)
         y = x**3
         W1, pval1 = stats.levene(x, y, center='mean')
-        W2, pval2 = stats.levene(x, y, center='median')
+        W2, pval2 = stats.levene(x2, y, center='median')
         assert_almost_equal(W1, W2)
         assert_almost_equal(pval1, pval2)
 
