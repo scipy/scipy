@@ -384,15 +384,15 @@ def _moment_from_stats(n, mu, mu2, g1, g2, moment_func, args):
         if g1 is None or mu2 is None or mu is None:
             val = moment_func(3,*args)
         else:
-            mu3 = g1*(mu2**1.5)  # 3rd central moment
-            val = mu3+3*mu*mu2+mu**3  # 3rd non-central moment
+            mu3 = g1 * np.power(mu2, 1.5)  # 3rd central moment
+            val = mu3+3*mu*mu2+mu*mu*mu  # 3rd non-central moment
     elif (n == 4):
         if g1 is None or g2 is None or mu2 is None or mu is None:
             val = moment_func(4,*args)
         else:
             mu4 = (g2+3.0)*(mu2**2.0)  # 4th central moment
-            mu3 = g1*(mu2**1.5)  # 3rd central moment
-            val = mu4+4*mu*mu3+6*mu*mu*mu2+mu**4
+            mu3 = g1*np.power(mu2, 1.5)  # 3rd central moment
+            val = mu4+4*mu*mu3+6*mu*mu*mu2+mu*mu*mu*mu
     else:
         val = moment_func(n, *args)
 
@@ -407,7 +407,7 @@ def _skew(data):
     mu = data.mean()
     m2 = ((data - mu)**2).mean()
     m3 = ((data - mu)**3).mean()
-    return m3 / m2**1.5
+    return m3 / np.power(m2, 1.5)
 
 
 def _kurtosis(data):
@@ -1636,7 +1636,7 @@ class rv_continuous(rv_generic):
                         mu2p = self._munp(2.0,*goodargs)
                         mu2 = mu2p - mu*mu
                     mu3 = mu3p - 3*mu*mu2 - mu**3
-                    g1 = mu3 / mu2**1.5
+                    g1 = mu3 / np.power(mu2, 1.5)
                 out0 = default.copy()
                 place(out0,cond,g1)
                 output.append(out0)
@@ -2798,7 +2798,7 @@ class chi_gen(rv_continuous):
     def _stats(self, df):
         mu = sqrt(2)*special.gamma(df/2.0+0.5)/special.gamma(df/2.0)
         mu2 = df - mu*mu
-        g1 = (2*mu**3.0 + mu*(1-2*df))/asarray(mu2**1.5)
+        g1 = (2*mu**3.0 + mu*(1-2*df))/asarray(np.power(mu2, 1.5))
         g2 = 2*df*(1.0-df)-6*mu**4 + 4*mu**2 * (2*df-1)
         g2 /= asarray(mu2**2.0)
         return mu, mu2, g1, g2
@@ -3140,7 +3140,7 @@ class fatiguelife_gen(rv_continuous):
         mu = c2 / 2.0 + 1
         den = 5*c2 + 4
         mu2 = c2*den / 4.0
-        g1 = 4*c*sqrt(11*c2+6.0)/den**1.5
+        g1 = 4*c*sqrt(11*c2+6.0)/np.power(den, 1.5)
         g2 = 6*c2*(93*c2+41.0) / den**2.0
         return mu, mu2, g1, g2
 fatiguelife = fatiguelife_gen(a=0.0, name='fatiguelife')
@@ -3274,7 +3274,7 @@ class foldnorm_gen(rv_continuous):
         g1 = sqrt(2/pi)*exp(-1.5*c2)*(4-pi*exp(c2)*(2*c2+1.0))
         g1 += 2*c*fac*(6*exp(-c2) + 3*sqrt(2*pi)*c*exp(-c2/2.0)*fac +
                        pi*c*(fac*fac-1))
-        g1 /= pi*mu2**1.5
+        g1 /= pi*np.power(mu2, 1.5)
 
         g2 = c2*c2+6*c2+3+6*(c2+1)*mu*mu - 3*mu**4
         g2 -= 4*exp(-c2/2.0)*mu*(sqrt(2.0/pi)*(c2+2)+c*(c2+3)*exp(c2/2.0)*fac)
@@ -3409,7 +3409,7 @@ class genlogistic_gen(rv_continuous):
         mu = _EULER + special.psi(c)
         mu2 = pi*pi/6.0 + zeta(2,c)
         g1 = -2*zeta(3,c) + 2*_ZETA3
-        g1 /= mu2**1.5
+        g1 /= np.power(mu2, 1.5)
         g2 = pi**4/15.0 + 6*zeta(4,c)
         g2 /= mu2**2.0
         return mu, mu2, g1, g2
@@ -4620,7 +4620,7 @@ class loggamma_gen(rv_continuous):
         # Ping Shing Chan (thesis, McMaster University, 1993).
         mean = special.digamma(c)
         var = special.polygamma(1, c)
-        skewness = special.polygamma(2, c) / var**1.5
+        skewness = special.polygamma(2, c) / np.power(var, 1.5)
         excess_kurtosis = special.polygamma(3, c) / (var*var)
         return mean, var, skewness, excess_kurtosis
 
@@ -4866,7 +4866,7 @@ class nakagami_gen(rv_continuous):
     def _stats(self, nu):
         mu = gam(nu+0.5)/gam(nu)/sqrt(nu)
         mu2 = 1.0-mu*mu
-        g1 = mu*(1-4*nu*mu2)/2.0/nu/mu2**1.5
+        g1 = mu * (1 - 4*nu*mu2) / 2.0 / nu / np.power(mu2, 1.5)
         g2 = -6*mu**4*nu + (8*nu-2)*mu**2-2*nu + 1
         g2 /= nu*mu2**2.0
         return mu, mu2, g1, g2
@@ -5680,7 +5680,7 @@ class triang_gen(rv_continuous):
 
     def _stats(self, c):
         return (c+1.0)/3.0, (1.0-c+c*c)/18, sqrt(2)*(2*c-1)*(c+1)*(c-2) / \
-               (5*(1.0-c+c*c)**1.5), -3.0/5.0
+               (5 * np.power((1.0-c+c*c), 1.5)), -3.0/5.0
 
     def _entropy(self,c):
         return 0.5-log(2)
@@ -6908,7 +6908,7 @@ class rv_discrete(rv_generic):
         if g1 is None:
             mu3 = None
         else:
-            mu3 = g1*(mu2**1.5)
+            mu3 = g1 * np.power(mu2, 1.5)
         default = valarray(shape(cond), self.badvalue)
         output = []
 
@@ -6942,7 +6942,7 @@ class rv_discrete(rv_generic):
                     mu2p = self._munp(2.0,*goodargs)
                     mu2 = mu2p - mu*mu
                 mu3 = mu3p - 3*mu*mu2 - mu**3
-                g1 = mu3 / mu2**1.5
+                g1 = mu3 / np.power(mu2, 1.5)
             out0 = default.copy()
             place(out0,cond,g1)
             output.append(out0)
@@ -7541,7 +7541,7 @@ class logser_gen(rv_discrete):
         var = mu2p - mu*mu
         mu3p = -p / r * (1.0+p) / (1.0 - p)**3
         mu3 = mu3p - 3*mu*mu2p + 2*mu**3
-        g1 = mu3 / var**1.5
+        g1 = mu3 / np.power(var, 1.5)
 
         mu4p = -p / r * (1.0 / (p-1)**2 - 6*p / (p - 1)**3 +
                           6*p*p / (p-1)**4)
@@ -7808,7 +7808,7 @@ class zipf_gen(rv_discrete):
         var = mu2p - mu*mu
         mu3p = special.zeta(a-3.0,1)/fac
         mu3 = mu3p - 3*mu*mu2p + 2*mu**3
-        g1 = mu3 / asarray(var**1.5)
+        g1 = mu3 / asarray(np.power(var, 1.5))
 
         mu4p = special.zeta(a-4.0,1)/fac
         sv = special.errprint(sv)
