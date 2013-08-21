@@ -392,8 +392,10 @@ class dok_matrix(spmatrix, dict):
         return new
 
     def _mul_scalar(self, other):
+        # Get the result dtype in a bad way.
+        res_dtype = (np.array([0], dtype=self.dtype) * other).dtype
         # Multiply this scalar by every element.
-        new = dok_matrix(self.shape, dtype=self.dtype)
+        new = dok_matrix(self.shape, dtype=res_dtype)
         for (key, val) in iteritems(self):
             new[key] = val * other
         return new
@@ -471,51 +473,23 @@ class dok_matrix(spmatrix, dict):
         new.update(self)
         return new
 
-    def take(self, cols_or_rows, columns=1):
-        # Extract columns or rows as indictated from matrix
-        # assume cols_or_rows is sorted
-        new = dok_matrix(dtype=self.dtype)    # what should the dimensions be ?!
-        indx = int((columns == 1))
-        N = len(cols_or_rows)
-        if indx:  # columns
-            for key in self.keys():
-                num = np.searchsorted(cols_or_rows, key[1])
-                if num < N:
-                    newkey = (key[0], num)
-                    new[newkey] = self[key]
-        else:
-            for key in self.keys():
-                num = np.searchsorted(cols_or_rows, key[0])
-                if num < N:
-                    newkey = (num, key[1])
-                    new[newkey] = self[key]
-        return new
+    def getrow(self, i):
+        """Returns a copy of row i of the matrix as a (1 x n)
+        DOK matrix.
+        """
+        out = self.__class__((1, self.shape[1]), dtype=self.dtype)
+        for j in range(self.shape[1]):
+            out[0, j] = self[i, j]
+        return out
 
-    def split(self, cols_or_rows, columns=1):
-        # Similar to take but returns two arrays, the extracted columns plus
-        # the resulting array.  Assumes cols_or_rows is sorted
-        base = dok_matrix()
-        ext = dok_matrix()
-        indx = int((columns == 1))
-        if indx:
-            for key in self.keys():
-                num = np.searchsorted(cols_or_rows, key[1])
-                if cols_or_rows[num] == key[1]:
-                    newkey = (key[0], num)
-                    ext[newkey] = self[key]
-                else:
-                    newkey = (key[0], key[1]-num)
-                    base[newkey] = self[key]
-        else:
-            for key in self.keys():
-                num = np.searchsorted(cols_or_rows, key[0])
-                if cols_or_rows[num] == key[0]:
-                    newkey = (num, key[1])
-                    ext[newkey] = self[key]
-                else:
-                    newkey = (key[0]-num, key[1])
-                    base[newkey] = self[key]
-        return base, ext
+    def getcol(self, j):
+        """Returns a copy of column j of the matrix as a (m x 1)
+        DOK matrix.
+        """
+        out = self.__class__((self.shape[0], 1), dtype=self.dtype)
+        for i in range(self.shape[0]):
+            out[i, 0] = self[i, j]
+        return out
 
     def tocoo(self):
         """ Return a copy of this matrix in COOrdinate format"""

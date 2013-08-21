@@ -91,6 +91,8 @@ def getdtype(dtype, a=None, default=None):
                 canCast = False
             else:
                 raise TypeError("could not interpret data type")
+    elif dtype == object or dtype == np.object_:
+        raise TypeError("object dtype is not implemented for sparse matrices.")
     else:
         newdtype = np.dtype(dtype)
 
