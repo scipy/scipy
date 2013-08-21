@@ -402,8 +402,8 @@ and gained a considerable test suite, however a few issues remain:
   inherently not be the best choice.
 
 
-Building  Specific Distributions
---------------------------------
+Building Specific Distributions
+-------------------------------
 
 The next examples shows how to build your own distributions.  Further
 examples show the usage of the distributions and some statistical
@@ -415,11 +415,12 @@ Making a Continuous Distribution, i.e., Subclassing ``rv_continuous``
 
 Making continuous distributions is fairly simple. 
 
-    >>> import scipy.stats as stats
+    >>> from scipy import stats
     >>> class deterministic_gen(stats.rv_continuous):
-    ...     def _cdf(self, x ): return np.where(x<0, 0., 1.)
-    ...     def _stats(self): return 0., 0., 0., 0.
-    ... 
+    ...     def _cdf(self, x ):
+    ...         return np.where(x<0, 0., 1.)
+    ...     def _stats(self):
+    ...         return 0., 0., 0., 0.
 
     >>> deterministic = deterministic_gen(name="deterministic")
     >>> deterministic.cdf(np.arange(-3, 3, 0.5))
