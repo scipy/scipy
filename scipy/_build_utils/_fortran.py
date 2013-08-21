@@ -70,7 +70,7 @@ def split_fortran_files(source_dir):
             # find lines with SUBROUTINE statements
             for ix, line in enumerate(lines):
                 if (re.match(b'^\\s+subroutine', line, re.I) and
-                                            not line[0] in b'Cc!'):
+                        line[0] not in b'Cc!*'):
                     subs.append(ix)
 
             # write out one file per subroutine
