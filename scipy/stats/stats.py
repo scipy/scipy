@@ -602,6 +602,7 @@ def hmean(a, axis=0, dtype=None):
         raise ValueError("Harmonic mean only defined if all elements greater than zero")
 
 
+@np.deprecate(message="Deprecated in scipy 0.13.0 - use numpy.median instead.")
 def cmedian(a, numbins=1000):
     """
     Returns the computed median value of an array.
@@ -4222,6 +4223,10 @@ def betai(a, b, x):
 #####################################
 
 
+_msg = """`glm` is deprecated in scipy 0.13.0 and will be removed in 0.14.0.
+Use `ttest_ind` for the same functionality in scipy.stats, or `statsmodels.OLS`
+for a more full-featured general linear model."""
+@np.deprecate_with_doc(_msg)
 def glm(data, para):
     """
     Calculates a linear model fit ...

@@ -1296,6 +1296,8 @@ def mood(x, y, axis=0):
     return z, pval
 
 
+@np.deprecate_with_doc("`oneway` was deprecated in scipy 0.13.0 and will be "
+                       "removed in 0.14.0.  Use `f_oneway` instead.")
 def oneway(*args,**kwds):
     """Test for equal means in two or more samples from the
     normal distribution.
