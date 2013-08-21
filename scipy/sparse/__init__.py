@@ -5,7 +5,7 @@ Sparse matrices (:mod:`scipy.sparse`)
 
 .. currentmodule:: scipy.sparse
 
-SciPy 2-D sparse matrix package.
+SciPy 2-D sparse matrix package for numeric data.
 
 Contents
 ========

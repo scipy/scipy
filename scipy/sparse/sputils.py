@@ -6,6 +6,7 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['upcast','getdtype','isscalarlike','isintlike',
             'isshape','issequence','isdense','ismatrix']
 
+import warnings
 import numpy as np
 
 # keep this list syncronized with sparsetools
@@ -69,6 +70,13 @@ def upcast_char(*args):
     return t
 
 
+def upcast_scalar(dtype, scalar):
+    """Determine data type for binary operation between an array of
+    type `dtype` and a scalar.
+    """
+    return (np.array([0], dtype=dtype) * scalar).dtype
+
+
 def to_native(A):
     return np.asarray(A,dtype=A.dtype.newbyteorder('native'))
 
@@ -93,6 +101,8 @@ def getdtype(dtype, a=None, default=None):
                 raise TypeError("could not interpret data type")
     else:
         newdtype = np.dtype(dtype)
+        if newdtype == np.object_:
+            warnings.warn("object dtype is not supported by sparse matrices")
 
     return newdtype
 

@@ -14,7 +14,7 @@ from scipy.lib.six.moves import xrange
 
 from .base import spmatrix, isspmatrix
 from .sputils import getdtype, isshape, issequence, isscalarlike, ismatrix, \
-    IndexMixin
+    IndexMixin, upcast_scalar
 
 from warnings import warn
 from .base import SparseEfficiencyWarning
@@ -310,7 +310,10 @@ class lil_matrix(spmatrix, IndexMixin):
             # Multiply by zero: return the zero matrix
             new = lil_matrix(self.shape, dtype=self.dtype)
         else:
+            res_dtype = upcast_scalar(self.dtype, other)
+
             new = self.copy()
+            new = new.astype(res_dtype)
             # Multiply this scalar by every element.
             new.data[:] = [[val*other for val in rowvals] for
                            rowvals in new.data]
