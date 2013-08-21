@@ -35,6 +35,8 @@ import numpy
 from . import _ni_support
 from . import _nd_image
 
+import warnings
+
 __all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',
            'map_coordinates', 'affine_transform', 'shift', 'zoom', 'rotate']
 
@@ -518,12 +520,21 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     else:
         filtered = input
     zoom = _ni_support._normalize_sequence(zoom, input.ndim)
-    output_shape = tuple([int(ii * jj) for ii, jj in zip(input.shape, zoom)])
+    output_shape = tuple(
+            [int(round(ii * jj)) for ii, jj in zip(input.shape, zoom)])
+
+    output_shape_old = tuple(
+            [int(ii * jj) for ii, jj in zip(input.shape, zoom)])
+    if output_shape != output_shape_old:
+        warnings.warn(
+                "From scipy 0.13.0, the output shape of zoom() is calculated "
+                "with round() instead of int() - for these inputs the size of "
+                "the returned array has changed.", UserWarning)
 
     zoom_div = numpy.array(output_shape, float) - 1
     zoom = (numpy.array(input.shape) - 1) / zoom_div
 
-    # Zooming to non-finite values in unpredictable, so just choose
+    # Zooming to non-finite values is unpredictable, so just choose
     # zoom factor 1 instead
     zoom[~numpy.isfinite(zoom)] = 1
 
