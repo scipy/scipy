@@ -6,6 +6,7 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['upcast','getdtype','isscalarlike','isintlike',
             'isshape','issequence','isdense','ismatrix']
 
+import warnings
 import numpy as np
 
 # keep this list syncronized with sparsetools
@@ -98,10 +99,10 @@ def getdtype(dtype, a=None, default=None):
                 canCast = False
             else:
                 raise TypeError("could not interpret data type")
-    elif dtype == object or dtype == np.object_:
-        raise TypeError("object dtype is not implemented for sparse matrices.")
     else:
         newdtype = np.dtype(dtype)
+        if newdtype == np.object_:
+            warnings.warn("object dtype is not supported by sparse matrices")
 
     return newdtype
 
