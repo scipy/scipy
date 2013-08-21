@@ -328,6 +328,8 @@ and normalizations.
 
 >>> from scipy.fftpack import dct, idct
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
+>>> dct(dct(x, type=2, norm='ortho'), type=3, norm='ortho')
+[1.0, 2.0, 1.0, -1.0, 1.5]
 >>>  # scaling factor 2*N = 10
 >>> idct(dct(x, type=2), type=2)
 [ 10.  20.  10. -10.  15.]
