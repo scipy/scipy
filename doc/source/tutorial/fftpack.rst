@@ -311,7 +311,7 @@ or, for ``norm='ortho'``:
 
 .. math::
 
-    y_k = {x_0\over\sqrt{N}} + {1\over\sqrt{N}} \sum_{n=1}^{N-1} x_n
+    y_k = {x_0\over\sqrt{N}} + {2\over\sqrt{N}} \sum_{n=1}^{N-1} x_n
     \cos\left({\pi n(2k+1) \over 2N}\right) \qquad 0 \le k < N.
 
 
