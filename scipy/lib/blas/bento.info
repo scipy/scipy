@@ -3,7 +3,7 @@ HookFile: bscript
 Library:
     Extension: fblas
         Sources:
-            fblaswrap.f.src,
+            fblaswrap_dummy.f,
             fblas.pyf.src
     Extension: cblas
         Sources:

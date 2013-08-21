@@ -9,8 +9,8 @@ def pre_build(context):
     def fblas_builder(extension):
         source = extension.sources[:]
         if sys.platform == "darwin":
-            source.pop(source.index("fblaswrap.f.src"))
-            source.append("fblaswrap_veclib_c.c.src")
+            source.pop(source.index("fblaswrap_dummy.f"))
+            source.append("fblaswrap_veclib_c.c")
         return default_builder(extension,
                                features="c fc pyext bento cshlib f2py",
                                source=source,

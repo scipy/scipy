@@ -16,7 +16,7 @@ def pre_build(context):
             sources.append("iterative/FWRAPPERS/veclib_cabi_f.f")
             sources.append("iterative/FWRAPPERS/veclib_cabi_c.c")
         else:
-            sources.append("iterative/FWRAPPERS/dummy.f")
+            sources.append("iterative/FWRAPPERS/wrap_dummy.f")
         return default_builder(extension,
                                features="c pyext fc bento cshlib f2py",
                                source=sources,

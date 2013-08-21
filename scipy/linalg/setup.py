@@ -82,7 +82,7 @@ def configuration(parent_package='',top_path=None):
 
     # _interpolative:
     config.add_extension('_interpolative',
-                         [join('src', 'id_dist', 'src', fn) for fn in 
+                         [join('src', 'id_dist', 'src', fn) for fn in
                              ['dfft.f', 'idd_frm.f', 'idd_house.f', 'idd_id2svd.f', 'idd_id.f',
                                  'iddp_aid.f', 'iddp_asvd.f', 'iddp_rid.f', 'iddp_rsvd.f', 'idd_qrpiv.f',
                                  'iddr_aid.f', 'iddr_asvd.f', 'iddr_rid.f', 'iddr_rsvd.f', 'idd_sfft.f',
