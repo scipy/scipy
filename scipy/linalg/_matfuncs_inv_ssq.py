@@ -627,9 +627,12 @@ def _remainder_matrix_power(A, t):
            32 (3). pp. 1056-1078. ISSN 0895-4798
 
     """
+    # This code block is copied from numpy.matrix_power().
     A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
-        raise ValueError('expected a square matrix')
+        raise ValueError('input must be a square array')
+
+    # Get the number of rows and columns.
     n, n = A.shape
 
     # Triangularize the matrix if necessary,
@@ -648,6 +651,10 @@ def _remainder_matrix_power(A, t):
     # Zeros on the diagonal of the triangular matrix are forbidden,
     # because the inverse scaling and squaring cannot deal with it.
     T_diag = np.diag(T)
+    #eigval_mags = np.absolute(T_diag)
+    #if np.min(eigval_mags) / np.max(eigval_mags)
+    #small_eigval_mag = 
+    #if np.min(np.absolute(T_diag)) < np.finfo(T_diag.dtype).eps:
     if _count_nonzero(T_diag) != n:
         raise FractionalMatrixPowerError(
                 'cannot use inverse scaling and squaring to find '
@@ -719,10 +726,12 @@ def fractional_matrix_power(A, p):
             a = int(np.ceil(p))
             b = p2
         try:
+            print('trying matrix powers', b, 'and', a)
             R = _remainder_matrix_power(A, b)
             Q = np.linalg.matrix_power(A, a)
             return Q.dot(R)
         except np.linalg.LinAlgError as e:
+            print(e, A, p)
             pass
     # If p is negative then we are going to give up.
     # If p is non-negative then we can fall back to generic funm.

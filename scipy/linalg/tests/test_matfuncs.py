@@ -510,23 +510,29 @@ class TestFractionalMatrixPower(TestCase):
 
     def test_singular(self):
         # Negative fractional powers do not work with singular matrices.
-        # Neither do non-integer fractional powers,
-        # because the scaling and squaring cannot deal with it.
         for matrix_as_list in (
                 [[0, 0], [0, 0]],
                 [[1, 1], [1, 1]],
-                [[1, 2], [3, 6]],
+                #[[1, 2], [3, 6]],
+                [[1, 3], [2, 6]],
                 [[0, 0, 0], [0, 1, 1], [0, -1, 1]]):
 
-            # check that the spectrum has the expected properties
-            W = scipy.linalg.eigvals(matrix_as_list)
-            assert_(np.sum(W != 0) < len(W))
-
-            # check fractional powers both for float and for complex types
+            # Check fractional powers both for float and for complex types.
             for newtype in (float, complex):
                 A = np.array(matrix_as_list, dtype=newtype)
+
+                # Get the smallest singular value.
+                smallest_sval = scipy.linalg.svdvals(matrix_as_list)[-1]
+
+                # For these small-magnitude negative values of p,
+                # the matrix A may or may not be attempted to be inverted.
+                #for p in (-0.1, -0.4, -0.7, -0.9):
+                    #A_power = fractional_matrix_power(A, p)
+                    #assert_(np.isnan(A_power).all())
                 for p in (-0.7, -0.9, -2.4, -1.3):
+                    print('want to compute', A, 'to the power', p)
                     A_power = fractional_matrix_power(A, p)
+                    print('fractional matrix power:', A_power)
                     assert_(np.isnan(A_power).all())
                 for p in (0.2, 1.43):
                     A_power = fractional_matrix_power(A, p)
