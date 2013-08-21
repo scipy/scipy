@@ -2445,7 +2445,7 @@ def test_binomtest3():
     assert_almost_equal(res4_p1, binom_testp1, decimal=13)
     assert_almost_equal(res4_m1, binom_testm1, decimal=13)
 
-class Test_Trim(object):
+class TestTrim(object):
     # test trim functions
     def test_trim1(self):
         a = np.arange(11)
@@ -2472,16 +2472,16 @@ class Test_Trim(object):
         a2 = np.arange(24).reshape(6, 4)[idx, :]
         a3 = np.arange(24).reshape(6, 4, order='F')[idx, :]
         assert_equal(stats.trim_mean(a3, 2/6.),
-                        np.array([2.5, 8.5, 14.5, 20.5]))
+                     np.array([2.5, 8.5, 14.5, 20.5]))
         assert_equal(stats.trim_mean(a2, 2/6.),
-                        np.array([10., 11., 12., 13.]))
+                     np.array([10., 11., 12., 13.]))
         idx4 = np.array([1, 0, 3, 2])
         a4 = np.arange(24).reshape(4, 6)[idx4, :]
         assert_equal(stats.trim_mean(a4, 2/6.),
-                        np.array([9., 10., 11., 12., 13., 14.]))
-        # shuffled arange(24)
-        a = np.array([ 7, 11, 12, 21, 16,  6, 22,  1,  5,  0, 18, 10, 17,  9,
-                      19, 15, 23, 20,  2, 14,  4, 13,  8,  3])
+                     np.array([9., 10., 11., 12., 13., 14.]))
+        # shuffled arange(24) as array_like
+        a = [7, 11, 12, 21, 16,  6, 22,  1,  5,  0, 18, 10, 17,  9, 19, 15, 23,
+             20,  2, 14,  4, 13,  8,  3]
         assert_equal(stats.trim_mean(a, 2/6.), 11.5)
         assert_equal(stats.trim_mean([5,4,3,1,2,0], 2/6.), 2.5)
 

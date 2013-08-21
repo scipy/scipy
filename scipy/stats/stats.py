@@ -2274,9 +2274,9 @@ def trimboth(a, proportiontocut, axis=0):
     ----------
     a : array_like
         Data to trim.
-    proportiontocut : float or int
-        Proportion of total data set to trim of each end.
-    axis : int or None
+    proportiontocut : float
+        Proportion (in range 0-1) of total data set to trim of each end.
+    axis : int or None, optional
         Axis along which the observations are trimmed. The default is to trim
         along axis=0. If axis is None then the array will be flattened before
         trimming.
@@ -2285,6 +2285,10 @@ def trimboth(a, proportiontocut, axis=0):
     -------
     out : ndarray
         Trimmed version of array `a`.
+
+    See Also
+    --------
+    trim_mean
 
     Examples
     --------
@@ -2299,6 +2303,7 @@ def trimboth(a, proportiontocut, axis=0):
     if axis is None:
         a = a.ravel()
         axis = 0
+
     nobs = a.shape[axis]
     lowercut = int(proportiontocut * nobs)
     uppercut = nobs - lowercut
@@ -2325,7 +2330,7 @@ def trim1(a, proportiontocut, tail='right'):
         Input array
     proportiontocut : float
         Fraction to cut off of 'left' or 'right' of distribution
-    tail : string, {'left', 'right'}, optional
+    tail : {'left', 'right'}, optional
         Defaults to 'right'.
 
     Returns
@@ -2341,6 +2346,7 @@ def trim1(a, proportiontocut, tail='right'):
     elif tail.lower() == 'left':
         lowercut = int(proportiontocut*len(a))
         uppercut = len(a)
+
     return a[lowercut:uppercut]
 
 
@@ -2359,7 +2365,7 @@ def trim_mean(a, proportiontocut, axis=0):
         Input array
     proportiontocut : float
         Fraction to cut off of both tails of the distribution
-    axis : int or None
+    axis : int or None, optional
         Axis along which the trimmed means are computed. The default is axis=0.
         If axis is None then the trimmed mean will be computed for the
         flattened array.
@@ -2368,6 +2374,28 @@ def trim_mean(a, proportiontocut, axis=0):
     -------
     trim_mean : ndarray
         Mean of trimmed array.
+
+    See Also
+    --------
+    trimboth
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x = np.arange(20)
+    >>> stats.trim_mean(x, 0.1)
+    9.5
+    >>> x2 = x.reshape(5, 4)
+    >>> x2
+    array([[ 0,  1,  2,  3],
+           [ 4,  5,  6,  7],
+           [ 8,  9, 10, 11],
+           [12, 13, 14, 15],
+           [16, 17, 18, 19]])
+    >>> stats.trim_mean(x2, 0.25)
+    array([  8.,   9.,  10.,  11.])
+    >>> stats.trim_mean(x2, 0.25, axis=1)
+    array([  1.5,   5.5,   9.5,  13.5,  17.5])
 
     """
     newa = trimboth(np.sort(a, axis), proportiontocut, axis=axis)
