@@ -59,8 +59,8 @@ call:
 We can list all methods and properties of the distribution with
 ``dir(norm)``.  As it turns out, some of the methods are private
 methods although they are not named as such (their name does not start
-with a leading underscore), for example ``veccdf`` or ``xa`` and
-``xb`` are only available for internal calculation.
+with a leading underscore), for example ``veccdf``, are only available
+for internal calculation.
 
 To obtain the `real` main methods, we list the methods of the frozen
 distribution. (We explain the meaning of a `frozen` distribution
@@ -210,7 +210,7 @@ additional shape parameters. For instance, the gamma distribution, with density
 
 .. math::
 
-    \gamma(x,n) = \frac{\lambda (\lambda x)^{n-1}}{\Gamma(n)} e^{-\lambda x},
+    \gamma(x,n) = \frac{\lambda (\lambda x)^{n-1}}{\Gamma(n)} e^{-\lambda x}\;,
  
 requires the shape parameter :math:`n`. Observe that setting
 :math:`\lambda` can be obtained by setting the ``scale`` keyword to
@@ -229,8 +229,13 @@ Now we set the value of the shape variable to 1 to obtain the
 exponential distribution, so that we compare easily whether we get the
 results we expect.
 
-    >>>  gamma(1, scale=2.).stats(moments = "mv")
+    >>>  gamma(1, scale=2.).stats(moments="mv")
     (array(2.0), array(4.0))
+
+Notice that we can also specify shape parameters as keywords:
+
+   >>> gamma(a=1, scale=2.).stats(moments="mv")
+   (array(2.0), array(4.0))
 
 
 Freezing a Distribution
@@ -410,8 +415,8 @@ Making a Continuous Distribution, i.e., Subclassing ``rv_continuous``
 
 Making continuous distributions is fairly simple. 
 
-    >>> import scipy
-    >>> class deterministic_gen(scipy.stats.rv_continuous):
+    >>> import scipy.stats as stats
+    >>> class deterministic_gen(stats.rv_continuous):
     ...     def _cdf(self, x ): return np.where(x<0, 0., 1.)
     ...     def _stats(self): return 0., 0., 0., 0.
     ... 
