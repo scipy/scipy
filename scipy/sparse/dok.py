@@ -13,7 +13,8 @@ from scipy.lib.six.moves import zip as izip, xrange
 from scipy.lib.six import iteritems
 
 from .base import spmatrix, isspmatrix
-from .sputils import isdense, getdtype, isshape, isintlike, isscalarlike, upcast
+from .sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
+                      upcast, upcast_scalar)
 
 try:
     from operator import isSequenceType as _is_sequence
@@ -392,8 +393,7 @@ class dok_matrix(spmatrix, dict):
         return new
 
     def _mul_scalar(self, other):
-        # Get the result dtype in a bad way.
-        res_dtype = (np.array([0], dtype=self.dtype) * other).dtype
+        res_dtype = upcast_scalar(self.dtype, other)
         # Multiply this scalar by every element.
         new = dok_matrix(self.shape, dtype=res_dtype)
         for (key, val) in iteritems(self):

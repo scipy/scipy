@@ -14,7 +14,7 @@ from scipy.lib.six.moves import xrange
 
 from .base import spmatrix, isspmatrix
 from .sputils import getdtype, isshape, issequence, isscalarlike, ismatrix, \
-    IndexMixin
+    IndexMixin, upcast_scalar
 
 from warnings import warn
 from .base import SparseEfficiencyWarning
@@ -310,8 +310,7 @@ class lil_matrix(spmatrix, IndexMixin):
             # Multiply by zero: return the zero matrix
             new = lil_matrix(self.shape, dtype=self.dtype)
         else:
-            # Get the result dtype in a bad way.
-            res_dtype = (np.array([0], dtype=self.dtype) * other).dtype
+            res_dtype = upcast_scalar(self.dtype, other)
 
             new = self.copy()
             new = new.astype(res_dtype)
