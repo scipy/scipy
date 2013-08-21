@@ -90,19 +90,19 @@ from scipy.lib.six import string_types
 
 from .byteordercodes import native_code, swapped_code
 
-from .miobase import MatFileReader, docfiller, matdims, \
-     read_dtype, arr_to_chars, arr_dtype_number, \
-     MatWriteError, MatReadError, MatReadWarning
+from .miobase import (MatFileReader, docfiller, matdims, read_dtype,
+                      arr_to_chars, arr_dtype_number, MatWriteError,
+                      MatReadError, MatReadWarning)
 
 # Reader object for matlab 5 format variables
 from .mio5_utils import VarReader5
 
 # Constants and helper objects
-from .mio5_params import MatlabObject, MatlabFunction, \
-        MDTYPES, NP_TO_MTYPES, NP_TO_MXTYPES, \
-        miCOMPRESSED, miMATRIX, miINT8, miUTF8, miUINT32, \
-        mxCELL_CLASS, mxSTRUCT_CLASS, mxOBJECT_CLASS, mxCHAR_CLASS, \
-        mxSPARSE_CLASS, mxDOUBLE_CLASS, mclass_info, mclass_dtypes_template
+from .mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
+                          NP_TO_MXTYPES, miCOMPRESSED, miMATRIX, miINT8, miUTF8,
+                          miUINT32, mxCELL_CLASS, mxSTRUCT_CLASS,
+                          mxOBJECT_CLASS, mxCHAR_CLASS, mxSPARSE_CLASS,
+                          mxDOUBLE_CLASS, mclass_info)
 
 from .streams import ZlibInputStream
 
@@ -797,7 +797,7 @@ class MatFile5Writer(object):
                  unicode_strings=False,
                  global_vars=None,
                  long_field_names=False,
-                 oned_as=None):
+                 oned_as='row'):
         ''' Initialize writer for matlab 5 format files
 
         Parameters
@@ -817,12 +817,6 @@ class MatFile5Writer(object):
         else:
             self.global_vars = []
         self.long_field_names = long_field_names
-        # deal with deprecations
-        if oned_as is None:
-            warnings.warn("Using oned_as default value ('column')" +
-                          " This will change to 'row' in future versions",
-                          FutureWarning, stacklevel=2)
-            oned_as = 'column'
         self.oned_as = oned_as
         self._matrix_writer = None
 
