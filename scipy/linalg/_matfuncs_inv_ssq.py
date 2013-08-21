@@ -627,9 +627,12 @@ def _remainder_matrix_power(A, t):
            32 (3). pp. 1056-1078. ISSN 0895-4798
 
     """
+    # This code block is copied from numpy.matrix_power().
     A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
-        raise ValueError('expected a square matrix')
+        raise ValueError('input must be a square array')
+
+    # Get the number of rows and columns.
     n, n = A.shape
 
     # Triangularize the matrix if necessary,
