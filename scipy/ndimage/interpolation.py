@@ -35,6 +35,8 @@ import numpy
 from . import _ni_support
 from . import _nd_image
 
+import warnings
+
 __all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',
            'map_coordinates', 'affine_transform', 'shift', 'zoom', 'rotate']
 
@@ -518,7 +520,15 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     else:
         filtered = input
     zoom = _ni_support._normalize_sequence(zoom, input.ndim)
-    output_shape = tuple([int(ii * jj) for ii, jj in zip(input.shape, zoom)])
+    output_shape = tuple(
+            [int(round(ii * jj)) for ii, jj in zip(input.shape, zoom)])
+    output_shape_old = tuple(
+            [int(ii * jj) for ii, jj in zip(input.shape, zoom)])
+
+    if output_shape != output_shape_old:
+        warnings.warn(
+                'The output shape of zoom() is calculated with '
+                'round() now and might not work as you expect')
 
     zoom_div = numpy.array(output_shape, float) - 1
     zoom = (numpy.array(input.shape) - 1) / zoom_div
