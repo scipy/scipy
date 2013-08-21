@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
+import os
 from os.path import join
 
-from scipy._build_utils import needs_g77_abi_wrapper
+from scipy._build_utils import needs_g77_abi_wrapper, split_fortran_files
 
 
 def configuration(parent_package='',top_path=None):
@@ -81,17 +82,12 @@ def configuration(parent_package='',top_path=None):
                          )
 
     # _interpolative:
-    config.add_extension('_interpolative',
-                         [join('src', 'id_dist', 'src', fn) for fn in
-                             ['dfft.f', 'idd_frm.f', 'idd_house.f', 'idd_id2svd.f', 'idd_id.f',
-                                 'iddp_aid.f', 'iddp_asvd.f', 'iddp_rid.f', 'iddp_rsvd.f', 'idd_qrpiv.f',
-                                 'iddr_aid.f', 'iddr_asvd.f', 'iddr_rid.f', 'iddr_rsvd.f', 'idd_sfft.f',
-                                 'idd_snorm.f', 'idd_svd.f', 'id_rand.f', 'id_rtrans.f', 'idz_frm.f',
-                                 'idz_house.f', 'idz_id2svd.f', 'idz_id.f', 'idzp_aid.f', 'idzp_asvd.f',
-                                 'idzp_rid.f', 'idzp_rsvd.f', 'idz_qrpiv.f', 'idzr_aid.f', 'idzr_asvd.f',
-                                 'idzr_rid.f', 'idzr_rsvd.f', 'idz_sfft.f', 'idz_snorm.f', 'idz_svd.f',
-                                 ]
-                             ] + ["interpolative.pyf"],
+    print('Splitting linalg.interpolative Fortran source files')
+    fnames = split_fortran_files(join(os.path.split(
+                                          os.path.abspath(__file__))[0],
+                                      'src', 'id_dist', 'src'))
+    fnames = [join('src', 'id_dist', 'src', f) for f in fnames]
+    config.add_extension('_interpolative', fnames + ["interpolative.pyf"],
                          extra_info = lapack_opt
                          )
 
