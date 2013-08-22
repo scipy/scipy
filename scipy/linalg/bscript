@@ -11,7 +11,7 @@ def pre_build(context):
         source = extension.sources[:]
         if sys.platform == "darwin":
             source.pop(source.index("src/fblaswrap_dummy.f"))
-            source.append("src/fblaswrap_veclib.f")
+            source.append("src/fblaswrap_veclib_c.c")
         return default_builder(extension,
                                features="c fc pyext bento cshlib f2py",
                                source=source,
@@ -29,7 +29,7 @@ def pre_build(context):
         source = extension.sources[:]
         if sys.platform == "darwin":
             source.pop(source.index("src/flapackwrap_dummy.f"))
-            source.append("src/flapackwrap_veclib.f")
+            source.append("src/flapackwrap_veclib_c.c")
         return default_builder(extension,
                                features="c fc pyext bento cshlib f2py",
                                use="LAPACK CLIB")
