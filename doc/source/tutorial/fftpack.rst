@@ -5,11 +5,6 @@ Fourier Transforms (:mod:`scipy.fftpack`)
 
 .. currentmodule:: scipy.fftpack
 
-.. warning::
-
-   This is currently a stub page
-
-
 .. contents::
 
 
@@ -30,18 +25,18 @@ Fast Fourier transforms
 One dimensional discrete Fourier transforms
 ___________________________________________
 
-The FFT `y[k]` of length :math:`N` of the length-:math:`N` sequence `x_n` is
-defined as a
+The FFT `y[k]` of length :math:`N` of the length-:math:`N` sequence `x[n]` is
+defined as
 
 .. math::
 
-    y_k = \sum_{n=0}^{N-1} e^{-2 \pi j \frac{k n}{N} } x_n
+    y[k] = \sum_{n=0}^{N-1} e^{-2 \pi j \frac{k n}{N} } x[n] \, ,
 
-The inverse transform is defined as follows
+and the inverse transform is defined as follows
 
 .. math::
 
-    x_n = \frac{1}{N} \sum_{n=0}^{N-1} e^{2 \pi j \frac{k n}{N} } y_k \, .
+    x[n] = \frac{1}{N} \sum_{n=0}^{N-1} e^{2 \pi j \frac{k n}{N} } y[k] \, .
 
 These transforms can be calculated by means of :func:`fft` and :func:`ifft`,
 respectively as shown in the following example.
@@ -61,21 +56,25 @@ From the definition of the FFT it can be seen that
 
 .. math::
 
-    y_0 = \sum_{n=0}^{N-1} x_n \, .
+    y[0] = \sum_{n=0}^{N-1} x[n] \, .
 
 In the example
 
 >>> np.sum(x)
 4.5
 
-which corresponds to `y[0]`. The elements `y[1]`...`y[N/2+1]` contain the
-positive-frequency terms, and the elements `y[N/2]`...`y[N-1]` contain the
-negative-frequency terms, in order of decreasingly negative frequency.
+which corresponds to :math:`y[0]`. For N even, the elements
+:math:`y[1]...y[N/2-1]` contain the positive-frequency terms, and the elements
+:math:`y[N/2]...y[N-1]` contain the negative-frequency terms, in order of
+decreasingly negative frequency. For N odd, the elements
+:math:`y[1]...y[(N-1)/2]` contain the positive- frequency terms, and the
+elements :math:`y[(N+1)/2]...y[N-1]` contain the negative- frequency terms, in
+order of decreasingly negative frequency.
 
-In case the sequence x is real-valued, the values of `y[n]` for positive
-frequencies is the conjugate of the values `y[n]` for negative frequencies
-(because the spectrum is symmetric). Typically, only the FFT corresponding to
-positive frequencies is plotted.
+In case the sequence x is real-valued, the values of :math:`y[n]` for positive
+frequencies is the conjugate of the values :math:`y[n]` for negative
+frequencies (because the spectrum is symmetric). Typically, only the FFT
+corresponding to positive frequencies is plotted.
 
 The example plots the FFT of the sum of two sines.
 
@@ -169,9 +168,10 @@ asymmetric spectrum.
 
 
 The function :func:`rfft` calculates the FFT of a real sequence and outputs
-the FFT coefficients :math:`y_n` with separate real and imaginary parts. In
-case of N being even: :math:`[y_0, Re(y_1), Im(y_1),..., Re(y_{N/2})]`; in
-case N being odd :math:`[y_0, Re(y_1),Im(y_1),..., Re(y_{N/2}), Im(y_{N/2})]`.
+the FFT coefficients :math:`y[n]` with separate real and imaginary parts. In
+case of N being even: :math:`[y[0], Re(y[1]), Im(y[1]),..., Re(y[N/2])]`; in
+case N being odd :math:`[y[0], Re(y[1]),Im(y[1]),..., Re(y[N/2]),
+Im(y[N/2])]`.
 
 The corresponding function :func:`irfft` calculates the IFFT of the FFT
 coefficients with this special ordering.
@@ -197,8 +197,8 @@ Two and n-dimensional discrete Fourier transforms
 _________________________________________________
 
 The functions :func:`fft2` and :func:`ifft2` provide 2-dimensional FFT, and
-IFFT, respectively. Similar, :func:`fftn` and :func:`ifftn` provide n-dimensional FFT, and
-IFFT, respectively.
+IFFT, respectively. Similar, :func:`fftn` and :func:`ifftn` provide
+n-dimensional FFT, and IFFT, respectively.
 
 The example below demonstrates a 2-dimensional IFFT and plots the resulting
 (2-dimensional) time-domain signals.
@@ -262,7 +262,7 @@ Scipy uses the following definition of the unnormalized DCT-I
 
 .. math::
 
-    y_k = x_0 + (-1)^k x_{N-1} + 2\sum_{n=1}^{N-2} x_n
+    y[k] = x_0 + (-1)^k x_{N-1} + 2\sum_{n=1}^{N-2} x[n]
     \cos\left({\pi nk\over N-1}\right),
     \qquad 0 \le k < N.
 
@@ -277,23 +277,23 @@ Scipy uses the following definition of the unnormalized DCT-II
 
 .. math::
 
-    y_k = 2 \sum_{n=0}^{N-1} x_n \cos \left({\pi(2n+1)k \over 2N} \right)
+    y[k] = 2 \sum_{n=0}^{N-1} x[n] \cos \left({\pi(2n+1)k \over 2N} \right)
     \qquad 0 \le k < N.
 
 In case of the normalized DCT (``norm='ortho'``), the DCT coefficients
-:math:`y_k` are multiplied by a scaling factor `f`:
+:math:`y[k]` are multiplied by a scaling factor `f`:
 
 .. math::
 
     f = \begin{cases} \sqrt{1/(4N)}, & \text{if $k = 0$} \\    \sqrt{1/(2N)},
     & \text{otherwise} \end{cases} \, .
 
-In this case, the DCT "base functions" :math:`\phi_k(n) = 2 f \cos
+In this case, the DCT "base functions" :math:`\phi_k[n] = 2 f \cos
 \left({\pi(2n+1)k \over 2N} \right)` become orthonormal:
 
 .. math::
 
-   \sum_{n=0}^{N-1} \phi_k(n) \phi_l(n) = \delta_{lk}
+   \sum_{n=0}^{N-1} \phi_k[n] \phi_l[n] = \delta_{lk}
 
 
 Type III DCT
@@ -304,14 +304,14 @@ Scipy uses the following definition of the unnormalized DCT-III
 
 .. math::
 
-    y_k = x_0 + 2 \sum_{n=1}^{N-1} x_n \cos\left({\pi n(2k+1) \over 2N}\right)
+    y[k] = x_0 + 2 \sum_{n=1}^{N-1} x[n] \cos\left({\pi n(2k+1) \over 2N}\right)
     \qquad 0 \le k < N,
 
 or, for ``norm='ortho'``:
 
 .. math::
 
-    y_k = {x_0\over\sqrt{N}} + {2\over\sqrt{N}} \sum_{n=1}^{N-1} x_n
+    y[k] = {x_0\over\sqrt{N}} + {2\over\sqrt{N}} \sum_{n=1}^{N-1} x[n]
     \cos\left({\pi n(2k+1) \over 2N}\right) \qquad 0 \le k < N.
 
 
@@ -406,7 +406,7 @@ definition of the unnormalized DST-I (``norm='None'``):
 
 .. math::
 
-    y_k = 2\sum_{n=0}^{N-1} x_n  \sin\left( \pi {(n+1) (k+1)}\over{N+1}
+    y[k] = 2\sum_{n=0}^{N-1} x[n]  \sin\left( \pi {(n+1) (k+1)}\over{N+1}
     \right), \qquad 0 \le k < N.
 
 Only ``None`` is supported as normalization mode for DST-I. Note also that the
@@ -421,7 +421,7 @@ the following definition of the unnormalized DST-II (``norm='None'``):
 
 .. math::
 
-    y_k = 2 \sum_{n=0}^{N-1} x_n  \sin\left( {\pi (n+1/2)(k+1)} \over N
+    y[k] = 2 \sum_{n=0}^{N-1} x[n]  \sin\left( {\pi (n+1/2)(k+1)} \over N
     \right), \qquad 0 \le k < N.
 
 Type III DST
@@ -432,7 +432,7 @@ the following definition of the unnormalized DST-III (``norm='None'``):
 
 .. math::
 
-    y_k = (-1)^k x_{N-1} + 2 \sum_{n=0}^{N-2} x_n \sin \left( {\pi
+    y[k] = (-1)^k x[N-1] + 2 \sum_{n=0}^{N-2} x[n] \sin \left( {\pi
     (n+1)(k+1/2)} \over N \right), \qquad 0 \le k < N.
 
 
@@ -468,7 +468,7 @@ and normalizations.
 .. Differential and pseudo-differential operators
 .. ----------------------------------------------
 ..
-.. :func:`diff` - I have no idea what this does!
+.. :func:`diff`
 
 
 Cache Destruction
