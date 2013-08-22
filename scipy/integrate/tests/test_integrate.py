@@ -23,8 +23,11 @@ from scipy.integrate import odeint, ode, complex_ode
 class TestOdeint(TestCase):
     # Check integrate.odeint
     def _do_problem(self, problem):
+        jac = None
+        if hasattr(problem, 'jac'):
+            jac = problem.jac
         t = arange(0.0, problem.stop_t, 0.05)
-        z, infodict = odeint(problem.f, problem.z0, t, full_output=True)
+        z = odeint(problem.f, problem.z0, t, jac)
         assert_(problem.verify(z, t))
 
     def test_odeint(self):
@@ -38,14 +41,10 @@ class TestOdeint(TestCase):
 class TestOde(TestCase):
     # Check integrate.ode
     def _do_problem(self, problem, integrator, method='adams'):
-
-        # ode has callback arguments in different order than odeint
-        f = lambda t, z: problem.f(z, t)
         jac = None
         if hasattr(problem, 'jac'):
-            jac = lambda t, z: problem.jac(z, t)
-
-        ig = ode(f, jac)
+            jac = problem.jac
+        ig = ode(problem.f, jac)
         ig.set_integrator(integrator,
                           atol=problem.atol/10,
                           rtol=problem.rtol/10,
@@ -159,13 +158,10 @@ class TestOde(TestCase):
 class TestComplexOde(TestCase):
     # Check integrate.complex_ode
     def _do_problem(self, problem, integrator, method='adams'):
-
-        # ode has callback arguments in different order than odeint
-        f = lambda t, z: problem.f(z, t)
         jac = None
         if hasattr(problem, 'jac'):
-            jac = lambda t, z: problem.jac(z, t)
-        ig = complex_ode(f, jac)
+            jac = problem.jac
+        ig = complex_ode(problem.f, jac)
         ig.set_integrator(integrator,
                           atol=problem.atol/10,
                           rtol=problem.rtol/10,
@@ -356,7 +352,7 @@ class SimpleOscillator(ODE):
     k = 4.0
     m = 1.0
 
-    def f(self, z, t):
+    def f(self, t, z):
         tmp = zeros((2,2), float)
         tmp[0,1] = 1.0
         tmp[1,0] = -self.k / self.m
@@ -374,10 +370,10 @@ class ComplexExp(ODE):
     z0 = exp([1j,2j,3j,4j,5j])
     cmplx = True
 
-    def f(self, z, t):
+    def f(self, t, z):
         return 1j*z
 
-    def jac(self, z, t):
+    def jac(self, t, z):
         return 1j*eye(5)
 
     def verify(self, zs, t):
@@ -391,7 +387,7 @@ class Pi(ODE):
     z0 = [0]
     cmplx = True
 
-    def f(self, z, t):
+    def f(self, t, z):
         return array([1./(t - 10 + 1j)])
 
     def verify(self, zs, t):

@@ -46,11 +46,10 @@ def configuration(parent_package='',top_path=None):
         if key == 'libraries':
             continue
         newblas[key] = blas_opt[key]
-    config.add_extension('_odepack',
-                         sources=['_odepackmodule.c'],
+    config.add_extension('_pyodepack',
+                         sources=['pyodepack.pyf'] + ['pyodepack.f90'],
                          libraries=libs,
-                         depends=(['__odepack.h','multipack.h']
-                                  + odepack_src + linpack_lite_src
+                         depends=(odepack_src + linpack_lite_src
                                   + mach_src),
                          **newblas)
 
