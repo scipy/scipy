@@ -80,6 +80,10 @@ def test_discrete_basic():
         yield check_named_args, distfn, k, arg, locscale_defaults, meths
         yield check_scale_docstring, distfn
 
+        # compare a generic _entropy w/ distribution-specific implementation,
+        # if available
+        if distfn.__class__._entropy != stats.rv_discrete._entropy:
+            yield check_private_entropy, distfn, arg
 
 @npt.dec.slow
 def test_discrete_extra():
@@ -338,6 +342,11 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
 
 def check_scale_docstring(distfn):
     npt.assert_('scale' not in distfn.__doc__)
+
+def check_private_entropy(distfn, args):
+    # compare a generic _entropy with the distribution-specific implementation
+    npt.assert_allclose(distfn._entropy(*args),
+                        super(distfn.__class__, distfn)._entropy(*args))
 
 
 if __name__ == "__main__":
