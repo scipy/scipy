@@ -5228,77 +5228,73 @@ class norminvgauss_gen(rv_continuous):
     Notes
     -----
     The usual probability density parametrisation for a
-    Normal Inverse Gaussian (NIG) distribution is given by
+    Normal Inverse Gaussian (NIG) distribution is given by::
 
-    NIG.pdf(x; mu, a, b, d) = (a*d/pi) * k_1(a*sqrt(d**2+(x-mu)**2))
-                              * exp(d*sqrt(a**2-b**2)+b*(x-mu))
-                              / sqrt(d**2+(x-mu)**2)
-    where
-    mu: location
-    a: tail heaviness, 0<a
-    b: asymmetry parameter, |b|<= a
-    d: scale parameter, 0<=d
-    k_1: Bessel function of second order.
+        NIG.pdf(x; mu, a, b, d) = (a * d / pi) * k_1 * a * sqrt(d**2 + (x - mu)**2)
+                                  * exp(d * sqrt(a**2 - b**2) + b * (x - mu))
+                                  / sqrt(d**2 + (x - mu)**2)
 
-    Scaling NIG(.; mu, a, b, d) by c>0 yields NIG(.; c*mu, a/c, b/c, cd)
+    where:
 
-    The pdf of norminvgauss is the scale invariant centered NIG.pdf:
+        - mu : location
+        - a : tail heaviness, 0<a
+        - b : asymmetry parameter, |b|<= a
+        - d : scale parameter, 0<=d
+        - k_1 : Bessel function of second order.
 
-    norminvgauss.pdf(x, a, b) = NIG.pdf(x;0, a, b, 1)
-                              = (a/pi) * k_1(a*sqrt(1+x**2))
-                                * exp(sqrt(a**2-b**2)+b*x)
-                                / sqrt(1+x**2)
+    Scaling ``NIG(.; mu, a, b, d)`` by ``c > 0`` yields
+    ``NIG(.; c*mu, a/c, b/c, cd)``.
 
-    Hence,
-    NIG.pdf(x; mu, a, b, d)= norminvgauss.pdf(x, a*d, b*d, loc= mu/d, scale=d)
+    The pdf of `norminvgauss` is the scale invariant centered NIG.pdf::
+
+        norminvgauss.pdf(x, a, b) = NIG.pdf(x;0, a, b, 1)
+                                  = a/pi * k_1 * (a * sqrt(1 + x**2))
+                                    * exp(sqrt(a**2 - b**2) + b * x)
+                                    / sqrt(1 + x**2)
+
+    Hence::
+
+        NIG.pdf(x; mu, a, b, d)= norminvgauss.pdf(x, a*d, b*d, loc=mu/d, scale=d)
 
     %(example)s
 
     """
     def __call__(self, a=1, b=0, *args, **kwds):
         gamma = sqrt(a**2 - b**2)
-        self.fac1 = (a/pi) * exp(gamma)
-        x_min = b/gamma - (sqrt(3) * a**2 / gamma**3)
-        x_max = b/gamma + (sqrt(3) * a**2 / gamma**3)
-        self.x_opt = optimize.minimize_scalar(lambda x:
-                                              - self._logpdf(x, a, b),
-                                              bounds=(x_min, x_max),
-                                              method = 'bounded').x
+        self.x_opt = self._compute_xopt(a, b)
         return self.freeze(a, b, *args, **kwds)
+
+    def _compute_xopt(self, a, b):
+        gamma = sqrt(a**2 - b**2)
+        x_min = b / gamma - (sqrt(3) * a**2 / gamma**3)
+        x_max = b / gamma + (sqrt(3) * a**2 / gamma**3)
+        x_opt = optimize.minimize_scalar(lambda x:
+                                         - self._logpdf(x, a, b),
+                                         bounds=(x_min, x_max),
+                                         method='bounded').x
+        return x_opt
 
     def _argcheck(self, a, b):
         return (a > 0) & (np.absolute(b) < a)
 
     def _pdf(self, x, a, b):
-        try:
-            fac1 = self.fac1
-        except AttributeError:
-            gamma = sqrt(a**2 - b**2)
-            fac1 = (a/pi) * exp(gamma)
-        return fac1 * \
-            special.k1e(a*sqrt(1 + x**2)) * exp(b*x - a*sqrt(1 + x**2)) /\
-            sqrt(1 + x**2)
+        gamma = sqrt(a**2 - b**2)
+        fac1 = a / pi * exp(gamma)
+        res = (fac1 * special.k1e(a * sqrt(1 + x**2)) *
+               exp(b * x - a * sqrt(1 + x**2)) / sqrt(1 + x**2))
+        return res
 
     def _cdf_single_call(self, x, a, b):
-        try:
+        if isinstance(self, rv_frozen):
             x_opt = self.x_opt
-        except AttributeError:
-            gamma = sqrt(a**2 - b**2)
-            x_min = b/gamma - (sqrt(3) * a**2 / gamma**3)
-            x_max = b/gamma + (sqrt(3) * a**2 / gamma**3)
-            self.x_opt = optimize.minimize_scalar(lambda x:
-                                                  - self._logpdf(x, a, b),
-                                                  bounds=(x_min, x_max),
-                                                  method = 'bounded').x
-            x_opt = self.x_opt
-        if x <= x_opt:
-            return integrate.quad(self._pdf, -np.Inf, x, args=(a, b,))[0]
         else:
-            h = integrate.quad(self._pdf, x, np.Inf, args=(a, b,))[0]
-            return 1-h
+            x_opt = self._compute_xopt(a, b)
 
-    def _logpdf(self, x, a, b):
-        return log(self._pdf(x, a, b))
+        if x <= x_opt:
+            return integrate.quad(self._pdf, -np.inf, x, args=(a, b))[0]
+        else:
+            h = integrate.quad(self._pdf, x, np.inf, args=(a, b))[0]
+            return 1 - h
 
     def _stats(self, a, b):
         gamma = sqrt(a**2 - b**2)
