@@ -38,7 +38,8 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy import array, asarray, float64, int32, zeros
 from . import _lbfgsb
-from .optimize import approx_fprime, MemoizeJac, Result, _check_unknown_options
+from .optimize import (approx_fprime, MemoizeJac, Result,
+                       _check_unknown_options, wrap_function)
 
 __all__ = ['fmin_l_bfgs_b']
 
@@ -253,6 +254,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         else:
             iprint = disp
 
+    n_function_evals, fun = wrap_function(fun, ())
     if jac is None:
         def func_and_grad(x):
             f = fun(x, *args)
@@ -294,7 +296,6 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
 
     task[:] = 'START'
 
-    n_function_evals = 0
     n_iterations = 0
 
     while 1:
@@ -304,12 +305,11 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
                        isave, dsave)
         task_str = task.tostring()
         if task_str.startswith(b'FG'):
-            if n_function_evals > maxfun:
+            if n_function_evals[0] > maxfun:
                 task[:] = ('STOP: TOTAL NO. of f AND g EVALUATIONS '
                            'EXCEEDS LIMIT')
             else:
                 # minimization routine wants f and g at the current x
-                n_function_evals += 1
                 # Overwrite f and g:
                 f, g = func_and_grad(x)
         elif task_str.startswith(b'NEW_X'):
@@ -326,14 +326,14 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     task_str = task.tostring().strip(b'\x00').strip()
     if task_str.startswith(b'CONV'):
         warnflag = 0
-    elif n_function_evals > maxfun:
+    elif n_function_evals[0] > maxfun:
         warnflag = 1
     elif n_iterations > maxiter:
         warnflag = 1
     else:
         warnflag = 2
 
-    return Result(fun=f, jac=g, nfev=n_function_evals, nit=n_iterations,
+    return Result(fun=f, jac=g, nfev=n_function_evals[0], nit=n_iterations,
                   status=warnflag, message=task_str, x=x,
                   success=(warnflag == 0))
 
