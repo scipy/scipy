@@ -161,7 +161,7 @@ def _raw_fft(x, n, axis, direction, overwrite_x, work_function):
     return r
 
 
-def fft(x, n=None, axis=-1, overwrite_x=0):
+def fft(x, n=None, axis=-1, overwrite_x=False):
     """
     Return discrete Fourier transform of real or complex sequence.
 
@@ -257,7 +257,7 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
     return swapaxes(tmp, axis, -1)
 
 
-def ifft(x, n=None, axis=-1, overwrite_x=0):
+def ifft(x, n=None, axis=-1, overwrite_x=False):
     """
     Return discrete inverse Fourier transform of real or complex sequence.
 
@@ -277,7 +277,7 @@ def ifft(x, n=None, axis=-1, overwrite_x=0):
         Axis along which the ifft's are computed; the default is over the
         last axis (i.e., ``axis=-1``).
     overwrite_x : bool, optional
-        If True the contents of `x` can be destroyed; the default is False.
+        If True, the contents of `x` can be destroyed; the default is False.
 
     See Also
     --------
@@ -318,7 +318,7 @@ def ifft(x, n=None, axis=-1, overwrite_x=0):
     return swapaxes(tmp, axis, -1)
 
 
-def rfft(x, n=None, axis=-1, overwrite_x=0):
+def rfft(x, n=None, axis=-1, overwrite_x=False):
     """
     Discrete Fourier transform of a real sequence.
 
@@ -384,7 +384,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=0):
     return _raw_fft(tmp,n,axis,1,overwrite_x,work_function)
 
 
-def irfft(x, n=None, axis=-1, overwrite_x=0):
+def irfft(x, n=None, axis=-1, overwrite_x=False):
     """
     Return inverse discrete Fourier transform of real sequence x.
 
@@ -404,7 +404,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=0):
         Axis along which the ifft's are computed; the default is over
         the last axis (i.e., axis=-1).
     overwrite_x : bool, optional
-        If True the contents of `x` can be destroyed; the default is False.
+        If True, the contents of `x` can be destroyed; the default is False.
 
     Returns
     -------
@@ -514,7 +514,7 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
     return r
 
 
-def fftn(x, shape=None, axes=None, overwrite_x=0):
+def fftn(x, shape=None, axes=None, overwrite_x=False):
     """
     Return multidimensional discrete Fourier transform.
 
@@ -577,7 +577,7 @@ def _raw_fftn_dispatch(x, shape, axes, overwrite_x, direction):
     return _raw_fftnd(tmp,shape,axes,direction,overwrite_x,work_function)
 
 
-def ifftn(x, shape=None, axes=None, overwrite_x=0):
+def ifftn(x, shape=None, axes=None, overwrite_x=False):
     """
     Return inverse multi-dimensional discrete Fourier transform of
     arbitrary type sequence x.
@@ -599,7 +599,7 @@ def ifftn(x, shape=None, axes=None, overwrite_x=0):
     return _raw_fftn_dispatch(x, shape, axes, overwrite_x, -1)
 
 
-def fft2(x, shape=None, axes=(-2,-1), overwrite_x=0):
+def fft2(x, shape=None, axes=(-2,-1), overwrite_x=False):
     """
     2-D discrete Fourier transform.
 
@@ -614,7 +614,7 @@ def fft2(x, shape=None, axes=(-2,-1), overwrite_x=0):
     return fftn(x,shape,axes,overwrite_x)
 
 
-def ifft2(x, shape=None, axes=(-2,-1), overwrite_x=0):
+def ifft2(x, shape=None, axes=(-2,-1), overwrite_x=False):
     """
     2-D discrete inverse Fourier transform of real or complex sequence.
 
