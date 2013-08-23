@@ -55,7 +55,8 @@ __all__ = [
            'truncnorm', 'tukeylambda', 'uniform', 'vonmises', 'wald',
            'wrapcauchy', 'entropy', 'rv_discrete', 'binom', 'bernoulli',
            'nbinom', 'geom', 'hypergeom', 'logser', 'poisson', 'planck',
-           'boltzmann', 'randint', 'zipf', 'dlaplace', 'skellam'
+           'boltzmann', 'randint', 'zipf', 'dlaplace', 'skellam',
+           'norminvgauss'
           ]
 
 floatinfo = numpy.finfo(float)
