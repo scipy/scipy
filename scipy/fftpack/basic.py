@@ -221,7 +221,10 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
     
     If the data type of `x` is real, a "real FFT" algorithm is automatically
     used, which roughly halves the computation time.  To increase efficiency
-    further, use `rfft`.
+    a little further, use `rfft`, which does the same calculation, but only 
+    outputs half of the symmetrical spectrum.  If the data is both real and 
+    symmetrical, the `dct` can again double the efficiency, by generating 
+    half of the spectrum from half of the signal.
 
     Examples
     --------
@@ -368,9 +371,9 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
     Examples
     --------
     >>> a = [9, -9, 1, 3]
-    >>> scipy.fftpack.fft(a)
+    >>> fft(a)
     array([  4. +0.j,   8.+12.j,  16. +0.j,   8.-12.j])
-    >>> scipy.fftpack.rfft(a)
+    >>> rfft(a)
     array([  4.,   8.,  12.,  16.])
 
     """
