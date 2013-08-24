@@ -69,7 +69,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
 
     jac : bool or callable, optional
         Jacobian of objective function. Only for CG, BFGS, Newton-CG,
-        dogleg, trust-ncg.
+        L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg.
         If `jac` is a Boolean and is True, `fun` is assumed to return the
         value of Jacobian along with the objective function. If False, the
         Jacobian will be estimated numerically.

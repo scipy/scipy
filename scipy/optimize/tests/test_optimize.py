@@ -392,11 +392,18 @@ class TestOptimize(object):
     def test_minimize_l_bfgs_b(self):
         """ Minimize with L-BFGS-B method """
         opts = {'disp': False, 'maxiter': self.maxiter}
-        x = optimize.minimize(self.func, self.startparams,
+        r = optimize.minimize(self.func, self.startparams,
                               method='L-BFGS-B', jac=self.grad,
-                              options=opts)['x']
-        assert_allclose(self.func(x), self.func(self.solution),
+                              options=opts)
+        assert_allclose(self.func(r.x), self.func(self.solution),
                         atol=1e-6)
+        # approximate jacobian
+        ra = optimize.minimize(self.func, self.startparams,
+                               method='L-BFGS-B', options=opts)
+        assert_allclose(self.func(ra.x), self.func(self.solution),
+                        atol=1e-6)
+        # check that function evaluations in approximate jacobian are counted
+        assert_(ra.nfev > r.nfev)
 
     def test_minimize_l_bfgs_b_ftol(self):
         # Check that the `ftol` parameter in l_bfgs_b works as expected
