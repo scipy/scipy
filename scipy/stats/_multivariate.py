@@ -123,12 +123,12 @@ def _pinv_1d(v, eps=1e-5):
     -------
     v_pinv : 1d float ndarray
         A vector of pseudo-inverted numbers.
-        
+
     """
     return np.array([0 if abs(x) < eps else 1/x for x in v], dtype=float)
 
 
-def _psd_pinv_decomposed_log_pdet(mat, cond=None, rcond=None, 
+def _psd_pinv_decomposed_log_pdet(mat, cond=None, rcond=None,
                                   lower=True, check_finite=True):
     """
     Compute a decomposition of the pseudo-inverse and the logarithm of
@@ -170,7 +170,7 @@ def _psd_pinv_decomposed_log_pdet(mat, cond=None, rcond=None,
     # are all real and non-negative,
     # but clip them anyway to avoid numerical issues.
 
-    # TODO: the code to set cond/rcond is identical to that in 
+    # TODO: the code to set cond/rcond is identical to that in
     # scipy.linalg.{pinvh, pinv2} and if/when this function is subsumed
     # into scipy.linalg it should probably be shared between all of
     # these routines.
@@ -181,7 +181,7 @@ def _psd_pinv_decomposed_log_pdet(mat, cond=None, rcond=None,
 
     if rcond is not None:
         cond = rcond
-    if cond in [None,-1]:
+    if cond in [None, -1]:
         t = u.dtype.char.lower()
         factor = {'f': 1E3, 'd': 1E6}
         cond = factor[t] * np.finfo(t).eps
@@ -330,7 +330,7 @@ class multivariate_normal_gen(object):
 
         Notes
         -----
-        As this function does no argument checking, it should not be 
+        As this function does no argument checking, it should not be
         called directly; use 'logpdf' instead.
 
         """
