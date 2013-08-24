@@ -279,6 +279,11 @@ def ifft(x, n=None, axis=-1, overwrite_x=False):
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
 
+    Returns
+    -------
+    ifft : ndarray of floats
+        The inverse discrete Fourier transform.
+
     See Also
     --------
     fft : Forward FFT
