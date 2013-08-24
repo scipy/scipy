@@ -262,6 +262,7 @@ Useful SciPy documents
   - `SciPy API`_
   - SciPy `maintainers`_
   - NumPy/SciPy `git workflow`_
+  - How to submit a good `bug report`_
 
 
 FAQ
@@ -439,6 +440,8 @@ various assert functions.
 .. _testing guidelines: https://github.com/numpy/numpy/blob/master/doc/TESTS.rst.txt
 
 .. _how to document: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
+
+.. _bug report http://scipy.org/bug-report.html
 
 .. _PEP8: http://www.python.org/dev/peps/pep-0008/
 
