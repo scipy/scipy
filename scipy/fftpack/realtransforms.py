@@ -440,6 +440,9 @@ def _dst(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
     else:
         raise NotImplementedError("Padding/truncating not yet implemented")
 
+    if np.issubdtype(tmp.dtype, np.integer):
+        tmp = tmp.astype(np.float)
+
     if tmp.dtype == np.double:
         if type == 1:
             f = _fftpack.ddst1
