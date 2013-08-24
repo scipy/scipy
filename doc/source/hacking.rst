@@ -1,1 +1,0 @@
-.. include:: ../../HACKING.rst.txt

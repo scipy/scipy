@@ -84,7 +84,7 @@ Developer information
 ---------------------
 
 If you would like to take part in SciPy development, take a look
-at ``HACKING.rst.txt``.
+at the file ``CONTRIBUTING``.
 
 
 License information
