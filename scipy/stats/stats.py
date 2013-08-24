@@ -185,8 +185,6 @@ import numpy as np
 from . import futil
 from . import distributions
 
-from . import _support
-from ._support import _chk_asarray, _chk2_asarray
 from ._rank import rankdata, tiecorrect
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'cmedian', 'mode',
@@ -209,6 +207,28 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'cmedian', 'mode',
            'fastsort', 'rankdata',
            'nanmean', 'nanstd', 'nanmedian',
            ]
+
+
+def _chk_asarray(a, axis):
+    if axis is None:
+        a = np.ravel(a)
+        outaxis = 0
+    else:
+        a = np.asarray(a)
+        outaxis = axis
+    return a, outaxis
+
+
+def _chk2_asarray(a, b, axis):
+    if axis is None:
+        a = np.ravel(a)
+        b = np.ravel(b)
+        outaxis = 0
+    else:
+        a = np.asarray(a)
+        b = np.asarray(b)
+        outaxis = axis
+    return a, b, outaxis
 
 
 def find_repeats(arr):
@@ -1352,7 +1372,7 @@ def jarque_bera(x):
 
 def itemfreq(a):
     """
-    Returns a 2D array of item frequencies.
+    Returns a 2-D array of item frequencies.
 
     Parameters
     ----------
@@ -1361,17 +1381,9 @@ def itemfreq(a):
 
     Returns
     -------
-    itemfreq : (2,K) ndarray
-        A 2D frequency table (col [0:n-1]=scores, col n=frequencies).
-        Column 1 contains sorted, unique values from `a`, column 2 contains
-        their respective counts.
-
-    Notes
-    -----
-    This uses a loop that is only reasonably fast if the number of unique
-    elements is not large. For integers, numpy.bincount is much faster.
-    This function currently does not support strings or multi-dimensional
-    scores.
+    itemfreq : (K, 2) ndarray
+        A 2-D frequency table.  Column 1 contains sorted, unique values from
+        `a`, column 2 contains their respective counts.
 
     Examples
     --------
@@ -1393,15 +1405,9 @@ def itemfreq(a):
            [ 0.5,  1. ]])
 
     """
-    # TODO: I'm not sure I understand what this does. The docstring is
-    # internally inconsistent.
-    # comment: fortunately, this function doesn't appear to be used elsewhere
-    scores = _support.unique(a)
-    scores = np.sort(scores)
-    freq = zeros(len(scores))
-    for i in range(len(scores)):
-        freq[i] = np.add.reduce(np.equal(a,scores[i]))
-    return array(_support.abut(scores, freq))
+    items, inv = np.unique(a, return_inverse=True)
+    freq = np.bincount(inv)
+    return np.array([items, freq]).T
 
 
 def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
@@ -4096,13 +4102,14 @@ def friedmanchisquare(*args):
     k = len(args)
     if k < 3:
         raise ValueError('\nLess than 3 levels.  Friedman test not appropriate.\n')
+
     n = len(args[0])
-    for i in range(1,k):
+    for i in range(1, k):
         if len(args[i]) != n:
             raise ValueError('Unequal N in friedmanchisquare.  Aborting.')
 
     # Rank data
-    data = _support.abut(*args)
+    data = np.vstack(args).T
     data = data.astype(float)
     for i in range(len(data)):
         data[i] = rankdata(data[i])
@@ -4207,10 +4214,48 @@ def glm(data, para):
     Lond B 354: 1239-1260.
 
     """
+    def _unique_rows(inarray):
+        """Returns unique items in the FIRST dimension of the passed array. Only
+        works on arrays NOT including string items (e.g., type 'O' or 'c').
+        """
+        inarray = asarray(inarray)
+        uniques = np.array([inarray[0]])
+        if len(uniques.shape) == 1:            # IF IT'S A 1D ARRAY
+            for item in inarray[1:]:
+                if np.add.reduce(np.equal(uniques,item).flat) == 0:
+                    try:
+                        uniques = np.concatenate([uniques,np.array[np.newaxis,:]])
+                    except TypeError:
+                        uniques = np.concatenate([uniques,np.array([item])])
+        else:                                  # IT MUST BE A 2+D ARRAY
+            if inarray.dtype.char != 'O':  # not an Object array
+                for item in inarray[1:]:
+                    if not np.sum(np.alltrue(np.equal(uniques,item),1),axis=0):
+                        try:
+                            uniques = np.concatenate([uniques,item[np.newaxis,:]])
+                        except TypeError:    # the item to add isn't a list
+                            uniques = np.concatenate([uniques,np.array([item])])
+                    else:
+                        pass  # this item is already in the uniques array
+            else:   # must be an Object array, alltrue/equal functions don't work
+                for item in inarray[1:]:
+                    newflag = 1
+                    for unq in uniques:  # NOTE: cmp --> 0=same, -1=<, 1=>
+                        test = np.sum(abs(np.array(list(map(cmp,item,unq)))),axis=0)
+                        if test == 0:   # if item identical to any 1 row in uniques
+                            newflag = 0  # then not a novel item to add
+                            break
+                    if newflag == 1:
+                        try:
+                            uniques = np.concatenate([uniques,item[np.newaxis,:]])
+                        except TypeError:    # the item to add isn't a list
+                            uniques = np.concatenate([uniques,np.array([item])])
+        return uniques
+
     if len(para) != len(data):
         raise ValueError("data and para must be same length in aglm")
     n = len(para)
-    p = _support.unique(para)
+    p = _unique_rows(para)
     x = zeros((n,len(p)))  # design matrix
     for l in range(len(p)):
         x[:,l] = para == p[l]
