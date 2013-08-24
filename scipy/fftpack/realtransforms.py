@@ -48,7 +48,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
     See Also
     --------
-    idct
+    idct : Inverse DCT
 
     Notes
     -----
@@ -59,7 +59,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     implemented in scipy. 'The' DCT generally refers to DCT type 2, and 'the'
     Inverse DCT generally refers to DCT type 3.
 
-    **type I**
+    **Type I**
 
     There are several definitions of the DCT-I; we use the following
     (for ``norm=None``)::
@@ -71,7 +71,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     Only None is supported as normalization mode for DCT-I. Note also that the
     DCT-I is only supported for input size > 1
 
-    **type II**
+    **Type II**
 
     There are several definitions of the DCT-II; we use the following
     (for ``norm=None``)::
@@ -89,7 +89,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     Which makes the corresponding matrix of coefficients orthonormal
     (``OO' = Id``).
 
-    **type III**
+    **Type III**
 
     There are several definitions, we use the following
     (for ``norm=None``)::
@@ -116,6 +116,17 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
            http://dx.doi.org/10.1109/TASSP.1980.1163351 (1980).
     .. [2] Wikipedia, "Discrete cosine transform",
            http://en.wikipedia.org/wiki/Discrete_cosine_transform
+
+    Examples
+    --------
+    The Type 1 DCT is equivalent to the FFT (though faster) for real,
+    even-symmetrical inputs.  The output is also real and even-symmetrical.
+    Half of the FFT input is used to generate half of the FFT output:
+
+    >>> fft(array([4., 3., 5., 10., 5., 3.])).real
+    array([ 30.,  -8.,   6.,  -2.,   6.,  -8.])
+    >>> dct(array([4., 3., 5., 10.]), 1)
+    array([ 30.,  -8.,   6.,  -2.])
 
     """
     if type == 1 and norm is not None:
@@ -150,7 +161,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
     See Also
     --------
-    dct
+    dct : Forward DCT
 
     Notes
     -----
@@ -162,6 +173,17 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     IDCT of type 1 is the DCT of type 1, IDCT of type 2 is the DCT of type
     3, and IDCT of type 3 is the DCT of type 2. For the definition of these
     types, see `dct`.
+
+    Examples
+    --------
+    The Type 1 DCT is equivalent to the DFT for real, even-symmetrical
+    inputs.  The output is also real and even-symmetrical.  Half of the IFFT
+    input is used to generate half of the IFFT output:
+
+    >>> ifft(array([ 30.,  -8.,   6.,  -2.,   6.,  -8.])).real
+    array([  4.,   3.,   5.,  10.,   5.,   3.])
+    >>> idct(array([ 30.,  -8.,   6.,  -2.]), 1) / 6
+    array([  4.,   3.,   5.,  10.])
 
     """
     if type == 1 and norm is not None:
@@ -275,7 +297,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
     See Also
     --------
-    idst
+    idst : Inverse DST
 
     Notes
     -----
@@ -285,7 +307,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     even/odd boundary conditions and boundary off sets [1]_, only the first
     3 types are implemented in scipy.
 
-    **type I**
+    **Type I**
 
     There are several definitions of the DST-I; we use the following
     for ``norm=None``.  DST-I assumes the input is odd around n=-1 and n=N. ::
@@ -298,7 +320,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     DCT-I is only supported for input size > 1
     The (unnormalized) DCT-I is its own inverse, up to a factor `2(N+1)`.
 
-    **type II**
+    **Type II**
 
     There are several definitions of the DST-II; we use the following
     for ``norm=None``.  DST-II assumes the input is odd around n=-1/2 and 
@@ -313,7 +335,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
         f = sqrt(1/(4*N)) if k == 0
         f = sqrt(1/(2*N)) otherwise.
 
-    **type III**
+    **Type III**
 
     There are several definitions of the DST-III, we use the following
     (for ``norm=None``).  DST-III assumes the input is odd around n=-1
@@ -367,7 +389,7 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
     See Also
     --------
-    dst
+    dst : Forward DST
 
     Notes
     -----
