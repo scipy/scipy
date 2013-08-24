@@ -122,7 +122,7 @@ Nils Werner for signal windowing and wavfile-writing improvements.
 Kenneth L. Ho for the wrapper around the Interpolative Decomposition code.
 Juan Luis Cano for refactorings in lti, sparse docs improvements and some
     trivial fixes.
-
+Joris Vankerschaver for multivariate Gaussian functionality.
 
 Institutions
 ------------

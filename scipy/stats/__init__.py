@@ -142,6 +142,14 @@ Continuous distributions
    weibull_max       -- Maximum Weibull (see Frechet)
    wrapcauchy        -- Wrapped Cauchy
 
+Multivariate distributions
+==========================
+
+.. autosummary::
+   :toctree: generated/
+
+   multivariate_normal   -- Multivariate normal distribution
+
 Discrete distributions
 ======================
 
@@ -329,6 +337,7 @@ from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
 from .contingency import chi2_contingency
+from ._multivariate import *
 
 #remove vonmises_cython from __all__, I don't know why it is included
 __all__ = [s for s in dir() if not (s.startswith('_') or s.endswith('cython'))]
