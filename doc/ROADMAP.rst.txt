@@ -1,0 +1,253 @@
+Roadmap to Scipy 1.0
+====================
+
+This roadmap provides a high-level view on what is needed per scipy
+sub-module in terms of new functionality, bug fixes, etc. before we can release
+a ``1.0`` version of Scipy. Things not mentioned in this roadmap are
+not necessarily unimportant or out of scope, however we (the Scipy developers)
+want to provide to our users and contributors a clear picture of where Scipy is
+going and where help is needed most urgently.
+
+When a module is in a 1.0-ready state, it means that it has the functionality
+we consider essential and has an API and code quality (including documentation
+and tests) that's of high enough quality.  
+
+
+cluster
+-------
+Not entirely clear whether or not to keep this module (not heavily used,
+whether this is "basic" functionality is debatable; but is used by
+scikit-learn).  If we do keep it, the following is needed:
+
+  - vq_rewrite: drop or finish
+  - Needs Cython rewrite for hierarchy_wrap
+
+constants
+---------
+This module is basically done, low-maintenance and without open issues.
+
+
+fftpack
+-------
+Needed:
+
+  - solve issues with single precision: large errors, disabled for difficult sizes
+  - fix caching bug
+  - Bluestein algorithm nice to have, padding is alternative
+  - deprecate fftpack.convolve as public function (was not meant to be public),
+    resolve differences between ``signal.fftconvolve`` / ``fftpack.convolve`` /
+    ``signal.convolve`` and ``numpy.convolve`` 
+
+There's a large overlap with ``numpy.fft``.  This duplication has to change
+(both are too widely used to deprecate one); in the documentation we should
+make clear that ``scipy.fftpack`` is preferred over ``numpy.fft``.
+
+
+integrate
+---------
+Needed for ODE solvers:
+
+  - documentation is pretty bad, needs fixing
+  - figure out if/how to integrate scikits.odes (Sundials wrapper)
+  - figure out what to deprecate 
+
+The numerical integration functions are in good shape, not much to do here.
+
+
+interpolate
+-----------
+Needed:
+
+  - Transparant B-splines and their usage in the interpolation routines is needed.
+  - Both fitpack and fitpack2 interfaces will be kept.
+  - splmake should go; is different spline representation --> need exactly one
+  - interp1d/interp2d are somewhat ugly but widely used, so we keep them.
+  - Regular grid interpolation routines needed
+
+
+io
+--
+wavfile;
+
+    - PCM float will be supported, for anything else use audiolab or other
+      specialized libraries.
+    - raise errors instead of warnings if data not understood.
+
+netcdf:
+
+    - TODO: check issue list
+
+Other sub-modules (matlab, idl, harwell-boeing, arff, matrix market) are in
+good shape.
+
+
+lib
+---
+``scipy.lib`` contains nothing public anymore, so rename to ``scipy._lib``.
+
+
+linalg
+------
+Needed:
+
+  - remove functions that are duplicate with numpy.linalg
+  - get_lapack_funcs should always use flapack
+  - cblas, clapack are deprecated, will go away
+  - wrap more lapack functions
+  - one too many funcs for LU decomposition, remove one
+
+
+misc
+----
+``scipy.misc`` will be removed as a public module.  The functions in it can be
+moved to other modules:
+
+  - pilutil, images : ndimage
+  - comb, factorials, logsumexp, pade : special
+  - derivative, central_diff_weight : remove
+  - doccer : move to scipy._lib
+  - info, who : these are in numpy
+
+
+ndimage
+-------
+Keep, fix some critical bugs??  Ask Stefan
+
+
+odr
+---
+Rename the module to ``regression`` or ``fitting``, include
+``optimize.curve_fit``. This module will then provide a home for other fitting
+functionality.
+
+
+optimize
+--------
+Overall this module is in reasonably good shape, however it is missing:
+
+  - large-scale optimizers
+  - a few more good global optimizers
+
+Other things that are needed:
+
+  - deprecate ``anneal``, it just doesn't work well enough
+  - clearly define what's out of scope for this module.
+
+
+signal
+------
+- David C. will check in more detail
+- splines --> check how much this is used; remove? Analog to Matlab funcs??
+- Add proper wavelets, including discrete wavelet transform.  What's there now
+  doesn't make much sense.
+- Improve performance of ltisys (less internal transformations between
+  different representations).
+
+
+sparse
+------
+The sparse matrix formats are getting feature-complete but are slow ...
+reimplement parts in Cython?
+
+    - Small matrices are slower than PySparse, needs fixing
+
+There are a lot of formats.  These should all be kept, but
+improvements/optimizations should go into CSR/CSC, which are the preferred
+formats.
+
+Don't emulate np.matrix behavior, drop 2-D?
+
+
+sparse.csgraph
+--------------
+This module is in good shape.
+
+
+sparse.linalg
+-------------
+Arpack is in good shape.
+
+isolve:
+
+    - callback keyword is inconsistent 
+    - tol keyword is broken, should be relative tol
+    - Fortran code not re-entrant (but we don't solve, maybe re-use from
+        PyKrilov)
+
+dsolve:
+
+    - remove umfpack wrapper due to license reasons
+    - add sparse Cholesky or incomplete Cholesky
+    - look at CHOLMOD
+
+
+spatial
+-------
+KDTree/cKDTree and the QHull wrappers are in good shape.  The distance module
+needs bug fixes in the distance metrics, and distance_wrap.c needs to be
+cleaned up (maybe rewrite in Cython).
+
+
+special
+-------
+special has a lot of functions that need improvements in precision.  All
+functions that are also implemented in mpmath can be tested against mpmath, and
+should match well.
+
+Things not in mpmath:
+
+  - cdflib
+  - <Pauli checks> some others
+
+
+stats
+-----
+This is a large module with by far the most open issues.  It has improved a lot
+over the past few releases, but more cleanup and rewriting of functions is
+needed.  The Statistics Review milestone on Github gives a reasonable overview
+of which functions need checking, documentation and tests. 
+
+``stats.distributions`` : 
+
+  - skew/kurtosis of a number of distributions needs fixing
+  - fix generic docstring examples, they should be valid Python and make sense
+    for each distributions
+  - document subclassing of distributions even better, make issues with state
+    of instances clear.
+
+The t-test functions need to be unified.
+``gaussian_kde`` is in good shape but limited. It should not be expanded
+probably, this fits better in statsmodels (which already has a lot more KDE
+functionality).
+
+``stats.mstats`` : unclear what to do with this.  It's a lot of work to fix it
+up.  
+
+
+weave
+-----
+This is the only module that was not ported to Python 3.  Effectively it's
+deprecated (not recommended to use for new code).  In the future it should be
+removed from scipy (can be made into a separate module). 
+
+
+Other
+-----
+It should be made more clear what is public and what is private in scipy.
+Everything private should be underscored as much as possible.
+
+It's not clear how much functionality can be Cythonized without making the .so
+files too large.  This needs measuring.
+
+
+
+
+
+
+
+
+
+
+
+
+

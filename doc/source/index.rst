@@ -17,6 +17,7 @@ science, and engineering.
 
    contributing
    api
+   roadmap
    release
 
 Reference

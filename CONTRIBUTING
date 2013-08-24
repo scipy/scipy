@@ -260,6 +260,7 @@ Useful SciPy documents
   - The `how to document`_ guidelines
   - NumPy/SciPy `testing guidelines`_
   - `SciPy API`_
+  - The `SciPy 1.0 Roadmap`_
   - SciPy `maintainers`_
   - NumPy/SciPy `git workflow`_
   - How to submit a good `bug report`_
@@ -450,6 +451,8 @@ various assert functions.
 .. _pyflakes: http://pypi.python.org/pypi/pyflakes
 
 .. _SciPy API: http://docs.scipy.org/doc/scipy/reference/api.html
+
+.. _SciPy 1.0 Roadmap http://docs.scipy.org/doc/scipy/reference/roadmap.html
 
 .. _git workflow: http://docs.scipy.org/doc/numpy/dev/gitwash/index.html
 
