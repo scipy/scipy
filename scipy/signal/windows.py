@@ -554,7 +554,7 @@ def bartlett(M, sym=True):
     window produces linear interpolation.  It is also known as an
     apodization (which means"removing the foot", i.e. smoothing
     discontinuities at the beginning and end of the sampled signal) or
-    tapering function. The fourier transform of the Bartlett is the product
+    tapering function. The Fourier transform of the Bartlett is the product
     of two sinc functions.
     Note the excellent discussion in Kanasewich.
 
@@ -1135,6 +1135,46 @@ def chebwin(M, at, sym=True):
     w : ndarray
         The window, with the maximum value always normalized to 1
 
+    Notes
+    -----
+    This window optimizes for the narrowest main lobe width for a given order
+    `M` and sidelobe equiripple attenuation `at`, using Chebyshev
+    polynomials.  It was originally developed by Dolph to optimize the
+    directionality of radio antenna arrays.
+
+    Unlike most windows, the Dolph-Chebyshev is defined in terms of its
+    frequency response:
+
+    .. math:: W(k) = \frac
+              {\cos\{M \cos^{-1}[\beta \cos(\frac{\pi k}{M})]\}}
+              {\cosh[M \cosh^{-1}(\beta)]}
+
+    where
+
+    .. math:: \beta = \cosh \left [\frac{1}{M}
+              \cosh^{-1}(10^\frac{A}{20}) \right ]
+
+    and 0 <= abs(k) <= M-1. A is the attenuation in decibels (`at`).
+    
+    The time domain window is then generated using the IFFT, so 
+    power-of-two `M` are the fastest to generate, and prime number `M` are 
+    the slowest.
+
+    The equiripple condition in the frequency domain creates impulses in the
+    time domain, which appear at the ends of the window.
+
+    References
+    ----------
+    .. [1] C. Dolph, "A current distribution for broadside arrays which
+           optimizes the relationship between beam width and side-lobe level",
+           Proceedings of the IEEE, Vol. 34, Issue 6
+    .. [2] Peter Lynch, "The Dolph-Chebyshev Window: A Simple Optimal Filter",
+           American Meteorological Society (April 1997)
+           http://mathsci.ucd.ie/~plynch/Publications/Dolph.pdf
+    .. [3] F. J. Harris, "On the use of windows for harmonic analysis with the
+           discrete Fourier transforms", Proceedings of the IEEE, Vol. 66,
+           No. 1, January 1978
+
     Examples
     --------
     Plot the window and its frequency response:
@@ -1249,7 +1289,7 @@ def slepian(M, width, sym=True):
 
     """
     if (M * width > 27.38):
-        raise ValueError("Cannot reliably obtain slepian sequences for"
+        raise ValueError("Cannot reliably obtain Slepian sequences for"
               " M*width > 27.38.")
     if M < 1:
         return np.array([])
