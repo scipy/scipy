@@ -14,6 +14,7 @@ import numpy as np
 
 from .base import spmatrix
 from .sputils import isscalarlike
+from .lil import lil_matrix
 
 
 # TODO implement all relevant operations
@@ -100,7 +101,46 @@ class _minmax_mixin(object):
     These are not implemented for dia_matrix, hence the separate class.
     """
 
-    def max(self):
+    def _min_or_max_axis(self, axis, min_or_max):
+        if axis == 0:
+            mat = self.tocsr()
+            if not mat.has_sorted_indices:
+                mat.sort_indices()
+
+            out_mat = lil_matrix((1, self.shape[1]))
+            zero = self.dtype.type(0)
+            for i in range(self.shape[1]):
+                ith_col_data_indices = np.argwhere(mat.indices == i)
+                ith_col_data = mat.data[ith_col_data_indices]
+
+                # Add a zero if needed
+                if len(ith_col_data) < self.shape[0]:
+                    ith_col_data = np.append(zero, ith_col_data)
+
+                get_min_or_max = getattr(ith_col_data, min_or_max)
+                out_mat[0, i] = get_min_or_max()
+            return self.__class__(out_mat)
+
+        elif axis == 1:
+            mat = self.tocsc()
+            if not mat.has_sorted_indices:
+                mat.sort_indices()
+
+            out_mat = lil_matrix((self.shape[0], 1))
+            zero = self.dtype.type(0)
+            for i in range(self.shape[0]):
+                ith_row_data_indices = np.argwhere(mat.indices == i)
+                ith_row_data = mat.data[ith_row_data_indices]
+
+                # Add a zero if needed
+                if len(ith_row_data) < self.shape[1]:
+                    ith_row_data = np.append(zero, ith_row_data)
+
+                get_min_or_max = getattr(ith_row_data, min_or_max)
+                out_mat[i, 0] = get_min_or_max()
+            return self.__class__(out_mat)
+
+    def max(self, axis=None):
         """Maximum of the elements of this matrix.
 
         This takes all elements into account, not just the non-zero ones.
@@ -110,15 +150,22 @@ class _minmax_mixin(object):
         amax : self.dtype
             Maximum element.
         """
-        zero = self.dtype.type(0)
-        if self.nnz == 0:
-            return zero
-        mx = np.max(self.data)
-        if self.nnz != np.product(self.shape):
-            mx = max(zero, mx)
-        return mx
+        if axis is None:
+            zero = self.dtype.type(0)
+            if self.nnz == 0:
+                return zero
+            mx = np.max(self.data)
+            if self.nnz != np.product(self.shape):
+                mx = max(zero, mx)
+            return mx
 
-    def min(self):
+        elif (axis == 0) or (axis == 1):
+            return self._min_or_max_axis(axis, 'max')
+
+        else:
+            raise ValueError("invalid axis, use 0 for rows, or 1 for columns")
+
+    def min(self, axis=None):
         """Minimum of the elements of this matrix.
 
         This takes all elements into account, not just the non-zero ones.
@@ -128,10 +175,17 @@ class _minmax_mixin(object):
         amin : self.dtype
             Minimum element.
         """
-        zero = self.dtype.type(0)
-        if self.nnz == 0:
-            return zero
-        mn = np.min(self.data)
-        if self.nnz != np.product(self.shape):
-            mn = min(zero, mn)
-        return mn
+        if axis is None:
+            zero = self.dtype.type(0)
+            if self.nnz == 0:
+                return zero
+            mn = np.min(self.data)
+            if self.nnz != np.product(self.shape):
+                mn = min(zero, mn)
+            return mn
+
+        elif (axis == 0) or (axis == 1):
+            return self._min_or_max_axis(axis, 'min')
+
+        else:
+            raise ValueError("invalid axis, use 0 for rows, or 1 for columns")

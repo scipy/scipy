@@ -2238,6 +2238,18 @@ class _TestMinMax(object):
         assert_equal(X.min(), 0)
         assert_equal(X.max(), 19)
 
+    def test_minmax_axis(self):
+        def check():
+            D = np.matrix(np.arange(50).reshape(5,10))
+            X = self.spmatrix(D)
+            assert_array_equal(X.max(axis=0).A, D.max(axis=0).A)
+            assert_array_equal(X.max(axis=1).A, D.max(axis=1).A)
+
+            assert_array_equal(X.min(axis=0).A, D.min(axis=0).A)
+            assert_array_equal(X.min(axis=1).A, D.min(axis=1).A)
+
+        yield check
+
 
 #------------------------------------------------------------------------------
 # Tailored base class for generic tests
