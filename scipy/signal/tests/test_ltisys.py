@@ -351,6 +351,12 @@ class Test_bode(object):
         system = lti([1], [1, 0, 100])
         w, mag, phase = bode(system, n=2)
 
+    def test_08(self):
+        """Test that bode() return continuous phase, issues/2331."""
+        system = lti([], [-10,-30,-40,-60, -70], 1)
+        w, mag, phase = system.bode(w=np.logspace(-3, 40, 100))
+        assert_equal(min(phase), -450.0)
+
     def test_from_state_space(self):
         # Ensure that bode works with a system that was created from the
         # state space representation matrices A, B, C, D.  In this case,
