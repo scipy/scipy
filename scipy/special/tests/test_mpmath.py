@@ -1362,7 +1362,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         def lpnm(n, m, z):
             if m > n:
                 return 0.0
-            return sc.lpmn(m, n, z)[0][-1,-1]
+            return sc.clpmn(m, n, z)[0][-1,-1]
 
         def legenp(n, m, z):
             if abs(z) < 1e-15:

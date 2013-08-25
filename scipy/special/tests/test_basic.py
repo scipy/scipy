@@ -2337,15 +2337,36 @@ class TestLog1p(TestCase):
 
 class TestLegendreFunctions(TestCase):
     def test_clpmn(self):
-        clp = special.specfun.clpmn(1, 1, 0.5, 0.3)
-        assert_array_almost_equal(clp,(array([[1.0000,
-                                                0.5+0.3j],
-                                              [0.0000,
-                                                -0.9305815721+0.1611895232j]]),
-                                       array([[0.0000,
-                                                1.0000],
-                                              [0.0000,
-                                                0.4674335183+0.4033449589j]])),7)
+        z = 0.5+0.3j
+        clp = special.clpmn(2, 2, z)
+        assert_array_almost_equal(clp,
+                   (array([[1.0000, z, 0.5*(3*z*z-1)],
+                           [0.0000, sqrt(z*z-1), 3*z*sqrt(z*z-1)],
+                           [0.0000, 0.0000, 3*(z*z-1)]]),
+                    array([[0.0000, 1.0000, 3*z],
+                           [0.0000, z/sqrt(z*z-1), 3*(2*z*z-1)/sqrt(z*z-1)],
+                           [0.0000, 0.0000, 6*z]]))
+                       ,7)
+
+    def test_clpmn_close_to_real(self):
+        eps = 1e-10
+        m = 1
+        n = 3
+        x = 0.5
+        clp_plus = special.clpmn(m, n, x+1j*eps)[0][m, n]
+        clp_minus = special.clpmn(m, n, x-1j*eps)[0][m, n]
+        assert_array_almost_equal(array([clp_plus, clp_minus]),
+                                  array([special.lpmv(m, n, x)*np.exp(-0.5j*m*np.pi),
+                                         special.lpmv(m, n, x)*np.exp(0.5j*m*np.pi)])
+                                  ,7)
+
+    def test_clpmn_across_unit_circle(self):
+        eps = 1e-7
+        m = 1
+        n = 1
+        x = 1j
+        assert_almost_equal(special.clpmn(m, n, x+1j*eps)[0][m, n],
+                            special.clpmn(m, n, x-1j*eps)[0][m, n], 6)
 
     def test_lpmn(self):
         lp = special.lpmn(0,2,.5)
