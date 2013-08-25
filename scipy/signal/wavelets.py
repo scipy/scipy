@@ -341,6 +341,9 @@ def cwt(data, wavelet, widths):
 
     Notes
     -----
+    ???
+    ???
+    ???
     >>> length = min(10 * width[ii], len(data))
     >>> cwt[ii,:] = scipy.signal.convolve(data, wavelet(width[ii],
     ...                                       length), mode='same')
