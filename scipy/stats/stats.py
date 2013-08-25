@@ -164,70 +164,9 @@ References
    York. 2000.
 
 """
-## CHANGE LOG:
-## ===========
-## since 2001-06-25 ... see scipy SVN changelog
-## 05-11-29 ... fixed default axis to be 0 for consistency with scipy;
-##              cleanup of redundant imports, dead code, {0,1} -> booleans
-## 02-02-10 ... require Numeric, eliminate "list-only" functions
-##              (only 1 set of functions now and no Dispatch class),
-##              removed all references to aXXXX functions.
-## 00-04-13 ... pulled all "global" statements, except from aanova()
-##              added/fixed lots of documentation, removed io.py dependency
-##              changed to version 0.5
-## 99-11-13 ... added asign() function
-## 99-11-01 ... changed version to 0.4 ... enough incremental changes now
-## 99-10-25 ... added acovariance and acorrelation functions
-## 99-10-10 ... fixed askew/akurtosis to avoid divide-by-zero errors
-##              added aglm function (crude, but will be improved)
-## 99-10-04 ... upgraded acumsum, ass, asummult, asamplevar, var, etc. to
-##                   all handle lists of 'dimension's and keepdims
-##              REMOVED ar0, ar2, ar3, ar4 and replaced them with around
-##              reinserted fixes for abetai to avoid math overflows
-## 99-09-05 ... rewrote achisqprob/aerfcc/aksprob/afprob/abetacf/abetai to
-##                   handle multi-dimensional arrays (whew!)
-## 99-08-30 ... fixed l/amoment, l/askew, l/akurtosis per D'Agostino (1990)
-##              added anormaltest per same reference
-##              re-wrote azprob to calc arrays of probs all at once
-## 99-08-22 ... edited attest_ind printing section so arrays could be rounded
-## 99-08-19 ... fixed amean and aharmonicmean for non-error(!) overflow on
-##                   short/byte arrays (mean of #s btw 100-300 = -150??)
-## 99-08-09 ... fixed asum so that the None case works for Byte arrays
-## 99-08-08 ... fixed 7/3 'improvement' to handle t-calcs on N-D arrays
-## 99-07-03 ... improved attest_ind, attest_rel (zero-division errortrap)
-## 99-06-24 ... fixed bug(?) in attest_ind (n1=a.shape[0])
-## 04/11/99 ... added asignaltonoise, athreshold functions, changed all
-##                   max/min in array section to maximum/minimum,
-##                   fixed square_of_sums to prevent integer overflow
-## 04/10/99 ... !!! Changed function name ... sumsquared ==> square_of_sums
-## 03/18/99 ... Added ar0, ar2, ar3 and ar4 rounding functions
-## 02/28/99 ... Fixed aobrientransform to return an array rather than a list
-## 01/15/99 ... Essentially ceased updating list-versions of functions (!!!)
-## 01/13/99 ... CHANGED TO VERSION 0.3
-##              fixed bug in a/lmannwhitneyu p-value calculation
-## 12/31/98 ... fixed variable-name bug in ldescribe
-## 12/19/98 ... fixed bug in findwithin (fcns needed pstat. prefix)
-## 12/16/98 ... changed amedianscore to return float (not array) for 1 score
-## 12/14/98 ... added atmin and atmax functions
-##              removed umath from import line (not needed)
-##              l/ageometricmean modified to reduce chance of overflows (take
-##                   nth root first, then multiply)
-## 12/07/98 ... added __version__variable (now 0.2)
-##              removed all 'stats.' from anova() fcn
-## 12/06/98 ... changed those functions (except shellsort) that altered
-##                   arguments in-place ... cumsum, ranksort, ...
-##              updated (and fixed some) doc-strings
-## 12/01/98 ... added anova() function (requires NumPy)
-##              incorporated Dispatch class
-## 11/12/98 ... added functionality to amean, aharmonicmean, ageometricmean
-##              added 'asum' function (added functionality to add.reduce)
-##              fixed both moment and amoment (two errors)
-##              changed name of skewness and askewness to skew and askew
-##              fixed (a)histogram (which sometimes counted points <lowerlimit)
 
 from __future__ import division, print_function, absolute_import
 
-# Standard library imports.
 import warnings
 import math
 
@@ -246,7 +185,6 @@ import numpy as np
 from . import futil
 from . import distributions
 
-# Local imports.
 from . import _support
 from ._support import _chk_asarray, _chk2_asarray
 from ._rank import rankdata, tiecorrect
@@ -1194,7 +1132,6 @@ def describe(a, axis=0):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    # mm = (np.minimum.reduce(a), np.maximum.reduce(a))
     mm = (np.min(a, axis=axis), np.max(a, axis=axis))
     m = np.mean(a, axis=axis)
     v = np.var(a, axis=axis, ddof=1)
@@ -1408,9 +1345,6 @@ def jarque_bera(x):
 
     return jb_value, p
 
-
-# Martinez-Iglewicz test
-# K-S test
 
 #####################################
 ######  FREQUENCY FUNCTIONS  #######
@@ -1749,7 +1683,7 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
     """
     a = np.ravel(a)               # flatten any >1D arrays
     if defaultlimits is None:
-        # no range given, so use values in a
+        # no range given, so use values in `a`
         data_min = a.min()
         data_max = a.max()
         # Have bins extend past min and max values slightly
@@ -2801,10 +2735,6 @@ def spearmanr(a, b=None, axis=0):
 
 
 def pointbiserialr(x, y):
-    # comment: I am changing the semantics somewhat. The original function is
-    # fairly general and accepts an x sequence that has any type of thing in it as
-    # along as there are only two unique items. I am going to restrict this to
-    # a boolean array for my sanity.
     """Calculates a point biserial correlation coefficient and the associated
     p-value.
 
@@ -2847,15 +2777,8 @@ def pointbiserialr(x, y):
     >>> np.corrcoef(a, b)
     array([[ 1.       ,  0.8660254],
            [ 0.8660254,  1.       ]])
+
     """
-
-    ## Test data: http://support.sas.com/ctx/samples/index.jsp?sid=490&tab=output
-    # x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1]
-    # y = [14.8,13.8,12.4,10.1,7.1,6.1,5.8,4.6,4.3,3.5,3.3,3.2,3.0,2.8,2.8,2.5,
-    #      2.4,2.3,2.1,1.7,1.7,1.5,1.3,1.3,1.2,1.2,1.1,0.8,0.7,0.6,0.5,0.2,0.2,
-    #      0.1]
-    # rpb = 0.36149
-
     x = np.asarray(x, dtype=bool)
     y = np.asarray(y, dtype=float)
     n = len(x)
@@ -3109,7 +3032,7 @@ def linregress(x, y=None):
             r = 1.0
         elif (r < -1.0):
             r = -1.0
-    # z = 0.5*log((1.0+r+TINY)/(1.0-r+TINY))
+
     df = n-2
     t = r*np.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))
     prob = distributions.t.sf(np.abs(t),df)*2
@@ -3493,12 +3416,12 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
 
     """
     if isinstance(rvs, string_types):
-        # cdf = getattr(stats, rvs).cdf
         if (not cdf) or (cdf == rvs):
             cdf = getattr(distributions, rvs).cdf
             rvs = getattr(distributions, rvs).rvs
         else:
-            raise AttributeError('if rvs is string, cdf has to be the same distribution')
+            raise AttributeError("if rvs is string, cdf has to be the "
+                                 "same distribution")
 
     if isinstance(cdf, string_types):
         cdf = getattr(distributions, cdf).cdf
@@ -4009,12 +3932,10 @@ def mannwhitneyu(x, y, use_continuity=True):
     n2 = len(y)
     ranked = rankdata(np.concatenate((x,y)))
     rankx = ranked[0:n1]       # get the x-ranks
-    # ranky = ranked[n1:]        # the rest are y-ranks
     u1 = n1*n2 + (n1*(n1+1))/2.0 - np.sum(rankx,axis=0)  # calc U for x
     u2 = n1*n2 - u1                            # remainder is U for y
     bigu = max(u1,u2)
     smallu = min(u1,u2)
-    # T = np.sqrt(tiecorrect(ranked))  # correction factor for tied scores
     T = tiecorrect(ranked)
     if T == 0:
         raise ValueError('All numbers are identical in amannwhitneyu')
@@ -4111,7 +4032,7 @@ def kruskal(*args):
 
     """
     args = list(map(np.asarray, args))  # convert to a numpy array
-    na = len(args)               # Kruskal-Wallis on 'na' groups, each in it's own array
+    na = len(args)     # Kruskal-Wallis on 'na' groups, each in it's own array
     if na < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
     n = np.asarray(list(map(len, args)))
