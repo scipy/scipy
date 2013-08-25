@@ -40,6 +40,7 @@ import numpy as np
 from numpy.testing import TestCase, run_module_suite
 
 from scipy.lib.six import xrange
+from scipy.lib.six import u
 
 from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage,\
         num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster, \
@@ -144,6 +145,14 @@ class TestLinkage(TestCase):
         "Tests linkage(Y, 'weighted') on the tdist data set."
         Z = linkage(_ytdist, 'weighted')
         Zmlab = eo['linkage-weighted-tdist']
+        eps = 1e-10
+        expectedZ = from_mlab_linkage(Zmlab)
+        self.assertTrue(within_tol(Z, expectedZ, eps))
+
+    def test_linkage_with_unicode_method_name(self):
+        "Tests linkage(Y, u'single') on the tdist data set."
+        Z = linkage(_ytdist, u('single'))
+        Zmlab = eo['linkage-single-tdist']
         eps = 1e-10
         expectedZ = from_mlab_linkage(Zmlab)
         self.assertTrue(within_tol(Z, expectedZ, eps))
