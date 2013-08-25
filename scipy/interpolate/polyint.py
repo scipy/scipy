@@ -971,8 +971,10 @@ class PchipInterpolator(PiecewisePolynomial):
 
         w1 = 2*hk[1:] + hk[:-1]
         w2 = hk[1:] + 2*hk[:-1]
-        whmean = 1.0/(w1+w2)*(w1/mk[1:] + w2/mk[:-1])
-
+        # values where division by zero occurs will be excluded
+        # by 'condition' afterwards
+        with np.errstate(divide='ignore'):
+            whmean = 1.0/(w1+w2)*(w1/mk[1:] + w2/mk[:-1])
         dk = np.zeros_like(y)
         dk[1:-1][condition] = 0.0
         dk[1:-1][~condition] = 1.0/whmean[~condition]
