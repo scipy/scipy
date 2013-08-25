@@ -1578,6 +1578,8 @@ class Delaunay(_QhullUser):
     QhullError
         Raised when Qhull encounters an error condition, such as
         geometrical degeneracy when options to resolve are not enabled.
+    ValueError
+        Raised if an incompatible array is given as input.
 
     Notes
     -----
@@ -1652,6 +1654,8 @@ class Delaunay(_QhullUser):
 
     def __init__(self, points, furthest_site=False, incremental=False,
                  qhull_options=None):
+        if np.ma.is_masked(points):
+            raise ValueError('Input points cannot be a masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
 
         if qhull_options is None:
@@ -2107,6 +2111,8 @@ class ConvexHull(_QhullUser):
     QhullError
         Raised when Qhull encounters an error condition, such as
         geometrical degeneracy when options to resolve are not enabled.
+    ValueError
+        Raised if an incompatible array is given as input.
 
     Notes
     -----
@@ -2142,6 +2148,8 @@ class ConvexHull(_QhullUser):
     """
 
     def __init__(self, points, incremental=False, qhull_options=None):
+        if np.ma.is_masked(points):
+            raise ValueError('Input points cannot be a masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
 
         if qhull_options is None:
@@ -2227,6 +2235,8 @@ class Voronoi(_QhullUser):
     QhullError
         Raised when Qhull encounters an error condition, such as
         geometrical degeneracy when options to resolve are not enabled.
+    ValueError
+        Raised if an incompatible array is given as input.
 
     Notes
     -----
@@ -2287,6 +2297,8 @@ class Voronoi(_QhullUser):
     """
     def __init__(self, points, furthest_site=False, incremental=False,
                  qhull_options=None):
+        if np.ma.is_masked(points):
+            raise ValueError('Input points cannot be a masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
 
         if qhull_options is None:

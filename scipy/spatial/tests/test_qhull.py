@@ -350,6 +350,9 @@ class TestDelaunay(object):
     Check that triangulation works.
 
     """
+    def test_masked_array_fails(self):
+        masked_array = np.ma.masked_all(1)
+        assert_raises(ValueError, qhull.Delaunay, masked_array)
 
     def test_nd_simplex(self):
         # simple smoke test: triangulate a n-dimensional simplex
@@ -534,6 +537,10 @@ def assert_hulls_equal(points, facets_1, facets_2):
 
 
 class TestConvexHull:
+    def test_masked_array_fails(self):
+        masked_array = np.ma.masked_all(1)
+        assert_raises(ValueError, qhull.ConvexHull, masked_array)
+
     def test_hull_consistency_tri(self):
         # Check that a convex hull returned by qhull in ndim
         # and the hull constructed from ndim delaunay agree
@@ -598,6 +605,10 @@ class TestConvexHull:
 
 
 class TestVoronoi:
+    def test_masked_array_fails(self):
+        masked_array = np.ma.masked_all(1)
+        assert_raises(ValueError, qhull.Voronoi, masked_array)
+
     def test_simple(self):
         # Simple case with known Voronoi diagram
         points = [(0, 0), (0, 1), (0, 2),
