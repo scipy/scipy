@@ -40,6 +40,10 @@ __ http://www.numpy.org/
 
 __ http://http://sphinx-doc.org/
 
+4) If you want to build SciPy from source: Cython__ 0.17.1 or newer
+
+__ http://cython.org/
+
 Windows
 -------
 
