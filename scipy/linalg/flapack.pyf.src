@@ -1169,7 +1169,8 @@ interface
      ! A = L * L^T, C = L if lower = 1
      ! C is triangular matrix of the corresponding Cholesky decomposition.
 
-     callstatement (*f2py_func)((lower?"L":"U"),&n,c,&n,&info)
+     ! swap the order of "U"/"L" to fix gh-2691
+     callstatement (*f2py_func)((lower?"U":"L"),&n,c,&n,&info)
      callprotoargument char*,int*,<ctype>*,int*,int*
 
      integer optional,intent(in),check(lower==0||lower==1) :: lower = 0

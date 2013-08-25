@@ -6,11 +6,12 @@
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
-    assert_array_almost_equal, assert_, assert_raises
+    assert_array_almost_equal, assert_, assert_raises, assert_allclose
 
 import numpy as np
 
 from scipy.linalg import _flapack as flapack
+from scipy.linalg import inv
 try:
     from scipy.linalg import _clapack as clapack
 except ImportError:
@@ -114,6 +115,22 @@ class TestRegression(TestCase):
                 ungrq, = get_lapack_funcs(['ungrq'], [a])
                 assert_raises(Exception, ungrq, rq[-2:], tau, lwork=1)
                 ungrq(rq[-2:], tau, lwork=2)
+
+class TestDpotr(TestCase):
+
+    def test_gh_2691(self):
+        # 'lower' argument of dportf/dpotri
+        # TODO: 'clean' arg to dportf --- can be removed?
+        np.random.seed(42)
+        x=np.random.normal(size=(3, 3))
+        a = x.dot(x.T)
+
+        dpotrf, dpotri = get_lapack_funcs(("potrf", "potri"), (a, ))
+
+        c, info = dpotrf(a, False, clean=False)
+        dpt = dpotri(c, False)[0]
+
+        assert_allclose(np.triu(dpt), np.triu(inv(a)))
 
 if __name__ == "__main__":
     run_module_suite()
