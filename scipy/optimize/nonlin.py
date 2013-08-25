@@ -1336,6 +1336,10 @@ class KrylovJacobian(Jacobian):
         the iterative solvers in `scipy.sparse.linalg`.
 
         The default is `scipy.sparse.linalg.lgmres`.
+    inner_maxiter : int, optional
+        Parameter to pass to the \"inner\" Krylov solver: maximum number of 
+        iterations. Iteration will stop after maxiter steps even if the 
+        specified tolerance has not been achieved.
     inner_M : LinearOperator or InverseJacobian
         Preconditioner for the inner Krylov iteration.
         Note that you can use also inverse Jacobians as (adaptive)
@@ -1347,18 +1351,24 @@ class KrylovJacobian(Jacobian):
         If the preconditioner has a method named 'update', it will be called
         as ``update(x, f)`` after each nonlinear step, with ``x`` giving
         the current point, and ``f`` the current function value.
-    inner_tol, inner_maxiter, ...
-        Parameters to pass on to the \"inner\" Krylov solver.
-        See `scipy.sparse.linalg.gmres` for details.
     outer_k : int, optional
         Size of the subspace kept across LGMRES nonlinear iterations.
         See `scipy.sparse.linalg.lgmres` for details.
+    inner_* ...
+        Parameters starting with \"inner_\", such as \"inner_tol\" will be
+        passed to the \"inner\" Krylov solver without prefix, such as \"tol\".
+        See one of the following for details:
+
     %(params_extra)s
+
 
     See Also
     --------
+    scipy.sparse.linalg.bicgstab
+    scipy.sparse.linalg.cgs
     scipy.sparse.linalg.gmres
     scipy.sparse.linalg.lgmres
+    scipy.sparse.linalg.minres
 
     Notes
     -----
@@ -1406,7 +1416,7 @@ class KrylovJacobian(Jacobian):
 
         if self.method is scipy.sparse.linalg.gmres:
             # Replace GMRES's outer iteration with Newton steps
-            self.method_kw['restrt'] = inner_maxiter
+            self.method_kw['restart'] = inner_maxiter
             self.method_kw['maxiter'] = 1
         elif self.method is scipy.sparse.linalg.lgmres:
             self.method_kw['outer_k'] = outer_k
