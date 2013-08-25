@@ -161,7 +161,7 @@ def _raw_fft(x, n, axis, direction, overwrite_x, work_function):
     return r
 
 
-def fft(x, n=None, axis=-1, overwrite_x=0):
+def fft(x, n=None, axis=-1, overwrite_x=False):
     """
     Return discrete Fourier transform of real or complex sequence.
 
@@ -181,7 +181,7 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
         Axis along which the fft's are computed; the default is over the
         last axis (i.e., ``axis=-1``).
     overwrite_x : bool, optional
-        If True the contents of `x` can be destroyed; the default is False.
+        If True, the contents of `x` can be destroyed; the default is False.
 
     Returns
     -------
@@ -216,7 +216,15 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
     negative-frequency terms.  For `n` even and `x` real, ``A[n/2]`` will
     always be real.
 
-    This function is most efficient when `n` is a power of two.
+    This function is most efficient when `n` is a power of two, and least
+    efficient when `n` is prime.
+    
+    If the data type of `x` is real, a "real FFT" algorithm is automatically
+    used, which roughly halves the computation time.  To increase efficiency
+    a little further, use `rfft`, which does the same calculation, but only 
+    outputs half of the symmetrical spectrum.  If the data is both real and 
+    symmetrical, the `dct` can again double the efficiency, by generating 
+    half of the spectrum from half of the signal.
 
     Examples
     --------
@@ -252,7 +260,7 @@ def fft(x, n=None, axis=-1, overwrite_x=0):
     return swapaxes(tmp, axis, -1)
 
 
-def ifft(x, n=None, axis=-1, overwrite_x=0):
+def ifft(x, n=None, axis=-1, overwrite_x=False):
     """
     Return discrete inverse Fourier transform of real or complex sequence.
 
@@ -272,8 +280,25 @@ def ifft(x, n=None, axis=-1, overwrite_x=0):
         Axis along which the ifft's are computed; the default is over the
         last axis (i.e., ``axis=-1``).
     overwrite_x : bool, optional
-        If True the contents of `x` can be destroyed; the default is False.
+        If True, the contents of `x` can be destroyed; the default is False.
 
+    Returns
+    -------
+    ifft : ndarray of floats
+        The inverse discrete Fourier transform.
+
+    See Also
+    --------
+    fft : Forward FFT
+
+    Notes
+    -----
+    This function is most efficient when `n` is a power of two, and least
+    efficient when `n` is prime.
+    
+    If the data type of `x` is real, a "real IFFT" algorithm is automatically
+    used, which roughly halves the computation time.
+    
     """
     tmp = _asfarray(x)
 
@@ -301,22 +326,9 @@ def ifft(x, n=None, axis=-1, overwrite_x=0):
     return swapaxes(tmp, axis, -1)
 
 
-def rfft(x, n=None, axis=-1, overwrite_x=0):
+def rfft(x, n=None, axis=-1, overwrite_x=False):
     """
     Discrete Fourier transform of a real sequence.
-
-    The returned real arrays contains::
-
-      [y(0),Re(y(1)),Im(y(1)),...,Re(y(n/2))]              if n is even
-      [y(0),Re(y(1)),Im(y(1)),...,Re(y(n/2)),Im(y(n/2))]   if n is odd
-
-    where
-    ::
-
-      y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k*2*pi/n)
-      j = 0..n-1
-
-    Note that ``y(-j) == y(n-j).conjugate()``.
 
     Parameters
     ----------
@@ -333,6 +345,21 @@ def rfft(x, n=None, axis=-1, overwrite_x=0):
         If set to true, the contents of `x` can be overwritten. Default is
         False.
 
+    Returns
+    -------
+    z : real ndarray
+        The returned real array contains::
+    
+          [y(0),Re(y(1)),Im(y(1)),...,Re(y(n/2))]              if n is even
+          [y(0),Re(y(1)),Im(y(1)),...,Re(y(n/2)),Im(y(n/2))]   if n is odd
+    
+        where::
+    
+          y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k*2*pi/n)
+          j = 0..n-1
+    
+        Note that ``y(-j) == y(n-j).conjugate()``.
+
     See Also
     --------
     fft, irfft, scipy.fftpack.basic
@@ -340,6 +367,14 @@ def rfft(x, n=None, axis=-1, overwrite_x=0):
     Notes
     -----
     Within numerical accuracy, ``y == rfft(irfft(y))``.
+    
+    Examples
+    --------
+    >>> a = [9, -9, 1, 3]
+    >>> fft(a)
+    array([  4. +0.j,   8.+12.j,  16. +0.j,   8.-12.j])
+    >>> rfft(a)
+    array([  4.,   8.,  12.,  16.])
 
     """
     tmp = _asfarray(x)
@@ -357,11 +392,11 @@ def rfft(x, n=None, axis=-1, overwrite_x=0):
     return _raw_fft(tmp,n,axis,1,overwrite_x,work_function)
 
 
-def irfft(x, n=None, axis=-1, overwrite_x=0):
+def irfft(x, n=None, axis=-1, overwrite_x=False):
     """
     Return inverse discrete Fourier transform of real sequence x.
 
-    The contents of x is interpreted as the output of the ``rfft(..)``
+    The contents of `x` are interpreted as the output of the `rfft`
     function.
 
     Parameters
@@ -377,7 +412,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=0):
         Axis along which the ifft's are computed; the default is over
         the last axis (i.e., axis=-1).
     overwrite_x : bool, optional
-        If True the contents of `x` can be destroyed; the default is False.
+        If True, the contents of `x` can be destroyed; the default is False.
 
     Returns
     -------
@@ -406,7 +441,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=0):
                                      * exp(sqrt(-1)*j*k* 2*pi/n)
                     + c.c. + x[0])
 
-    c.c. denotes complex conjugate of preceeding expression.
+    c.c. denotes complex conjugate of preceding expression.
 
     For details on input parameters, see `rfft`.
 
@@ -487,7 +522,7 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
     return r
 
 
-def fftn(x, shape=None, axes=None, overwrite_x=0):
+def fftn(x, shape=None, axes=None, overwrite_x=False):
     """
     Return multidimensional discrete Fourier transform.
 
@@ -550,7 +585,7 @@ def _raw_fftn_dispatch(x, shape, axes, overwrite_x, direction):
     return _raw_fftnd(tmp,shape,axes,direction,overwrite_x,work_function)
 
 
-def ifftn(x, shape=None, axes=None, overwrite_x=0):
+def ifftn(x, shape=None, axes=None, overwrite_x=False):
     """
     Return inverse multi-dimensional discrete Fourier transform of
     arbitrary type sequence x.
@@ -572,7 +607,7 @@ def ifftn(x, shape=None, axes=None, overwrite_x=0):
     return _raw_fftn_dispatch(x, shape, axes, overwrite_x, -1)
 
 
-def fft2(x, shape=None, axes=(-2,-1), overwrite_x=0):
+def fft2(x, shape=None, axes=(-2,-1), overwrite_x=False):
     """
     2-D discrete Fourier transform.
 
@@ -587,7 +622,7 @@ def fft2(x, shape=None, axes=(-2,-1), overwrite_x=0):
     return fftn(x,shape,axes,overwrite_x)
 
 
-def ifft2(x, shape=None, axes=(-2,-1), overwrite_x=0):
+def ifft2(x, shape=None, axes=(-2,-1), overwrite_x=False):
     """
     2-D discrete inverse Fourier transform of real or complex sequence.
 
