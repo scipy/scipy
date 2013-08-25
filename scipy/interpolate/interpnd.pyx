@@ -54,7 +54,8 @@ class NDInterpolatorBase(object):
 
     """
 
-    def __init__(self, points, values, fill_value=np.nan, ndim=None):
+    def __init__(self, points, values, fill_value=np.nan, ndim=None,
+            rescale=False):
         """
         Check shape of points and values arrays, and reshape values to
         (npoints, nvalues).  Ensure the `points` and values arrays are
@@ -63,6 +64,9 @@ class NDInterpolatorBase(object):
 
         if isinstance(points, qhull.Delaunay):
             # Precomputed triangulation was passed in
+            if rescale:
+                raise ValueError("rescaling is not supported when passing "
+                        "a Delaunay triangulation as ``points``.")
             self.tri = points
             points = self.tri.points
         else:
@@ -93,7 +97,16 @@ class NDInterpolatorBase(object):
             self.values = np.ascontiguousarray(self.values, dtype=np.double)
             self.fill_value = float(fill_value)
 
-        self.points = points
+        if not rescale:
+            self.scale = None
+            self.points = points
+        else:
+            # scale to unit cube centered at 0
+            offset = np.mean(points, axis=0)
+            self.offset = offset
+            scale = np.max(np.abs(points), axis=0) / .5
+            self.scale = scale
+            self.points = (points - offset) / scale
 
     def _check_init_shape(self, points, values, ndim=None):
         """
@@ -134,10 +147,16 @@ class NDInterpolatorBase(object):
         xi = xi.reshape(-1, shape[-1])
         xi = np.ascontiguousarray(xi, dtype=np.double)
 
-        if self.is_complex:
-            r = self._evaluate_complex(xi)
+        if self.scale is None:
+            if self.is_complex:
+                r = self._evaluate_complex(xi)
+            else:
+                r = self._evaluate_double(xi)
         else:
-            r = self._evaluate_double(xi)
+            if self.is_complex:
+                r = self._evaluate_complex((xi - self.offset) / self.scale)
+            else:
+                r = self._evaluate_double((xi - self.offset) / self.scale)
 
         return np.asarray(r).reshape(shape[:-1] + self.values_shape)
 
@@ -169,7 +188,7 @@ def _ndim_coords_from_arrays(points):
 
 class LinearNDInterpolator(NDInterpolatorBase):
     """
-    LinearNDInterpolator(points, values, fill_value=np.nan)
+    LinearNDInterpolator(points, values, fill_value=np.nan, rescale=False)
 
     Piecewise linear interpolant in N dimensions.
 
@@ -185,6 +204,10 @@ class LinearNDInterpolator(NDInterpolatorBase):
         Value used to fill in for requested points outside of the
         convex hull of the input points.  If not provided, then
         the default is ``nan``.
+    rescale : boolean, optional
+        Rescale points to unit cube before performing interpolation.
+        This is useful if some of the input dimensions have
+        incommensurable units and differ by many orders of magnitude.
 
     Notes
     -----
@@ -198,8 +221,9 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     """
 
-    def __init__(self, points, values, fill_value=np.nan):
-        NDInterpolatorBase.__init__(self, points, values, fill_value=fill_value)
+    def __init__(self, points, values, fill_value=np.nan, rescale=False):
+        NDInterpolatorBase.__init__(self, points, values, fill_value=fill_value,
+                rescale=rescale)
         if self.tri is None:
             self.tri = qhull.Delaunay(self.points)
 
@@ -754,6 +778,10 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         Absolute/relative tolerance for gradient estimation.
     maxiter : int, optional
         Maximum number of iterations in gradient estimation.
+    rescale : boolean, optional
+        Rescale points to unit cube before performing interpolation.
+        This is useful if some of the input dimensions have
+        incommensurable units and differ by many orders of magnitude.
 
     Notes
     -----
@@ -792,9 +820,9 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     """
 
     def __init__(self, points, values, fill_value=np.nan,
-                 tol=1e-6, maxiter=400):
+                 tol=1e-6, maxiter=400, rescale=False):
         NDInterpolatorBase.__init__(self, points, values, ndim=2,
-                                    fill_value=fill_value)
+                                    fill_value=fill_value, rescale=rescale)
         if self.tri is None:
             self.tri = qhull.Delaunay(self.points)
         self.grad = estimate_gradients_2d_global(self.tri, self.values,
