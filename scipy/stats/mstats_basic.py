@@ -1667,7 +1667,7 @@ skewtest.__doc__ = stats.skewtest.__doc__
 
 def kurtosistest(a, axis=0):
     a, axis = _chk_asarray(a, axis)
-    n = a.count(axis=axis).astype(float)
+    n = a.count(axis=axis).astype(float) if a.ndim > 1 else float(a.count(axis=axis))
     if np.min(n) < 20:
         warnings.warn(
             "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" %
@@ -1681,7 +1681,12 @@ def kurtosistest(a, axis=0):
     A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
     term1 = 1 - 2./(9.0*A)
     denom = 1 + x*ma.sqrt(2/(A-4.0))
-    denom[denom < 0] = masked
+    if a.ndim > 1:
+        denom[denom < 0] = masked
+    elif denom < 0:
+        warnings.warn(
+            "only denom value is negative ... continuing anyway, denom=%f" %
+            denom)
     term2 = ma.power((1-2.0/A)/denom,1/3.0)
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))
     return Z, (1.0-stats.zprob(Z))*2
