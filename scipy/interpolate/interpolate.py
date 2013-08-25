@@ -156,7 +156,7 @@ class interp2d(object):
     >>> xnew = np.arange(-5.01, 5.01, 1e-2)
     >>> ynew = np.arange(-5.01, 5.01, 1e-2)
     >>> znew = f(xnew, ynew)
-    >>> plt.plot(x, z[:, 0], 'ro-', xnew, znew[:, 0], 'b-')
+    >>> plt.plot(x, z[0, :], 'ro-', xnew, znew[0, :], 'b-')
     >>> plt.show()
 
     """
