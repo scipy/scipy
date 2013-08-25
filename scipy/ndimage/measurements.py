@@ -555,7 +555,7 @@ def sum(input, labels=None, index=None):
 
     Returns
     -------
-    sum : ndarray
+    sum : ndarray or scalar
         An array of the sums of values of `input` inside the regions defined
         by `labels` with the same shape as `index`. If 'index' is None or scalar,
         a scalar is returned. 
@@ -572,7 +572,7 @@ def sum(input, labels=None, index=None):
     [1.0, 5.0]
     >>> sum(input, labels, index=1)
     1
-    >>> sum(input, labels, index=1)
+    >>> sum(input, labels)
     6
 
 
