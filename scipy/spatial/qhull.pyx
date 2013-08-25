@@ -1579,6 +1579,9 @@ class Delaunay(_QhullUser):
         Raised when Qhull encounters an error condition, such as
         geometrical degeneracy when options to resolve are not enabled.
 
+    ValueError
+        Raised when a Masked array is given as points argument.
+
     Notes
     -----
     The tesselation is computed using the Qhull library [Qhull]_.
@@ -1652,6 +1655,8 @@ class Delaunay(_QhullUser):
 
     def __init__(self, points, furthest_site=False, incremental=False,
                  qhull_options=None):
+        if np.ma.is_masked(points):
+            raise ValueError('Input points could not be masked array.')
         points = np.ascontiguousarray(points, dtype=np.double)
 
         if qhull_options is None:
@@ -2108,6 +2113,9 @@ class ConvexHull(_QhullUser):
         Raised when Qhull encounters an error condition, such as
         geometrical degeneracy when options to resolve are not enabled.
 
+    ValueError
+        Raised when a Masked array is given as points argument.
+
     Notes
     -----
     The convex hull is computed using the Qhull libary [Qhull]_.
@@ -2142,6 +2150,8 @@ class ConvexHull(_QhullUser):
     """
 
     def __init__(self, points, incremental=False, qhull_options=None):
+        if np.ma.is_masked(points):
+            raise ValueError('Input points could not be masked array.')
         points = np.ascontiguousarray(points, dtype=np.double)
 
         if qhull_options is None:
@@ -2228,6 +2238,9 @@ class Voronoi(_QhullUser):
         Raised when Qhull encounters an error condition, such as
         geometrical degeneracy when options to resolve are not enabled.
 
+    ValueError
+        Raised when a Masked array is given as points argument.
+
     Notes
     -----
     The Voronoi diagram is computed using the Qhull libary [Qhull]_.
@@ -2287,6 +2300,8 @@ class Voronoi(_QhullUser):
     """
     def __init__(self, points, furthest_site=False, incremental=False,
                  qhull_options=None):
+        if np.ma.is_masked(points):
+            raise ValueError('Input points could not be masked array.')
         points = np.ascontiguousarray(points, dtype=np.double)
 
         if qhull_options is None:
