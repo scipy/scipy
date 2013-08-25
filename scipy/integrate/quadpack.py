@@ -448,6 +448,9 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     Return the triple integral of ``func(z, y, x)`` from ``x = a..b``,
     ``y = gfun(x)..hfun(x)``, and ``z = qfun(x,y)..rfun(x,y)``.
 
+    For simple domains (bounds in x, y and z given) that involve infinities, it
+    is advised to use nquad instead.
+
     Parameters
     ----------
     func : function
