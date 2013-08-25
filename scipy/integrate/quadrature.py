@@ -162,6 +162,8 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     odeint: ODE integrator
 
     """
+    if not isinstance(args, tuple):
+        args = (args,)
     vfunc = vectorize1(func, args, vec_func=vec_func)
     val = np.inf
     err = np.inf
