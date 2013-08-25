@@ -5260,8 +5260,6 @@ class norminvgauss_gen(rv_continuous):
 
     """
     def __call__(self, a=1, b=0, *args, **kwds):
-        gamma = sqrt(a**2 - b**2)
-        self.x_opt = self._compute_xopt(a, b)
         return self.freeze(a, b, *args, **kwds)
 
     def _compute_xopt(self, a, b):
@@ -5284,12 +5282,16 @@ class norminvgauss_gen(rv_continuous):
                exp(b * x - a * sqrt(1 + x**2)) / sqrt(1 + x**2))
         return res
 
-    def _cdf_single_call(self, x, a, b):
-        if isinstance(self, rv_frozen):
-            x_opt = self.x_opt
-        else:
-            x_opt = self._compute_xopt(a, b)
+    def _cdf(self, x, a, b):
+        # x_opt is expensive to compute, but we can't cache it easily (no state
+        # variables that depend on shape parameters can be used) - therefore
+        # pass it directly to _cdf_single_call
+        x_opt = np.empty(a.shape, dtype=float)  # a.shape == b.shape == x.shape
+        x_opt.fill(self._compute_xopt(a[0], b[0]))
+        self.veccdf.nin = self.numargs + 2  # shape args, x, x_opt
+        return self.veccdf(x, a, b, x_opt)
 
+    def _cdf_single_call(self, x, a, b, x_opt):
         if x <= x_opt:
             return integrate.quad(self._pdf, -np.inf, x, args=(a, b))[0]
         else:
