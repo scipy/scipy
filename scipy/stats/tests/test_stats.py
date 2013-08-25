@@ -8,7 +8,6 @@
 """
 from __future__ import division, print_function, absolute_import
 
-import sys
 import warnings
 from collections import namedtuple
 
@@ -556,7 +555,6 @@ class TestCorrSpearmanrTies(TestCase):
 ### I need to figure out how to do this one.
 
 
-@dec.knownfailureif(sys.version[:3] < '2.5', "Can't index array with np.int64")
 def test_kendalltau():
     # with some ties
     x1 = [12, 2, 1, 12, 2]
@@ -2073,7 +2071,8 @@ def mannwhitneyu():
 
 
 def test_pointbiserial():
-    # copied from mstats tests removing nans
+    # same as mstats test except for the nan
+    # Test data: http://support.sas.com/ctx/samples/index.jsp?sid=490&tab=output
     x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
          0,0,0,0,1]
     y = [14.8,13.8,12.4,10.1,7.1,6.1,5.8,4.6,4.3,3.5,3.3,3.2,3.0,
