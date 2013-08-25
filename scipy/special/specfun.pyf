@@ -404,7 +404,7 @@ python module specfun ! in
         end subroutine othpl
         subroutine klvnzo(nt,kd,zo) ! in :specfun:specfun.f
             integer intent(in), check(nt>0) :: nt
-            integer intent(in), check(kd>=1 || kd<=8) :: kd
+            integer intent(in), check((kd>=1)&&(kd<=8)) :: kd
             double precision intent(out), depend(nt), dimension(nt) :: zo
         end subroutine klvnzo
         ! rswfo
