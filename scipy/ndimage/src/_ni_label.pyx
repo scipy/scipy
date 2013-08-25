@@ -58,7 +58,7 @@ cdef void fused_nonzero_line(data_t *p, np.intp_t stride,
     cdef np.uintp_t i
     for i in range(L):
         line[i] = FOREGROUND if \
-            (<data_t *> ((<void *> p) + i * stride))[0] \
+            (<data_t *> ((<char *> p) + i * stride))[0] \
             else BACKGROUND
 
 
@@ -69,7 +69,7 @@ cdef void fused_read_line(data_t *p, np.intp_t stride,
                           np.uintp_t *line, np.intp_t L) nogil:
     cdef np.uintp_t i
     for i in range(L):
-        line[i] = <np.uintp_t> (<data_t *> ((<void *> p) + i * stride))[0]
+        line[i] = <np.uintp_t> (<data_t *> ((<char *> p) + i * stride))[0]
 
 
 ######################################################################
@@ -85,7 +85,7 @@ cdef bint fused_write_line(data_t *p, np.intp_t stride,
         # in-place.
         if line[i] != <np.uintp_t> <data_t> line[i]:
             return True
-        (<data_t *> ((<void *> p) + i * stride))[0] = <data_t> line[i]
+        (<data_t *> ((<char *> p) + i * stride))[0] = <data_t> line[i]
     return False
 
 
@@ -302,8 +302,8 @@ cpdef _label(np.ndarray input,
                 PyArray_ITER_RESET(itstruct)
                 for ni in range(num_neighbors):
                     neighbor_use_prev = (<np.int_t *> PyArray_ITER_DATA(itstruct))[0]
-                    neighbor_use_adjacent = (<np.int_t *> (PyArray_ITER_DATA(itstruct) + ss))[0]
-                    neighbor_use_next = (<np.int_t *> (PyArray_ITER_DATA(itstruct) + 2 * ss))[0]
+                    neighbor_use_adjacent = (<np.int_t *> (<char *> PyArray_ITER_DATA(itstruct) + ss))[0]
+                    neighbor_use_next = (<np.int_t *> (<char *> PyArray_ITER_DATA(itstruct) + 2 * ss))[0]
                     if not (neighbor_use_prev or
                             neighbor_use_adjacent or
                             neighbor_use_next):
@@ -327,7 +327,7 @@ cpdef _label(np.ndarray input,
                         # becomes next iteration's neighbor buffer, so no
                         # need to read it here.
                         if output.ndim != 2:
-                            read_line(PyArray_ITER_DATA(ito) + total_offset, so,
+                            read_line(<char *> PyArray_ITER_DATA(ito) + total_offset, so,
                                       neighbor_buffer, L)
 
                         # be conservative about how much space we may need
