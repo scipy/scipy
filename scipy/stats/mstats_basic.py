@@ -52,6 +52,7 @@ import warnings
 
 # import scipy.stats as stats
 from . import stats
+from . import distributions
 import scipy.special as special
 import scipy.misc as misc
 # import scipy.stats.futil as futil
@@ -1661,7 +1662,7 @@ def skewtest(a, axis=0):
     alpha = ma.sqrt(2.0/(W2-1))
     y = ma.where(y == 0, 1, y)
     Z = delta*ma.log(y/alpha + ma.sqrt((y/alpha)**2+1))
-    return Z, (1.0 - stats.zprob(Z))*2
+    return Z, 2 * distributions.norm.sf(np.abs(Z)) # (1.0 - stats.zprob(Z))*2
 skewtest.__doc__ = stats.skewtest.__doc__
 
 
@@ -1689,7 +1690,7 @@ def kurtosistest(a, axis=0):
             denom)
     term2 = ma.power((1-2.0/A)/denom,1/3.0)
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))
-    return Z, (1.0-stats.zprob(Z))*2
+    return Z, 2 * distributions.norm.sf(np.abs(Z)) # (1.0 - stats.zprob(Z))*2
 kurtosistest.__doc__ = stats.kurtosistest.__doc__
 
 
