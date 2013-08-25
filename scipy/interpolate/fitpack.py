@@ -367,6 +367,9 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
 
     See splev for evaluation of the spline and its derivatives.
 
+    The user is responsible for assuring that the values of *x* are unique.
+    Otherwise, *splrep* will not return sensible results.
+
     See Also
     --------
 
