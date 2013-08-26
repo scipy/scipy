@@ -1357,9 +1357,8 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             legenp,
                             [IntArg(0, 100), IntArg(0, 100), Arg(-1, 1)])
 
-    @knownfailure_overridable("wrong function at |z| > 1 (Trac #1877)")
     def test_legenp_complex(self):
-        def lpnm(n, m, z):
+        def clpnm(n, m, z):
             if m > n:
                 return 0.0
             return sc.clpmn(m, n, z)[0][-1,-1]
@@ -1370,7 +1369,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                 return np.nan
             return _exception_to_nan(mpmath.legenp)(int(n.real), int(m.real), **HYPERKW)
 
-        assert_mpmath_equal(lpnm,
+        assert_mpmath_equal(clpnm,
                             legenp,
                             [IntArg(0, 100), IntArg(0, 100), ComplexArg()])
 
