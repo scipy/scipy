@@ -2447,6 +2447,11 @@ class beta_gen(rv_continuous):
             # do general fit
             return super(beta_gen, self).fit(data, *args, **kwds)
 
+        if f0 is not None and f1 is not None:
+            # This check is for consistency with `rv_continuous.fit`.
+            raise ValueError("All parameters fixed. There is nothing to "
+                             "optimize.")
+
         # Special case: loc and scale are constrained, so we are fitting
         # just the shape parameters.  This can be done much more efficiently
         # than the method used in `rv_continuous.fit`.  (See the subsection

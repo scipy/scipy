@@ -840,7 +840,6 @@ class TestFitMethod(object):
         assert_almost_equal(loc, 3)
         assert_equal(scale, 2)
 
-
     def test_fix_fit_gamma(self):
         x = np.arange(1, 6)
         meanlog = np.log(x).mean()
@@ -878,7 +877,6 @@ class TestFitMethod(object):
         assert_equal(scale, fscale)
         c = meanlog - np.log(fscale)
         assert_almost_equal(special.digamma(a), c)
-
 
     def test_fix_fit_beta(self):
         # Test beta.fit when both floc and fscale are given.
@@ -930,6 +928,10 @@ class TestFitMethod(object):
         assert_raises(ValueError, stats.beta.fit, y, floc=0, fscale=1)
         assert_raises(ValueError, stats.beta.fit, y, floc=0, fscale=1, f0=2)
         assert_raises(ValueError, stats.beta.fit, y, floc=0, fscale=1, f1=2)
+
+        # Check that attempting to fix all the parameters raises a ValueError.
+        assert_raises(ValueError, stats.beta.fit, y, f0=0, f1=1,
+                                                     floc=2, fscale=3)
 
 
 class TestFrozen(TestCase):
