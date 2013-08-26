@@ -4,7 +4,7 @@ Test functions for multivariate normal distributions.
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import (
+from numpy.testing import (assert_almost_equal,
         run_module_suite, assert_allclose, assert_equal, assert_raises)
 
 import numpy
@@ -248,6 +248,25 @@ def test_large_sample():
 
     assert_allclose(numpy.cov(sample.T), cov, rtol=1e-1)
     assert_allclose(sample.mean(0), mean, rtol=1e-1)
+
+
+def test_entropy():
+    np.random.seed(2846)
+
+    n = 3
+    mean = np.random.randn(n)
+    M = np.random.randn(n, n)
+    cov = np.dot(M, M.T)
+
+    rv = multivariate_normal(mean, cov)
+
+    # Check that frozen distribution agrees with entropy function
+    assert_almost_equal(rv.entropy(), multivariate_normal.entropy(mean, cov))
+    # Compare entropy with manually computed expression involving
+    # the sum of the logs of the eigenvalues of the covariance matrix
+    eigs = np.linalg.eig(cov)[0]
+    desired = 1/2 * (n * (np.log(2*np.pi) + 1) + np.sum(np.log(eigs)))
+    assert_almost_equal(desired, rv.entropy())
 
 
 if __name__ == "__main__":

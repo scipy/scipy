@@ -414,6 +414,27 @@ class multivariate_normal_gen(object):
             out = out[()]
         return out
 
+    def entropy(self, mean=None, cov=1):
+        """
+        Computes the differential entropy of the multivariate normal.
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+
+        Returns
+        -------
+        h : scalar
+            Entropy of the multivariate normal distribution
+
+        """
+        dim, mean, cov = _process_parameters(None, mean, cov)
+        return 1/2 * np.log(np.linalg.det(2 * np.pi * np.e * cov))
+
 multivariate_normal = multivariate_normal_gen()
 
 
@@ -462,6 +483,18 @@ class multivariate_normal_frozen(object):
 
     def rvs(self, size=1):
         return self._mnorm.rvs(self.mean, self.cov, size)
+
+    def entropy(self):
+        """
+        Computes the differential entropy of the multivariate normal.
+
+        Returns
+        -------
+        h : scalar
+            Entropy of the multivariate normal distribution
+
+        """
+        return 1/2 * (self.dim * (_LOG_2PI + 1) + self._log_det_cov)
 
 
 # Set frozen generator docstrings from corresponding docstrings in
