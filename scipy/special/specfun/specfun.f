@@ -266,10 +266,6 @@ C
 20         CONTINUE
            RETURN
         ENDIF
-C       LS=1
-C       IF (CDABS(Z).GT.1.0D0) LS=-1
-C       ZQ=CDSQRT(LS*(1.0D0-Z*Z))
-C       ZS=LS*(1.0D0-Z*Z)
         ZQ=CDSQRT(Z*Z-1.0D0)
         ZS=(Z*Z-1.0D0)
         DO 25 I=1,M
@@ -287,7 +283,6 @@ C       DLMF 14.10.3
         CPD(0,0)=(0.0D0,0.0D0)
         DO 40 J=1,N
 C       DLMF 14.10.5
-C 40         CPD(0,J)=LS*J*(CPM(0,J-1)-Z*CPM(0,J))/ZS
 40         CPD(0,J)=J*(Z*CPM(0,J)-CPM(0,J-1))/ZS
         DO 45 I=1,M
         DO 45 J=I,N
