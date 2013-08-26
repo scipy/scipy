@@ -12,7 +12,7 @@ import numpy as np
 import scipy.special as spec
 import math
 
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 
 from . import fitpack
 from . import dfitpack

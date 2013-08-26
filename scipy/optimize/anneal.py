@@ -7,7 +7,7 @@ import numpy
 from numpy import asarray, tan, exp, ones, squeeze, sign, \
     all, log, sqrt, pi, shape, array, minimum, where, random
 from .optimize import Result, _check_unknown_options
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 
 __all__ = ['anneal']
 

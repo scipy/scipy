@@ -10,7 +10,7 @@ __all__ = ['lil_matrix','isspmatrix_lil']
 from bisect import bisect_left
 
 import numpy as np
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 
 from .base import spmatrix, isspmatrix
 from .sputils import getdtype, isshape, issequence, isscalarlike, ismatrix, \

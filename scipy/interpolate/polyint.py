@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.misc import factorial
 
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 
 
 __all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator",

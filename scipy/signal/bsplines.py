@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 import scipy.special
 from numpy import logical_and, asarray, pi, zeros_like, \
      piecewise, array, arctan2, tan, zeros, arange, floor

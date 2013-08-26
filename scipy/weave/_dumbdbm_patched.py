@@ -24,7 +24,7 @@ from __future__ import division, print_function, absolute_import
 
 _os = __import__('os')
 
-from scipy.lib.six.moves import builtins
+from scipy.lib.six import builtins
 from scipy.lib.six import string_types
 
 _open = builtins.open

@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 from scipy.signal.wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
