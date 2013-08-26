@@ -6955,7 +6955,8 @@ C       **********************************
 C
 C       =====================================================
 C       Purpose: Compute the associated Legendre functions
-C                Pmn(x) and their derivatives Pmn'(x)
+C                Pmn(x) and their derivatives Pmn'(x) for
+C                real argument
 C       Input :  x  --- Argument of Pmn(x)
 C                m  --- Order of Pmn(x),  m = 0,1,2,...,n
 C                n  --- Degree of Pmn(x), n = 0,1,2,...,N
