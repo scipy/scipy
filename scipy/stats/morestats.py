@@ -1474,6 +1474,15 @@ def pdf_fromgamma(g1,g2,g3=0.0,g4=None):
     return thefunc
 
 
+def _circfuncs_common(samples, high, low):
+    samples = np.asarray(samples)
+    if samples.size == 0:
+        return np.nan, np.nan
+
+    ang = (samples - low)*2*pi / (high-low)
+    return samples, ang
+
+
 def circmean(samples, high=2*pi, low=0, axis=None):
     """
     Compute the circular mean for samples in a range.
@@ -1496,13 +1505,14 @@ def circmean(samples, high=2*pi, low=0, axis=None):
         Circular mean.
 
     """
-    ang = (samples - low)*2*pi / (high-low)
+    samples, ang = _circfuncs_common(samples, high, low)
     res = angle(np.mean(exp(1j*ang), axis=axis))
     mask = res < 0
     if (mask.ndim > 0):
         res[mask] += 2*pi
     elif mask:
         res = res + 2*pi
+
     return res*(high-low)/2.0/pi + low
 
 
@@ -1533,7 +1543,7 @@ def circvar(samples, high=2*pi, low=0, axis=None):
     angles returns a number close to the 'linear' variance.
 
     """
-    ang = (samples - low)*2*pi / (high-low)
+    samples, ang = _circfuncs_common(samples, high, low)
     res = np.mean(exp(1j*ang), axis=axis)
     R = abs(res)
     return ((high-low)/2.0/pi)**2 * 2 * log(1/R)
@@ -1568,7 +1578,7 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     small angles returns a number close to the 'linear' standard deviation.
 
     """
-    ang = (samples - low)*2*pi / (high-low)
+    samples, ang = _circfuncs_common(samples, high, low)
     res = np.mean(exp(1j*ang), axis=axis)
     R = abs(res)
     return ((high-low)/2.0/pi) * sqrt(-2*log(R))
