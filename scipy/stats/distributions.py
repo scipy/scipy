@@ -2349,25 +2349,6 @@ class FitSolverError(RuntimeError):
         self.args = (emsg,)
 
 
-def _sumlog(data, loc, scale, check_upper=False):
-    # A utililty function used in beta_gen.fit.
-    # Sum the logs of the data.  The data must be strictly positive, and if
-    # check_upper is True, the data must be strictly less than 1.
-    # `loc` and `scale` are only used in the exception that is
-    # raised if any data is out of bounds.
-
-    if check_upper and np.any(data > 1):
-        raise FitDataError("beta", lower=loc, upper=loc + scale)
-
-    # Ensure that any 0 or negative values raise an exception.
-    with np.errstate(divide='raise', invalid='raise'):
-        try:
-            s = np.log(data).sum()
-        except FloatingPointError:
-            raise FitDataError("beta", lower=loc, upper=loc + scale)
-    return s
-
-
 def _beta_mle_a(a, b, n, s1):
     # The zeros of this function give the MLE for `a`, with
     # `b`, `n` and `s1` given.  `s1` is the sum of the logs of
@@ -2474,6 +2455,8 @@ class beta_gen(rv_continuous):
 
         # Normalize the data to the interval [0,1].
         data = (ravel(data) - floc) / fscale
+        if np.any(data <= 0) or np.any(data >= 1):
+            raise FitDataError("beta", lower=floc, upper=floc + fscale)
         xbar = data.mean()
 
         if f0 is not None or f1 is not None:
@@ -2489,10 +2472,6 @@ class beta_gen(rv_continuous):
             else:
                 b = f1
 
-            # Sum the logs of data.  A FitDataError exception is raised if any
-            # value in data is not between 0 and 1 (exclusive).
-            s1 = _sumlog(data, floc, fscale, check_upper=True)
-
             # Initial guess for a.  Use the formula for the mean of the beta
             # distribution, E[x] = a / (a + b), to generate a reasonable
             # starting point based on the mean of the data and the given
@@ -2501,7 +2480,7 @@ class beta_gen(rv_continuous):
 
             # Compute the MLE for `a` by solving _beta_mle_a.
             theta, info, ier, mesg = optimize.fsolve(_beta_mle_a, a,
-                args=(b, len(data), s1), full_output=True)
+                args=(b, len(data), np.log(data).sum()), full_output=True)
             if ier != 1:
                 raise FitSolverError(mesg=mesg)
             a = theta[0]
@@ -2514,11 +2493,10 @@ class beta_gen(rv_continuous):
         else:
             # Neither of the shape parameters is fixed.
 
-            # Compute the sums of the logs of data and 1-data. This will raise
-            # a FitDataError exception if any value in data is not in the
-            # interval (0, 1).
-            s1 = _sumlog(data, floc, fscale, check_upper=True)
-            s2 = _sumlog(1 - data, floc, fscale)
+            # s1 and s2 are used in the extra arguments passed to _beta_mle_ab
+            # by optimize.fsolve.
+            s1 = np.log(data).sum()
+            s2 = np.log(1 - data).sum()
 
             # Use the "method of moments" to estimate the initial
             # guess for a and b.
