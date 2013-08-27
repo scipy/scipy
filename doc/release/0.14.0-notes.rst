@@ -29,6 +29,13 @@ Deprecated features
 Backwards incompatible changes
 ==============================
 
+scipy.special.lpmn
+------------------
+
+``lpmn`` no longer accepts complex-valued arguments. A new function
+``clpmn`` with uniform complex analytic behavior has been added, and
+it should be used instead.
+
 
 Other changes
 =============
