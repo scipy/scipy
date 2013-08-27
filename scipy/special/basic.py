@@ -627,10 +627,13 @@ def mathieu_odd_coef(m,q):
 
 
 def lpmn(m,n,z):
-    """Associated Legendre functions of the first kind, Pmn(z) and its
-    derivative, ``Pmn'(z)`` of order m and degree n.  Returns two
-    arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and ``Pmn'(z)`` for
-    all orders from ``0..m`` and degrees from ``0..n``.
+    """Associated Legendre functions of the first kind, ``Pmn(z)`` and its
+    derivative, ``Pmn'(z)`` of order m and degree n for real arguments ``z``.
+    Returns two arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and
+    ``Pmn'(z)`` for all orders from ``0..m`` and degrees from ``0..n``.
+
+    This function takes a real argument ``z``. For complex arguments ``z``
+    use clpmn instead.
 
     Parameters
     ----------
@@ -640,7 +643,7 @@ def lpmn(m,n,z):
        where ``n >= 0``; the degree of the Legendre function.  Often
        called ``l`` (lower case L) in descriptions of the associated
        Legendre function
-    z : float or complex
+    z : float 
         Input value.
 
     Returns
@@ -649,6 +652,18 @@ def lpmn(m,n,z):
        Values for all orders 0..m and degrees 0..n
     Pmn_d_z : (m+1, n+1) array
        Derivatives for all orders 0..m and degrees 0..n
+
+    Notes
+    -----
+    In the interval (-1, 1), Ferrer's function of the first kind is returned.
+    The phase convention used for the interval (1, inf) is such that the
+    result is always real.
+
+    See Also
+    --------
+    clpmn: Associated Legendre functions of the first kind for complex
+    arguments ``z``.
+    
     """
     if not isscalar(m) or (abs(m) > n):
         raise ValueError("m must be <= n.")
@@ -680,9 +695,6 @@ def clpmn(m,n,z):
     arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and ``Pmn'(z)`` for
     all orders from ``0..m`` and degrees from ``0..n``.
 
-    Phase conventions are chosen according to http://dlmf.nist.gov/14.21
-    such that the function is analytic.
-
     Parameters
     ----------
     m : int
@@ -700,6 +712,18 @@ def clpmn(m,n,z):
        Values for all orders 0..m and degrees 0..n
     Pmn_d_z : (m+1, n+1) array
        Derivatives for all orders 0..m and degrees 0..n
+
+    Notes
+    -----
+    Phase conventions are chosen according to http://dlmf.nist.gov/14.21
+    such that the function is analytic. The cut lies on the interval (-1, 1).
+    Approaching the cut from above or below in general yields a phase factor
+    with respect to Ferrer's function of the first kind (cf. ``lpmn(m, n, z)``).
+
+    See Also
+    --------
+    lpmn: Associated Legendre functions of the first kind for real
+    arguments ``z``
     """
     if not isscalar(m) or (abs(m) > n):
         raise ValueError("m must be <= n.")
