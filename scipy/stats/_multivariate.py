@@ -85,27 +85,16 @@ def _process_quantiles(x, dim):
     return x
 
 
-def process_arguments(f):
+def _squeeze_output(out):
     """
-    Process arguments passed to member functions of `multivariate_normal`.
-
-    This function infers the dimensionality of the Gaussian from the mean
-    or from the data, ensures that the mean and covariance are resp. a
-    full vector and matrix, and that the data points are formatted
-    as an ndarray whose last axis labels the components of the data points.
+    Remove single-dimensional entries from array and convert to scalar, 
+    if necessary.
 
     """
-    @wraps(f)
-    def _f(self, x, mean=None, cov=1):
-        dim, mean, cov = _process_parameters(None, mean, cov)
-        x = _process_quantiles(x, dim)
-
-        out = f(self, x, mean, cov).squeeze()
-        if out.ndim == 0:
-            out = out[()]
-        return out
-
-    return _f
+    out = out.squeeze()
+    if out.ndim == 0:
+        out = out[()]
+    return out
 
 
 def _pinv_1d(v, eps=1e-5):
@@ -310,7 +299,6 @@ class multivariate_normal_gen(object):
         See `multivariate_normal_frozen` for more information.
 
         """
-
         return multivariate_normal_frozen(mean, cov)
 
     def _logpdf(self, x, mean, prec_U, log_det_cov):
@@ -339,7 +327,6 @@ class multivariate_normal_gen(object):
         maha = np.sum(np.square(np.dot(dev, prec_U)), axis=-1)
         return -0.5 * (dim * _LOG_2PI + log_det_cov + maha)
 
-    @process_arguments
     def logpdf(self, x, mean, cov):
         """
         Log of the multivariate normal probability density function.
@@ -360,10 +347,12 @@ class multivariate_normal_gen(object):
             Log of the probability density function evaluated at `x`
 
         """
+        dim, mean, cov = _process_parameters(None, mean, cov)
+        x = _process_quantiles(x, dim)
         prec_U, log_det_cov = _psd_pinv_decomposed_log_pdet(cov)
-        return self._logpdf(x, mean, prec_U, log_det_cov)
+        out = self._logpdf(x, mean, prec_U, log_det_cov)
+        return _squeeze_output(out)
 
-    @process_arguments
     def pdf(self, x, mean, cov):
         """
         Multivariate normal probability density function.
@@ -384,8 +373,11 @@ class multivariate_normal_gen(object):
             Probability density function evaluated at `x`
 
         """
+        dim, mean, cov = _process_parameters(None, mean, cov)
+        x = _process_quantiles(x, dim)
         prec_U, log_det_cov = _psd_pinv_decomposed_log_pdet(cov)
-        return np.exp(self._logpdf(x, mean, prec_U, log_det_cov))
+        out = np.exp(self._logpdf(x, mean, prec_U, log_det_cov))
+        return _squeeze_output(out)
 
     def rvs(self, mean=None, cov=1, size=1):
         """
@@ -409,10 +401,8 @@ class multivariate_normal_gen(object):
 
         """
         dim, mean, cov = _process_parameters(None, mean, cov)
-        out = np.random.multivariate_normal(mean, cov, size).squeeze()
-        if out.ndim == 0:
-            out = out[()]
-        return out
+        out = np.random.multivariate_normal(mean, cov, size)
+        return _squeeze_output(out)
 
     def entropy(self, mean=None, cov=1):
         """
@@ -469,14 +459,9 @@ class multivariate_normal_frozen(object):
         self._mnorm = multivariate_normal_gen()
 
     def logpdf(self, x):
-        # TODO: the output processing below can be made into a generator
-        # just as for the multivariate_normal class.
         x = _process_quantiles(x, self.dim)
-        out = self._mnorm._logpdf(x, self.mean, self.prec_U,
-                                  self._log_det_cov).squeeze()
-        if out.ndim == 0:
-            out = out[()]
-        return out
+        out = self._mnorm._logpdf(x, self.mean, self.prec_U, self._log_det_cov)
+        return _squeeze_output(out)
 
     def pdf(self, x):
         return np.exp(self.logpdf(x))
