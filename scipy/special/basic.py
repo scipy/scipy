@@ -627,10 +627,16 @@ def mathieu_odd_coef(m,q):
 
 
 def lpmn(m,n,z):
-    """Associated Legendre functions of the first kind, ``Pmn(z)`` and its
-    derivative, ``Pmn'(z)`` of order m and degree n for real arguments ``z``.
-    Returns two arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and
-    ``Pmn'(z)`` for all orders from ``0..m`` and degrees from ``0..n``.
+    """Associated Legendre function of the first kind, Pmn(z)
+
+    Computes the associated Legendre function of the first kind
+    of order m and degree n,::
+
+        Pmn(z) = P_n^m(z)
+
+    and its derivative, ``Pmn'(z)``.  Returns two arrays of size
+    ``(m+1, n+1)`` containing ``Pmn(z)`` and ``Pmn'(z)`` for all
+    orders from ``0..m`` and degrees from ``0..n``.
 
     This function takes a real argument ``z``. For complex arguments ``z``
     use clpmn instead.
@@ -653,16 +659,20 @@ def lpmn(m,n,z):
     Pmn_d_z : (m+1, n+1) array
        Derivatives for all orders 0..m and degrees 0..n
 
-    Notes
-    -----
-    In the interval (-1, 1), Ferrer's function of the first kind is returned.
-    The phase convention used for the interval (1, inf) is such that the
-    result is always real.
-
     See Also
     --------
-    clpmn: Associated Legendre functions of the first kind for complex
-    arguments ``z``.
+    clpmn: associated Legendre functions of the first kind for complex z
+
+    Notes
+    -----
+    In the interval (-1, 1), Ferrer's function of the first kind is
+    returned. The phase convention used for the intervals (1, inf)
+    and (-inf, -1) is such that the result is always real.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           http://dlmf.nist.gov/14.3
     
     """
     if not isscalar(m) or (abs(m) > n):
@@ -690,10 +700,16 @@ def lpmn(m,n,z):
 
 
 def clpmn(m,n,z):
-    """Associated Legendre functions of the first kind, Pmn(z) and its
-    derivative, ``Pmn'(z)`` of order m and degree n.  Returns two
-    arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and ``Pmn'(z)`` for
-    all orders from ``0..m`` and degrees from ``0..n``.
+    """Associated Legendre function of the first kind, Pmn(z)
+
+    Computes the (associated) Legendre function of the first kind
+    of order m and degree n,::
+
+        Pmn(z) = P_n^m(z)
+
+    and its derivative, ``Pmn'(z)``.  Returns two arrays of size
+    ``(m+1, n+1)`` containing ``Pmn(z)`` and ``Pmn'(z)`` for all
+    orders from ``0..m`` and degrees from ``0..n``.
 
     Parameters
     ----------
@@ -713,17 +729,23 @@ def clpmn(m,n,z):
     Pmn_d_z : (m+1, n+1) array
        Derivatives for all orders 0..m and degrees 0..n
 
-    Notes
-    -----
-    Phase conventions are chosen according to http://dlmf.nist.gov/14.21
-    such that the function is analytic. The cut lies on the interval (-1, 1).
-    Approaching the cut from above or below in general yields a phase factor
-    with respect to Ferrer's function of the first kind (cf. ``lpmn(m, n, z)``).
-
     See Also
     --------
-    lpmn: Associated Legendre functions of the first kind for real
-    arguments ``z``
+    lpmn: associated Legendre functions of the first kind for real z
+
+    Notes
+    -----
+    Phase conventions are chosen according to [1] such that the
+    function is analytic. The cut lies on the interval (-1, 1).
+    Approaching the cut from above or below in general yields a phase
+    factor with respect to Ferrer's function of the first kind
+    (cf. `lpmn`).
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           http://dlmf.nist.gov/14.21
+
     """
     if not isscalar(m) or (abs(m) > n):
         raise ValueError("m must be <= n.")
