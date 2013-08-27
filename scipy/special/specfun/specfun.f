@@ -19,6 +19,12 @@ C
         DNAN = 0.0D0/DNAN
         END
 
+        FUNCTION DINF()
+        DOUBLE PRECISION DINF
+        DINF = 1.0D300
+        DINF = DINF*DINF
+        END
+
         SUBROUTINE CPDSA(N,Z,CDN)
 C
 C       ===========================================================
@@ -242,7 +248,7 @@ C       Output:  CPM(m,n) --- Pmn(z)
 C                CPD(m,n) --- Pmn'(z)
 C       =========================================================
 C
-        IMPLICIT DOUBLE PRECISION (X,Y)
+        IMPLICIT DOUBLE PRECISION (D,X,Y)
         IMPLICIT COMPLEX*16 (C,Z)
         DIMENSION CPM(0:MM,0:N),CPD(0:MM,0:N)
         Z=CMPLX(X,Y)
@@ -259,32 +265,39 @@ C
            DO 20 J=1,N
            DO 20 I=1,M
               IF (I.EQ.1) THEN
-                 CPD(I,J)=(1.0D+300,0.0D0)
+                 CPD(I,J)=DINF()
               ELSE IF (I.EQ.2) THEN
                  CPD(I,J)=-0.25D0*(J+2)*(J+1)*J*(J-1)*X**(J+1)
               ENDIF
 20         CONTINUE
            RETURN
         ENDIF
-        LS=1
-        IF (CDABS(Z).GT.1.0D0) LS=-1
-        ZQ=CDSQRT(LS*(1.0D0-Z*Z))
-        ZS=LS*(1.0D0-Z*Z)
+C       sqrt(z^2 - 1) with branch cut between [-1, 1]
+        ZQ=CDSQRT(Z*Z-1.0D0)
+        IF (X.LT.0D0) THEN
+           ZQ=-ZQ
+        END IF
+        ZS=(Z*Z-1.0D0)
         DO 25 I=1,M
-25         CPM(I,I)=-LS*(2.0D0*I-1.0D0)*ZQ*CPM(I-1,I-1)
+C       DLMF 14.7.15
+25         CPM(I,I)=(2.0D0*I-1.0D0)*ZQ*CPM(I-1,I-1)
         DO 30 I=0,MIN(M,N-1)
+C       DLMF 14.10.7
 30         CPM(I,I+1)=(2.0D0*I+1.0D0)*Z*CPM(I,I)
         DO 35 I=0,M
         DO 35 J=I+2,N
+C       DLMF 14.10.3
            CPM(I,J)=((2.0D0*J-1.0D0)*Z*CPM(I,J-1)-(I+J-
      &              1.0D0)*CPM(I,J-2))/(J-I)
 35      CONTINUE
         CPD(0,0)=(0.0D0,0.0D0)
         DO 40 J=1,N
-40         CPD(0,J)=LS*J*(CPM(0,J-1)-Z*CPM(0,J))/ZS
+C       DLMF 14.10.5
+40         CPD(0,J)=J*(Z*CPM(0,J)-CPM(0,J-1))/ZS
         DO 45 I=1,M
         DO 45 J=I,N
-           CPD(I,J)=LS*I*Z*CPM(I,J)/ZS+(J+I)*(J-I+1.0D0)
+C       derivative of DLMF 14.7.11 & DLMF 14.10.6
+           CPD(I,J)=-I*Z*CPM(I,J)/ZS+(J+I)*(J-I+1.0D0)
      &              /ZQ*CPM(I-1,J)
 45      CONTINUE
         RETURN
@@ -6952,7 +6965,8 @@ C       **********************************
 C
 C       =====================================================
 C       Purpose: Compute the associated Legendre functions
-C                Pmn(x) and their derivatives Pmn'(x)
+C                Pmn(x) and their derivatives Pmn'(x) for
+C                real argument
 C       Input :  x  --- Argument of Pmn(x)
 C                m  --- Order of Pmn(x),  m = 0,1,2,...,n
 C                n  --- Degree of Pmn(x), n = 0,1,2,...,N
@@ -6961,7 +6975,7 @@ C       Output:  PM(m,n) --- Pmn(x)
 C                PD(m,n) --- Pmn'(x)
 C       =====================================================
 C
-        IMPLICIT DOUBLE PRECISION (P,X)
+        IMPLICIT DOUBLE PRECISION (D,P,X)
         DIMENSION PM(0:MM,0:N),PD(0:MM,0:N)
         INTRINSIC MIN
         DO 10 I=0,N
@@ -6977,7 +6991,7 @@ C
            DO 20 J=1,N
            DO 20 I=1,M
               IF (I.EQ.1) THEN
-                 PD(I,J)=1.0D+300
+                 PD(I,J)=DINF()
               ELSE IF (I.EQ.2) THEN
                  PD(I,J)=-0.25D0*(J+2)*(J+1)*J*(J-1)*X**(J+1)
               ENDIF
@@ -6987,6 +7001,8 @@ C
         LS=1
         IF (DABS(X).GT.1.0D0) LS=-1
         XQ=DSQRT(LS*(1.0D0-X*X))
+C       Ensure connection to the complex-valued function for |x| > 1
+        IF (X.LT.-1D0) XQ=-XQ
         XS=LS*(1.0D0-X*X)
         DO 30 I=1,M
 30         PM(I,I)=-LS*(2.0D0*I-1.0D0)*XQ*PM(I-1,I-1)

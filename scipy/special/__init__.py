@@ -293,9 +293,10 @@ These are not universal functions:
 .. autosummary::
    :toctree: generated/
 
+   clpmn    -- [+]Associated Legendre Function of the first kind for complex arguments.
    lpn      -- [+]Legendre Functions (polynomials) of the first kind
    lqn      -- [+]Legendre Functions of the second kind.
-   lpmn     -- [+]Associated Legendre Function of the first kind.
+   lpmn     -- [+]Associated Legendre Function of the first kind for real arguments.
    lqmn     -- [+]Associated Legendre Function of the second kind.
 
 Orthogonal polynomials

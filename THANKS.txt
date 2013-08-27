@@ -123,6 +123,7 @@ Kenneth L. Ho for the wrapper around the Interpolative Decomposition code.
 Juan Luis Cano for refactorings in lti, sparse docs improvements and some
     trivial fixes.
 Pawel Chojnacki for simple documentation fixes.
+Gert-Ludwig Ingold for contributions to special functions.
 
 
 Institutions

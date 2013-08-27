@@ -19,7 +19,7 @@ import warnings
 
 __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'ber_zeros', 'bernoulli', 'berp_zeros', 'bessel_diff_formula',
-           'bi_zeros', 'digamma', 'diric', 'ellipk', 'erf_zeros', 'erfcinv',
+           'bi_zeros', 'clpmn', 'digamma', 'diric', 'ellipk', 'erf_zeros', 'erfcinv',
            'erfinv', 'errprint', 'euler', 'fresnel_zeros',
            'fresnelc_zeros', 'fresnels_zeros', 'gamma', 'gammaln', 'h1vp',
            'h2vp', 'hankel1', 'hankel2', 'hyp0f1', 'iv', 'ivp', 'jn_zeros',
@@ -627,10 +627,89 @@ def mathieu_odd_coef(m,q):
 
 
 def lpmn(m,n,z):
-    """Associated Legendre functions of the first kind, Pmn(z) and its
-    derivative, ``Pmn'(z)`` of order m and degree n.  Returns two
-    arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and ``Pmn'(z)`` for
-    all orders from ``0..m`` and degrees from ``0..n``.
+    """Associated Legendre function of the first kind, Pmn(z)
+
+    Computes the associated Legendre function of the first kind
+    of order m and degree n,::
+
+        Pmn(z) = P_n^m(z)
+
+    and its derivative, ``Pmn'(z)``.  Returns two arrays of size
+    ``(m+1, n+1)`` containing ``Pmn(z)`` and ``Pmn'(z)`` for all
+    orders from ``0..m`` and degrees from ``0..n``.
+
+    This function takes a real argument ``z``. For complex arguments ``z``
+    use clpmn instead.
+
+    Parameters
+    ----------
+    m : int
+       ``|m| <= n``; the order of the Legendre function.
+    n : int
+       where ``n >= 0``; the degree of the Legendre function.  Often
+       called ``l`` (lower case L) in descriptions of the associated
+       Legendre function
+    z : float 
+        Input value.
+
+    Returns
+    -------
+    Pmn_z : (m+1, n+1) array
+       Values for all orders 0..m and degrees 0..n
+    Pmn_d_z : (m+1, n+1) array
+       Derivatives for all orders 0..m and degrees 0..n
+
+    See Also
+    --------
+    clpmn: associated Legendre functions of the first kind for complex z
+
+    Notes
+    -----
+    In the interval (-1, 1), Ferrer's function of the first kind is
+    returned. The phase convention used for the intervals (1, inf)
+    and (-inf, -1) is such that the result is always real.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           http://dlmf.nist.gov/14.3
+    
+    """
+    if not isscalar(m) or (abs(m) > n):
+        raise ValueError("m must be <= n.")
+    if not isscalar(n) or (n < 0):
+        raise ValueError("n must be a non-negative integer.")
+    if not isscalar(z):
+        raise ValueError("z must be scalar.")
+    if (m < 0):
+        mp = -m
+        mf,nf = mgrid[0:mp+1,0:n+1]
+        sv = errprint(0)
+        fixarr = where(mf > nf,0.0,(-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
+        sv = errprint(sv)
+    else:
+        mp = m
+    if iscomplex(z):
+        raise ValueError("Argument must be real. Use clpmn instead.")
+    else:
+        p,pd = specfun.lpmn(mp,n,z)
+    if (m < 0):
+        p = p * fixarr
+        pd = pd * fixarr
+    return p,pd
+
+
+def clpmn(m,n,z):
+    """Associated Legendre function of the first kind, Pmn(z)
+
+    Computes the (associated) Legendre function of the first kind
+    of order m and degree n,::
+
+        Pmn(z) = P_n^m(z)
+
+    and its derivative, ``Pmn'(z)``.  Returns two arrays of size
+    ``(m+1, n+1)`` containing ``Pmn(z)`` and ``Pmn'(z)`` for all
+    orders from ``0..m`` and degrees from ``0..n``.
 
     Parameters
     ----------
@@ -649,6 +728,24 @@ def lpmn(m,n,z):
        Values for all orders 0..m and degrees 0..n
     Pmn_d_z : (m+1, n+1) array
        Derivatives for all orders 0..m and degrees 0..n
+
+    See Also
+    --------
+    lpmn: associated Legendre functions of the first kind for real z
+
+    Notes
+    -----
+    Phase conventions are chosen according to [1] such that the
+    function is analytic. The cut lies on the interval (-1, 1).
+    Approaching the cut from above or below in general yields a phase
+    factor with respect to Ferrer's function of the first kind
+    (cf. `lpmn`).
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           http://dlmf.nist.gov/14.21
+
     """
     if not isscalar(m) or (abs(m) > n):
         raise ValueError("m must be <= n.")
@@ -660,14 +757,11 @@ def lpmn(m,n,z):
         mp = -m
         mf,nf = mgrid[0:mp+1,0:n+1]
         sv = errprint(0)
-        fixarr = where(mf > nf,0.0,(-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
+        fixarr = where(mf > nf,0.0,gamma(nf-mf+1) / gamma(nf+mf+1))
         sv = errprint(sv)
     else:
         mp = m
-    if iscomplex(z):
-        p,pd = specfun.clpmn(mp,n,real(z),imag(z))
-    else:
-        p,pd = specfun.lpmn(mp,n,z)
+    p,pd = specfun.clpmn(mp,n,real(z),imag(z))
     if (m < 0):
         p = p * fixarr
         pd = pd * fixarr
