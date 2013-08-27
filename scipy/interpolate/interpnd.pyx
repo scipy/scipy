@@ -55,7 +55,7 @@ class NDInterpolatorBase(object):
     """
 
     def __init__(self, points, values, fill_value=np.nan, ndim=None,
-            rescale=False):
+                 rescale=False):
         """
         Check shape of points and values arrays, and reshape values to
         (npoints, nvalues).  Ensure the `points` and values arrays are
@@ -65,8 +65,8 @@ class NDInterpolatorBase(object):
         if isinstance(points, qhull.Delaunay):
             # Precomputed triangulation was passed in
             if rescale:
-                raise ValueError("rescaling is not supported when passing "
-                        "a Delaunay triangulation as ``points``.")
+                raise ValueError("Rescaling is not supported when passing "
+                                 "a Delaunay triangulation as ``points``.")
             self.tri = points
             points = self.tri.points
         else:
@@ -102,11 +102,11 @@ class NDInterpolatorBase(object):
             self.points = points
         else:
             # scale to unit cube centered at 0
-            offset = np.mean(points, axis=0)
-            self.offset = offset
-            scale = np.max(np.abs(points), axis=0) / .5
-            self.scale = scale
-            self.points = (points - offset) / scale
+            self.offset = np.mean(points, axis=0)
+            self.points = points - self.offset
+            self.scale = self.points.ptp(axis=0)
+            self.scale[~(self.scale > 0)] = 1.0  # avoid division by 0
+            self.points /= self.scale
 
     def _check_init_shape(self, points, values, ndim=None):
         """
