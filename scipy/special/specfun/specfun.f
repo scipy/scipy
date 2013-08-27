@@ -19,6 +19,12 @@ C
         DNAN = 0.0D0/DNAN
         END
 
+        FUNCTION DINF()
+        DOUBLE PRECISION DINF
+        DINF = 1.0D300
+        DINF = DINF*DINF
+        END
+
         SUBROUTINE CPDSA(N,Z,CDN)
 C
 C       ===========================================================
@@ -242,7 +248,7 @@ C       Output:  CPM(m,n) --- Pmn(z)
 C                CPD(m,n) --- Pmn'(z)
 C       =========================================================
 C
-        IMPLICIT DOUBLE PRECISION (X,Y)
+        IMPLICIT DOUBLE PRECISION (D,X,Y)
         IMPLICIT COMPLEX*16 (C,Z)
         DIMENSION CPM(0:MM,0:N),CPD(0:MM,0:N)
         Z=CMPLX(X,Y)
@@ -259,7 +265,7 @@ C
            DO 20 J=1,N
            DO 20 I=1,M
               IF (I.EQ.1) THEN
-                 CPD(I,J)=(1.0D+300,0.0D0)
+                 CPD(I,J)=DINF()
               ELSE IF (I.EQ.2) THEN
                  CPD(I,J)=-0.25D0*(J+2)*(J+1)*J*(J-1)*X**(J+1)
               ENDIF
@@ -6969,7 +6975,7 @@ C       Output:  PM(m,n) --- Pmn(x)
 C                PD(m,n) --- Pmn'(x)
 C       =====================================================
 C
-        IMPLICIT DOUBLE PRECISION (P,X)
+        IMPLICIT DOUBLE PRECISION (D,P,X)
         DIMENSION PM(0:MM,0:N),PD(0:MM,0:N)
         INTRINSIC MIN
         DO 10 I=0,N
@@ -6985,7 +6991,7 @@ C
            DO 20 J=1,N
            DO 20 I=1,M
               IF (I.EQ.1) THEN
-                 PD(I,J)=1.0D+300
+                 PD(I,J)=DINF()
               ELSE IF (I.EQ.2) THEN
                  PD(I,J)=-0.25D0*(J+2)*(J+1)*J*(J-1)*X**(J+1)
               ENDIF

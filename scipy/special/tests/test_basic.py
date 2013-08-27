@@ -2368,6 +2368,15 @@ class TestLegendreFunctions(TestCase):
         assert_almost_equal(special.clpmn(m, n, x+1j*eps)[0][m, n],
                             special.clpmn(m, n, x-1j*eps)[0][m, n], 6)
 
+    def test_inf(self):
+        for z in (1, -1):
+            for n in range(4):
+                for m in range(1, n):
+                    lp = special.clpmn(m, n, z)
+                    assert_equal(lp[1][1,1:], np.inf)
+                    lp = special.lpmn(m, n, z)
+                    assert_equal(lp[1][1,1:], np.inf)
+
     def test_lpmn(self):
         lp = special.lpmn(0,2,.5)
         assert_array_almost_equal(lp,(array([[1.00000,
