@@ -8,7 +8,7 @@ import numpy
 from numpy import arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp, \
                   allclose
 
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 
 from numpy.testing import assert_, TestCase, run_module_suite, \
         assert_array_almost_equal, assert_raises, assert_allclose, \

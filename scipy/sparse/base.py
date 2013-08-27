@@ -9,7 +9,7 @@ from warnings import warn
 
 import numpy as np
 
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 from .sputils import isdense, isscalarlike, isintlike
 
 

@@ -71,7 +71,7 @@ import numpy as np
 from numpy.linalg import norm
 
 from scipy.lib.six import callable, string_types
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 
 from . import _distance_wrap
 import collections

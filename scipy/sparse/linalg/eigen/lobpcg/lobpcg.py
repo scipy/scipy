@@ -16,7 +16,7 @@ import sys
 import numpy as np
 import scipy as sp
 
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 
 from scipy.sparse.linalg import aslinearoperator, LinearOperator
 

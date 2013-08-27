@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_array_almost_equal, assert_almost_equal, \
         rand, TestCase
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 import numpy as np
 from numpy import array, sqrt
 import scipy.special.orthogonal as orth

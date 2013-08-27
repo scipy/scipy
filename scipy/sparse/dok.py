@@ -9,7 +9,7 @@ __all__ = ['dok_matrix', 'isspmatrix_dok']
 
 import numpy as np
 
-from scipy.lib.six.moves import zip as izip, xrange
+from scipy.lib.six import zip as izip, xrange
 from scipy.lib.six import iteritems
 
 from .base import spmatrix, isspmatrix
