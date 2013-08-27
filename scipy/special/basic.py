@@ -5,7 +5,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \
         where, mgrid, cos, sin, exp, place, seterr, issubdtype, extract, \
         less, vectorize, inexact, nan, zeros, sometrue, atleast_1d

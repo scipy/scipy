@@ -6,7 +6,7 @@ from scipy.interpolate import KroghInterpolator, krogh_interpolate, \
         BarycentricInterpolator, barycentric_interpolate, \
         PiecewisePolynomial, piecewise_polynomial_interpolate, \
         approximate_taylor_polynomial, pchip
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 import scipy
 import numpy as np
 from scipy.interpolate import splrep, splev

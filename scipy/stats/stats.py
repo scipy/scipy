@@ -170,7 +170,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import math
 
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 
 # friedmanchisquare patch uses python sum
 pysum = sum  # save it before it gets overwritten

@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import math
 import numpy as np
 from scipy.misc import comb
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 from scipy.lib.six import string_types
 
 

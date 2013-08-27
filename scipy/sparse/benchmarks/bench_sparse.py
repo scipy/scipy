@@ -9,7 +9,7 @@ from numpy import ones, array, asarray, empty
 from numpy.testing import *
 
 from scipy import sparse
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 from scipy.sparse import csr_matrix, coo_matrix, dia_matrix, lil_matrix, \
         dok_matrix
 

@@ -39,7 +39,7 @@ import os.path
 import numpy as np
 from numpy.testing import TestCase, run_module_suite
 
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 
 from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage,\
         num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster, \

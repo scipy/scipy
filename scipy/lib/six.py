@@ -75,133 +75,20 @@ def _import_module(name):
     return sys.modules[name]
 
 
-class _LazyDescr(object):
-
-    def __init__(self, name):
-        self.name = name
-
-    def __get__(self, obj, tp):
-        result = self._resolve()
-        setattr(obj, self.name, result)
-        # This is a bit ugly, but it avoids running this again.
-        delattr(tp, self.name)
-        return result
-
-
-class MovedModule(_LazyDescr):
-
-    def __init__(self, name, old, new=None):
-        super(MovedModule, self).__init__(name)
-        if PY3:
-            if new is None:
-                new = name
-            self.mod = new
-        else:
-            self.mod = old
-
-    def _resolve(self):
-        return _import_module(self.mod)
-
-
-class MovedAttribute(_LazyDescr):
-
-    def __init__(self, name, old_mod, new_mod, old_attr=None, new_attr=None):
-        super(MovedAttribute, self).__init__(name)
-        if PY3:
-            if new_mod is None:
-                new_mod = name
-            self.mod = new_mod
-            if new_attr is None:
-                if old_attr is None:
-                    new_attr = name
-                else:
-                    new_attr = old_attr
-            self.attr = new_attr
-        else:
-            self.mod = old_mod
-            if old_attr is None:
-                old_attr = name
-            self.attr = old_attr
-
-    def _resolve(self):
-        module = _import_module(self.mod)
-        return getattr(module, self.attr)
-
-
-class _MovedItems(types.ModuleType):
-    """Lazy loading of moved objects"""
-
-
-_moved_attributes = [
-    MovedAttribute("cStringIO", "cStringIO", "io", "StringIO"),
-    MovedAttribute("filter", "itertools", "builtins", "ifilter", "filter"),
-    MovedAttribute("input", "__builtin__", "builtins", "raw_input", "input"),
-    MovedAttribute("map", "itertools", "builtins", "imap", "map"),
-    MovedAttribute("reload_module", "__builtin__", "imp", "reload"),
-    MovedAttribute("reduce", "__builtin__", "functools"),
-    MovedAttribute("StringIO", "StringIO", "io"),
-    MovedAttribute("xrange", "__builtin__", "builtins", "xrange", "range"),
-    MovedAttribute("zip", "itertools", "builtins", "izip", "zip"),
-
-    MovedModule("builtins", "__builtin__"),
-    MovedModule("configparser", "ConfigParser"),
-    MovedModule("copyreg", "copy_reg"),
-    MovedModule("http_cookiejar", "cookielib", "http.cookiejar"),
-    MovedModule("http_cookies", "Cookie", "http.cookies"),
-    MovedModule("html_entities", "htmlentitydefs", "html.entities"),
-    MovedModule("html_parser", "HTMLParser", "html.parser"),
-    MovedModule("http_client", "httplib", "http.client"),
-    MovedModule("email_mime_multipart", "email.MIMEMultipart", "email.mime.multipart"),
-    MovedModule("email_mime_text", "email.MIMEText", "email.mime.text"),
-    MovedModule("email_mime_base", "email.MIMEBase", "email.mime.base"),
-    MovedModule("BaseHTTPServer", "BaseHTTPServer", "http.server"),
-    MovedModule("CGIHTTPServer", "CGIHTTPServer", "http.server"),
-    MovedModule("SimpleHTTPServer", "SimpleHTTPServer", "http.server"),
-    MovedModule("cPickle", "cPickle", "pickle"),
-    MovedModule("queue", "Queue"),
-    MovedModule("reprlib", "repr"),
-    MovedModule("socketserver", "SocketServer"),
-    MovedModule("tkinter", "Tkinter"),
-    MovedModule("tkinter_dialog", "Dialog", "tkinter.dialog"),
-    MovedModule("tkinter_filedialog", "FileDialog", "tkinter.filedialog"),
-    MovedModule("tkinter_scrolledtext", "ScrolledText", "tkinter.scrolledtext"),
-    MovedModule("tkinter_simpledialog", "SimpleDialog", "tkinter.simpledialog"),
-    MovedModule("tkinter_tix", "Tix", "tkinter.tix"),
-    MovedModule("tkinter_constants", "Tkconstants", "tkinter.constants"),
-    MovedModule("tkinter_dnd", "Tkdnd", "tkinter.dnd"),
-    MovedModule("tkinter_colorchooser", "tkColorChooser",
-                "tkinter.colorchooser"),
-    MovedModule("tkinter_commondialog", "tkCommonDialog",
-                "tkinter.commondialog"),
-    MovedModule("tkinter_tkfiledialog", "tkFileDialog", "tkinter.filedialog"),
-    MovedModule("tkinter_font", "tkFont", "tkinter.font"),
-    MovedModule("tkinter_messagebox", "tkMessageBox", "tkinter.messagebox"),
-    MovedModule("tkinter_tksimpledialog", "tkSimpleDialog",
-                "tkinter.simpledialog"),
-    MovedModule("urllib_robotparser", "robotparser", "urllib.robotparser"),
-    MovedModule("winreg", "_winreg"),
-]
-for attr in _moved_attributes:
-    setattr(_MovedItems, attr.name, attr)
-del attr
-
-moves = sys.modules[__name__ + ".moves"] = _MovedItems("moves")
-
-
-def add_move(move):
-    """Add an item to six.moves."""
-    setattr(_MovedItems, move.name, move)
-
-
-def remove_move(name):
-    """Remove item from six.moves."""
-    try:
-        delattr(_MovedItems, name)
-    except AttributeError:
-        try:
-            del moves.__dict__[name]
-        except KeyError:
-            raise AttributeError("no such move, %r" % (name,))
+# Replacement for lazy loading stuff in upstream six.  See gh-2764
+if PY3:
+    import builtins
+    import functools
+    reduce = functools.reduce
+    zip = builtins.zip
+    xrange = builtins.range
+else:
+    import __builtin__
+    import itertools
+    builtins = __builtin__
+    reduce = __builtin__.reduce
+    zip = itertools.izip
+    xrange = __builtin__.xrange
 
 
 if PY3:

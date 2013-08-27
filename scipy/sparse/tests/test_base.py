@@ -22,7 +22,7 @@ Run tests if sparse is not installed:
 import warnings
 
 import numpy as np
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 from numpy import arange, zeros, array, dot, matrix, asmatrix, asarray, \
                   vstack, ndarray, transpose, diag, kron, inf, conjugate, \
                   int8, ComplexWarning

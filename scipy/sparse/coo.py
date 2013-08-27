@@ -9,7 +9,7 @@ from warnings import warn
 
 import numpy as np
 
-from scipy.lib.six.moves import zip as izip
+from scipy.lib.six import zip as izip
 
 from .sparsetools import coo_tocsr, coo_todense, coo_matvec
 from .base import isspmatrix

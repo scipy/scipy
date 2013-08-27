@@ -5,7 +5,7 @@ import inspect
 import numpy.testing as npt
 import numpy as np
 import nose
-from scipy.lib.six.moves import xrange
+from scipy.lib.six import xrange
 
 from scipy import stats
 
