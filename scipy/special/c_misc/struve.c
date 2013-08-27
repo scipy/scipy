@@ -77,9 +77,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include <math.h>
-
 #include "cephes.h"
 #include "amos_wrappers.h"
 #include "misc.h"
