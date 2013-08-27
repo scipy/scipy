@@ -983,7 +983,7 @@ def bode(system, w=None, n=100):
     w, y = freqresp(system, w=w, n=n)
 
     mag = 20.0 * numpy.log10(abs(y))
-    phase = numpy.arctan2(y.imag, y.real) * 180.0 / numpy.pi
+    phase = numpy.unwrap(numpy.arctan2(y.imag, y.real)) * 180.0 / numpy.pi
 
     return w, mag, phase
 
