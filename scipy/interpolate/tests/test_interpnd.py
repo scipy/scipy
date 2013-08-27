@@ -153,9 +153,9 @@ class TestLinearNDInterpolation(object):
         tri = qhull.Delaunay(x)
         try:
             interpnd.LinearNDInterpolator(tri, y, rescale=True)(x)
-        except ValueError, e:
-            if (e.message != "rescaling is not supported when passing a "
-                    "Delaunay triangulation as ``points``."):
+        except ValueError as e:
+            if str(e) != ("Rescaling is not supported when passing a "
+                          "Delaunay triangulation as ``points``."):
                 raise
         except:
             raise
@@ -299,9 +299,9 @@ class TestCloughTocher2DInterpolator(object):
         tri = qhull.Delaunay(x)
         try:
             interpnd.CloughTocher2DInterpolator(tri, y, rescale=True)(x)
-        except ValueError, a:
-            if (a.message != "rescaling is not supported when passing a "
-                    "Delaunay triangulation as ``points``."):
+        except ValueError as a:
+            if str(a) != ("Rescaling is not supported when passing a "
+                          "Delaunay triangulation as ``points``."):
                 raise
         except:
             raise
