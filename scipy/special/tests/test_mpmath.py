@@ -1331,23 +1331,48 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             lambda n, x: _exception_to_nan(mpmath.legendre)(n, x, **HYPERKW),
                             [IntArg(), FixedArg(np.logspace(-30, -4, 20))])
 
-    @knownfailure_overridable("wrong function at |z| > 1 (Trac #1877)")
     def test_legenp(self):
         def lpnm(n, m, z):
-            if m > n:
-                return 0.0
-            return sc.lpmn(m, n, z)[0][-1,-1]
+            try:
+                v = sc.lpmn(m, n, z)[0][-1,-1]
+            except ValueError:
+                return np.nan
+            if abs(v) > 1e306:
+                # harmonize overflow to inf
+                v = np.inf * np.sign(v.real)
+            return v
 
         def lpnm_2(n, m, z):
-            if m > n:
-                return 0.0
-            return sc.lpmv(m, n, z)
+            v = sc.lpmv(m, n, z)
+            if abs(v) > 1e306:
+                # harmonize overflow to inf
+                v = np.inf * np.sign(v.real)
+            return v
 
         def legenp(n, m, z):
+            if z == 1 and int(n) == n:
+                # Special case (mpmath gives inf, we take the limit by
+                # continuity)
+                if m == 0:
+                    return 1
+                else:
+                    return 0
+
             if abs(z) < 1e-15:
                 # mpmath has bad performance here
                 return np.nan
-            return _exception_to_nan(mpmath.legenp)(n, m, z, **HYPERKW)
+
+            if z == 1:
+                z = 1 - 1e-9
+
+            typ = 2 if abs(z) < 1 else 3
+            v = _exception_to_nan(mpmath.legenp)(n, m, z, type=typ)
+
+            if abs(v) > 1e306:
+                # harmonize overflow to inf
+                v = mpmath.inf * mpmath.sign(v.real)
+
+            return v
 
         assert_mpmath_equal(lpnm,
                             legenp,
@@ -1359,19 +1384,27 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
 
     def test_legenp_complex(self):
         def clpnm(n, m, z):
-            if m > n:
-                return 0.0
-            return sc.clpmn(m, n, z)[0][-1,-1]
+            try:
+                return sc.clpmn(m.real, n.real, z)[0][-1,-1]
+            except ValueError:
+                return np.nan
 
         def legenp(n, m, z):
             if abs(z) < 1e-15:
                 # mpmath has bad performance here
                 return np.nan
-            return _exception_to_nan(mpmath.legenp)(int(n.real), int(m.real), **HYPERKW)
+            return _exception_to_nan(mpmath.legenp)(int(n.real), int(m.real), z, type=3)
+
+        # mpmath is quite slow here
+        x = np.array([-2, -0.99, -0.5, 0, 1e-5, 0.5, 0.99, 20, 2e3])
+        y = np.array([-1e3, -0.5, 0.5, 1.3])
+        z = (x[:,None] + 1j*y[None,:]).ravel()
 
         assert_mpmath_equal(clpnm,
                             legenp,
-                            [IntArg(0, 100), IntArg(0, 100), ComplexArg()])
+                            [FixedArg([0, 1, 2, 10]), FixedArg([0, 1, 2, 10]), FixedArg(z)],
+                            rtol=1e-6,
+                            n=500)
 
     @knownfailure_overridable("apparently picks wrong function at |z| > 1")
     def test_legenq(self):
