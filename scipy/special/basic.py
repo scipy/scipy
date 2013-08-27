@@ -753,6 +753,8 @@ def clpmn(m,n,z):
         raise ValueError("n must be a non-negative integer.")
     if not isscalar(z):
         raise ValueError("z must be scalar.")
+    if z.imag==0 and -1<=z.real<=1:
+        raise ValueError("z may not lie on the cut [-1, 1]. Use lpmn instead.")
     if (m < 0):
         mp = -m
         mf,nf = mgrid[0:mp+1,0:n+1]

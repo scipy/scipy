@@ -268,7 +268,7 @@ C
         ENDIF
 C       sqrt(z^2 - 1) with branch cut between [-1, 1]
         ZQ=CDSQRT(Z*Z-1.0D0)
-        IF (X.LT.0d0) THEN
+        IF (X.LT.0D0) THEN
            ZQ=-ZQ
         END IF
         ZS=(Z*Z-1.0D0)
@@ -6996,7 +6996,7 @@ C
         IF (DABS(X).GT.1.0D0) LS=-1
         XQ=DSQRT(LS*(1.0D0-X*X))
 C       Ensure connection to the complex-valued function for |x| > 1
-        IF (X.LT.-1d0) XQ=-XQ
+        IF (X.LT.-1D0) XQ=-XQ
         XS=LS*(1.0D0-X*X)
         DO 30 I=1,M
 30         PM(I,I)=-LS*(2.0D0*I-1.0D0)*XQ*PM(I-1,I-1)
