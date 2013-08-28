@@ -5278,9 +5278,8 @@ class norminvgauss_gen(rv_continuous):
     def _pdf(self, x, a, b):
         gamma = sqrt(a**2 - b**2)
         fac1 = a / pi * exp(gamma)
-        res = (fac1 * special.k1e(a * sqrt(1 + x**2)) *
-               exp(b * x - a * sqrt(1 + x**2)) / sqrt(1 + x**2))
-        return res
+        sq = sqrt(1 + x**2)
+        return (fac1 * special.k1e(a * sq) * exp(b*x - a*sq) / sq)
 
     def _cdf(self, x, a, b):
         # x_opt is expensive to compute, but we can't cache it easily (no state
