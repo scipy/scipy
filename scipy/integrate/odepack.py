@@ -162,7 +162,8 @@ def odeint(func, y0, t, dfunc=None, col_deriv=0,
     if iostate == 0:
         raise MemoryError('Could not allocate work arrays')
     elif iostate < 0:
-        # TODO: Warnings are raised only once in the program. Alternative?
-        warnings.warn(RuntimeWarning(_msgs[iostate]))
+        with warnings.catch_warnings():
+            warnings.simplefilter("always")
+            warnings.warn(RuntimeWarning(_msgs[iostate]))
 
     return Result(y=y, success=iostate == 2, iostate=iostate)
