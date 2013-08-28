@@ -1656,7 +1656,7 @@ class Delaunay(_QhullUser):
     def __init__(self, points, furthest_site=False, incremental=False,
                  qhull_options=None):
         if np.ma.is_masked(points):
-            raise ValueError('Input points could not be masked array.')
+            raise ValueError('Input points cannot be masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
 
         if qhull_options is None:
@@ -2151,7 +2151,7 @@ class ConvexHull(_QhullUser):
 
     def __init__(self, points, incremental=False, qhull_options=None):
         if np.ma.is_masked(points):
-            raise ValueError('Input points could not be masked array.')
+            raise ValueError('Input points cannot be masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
 
         if qhull_options is None:
@@ -2301,7 +2301,7 @@ class Voronoi(_QhullUser):
     def __init__(self, points, furthest_site=False, incremental=False,
                  qhull_options=None):
         if np.ma.is_masked(points):
-            raise ValueError('Input points could not be masked array.')
+            raise ValueError('Input points cannot be masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
 
         if qhull_options is None:
