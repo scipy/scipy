@@ -346,8 +346,7 @@ def check_scale_docstring(distfn):
 def check_private_entropy(distfn, args):
     # compare a generic _entropy with the distribution-specific implementation
     npt.assert_allclose(distfn._entropy(*args),
-                        super(distfn.__class__, distfn)._entropy(*args))
-
+                        stats.rv_discrete._entropy(distfn, *args))
 
 if __name__ == "__main__":
     # nose.run(argv=['', __file__])

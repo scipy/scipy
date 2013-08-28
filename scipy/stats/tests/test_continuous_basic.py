@@ -493,10 +493,11 @@ def check_edge_support(distfn, args):
     # pdf(x=[a, b], *args) depends on the distribution
 
 
+@_silence_fp_errors
 def check_private_entropy(distfn, args):
     # compare a generic _entropy with the distribution-specific implementation
     npt.assert_allclose(distfn._entropy(*args),
-                        super(distfn.__class__, distfn)._entropy(*args))
+                        stats.rv_continuous._entropy(distfn, *args))
 
 
 if __name__ == "__main__":
