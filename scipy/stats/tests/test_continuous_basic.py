@@ -219,6 +219,7 @@ def test_cont_basic():
         # if available
         if distfn.__class__._entropy != stats.rv_continuous._entropy:
             yield check_private_entropy, distfn, arg
+
         yield check_edge_support, distfn, arg
 
 
@@ -270,7 +271,7 @@ def test_cont_basic_slow():
             yield check_vecentropy, distfn, arg
         # compare a generic _entropy w/ distribution-specific implementation,
         # if available
-        if distfn.__class__._entropy == stats.rv_continuous._entropy:
+        if distfn.__class__._entropy != stats.rv_continuous._entropy:
             yield check_private_entropy, distfn, arg
         yield check_edge_support, distfn, arg
 

@@ -1964,7 +1964,7 @@ class rv_continuous(rv_generic):
         if not np.isnan(entr):
             return entr
         else:  # try with different limits if integration problems
-            low,upp = self.ppf([0.001,0.999],*args)
+            low, upp = self.ppf([1e-10, 1.-1e-10], *args)
             if np.isinf(self.b):
                 upper = upp
             else:
@@ -3949,7 +3949,8 @@ class gumbel_r_gen(rv_continuous):
                12*sqrt(6)/pi**3 * _ZETA3, 12.0/5
 
     def _entropy(self):
-        return 1.0608407169541684911
+        # http://en.wikipedia.org/wiki/Gumbel_distribution
+        return _EULER + 1.
 gumbel_r = gumbel_r_gen(name='gumbel_r')
 
 
@@ -3992,7 +3993,7 @@ class gumbel_l_gen(rv_continuous):
                -12*sqrt(6)/pi**3 * _ZETA3, 12.0/5
 
     def _entropy(self):
-        return 1.0608407169541684911
+        return _EULER + 1.
 gumbel_l = gumbel_l_gen(name='gumbel_l')
 
 
@@ -4568,7 +4569,8 @@ class logistic_gen(rv_continuous):
         return 0, pi*pi/3.0, 0, 6.0/5.0
 
     def _entropy(self):
-        return 1.0
+        # http://en.wikipedia.org/wiki/Logistic_distribution
+        return 2.0
 logistic = logistic_gen(name='logistic')
 
 
