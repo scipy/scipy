@@ -1173,6 +1173,30 @@ class TestNct(TestCase):
         assert_equal(rv.var(), 2.0)
 
 
+class TestNorminvgauss(TestCase):
+    def test_accuracy_cdf_tails(self):
+        pass  #TODO
+
+    def test_accuracy_ppf_tails(self):
+        pass  #TODO
+
+    def test_broadcasting_shape_args(self):
+        # Test that the result is self-consistent.
+        a = [2, 2.5, 3]
+        b = -1
+        assert_allclose([stats.norminvgauss.pdf(1, val, b) for val in a],
+                        stats.norminvgauss.pdf(1, a, b), rtol=1e-15)
+        assert_allclose([stats.norminvgauss.cdf(1, val, b) for val in a],
+                        stats.norminvgauss.cdf(1, a, b), rtol=1e-15)
+        # And the 2-D case:
+        b = np.linspace(-0.5, -1.5, num=4)[:, np.newaxis]
+        a2, b2 = np.broadcast_arrays(a, b)
+        expected = [stats.norminvgauss.cdf(0.5, aval, bval) for (aval, bval) in
+                    zip(a2.ravel(), b2.ravel())]
+        assert_allclose(stats.norminvgauss.cdf(0.5, a, b).ravel(),
+                        expected, rtol=1e-15)
+
+
 def test_regression_ticket_1316():
     # The following was raising an exception, because _construct_default_doc()
     # did not handle the default keyword extradoc=None.  See ticket #1316.
@@ -1573,9 +1597,9 @@ class TestSubclassingExplicitShapes(TestCase):
                 return stats.norm._pdf(x) * extra_kwarg + offset
 
         dist = _dist_gen(shapes='offset, extra_kwarg')
-        assert_equal(dist.pdf(0.5, offset=111, extra_kwarg=33), 
+        assert_equal(dist.pdf(0.5, offset=111, extra_kwarg=33),
                      stats.norm.pdf(0.5)*33 + 111)
-        assert_equal(dist.pdf(0.5, 111, 33), 
+        assert_equal(dist.pdf(0.5, 111, 33),
                      stats.norm.pdf(0.5)*33 + 111)
 
     def test_extra_kwarg(self):
@@ -1643,7 +1667,7 @@ class TestSubclassingNoShapes(TestCase):
             raise AssertionError('TypeError not raised.')
 
     def test_defaults_raise(self):
-        # default arguments should raise 
+        # default arguments should raise
         class _dist_gen(stats.rv_continuous):
             def _pdf(self, x, a=42):
                 return 42
