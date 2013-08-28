@@ -194,8 +194,6 @@ def test_cont_basic():
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
         yield check_pdf, distfn, arg, distname
-        if distname in ['wald']:
-            continue
         yield check_pdf_logpdf, distfn, arg, distname
         yield check_cdf_logcdf, distfn, arg, distname
         yield check_sf_logsf, distfn, arg, distname
