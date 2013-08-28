@@ -6,7 +6,7 @@ from scipy.lib.six.moves import xrange
 import numpy as np
 from numpy import array, sqrt
 import scipy.special.orthogonal as orth
-from scipy.special import gamma
+from scipy.special import gamma, eval_hermite
 
 
 class TestCheby(TestCase):
@@ -133,6 +133,22 @@ class TestHermite(TestCase):
         assert_array_almost_equal(H3.c,he3.c,13)
         assert_array_almost_equal(H4.c,he4.c,13)
         assert_array_almost_equal(H5.c,he5.c,13)
+
+    def test_h_roots(self):
+        # this test is copied from numpy's TestGauss in test_hermite.py
+        x, w = orth.h_roots(100)
+
+        n = np.arange(100)
+        v = eval_hermite(n[:, np.newaxis], x[np.newaxis,:])
+        vv = np.dot(v*w, v.T)
+        vd = 1 / np.sqrt(vv.diagonal())
+        vv = vd[:, np.newaxis] * vv * vd
+        assert_almost_equal(vv, np.eye(100))
+
+        # check that the integral of 1 is correct
+        assert_almost_equal(w.sum(), np.sqrt(np.pi))
+
+
 
 
 class _test_sh_legendre(TestCase):
