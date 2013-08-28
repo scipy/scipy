@@ -27,8 +27,8 @@ class TestOdeint(TestCase):
         if hasattr(problem, 'jac'):
             jac = problem.jac
         t = arange(0.0, problem.stop_t, 0.05)
-        z = odeint(problem.f, problem.z0, t, jac)
-        assert_(problem.verify(z, t))
+        res = odeint(problem.f, problem.z0, t, jac)
+        assert_(problem.verify(res.y, t), problem.__class__)
 
     def test_odeint(self):
         for problem_cls in PROBLEMS:

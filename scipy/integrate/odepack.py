@@ -7,6 +7,8 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['odeint']
 
+import warnings
+from collections import namedtuple
 from . import _pyodepack
 
 _msgs = {
@@ -19,6 +21,8 @@ _msgs = {
     -6: "Error weight became zero during problem.",
     -7: "Internal workspace insufficient to finish (internal error)."
 }
+
+Result = namedtuple('Result', 'y success iostate')
 
 
 def odeint(func, y0, t, dfunc=None, col_deriv=0,
@@ -130,11 +134,6 @@ def odeint(func, y0, t, dfunc=None, col_deriv=0,
 
     """
 
-    # TODO: Think about using warnings instead of exceptions
-    # for iostate < 0 and still returning a result, usually
-    # there's interest in seeing how was the integration up
-    # to the failure point
-    # TODO: Create a Result object, initially using namedtuple
     # TODO: Jacobian
     # TODO: Critical points
     tol = 1.49012e-8
@@ -150,6 +149,7 @@ def odeint(func, y0, t, dfunc=None, col_deriv=0,
     jt = 1
     if dfunc is None:
         jt = 2
+
         def dfunc(t, y):
             return None
 
@@ -162,6 +162,7 @@ def odeint(func, y0, t, dfunc=None, col_deriv=0,
     if iostate == 0:
         raise MemoryError('Could not allocate work arrays')
     elif iostate < 0:
-        raise RuntimeError(_msgs[iostate])
+        # TODO: Warnings are raised only once in the program. Alternative?
+        warnings.warn(RuntimeWarning(_msgs[iostate]))
 
-    return y
+    return Result(y=y, success=iostate == 2, iostate=iostate)
