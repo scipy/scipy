@@ -685,7 +685,12 @@ def lpmn(m,n,z):
         mp = -m
         mf,nf = mgrid[0:mp+1,0:n+1]
         sv = errprint(0)
-        fixarr = where(mf > nf,0.0,(-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
+        if abs(z) < 1:
+            # Ferrier function; DLMF 14.9.3
+            fixarr = where(mf > nf,0.0,(-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
+        else:
+            # Match to clpmn; DLMF 14.9.13
+            fixarr = where(mf > nf,0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
         sv = errprint(sv)
     else:
         mp = m
