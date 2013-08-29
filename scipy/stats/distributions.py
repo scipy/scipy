@@ -5145,11 +5145,13 @@ class genhyp_gen(rv_continuous):
 
     """
     def __call__(self, l=1, a=1, b=0, *args, **kwds):
+        return self.freeze(l, a, b, *args, **kwds)
+
+    def _compute_xopt(self, l, a, b):
         gamma = sqrt(a**2 - b**2)
         kl0 = special.kv(l, gamma)
         kl1 = special.kv(l+1, gamma)
         kl2 = special.kv(l+2, gamma)
-        self.fact = gamma**(l) * a**(0.5-l) / (sqrt(2*pi) * kl0)
         x_min = b * kl1 / (gamma * kl0) -\
                 sqrt(3) * (kl1 / (gamma * kl0) +
                            b**2 * (kl0 * kl2 - kl1**2) /
@@ -5158,53 +5160,36 @@ class genhyp_gen(rv_continuous):
                 sqrt(3) * (kl1 / (gamma * kl0) +
                            b**2 * (kl0 * kl2 - kl1**2) /
                            (gamma**2 * kl0**2))
-        self.x_opt = optimize.minimize_scalar(lambda x:
-                                              - self._logpdf(x, l, a, b),
-                                              bounds=(x_min, x_max),
-                                              method = 'bounded').x
-        return self.freeze(l, a, b, *args, **kwds)
+        x_opt = optimize.minimize_scalar(lambda x:
+                                         - self._logpdf(x, l, a, b),
+                                         bounds=(x_min, x_max),
+                                         method = 'bounded').x
+        return x_opt
 
     def _argcheck(self, l, a, b):
         return (a > 0) & (np.absolute(b) < a)
 
     def _pdf(self, x, l, a, b):
-        try:
-            fact = self.fact
-        except AttributeError:
-            gamma = sqrt(a**2 - b**2)
-            fact = gamma**(l) * a**(0.5-l) /\
-                (sqrt(2*pi) * special.kv(l, gamma))
+        gamma = sqrt(a**2 - b**2)
+        fact = gamma**(l) * a**(0.5-l) /\
+            (sqrt(2*pi) * special.kv(l, gamma))
         return fact * (1 + x**2)**(0.5*l-0.25) * \
             special.kve(l-0.5, a*sqrt(1+x**2)) * exp(b*x - a*sqrt(1+x**2))
 
-    def _logpdf(self, x, l, a, b):
-        return log(self._pdf(x, l, a, b))
+    def _cdf(self, x, l, a, b):
+        # x_opt is expensive to compute, but we can't cache it easily (no state
+        # variables that depend on shape parameters can be used) - therefore
+        # pass it directly to _cdf_single_call
+        x_opt = np.empty(a.shape, dtype=float)  # a.shape == b.shape == x.shape
+        x_opt.fill(self._compute_xopt(l[0], a[0], b[0]))
+        self.veccdf.nin = self.numargs + 2  # shape args, x, x_opt
+        return self.veccdf(x, l, a, b, x_opt)
 
-    def _cdf_single_call(self, x, l, a, b):
-        try:
-            x_opt = self.x_opt
-        except AttributeError:
-            gamma = sqrt(a**2 - b**2)
-            kl0 = special.kv(l, gamma)
-            kl1 = special.kv(l+1, gamma)
-            kl2 = special.kv(l+2, gamma)
-            x_min = b * kl1 / (gamma * kl0) -\
-                    sqrt(3) * (kl1 / (gamma * kl0) +
-                               b**2 * (kl0 * kl2 - kl1**2) /
-                               (gamma**2 * kl0**2))
-            x_max = b * kl1 / (gamma * kl0) +\
-                    sqrt(3) * (kl1 / (gamma * kl0) +
-                               b**2 * (kl0 * kl2 - kl1**2) /
-                               (gamma**2 * kl0**2))
-            self.x_opt = optimize.minimize_scalar(lambda x:
-                                                  - self._logpdf(x, l, a, b),
-                                                  bounds=(x_min, x_max),
-                                                  method = 'bounded').x
-            x_opt = self.x_opt
+    def _cdf_single_call(self, x, l, a, b, x_opt):
         if x <= x_opt:
-            return integrate.quad(self._pdf, -np.Inf, x, args=(l, a, b,))[0]
+            return integrate.quad(self._pdf, -np.Inf, x, args=(l, a, b))[0]
         else:
-            h = integrate.quad(self._pdf, x, np.Inf, args=(l, a, b,))[0]
+            h = integrate.quad(self._pdf, x, np.Inf, args=(l, a, b))[0]
             return 1-h
 
     def _stats(self, l, a, b):
