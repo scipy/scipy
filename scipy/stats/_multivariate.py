@@ -234,6 +234,8 @@ class multivariate_normal_gen(object):
         Log of the probability density function.
     rvs(mean=None, cov=1)
         Draw random samples from a multivariate normal distribution.
+    entropy()
+        Compute the differential entropy of the multivariate normal.
 
     Parameters
     ----------
@@ -406,7 +408,7 @@ class multivariate_normal_gen(object):
 
     def entropy(self, mean=None, cov=1):
         """
-        Computes the differential entropy of the multivariate normal.
+        Compute the differential entropy of the multivariate normal.
 
         Parameters
         ----------
