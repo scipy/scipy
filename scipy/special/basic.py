@@ -696,8 +696,7 @@ def lpmn(m,n,z):
         sv = errprint(sv)
     else:
         mp = m
-    else:
-        p,pd = specfun.lpmn(mp,n,z)
+    p,pd = specfun.lpmn(mp,n,z)
     if (m < 0):
         p = p * fixarr
         pd = pd * fixarr
