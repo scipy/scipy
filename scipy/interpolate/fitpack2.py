@@ -990,7 +990,7 @@ class SphereBivariateSpline(_BivariateSplineBase):
             theta = np.sort(theta)
             theta = np.sort(theta)
             if (dtheta | dphi):
-                z,ier = dfitpack.parder(tx,ty,c,kx,ky,dx,dy,theta,phi)
+                z,ier = dfitpack.parder(tx,ty,c,kx,ky,dtheta,dphi,theta,phi)
                 if not ier == 0:
                     raise ValueError("Error code returned by parder: %s" % ier)
             else:
