@@ -1,7 +1,7 @@
 include MANIFEST.in
 include *.txt
 # Top-level build scripts
-include setup.py bscript bento.info
+include setup.py setupegg.py bscript bento.info
 # All source files
 recursive-include scipy *
 # All documentation
