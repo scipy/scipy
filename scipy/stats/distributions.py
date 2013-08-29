@@ -3656,7 +3656,7 @@ class gamma_gen(rv_continuous):
         return a, a, 2.0/sqrt(a), 6.0/a
 
     def _entropy(self, a):
-        return special.psi(a)*(1-a) + 1 + gamln(a)
+        return special.psi(a)*(1-a) + a + gamln(a)
 
     def _fitstart(self, data):
         # The skewness of the gamma distribution is `4 / sqrt(a)`.
