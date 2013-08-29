@@ -199,6 +199,9 @@ cdef class ZlibInputStream(GenericStream):
         cdef void *p
         return self.read_string(n_bytes, &p)
 
+    cpdef int all_data_read(self):
+        return (self._max_length == self._read_bytes) and (self._buffer_size == self._buffer_position)
+
     cpdef long int tell(self):
         return self._total_position
 

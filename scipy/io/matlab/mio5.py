@@ -220,12 +220,14 @@ class MatFile5Reader(MatFileReader):
             # Make new stream from compressed data
             stream = ZlibInputStream(self.mat_stream, byte_count)
             self._matrix_reader.set_stream(stream)
+            check_stream_limit = True
             mdtype, byte_count = self._matrix_reader.read_full_tag()
         else:
+            check_stream_limit = False
             self._matrix_reader.set_stream(self.mat_stream)
         if not mdtype == miMATRIX:
             raise TypeError('Expecting miMATRIX type here, got %d' % mdtype)
-        header = self._matrix_reader.read_header()
+        header = self._matrix_reader.read_header(check_stream_limit)
         return header, next_pos
 
     def read_var_array(self, header, process=True):
