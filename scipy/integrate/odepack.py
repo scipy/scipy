@@ -22,13 +22,13 @@ _msgs = {
     -7: "Internal workspace insufficient to finish (internal error)."
 }
 
-Result = namedtuple('Result', 'y success iostate')
+Result = namedtuple('Result', 'y success infodict')
 
 
 def odeint(func, y0, t, dfunc=None, col_deriv=0,
            ml=None, mu=None, rtol=None, atol=None, tcrit=None, first_step=0.0,
            max_step=0.0, min_step=0.0, ixpr=0, max_nosteps=0, max_msgs=0,
-           mxordn=0, mxords=0):
+           max_order_ns=12, max_order_s=5):
     """Integrate a system of ordinary differential equations.
 
     Solve a system of ordinary differential equations using lsoda from the
@@ -58,11 +58,11 @@ def odeint(func, y0, t, dfunc=None, col_deriv=0,
 
     Returns
     -------
-    y : array, shape (len(t), len(y0))
-        Array containing the value of y for each desired time in t,
-        with the initial value `y0` in the first row.
-    infodict : dict, only returned if full_output == True
-        Dictionary containing additional output information
+    Result
+        The integration result represented as a `Result` object.
+        Its attributes are: `y`, the solution array, `success`, a boolean
+        flag indicating if the solver exited successfully and `infodict`
+        with additional output information:
 
         =======  ============================================================
         key      meaning
@@ -122,9 +122,9 @@ def odeint(func, y0, t, dfunc=None, col_deriv=0,
         integration point in t.
     max_msgs : int, (0: solver-determined), optional
         Maximum number of messages printed.
-    mxordn : int, (0: solver-determined), optional
+    max_order_ns : int, (0: solver-determined), optional
         Maximum order to be allowed for the non-stiff (Adams) method.
-    mxords : int, (0: solver-determined), optional
+    max_order_s : int, (0: solver-determined), optional
         Maximum order to be allowed for the stiff (BDF) method.
 
     See Also
@@ -149,16 +149,14 @@ def odeint(func, y0, t, dfunc=None, col_deriv=0,
     jt = 1
     if dfunc is None:
         jt = 2
-
-        def dfunc(t, y):
-            return None
+        dfunc = lambda t, y: None
 
     odeint = _pyodepack.pyodepack.odeint
-    y, iostate = odeint(func, y0, t, rtol, atol,
-                        first_step, max_step, min_step,
-                        dfunc, jt,
-                        ixpr, max_nosteps, max_msgs,
-                        mxordn, mxords)
+    y, iostate, rout, iout = odeint(func, y0, t, rtol, atol,
+                                    first_step, max_step, min_step,
+                                    dfunc, jt, ml, mu,
+                                    ixpr, max_nosteps, max_msgs,
+                                    max_order_ns, max_order_s)
     if iostate == 0:
         raise MemoryError('Could not allocate work arrays')
     elif iostate < 0:
@@ -166,4 +164,18 @@ def odeint(func, y0, t, dfunc=None, col_deriv=0,
             warnings.simplefilter("always")
             warnings.warn(RuntimeWarning(_msgs[iostate]))
 
-    return Result(y=y, success=iostate == 2, iostate=iostate)
+    infodict = {
+        'hu': rout[:, 0],
+        'tcur': rout[:, 2],
+        'tolsf': rout[:, 3],
+        'tsw': rout[:, 4],
+        'nst': iout[:, 0],
+        'nfe': iout[:, 1],
+        'nje': iout[:, 2],
+        'nqu': iout[:, 3],
+        'imxer': iout[:, 5],
+        'lenrw': iout[:, 6],
+        'leniw': iout[:, 7],
+        'mused': iout[:, 8],
+    }
+    return Result(y, iostate == 2, infodict)

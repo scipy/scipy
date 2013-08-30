@@ -308,7 +308,7 @@ vector differential equation:
 
 .. math::
 
-    \frac{d\mathbf{y}}{dt}=\mathbf{f}\left(\mathbf{y},t\right),
+    \frac{d\mathbf{y}}{dt}=\mathbf{f}\left(t,\mathbf{y}\right),
 
 given initial conditions :math:`\mathbf{y}\left(0\right)=y_{0}`, where
 :math:`\mathbf{y}` is a length :math:`N` vector and :math:`\mathbf{f}`
@@ -345,7 +345,7 @@ In other words,
 
 .. math::
 
-    \mathbf{f}\left(\mathbf{y},t\right)=\mathbf{A}\left(t\right)\mathbf{y}.
+    \mathbf{f}\left(t,\mathbf{y}\right)=\mathbf{A}\left(t\right)\mathbf{y}.
 
 As an interesting reminder, if :math:`\mathbf{A}\left(t\right)`
 commutes with :math:`\int_{0}^{t}\mathbf{A}\left(\tau\right)\, d\tau`
@@ -362,44 +362,50 @@ There are many optional inputs and outputs available when using odeint
 which can help tune the solver. These additional inputs and outputs
 are not needed much of the time, however, and the three required input
 arguments and the output solution suffice. The required inputs are the
-function defining the derivative, *fprime*, the initial conditions
-vector, *y0*, and the time points to obtain a solution, *t*, (with
+function defining the derivative, `func`, the initial conditions
+vector, `y0`, and the time points to obtain a solution, `t`, (with
 the initial value point as the first element of this sequence).  The
 output to :obj:`odeint` is a matrix where each row contains the
 solution vector at each requested time point (thus, the initial
 conditions are given in the first output row).
 
 The following example illustrates the use of odeint including the
-usage of the *Dfun* option which allows the user to specify a gradient
+usage of the `dfunc` option which allows the user to specify a gradient
 (with respect to :math:`\mathbf{y}` ) of the function,
-:math:`\mathbf{f}\left(\mathbf{y},t\right)`.
+:math:`\mathbf{f}\left(t,\mathbf{y}\right)`.
 
     >>> from scipy.integrate import odeint
     >>> from scipy.special import gamma, airy
     >>> y1_0 = 1.0/3**(2.0/3.0)/gamma(2.0/3.0)
     >>> y0_0 = -1.0/3**(1.0/3.0)/gamma(1.0/3.0)
     >>> y0 = [y0_0, y1_0]
-    >>> def func(y, t):
+    >>> def func(t, y):
     ...     return [t*y[1],y[0]]
     
-    >>> def gradient(y,t):
+    >>> def gradient(t, y):
     ...     return [[0,t],[1,0]]
     
     >>> x = arange(0,4.0, 0.01)
     >>> t = x
     >>> ychk = airy(x)[0]
-    >>> y = odeint(func, y0, t)
-    >>> y2 = odeint(func, y0, t, Dfun=gradient)
+    >>> res = odeint(func, y0, t)
+    >>> res2 = odeint(func, y0, t, dfunc=gradient)
     
     >>> print ychk[:36:6]
     [ 0.355028  0.339511  0.324068  0.308763  0.293658  0.278806]
     
-    >>> print y[:36:6,1]
+    >>> print res.y[:36:6,1]
     [ 0.355028  0.339511  0.324067  0.308763  0.293658  0.278806]
     
-    >>> print y2[:36:6,1]
+    >>> print res2.y[:36:6,1]
     [ 0.355028  0.339511  0.324067  0.308763  0.293658  0.278806]
 
+.. note::
+
+  The Jacobian will be called only if the solver detects the problem is stiff,
+  otherwise passing it as an argument has no effect. In case the problem is
+  stiff and it is not provided one will be automatically generated, but in
+  these cases is highly recommended to pass the Jacobian function.
 
 References
 ~~~~~~~~~~

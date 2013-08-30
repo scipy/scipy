@@ -8,9 +8,9 @@ module pyodepack
     contains
 
     subroutine odeint(func, neq, y0, t, rtol, atol, h0, hmax, hmin, &
-                      dfunc, jt, &
+                      dfunc, jt, ml, mu, &
                       ixpr, mxstep, mxhnil, mxordn, mxords, &
-                      yout, iostate)
+                      yout, iostate, rout, iout)
 
         interface odeint_user_interface
 
@@ -50,6 +50,8 @@ module pyodepack
         double precision, intent(in), dimension(neq) :: y0
         double precision, intent(in), dimension(:) :: t
         integer, intent(in) :: jt
+        integer, intent(in) :: ml
+        integer, intent(in) :: mu
 
         double precision, intent(in), dimension(:) :: rtol
         double precision, intent(in), dimension(:) :: atol
@@ -84,6 +86,8 @@ module pyodepack
         ! and so forth.
         double precision, intent(out), dimension(size(t), neq) :: yout
         integer, intent(out) :: iostate
+        double precision, intent(out), dimension(size(t), 5) :: rout
+        integer, intent(out), dimension(size(t), 10) :: iout
 
         ! Parameters used for only input in lsoda
         integer :: itol
@@ -132,8 +136,8 @@ module pyodepack
         itask = 1
 
         ! Compute size of the work arrays and allocate them
-        lrn = 20 + 16 * neq
-        lrs = 22 + 9 * neq + neq * neq  ! jt = 2
+        lrn = 20 + (mxordn + 4) * neq
+        lrs = 22 + (mxords + 4) * neq + neq * neq
         lrw = max(lrn, lrs)
         liw = 20 + neq
 
@@ -152,6 +156,8 @@ module pyodepack
         rwork(5) = h0
         rwork(6) = hmax
         rwork(7) = hmin
+        iwork(1) = ml
+        iwork(2) = mu
         iwork(5) = ixpr
         iwork(6) = mxstep
         iwork(7) = mxhnil
@@ -160,15 +166,18 @@ module pyodepack
 
         do ii = 2, size(t)
             call lsoda(func, neq, y, t_, t(ii), itol, rtol, atol, itask, &
-                        iostate, 1, rwork, lrw, iwork, liw, &
-                        dfunc, jt)
+                       iostate, 1, rwork, lrw, iwork, liw, &
+                       dfunc, jt)
+
+            yout(ii, :) = y
+            rout(ii, :) = rwork(11:15)
+            iout(ii, :) = iwork(11:20)
 
             if (iostate < 0) exit
             ! TODO: iostate 3
             ! changes are allowed in
             ! neq, itol, rtol, atol, iopt, lrw, liw, jt, ml, mu,
             ! and any optional inputs except h0, mxordn, and mxords.
-            yout(ii, :) = y
         end do
 
         deallocate(rwork)
