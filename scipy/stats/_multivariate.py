@@ -87,7 +87,7 @@ def _process_quantiles(x, dim):
 
 def _squeeze_output(out):
     """
-    Remove single-dimensional entries from array and convert to scalar, 
+    Remove single-dimensional entries from array and convert to scalar,
     if necessary.
 
     """
