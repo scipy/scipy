@@ -7411,7 +7411,7 @@ class hypergeom_gen(rv_discrete):
     The probability mass function is defined as::
 
         pmf(k, M, n, N) = choose(n, k) * choose(M - n, N - k) / choose(M, N),
-                                               for N - (M-n) <= k <= min(m,N)
+                                       for max(0, N - (M-n)) <= k <= min(n, N)
 
     Examples
     --------
