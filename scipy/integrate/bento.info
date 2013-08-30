@@ -29,12 +29,14 @@ Library:
         Sources:
             odepack/*.f
     Extension: _quadpack
-        Sources: _quadpackmodule.c
-    Extension: _odepack
-        Sources: _odepackmodule.c
+        Sources: src/_quadpackmodule.c
+    Extension: _pyodepack
+        Sources:
+            src/pyodepack.f90
+            src/pyodepack.pyf
     Extension: vode
-        Sources: vode.pyf
+        Sources: src/vode.pyf
     Extension: lsoda
-        Sources: lsoda.pyf
+        Sources: src/lsoda.pyf
     Extension: _dop
-        Sources: dop.pyf
+        Sources: src/dop.pyf
