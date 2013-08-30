@@ -153,16 +153,9 @@ module pyodepack
         end if
 
         ! Optional inputs
-        rwork(5) = h0
-        rwork(6) = hmax
-        rwork(7) = hmin
-        iwork(1) = ml
-        iwork(2) = mu
-        iwork(5) = ixpr
-        iwork(6) = mxstep
-        iwork(7) = mxhnil
-        iwork(8) = mxordn
-        iwork(9) = mxords
+        rwork(5:7) = (/h0, hmax, hmin/)
+        iwork(1:2) = (/ml, mu/)
+        iwork(5:9) = (/ixpr, mxstep, mxhnil, mxordn, mxords/)
 
         do ii = 2, size(t)
             call lsoda(func, neq, y, t_, t(ii), itol, rtol, atol, itask, &

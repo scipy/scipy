@@ -27,7 +27,8 @@ class TestOdeint(TestCase):
         if hasattr(problem, 'jac'):
             jac = problem.jac
         t = arange(0.0, problem.stop_t, 0.05)
-        res = odeint(problem.f, problem.z0, t, jac)
+        res = odeint(problem.f, problem.z0, t, jac,
+                     rtol=problem.rtol / 10, atol=problem.atol / 10)
         assert_(problem.verify(res.y, t), problem.__class__)
 
     def test_odeint(self):
@@ -394,7 +395,37 @@ class Pi(ODE):
         u = -2j*numpy.arctan(10)
         return allclose(u, zs[-1,:], atol=self.atol, rtol=self.rtol)
 
-PROBLEMS = [SimpleOscillator, ComplexExp, Pi]
+
+class LsodaOde(ODE):
+    r"""Example problem from LSODA.F"""
+    stop_t = 4.0e3
+    z0 = array([1.0, 0.0, 0.0], float)
+
+    stiff = True
+
+    rtol = 1.0e-4
+    atol = 1.0e-10
+
+    def f(self, t, z):
+        return [
+            -0.04 * z[0] + 1.0e4 * z[1] * z[2],
+            -(-0.04 * z[0] + 1.0e4 * z[1] * z[2]) - (3.0e7 * z[1] * z[1]),
+            3.0e7 * z[1] * z[1]
+        ]
+
+    def jac(self, t, z):
+        return [
+            [-0.04, 1.0e4 * z[2], 1.0e4 * z[1]],
+            [0.04, -1.0e4 * z[2] - 6.0e7 * z[1], -1.0e4 * z[1]],
+            [0, 6.0e7 * z[1], 0]
+        ]
+
+    def verify(self, zs, t):
+        u = array([1.831976e-1, 8.941773e-7, 8.168015e-1])
+        return allclose(u, zs[-1, :], atol=self.atol, rtol=self.rtol)
+
+
+PROBLEMS = [SimpleOscillator, ComplexExp, Pi, LsodaOde]
 
 #------------------------------------------------------------------------------
 
