@@ -152,7 +152,7 @@ def odeint(func, y0, t, dfunc=None, col_deriv=0,
         dfunc = lambda t, y: None
 
     odeint = _pyodepack.pyodepack.odeint
-    y, iostate, rout, iout = odeint(func, y0, t, rtol, atol,
+    y, iostate, rout, iout = odeint(func, y0, t, rtol, atol, tcrit,
                                     first_step, max_step, min_step,
                                     dfunc, jt, ml, mu,
                                     ixpr, max_nosteps, max_msgs,

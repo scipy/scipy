@@ -5,13 +5,14 @@
 python module _pyodepack ! in 
     interface  ! in :_pyodepack
         module pyodepack ! in :_pyodepack:pyodepack.f90
-            subroutine odeint(func,neq,y0,t,rtol,atol,h0,hmax,hmin,dfunc,jt,ml,mu,ixpr,mxstep,mxhnil,mxordn,mxords,yout,iostate,rout,iout) ! in :_pyodepack:pyodepack.f90:pyodepack
+            subroutine odeint(func,neq,y0,t,rtol,atol,tcrit,h0,hmax,hmin,dfunc,jt,ml,mu,ixpr,mxstep,mxhnil,mxordn,mxords,yout,iostate,rout,iout) ! in :_pyodepack:pyodepack.f90:pyodepack
                 external func
                 integer, optional,intent(hide),check(len(y0)>=neq),depend(y0) :: neq=len(y0)
                 double precision dimension(neq),intent(in) :: y0
                 double precision dimension(:),intent(in) :: t
                 double precision dimension(:),intent(in) :: rtol
                 double precision dimension(:),intent(in) :: atol
+                double precision,dimension(:),intent(in) :: tcrit
                 double precision intent(in) :: h0
                 double precision intent(in) :: hmax
                 double precision intent(in) :: hmin

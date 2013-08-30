@@ -7,7 +7,8 @@ module pyodepack
 
     contains
 
-    subroutine odeint(func, neq, y0, t, rtol, atol, h0, hmax, hmin, &
+    subroutine odeint(func, neq, y0, t, rtol, atol, tcrit, &
+                      h0, hmax, hmin, &
                       dfunc, jt, ml, mu, &
                       ixpr, mxstep, mxhnil, mxordn, mxords, &
                       yout, iostate, rout, iout)
@@ -56,6 +57,8 @@ module pyodepack
         double precision, intent(in), dimension(:) :: rtol
         double precision, intent(in), dimension(:) :: atol
 
+        double precision, intent(in), dimension(:) :: tcrit
+
         double precision, intent(in) :: h0
         double precision, intent(in) :: hmax
         ! Optionals are handled almost correctly by f2py. In _pyodepackmodule.c:
@@ -101,6 +104,7 @@ module pyodepack
 
         ! Internal variables
         integer :: nrtol, natol
+        integer :: ncrit, icrit
         integer :: ierr
         integer :: lrn, lrs
         integer :: lrw, liw
@@ -133,8 +137,6 @@ module pyodepack
         yout(1, :) = y0
         t_ = t(1)
 
-        itask = 1
-
         ! Compute size of the work arrays and allocate them
         lrn = 20 + (mxordn + 4) * neq
         lrs = 22 + (mxords + 4) * neq + neq * neq
@@ -157,7 +159,24 @@ module pyodepack
         iwork(1:2) = (/ml, mu/)
         iwork(5:9) = (/ixpr, mxstep, mxhnil, mxordn, mxords/)
 
+        itask = 1
+        ! This block will run if tcrit is not NaN (because NaN /= NaN)
+        if (all(tcrit == tcrit)) then
+            itask = 4
+            ncrit = size(tcrit)
+            icrit = 1
+            rwork(1) = tcrit(icrit)
+        end if
+
         do ii = 2, size(t)
+            if ((itask == 4) .and. (t(ii) > tcrit(icrit))) then
+                if (icrit < ncrit) then
+                    icrit = icrit + 1
+                    rwork(1) = tcrit(icrit)
+                else
+                    itask = 1
+                end if
+            end if
             call lsoda(func, neq, y, t_, t(ii), itol, rtol, atol, itask, &
                        iostate, 1, rwork, lrw, iwork, liw, &
                        dfunc, jt)
