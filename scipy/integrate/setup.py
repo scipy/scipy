@@ -31,9 +31,9 @@ def configuration(parent_package='',top_path=None):
     # quadpack:
 
     config.add_extension('_quadpack',
-                         sources=['_quadpackmodule.c'],
+                         sources=['src/_quadpackmodule.c'],
                          libraries=['quadpack', 'linpack_lite', 'mach'],
-                         depends=(['quadpack.h','__quadpack.h']
+                         depends=(['src/quadpack.h','src/__quadpack.h']
                                   + quadpack_src + linpack_lite_src + mach_src))
     # odepack
     libs = ['odepack','linpack_lite','mach']
@@ -47,7 +47,7 @@ def configuration(parent_package='',top_path=None):
             continue
         newblas[key] = blas_opt[key]
     config.add_extension('_pyodepack',
-                         sources=['pyodepack.pyf'] + ['pyodepack.f90'],
+                         sources=['src/pyodepack.pyf'] + ['src/pyodepack.f90'],
                          libraries=libs,
                          depends=(odepack_src + linpack_lite_src
                                   + mach_src),
@@ -55,7 +55,7 @@ def configuration(parent_package='',top_path=None):
 
     # vode
     config.add_extension('vode',
-                         sources=['vode.pyf'],
+                         sources=['src/vode.pyf'],
                          libraries=libs,
                          depends=(odepack_src + linpack_lite_src
                                   + mach_src),
@@ -63,7 +63,7 @@ def configuration(parent_package='',top_path=None):
 
     # lsoda
     config.add_extension('lsoda',
-                         sources=['lsoda.pyf'],
+                         sources=['src/lsoda.pyf'],
                          libraries=libs,
                          depends=(odepack_src + linpack_lite_src
                                   + mach_src),
@@ -71,7 +71,7 @@ def configuration(parent_package='',top_path=None):
 
     # dop
     config.add_extension('_dop',
-                         sources=['dop.pyf'],
+                         sources=['src/dop.pyf'],
                          libraries=['dop'],
                          depends=dop_src)
 
