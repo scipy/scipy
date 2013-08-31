@@ -372,27 +372,27 @@ def _moment_from_stats(n, mu, mu2, g1, g2, moment_func, args):
         return 1.0
     elif (n == 1):
         if mu is None:
-            val = moment_func(1,*args)
+            val = moment_func(1, *args)
         else:
             val = mu
     elif (n == 2):
         if mu2 is None or mu is None:
-            val = moment_func(2,*args)
+            val = moment_func(2, *args)
         else:
             val = mu2 + mu*mu
     elif (n == 3):
         if g1 is None or mu2 is None or mu is None:
-            val = moment_func(3,*args)
+            val = moment_func(3, *args)
         else:
             mu3 = g1 * np.power(mu2, 1.5)  # 3rd central moment
-            val = mu3+3*mu*mu2+mu*mu*mu  # 3rd non-central moment
+            val = mu3 + 3*mu*mu2 + mu*mu*mu  # 3rd non-central moment
     elif (n == 4):
         if g1 is None or g2 is None or mu2 is None or mu is None:
-            val = moment_func(4,*args)
+            val = moment_func(4, *args)
         else:
-            mu4 = (g2+3.0)*(mu2**2.0)  # 4th central moment
+            mu4 = (g2 + 3.0) * (mu2**2.0)  # 4th central moment
             mu3 = g1*np.power(mu2, 1.5)  # 3rd central moment
-            val = mu4+4*mu*mu3+6*mu*mu*mu2+mu*mu*mu*mu
+            val = mu4 + 4*mu*mu3 + 6*mu*mu*mu2 + mu*mu*mu*mu
     else:
         val = moment_func(n, *args)
 
@@ -1076,7 +1076,7 @@ class rv_continuous(rv_generic):
             self.generic_moment = vectorize(self._mom0_sc, otypes='d')
         else:
             self.generic_moment = vectorize(self._mom1_sc, otypes='d')
-        self.generic_moment.nin = self.numargs+1  # Because of the *args argument
+        self.generic_moment.nin = self.numargs + 1  # Because of the *args argument
         # of _mom0_sc, vectorize cannot count the number of arguments correctly.
 
         if longname is None:
@@ -1593,13 +1593,13 @@ class rv_continuous(rv_generic):
 
         signature = inspect.getargspec(get_method_function(self._stats))
         if (signature[2] is not None) or ('moments' in signature[0]):
-            mu, mu2, g1, g2 = self._stats(*args,**{'moments':moments})
+            mu, mu2, g1, g2 = self._stats(*args, **{'moments': moments})
         else:
             mu, mu2, g1, g2 = self._stats(*args)
         if g1 is None:
             mu3 = None
         else:
-            mu3 = g1*np.power(mu2,1.5)  # (mu2**1.5) breaks down for nan and inf
+            mu3 = g1*np.power(mu2, 1.5)  # (mu2**1.5) breaks down for nan and inf
         default = valarray(shape(cond), self.badvalue)
         output = []
 
@@ -1629,11 +1629,11 @@ class rv_continuous(rv_generic):
 
             if 's' in moments:
                 if g1 is None:
-                    mu3p = self._munp(3.0,*goodargs)
+                    mu3p = self._munp(3, *goodargs)
                     if mu is None:
-                        mu = self._munp(1.0,*goodargs)
+                        mu = self._munp(1, *goodargs)
                     if mu2 is None:
-                        mu2p = self._munp(2.0,*goodargs)
+                        mu2p = self._munp(2, *goodargs)
                         mu2 = mu2p - mu*mu
                     mu3 = mu3p - 3*mu*mu2 - mu**3
                     g1 = mu3 / np.power(mu2, 1.5)
@@ -1695,10 +1695,10 @@ class rv_continuous(rv_generic):
         if (n > 0) and (n < 5):
             signature = inspect.getargspec(get_method_function(self._stats))
             if (signature[2] is not None) or ('moments' in signature[0]):
-                mdict = {'moments':{1:'m',2:'v',3:'vs',4:'vk'}[n]}
+                mdict = {'moments':{1:'m', 2:'v', 3:'vs', 4:'vk'}[n]}
             else:
                 mdict = {}
-            mu, mu2, g1, g2 = self._stats(*args,**mdict)
+            mu, mu2, g1, g2 = self._stats(*args, **mdict)
         val = _moment_from_stats(n, mu, mu2, g1, g2, self._munp, args)
 
         # Convert to transformed  X = L + S*Y
@@ -6891,7 +6891,7 @@ class rv_discrete(rv_generic):
 
         signature = inspect.getargspec(get_method_function(self._stats))
         if (signature[2] is not None) or ('moments' in signature[0]):
-            mu, mu2, g1, g2 = self._stats(*args,**{'moments':moments})
+            mu, mu2, g1, g2 = self._stats(*args, **{'moments':moments})
         else:
             mu, mu2, g1, g2 = self._stats(*args)
         if g1 is None:
@@ -6907,28 +6907,28 @@ class rv_discrete(rv_generic):
 
         if 'm' in moments:
             if mu is None:
-                mu = self._munp(1.0,*goodargs)
+                mu = self._munp(1.0, *goodargs)
             out0 = default.copy()
-            place(out0,cond,mu+loc)
+            place(out0, cond, mu + loc)
             output.append(out0)
 
         if 'v' in moments:
             if mu2 is None:
-                mu2p = self._munp(2.0,*goodargs)
+                mu2p = self._munp(2.0, *goodargs)
                 if mu is None:
-                    mu = self._munp(1.0,*goodargs)
+                    mu = self._munp(1.0, *goodargs)
                 mu2 = mu2p - mu*mu
             out0 = default.copy()
-            place(out0,cond,mu2)
+            place(out0, cond, mu2)
             output.append(out0)
 
         if 's' in moments:
             if g1 is None:
-                mu3p = self._munp(3.0,*goodargs)
+                mu3p = self._munp(3.0, *goodargs)
                 if mu is None:
-                    mu = self._munp(1.0,*goodargs)
+                    mu = self._munp(1.0, *goodargs)
                 if mu2 is None:
-                    mu2p = self._munp(2.0,*goodargs)
+                    mu2p = self._munp(2.0, *goodargs)
                     mu2 = mu2p - mu*mu
                 mu3 = mu3p - 3*mu*mu2 - mu**3
                 g1 = mu3 / np.power(mu2, 1.5)
@@ -6938,19 +6938,19 @@ class rv_discrete(rv_generic):
 
         if 'k' in moments:
             if g2 is None:
-                mu4p = self._munp(4.0,*goodargs)
+                mu4p = self._munp(4.0, *goodargs)
                 if mu is None:
-                    mu = self._munp(1.0,*goodargs)
+                    mu = self._munp(1.0, *goodargs)
                 if mu2 is None:
-                    mu2p = self._munp(2.0,*goodargs)
+                    mu2p = self._munp(2.0, *goodargs)
                     mu2 = mu2p - mu*mu
                 if mu3 is None:
-                    mu3p = self._munp(3.0,*goodargs)
+                    mu3p = self._munp(3.0, *goodargs)
                     mu3 = mu3p - 3*mu*mu2 - mu**3
                 mu4 = mu4p - 4*mu*mu3 - 6*mu*mu*mu2 - mu**4
                 g2 = mu4 / mu2**2.0 - 3.0
             out0 = default.copy()
-            place(out0,cond,g2)
+            place(out0, cond, g2)
             output.append(out0)
 
         if len(output) == 1:

@@ -183,14 +183,14 @@ def test_cont_basic():
         sv = rvs.var()
         skurt = stats.kurtosis(rvs)
         sskew = stats.skew(rvs)
-        m,v = distfn.stats(*arg)
+        m, v, s, k = distfn.stats(*arg, moments='mvsk')
 
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
         # the sample skew kurtosis test has known failures, not very good distance measure
         # yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
         yield check_normalization, distfn, arg, distname
-        yield check_moment, distfn, arg, m, v, distname
+        yield check_moment, distfn, arg, m, v, s, k, distname
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
         yield check_pdf, distfn, arg, distname
@@ -227,12 +227,12 @@ def test_cont_basic_slow():
         sv = rvs.var()
         skurt = stats.kurtosis(rvs)
         sskew = stats.skew(rvs)
-        m,v = distfn.stats(*arg)
+        m, v, s, k = distfn.stats(*arg, moments='mvsk')
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
         # the sample skew kurtosis test has known failures, not very good distance measure
         # yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
-        yield check_moment, distfn, arg, m, v, distname
+        yield check_moment, distfn, arg, m, v, s, k, distname
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
         yield check_pdf, distfn, arg, distname
@@ -256,9 +256,9 @@ def test_cont_basic_slow():
         yield check_named_args, distfn, x, arg, locscale_defaults, meths
 
 
-def check_moment(distfn, arg, m, v, msg):
-    m1 = distfn.moment(1,*arg)
-    m2 = distfn.moment(2,*arg)
+def check_moment(distfn, arg, m, v, s, k, msg):
+    m1 = distfn.moment(1, *arg)
+    m2 = distfn.moment(2, *arg)
     if not np.isinf(m):
         npt.assert_almost_equal(m1, m, decimal=10, err_msg=msg +
                             ' - 1st moment')
@@ -272,6 +272,16 @@ def check_moment(distfn, arg, m, v, msg):
         npt.assert_(np.isinf(m2),
                msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
 
+    # skew / kurtosis
+    if not np.isnan(s):
+        m2e = distfn.expect(lambda x: np.power(x - m1, 2), arg)
+        if np.isfinite(m2e):
+            m3e = distfn.expect(lambda x: np.power(x - m1, 3), arg)
+            npt.assert_almost_equal(m3e, s * np.power(m2e, 1.5), decimal=5)
+
+        if not np.isnan(k) and np.isfinite(m2e):
+            m4e = distfn.expect(lambda x: np.power(x - m1, 4), arg)
+            npt.assert_almost_equal(m4e, (k+3.) * m2e**2, decimal=5)
 
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
     # this did not work, skipped silently by nose
