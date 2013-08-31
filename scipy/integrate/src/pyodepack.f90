@@ -105,7 +105,7 @@ module pyodepack
         integer :: nrtol, natol
         integer :: ncrit, icrit
         integer :: ierr
-        integer :: lrn, lrs
+        integer :: lrn, lrs, lmat
         integer :: lrw, liw
         integer :: ii
 
@@ -137,8 +137,16 @@ module pyodepack
         t_ = t(1)
 
         ! Compute size of the work arrays and allocate them
+        if ((jt == 1) .or. (jt == 2)) then
+            lmat = neq ** 2 + 2
+        else if ((jt == 4) .or. (jt == 5)) then
+            lmat = (2 * ml + mu + 1) * neq + 2
+        else
+            iostate = -3
+            return
+        end if
         lrn = 20 + (mxordn + 4) * neq
-        lrs = 22 + (mxords + 4) * neq + neq * neq
+        lrs = 20 + (mxords + 1) * neq + 3 * neq + lmat
         lrw = max(lrn, lrs)
         liw = 20 + neq
 

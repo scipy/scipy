@@ -129,21 +129,21 @@ def odeint(func, y0, t, dfunc=None,
 
     """
 
-    # TODO: Banded Jacobian
     tol = 1.49012e-8
     if rtol is None:
         rtol = tol
     if atol is None:
         atol = tol
-    if ml is None:
-        ml = -1
-    if mu is None:
-        mu = -1
 
     jt = 1
     if dfunc is None:
         jt = 2
         dfunc = lambda t, y: None
+
+    if (ml is not None) and (mu is not None):
+        jt += 3
+    else:
+        ml = mu = -1
 
     odeint = _pyodepack.pyodepack.odeint
     y, iostate, rout, iout = odeint(func, y0, t, rtol, atol, tcrit,
