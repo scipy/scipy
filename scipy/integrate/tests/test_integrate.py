@@ -430,6 +430,17 @@ PROBLEMS = [SimpleOscillator, ComplexExp, Pi, LsodaOde]
 #------------------------------------------------------------------------------
 
 
+def test_odeint_raises_callback_exception():
+    """Exceptions raised in callback functions properly propagate,
+    see gh-2570"""
+    def func(t, y):
+        raise TypeError
+    assert_raises(TypeError, odeint, func, [1.0, 0.0], [0.0, 0.1])
+
+
+#------------------------------------------------------------------------------
+
+
 def f(t, x):
     dxdt = [x[1], -x[0]]
     return dxdt
