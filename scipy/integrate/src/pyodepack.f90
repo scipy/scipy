@@ -1,5 +1,4 @@
 ! Fortran 90 wrapper around lsoda
-! Author: Juan Luis Cano, Aug 2013
 
 module pyodepack
 

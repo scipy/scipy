@@ -1,7 +1,5 @@
 # Author: Travis Oliphant
 #
-# Aug 2013: Juan Luis Cano
-#   Rewritten odeint loop in Fortran.
 
 from __future__ import division, print_function, absolute_import
 

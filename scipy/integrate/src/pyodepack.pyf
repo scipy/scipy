@@ -1,6 +1,5 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
-! Author: Juan Luis Cano, Aug 2013 (automatically generated + manual editing)
 
 python module _pyodepack ! in 
     interface  ! in :_pyodepack
