@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_
+from numpy.testing import assert_, assert_allclose
 import scipy.special.orthogonal as orth
 
 from scipy.special._testutils import FuncData
@@ -235,3 +235,10 @@ class TestRecurrence(object):
     def test_laguerre(self):
         self.check_poly(orth.eval_laguerre,
                    param_ranges=[], x_range=[0, 100])
+
+    def test_hermite(self):
+        v =  orth.eval_hermite(70, 1.0)
+        a = -1.457076485701412e60 
+        assert_allclose(v,a)
+
+        

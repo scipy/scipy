@@ -87,6 +87,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy import all, any, exp, inf, pi, sqrt
 from numpy.dual import eig
+from scipy import linalg
 
 # Local imports.
 from . import _ufuncs as cephes
@@ -382,6 +383,38 @@ def laguerre(n, monic=0):
 
 
 # Hermite  1                         H_n(x)
+def _h_gen_roots_and_weights(n, mu, factor, func):
+    """Compute the roots and weights for Gaussian-Hermite quadrature.
+    Internal function.
+    """
+    if n < 1:
+        raise ValueError("n must be positive.")
+    
+    bn = np.sqrt(np.arange(1,n, dtype=np.float64)/factor)
+    c = np.diag(bn, -1)
+    x = linalg.eigvalsh(c, overwrite_a=True)
+
+    # improve roots by one application of Newton's method
+    dy = func(n, x)
+    df = factor*n*func(n-1, x)
+    x -= dy/df
+
+    df /= df.max()
+    w = 1 / (df * df)
+
+    # symmetrize
+    w = (w + w[::-1])/2
+    x = (x - x[::-1])/2
+
+    # scale w correctly
+    w *= np.sqrt(2.0*np.pi/factor) / w.sum()
+
+    if mu:
+        return [x, w, mu]
+    else:
+        return x, w
+ 
+
 def h_roots(n, mu=0):
     """[x,w] = h_roots(n)
 
@@ -389,18 +422,8 @@ def h_roots(n, mu=0):
     H_n(x), and weights (w) to use in Gaussian Quadrature over
     [-inf,inf] with weighting function exp(-x**2).
     """
-    if n < 1:
-        raise ValueError("n must be positive.")
-
-    sbn_H = lambda k: sqrt(k/2)  # from recurrence relation
-    an_H = lambda k: 0*k
-    mu0 = sqrt(pi)               # integral of weight over interval
-    val = gen_roots_and_weights(n,an_H,sbn_H,mu0)
-    if mu:
-        return val + [mu0]
-    else:
-        return val
-
+    return _h_gen_roots_and_weights(n, mu, 2.0, cephes.eval_hermite)
+   
 
 def hermite(n, monic=0):
     """Return the nth order Hermite polynomial, H_n(x), orthogonal over
@@ -433,17 +456,7 @@ def he_roots(n, mu=0):
     He_n(x), and weights (w) to use in Gaussian Quadrature over
     [-inf,inf] with weighting function exp(-(x/2)**2).
     """
-    if n < 1:
-        raise ValueError("n must be positive.")
-
-    sbn_He = lambda k: sqrt(k)   # from recurrence relation
-    an_He = lambda k: 0*k
-    mu0 = sqrt(2*pi)             # integral of weight over interval
-    val = gen_roots_and_weights(n,an_He,sbn_He,mu0)
-    if mu:
-        return val + [mu0]
-    else:
-        return val
+    return _h_gen_roots_and_weights(n, mu, 1.0, cephes.eval_hermitenorm)
 
 
 def hermitenorm(n, monic=0):
