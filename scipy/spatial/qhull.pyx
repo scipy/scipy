@@ -1581,6 +1581,9 @@ class Delaunay(_QhullUser):
     ValueError
         Raised if an incompatible array is given as input.
 
+    ValueError
+        Raised when a Masked array is given as points argument.
+
     Notes
     -----
     The tesselation is computed using the Qhull library [Qhull]_.
@@ -2114,6 +2117,9 @@ class ConvexHull(_QhullUser):
     ValueError
         Raised if an incompatible array is given as input.
 
+    ValueError
+        Raised when a Masked array is given as points argument.
+
     Notes
     -----
     The convex hull is computed using the Qhull libary [Qhull]_.
@@ -2237,6 +2243,9 @@ class Voronoi(_QhullUser):
         geometrical degeneracy when options to resolve are not enabled.
     ValueError
         Raised if an incompatible array is given as input.
+
+    ValueError
+        Raised when a Masked array is given as points argument.
 
     Notes
     -----
