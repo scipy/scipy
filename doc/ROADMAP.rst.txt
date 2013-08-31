@@ -2,8 +2,8 @@ Roadmap to Scipy 1.0
 ====================
 
 This roadmap provides a high-level view on what is needed per scipy
-sub-module in terms of new functionality, bug fixes, etc. before we can release
-a ``1.0`` version of Scipy. Things not mentioned in this roadmap are
+submodule in terms of new functionality, bug fixes, etc. before we can release
+a ``1.0`` version of Scipy.  Things not mentioned in this roadmap are
 not necessarily unimportant or out of scope, however we (the Scipy developers)
 want to provide to our users and contributors a clear picture of where Scipy is
 going and where help is needed most urgently.
@@ -13,22 +13,88 @@ we consider essential and has an API and code quality (including documentation
 and tests) that's of high enough quality.  
 
 
-cluster
+General
 -------
-Not entirely clear whether or not to keep this module (not heavily used,
-whether this is "basic" functionality is debatable; but is used by
-scikit-learn).  If we do keep it, the following is needed:
 
-  - vq_rewrite: drop or finish
-  - Needs Cython rewrite for hierarchy_wrap
+API changes
+```````````
+In general, we want to take advantage of the major version change to fix the
+known warts in the API.  The change from 0.x.x to 1.x.x is the chance to fix
+those API issues that we all know are ugly warts.  Example: unify the
+convention for specifying tolerances (including absolute, relative, argument
+and function value tolerances) of the optimization functions.  More API issues
+will be noted in the module sections below.
+
+It should be made more clear what is public and what is private in scipy.
+Everything private should be underscored as much as possible.  Now this is done
+consistently when we add new code, but for 1.0 it should also be done for
+existing code.
+
+
+Test coverage
+`````````````
+Test coverage of code added in the last few years is quite good, and we aim for
+a high coverage for all new code that is added.  However, there is still a
+significant amount of old code for which coverage is poor.  Bringing that up to
+the current standard is probably not realistic, but we should plug the biggest
+holes.  Additionally the coverage should be tracked over time and we should
+ensure it only goes up.
+
+Besides coverage there is also the issue of correctness - older code may have a
+few tests that provide decent statement coverage, but that doesn't necessarily
+say much about whether the code does what it says on the box.  Therefore code
+review of some parts of the code (``stats`` and ``signal`` in particular) is
+necessary.
+
+
+Documentation
+`````````````
+The documentation is in decent shape.  Expanding of current docstrings and
+putting them in the standard numpy format should continue, so the number of
+reST errors and glitches in the html docs decreases.  Most modules also have a
+tutorial in the reference guide that is a good introduction, however there are
+a few missing or incomplete tutorials - this should be fixed.
+
+
+Other
+`````
+Scipy 1.0 will likely contain more backwards-incompatible changes than a minor
+release.  Therefore we will have a longer-lived maintenance branch of the last
+0.X release.
+
+It's not clear how much functionality can be Cythonized without making the .so
+files too large.  This needs measuring.
+
+Bento will be officially supported as the second build tool besides distutils.
+At the moment it still has an experimental, use-at-your-own-risk status, but
+that has to change. 
+
+A more complete continuous integration setup is needed; at the moment we often
+find out right before a release that there are issues on some less-often used
+platform or Python version.  At least needed are a Windows, Linux and OS X
+build, coverage of the lowest and highest Python and Numpy versions that are
+supported, a Bento build and a PEP8 checker.
+
+
+Modules
+-------
+
+cluster
+```````
+Most of the cluster module is a candidate for a Cython rewrite; this will speed
+up the code and it will be more maintainable than the current C code.  The code
+should remain (or become) simple and easy to understand.  Support for the
+arbitrary distance metrics in ``scipy.spatial`` is probably best left to
+scikit-learn or other more specialized libraries.
+
 
 constants
----------
+`````````
 This module is basically done, low-maintenance and without open issues.
 
 
 fftpack
--------
+```````
 Needed:
 
   - solve issues with single precision: large errors, disabled for difficult sizes
@@ -44,7 +110,7 @@ make clear that ``scipy.fftpack`` is preferred over ``numpy.fft``.
 
 
 integrate
----------
+`````````
 Needed for ODE solvers:
 
   - documentation is pretty bad, needs fixing
@@ -55,7 +121,7 @@ The numerical integration functions are in good shape, not much to do here.
 
 
 interpolate
------------
+```````````
 Needed:
 
   - Transparant B-splines and their usage in the interpolation routines is needed.
@@ -87,7 +153,7 @@ lib
 
 
 linalg
-------
+``````
 Needed:
 
   - remove functions that are duplicate with numpy.linalg
@@ -98,20 +164,29 @@ Needed:
 
 
 misc
-----
+````
 ``scipy.misc`` will be removed as a public module.  The functions in it can be
 moved to other modules:
 
   - pilutil, images : ndimage
   - comb, factorials, logsumexp, pade : special
-  - derivative, central_diff_weight : remove
   - doccer : move to scipy._lib
   - info, who : these are in numpy
+  - derivative, central_diff_weight : remove, replace with more extensive
+    functionality for numerical differentiation - likely in a new module
+    ``scipy.diff``, as discussed in https://github.com/scipy/scipy/issues/2035
 
 
 ndimage
--------
-Keep, fix some critical bugs??  Ask Stefan
+```````
+Underlying ndimage is a powerful interpolation engine.  Unfortunately, it was
+never decided whether to use a pixel model (``(1, 1)`` elements with centers
+``(0.5, 0.5)``) or a data point model (values at points on a grid).  Over time,
+it seems that the data point model is better defined and easier to implement.
+We therefore propose to move to this data representation for 1.0, and to vet
+all interpolation code to ensure that boundary values, transformations, etc.
+are correctly computed.  Addressing this issue will close several issues,
+including #1323, #1903, #2045 and #2640.
 
 
 odr
@@ -122,30 +197,44 @@ functionality.
 
 
 optimize
---------
-Overall this module is in reasonably good shape, however it is missing:
+````````
+Overall this module is in reasonably good shape, however it is missing a few
+more good global optimizers as well as large-scale optimizers.  These should be
+added.  Other things that are needed:
 
-  - large-scale optimizers
-  - a few more good global optimizers
-
-Other things that are needed:
-
-  - deprecate ``anneal``, it just doesn't work well enough
+  - deprecate ``anneal``, it just doesn't work well enough.
+  - deprecate the ``fmin_*`` functions in the documentation, ``minimize`` is
+    preferred.
   - clearly define what's out of scope for this module.
 
 
 signal
-------
-- David C. will check in more detail
-- splines --> check how much this is used; remove? Analog to Matlab funcs??
-- Add proper wavelets, including discrete wavelet transform.  What's there now
-  doesn't make much sense.
-- Improve performance of ltisys (less internal transformations between
-  different representations).
+``````
+*Convolution and correlation*: (Relevant functions are convolve, correlate,
+fftconvolve, convolve2d, correlate2d, and sepfir2d.) Eliminate the overlap with
+`ndimage` (and elsewhere).  From `numpy`, `scipy.signal` and `scipy.ndimage`
+(and anywhere else we find them), pick the "best of class" for 1-D, 2-D and n-d
+convolution and correlation, put the implementation somewhere, and use that
+consistently throughout scipy.
+
+*B-splines*: (Relevant functions are bspline, cubic, quadratic, gauss_spline,
+cspline1d, qspline1d, cspline2d, qspline2d, cspline1d_eval, and spline_filter.)
+Move the good stuff to `interpolate` (with appropriate API changes to match how
+things are done in `interpolate`), and eliminate any duplication.
+
+*Filter design*: merge `firwin` and `firwin2` so `firwin2` can be removed.
+
+*Continuous-Time Linear Systems*: remove `lsim2`, `impulse2`, `step2`.  Make
+`lsim`, `impulse` and `step` "just work" for any input system.  Improve
+performance of ltisys (less internal transformations between different
+representations).
+
+*Wavelets*: add proper wavelets, including discrete wavelet transform.  What's
+there now doesn't make much sense.
 
 
 sparse
-------
+``````
 The sparse matrix formats are getting feature-complete but are slow ...
 reimplement parts in Cython?
 
@@ -159,12 +248,12 @@ Don't emulate np.matrix behavior, drop 2-D?
 
 
 sparse.csgraph
---------------
+``````````````
 This module is in good shape.
 
 
 sparse.linalg
--------------
+`````````````
 Arpack is in good shape.
 
 isolve:
@@ -182,14 +271,14 @@ dsolve:
 
 
 spatial
--------
+```````
 KDTree/cKDTree and the QHull wrappers are in good shape.  The distance module
 needs bug fixes in the distance metrics, and distance_wrap.c needs to be
 cleaned up (maybe rewrite in Cython).
 
 
 special
--------
+```````
 special has a lot of functions that need improvements in precision.  All
 functions that are also implemented in mpmath can be tested against mpmath, and
 should match well.
@@ -201,7 +290,7 @@ Things not in mpmath:
 
 
 stats
------
+`````
 This is a large module with by far the most open issues.  It has improved a lot
 over the past few releases, but more cleanup and rewriting of functions is
 needed.  The Statistics Review milestone on Github gives a reasonable overview
@@ -215,39 +304,23 @@ of which functions need checking, documentation and tests.
   - document subclassing of distributions even better, make issues with state
     of instances clear.
 
-The t-test functions need to be unified.
+All hypothesis tests should get a keyword 'alternative' where applicable (see
+``stats.kstest`` for an example).
+
 ``gaussian_kde`` is in good shape but limited. It should not be expanded
 probably, this fits better in statsmodels (which already has a lot more KDE
 functionality).
 
-``stats.mstats`` : unclear what to do with this.  It's a lot of work to fix it
-up.  
+``stats.mstats`` is a useful module for worked with data with missing values.
+One problem it has though is that in many cases the functions have diverged
+from their counterparts in `scipy.stats`.  The ``mstats`` functions should be
+updated so that the two sets of functions are consistent.
 
 
 weave
------
+`````
 This is the only module that was not ported to Python 3.  Effectively it's
 deprecated (not recommended to use for new code).  In the future it should be
 removed from scipy (can be made into a separate module). 
-
-
-Other
------
-It should be made more clear what is public and what is private in scipy.
-Everything private should be underscored as much as possible.
-
-It's not clear how much functionality can be Cythonized without making the .so
-files too large.  This needs measuring.
-
-
-
-
-
-
-
-
-
-
-
 
 
