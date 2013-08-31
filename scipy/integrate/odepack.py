@@ -25,7 +25,7 @@ _msgs = {
 Result = namedtuple('Result', 'y success infodict')
 
 
-def odeint(func, y0, t, dfunc=None, col_deriv=0,
+def odeint(func, y0, t, dfunc=None,
            ml=None, mu=None, rtol=None, atol=None, tcrit=None, first_step=0.0,
            max_step=0.0, min_step=0.0, ixpr=0, max_nosteps=0, max_msgs=0,
            max_order_ns=12, max_order_s=5):
@@ -52,9 +52,6 @@ def odeint(func, y0, t, dfunc=None, col_deriv=0,
         value point should be the first element of this sequence.
     dfunc : callable(t0, y, ...)
         Gradient (Jacobian) of `func`.
-    col_deriv : bool, optional
-        True if `Dfun` defines derivatives down columns (faster),
-        otherwise `Dfun` should define derivatives across rows.
 
     Returns
     -------
@@ -134,8 +131,7 @@ def odeint(func, y0, t, dfunc=None, col_deriv=0,
 
     """
 
-    # TODO: Jacobian
-    # TODO: Critical points
+    # TODO: Banded Jacobian
     tol = 1.49012e-8
     if rtol is None:
         rtol = tol
