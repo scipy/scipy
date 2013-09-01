@@ -115,7 +115,7 @@ def vectorize1(func, args=(), vec_func=False):
 
 
 def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
-               vec_func=True):
+               vec_func=True, miniter=1):
     """
     Compute a definite integral using fixed-tolerance Gaussian quadrature.
 
@@ -136,10 +136,12 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
         Iteration stops when error between last two iterates is less than
         `tol` OR the relative change is less than `rtol`.
     maxiter : int, optional
-        Maximum number of iterations.
+        Maximum order of Gaussian quadrature.
     vec_func : bool, optional
         True or False if func handles arrays as arguments (is
         a "vector" function). Default is True.
+    miniter : int, optional
+        Minimum order of Gaussian quadrature.
 
     Returns
     -------
@@ -165,7 +167,8 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     vfunc = vectorize1(func, args, vec_func=vec_func)
     val = np.inf
     err = np.inf
-    for n in xrange(1, maxiter+1):
+    maxiter = max(miniter+1, maxiter)
+    for n in xrange(miniter, maxiter+1):
         newval = fixed_quad(vfunc, a, b, (), n)[0]
         err = abs(newval-val)
         val = newval
