@@ -251,7 +251,7 @@ def sqeuclidean(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    dist = ((u - v) ** 2).sum()
+    dist = np.dot(u, u) + np.dot(v, v) - 2 * np.dot(u, v)
     return dist
 
 
