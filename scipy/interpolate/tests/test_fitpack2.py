@@ -9,6 +9,7 @@ from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal,
         assert_array_almost_equal, assert_allclose, TestCase, run_module_suite
 from numpy.testing.utils import WarningManager
 from numpy import array, diff, linspace, meshgrid, ones, pi, roll, shape
+from scipy.interpolate.fitpack import bisplrep, bisplev
 from scipy.interpolate.fitpack2 import UnivariateSpline, \
     LSQBivariateSpline, SmoothBivariateSpline, RectBivariateSpline, \
     LSQSphereBivariateSpline, SmoothSphereBivariateSpline, \
@@ -216,6 +217,21 @@ class TestSmoothBivariateSpline(TestCase):
         trpz = .25*(diff(tx[:-1])[:,None]*diff(ty[:-1])[None,:]
                     * (tz[:-1,:-1]+tz[1:,:-1]+tz[:-1,1:]+tz[1:,1:])).sum()
         assert_almost_equal(lut.integral(tx[0], tx[-2], ty[0], ty[-2]), trpz)
+
+    def test_rerun_lwrk2_too_small(self):
+        # in this setting, lwrk2 is too small in the default run. Here we
+        # check for equality with the bisplrep/bisplev output because there,
+        # an automatic re-run of the spline representation is done if ier>10.
+        x = np.linspace(-2, 2, 80)
+        y = np.linspace(-2, 2, 80)
+        z = x + y
+        xi = np.linspace(-1, 1, 100)
+        yi = np.linspace(-2, 2, 100)
+        tck = bisplrep(x, y, z)
+        res1 = bisplev(xi, yi, tck)
+        interp_ = SmoothBivariateSpline(x, y, z)
+        res2 = interp_(xi, yi)
+        assert_almost_equal(res1, res2)
 
 
 class TestLSQSphereBivariateSpline(TestCase):
