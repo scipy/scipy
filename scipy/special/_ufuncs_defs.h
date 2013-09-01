@@ -180,6 +180,7 @@ npy_double pdtr(npy_int, npy_double);
 npy_double pdtrc(npy_int, npy_double);
 npy_double pdtri(npy_int, npy_double);
 npy_double cdfpoi2_wrap(npy_double, npy_double);
+npy_double poch(npy_double, npy_double);
 npy_double prolate_aswfa_nocv_wrap(npy_double, npy_double, npy_double, npy_double, npy_double *);
 npy_int prolate_aswfa_wrap(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *);
 npy_double prolate_segv_wrap(npy_double, npy_double, npy_double);

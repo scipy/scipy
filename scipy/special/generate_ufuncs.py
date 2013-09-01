@@ -289,6 +289,7 @@ erfcx -- faddeeva_erfcx: d->d, faddeeva_erfcx_complex: D->D -- _faddeeva.h++
 erfi -- faddeeva_erfi: d->d, faddeeva_erfi_complex: D->D   -- _faddeeva.h++
 xlogy -- xlogy[double]: dd->d, xlogy[double_complex]: DD->D -- _xlogy.pxd
 xlog1py -- xlog1py: dd->d                                  -- _xlogy.pxd
+poch -- poch: dd->d                                        -- c_misc/misc.h
 """
 
 #---------------------------------------------------------------------------------

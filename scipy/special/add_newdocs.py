@@ -1336,6 +1336,19 @@ add_newdoc("scipy.special", "pdtrik",
     k=pdtrik(p,m) returns the quantile k such that pdtr(k,m)=p
     """)
 
+add_newdoc("scipy.special", "poch",
+    """
+    Pochhammer symbol (z)_m
+
+    The Pochhammer symbol (rising factorial), is defined as::
+
+        (z)_m = gamma(z + m) / gamma(z)
+
+    For positive integer `m` it reads::
+
+        (z)_m = z * (z + 1) * ... * (z + m - 1) 
+    """)
+
 add_newdoc("scipy.special", "pro_ang1",
     """
     (s,sp)=pro_ang1(m,n,c,x) computes the prolate sheroidal angular function

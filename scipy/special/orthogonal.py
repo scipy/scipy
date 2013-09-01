@@ -106,9 +106,8 @@ __all__ = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
            'eval_sh_jacobi', 'poch', 'binom']
 
 
-def poch(z, m):
-    """Pochhammer symbol (z)_m = (z)(z+1)....(z+m-1) = gamma(z+m)/gamma(z)"""
-    return _gam(z+m) / _gam(z)
+# For backward compatibility
+poch = cephes.poch
 
 
 class orthopoly1d(np.poly1d):
