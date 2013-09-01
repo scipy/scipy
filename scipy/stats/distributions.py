@@ -2670,7 +2670,7 @@ class burr_gen(rv_continuous):
         return mu, mu2, g1, g2
 burr = burr_gen(a=0.0, name='burr')
 
-#XXX: cf gh-2552
+
 class fisk_gen(burr_gen):
     """A Fisk continuous random variable.
 
@@ -3733,7 +3733,6 @@ class gamma_gen(rv_continuous):
 gamma = gamma_gen(a=0.0, name='gamma')
 
 
-#XXX: cf gh-2552
 class erlang_gen(gamma_gen):
     """An Erlang continuous random variable.
 
@@ -7225,7 +7224,6 @@ class binom_gen(rv_discrete):
 binom = binom_gen(name='binom')
 
 
-#XXX: cf gh-2552
 class bernoulli_gen(binom_gen):
     """A Bernoulli discrete random variable.
 
