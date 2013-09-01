@@ -1116,7 +1116,7 @@ def general_gaussian(M, p, sig, sym=True):
 # `chebwin` contributed by Kumar Appaiah.
 
 def chebwin(M, at, sym=True):
-    """Return a Dolph-Chebyshev window.
+    r"""Return a Dolph-Chebyshev window.
 
     Parameters
     ----------
