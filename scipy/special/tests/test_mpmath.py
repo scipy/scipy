@@ -1350,20 +1350,19 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
             return v
 
         def legenp(n, m, z):
-            if z == 1 and int(n) == n:
-                # Special case (mpmath gives inf, we take the limit by
+            if (z == 1 or z == -1) and int(n) == n:
+                # Special case (mpmath may give inf, we take the limit by
                 # continuity)
                 if m == 0:
-                    return 1
+                    if n < 0:
+                        n = -n - 1
+                    return mpmath.power(mpmath.sign(z), n)
                 else:
                     return 0
 
             if abs(z) < 1e-15:
                 # mpmath has bad performance here
                 return np.nan
-
-            if z == 1:
-                z = 1 - 1e-9
 
             typ = 2 if abs(z) < 1 else 3
             v = _exception_to_nan(mpmath.legenp)(n, m, z, type=typ)
@@ -1376,11 +1375,11 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
 
         assert_mpmath_equal(lpnm,
                             legenp,
-                            [IntArg(0, 100), IntArg(0, 100), Arg()])
+                            [IntArg(-100, 100), IntArg(-100, 100), Arg()])
 
         assert_mpmath_equal(lpnm_2,
                             legenp,
-                            [IntArg(0, 100), IntArg(0, 100), Arg(-1, 1)])
+                            [IntArg(-100, 100), Arg(-100, 100), Arg(-1, 1)])
 
     def test_legenp_complex(self):
         def clpnm(n, m, z):
@@ -1402,7 +1401,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
 
         assert_mpmath_equal(clpnm,
                             legenp,
-                            [FixedArg([0, 1, 2, 10]), FixedArg([0, 1, 2, 10]), FixedArg(z)],
+                            [FixedArg([-2, -1, 0, 1, 2, 10]), FixedArg([-2, -1, 0, 1, 2, 10]), FixedArg(z)],
                             rtol=1e-6,
                             n=500)
 

@@ -7912,7 +7912,7 @@ C
 C       =======================================================
 C       Purpose: Compute the associated Legendre function
 C                Pmv(x) with an integer order and an arbitrary
-C                degree v, using down-recursion for large degrees
+C                degree v, using recursion for large degrees
 C       Input :  x   --- Argument of Pm(x)  ( -1 ≤ x ≤ 1 )
 C                m   --- Order of Pmv(x)
 C                v   --- Degree of Pmv(x)
@@ -7922,8 +7922,8 @@ C       =======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         IF (X.EQ.-1.0D0.AND.V.NE.INT(V)) THEN
-           IF (M.EQ.0) PMV=-1.0D+300
-           IF (M.NE.0) PMV=1.0D+300
+           IF (M.EQ.0) PMV=-DINF()
+           IF (M.NE.0) PMV=DINF()
            RETURN
         ENDIF
         VX=V
@@ -7932,11 +7932,15 @@ C
            VX=-VX-1
         ENDIF
         NEG_M=0
-        IF (M.LT.0.AND.(VX+M+1).GT.0D0) THEN
-C          XXX: does not handle the cases where AMS 8.2.5
-C               does not help
-           NEG_M=1
-           MX=-M
+        IF (M.LT.0) THEN
+           IF ((VX+M+1).GT.0D0.OR.VX.NE.INT(VX)) THEN
+              NEG_M=1
+              MX=-M
+           ELSE
+C             We don't handle cases where DLMF 14.9.3 doesn't help
+              PMV=DNAN()
+              RETURN
+           END IF
         ENDIF
         NV=INT(VX)
         V0=VX-NV
@@ -7954,7 +7958,7 @@ C          Up-recursion on degree, AMS 8.5.3
            CALL LPMV0(VX, MX, X, PMV)
         ENDIF
         IF (NEG_M.NE.0.AND.ABS(PMV).LT.1.0D+300) THEN
-C          AMS 8.2.5, for integer order
+C          DLMF 14.9.3
            CALL GAMMA2(VX-MX+1, G1)
            CALL GAMMA2(VX+MX+1, G2)
            PMV = PMV*G1/G2 * (-1)**MX
