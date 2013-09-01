@@ -57,7 +57,7 @@ class TestUnivariateSpline(TestCase):
         assert_array_equal(sp([1.5, 2.5]), [0., 0.])
 
     def test_empty_input(self):
-        """Test whether empty input returns an empty output. Ticket 1014"""
+        # Test whether empty input returns an empty output. Ticket 1014
         x = [1,3,5,7,9]
         y = [0,4,9,12,21]
         spl = UnivariateSpline(x, y, k=3)
@@ -154,7 +154,7 @@ class TestLSQBivariateSpline(TestCase):
         assert_almost_equal(lut.integral(tx[0], tx[-1], ty[0], ty[-1]), trpz)
 
     def test_empty_input(self):
-        """Test whether empty inputs returns an empty output. Ticket 1014"""
+        # Test whether empty inputs returns an empty output. Ticket 1014
         x = [1,1,1,2,2,2,3,3,3]
         y = [1,2,3,1,2,3,1,2,3]
         z = [3,3,3,3,3,3,3,3,3]
@@ -163,7 +163,8 @@ class TestLSQBivariateSpline(TestCase):
         ty = [1+s,3-s]
         lut = LSQBivariateSpline(x,y,z,tx,ty,kx=1,ky=1)
 
-        assert_array_equal(lut([], []), array([]))
+        assert_array_equal(lut([], []), np.zeros((0,0)))
+        assert_array_equal(lut([], [], grid=False), np.zeros((0,)))
 
 
 class TestSmoothBivariateSpline(TestCase):
@@ -259,7 +260,8 @@ class TestLSQSphereBivariateSpline(TestCase):
                                   self.data)
 
     def test_empty_input(self):
-        assert_array_almost_equal(self.lut_lsq([], []), array([]))
+        assert_array_almost_equal(self.lut_lsq([], []), np.zeros((0,0)))
+        assert_array_almost_equal(self.lut_lsq([], [], grid=False), np.zeros((0,)))
 
 
 class TestSmoothSphereBivariateSpline(TestCase):
@@ -277,7 +279,8 @@ class TestSmoothSphereBivariateSpline(TestCase):
                                   [[3, 3], [3, 3], [3, 3]])
 
     def test_empty_input(self):
-        assert_array_almost_equal(self.lut([], []), array([]))
+        assert_array_almost_equal(self.lut([], []), np.zeros((0,0)))
+        assert_array_almost_equal(self.lut([], [], grid=False), np.zeros((0,)))
 
 
 class TestRectBivariateSpline(TestCase):
@@ -301,6 +304,39 @@ class TestRectBivariateSpline(TestCase):
 
         assert_almost_equal(zi, zi2)
 
+    def test_derivatives_grid(self):
+        x = array([1,2,3,4,5])
+        y = array([1,2,3,4,5])
+        z = array([[1,2,1,2,1],[1,2,1,2,1],[1,2,3,2,1],[1,2,2,2,1],[1,2,1,2,1]])
+        dx = array([[0,0,-20,0,0],[0,0,13,0,0],[0,0,4,0,0],
+            [0,0,-11,0,0],[0,0,4,0,0]])/6.
+        dy = array([[4,-1,0,1,-4],[4,-1,0,1,-4],[0,1.5,0,-1.5,0],
+            [2,.25,0,-.25,-2],[4,-1,0,1,-4]])
+        dxdy = array([[40,-25,0,25,-40],[-26,16.25,0,-16.25,26],
+            [-8,5,0,-5,8],[22,-13.75,0,13.75,-22],[-8,5,0,-5,8]])/6.
+        lut = RectBivariateSpline(x,y,z)
+        assert_array_almost_equal(lut(x,y,dx=1),dx)
+        assert_array_almost_equal(lut(x,y,dy=1),dy)
+        assert_array_almost_equal(lut(x,y,dx=1,dy=1),dxdy)
+
+    def test_derivatives(self):
+        x = array([1,2,3,4,5])
+        y = array([1,2,3,4,5])
+        z = array([[1,2,1,2,1],[1,2,1,2,1],[1,2,3,2,1],[1,2,2,2,1],[1,2,1,2,1]])
+        dx = array([0,0,2./3,0,0])
+        dy = array([4,-1,0,-.25,-4])
+        dxdy = array([160,65,0,55,32])/24.
+        lut = RectBivariateSpline(x,y,z)
+        assert_array_almost_equal(lut(x,y,dx=1,grid=False),dx)
+        assert_array_almost_equal(lut(x,y,dy=1,grid=False),dy)
+        assert_array_almost_equal(lut(x,y,dx=1,dy=1,grid=False),dxdy)
+
+    def test_broadcast(self):
+        x = array([1,2,3,4,5])
+        y = array([1,2,3,4,5])
+        z = array([[1,2,1,2,1],[1,2,1,2,1],[1,2,3,2,1],[1,2,2,2,1],[1,2,1,2,1]])
+        lut = RectBivariateSpline(x,y,z)
+        assert_allclose(lut(x, y), lut(x[:,None], y[None,:], grid=False))
 
 class TestRectSphereBivariateSpline(TestCase):
     def test_defaults(self):
@@ -325,6 +361,61 @@ class TestRectSphereBivariateSpline(TestCase):
         zi2 = array([lut(xp, yp)[0,0] for xp, yp in zip(xi, yi)])
         assert_almost_equal(zi, zi2)
 
+    def test_derivatives_grid(self):
+        y = linspace(0.01, 2*pi-0.01, 7)
+        x = linspace(0.01, pi-0.01, 7)
+        z = array([[1,2,1,2,1,2,1],[1,2,1,2,1,2,1],[1,2,3,2,1,2,1],
+                   [1,2,2,2,1,2,1],[1,2,1,2,1,2,1],[1,2,2,2,1,2,1],
+                   [1,2,1,2,1,2,1]])
+
+        lut = RectSphereBivariateSpline(x,y,z)
+
+        y = linspace(0.02, 2*pi-0.02, 7)
+        x = linspace(0.02, pi-0.02, 7)
+
+        assert_allclose(lut(x, y, dtheta=1), _numdiff_2d(lut, x, y, dx=1),
+                        rtol=1e-4, atol=1e-4)
+        assert_allclose(lut(x, y, dphi=1), _numdiff_2d(lut, x, y, dy=1),
+                        rtol=1e-4, atol=1e-4)
+        assert_allclose(lut(x, y, dtheta=1, dphi=1), _numdiff_2d(lut, x, y, dx=1, dy=1, eps=1e-6),
+                        rtol=1e-3, atol=1e-3)
+
+    def test_derivatives(self):
+        y = linspace(0.01, 2*pi-0.01, 7)
+        x = linspace(0.01, pi-0.01, 7)
+        z = array([[1,2,1,2,1,2,1],[1,2,1,2,1,2,1],[1,2,3,2,1,2,1],
+                   [1,2,2,2,1,2,1],[1,2,1,2,1,2,1],[1,2,2,2,1,2,1],
+                   [1,2,1,2,1,2,1]])
+
+        lut = RectSphereBivariateSpline(x,y,z)
+
+        y = linspace(0.02, 2*pi-0.02, 7)
+        x = linspace(0.02, pi-0.02, 7)
+
+        assert_equal(lut(x, y, dtheta=1, grid=False).shape, x.shape)
+        assert_allclose(lut(x, y, dtheta=1, grid=False),
+                        _numdiff_2d(lambda x,y: lut(x,y,grid=False), x, y, dx=1),
+                        rtol=1e-4, atol=1e-4)
+        assert_allclose(lut(x, y, dphi=1, grid=False),
+                        _numdiff_2d(lambda x,y: lut(x,y,grid=False), x, y, dy=1),
+                        rtol=1e-4, atol=1e-4)
+        assert_allclose(lut(x, y, dtheta=1, dphi=1, grid=False),
+                        _numdiff_2d(lambda x,y: lut(x,y,grid=False), x, y, dx=1, dy=1, eps=1e-6),
+                        rtol=1e-3, atol=1e-3)
+
+
+def _numdiff_2d(func, x, y, dx=0, dy=0, eps=1e-8):
+    if dx == 0 and dy == 0:
+        return func(x, y)
+    elif dx == 1 and dy == 0:
+        return (func(x + eps, y) - func(x - eps, y)) / (2*eps)
+    elif dx == 0 and dy == 1:
+        return (func(x, y + eps) - func(x, y - eps)) / (2*eps)
+    elif dx == 1 and dy == 1:
+        return (func(x + eps, y + eps) - func(x - eps, y + eps)
+                - func(x + eps, y - eps) + func(x - eps, y - eps)) / (2*eps)**2
+    else:
+        raise ValueError("invalid derivative order")
 
 if __name__ == "__main__":
     run_module_suite()
