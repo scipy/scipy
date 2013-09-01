@@ -681,18 +681,22 @@ def lpmn(m,n,z):
         raise ValueError("n must be a non-negative integer.")
     if not isscalar(z):
         raise ValueError("z must be scalar.")
+    if iscomplex(z):
+        raise ValueError("Argument must be real. Use clpmn instead.")
     if (m < 0):
         mp = -m
         mf,nf = mgrid[0:mp+1,0:n+1]
         sv = errprint(0)
-        fixarr = where(mf > nf,0.0,(-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
+        if abs(z) < 1:
+            # Ferrer function; DLMF 14.9.3
+            fixarr = where(mf > nf,0.0,(-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
+        else:
+            # Match to clpmn; DLMF 14.9.13
+            fixarr = where(mf > nf,0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
         sv = errprint(sv)
     else:
         mp = m
-    if iscomplex(z):
-        raise ValueError("Argument must be real. Use clpmn instead.")
-    else:
-        p,pd = specfun.lpmn(mp,n,z)
+    p,pd = specfun.lpmn(mp,n,z)
     if (m < 0):
         p = p * fixarr
         pd = pd * fixarr
