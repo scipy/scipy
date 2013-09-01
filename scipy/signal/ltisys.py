@@ -527,16 +527,19 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
         ufunc = interpolate.interp1d(T, U, kind='linear',
                                      axis=0, bounds_error=False)
 
-        def fprime(x, t, sys, ufunc):
+        def fprime(t, x, sys, ufunc):
             """The vector field of the linear system."""
             return dot(sys.A, x) + squeeze(dot(sys.B, nan_to_num(ufunc([t]))))
-        xout = integrate.odeint(fprime, X0, T, args=(sys, ufunc), **kwargs)
+        res = integrate.odeint(lambda t, x: fprime(t, x, sys, ufunc), X0, T,
+                                **kwargs)
+        xout = res.y
         yout = dot(sys.C, transpose(xout)) + dot(sys.D, transpose(U))
     else:
-        def fprime(x, t, sys):
+        def fprime(t, x, sys):
             """The vector field of the linear system."""
             return dot(sys.A, x)
-        xout = integrate.odeint(fprime, X0, T, args=(sys,), **kwargs)
+        res = integrate.odeint(lambda t, x: fprime(t, x, sys), X0, T, **kwargs)
+        xout = res.y
         yout = dot(sys.C, transpose(xout))
 
     return T, squeeze(transpose(yout)), xout
