@@ -40,13 +40,15 @@ def needs_g77_abi_wrapper(info):
         return False
 
 
-def split_fortran_files(source_dir):
+def split_fortran_files(source_dir, subroutines=None):
     """Split each file in `source_dir` into separate files per subroutine.
 
     Parameters
     ----------
     source_dir : str
         Full path to directory in which sources to be split are located.
+    subroutines : list of str, optional
+        Subroutines to split. (Default: all)
 
     Returns
     -------
@@ -63,15 +65,32 @@ def split_fortran_files(source_dir):
     starting at zero and ending at ``num_subroutines_in_file - 1``.
 
     """
+
+    if subroutines is not None:
+        subroutines = [x.lower() for x in subroutines]
+
     def split_file(fname):
         with open(fname, 'rb') as f:
             lines = f.readlines()
             subs = []
+            need_split_next = True
+
             # find lines with SUBROUTINE statements
             for ix, line in enumerate(lines):
-                if (re.match(b'^\\s+subroutine', line, re.I) and
-                        line[0] not in b'Cc!*'):
-                    subs.append(ix)
+                m = re.match(b'^\\s+subroutine\\s+([a-z0-9_]+)\s*\\(', line, re.I)
+                if m and line[0] not in b'Cc!*':
+                    if subroutines is not None:
+                        subr_name = m.group(1).decode('ascii').lower()
+                        subr_wanted = (subr_name in subroutines)
+                    else:
+                        subr_wanted = True
+                    if subr_wanted or need_split_next:
+                        need_split_next = subr_wanted
+                        subs.append(ix)
+
+            # check if no split needed
+            if len(subs) <= 1:
+                return [fname]
 
             # write out one file per subroutine
             new_fnames = []
