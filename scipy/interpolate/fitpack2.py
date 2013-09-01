@@ -656,34 +656,59 @@ class BivariateSpline(_BivariateSplineBase):
     bisplev : older wrapping of FITPACK
 
     """
-    def __call__(self, x, y, mth='array'):
-        """ Evaluate spline at the grid points defined by the coordinate arrays
-        x,y."""
+    def __call__(self, x, y, mth='array', dx=0, dy=0, grid=True):
+        """ If grid is True: evaluate spline at the grid points defined by the coordinate arrays
+        x,y. Else, evaluate spline at points (x[i], y[i]), i=0,...,len(x)-1
+
+        """
         x = np.asarray(x)
         y = np.asarray(y)
         # empty input yields empty output
         if (x.size == 0) and (y.size == 0):
             return array([])
-
-        if mth == 'array':
+        if not x.shape:
+            x = np.expand_dims(x,0)
+        if not y.shape:
+            y = np.expand_dims(y,0)
+        xshape = x.shape
+        yshape = y.shape
+        x = x.flatten()
+        y = y.flatten()
+        if mth=='array':
             tx,ty,c = self.tck[:3]
             kx,ky = self.degrees
-            z,ier = dfitpack.bispev(tx,ty,c,kx,ky,x,y)
-            if not ier == 0:
-                raise ValueError("Error code returned by bispev: %s" % ier)
+            if grid:
+                x = np.sort(x)
+                y = np.sort(y)
+                if (dx | dy):
+                    z,ier = dfitpack.parder(tx,ty,c,kx,ky,dx,dy,x,y)
+                    if not ier == 0:
+                        raise ValueError("Error code returned by parder: %s" % ier)
+                else:
+                    z,ier = dfitpack.bispev(tx,ty,c,kx,ky,x,y)
+                    if not ier == 0:
+                        raise ValueError("Error code returned by bispev: %s" % ier)
+            else:
+                x,y = x[:min(x.size,y.size)],y[:min(x.size,y.size)]
+                if (dx | dy):
+                    z,ier = dfitpack.pardeu(tx,ty,c,kx,ky,dx,dy,x,y)
+                    if not ier == 0:
+                        raise ValueError("Error code returned by pardeu: %s" % ier)
+                else:
+                    z,ier = dfitpack.bispeu(tx,ty,c,kx,ky,x,y)
+                    if not ier == 0:
+                        raise ValueError("Error code returned by bispeu: %s" % ier)
+                if xshape == yshape:
+                    z = np.reshape(z,xshape)
             return z
         raise NotImplementedError('unknown method mth=%s' % mth)
 
-    def ev(self, xi, yi):
+    def ev(self, xi, yi, dx=0, dy=0):
         """
         Evaluate spline at points (x[i], y[i]), i=0,...,len(x)-1
+        for backwards compatibility
         """
-        tx,ty,c = self.tck[:3]
-        kx,ky = self.degrees
-        zi,ier = dfitpack.bispeu(tx,ty,c,kx,ky,xi,yi)
-        if not ier == 0:
-            raise ValueError("Error code returned by bispeu: %s" % ier)
-        return zi
+        return self.__call__(xi, yi, dx=dx, dy=dy, grid=False)
 
     def integral(self, xa, xb, ya, yb):
         """
@@ -944,7 +969,7 @@ class SphereBivariateSpline(_BivariateSplineBase):
         to create a BivariateSpline using weighted least-squares fitting
     """
 
-    def __call__(self, theta, phi):
+    def __call__(self, theta, phi, dtheta=0, dphi=0, grid=True):
         """ Evaluate the spline at the grid ponts defined by the coordinate
         arrays theta, phi. """
         theta = np.asarray(theta)
@@ -952,36 +977,48 @@ class SphereBivariateSpline(_BivariateSplineBase):
         # empty input yields empty output
         if (theta.size == 0) and (phi.size == 0):
             return array([])
+        if not theta.shape:
+            theta = np.expand_dims(theta,0)
+        if not phi.shape:
+            phi = np.expand_dims(phi,0)
+        thetashape = theta.shape
+        phishape = phi.shape
+        theta = theta.flatten()
+        phi = phi.flatten()
         if theta.min() < 0. or theta.max() > np.pi:
             raise ValueError("requested theta out of bounds.")
         if phi.min() < 0. or phi.max() > 2. * np.pi:
             raise ValueError("requested phi out of bounds.")
         tx, ty, c = self.tck[:3]
         kx, ky = self.degrees
-        z, ier = dfitpack.bispev(tx, ty, c, kx, ky, theta, phi)
-        if not ier == 0:
-            raise ValueError("Error code returned by bispev: %s" % ier)
+        if grid:
+            theta = np.sort(theta)
+            theta = np.sort(theta)
+            if (dtheta | dphi):
+                z,ier = dfitpack.parder(tx,ty,c,kx,ky,dtheta,dphi,theta,phi)
+                if not ier == 0:
+                    raise ValueError("Error code returned by parder: %s" % ier)
+            else:
+                z,ier = dfitpack.bispev(tx,ty,c,kx,ky,theta,phi)
+                if not ier == 0:
+                    raise ValueError("Error code returned by bispev: %s" % ier)
+        else:
+            if (dtheta | dphi):
+                z,ier = dfitpack.pardeu(tx,ty,c,kx,ky,dtheta,dphi,theta,phi)
+                if not ier == 0:
+                    raise ValueError("Error code returned by pardeu: %s" % ier)
+            else:
+                z,ier = dfitpack.bispeu(tx,ty,c,kx,ky,theta,phi)
+                if not ier == 0:
+                    raise ValueError("Error code returned by bispeu: %s" % ier)
         return z
 
-    def ev(self, thetai, phii):
+    def ev(self, theta, phi, dtheta=0, dphi=0):
         """ Evaluate the spline at the points (theta[i], phi[i]),
         i=0,...,len(theta)-1
+        for backwards compatability
         """
-        thetai = np.asarray(thetai)
-        phii = np.asarray(phii)
-        # empty input yields empty output
-        if (thetai.size == 0) and (phii.size == 0):
-            return array([])
-        if thetai.min() < 0. or thetai.max() > np.pi:
-            raise ValueError("requested thetai out of bounds.")
-        if phii.min() < 0. or phii.max() > 2. * np.pi:
-            raise ValueError("requested phii out of bounds.")
-        tx, ty, c = self.tck[:3]
-        kx, ky = self.degrees
-        zi, ier = dfitpack.bispeu(tx, ty, c, kx, ky, thetai, phii)
-        if not ier == 0:
-            raise ValueError("Error code returned by bispeu: %s" % ier)
-        return zi
+        return self.__call__(theta, phi, dtheta=dtheta, dphi=dphi, grid=False)
 
 
 class SmoothSphereBivariateSpline(SphereBivariateSpline):

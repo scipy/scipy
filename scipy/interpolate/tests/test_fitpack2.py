@@ -301,6 +301,32 @@ class TestRectBivariateSpline(TestCase):
 
         assert_almost_equal(zi, zi2)
 
+    def test_derivatives_grid(self):
+        x = array([1,2,3,4,5])
+        y = array([1,2,3,4,5])
+        z = array([[1,2,1,2,1],[1,2,1,2,1],[1,2,3,2,1],[1,2,2,2,1],[1,2,1,2,1]])
+        dx = array([[0,0,-20,0,0],[0,0,13,0,0],[0,0,4,0,0],
+            [0,0,-11,0,0],[0,0,4,0,0]])/6.
+        dy = array([[4,-1,0,1,-4],[4,-1,0,1,-4],[0,1.5,0,-1.5,0],
+            [2,.25,0,-.25,-2],[4,-1,0,1,-4]])
+        dxdy = array([[40,-25,0,25,-40],[-26,16.25,0,-16.25,26],
+            [-8,5,0,-5,8],[22,-13.75,0,13.75,-22],[-8,5,0,-5,8]])/6.
+        lut = RectBivariateSpline(x,y,z)
+        assert_array_almost_equal(lut(x,y,dx=1),dx)
+        assert_array_almost_equal(lut(x,y,dy=1),dy)
+        assert_array_almost_equal(lut(x,y,dx=1,dy=1),dxdy)
+
+    def test_derivatives(self):
+        x = array([1,2,3,4,5])
+        y = array([1,2,3,4,5])
+        z = array([[1,2,1,2,1],[1,2,1,2,1],[1,2,3,2,1],[1,2,2,2,1],[1,2,1,2,1]])
+        dx = array([0,0,2./3,0,0])
+        dy = array([4,-1,0,-.25,-4])
+        dxdy = array([160,65,0,55,32])/24.
+        lut = RectBivariateSpline(x,y,z)
+        assert_array_almost_equal(lut(x,y,dx=1,grid=False),dx)
+        assert_array_almost_equal(lut(x,y,dy=1,grid=False),dy)
+        assert_array_almost_equal(lut(x,y,dx=1,dy=1,grid=False),dxdy)
 
 class TestRectSphereBivariateSpline(TestCase):
     def test_defaults(self):
