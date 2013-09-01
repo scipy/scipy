@@ -1,4 +1,5 @@
 .. image:: https://travis-ci.org/scipy/scipy.png?branch=master
+   :target: https://travis-ci.org/scipy/scipy/
 
 =====
 SciPy
