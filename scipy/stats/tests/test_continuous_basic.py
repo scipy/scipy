@@ -72,7 +72,7 @@ distcont = [
     ['halflogistic', ()],
     ['halfnorm', ()],
     ['hypsecant', ()],
-    ['invgamma', (2.0668996136993067,)],
+    ['invgamma', (4.0668996136993067,)],
     ['invgauss', (0.14546264555347513,)],
     ['invweibull', (10.58,)],  # sample mean test fails at(0.58847112119264788,)]
     ['johnsonsb', (4.3172675099141058, 3.1837781130785063)],
@@ -183,7 +183,12 @@ def test_cont_basic():
         sv = rvs.var()
         skurt = stats.kurtosis(rvs)
         sskew = stats.skew(rvs)
-        m, v, s, k = distfn.stats(*arg, moments='mvsk')
+        if (distfn._stats != stats.rv_continuous._stats or 
+            distfn._munp != stats.rv_continuous._munp):
+            m, v, s, k = distfn.stats(*arg, moments='mvsk')
+        else:
+            m, v = distfn.stats(*arg, moments='mv')
+            s = k = np.nan   # do not check them 
 
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
@@ -227,7 +232,13 @@ def test_cont_basic_slow():
         sv = rvs.var()
         skurt = stats.kurtosis(rvs)
         sskew = stats.skew(rvs)
-        m, v, s, k = distfn.stats(*arg, moments='mvsk')
+        if (distfn._stats != stats.rv_continuous._stats or 
+            distfn._munp != stats.rv_continuous._munp):
+            m, v, s, k = distfn.stats(*arg, moments='mvsk')
+        else:
+            m, v = distfn.stats(*arg, moments='mv')
+            s = k = np.nan   # do not check them 
+
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
         # the sample skew kurtosis test has known failures, not very good distance measure
