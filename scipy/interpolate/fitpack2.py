@@ -622,15 +622,15 @@ class _BivariateSplineBase(object):
         x = np.asarray(x)
         y = np.asarray(y)
 
-        if x.size == 0 or y.size == 0:
-            return np.array([], dtype=self.tck[2].dtype)
-
         if mth != 'array':
             raise NotImplementedError('unknown method mth=%s' % mth)
 
         tx, ty, c = self.tck[:3]
         kx, ky = self.degrees
         if grid:
+            if x.size == 0 or y.size == 0:
+                return np.zeros((x.size, y.size), dtype=self.tck[2].dtype)
+
             if dx or dy:
                 z,ier = dfitpack.parder(tx,ty,c,kx,ky,dx,dy,x,y)
                 if not ier == 0:
@@ -647,6 +647,9 @@ class _BivariateSplineBase(object):
             shape = x.shape
             x = x.ravel()
             y = y.ravel()
+
+            if x.size == 0 or y.size == 0:
+                return np.zeros(shape, dtype=self.tck[2].dtype)
 
             if dx or dy:
                 z,ier = dfitpack.pardeu(tx,ty,c,kx,ky,dx,dy,x,y)

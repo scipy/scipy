@@ -56,7 +56,7 @@ class TestUnivariateSpline(TestCase):
         assert_array_equal(sp([1.5, 2.5]), [0., 0.])
 
     def test_empty_input(self):
-        """Test whether empty input returns an empty output. Ticket 1014"""
+        # Test whether empty input returns an empty output. Ticket 1014
         x = [1,3,5,7,9]
         y = [0,4,9,12,21]
         spl = UnivariateSpline(x, y, k=3)
@@ -153,7 +153,7 @@ class TestLSQBivariateSpline(TestCase):
         assert_almost_equal(lut.integral(tx[0], tx[-1], ty[0], ty[-1]), trpz)
 
     def test_empty_input(self):
-        """Test whether empty inputs returns an empty output. Ticket 1014"""
+        # Test whether empty inputs returns an empty output. Ticket 1014
         x = [1,1,1,2,2,2,3,3,3]
         y = [1,2,3,1,2,3,1,2,3]
         z = [3,3,3,3,3,3,3,3,3]
@@ -162,7 +162,8 @@ class TestLSQBivariateSpline(TestCase):
         ty = [1+s,3-s]
         lut = LSQBivariateSpline(x,y,z,tx,ty,kx=1,ky=1)
 
-        assert_array_equal(lut([], []), array([]))
+        assert_array_equal(lut([], []), np.zeros((0,0)))
+        assert_array_equal(lut([], [], grid=False), np.zeros((0,)))
 
 
 class TestSmoothBivariateSpline(TestCase):
@@ -243,7 +244,8 @@ class TestLSQSphereBivariateSpline(TestCase):
                                   self.data)
 
     def test_empty_input(self):
-        assert_array_almost_equal(self.lut_lsq([], []), array([]))
+        assert_array_almost_equal(self.lut_lsq([], []), np.zeros((0,0)))
+        assert_array_almost_equal(self.lut_lsq([], [], grid=False), np.zeros((0,)))
 
 
 class TestSmoothSphereBivariateSpline(TestCase):
@@ -261,7 +263,8 @@ class TestSmoothSphereBivariateSpline(TestCase):
                                   [[3, 3], [3, 3], [3, 3]])
 
     def test_empty_input(self):
-        assert_array_almost_equal(self.lut([], []), array([]))
+        assert_array_almost_equal(self.lut([], []), np.zeros((0,0)))
+        assert_array_almost_equal(self.lut([], [], grid=False), np.zeros((0,)))
 
 
 class TestRectBivariateSpline(TestCase):
