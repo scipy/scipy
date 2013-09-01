@@ -388,7 +388,7 @@ def aslinearoperator(A):
      - LinearOperator
      - An object with .shape and .matvec attributes
 
-    See the LinearOperator documentation for additonal information.
+    See the LinearOperator documentation for additional information.
 
     Examples
     --------
