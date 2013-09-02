@@ -2568,7 +2568,7 @@ class betaprime_gen(rv_continuous):
                                                     * (b-2.0)*(b-1.0)), inf)
         else:
             raise NotImplementedError
-betaprime = betaprime_gen(a=0.0, b=500.0, name='betaprime')
+betaprime = betaprime_gen(a=0.0, name='betaprime')
 
 
 class bradford_gen(rv_continuous):
@@ -4920,11 +4920,11 @@ class ncf_gen(rv_continuous):
 
     def _ppf(self, q, dfn, dfd, nc):
         return special.ncfdtri(dfn, dfd, nc, q)
-
+    
     def _munp(self, n, dfn, dfd, nc):
         val = (dfn * 1.0/dfd)**n
         term = gamln(n+0.5*dfn) + gamln(0.5*dfd-n) - gamln(dfd*0.5)
-        val *= exp(-nc / 2.0+term)
+        val *= exp(-nc/2.0 + term)
         val *= special.hyp1f1(n+0.5*dfn, 0.5*dfn, 0.5*nc)
         return val
 
