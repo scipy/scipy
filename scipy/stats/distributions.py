@@ -3193,7 +3193,7 @@ class f_gen(rv_continuous):
         mu = where(v2 > 2, v2 / asarray(v2 - 2), inf)
         mu2 = 2*v2*v2*(v2+v1-2)/(v1*(v2-2)**2 * (v2-4))
         mu2 = where(v2 > 4, mu2, inf)
-        g1 = 2*(v2+2*v1-2)/(v2-6)*sqrt((2*v2-4)/(v1*(v2+v1-2)))
+        g1 = 2*(v2+2*v1-2)/(v2-6)*sqrt((2*v2-8)/(v1*(v2+v1-2)))
         g1 = where(v2 > 6, g1, nan)
         g2 = 3/(2*v2-16)*(8+g1*g1*(v2-6))
         g2 = where(v2 > 8, g2, nan)
