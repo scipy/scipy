@@ -5466,11 +5466,11 @@ class rdist_gen(rv_continuous):
         # background.
         if any(np.isnan(res)):
             return rv_continuous._cdf(self, x, c)
-
         return res
 
     def _munp(self, n, c):
-        return (1 - (n % 2)) * special.beta((n + 1.0) / 2, c / 2.0)
+        numerator = (1 - (n % 2)) * special.beta((n + 1.0) / 2, c / 2.0) 
+        return numerator / special.beta(1. / 2, c / 2.)
 rdist = rdist_gen(a=-1.0, b=1.0, name="rdist")
 
 
