@@ -3179,13 +3179,18 @@ class f_gen(rv_continuous):
     def _stats(self, dfn, dfd):
         v2 = asarray(dfd*1.0)
         v1 = asarray(dfn*1.0)
-        mu = where(v2 > 2, v2 / asarray(v2 - 2), inf)
-        mu2 = 2*v2*v2*(v2+v1-2)/(v1*(v2-2)**2 * (v2-4))
-        mu2 = where(v2 > 4, mu2, inf)
-        g1 = 2*(v2+2*v1-2)/(v2-6)*sqrt((2*v2-8)/(v1*(v2+v1-2)))
-        g1 = where(v2 > 6, g1, nan)
-        g2 = 3/(2*v2-16)*(8+g1*g1*(v2-6))
-        g2 = where(v2 > 8, g2, nan)
+        _v22 = v2 / (v2 - 2)
+        mu = np.where(v2 > 2, _v22, np.inf)
+        mu2 = np.where(v2 > 4, 
+            2*(v2+v1-2)*_v22**2 / v1 / (v2-4),
+            np.inf)
+        _v122 = v1 + v2 -2.
+        g1 = where(v2 > 6, 
+            2 * (v1 + _v122) / (v2-6) * sqrt((2*v2-8) / (v1*_v122)),
+            np.nan)
+        g2 = where(v2 > 8, 
+            3/(2*v2-16)*(8+g1*g1*(v2-6)), 
+            nan)
         return mu, mu2, g1, g2
 f = f_gen(a=0.0, name='f')
 
