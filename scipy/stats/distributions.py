@@ -2646,28 +2646,9 @@ class burr_gen(rv_continuous):
     def _ppf(self, q, c, d):
         return (q**(-1.0/d)-1)**(-1.0/c)
 
-    def _stats(self, c, d, moments='mv'):
-        g2c, g2cd = gam(1-2.0/c), gam(2.0/c+d)
-        g1c, g1cd = gam(1-1.0/c), gam(1.0/c+d)
-        gd = gam(d)
-        k = gd*g2c*g2cd - g1c**2 * g1cd**2
-        mu = g1c*g1cd / gd
-        mu2 = k / gd**2.0
-        g1, g2 = None, None
-        g3c, g3cd = None, None
-        if 's' in moments:
-            g3c, g3cd = gam(1-3.0/c), gam(3.0/c+d)
-            g1 = 2*g1c**3 * g1cd**3 + gd*gd*g3c*g3cd - 3*gd*g2c*g1c*g1cd*g2cd
-            g1 /= sqrt(k**3)
-        if 'k' in moments:
-            if g3c is None:
-                g3c = gam(1-3.0/c)
-            if g3cd is None:
-                g3cd = gam(3.0/c+d)
-            g4c, g4cd = gam(1-4.0/c), gam(4.0/c+d)
-            g2 = 6*gd*g2c*g2cd * g1c**2 * g1cd**2 + gd**3 * g4c*g4cd
-            g2 -= 3*g1c**4 * g1cd**4 - 4*gd**2*g3c*g1c*g1cd*g3cd
-        return mu, mu2, g1, g2
+    def _munp(self, n, c, d):
+        nc = 1.*n/c
+        return d * special.beta(1.0 - nc, d + nc)
 burr = burr_gen(a=0.0, name='burr')
 
 #XXX: cf PR #2552
@@ -2695,8 +2676,8 @@ class fisk_gen(burr_gen):
     def _ppf(self, x, c):
         return burr_gen._ppf(self, x, c, 1.0)
 
-    def _stats(self, c):
-        return burr_gen._stats(self, c, 1.0)
+    def _munp(self, n, c):
+        return burr_gen._munp(self, n, c, 1.0)
 
     def _entropy(self, c):
         return 2 - log(c)
