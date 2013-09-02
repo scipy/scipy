@@ -245,11 +245,23 @@ class TestGeom(TestCase):
         assert_allclose(vals1, vals2, rtol=1e-15, atol=0)
 
     def test_cdf_sf(self):
-        vals = stats.geom.cdf([1,2,3],0.5)
-        vals_sf = stats.geom.sf([1,2,3],0.5)
-        expected = array([0.5,0.75,0.875])
-        assert_array_almost_equal(vals,expected)
-        assert_array_almost_equal(vals_sf,1-expected)
+        vals = stats.geom.cdf([1, 2, 3], 0.5)
+        vals_sf = stats.geom.sf([1, 2, 3], 0.5)
+        expected = array([0.5, 0.75, 0.875])
+        assert_array_almost_equal(vals, expected)
+        assert_array_almost_equal(vals_sf, 1-expected)
+
+    def test_logcdf_logsf(self):
+        vals = stats.geom.logcdf([1, 2, 3], 0.5)
+        vals_sf = stats.geom.logsf([1, 2, 3], 0.5)
+        expected = array([0.5, 0.75, 0.875])
+        assert_array_almost_equal(vals, np.log(expected))
+        assert_array_almost_equal(vals_sf, np.log1p(-expected))
+
+    def test_ppf(self):
+        vals = stats.geom.ppf([0.5, 0.75, 0.875], 0.5)
+        expected = array([1.0, 2.0, 3.0])
+        assert_array_almost_equal(vals, expected)
 
 
 class TestTruncnorm(TestCase):
