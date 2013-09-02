@@ -1466,17 +1466,32 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _time_limited()(_exception_to_nan(mpmath.polygamma)),
                             [IntArg(0, 1000), Arg()])
 
-    @knownfailure_overridable("all large negative arguments hit a pole --- the function itself is however numerically badly defined in this region, but maybe should return 0 instead?")
     def test_rgamma(self):
+        def rgamma(x):
+            if x < -8000:
+                return np.inf
+            else:
+                v = mpmath.rgamma(x)
+            return v
         assert_mpmath_equal(sc.rgamma,
-                            mpmath.rgamma,
-                            [Arg()])
+                            rgamma,
+                            [Arg()],
+                            ignore_inf_sign=True)
 
-    @knownfailure_overridable("invalid inf at very large negative arguments, accuracy issues at negative arguments eps-close to poles (some loss of precision in cancellation)")
     def test_rf(self):
+        def mppoch(a, m):
+            # deal with cases where the result in double precision
+            # hits exactly a non-positive integer, but the
+            # corresponding extended-precision mpf floats don't
+            if float(a + m) == int(a + m) and float(a + m) <= 0:
+                a = mpmath.mpf(a)
+                m = int(a + m) - a
+            return mpmath.rf(a, m)
+
         assert_mpmath_equal(sc.poch,
-                            mpmath.rf,
-                            [Arg(), Arg()], dps=100)
+                            mppoch,
+                            [Arg(), Arg()],
+                            dps=400)
 
     def test_shi(self):
         def shi(x):

@@ -1576,6 +1576,8 @@ cdef _proto_pdtri_unsafe_t *_proto_pdtri_unsafe_t_var = &_func_pdtri_unsafe
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_cdfpoi2_wrap "cdfpoi2_wrap"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
+    cdef double _func_poch "poch"(double, double) nogil
+cdef extern from "_ufuncs_defs.h":
     cdef double _func_prolate_aswfa_nocv_wrap "prolate_aswfa_nocv_wrap"(double, double, double, double, double *) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef int _func_prolate_aswfa_wrap "prolate_aswfa_wrap"(double, double, double, double, double, double *, double *) nogil
@@ -6973,6 +6975,36 @@ ufunc_pdtrik_ptr[2*1+1] = <void*>(<char*>"pdtrik")
 ufunc_pdtrik_data[0] = &ufunc_pdtrik_ptr[2*0]
 ufunc_pdtrik_data[1] = &ufunc_pdtrik_ptr[2*1]
 pdtrik = np.PyUFunc_FromFuncAndData(ufunc_pdtrik_loops, ufunc_pdtrik_data, ufunc_pdtrik_types, 2, 2, 1, 0, "pdtrik", ufunc_pdtrik_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_poch_loops[2]
+cdef void *ufunc_poch_ptr[4]
+cdef void *ufunc_poch_data[2]
+cdef char ufunc_poch_types[6]
+cdef char *ufunc_poch_doc = (
+    "Pochhammer symbol (z)_m\n"
+    "\n"
+    "The Pochhammer symbol (rising factorial), is defined as::\n"
+    "\n"
+    "    (z)_m = gamma(z + m) / gamma(z)\n"
+    "\n"
+    "For positive integer `m` it reads::\n"
+    "\n"
+    "    (z)_m = z * (z + 1) * ... * (z + m - 1)")
+ufunc_poch_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_poch_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_poch_types[0] = <char>NPY_FLOAT
+ufunc_poch_types[1] = <char>NPY_FLOAT
+ufunc_poch_types[2] = <char>NPY_FLOAT
+ufunc_poch_types[3] = <char>NPY_DOUBLE
+ufunc_poch_types[4] = <char>NPY_DOUBLE
+ufunc_poch_types[5] = <char>NPY_DOUBLE
+ufunc_poch_ptr[2*0] = <void*>_func_poch
+ufunc_poch_ptr[2*0+1] = <void*>(<char*>"poch")
+ufunc_poch_ptr[2*1] = <void*>_func_poch
+ufunc_poch_ptr[2*1+1] = <void*>(<char*>"poch")
+ufunc_poch_data[0] = &ufunc_poch_ptr[2*0]
+ufunc_poch_data[1] = &ufunc_poch_ptr[2*1]
+poch = np.PyUFunc_FromFuncAndData(ufunc_poch_loops, ufunc_poch_data, ufunc_poch_types, 2, 2, 1, 0, "poch", ufunc_poch_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_pro_ang1_loops[2]
 cdef void *ufunc_pro_ang1_ptr[4]
