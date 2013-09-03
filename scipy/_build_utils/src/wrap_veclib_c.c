@@ -13,37 +13,43 @@
      endorsed by Apple.
 */
 
-float WRAP_F77(acc_sdot)(const int *N, const float *X, const int *incX,
-			 const float *Y, const int *incY)
+void WRAP_F77(acc_sdot)(const int *N, const float *X, const int *incX,
+                        const float *Y, const int *incY,
+                        float *result)
 {
-    return cblas_sdot(*N, X, *incX, Y, *incY);
+    *result = cblas_sdot(*N, X, *incX, Y, *incY);
 }
 
-float WRAP_F77(acc_sdsdot)(const int *N, const float *alpha,
-			   const float *X, const int *incX,
-			   const float *Y, const int *incY)
+void WRAP_F77(acc_sdsdot)(const int *N, const float *alpha,
+                          const float *X, const int *incX,
+                          const float *Y, const int *incY,
+                          float *result)
 {
-    return cblas_sdsdot(*N, *alpha, X, *incX, Y, *incY);
+    *result = cblas_sdsdot(*N, *alpha, X, *incX, Y, *incY);
 }
 
-float WRAP_F77(acc_sasum)(const int *N, const float *X, const int *incX)
+void WRAP_F77(acc_sasum)(const int *N, const float *X, const int *incX,
+                         float *result)
 {
-    return cblas_sasum(*N, X, *incX);
+    *result = cblas_sasum(*N, X, *incX);
 }
 
-float WRAP_F77(acc_snrm2)(const int *N, const float *X, const int *incX)
+void WRAP_F77(acc_snrm2)(const int *N, const float *X, const int *incX,
+                         float *result)
 {
-    return cblas_snrm2(*N, X, *incX);
+    *result = cblas_snrm2(*N, X, *incX);
 }
 
-float WRAP_F77(acc_scasum)(const int *N, const void *X, const int *incX)
+void WRAP_F77(acc_scasum)(const int *N, const void *X, const int *incX,
+                          float *result)
 {
-    return cblas_scasum(*N, X, *incX);
+    *result = cblas_scasum(*N, X, *incX);
 }
 
-float WRAP_F77(acc_scnrm2)(const int *N, const void *X, const int *incX)
+void WRAP_F77(acc_scnrm2)(const int *N, const void *X, const int *incX,
+                          float *result)
 {
-    return cblas_scnrm2(*N, X, *incX);
+    *result = cblas_scnrm2(*N, X, *incX);
 }
 
 void WRAP_F77(acc_cdotc_sub)(const int *N, const void *X, const int *incX,
