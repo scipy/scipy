@@ -10,7 +10,7 @@ Sub-package for objects used in interpolation.
 As listed below, this sub-package contains spline functions and classes,
 one-dimensional and multi-dimensional (univariate and multivariate)
 interpolation classes, Lagrange and Taylor polynomial interpolators, and
-wrappers for `FITPACK <http://www.cisl.ucar.edu/softlib/FITPACK.html>`_
+wrappers for `FITPACK <http://www.netlib.org/dierckx/>`__
 and DFITPACK functions.
 
 Univariate interpolation
@@ -93,8 +93,6 @@ Functional interface to FITPACK functions:
    spalde
    splder
    splantider
-   bisplrep
-   bisplev
 
 
 2-D Splines
