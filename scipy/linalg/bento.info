@@ -3,15 +3,13 @@ HookFile: bscript
 Library:
     Extension: _fblas
         Sources:
-            fblas.pyf.src,
-            src/fblaswrap_dummy.f
+            fblas.pyf.src
     Extension: _cblas
         Sources:
             cblas.pyf.src
     Extension: _flapack
         Sources:
-            flapack.pyf.src,
-            src/flapackwrap_dummy.f
+            flapack.pyf.src
     Extension: _clapack
         Sources:
             clapack.pyf.src
