@@ -614,7 +614,7 @@ def block_diag(mats, format=None, dtype=None):
 
 
 def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
-    """Generate a sparse matrix of the given shape and density with uniformely
+    """Generate a sparse matrix of the given shape and density with uniformly
     distributed values.
 
     Parameters
