@@ -1,23 +1,24 @@
 import sys
+import os
 
 from bento.commands import hooks
+from scipy._build_utils import get_g77_abi_wrappers
 
 @hooks.pre_build
 def pre_build(context):
     default_builder = context.default_builder
 
     def builder(extension):
-        # FIXME: detect this properly
-        if sys.platform == "darwin":
-            use_c_calling = True
-        else:
-            use_c_calling = False
         sources = extension.sources[:]
-        if use_c_calling:
-            sources.append("ARPACK/FWRAPPERS/wrap_veclib_f.f")
-            sources.append("ARPACK/FWRAPPERS/wrap_veclib_c.c")
+
+        # XXX: detect this properly
+        if sys.platform == "darwin":
+            info = {'extra_link_args': 'Accelerate'}
         else:
-            sources.append("ARPACK/FWRAPPERS/wrap_dummy.f")
+            info = {}
+	sources += [os.path.relpath(f, os.path.abspath(os.path.dirname(__file__)))
+                    for f in get_g77_abi_wrappers(info)]
+
         return default_builder(extension,
                                features="c fc cstlib pyext bento",
                                source=sources,
