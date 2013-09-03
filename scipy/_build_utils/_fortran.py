@@ -4,7 +4,8 @@ import os
 import glob
 
 
-__all__ = ['needs_g77_abi_wrapper', 'split_fortran_files']
+__all__ = ['needs_g77_abi_wrapper', 'split_fortran_files',
+           'get_g77_abi_wrappers']
 
 
 def _uses_veclib(info):
@@ -38,6 +39,22 @@ def needs_g77_abi_wrapper(info):
         return True
     else:
         return False
+
+
+def get_g77_abi_wrappers(info, blas_only=False):
+    """
+    Returns file names of source files containing Fortran ABI wrapper
+    routines.
+    """
+    path = os.path.abspath(os.path.dirname(__file__))
+    if needs_g77_abi_wrapper(info):
+        return [os.path.join(path, 'src', 'wrap_veclib_f.f'),
+                os.path.join(path, 'src', 'wrap_veclib_c.c')]
+    else:
+        src = [os.path.join(path, 'src', 'wrap_blas_dummy.f')]
+        if not blas_only:
+            src += [os.path.join(path, 'src', 'wrap_lapack_dummy.f')]
+        return src
 
 
 def split_fortran_files(source_dir, subroutines=None):
