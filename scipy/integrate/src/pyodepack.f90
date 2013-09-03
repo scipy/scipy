@@ -16,7 +16,6 @@ module pyodepack
 
             subroutine func(n, t, y, ydot)
 
-                !f2py integer, intent(hide), check(len(y) >= n), depend(y) :: n = len(y)
                 integer, intent(in) :: n
                 double precision, intent(in) :: t
                 double precision, intent(in), dimension(n) :: y
@@ -26,15 +25,11 @@ module pyodepack
 
             subroutine dfunc(n, t, y, ml, mu, jac, nrowjac)
 
-                !f2py integer, intent(hide), check(len(y) >= n), depend(y) :: n = len(y)
                 integer, intent(in) :: n
-                !f2py integer, intent(hide) :: nrowjac
                 integer, intent(in) :: nrowjac
                 double precision, intent(in) :: t
                 double precision, intent(in), dimension(n) :: y
-                !f2py intent(hide) :: ml
                 integer, intent(in) :: ml
-                !f2py intent(hide) :: mu
                 integer, intent(in) :: mu
                 double precision, intent(out), dimension(nrowjac, n) :: jac
 
@@ -45,7 +40,6 @@ module pyodepack
 !             interface lsoda_interface
 !             end interface lsoda_interface
 
-        !f2py intent(hide) :: neq = len(y0)
         integer, intent(in) :: neq
         double precision, intent(in), dimension(neq) :: y0
         double precision, intent(in), dimension(:) :: t
@@ -66,15 +60,10 @@ module pyodepack
 !         double precision, intent(in), optional :: hmin = 0.0d0
         double precision, intent(in) :: hmin
 
-        !f2py check((ixpr == 0) || (ixpr == 1)) :: ixpr
         integer, intent(in) :: ixpr
-        !f2py check(mxstep >= 0) :: mxstep
         integer, intent(in) :: mxstep
-        !f2py check(mxhnil >= 0) :: mxhnil
         integer, intent(in) :: mxhnil
-        !f2py check(mxordn >= 0) :: mxordn
         integer, intent(in) :: mxordn
-        !f2py check(mxords >= 0) :: mxords
         integer, intent(in) :: mxords
 
         ! Output
