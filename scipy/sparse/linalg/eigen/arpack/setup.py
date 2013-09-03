@@ -35,8 +35,7 @@ def configuration(parent_package='',top_path=None):
         else:
             raise NotImplementedError("Do not know how to handle LAPACK %s on mac os x" % (info,))
     else:
-        arpack_sources += [join('ARPACK', 'FWRAPPERS', 'wrap_dummy_clapack.f'),
-                           join('ARPACK', 'FWRAPPERS', 'wrap_dummy_g77_abi.f'),
+        arpack_sources += [join('ARPACK', 'FWRAPPERS', 'wrap_dummy_g77_abi.f'),
                            join('ARPACK', 'FWRAPPERS', 'wrap_dummy_accelerate.f')]
 
     config.add_library('arpack_scipy', sources=arpack_sources,
