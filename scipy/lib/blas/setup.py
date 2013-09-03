@@ -4,9 +4,6 @@ from __future__ import division, print_function, absolute_import
 import os
 from os.path import join
 
-from scipy._build_utils import needs_g77_abi_wrapper
-
-
 tmpl_empty_cblas_pyf = '''
 python module cblas
   usercode void empty_module(void) {}
@@ -22,6 +19,7 @@ end python module cblas
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from numpy.distutils.system_info import get_info
+    from scipy._build_utils import get_g77_abi_wrappers
 
     config = Configuration('blas',parent_package,top_path)
 
@@ -34,13 +32,11 @@ def configuration(parent_package='',top_path=None):
 
     target_dir = ''
 
-    depends = [__file__, 'fblas_l?.pyf.src', 'fblas.pyf.src',
-               'fblaswrap_dummy.f', 'fblaswrap_veclib_c.c']
+    depends = [__file__, 'fblas_l?.pyf.src', 'fblas.pyf.src']
+
     # fblas:
-    if needs_g77_abi_wrapper(blas_opt):
-        sources = ['fblas.pyf.src', 'fblaswrap_veclib_c.c'],
-    else:
-        sources = ['fblas.pyf.src','fblaswrap_dummy.f']
+    sources = ['fblas.pyf.src']
+    sources += get_g77_abi_wrappers(blas_opt, blas_only=True)
     config.add_extension('fblas',
                          sources=sources,
                          depends=depends,
