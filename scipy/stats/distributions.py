@@ -3096,12 +3096,14 @@ class fatiguelife_gen(rv_continuous):
         return 0.25*(tmp + sqrt(tmp**2 + 4))**2
 
     def _stats(self, c):
+        # kurtosis: wikipedia errs? 40 vs 41
+        # cf eg unalmed.edu.co/~estadist/seminario/conf_victor.pdf
         c2 = c*c
-        mu = c2 / 2.0 + 1
-        den = 5*c2 + 4
+        mu = c2 / 2.0 + 1.0
+        den = 5.0*c2 + 4.0
         mu2 = c2*den / 4.0
-        g1 = 4*c*sqrt(11*c2+6.0)/np.power(den, 1.5)
-        g2 = 6*c2*(93*c2+41.0) / den**2.0
+        g1 = 4*c*(11*c2+6.0)/np.power(den, 1.5)
+        g2 = 6*c2*(93*c2+40.0) / den**2.0
         return mu, mu2, g1, g2
 fatiguelife = fatiguelife_gen(a=0.0, name='fatiguelife')
 
@@ -3189,7 +3191,7 @@ class f_gen(rv_continuous):
             2 * (v1 + _v122) / (v2-6) * sqrt((2*v2-8) / (v1*_v122)),
             np.nan)
         g2 = where(v2 > 8, 
-            3/(2*v2-16)*(8+g1*g1*(v2-6)), 
+            3. / (2*v2-16) * (8+g1*g1*(v2-6)), 
             nan)
         return mu, mu2, g1, g2
 f = f_gen(a=0.0, name='f')
