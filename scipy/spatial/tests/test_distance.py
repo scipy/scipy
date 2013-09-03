@@ -38,6 +38,8 @@ from __future__ import division, print_function, absolute_import
 import os.path
 from scipy.lib.six import xrange
 
+from nose.tools import assert_greater_equal
+
 import numpy as np
 from numpy.linalg import norm
 from numpy.testing import (verbose, TestCase, run_module_suite,
@@ -1865,6 +1867,25 @@ def test_euclideans():
     d1 = euclidean(x, y)
     d2 = sqeuclidean(x, y)
     assert_almost_equal(d1**2, d2, decimal=14)
+
+
+def test_sqeuclidean_dtypes():
+    """Assert that sqeuclidean returns the right types of values.
+
+    Integer types should be upcast to intp or larger. Floating point types
+    should be the same as the input.
+    """
+    x = [1, 2, 3]
+    y = [4, 5, 6]
+
+    for dtype in [np.int8, np.int16, np.int32, np.int64]:
+        d = sqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
+        assert_greater_equal(d.nbytes, np.dtype('intp').itemsize)
+
+    for dtype in [np.float16, np.float32, np.float64, np.float128,
+                  np.complex64, np.complex128]:
+        d = sqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
+        assert_equal(d.dtype, dtype)
 
 
 def test_sokalmichener():

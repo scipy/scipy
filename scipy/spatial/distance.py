@@ -68,12 +68,12 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import numpy as np
-from numpy.linalg import norm
 
 from scipy.lib.six import callable, string_types
 from scipy.lib.six import xrange
 
 from . import _distance_wrap
+from ..linalg import norm
 import collections
 
 
@@ -251,8 +251,14 @@ def sqeuclidean(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    dist = ((u - v) ** 2).sum()
-    return dist
+    u_v = u - v
+    if (np.issubdtype(u_v.dtype, np.floating)
+        or u_v.dtype.itemsize >= np.dtype('intp').itemsize):
+        d = np.dot(u_v, u_v)
+    else:
+        # rely on the squaring and sum to upcast to a large enough type
+        d = np.sum(u_v ** 2)
+    return d
 
 
 def cosine(u, v):
