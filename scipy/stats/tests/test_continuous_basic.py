@@ -277,11 +277,14 @@ def check_moment(distfn, arg, m, v, s, k, msg):
         m2e = distfn.expect(lambda x: np.power(x - m1, 2), arg)
         if np.isfinite(m2e):
             m3e = distfn.expect(lambda x: np.power(x - m1, 3), arg)
-            npt.assert_almost_equal(m3e, s * np.power(m2e, 1.5), decimal=5)
+            npt.assert_allclose(m3e, s * np.power(m2e, 1.5), 
+                        atol=1e-7, rtol=1e-7)
 
         if not np.isnan(k) and np.isfinite(m2e):
             m4e = distfn.expect(lambda x: np.power(x - m1, 4), arg)
-            npt.assert_almost_equal(m4e, (k+3.) * m2e**2, decimal=5)
+            npt.assert_allclose(m4e, (k+3.) * m2e**2, 
+                        atol=1e-7, rtol=1e-7)
+
 
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
     # this did not work, skipped silently by nose
