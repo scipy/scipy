@@ -4595,7 +4595,6 @@ class loggamma_gen(rv_continuous):
         skewness = special.polygamma(2, c) / np.power(var, 1.5)
         excess_kurtosis = special.polygamma(3, c) / (var*var)
         return mean, var, skewness, excess_kurtosis
-
 loggamma = loggamma_gen(name='loggamma')
 
 
