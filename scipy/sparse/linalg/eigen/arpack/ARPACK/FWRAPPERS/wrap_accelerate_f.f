@@ -54,42 +54,6 @@ c in veclib_cabi.c
       WSCNRM2 = ACC_SCNRM2( N, CX, INCX )
       END FUNCTION
 
-      COMPLEX FUNCTION WCDOTC( N, CX, INCX, CY, INCY )
-      INTEGER INCX, INCY, N
-      COMPLEX CX(*), CY(*)
-      COMPLEX RESULT
-      EXTERNAL ACC_CDOTC_SUB
-      CALL ACC_CDOTC_SUB( N, CX, INCX, CY, INCY, RESULT )
-      WCDOTC = RESULT
-      END FUNCTION
-
-      COMPLEX FUNCTION WCDOTU( N, CX, INCX, CY, INCY )
-      INTEGER INCX, INCY, N
-      COMPLEX CX(*), CY(*)
-      COMPLEX RESULT
-      EXTERNAL ACC_CDOTU_SUB
-      CALL ACC_CDOTU_SUB( N, CX, INCX, CY, INCY, RESULT )
-      WCDOTU = RESULT
-      END FUNCTION
-
-      DOUBLE COMPLEX FUNCTION WZDOTC( N, CX, INCX, CY, INCY )
-      INTEGER INCX, INCY, N
-      DOUBLE COMPLEX CX(*), CY(*)
-      DOUBLE COMPLEX RESULT
-      EXTERNAL ACC_ZDOTC_SUB
-      CALL ACC_ZDOTC_SUB( N, CX, INCX, CY, INCY, RESULT )
-      WZDOTC = RESULT
-      END FUNCTION
-
-      DOUBLE COMPLEX FUNCTION WZDOTU( N, CX, INCX, CY, INCY )
-      INTEGER INCX, INCY, N
-      DOUBLE COMPLEX CX(*), CY(*)
-      DOUBLE COMPLEX RESULT
-      EXTERNAL ACC_ZDOTU_SUB
-      CALL ACC_ZDOTU_SUB( N, CX, INCX, CY, INCY, RESULT )
-      WZDOTU = RESULT
-      END FUNCTION
-
 c The LAPACK in the Accelerate framework is a CLAPACK
 c (www.netlib.org/clapack) and has hence a different interface than the
 c modern Fortran LAPACK libraries. These wrappers here help to link
@@ -98,22 +62,6 @@ c This wrapper files covers all Lapack functions that are in all versions
 c before Lapack 3.2 (Lapack 3.2 adds CLANHF and SLANSF that would be
 c problematic, but those do not exist in OSX <= 10.6, and are actually not
 c used in scipy)
-
-      COMPLEX FUNCTION WCLADIV( X, Y )
-      COMPLEX            X, Y
-      COMPLEX            Z
-      EXTERNAL CLADIV
-      CALL CLADIV(Z, X, Y)
-      WCLADIV = Z
-      END FUNCTION
-
-      DOUBLE COMPLEX FUNCTION WZLADIV( X, Y )
-      DOUBLE COMPLEX     X, Y
-      DOUBLE COMPLEX     Z
-      EXTERNAL ZLADIV
-      CALL ZLADIV(Z, X, Y)
-      WZLADIV = Z
-      END FUNCTION
 
       REAL FUNCTION WCLANGB( NORM, N, KL, KU, AB, LDAB, WORK )
       CHARACTER          NORM

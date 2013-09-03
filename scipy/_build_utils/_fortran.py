@@ -17,8 +17,7 @@ def _uses_veclib(info):
 
     return False
 
-
-def _uses_mkl(info):
+def uses_mkl(info):
     r_mkl = re.compile("mkl_core")
 
     libraries = info.get('libraries', '')
@@ -28,13 +27,15 @@ def _uses_mkl(info):
 
     return False
 
+def uses_accelerate(info):
+    return _uses_veclib(info)
 
 def needs_g77_abi_wrapper(info):
     """Returns true if g77 ABI wrapper must be used."""
-    if _uses_veclib(info):
+    if uses_accelerate(info):
         return True
     # XXX: is this really true only on Mac OS X ?
-    elif _uses_mkl(info) and sys.platform == "darwin":
+    elif uses_mkl(info) and sys.platform == "darwin":
         return True
     else:
         return False
