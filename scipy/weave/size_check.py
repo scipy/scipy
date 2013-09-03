@@ -338,5 +338,5 @@ def reduction(ary,axis=0):
 
 
 def take(ary,axis=0):
-    raise NotImplemented
+    raise NotImplementedError
 # and all the rest
