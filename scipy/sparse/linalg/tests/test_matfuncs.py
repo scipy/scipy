@@ -201,9 +201,9 @@ class TestExpM(TestCase):
         desired = np.array([
             [
                 39/(38*exp1) - 1/(38*exp39),
-                -math.expm1(-38) / (38*exp1)],
+                -np.expm1(-38) / (38*exp1)],
             [
-                39*math.expm1(-38) / (38*exp1),
+                39*np.expm1(-38) / (38*exp1),
                 -1/(38*exp1) + 39/(38*exp39)],
             ], dtype=float)
         actual = expm(A)
