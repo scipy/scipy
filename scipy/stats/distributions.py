@@ -3116,7 +3116,7 @@ class fatiguelife_gen(rv_continuous):
 
     """
     def _rvs(self, c):
-        z = norm.rvs(size=self._size)
+        z = mtrand.standard_normal(self._size)
         x = 0.5*c*z
         x2 = x*x
         t = 1.0 + 2*x2 + 2*x*sqrt(1 + x2)
@@ -3258,7 +3258,7 @@ class foldnorm_gen(rv_continuous):
         return (c >= 0)
 
     def _rvs(self, c):
-        return abs(norm.rvs(loc=c,size=self._size))
+        return abs(mtrand.standard_normal(self._size) + c)
 
     def _pdf(self, x, c):
         return sqrt(2.0/pi)*cosh(c*x)*exp(-(x*x+c*c)/2.0)
@@ -4112,7 +4112,7 @@ class halfnorm_gen(rv_continuous):
 
     """
     def _rvs(self):
-        return abs(norm.rvs(size=self._size))
+        return abs(mtrand.standard_normal(size=self._size))
 
     def _pdf(self, x):
         return sqrt(2.0/pi)*exp(-x*x/2.0)
@@ -4270,8 +4270,8 @@ class invgauss_gen(rv_continuous):
     def _cdf(self, x, mu):
         fac = sqrt(1.0/x)
         # Numerical accuracy for small `mu` is bad.  See #869.
-        C1 = norm.cdf(fac*(x-mu)/mu)
-        C1 += exp(1.0/mu) * norm.cdf(-fac*(x+mu)/mu) * exp(1.0/mu)
+        C1 = _norm_cdf(fac*(x-mu)/mu)
+        C1 += exp(1.0/mu) * _norm_cdf(-fac*(x+mu)/mu) * exp(1.0/mu)
         return C1
 
     def _stats(self, mu):
@@ -4345,14 +4345,14 @@ class johnsonsb_gen(rv_continuous):
         return (b > 0) & (a == a)
 
     def _pdf(self, x, a, b):
-        trm = norm.pdf(a+b*log(x/(1.0-x)))
+        trm = _norm_pdf(a + b*log(x/(1.0-x)))
         return b*1.0/(x*(1-x))*trm
 
     def _cdf(self, x, a, b):
-        return norm.cdf(a+b*log(x/(1.0-x)))
+        return _norm_cdf(a + b*log(x/(1.0-x)))
 
     def _ppf(self, q, a, b):
-        return 1.0/(1+exp(-1.0/b*(norm.ppf(q)-a)))
+        return 1.0 / (1 + exp(-1.0 / b * (_norm_ppf(q) - a)))
 johnsonsb = johnsonsb_gen(a=0.0, b=1.0, name='johnsonb')
 
 
@@ -4382,14 +4382,14 @@ class johnsonsu_gen(rv_continuous):
 
     def _pdf(self, x, a, b):
         x2 = x*x
-        trm = norm.pdf(a+b*log(x+sqrt(x2+1)))
+        trm = _norm_pdf(a + b * log(x + sqrt(x2+1)))
         return b*1.0/sqrt(x2+1.0)*trm
 
     def _cdf(self, x, a, b):
-        return norm.cdf(a+b*log(x+sqrt(x*x+1)))
+        return _norm_cdf(a + b * log(x + sqrt(x*x + 1)))
 
     def _ppf(self, q, a, b):
-        return sinh((norm.ppf(q)-a)/b)
+        return sinh((_norm_ppf(q) - a) / b)
 johnsonsu = johnsonsu_gen(name='johnsonsu')
 
 
@@ -4450,14 +4450,14 @@ class levy_gen(rv_continuous):
 
     """
     def _pdf(self, x):
-        return 1/sqrt(2*pi*x)/x*exp(-1/(2*x))
+        return 1 / sqrt(2*pi*x) / x * exp(-1/(2*x))
 
     def _cdf(self, x):
-        return 2*(1-norm._cdf(1/sqrt(x)))
+        return 2 * (1 - _norm_cdf(1 / sqrt(x)))
 
     def _ppf(self, q):
-        val = norm._ppf(1-q/2.0)
-        return 1.0/(val*val)
+        val = _norm_ppf(1 - q / 2.0)
+        return 1.0 / (val * val)
 
     def _stats(self):
         return inf, inf, nan, nan
@@ -4492,11 +4492,11 @@ class levy_l_gen(rv_continuous):
 
     def _cdf(self, x):
         ax = abs(x)
-        return 2*norm._cdf(1/sqrt(ax))-1
+        return 2 * _norm_cdf(1 / sqrt(ax)) - 1
 
     def _ppf(self, q):
-        val = norm._ppf((q+1.0)/2)
-        return -1.0/(val*val)
+        val = _norm_ppf((q + 1.0) / 2)
+        return -1.0 / (val * val)
 
     def _stats(self):
         return inf, inf, nan, nan
@@ -5047,7 +5047,7 @@ class nct_gen(rv_continuous):
         return (df > 0) & (nc == nc)
 
     def _rvs(self, df, nc):
-        return norm.rvs(loc=nc,size=self._size)*sqrt(df) / sqrt(chi2.rvs(df,size=self._size))
+        return norm.rvs(loc=nc, size=self._size)*sqrt(df) / sqrt(chi2.rvs(df, size=self._size))
 
     def _pdf(self, x, df, nc):
         n = df*1.0
@@ -5390,13 +5390,13 @@ class powerlognorm_gen(rv_continuous):
 
     """
     def _pdf(self, x, c, s):
-        return c/(x*s)*norm.pdf(log(x)/s)*pow(norm.cdf(-log(x)/s),c*1.0-1.0)
+        return c/(x*s) * _norm_pdf(log(x)/s) * pow(_norm_cdf(-log(x)/s), c*1.0-1.0)
 
     def _cdf(self, x, c, s):
-        return 1.0 - pow(norm.cdf(-log(x)/s),c*1.0)
+        return 1.0 - pow(_norm_cdf(-log(x)/s),c*1.0)
 
     def _ppf(self, q, c, s):
-        return exp(-s*norm.ppf(pow(1.0-q,1.0/c)))
+        return exp(-s * _norm_ppf(pow(1.0 - q, 1.0 / c)))
 powerlognorm = powerlognorm_gen(a=0.0, name="powerlognorm")
 
 
@@ -5428,7 +5428,7 @@ class powernorm_gen(rv_continuous):
         return 1.0-_norm_cdf(-x)**(c*1.0)
 
     def _ppf(self, q, c):
-        return -norm.ppf(pow(1.0-q,1.0/c))
+        return -_norm_ppf(pow(1.0 - q, 1.0 / c))
 powernorm = powernorm_gen(name='powernorm')
 
 
