@@ -93,8 +93,6 @@ Functional interface to FITPACK functions:
    spalde
    splder
    splantider
-   bisplrep
-   bisplev
 
 
 2-D Splines
