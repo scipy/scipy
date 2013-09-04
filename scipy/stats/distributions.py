@@ -1189,9 +1189,6 @@ class rv_continuous(rv_generic):
         # with multiple dx values, then I want Derivative to internally
         # add another dimension to the array.
         # This way the other args provided to f would broadcast appropriately.
-        #
-        # Apparently this needs next would need python 3...
-        #x, *args = np.broadcast_arrays(x, *args)
         x_args = np.broadcast_arrays(x, *args)
         x, args = x_args[0], x_args[1:]
         dfx = np.empty_like(x)
