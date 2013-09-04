@@ -1181,9 +1181,25 @@ class rv_continuous(rv_generic):
         return cond
 
     def _pdf(self,x,*args):
-        def f(y):
-            return self._cdf(y, *args)
-        dfx = Derivative(f)(x)
+        # numdifftools uses vectorization internally
+        # but does not conformantly vectorize the args.
+        # We will do this manually.
+        # If Derivative is given f and x, where x is an array,
+        # then if it wants to internally evaluate at each entry of x
+        # with multiple dx values, then I want Derivative to internally
+        # add another dimension to the array.
+        # This way the other args provided to f would broadcast appropriately.
+        #
+        # Apparently this needs next would need python 3...
+        #x, *args = np.broadcast_arrays(x, *args)
+        x_args = np.broadcast_arrays(x, *args)
+        x, args = x_args[0], x_args[1:]
+        dfx = np.empty_like(x)
+        for ind in np.ndindex(*x.shape):
+            local_args = [a[ind] for a in args]
+            def f(y):
+                return self._cdf(y, *local_args)
+            dfx[ind] = Derivative(f, vectorized=True)(x[ind])
         return dfx
 
     ## Could also define any of these

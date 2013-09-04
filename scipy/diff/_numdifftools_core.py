@@ -282,8 +282,10 @@ class _Derivative(object):
 
         # check the size of f_del to ensure it was properly vectorized.
         if f_del.size != h.size:
-            t = 'fun did not return data of correct size (it must be vectorized)'
-            raise ValueError(t)
+            raise ValueError('fun did not return data of correct size '
+                             '(it must be vectorized) '
+                             'f_del.shape=%s h.shape=%s' % (
+                                 f_del.shape, h.shape))
 
         # Apply the finite difference rule at each delta, scaling
         # as appropriate for delta and the requested DerivativeOrder.
