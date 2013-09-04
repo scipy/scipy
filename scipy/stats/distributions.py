@@ -6,12 +6,14 @@ from __future__ import division, print_function, absolute_import
 
 import math
 import warnings
+import functools
 
 from scipy.lib.six import callable, string_types, get_method_function
 from scipy.lib.six import exec_
 
 from scipy.misc import comb, derivative
 from scipy.misc.doccer import inherit_docstring_from
+from scipy.diff import Derivative
 from scipy import special
 from scipy import optimize
 from scipy import integrate
@@ -1179,7 +1181,10 @@ class rv_continuous(rv_generic):
         return cond
 
     def _pdf(self,x,*args):
-        return derivative(self._cdf,x,dx=1e-5,args=args,order=5)
+        def f(y):
+            return self._cdf(y, *args)
+        dfx = Derivative(f)(x)
+        return dfx
 
     ## Could also define any of these
     def _logpdf(self, x, *args):

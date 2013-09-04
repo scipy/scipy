@@ -17,18 +17,22 @@ Numdifftools implementation
 # Release: 1.0
 # Release date: 12/27/2006
 #-------------------------------------------------------------------------
-#!/usr/bin/env python
+from __future__ import division, print_function, absolute_import
 
-from __future__ import division
 import numpy as np
-import scipy.linalg as linalg
-#import numpy.linalg as linalg
-import scipy.misc as misc
+from scipy import linalg
+from scipy import misc
 import warnings
 
 __all__ = [
-    'dea3', 'Derivative', 'Jacobian', 'Gradient', 'Hessian', 'Hessdiag'
+    'dea3', 'Derivative', 'Jacobian', 'Gradient', 'Hessian', 'Hessdiag',
+    'DerivativeError',
     ]
+
+
+class DerivativeError(Exception):
+    pass
+
 
 _TINY =  np.finfo(float).machar.tiny
 _EPS = np.finfo(float).machar.eps
@@ -134,6 +138,10 @@ def dea3(v0, v1, v2):
 def vec2mat(vec, n, m):
     ''' forms the matrix M, such that M(i,j) = vec(i+j)
     '''
+    if len(vec) < n + m - 1:
+        raise ValueError('internal error: '
+                'vec2mat was passed bad args len(vec):%s n:%s m:%s ' % (
+                    len(vec), n, m))
     [i, j] = np.ogrid[0:n, 0:m]
     ind = i + j
     return np.matrix(vec[ind])
@@ -346,12 +354,19 @@ class _Derivative(object):
 
             der_init, h1 = self._fder(fun, f_x0i, x0i, h)
 
+            # What if we cannot even find any values that are finite.
+            der_init_isfinite = np.isfinite(der_init)
+            if not np.any(der_init_isfinite):
+                raise DerivativeError('cannot find an initial '
+                                      'derivative approximation')
+
             # Each approximation that results is an approximation
             # of order n to the desired derivative.
             # Additional (higher order, even or odd) terms in the
             # Taylor series also remain. Use a generalized (multi-term)
             # Romberg extrapolation to improve these estimates.
-            der_romb, errors, h2 = self._romb_extrap(der_init, h1)
+            der_romb, errors, h2 = self._romb_extrap(der_init, h1,
+                    der_init_isfinite=der_init_isfinite)
 #            import matplotlib.pyplot as plt
 #            plt.ioff()
 #            #plt.loglog(h2,der_romb, h2, der_romb+errors,'r--',h2, der_romb-errors,'r--')
@@ -361,13 +376,19 @@ class _Derivative(object):
 #            plt.title('Relative error as function of stepsize nom=%g' % step_nom[i])
 #            print np.vstack((h2,der_romb,errors)).T 
 #            plt.show()
-            der_romb, errors, trimdelta  = self._trim_estimates(der_romb, errors, h2)
+
+            # Do something that sounds like trimming the estimates.
+            der_romb_trimmed, errors_trimmed, trimdelta = self._trim_estimates(
+                    der_romb, errors, h2)
+
+            if not der_romb_trimmed.size:
+                raise DerivativeError('cannot find a derivative approximation')
             
-            ind = errors.argmin()
+            ind = errors_trimmed.argmin()
             
-            errest[i] = errors[ind]
+            errest[i] = errors_trimmed[ind]
             finaldelta[i] = trimdelta[ind]
-            der[i] = der_romb[ind]
+            der[i] = der_romb_trimmed[ind]
 
         # Save errorEstimate and final step
         self.error_estimate = errest
@@ -637,7 +658,7 @@ class _Derivative(object):
 
 
 
-    def _romb_extrap(self, der_init, h1):
+    def _romb_extrap(self, der_init, h1, der_init_isfinite=None):
         ''' Return Romberg extrapolated derivatives and error estimates
             based on the initial derivative estimates
 
@@ -645,6 +666,7 @@ class _Derivative(object):
         ---------
         der_init - initial derivative estimates
         h1 - stepsizes used in the derivative estimates
+        der_init_isfinite - optional boolean array
 
         Returns
         -------
@@ -663,7 +685,10 @@ class _Derivative(object):
         # the noise amplification is further amplified by the Romberg step.
         # amp = cond(rromb)
 
-        isnonfinite = 1 - np.isfinite(der_init)
+        if der_init_isfinite is None:
+            der_init_isfinite = np.isfinite(der_init)
+
+        isnonfinite = 1 - der_init_isfinite
         i_nonfinite, = isnonfinite.ravel().nonzero()
         hout = h1
         if i_nonfinite.size > 0:
@@ -673,6 +698,10 @@ class _Derivative(object):
         # this does the extrapolation to a zero step size.
         nexpon = self.romberg_terms #self._nexpon
         ne = der_init.size
+
+        # The vec2mat is causing errors when der_init has size zero.
+        if not ne:
+            raise Exception('internal error der_init has size zero')
         rhs = vec2mat(der_init, nexpon + 2, max(1, ne - (nexpon + 2)))
 
         rombcoefs = linalg.lstsq(self._rromb, (self._qromb.T * rhs))
@@ -791,7 +820,12 @@ class Derivative(_Derivative):
             using romberg extrapolation
         '''
         self._initialize()
-        return self._derivative(self.fun, x00, self.step_nom)
+        try:
+            return self._derivative(self.fun, x00, self.step_nom)
+        except DerivativeError as e:
+            dx00 = np.empty_like(x00)
+            dx00.fill(np.nan)
+            return dx00
 
  
 class Jacobian(_Derivative):
@@ -1276,14 +1310,4 @@ class Hessian(Hessdiag):
 
         self.error_estimate = err
         return hess
-
-
-
-def test_docstrings():
-    import doctest
-    doctest.testmod()
-    
-
-if __name__ == '__main__':
-    test_docstrings()
 
