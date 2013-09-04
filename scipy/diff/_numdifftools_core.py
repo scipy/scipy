@@ -26,7 +26,6 @@ import warnings
 
 __all__ = [
     'dea3', 'Derivative', 'Jacobian', 'Gradient', 'Hessian', 'Hessdiag',
-    'DerivativeError',
     ]
 
 
