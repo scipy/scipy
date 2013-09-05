@@ -559,6 +559,15 @@ class rv_generic(object):
     and rv_continuous.
 
     """
+    def __init__(self):
+        super(rv_generic, self).__init__()
+        
+        # figure out if _stats signature has 'moments' keyword
+        sign = inspect.getargspec(get_method_function(self._stats))
+        self._stats_has_moments = ((sign[2] is not None) or
+                                   ('moments' in sign[0]))
+
+
     def _construct_argparser(self, names_to_inspect, locscale_in, locscale_out):
         """Construct the parser for the shape arguments.
 
@@ -792,8 +801,7 @@ class rv_generic(object):
         args = tuple(map(asarray, args))
         cond = self._argcheck(*args) & (scale > 0) & (loc == loc)
 
-        signature = inspect.getargspec(get_method_function(self._stats))
-        if (signature[2] is not None) or ('moments' in signature[0]):
+        if self._stats_has_moments:
             mu, mu2, g1, g2 = self._stats(*args, **{'moments': moments})
         else:
             mu, mu2, g1, g2 = self._stats(*args)
@@ -927,12 +935,11 @@ class rv_generic(object):
             raise ValueError("Moment must be positive.")
         mu, mu2, g1, g2 = None, None, None, None
         if (n > 0) and (n < 5):
-            signature = inspect.getargspec(get_method_function(self._stats))
-            if (signature[2] is not None) or ('moments' in signature[0]):
-                mdict = {'moments':{1:'m',2:'v',3:'vs',4:'vk'}[n]}
+            if self._stats_has_moments:
+                mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'vk'}[n]}
             else:
                 mdict = {}
-            mu, mu2, g1, g2 = self._stats(*args,**mdict)
+            mu, mu2, g1, g2 = self._stats(*args, **mdict)
         val = _moment_from_stats(n, mu, mu2, g1, g2, self._munp, args)
 
         # Convert to transformed  X = L + S*Y
@@ -1304,7 +1311,7 @@ class rv_continuous(rv_generic):
                  badvalue=None, name=None, longname=None,
                  shapes=None, extradoc=None):
 
-        rv_generic.__init__(self)
+        super(rv_continuous, self).__init__()
 
         if badvalue is None:
             badvalue = nan
@@ -1791,10 +1798,7 @@ class rv_continuous(rv_generic):
             return output[()]
         return output
 
-<<<<<<< HEAD
 
-=======
->>>>>>> DOC: correct the docstring of _construct_argparser
     def _nnlf(self, x, *args):
         return -sum(self._logpdf(x, *args),axis=0)
 
@@ -2064,9 +2068,7 @@ class rv_continuous(rv_generic):
             place(output, cond0, self.vecentropy(*goodargs) + log(scale))
 
         return output
-=======
 
->>>>>>> MAINT: Lift entropy to rv_generic.
 
     def expect(self, func=None, args=(), loc=0, scale=1, lb=None, ub=None,
                conditional=False, **kwds):
@@ -6439,7 +6441,7 @@ class rv_discrete(rv_generic):
                  moment_tol=1e-8,values=None,inc=1,longname=None,
                  shapes=None, extradoc=None):
 
-        super(rv_generic,self).__init__()
+        super(rv_discrete, self).__init__()
 
         if badvalue is None:
             badvalue = nan
