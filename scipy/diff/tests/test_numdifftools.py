@@ -22,10 +22,10 @@ class TestDerivative(TestCase):
     def test_derivative_exp(self):
         #derivative of exp(x), at x == 0
         dexp = Derivative(np.exp)
-        self.assertAlmostEqual(dexp(0), np.exp(0))
+        assert_allclose(dexp(0), np.exp(0))
         dexp.n = 2
         t = dexp(0)
-        self.assertAlmostEqual(t, np.exp(0))
+        assert_allclose(t, np.exp(0))
     def test_derivative_sin(self):
         # Evaluate the indicated (default = first)
         # derivative at multiple points
@@ -43,7 +43,7 @@ class TestDerivative(TestCase):
         # Truth: 0
         d2sin = Derivative(np.sin, n=2, stepFix=0.5)
 
-        self.assertAlmostEqual(d2sin(np.pi), 0.0,)
+        assert_allclose(d2sin(np.pi), 0.0, atol=1e-8)
 
         # Higher order derivatives (up to the fourth derivative)
         # Truth: sqrt(2)/2 = 0.707106781186548
@@ -92,13 +92,13 @@ class TestDerivative(TestCase):
         ## Control the behavior of DERIVEST - forward 2nd order method, with only 1 Romberg term
         ## Compute the first derivative, also return the final stepsize chosen
         dtan = Derivative(np.tan, n=1, method='forward', order=2, romberg_terms=1)
-        self.assertAlmostEqual(dtan(np.pi), 1.0)
+        assert_allclose(dtan(np.pi), 1.0)
     def test_derivative_poly1d(self):
         ## Specify the step size (default stepsize = 0.1)
         p0 = np.poly1d(range(1, 6))
         fd = Derivative(p0, n=4, stepFix=1.)
         p4 = p0.deriv(4)
-        self.assertAlmostEqual(fd(1), p4(1))
+        assert_allclose(fd(1), p4(1))
         
         
         
@@ -198,7 +198,7 @@ class TestJacobian(TestCase):
         Jfun = Jacobian(fun)
         J = Jfun([1, 2, 0.75]) # should be numerically zero
         for ji in J.ravel():
-            self.assertAlmostEqual(ji, 0.0)
+            assert_allclose(ji, 0.0, atol=1e-8)
 
 class TestGradient(TestCase):
 
@@ -214,7 +214,7 @@ class TestGradient(TestCase):
         d = dfun([1, 2, 3])
         dtrue = [ 2., 4., 6.]
         for (di, dit) in zip(d, dtrue):
-            self.assertAlmostEqual(di, dit)
+            assert_allclose(di, dit)
 
 class TestHessian(TestCase):
 
@@ -232,7 +232,7 @@ class TestHessian(TestCase):
         h2 = Hfun2([0, 0]) # h2 = [-1 1; 1 -1];
         htrue = [-1., 1., 1., -1.]
         for (hi, hit) in zip(h2.ravel(), htrue):
-            self.assertAlmostEqual(hi, hit)
+            assert_allclose(hi, hit)
         
 class TestHessdiag(TestCase):
 
@@ -248,7 +248,7 @@ class TestHessdiag(TestCase):
         hd = Hfun([1, 2, 3])
         htrue = [  0., 2., 18.]
         for (hi, hit) in zip(hd, htrue):
-            self.assertAlmostEqual(hi, hit)
+            assert_allclose(hi, hit)
 
 
 class TestGlobalFunctions(TestCase):
@@ -269,7 +269,7 @@ class TestGlobalFunctions(TestCase):
             Ei[k] = np.trapz(np.sin(x), x)
         [En, err] = dea3(Ei[0], Ei[1], Ei[2])
         self.assertTrue(np.abs(En - 1) < err)
-        self.assertAlmostEqual(En, 1.0)
+        assert_allclose(En, 1.0)
 
 if __name__ == "__main__":
     run_module_suite()
