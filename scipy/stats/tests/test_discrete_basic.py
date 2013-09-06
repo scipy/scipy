@@ -40,11 +40,12 @@ def test_discrete_basic():
         np.random.seed(9765456)
         rvs = distfn.rvs(size=2000,*arg)
         supp = np.unique(rvs)
-        m,v = distfn.stats(*arg)
+        m, v, s, k = distfn.stats(*arg, moments='mvsk')
         # yield npt.assert_almost_equal(rvs.mean(), m, decimal=4,err_msg='mean')
         # yield npt.assert_almost_equal, rvs.mean(), m, 2, 'mean' # does not work
         yield check_sample_meanvar, rvs.mean(), m, distname + ' sample mean test'
         yield check_sample_meanvar, rvs.var(), v, distname + ' sample var test'
+        yield check_moment, distfn, arg, m, v, s, k, distname
         yield check_cdf_ppf, distfn, arg, distname + ' cdf_ppf'
         yield check_cdf_ppf2, distfn, arg, supp, distname + ' cdf_ppf'
         yield check_pmf_cdf, distfn, arg, distname + ' pmf_cdf'
@@ -167,6 +168,39 @@ def check_pmf_cdf(distfn, arg, msg):
                             decimal=4, err_msg=msg + 'pmf-cdf')
 
 
+def check_moment(distfn, arg, m, v, s, k, msg):
+    m1 = distfn.moment(1, *arg)
+    m2 = distfn.moment(2, *arg)
+    if not np.isinf(m):
+        npt.assert_almost_equal(m1, m, decimal=10, err_msg=msg +
+                            ' - 1st moment')
+    else:                     # or np.isnan(m1),
+        npt.assert_(np.isinf(m1),
+               msg + ' - 1st moment -infinite, m1=%s' % str(m1))
+        # np.isnan(m1) temporary special treatment for loggamma
+    if not np.isinf(v):
+        npt.assert_almost_equal(m2-m1*m1, v, decimal=10, err_msg=msg +
+                            ' - 2ndt moment')
+    else:                     # or np.isnan(m2),
+        npt.assert_(np.isinf(m2),
+               msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
+        # np.isnan(m2) temporary special treatment for loggamma
+
+    # skew / kurtosis
+    if not np.isnan(s):
+        m2e = distfn.expect(lambda x: np.power(x - m1, 2), arg)
+        if np.isfinite(m2e):
+            m3e = distfn.expect(lambda x: np.power(x - m1, 3), arg)
+            npt.assert_allclose(m3e, s * np.power(m2e, 1.5),
+                        atol=1e-7, rtol=1e-7)
+
+        if not np.isnan(k) and np.isfinite(m2e):
+            m4e = distfn.expect(lambda x: np.power(x - m1, 4), arg)
+            npt.assert_allclose(m4e, (k+3.) * m2e**2,
+                        atol=1e-7, rtol=1e-7)
+
+'''
+# these are not run anyway
 def check_generic_moment(distfn, arg, m, k, decim):
     npt.assert_almost_equal(distfn.generic_moment(k,*arg), m, decimal=decim,
                             err_msg=str(distfn) + ' generic moment test')
@@ -175,7 +209,7 @@ def check_generic_moment(distfn, arg, m, k, decim):
 def check_moment_frozen(distfn, arg, m, k, decim):
     npt.assert_almost_equal(distfn(*arg).moment(k), m, decimal=decim,
                             err_msg=str(distfn) + ' frozen moment test')
-
+'''
 
 def check_oth(distfn, arg, msg):
     # checking other methods of distfn

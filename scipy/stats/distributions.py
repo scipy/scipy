@@ -5043,6 +5043,22 @@ class nct_gen(rv_continuous):
     def _ppf(self, q, df, nc):
         return special.nctdtrit(df, nc, q)
 
+	# this is still wrong, FIXME
+    def _munp(self, n, df, nc):
+        term = n*log(df/2.)
+        term += gamln((df-n)/2.) - gamln(df/2.)
+        
+        pol = {0: 1, 
+               1: nc, 
+               2: nc**2 + 1., 
+               3: nc*(nc**2 + 3.), 
+               4: nc**4 + 6.*nc**2 +3.}
+        try:
+            term = exp(term) * pol[n]
+        except KeyError:
+            raise NotImplementedError
+        return np.where(df > n, term, np.nan)
+
     def _stats(self, df, nc, moments='mv'):
         mu, mu2, g1, g2 = None, None, None, None
         val1 = gam((df-1.0)/2.0)
@@ -7696,9 +7712,9 @@ class randint_gen(rv_discrete):
     -----
     The probability mass function for `randint` is::
 
-        randint.pmf(k) = 1./(max- min)
+        randint.pmf(k) = 1./(max - min)
 
-    for ``k = min,...,max``.
+    for ``k = min, ..., max-1``.
 
     `randint` takes ``min`` and ``max`` as shape parameters.
 
@@ -7730,7 +7746,7 @@ class randint_gen(rv_discrete):
         d = m2 - m1
         var = (d-1)*(d+1.0)/12.0
         g1 = 0.0
-        g2 = -6.0/5.0*(d*d+1.0)/(d-1.0)*(d+1.0)
+        g2 = -6.0/5.0*(d*d+1.0)/(d*d-1.0)
         return mu, var, g1, g2
 
     def _rvs(self, min, max=None):
