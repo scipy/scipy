@@ -4907,7 +4907,7 @@ class ncf_gen(rv_continuous):
 
     """
     def _rvs(self, dfn, dfd, nc):
-        return mtrand.noncentral_f(dfn,dfd,nc,self._size)
+        return mtrand.noncentral_f(dfn, dfd, nc, self._size)
 
     def _pdf_skip(self, x, dfn, dfd, nc):
         n1,n2 = dfn, dfd
@@ -4922,19 +4922,49 @@ class ncf_gen(rv_continuous):
          #   drop it for now, the generic function seems to work ok
 
     def _cdf(self, x, dfn, dfd, nc):
-        return special.ncfdtr(dfn,dfd,nc,x)
+        return special.ncfdtr(dfn, dfd, nc, x)
 
     def _ppf(self, q, dfn, dfd, nc):
         return special.ncfdtri(dfn, dfd, nc, q)
     
     def _munp(self, n, dfn, dfd, nc):
-        val = (dfn * 1.0/dfd)**n
-        term = gamln(n+0.5*dfn) + gamln(0.5*dfd-n) - gamln(dfd*0.5)
-        val *= exp(-nc/2.0 + term)
-        val *= special.hyp1f1(n+0.5*dfn, 0.5*dfn, 0.5*nc)
-        return val
+        # explicit formula from
+        # http://reference.wolfram.com/mathematica/ref/NoncentralFRatioDistribution.html
+        # (is a bit dubious)
+        ##val = gam(0.5*dfn + n) * gam(0.5*dfd -n ) / gam(0.5*dfd) / gam(0.5*dfn)
+        ##val *= (dfd * 1.0/dfn)**n
+        ##val *= special.hyp1f1(-n, 0.5*dfn, -0.5*nc)
 
-    def _stats(self, dfn, dfd, nc):
+        # these formulas are from 
+        # P.B. Patnaik, 'The non-central chisquare and F-distributions and 
+        #  their applications', Biometrika 36, 202-232, 1949.
+        # doi:10.1093/biomet/36.1-2.202
+        drat = (1.*dfd/dfn)
+        dnc = dfn + nc
+        
+        if (n==1):
+            return np.where(dfd > 2,  drat * (dnc) / (dfd -2.), np.nan)
+        elif (n==2):
+            m2 = (dnc)**2 + 2.*(dfn + 2.*nc)
+            m2 /= (dfd - 2.) * (dfd - 4.)
+            m2 *= drat**2
+            return np.where(dfd > 4, m2, np.nan)
+        elif (n==3):
+            m3 = dnc**3 + 6.*dnc*(dfn+2.*nc) + 8.*(dfn+3.*nc)
+            m3 /= (dfd-2.) * (dfd-4.) *(dfd-6.)
+            m3 *= drat**3
+            return np.where(dfd > 6, m3, np.nan)
+        elif (n==4):
+            m4 = dnc**4 + 12.*(dfn+2.*nc)*dnc**2 + 44.*(dfn+2.*nc)**2
+            m4 += 48.*(dfn+4.*nc) - 32.*nc**2
+            m4 /= (dfd-2.) * (dfd-4.) * (dfd-6.) * (dfd-8.)
+            m4 *= drat**4
+            return np.where(dfd > 8, m4, np.nan)
+        else:
+            return NotImplementedError
+
+
+    def _stats_skip(self, dfn, dfd, nc):
         mu = where(dfd <= 2, inf, dfd / (dfd-2.0)*(1+nc*1.0/dfn))
         mu2 = where(dfd <= 4, inf, 2*(dfd*1.0/dfn)**2.0 *
                     ((dfn+nc/2.0)**2.0 + (dfn+nc)*(dfd-2.0)) /
@@ -6903,16 +6933,16 @@ class rv_discrete(rv_generic):
 
         if 'm' in moments:
             if mu is None:
-                mu = self._munp(1.0, *goodargs)
+                mu = self._munp(1, *goodargs)
             out0 = default.copy()
             place(out0, cond, mu + loc)
             output.append(out0)
 
         if 'v' in moments:
             if mu2 is None:
-                mu2p = self._munp(2.0, *goodargs)
+                mu2p = self._munp(2, *goodargs)
                 if mu is None:
-                    mu = self._munp(1.0, *goodargs)
+                    mu = self._munp(1, *goodargs)
                 mu2 = mu2p - mu*mu
             out0 = default.copy()
             place(out0, cond, mu2)
