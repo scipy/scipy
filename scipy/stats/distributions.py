@@ -5043,48 +5043,42 @@ class nct_gen(rv_continuous):
     def _ppf(self, q, df, nc):
         return special.nctdtrit(df, nc, q)
 
-	# this is still wrong, FIXME
-    def _munp(self, n, df, nc):
-        term = n*log(df/2.)
-        term += gamln((df-n)/2.) - gamln(df/2.)
-        
-        pol = {0: 1, 
-               1: nc, 
-               2: nc**2 + 1., 
-               3: nc*(nc**2 + 3.), 
-               4: nc**4 + 6.*nc**2 +3.}
-        try:
-            term = exp(term) * pol[n]
-        except KeyError:
-            raise NotImplementedError
-        return np.where(df > n, term, np.nan)
-
     def _stats(self, df, nc, moments='mv'):
+        #
+        # See D. Hogben, R.S. Pinkham, and M.B. Wilk,
+        # 'The moments of the non-central t-distribution'
+        # Biometrika 48, p. 465 (2961).
+        # e.g. http://www.jstor.org/stable/2332772 (gated)
+        #
         mu, mu2, g1, g2 = None, None, None, None
-        val1 = gam((df-1.0)/2.0)
-        val2 = gam(df/2.0)
-        if 'm' in moments:
-            mu = nc*sqrt(df/2.0)*val1/val2
-        if 'v' in moments:
-            var = (nc*nc+1.0)*df/(df-2.0)
-            var -= nc*nc*df * val1**2 / 2.0 / val2**2
-            mu2 = var
+        
+        gfac = gam(df/2.-0.5) / gam(df/2.)
+        c11 = sqrt(df/2.) * gfac
+        c20 = df / (df-2.)
+        c22 = c20 - c11*c11
+        mu = np.where(df > 1, nc*c11, np.nan)
+        mu2 = np.where(df > 2, c22*nc*nc + c20, np.nan)
+
         if 's' in moments:
-            g1n = 2*nc*sqrt(df)*val1*((nc*nc*(2*df-7)-3)*val2**2
-                                      - nc*nc*(df-2)*(df-3)*val1**2)
-            g1d = (df-3)*sqrt(2*df*(nc*nc+1)/(df-2) -
-                              nc*nc*df*(val1/val2)**2) * val2 * \
-                              (nc*nc*(df-2)*val1**2 -
-                               2*(nc*nc+1)*val2**2)
-            g1 = g1n/g1d
+            c33t = df * (7.-2.*df) / (df-2.) / (df-3.) + 2.*c11*c11
+            c31t = 3.*df / (df-2.) / (df-3.)
+            mu3 = (c33t*nc*nc + c31t) * c11*nc
+            g1 = np.where(df > 3, mu3 / np.power(mu2, 1.5), 
+                                  np.nan)
+
+        #kurtosis
         if 'k' in moments:
-            g2n = 2*(-3*nc**4*(df-2)**2 * (df-3) * (df-4)*val1**4 +
-                     2**(6-2*df) * nc*nc*(df-2)*(df-4) *
-                     (nc*nc*(2*df-7)-3)*pi*gam(df+1)**2 -
-                     4*(nc**4*(df-5)-6*nc*nc-3)*(df-3)*val2**4)
-            g2d = (df-3)*(df-4)*(nc*nc*(df-2)*val1**2 -
-                                 2*(nc*nc+1)*val2)**2
-            g2 = g2n / g2d
+            c44 = df*df / (df-2.) / (df-4.)
+            c44 -= c11*c11 * 2.*df*(5.-df) / (df-2.) / (df-3.)
+            c44 -= 3.*c11**4
+            c42 = df / (df-4.) - c11*c11 * (df-1.) / (df-3.)
+            c42 *= 6.*df / (df-2.)
+            c40 = 3.*df*df / (df-2.) / (df-4.)
+            
+            mu4 = c44 * nc**4 + c42*nc**2 + c40   
+            g2 = np.where(df > 4, mu4/mu2**2 - 3., 
+                                  np.nan)
+        
         return mu, mu2, g1, g2
 nct = nct_gen(name="nct")
 
