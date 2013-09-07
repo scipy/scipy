@@ -101,7 +101,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     or, for ``norm='ortho'`` and 0 <= k < N::
 
                                           N-1
-      y[k] = x[0] / sqrt(N) + sqrt(1/N) * sum x[n]*cos(pi*(k+0.5)*n/N)
+      y[k] = x[0] / sqrt(N) + sqrt(2/N) * sum x[n]*cos(pi*(k+0.5)*n/N)
                                           n=1
 
     The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up
