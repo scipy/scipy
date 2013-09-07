@@ -4928,17 +4928,19 @@ class ncf_gen(rv_continuous):
         return special.ncfdtri(dfn, dfd, nc, q)
     
     def _munp(self, n, dfn, dfd, nc):
-        # explicit formula from
-        # http://reference.wolfram.com/mathematica/ref/NoncentralFRatioDistribution.html
-        # (is a bit dubious)
-        ##val = gam(0.5*dfn + n) * gam(0.5*dfd -n ) / gam(0.5*dfd) / gam(0.5*dfn)
-        ##val *= (dfd * 1.0/dfn)**n
-        ##val *= special.hyp1f1(-n, 0.5*dfn, -0.5*nc)
-
         # these formulas are from 
         # P.B. Patnaik, 'The non-central chisquare and F-distributions and 
         #  their applications', Biometrika 36, 202-232, 1949.
         # doi:10.1093/biomet/36.1-2.202
+        #
+        # FIXME: mvs seem to agree to boost, which just implements
+        # explicit formulas for mvsk (not moments!) copy-pasted from the 
+        # Mathematica online docs.
+        # Don't have Mathematica to check, but here it is:
+        # mvs agrees, but kurtosis (kurtosis_excess in boost-speak)
+        # is off-by-three. THREE. Wrong way.
+        # an err in Mathematica? or an overflow? 
+        #
         drat = (1.*dfd/dfn)
         dnc = dfn + nc
         
@@ -4961,8 +4963,13 @@ class ncf_gen(rv_continuous):
             m4 *= drat**4
             return np.where(dfd > 8, m4, np.nan)
         else:
-            return NotImplementedError
-
+            # explicit formula from
+            # http://reference.wolfram.com/mathematica/ref/NoncentralFRatioDistribution.html
+            #
+            val = gam(0.5*dfn + n) * gam(0.5*dfd -n ) / gam(0.5*dfd) / gam(0.5*dfn)
+            val *= (dfd * 1.0/dfn)**n
+            val *= special.hyp1f1(-n, 0.5*dfn, -0.5*nc)
+            return val
 
     def _stats_skip(self, dfn, dfd, nc):
         mu = where(dfd <= 2, inf, dfd / (dfd-2.0)*(1+nc*1.0/dfn))
