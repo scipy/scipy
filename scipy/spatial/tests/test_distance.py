@@ -38,7 +38,7 @@ from __future__ import division, print_function, absolute_import
 import os.path
 from scipy.lib.six import xrange
 
-from nose.tools import assert_greater_equal
+from nose.tools import assert_true
 
 import numpy as np
 from numpy.linalg import norm
@@ -1872,15 +1872,22 @@ def test_euclideans():
 def test_sqeuclidean_dtypes():
     """Assert that sqeuclidean returns the right types of values.
 
-    Integer types should be upcast to intp or larger. Floating point types
-    should be the same as the input.
+    Integer types should be converted to floating for stability.
+    Floating point types should be the same as the input.
     """
     x = [1, 2, 3]
     y = [4, 5, 6]
 
     for dtype in [np.int8, np.int16, np.int32, np.int64]:
         d = sqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
-        assert_greater_equal(d.nbytes, np.dtype('intp').itemsize)
+        assert_true(np.issubdtype(d.dtype, np.floating))
+
+    for dtype in [np.uint8, np.uint16, np.uint32, np.uint64]:
+        d1 = sqeuclidean([0], np.asarray([-1], dtype=dtype))
+        d2 = sqeuclidean(np.asarray([-1], dtype=dtype), [0])
+
+        assert_equal(d1, d2)
+        assert_equal(d1, np.float64(np.iinfo(dtype).max) ** 2)
 
     for dtype in [np.float16, np.float32, np.float64, np.float128,
                   np.complex64, np.complex128]:

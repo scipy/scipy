@@ -249,16 +249,19 @@ def sqeuclidean(u, v):
         The squared Euclidean distance between vectors `u` and `v`.
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
+    # Preserve float dtypes, but convert everything else to np.float64
+    # for stability.
+    utype, vtype = None, None
+    if not (hasattr(u, "dtype") and np.issubdtype(u.dtype, np.inexact)):
+        utype = np.float64
+    if not (hasattr(v, "dtype") and np.issubdtype(v.dtype, np.inexact)):
+        vtype = np.float64
+
+    u = _validate_vector(u, dtype=utype)
+    v = _validate_vector(v, dtype=vtype)
     u_v = u - v
-    if (np.issubdtype(u_v.dtype, np.floating)
-        or u_v.dtype.itemsize >= np.dtype('intp').itemsize):
-        d = np.dot(u_v, u_v)
-    else:
-        # rely on the squaring and sum to upcast to a large enough type
-        d = np.sum(u_v ** 2)
-    return d
+
+    return np.dot(u_v, u_v)
 
 
 def cosine(u, v):
