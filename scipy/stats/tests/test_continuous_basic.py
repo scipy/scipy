@@ -188,6 +188,7 @@ def test_cont_basic():
               'sample mean test'
         # the sample skew kurtosis test has known failures, not very good distance measure
         # yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
+        yield check_normalization, distfn, arg, distname
         yield check_moment, distfn, arg, m, v, distname
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
@@ -417,6 +418,17 @@ def check_distribution_rvs(dist, args, alpha, rvs):
         D,pval = stats.kstest(dist,'',args=args, N=1000)
         npt.assert_(pval > alpha, "D = " + str(D) + "; pval = " + str(pval) +
                "; alpha = " + str(alpha) + "\nargs = " + str(args))
+
+
+def check_normalization(distfn, args, distname):
+    norm_moment = distfn.moment(0, *args)
+    npt.assert_allclose(norm_moment, 1.0)
+
+    norm_expect = distfn.expect(lambda x: 1, args=args)
+    npt.assert_allclose(norm_expect, 1.0, err_msg=distname, verbose=True)
+
+    norm_cdf = distfn.cdf(distfn.b, *args)
+    npt.assert_allclose(norm_cdf, 1.0)
 
 
 def check_named_args(distfn, x, shape_args, defaults, meths):

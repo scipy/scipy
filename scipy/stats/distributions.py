@@ -4553,8 +4553,8 @@ class logistic_gen(rv_continuous):
         return mtrand.logistic(size=self._size)
 
     def _pdf(self, x):
-        ex = exp(-x)
-        return ex / (1+ex)**2.0
+        ex = np.where(x>0, exp(-x), exp(x))
+        return ex / (1+ex)**2
 
     def _cdf(self, x):
         return 1.0/(1+exp(-x))
