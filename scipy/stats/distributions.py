@@ -7358,15 +7358,18 @@ class geom_gen(rv_discrete):
 
     def _cdf(self, x, p):
         k = floor(x)
-        return (1.0-(1.0-p)**k)
+        return -np.expm1(np.log1p(-p)*k)
 
     def _sf(self, x, p):
+        return np.exp(self._logsf(x, p))
+
+    def _logsf(self, x, p):
         k = floor(x)
-        return (1.0-p)**k
+        return k*np.log1p(-p)
 
     def _ppf(self, q, p):
         vals = ceil(log(1.0-q)/log(1-p))
-        temp = 1.0-(1.0-p)**(vals-1)
+        temp = self._cdf(vals-1, p)
         return where((temp >= q) & (vals > 0), vals-1, vals)
 
     def _stats(self, p):
