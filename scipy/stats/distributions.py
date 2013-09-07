@@ -3244,7 +3244,13 @@ class foldnorm_gen(rv_continuous):
         return abs(mtrand.standard_normal(self._size) + c)
 
     def _pdf(self, x, c):
-        return sqrt(2.0/pi)*cosh(c*x)*exp(-(x*x+c*c)/2.0)
+        term = exp(-(x-c)*(x-c)/2) + exp(-(x+c)*(x+c)/2)
+        return term / sqrt(2.*pi) 
+        #return sqrt(2.0/pi)*cosh(c*x)*exp(-(x*x+c*c)/2.0)
+        #return exp(self._logpdf(x, c))
+
+    #def _logpdf(self, x, c):
+    #    return log(2./pi) + log(cosh(c*x)) - (x*x + c*c)/2.
 
     def _cdf(self, x, c):
         return special.ndtr(x-c) + special.ndtr(x+c) - 1.0
@@ -3373,8 +3379,7 @@ class genlogistic_gen(rv_continuous):
 
     """
     def _pdf(self, x, c):
-        Px = c*exp(-x)/(1+exp(-x))**(c+1.0)
-        return Px
+        return exp(self._logpdf(x, c))
 
     def _logpdf(self, x, c):
         return log(c) - x - (c+1.0)*log1p(exp(-x))
@@ -3894,8 +3899,10 @@ class gompertz_gen(rv_continuous):
 
     """
     def _pdf(self, x, c):
-        ex = exp(x)
-        return c*ex*exp(-c*(ex-1))
+        return exp(self._logpdf(x, c))
+
+    def _logpdf(self, x, c):
+        return log(c) + x - c * (exp(x) - 1.)
 
     def _cdf(self, x, c):
         return 1.0-exp(-c*(exp(x)-1))
@@ -3931,8 +3938,7 @@ class gumbel_r_gen(rv_continuous):
 
     """
     def _pdf(self, x):
-        ex = exp(-x)
-        return ex*exp(-ex)
+      return exp(self._logpdf(x))
 
     def _logpdf(self, x):
         return -x - exp(-x)
@@ -3978,8 +3984,7 @@ class gumbel_l_gen(rv_continuous):
 
     """
     def _pdf(self, x):
-        ex = exp(x)
-        return ex*exp(-ex)
+        return exp(self._logpdf(x))
 
     def _logpdf(self, x):
         return x - exp(x)
@@ -4052,7 +4057,11 @@ class halflogistic_gen(rv_continuous):
 
     """
     def _pdf(self, x):
-        return 0.5/(cosh(x/2.0))**2.0
+       return exp(self._logpdf(x))
+#        return 0.5/(cosh(x/2.0))**2.0
+
+    def _logpdf(self, x):
+        return log(2) - x - 2. * special.log1p(exp(-x))
 
     def _cdf(self, x):
         return tanh(x/2.0)
@@ -4553,11 +4562,13 @@ class logistic_gen(rv_continuous):
         return mtrand.logistic(size=self._size)
 
     def _pdf(self, x):
-        ex = np.where(x>0, exp(-x), exp(x))
-        return ex / (1+ex)**2
+       return exp(self._logpdf(x))
+
+    def _logpdf(self, x):
+        return -x -2. * special.log1p(exp(-x))
 
     def _cdf(self, x):
-        return 1.0/(1+exp(-x))
+        return special.expit(x)
 
     def _ppf(self, q):
         return -log(1.0/q-1)
