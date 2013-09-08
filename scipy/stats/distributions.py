@@ -5552,17 +5552,17 @@ class rice_gen(rv_continuous):
 
     """
     def _pdf(self, x, b):
-        return x*exp(-(x*x+b*b)/2.0)*special.i0(x*b)
+        return x * exp(-(x-b)*(x-b)/2.0) * special.i0e(x*b)
 
     def _logpdf(self, x, b):
-        return log(x) - (x*x + b*b)/2.0 + log(special.i0(x*b))
+        return log(self._pdf(x, b))
 
     def _munp(self, n, b):
         nd2 = n/2.0
-        n1 = 1+nd2
+        n1 = 1 + nd2
         b2 = b*b/2.0
-        return 2.0**(nd2)*exp(-b2)*special.gamma(n1) * \
-               special.hyp1f1(n1,1,b2)
+        return 2.0**(nd2) * exp(-b2) * special.gamma(n1) * \
+               special.hyp1f1(n1, 1, b2)
 rice = rice_gen(a=0.0, name="rice")
 
 

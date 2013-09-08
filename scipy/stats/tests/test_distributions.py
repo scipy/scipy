@@ -1161,6 +1161,15 @@ class TestExpect(TestCase):
         res2 = halflog.expect(args=(1.5,))
         assert_almost_equal(res1, res2, decimal=14)
 
+    def test_rice_overflow(self):
+        # rice.pdf(999, 0.74) was inf since special.i0 silentyly overflows
+        # check that using i0e fixes it
+        assert_(np.isfinite(stats.rice.pdf(999, 0.74)))
+
+        assert_(np.isfinite(stats.rice.expect(lambda x: 1, args=(0.74,))))
+        assert_(np.isfinite(stats.rice.expect(lambda x: 2, args=(0.74,))))
+        assert_(np.isfinite(stats.rice.expect(lambda x: 3, args=(0.74,))))
+
 
 class TestNct(TestCase):
     def test_nc_parameter(self):
