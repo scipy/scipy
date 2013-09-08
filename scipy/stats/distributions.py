@@ -2063,7 +2063,38 @@ class rv_continuous(rv_generic):
         else:
             invfac = 1.0
         kwds['args'] = args
-        return integrate.quad(fun, lb, ub, **kwds)[0] / invfac
+        integral = integrate.quad(fun, lb, ub, **kwds)[0]
+
+        if not np.isfinite(integral):
+            msg = "expect: integral did not converge. Trying to adjust the bounds. "
+            msg += "Better check that the expectation value actually exists."
+            warnings.warn(msg, RuntimeWarning)
+
+            if lb == -np.inf or ub == np.inf:
+                # is it that fun(ub, *args) is a spurious inf or nan?
+                # In that case try starting with small limits and increase them
+                # as long as the function is still sensible
+                if (not np.isfinite(fun(lb, *args)) or 
+                    not np.isfinite(fun(ub, *args))):
+
+                        if lb == -np.inf and ub == np.inf:
+                            fl, fu = 2, 2
+                        elif lb == -np.inf and ub < np.inf:
+                            fl, fu = 2, 1.
+                        elif lb > -np.inf and ub == np.inf:
+                            fl, fu = 1., 2
+                        else:
+                            raise RuntimeError('Never get here.')
+
+                        lb = -1. if lb != 0 else 0  # if a bound was zero, 
+                        ub = 1. if ub != 0 else 0   #     it stays zero
+                        while (np.isfinite(fun(fl*fl*lb, *args)) and
+                               np.isfinite(fun(fu*fu*ub, *args))):
+                            lb = fl * lb
+                            ub = fu * ub
+
+            integral = integrate.quad(fun, lb, ub, **kwds)[0]
+        return integral / invfac
 
 
 _EULER = 0.577215664901532860606512090082402431042  # -special.psi(1)
