@@ -26,10 +26,10 @@ distdiscrete = [
     ['planck', (0.51,)],   # 4.1
     ['poisson', (0.6,)],
     ['randint', (7, 31)],
-    ['skellam', (15, 8)]]
-#    ['zipf',     (4,)] ]   # arg=4 is ok,
+    ['skellam', (15, 8)],
+    ['zipf',    (6,)]    # arg=4 is ok,
                            # Zipf broken for arg = 2, e.g. weird .stats
-                           # looking closer, mean, var should be inf for arg=2
+]                          # looking closer, mean, var should be inf for arg=2
 
 
 #@npt.dec.slow
@@ -41,7 +41,7 @@ def test_discrete_basic():
         rvs = distfn.rvs(size=2000,*arg)
         supp = np.unique(rvs)
         m, v, s, k = distfn.stats(*arg, moments='mvsk')
-        # yield npt.assert_almost_equal(rvs.mean(), m, decimal=4,err_msg='mean')
+        #yield npt.assert_almost_equal(rvs.mean(), m, decimal=4,err_msg='mean')
         # yield npt.assert_almost_equal, rvs.mean(), m, 2, 'mean' # does not work
         yield check_sample_meanvar, rvs.mean(), m, distname + ' sample mean test'
         yield check_sample_meanvar, rvs.var(), v, distname + ' sample var test'
@@ -50,21 +50,15 @@ def test_discrete_basic():
         yield check_cdf_ppf2, distfn, arg, supp, distname + ' cdf_ppf'
         yield check_pmf_cdf, distfn, arg, distname + ' pmf_cdf'
 
-        # zipf doesn't fail, but generates floating point warnings.
-        # Should be checked.
-        if not distname in ['zipf']:
-            yield check_oth, distfn, arg, distname + ' oth'
-            skurt = stats.kurtosis(rvs)
-            sskew = stats.skew(rvs)
-            yield check_sample_skew_kurt, distfn, arg, skurt, sskew, \
-                          distname + ' skew_kurt'
+        yield check_oth, distfn, arg, distname + ' oth'
+        skurt = stats.kurtosis(rvs)
+        sskew = stats.skew(rvs)
+        yield check_sample_skew_kurt, distfn, arg, skurt, sskew, \
+                      distname + ' skew_kurt'
 
-        # dlaplace doesn't fail, but generates lots of floating point warnings.
-        # Should be checked.
-        if not distname in ['dlaplace']:  # ['logser']:  #known failure, fixed
-            alpha = 0.01
-            yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
-                          distname + ' chisquare'
+        alpha = 0.01
+        yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
+                      distname + ' chisquare'
 
     seen = set()
     for distname, arg in distdiscrete:
@@ -134,7 +128,7 @@ def check_cdf_ppf(distfn,arg,msg):
 
 def check_cdf_ppf2(distfn,arg,supp,msg):
     npt.assert_array_equal(distfn.ppf(distfn.cdf(supp,*arg),*arg),
-                           supp, msg + '-roundtrip')
+                           supp, msg + '-roundtrip', verbose=True)
     npt.assert_array_equal(distfn.ppf(distfn.cdf(supp,*arg)-1e-8,*arg),
                            supp, msg + '-roundtrip')
     # -1e-8 could cause an error if pmf < 1e-8
@@ -375,5 +369,4 @@ def check_scale_docstring(distfn):
 
 
 if __name__ == "__main__":
-    # nose.run(argv=['', __file__])
     nose.runmodule(argv=[__file__,'-s'], exit=False)
