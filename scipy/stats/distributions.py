@@ -7696,7 +7696,7 @@ class boltzmann_gen(rv_discrete):
 
         boltzmann.pmf(k) = (1-exp(-lambda_)*exp(-lambda_*k)/(1-exp(-lambda_*N))
 
-    for ``k = 0,...,N-1``.
+    for ``k = 0,..., N-1``.
 
     `boltzmann` takes ``lambda_`` and ``N`` as shape parameters.
 
@@ -7803,7 +7803,7 @@ class zipf_gen(rv_discrete):
     -----
     The probability mass function for `zipf` is::
 
-        zipf.pmf(k) = 1/(zeta(a)*k**a)
+        zipf.pmf(k, a) = 1/(zeta(a)*k**a)
 
     for ``k >= 1``.
 
@@ -7819,13 +7819,13 @@ class zipf_gen(rv_discrete):
         return a > 1
 
     def _pmf(self, k, a):
-        Pk = 1.0 / asarray(special.zeta(a,1) * k**a)
+        Pk = 1.0 / special.zeta(a, 1) * k**a
         return Pk
 
     def _munp(self, n, a):
-        return special.zeta(a-n,1) / special.zeta(a,1)
+        return np.where(a > n +1, special.zeta(a-n, 1) / special.zeta(a, 1), np.nan)
 
-    def _stats(self, a):
+    def _stats_skip(self, a):
         sv = special.errprint(0)
         fac = asarray(special.zeta(a,1))
         mu = special.zeta(a-1.0,1)/fac
