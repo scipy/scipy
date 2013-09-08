@@ -59,7 +59,7 @@ distcont = [
     ['gausshyper', (13.763771604130699, 3.1189636648681431,
                     2.5145980350183019, 5.1811649903971615)],  # veryslow
     ['genexpon', (9.1325976465418908, 16.231956600590632, 3.2819552690843983)],
-    ['genextreme', (-0.1,)],  # sample mean test fails for (3.3184017469423535,)],
+    ['genextreme', (-0.1,)],
     ['gengamma', (4.4162385429431925, 3.1193091679242761)],
     ['genhalflogistic', (0.77274727809929322,)],
     ['genlogistic', (0.41192440799679475,)],
@@ -72,9 +72,9 @@ distcont = [
     ['halflogistic', ()],
     ['halfnorm', ()],
     ['hypsecant', ()],
-    ['invgamma', (2.0668996136993067,)],
+    ['invgamma', (4.0668996136993067,)],
     ['invgauss', (0.14546264555347513,)],
-    ['invweibull', (10.58,)],  # sample mean test fails at(0.58847112119264788,)]
+    ['invweibull', (10.58,)],
     ['johnsonsb', (4.3172675099141058, 3.1837781130785063)],
     ['johnsonsu', (2.554395574161155, 2.2482281679651965)],
     ['ksone', (1000,)],  # replace 22 by 100 to avoid failing range, ticket 956
@@ -91,8 +91,7 @@ distcont = [
     ['lognorm', (0.95368226960575331,)],
     ['lomax', (1.8771398388773268,)],
     ['maxwell', ()],
-    ['mielke', (10.4, 3.6)],  # sample mean test fails for (4.6420495492121487, 0.59707419545516938)],
-                             # mielke: good results if 2nd parameter >2, weird mean or var below
+    ['mielke', (10.4, 3.6)], # mielke: good results if 2nd parameter >2, weird mean or var below
     ['nakagami', (4.9673794866666237,)],
     ['ncf', (27, 27, 0.41578441799226107)],
     ['nct', (14, 0.24045031331198066)],
@@ -121,6 +120,17 @@ distcont = [
     ['weibull_max', (2.8687961709100187,)],
     ['weibull_min', (1.7866166930421596,)],
     ['wrapcauchy', (0.031071279018614728,)]]
+
+distcont_extra = [
+    ['betaprime', (100, 86)],
+    ['fatiguelife', (5,)],
+    ['mielke', (4.6420495492121487, 0.59707419545516938)],
+    ['invweibull', (0.58847112119264788,)],
+    # burr: sample mean test fails still for c<1
+    #['burr', (0.94839838075366045, 4.3820284068855795)],
+    # genextreme: sample mean test, sf-logsf test fail
+    #['genextreme', (3.3184017469423535,)],
+]
 
 # for testing only specific functions
 # distcont = [
@@ -172,7 +182,7 @@ def _silence_fp_errors(func):
 
 def test_cont_basic():
     # this test skips slow distributions
-    for distname, arg in distcont[:]:
+    for distname, arg in distcont[:] + distcont_extra[:]:
         if distname in distslow:
             continue
         distfn = getattr(stats, distname)
@@ -183,14 +193,19 @@ def test_cont_basic():
         sv = rvs.var()
         skurt = stats.kurtosis(rvs)
         sskew = stats.skew(rvs)
-        m,v = distfn.stats(*arg)
+        if (distfn._stats != stats.rv_continuous._stats or 
+            distfn._munp != stats.rv_continuous._munp):
+            m, v, s, k = distfn.stats(*arg, moments='mvsk')
+        else:
+            m, v = distfn.stats(*arg, moments='mv')
+            s = k = np.nan   # do not check them 
 
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
         # the sample skew kurtosis test has known failures, not very good distance measure
         # yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
         yield check_normalization, distfn, arg, distname
-        yield check_moment, distfn, arg, m, v, distname
+        yield check_moment, distfn, arg, m, v, s, k, distname
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
         yield check_pdf, distfn, arg, distname
@@ -227,12 +242,19 @@ def test_cont_basic_slow():
         sv = rvs.var()
         skurt = stats.kurtosis(rvs)
         sskew = stats.skew(rvs)
-        m,v = distfn.stats(*arg)
+        if (distfn._stats != stats.rv_continuous._stats or 
+            distfn._munp != stats.rv_continuous._munp):
+            m, v, s, k = distfn.stats(*arg, moments='mvsk')
+        else:
+            m, v = distfn.stats(*arg, moments='mv')
+            s = k = np.nan   # do not check them 
+
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
         # the sample skew kurtosis test has known failures, not very good distance measure
-        # yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
-        yield check_moment, distfn, arg, m, v, distname
+        #yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
+        yield check_normalization, distfn, arg, distname
+        yield check_moment, distfn, arg, m, v, s, k, distname
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
         yield check_pdf, distfn, arg, distname
@@ -256,9 +278,9 @@ def test_cont_basic_slow():
         yield check_named_args, distfn, x, arg, locscale_defaults, meths
 
 
-def check_moment(distfn, arg, m, v, msg):
-    m1 = distfn.moment(1,*arg)
-    m2 = distfn.moment(2,*arg)
+def check_moment(distfn, arg, m, v, s, k, msg):
+    m1 = distfn.moment(1, *arg)
+    m2 = distfn.moment(2, *arg)
     if not np.isinf(m):
         npt.assert_almost_equal(m1, m, decimal=10, err_msg=msg +
                             ' - 1st moment')
@@ -271,6 +293,19 @@ def check_moment(distfn, arg, m, v, msg):
     else:                     # or np.isnan(m2),
         npt.assert_(np.isinf(m2),
                msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
+
+    # skew / kurtosis
+    if not np.isnan(s):
+        m2e = distfn.expect(lambda x: np.power(x - m1, 2), arg)
+        if np.isfinite(m2e):
+            m3e = distfn.expect(lambda x: np.power(x - m1, 3), arg)
+            npt.assert_allclose(m3e, s * np.power(m2e, 1.5),
+                        atol=1e-7, rtol=1e-7)
+
+        if not np.isnan(k) and np.isfinite(m2e):
+            m4e = distfn.expect(lambda x: np.power(x - m1, 4), arg)
+            npt.assert_allclose(m4e, (k+3.) * m2e**2,
+                        atol=1e-7, rtol=1e-7)
 
 
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):

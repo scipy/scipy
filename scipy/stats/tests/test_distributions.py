@@ -513,6 +513,23 @@ class TestZipf(TestCase):
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
+    def test_moments(self):
+        # n-th raw moment only exists for a>n+1
+        z = stats.zipf(1.5)
+        m, v, s, k = z.stats(moments='mvsk')
+        assert_(not np.isfinite(m))
+        assert_(not np.isfinite(v))
+        assert_(not np.isfinite(s))
+        assert_(not np.isfinite(k))
+
+        z = stats.zipf(3.5)
+        m, v, s, k = z.stats(moments='mvsk')
+        assert_(np.isfinite(m))
+        assert_(np.isfinite(v))
+        assert_(not np.isfinite(s))
+        assert_(not np.isfinite(k))
+
+
 
 class TestDLaplace(TestCase):
     def test_rvs(self):

@@ -131,6 +131,34 @@ def test_rdist_cdf_gh1285():
     npt.assert_almost_equal(distfn.cdf(distfn.ppf(values, 541.0), 541.0),
                             values, decimal=5)
 
+def test_invgamma_inf_gh_1866():
+    # invgamma's moments are only finite for a>n
+    m, v, s, k = stats.invgamma.stats(a=1.1, moments='mvsk')
+    npt.assert_(np.isfinite(m))
+    npt.assert_(not np.isfinite(v))
+    npt.assert_(not np.isfinite(s))
+    npt.assert_(not np.isfinite(k))
+
+    m, v, s, k = stats.invgamma.stats(a=3.1, moments='mvsk')
+    npt.assert_(np.isfinite(m))
+    npt.assert_(np.isfinite(v))
+    npt.assert_(np.isfinite(s))
+    npt.assert_(not np.isfinite(k))
+
+def test_nct_inf_moments():
+    # n-th moment of nct only exists for df > n
+    m, v, s, k = stats.nct.stats(df=1.9, nc = 0.3, moments='mvsk')
+    npt.assert_(np.isfinite(m))
+    npt.assert_(not np.isfinite(v))
+    npt.assert_(not np.isfinite(s))
+    npt.assert_(not np.isfinite(k))
+
+    m, v, s, k = stats.nct.stats(df=3.1, nc = 0.3, moments='mvsk')
+    npt.assert_(np.isfinite(m))
+    npt.assert_(np.isfinite(v))
+    npt.assert_(np.isfinite(s))
+    npt.assert_(not np.isfinite(k))
+
 
 if __name__ == "__main__":
     npt.run_module_suite()

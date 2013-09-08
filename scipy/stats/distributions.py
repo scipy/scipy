@@ -372,27 +372,27 @@ def _moment_from_stats(n, mu, mu2, g1, g2, moment_func, args):
         return 1.0
     elif (n == 1):
         if mu is None:
-            val = moment_func(1,*args)
+            val = moment_func(1, *args)
         else:
             val = mu
     elif (n == 2):
         if mu2 is None or mu is None:
-            val = moment_func(2,*args)
+            val = moment_func(2, *args)
         else:
             val = mu2 + mu*mu
     elif (n == 3):
         if g1 is None or mu2 is None or mu is None:
-            val = moment_func(3,*args)
+            val = moment_func(3, *args)
         else:
             mu3 = g1 * np.power(mu2, 1.5)  # 3rd central moment
-            val = mu3+3*mu*mu2+mu*mu*mu  # 3rd non-central moment
+            val = mu3 + 3*mu*mu2 + mu*mu*mu  # 3rd non-central moment
     elif (n == 4):
         if g1 is None or g2 is None or mu2 is None or mu is None:
-            val = moment_func(4,*args)
+            val = moment_func(4, *args)
         else:
-            mu4 = (g2+3.0)*(mu2**2.0)  # 4th central moment
+            mu4 = (g2 + 3.0) * (mu2**2.0)  # 4th central moment
             mu3 = g1*np.power(mu2, 1.5)  # 3rd central moment
-            val = mu4+4*mu*mu3+6*mu*mu*mu2+mu*mu*mu*mu
+            val = mu4 + 4*mu*mu3 + 6*mu*mu*mu2 + mu*mu*mu*mu
     else:
         val = moment_func(n, *args)
 
@@ -1076,7 +1076,7 @@ class rv_continuous(rv_generic):
             self.generic_moment = vectorize(self._mom0_sc, otypes='d')
         else:
             self.generic_moment = vectorize(self._mom1_sc, otypes='d')
-        self.generic_moment.nin = self.numargs+1  # Because of the *args argument
+        self.generic_moment.nin = self.numargs + 1  # Because of the *args argument
         # of _mom0_sc, vectorize cannot count the number of arguments correctly.
 
         if longname is None:
@@ -1593,13 +1593,13 @@ class rv_continuous(rv_generic):
 
         signature = inspect.getargspec(get_method_function(self._stats))
         if (signature[2] is not None) or ('moments' in signature[0]):
-            mu, mu2, g1, g2 = self._stats(*args,**{'moments':moments})
+            mu, mu2, g1, g2 = self._stats(*args, **{'moments': moments})
         else:
             mu, mu2, g1, g2 = self._stats(*args)
         if g1 is None:
             mu3 = None
         else:
-            mu3 = g1*np.power(mu2,1.5)  # (mu2**1.5) breaks down for nan and inf
+            mu3 = g1*np.power(mu2, 1.5)  # (mu2**1.5) breaks down for nan and inf
         default = valarray(shape(cond), self.badvalue)
         output = []
 
@@ -1629,11 +1629,11 @@ class rv_continuous(rv_generic):
 
             if 's' in moments:
                 if g1 is None:
-                    mu3p = self._munp(3.0,*goodargs)
+                    mu3p = self._munp(3, *goodargs)
                     if mu is None:
-                        mu = self._munp(1.0,*goodargs)
+                        mu = self._munp(1, *goodargs)
                     if mu2 is None:
-                        mu2p = self._munp(2.0,*goodargs)
+                        mu2p = self._munp(2, *goodargs)
                         mu2 = mu2p - mu*mu
                     mu3 = mu3p - 3*mu*mu2 - mu**3
                     g1 = mu3 / np.power(mu2, 1.5)
@@ -1695,10 +1695,10 @@ class rv_continuous(rv_generic):
         if (n > 0) and (n < 5):
             signature = inspect.getargspec(get_method_function(self._stats))
             if (signature[2] is not None) or ('moments' in signature[0]):
-                mdict = {'moments':{1:'m',2:'v',3:'vs',4:'vk'}[n]}
+                mdict = {'moments':{1:'m', 2:'v', 3:'vs', 4:'vk'}[n]}
             else:
                 mdict = {}
-            mu, mu2, g1, g2 = self._stats(*args,**mdict)
+            mu, mu2, g1, g2 = self._stats(*args, **mdict)
         val = _moment_from_stats(n, mu, mu2, g1, g2, self._munp, args)
 
         # Convert to transformed  X = L + S*Y
@@ -2568,7 +2568,7 @@ class betaprime_gen(rv_continuous):
                                                     * (b-2.0)*(b-1.0)), inf)
         else:
             raise NotImplementedError
-betaprime = betaprime_gen(a=0.0, b=500.0, name='betaprime')
+betaprime = betaprime_gen(a=0.0, name='betaprime')
 
 
 class bradford_gen(rv_continuous):
@@ -2646,31 +2646,12 @@ class burr_gen(rv_continuous):
     def _ppf(self, q, c, d):
         return (q**(-1.0/d)-1)**(-1.0/c)
 
-    def _stats(self, c, d, moments='mv'):
-        g2c, g2cd = gam(1-2.0/c), gam(2.0/c+d)
-        g1c, g1cd = gam(1-1.0/c), gam(1.0/c+d)
-        gd = gam(d)
-        k = gd*g2c*g2cd - g1c**2 * g1cd**2
-        mu = g1c*g1cd / gd
-        mu2 = k / gd**2.0
-        g1, g2 = None, None
-        g3c, g3cd = None, None
-        if 's' in moments:
-            g3c, g3cd = gam(1-3.0/c), gam(3.0/c+d)
-            g1 = 2*g1c**3 * g1cd**3 + gd*gd*g3c*g3cd - 3*gd*g2c*g1c*g1cd*g2cd
-            g1 /= sqrt(k**3)
-        if 'k' in moments:
-            if g3c is None:
-                g3c = gam(1-3.0/c)
-            if g3cd is None:
-                g3cd = gam(3.0/c+d)
-            g4c, g4cd = gam(1-4.0/c), gam(4.0/c+d)
-            g2 = 6*gd*g2c*g2cd * g1c**2 * g1cd**2 + gd**3 * g4c*g4cd
-            g2 -= 3*g1c**4 * g1cd**4 - 4*gd**2*g3c*g1c*g1cd*g3cd
-        return mu, mu2, g1, g2
+    def _munp(self, n, c, d):
+        nc = 1.*n/c
+        return d * special.beta(1.0 - nc, d + nc)
 burr = burr_gen(a=0.0, name='burr')
 
-#XXX: cf PR #2552
+
 class fisk_gen(burr_gen):
     """A Fisk continuous random variable.
 
@@ -2695,8 +2676,8 @@ class fisk_gen(burr_gen):
     def _ppf(self, x, c):
         return burr_gen._ppf(self, x, c, 1.0)
 
-    def _stats(self, c):
-        return burr_gen._stats(self, c, 1.0)
+    def _munp(self, n, c):
+        return burr_gen._munp(self, n, c, 1.0)
 
     def _entropy(self, c):
         return 2 - log(c)
@@ -2946,9 +2927,8 @@ class dweibull_gen(rv_continuous):
         fac = pow(asarray(log(1.0/fac)),1.0/c)
         return where(q > 0.5,fac,-fac)
 
-    def _stats(self, c):
-        var = gam(1+2.0/c)
-        return 0.0, var, 0.0, gam(1+4.0/c)/var
+    def _munp(self, n, c):
+        return (1 - n%2) * special.gamma(1.0 + 1.0*n/c)
 dweibull = dweibull_gen(name='dweibull')
 
 
@@ -3116,12 +3096,14 @@ class fatiguelife_gen(rv_continuous):
         return 0.25*(tmp + sqrt(tmp**2 + 4))**2
 
     def _stats(self, c):
+        # kurtosis: wikipedia errs? 40 vs 41
+        # cf eg unalmed.edu.co/~estadist/seminario/conf_victor.pdf
         c2 = c*c
-        mu = c2 / 2.0 + 1
-        den = 5*c2 + 4
+        mu = c2 / 2.0 + 1.0
+        den = 5.0*c2 + 4.0
         mu2 = c2*den / 4.0
-        g1 = 4*c*sqrt(11*c2+6.0)/np.power(den, 1.5)
-        g2 = 6*c2*(93*c2+41.0) / den**2.0
+        g1 = 4*c*(11*c2+6.0)/np.power(den, 1.5)
+        g2 = 6*c2*(93*c2+40.0) / den**2.0
         return mu, mu2, g1, g2
 fatiguelife = fatiguelife_gen(a=0.0, name='fatiguelife')
 
@@ -3199,13 +3181,18 @@ class f_gen(rv_continuous):
     def _stats(self, dfn, dfd):
         v2 = asarray(dfd*1.0)
         v1 = asarray(dfn*1.0)
-        mu = where(v2 > 2, v2 / asarray(v2 - 2), inf)
-        mu2 = 2*v2*v2*(v2+v1-2)/(v1*(v2-2)**2 * (v2-4))
-        mu2 = where(v2 > 4, mu2, inf)
-        g1 = 2*(v2+2*v1-2)/(v2-6)*sqrt((2*v2-4)/(v1*(v2+v1-2)))
-        g1 = where(v2 > 6, g1, nan)
-        g2 = 3/(2*v2-16)*(8+g1*g1*(v2-6))
-        g2 = where(v2 > 8, g2, nan)
+        _v22 = v2 / (v2 - 2)
+        mu = np.where(v2 > 2, _v22, np.inf)
+        mu2 = np.where(v2 > 4, 
+            2*(v2+v1-2)*_v22**2 / v1 / (v2-4),
+            np.inf)
+        _v122 = v1 + v2 -2.
+        g1 = where(v2 > 6, 
+            2 * (v1 + _v122) / (v2-6) * sqrt((2*v2-8) / (v1*_v122)),
+            np.nan)
+        g2 = where(v2 > 8, 
+            3. / (2*v2-16) * (8+g1*g1*(v2-6)), 
+            nan)
         return mu, mu2, g1, g2
 f = f_gen(a=0.0, name='f')
 
@@ -4213,7 +4200,7 @@ class invgamma_gen(rv_continuous):
         return 1.0/special.gammaincinv(a,1-q)
 
     def _munp(self, n, a):
-        return exp(gamln(a-n) - gamln(a))
+        return np.where(a > n, exp(gamln(a-n) - gamln(a)), np.nan)
 
     def _entropy(self, a):
         return a - (a+1.0)*special.psi(a) + gamln(a)
@@ -4608,7 +4595,6 @@ class loggamma_gen(rv_continuous):
         skewness = special.polygamma(2, c) / np.power(var, 1.5)
         excess_kurtosis = special.polygamma(3, c) / (var*var)
         return mean, var, skewness, excess_kurtosis
-
 loggamma = loggamma_gen(name='loggamma')
 
 
@@ -4921,7 +4907,7 @@ class ncf_gen(rv_continuous):
 
     """
     def _rvs(self, dfn, dfd, nc):
-        return mtrand.noncentral_f(dfn,dfd,nc,self._size)
+        return mtrand.noncentral_f(dfn, dfd, nc, self._size)
 
     def _pdf_skip(self, x, dfn, dfd, nc):
         n1,n2 = dfn, dfd
@@ -4936,19 +4922,56 @@ class ncf_gen(rv_continuous):
          #   drop it for now, the generic function seems to work ok
 
     def _cdf(self, x, dfn, dfd, nc):
-        return special.ncfdtr(dfn,dfd,nc,x)
+        return special.ncfdtr(dfn, dfd, nc, x)
 
     def _ppf(self, q, dfn, dfd, nc):
         return special.ncfdtri(dfn, dfd, nc, q)
-
+    
     def _munp(self, n, dfn, dfd, nc):
-        val = (dfn * 1.0/dfd)**n
-        term = gamln(n+0.5*dfn) + gamln(0.5*dfd-n) - gamln(dfd*0.5)
-        val *= exp(-nc / 2.0+term)
-        val *= special.hyp1f1(n+0.5*dfn, 0.5*dfn, 0.5*nc)
-        return val
+        # these formulas are from 
+        # P.B. Patnaik, 'The non-central chisquare and F-distributions and 
+        #  their applications', Biometrika 36, 202-232, 1949.
+        # doi:10.1093/biomet/36.1-2.202
+        #
+        # FIXME: mvs seem to agree to boost, which just implements
+        # explicit formulas for mvsk (not moments!) copy-pasted from the 
+        # Mathematica online docs.
+        # Don't have Mathematica to check, but here it is:
+        # mvs agrees, but kurtosis (kurtosis_excess in boost-speak)
+        # is off-by-three. THREE. Wrong way.
+        # an err in Mathematica? or an overflow? 
+        #
+        drat = (1.*dfd/dfn)
+        dnc = dfn + nc
+        
+        if (n==1):
+            return np.where(dfd > 2,  drat * (dnc) / (dfd -2.), np.nan)
+        elif (n==2):
+            m2 = (dnc)**2 + 2.*(dfn + 2.*nc)
+            m2 /= (dfd - 2.) * (dfd - 4.)
+            m2 *= drat**2
+            return np.where(dfd > 4, m2, np.nan)
+        elif (n==3):
+            m3 = dnc**3 + 6.*dnc*(dfn+2.*nc) + 8.*(dfn+3.*nc)
+            m3 /= (dfd-2.) * (dfd-4.) *(dfd-6.)
+            m3 *= drat**3
+            return np.where(dfd > 6, m3, np.nan)
+        elif (n==4):
+            m4 = dnc**4 + 12.*(dfn+2.*nc)*dnc**2 + 44.*(dfn+2.*nc)**2
+            m4 += 48.*(dfn+4.*nc) - 32.*nc**2
+            m4 /= (dfd-2.) * (dfd-4.) * (dfd-6.) * (dfd-8.)
+            m4 *= drat**4
+            return np.where(dfd > 8, m4, np.nan)
+        else:
+            # explicit formula from
+            # http://reference.wolfram.com/mathematica/ref/NoncentralFRatioDistribution.html
+            #
+            val = gam(0.5*dfn + n) * gam(0.5*dfd -n ) / gam(0.5*dfd) / gam(0.5*dfn)
+            val *= (dfd * 1.0/dfn)**n
+            val *= special.hyp1f1(-n, 0.5*dfn, -0.5*nc)
+            return val
 
-    def _stats(self, dfn, dfd, nc):
+    def _stats_skip(self, dfn, dfd, nc):
         mu = where(dfd <= 2, inf, dfd / (dfd-2.0)*(1+nc*1.0/dfn))
         mu2 = where(dfd <= 4, inf, 2*(dfd*1.0/dfn)**2.0 *
                     ((dfn+nc/2.0)**2.0 + (dfn+nc)*(dfd-2.0)) /
@@ -5058,31 +5081,41 @@ class nct_gen(rv_continuous):
         return special.nctdtrit(df, nc, q)
 
     def _stats(self, df, nc, moments='mv'):
+        #
+        # See D. Hogben, R.S. Pinkham, and M.B. Wilk,
+        # 'The moments of the non-central t-distribution'
+        # Biometrika 48, p. 465 (2961).
+        # e.g. http://www.jstor.org/stable/2332772 (gated)
+        #
         mu, mu2, g1, g2 = None, None, None, None
-        val1 = gam((df-1.0)/2.0)
-        val2 = gam(df/2.0)
-        if 'm' in moments:
-            mu = nc*sqrt(df/2.0)*val1/val2
-        if 'v' in moments:
-            var = (nc*nc+1.0)*df/(df-2.0)
-            var -= nc*nc*df * val1**2 / 2.0 / val2**2
-            mu2 = var
+        
+        gfac = gam(df/2.-0.5) / gam(df/2.)
+        c11 = sqrt(df/2.) * gfac
+        c20 = df / (df-2.)
+        c22 = c20 - c11*c11
+        mu = np.where(df > 1, nc*c11, np.nan)
+        mu2 = np.where(df > 2, c22*nc*nc + c20, np.nan)
+
         if 's' in moments:
-            g1n = 2*nc*sqrt(df)*val1*((nc*nc*(2*df-7)-3)*val2**2
-                                      - nc*nc*(df-2)*(df-3)*val1**2)
-            g1d = (df-3)*sqrt(2*df*(nc*nc+1)/(df-2) -
-                              nc*nc*df*(val1/val2)**2) * val2 * \
-                              (nc*nc*(df-2)*val1**2 -
-                               2*(nc*nc+1)*val2**2)
-            g1 = g1n/g1d
+            c33t = df * (7.-2.*df) / (df-2.) / (df-3.) + 2.*c11*c11
+            c31t = 3.*df / (df-2.) / (df-3.)
+            mu3 = (c33t*nc*nc + c31t) * c11*nc
+            g1 = np.where(df > 3, mu3 / np.power(mu2, 1.5), 
+                                  np.nan)
+
+        #kurtosis
         if 'k' in moments:
-            g2n = 2*(-3*nc**4*(df-2)**2 * (df-3) * (df-4)*val1**4 +
-                     2**(6-2*df) * nc*nc*(df-2)*(df-4) *
-                     (nc*nc*(2*df-7)-3)*pi*gam(df+1)**2 -
-                     4*(nc**4*(df-5)-6*nc*nc-3)*(df-3)*val2**4)
-            g2d = (df-3)*(df-4)*(nc*nc*(df-2)*val1**2 -
-                                 2*(nc*nc+1)*val2)**2
-            g2 = g2n / g2d
+            c44 = df*df / (df-2.) / (df-4.)
+            c44 -= c11*c11 * 2.*df*(5.-df) / (df-2.) / (df-3.)
+            c44 -= 3.*c11**4
+            c42 = df / (df-4.) - c11*c11 * (df-1.) / (df-3.)
+            c42 *= 6.*df / (df-2.)
+            c40 = 3.*df*df / (df-2.) / (df-4.)
+            
+            mu4 = c44 * nc**4 + c42*nc**2 + c40   
+            g2 = np.where(df > 4, mu4/mu2**2 - 3., 
+                                  np.nan)
+        
         return mu, mu2, g1, g2
 nct = nct_gen(name="nct")
 
@@ -5444,11 +5477,11 @@ class rdist_gen(rv_continuous):
         # background.
         if any(np.isnan(res)):
             return rv_continuous._cdf(self, x, c)
-
         return res
 
     def _munp(self, n, c):
-        return (1 - (n % 2)) * special.beta((n + 1.0) / 2, c / 2.0)
+        numerator = (1 - (n % 2)) * special.beta((n + 1.0) / 2, c / 2.0) 
+        return numerator / special.beta(1./2, c/2.)
 rdist = rdist_gen(a=-1.0, b=1.0, name="rdist")
 
 
@@ -6891,7 +6924,7 @@ class rv_discrete(rv_generic):
 
         signature = inspect.getargspec(get_method_function(self._stats))
         if (signature[2] is not None) or ('moments' in signature[0]):
-            mu, mu2, g1, g2 = self._stats(*args,**{'moments':moments})
+            mu, mu2, g1, g2 = self._stats(*args, **{'moments':moments})
         else:
             mu, mu2, g1, g2 = self._stats(*args)
         if g1 is None:
@@ -6907,28 +6940,28 @@ class rv_discrete(rv_generic):
 
         if 'm' in moments:
             if mu is None:
-                mu = self._munp(1.0,*goodargs)
+                mu = self._munp(1, *goodargs)
             out0 = default.copy()
-            place(out0,cond,mu+loc)
+            place(out0, cond, mu + loc)
             output.append(out0)
 
         if 'v' in moments:
             if mu2 is None:
-                mu2p = self._munp(2.0,*goodargs)
+                mu2p = self._munp(2, *goodargs)
                 if mu is None:
-                    mu = self._munp(1.0,*goodargs)
+                    mu = self._munp(1, *goodargs)
                 mu2 = mu2p - mu*mu
             out0 = default.copy()
-            place(out0,cond,mu2)
+            place(out0, cond, mu2)
             output.append(out0)
 
         if 's' in moments:
             if g1 is None:
-                mu3p = self._munp(3.0,*goodargs)
+                mu3p = self._munp(3.0, *goodargs)
                 if mu is None:
-                    mu = self._munp(1.0,*goodargs)
+                    mu = self._munp(1.0, *goodargs)
                 if mu2 is None:
-                    mu2p = self._munp(2.0,*goodargs)
+                    mu2p = self._munp(2.0, *goodargs)
                     mu2 = mu2p - mu*mu
                 mu3 = mu3p - 3*mu*mu2 - mu**3
                 g1 = mu3 / np.power(mu2, 1.5)
@@ -6938,19 +6971,19 @@ class rv_discrete(rv_generic):
 
         if 'k' in moments:
             if g2 is None:
-                mu4p = self._munp(4.0,*goodargs)
+                mu4p = self._munp(4.0, *goodargs)
                 if mu is None:
-                    mu = self._munp(1.0,*goodargs)
+                    mu = self._munp(1.0, *goodargs)
                 if mu2 is None:
-                    mu2p = self._munp(2.0,*goodargs)
+                    mu2p = self._munp(2.0, *goodargs)
                     mu2 = mu2p - mu*mu
                 if mu3 is None:
-                    mu3p = self._munp(3.0,*goodargs)
+                    mu3p = self._munp(3.0, *goodargs)
                     mu3 = mu3p - 3*mu*mu2 - mu**3
                 mu4 = mu4p - 4*mu*mu3 - 6*mu*mu*mu2 - mu**4
                 g2 = mu4 / mu2**2.0 - 3.0
             out0 = default.copy()
-            place(out0,cond,g2)
+            place(out0, cond, g2)
             output.append(out0)
 
         if len(output) == 1:
@@ -7457,22 +7490,17 @@ class hypergeom_gen(rv_discrete):
         return exp(self._logpmf(k, M, n, N))
 
     def _stats(self, M, n, N):
-        tot, good = M, n
-        n = good*1.0
-        m = (tot-good)*1.0
-        N = N*1.0
-        tot = m+n
-        p = n/tot
+        M, n, N = 1.*M, 1.*n, 1.*N
+        m = M - n
+        p = n/M
         mu = N*p
-        var = m*n*N*(tot-N)*1.0/(tot*tot*(tot-1))
-        g1 = (m - n)*(tot-2*N) / (tot-2.0)*sqrt((tot-1.0)/(m*n*N*(tot-N)))
-        m2, m3, m4, m5 = m**2, m**3, m**4, m**5
-        n2, n3, n4, n5 = n**2, n**2, n**4, n**5
-        g2 = m3 - m5 + n*(3*m2-6*m3+m4) + 3*m*n2 - 12*m2*n2 + 8*m3*n2 + n3 \
-             - 6*m*n3 + 8*m2*n3 + m*n4 - n5 - 6*m3*N + 6*m4*N + 18*m2*n*N \
-             - 6*m3*n*N + 18*m*n2*N - 24*m2*n2*N - 6*n3*N - 6*m*n3*N \
-             + 6*n4*N + N*N*(6*m2 - 6*m3 - 24*m*n + 12*m2*n + 6*n2 +
-                             12*m*n2 - 6*n3)
+        var = m*n*N*(M - N)*1.0/(M*M*(M-1))
+        g1 = (m - n)*(M-2*N) / (M-2.0) * sqrt((M-1.0) / (m*n*N*(M-N)))
+
+        g2 = M*(M+1) - 6.*N*(M-N) - 6.*n*m
+        g2 *= (M-1)*M*M
+        g2 += 6.*n*N*(M-N)*m*(5.*M-6)
+        g2 /= n * N * (M-N) * m * (M-2.) * (M-3.)
         return mu, var, g1, g2
 
     def _entropy(self, M, n, N):
@@ -7663,7 +7691,7 @@ class boltzmann_gen(rv_discrete):
 
         boltzmann.pmf(k) = (1-exp(-lambda_)*exp(-lambda_*k)/(1-exp(-lambda_*N))
 
-    for ``k = 0,...,N-1``.
+    for ``k = 0,..., N-1``.
 
     `boltzmann` takes ``lambda_`` and ``N`` as shape parameters.
 
@@ -7710,9 +7738,9 @@ class randint_gen(rv_discrete):
     -----
     The probability mass function for `randint` is::
 
-        randint.pmf(k) = 1./(max- min)
+        randint.pmf(k) = 1./(max - min)
 
-    for ``k = min,...,max``.
+    for ``k = min, ..., max-1``.
 
     `randint` takes ``min`` and ``max`` as shape parameters.
 
@@ -7744,7 +7772,7 @@ class randint_gen(rv_discrete):
         d = m2 - m1
         var = (d-1)*(d+1.0)/12.0
         g1 = 0.0
-        g2 = -6.0/5.0*(d*d+1.0)/(d-1.0)*(d+1.0)
+        g2 = -6.0/5.0*(d*d+1.0)/(d*d-1.0)
         return mu, var, g1, g2
 
     def _rvs(self, min, max=None):
@@ -7770,7 +7798,7 @@ class zipf_gen(rv_discrete):
     -----
     The probability mass function for `zipf` is::
 
-        zipf.pmf(k) = 1/(zeta(a)*k**a)
+        zipf.pmf(k, a) = 1/(zeta(a)*k**a)
 
     for ``k >= 1``.
 
@@ -7786,13 +7814,13 @@ class zipf_gen(rv_discrete):
         return a > 1
 
     def _pmf(self, k, a):
-        Pk = 1.0 / asarray(special.zeta(a,1) * k**a)
+        Pk = 1.0 / special.zeta(a, 1) * k**a
         return Pk
 
     def _munp(self, n, a):
-        return special.zeta(a-n,1) / special.zeta(a,1)
+        return np.where(a > n +1, special.zeta(a-n, 1) / special.zeta(a, 1), np.nan)
 
-    def _stats(self, a):
+    def _stats_skip(self, a):
         sv = special.errprint(0)
         fac = asarray(special.zeta(a,1))
         mu = special.zeta(a-1.0,1)/fac

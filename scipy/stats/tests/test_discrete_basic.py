@@ -26,10 +26,10 @@ distdiscrete = [
     ['planck', (0.51,)],   # 4.1
     ['poisson', (0.6,)],
     ['randint', (7, 31)],
-    ['skellam', (15, 8)]]
-#    ['zipf',     (4,)] ]   # arg=4 is ok,
+    ['skellam', (15, 8)],
+    ['zipf',    (6,)]    # arg=4 is ok,
                            # Zipf broken for arg = 2, e.g. weird .stats
-                           # looking closer, mean, var should be inf for arg=2
+]                          # looking closer, mean, var should be inf for arg=2
 
 
 #@npt.dec.slow
@@ -40,30 +40,26 @@ def test_discrete_basic():
         np.random.seed(9765456)
         rvs = distfn.rvs(size=2000,*arg)
         supp = np.unique(rvs)
-        m,v = distfn.stats(*arg)
-        # yield npt.assert_almost_equal(rvs.mean(), m, decimal=4,err_msg='mean')
+        m, v, s, k = distfn.stats(*arg, moments='mvsk')
+        #yield npt.assert_almost_equal(rvs.mean(), m, decimal=4,err_msg='mean')
         # yield npt.assert_almost_equal, rvs.mean(), m, 2, 'mean' # does not work
+        yield check_normalization, distfn, arg, distname
         yield check_sample_meanvar, rvs.mean(), m, distname + ' sample mean test'
         yield check_sample_meanvar, rvs.var(), v, distname + ' sample var test'
+        yield check_moment, distfn, arg, m, v, s, k, distname
         yield check_cdf_ppf, distfn, arg, distname + ' cdf_ppf'
         yield check_cdf_ppf2, distfn, arg, supp, distname + ' cdf_ppf'
         yield check_pmf_cdf, distfn, arg, distname + ' pmf_cdf'
 
-        # zipf doesn't fail, but generates floating point warnings.
-        # Should be checked.
-        if not distname in ['zipf']:
-            yield check_oth, distfn, arg, distname + ' oth'
-            skurt = stats.kurtosis(rvs)
-            sskew = stats.skew(rvs)
-            yield check_sample_skew_kurt, distfn, arg, skurt, sskew, \
-                          distname + ' skew_kurt'
+        yield check_oth, distfn, arg, distname + ' oth'
+        skurt = stats.kurtosis(rvs)
+        sskew = stats.skew(rvs)
+        yield check_sample_skew_kurt, distfn, arg, skurt, sskew, \
+                      distname + ' skew_kurt'
 
-        # dlaplace doesn't fail, but generates lots of floating point warnings.
-        # Should be checked.
-        if not distname in ['dlaplace']:  # ['logser']:  #known failure, fixed
-            alpha = 0.01
-            yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
-                          distname + ' chisquare'
+        alpha = 0.01
+        yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
+                      distname + ' chisquare'
 
     seen = set()
     for distname, arg in distdiscrete:
@@ -133,7 +129,7 @@ def check_cdf_ppf(distfn,arg,msg):
 
 def check_cdf_ppf2(distfn,arg,supp,msg):
     npt.assert_array_equal(distfn.ppf(distfn.cdf(supp,*arg),*arg),
-                           supp, msg + '-roundtrip')
+                           supp, msg + '-roundtrip', verbose=True)
     npt.assert_array_equal(distfn.ppf(distfn.cdf(supp,*arg)-1e-8,*arg),
                            supp, msg + '-roundtrip')
     # -1e-8 could cause an error if pmf < 1e-8
@@ -167,14 +163,36 @@ def check_pmf_cdf(distfn, arg, msg):
                             decimal=4, err_msg=msg + 'pmf-cdf')
 
 
-def check_generic_moment(distfn, arg, m, k, decim):
-    npt.assert_almost_equal(distfn.generic_moment(k,*arg), m, decimal=decim,
-                            err_msg=str(distfn) + ' generic moment test')
+def check_moment(distfn, arg, m, v, s, k, msg):
+    m1 = distfn.moment(1, *arg)
+    m2 = distfn.moment(2, *arg)
+    if not np.isinf(m):
+        npt.assert_almost_equal(m1, m, decimal=10, err_msg=msg +
+                            ' - 1st moment')
+    else:                     # or np.isnan(m1),
+        npt.assert_(np.isinf(m1),
+               msg + ' - 1st moment -infinite, m1=%s' % str(m1))
+        # np.isnan(m1) temporary special treatment for loggamma
+    if not np.isinf(v):
+        npt.assert_almost_equal(m2-m1*m1, v, decimal=10, err_msg=msg +
+                            ' - 2ndt moment')
+    else:                     # or np.isnan(m2),
+        npt.assert_(np.isinf(m2),
+               msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
+        # np.isnan(m2) temporary special treatment for loggamma
 
+    # skew / kurtosis
+    if not np.isnan(s):
+        m2e = distfn.expect(lambda x: np.power(x - m1, 2), arg)
+        if np.isfinite(m2e):
+            m3e = distfn.expect(lambda x: np.power(x - m1, 3), arg)
+            npt.assert_allclose(m3e, s * np.power(m2e, 1.5),
+                        atol=1e-7, rtol=1e-7)
 
-def check_moment_frozen(distfn, arg, m, k, decim):
-    npt.assert_almost_equal(distfn(*arg).moment(k), m, decimal=decim,
-                            err_msg=str(distfn) + ' frozen moment test')
+        if not np.isnan(k) and np.isfinite(m2e):
+            m4e = distfn.expect(lambda x: np.power(x - m1, 4), arg)
+            npt.assert_allclose(m4e, (k+3.) * m2e**2,
+                        atol=1e-7, rtol=1e-7)
 
 
 def check_oth(distfn, arg, msg):
@@ -297,6 +315,19 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
            ' at arg = %s with pval = %s' % (msg,str(arg),str(pval)))
 
 
+# this is a copy-paste from test_discrete_basic; FIXME
+def check_normalization(distfn, args, distname):
+    norm_moment = distfn.moment(0, *args)
+    npt.assert_allclose(norm_moment, 1.0)
+
+    norm_expect = distfn.expect(lambda x: 1, args=args)
+    npt.assert_allclose(norm_expect, 1.0, atol=1e-7, rtol=1e-7,
+            err_msg=distname, verbose=True)
+
+    norm_cdf = distfn.cdf(distfn.b, *args)
+    npt.assert_allclose(norm_cdf, 1.0)
+
+
 def check_named_args(distfn, x, shape_args, defaults, meths):
     """Check calling w/ named arguments."""
     ### This is a copy-paste from test_continuous_basic.py; dedupe?
@@ -341,5 +372,4 @@ def check_scale_docstring(distfn):
 
 
 if __name__ == "__main__":
-    # nose.run(argv=['', __file__])
     nose.runmodule(argv=[__file__,'-s'], exit=False)
