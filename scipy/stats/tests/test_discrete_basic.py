@@ -43,6 +43,7 @@ def test_discrete_basic():
         m, v, s, k = distfn.stats(*arg, moments='mvsk')
         #yield npt.assert_almost_equal(rvs.mean(), m, decimal=4,err_msg='mean')
         # yield npt.assert_almost_equal, rvs.mean(), m, 2, 'mean' # does not work
+        yield check_normalization, distfn, arg, distname
         yield check_sample_meanvar, rvs.mean(), m, distname + ' sample mean test'
         yield check_sample_meanvar, rvs.var(), v, distname + ' sample var test'
         yield check_moment, distfn, arg, m, v, s, k, distname
@@ -193,17 +194,6 @@ def check_moment(distfn, arg, m, v, s, k, msg):
             npt.assert_allclose(m4e, (k+3.) * m2e**2,
                         atol=1e-7, rtol=1e-7)
 
-'''
-# these are not run anyway
-def check_generic_moment(distfn, arg, m, k, decim):
-    npt.assert_almost_equal(distfn.generic_moment(k,*arg), m, decimal=decim,
-                            err_msg=str(distfn) + ' generic moment test')
-
-
-def check_moment_frozen(distfn, arg, m, k, decim):
-    npt.assert_almost_equal(distfn(*arg).moment(k), m, decimal=decim,
-                            err_msg=str(distfn) + ' frozen moment test')
-'''
 
 def check_oth(distfn, arg, msg):
     # checking other methods of distfn
@@ -323,6 +313,19 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
 
     npt.assert_(pval > alpha, 'chisquare - test for %s'
            ' at arg = %s with pval = %s' % (msg,str(arg),str(pval)))
+
+
+# this is a copy-paste from test_discrete_basic; FIXME
+def check_normalization(distfn, args, distname):
+    norm_moment = distfn.moment(0, *args)
+    npt.assert_allclose(norm_moment, 1.0)
+
+    norm_expect = distfn.expect(lambda x: 1, args=args)
+    npt.assert_allclose(norm_expect, 1.0, atol=1e-7, rtol=1e-7,
+            err_msg=distname, verbose=True)
+
+    norm_cdf = distfn.cdf(distfn.b, *args)
+    npt.assert_allclose(norm_cdf, 1.0)
 
 
 def check_named_args(distfn, x, shape_args, defaults, meths):
