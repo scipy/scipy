@@ -555,9 +555,10 @@ def sum(input, labels=None, index=None):
 
     Returns
     -------
-    sum : list
-        A list of the sums of the values of `input` inside the regions
-        defined by `labels`.
+    sum : ndarray or scalar
+        An array of the sums of values of `input` inside the regions defined
+        by `labels` with the same shape as `index`. If 'index' is None or scalar,
+        a scalar is returned. 
 
     See also
     --------
@@ -569,6 +570,11 @@ def sum(input, labels=None, index=None):
     >>> labels = [1,1,2,2]
     >>> sum(input, labels, index=[1,2])
     [1.0, 5.0]
+    >>> sum(input, labels, index=1)
+    1
+    >>> sum(input, labels)
+    6
+
 
     """
     count, sum = _stats(input, labels, index)
