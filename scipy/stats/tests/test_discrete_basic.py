@@ -188,8 +188,26 @@ def check_oth(distfn, arg, msg):
     npt.assert_(distfn.cdf(median_sf + 1, *arg) > 0.5)
     npt.assert_equal(distfn.isf(0.5, *arg), distfn.ppf(0.5, *arg))
 
-# next 3 functions copied from test_continous_extra
+# next 4 functions copied from test_continous_extra
 #    adjusted
+
+def check_normalization(distfn, args, distname):
+    normalization_moment = distfn.moment(0, *args)
+    npt.assert_allclose(normalization_moment, 1.0)
+
+    # this is a temporary plug: either ncf or expect is problematic; 
+	# best be marked as a knownfail, but I've no clue how to do it.
+    if distname == "ncf":
+        atol, rtol = 1e-5, 0
+    else:
+        atol, rtol = 1e-7, 1e-7
+
+    normalization_expect = distfn.expect(lambda x: 1, args=args)
+    npt.assert_allclose(normalization_expect, 1.0, atol=atol, rtol=rtol,
+            err_msg=distname, verbose=True)
+
+    normalization_cdf = distfn.cdf(distfn.b, *args)
+    npt.assert_allclose(normalization_cdf, 1.0)
 
 
 def check_ppf_limits(distfn,arg,msg):

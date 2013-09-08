@@ -232,6 +232,8 @@ def test_cont_basic_slow():
               'sample mean test'
         # the sample skew kurtosis test has known failures, not very good distance measure
         # yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
+        if distname not in ['ksone', 'vonmises']:
+            yield check_normalization, distfn, arg, distname
         yield check_moment, distfn, arg, m, v, distname
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
@@ -398,8 +400,8 @@ def check_distribution_rvs(dist, args, alpha, rvs):
 
 
 def check_normalization(distfn, args, distname):
-    norm_moment = distfn.moment(0, *args)
-    npt.assert_allclose(norm_moment, 1.0)
+    normalization_moment = distfn.moment(0, *args)
+    npt.assert_allclose(normalization_moment, 1.0)
 
     # this is a temporary plug: either ncf or expect is problematic; 
 	# best be marked as a knownfail, but I've no clue how to do it.
@@ -408,12 +410,12 @@ def check_normalization(distfn, args, distname):
     else:
         atol, rtol = 1e-7, 1e-7
 
-    norm_expect = distfn.expect(lambda x: 1, args=args)
-    npt.assert_allclose(norm_expect, 1.0, atol=atol, rtol=rtol,
+    normalization_expect = distfn.expect(lambda x: 1, args=args)
+    npt.assert_allclose(normalization_expect, 1.0, atol=atol, rtol=rtol,
             err_msg=distname, verbose=True)
 
-    norm_cdf = distfn.cdf(distfn.b, *args)
-    npt.assert_allclose(norm_cdf, 1.0)
+    normalization_cdf = distfn.cdf(distfn.b, *args)
+    npt.assert_allclose(normalization_cdf, 1.0)
 
 
 def check_named_args(distfn, x, shape_args, defaults, meths):

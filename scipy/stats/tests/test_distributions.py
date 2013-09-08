@@ -9,7 +9,7 @@ import inspect
 
 from numpy.testing import (TestCase, run_module_suite, assert_equal,
     assert_array_equal, assert_almost_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_raises, rand, dec)
+    assert_allclose, assert_, assert_raises, assert_warns, rand, dec)
 from numpy.testing.utils import WarningManager
 from nose import SkipTest
 
@@ -1161,6 +1161,39 @@ class TestExpect(TestCase):
         res2 = halflog.expect(args=(1.5,))
         assert_almost_equal(res1, res2, decimal=14)
 
+    def test_rice(self):
+        # rice.pdf(997, 0.73) is inifity since i0 silently overflows.
+        # expect should detect the inf value for the integral
+        # and adjust the integration range
+        x, b = 997, 0.73
+        assert_(not np.isfinite(stats.rice.pdf(x, b)))
+
+        def f(b):
+            return stats.rice.expect( lambda x: 1, args=(b,) )
+        assert_allclose(f(b), 1., atol=1e-12, rtol=1e-12)
+
+    def test_norm_exp(self):
+        def f(x):
+            if x>0: return np.exp(x)
+            else: return 0.
+        assert_allclose(stats.norm.expect(f), np.exp(0.5)*stats.norm.cdf(1.))
+
+    def test_divergent(self):
+        # if it does not converge, it does not converge
+        infty = stats.norm.expect(lambda x: np.exp(x*x))
+        assert_(infty > 1e10)
+
+    @dec.knownfailureif(True)
+    def test_borderline(self):
+        # this is failing at the moment: 
+        # the integral is actually diverging, but the bound-adjustment
+        # in .expect errs and reports a finite value.
+        # Basically, how do you tell a slowly divergent integral from a 
+        # slowly converging one?  
+        infty = stats.norm.expect(lambda x: np.exp(x*x/2.))
+        assert_(infty > 1e10)
+
+        
 
 class TestNct(TestCase):
     def test_nc_parameter(self):
