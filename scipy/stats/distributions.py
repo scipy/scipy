@@ -5886,7 +5886,7 @@ class vonmises_gen(rv_continuous):
 
     def _stats_skip(self, b):
         return 0, None, 0, None
-vonmises = vonmises_gen(name='vonmises')
+vonmises = vonmises_gen(a=-np.pi, b=np.pi, name='vonmises')
 
 
 class wald_gen(invgauss_gen):
