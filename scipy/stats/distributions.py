@@ -52,8 +52,8 @@ __all__ = [
            'nct', 'pareto', 'lomax', 'pearson3', 'powerlaw', 'powerlognorm',
            'powernorm', 'rdist', 'rayleigh', 'reciprocal', 'rice',
            'recipinvgauss', 'semicircular', 'triang', 'truncexpon',
-           'truncnorm', 'tukeylambda', 'uniform', 'vonmises', 'wald',
-           'wrapcauchy', 'entropy', 'rv_discrete', 'binom', 'bernoulli',
+           'truncnorm', 'tukeylambda', 'uniform', 'vonmises', 'vonmises_line',
+           'wald', 'wrapcauchy', 'entropy', 'rv_discrete', 'binom', 'bernoulli',
            'nbinom', 'geom', 'hypergeom', 'logser', 'poisson', 'planck',
            'boltzmann', 'randint', 'zipf', 'dlaplace', 'skellam'
           ]
@@ -5872,12 +5872,10 @@ class vonmises_gen(rv_continuous):
 
     for ``-pi <= x <= pi``, ``b > 0``.
 
-    Note that `vonmises` is only supposed to work as a circular distribution.
-    If you need a distribution defined on a [-pi, pi] segment of a real line,
-    you need to define the support explicitly:
-    >>> vonmises_line = vonmises_gen(a=-np.pi, b=np.pi, name='vonmises_line')
-    >>> vonmises_line.cdf(vonmises_line.b, 4.)
-    1.0
+    See Also
+    --------
+    vonmises_line : The same distribution, defined on a [-pi, pi] segment 
+    of the real line. 
  
     %(example)s
 
@@ -5894,6 +5892,7 @@ class vonmises_gen(rv_continuous):
     def _stats_skip(self, b):
         return 0, None, 0, None
 vonmises = vonmises_gen(name='vonmises')
+vonmises_line = vonmises_gen(a=-np.pi, b=np.pi, name='vonmises_line')
 
 
 class wald_gen(invgauss_gen):

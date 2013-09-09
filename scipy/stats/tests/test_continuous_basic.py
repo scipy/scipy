@@ -117,6 +117,7 @@ distcont = [
     ['tukeylambda', (3.1321477856738267,)],
     ['uniform', ()],
     ['vonmises', (3.9939042581071398,)],
+    ['vonmises_line', (3.9939042581071398,)],
     ['wald', ()],
     ['weibull_max', (2.8687961709100187,)],
     ['weibull_min', (1.7866166930421596,)],
@@ -152,8 +153,8 @@ distmissing = ['wald', 'gausshyper', 'genexpon', 'rv_continuous',
 
 distmiss = [[dist,args] for dist,args in distcont if dist in distmissing]
 distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
-            'vonmises', 'rice', 'mielke', 'semicircular', 'cosine', 'invweibull',
-            'powerlognorm', 'johnsonsu', 'kstwobign']
+            'vonmises', 'vonmises_line', 'rice', 'mielke', 'semicircular',
+            'cosine', 'invweibull', 'powerlognorm', 'johnsonsu', 'kstwobign']
 # distslow are sorted by speed (very slow to slow)
 
 

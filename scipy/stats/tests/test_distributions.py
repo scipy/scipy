@@ -47,7 +47,7 @@ dists = ['uniform','norm','lognorm','expon','beta',
          'weibull_min','weibull_max','dweibull','maxwell','rayleigh',
          'genlogistic', 'logistic','gumbel_l','gumbel_r','gompertz',
          'hypsecant', 'laplace', 'reciprocal','triang','tukeylambda',
-         'vonmises', 'pearson3']
+         'vonmises', 'vonmises_line', 'pearson3']
 
 # check function for test generator
 
@@ -110,6 +110,11 @@ def test_vonmises_pdf_periodic():
             yield check_vonmises_cdf_periodic, k, 0, 1, x
             yield check_vonmises_cdf_periodic, k, 1, 1, x
             yield check_vonmises_cdf_periodic, k, 0, 10, x
+
+
+def test_vonmises_line_support():
+    assert_equal(stats.vonmises_line.a, -np.pi)
+    assert_equal(stats.vonmises_line.b, np.pi)
 
 
 class TestRandInt(TestCase):
