@@ -5576,6 +5576,12 @@ class rice_gen(rv_continuous):
     def _argcheck(self, b):
         return b >= 0
 
+    def _rvs(self, b):
+        # http://en.wikipedia.org/wiki/Rice_distribution
+        sz = self._size if self._size else 1
+        t = b/np.sqrt(2) + mtrand.standard_normal(size=(2, sz))
+        return np.sqrt((t*t).sum(axis=0))
+
     def _pdf(self, x, b):
         return x * exp(-(x-b)*(x-b)/2.0) * special.i0e(x*b)
 

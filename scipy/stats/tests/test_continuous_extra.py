@@ -153,5 +153,13 @@ def test_rice_zero_b():
     np.allclose(stats.rice.pdf(x, 0), stats.rice.pdf(x, b),
             atol = b, rtol=0)
 
+
+def test_rice_rvs():
+    # a supplement to the KS test (which is run separately)
+    rvs = stats.rice.rvs
+    npt.assert_equals(rvs(b=3.).size, 1)
+    npt.assert_equals(rvs(b=3., size=(3, 5)).shape, (3, 5))
+
+
 if __name__ == "__main__":
     npt.run_module_suite()
