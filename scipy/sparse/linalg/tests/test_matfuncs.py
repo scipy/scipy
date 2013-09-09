@@ -16,8 +16,8 @@ import numpy as np
 from numpy import array, eye, dot, sqrt, double, exp, random
 from numpy.linalg import matrix_power
 from numpy.testing import (TestCase, run_module_suite,
-        assert_allclose, assert_, assert_array_almost_equal,
-        assert_array_almost_equal_nulp, decorators)
+        assert_allclose, assert_, assert_array_almost_equal, assert_equal,
+        assert_array_equal, assert_array_almost_equal_nulp, decorators)
 
 from scipy.sparse import csc_matrix, SparseEfficiencyWarning
 from scipy.sparse.construct import eye as speye
@@ -28,6 +28,37 @@ from scipy.linalg import logm
 from scipy.misc import factorial
 import scipy.sparse
 import scipy.sparse.linalg
+
+def _burkardt_13_power(n, p):
+    """
+    A helper function for testing matrix functions.
+
+    Parameters
+    ----------
+    n : integer greater than 1
+        Order of the square matrix to be returned.
+    p : non-negative integer
+        Power of the matrix.
+
+    Returns
+    -------
+    out : ndarray representing a square matrix
+        A Forsythe matrix of order n, raised to the power p.
+
+    """
+    # Input validation.
+    if n != int(n) or n < 2:
+        raise ValueError('n must be an integer greater than 1')
+    n = int(n)
+    if p != int(p) or p < 0:
+        raise ValueError('p must be a non-negative integer')
+    p = int(p)
+
+    # Construct the matrix explicitly.
+    a, b = divmod(p, n)
+    large = np.power(10.0, -n*a)
+    small = large * np.power(10.0, -n)
+    return np.diag([large]*(n-b), b) + np.diag([small]*b, b-n)
 
 
 class TestExpM(TestCase):
@@ -217,11 +248,6 @@ class TestExpM(TestCase):
             [-49, 24],
             [-64, 31],
             ], dtype=float)
-        # NOTE Burkardt's posted answer is too imprecise for assert_allclose.
-        #desired = np.array([
-            #[-0.735759, 0.551819],
-            #[-1.471518, 1.103638],
-            #], dtype=float)
         U = np.array([[3, 1], [4, 2]], dtype=float)
         V = np.array([[1, -1/2], [-2, 3/2]], dtype=float)
         w = np.array([-17, -1], dtype=float)
@@ -276,11 +302,6 @@ class TestExpM(TestCase):
             [1 + eps, 1],
             [0, 1 - eps],
             ], dtype=float)
-        # NOTE Burkardt's posted almost-exact answer is probably wrong.
-        #desired = np.array([
-            #[2.718309, 2.718282],
-            #[0, 2.718255],
-            #], dtype=float)
         desired = np.array([
             [exp1, exp1],
             [0, exp1],
@@ -390,25 +411,30 @@ class TestExpM(TestCase):
         # Ward's algorithm has difficulty esimating the accuracy
         # of its results for this problem.
         #
-        # NOTE Burkardt uses only a placeholder
-        # but here we guess the real expm.
+        # Check the construction of one instance of this family of matrices.
+        A4_actual = _burkardt_13_power(4, 1)
+        A4_desired = [[0, 1, 0, 0],
+                      [0, 0, 1, 0],
+                      [0, 0, 0, 1],
+                      [1e-4, 0, 0, 0]]
+        assert_allclose(A4_actual, A4_desired)
+        # Check the expm for a few instances.
         for n in (2, 3, 4, 10):
-            p = np.power(10.0, -n)
-            A = np.eye(n, n, 1, dtype=float)
-            A[-1, 0] = p
-            # Guess a non-closed formula for the exact expm
-            # and run a few iterations to approximate the answer.
-            first_row = np.zeros(n)
-            for k in itertools.count():
-                row = np.power(p, k) * np.array(
-                        [1/factorial(k*n+i) for i in range(n)])
-                if row.sum() < np.finfo(np.float64).eps:
-                    break
-                first_row += row
-            first_col = first_row.copy()
-            first_col[1:] = p * first_row[:0:-1]
-            desired = scipy.linalg.toeplitz(first_col, first_row)
-            actual = expm(A)
+            # Approximate expm using Taylor series.
+            # This works well for this matrix family
+            # because each matrix in the summation,
+            # even before dividing by the factorial,
+            # is entrywise positive with max entry 10**(-floor(p/n)*n).
+            k = max(1, int(np.ceil(16/n)))
+            desired = np.zeros((n, n), dtype=float)
+            for p in range(n*k):
+                Ap = _burkardt_13_power(n, p)
+                min_entry = np.min(Ap)
+                max_entry = np.max(Ap)
+                assert_equal(min_entry, 0)
+                assert_allclose(max_entry, np.power(10, -np.floor(p/n)*n))
+                desired += Ap / factorial(p)
+            actual = expm(_burkardt_13_power(n, 1))
             assert_allclose(actual, desired)
 
     def test_burkardt_14(self):
