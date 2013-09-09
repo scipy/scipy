@@ -5872,6 +5872,13 @@ class vonmises_gen(rv_continuous):
 
     for ``-pi <= x <= pi``, ``b > 0``.
 
+    Note that `vonmises` is only supposed to work as a circular distribution.
+    If you need a distribution defined on a [-pi, pi] segment of a real line,
+    you need to define the support explicitly:
+    >>> vonmises_line = vonmises_gen(a=-np.pi, b=np.pi, name='vonmises_line')
+    >>> vonmises_line.cdf(vonmises_line.b, 4.)
+    1.0
+ 
     %(example)s
 
     """
