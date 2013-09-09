@@ -53,3 +53,44 @@ def test_valid_origins():
         # Just check this raises an error instead of silently accepting or
         # segfaulting.
         assert_raises(ValueError, filter, data, 3, origin=2)
+
+
+def test_gaussian_truncate():
+    # Test that Gaussian filters can be truncated at different widths.
+    # These tests only check that the result has the expected number
+    # of nonzero elements.
+    arr = np.zeros((100, 100), np.float)
+    arr[50, 50] = 1
+    num_nonzeros_2 = (sndi.gaussian_filter(arr, 5, truncate=2) > 0).sum()
+    assert_equal(num_nonzeros_2, 21**2)
+    num_nonzeros_5 = (sndi.gaussian_filter(arr, 5, truncate=5) > 0).sum()
+    assert_equal(num_nonzeros_5, 51**2)
+
+    # Test truncate when sigma is a sequence.
+    f = sndi.gaussian_filter(arr, [0.5, 2.5], truncate=3.5)
+    fpos = f > 0
+    n0 = fpos.any(axis=0).sum()
+    # n0 should be 2*int(2.5*3.5 + 0.5) + 1
+    assert_equal(n0, 19)
+    n1 = fpos.any(axis=1).sum()
+    # n1 should be 2*int(0.5*3.5 + 0.5) + 1
+    assert_equal(n1, 5)
+
+    # Test gaussian_filter1d.
+    x = np.zeros(51)
+    x[25] = 1
+    f = sndi.gaussian_filter1d(x, sigma=2, truncate=3.5)
+    n = (f > 0).sum()
+    assert_equal(n, 15)
+
+    # Test gaussian_laplace
+    y = sndi.gaussian_laplace(x, sigma=2, truncate=3.5)
+    nonzero_indices = np.where(y != 0)[0]
+    n = nonzero_indices.ptp() + 1
+    assert_equal(n, 15)
+
+    # Test gaussian_gradient_magnitude
+    y = sndi.gaussian_gradient_magnitude(x, sigma=2, truncate=3.5)
+    nonzero_indices = np.where(y != 0)[0]
+    n = nonzero_indices.ptp() + 1
+    assert_equal(n, 15)
