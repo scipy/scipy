@@ -4927,19 +4927,20 @@ class ncf_gen(rv_continuous):
     def _ppf(self, q, dfn, dfd, nc):
         return special.ncfdtri(dfn, dfd, nc, q)
     
-    def _munp(self, n, dfn, dfd, nc):
+    def _munp_skip(self, n, dfn, dfd, nc):
         # these formulas are from 
         # P.B. Patnaik, 'The non-central chisquare and F-distributions and 
         #  their applications', Biometrika 36, 202-232, 1949.
         # doi:10.1093/biomet/36.1-2.202
         #
-        # FIXME: mvs seem to agree to boost, which just implements
-        # explicit formulas for mvsk (not moments!) copy-pasted from the 
-        # Mathematica online docs.
+        # mvs seem to agree to boost, which just implements
+        # explicit formulas for mvsk (not moments!), apparently copy-pasted
+        # from the Mathematica online docs.
         # Don't have Mathematica to check, but here it is:
         # mvs agrees, but kurtosis (kurtosis_excess in boost-speak)
         # is off-by-three. THREE. Wrong way.
-        # an err in Mathematica? or an overflow? 
+        # an err in Mathematica / boost?
+        # also see _stats below
         #
         drat = (1.*dfd/dfn)
         dnc = dfn + nc
@@ -4971,12 +4972,50 @@ class ncf_gen(rv_continuous):
             val *= special.hyp1f1(-n, 0.5*dfn, -0.5*nc)
             return val
 
-    def _stats_skip(self, dfn, dfd, nc):
-        mu = where(dfd <= 2, inf, dfd / (dfd-2.0)*(1+nc*1.0/dfn))
-        mu2 = where(dfd <= 4, inf, 2*(dfd*1.0/dfn)**2.0 *
-                    ((dfn+nc/2.0)**2.0 + (dfn+nc)*(dfd-2.0)) /
-                    ((dfd-2.0)**2.0 * (dfd-4.0)))
-        return mu, mu2, None, None
+    def _stats(self, dfn, dfd, nc):
+        # explicit formulas from
+        # E.S. Pearson and M.L. Tiku, 'Some notes on the relation between the 
+        #    distributions of central and non-central F', 
+        #    Biometrika 57, 175 (1970).
+        # Eqs. (6)--(10)
+        # NB: These formulas seem to agree with the _munp above (from Patnaik).
+        # 
+        v1, v2, nc = 1.*dfn, 1.*dfd, 1.*nc
+        ell = 1.*nc/v1
+        v1sc, v2sc = v1 / (v1 + v2 - 2.), v1 / (2.*v1 + v2 - 2.)
+
+        # mean
+        mu1 = v2 * (1. + ell) / (v2 - 2.)
+
+        # variance
+        mu2 = 1. + 2.*ell + ell*ell * v1sc
+        mu2 *= 2. * v2 * (v2 / v1sc) 
+        mu2 /= (v2-2.)**2 * (v2 - 4)
+
+        # skew
+        v1sc2 = v1 / (2.*v1 + v2 - 2.)
+        mu3 = 1. + 3.*ell + 6.*v1sc2*ell*ell + 2.*v1sc*v1sc2*ell*ell*ell
+        mu3 *= 8. * v2 * (v2 / v1sc) * (v2 / v1sc2)
+        mu3 /= (v2-2.) * (v2-2.) *(v2-2.) * (v2-4.) * (v2-6.)
+
+        g1 = mu3 / np.power(mu2, 1.5)
+
+        #kurtosis
+        brak = 2.* (3.*v1 + v2 - 2.) * (2.*v1 + v2 - 2.) + \
+              (v1 + v2 - 2.) * (v2 - 2.) * (v1 + 2.)
+        brak *= (1 + 4.*ell)
+
+        brak += 2. * v1 * (3.*v1 + 2.*v2 - 4) * (v2 + 10) * ell * ell
+        brak += 4. * v1 * v1 * (v2 + 10.) * ell * ell * ell
+        brak += v1**3 * (v2 + 10.) / (v1 + v2 - 2.) * ell**4  
+
+        mu4 = brak * 12. * v2**4 * (v1 + v2 - 2.) / v1**3 / (v2 - 2.)**4
+        mu4 /= (v2 - 4.) * (v2 - 6.) * (v2 - 8.)
+
+        g2 = mu4 / mu2 / mu2 - 3.
+
+        return mu1, mu2, g1, g2
+
 ncf = ncf_gen(a=0.0, name='ncf')
 
 
