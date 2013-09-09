@@ -232,7 +232,7 @@ def test_cont_basic_slow():
               'sample mean test'
         # the sample skew kurtosis test has known failures, not very good distance measure
         # yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
-        if distname not in ['ksone']:
+        if distname not in ['vonmises', 'ksone']:
             yield check_normalization, distfn, arg, distname
         yield check_moment, distfn, arg, m, v, distname
         yield check_cdf_ppf, distfn, arg, distname

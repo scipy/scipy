@@ -90,6 +90,28 @@ def test_all_distributions():
         yield check_distribution, dist, args, alpha
 
 
+def check_vonmises_pdf_periodic(k,l,s,x):
+    vm = stats.vonmises(k,loc=l,scale=s)
+    assert_almost_equal(vm.pdf(x),vm.pdf(x % (2*numpy.pi*s)))
+
+
+def check_vonmises_cdf_periodic(k,l,s,x):
+    vm = stats.vonmises(k,loc=l,scale=s)
+    assert_almost_equal(vm.cdf(x) % 1,vm.cdf(x % (2*numpy.pi*s)) % 1)
+
+
+def test_vonmises_pdf_periodic():
+    for k in [0.1, 1, 101]:
+        for x in [0,1,numpy.pi,10,100]:
+            yield check_vonmises_pdf_periodic, k, 0, 1, x
+            yield check_vonmises_pdf_periodic, k, 1, 1, x
+            yield check_vonmises_pdf_periodic, k, 0, 10, x
+
+            yield check_vonmises_cdf_periodic, k, 0, 1, x
+            yield check_vonmises_cdf_periodic, k, 1, 1, x
+            yield check_vonmises_cdf_periodic, k, 0, 10, x
+
+
 class TestRandInt(TestCase):
     def test_rvs(self):
         vals = stats.randint.rvs(5,30,size=100)
