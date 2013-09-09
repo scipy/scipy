@@ -859,6 +859,10 @@ class TestAssocLaguerre(TestCase):
         a2 = special.assoc_laguerre(1,11,1)
         assert_array_almost_equal(a2,a1(1),8)
 
+    def test_assoc_laguerre_n_eq_0(self): # gh-992
+        assert_almost_equal(special.assoc_laguerre(0, 0, -2), 1)
+        assert_almost_equal(special.assoc_laguerre(2, 0, -2), 1)
+
 
 class TestBesselpoly(TestCase):
     def test_besselpoly(self):
