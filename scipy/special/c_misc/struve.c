@@ -77,6 +77,12 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* Do NOT remove python.h inclusion as it sets up configuration for stdio.h and
+ * math.h inclusion */
+#include <Python.h>
+#include <stdio.h>
+#include <math.h>
+
 #include "cephes.h"
 #include "amos_wrappers.h"
 #include "misc.h"
