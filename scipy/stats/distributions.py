@@ -5573,6 +5573,9 @@ class rice_gen(rv_continuous):
     %(example)s
 
     """
+    def _argcheck(self, b):
+        return b >= 0
+
     def _pdf(self, x, b):
         return x * exp(-(x-b)*(x-b)/2.0) * special.i0e(x*b)
 
