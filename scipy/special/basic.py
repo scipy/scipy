@@ -534,6 +534,8 @@ def hyp0f1(v, z):
 
 
 def assoc_laguerre(x,n,k=0.0):
+    if k <= -1:
+        raise ValueError("k must be > -1")
     return orthogonal.eval_genlaguerre(n, k, x)
 
 digamma = psi
