@@ -309,7 +309,7 @@ class spmatrix(object):
             other_a = np.asanyarray(other)
 
             if other_a.ndim == 0 and other_a.dtype == np.object_:
-                # Not interpretable as an array; raise NotImplemented so that
+                # Not interpretable as an array; return NotImplemented so that
                 # other's __rmul__ can kick in if that's implemented.
                 return NotImplemented
 

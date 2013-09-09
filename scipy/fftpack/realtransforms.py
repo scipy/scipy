@@ -221,7 +221,7 @@ def _dct(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
     if n is None:
         n = tmp.shape[axis]
     else:
-        raise NotImplemented("Padding/truncating not yet implemented")
+        raise NotImplementedError("Padding/truncating not yet implemented")
 
     if tmp.dtype == np.double:
         if type == 1:
@@ -435,7 +435,7 @@ def _dst(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
     if n is None:
         n = tmp.shape[axis]
     else:
-        raise NotImplemented("Padding/truncating not yet implemented")
+        raise NotImplementedError("Padding/truncating not yet implemented")
 
     if tmp.dtype == np.double:
         if type == 1:
