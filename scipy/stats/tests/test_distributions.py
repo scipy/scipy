@@ -546,6 +546,25 @@ class TestDLaplace(TestCase):
         assert_allclose((v, k), (4., 3.25))
 
 
+class TestInvGamma(TestCase):
+    def test_invgamma_inf_gh_1866(self):
+        # invgamma's moments are only finite for a>n
+        # specific numbers checked w/ boost 1.54
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', RuntimeWarning)
+            mvsk = stats.invgamma.stats(a=19.31, moments='mvsk')
+            assert_allclose(mvsk,
+                [0.05461496450, 0.0001723162534, 1.020362676, 2.055616582])
+
+            a = [1.1, 3.1, 5.6]
+            mvsk = stats.invgamma.stats(a=a, moments='mvsk')
+            assert_allclose(mvsk,
+                        ([10., 0.476190476, 0.2173913043],      # mmm
+                         [np.inf, 0.2061430632, 0.01312749422], # vvv
+                         [np.inf, 41.95235392, 2.919025532],    # sss
+                         [np.inf, np.inf, 24.51923076]))        # kkk
+
+
 def test_rvgeneric_std():
     # Regression test for #1191
     assert_array_almost_equal(stats.t.std([5, 6]), [1.29099445, 1.22474487])

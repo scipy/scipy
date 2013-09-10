@@ -4212,8 +4212,16 @@ class invgamma_gen(rv_continuous):
     def _ppf(self, q, a):
         return 1.0 / special.gammaincinv(a, 1.-q)
 
-    def _munp(self, n, a):
-        return np.where(a > n, exp(gamln(a-n) - gamln(a)), np.nan)
+    def _stats(self, a, moments='mvsk'):
+        a1, a2, a3, a4 = a - 1., a -2., a - 3., a - 4.
+        mu1 = np.where(a > 1., 1. / a1, np.inf)
+        mu2 = np.where(a > 2., 1. / a1 / a1 / a2, np.inf)
+        g1, g2 = None, None
+        if 's' in moments:
+            g1 = np.where(a > 3., 4. * np.sqrt(a2) / a3, np.inf)
+        if 'k' in moments:        
+            g2 = np.where(a > 4., 6. * (5. * a - 11.) / a3 / a4, np.inf)
+        return mu1, mu2, g1, g2
 
     def _entropy(self, a):
         return a - (a+1.0) * special.psi(a) + gamln(a)
