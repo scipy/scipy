@@ -89,6 +89,24 @@ def _none_to_empty_2d(arg):
         return arg
 
 
+def _atleast_2d_or_none(arg):
+    if arg is not None:
+        return atleast_2d(arg)
+
+
+def _shape_or_none(M):
+    if M is not None:
+        return M.shape
+    else:
+        return (None,) * 2
+
+
+def _choice_not_none(*args):
+    for arg in args:
+        if arg is not None:
+            return arg
+
+
 def _restore(M, shape):
     if M.shape == (0, 0):
         return zeros(shape)
@@ -122,21 +140,20 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
         If not enough information on the system was provided.
 
     """
-    A, B, C, D = map(_none_to_empty_2d, (A, B, C, D))
-    A, B, C, D = map(atleast_2d, (A, B, C, D))
+    A, B, C, D = map(_atleast_2d_or_none, (A, B, C, D))
 
-    MA, NA = A.shape
-    MB, NB = B.shape
-    MC, NC = C.shape
-    MD, ND = D.shape
+    MA, NA = _shape_or_none(A)
+    MB, NB = _shape_or_none(B)
+    MC, NC = _shape_or_none(C)
+    MD, ND = _shape_or_none(D)
 
-    p = (MA or MB or NC)
-    q = (NB or ND)
-    r = (MC or MD)
-
-    if (p == 0) or (q == 0) or (r == 0):
+    p = _choice_not_none(MA, MB, NC)
+    q = _choice_not_none(NB, ND)
+    r = _choice_not_none(MC, MD)
+    if p is None or q is None or r is None:
         raise ValueError("Not enough information on the system.")
 
+    A, B, C, D = map(_none_to_empty_2d, (A, B, C, D))
     A = _restore(A, (p, p))
     B = _restore(B, (p, q))
     C = _restore(C, (r, p))

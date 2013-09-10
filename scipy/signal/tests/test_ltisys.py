@@ -324,6 +324,26 @@ class Test_abcd_normalize(object):
         assert_equal(C.shape[0], D.shape[0])
         assert_equal(B.shape[1], D.shape[1])
 
+    def test_zero_dimension_is_not_none1(self):
+        B_ = np.zeros((2, 0))
+        D_ = np.zeros((0, 0))
+        A, B, C, D = abcd_normalize(A=self.A, B=B_, D=D_)
+        assert_equal(A, self.A)
+        assert_equal(B, B_)
+        assert_equal(D, D_)
+        assert_equal(C.shape[0], D_.shape[0])
+        assert_equal(C.shape[1], self.A.shape[0])
+
+    def test_zero_dimension_is_not_none2(self):
+        B_ = np.zeros((2, 0))
+        C_ = np.zeros((0, 2))
+        A, B, C, D = abcd_normalize(A=self.A, B=B_, C=C_)
+        assert_equal(A, self.A)
+        assert_equal(B, B_)
+        assert_equal(C, C_)
+        assert_equal(D.shape[0], C_.shape[0])
+        assert_equal(D.shape[1], B_.shape[1])
+
     def test_missing_A(self):
         A, B, C, D = abcd_normalize(B=self.B, C=self.C, D=self.D)
         assert_equal(A.shape[0], A.shape[1])
