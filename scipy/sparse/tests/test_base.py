@@ -1318,21 +1318,15 @@ class _TestCommon:
             assert_array_equal(spm.todok().A, m)
             assert_array_equal(spm.tobsr().A, m)
 
-    # Eventually we'd like to allow matrix products between dense
-    # and sparse matrices using the normal dot() function:
-    # def test_dense_dot_sparse(self):
-    #    a = array([1.,2.,3.])
-    #    dense_dot_dense = dot(a, self.dat)
-    #    dense_dot_sparse = dot(a, self.datsp)
-    #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
+    def test_unary_ufunc_overrides(self):
+        X = self.spmatrix(np.arange(20).reshape(4, 5) / 20.)
+        for f in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
+                  "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
+                  "deg2rad", "rad2deg", "floor", "ceil", "trunc", "sqrt"]:
+            X2 = getattr(np, f)(X)
+            assert_array_equal(X2.toarray(), getattr(np, f)(X.toarray()))
 
-    # def test_sparse_dot_dense(self):
-    #    b = array([1.,2.,3.,4.])
-    #    dense_dot_dense = dot(self.dat, b)
-    #    dense_dot_sparse = dot(self.datsp, b)
-    #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
-
-    def test_ufunc_overrides(self):
+    def test_binary_ufunc_overrides(self):
         # data
         a = np.array([[1, 2, 3],
                       [4, 5, 0],

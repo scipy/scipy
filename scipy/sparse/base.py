@@ -785,6 +785,14 @@ class spmatrix(object):
         elif func is np.true_divide:
             rdivide = (pos == 1)
             return self._divide(*without_self, true_divide=True, rdivide=rdivide)
+        elif func in (np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh,
+                      np.arcsinh, np.arctanh, np.rint, np.sign, np.expm1, np.log1p,
+                      np.deg2rad, np.rad2deg, np.floor, np.ceil, np.trunc, np.sqrt):
+            func_name = func.__name__
+            if hasattr(self, func_name):
+                return getattr(self, func_name)()
+            else:
+                return getattr(self.tocsr(), func_name)()
         else:
             return NotImplemented
 
