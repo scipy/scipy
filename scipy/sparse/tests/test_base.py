@@ -60,6 +60,11 @@ def _can_cast_samekind(dtype1, dtype2):
     else:
         return np.can_cast(dtype1, dtype2, casting='same_kind')
 
+def todense(a):
+    if isinstance(a, np.ndarray) or isscalarlike(a):
+        return a
+    return a.todense()
+
 
 class MultipliesWithMatrix(object):
     """Class that knows how to multiply with a sparse matrix."""
@@ -74,6 +79,7 @@ class MultipliesWithMatrix(object):
 #------------------------------------------------------------------------------
 # Generic tests
 #------------------------------------------------------------------------------
+
 
 # TODO check that spmatrix( ... , copy=X ) is respected
 # TODO test prune
@@ -963,19 +969,19 @@ class _TestCommon:
                     assert_almost_equal(sp_mult, dense_mult)
 
     def test_elementwise_divide(self):
-        expected = [[1,0,0,1],[1,0,1,0],[0,1,0,0]]
-        assert_array_equal((self.datsp / self.datsp).todense(),expected)
+        expected = [[1,np.nan,np.nan,1],[1,np.nan,1,np.nan],[np.nan,1,np.nan,np.nan]]
+        assert_array_equal(todense(self.datsp / self.datsp),expected)
 
         denom = self.spmatrix(matrix([[1,0,0,4],[-1,0,0,0],[0,8,0,-5]],'d'))
-        res = matrix([[1,0,0,0.5],[-3,0,inf,0],[0,0.25,0,0]],'d')
-        assert_array_equal((self.datsp / denom).todense(),res)
+        res = matrix([[1,np.nan,np.nan,0.5],[-3,np.nan,inf,np.nan],[np.nan,0.25,np.nan,np.nan]],'d')
+        assert_array_equal(todense(self.datsp / denom),res)
 
         # complex
         A = array([[1-2j,0+5j,-1+0j],[4-3j,-3+6j,5]])
         B = array([[5+2j,7-3j,-2+1j],[0-1j,-4+2j,9]])
         Asp = self.spmatrix(A)
         Bsp = self.spmatrix(B)
-        assert_almost_equal((Asp / Bsp).todense(), A/B)
+        assert_almost_equal(todense(Asp / Bsp), A/B)
 
     def test_pow(self):
         A = matrix([[1,0,2,0],[0,3,4,0],[0,5,0,0],[0,6,7,8]])
@@ -1343,11 +1349,6 @@ class _TestCommon:
 
         a_items = dict(dense=a, scalar=c, cplx_scalar=d, int_scalar=e, sparse=asp)
         b_items = dict(dense=b, scalar=c, cplx_scalar=d, int_scalar=e, sparse=bsp)
-
-        def todense(a):
-            if isinstance(a, np.ndarray) or isscalarlike(a):
-                return a
-            return a.todense()
 
         @dec.skipif(LooseVersion(np.version.version) < LooseVersion('1.9'),
                     "feature requires Numpy 1.9")
@@ -1848,11 +1849,6 @@ class _TestFancyIndexing:
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix(B)
 
-        def todense(a):
-            if isinstance(a, np.ndarray):
-                return a
-            return a.todense()
-
         # [i]
         assert_equal(A[[1,3]].todense(), B[[1,3]])
 
@@ -1945,12 +1941,6 @@ class _TestFancyIndexing:
     def test_fancy_indexing_boolean(self):
         random.seed(1234)  # make runs repeatable
 
-        # CSR matrix returns matrix in some cases
-        def todense(a):
-            if isinstance(a, (np.matrix, np.ndarray)):
-                return a
-            return a.todense()
-
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix(B)
 
@@ -1977,12 +1967,6 @@ class _TestFancyIndexing:
 
     def test_fancy_indexing_sparse_boolean(self):
         random.seed(1234)  # make runs repeatable
-
-        # CSR matrix returns matrix in some cases
-        def todense(a):
-            if isinstance(a, (np.matrix, np.ndarray)):
-                return a
-            return a.todense()
 
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix(B)
