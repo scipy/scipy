@@ -558,11 +558,11 @@ class TestInvGamma(TestCase):
 
             a = [1.1, 3.1, 5.6]
             mvsk = stats.invgamma.stats(a=a, moments='mvsk')
-            assert_allclose(mvsk,
+            assert_array_almost_equal(mvsk,
                         ([10., 0.476190476, 0.2173913043],      # mmm
                          [np.inf, 0.2061430632, 0.01312749422], # vvv
-                         [np.inf, 41.95235392, 2.919025532],    # sss
-                         [np.inf, np.inf, 24.51923076]))        # kkk
+                         [np.nan, 41.95235392, 2.919025532],    # sss
+                         [np.nan, np.nan, 24.51923076]))        # kkk
 
 
 def test_rvgeneric_std():

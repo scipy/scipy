@@ -4218,9 +4218,9 @@ class invgamma_gen(rv_continuous):
         mu2 = np.where(a > 2., 1. / a1 / a1 / a2, np.inf)
         g1, g2 = None, None
         if 's' in moments:
-            g1 = np.where(a > 3., 4. * np.sqrt(a2) / a3, np.inf)
+            g1 = np.where(a > 3., 4. * np.sqrt(a2) / a3, np.nan)
         if 'k' in moments:        
-            g2 = np.where(a > 4., 6. * (5. * a - 11.) / a3 / a4, np.inf)
+            g2 = np.where(a > 4., 6. * (5. * a - 11.) / a3 / a4, np.nan)
         return mu1, mu2, g1, g2
 
     def _entropy(self, a):
