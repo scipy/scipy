@@ -387,10 +387,14 @@ class spmatrix(object):
                 return self.astype(np.float_)._mul_scalar(1./other)
             else:
                 r = self._mul_scalar(1./other)
-                if np.issubdtype(r.dtype, np.floating):
+
+                scalar_dtype = np.asarray(other).dtype
+                if (np.issubdtype(self.dtype, np.integer)
+                        and np.issubdtype(scalar_dtype, np.integer)):
                     return r.astype(self.dtype)
                 else:
                     return r
+                    
         elif isdense(other):
             if not rdivide:
                 if true_divide:
