@@ -413,27 +413,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         else:
             raise NotImplementedError
 
-    def __truediv__(self,other):
-        if isscalarlike(other):
-            if np.can_cast(self.dtype, np.float_):
-                return self.astype(np.float_) * (1./other)
-            else:
-                return self * (1./other)
-
-        elif isspmatrix(other):
-            if other.shape != self.shape:
-                raise ValueError('inconsistent shapes')
-            elif np.can_cast(self.dtype, np.float_):
-                return self.astype(np.float_)._binopt(other,'_eldiv_')
-            else:
-                return self._binopt(other,'_eldiv_')
-
-        elif isdense(other):
-            return self.todense().__truediv__(other)
-
-        else:
-            raise NotImplementedError
-
     def multiply(self, other):
         """Point-wise multiplication by another matrix, vector, or
         scalar.
@@ -931,3 +910,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         A = self.__class__((data, indices, indptr), shape=self.shape)
 
         return A
+
+    def _divide_sparse(self, other):
+        """
+        Divide this matrix by a second sparse matrix.
+        """
+        if other.shape != self.shape:
+            raise ValueError('inconsistent shapes')
+        return self._binopt(other, '_eldiv_')

@@ -375,24 +375,54 @@ class spmatrix(object):
     # Other Arithmetic #
     ####################
 
-    def __truediv__(self, other):
+    def _divide(self, other, true_divide=False, rdivide=False):
         if isscalarlike(other):
-            if np.can_cast(self.dtype, np.float_):
-                return self.astype(np.float_) * (1./other)
-            else:
-                return self * (1./other)
-        else:
-            if np.can_cast(self.dtype, np.float_):
-                return self.astype(np.float_).tocsr().__truediv__(other)
-            else:
-                return self.tocsr().__truediv__(other)
+            if rdivide:
+                if true_divide:
+                    return np.true_divide(other, self.todense())
+                else:
+                    return np.divide(other, self.todense())
 
-    def __rtruediv__(self, other):
-        return NotImplemented
+            if true_divide and np.can_cast(self.dtype, np.float_):
+                return self.astype(np.float_)._mul_scalar(1./other)
+            else:
+                r = self._mul_scalar(1./other)
+                if np.issubdtype(r.dtype, np.floating):
+                    return r.astype(self.dtype)
+                else:
+                    return r
+        elif isdense(other):
+            if not rdivide:
+                if true_divide:
+                    return np.true_divide(self.todense(), other)
+                else:
+                    return np.divide(self.todense(), other)
+            else:
+                if true_divide:
+                    return np.true_divide(other, self.todense())
+                else:
+                    return np.divide(other, self.todense())
+        elif isspmatrix(other):
+            if rdivide:
+                return other._divide(self, true_divide, rdivide=False)
+
+            self_csr = self.tocsr()
+            if true_divide and np.can_cast(self.dtype, np.float_):
+                return self_csr.astype(np.float_)._divide_sparse(other)
+            else:
+                return self_csr._divide_sparse(other)
+        else:
+            return NotImplemented
+
+    def __truediv__(self, other):
+        return self._divide(other, true_divide=True)
 
     def __div__(self, other):
         # Always do true division
-        return self.__truediv__(other)
+        return self._divide(other, true_divide=True)
+
+    def __rtruediv__(self, other):
+        return NotImplemented
 
     def __rdiv__(self, other):
         # Always do true division
@@ -727,38 +757,29 @@ class spmatrix(object):
         del without_self[pos]
         without_self = tuple(without_self)
 
-        # Associative operations
         if func is np.multiply:
             return self.multiply(*without_self)
-
         elif func is np.add:
             return self.__add__(*without_self)
-
-        # Non-associative operations
         elif func is np.dot:
             if pos == 0:
                 return self.__mul__(inputs[1])
             else:
                 return self.__rmul__(inputs[0])
-
         elif func is np.subtract:
             if pos == 0:
                 return self.__sub__(inputs[1])
             else:
                 return self.__rsub__(inputs[0])
-
         elif func is np.divide:
-            if pos == 0:
-                return self.__div__(inputs[1])
-            else:
-                return NotImplemented
-
+            true_divide = (sys.version_info[0] >= 3)
+            rdivide = (pos == 1)
+            return self._divide(*without_self,
+                                true_divide=true_divide,
+                                rdivide=rdivide)
         elif func is np.true_divide:
-            if pos == 0:
-                return self.__truediv__(inputs[1])
-            else:
-                return NotImplemented
-
+            rdivide = (pos == 1)
+            return self._divide(*without_self, true_divide=True, rdivide=rdivide)
         else:
             return NotImplemented
 
