@@ -1333,40 +1333,60 @@ class _TestCommon:
     #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
 
     def test_ufunc_overrides(self):
-        def check():
-            #data
-            a = np.array([[1, 2, 3],
-                          [4, 5, 6],
-                          [7, 8, 9]])
-            b = np.array([[9, 8, 7],
-                          [6, 5, 4],
-                          [3, 2, 1]])
+        # data
+        a = np.array([[1, 2, 3],
+                      [4, 5, 6],
+                      [7, 8, 9]])
+        b = np.array([[9, 8, 7],
+                      [6, 5, 4],
+                      [3, 2, 1]])
 
-            asp = self.spmatrix(a)
-            bsp = self.spmatrix(b)
+        asp = self.spmatrix(a)
+        bsp = self.spmatrix(b)
 
-            # associative
+        def todense(a):
+            if isinstance(a, np.ndarray):
+                return a
+            return a.todense()
+
+        @dec.skipif(LooseVersion(np.version.version) < LooseVersion('1.9'),
+                    "feature requires Numpy 1.9")
+        def check(i, j):
+            ax = (a, asp)[i]
+            bx = (b, bsp)[j]
+
+            # -- associative
+
             # multiply
-            assert_array_equal(np.multiply(asp, bsp).A, np.multiply(a, b))
+            assert_array_equal(todense(np.multiply(ax, bx)), np.multiply(a, b))
+
             # add
-            assert_array_equal(np.add(asp, bsp).A, np.add(a, b))
+            assert_array_equal(todense(np.add(ax, bx)), np.add(a, b))
 
-            # non-associative
+            # -- non-associative
+
             # dot
-            assert_array_equal(np.dot(asp, bsp).A, np.dot(a, b))
-            assert_array_equal(np.dot(a, bsp), np.dot(a, b))
-            assert_array_equal(np.dot(asp, b), np.dot(a, b))
-            # subtract
-            assert_array_equal(np.subtract(asp, bsp).A, np.subtract(a, b))
-            assert_array_equal(np.subtract(a, bsp).A, np.subtract(a, b))
-            assert_array_equal(np.subtract(asp, b).A, np.subtract(a, b))
-            # divide
-            assert_array_equal(np.divide(asp, bsp).A, np.divide(a, b))
-            assert_array_equal(np.divide(asp, b).A, np.divide(a, b))
-            assert_raises(TypeError, np.divide, a, bsp)
+            assert_array_equal(todense(np.dot(ax, bx)), np.dot(a, b))
 
-        if LooseVersion(np.version.version) > LooseVersion('1.9'):
-            yield check
+            # subtract
+            assert_array_equal(todense(np.subtract(ax, bx)), np.subtract(a, b))
+
+            # divide
+            if ax is asp or bx is b:
+                assert_array_equal(todense(np.divide(ax, bx)), np.divide(a, b))
+            if bx is bsp:
+                assert_raises(TypeError, np.divide, a, bx)
+
+            # true_divide
+            if ax is asp or bx is b:
+                assert_array_equal(todense(np.true_divide(ax, bx)), np.true_divide(a, b))
+            if bx is bsp:
+                assert_raises(TypeError, np.true_divide, a, bx)
+
+        for i in (0, 1):
+            for j in (0, 1):
+                if i != 0 or j != 0:
+                    yield check, i, j
 
 
 class _TestInplaceArithmetic:
