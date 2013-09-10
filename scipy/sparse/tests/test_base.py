@@ -39,7 +39,7 @@ import scipy.sparse as sparse
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
         eye, isspmatrix, SparseEfficiencyWarning
-from scipy.sparse.sputils import supported_dtypes
+from scipy.sparse.sputils import supported_dtypes, isscalarlike
 from scipy.sparse.linalg import splu, expm, inv
 
 import nose
@@ -1341,20 +1341,32 @@ class _TestCommon:
                       [6, 0, 0],
                       [3, 2, 1]])
         c = 1.0
+        d = 1 + 2j
 
         asp = self.spmatrix(a)
         bsp = self.spmatrix(b)
 
+        a_items = dict(dense=a, scalar=c, cplx_scalar=d, sparse=asp)
+        b_items = dict(dense=b, scalar=c, cplx_scalar=d, sparse=bsp)
+
         def todense(a):
-            if isinstance(a, np.ndarray):
+            if isinstance(a, np.ndarray) or isscalarlike(a):
                 return a
             return a.todense()
 
         @dec.skipif(LooseVersion(np.version.version) < LooseVersion('1.9'),
                     "feature requires Numpy 1.9")
-        def check(i, j):
-            ax = (a, c, asp)[i]
-            bx = (b, c, bsp)[j]
+        def check(i, j, dtype):
+            ax = a_items[i]
+            bx = b_items[j]
+
+            if isinstance(ax, self.spmatrix):
+                ax = ax.astype(dtype)
+            if isinstance(bx, self.spmatrix):
+                bx = bx.astype(dtype)
+
+            a = todense(ax)
+            b = todense(bx)
 
             # -- associative
 
@@ -1362,7 +1374,10 @@ class _TestCommon:
             assert_array_equal(todense(np.multiply(ax, bx)), np.multiply(a, b))
 
             # add
-            assert_array_equal(todense(np.add(ax, bx)), np.add(a, b))
+            if isscalarlike(ax) or isscalarlike(bx):
+                assert_raises(TypeError, np.add, ax, bx)
+            else:
+                assert_array_equal(todense(np.add(ax, bx)), np.add(a, b))
 
             # -- non-associative
 
@@ -1370,7 +1385,10 @@ class _TestCommon:
             assert_array_equal(todense(np.dot(ax, bx)), np.dot(a, b))
 
             # subtract
-            assert_array_equal(todense(np.subtract(ax, bx)), np.subtract(a, b))
+            if isscalarlike(ax) or isscalarlike(bx):
+                assert_raises(TypeError, np.subtract, ax, bx)
+            else:
+                assert_array_equal(todense(np.subtract(ax, bx)), np.subtract(a, b))
 
             # divide
             assert_array_equal(todense(np.divide(ax, bx)), np.divide(a, b))
@@ -1378,10 +1396,11 @@ class _TestCommon:
             # true_divide
             assert_array_equal(todense(np.true_divide(ax, bx)), np.true_divide(a, b))
 
-        for i in range(3):
-            for j in range(3):
-                if i == 2 or j == 2:
-                    yield check, i, j
+        for i in a_items.keys():
+            for j in b_items.keys():
+                for dtype in [np.int_, np.float_, np.complex_]:
+                    if i == 'sparse' or j == 'sparse':
+                        yield check, i, j, dtype
 
 
 class _TestInplaceArithmetic:
