@@ -1335,11 +1335,12 @@ class _TestCommon:
     def test_ufunc_overrides(self):
         # data
         a = np.array([[1, 2, 3],
-                      [4, 5, 6],
+                      [4, 5, 0],
                       [7, 8, 9]])
         b = np.array([[9, 8, 7],
-                      [6, 5, 4],
+                      [6, 0, 0],
                       [3, 2, 1]])
+        c = 1.0
 
         asp = self.spmatrix(a)
         bsp = self.spmatrix(b)
@@ -1352,8 +1353,8 @@ class _TestCommon:
         @dec.skipif(LooseVersion(np.version.version) < LooseVersion('1.9'),
                     "feature requires Numpy 1.9")
         def check(i, j):
-            ax = (a, asp)[i]
-            bx = (b, bsp)[j]
+            ax = (a, c, asp)[i]
+            bx = (b, c, bsp)[j]
 
             # -- associative
 
@@ -1372,20 +1373,14 @@ class _TestCommon:
             assert_array_equal(todense(np.subtract(ax, bx)), np.subtract(a, b))
 
             # divide
-            if ax is asp or bx is b:
-                assert_array_equal(todense(np.divide(ax, bx)), np.divide(a, b))
-            if bx is bsp:
-                assert_raises(TypeError, np.divide, a, bx)
+            assert_array_equal(todense(np.divide(ax, bx)), np.divide(a, b))
 
             # true_divide
-            if ax is asp or bx is b:
-                assert_array_equal(todense(np.true_divide(ax, bx)), np.true_divide(a, b))
-            if bx is bsp:
-                assert_raises(TypeError, np.true_divide, a, bx)
+            assert_array_equal(todense(np.true_divide(ax, bx)), np.true_divide(a, b))
 
-        for i in (0, 1):
-            for j in (0, 1):
-                if i != 0 or j != 0:
+        for i in range(3):
+            for j in range(3):
+                if i == 2 or j == 2:
                     yield check, i, j
 
 
