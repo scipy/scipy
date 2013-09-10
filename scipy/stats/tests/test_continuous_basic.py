@@ -406,7 +406,8 @@ def check_normalization(distfn, args, distname):
     npt.assert_allclose(normalization_moment, 1.0)
 
     # this is a temporary plug: either ncf or expect is problematic;
-	# best be marked as a knownfail, but I've no clue how to do it.
+    msg = "ncf normalization requires low tolerance"
+    npt.dec.knownfailureif(distname=="ncf", msg)(lambda: None)()
     if distname == "ncf":
         atol, rtol = 1e-5, 0
     else:
