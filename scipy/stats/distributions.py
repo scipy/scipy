@@ -2670,7 +2670,7 @@ class burr_gen(rv_continuous):
         return mu, mu2, g1, g2
 burr = burr_gen(a=0.0, name='burr')
 
-#XXX: cf PR #2552
+
 class fisk_gen(burr_gen):
     """A Fisk continuous random variable.
 
@@ -4204,19 +4204,19 @@ class invgamma_gen(rv_continuous):
         return exp(self._logpdf(x,a))
 
     def _logpdf(self, x, a):
-        return (-(a+1)*log(x)-gamln(a) - 1.0/x)
+        return (-(a+1) * log(x) - gamln(a) - 1.0/x)
 
     def _cdf(self, x, a):
-        return 1.0-special.gammainc(a, 1.0/x)
+        return 1.0 - special.gammainc(a, 1.0/x)
 
     def _ppf(self, q, a):
-        return 1.0/special.gammaincinv(a,1-q)
+        return 1.0 / special.gammaincinv(a, 1.-q)
 
     def _munp(self, n, a):
-        return exp(gamln(a-n) - gamln(a))
+        return np.where(a > n, exp(gamln(a-n) - gamln(a)), np.nan)
 
     def _entropy(self, a):
-        return a - (a+1.0)*special.psi(a) + gamln(a)
+        return a - (a+1.0) * special.psi(a) + gamln(a)
 invgamma = invgamma_gen(a=0.0, name='invgamma')
 
 
