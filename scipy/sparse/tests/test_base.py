@@ -31,7 +31,7 @@ from numpy import arange, zeros, array, dot, matrix, asmatrix, asarray, \
 import random
 from numpy.testing import assert_raises, assert_equal, assert_array_equal, \
         assert_array_almost_equal, assert_almost_equal, assert_, \
-        dec, run_module_suite
+        dec, run_module_suite, assert_allclose
 
 import scipy.linalg
 
@@ -1342,12 +1342,13 @@ class _TestCommon:
                       [3, 2, 1]])
         c = 1.0
         d = 1 + 2j
+        e = 5
 
         asp = self.spmatrix(a)
         bsp = self.spmatrix(b)
 
-        a_items = dict(dense=a, scalar=c, cplx_scalar=d, sparse=asp)
-        b_items = dict(dense=b, scalar=c, cplx_scalar=d, sparse=bsp)
+        a_items = dict(dense=a, scalar=c, cplx_scalar=d, int_scalar=e, sparse=asp)
+        b_items = dict(dense=b, scalar=c, cplx_scalar=d, int_scalar=e, sparse=bsp)
 
         def todense(a):
             if isinstance(a, np.ndarray) or isscalarlike(a):
@@ -1391,10 +1392,20 @@ class _TestCommon:
                 assert_array_equal(todense(np.subtract(ax, bx)), np.subtract(a, b))
 
             # divide
-            assert_array_equal(todense(np.divide(ax, bx)), np.divide(a, b))
+            if isscalarlike(bx):
+                # Rounding error may be different, as the sparse implementation
+                # computes a/b -> a * (1/b) if b is a scalar
+                assert_allclose(todense(np.divide(ax, bx)), np.divide(a, b),
+                                rtol=5e-15, atol=0)
+            else:
+                assert_array_equal(todense(np.divide(ax, bx)), np.divide(a, b))
 
             # true_divide
-            assert_array_equal(todense(np.true_divide(ax, bx)), np.true_divide(a, b))
+            if isscalarlike(bx):
+                assert_allclose(todense(np.true_divide(ax, bx)), np.true_divide(a, b),
+                                rtol=5e-15, atol=0)
+            else:
+                assert_array_equal(todense(np.true_divide(ax, bx)), np.true_divide(a, b))
 
         for i in a_items.keys():
             for j in b_items.keys():
