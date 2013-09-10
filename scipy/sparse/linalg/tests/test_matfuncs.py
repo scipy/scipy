@@ -8,7 +8,6 @@
 from __future__ import division, print_function, absolute_import
 
 import math
-import itertools
 
 import warnings
 
@@ -429,10 +428,8 @@ class TestExpM(TestCase):
             desired = np.zeros((n, n), dtype=float)
             for p in range(n*k):
                 Ap = _burkardt_13_power(n, p)
-                min_entry = np.min(Ap)
-                max_entry = np.max(Ap)
-                assert_equal(min_entry, 0)
-                assert_allclose(max_entry, np.power(10, -np.floor(p/n)*n))
+                assert_equal(np.min(Ap), 0)
+                assert_allclose(np.max(Ap), np.power(10, -np.floor(p/n)*n))
                 desired += Ap / factorial(p)
             actual = expm(_burkardt_13_power(n, 1))
             assert_allclose(actual, desired)
