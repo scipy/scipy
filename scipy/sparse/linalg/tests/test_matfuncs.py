@@ -346,12 +346,12 @@ class TestExpM(TestCase):
     def test_burkardt_10(self):
         # This is Ward's example #1.
         # It is defective and nonderogatory.
-        # The eigenvalues are 3, 3 and 6.
         A = np.array([
             [4, 2, 0],
             [1, 4, 1],
             [1, 1, 4],
             ], dtype=float)
+        assert_allclose(sorted(scipy.linalg.eigvals(A)), (3, 3, 6))
         desired = np.array([
             [147.8666224463699, 183.7651386463682, 71.79703239999647],
             [127.7810855231823, 183.7651386463682, 91.88256932318415],
@@ -363,12 +363,12 @@ class TestExpM(TestCase):
     def test_burkardt_11(self):
         # This is Ward's example #2.
         # It is a symmetric matrix.
-        # The eigenvalues are 20, 30, 40.
         A = np.array([
             [29.87942128909879, 0.7815750847907159, -2.289519314033932],
             [0.7815750847907159, 25.72656945571064, 8.680737820540137],
             [-2.289519314033932, 8.680737820540137, 34.39400925519054],
             ], dtype=float)
+        assert_allclose(scipy.linalg.eigvalsh(A), (20, 30, 40))
         desired = np.array([
              [
                  5.496313853692378E+15,
@@ -389,12 +389,13 @@ class TestExpM(TestCase):
     def test_burkardt_12(self):
         # This is Ward's example #3.
         # Ward's algorithm has difficulty estimating the accuracy
-        # of its results.  The eigenvalues are -1, -2, -20.
+        # of its results.
         A = np.array([
             [-131, 19, 18],
             [-390, 56, 54],
             [-387, 57, 52],
             ], dtype=float)
+        assert_allclose(sorted(scipy.linalg.eigvals(A)), (-20, -2, -1))
         desired = np.array([
             [-1.509644158793135, 0.3678794391096522, 0.1353352811751005],
             [-5.632570799891469, 1.471517758499875, 0.4060058435250609],
