@@ -536,9 +536,9 @@ def bartlett(M, sym=True):
     Returns
     -------
     w : ndarray
-        The triangular window, with the maximum value normalized to 1
-        (though the value 1 does not appear if `M` is even
-        and `sym` is True), and the first and last samples equal to zero.
+        The triangular window, with the first and last samples equal to zero
+        and the maximum value normalized to 1 (though the value 1 does not 
+        appear if `M` is even and `sym` is True).
 
     Notes
     -----
