@@ -730,9 +730,7 @@ cdef class _Qhull:
             if facet.visitid > 0:
                 # finite Voronoi vertex
 
-                center = facet.center
-                if center == NULL:
-                    center = qh_facetcenter(facet.vertices)
+                center = qh_facetcenter(facet.vertices)
 
                 nvoronoi_vertices = max(facet.visitid, nvoronoi_vertices)
                 if nvoronoi_vertices >= voronoi_vertices.shape[0]:
@@ -747,8 +745,7 @@ cdef class _Qhull:
                 for k in range(self.ndim):
                     voronoi_vertices[facet.visitid-1, k] = center[k]
 
-                if center != facet.center:
-                    qh_memfree(center, qh_qh.center_size)
+                qh_memfree(center, qh_qh.center_size)
 
                 if facet.coplanarset:
                     for k in range(qh_setsize(facet.coplanarset)):
