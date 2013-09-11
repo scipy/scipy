@@ -65,6 +65,15 @@ pathological_data_2 = np.array([
     [1, -1 - np.finfo(np.float_).eps], [1, 0], [1, 1],
 ])
 
+bug_2850_chunks = [np.random.rand(10, 2),
+                   np.array([[0,0], [0,1], [1,0], [1,1]]) # add corners
+                   ]
+
+# same with some additional chunks
+bug_2850_chunks_2 = (bug_2850_chunks +
+                     [np.random.rand(10, 2),
+                      0.25 + np.array([[0,0], [0,1], [1,0], [1,1]])])
+
 DATASETS = {
     'some-points': np.asarray(points),
     'random-2d': np.random.rand(30, 2),
@@ -77,6 +86,40 @@ DATASETS = {
     'pathological-1': pathological_data_1,
     'pathological-2': pathological_data_2
 }
+
+INCREMENTAL_DATASETS = {
+    'bug-2850': (bug_2850_chunks, None),
+    'bug-2850-2': (bug_2850_chunks_2, None),
+}
+
+def _add_inc_data(name, chunksize):
+    """
+    Generate incremental datasets from basic data sets
+    """
+    points = DATASETS[name]
+    ndim = points.shape[1]
+
+    opts = None
+    nmin = ndim + 2
+
+    if name == 'some-points':
+        # since Qz is not allowed, use QJ
+        opts = 'QJ Pp'
+    elif name == 'pathological-1':
+        # include enough points so that we get different x-coordinates
+        nmin = 12
+
+    chunks = [points[:nmin]]
+    for j in xrange(nmin, len(points), chunksize):
+        chunks.append(points[j:j+chunksize])
+
+    new_name = "%s-chunk-%d" % (name, chunksize)
+    assert new_name not in INCREMENTAL_DATASETS
+    INCREMENTAL_DATASETS[new_name] = (chunks, opts)
+
+for name in DATASETS:
+    for chunksize in 1, 4, 16:
+        _add_inc_data(name, chunksize)
 
 
 class Test_Qhull(object):
@@ -432,30 +475,22 @@ class TestDelaunay(object):
     def test_incremental(self):
         # Test incremental construction of the triangulation
 
-        def check(name, chunksize):
-            points = DATASETS[name]
-            ndim = points.shape[1]
+        def check(name):
+            chunks, opts = INCREMENTAL_DATASETS[name]
+            points = np.concatenate(chunks, axis=0)
 
-            opts = None
-            nmin = ndim + 2
-
-            if name == 'some-points':
-                # since Qz is not allowed, use QJ
-                opts = 'QJ Pp'
-            elif name == 'pathological-1':
-                # include enough points so that we get different x-coordinates
-                nmin = 12
-
-            obj = qhull.Delaunay(points[:nmin], incremental=True,
+            obj = qhull.Delaunay(chunks[0], incremental=True,
                                  qhull_options=opts)
-            for j in xrange(nmin, len(points), chunksize):
-                obj.add_points(points[j:j+chunksize])
+            for chunk in chunks[1:]:
+                obj.add_points(chunk)
 
             obj2 = qhull.Delaunay(points)
 
-            obj3 = qhull.Delaunay(points[:nmin], incremental=True,
+            obj3 = qhull.Delaunay(chunks[0], incremental=True,
                                   qhull_options=opts)
-            obj3.add_points(points[nmin:], restart=True)
+            if len(chunks) > 1:
+                obj3.add_points(np.concatenate(chunks[1:], axis=0),
+                                restart=True)
 
             # Check that the incremental mode agrees with upfront mode
             if name.startswith('pathological'):
@@ -473,9 +508,8 @@ class TestDelaunay(object):
             assert_unordered_tuple_list_equal(obj2.simplices, obj3.simplices,
                                               tpl=sorted_tuple)
 
-        for name in sorted(DATASETS):
-            for chunksize in 1, 4:
-                yield check, name, chunksize
+        for name in sorted(INCREMENTAL_DATASETS):
+            yield check, name
 
 
 def assert_hulls_equal(points, facets_1, facets_2):
@@ -556,32 +590,27 @@ class TestConvexHull:
 
     def test_incremental(self):
         # Test incremental construction of the convex hull
-        def check(name, chunksize):
-            points = DATASETS[name]
-            ndim = points.shape[1]
+        def check(name):
+            chunks, _ = INCREMENTAL_DATASETS[name]
+            points = np.concatenate(chunks, axis=0)
 
-            if name == 'pathological-1':
-                # include enough points so that we get different x-coordinates
-                nmin = 12
-            else:
-                nmin = ndim + 2
-
-            obj = qhull.ConvexHull(points[:nmin], incremental=True)
-            for j in xrange(nmin, len(points), chunksize):
-                obj.add_points(points[j:j+chunksize])
+            obj = qhull.ConvexHull(chunks[0], incremental=True)
+            for chunk in chunks[1:]:
+                obj.add_points(chunk)
 
             obj2 = qhull.ConvexHull(points)
 
-            obj3 = qhull.ConvexHull(points[:nmin], incremental=True)
-            obj3.add_points(points[nmin:], restart=True)
+            obj3 = qhull.ConvexHull(chunks[0], incremental=True)
+            if len(chunks) > 1:
+                obj3.add_points(np.concatenate(chunks[1:], axis=0),
+                                restart=True)
 
             # Check that the incremental mode agrees with upfront mode
             assert_hulls_equal(points, obj.simplices, obj2.simplices)
             assert_hulls_equal(points, obj.simplices, obj3.simplices)
 
-        for name in sorted(DATASETS):
-            for chunksize in 1, 4:
-                yield check, name, chunksize
+        for name in sorted(INCREMENTAL_DATASETS):
+            yield check, name
 
     def test_vertices_2d(self):
         # The vertices should be in counterclockwise order in 2-D
@@ -728,30 +757,22 @@ class TestVoronoi:
     def test_incremental(self):
         # Test incremental construction of the triangulation
 
-        def check(name, chunksize):
-            points = DATASETS[name]
-            ndim = points.shape[1]
+        def check(name):
+            chunks, opts = INCREMENTAL_DATASETS[name]
+            points = np.concatenate(chunks, axis=0)
 
-            opts = None
-            nmin = ndim + 2
-
-            if name == 'some-points':
-                # since Qz is not allowed, use QJ
-                opts = 'QJ Pp'
-            elif name == 'pathological-1':
-                # include enough points so that we get different x-coordinates
-                nmin = 12
-
-            obj = qhull.Voronoi(points[:nmin], incremental=True,
+            obj = qhull.Voronoi(chunks[0], incremental=True,
                                  qhull_options=opts)
-            for j in xrange(nmin, len(points), chunksize):
-                obj.add_points(points[j:j+chunksize])
+            for chunk in chunks[1:]:
+                obj.add_points(chunk)
 
             obj2 = qhull.Voronoi(points)
 
-            obj3 = qhull.Voronoi(points[:nmin], incremental=True,
+            obj3 = qhull.Voronoi(chunks[0], incremental=True,
                                  qhull_options=opts)
-            obj3.add_points(points[nmin:], restart=True)
+            if len(chunks) > 1:
+                obj3.add_points(np.concatenate(chunks[1:], axis=0),
+                                restart=True)
 
             # -- Check that the incremental mode agrees with upfront mode
 
@@ -767,7 +788,11 @@ class TestVoronoi:
                 def remap(x):
                     if hasattr(x, '__len__'):
                         return tuple(set([remap(y) for y in x]))
-                    return vertex_map.get(x, x)
+                    try:
+                        return vertex_map[x]
+                    except KeyError:
+                        raise AssertionError("incremental result has spurious vertex at %r"
+                                             % (objx.vertices[x],))
 
                 def simplified(x):
                     items = set(map(sorted_tuple, x))
@@ -788,15 +813,15 @@ class TestVoronoi:
 
                 # XXX: compare ridge_points --- not clear exactly how to do this
 
-        for name in sorted(DATASETS):
-            if DATASETS[name].shape[1] > 3:
+        for name in sorted(INCREMENTAL_DATASETS):
+            if INCREMENTAL_DATASETS[name][0][0].shape[1] > 3:
                 # too slow (testing of the result --- qhull is still fast)
                 continue
-            if name == 'pathological-1':
+            if name.startswith('pathological-1'):
                 # the test above fails -- but the plotted diagram looks OK
                 continue
-            for chunksize in 1, 4:
-                yield check, name, chunksize
+
+            yield check, name
 
 if __name__ == "__main__":
     run_module_suite()
