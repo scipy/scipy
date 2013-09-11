@@ -187,57 +187,42 @@ class IndexMixin(object):
         return row, col
 
     def _check_ellipsis(self, index):
-        """ Process indices with Ellipsis. Returns modified index. The
-        plural form of ellipsis is ellipses."""
+        """Process indices with Ellipsis. Returns modified index."""
         if index is Ellipsis:
             return (slice(None), slice(None))
-        # There is a NumPy wontfix bug which raises an error if we ask
-        # `Ellipsis in index`, where index is a tuple which contains
-        # an ndarray. So we work around that. Otherwise we'd do.
-        #  elif isinstance(index, tuple) and (Ellipsis in index):
         elif isinstance(index, tuple):
-            has_ellipsis = False
-            for i in index:
-                if i is Ellipsis:
-                    has_ellipsis = True
-            if not has_ellipsis:
-                return index
-            # (...,)
-            elif len(index) == 1:
-                # It must be the Ellipsis.
-                return (slice(None), slice(None))
-            # (..., ?), (?, ...)
-            elif len(index) == 2:
-                if index[0] is Ellipsis:
-                    index = (slice(None), index[1])
-                if index[1] is Ellipsis:
-                    index = (index[0], slice(None))
-                return index
-            elif len(index) == 3:
-                # Convert to list for ease of manipulation.
-                index = list(index)
-                ellipsis_count = index.count(Ellipsis)
-                # (?, ..., ?), etc.
-                if ellipsis_count == 1:
-                    index.remove(Ellipsis)
-                    return tuple(index)
-                # (?, ..., ...), etc.
-                elif ellipsis_count == 2:
-                    if index[0] is not Ellipsis:
-                        return (index[0], slice(None))
-                    elif index[1] is not Ellipsis:
-                        return (slice(None), index[1])
-                    else:
-                        return (slice(None), index[2])
-                # (..., ..., ...)
-                else:
-                    return (slice(None), slice(None))
-            # bad stuff
+            # Find first ellipsis
+            for j, v in enumerate(index):
+                if v is Ellipsis:
+                    first_ellipsis = j
+                    break
             else:
-                raise IndexError('too many indices')
-        # indices without Ellipses
-        else:
-            return index
+                first_ellipsis = None
+
+            # Expand the first one
+            if first_ellipsis is not None:
+                # Shortcuts
+                if len(index) == 1:
+                    return (slice(None), slice(None))
+                elif len(index) == 2:
+                    if first_ellipsis == 0:
+                        if index[1] is Ellipsis:
+                            return (slice(None), slice(None))
+                        else:
+                            return (slice(None), index[1])
+                    else:
+                        return (index[0], slice(None))
+
+                # General case
+                tail = ()
+                for v in index[first_ellipsis+1:]:
+                    if v is not Ellipsis:
+                        tail = tail + (v,)
+                nd = first_ellipsis + len(tail)
+                nslice = max(0, 2 - nd)
+                return index[:first_ellipsis] + (slice(None),)*nslice + tail
+
+        return index
 
     def _check_boolean(self, row, col):
         from .base import isspmatrix  # ew...
