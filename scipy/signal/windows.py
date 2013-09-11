@@ -27,7 +27,7 @@ def boxcar(M, sym=True):
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1
+        The window, with the maximum value normalized to 1.
 
     Examples
     --------
@@ -74,7 +74,7 @@ def triang(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -138,7 +138,7 @@ def parzen(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -201,7 +201,7 @@ def bohman(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -266,7 +266,7 @@ def blackman(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Notes
     -----
@@ -347,7 +347,7 @@ def nuttall(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -408,7 +408,7 @@ def blackmanharris(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -469,7 +469,7 @@ def flattop(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -537,8 +537,8 @@ def bartlett(M, sym=True):
     -------
     w : ndarray
         The triangular window, with the maximum value normalized to 1
-        (though the value 1 does not appear if the number of samples is even
-        and sym is True), with the first and last samples equal to zero.
+        (though the value 1 does not appear if `M` is even
+        and `sym` is True), and the first and last samples equal to zero.
 
     Notes
     -----
@@ -723,7 +723,7 @@ def barthann(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -785,7 +785,7 @@ def hamming(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Notes
     -----
@@ -876,7 +876,7 @@ def kaiser(M, beta, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Notes
     -----
@@ -992,7 +992,7 @@ def gaussian(M, std, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Notes
     -----
@@ -1062,7 +1062,7 @@ def general_gaussian(M, p, sig, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Notes
     -----
@@ -1333,7 +1333,8 @@ def cosine(M, sym=True):
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
