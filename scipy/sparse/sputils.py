@@ -178,6 +178,9 @@ class IndexMixin(object):
            (index.ndim == 2) and index.dtype.kind == 'b'):
                 return index.nonzero()
 
+        # Parse any ellipses.
+        index = self._check_ellipsis(index)
+
         # Next, parse the tuple or object
         if isinstance(index, tuple):
             if len(index) == 2:
@@ -192,6 +195,44 @@ class IndexMixin(object):
         # Next, check for validity, or transform the index as needed.
         row, col = self._check_boolean(row, col)
         return row, col
+
+    def _check_ellipsis(self, index):
+        """Process indices with Ellipsis. Returns modified index."""
+        if index is Ellipsis:
+            return (slice(None), slice(None))
+        elif isinstance(index, tuple):
+            # Find first ellipsis
+            for j, v in enumerate(index):
+                if v is Ellipsis:
+                    first_ellipsis = j
+                    break
+            else:
+                first_ellipsis = None
+
+            # Expand the first one
+            if first_ellipsis is not None:
+                # Shortcuts
+                if len(index) == 1:
+                    return (slice(None), slice(None))
+                elif len(index) == 2:
+                    if first_ellipsis == 0:
+                        if index[1] is Ellipsis:
+                            return (slice(None), slice(None))
+                        else:
+                            return (slice(None), index[1])
+                    else:
+                        return (index[0], slice(None))
+
+                # General case
+                tail = ()
+                for v in index[first_ellipsis+1:]:
+                    if v is not Ellipsis:
+                        tail = tail + (v,)
+                nd = first_ellipsis + len(tail)
+                nslice = max(0, 2 - nd)
+                return index[:first_ellipsis] + (slice(None),)*nslice + tail
+
+        return index
 
     def _check_boolean(self, row, col):
         from .base import isspmatrix  # ew...
