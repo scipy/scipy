@@ -1371,7 +1371,12 @@ class _TestCommon:
 
             # add
             if isscalarlike(ax) or isscalarlike(bx):
-                assert_raises(TypeError, np.add, ax, bx)
+                try:
+                    assert_array_equal(todense(np.add(ax, bx)),
+                                       np.add(a, b))
+                except TypeError:
+                    # Not implemented for all spmatrix types
+                    pass
             else:
                 assert_array_equal(todense(np.add(ax, bx)), np.add(a, b))
 
@@ -1382,7 +1387,12 @@ class _TestCommon:
 
             # subtract
             if isscalarlike(ax) or isscalarlike(bx):
-                assert_raises(TypeError, np.subtract, ax, bx)
+                try:
+                    assert_array_equal(todense(np.subtract(ax, bx)),
+                                       np.subtract(a, b))
+                except TypeError:
+                    # Not implemented for all spmatrix types
+                    pass
             else:
                 assert_array_equal(todense(np.subtract(ax, bx)), np.subtract(a, b))
 
