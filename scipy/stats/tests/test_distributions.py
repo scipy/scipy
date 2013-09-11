@@ -551,7 +551,7 @@ class TestInvGamma(TestCase):
         # invgamma's moments are only finite for a>n
         # specific numbers checked w/ boost 1.54
         with warnings.catch_warnings():
-            warnings.simplefilter('ignore', RuntimeWarning)
+            warnings.simplefilter('error', RuntimeWarning)
             mvsk = stats.invgamma.stats(a=19.31, moments='mvsk')
             assert_allclose(mvsk,
                 [0.05461496450, 0.0001723162534, 1.020362676, 2.055616582])
