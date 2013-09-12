@@ -257,7 +257,7 @@ def test_cont_basic_slow():
 @npt.dec.slow
 def test_moments():
      knf = npt.dec.knownfailureif
-     distfailing = set(['betaprime', 'burr', 'dweibull', 'f', 
+     distfailing = set(['burr', 'dweibull', 'f', 
                 'fatiguelife', 'foldnorm', 'invgamma', 'ksone', 'ncf', 'nct', 
                 'rdist', 'rice', 'vonmises'])
 
