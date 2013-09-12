@@ -183,7 +183,7 @@ def test_cont_basic():
         sv = rvs.var()
         skurt = stats.kurtosis(rvs)
         sskew = stats.skew(rvs)
-        m,v = distfn.stats(*arg)
+        m, v = distfn.stats(*arg)
 
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
@@ -194,8 +194,6 @@ def test_cont_basic():
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
         yield check_pdf, distfn, arg, distname
-        if distname in ['wald']:
-            continue
         yield check_pdf_logpdf, distfn, arg, distname
         yield check_cdf_logcdf, distfn, arg, distname
         yield check_sf_logsf, distfn, arg, distname
@@ -227,7 +225,7 @@ def test_cont_basic_slow():
         sv = rvs.var()
         skurt = stats.kurtosis(rvs)
         sskew = stats.skew(rvs)
-        m,v = distfn.stats(*arg)
+        m, v = distfn.stats(*arg)
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
         # the sample skew kurtosis test has known failures, not very good distance measure
@@ -254,6 +252,25 @@ def test_cont_basic_slow():
         elif distname == 'ksone':
             arg = (3,)
         yield check_named_args, distfn, x, arg, locscale_defaults, meths
+
+
+@npt.dec.slow
+def test_moments():
+     knf = npt.dec.knownfailureif
+     distfailing = set(['betaprime', 'burr', 'dweibull', 'f', 
+                'fatiguelife', 'foldnorm', 'invgamma', 'ksone', 'ncf', 'nct', 
+                'rdist', 'rice', 'vonmises'])
+
+     for distname, arg in distcont[:]:
+        distfn = getattr(stats, distname)
+        m, v, s, k = distfn.stats(*arg, moments='mvsk')
+        cond = distname in distfailing
+        msg = distname + ' fails moments'
+        yield knf(cond, msg)(check_normalization), distfn, arg, distname
+        yield knf(cond, msg)(check_mean_expect), distfn, arg, m, distname
+        yield knf(cond, msg)(check_var_expect), distfn, arg, m, v, distname
+        yield knf(cond, msg)(check_skew), distfn, arg, m, v, s, distname
+        yield knf(cond, msg)(check_kurt), distfn, arg, m, v, k, distname
 
 
 def check_moment(distfn, arg, m, v, msg):
@@ -318,6 +335,38 @@ def check_sample_skew_kurt(distfn, arg, ss, sk, msg):
 ##    kurt = distfn.stats(moment='k',*arg)[()]
     check_sample_meanvar(sk, kurt, msg + 'sample kurtosis test')
     check_sample_meanvar(ss, skew, msg + 'sample skew test')
+
+
+def check_mean_expect(distfn, arg, m, msg):
+    if np.isfinite(m):
+        m1 = distfn.expect(lambda x: x, arg)
+        npt.assert_almost_equal(m1, m, decimal=5, err_msg=msg +
+                            ' - 1st moment (expect)')
+
+
+def check_var_expect(distfn, arg, m, v, msg):
+    if np.isfinite(v):
+        m2 = distfn.expect(lambda x: x*x, arg)
+        npt.assert_almost_equal(m2, v + m*m, decimal=5, err_msg=msg +
+                            ' - 2st moment (expect)')
+
+
+def check_skew(distfn, arg, m, v, s, msg):
+    if np.isfinite(s):
+        m3e = distfn.expect(lambda x: np.power(x-m, 3), arg)
+        npt.assert_almost_equal(m3e, s * np.power(v, 1.5), 
+                decimal=5, err_msg=msg + ' - skew')
+    else:
+        npt.assert_(np.isnan(s))
+
+
+def check_kurt(distfn, arg, m, v, k, msg):
+    if np.isfinite(k):
+        m4e = distfn.expect(lambda x: np.power(x-m, 4), arg)
+        npt.assert_almost_equal(m4e, (k + 3.) * np.power(v, 2), 
+                decimal=5, err_msg=msg + ' - kurtosis')
+    else:
+        npt.assert_(np.isnan(k))
 
 
 def check_cdf_ppf(distfn,arg,msg):

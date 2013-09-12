@@ -26,11 +26,11 @@ distdiscrete = [
     ['planck', (0.51,)],   # 4.1
     ['poisson', (0.6,)],
     ['randint', (7, 31)],
-    ['skellam', (15, 8)]]
-#    ['zipf',     (4,)] ]   # arg=4 is ok,
+    ['skellam', (15, 8)], 
+    ['zipf',     (4,)]    # arg=4 is ok,
                            # Zipf broken for arg = 2, e.g. weird .stats
                            # looking closer, mean, var should be inf for arg=2
-
+]
 
 #@npt.dec.slow
 def test_discrete_basic():
@@ -40,7 +40,7 @@ def test_discrete_basic():
         np.random.seed(9765456)
         rvs = distfn.rvs(size=2000,*arg)
         supp = np.unique(rvs)
-        m,v = distfn.stats(*arg)
+        m, v = distfn.stats(*arg)
         # yield npt.assert_almost_equal(rvs.mean(), m, decimal=4,err_msg='mean')
         # yield npt.assert_almost_equal, rvs.mean(), m, 2, 'mean' # does not work
         yield check_sample_meanvar, rvs.mean(), m, distname + ' sample mean test'
@@ -49,21 +49,16 @@ def test_discrete_basic():
         yield check_cdf_ppf2, distfn, arg, supp, distname + ' cdf_ppf'
         yield check_pmf_cdf, distfn, arg, distname + ' pmf_cdf'
 
-        # zipf doesn't fail, but generates floating point warnings.
-        # Should be checked.
-        if not distname in ['zipf']:
-            yield check_oth, distfn, arg, distname + ' oth'
-            skurt = stats.kurtosis(rvs)
-            sskew = stats.skew(rvs)
-            yield check_sample_skew_kurt, distfn, arg, skurt, sskew, \
-                          distname + ' skew_kurt'
+        yield check_oth, distfn, arg, distname + ' oth'
+        skurt = stats.kurtosis(rvs)
+        sskew = stats.skew(rvs)
+        yield check_sample_skew_kurt, distfn, arg, skurt, sskew, \
+                      distname + ' skew_kurt'
 
-        # dlaplace doesn't fail, but generates lots of floating point warnings.
-        # Should be checked.
-        if not distname in ['dlaplace']:  # ['logser']:  #known failure, fixed
-            alpha = 0.01
-            yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
-                          distname + ' chisquare'
+        alpha = 0.01
+        yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
+                      distname + ' chisquare'
+
 
     seen = set()
     for distname, arg in distdiscrete:
@@ -79,6 +74,29 @@ def test_discrete_basic():
         k = spec_k.get(distname, 1)
         yield check_named_args, distfn, k, arg, locscale_defaults, meths
         yield check_scale_docstring, distfn
+
+
+#@npt.dec.slow
+def test_moments():
+    knf = npt.dec.knownfailureif
+    for distname, arg in distdiscrete:
+        distfn = getattr(stats,distname)
+        m, v, s, k = distfn.stats(*arg, moments='mvsk')
+
+        cond = distname in ['zipf', 'randint']
+        yield knf(cond, distname + ' normalization fails')(
+                check_normalization), distfn, arg, distname
+        yield check_moment, distfn, arg, m, v, distname
+        yield check_mean_expect, distfn, arg, m, distname
+        yield knf(distname=='zipf', 'zipf fails')(check_var_expect),\
+                distfn, arg, m, v, distname
+        yield knf(distname=='zipf', 'zipf fails')(check_skew),\
+                distfn, arg, m, v, s, distname
+
+        cond = distname in ['hypergeom', 'randint', 'zipf']
+        msg = distname + ' fails kurtosis'
+        yield knf(cond, msg)(check_kurt), distfn, arg, m, v, k, distname
+
 
 
 @npt.dec.slow
@@ -339,6 +357,75 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
 def check_scale_docstring(distfn):
     npt.assert_('scale' not in distfn.__doc__)
 
+
+## these are copy-pasted from test_continuous_basic, verbatim.
+def check_normalization(distfn, args, distname):
+    norm_moment = distfn.moment(0, *args)
+    npt.assert_allclose(norm_moment, 1.0)
+
+    # this is a temporary plug: either ncf or expect is problematic; 
+	# best be marked as a knownfail, but I've no clue how to do it.
+    if distname == "ncf":
+        atol, rtol = 1e-5, 0
+    else:
+        atol, rtol = 1e-7, 1e-7
+
+    norm_expect = distfn.expect(lambda x: 1, args=args)
+    npt.assert_allclose(norm_expect, 1.0, atol=atol, rtol=rtol,
+            err_msg=distname, verbose=True)
+
+    norm_cdf = distfn.cdf(distfn.b, *args)
+    npt.assert_allclose(norm_cdf, 1.0)
+
+
+def check_moment(distfn, arg, m, v, msg):
+    m1 = distfn.moment(1, *arg)
+    m2 = distfn.moment(2, *arg)
+    if not np.isinf(m):
+        npt.assert_almost_equal(m1, m, decimal=10, err_msg=msg +
+                            ' - 1st moment')
+    else:                     # or np.isnan(m1),
+        npt.assert_(np.isinf(m1),
+               msg + ' - 1st moment -infinite, m1=%s' % str(m1))
+
+    if not np.isinf(v):
+        npt.assert_almost_equal(m2 - m1 * m1, v, decimal=10, err_msg=msg +
+                            ' - 2ndt moment')
+    else:                     # or np.isnan(m2),
+        npt.assert_(np.isinf(m2),
+               msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
+
+
+def check_mean_expect(distfn, arg, m, msg):
+    if np.isfinite(m):
+        m1 = distfn.expect(lambda x: x, arg)
+        npt.assert_almost_equal(m1, m, decimal=5, err_msg=msg +
+                            ' - 1st moment (expect)')
+
+
+def check_var_expect(distfn, arg, m, v, msg):
+    if np.isfinite(v):
+        m2 = distfn.expect(lambda x: x*x, arg)
+        npt.assert_almost_equal(m2, v + m*m, decimal=5, err_msg=msg +
+                            ' - 2st moment (expect)')
+
+
+def check_skew(distfn, arg, m, v, s, msg):
+    if np.isfinite(s):
+        m3e = distfn.expect(lambda x: np.power(x-m, 3), arg)
+        npt.assert_almost_equal(m3e, s * np.power(v, 1.5), 
+                decimal=5, err_msg=msg + ' - skew')
+    else:
+        npt.assert_(np.isnan(s))
+
+
+def check_kurt(distfn, arg, m, v, k, msg):
+    if np.isfinite(k):
+        m4e = distfn.expect(lambda x: np.power(x-m, 4), arg)
+        npt.assert_almost_equal(m4e, (k + 3.) * np.power(v, 2), 
+                decimal=5, err_msg=msg + ' - kurtosis')
+    else:
+        npt.assert_(np.isnan(k))
 
 if __name__ == "__main__":
     # nose.run(argv=['', __file__])
