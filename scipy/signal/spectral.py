@@ -88,6 +88,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
 
     >>> f, Pxx_den = signal.periodogram(x, fs)
     >>> plt.semilogy(f, Pxx_den)
+    >>> plt.ylim([1e-7, 1e2])
     >>> plt.xlabel('frequency [Hz]')
     >>> plt.ylabel('PSD [V**2/Hz]')
     >>> plt.show()
@@ -103,6 +104,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
     >>> f, Pxx_spec = signal.periodogram(x, fs, 'flattop', scaling='spectrum')
     >>> plt.figure()
     >>> plt.semilogy(f, np.sqrt(Pxx_spec))
+    >>> plt.ylim([1e-4, 1e1])
     >>> plt.xlabel('frequency [Hz]')
     >>> plt.ylabel('Linear spectrum [V RMS]')
     >>> plt.show()
@@ -237,8 +239,9 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
 
     Compute and plot the power spectral density.
 
-    >>> f, Pxx_den = signal.welch(x, fs, 1024)
+    >>> f, Pxx_den = signal.welch(x, fs, nperseg=1024)
     >>> plt.semilogy(f, Pxx_den)
+    >>> plt.ylim([0.5e-3, 1])
     >>> plt.xlabel('frequency [Hz]')
     >>> plt.ylabel('PSD [V**2/Hz]')
     >>> plt.show()
