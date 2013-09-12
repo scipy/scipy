@@ -828,9 +828,6 @@ class TestVoronoi:
             if INCREMENTAL_DATASETS[name][0][0].shape[1] > 3:
                 # too slow (testing of the result --- qhull is still fast)
                 continue
-            if name.startswith('pathological-1'):
-                # the test above fails -- but the plotted diagram looks OK
-                continue
 
             yield check, name
 
