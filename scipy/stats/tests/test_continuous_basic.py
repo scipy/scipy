@@ -7,6 +7,8 @@ import numpy as np
 import numpy.testing as npt
 
 from scipy import stats
+from common_tests import (check_normalization, check_moment, check_mean_expect,
+        check_var_expect, check_skew, check_kurt)
 
 """
 Test all continuous distributions.
@@ -273,23 +275,6 @@ def test_moments():
         yield knf(cond, msg)(check_kurt), distfn, arg, m, v, k, distname
 
 
-def check_moment(distfn, arg, m, v, msg):
-    m1 = distfn.moment(1,*arg)
-    m2 = distfn.moment(2,*arg)
-    if not np.isinf(m):
-        npt.assert_almost_equal(m1, m, decimal=10, err_msg=msg +
-                            ' - 1st moment')
-    else:                     # or np.isnan(m1),
-        npt.assert_(np.isinf(m1),
-               msg + ' - 1st moment -infinite, m1=%s' % str(m1))
-    if not np.isinf(v):
-        npt.assert_almost_equal(m2-m1*m1, v, decimal=10, err_msg=msg +
-                            ' - 2ndt moment')
-    else:                     # or np.isnan(m2),
-        npt.assert_(np.isinf(m2),
-               msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
-
-
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
     # this did not work, skipped silently by nose
     if not np.isinf(m):
@@ -335,38 +320,6 @@ def check_sample_skew_kurt(distfn, arg, ss, sk, msg):
 ##    kurt = distfn.stats(moment='k',*arg)[()]
     check_sample_meanvar(sk, kurt, msg + 'sample kurtosis test')
     check_sample_meanvar(ss, skew, msg + 'sample skew test')
-
-
-def check_mean_expect(distfn, arg, m, msg):
-    if np.isfinite(m):
-        m1 = distfn.expect(lambda x: x, arg)
-        npt.assert_almost_equal(m1, m, decimal=5, err_msg=msg +
-                            ' - 1st moment (expect)')
-
-
-def check_var_expect(distfn, arg, m, v, msg):
-    if np.isfinite(v):
-        m2 = distfn.expect(lambda x: x*x, arg)
-        npt.assert_almost_equal(m2, v + m*m, decimal=5, err_msg=msg +
-                            ' - 2st moment (expect)')
-
-
-def check_skew(distfn, arg, m, v, s, msg):
-    if np.isfinite(s):
-        m3e = distfn.expect(lambda x: np.power(x-m, 3), arg)
-        npt.assert_almost_equal(m3e, s * np.power(v, 1.5), 
-                decimal=5, err_msg=msg + ' - skew')
-    else:
-        npt.assert_(np.isnan(s))
-
-
-def check_kurt(distfn, arg, m, v, k, msg):
-    if np.isfinite(k):
-        m4e = distfn.expect(lambda x: np.power(x-m, 4), arg)
-        npt.assert_almost_equal(m4e, (k + 3.) * np.power(v, 2), 
-                decimal=5, err_msg=msg + ' - kurtosis')
-    else:
-        npt.assert_(np.isnan(k))
 
 
 def check_cdf_ppf(distfn,arg,msg):
