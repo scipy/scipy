@@ -205,6 +205,19 @@ _qhull_lock = threading.Lock()
 cdef _Qhull _active_qhull = None
 cdef int _qhull_count = 0
 
+# Qhull objects pending cleanup
+#
+# Python's garbage collector can trigger a call to a destructor while
+# the qhull lock is held.  Destructors, for instance that of
+# Voronoi/etc, can call _Qhull methods that require the lock, which
+# causes a deadlock also in a single-threaded code.
+#
+# We ensure that _Qhull.close is safe to call from a destructor, by
+# postponing the cleanup if the lock happens to be held. The other
+# methods are not safe to call.
+#
+cdef list _qhull_pending_cleanup = []
+
 class QhullError(RuntimeError):
     pass
 
@@ -313,16 +326,32 @@ cdef class _Qhull:
 
     @cython.final
     def close(self):
-        _qhull_lock.acquire()
-        try:
-            if _active_qhull is self or self._saved_qh != NULL:
+        if _qhull_lock.acquire(False):
+            try:
+                self._cleanup_pending()
                 self._uninit()
-        finally:
-            _qhull_lock.release()
+            finally:
+                _qhull_lock.release()
+        else:
+            # Failed to acquire the lock. 
+            _qhull_pending_cleanup.append(self)
 
     @cython.final
-    def __del__(self):
-        self.close()
+    cdef int _cleanup_pending(self) except -1:
+        """
+        Process any pending cleanups (_qhull_lock MUST be held when calling this)
+        """
+        cdef _Qhull qh
+        cdef int k
+
+        for k in range(len(_qhull_pending_cleanup)):
+            try:
+                qh = _qhull_pending_cleanup.pop()
+            except IndexError:
+                break
+            qh._uninit()
+
+        return 0
 
     @cython.final
     cdef int _activate(self) except -1:
@@ -367,6 +396,10 @@ cdef class _Qhull:
         """
         global _active_qhull, _qhull_count
         cdef int curlong, totlong
+
+        if not (_active_qhull is self or self._saved_qh != NULL):
+            # already freed
+            return 0
 
         self._activate()
 
@@ -1587,6 +1620,9 @@ class Delaunay(_QhullUser):
        Delaunay triangulation. Omitted points are listed in the
        `coplanar` attribute.
 
+    Do not call the ``add_points`` method from a ``__del__``
+    destructor.
+
     Examples
     --------
     Triangulation of a set of points:
@@ -2109,6 +2145,9 @@ class ConvexHull(_QhullUser):
     -----
     The convex hull is computed using the Qhull libary [Qhull]_.
 
+    Do not call the ``add_points`` method from a ``__del__``
+    destructor.
+
     Examples
     --------
 
@@ -2228,6 +2267,9 @@ class Voronoi(_QhullUser):
     Notes
     -----
     The Voronoi diagram is computed using the Qhull libary [Qhull]_.
+
+    Do not call the ``add_points`` method from a ``__del__``
+    destructor.
 
     Examples
     --------
