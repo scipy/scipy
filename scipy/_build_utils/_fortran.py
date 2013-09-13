@@ -18,8 +18,10 @@ def _uses_veclib(info):
 
     return False
 
+def uses_accelerate(info):
+    return _uses_veclib(info)
 
-def _uses_mkl(info):
+def uses_mkl(info):
     r_mkl = re.compile("mkl_core")
 
     libraries = info.get('libraries', '')
@@ -32,10 +34,10 @@ def _uses_mkl(info):
 
 def needs_g77_abi_wrapper(info):
     """Returns true if g77 ABI wrapper must be used."""
-    if _uses_veclib(info):
+    if uses_accelerate(info):
         return True
     # XXX: is this really true only on Mac OS X ?
-    elif _uses_mkl(info) and sys.platform == "darwin":
+    elif uses_mkl(info) and sys.platform == "darwin":
         return True
     else:
         return False
@@ -46,15 +48,31 @@ def get_g77_abi_wrappers(info, blas_only=False):
     Returns file names of source files containing Fortran ABI wrapper
     routines.
     """
+    wrapper_sources = []
+
     path = os.path.abspath(os.path.dirname(__file__))
     if needs_g77_abi_wrapper(info):
-        return [os.path.join(path, 'src', 'wrap_veclib_f.f'),
-                os.path.join(path, 'src', 'wrap_veclib_c.c')]
+        wrapper_sources += [
+            os.path.join(path, 'src', 'wrap_g77_abi_f.f'),
+            os.path.join(path, 'src', 'wrap_g77_abi_c.c'),
+        ]
+        if uses_accelerate(info):
+            wrapper_sources += [
+                    os.path.join(path, 'src', 'wrap_accelerate_c.c'),
+                    os.path.join(path, 'src', 'wrap_accelerate_f.f'),
+            ]
+        elif uses_mkl(info):
+            wrapper_sources += [
+                    os.path.join(path, 'src', 'wrap_dummy_accelerate.f'),
+            ]
+        else:
+            raise NotImplementedError("Do not know how to handle LAPACK %s on mac os x" % (info,))
     else:
-        src = [os.path.join(path, 'src', 'wrap_blas_dummy.f')]
-        if not blas_only:
-            src += [os.path.join(path, 'src', 'wrap_lapack_dummy.f')]
-        return src
+        wrapper_sources += [
+            os.path.join(path, 'src', 'wrap_dummy_g77_abi.f'),
+            os.path.join(path, 'src', 'wrap_dummy_accelerate.f'),
+        ]
+    return wrapper_sources
 
 
 def split_fortran_files(source_dir, subroutines=None):
