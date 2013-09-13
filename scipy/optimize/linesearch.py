@@ -404,27 +404,27 @@ def _cubicmin(a, fa, fpa, b, fb, c, fc):
     """
     # f(x) = A *(x-a)^3 + B*(x-a)^2 + C*(x-a) + D
 
-    C = fpa
-    db = b - a
-    dc = c - a
-    if (db == 0) or (dc == 0) or (b == c):
+    with np.errstate(divide='raise', over='raise', invalid='raise'):
+        try:
+            C = fpa
+            db = b - a
+            dc = c - a
+            denom = (db * dc) ** 2 * (db - dc)
+            d1 = np.empty((2, 2))
+            d1[0, 0] = dc ** 2
+            d1[0, 1] = -db ** 2
+            d1[1, 0] = -dc ** 3
+            d1[1, 1] = db ** 3
+            [A, B] = np.dot(d1, np.asarray([fb - fa - C * db,
+                                            fc - fa - C * dc]).flatten())
+            A /= denom
+            B /= denom
+            radical = B * B - 3 * A * C
+            xmin = a + (-B + np.sqrt(radical)) / (3 * A)
+        except ArithmeticError:
+            return None
+    if not np.isfinite(xmin):
         return None
-    denom = (db * dc) ** 2 * (db - dc)
-    d1 = np.empty((2, 2))
-    d1[0, 0] = dc ** 2
-    d1[0, 1] = -db ** 2
-    d1[1, 0] = -dc ** 3
-    d1[1, 1] = db ** 3
-    [A, B] = np.dot(d1, np.asarray([fb - fa - C * db,
-                                    fc - fa - C * dc]).flatten())
-    A /= denom
-    B /= denom
-    radical = B * B - 3 * A * C
-    if radical < 0:
-        return None
-    if A == 0:
-        return None
-    xmin = a + (-B + np.sqrt(radical)) / (3 * A)
     return xmin
 
 
@@ -435,15 +435,17 @@ def _quadmin(a, fa, fpa, b, fb):
 
     """
     # f(x) = B*(x-a)^2 + C*(x-a) + D
-    D = fa
-    C = fpa
-    db = b - a * 1.0
-    if db == 0:
+    with np.errstate(divide='raise', over='raise', invalid='raise'):
+        try:
+            D = fa
+            C = fpa
+            db = b - a * 1.0
+            B = (fb - D - C * db) / (db * db)
+            xmin = a - C / (2.0 * B)
+        except ArithmeticError:
+            return None
+    if not np.isfinite(xmin):
         return None
-    B = (fb - D - C * db) / (db * db)
-    if B <= 0:
-        return None
-    xmin = a - C / (2.0 * B)
     return xmin
 
 
