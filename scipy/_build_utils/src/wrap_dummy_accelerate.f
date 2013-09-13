@@ -1,21 +1,56 @@
+      REAL FUNCTION WSDOT( N, SX, INCX, SY, INCY )
+      INTEGER INCX, INCY, N
+      REAL SX(*), SY(*)
+      EXTERNAL SDOT
+      REAL SDOT
+      WSDOT = SDOT( N, SX, INCX, SY, INCY )
+      END FUNCTION
+
+      REAL FUNCTION WSDSDOT( N, SB, SX, INCX, SY, INCY )
+      REAL SB
+      INTEGER INCX, INCY, N
+      REAL SX(*), SY(*)
+      EXTERNAL SDSDOT
+      REAL SDSDOT
+      WSDSDOT = SDSDOT( N, SB, SX, INCX, SY, INCY )
+      END FUNCTION
+
+      REAL FUNCTION WSASUM( N, SX, INCX )
+      INTEGER INCX, N
+      REAL SX(*)
+      EXTERNAL SASUM
+      REAL SASUM
+      WSASUM = SASUM( N, SX, INCX )
+      END FUNCTION
+
+      REAL FUNCTION WSNRM2( N, SX, INCX )
+      INTEGER INCX, N
+      REAL SX(*)
+      EXTERNAL SNRM2
+      REAL SNRM2
+      WSNRM2 = SNRM2( N, SX, INCX )
+      END FUNCTION
+
+      REAL FUNCTION WSCASUM( N, CX, INCX )
+      INTEGER INCX, N
+      COMPLEX CX(*)
+      EXTERNAL SCASUM
+      REAL SCASUM
+      WSCASUM = SCASUM( N, CX, INCX )
+      END FUNCTION
+
+      REAL FUNCTION WSCNRM2( N, CX, INCX )
+      INTEGER INCX, N
+      COMPLEX CX(*)
+      EXTERNAL SCNRM2
+      REAL SCNRM2
+      WSCNRM2 = SCNRM2( N, CX, INCX )
+      END FUNCTION
+
 c The LAPACK in the Accelerate framework is a CLAPACK
 c (www.netlib.org/clapack) and has hence a different interface than the
 c modern Fortran LAPACK libraries. These wrappers here help to link
 c Fortran code to Accelerate.
-
-      COMPLEX FUNCTION WCLADIV( X, Y )
-      COMPLEX            X, Y
-      EXTERNAL           CLADIV
-      COMPLEX            CLADIV
-      WCLADIV = CLADIV( X, Y)
-      END FUNCTION
-
-      DOUBLE COMPLEX FUNCTION WZLADIV( X, Y )
-      DOUBLE COMPLEX     X, Y
-      EXTERNAL           ZLADIV
-      DOUBLE COMPLEX     ZLADIV
-      WZLADIV = ZLADIV( X, Y)
-      END FUNCTION
 
       REAL FUNCTION WCLANGB( NORM, N, KL, KU, AB, LDAB, WORK )
       CHARACTER          NORM
