@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 
 from os.path import join
 
-from scipy._build_utils import needs_g77_abi_wrapper
+from scipy._build_utils import needs_g77_abi_wrapper, uses_mkl, uses_accelerate
 
 
 def configuration(parent_package='',top_path=None):
@@ -24,10 +24,19 @@ def configuration(parent_package='',top_path=None):
     arpack_sources.extend([join('ARPACK','LAPACK', '*.f')])
 
     if needs_g77_abi_wrapper(lapack_opt):
-        arpack_sources += [join('ARPACK', 'FWRAPPERS', 'wrap_veclib_f.f'),
-                           join('ARPACK', 'FWRAPPERS', 'wrap_veclib_c.c')]
+        arpack_sources += [join('ARPACK', 'FWRAPPERS', 'wrap_g77_abi_f.f'),
+                           join('ARPACK', 'FWRAPPERS', 'wrap_g77_abi_c.c')]
+
+        if uses_accelerate(lapack_opt):
+            arpack_sources += [join('ARPACK', 'FWRAPPERS', 'wrap_accelerate_f.f'),
+                               join('ARPACK', 'FWRAPPERS', 'wrap_accelerate_c.c')]
+        elif uses_mkl(lapack_opt):
+            arpack_sources += [join('ARPACK', 'FWRAPPERS', 'wrap_dummy_accelerate.f')]
+        else:
+            raise NotImplementedError("Do not know how to handle LAPACK %s on mac os x" % (info,))
     else:
-        arpack_sources += [join('ARPACK', 'FWRAPPERS', 'wrap_dummy.f')]
+        arpack_sources += [join('ARPACK', 'FWRAPPERS', 'wrap_dummy_g77_abi.f'),
+                           join('ARPACK', 'FWRAPPERS', 'wrap_dummy_accelerate.f')]
 
     config.add_library('arpack_scipy', sources=arpack_sources,
                        include_dirs=[join('ARPACK', 'SRC')],

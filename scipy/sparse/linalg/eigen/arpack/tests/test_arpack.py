@@ -65,8 +65,8 @@ def _get_test_tolerance(type_char, mattype=None):
 
     rtol = {'f': 3000 * np.finfo(np.float32).eps,
             'F': 3000 * np.finfo(np.float32).eps,
-            'd': 2000 * np.finfo(np.float64).eps,
-            'D': 2000 * np.finfo(np.float64).eps}[type_char]
+            'd': 3000 * np.finfo(np.float64).eps,
+            'D': 3000 * np.finfo(np.float64).eps}[type_char]
     atol = rtol
     tol = 0
 

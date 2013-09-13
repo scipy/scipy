@@ -14,10 +14,13 @@ def pre_build(context):
             use_c_calling = False
         sources = extension.sources[:]
         if use_c_calling:
-            sources.append("ARPACK/FWRAPPERS/wrap_veclib_f.f")
-            sources.append("ARPACK/FWRAPPERS/wrap_veclib_c.c")
+            sources.append("ARPACK/FWRAPPERS/wrap_g77_abi_f.f")
+            sources.append("ARPACK/FWRAPPERS/wrap_g77_abi_c.c")
+            sources.append("ARPACK/FWRAPPERS/wrap_accelerate_f.f")
+            sources.append("ARPACK/FWRAPPERS/wrap_accelerate_c.c")
         else:
-            sources.append("ARPACK/FWRAPPERS/wrap_dummy.f")
+            sources.append("ARPACK/FWRAPPERS/wrap_dummy_g77_abi.f")
+            sources.append("ARPACK/FWRAPPERS/wrap_dummy_accelerate.f")
         return default_builder(extension,
                                features="c fc cstlib pyext bento",
                                source=sources,
