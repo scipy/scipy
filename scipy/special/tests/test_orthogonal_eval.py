@@ -15,6 +15,12 @@ def test_eval_chebyt():
     assert_(np.allclose(v1, v2, rtol=1e-15))
 
 
+def test_eval_genlaguerre_restriction():
+    # check it returns nan for alpha <= -1
+    assert_(np.isnan(orth.eval_genlaguerre(0, -1, 0)))
+    assert_(np.isnan(orth.eval_genlaguerre(0.1, -1, 0)))
+
+
 def test_warnings():
     # ticket 1334
     olderr = np.seterr(all='raise')
