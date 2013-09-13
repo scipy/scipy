@@ -43,7 +43,7 @@ def needs_g77_abi_wrapper(info):
         return False
 
 
-def get_g77_abi_wrappers(info, blas_only=False):
+def get_g77_abi_wrappers(info):
     """
     Returns file names of source files containing Fortran ABI wrapper
     routines.
