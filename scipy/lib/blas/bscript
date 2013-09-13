@@ -17,12 +17,12 @@ def pre_build(context):
         else:
             info = {}
 	source += [os.path.relpath(f, os.path.abspath(os.path.dirname(__file__)))
-                    for f in get_g77_abi_wrappers(info, blas_only=True)]
+                    for f in get_g77_abi_wrappers(info)]
 
         return default_builder(extension,
                                features="c fc pyext bento cshlib f2py",
                                source=source,
-                               use="BLAS CLIB")
+                               use="LAPACK CLIB")
     context.register_builder("fblas", fblas_builder)
 
     def cblas_builder(extension):

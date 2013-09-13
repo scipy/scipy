@@ -23,9 +23,9 @@ def configuration(parent_package='',top_path=None):
 
     config = Configuration('blas',parent_package,top_path)
 
-    blas_opt = get_info('blas_opt',notfound_action=2)
+    lapack_opt = get_info('lapack_opt',notfound_action=2)
 
-    atlas_version = ([v[3:-3] for k,v in blas_opt.get('define_macros',[])
+    atlas_version = ([v[3:-3] for k,v in lapack_opt.get('define_macros',[])
                       if k == 'ATLAS_INFO']+[None])[0]
     if atlas_version:
         print(('ATLAS version: %s' % atlas_version))
@@ -36,12 +36,11 @@ def configuration(parent_package='',top_path=None):
 
     # fblas:
     sources = ['fblas.pyf.src']
-    sources += get_g77_abi_wrappers(blas_opt, blas_only=True)
+    sources += get_g77_abi_wrappers(lapack_opt)
     config.add_extension('fblas',
                          sources=sources,
                          depends=depends,
-                         extra_info=blas_opt
-                         )
+                         extra_info=lapack_opt)
 
     # cblas:
     def get_cblas_source(ext, build_dir):
@@ -62,7 +61,7 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('cblas',
                          sources=[get_cblas_source],
                          depends=['cblas.pyf.src','cblas_l?.pyf.src'],
-                         extra_info=blas_opt
+                         extra_info=lapack_opt
                          )
 
     config.add_data_dir('tests')
