@@ -4,9 +4,6 @@ from __future__ import division, print_function, absolute_import
 import os
 from os.path import join
 
-from scipy._build_utils import needs_g77_abi_wrapper
-
-
 tmpl_empty_cblas_pyf = '''
 python module cblas
   usercode void empty_module(void) {}
@@ -22,30 +19,28 @@ end python module cblas
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from numpy.distutils.system_info import get_info
+    from scipy._build_utils import get_g77_abi_wrappers
 
     config = Configuration('blas',parent_package,top_path)
 
-    blas_opt = get_info('blas_opt',notfound_action=2)
+    lapack_opt = get_info('lapack_opt',notfound_action=2)
 
-    atlas_version = ([v[3:-3] for k,v in blas_opt.get('define_macros',[])
+    atlas_version = ([v[3:-3] for k,v in lapack_opt.get('define_macros',[])
                       if k == 'ATLAS_INFO']+[None])[0]
     if atlas_version:
         print(('ATLAS version: %s' % atlas_version))
 
     target_dir = ''
 
-    depends = [__file__, 'fblas_l?.pyf.src', 'fblas.pyf.src',
-               'fblaswrap_dummy.f', 'fblaswrap_veclib_c.c']
+    depends = [__file__, 'fblas_l?.pyf.src', 'fblas.pyf.src']
+
     # fblas:
-    if needs_g77_abi_wrapper(blas_opt):
-        sources = ['fblas.pyf.src', 'fblaswrap_veclib_c.c'],
-    else:
-        sources = ['fblas.pyf.src','fblaswrap_dummy.f']
+    sources = ['fblas.pyf.src']
+    sources += get_g77_abi_wrappers(lapack_opt)
     config.add_extension('fblas',
                          sources=sources,
                          depends=depends,
-                         extra_info=blas_opt
-                         )
+                         extra_info=lapack_opt)
 
     # cblas:
     def get_cblas_source(ext, build_dir):
@@ -66,7 +61,7 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('cblas',
                          sources=[get_cblas_source],
                          depends=['cblas.pyf.src','cblas_l?.pyf.src'],
-                         extra_info=blas_opt
+                         extra_info=lapack_opt
                          )
 
     config.add_data_dir('tests')
