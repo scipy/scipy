@@ -300,7 +300,10 @@ class TestSplder(object):
             dy = splev(xx, self.spl, n)
             spl2 = splder(self.spl, n)
             dy2 = splev(xx, spl2)
-            assert_allclose(dy, dy2)
+            if n == 1:
+                assert_allclose(dy, dy2, rtol=2e-6)
+            else:
+                assert_allclose(dy, dy2)
 
     def test_splantider_vs_splint(self):
         # Check antiderivative vs. FITPACK
