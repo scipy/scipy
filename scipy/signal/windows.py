@@ -27,7 +27,7 @@ def boxcar(M, sym=True):
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1
+        The window, with the maximum value normalized to 1.
 
     Examples
     --------
@@ -74,7 +74,7 @@ def triang(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -138,7 +138,7 @@ def parzen(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -201,7 +201,7 @@ def bohman(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -266,7 +266,7 @@ def blackman(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Notes
     -----
@@ -347,7 +347,7 @@ def nuttall(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -408,7 +408,7 @@ def blackmanharris(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -469,7 +469,7 @@ def flattop(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -536,9 +536,9 @@ def bartlett(M, sym=True):
     Returns
     -------
     w : ndarray
-        The triangular window, with the maximum value normalized to 1
-        (though the value 1 does not appear if the number of samples is even
-        and sym is True), with the first and last samples equal to zero.
+        The triangular window, with the first and last samples equal to zero
+        and the maximum value normalized to 1 (though the value 1 does not 
+        appear if `M` is even and `sym` is True).
 
     Notes
     -----
@@ -723,7 +723,7 @@ def barthann(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -785,7 +785,7 @@ def hamming(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Notes
     -----
@@ -876,7 +876,7 @@ def kaiser(M, beta, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Notes
     -----
@@ -992,7 +992,7 @@ def gaussian(M, std, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Notes
     -----
@@ -1062,7 +1062,7 @@ def general_gaussian(M, p, sig, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Notes
     -----
@@ -1326,13 +1326,40 @@ def cosine(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1.
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if `M` is even and `sym` is True).
+
+    Examples
+    --------
+    Plot the window and its frequency response:
+
+    >>> from scipy import signal
+    >>> from scipy.fftpack import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = signal.cosine(51)
+    >>> plt.plot(window)
+    >>> plt.title("Cosine window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the cosine window")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+    >>> plt.show()
 
     """
     if M < 1:
