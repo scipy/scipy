@@ -93,8 +93,8 @@ There are seven available sparse matrix types:
     6. coo_matrix: COOrdinate format (aka IJV, triplet format)
     7. dia_matrix: DIAgonal format
 
-To construct a matrix efficiently, use either lil_matrix (recommended) or
-dok_matrix. The lil_matrix class supports basic slicing and fancy
+To construct a matrix efficiently, use either dok_matrix or lil_matrix.
+The lil_matrix class supports basic slicing and fancy
 indexing with a similar syntax to NumPy arrays.  As illustrated below,
 the COO format may also be used to efficiently construct matrices.
 
