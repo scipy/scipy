@@ -9,7 +9,7 @@ from scipy.lib.six import xrange
 
 from scipy import stats
 from common_tests import (check_normalization, check_moment, check_mean_expect,
-        check_var_expect, check_skew, check_kurt)
+        check_var_expect, check_skew_expect, check_kurt_expect)
 
 DECIMAL_meanvar = 0  # 1  # was 0
 
@@ -88,16 +88,18 @@ def test_moments():
         cond = distname in ['zipf', 'randint']
         yield knf(cond, distname + ' normalization fails')(
                 check_normalization), distfn, arg, distname
+
+        # compare `stats` and `moment` methods
         yield check_moment, distfn, arg, m, v, distname
         yield check_mean_expect, distfn, arg, m, distname
         yield knf(distname=='zipf', 'zipf fails')(check_var_expect),\
                 distfn, arg, m, v, distname
-        yield knf(distname=='zipf', 'zipf fails')(check_skew),\
+        yield knf(distname=='zipf', 'zipf fails')(check_skew_expect),\
                 distfn, arg, m, v, s, distname
 
         cond = distname in ['hypergeom', 'randint', 'zipf']
         msg = distname + ' fails kurtosis'
-        yield knf(cond, msg)(check_kurt), distfn, arg, m, v, k, distname
+        yield knf(cond, msg)(check_kurt_expect), distfn, arg, m, v, k, distname
 
 
 

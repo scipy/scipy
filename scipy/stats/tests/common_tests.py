@@ -15,12 +15,12 @@ def check_normalization(distfn, args, distname):
     else:
         atol, rtol = 1e-7, 1e-7
 
-    norm_expect = distfn.expect(lambda x: 1, args=args)
-    npt.assert_allclose(norm_expect, 1.0, atol=atol, rtol=rtol,
+    normalization_expect = distfn.expect(lambda x: 1, args=args)
+    npt.assert_allclose(normaztion_expect, 1.0, atol=atol, rtol=rtol,
             err_msg=distname, verbose=True)
 
-    norm_cdf = distfn.cdf(distfn.b, *args)
-    npt.assert_allclose(norm_cdf, 1.0)
+    normalization_cdf = distfn.cdf(distfn.b, *args)
+    npt.assert_allclose(normalization_cdf, 1.0)
 
 
 def check_moment(distfn, arg, m, v, msg):
@@ -55,7 +55,7 @@ def check_var_expect(distfn, arg, m, v, msg):
                             ' - 2st moment (expect)')
 
 
-def check_skew(distfn, arg, m, v, s, msg):
+def check_skew_expect(distfn, arg, m, v, s, msg):
     if np.isfinite(s):
         m3e = distfn.expect(lambda x: np.power(x-m, 3), arg)
         npt.assert_almost_equal(m3e, s * np.power(v, 1.5), 
@@ -64,7 +64,7 @@ def check_skew(distfn, arg, m, v, s, msg):
         npt.assert_(np.isnan(s))
 
 
-def check_kurt(distfn, arg, m, v, k, msg):
+def check_kurt_expect(distfn, arg, m, v, k, msg):
     if np.isfinite(k):
         m4e = distfn.expect(lambda x: np.power(x-m, 4), arg)
         npt.assert_almost_equal(m4e, (k + 3.) * np.power(v, 2), 

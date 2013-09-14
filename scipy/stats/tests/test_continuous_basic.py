@@ -8,7 +8,7 @@ import numpy.testing as npt
 
 from scipy import stats
 from common_tests import (check_normalization, check_moment, check_mean_expect,
-        check_var_expect, check_skew, check_kurt)
+        check_var_expect, check_skew_expect, check_kurt_expect)
 
 """
 Test all continuous distributions.
@@ -271,8 +271,8 @@ def test_moments():
         yield knf(cond, msg)(check_normalization), distfn, arg, distname
         yield knf(cond, msg)(check_mean_expect), distfn, arg, m, distname
         yield knf(cond, msg)(check_var_expect), distfn, arg, m, v, distname
-        yield knf(cond, msg)(check_skew), distfn, arg, m, v, s, distname
-        yield knf(cond, msg)(check_kurt), distfn, arg, m, v, k, distname
+        yield knf(cond, msg)(check_skew_expect), distfn, arg, m, v, s, distname
+        yield knf(cond, msg)(check_kurt_expect), distfn, arg, m, v, k, distname
 
 
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
