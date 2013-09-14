@@ -278,13 +278,15 @@ relative path filename.
 Other changes
 =============
 
+Security fix: ``scipy.weave`` previously used temporary directories in an
+insecure manner under certain circumstances.
+
 Cython is now required to build *unreleased* versions of scipy.
 The C files generated from Cython sources are not included in the git repo
 anymore.  They are however still shipped in source releases.
 
 The code base received a fairly large PEP8 cleanup.  A ``tox pep8`` 
 command has been added; new code should pass this test command.
-
 
 Authors
 =======
