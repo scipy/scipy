@@ -445,5 +445,30 @@ class TestSyHe(TestCase):
             assert_array_almost_equal(np.triu(res), 2.*np.diag([1, 1]))
 
 
+class TestTRMM(TestCase):
+    """Quick and simple tests for dtrmm."""
+    def setUp(self):
+        self.a = np.array([[1., 2., ],
+                           [-2., 1.]])
+        self.b = np.array([[3., 4., -1.],
+                           [5., 6., -2.]])
+
+    def test_ab(self):
+        f = getattr(fblas, 'dtrmm', None)
+        if f is not None:
+            result = f(1., self.a, self.b)
+            expected = np.array([[13., 16., -5.],
+                                 [5., 6., -2.]]) # default a is upper triangular
+            assert_array_almost_equal(result, expected)
+
+    def test_ab_lower(self):
+        f = getattr(fblas, 'dtrmm', None)
+        if f is not None:
+            result = f(1., self.a, self.b, lower=True)
+            expected = np.array([[3., 4., -1.],
+                                 [-1., -2., 0.]]) # now a is lower triangular
+            assert_array_almost_equal(result, expected)
+
+
 if __name__ == "__main__":
     run_module_suite()
