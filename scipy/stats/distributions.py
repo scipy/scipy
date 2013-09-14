@@ -1960,11 +1960,11 @@ class rv_continuous(rv_generic):
             val = self._pdf(x, *args)
             return special.xlogy(val, val)
 
-        entr = -integrate.quad(integ,self.a,self.b)[0]
+        entr = -integrate.quad(integ,self.a, self.b)[0]
         if not np.isnan(entr):
             return entr
         else:  # try with different limits if integration problems
-            low,upp = self.ppf([0.001,0.999],*args)
+            low, upp = self.ppf([1e-10, 1. - 1e-10], *args)
             if np.isinf(self.b):
                 upper = upp
             else:
@@ -1973,7 +1973,7 @@ class rv_continuous(rv_generic):
                 lower = low
             else:
                 lower = self.a
-            return -integrate.quad(integ,lower,upper)[0]
+            return -integrate.quad(integ, lower, upper)[0]
 
     def entropy(self, *args, **kwds):
         """
@@ -1991,16 +1991,16 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
-        args = tuple(map(asarray,args))
+        args = tuple(map(asarray, args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
-        output = zeros(shape(cond0),'d')
-        place(output,(1-cond0),self.badvalue)
+        output = zeros(shape(cond0), 'd')
+        place(output, (1-cond0), self.badvalue)
         goodargs = argsreduce(cond0, *args)
         # np.vectorize doesn't work when numargs == 0 in numpy 1.5.1
         if self.numargs == 0:
-            place(output,cond0,self._entropy()+log(scale))
+            place(output, cond0, self._entropy() + log(scale))
         else:
-            place(output,cond0,self.vecentropy(*goodargs)+log(scale))
+            place(output, cond0, self.vecentropy(*goodargs) + log(scale))
 
         return output
 
@@ -2670,7 +2670,7 @@ class burr_gen(rv_continuous):
         return mu, mu2, g1, g2
 burr = burr_gen(a=0.0, name='burr')
 
-#XXX: cf PR #2552
+
 class fisk_gen(burr_gen):
     """A Fisk continuous random variable.
 
@@ -3656,7 +3656,7 @@ class gamma_gen(rv_continuous):
         return a, a, 2.0/sqrt(a), 6.0/a
 
     def _entropy(self, a):
-        return special.psi(a)*(1-a) + 1 + gamln(a)
+        return special.psi(a)*(1-a) + a + gamln(a)
 
     def _fitstart(self, data):
         # The skewness of the gamma distribution is `4 / sqrt(a)`.
@@ -3949,7 +3949,8 @@ class gumbel_r_gen(rv_continuous):
                12*sqrt(6)/pi**3 * _ZETA3, 12.0/5
 
     def _entropy(self):
-        return 1.0608407169541684911
+        # http://en.wikipedia.org/wiki/Gumbel_distribution
+        return _EULER + 1.
 gumbel_r = gumbel_r_gen(name='gumbel_r')
 
 
@@ -3992,7 +3993,7 @@ class gumbel_l_gen(rv_continuous):
                -12*sqrt(6)/pi**3 * _ZETA3, 12.0/5
 
     def _entropy(self):
-        return 1.0608407169541684911
+        return _EULER + 1.
 gumbel_l = gumbel_l_gen(name='gumbel_l')
 
 
@@ -4568,7 +4569,8 @@ class logistic_gen(rv_continuous):
         return 0, pi*pi/3.0, 0, 6.0/5.0
 
     def _entropy(self):
-        return 1.0
+        # http://en.wikipedia.org/wiki/Logistic_distribution
+        return 2.0
 logistic = logistic_gen(name='logistic')
 
 
