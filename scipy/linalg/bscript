@@ -46,6 +46,7 @@ def pre_build(context):
 
         return default_builder(extension,
                                features="c fc pyext bento cshlib f2py",
+                               source=source,
                                use="LAPACK CLIB")
     context.register_builder("_flapack", flapack_builder)
 
