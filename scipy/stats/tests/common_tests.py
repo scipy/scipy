@@ -16,7 +16,7 @@ def check_normalization(distfn, args, distname):
         atol, rtol = 1e-7, 1e-7
 
     normalization_expect = distfn.expect(lambda x: 1, args=args)
-    npt.assert_allclose(normaztion_expect, 1.0, atol=atol, rtol=rtol,
+    npt.assert_allclose(normalization_expect, 1.0, atol=atol, rtol=rtol,
             err_msg=distname, verbose=True)
 
     normalization_cdf = distfn.cdf(distfn.b, *args)
