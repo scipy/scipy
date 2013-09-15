@@ -503,13 +503,22 @@ def valarray(shape,value=nan,typecode=None):
     return out
 
 
-def _lazywhere(cond, arr, f, fillvalue):
-    """np.where(cond, x, fillvalue) always evaluates x even where cond is False.
-    This one only evaluates f(arr[cond]).
+def _lazywhere(cond, arrays, f, fillvalue):
     """
-    temp = np.extract(cond, arr)
-    out = valarray(shape(arr), value=fillvalue)
-    np.place(out, cond, f(temp))
+    np.where(cond, x, fillvalue) always evaluates x even where cond is False.
+    This one only evaluates f(arr1[cond], arr2[cond], ...).
+    For example, 
+    >>> a, b = np.array([1, 2, 3, 4]), np.array([5, 6, 7, 8])
+    >>> def f(a, b): 
+        return a*b
+    >>> _lazywhere(a > 2, (a, b), f, np.nan)
+    array([ nan,  nan,  21.,  32.])
+
+    Notice it assumes that all `arrays` are of the same shape.
+    """
+    temp = tuple(np.extract(cond, arr) for arr in arrays)
+    out = valarray(shape(arrays[0]), value=fillvalue)
+    np.place(out, cond, f(*temp))
     return out
 
 
@@ -3172,10 +3181,10 @@ class f_gen(rv_continuous):
         return exp(self._logpdf(x, dfn, dfd))
 
     def _logpdf(self, x, dfn, dfd):
-        n = 1.0*dfn
-        m = 1.0*dfd
-        lPx = m/2*log(m) + n/2*log(n) + (n/2-1)*log(x)
-        lPx -= ((n+m)/2)*log(m+n*x) + special.betaln(n/2,m/2)
+        n = 1.0 * dfn
+        m = 1.0 * dfd
+        lPx = m/2 * log(m) + n/2 * log(n) + (n/2 - 1) * log(x)
+        lPx -= ((n+m)/2) * log(m + n*x) + special.betaln(n/2, m/2)
         return lPx
 
     def _cdf(self, x, dfn, dfd):
@@ -3188,15 +3197,29 @@ class f_gen(rv_continuous):
         return special.fdtri(dfn, dfd, q)
 
     def _stats(self, dfn, dfd):
-        v2 = asarray(dfd*1.0)
-        v1 = asarray(dfn*1.0)
-        mu = where(v2 > 2, v2 / asarray(v2 - 2), inf)
-        mu2 = 2*v2*v2*(v2+v1-2)/(v1*(v2-2)**2 * (v2-4))
-        mu2 = where(v2 > 4, mu2, inf)
-        g1 = 2*(v2+2*v1-2)/(v2-6)*sqrt((2*v2-8)/(v1*(v2+v1-2)))
-        g1 = where(v2 > 6, g1, nan)
-        g2 = 3/(2*v2-16)*(8+g1*g1*(v2-6))
-        g2 = where(v2 > 8, g2, nan)
+        v1, v2 = 1. * dfn, 1. * dfd
+        v2_2, v2_4, v2_6, v2_8 = v2 - 2., v2 - 4., v2 - 6., v2 - 8.
+
+        mu = _lazywhere(v2 > 2, (v2, v2_2), 
+                lambda v2, v2_2: v2 / v2_2, 
+                np.inf)
+
+        mu2 = _lazywhere(v2 > 4, (v1, v2, v2_2, v2_4),
+                lambda v1, v2, v2_2, v2_4: 2 * v2 * v2 * (v1 + v2_2) /
+                                        (v1 * v2_2**2 * v2_4),
+                np.inf)
+
+        g1 = _lazywhere(v2 > 6, (v1, v2_2, v2_4, v2_6),
+                lambda v1, v2_2, v2_4, v2_6: (2 * v1 + v2_2) / v2_6 *
+                                           sqrt(v2_4 / (v1 * (v1 + v2_2))),
+                np.nan)
+        g1 *= np.sqrt(8.)
+
+        g2 = _lazywhere(v2 > 8, (g1, v2_6, v2_8), 
+                lambda g1, v2_6, v2_8: (8 + g1 * g1 * v2_6) / v2_8,
+                np.nan)
+        g2 *= 3. / 2.
+
         return mu, mu2, g1, g2
 f = f_gen(a=0.0, name='f')
 
@@ -4205,15 +4228,15 @@ class invgamma_gen(rv_continuous):
         return 1.0 / special.gammaincinv(a, 1.-q)
 
     def _stats(self, a, moments='mvsk'):
-        m1 = _lazywhere(a > 1, a, lambda x: 1. / (x - 1.), np.inf)
-        m2 = _lazywhere(a > 2, a, lambda x: 1. / (x - 1.)**2 / (x - 2.), np.inf)
+        m1 = _lazywhere(a > 1, (a,), lambda x: 1. / (x - 1.), np.inf)
+        m2 = _lazywhere(a > 2, (a,), lambda x: 1. / (x - 1.)**2 / (x - 2.), np.inf)
 
         g1, g2 = None, None
         if 's' in moments:
-            g1 = _lazywhere(a > 3, a, 
+            g1 = _lazywhere(a > 3, (a,), 
                     lambda x: 4. * np.sqrt(x - 2.) / (x - 3.), np.nan)
         if 'k' in moments:
-            g2 = _lazywhere(a > 4, a, 
+            g2 = _lazywhere(a > 4, (a,), 
                     lambda x: 6. * (5. * x - 11.) / (x - 3.) / (x - 4.), np.nan)
         return m1, m2, g1, g2
 
