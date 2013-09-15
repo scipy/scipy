@@ -132,5 +132,33 @@ def test_rdist_cdf_gh1285():
                             values, decimal=5)
 
 
+def test_rice_zero_b():
+    # rice distribution should work with b=0, cf gh-2164
+    x = [0.2, 1., 5.]
+    npt.assert_(np.isfinite(stats.rice.pdf(x, b=0.)).all())
+    npt.assert_(np.isfinite(stats.rice.logpdf(x, b=0.)).all())
+    npt.assert_(np.isfinite(stats.rice.cdf(x, b=0.)).all())
+    npt.assert_(np.isfinite(stats.rice.logcdf(x, b=0.)).all())
+
+    q = [0.1, 0.1, 0.5, 0.9]
+    npt.assert_(np.isfinite(stats.rice.ppf(q, b=0.)).all())
+
+    mvsk = stats.rice.stats(0, moments='mvsk')
+    npt.assert_(np.isfinite(mvsk).all())
+
+    # furthermore, pdf is continuous as b\to 0
+    # rice.pdf(x, b\to 0) = x exp(-x^2/2) + O(b^2)
+    # see e.g. Abramovich & Stegun 9.6.7 & 9.6.10
+    b = 1e-8
+    npt.assert_allclose(stats.rice.pdf(x, 0), stats.rice.pdf(x, b),
+            atol = b, rtol=0)
+
+
+def test_rice_rvs():
+    rvs = stats.rice.rvs
+    npt.assert_equal(rvs(b=3.).size, 1)
+    npt.assert_equal(rvs(b=3., size=(3, 5)).shape, (3, 5))
+
+
 if __name__ == "__main__":
     npt.run_module_suite()
