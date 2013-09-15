@@ -117,6 +117,7 @@ distcont = [
     ['tukeylambda', (3.1321477856738267,)],
     ['uniform', ()],
     ['vonmises', (3.9939042581071398,)],
+    ['vonmises_line', (3.9939042581071398,)],
     ['wald', ()],
     ['weibull_max', (2.8687961709100187,)],
     ['weibull_min', (1.7866166930421596,)],
@@ -152,8 +153,8 @@ distmissing = ['wald', 'gausshyper', 'genexpon', 'rv_continuous',
 
 distmiss = [[dist,args] for dist,args in distcont if dist in distmissing]
 distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
-            'vonmises', 'rice', 'mielke', 'semicircular', 'cosine', 'invweibull',
-            'powerlognorm', 'johnsonsu', 'kstwobign']
+            'vonmises', 'vonmises_line', 'rice', 'mielke', 'semicircular',
+            'cosine', 'invweibull', 'powerlognorm', 'johnsonsu', 'kstwobign']
 # distslow are sorted by speed (very slow to slow)
 
 
@@ -243,6 +244,9 @@ def test_cont_basic_slow():
               'sample mean test'
         # the sample skew kurtosis test has known failures, not very good distance measure
         # yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
+        # vonmises and ksone are not supposed to fully work
+        if distname not in ['vonmises', 'ksone']:
+            yield check_normalization, distfn, arg, distname
         yield check_moment, distfn, arg, m, v, distname
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
@@ -417,22 +421,23 @@ def check_distribution_rvs(dist, args, alpha, rvs):
 
 
 def check_normalization(distfn, args, distname):
-    norm_moment = distfn.moment(0, *args)
-    npt.assert_allclose(norm_moment, 1.0)
+    normalization_moment = distfn.moment(0, *args)
+    npt.assert_allclose(normalization_moment, 1.0)
 
-    # this is a temporary plug: either ncf or expect is problematic; 
-	# best be marked as a knownfail, but I've no clue how to do it.
+    # this is a temporary plug: either ncf or expect is problematic;
+    msg = "ncf normalization requires low tolerance"
+    npt.dec.knownfailureif(distname=="ncf", msg)(lambda: None)()
     if distname == "ncf":
         atol, rtol = 1e-5, 0
     else:
         atol, rtol = 1e-7, 1e-7
 
-    norm_expect = distfn.expect(lambda x: 1, args=args)
-    npt.assert_allclose(norm_expect, 1.0, atol=atol, rtol=rtol,
+    normalization_expect = distfn.expect(lambda x: 1, args=args)
+    npt.assert_allclose(normalization_expect, 1.0, atol=atol, rtol=rtol,
             err_msg=distname, verbose=True)
 
-    norm_cdf = distfn.cdf(distfn.b, *args)
-    npt.assert_allclose(norm_cdf, 1.0)
+    normalization_cdf = distfn.cdf(distfn.b, *args)
+    npt.assert_allclose(normalization_cdf, 1.0)
 
 
 def check_vecentropy(distfn, args):

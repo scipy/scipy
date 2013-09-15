@@ -52,8 +52,8 @@ __all__ = [
            'nct', 'pareto', 'lomax', 'pearson3', 'powerlaw', 'powerlognorm',
            'powernorm', 'rdist', 'rayleigh', 'reciprocal', 'rice',
            'recipinvgauss', 'semicircular', 'triang', 'truncexpon',
-           'truncnorm', 'tukeylambda', 'uniform', 'vonmises', 'wald',
-           'wrapcauchy', 'entropy', 'rv_discrete', 'binom', 'bernoulli',
+           'truncnorm', 'tukeylambda', 'uniform', 'vonmises', 'vonmises_line',
+           'wald', 'wrapcauchy', 'entropy', 'rv_discrete', 'binom', 'bernoulli',
            'nbinom', 'geom', 'hypergeom', 'logser', 'poisson', 'planck',
            'boltzmann', 'randint', 'zipf', 'dlaplace', 'skellam'
           ]
@@ -5554,17 +5554,17 @@ class rice_gen(rv_continuous):
 
     """
     def _pdf(self, x, b):
-        return x*exp(-(x*x+b*b)/2.0)*special.i0(x*b)
+        return x * exp(-(x-b)*(x-b)/2.0) * special.i0e(x*b)
 
     def _logpdf(self, x, b):
-        return log(x) - (x*x + b*b)/2.0 + log(special.i0(x*b))
+        return log(self._pdf(x, b))
 
     def _munp(self, n, b):
         nd2 = n/2.0
-        n1 = 1+nd2
+        n1 = 1 + nd2
         b2 = b*b/2.0
-        return 2.0**(nd2)*exp(-b2)*special.gamma(n1) * \
-               special.hyp1f1(n1,1,b2)
+        return 2.0**(nd2) * exp(-b2) * special.gamma(n1) * \
+               special.hyp1f1(n1, 1, b2)
 rice = rice_gen(a=0.0, name="rice")
 
 
@@ -5874,6 +5874,11 @@ class vonmises_gen(rv_continuous):
 
     for ``-pi <= x <= pi``, ``b > 0``.
 
+    See Also
+    --------
+    vonmises_line : The same distribution, defined on a [-pi, pi] segment 
+    of the real line. 
+ 
     %(example)s
 
     """
@@ -5889,6 +5894,7 @@ class vonmises_gen(rv_continuous):
     def _stats_skip(self, b):
         return 0, None, 0, None
 vonmises = vonmises_gen(name='vonmises')
+vonmises_line = vonmises_gen(a=-np.pi, b=np.pi, name='vonmises_line')
 
 
 class wald_gen(invgauss_gen):

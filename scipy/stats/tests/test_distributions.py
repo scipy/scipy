@@ -47,7 +47,7 @@ dists = ['uniform','norm','lognorm','expon','beta',
          'weibull_min','weibull_max','dweibull','maxwell','rayleigh',
          'genlogistic', 'logistic','gumbel_l','gumbel_r','gompertz',
          'hypsecant', 'laplace', 'reciprocal','triang','tukeylambda',
-         'vonmises', 'pearson3']
+         'vonmises', 'vonmises_line', 'pearson3']
 
 # check function for test generator
 
@@ -110,6 +110,11 @@ def test_vonmises_pdf_periodic():
             yield check_vonmises_cdf_periodic, k, 0, 1, x
             yield check_vonmises_cdf_periodic, k, 1, 1, x
             yield check_vonmises_cdf_periodic, k, 0, 10, x
+
+
+def test_vonmises_line_support():
+    assert_equal(stats.vonmises_line.a, -np.pi)
+    assert_equal(stats.vonmises_line.b, np.pi)
 
 
 class TestRandInt(TestCase):
@@ -1160,6 +1165,15 @@ class TestExpect(TestCase):
         halflog.expect(args=(0.5,))
         res2 = halflog.expect(args=(1.5,))
         assert_almost_equal(res1, res2, decimal=14)
+
+    def test_rice_overflow(self):
+        # rice.pdf(999, 0.74) was inf since special.i0 silentyly overflows
+        # check that using i0e fixes it
+        assert_(np.isfinite(stats.rice.pdf(999, 0.74)))
+
+        assert_(np.isfinite(stats.rice.expect(lambda x: 1, args=(0.74,))))
+        assert_(np.isfinite(stats.rice.expect(lambda x: 2, args=(0.74,))))
+        assert_(np.isfinite(stats.rice.expect(lambda x: 3, args=(0.74,))))
 
 
 class TestNct(TestCase):
