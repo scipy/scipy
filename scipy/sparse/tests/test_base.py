@@ -1325,12 +1325,22 @@ class _TestCommon:
             assert_array_equal(spm.tobsr().A, m)
 
     def test_unary_ufunc_overrides(self):
-        X = self.spmatrix(np.arange(20).reshape(4, 5) / 20.)
-        for f in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
-                  "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
-                  "deg2rad", "rad2deg", "floor", "ceil", "trunc", "sqrt"]:
-            X2 = getattr(np, f)(X)
-            assert_array_equal(X2.toarray(), getattr(np, f)(X.toarray()))
+        def check(name):
+            if LooseVersion(np.version.version) < LooseVersion('1.9'):
+                if name == "sign":
+                    raise nose.SkipTest("sign conflicts with comparison op "
+                                        "support on Numpy < 1.9")
+                if self.spmatrix in (dok_matrix, lil_matrix):
+                    raise nose.SkipTest("Unary ops not implemented for dok/lil "
+                                        "with Numpy < 1.9")
+            X = self.spmatrix(np.arange(20).reshape(4, 5) / 20.)
+            X2 = getattr(np, name)(X)
+            assert_array_equal(X2.toarray(), getattr(np, name)(X.toarray()))
+        
+        for name in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
+                     "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
+                     "deg2rad", "rad2deg", "floor", "ceil", "trunc", "sqrt"]:
+            yield check, name
 
     def test_binary_ufunc_overrides(self):
         # data
