@@ -3242,7 +3242,7 @@ class foldnorm_gen(rv_continuous):
 
     def _pdf(self, x, c):
         term = exp(-(x-c)*(x-c)/2) + exp(-(x+c)*(x+c)/2)
-        return term / sqrt(2.*pi) 
+        return term / sqrt(2*pi)
 
     def _cdf(self, x, c):
         return special.ndtr(x-c) + special.ndtr(x+c) - 1.0
@@ -5556,9 +5556,6 @@ class rice_gen(rv_continuous):
     def _pdf(self, x, b):
         return x * exp(-(x-b)*(x-b)/2.0) * special.i0e(x*b)
 
-    def _logpdf(self, x, b):
-        return log(self._pdf(x, b))
-
     def _munp(self, n, b):
         nd2 = n/2.0
         n1 = 1 + nd2
@@ -5876,9 +5873,9 @@ class vonmises_gen(rv_continuous):
 
     See Also
     --------
-    vonmises_line : The same distribution, defined on a [-pi, pi] segment 
-    of the real line. 
- 
+    vonmises_line : The same distribution, defined on a [-pi, pi] segment
+                    of the real line.
+
     %(example)s
 
     """
