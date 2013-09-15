@@ -503,6 +503,16 @@ def valarray(shape,value=nan,typecode=None):
     return out
 
 
+def _lazywhere(cond, arr, f, fillvalue):
+    """np.where(cond, x, fillvalue) always evaluates x even where cond is False.
+    This one only evaluates f(arr[cond]).
+    """
+    temp = np.extract(cond, arr)
+    out = valarray(shape(arr), value=fillvalue)
+    np.place(out, cond, f(temp))
+    return out
+
+
 # This should be rewritten
 def argsreduce(cond, *args):
     """Return the sequence of ravel(args[i]) where ravel(condition) is
@@ -4205,19 +4215,29 @@ class invgamma_gen(rv_continuous):
         return exp(self._logpdf(x,a))
 
     def _logpdf(self, x, a):
-        return (-(a+1)*log(x)-gamln(a) - 1.0/x)
+        return (-(a+1) * log(x) - gamln(a) - 1.0/x)
 
     def _cdf(self, x, a):
-        return 1.0-special.gammainc(a, 1.0/x)
+        return 1.0 - special.gammainc(a, 1.0/x)
 
     def _ppf(self, q, a):
-        return 1.0/special.gammaincinv(a,1-q)
+        return 1.0 / special.gammaincinv(a, 1.-q)
 
-    def _munp(self, n, a):
-        return exp(gamln(a-n) - gamln(a))
+    def _stats(self, a, moments='mvsk'):
+        m1 = _lazywhere(a > 1, a, lambda x: 1. / (x - 1.), np.inf)
+        m2 = _lazywhere(a > 2, a, lambda x: 1. / (x - 1.)**2 / (x - 2.), np.inf)
+
+        g1, g2 = None, None
+        if 's' in moments:
+            g1 = _lazywhere(a > 3, a, 
+                    lambda x: 4. * np.sqrt(x - 2.) / (x - 3.), np.nan)
+        if 'k' in moments:
+            g2 = _lazywhere(a > 4, a, 
+                    lambda x: 6. * (5. * x - 11.) / (x - 3.) / (x - 4.), np.nan)
+        return m1, m2, g1, g2
 
     def _entropy(self, a):
-        return a - (a+1.0)*special.psi(a) + gamln(a)
+        return a - (a+1.0) * special.psi(a) + gamln(a)
 invgamma = invgamma_gen(a=0.0, name='invgamma')
 
 

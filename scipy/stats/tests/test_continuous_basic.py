@@ -72,7 +72,7 @@ distcont = [
     ['halflogistic', ()],
     ['halfnorm', ()],
     ['hypsecant', ()],
-    ['invgamma', (2.0668996136993067,)],
+    ['invgamma', (4.0668996136993067,)],
     ['invgauss', (0.14546264555347513,)],
     ['invweibull', (10.58,)],  # sample mean test fails at(0.58847112119264788,)]
     ['johnsonsb', (4.3172675099141058, 3.1837781130785063)],
