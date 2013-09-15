@@ -2982,25 +2982,25 @@ class dweibull_gen(rv_continuous):
     """
     def _rvs(self, c):
         u = random(size=self._size)
-        return weibull_min.rvs(c, size=self._size)*(where(u >= 0.5,1,-1))
+        return weibull_min.rvs(c, size=self._size) * (where(u >= 0.5, 1, -1))
 
     def _pdf(self, x, c):
         ax = abs(x)
-        Px = c/2.0*ax**(c-1.0)*exp(-ax**c)
+        Px = c / 2.0 * ax**(c-1.0) * exp(-ax**c)
         return Px
 
     def _logpdf(self, x, c):
         ax = abs(x)
-        return log(c) - log(2.0) + special.xlogy(c-1.0, ax) - ax**c
+        return log(c) - log(2.0) + special.xlogy(c - 1.0, ax) - ax**c
 
     def _cdf(self, x, c):
-        Cx1 = 0.5*exp(-abs(x)**c)
-        return where(x > 0, 1-Cx1, Cx1)
+        Cx1 = 0.5 * exp(-abs(x)**c)
+        return where(x > 0, 1 - Cx1, Cx1)
 
-    def _ppf_skip(self, q, c):
-        fac = where(q <= 0.5,2*q,2*q-1)
-        fac = pow(asarray(log(1.0/fac)),1.0/c)
-        return where(q > 0.5,fac,-fac)
+    def _ppf(self, q, c):
+        fac = 2. * where(q <= 0.5, q, 1. - q)
+        fac = np.power(-log(fac), 1.0 / c)
+        return where(q > 0.5, fac, -fac)
 
     def _munp(self, n, c):
         return (1 - n%2) * special.gamma(1.0 + 1.0 * n / c)
