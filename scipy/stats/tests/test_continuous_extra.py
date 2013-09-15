@@ -150,15 +150,14 @@ def test_rice_zero_b():
     # rice.pdf(x, b\to 0) = x exp(-x^2/2) + O(b^2)
     # see e.g. Abramovich & Stegun 9.6.7 & 9.6.10
     b = 1e-8
-    np.allclose(stats.rice.pdf(x, 0), stats.rice.pdf(x, b),
+    npt.assert_allclose(stats.rice.pdf(x, 0), stats.rice.pdf(x, b),
             atol = b, rtol=0)
 
 
 def test_rice_rvs():
-    # a supplement to the KS test (which is run separately)
     rvs = stats.rice.rvs
-    npt.assert_equals(rvs(b=3.).size, 1)
-    npt.assert_equals(rvs(b=3., size=(3, 5)).shape, (3, 5))
+    npt.assert_equal(rvs(b=3.).size, 1)
+    npt.assert_equal(rvs(b=3., size=(3, 5)).shape, (3, 5))
 
 
 if __name__ == "__main__":
