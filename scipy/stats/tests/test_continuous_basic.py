@@ -7,6 +7,8 @@ import numpy as np
 import numpy.testing as npt
 
 from scipy import stats
+from common_tests import (check_normalization, check_moment, check_mean_expect,
+        check_var_expect, check_skew_expect, check_kurt_expect)
 
 """
 Test all continuous distributions.
@@ -184,7 +186,7 @@ def test_cont_basic():
         sv = rvs.var()
         skurt = stats.kurtosis(rvs)
         sskew = stats.skew(rvs)
-        m,v = distfn.stats(*arg)
+        m, v = distfn.stats(*arg)
 
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
@@ -239,7 +241,7 @@ def test_cont_basic_slow():
         sv = rvs.var()
         skurt = stats.kurtosis(rvs)
         sskew = stats.skew(rvs)
-        m,v = distfn.stats(*arg)
+        m, v = distfn.stats(*arg)
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
         # the sample skew kurtosis test has known failures, not very good distance measure
@@ -279,21 +281,23 @@ def test_cont_basic_slow():
             yield check_private_entropy, distfn, arg
         yield check_edge_support, distfn, arg
 
-def check_moment(distfn, arg, m, v, msg):
-    m1 = distfn.moment(1,*arg)
-    m2 = distfn.moment(2,*arg)
-    if not np.isinf(m):
-        npt.assert_almost_equal(m1, m, decimal=10, err_msg=msg +
-                            ' - 1st moment')
-    else:                     # or np.isnan(m1),
-        npt.assert_(np.isinf(m1),
-               msg + ' - 1st moment -infinite, m1=%s' % str(m1))
-    if not np.isinf(v):
-        npt.assert_almost_equal(m2-m1*m1, v, decimal=10, err_msg=msg +
-                            ' - 2ndt moment')
-    else:                     # or np.isnan(m2),
-        npt.assert_(np.isinf(m2),
-               msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
+@npt.dec.slow
+def test_moments():
+     knf = npt.dec.knownfailureif
+     distfailing = set(['burr', 'dweibull', 'f', 
+                'fatiguelife', 'foldnorm', 'invgamma', 'ksone', 'ncf', 'nct', 
+                'rdist', 'rice', 'vonmises'])
+
+     for distname, arg in distcont[:]:
+        distfn = getattr(stats, distname)
+        m, v, s, k = distfn.stats(*arg, moments='mvsk')
+        cond = distname in distfailing
+        msg = distname + ' fails moments'
+        yield knf(cond, msg)(check_normalization), distfn, arg, distname
+        yield knf(cond, msg)(check_mean_expect), distfn, arg, m, distname
+        yield knf(cond, msg)(check_var_expect), distfn, arg, m, v, distname
+        yield knf(cond, msg)(check_skew_expect), distfn, arg, m, v, s, distname
+        yield knf(cond, msg)(check_kurt_expect), distfn, arg, m, v, k, distname
 
 
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
