@@ -2,11 +2,12 @@ from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_, assert_equal, assert_almost_equal, \
         assert_array_almost_equal, assert_raises, assert_array_equal, \
-        dec, TestCase, run_module_suite
+        dec, TestCase, run_module_suite, assert_allclose
 from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
 
-from scipy.interpolate import interp1d, interp2d, lagrange
+from scipy.interpolate import interp1d, interp2d, lagrange, PPoly, ppform, \
+     splrep, splev
 
 from scipy.lib._gcutils import assert_deallocated
 
@@ -396,6 +397,99 @@ class TestLagrange(TestCase):
         ys = p(xs)
         pl = lagrange(xs,ys)
         assert_array_almost_equal(p.coeffs,pl.coeffs)
+
+
+class TestPPoly(TestCase):
+    def test_simple(self):
+        c = np.array([[1, 4], [2, 5], [3, 6]])
+        x = np.array([0, 0.5, 1])
+        p = PPoly(c, x)
+        assert_allclose(p(0.3), 1*0.3**2 + 2*0.3 + 3)
+        assert_allclose(p(0.7), 4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6)
+
+    def test_vs_alternative_implementations(self):
+        np.random.seed(1234)
+        c = np.random.rand(3, 12, 22)
+        x = np.sort(np.r_[0, np.random.rand(11), 1])
+
+        p = PPoly(c, x)
+
+        xp = np.r_[0.3, -0.1, 0.5, 0.33, 1.1, 2.1, 0.6]
+        expected = _ppoly_eval_1(c, x, xp)
+        assert_allclose(p(xp), expected)
+
+        expected = _ppoly_eval_2(c[:,:,0], x, xp)
+        assert_allclose(p(xp)[:,0], expected)
+
+    def test_shape(self):
+        np.random.seed(1234)
+        c = np.random.rand(3, 12, 5, 6, 7)
+        x = np.sort(np.random.rand(13))
+        p = PPoly(c, x)
+        xp = np.random.rand(3, 4)
+        assert_equal(p(xp).shape, (3, 4, 5, 6, 7))
+
+    def test_from_spline(self):
+        np.random.seed(1234)
+        x = np.sort(np.r_[0, np.random.rand(11), 1])
+        y = np.random.rand(len(x))
+
+        spl = splrep(x, y, s=0)
+        pp = PPoly.from_spline(spl, fill_value=np.nan)
+
+        xi = np.linspace(0, 1, 200)
+        assert_allclose(pp(xi), splev(xi, spl))
+        assert_(np.isnan(pp([-0.1, 1.1])).all())
+        
+
+class TestPpform(TestCase):
+    def test_shape(self):
+        np.random.seed(1234)
+        c = np.random.rand(3, 12, 5, 6, 7)
+        x = np.sort(np.random.rand(13))
+        p = ppform(c, x)
+        xp = np.random.rand(3, 4)
+        assert_equal(p(xp).shape, (3, 4, 5, 6, 7))
+
+
+def _ppoly_eval_1(c, x, xps):
+    """Evaluate piecewise polynomial manually"""
+    out = np.zeros((len(xps), c.shape[2]))
+    for i, xp in enumerate(xps):
+        if xp < 0 or xp > 1:
+            out[i,:] = np.nan
+            continue
+        j = np.searchsorted(x, xp) - 1
+        d = xp - x[j]
+        assert_(x[j] <= xp < x[j+1])
+        r = sum(c[k,j] * d**(c.shape[0]-k-1)
+                for k in range(c.shape[0]))
+        out[i,:] = r
+    return out
+
+
+def _ppoly_eval_2(coeffs, breaks, xnew, fill=np.nan):
+    """Evaluate piecewise polynomial manually (another way)"""
+    a = breaks[0]
+    b = breaks[-1]
+    K = coeffs.shape[0]
+
+    saveshape = np.shape(xnew)
+    xnew = np.ravel(xnew)
+    res = np.empty_like(xnew)
+    mask = (xnew >= a) & (xnew <= b)
+    res[~mask] = fill
+    xx = xnew.compress(mask)
+    indxs = np.searchsorted(breaks, xx)-1
+    indxs = indxs.clip(0, len(breaks))
+    pp = coeffs
+    diff = xx - breaks.take(indxs)
+    V = np.vander(diff, N=K)
+    values = np.array([np.dot(V[k, :], pp[:, indxs[k]]) for k in xrange(len(xx))])
+    res[mask] = values
+    res.shape = saveshape
+    return res
+
 
 if __name__ == "__main__":
     run_module_suite()

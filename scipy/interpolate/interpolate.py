@@ -3,7 +3,7 @@
 from __future__ import division, print_function, absolute_import
 
 __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
-           'ppform', 'lagrange']
+           'ppform', 'lagrange', 'PPoly']
 
 from numpy import shape, sometrue, array, transpose, searchsorted, \
                   ones, logical_or, atleast_1d, atleast_2d, ravel, \
@@ -18,7 +18,7 @@ from . import fitpack
 from . import dfitpack
 from . import _fitpack
 from .polyint import _Interpolator1D
-
+from . import _ppoly
 
 def reduce_sometrue(a):
     all = a
@@ -484,44 +484,111 @@ class interp1d(_Interpolator1D):
         return out_of_bounds
 
 
-class ppform(object):
-    """The ppform of the piecewise polynomials is given in terms of coefficients
-    and breaks.  The polynomial in the ith interval is
-    x_{i} <= x < x_{i+1}
-
-    S_i = sum(coefs[m,i]*(x-breaks[i])^(k-m), m=0..k)
-    where k is the degree of the polynomial.
+class PPoly(_Interpolator1D):
     """
+    Piecewise polynomial in terms of coefficients and breakpoints
+
+    The polynomial in the ith interval is ``x[i] <= xp < x[i+1]``::
+
+        S = sum(c[m, i] * (xp - x[i])**(k-m) for m in range(k+1))
+
+    where ``k`` is the degree of the polynomial.
+
+    Parameters
+    ----------
+    c : ndarray, shape (k, m, ...)
+        Polynomial coefficients, order `k` and `m` intervals
+    x : ndarray, shape (m+1,)
+        Polynomial breakpoints. These must be sorted in
+        increasing order.
+
+    Methods
+    -------
+    __call__
+    from_spline
+
+    """
+
+    def __init__(self, c, x, fill_value=None):
+        _Interpolator1D.__init__(self)
+
+        self.c = np.asarray(c)
+        self.x = np.ascontiguousarray(x, dtype=np.float64)
+        if fill_value is None:
+            fill_value = np.nan
+        self.fill_value = fill_value
+
+        if self.x.ndim != 1:
+            raise ValueError("x must be 1-dimensional")
+        if self.x.size < 2:
+            raise ValueError("at least 2 breakpoints are needed")
+        if self.c.shape[1] != self.x.size-1:
+            raise ValueError("number of coefficients != len(x)-1")
+
+        self._y_axis = 0
+        self._y_extra_shape = self.c.shape[2:]
+        self._set_dtype(self.c.dtype)
+        self.c = np.ascontiguousarray(
+            self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+            dtype=self.dtype)
+
+    def _evaluate(self, x):
+        out = np.empty((len(x), self.c.shape[2]), dtype=self.dtype)
+        has_out_of_bounds = _ppoly.evaluate(self.c, self.x, x, out)
+        if has_out_of_bounds:
+            out[~((x >= self.x[0]) & (x <= self.x[-1]))] = self.fill_value
+        return out
+
+    @classmethod
+    def from_spline(cls, tck, fill_value=None):
+        """
+        Construct a piecewise polynomial from a spline
+
+        Parameters
+        ----------
+        tck
+            A spline, as returned by `splrep`
+        fill_value
+            Value to use for extrapolation
+
+        """
+        t, c, k = tck
+
+        cvals = np.empty((k + 1, len(t)-1), dtype=c.dtype)
+        for m in xrange(k, -1, -1):
+            y = fitpack.splev(t[:-1], tck, der=m)
+            cvals[k - m, :] = y/spec.gamma(m+1)
+
+        return cls(cvals, t, fill_value=fill_value)
+
+
+# backward compatibility wrapper
+class ppform(PPoly):
+    """
+    Deprecated piecewise polynomial class.
+
+    New code should use the `PPoly` class instead.
+
+    """
+
     def __init__(self, coeffs, breaks, fill=0.0, sort=False):
-        self.coeffs = np.asarray(coeffs)
         if sort:
-            self.breaks = np.sort(breaks)
+            breaks = np.sort(breaks)
         else:
-            self.breaks = np.asarray(breaks)
+            breaks = np.asarray(breaks)
+
+        PPoly.__init__(self, coeffs, breaks, fill_value=fill)
+
+        self.coeffs = self.c
+        self.breaks = self.x
         self.K = self.coeffs.shape[0]
         self.fill = fill
         self.a = self.breaks[0]
         self.b = self.breaks[-1]
 
-    def __call__(self, xnew):
-        saveshape = np.shape(xnew)
-        xnew = np.ravel(xnew)
-        res = np.empty_like(xnew)
-        mask = (xnew >= self.a) & (xnew <= self.b)
-        res[~mask] = self.fill
-        xx = xnew.compress(mask)
-        indxs = np.searchsorted(self.breaks, xx)-1
-        indxs = indxs.clip(0, len(self.breaks))
-        pp = self.coeffs
-        diff = xx - self.breaks.take(indxs)
-        V = np.vander(diff, N=self.K)
-        # values = np.diag(dot(V,pp[:,indxs]))
-        values = array([dot(V[k, :], pp[:, indxs[k]]) for k in xrange(len(xx))])
-        res[mask] = values
-        res.shape = saveshape
-        return res
-
+    @classmethod
     def fromspline(cls, xk, cvals, order, fill=0.0):
+        # Note: this spline representation is incompatible with FITPACK
         N = len(xk)-1
         sivals = np.empty((order+1, N), dtype=float)
         for m in xrange(order, -1, -1):
@@ -530,7 +597,6 @@ class ppform(object):
             res /= fact
             sivals[order-m, :] = res
         return cls(sivals, xk, fill=fill)
-    fromspline = classmethod(fromspline)
 
 
 def _dot0(a, b):
