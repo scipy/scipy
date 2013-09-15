@@ -2578,7 +2578,7 @@ class betaprime_gen(rv_continuous):
                                                     * (b-2.0)*(b-1.0)), inf)
         else:
             raise NotImplementedError
-betaprime = betaprime_gen(a=0.0, b=500.0, name='betaprime')
+betaprime = betaprime_gen(a=0.0, name='betaprime')
 
 
 class bradford_gen(rv_continuous):
