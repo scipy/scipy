@@ -3002,9 +3002,8 @@ class dweibull_gen(rv_continuous):
         fac = pow(asarray(log(1.0/fac)),1.0/c)
         return where(q > 0.5,fac,-fac)
 
-    def _stats(self, c):
-        var = gam(1+2.0/c)
-        return 0.0, var, 0.0, gam(1+4.0/c)/var
+    def _munp(self, n, c):
+        return (1 - n%2) * special.gamma(1.0 + 1.0 * n / c)
 dweibull = dweibull_gen(name='dweibull')
 
 
