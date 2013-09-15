@@ -112,7 +112,7 @@ def _restore(M, shape):
         return zeros(shape)
     else:
         if M.shape != shape:
-            raise ValueError("Array doesn't have intended shape.")
+            raise ValueError("The input arrays have incompatible shapes.")
         return M
 
 
