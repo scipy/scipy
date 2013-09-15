@@ -194,8 +194,6 @@ def test_cont_basic():
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
         yield check_pdf, distfn, arg, distname
-        if distname in ['wald']:
-            continue
         yield check_pdf_logpdf, distfn, arg, distname
         yield check_cdf_logcdf, distfn, arg, distname
         yield check_sf_logsf, distfn, arg, distname
@@ -211,6 +209,19 @@ def test_cont_basic():
                   'pareto': 1.5, 'tukeylambda': 0.3}
         x = spec_x.get(distname, 0.5)
         yield check_named_args, distfn, x, arg, locscale_defaults, meths
+
+        # this asserts the vectorization of _entropy w/ no shape parameters
+        # NB: broken for older versions of numpy
+        if distfn.numargs == 0:
+            if np.__version__ > '1.7':
+                yield check_vecentropy, distfn, arg
+        # compare a generic _entropy w/ distribution-specific implementation,
+        # if available
+        if distfn.__class__._entropy != stats.rv_continuous._entropy:
+            yield check_private_entropy, distfn, arg
+
+        yield check_edge_support, distfn, arg
+
 
 
 @npt.dec.slow
@@ -255,6 +266,14 @@ def test_cont_basic_slow():
             arg = (3,)
         yield check_named_args, distfn, x, arg, locscale_defaults, meths
 
+        # this asserts the vectorization of _entropy w/ no shape parameters
+        if distfn.numargs == 0:
+            yield check_vecentropy, distfn, arg
+        # compare a generic _entropy w/ distribution-specific implementation,
+        # if available
+        if distfn.__class__._entropy != stats.rv_continuous._entropy:
+            yield check_private_entropy, distfn, arg
+        yield check_edge_support, distfn, arg
 
 def check_moment(distfn, arg, m, v, msg):
     m1 = distfn.moment(1,*arg)
@@ -416,6 +435,10 @@ def check_normalization(distfn, args, distname):
     npt.assert_allclose(norm_cdf, 1.0)
 
 
+def check_vecentropy(distfn, args):
+    npt.assert_equal( distfn.vecentropy(*args), distfn._entropy(*args) )
+
+
 def check_named_args(distfn, x, shape_args, defaults, meths):
     """Check calling w/ named arguments."""
 
@@ -454,6 +477,27 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     # unknown arguments should not go through:
     k.update({'kaboom': 42})
     npt.assert_raises(TypeError, distfn.cdf, x, **k)
+
+
+def check_edge_support(distfn, args):
+    """Make sure the x=self.a and self.b are handled correctly."""
+    x = [distfn.a, distfn.b]
+    npt.assert_equal(distfn.cdf(x, *args), [0.0, 1.0])
+    npt.assert_equal(distfn.logcdf(x, *args), [-np.inf, 0.0])
+
+    npt.assert_equal(distfn.sf(x, *args), [1.0, 0.0])
+    npt.assert_equal(distfn.logsf(x, *args), [0.0, -np.inf])
+
+    npt.assert_equal(distfn.ppf([0.0, 1.0], *args), x)
+    npt.assert_equal(distfn.isf([0.0, 1.0], *args), x[::-1])
+    # pdf(x=[a, b], *args) depends on the distribution
+
+
+@_silence_fp_errors
+def check_private_entropy(distfn, args):
+    # compare a generic _entropy with the distribution-specific implementation
+    npt.assert_allclose(distfn._entropy(*args),
+                        stats.rv_continuous._entropy(distfn, *args))
 
 
 if __name__ == "__main__":
