@@ -777,7 +777,7 @@ class rv_generic(object):
         return vals
 
 
-    def stats(self, *args, **kwds):
+    def stats(self,*args,**kwds):
         """
         Some statistics of the given RV
 
@@ -809,71 +809,74 @@ class rv_generic(object):
         loc, scale = map(asarray, (loc, scale))
         args = tuple(map(asarray, args))
         cond = self._argcheck(*args) & (scale > 0) & (loc == loc)
-
-        if self._stats_has_moments:
-            mu, mu2, g1, g2 = self._stats(*args, **{'moments': moments})
-        else:
-            mu, mu2, g1, g2 = self._stats(*args)
-        if g1 is None:
-            mu3 = None
-        else:
-            mu3 = g1*np.power(mu2, 1.5)  # (mu2**1.5) breaks down for nan and inf
-        default = valarray(shape(cond), self.badvalue)
         output = []
+        default = valarray(shape(cond), self.badvalue)
 
         # Use only entries that are valid in calculation
         if any(cond):
-            goodargs = argsreduce(cond, *(args + (scale, loc)))
+            goodargs = argsreduce(cond, *(args+(scale,loc)))
             scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
+
+        if self._stats_has_moments:
+                mu, mu2, g1, g2 = self._stats(*goodargs,**{'moments':moments})
+            else:
+                mu, mu2, g1, g2 = self._stats(*goodargs)
+            if g1 is None:
+                mu3 = None
+            else:
+                if mu2 is None:
+                    mu2 = self._munp(2, *goodargs)
+                mu3 = g1 * np.power(mu2, 1.5)  # (mu2**1.5) breaks down for nan and inf
+
             if 'm' in moments:
                 if mu is None:
-                    mu = self._munp(1.0, *goodargs)
+                    mu = self._munp(1, *goodargs)
                 out0 = default.copy()
-                place(out0, cond, mu*scale + loc)
+                place(out0,cond,mu*scale+loc)
                 output.append(out0)
 
             if 'v' in moments:
                 if mu2 is None:
-                    mu2p = self._munp(2.0, *goodargs)
+                    mu2p = self._munp(2, *goodargs)
                     if mu is None:
-                        mu = self._munp(1.0, *goodargs)
+                        mu = self._munp(1, *goodargs)
                     mu2 = mu2p - mu*mu
                     if np.isinf(mu):
                         #if mean is inf then var is also inf
                         mu2 = np.inf
                 out0 = default.copy()
-                place(out0, cond, mu2*scale*scale)
+                place(out0,cond,mu2*scale*scale)
                 output.append(out0)
 
             if 's' in moments:
                 if g1 is None:
-                    mu3p = self._munp(3.0, *goodargs)
+                    mu3p = self._munp(3, *goodargs)
                     if mu is None:
-                        mu = self._munp(1.0, *goodargs)
+                        mu = self._munp(1, *goodargs)
                     if mu2 is None:
-                        mu2p = self._munp(2.0, *goodargs)
+                        mu2p = self._munp(2 ,*goodargs)
                         mu2 = mu2p - mu*mu
                     mu3 = mu3p - 3*mu*mu2 - mu**3
-                    g1 = mu3 / np.power(mu2, 1.5) #mu2**1.5
+                    g1 = mu3 / np.power(mu2, 1.5)
                 out0 = default.copy()
-                place(out0, cond, g1)
+                place(out0,cond,g1)
                 output.append(out0)
 
             if 'k' in moments:
                 if g2 is None:
-                    mu4p = self._munp(4.0, *goodargs)
+                    mu4p = self._munp(4, *goodargs)
                     if mu is None:
-                        mu = self._munp(1.0, *goodargs)
+                        mu = self._munp(1, *goodargs)
                     if mu2 is None:
-                        mu2p = self._munp(2.0, *goodargs)
+                        mu2p = self._munp(2, *goodargs)
                         mu2 = mu2p - mu*mu
                     if mu3 is None:
-                        mu3p = self._munp(3.0, *goodargs)
+                        mu3p = self._munp(3, *goodargs)
                         mu3 = mu3p - 3*mu*mu2 - mu**3
                     mu4 = mu4p - 4*mu*mu3 - 6*mu*mu*mu2 - mu**4
                     g2 = mu4 / mu2**2.0 - 3.0
                 out0 = default.copy()
-                place(out0,cond, g2)
+                place(out0,cond,g2)
                 output.append(out0)
         else:  # no valid args
             output = []
@@ -3004,6 +3007,12 @@ class dweibull_gen(rv_continuous):
 
     def _munp(self, n, c):
         return (1 - n%2) * special.gamma(1.0 + 1.0 * n / c)
+
+    # since we know that all odd moments are zeros, return them at once.
+    # returning Nones from _stats makes the public stats call _munp
+    # so overall we're saving one or two gamma function evaluations here.
+    def _stats(self, c):
+        return 0, None, 0, None
 dweibull = dweibull_gen(name='dweibull')
 
 
