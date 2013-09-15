@@ -166,6 +166,15 @@ class TestOptimize(object):
         finally:
             np.seterr(**olderr)
 
+    def test_bfgs_gh_2169(self):
+        def f(x):
+            if x < 0:
+                return 1.79769313e+308
+            else:
+                return x + 1./x
+        xs = optimize.fmin_bfgs(f, [10.], disp=False)
+        assert_allclose(xs, 1.0, rtol=1e-4, atol=1e-4)
+
     def test_powell(self, use_wrapper=False):
         """ Powell (direction set) optimization routine
         """
