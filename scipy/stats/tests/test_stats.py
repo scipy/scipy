@@ -1023,6 +1023,46 @@ class TestScoreatpercentile(TestCase):
         assert_raises(ValueError, stats.scoreatpercentile, [1], -1)
 
 
+class TestItemfreq(TestCase):
+    a = [5, 7, 1, 2, 1, 5, 7] * 10
+    b = [1, 2, 5, 7]
+
+    def test_numeric_types(self):
+        # Check itemfreq works for all dtypes (adapted from np.unique tests)
+        def _check_itemfreq(a, b, dt):
+            v = stats.itemfreq(a)
+            assert_array_equal(v[:, 0], [1, 2, 5, 7])
+            assert_array_equal(v[:, 1], np.bincount(v[:, 0]))
+
+        a, b = self.a, self.b
+        types = []
+        types.extend(np.typecodes['AllInteger'])
+        types.extend(np.typecodes['AllFloat'])
+        for dt in types:
+            aa = np.array(a, dt)
+            bb = np.array(b, dt)
+            yield _check_itemfreq, aa, bb, dt
+
+    def test_object_arrays(self):
+        a, b = self.a, self.b
+        dt = 'O'
+        aa = np.empty(len(a), dt)
+        aa[:] = a
+        bb = np.empty(len(b), dt)
+        bb[:] = b
+        v = stats.itemfreq(aa)
+        assert_array_equal(v[:, 0], bb)
+
+    def test_structured_arrays(self):
+        a, b = self.a, self.b
+        dt = [('', 'i'), ('', 'i')]
+        aa = np.array(list(zip(a, a)), dt)
+        bb = np.array(list(zip(b, b)), dt)
+        v = stats.itemfreq(aa)
+        # Arrays don't compare equal because v[:,0] is object array
+        assert_equal(v[2, 0], bb[2])
+
+
 class TestMode(TestCase):
     def test_basic(self):
         data1 = [3,5,1,10,23,3,2,6,8,6,10,6]
