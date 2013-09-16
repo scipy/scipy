@@ -588,7 +588,7 @@ class TestF(TestCase):
 
     @dec.knownfailureif(True, 'f stats does not properly broadcast')
     def test_stats_broadcast(self):
-        # stats do not full broadcast yet just yet
+        # stats do not fully broadcast just yet
         mv = stats.f.stats(dfn=11, dfd=[11, 12])        
 
 
