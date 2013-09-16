@@ -256,6 +256,21 @@ class TestSmokeTests(TestCase):
         self.check_5()
 
 
+class TestSplrep(TestCase):
+    def test_caching(self):
+        from scipy.interpolate.fitpack import _curfit_cache
+        x = range(5)
+        y = range(5, 10)
+        knots, coefficients, degree = splrep(x, y, task=0)
+        assert_equal(_curfit_cache['t'], knots)
+
+    def test_task_argument(self):
+        x, y  = range(5), range(5, 10)
+        # must call splrep twice to cache values
+        tck1 = splrep(x, y, task=0)
+        tck2 = splrep(x, y, task=1) # check if runnable
+
+
 class TestSplev(TestCase):
     def test_1d_shape(self):
         x = [1,2,3,4,5]
