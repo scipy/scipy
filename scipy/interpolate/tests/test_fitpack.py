@@ -260,13 +260,6 @@ class TestSmokeTests(object):
 
 
 class TestSplrep(object):
-    def test_caching(self):
-        # from scipy.interpolate.fitpack import _curfit_cache
-        x = range(5)
-        y = range(5, 10)
-        knots, coefficients, degree = splrep(x, y, task=0)
-        # assert_equal(_curfit_cache['t'], knots)
-
     def test_task_argument(self):
         x, y  = range(5), range(5, 10)
         # must call splrep twice to cache values
