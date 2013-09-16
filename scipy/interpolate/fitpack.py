@@ -433,8 +433,7 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     >>> plot(x, y, 'o', x2, y2)
 
     """
-    if task <= 0:
-        _curfit_cache = {}
+    cache = {} if task < 0 else _curfit_cache
     x,y = map(myasarray,[x,y])
     m = len(x)
     if w is None:
@@ -465,26 +464,26 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
         if t is None:
             raise TypeError('Knots must be given for task=-1')
         numknots = len(t)
-        _curfit_cache['t'] = empty((numknots + 2*k+2,),float)
-        _curfit_cache['t'][k+1:-k-1] = t
-        nest = len(_curfit_cache['t'])
+        cache['t'] = empty((numknots + 2*k+2,),float)
+        cache['t'][k+1:-k-1] = t
+        nest = len(cache['t'])
     elif task == 0:
         if per:
             nest = max(m+2*k,2*k+3)
         else:
             nest = max(m+k+1,2*k+3)
         t = empty((nest,),float)
-        _curfit_cache['t'] = t
+        cache['t'] = t
     if task <= 0:
         if per:
-            _curfit_cache['wrk'] = empty((m*(k+1)+nest*(8+5*k),),float)
+            cache['wrk'] = empty((m*(k+1)+nest*(8+5*k),),float)
         else:
-            _curfit_cache['wrk'] = empty((m*(k+1)+nest*(7+3*k),),float)
-        _curfit_cache['iwrk'] = empty((nest,),intc)
+            cache['wrk'] = empty((m*(k+1)+nest*(7+3*k),),float)
+        cache['iwrk'] = empty((nest,),intc)
     try:
-        t = _curfit_cache['t']
-        wrk = _curfit_cache['wrk']
-        iwrk = _curfit_cache['iwrk']
+        t = cache['t']
+        wrk = cache['wrk']
+        iwrk = cache['iwrk']
     except KeyError:
         raise TypeError("must call with task=1 only after"
                         " call with task=0,-1")
