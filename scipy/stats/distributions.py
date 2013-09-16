@@ -52,8 +52,8 @@ __all__ = [
            'nct', 'pareto', 'lomax', 'pearson3', 'powerlaw', 'powerlognorm',
            'powernorm', 'rdist', 'rayleigh', 'reciprocal', 'rice',
            'recipinvgauss', 'semicircular', 'triang', 'truncexpon',
-           'truncnorm', 'tukeylambda', 'uniform', 'vonmises', 'wald',
-           'wrapcauchy', 'entropy', 'rv_discrete', 'binom', 'bernoulli',
+           'truncnorm', 'tukeylambda', 'uniform', 'vonmises', 'vonmises_line',
+           'wald', 'wrapcauchy', 'entropy', 'rv_discrete', 'binom', 'bernoulli',
            'nbinom', 'geom', 'hypergeom', 'logser', 'poisson', 'planck',
            'boltzmann', 'randint', 'zipf', 'dlaplace', 'skellam'
           ]
@@ -500,6 +500,16 @@ def valarray(shape,value=nan,typecode=None):
         out = out.astype(typecode)
     if not isinstance(out, ndarray):
         out = asarray(out)
+    return out
+
+
+def _lazywhere(cond, arr, f, fillvalue):
+    """np.where(cond, x, fillvalue) always evaluates x even where cond is False.
+    This one only evaluates f(arr[cond]).
+    """
+    temp = np.extract(cond, arr)
+    out = valarray(shape(arr), value=fillvalue)
+    np.place(out, cond, f(temp))
     return out
 
 
@@ -1960,11 +1970,11 @@ class rv_continuous(rv_generic):
             val = self._pdf(x, *args)
             return special.xlogy(val, val)
 
-        entr = -integrate.quad(integ,self.a,self.b)[0]
+        entr = -integrate.quad(integ,self.a, self.b)[0]
         if not np.isnan(entr):
             return entr
         else:  # try with different limits if integration problems
-            low,upp = self.ppf([0.001,0.999],*args)
+            low, upp = self.ppf([1e-10, 1. - 1e-10], *args)
             if np.isinf(self.b):
                 upper = upp
             else:
@@ -1973,7 +1983,7 @@ class rv_continuous(rv_generic):
                 lower = low
             else:
                 lower = self.a
-            return -integrate.quad(integ,lower,upper)[0]
+            return -integrate.quad(integ, lower, upper)[0]
 
     def entropy(self, *args, **kwds):
         """
@@ -1991,16 +2001,16 @@ class rv_continuous(rv_generic):
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
-        args = tuple(map(asarray,args))
+        args = tuple(map(asarray, args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
-        output = zeros(shape(cond0),'d')
-        place(output,(1-cond0),self.badvalue)
+        output = zeros(shape(cond0), 'd')
+        place(output, (1-cond0), self.badvalue)
         goodargs = argsreduce(cond0, *args)
         # np.vectorize doesn't work when numargs == 0 in numpy 1.5.1
         if self.numargs == 0:
-            place(output,cond0,self._entropy()+log(scale))
+            place(output, cond0, self._entropy() + log(scale))
         else:
-            place(output,cond0,self.vecentropy(*goodargs)+log(scale))
+            place(output, cond0, self.vecentropy(*goodargs) + log(scale))
 
         return output
 
@@ -2568,7 +2578,7 @@ class betaprime_gen(rv_continuous):
                                                     * (b-2.0)*(b-1.0)), inf)
         else:
             raise NotImplementedError
-betaprime = betaprime_gen(a=0.0, b=500.0, name='betaprime')
+betaprime = betaprime_gen(a=0.0, name='betaprime')
 
 
 class bradford_gen(rv_continuous):
@@ -2670,7 +2680,7 @@ class burr_gen(rv_continuous):
         return mu, mu2, g1, g2
 burr = burr_gen(a=0.0, name='burr')
 
-#XXX: cf PR #2552
+
 class fisk_gen(burr_gen):
     """A Fisk continuous random variable.
 
@@ -3242,7 +3252,7 @@ class foldnorm_gen(rv_continuous):
 
     def _pdf(self, x, c):
         term = exp(-(x-c)*(x-c)/2) + exp(-(x+c)*(x+c)/2)
-        return term / sqrt(2.*pi) 
+        return term / sqrt(2*pi)
 
     def _cdf(self, x, c):
         return special.ndtr(x-c) + special.ndtr(x+c) - 1.0
@@ -3656,7 +3666,7 @@ class gamma_gen(rv_continuous):
         return a, a, 2.0/sqrt(a), 6.0/a
 
     def _entropy(self, a):
-        return special.psi(a)*(1-a) + 1 + gamln(a)
+        return special.psi(a)*(1-a) + a + gamln(a)
 
     def _fitstart(self, data):
         # The skewness of the gamma distribution is `4 / sqrt(a)`.
@@ -3949,7 +3959,8 @@ class gumbel_r_gen(rv_continuous):
                12*sqrt(6)/pi**3 * _ZETA3, 12.0/5
 
     def _entropy(self):
-        return 1.0608407169541684911
+        # http://en.wikipedia.org/wiki/Gumbel_distribution
+        return _EULER + 1.
 gumbel_r = gumbel_r_gen(name='gumbel_r')
 
 
@@ -3992,7 +4003,7 @@ class gumbel_l_gen(rv_continuous):
                -12*sqrt(6)/pi**3 * _ZETA3, 12.0/5
 
     def _entropy(self):
-        return 1.0608407169541684911
+        return _EULER + 1.
 gumbel_l = gumbel_l_gen(name='gumbel_l')
 
 
@@ -4204,19 +4215,29 @@ class invgamma_gen(rv_continuous):
         return exp(self._logpdf(x,a))
 
     def _logpdf(self, x, a):
-        return (-(a+1)*log(x)-gamln(a) - 1.0/x)
+        return (-(a+1) * log(x) - gamln(a) - 1.0/x)
 
     def _cdf(self, x, a):
-        return 1.0-special.gammainc(a, 1.0/x)
+        return 1.0 - special.gammainc(a, 1.0/x)
 
     def _ppf(self, q, a):
-        return 1.0/special.gammaincinv(a,1-q)
+        return 1.0 / special.gammaincinv(a, 1.-q)
 
-    def _munp(self, n, a):
-        return exp(gamln(a-n) - gamln(a))
+    def _stats(self, a, moments='mvsk'):
+        m1 = _lazywhere(a > 1, a, lambda x: 1. / (x - 1.), np.inf)
+        m2 = _lazywhere(a > 2, a, lambda x: 1. / (x - 1.)**2 / (x - 2.), np.inf)
+
+        g1, g2 = None, None
+        if 's' in moments:
+            g1 = _lazywhere(a > 3, a, 
+                    lambda x: 4. * np.sqrt(x - 2.) / (x - 3.), np.nan)
+        if 'k' in moments:
+            g2 = _lazywhere(a > 4, a, 
+                    lambda x: 6. * (5. * x - 11.) / (x - 3.) / (x - 4.), np.nan)
+        return m1, m2, g1, g2
 
     def _entropy(self, a):
-        return a - (a+1.0)*special.psi(a) + gamln(a)
+        return a - (a+1.0) * special.psi(a) + gamln(a)
 invgamma = invgamma_gen(a=0.0, name='invgamma')
 
 
@@ -4568,7 +4589,8 @@ class logistic_gen(rv_continuous):
         return 0, pi*pi/3.0, 0, 6.0/5.0
 
     def _entropy(self):
-        return 1.0
+        # http://en.wikipedia.org/wiki/Logistic_distribution
+        return 2.0
 logistic = logistic_gen(name='logistic')
 
 
@@ -5551,18 +5573,24 @@ class rice_gen(rv_continuous):
     %(example)s
 
     """
-    def _pdf(self, x, b):
-        return x*exp(-(x*x+b*b)/2.0)*special.i0(x*b)
+    def _argcheck(self, b):
+        return b >= 0
 
-    def _logpdf(self, x, b):
-        return log(x) - (x*x + b*b)/2.0 + log(special.i0(x*b))
+    def _rvs(self, b):
+        # http://en.wikipedia.org/wiki/Rice_distribution
+        sz = self._size if self._size else 1
+        t = b/np.sqrt(2) + mtrand.standard_normal(size=(2, sz))
+        return np.sqrt((t*t).sum(axis=0))
+
+    def _pdf(self, x, b):
+        return x * exp(-(x-b)*(x-b)/2.0) * special.i0e(x*b)
 
     def _munp(self, n, b):
         nd2 = n/2.0
-        n1 = 1+nd2
+        n1 = 1 + nd2
         b2 = b*b/2.0
-        return 2.0**(nd2)*exp(-b2)*special.gamma(n1) * \
-               special.hyp1f1(n1,1,b2)
+        return 2.0**(nd2) * exp(-b2) * special.gamma(n1) * \
+               special.hyp1f1(n1, 1, b2)
 rice = rice_gen(a=0.0, name="rice")
 
 
@@ -5872,6 +5900,11 @@ class vonmises_gen(rv_continuous):
 
     for ``-pi <= x <= pi``, ``b > 0``.
 
+    See Also
+    --------
+    vonmises_line : The same distribution, defined on a [-pi, pi] segment
+                    of the real line.
+
     %(example)s
 
     """
@@ -5887,6 +5920,7 @@ class vonmises_gen(rv_continuous):
     def _stats_skip(self, b):
         return 0, None, 0, None
 vonmises = vonmises_gen(name='vonmises')
+vonmises_line = vonmises_gen(a=-np.pi, b=np.pi, name='vonmises_line')
 
 
 class wald_gen(invgauss_gen):

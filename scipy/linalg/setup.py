@@ -4,13 +4,10 @@ from __future__ import division, print_function, absolute_import
 import os
 from os.path import join
 
-from scipy._build_utils import needs_g77_abi_wrapper, split_fortran_files
-
-
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info, NotFoundError
-
     from numpy.distutils.misc_util import Configuration
+    from scipy._build_utils import get_g77_abi_wrappers, split_fortran_files
 
     config = Configuration('linalg',parent_package,top_path)
 
@@ -25,32 +22,22 @@ def configuration(parent_package='',top_path=None):
         print(('ATLAS version: %s' % atlas_version))
 
     # fblas:
-    if needs_g77_abi_wrapper(lapack_opt):
-        sources = ['fblas.pyf.src', join('src', 'fblaswrap_veclib_c.c')],
-    else:
-        sources = ['fblas.pyf.src', join('src', 'fblaswrap_dummy.f')]
+    sources = ['fblas.pyf.src']
+    sources += get_g77_abi_wrappers(lapack_opt)
 
-    # Note: `depends` needs to include fblaswrap(_veclib) for both files to be
-    # included by "python setup.py sdist"
     config.add_extension('_fblas',
                          sources=sources,
-                         depends=['fblas_l?.pyf.src',
-                                  join('src', 'fblaswrap_veclib_c.c'),
-                                  join('src', 'fblaswrap_dummy.f')],
+                         depends=['fblas_l?.pyf.src'],
                          extra_info=lapack_opt
                          )
 
     # flapack:
-    if needs_g77_abi_wrapper(lapack_opt):
-        sources = ['flapack.pyf.src', join('src', 'flapackwrap_veclib.f')],
-    else:
-        sources = ['flapack.pyf.src', join('src', 'flapackwrap_dummy.f')]
+    sources = ['flapack.pyf.src']
+    sources += get_g77_abi_wrappers(lapack_opt)
 
     config.add_extension('_flapack',
                          sources=sources,
-                         depends=['flapack_user.pyf.src',
-                                  join('src', 'flapackwrap_veclib.f'),
-                                  join('src', 'flapackwrap_dummy.f')],
+                         depends=['flapack_user.pyf.src'],
                          extra_info=lapack_opt
                          )
 

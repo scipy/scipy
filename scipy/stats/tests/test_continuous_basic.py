@@ -7,6 +7,8 @@ import numpy as np
 import numpy.testing as npt
 
 from scipy import stats
+from common_tests import (check_normalization, check_moment, check_mean_expect,
+        check_var_expect, check_skew_expect, check_kurt_expect)
 
 """
 Test all continuous distributions.
@@ -72,7 +74,7 @@ distcont = [
     ['halflogistic', ()],
     ['halfnorm', ()],
     ['hypsecant', ()],
-    ['invgamma', (2.0668996136993067,)],
+    ['invgamma', (4.0668996136993067,)],
     ['invgauss', (0.14546264555347513,)],
     ['invweibull', (10.58,)],  # sample mean test fails at(0.58847112119264788,)]
     ['johnsonsb', (4.3172675099141058, 3.1837781130785063)],
@@ -117,6 +119,7 @@ distcont = [
     ['tukeylambda', (3.1321477856738267,)],
     ['uniform', ()],
     ['vonmises', (3.9939042581071398,)],
+    ['vonmises_line', (3.9939042581071398,)],
     ['wald', ()],
     ['weibull_max', (2.8687961709100187,)],
     ['weibull_min', (1.7866166930421596,)],
@@ -152,8 +155,8 @@ distmissing = ['wald', 'gausshyper', 'genexpon', 'rv_continuous',
 
 distmiss = [[dist,args] for dist,args in distcont if dist in distmissing]
 distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
-            'vonmises', 'rice', 'mielke', 'semicircular', 'cosine', 'invweibull',
-            'powerlognorm', 'johnsonsu', 'kstwobign']
+            'vonmises', 'vonmises_line', 'mielke', 'semicircular',
+            'cosine', 'invweibull', 'powerlognorm', 'johnsonsu', 'kstwobign']
 # distslow are sorted by speed (very slow to slow)
 
 
@@ -183,7 +186,7 @@ def test_cont_basic():
         sv = rvs.var()
         skurt = stats.kurtosis(rvs)
         sskew = stats.skew(rvs)
-        m,v = distfn.stats(*arg)
+        m, v = distfn.stats(*arg)
 
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
@@ -194,8 +197,6 @@ def test_cont_basic():
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
         yield check_pdf, distfn, arg, distname
-        if distname in ['wald']:
-            continue
         yield check_pdf_logpdf, distfn, arg, distname
         yield check_cdf_logcdf, distfn, arg, distname
         yield check_sf_logsf, distfn, arg, distname
@@ -212,6 +213,19 @@ def test_cont_basic():
         x = spec_x.get(distname, 0.5)
         yield check_named_args, distfn, x, arg, locscale_defaults, meths
 
+        # this asserts the vectorization of _entropy w/ no shape parameters
+        # NB: broken for older versions of numpy
+        if distfn.numargs == 0:
+            if np.__version__ > '1.7':
+                yield check_vecentropy, distfn, arg
+        # compare a generic _entropy w/ distribution-specific implementation,
+        # if available
+        if distfn.__class__._entropy != stats.rv_continuous._entropy:
+            yield check_private_entropy, distfn, arg
+
+        yield check_edge_support, distfn, arg
+
+
 
 @npt.dec.slow
 def test_cont_basic_slow():
@@ -227,11 +241,14 @@ def test_cont_basic_slow():
         sv = rvs.var()
         skurt = stats.kurtosis(rvs)
         sskew = stats.skew(rvs)
-        m,v = distfn.stats(*arg)
+        m, v = distfn.stats(*arg)
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
         # the sample skew kurtosis test has known failures, not very good distance measure
         # yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
+        # vonmises and ksone are not supposed to fully work
+        if distname not in ['vonmises', 'ksone']:
+            yield check_normalization, distfn, arg, distname
         yield check_moment, distfn, arg, m, v, distname
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
@@ -255,22 +272,32 @@ def test_cont_basic_slow():
             arg = (3,)
         yield check_named_args, distfn, x, arg, locscale_defaults, meths
 
+        # this asserts the vectorization of _entropy w/ no shape parameters
+        if distfn.numargs == 0:
+            yield check_vecentropy, distfn, arg
+        # compare a generic _entropy w/ distribution-specific implementation,
+        # if available
+        if distfn.__class__._entropy != stats.rv_continuous._entropy:
+            yield check_private_entropy, distfn, arg
+        yield check_edge_support, distfn, arg
 
-def check_moment(distfn, arg, m, v, msg):
-    m1 = distfn.moment(1,*arg)
-    m2 = distfn.moment(2,*arg)
-    if not np.isinf(m):
-        npt.assert_almost_equal(m1, m, decimal=10, err_msg=msg +
-                            ' - 1st moment')
-    else:                     # or np.isnan(m1),
-        npt.assert_(np.isinf(m1),
-               msg + ' - 1st moment -infinite, m1=%s' % str(m1))
-    if not np.isinf(v):
-        npt.assert_almost_equal(m2-m1*m1, v, decimal=10, err_msg=msg +
-                            ' - 2ndt moment')
-    else:                     # or np.isnan(m2),
-        npt.assert_(np.isinf(m2),
-               msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
+@npt.dec.slow
+def test_moments():
+     knf = npt.dec.knownfailureif
+     distfailing = set(['burr', 'dweibull', 'f', 
+                'fatiguelife', 'foldnorm', 'invgamma', 'ksone', 'ncf', 'nct', 
+                'rdist', 'rice', 'vonmises'])
+
+     for distname, arg in distcont[:]:
+        distfn = getattr(stats, distname)
+        m, v, s, k = distfn.stats(*arg, moments='mvsk')
+        cond = distname in distfailing
+        msg = distname + ' fails moments'
+        yield knf(cond, msg)(check_normalization), distfn, arg, distname
+        yield knf(cond, msg)(check_mean_expect), distfn, arg, m, distname
+        yield knf(cond, msg)(check_var_expect), distfn, arg, m, v, distname
+        yield knf(cond, msg)(check_skew_expect), distfn, arg, m, v, s, distname
+        yield knf(cond, msg)(check_kurt_expect), distfn, arg, m, v, k, distname
 
 
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
@@ -398,22 +425,27 @@ def check_distribution_rvs(dist, args, alpha, rvs):
 
 
 def check_normalization(distfn, args, distname):
-    norm_moment = distfn.moment(0, *args)
-    npt.assert_allclose(norm_moment, 1.0)
+    normalization_moment = distfn.moment(0, *args)
+    npt.assert_allclose(normalization_moment, 1.0)
 
-    # this is a temporary plug: either ncf or expect is problematic; 
-	# best be marked as a knownfail, but I've no clue how to do it.
+    # this is a temporary plug: either ncf or expect is problematic;
+    msg = "ncf normalization requires low tolerance"
+    npt.dec.knownfailureif(distname=="ncf", msg)(lambda: None)()
     if distname == "ncf":
         atol, rtol = 1e-5, 0
     else:
         atol, rtol = 1e-7, 1e-7
 
-    norm_expect = distfn.expect(lambda x: 1, args=args)
-    npt.assert_allclose(norm_expect, 1.0, atol=atol, rtol=rtol,
+    normalization_expect = distfn.expect(lambda x: 1, args=args)
+    npt.assert_allclose(normalization_expect, 1.0, atol=atol, rtol=rtol,
             err_msg=distname, verbose=True)
 
-    norm_cdf = distfn.cdf(distfn.b, *args)
-    npt.assert_allclose(norm_cdf, 1.0)
+    normalization_cdf = distfn.cdf(distfn.b, *args)
+    npt.assert_allclose(normalization_cdf, 1.0)
+
+
+def check_vecentropy(distfn, args):
+    npt.assert_equal( distfn.vecentropy(*args), distfn._entropy(*args) )
 
 
 def check_named_args(distfn, x, shape_args, defaults, meths):
@@ -454,6 +486,27 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     # unknown arguments should not go through:
     k.update({'kaboom': 42})
     npt.assert_raises(TypeError, distfn.cdf, x, **k)
+
+
+def check_edge_support(distfn, args):
+    """Make sure the x=self.a and self.b are handled correctly."""
+    x = [distfn.a, distfn.b]
+    npt.assert_equal(distfn.cdf(x, *args), [0.0, 1.0])
+    npt.assert_equal(distfn.logcdf(x, *args), [-np.inf, 0.0])
+
+    npt.assert_equal(distfn.sf(x, *args), [1.0, 0.0])
+    npt.assert_equal(distfn.logsf(x, *args), [0.0, -np.inf])
+
+    npt.assert_equal(distfn.ppf([0.0, 1.0], *args), x)
+    npt.assert_equal(distfn.isf([0.0, 1.0], *args), x[::-1])
+    # pdf(x=[a, b], *args) depends on the distribution
+
+
+@_silence_fp_errors
+def check_private_entropy(distfn, args):
+    # compare a generic _entropy with the distribution-specific implementation
+    npt.assert_allclose(distfn._entropy(*args),
+                        stats.rv_continuous._entropy(distfn, *args))
 
 
 if __name__ == "__main__":

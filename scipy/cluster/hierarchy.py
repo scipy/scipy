@@ -614,7 +614,7 @@ def linkage(y, method='single', metric='euclidean'):
         The hierarchical clustering encoded as a linkage matrix.
 
     """
-    if not isinstance(method, str):
+    if not isinstance(method, string_types):
         raise TypeError("Argument 'method' must be a string.")
 
     y = _convert_to_double(np.asarray(y, order='c'))

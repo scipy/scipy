@@ -8,6 +8,8 @@ import nose
 from scipy.lib.six import xrange
 
 from scipy import stats
+from common_tests import (check_normalization, check_moment, check_mean_expect,
+        check_var_expect, check_skew_expect, check_kurt_expect)
 
 DECIMAL_meanvar = 0  # 1  # was 0
 
@@ -26,11 +28,11 @@ distdiscrete = [
     ['planck', (0.51,)],   # 4.1
     ['poisson', (0.6,)],
     ['randint', (7, 31)],
-    ['skellam', (15, 8)]]
-#    ['zipf',     (4,)] ]   # arg=4 is ok,
+    ['skellam', (15, 8)], 
+    ['zipf',     (4,)]    # arg=4 is ok,
                            # Zipf broken for arg = 2, e.g. weird .stats
                            # looking closer, mean, var should be inf for arg=2
-
+]
 
 #@npt.dec.slow
 def test_discrete_basic():
@@ -40,7 +42,7 @@ def test_discrete_basic():
         np.random.seed(9765456)
         rvs = distfn.rvs(size=2000,*arg)
         supp = np.unique(rvs)
-        m,v = distfn.stats(*arg)
+        m, v = distfn.stats(*arg)
         # yield npt.assert_almost_equal(rvs.mean(), m, decimal=4,err_msg='mean')
         # yield npt.assert_almost_equal, rvs.mean(), m, 2, 'mean' # does not work
         yield check_sample_meanvar, rvs.mean(), m, distname + ' sample mean test'
@@ -49,21 +51,16 @@ def test_discrete_basic():
         yield check_cdf_ppf2, distfn, arg, supp, distname + ' cdf_ppf'
         yield check_pmf_cdf, distfn, arg, distname + ' pmf_cdf'
 
-        # zipf doesn't fail, but generates floating point warnings.
-        # Should be checked.
-        if not distname in ['zipf']:
-            yield check_oth, distfn, arg, distname + ' oth'
-            skurt = stats.kurtosis(rvs)
-            sskew = stats.skew(rvs)
-            yield check_sample_skew_kurt, distfn, arg, skurt, sskew, \
-                          distname + ' skew_kurt'
+        yield check_oth, distfn, arg, distname + ' oth'
+        skurt = stats.kurtosis(rvs)
+        sskew = stats.skew(rvs)
+        yield check_sample_skew_kurt, distfn, arg, skurt, sskew, \
+                      distname + ' skew_kurt'
 
-        # dlaplace doesn't fail, but generates lots of floating point warnings.
-        # Should be checked.
-        if not distname in ['dlaplace']:  # ['logser']:  #known failure, fixed
-            alpha = 0.01
-            yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
-                          distname + ' chisquare'
+        alpha = 0.01
+        yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
+                      distname + ' chisquare'
+
 
     seen = set()
     for distname, arg in distdiscrete:
@@ -79,6 +76,35 @@ def test_discrete_basic():
         k = spec_k.get(distname, 1)
         yield check_named_args, distfn, k, arg, locscale_defaults, meths
         yield check_scale_docstring, distfn
+
+        # compare a generic _entropy w/ distribution-specific implementation,
+        # if available
+        if distfn.__class__._entropy != stats.rv_discrete._entropy:
+            yield check_private_entropy, distfn, arg
+
+#@npt.dec.slow
+def test_moments():
+    knf = npt.dec.knownfailureif
+    for distname, arg in distdiscrete:
+        distfn = getattr(stats,distname)
+        m, v, s, k = distfn.stats(*arg, moments='mvsk')
+
+        cond = distname in ['zipf', 'randint']
+        yield knf(cond, distname + ' normalization fails')(
+                check_normalization), distfn, arg, distname
+
+        # compare `stats` and `moment` methods
+        yield check_moment, distfn, arg, m, v, distname
+        yield check_mean_expect, distfn, arg, m, distname
+        yield knf(distname=='zipf', 'zipf fails')(check_var_expect),\
+                distfn, arg, m, v, distname
+        yield knf(distname=='zipf', 'zipf fails')(check_skew_expect),\
+                distfn, arg, m, v, s, distname
+
+        cond = distname in ['hypergeom', 'randint', 'zipf']
+        msg = distname + ' fails kurtosis'
+        yield knf(cond, msg)(check_kurt_expect), distfn, arg, m, v, k, distname
+
 
 
 @npt.dec.slow
@@ -339,6 +365,10 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
 def check_scale_docstring(distfn):
     npt.assert_('scale' not in distfn.__doc__)
 
+def check_private_entropy(distfn, args):
+    # compare a generic _entropy with the distribution-specific implementation
+    npt.assert_allclose(distfn._entropy(*args),
+                        stats.rv_discrete._entropy(distfn, *args))
 
 if __name__ == "__main__":
     # nose.run(argv=['', __file__])

@@ -47,7 +47,7 @@ dists = ['uniform','norm','lognorm','expon','beta',
          'weibull_min','weibull_max','dweibull','maxwell','rayleigh',
          'genlogistic', 'logistic','gumbel_l','gumbel_r','gompertz',
          'hypsecant', 'laplace', 'reciprocal','triang','tukeylambda',
-         'vonmises', 'pearson3']
+         'vonmises', 'vonmises_line', 'pearson3']
 
 # check function for test generator
 
@@ -110,6 +110,11 @@ def test_vonmises_pdf_periodic():
             yield check_vonmises_cdf_periodic, k, 0, 1, x
             yield check_vonmises_cdf_periodic, k, 1, 1, x
             yield check_vonmises_cdf_periodic, k, 0, 10, x
+
+
+def test_vonmises_line_support():
+    assert_equal(stats.vonmises_line.a, -np.pi)
+    assert_equal(stats.vonmises_line.b, np.pi)
 
 
 class TestRandInt(TestCase):
@@ -544,6 +549,25 @@ class TestDLaplace(TestCase):
         m, v, s, k = dl.stats('mvsk')
         assert_equal((m, s), (0.,0.))
         assert_allclose((v, k), (4., 3.25))
+
+
+class TestInvGamma(TestCase):
+    def test_invgamma_inf_gh_1866(self):
+        # invgamma's moments are only finite for a>n
+        # specific numbers checked w/ boost 1.54
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', RuntimeWarning)
+            mvsk = stats.invgamma.stats(a=19.31, moments='mvsk')
+            assert_allclose(mvsk,
+                [0.05461496450, 0.0001723162534, 1.020362676, 2.055616582])
+
+            a = [1.1, 3.1, 5.6]
+            mvsk = stats.invgamma.stats(a=a, moments='mvsk')
+            assert_array_almost_equal(mvsk,
+                        ([10., 0.476190476, 0.2173913043],      # mmm
+                         [np.inf, 0.2061430632, 0.01312749422], # vvv
+                         [np.nan, 41.95235392, 2.919025532],    # sss
+                         [np.nan, np.nan, 24.51923076]))        # kkk
 
 
 def test_rvgeneric_std():
@@ -1160,6 +1184,15 @@ class TestExpect(TestCase):
         halflog.expect(args=(0.5,))
         res2 = halflog.expect(args=(1.5,))
         assert_almost_equal(res1, res2, decimal=14)
+
+    def test_rice_overflow(self):
+        # rice.pdf(999, 0.74) was inf since special.i0 silentyly overflows
+        # check that using i0e fixes it
+        assert_(np.isfinite(stats.rice.pdf(999, 0.74)))
+
+        assert_(np.isfinite(stats.rice.expect(lambda x: 1, args=(0.74,))))
+        assert_(np.isfinite(stats.rice.expect(lambda x: 2, args=(0.74,))))
+        assert_(np.isfinite(stats.rice.expect(lambda x: 3, args=(0.74,))))
 
 
 class TestNct(TestCase):

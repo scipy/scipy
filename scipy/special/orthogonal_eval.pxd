@@ -28,6 +28,8 @@ from libc.math cimport sqrt, exp, floor, fabs, log, sin, M_PI as pi
 from numpy cimport npy_cdouble
 from _complexstuff cimport nan, inf, number_t
 
+cimport sf_error
+
 cdef extern from "cephes.h":
     double Gamma(double x) nogil
     double lgam(double x) nogil
@@ -430,6 +432,11 @@ cdef inline number_t eval_genlaguerre(double n, double alpha, number_t x) nogil:
     cdef double a, b, d
     cdef number_t g
 
+    if alpha <= -1:
+        sf_error.error("eval_genlaguerre", sf_error.DOMAIN,
+                       "polynomial defined only for alpha > -1")
+        return nan
+
     d = binom(n+alpha, n)
     a = -n
     b = alpha + 1
@@ -441,6 +448,11 @@ cdef inline double eval_genlaguerre_l(long n, double alpha, double x) nogil:
     cdef long kk
     cdef double p, d
     cdef double k
+
+    if alpha <= -1:
+        sf_error.error("eval_genlaguerre", sf_error.DOMAIN,
+                       "polynomial defined only for alpha > -1")
+        return nan
 
     if n < 0:
         return 0.0
