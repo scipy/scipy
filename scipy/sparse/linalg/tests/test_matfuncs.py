@@ -21,8 +21,7 @@ from numpy.testing import (TestCase, run_module_suite,
 from scipy.sparse import csc_matrix, SparseEfficiencyWarning
 from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg.matfuncs import (expm,
-        ProductOperator, MatrixPowerOperator,
-        _is_upper_triangular)
+        ProductOperator, MatrixPowerOperator)
 from scipy.linalg import logm
 from scipy.misc import factorial
 import scipy.sparse
@@ -94,9 +93,10 @@ class TestExpM(TestCase):
     def test_padecases_dtype_complex(self):
         for dtype in [np.complex64, np.complex128]:
             for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
-                a = scale * eye(3, dtype=dtype)
-                e = exp(scale) * eye(3, dtype=dtype)
-                assert_array_almost_equal_nulp(expm(a), e, nulp=100)
+                A = scale * eye(3, dtype=dtype)
+                observed = expm(A)
+                expected = exp(scale) * eye(3, dtype=dtype)
+                assert_array_almost_equal_nulp(observed, expected, nulp=100)
 
     def test_padecases_dtype_sparse_float(self):
         # float32 and complex64 lead to errors in spsolve/UMFpack
