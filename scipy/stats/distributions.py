@@ -7491,22 +7491,20 @@ class hypergeom_gen(rv_discrete):
         return exp(self._logpmf(k, M, n, N))
 
     def _stats(self, M, n, N):
-        tot, good = M, n
-        n = good*1.0
-        m = (tot-good)*1.0
-        N = N*1.0
-        tot = m+n
-        p = n/tot
+        # tot, good, sample_size = M, n, N
+        # "wikipedia".replace('N','M').replace('n','N').replace('K','n')
+        M, n, N = 1.*M, 1.*n, 1.*N
+        m = M - n
+        p = n/M
         mu = N*p
-        var = m*n*N*(tot-N)*1.0/(tot*tot*(tot-1))
-        g1 = (m - n)*(tot-2*N) / (tot-2.0)*sqrt((tot-1.0)/(m*n*N*(tot-N)))
-        m2, m3, m4, m5 = m**2, m**3, m**4, m**5
-        n2, n3, n4, n5 = n**2, n**2, n**4, n**5
-        g2 = m3 - m5 + n*(3*m2-6*m3+m4) + 3*m*n2 - 12*m2*n2 + 8*m3*n2 + n3 \
-             - 6*m*n3 + 8*m2*n3 + m*n4 - n5 - 6*m3*N + 6*m4*N + 18*m2*n*N \
-             - 6*m3*n*N + 18*m*n2*N - 24*m2*n2*N - 6*n3*N - 6*m*n3*N \
-             + 6*n4*N + N*N*(6*m2 - 6*m3 - 24*m*n + 12*m2*n + 6*n2 +
-                             12*m*n2 - 6*n3)
+
+        var = m*n*N*(M - N)*1.0/(M*M*(M-1))
+        g1 = (m - n)*(M-2*N) / (M-2.0) * sqrt((M-1.0) / (m*n*N*(M-N)))
+
+        g2 = M*(M+1) - 6.*N*(M-N) - 6.*n*m
+        g2 *= (M-1)*M*M
+        g2 += 6.*n*N*(M-N)*m*(5.*M-6)
+        g2 /= n * N * (M-N) * m * (M-2.) * (M-3.)
         return mu, var, g1, g2
 
     def _entropy(self, M, n, N):
