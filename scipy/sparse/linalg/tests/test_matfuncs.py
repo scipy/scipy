@@ -60,13 +60,17 @@ def _burkardt_13_power(n, p):
 
 
 class TestExpM(TestCase):
-    def test_zero(self):
+    def test_zero_ndarray(self):
         a = array([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
 
     def test_zero_sparse(self):
         a = csc_matrix([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a).toarray(),[[1,0],[0,1]])
+
+    def test_zero_matrix(self):
+        a = np.matrix([[0.,0],[0,0]])
+        assert_array_almost_equal(expm(a),[[1,0],[0,1]])
 
     def test_bidiagonal_sparse(self):
         A = csc_matrix([

@@ -642,6 +642,9 @@ def _ell(A, m):
         A value related to a bound.
 
     """
+    if A.ndim != 2 or A.shape[0] != A.shape[1]:
+        raise ValueError('expected A to be like a square matrix')
+
     p = 2*m + 1
 
     # The c_i are explained in (2.2) and (2.6) of the 2005 expm paper.
@@ -654,7 +657,9 @@ def _ell(A, m):
 
     # The 1-norm of a small power of a positive matrix
     # can be computed exactly and efficiently.
-    v = np.ones(A.shape[0], dtype=float)
+    # Explicitly make a column vector so that this works when A is a
+    # numpy matrix (as opposed to ndarray or sparse matrix).
+    v = np.ones((A.shape[0], 1), dtype=float)
     M = abs(A).T
     for i in range(p):
         v = M.dot(v)
