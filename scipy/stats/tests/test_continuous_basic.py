@@ -284,9 +284,8 @@ def test_cont_basic_slow():
 @npt.dec.slow
 def test_moments():
      knf = npt.dec.knownfailureif
-     distfailing = set(['dweibull', 'fatiguelife', 'foldnorm', 'ksone', 
+     distfailing = set(['dweibull', 'foldnorm', 'ksone', 
             'ncf', 'nct', 'vonmises'])
-
      for distname, arg in distcont[:]:
         distfn = getattr(stats, distname)
         m, v, s, k = distfn.stats(*arg, moments='mvsk')
@@ -421,26 +420,6 @@ def check_distribution_rvs(dist, args, alpha, rvs):
         D,pval = stats.kstest(dist,'',args=args, N=1000)
         npt.assert_(pval > alpha, "D = " + str(D) + "; pval = " + str(pval) +
                "; alpha = " + str(alpha) + "\nargs = " + str(args))
-
-
-def check_normalization(distfn, args, distname):
-    normalization_moment = distfn.moment(0, *args)
-    npt.assert_allclose(normalization_moment, 1.0)
-
-    # this is a temporary plug: either ncf or expect is problematic;
-    msg = "ncf normalization requires low tolerance"
-    npt.dec.knownfailureif(distname=="ncf", msg)(lambda: None)()
-    if distname == "ncf":
-        atol, rtol = 1e-5, 0
-    else:
-        atol, rtol = 1e-7, 1e-7
-
-    normalization_expect = distfn.expect(lambda x: 1, args=args)
-    npt.assert_allclose(normalization_expect, 1.0, atol=atol, rtol=rtol,
-            err_msg=distname, verbose=True)
-
-    normalization_cdf = distfn.cdf(distfn.b, *args)
-    npt.assert_allclose(normalization_cdf, 1.0)
 
 
 def check_vecentropy(distfn, args):

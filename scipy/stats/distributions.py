@@ -3103,25 +3103,30 @@ class fatiguelife_gen(rv_continuous):
         return t
 
     def _pdf(self, x, c):
-        return (x+1)/asarray(2*c*sqrt(2*pi*x**3))*exp(-(x-1)**2/asarray((2.0*x*c**2)))
+        return np.exp(self._logpdf(x, c))
 
     def _logpdf(self, x, c):
         return log(x+1) - (x-1)**2 / (2.0*x*c**2) - log(2*c) - 0.5*(log(2*pi) + 3*log(x))
 
     def _cdf(self, x, c):
-        return special.ndtr(1.0/c*(sqrt(x)-1.0/asarray(sqrt(x))))
+        return special.ndtr(1.0 / c * (sqrt(x) - 1.0/sqrt(x)))
 
     def _ppf(self, q, c):
         tmp = c*special.ndtri(q)
-        return 0.25*(tmp + sqrt(tmp**2 + 4))**2
+        return 0.25 * (tmp + sqrt(tmp**2 + 4))**2
 
     def _stats(self, c):
+        # NB: the formula for kurtosis in wikipedia seems to have an error:
+        # it's 40, not 41. At least it disagrees with the one from Wolfram Alpha.
+        # And the latter one, below, passes the tests, while the wiki one doesn't
+        # So far I didn't have the guts to actually check the coefficients
+        # from the expressions for the raw moments.
         c2 = c*c
-        mu = c2 / 2.0 + 1
-        den = 5*c2 + 4
+        mu = c2 / 2.0 + 1.0
+        den = 5.0 * c2 + 4.0
         mu2 = c2*den / 4.0
-        g1 = 4*c*sqrt(11*c2+6.0)/np.power(den, 1.5)
-        g2 = 6*c2*(93*c2+41.0) / den**2.0
+        g1 = 4 * c * (11*c2 + 6.0) / np.power(den, 1.5)
+        g2 = 6 * c2 * (93*c2 + 40.0) / den**2.0
         return mu, mu2, g1, g2
 fatiguelife = fatiguelife_gen(a=0.0, name='fatiguelife')
 
