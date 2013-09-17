@@ -563,11 +563,12 @@ class TestInvGamma(TestCase):
 
             a = [1.1, 3.1, 5.6]
             mvsk = stats.invgamma.stats(a=a, moments='mvsk')
-            assert_array_almost_equal(mvsk,
-                        ([10., 0.476190476, 0.2173913043],      # mmm
-                         [np.inf, 0.2061430632, 0.01312749422], # vvv
-                         [np.nan, 41.95235392, 2.919025532],    # sss
-                         [np.nan, np.nan, 24.51923076]))        # kkk
+            expected = ([10., 0.476190476, 0.2173913043],      # mmm
+                        [np.inf, 0.2061430632, 0.01312749422], # vvv
+                        [np.nan, 41.95235392, 2.919025532],    # sss
+                        [np.nan, np.nan, 24.51923076])         # kkk
+            for x, y in zip(mvsk, expected):
+                assert_almost_equal(x, y)
 
 
 class TestF(TestCase):

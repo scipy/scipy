@@ -273,8 +273,11 @@ def test_cont_basic_slow():
         yield check_named_args, distfn, x, arg, locscale_defaults, meths
 
         # this asserts the vectorization of _entropy w/ no shape parameters
+        # this asserts the vectorization of _entropy w/ no shape parameters
+        # NB: broken for older versions of numpy
         if distfn.numargs == 0:
-            yield check_vecentropy, distfn, arg
+            if np.__version__ > '1.7':
+                yield check_vecentropy, distfn, arg
         # compare a generic _entropy w/ distribution-specific implementation,
         # if available
         if distfn.__class__._entropy != stats.rv_continuous._entropy:
