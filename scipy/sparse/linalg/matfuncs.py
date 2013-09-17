@@ -21,7 +21,6 @@ import numpy as np
 import scipy.misc
 from scipy.linalg.misc import norm
 from scipy.linalg.basic import solve, solve_triangular, inv
-from scipy.linalg import blas
 
 from scipy.sparse.base import isspmatrix
 from scipy.sparse.construct import eye as speye
@@ -166,16 +165,9 @@ def _smart_matrix_product(A, B, alpha=None, structure=None):
     if len(B.shape) != 2:
         raise ValueError('expected B to be a rectangular matrix')
     f = None
-    if structure == UPPER_TRIANGULAR and A.dtype == B.dtype:
+    if structure == UPPER_TRIANGULAR:
         if not isspmatrix(A) and not isspmatrix(B):
-            if A.dtype == np.float32:
-                f = blas.strmm
-            elif A.dtype == np.float64:
-                f = blas.dtrmm
-            elif A.dtype == np.complex64:
-                f = blas.ctrmm
-            elif A.dtype == np.complex128:
-                f = blas.ztrmm
+            f, = scipy.linalg.get_blas_funcs(('trmm',), (A, B))
     if f is not None:
         if alpha is None:
             alpha = 1.
