@@ -101,7 +101,7 @@ def test_moments():
         yield knf(distname=='zipf', 'zipf fails')(check_skew_expect),\
                 distfn, arg, m, v, s, distname
 
-        cond = distname in ['hypergeom', 'randint', 'zipf']
+        cond = distname in ['randint', 'zipf']
         msg = distname + ' fails kurtosis'
         yield knf(cond, msg)(check_kurt_expect), distfn, arg, m, v, k, distname
 
