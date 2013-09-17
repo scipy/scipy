@@ -3260,25 +3260,28 @@ class foldnorm_gen(rv_continuous):
         return abs(mtrand.standard_normal(self._size) + c)
 
     def _pdf(self, x, c):
-        term = exp(-(x-c)*(x-c)/2) + exp(-(x+c)*(x+c)/2)
-        return term / sqrt(2*pi)
+        return _norm_pdf(x + c) + _norm_pdf(x-c)
 
     def _cdf(self, x, c):
         return special.ndtr(x-c) + special.ndtr(x+c) - 1.0
 
     def _stats(self, c):
-        fac = special.erf(c/sqrt(2))
-        mu = sqrt(2.0/pi)*exp(-0.5*c*c)+c*fac
-        mu2 = c*c + 1 - mu*mu
+        # Regina C. Elandt, Technometrics 3, 551 (1961)
+        # http://www.jstor.org/stable/1266561
+        #
         c2 = c*c
-        g1 = sqrt(2/pi)*exp(-1.5*c2)*(4-pi*exp(c2)*(2*c2+1.0))
-        g1 += 2*c*fac*(6*exp(-c2) + 3*sqrt(2*pi)*c*exp(-c2/2.0)*fac +
-                       pi*c*(fac*fac-1))
-        g1 /= pi*np.power(mu2, 1.5)
+        expfac = np.exp(-0.5*c2) / np.sqrt(2.*pi)
+        
+        mu = 2.*expfac + c * special.erf(c/sqrt(2))
+        mu2 = c2 + 1 - mu*mu
 
-        g2 = c2*c2+6*c2+3+6*(c2+1)*mu*mu - 3*mu**4
-        g2 -= 4*exp(-c2/2.0)*mu*(sqrt(2.0/pi)*(c2+2)+c*(c2+3)*exp(c2/2.0)*fac)
-        g2 /= mu2**2.0
+        g1 = 2. * (mu*mu*mu  - c2*mu - expfac)
+        g1 /= np.power(mu2, 1.5)
+
+        g2 = c2 * (c2 + 6.) + 3 + 8.*expfac*mu
+        g2 += (2. * (c2 - 3.) - 3. * mu**2) * mu**2
+        g2 = g2 / mu2**2.0 - 3.
+
         return mu, mu2, g1, g2
 foldnorm = foldnorm_gen(a=0.0, name='foldnorm')
 

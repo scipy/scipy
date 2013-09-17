@@ -284,7 +284,7 @@ def test_cont_basic_slow():
 @npt.dec.slow
 def test_moments():
      knf = npt.dec.knownfailureif
-     distfailing = set(['dweibull', 'foldnorm', 'ksone', 'ncf', 'vonmises'])
+     distfailing = set(['dweibull', 'ksone', 'ncf', 'vonmises'])
      for distname, arg in distcont[:]:
         distfn = getattr(stats, distname)
         m, v, s, k = distfn.stats(*arg, moments='mvsk')
