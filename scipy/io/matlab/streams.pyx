@@ -106,9 +106,8 @@ cdef class ZlibInputStream(GenericStream):
     ----------
     stream : file-like
         Stream to read compressed data from.
-    max_length : int, optional
+    max_length : int
         Maximum number of bytes to read from the stream.
-        -1 if the length is unlimited.
 
     Notes
     -----
@@ -127,7 +126,7 @@ cdef class ZlibInputStream(GenericStream):
     cdef size_t _total_position
     cdef size_t _read_bytes
 
-    def __init__(self, fobj, ssize_t max_length=-1):
+    def __init__(self, fobj, ssize_t max_length):
         self.fobj = fobj
 
         self._max_length = max_length
@@ -145,9 +144,7 @@ cdef class ZlibInputStream(GenericStream):
         if self._buffer_position < self._buffer_size:
             return
 
-        read_size = BLOCK_SIZE
-        if self._max_length >= 0:
-            read_size = min(read_size, self._max_length - self._read_bytes)
+        read_size = min(BLOCK_SIZE, self._max_length - self._read_bytes)
 
         block = self.fobj.read(read_size)
         self._read_bytes += len(block)
@@ -200,7 +197,8 @@ cdef class ZlibInputStream(GenericStream):
         return self.read_string(n_bytes, &p)
 
     cpdef int all_data_read(self):
-        return (self._max_length == self._read_bytes) and (self._buffer_size == self._buffer_position)
+        return (self._max_length == self._read_bytes) and \
+               (self._buffer_size == self._buffer_position)
 
     cpdef long int tell(self):
         return self._total_position

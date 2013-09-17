@@ -105,8 +105,9 @@ def test_read():
 class TestZlibInputStream(object):
     def _get_data(self, size):
         data = np.random.randint(0, 256, size).astype(np.uint8).tostring()
-        stream = BytesIO(zlib.compress(data))
-        return stream, data
+        compressed_data = zlib.compress(data)
+        stream = BytesIO(compressed_data)
+        return stream, len(compressed_data), data
 
     def test_read(self):
         block_size = 131072
@@ -118,8 +119,8 @@ class TestZlibInputStream(object):
                       block_size, block_size+1]
 
         def check(size, read_size):
-            compressed_stream, data = self._get_data(size)
-            stream = ZlibInputStream(compressed_stream)
+            compressed_stream, compressed_data_len, data = self._get_data(size)
+            stream = ZlibInputStream(compressed_stream, compressed_data_len)
             data2 = b''
             so_far = 0
             while True:
@@ -148,9 +149,9 @@ class TestZlibInputStream(object):
         assert_raises(IOError, stream.read, 1)
 
     def test_seek(self):
-        compressed_stream, data = self._get_data(1024)
+        compressed_stream, compressed_data_len, data = self._get_data(1024)
 
-        stream = ZlibInputStream(compressed_stream)
+        stream = ZlibInputStream(compressed_stream, compressed_data_len)
 
         stream.seek(123)
         p = 123
@@ -176,6 +177,16 @@ class TestZlibInputStream(object):
 
         stream.seek(10000, 1)
         assert_raises(IOError, stream.read, 12)
+
+    def test_all_data_read(self):
+        compressed_stream, compressed_data_len, data = self._get_data(1024)
+        stream = ZlibInputStream(compressed_stream, compressed_data_len)
+        assert_false(stream.all_data_read())
+        stream.seek(512)
+        assert_false(stream.all_data_read())
+        stream.seek(1024)
+        assert_true(stream.all_data_read())
+
 
 if __name__ == "__main__":
     run_module_suite()

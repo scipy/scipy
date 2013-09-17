@@ -136,6 +136,7 @@ class MatFile5Reader(MatFileReader):
                  chars_as_strings=True,
                  matlab_compatible=False,
                  struct_as_record=True,
+                 verify_compressed_data_integrity=True,
                  uint16_codec=None
                  ):
         '''Initializer for matlab 5 file format reader
@@ -154,7 +155,8 @@ class MatFile5Reader(MatFileReader):
             squeeze_me,
             chars_as_strings,
             matlab_compatible,
-            struct_as_record
+            struct_as_record,
+            verify_compressed_data_integrity
             )
         # Set uint16 codec
         if not uint16_codec:
@@ -220,7 +222,7 @@ class MatFile5Reader(MatFileReader):
             # Make new stream from compressed data
             stream = ZlibInputStream(self.mat_stream, byte_count)
             self._matrix_reader.set_stream(stream)
-            check_stream_limit = True
+            check_stream_limit = self.verify_compressed_data_integrity
             mdtype, byte_count = self._matrix_reader.read_full_tag()
         else:
             check_stream_limit = False

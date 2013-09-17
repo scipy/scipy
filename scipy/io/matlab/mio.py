@@ -99,6 +99,12 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
        False replicates the behavior of scipy version 0.7.x (returning
        numpy object arrays).  The default setting is True, because it
        allows easier round-trip load and save of MATLAB files.
+    verify_compressed_data_integrity : bool, optional
+        Whether the length of compressed sequences in the MATLAB file
+        should be checked, to ensure that they are not longer than we expect.
+        It is advisable to enable this (the default) because overlong
+        compressed sequences in MATLAB files generally indicate that the
+        files have experienced some sort of corruption.
     variable_names : None or sequence
         If None (the default) - read all variables in file. Otherwise
         `variable_names` should be a sequence of strings, giving names of the

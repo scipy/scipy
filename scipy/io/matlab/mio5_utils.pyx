@@ -516,6 +516,13 @@ cdef class VarReader5:
         ''' Return matrix header for current stream position
 
         Returns matrix headers at top level and sub levels
+
+        Parameters
+        ----------
+        check_stream_limit : if True, then if the returned header
+        is passed to array_from_header, it will be verified that
+        the length of the uncompressed data is not overlong (which
+        can indicate .mat file corruption)
         '''
         cdef:
             cdef cnp.uint32_t u4s[2]
@@ -612,7 +619,7 @@ cdef class VarReader5:
                 return np.array([])
             else:
                 return np.array([[]])
-        header = self.read_header(0)
+        header = self.read_header(False)
         return self.array_from_header(header, process)
 
     cpdef array_from_header(self, VarHeader5 header, int process=1):
@@ -655,7 +662,7 @@ cdef class VarReader5:
         elif mc == mxSPARSE_CLASS:
             arr = self.read_sparse(header)
             # no current processing makes sense for sparse
-            process = 0
+            process = False
         elif mc == mxCHAR_CLASS:
             arr = self.read_char(header)
             if process and self.chars_as_strings:
@@ -680,7 +687,9 @@ cdef class VarReader5:
             process = 0
         if header.check_stream_limit:
             if not self.cstream.all_data_read():
-                raise ValueError('Did not fully consume compressed contents of an miCOMPRESSED element. This can indicate that the .mat file is corrupted.')
+                raise ValueError('Did not fully consume compressed contents' +
+                                 ' of an miCOMPRESSED element. This can' +
+                                 ' indicate that the .mat file is corrupted.')
         if process and self.squeeze_me:
             return squeeze_element(arr)
         return arr
