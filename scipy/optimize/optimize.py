@@ -1528,7 +1528,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     for auto-bracketing).
 
     """
-    options = {'xtol': xtol,
+    options = {'xatol': xtol,
                'maxiter': maxfun,
                'disp': disp}
 
@@ -1540,7 +1540,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
 
 
 def _minimize_scalar_bounded(func, bounds, args=(),
-                             xtol=1e-5, maxiter=500, disp=0,
+                             xatol=1e-5, maxiter=500, disp=0,
                              **unknown_options):
     _check_unknown_options(unknown_options)
     maxfun = maxiter
@@ -1572,7 +1572,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
 
     ffulc = fnfc = fx
     xm = 0.5 * (a + b)
-    tol1 = sqrt_eps * numpy.abs(xf) + xtol / 3.0
+    tol1 = sqrt_eps * numpy.abs(xf) + xatol / 3.0
     tol2 = 2.0 * tol1
 
     if disp > 2:
@@ -1644,7 +1644,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
                 fulc, ffulc = x, fu
 
         xm = 0.5 * (a + b)
-        tol1 = sqrt_eps * numpy.abs(xf) + xtol / 3.0
+        tol1 = sqrt_eps * numpy.abs(xf) + xatol / 3.0
         tol2 = 2.0 * tol1
 
         if num >= maxfun:
@@ -1653,7 +1653,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
 
     fval = fx
     if disp > 0:
-        _endprint(x, flag, fval, maxfun, xtol, disp)
+        _endprint(x, flag, fval, maxfun, xatol, disp)
 
     result = Result(fun=fval, status=flag, success=(flag == 0),
                     message={0: 'Solution found.',
@@ -2754,6 +2754,20 @@ def show_options(solver, method=None):
 
     * trust-ncg options:
         see dogleg options.
+
+    ** minimize_scalar options
+
+    * brent options:
+        xtol : float
+            Relative error in solution `xopt` acceptable for convergence.
+
+    * bounded options:
+        xatol : float
+            Absolute error in solution `xopt` acceptable for convergence.
+
+    * golden options:
+        xtol : float
+            Relative error in solution `xopt` acceptable for convergence.
 
     ** root options
 
