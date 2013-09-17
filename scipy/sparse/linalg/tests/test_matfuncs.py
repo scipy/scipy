@@ -21,7 +21,8 @@ from numpy.testing import (TestCase, run_module_suite,
 from scipy.sparse import csc_matrix, SparseEfficiencyWarning
 from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg.matfuncs import (expm,
-        ProductOperator, MatrixPowerOperator)
+        ProductOperator, MatrixPowerOperator,
+        _onenorm_matrix_power_nnm)
 from scipy.linalg import logm
 from scipy.misc import factorial
 import scipy.sparse
@@ -57,6 +58,17 @@ def _burkardt_13_power(n, p):
     large = np.power(10.0, -n*a)
     small = large * np.power(10.0, -n)
     return np.diag([large]*(n-b), b) + np.diag([small]*b, b-n)
+
+
+def test_onenorm_matrix_power_nnm():
+    np.random.seed(1234)
+    for n in range(1, 5):
+        for p in range(5):
+            M = np.random.random((n, n))
+            Mp = np.linalg.matrix_power(M, p)
+            observed = _onenorm_matrix_power_nnm(M, p)
+            expected = np.linalg.norm(Mp, 1)
+            assert_allclose(observed, expected)
 
 
 class TestExpM(TestCase):

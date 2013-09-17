@@ -63,7 +63,40 @@ def inv(A):
     return Ainv
 
 
-def _exact_1_norm(A):
+def _onenorm_matrix_power_nnm(A, p):
+    """
+    Compute the 1-norm of a non-negative integer power of a non-negative matrix.
+
+    Parameters
+    ----------
+    A : a square ndarray or matrix or sparse matrix
+        Input matrix with non-negative entries.
+    p : non-negative integer
+        The power to which the matrix is to be raised.
+
+    Returns
+    -------
+    out : float
+        The 1-norm of the matrix power p of A.
+
+    """
+    # check input
+    if int(p) != p or p < 0:
+        raise ValueError('expected non-negative integer p')
+    p = int(p)
+    if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
+        raise ValueError('expected A to be like a square matrix')
+
+    # Explicitly make a column vector so that this works when A is a
+    # numpy matrix (in addition to ndarray and sparse matrix).
+    v = np.ones((A.shape[0], 1), dtype=float)
+    M = A.T
+    for i in range(p):
+        v = M.dot(v)
+    return max(v)
+
+
+def _onenorm(A):
     # A compatibility function which should eventually disappear.
     # This is copypasted from expm_action.
     if scipy.sparse.isspmatrix(A):
@@ -453,14 +486,14 @@ def expm(A):
         return _solve_P_Q(U, V, structure=structure)
 
     # Try Pade order 5.
-    d4 = _exact_1_norm(h.A4)**(1/4.)
+    d4 = _onenorm(h.A4)**(1/4.)
     eta_2 = max(d4, d6)
     if eta_2 < 2.539398330063230e-001 and _ell(h.A, 5) == 0:
         U, V = h.pade5()
         return _solve_P_Q(U, V, structure=structure)
 
     # Try Pade orders 7 and 9.
-    d6 = _exact_1_norm(h.A6)**(1/6.)
+    d6 = _onenorm(h.A6)**(1/6.)
     d8 = _onenormest_matrix_power(h.A4, 2, structure=structure)**(1/8.)
     eta_3 = max(d6, d8)
     if eta_3 < 9.504178996162932e-001 and _ell(h.A, 7) == 0:
@@ -642,7 +675,7 @@ def _ell(A, m):
         A value related to a bound.
 
     """
-    if A.ndim != 2 or A.shape[0] != A.shape[1]:
+    if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected A to be like a square matrix')
 
     p = 2*m + 1
@@ -655,21 +688,14 @@ def _ell(A, m):
     # It is the "unit roundoff" of IEEE double precision arithmetic.
     u = 2**-53
 
-    # The 1-norm of a small power of a positive matrix
-    # can be computed exactly and efficiently.
-    # Explicitly make a column vector so that this works when A is a
-    # numpy matrix (as opposed to ndarray or sparse matrix).
-    v = np.ones((A.shape[0], 1), dtype=float)
-    M = abs(A).T
-    for i in range(p):
-        v = M.dot(v)
-    A_abs_one_norm = max(v)
+    # Compute the one-norm of matrix power p of abs(A).
+    A_abs_onenorm = _onenorm_matrix_power_nnm(abs(A), p)
 
     # Treat zero norm as a special case.
-    if not A_abs_one_norm:
+    if not A_abs_onenorm:
         return 0
 
-    alpha = A_abs_one_norm / (_exact_1_norm(A) * abs_c_recip)
+    alpha = A_abs_onenorm / (_onenorm(A) * abs_c_recip)
     log2_alpha_div_u = np.log2(alpha/u)
     value = int(np.ceil(log2_alpha_div_u / (2 * m)))
     return max(value, 0)
