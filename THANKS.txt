@@ -124,6 +124,7 @@ Juan Luis Cano for refactorings in lti, sparse docs improvements and some
     trivial fixes.
 Pawel Chojnacki for simple documentation fixes.
 Gert-Ludwig Ingold for contributions to special functions.
+Micky Latowicki for improving the minimize_scalar interface.
 
 
 Institutions

@@ -22,7 +22,7 @@ from scipy.lib.six import callable
 from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                       _minimize_bfgs, _minimize_newtoncg,
                       _minimize_scalar_brent, _minimize_scalar_bounded,
-                      _minimize_scalar_golden, MemoizeJac)
+                      _minimize_scalar_golden, MemoizeJac, OptimizeWarning)
 from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
 from .anneal import _minimize_anneal
@@ -395,7 +395,8 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
 
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),
-                    method='brent', tol=None, options=None):
+                    method='brent', tol=None, options=None,
+                    xtol=None, xatol=None):
     """
     Minimization of scalar function of one variable.
 
@@ -424,9 +425,16 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
             - 'Brent'
             - 'Bounded'
             - 'Golden'
+    xatol : float, optioonal
+        Absolute tolerane in the function's domain. If you specify xatol but not
+        xtol, and the solver only supports xtol, then a warning will be issued.
+    xtol : float, optional
+        Relative tolerance in the function's domain. If you specify xtol but not
+        xatol, and the solver only supports xatol, then a warning will be issued.
     tol : float, optional
         Tolerance for termination. For detailed control, use solver-specific
-        options.
+        options. Note that the meaning of this parameter depends on the solver,
+        so it is generally better to use xatol or xtol.
     options : dict, optional
         A dictionary of solver options.
             xtol : float
@@ -492,10 +500,29 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     meth = method.lower()
     if options is None:
         options = {}
-
-    if tol is not None:
+    elif not isinstance(options,dict):
         options = dict(options)
-        options.setdefault('xtol', tol)
+
+    # set options['xtol'] and/or options['xatol']
+    has_xtol = xtol is not None
+    has_xatol = xatol is not None
+    if has_xtol:
+        if method in _methods_supporting_xtol:
+            options.setdefault('xtol', xtol)
+        elif not has_xatol:
+            warn('Method %s does not support xtol.' % method, OptimizeWarning,
+                 stacklevel=2)
+    if has_xatol:
+        if method in _methods_supporting_xatol:
+            options.setdefault('xatol', xatol)
+        elif not has_xtol:
+            warn('Method %s does not support xatol.' % method, OptimizeWarning,
+                 stacklevel=2)
+    if tol is not None:
+        if method in _methods_supporting_xtol:
+            options.setdefault('xtol', tol)
+        else:
+            options.setdefault('xatol', tol)
 
     if meth == 'brent':
         return _minimize_scalar_brent(fun, bracket, args, **options)
@@ -508,3 +535,6 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         return _minimize_scalar_golden(fun, bracket, args, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
+
+_methods_supporting_xtol = ('brent', 'golden',)
+_methods_supporting_xatol = ('bounded',)

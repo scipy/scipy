@@ -32,8 +32,8 @@ import numpy
 from scipy.lib.six import callable
 from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
                    vectorize, asarray, sqrt, Inf, asfarray, isinf)
-from .linesearch import (line_search_BFGS, line_search_wolfe1,
-                         line_search_wolfe2, line_search_wolfe2 as line_search)
+from .linesearch import (line_search_wolfe1, line_search_wolfe2,
+                         line_search_wolfe2 as line_search)
 
 
 # standard status messages of optimizers
@@ -590,6 +590,7 @@ def approx_fprime(xk, f, epsilon, *args):
     Examples
     --------
     >>> from scipy import optimize
+    >>> import numpy as np
     >>> def func(x, c0, c1):
     ...     "Coordinate vector `x` should be an array of size two."
     ...     return c0 * x[0]**2 + c1*x[1]**2
@@ -1034,6 +1035,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     ``a*u**2 + b*u*v + c*v**2 + d*u + e*v + f`` for given values
     of the parameters and an initial guess ``(u, v) = (0, 0)``.
 
+    >>> import numpy as np
     >>> args = (2, 3, 7, 8, 9, 10)  # parameter values
     >>> def f(x, *args):
     ...     u, v = x
@@ -1528,7 +1530,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     for auto-bracketing).
 
     """
-    options = {'xtol': xtol,
+    options = {'xatol': xtol,
                'maxiter': maxfun,
                'disp': disp}
 
@@ -1540,7 +1542,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
 
 
 def _minimize_scalar_bounded(func, bounds, args=(),
-                             xtol=1e-5, maxiter=500, disp=0,
+                             xatol=1e-5, maxiter=500, disp=0,
                              **unknown_options):
     _check_unknown_options(unknown_options)
     maxfun = maxiter
@@ -1572,7 +1574,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
 
     ffulc = fnfc = fx
     xm = 0.5 * (a + b)
-    tol1 = sqrt_eps * numpy.abs(xf) + xtol / 3.0
+    tol1 = sqrt_eps * numpy.abs(xf) + xatol / 3.0
     tol2 = 2.0 * tol1
 
     if disp > 2:
@@ -1644,7 +1646,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
                 fulc, ffulc = x, fu
 
         xm = 0.5 * (a + b)
-        tol1 = sqrt_eps * numpy.abs(xf) + xtol / 3.0
+        tol1 = sqrt_eps * numpy.abs(xf) + xatol / 3.0
         tol2 = 2.0 * tol1
 
         if num >= maxfun:
@@ -1653,7 +1655,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
 
     fval = fx
     if disp > 0:
-        _endprint(x, flag, fval, maxfun, xtol, disp)
+        _endprint(x, flag, fval, maxfun, xatol, disp)
 
     result = Result(fun=fval, status=flag, success=(flag == 0),
                     message={0: 'Solution found.',
@@ -2479,6 +2481,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     ``(z, *params)``, where ``z = (x, y)``,  and ``params`` and the functions
     are as defined below.
 
+    >>> import numpy as np
     >>> params = (2, 3, 7, 8, 9, 10, 44, -1, 2, 26, 1, -2, 0.5)
     >>> def f1(z, *params):
     ...     x, y = z
@@ -2508,7 +2511,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     >>> rranges = (slice(-4, 4, 0.25), slice(-4, 4, 0.25))
     >>> from scipy import optimize
     >>> resbrute = optimize.brute(f, rranges, args=params, full_output=True,
-                                  finish=optimize.fmin)
+    ...                           finish=optimize.fmin)
     >>> resbrute[0]  # global minimum
     array([-1.05665192,  1.80834843])
     >>> resbrute[1]  # function value at global minimum
@@ -3088,8 +3091,9 @@ def show_options(solver, method=None):
                     Note that you can use also inverse Jacobians as (adaptive)
                     preconditioners. For example,
 
-                    >>> jac = BroydenFirst()
-                    >>> kjac = KrylovJacobian(inner_M=jac.inverse).
+                    >>> from scipy.optimize import nonlin
+                    >>> jac = nonlin.BroydenFirst()
+                    >>> kjac = nonlin.KrylovJacobian(inner_M=jac.inverse)
 
                     If the preconditioner has a method named 'update', it will
                     be called as ``update(x, f)`` after each nonlinear step,
