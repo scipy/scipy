@@ -297,13 +297,14 @@ def nanmean(x, axis=0):
     1.0
 
     """
-    x, axis = _chk_asarray(x,axis)
+    x, axis = _chk_asarray(x, axis)
     x = x.copy()
     Norig = x.shape[axis]
-    factor = 1.0-np.sum(np.isnan(x),axis)*1.0/Norig
+    mask = np.isnan(x)
+    factor = 1.0 - np.sum(mask, axis) / Norig
 
-    x[np.isnan(x)] = 0
-    return np.mean(x,axis)/factor
+    x[mask] = 0.0
+    return np.mean(x, axis) / factor
 
 
 def nanstd(x, axis=0, bias=False):
@@ -345,26 +346,31 @@ def nanstd(x, axis=0, bias=False):
     2.9154759474226504
 
     """
-    x, axis = _chk_asarray(x,axis)
+    x, axis = _chk_asarray(x, axis)
     x = x.copy()
     Norig = x.shape[axis]
 
-    Nnan = np.sum(np.isnan(x),axis)*1.0
+    mask = np.isnan(x)
+    Nnan = np.sum(mask, axis) * 1.0
     n = Norig - Nnan
 
-    x[np.isnan(x)] = 0.
-    m1 = np.sum(x,axis)/n
+    x[mask] = 0.0
+    m1 = np.sum(x, axis) / n
 
     if axis:
-        d = (x - np.expand_dims(m1, axis))**2.0
+        d = x - np.expand_dims(m1, axis)
     else:
-        d = (x - m1)**2.0
+        d = x - m1
 
-    m2 = np.sum(d,axis)-(m1*m1)*Nnan
+    d *= d
+
+    m2 = np.sum(d, axis) - m1 * m1 * Nnan
+
     if bias:
         m2c = m2 / n
     else:
-        m2c = m2 / (n - 1.)
+        m2c = m2 / (n - 1.0)
+
     return np.sqrt(m2c)
 
 
