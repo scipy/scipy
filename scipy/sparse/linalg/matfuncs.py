@@ -171,8 +171,7 @@ def _smart_matrix_product(A, B, alpha=None, structure=None):
     if f is not None:
         if alpha is None:
             alpha = 1.
-        out = B.copy()
-        out = f(alpha, A, out)
+        out = f(alpha, A, B)
     else:
         if alpha is None:
             out = A.dot(B)
