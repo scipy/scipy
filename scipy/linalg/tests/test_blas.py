@@ -15,8 +15,8 @@ Run tests if scipy is installed:
 import math
 
 import numpy as np
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
-    assert_almost_equal, assert_array_almost_equal, assert_raises
+from numpy.testing import (TestCase, run_module_suite, assert_equal,
+    assert_almost_equal, assert_array_almost_equal, assert_raises, assert_)
 
 from scipy.linalg import _fblas as fblas, get_blas_funcs
 
@@ -468,6 +468,25 @@ class TestTRMM(TestCase):
             expected = np.array([[3., 4., -1.],
                                  [-1., -2., 0.]]) # now a is lower triangular
             assert_array_almost_equal(result, expected)
+
+    def test_b_overwrites(self):
+        # BLAS dtrmm modifies B argument in-place.
+        # Here the default is to copy, but this can be overridden
+        f = getattr(fblas, 'dtrmm', None)
+        if f is not None:
+            for overwr in [True, False]:
+                bcopy = self.b.copy()
+                result = f(1., self.a, bcopy, overwrite_b=overwr)
+                # C-contiguous arrays are copied
+                assert_(bcopy.flags.f_contiguous is False and 
+                        np.may_share_memory(bcopy, result) is False)
+                assert_equal(bcopy, self.b)
+
+            bcopy = np.asfortranarray(self.b.copy())  # or just transpose it
+            result = f(1., self.a, bcopy, overwrite_b=True)
+            assert_(bcopy.flags.f_contiguous is True and
+                    np.may_share_memory(bcopy, result) is True)
+            assert_array_almost_equal(bcopy, result)
 
 
 if __name__ == "__main__":

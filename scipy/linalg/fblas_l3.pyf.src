@@ -6,10 +6,10 @@
 ! Modified: Fabian Pedregosa, 2011; Evgeni Burovski, 2013
 !
 ! Implemented:
-!   gemm, symm, hemm, syrk, herk, syr2k, her2k
+!   gemm, symm, hemm, syrk, herk, syr2k, her2k, trmm
 !
 ! Not Implemented:
-!   trmm, trsm
+!   trsm
 !
 
 
@@ -181,7 +181,7 @@ subroutine <prefix>trmm(m, n, k, alpha, a, b, lda, ldb, side, lower, trans_a, di
   <ftype> intent(in) :: alpha
 
   <ftype> dimension(lda, k), intent(in) :: a
-  <ftype> dimension(ldb, n), intent(in, out) :: b
+  <ftype> dimension(ldb, n), intent(in, out, copy) :: b
 
   integer depend(a), intent(hide) :: lda = shape(a, 0)
   integer depend(a), intent(hide) :: k = shape(a, 1)
