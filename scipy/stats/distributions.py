@@ -817,7 +817,7 @@ class rv_generic(object):
             goodargs = argsreduce(cond, *(args+(scale,loc)))
             scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
 
-        if self._stats_has_moments:
+            if self._stats_has_moments:
                 mu, mu2, g1, g2 = self._stats(*goodargs,**{'moments':moments})
             else:
                 mu, mu2, g1, g2 = self._stats(*goodargs)

@@ -19,27 +19,18 @@ distributions so that we can perform further testing of class methods.
 
 These tests currently check only/mostly for serious errors and exceptions,
 not for numerically exact results.
-
-
-TODO:
-* make functioning test for skew and kurtosis
-  still known failures - skip for now
-
-
 """
 
-# currently not used
 DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
-DECIMAL_kurt = 0
 
 distcont = [
     ['alpha', (3.5704770516650459,)],
     ['anglit', ()],
     ['arcsine', ()],
     ['beta', (2.3098496451481823, 0.62687954300963677)],
-    ['betaprime', (5, 6)],   # avoid unbound error in entropy with (100, 86)],
+    ['betaprime', (5, 6)],
     ['bradford', (0.29891359763170633,)],
-    ['burr', (10.5, 4.3)],    # incorrect mean and var for(0.94839838075366045, 4.3820284068855795)],
+    ['burr', (10.5, 4.3)],
     ['cauchy', ()],
     ['chi', (78,)],
     ['chi2', (55,)],
@@ -61,7 +52,7 @@ distcont = [
     ['gausshyper', (13.763771604130699, 3.1189636648681431,
                     2.5145980350183019, 5.1811649903971615)],  # veryslow
     ['genexpon', (9.1325976465418908, 16.231956600590632, 3.2819552690843983)],
-    ['genextreme', (-0.1,)],  # sample mean test fails for (3.3184017469423535,)],
+    ['genextreme', (-0.1,)],
     ['gengamma', (4.4162385429431925, 3.1193091679242761)],
     ['genhalflogistic', (0.77274727809929322,)],
     ['genlogistic', (0.41192440799679475,)],
@@ -76,7 +67,7 @@ distcont = [
     ['hypsecant', ()],
     ['invgamma', (4.0668996136993067,)],
     ['invgauss', (0.14546264555347513,)],
-    ['invweibull', (10.58,)],  # sample mean test fails at(0.58847112119264788,)]
+    ['invweibull', (10.58,)],
     ['johnsonsb', (4.3172675099141058, 3.1837781130785063)],
     ['johnsonsu', (2.554395574161155, 2.2482281679651965)],
     ['ksone', (1000,)],  # replace 22 by 100 to avoid failing range, ticket 956
@@ -93,8 +84,7 @@ distcont = [
     ['lognorm', (0.95368226960575331,)],
     ['lomax', (1.8771398388773268,)],
     ['maxwell', ()],
-    ['mielke', (10.4, 3.6)],  # sample mean test fails for (4.6420495492121487, 0.59707419545516938)],
-                             # mielke: good results if 2nd parameter >2, weird mean or var below
+    ['mielke', (10.4, 3.6)],
     ['nakagami', (4.9673794866666237,)],
     ['ncf', (27, 27, 0.41578441799226107)],
     ['nct', (14, 0.24045031331198066)],
@@ -124,6 +114,19 @@ distcont = [
     ['weibull_max', (2.8687961709100187,)],
     ['weibull_min', (1.7866166930421596,)],
     ['wrapcauchy', (0.031071279018614728,)]]
+
+## Last four of these fail all around. Need to be checked
+distcont_extra = [
+    ['betaprime', (100, 86)],
+    ['fatiguelife', (5,)],
+    ['mielke', (4.6420495492121487, 0.59707419545516938)],
+    ['invweibull', (0.58847112119264788,)],
+    # burr: sample mean test fails still for c<1
+    ['burr', (0.94839838075366045, 4.3820284068855795)],
+    # genextreme: sample mean test, sf-logsf test fail
+    ['genextreme', (3.3184017469423535,)],
+]
+
 
 # for testing only specific functions
 # distcont = [
@@ -192,7 +195,6 @@ def test_cont_basic():
               'sample mean test'
         # the sample skew kurtosis test has known failures, not very good distance measure
         # yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
-        yield check_normalization, distfn, arg, distname
         yield check_moment, distfn, arg, m, v, distname
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
@@ -245,8 +247,6 @@ def test_cont_basic_slow():
         # the sample skew kurtosis test has known failures, not very good distance measure
         # yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
         # vonmises and ksone are not supposed to fully work
-        if distname not in ['vonmises', 'ksone']:
-            yield check_normalization, distfn, arg, distname
         yield check_moment, distfn, arg, m, v, distname
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
@@ -271,7 +271,6 @@ def test_cont_basic_slow():
         yield check_named_args, distfn, x, arg, locscale_defaults, meths
 
         # this asserts the vectorization of _entropy w/ no shape parameters
-        # this asserts the vectorization of _entropy w/ no shape parameters
         # NB: broken for older versions of numpy
         if distfn.numargs == 0:
             if np.__version__ > '1.7':
@@ -285,18 +284,19 @@ def test_cont_basic_slow():
 
 @npt.dec.slow
 def test_moments():
-     knf = npt.dec.knownfailureif
-     distfailing = set(['ksone', 'ncf', 'vonmises'])
-     for distname, arg in distcont[:]:
+    knf = npt.dec.knownfailureif
+    fail_normalization = set(['vonmises', 'ksone'])
+    fail_higher = set(['vonmises', 'ksone', 'ncf'])
+    for distname, arg in distcont[:]:
         distfn = getattr(stats, distname)
         m, v, s, k = distfn.stats(*arg, moments='mvsk')
-        cond = distname in distfailing
+        cond1, cond2 = distname in fail_normalization, distname in fail_higher
         msg = distname + ' fails moments'
-        yield knf(cond, msg)(check_normalization), distfn, arg, distname
-        yield knf(cond, msg)(check_mean_expect), distfn, arg, m, distname
-        yield knf(cond, msg)(check_var_expect), distfn, arg, m, v, distname
-        yield knf(cond, msg)(check_skew_expect), distfn, arg, m, v, s, distname
-        yield knf(cond, msg)(check_kurt_expect), distfn, arg, m, v, k, distname
+        yield knf(cond1, msg)(check_normalization), distfn, arg, distname
+        yield knf(cond2, msg)(check_mean_expect), distfn, arg, m, distname
+        yield knf(cond2, msg)(check_var_expect), distfn, arg, m, v, distname
+        yield knf(cond2, msg)(check_skew_expect), distfn, arg, m, v, s, distname
+        yield knf(cond2, msg)(check_kurt_expect), distfn, arg, m, v, k, distname
 
 
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
