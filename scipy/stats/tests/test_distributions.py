@@ -563,11 +563,34 @@ class TestInvGamma(TestCase):
 
             a = [1.1, 3.1, 5.6]
             mvsk = stats.invgamma.stats(a=a, moments='mvsk')
-            assert_array_almost_equal(mvsk,
-                        ([10., 0.476190476, 0.2173913043],      # mmm
-                         [np.inf, 0.2061430632, 0.01312749422], # vvv
-                         [np.nan, 41.95235392, 2.919025532],    # sss
-                         [np.nan, np.nan, 24.51923076]))        # kkk
+            expected = ([10., 0.476190476, 0.2173913043],      # mmm
+                        [np.inf, 0.2061430632, 0.01312749422], # vvv
+                        [np.nan, 41.95235392, 2.919025532],    # sss
+                        [np.nan, np.nan, 24.51923076])         # kkk
+            for x, y in zip(mvsk, expected):
+                assert_almost_equal(x, y)
+
+
+class TestF(TestCase):
+    def test_f_moments(self):
+        # n-th moment of F distributions is only finite for n < dfd / 2
+        m, v, s, k = stats.f.stats(11, 6.5, moments='mvsk')
+        assert_(np.isfinite(m))
+        assert_(np.isfinite(v))
+        assert_(np.isfinite(s))
+        assert_(not np.isfinite(k))
+
+    def test_moments_warnings(self):
+        # no warnings should be generated for dfd = 2, 4, 6, 8 (div by zero)
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', RuntimeWarning)
+            mvsk = stats.f.stats(dfn=[11]*4, 
+                                 dfd=[2, 4, 6, 8], moments='mvsk')
+
+    @dec.knownfailureif(True, 'f stats does not properly broadcast')
+    def test_stats_broadcast(self):
+        # stats do not fully broadcast just yet
+        mv = stats.f.stats(dfn=11, dfd=[11, 12])        
 
 
 def test_rvgeneric_std():
@@ -1211,13 +1234,23 @@ class TestNct(TestCase):
                           [0.00153078, 0.00291093, 0.00525206, 0.00900815]])
         assert_allclose(res, expected, rtol=1e-5)
 
-    def text_variance_gh_issue_2401():
+    def text_variance_gh_issue_2401(self):
         # Computation of the variance of a non-central t-distribution resulted
         # in a TypeError: ufunc 'isinf' not supported for the input types,
         # and the inputs could not be safely coerced to any supported types
         # according to the casting rule 'safe'
         rv = stats.nct(4, 0)
         assert_equal(rv.var(), 2.0)
+
+    def test_nct_inf_moments(self):
+        # n-th moment of nct only exists for df > n
+        m, v, s, k = stats.nct.stats(df=1.9, nc = 0.3, moments='mvsk')
+        assert_(np.isfinite(m))
+        assert_equal([v, s, k], [np.inf, np.nan, np.nan])
+
+        m, v, s, k = stats.nct.stats(df=3.1, nc = 0.3, moments='mvsk')
+        assert_(np.isfinite([m, v, s]).all())
+        assert_equal(k, np.nan)
 
 
 def test_regression_ticket_1316():

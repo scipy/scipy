@@ -503,13 +503,22 @@ def valarray(shape,value=nan,typecode=None):
     return out
 
 
-def _lazywhere(cond, arr, f, fillvalue):
-    """np.where(cond, x, fillvalue) always evaluates x even where cond is False.
-    This one only evaluates f(arr[cond]).
+def _lazywhere(cond, arrays, f, fillvalue):
     """
-    temp = np.extract(cond, arr)
-    out = valarray(shape(arr), value=fillvalue)
-    np.place(out, cond, f(temp))
+    np.where(cond, x, fillvalue) always evaluates x even where cond is False.
+    This one only evaluates f(arr1[cond], arr2[cond], ...).
+    For example, 
+    >>> a, b = np.array([1, 2, 3, 4]), np.array([5, 6, 7, 8])
+    >>> def f(a, b): 
+        return a*b
+    >>> _lazywhere(a > 2, (a, b), f, np.nan)
+    array([ nan,  nan,  21.,  32.])
+
+    Notice it assumes that all `arrays` are of the same shape.
+    """
+    temp = tuple(np.extract(cond, arr) for arr in arrays)
+    out = valarray(shape(arrays[0]), value=fillvalue)
+    np.place(out, cond, f(*temp))
     return out
 
 
@@ -2656,28 +2665,9 @@ class burr_gen(rv_continuous):
     def _ppf(self, q, c, d):
         return (q**(-1.0/d)-1)**(-1.0/c)
 
-    def _stats(self, c, d, moments='mv'):
-        g2c, g2cd = gam(1-2.0/c), gam(2.0/c+d)
-        g1c, g1cd = gam(1-1.0/c), gam(1.0/c+d)
-        gd = gam(d)
-        k = gd*g2c*g2cd - g1c**2 * g1cd**2
-        mu = g1c*g1cd / gd
-        mu2 = k / gd**2.0
-        g1, g2 = None, None
-        g3c, g3cd = None, None
-        if 's' in moments:
-            g3c, g3cd = gam(1-3.0/c), gam(3.0/c+d)
-            g1 = 2*g1c**3 * g1cd**3 + gd*gd*g3c*g3cd - 3*gd*g2c*g1c*g1cd*g2cd
-            g1 /= sqrt(k**3)
-        if 'k' in moments:
-            if g3c is None:
-                g3c = gam(1-3.0/c)
-            if g3cd is None:
-                g3cd = gam(3.0/c+d)
-            g4c, g4cd = gam(1-4.0/c), gam(4.0/c+d)
-            g2 = 6*gd*g2c*g2cd * g1c**2 * g1cd**2 + gd**3 * g4c*g4cd
-            g2 -= 3*g1c**4 * g1cd**4 - 4*gd**2*g3c*g1c*g1cd*g3cd
-        return mu, mu2, g1, g2
+    def _munp(self, n, c, d):
+        nc = 1. * n / c
+        return d * special.beta(1.0 - nc, d + nc)
 burr = burr_gen(a=0.0, name='burr')
 
 
@@ -2705,8 +2695,8 @@ class fisk_gen(burr_gen):
     def _ppf(self, x, c):
         return burr_gen._ppf(self, x, c, 1.0)
 
-    def _stats(self, c):
-        return burr_gen._stats(self, c, 1.0)
+    def _munp(self, n, c):
+        return burr_gen._munp(self, n, c, 1.0)
 
     def _entropy(self, c):
         return 2 - log(c)
@@ -3113,25 +3103,30 @@ class fatiguelife_gen(rv_continuous):
         return t
 
     def _pdf(self, x, c):
-        return (x+1)/asarray(2*c*sqrt(2*pi*x**3))*exp(-(x-1)**2/asarray((2.0*x*c**2)))
+        return np.exp(self._logpdf(x, c))
 
     def _logpdf(self, x, c):
         return log(x+1) - (x-1)**2 / (2.0*x*c**2) - log(2*c) - 0.5*(log(2*pi) + 3*log(x))
 
     def _cdf(self, x, c):
-        return special.ndtr(1.0/c*(sqrt(x)-1.0/asarray(sqrt(x))))
+        return special.ndtr(1.0 / c * (sqrt(x) - 1.0/sqrt(x)))
 
     def _ppf(self, q, c):
         tmp = c*special.ndtri(q)
-        return 0.25*(tmp + sqrt(tmp**2 + 4))**2
+        return 0.25 * (tmp + sqrt(tmp**2 + 4))**2
 
     def _stats(self, c):
+        # NB: the formula for kurtosis in wikipedia seems to have an error:
+        # it's 40, not 41. At least it disagrees with the one from Wolfram Alpha.
+        # And the latter one, below, passes the tests, while the wiki one doesn't
+        # So far I didn't have the guts to actually check the coefficients
+        # from the expressions for the raw moments.
         c2 = c*c
-        mu = c2 / 2.0 + 1
-        den = 5*c2 + 4
+        mu = c2 / 2.0 + 1.0
+        den = 5.0 * c2 + 4.0
         mu2 = c2*den / 4.0
-        g1 = 4*c*sqrt(11*c2+6.0)/np.power(den, 1.5)
-        g2 = 6*c2*(93*c2+41.0) / den**2.0
+        g1 = 4 * c * (11*c2 + 6.0) / np.power(den, 1.5)
+        g2 = 6 * c2 * (93*c2 + 40.0) / den**2.0
         return mu, mu2, g1, g2
 fatiguelife = fatiguelife_gen(a=0.0, name='fatiguelife')
 
@@ -3191,10 +3186,10 @@ class f_gen(rv_continuous):
         return exp(self._logpdf(x, dfn, dfd))
 
     def _logpdf(self, x, dfn, dfd):
-        n = 1.0*dfn
-        m = 1.0*dfd
-        lPx = m/2*log(m) + n/2*log(n) + (n/2-1)*log(x)
-        lPx -= ((n+m)/2)*log(m+n*x) + special.betaln(n/2,m/2)
+        n = 1.0 * dfn
+        m = 1.0 * dfd
+        lPx = m/2 * log(m) + n/2 * log(n) + (n/2 - 1) * log(x)
+        lPx -= ((n+m)/2) * log(m + n*x) + special.betaln(n/2, m/2)
         return lPx
 
     def _cdf(self, x, dfn, dfd):
@@ -3207,15 +3202,29 @@ class f_gen(rv_continuous):
         return special.fdtri(dfn, dfd, q)
 
     def _stats(self, dfn, dfd):
-        v2 = asarray(dfd*1.0)
-        v1 = asarray(dfn*1.0)
-        mu = where(v2 > 2, v2 / asarray(v2 - 2), inf)
-        mu2 = 2*v2*v2*(v2+v1-2)/(v1*(v2-2)**2 * (v2-4))
-        mu2 = where(v2 > 4, mu2, inf)
-        g1 = 2*(v2+2*v1-2)/(v2-6)*sqrt((2*v2-4)/(v1*(v2+v1-2)))
-        g1 = where(v2 > 6, g1, nan)
-        g2 = 3/(2*v2-16)*(8+g1*g1*(v2-6))
-        g2 = where(v2 > 8, g2, nan)
+        v1, v2 = 1. * dfn, 1. * dfd
+        v2_2, v2_4, v2_6, v2_8 = v2 - 2., v2 - 4., v2 - 6., v2 - 8.
+
+        mu = _lazywhere(v2 > 2, (v2, v2_2), 
+                lambda v2, v2_2: v2 / v2_2, 
+                np.inf)
+
+        mu2 = _lazywhere(v2 > 4, (v1, v2, v2_2, v2_4),
+                lambda v1, v2, v2_2, v2_4: 2 * v2 * v2 * (v1 + v2_2) /
+                                        (v1 * v2_2**2 * v2_4),
+                np.inf)
+
+        g1 = _lazywhere(v2 > 6, (v1, v2_2, v2_4, v2_6),
+                lambda v1, v2_2, v2_4, v2_6: (2 * v1 + v2_2) / v2_6 *
+                                           sqrt(v2_4 / (v1 * (v1 + v2_2))),
+                np.nan)
+        g1 *= np.sqrt(8.)
+
+        g2 = _lazywhere(v2 > 8, (g1, v2_6, v2_8), 
+                lambda g1, v2_6, v2_8: (8 + g1 * g1 * v2_6) / v2_8,
+                np.nan)
+        g2 *= 3. / 2.
+
         return mu, mu2, g1, g2
 f = f_gen(a=0.0, name='f')
 
@@ -3251,25 +3260,28 @@ class foldnorm_gen(rv_continuous):
         return abs(mtrand.standard_normal(self._size) + c)
 
     def _pdf(self, x, c):
-        term = exp(-(x-c)*(x-c)/2) + exp(-(x+c)*(x+c)/2)
-        return term / sqrt(2*pi)
+        return _norm_pdf(x + c) + _norm_pdf(x-c)
 
     def _cdf(self, x, c):
         return special.ndtr(x-c) + special.ndtr(x+c) - 1.0
 
     def _stats(self, c):
-        fac = special.erf(c/sqrt(2))
-        mu = sqrt(2.0/pi)*exp(-0.5*c*c)+c*fac
-        mu2 = c*c + 1 - mu*mu
+        # Regina C. Elandt, Technometrics 3, 551 (1961)
+        # http://www.jstor.org/stable/1266561
+        #
         c2 = c*c
-        g1 = sqrt(2/pi)*exp(-1.5*c2)*(4-pi*exp(c2)*(2*c2+1.0))
-        g1 += 2*c*fac*(6*exp(-c2) + 3*sqrt(2*pi)*c*exp(-c2/2.0)*fac +
-                       pi*c*(fac*fac-1))
-        g1 /= pi*np.power(mu2, 1.5)
+        expfac = np.exp(-0.5*c2) / np.sqrt(2.*pi)
+        
+        mu = 2.*expfac + c * special.erf(c/sqrt(2))
+        mu2 = c2 + 1 - mu*mu
 
-        g2 = c2*c2+6*c2+3+6*(c2+1)*mu*mu - 3*mu**4
-        g2 -= 4*exp(-c2/2.0)*mu*(sqrt(2.0/pi)*(c2+2)+c*(c2+3)*exp(c2/2.0)*fac)
-        g2 /= mu2**2.0
+        g1 = 2. * (mu*mu*mu  - c2*mu - expfac)
+        g1 /= np.power(mu2, 1.5)
+
+        g2 = c2 * (c2 + 6.) + 3 + 8.*expfac*mu
+        g2 += (2. * (c2 - 3.) - 3. * mu**2) * mu**2
+        g2 = g2 / mu2**2.0 - 3.
+
         return mu, mu2, g1, g2
 foldnorm = foldnorm_gen(a=0.0, name='foldnorm')
 
@@ -4224,15 +4236,15 @@ class invgamma_gen(rv_continuous):
         return 1.0 / special.gammaincinv(a, 1.-q)
 
     def _stats(self, a, moments='mvsk'):
-        m1 = _lazywhere(a > 1, a, lambda x: 1. / (x - 1.), np.inf)
-        m2 = _lazywhere(a > 2, a, lambda x: 1. / (x - 1.)**2 / (x - 2.), np.inf)
+        m1 = _lazywhere(a > 1, (a,), lambda x: 1. / (x - 1.), np.inf)
+        m2 = _lazywhere(a > 2, (a,), lambda x: 1. / (x - 1.)**2 / (x - 2.), np.inf)
 
         g1, g2 = None, None
         if 's' in moments:
-            g1 = _lazywhere(a > 3, a, 
+            g1 = _lazywhere(a > 3, (a,), 
                     lambda x: 4. * np.sqrt(x - 2.) / (x - 3.), np.nan)
         if 'k' in moments:
-            g2 = _lazywhere(a > 4, a, 
+            g2 = _lazywhere(a > 4, (a,), 
                     lambda x: 6. * (5. * x - 11.) / (x - 3.) / (x - 4.), np.nan)
         return m1, m2, g1, g2
 
@@ -5080,31 +5092,38 @@ class nct_gen(rv_continuous):
         return special.nctdtrit(df, nc, q)
 
     def _stats(self, df, nc, moments='mv'):
+        #
+        # See D. Hogben, R.S. Pinkham, and M.B. Wilk,
+        # 'The moments of the non-central t-distribution'
+        # Biometrika 48, p. 465 (2961).
+        # e.g. http://www.jstor.org/stable/2332772 (gated)
+        #
         mu, mu2, g1, g2 = None, None, None, None
-        val1 = gam((df-1.0)/2.0)
-        val2 = gam(df/2.0)
-        if 'm' in moments:
-            mu = nc*sqrt(df/2.0)*val1/val2
-        if 'v' in moments:
-            var = (nc*nc+1.0)*df/(df-2.0)
-            var -= nc*nc*df * val1**2 / 2.0 / val2**2
-            mu2 = var
+        
+        gfac = gam(df/2.-0.5) / gam(df/2.)
+        c11 = sqrt(df/2.) * gfac
+        c20 = df / (df-2.)
+        c22 = c20 - c11*c11
+        mu = np.where(df > 1, nc*c11, np.inf)
+        mu2 = np.where(df > 2, c22*nc*nc + c20, np.inf)
         if 's' in moments:
-            g1n = 2*nc*sqrt(df)*val1*((nc*nc*(2*df-7)-3)*val2**2
-                                      - nc*nc*(df-2)*(df-3)*val1**2)
-            g1d = (df-3)*sqrt(2*df*(nc*nc+1)/(df-2) -
-                              nc*nc*df*(val1/val2)**2) * val2 * \
-                              (nc*nc*(df-2)*val1**2 -
-                               2*(nc*nc+1)*val2**2)
-            g1 = g1n/g1d
+            c33t = df * (7.-2.*df) / (df-2.) / (df-3.) + 2.*c11*c11
+            c31t = 3.*df / (df-2.) / (df-3.)
+            mu3 = (c33t*nc*nc + c31t) * c11*nc
+            g1 = np.where(df > 3, mu3 / np.power(mu2, 1.5),
+                                  np.nan)
+        #kurtosis
         if 'k' in moments:
-            g2n = 2*(-3*nc**4*(df-2)**2 * (df-3) * (df-4)*val1**4 +
-                     2**(6-2*df) * nc*nc*(df-2)*(df-4) *
-                     (nc*nc*(2*df-7)-3)*pi*gam(df+1)**2 -
-                     4*(nc**4*(df-5)-6*nc*nc-3)*(df-3)*val2**4)
-            g2d = (df-3)*(df-4)*(nc*nc*(df-2)*val1**2 -
-                                 2*(nc*nc+1)*val2)**2
-            g2 = g2n / g2d
+            c44 = df*df / (df-2.) / (df-4.)
+            c44 -= c11*c11 * 2.*df*(5.-df) / (df-2.) / (df-3.)
+            c44 -= 3.*c11**4
+            c42 = df / (df-4.) - c11*c11 * (df-1.) / (df-3.)
+            c42 *= 6.*df / (df-2.)
+            c40 = 3.*df*df / (df-2.) / (df-4.)
+            
+            mu4 = c44 * nc**4 + c42*nc**2 + c40
+            g2 = np.where(df > 4, mu4/mu2**2 - 3.,
+                                  np.nan)
         return mu, mu2, g1, g2
 nct = nct_gen(name="nct")
 
@@ -5466,11 +5485,11 @@ class rdist_gen(rv_continuous):
         # background.
         if any(np.isnan(res)):
             return rv_continuous._cdf(self, x, c)
-
         return res
 
     def _munp(self, n, c):
-        return (1 - (n % 2)) * special.beta((n + 1.0) / 2, c / 2.0)
+        numerator = (1 - (n % 2)) * special.beta((n + 1.0) / 2, c / 2.0) 
+        return numerator / special.beta(1. / 2, c / 2.)
 rdist = rdist_gen(a=-1.0, b=1.0, name="rdist")
 
 
