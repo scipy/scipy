@@ -99,11 +99,7 @@ class TestNanFunc(TestCase):
 
     def test_nanmean_all(self):
         # Check nanmean when all values are nan.
-        olderr = np.seterr(all='ignore')
-        try:
-            m = stats.nanmean(self.Xall)
-        finally:
-            np.seterr(**olderr)
+        m = stats.nanmean(self.Xall)
         assert_(np.isnan(m))
 
     def test_nanstd_none(self):
@@ -118,11 +114,7 @@ class TestNanFunc(TestCase):
 
     def test_nanstd_all(self):
         # Check nanstd when all values are nan.
-        olderr = np.seterr(all='ignore')
-        try:
-            s = stats.nanstd(self.Xall)
-        finally:
-            np.seterr(**olderr)
+        s = stats.nanstd(self.Xall)
         assert_(np.isnan(s))
 
     def test_nanstd_negative_axis(self):
