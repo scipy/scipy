@@ -797,6 +797,20 @@ def test_empty_string():
     stream.close()
 
 
+def test_corrupted_data():
+    import zlib
+    for exc, fname in [(ValueError, 'corrupted_zlib_data.mat'), (zlib.error, 'corrupted_zlib_checksum.mat')]:
+        with open(pjoin(test_data_path, fname), 'rb') as fp:
+            rdr = MatFile5Reader(fp)
+            assert_raises(exc, rdr.get_variables)
+
+def test_corrupted_data_check_can_be_disabled():
+    with open(pjoin(test_data_path, 'corrupted_zlib_data.mat'), 'rb') as fp:
+        rdr = MatFile5Reader(fp, verify_compressed_data_integrity=False)
+        rdr.get_variables()
+
+
+
 def test_read_both_endian():
     # make sure big- and little- endian data is read correctly
     for fname in ('big_endian.mat', 'little_endian.mat'):

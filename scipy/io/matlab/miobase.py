@@ -344,7 +344,8 @@ class MatFileReader(object):
                  squeeze_me=False,
                  chars_as_strings=True,
                  matlab_compatible=False,
-                 struct_as_record=True
+                 struct_as_record=True,
+                 verify_compressed_data_integrity=True
                  ):
         '''
         Initializer for mat file reader
@@ -368,6 +369,7 @@ class MatFileReader(object):
             self.squeeze_me = squeeze_me
             self.chars_as_strings = chars_as_strings
             self.mat_dtype = mat_dtype
+        self.verify_compressed_data_integrity = verify_compressed_data_integrity
 
     def set_matlab_compatible(self):
         ''' Sets options to return arrays as MATLAB loads them '''

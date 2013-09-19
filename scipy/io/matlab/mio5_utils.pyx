@@ -122,6 +122,7 @@ cdef class VarHeader5:
     cdef readonly object dims
     cdef cnp.int32_t dims_ptr[_MAT_MAXDIMS]
     cdef int n_dims
+    cdef int check_stream_limit
     cdef int is_complex
     cdef readonly int is_logical
     cdef public int is_global
@@ -511,10 +512,17 @@ cdef class VarReader5:
             byte_count[0] = u4s[1]
         return 0
 
-    cpdef VarHeader5 read_header(self):
+    cpdef VarHeader5 read_header(self, int check_stream_limit):
         ''' Return matrix header for current stream position
 
         Returns matrix headers at top level and sub levels
+
+        Parameters
+        ----------
+        check_stream_limit : if True, then if the returned header
+        is passed to array_from_header, it will be verified that
+        the length of the uncompressed data is not overlong (which
+        can indicate .mat file corruption)
         '''
         cdef:
             cdef cnp.uint32_t u4s[2]
@@ -537,6 +545,7 @@ cdef class VarReader5:
         header = VarHeader5()
         mc = flags_class & 0xFF
         header.mclass = mc
+        header.check_stream_limit = check_stream_limit
         header.is_logical = flags_class >> 9 & 1
         header.is_global = flags_class >> 10 & 1
         header.is_complex = flags_class >> 11 & 1
@@ -610,7 +619,7 @@ cdef class VarReader5:
                 return np.array([])
             else:
                 return np.array([[]])
-        header = self.read_header()
+        header = self.read_header(False)
         return self.array_from_header(header, process)
 
     cpdef array_from_header(self, VarHeader5 header, int process=1):
@@ -631,6 +640,7 @@ cdef class VarReader5:
         cdef:
             object arr
             cnp.dtype mat_dtype
+        cdef size_t remaining
         cdef int mc = header.mclass
         if (mc == mxDOUBLE_CLASS
             or mc == mxSINGLE_CLASS
@@ -652,7 +662,7 @@ cdef class VarReader5:
         elif mc == mxSPARSE_CLASS:
             arr = self.read_sparse(header)
             # no current processing makes sense for sparse
-            return arr
+            process = False
         elif mc == mxCHAR_CLASS:
             arr = self.read_char(header)
             if process and self.chars_as_strings:
@@ -669,12 +679,17 @@ cdef class VarReader5:
             arr = self.read_mi_matrix()
             arr = mio5p.MatlabFunction(arr)
             # to make them more re-writeable - don't squeeze
-            return arr
+            process = 0
         elif mc == mxOPAQUE_CLASS:
             arr = self.read_opaque(header)
             arr = mio5p.MatlabOpaque(arr)
             # to make them more re-writeable - don't squeeze
-            return arr
+            process = 0
+        if header.check_stream_limit:
+            if not self.cstream.all_data_read():
+                raise ValueError('Did not fully consume compressed contents' +
+                                 ' of an miCOMPRESSED element. This can' +
+                                 ' indicate that the .mat file is corrupted.')
         if process and self.squeeze_me:
             return squeeze_element(arr)
         return arr
