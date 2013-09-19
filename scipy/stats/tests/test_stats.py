@@ -121,6 +121,13 @@ class TestNanFunc(TestCase):
         x = np.array([1, 2, 3])
         assert_equal(stats.nanstd(x, -1), 1)
 
+    def test_nanstd_one_nonnan(self):
+        x = np.array([1.0, np.nan, np.nan])
+        s = stats.nanstd(x)
+        assert_equal(s, np.nan)
+        s = stats.nanstd(x, bias=True)
+        assert_equal(s, 0)
+
     def test_nanmedian_none(self):
         # Check nanmedian when no values are nan.
         m = stats.nanmedian(self.X)

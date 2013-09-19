@@ -265,6 +265,39 @@ def find_repeats(arr):
 ########
 
 
+def _nanmean_core(x, axis):
+    """Private "unsafe" nanmean.
+
+    This function is used by `nanmean` and `nanstd`.
+
+    Parameters
+    ----------
+    x : ndarray
+        The mean of `x` is computed.  nan is ignored.  `x` must be an ndarray.
+        Any nans in `x` will be overwritten with 0.
+    axis : int
+        Axis along `x` to compute the mean.
+
+    Returns
+    -------
+    mean : ndarray or float
+        The mean value(s).
+    n : int or array of int
+        The number of non-nan elements used to compute the mean.
+    nnan : int or array of int
+        The number of nan values that were ignored.
+    """
+    mask = np.isnan(x)
+    nnan = np.sum(mask, axis)
+    n = x.shape[axis] - nnan
+
+    x[mask] = 0.0
+    with np.errstate(divide='ignore', invalid='ignore'):
+        m = np.sum(x, axis) / n
+
+    return m, n, nnan
+
+
 def nanmean(x, axis=0):
     """
     Compute the mean over the given axis ignoring nans.
@@ -299,12 +332,8 @@ def nanmean(x, axis=0):
     """
     x, axis = _chk_asarray(x, axis)
     x = x.copy()
-    Norig = x.shape[axis]
-    mask = np.isnan(x)
-    factor = 1.0 - np.sum(mask, axis) / Norig
-
-    x[mask] = 0.0
-    return np.mean(x, axis) / factor
+    result, _, _ = _nanmean_core(x, axis)
+    return result
 
 
 def nanstd(x, axis=0, bias=False):
@@ -341,21 +370,14 @@ def nanstd(x, axis=0, bias=False):
     >>> stats.nanstd(a)
     2.9154759474226504
     >>> stats.nanstd(a.reshape(2, 5), axis=1)
-    array([ 2.0817,  1.5811])
+    array([ 2.081666  ,  1.58113883])
     >>> stats.nanstd(a.reshape(2, 5), axis=None)
     2.9154759474226504
 
     """
     x, axis = _chk_asarray(x, axis)
     x = x.copy()
-    Norig = x.shape[axis]
-
-    mask = np.isnan(x)
-    Nnan = np.sum(mask, axis) * 1.0
-    n = Norig - Nnan
-
-    x[mask] = 0.0
-    m1 = np.sum(x, axis) / n
+    m1, n, nnan = _nanmean_core(x, axis)
 
     if axis:
         d = x - np.expand_dims(m1, axis)
@@ -364,12 +386,13 @@ def nanstd(x, axis=0, bias=False):
 
     d *= d
 
-    m2 = np.sum(d, axis) - m1 * m1 * Nnan
+    m2 = np.sum(d, axis) - m1 * m1 * nnan
 
-    if bias:
-        m2c = m2 / n
-    else:
-        m2c = m2 / (n - 1.0)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        if bias:
+            m2c = m2 / n
+        else:
+            m2c = m2 / (n - 1.0)
 
     return np.sqrt(m2c)
 
