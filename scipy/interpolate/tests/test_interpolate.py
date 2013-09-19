@@ -6,6 +6,8 @@ from numpy.testing import assert_, assert_equal, assert_almost_equal, \
 from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
 
+from scipy.lib.six import xrange
+
 from scipy.interpolate import interp1d, interp2d, lagrange, PPoly, ppform, \
      splrep, splev
 
