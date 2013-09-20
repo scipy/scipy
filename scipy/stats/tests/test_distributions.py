@@ -518,6 +518,15 @@ class TestZipf(TestCase):
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
+    def test_moments(self):
+        # n-th moment is finite iff a > n + 1
+        m, v = stats.zipf.stats(a=2.8)
+        assert_(np.isfinite(m))
+        assert_equal(v, np.inf)
+
+        s, k = stats.zipf.stats(a=4.8, moments='sk')
+        assert_(not np.isfinite([s, k]).all())
+
 
 class TestDLaplace(TestCase):
     def test_rvs(self):
