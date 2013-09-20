@@ -2731,6 +2731,8 @@ def show_options(solver, method=None):
             Reasonable initial changes to the variables.
         maxfev : int
             Maximum number of function evaluations.
+        catol : float
+            Absolute tolerance for constraint violations (default: 1e-6).
 
     * SLSQP options:
         ftol : float
