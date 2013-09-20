@@ -192,9 +192,8 @@ integer :math:`n.` Full convolution of two one-dimensional signals can be
 expressed as
 
 .. math::
-   :nowrap:
 
-    \[ y\left[n\right]=\sum_{k=-\infty}^{\infty}x\left[k\right]h\left[n-k\right].\]
+    y\left[n\right]=\sum_{k=-\infty}^{\infty}x\left[k\right]h\left[n-k\right].
 
 This equation can only be implemented directly if we limit the
 sequences to finite support sequences that can be stored in a
@@ -205,9 +204,8 @@ that value for which :math:`x\left[n\right]=0` for all :math:`n>M+1` ,
 then the discrete convolution expression is
 
 .. math::
-   :nowrap:
 
-    \[ y\left[n\right]=\sum_{k=\max\left(n-M,0\right)}^{\min\left(n,K\right)}x\left[k\right]h\left[n-k\right].\]
+    y\left[n\right]=\sum_{k=\max\left(n-M,0\right)}^{\min\left(n,K\right)}x\left[k\right]h\left[n-k\right].
 
 For convenience assume :math:`K\geq M.` Then, more explicitly the output of
 this operation is
@@ -222,33 +220,30 @@ Thus, the full discrete convolution of two finite sequences of lengths
 :math:`K+M+1=\left(K+1\right)+\left(M+1\right)-1.`
 
 One dimensional convolution is implemented in SciPy with the function
-``signal.convolve`` . This function takes as inputs the signals
-:math:`x,` :math:`h` , and an optional flag and returns the signal
-:math:`y.` The optional flag allows for specification of which part of
-the output signal to return. The default value of 'full' returns the
-entire signal. If the flag has a value of 'same' then only the middle
-:math:`K` values are returned starting at :math:`y\left[\left\lfloor
-\frac{M-1}{2}\right\rfloor \right]` so that the output has the same
-length as the largest input. If the flag has a value of 'valid' then
-only the middle :math:`K-M+1=\left(K+1\right)-\left(M+1\right)+1`
-output values are returned where :math:`z` depends on all of the
-values of the smallest input from :math:`h\left[0\right]` to
-:math:`h\left[M\right].` In other words only the values
-:math:`y\left[M\right]` to :math:`y\left[K\right]` inclusive are
-returned.
+:func:`convolve`. This function takes as inputs the signals :math:`x,`
+:math:`h` , and an optional flag and returns the signal :math:`y.` The
+optional flag allows for specification of which part of the output signal to
+return. The default value of 'full' returns the entire signal. If the flag has
+a value of 'same' then only the middle :math:`K` values are returned starting
+at :math:`y\left[\left\lfloor \frac{M-1}{2}\right\rfloor \right]` so that the
+output has the same length as the largest input. If the flag has a value of
+'valid' then only the middle :math:`K-M+1=\left(K+1\right)-\left(M+1\right)+1`
+output values are returned where :math:`z` depends on all of the values of the
+smallest input from :math:`h\left[0\right]` to :math:`h\left[M\right].` In
+other words only the values :math:`y\left[M\right]` to :math:`y\left[K\right]`
+inclusive are returned.
 
-This same function ``signal.convolve`` can actually take :math:`N`
--dimensional arrays as inputs and will return the :math:`N`
--dimensional convolution of the two arrays. The same input flags are
-available for that case as well.
+
+This same function :func:`convolve` can actually take :math:`N` -dimensional
+arrays as inputs and will return the :math:`N` -dimensional convolution of the
+two arrays. The same input flags are available for that case as well.
 
 Correlation is very similar to convolution except for the minus sign
 becomes a plus sign. Thus
 
 .. math::
-   :nowrap:
 
-    \[ w\left[n\right]=\sum_{k=-\infty}^{\infty}y\left[k\right]x\left[n+k\right]\]
+    w\left[n\right]=\sum_{k=-\infty}^{\infty}y\left[k\right]x\left[n+k\right]
 
 is the (cross) correlation of the signals :math:`y` and :math:`x.` For
 finite-length signals with :math:`y\left[n\right]=0` outside of the range
@@ -256,37 +251,31 @@ finite-length signals with :math:`y\left[n\right]=0` outside of the range
 :math:`\left[0,M\right],` the summation can simplify to
 
 .. math::
-   :nowrap:
 
-    \[ w\left[n\right]=\sum_{k=\max\left(0,-n\right)}^{\min\left(K,M-n\right)}y\left[k\right]x\left[n+k\right].\]
+    w\left[n\right]=\sum_{k=\max\left(0,-n\right)}^{\min\left(K,M-n\right)}y\left[k\right]x\left[n+k\right].
 
 Assuming again that :math:`K\geq M` this is
 
 .. math::
-   :nowrap:
 
     \begin{eqnarray*} w\left[-K\right] & = & y\left[K\right]x\left[0\right]\\ w\left[-K+1\right] & = & y\left[K-1\right]x\left[0\right]+y\left[K\right]x\left[1\right]\\ \vdots & \vdots & \vdots\\ w\left[M-K\right] & = & y\left[K-M\right]x\left[0\right]+y\left[K-M+1\right]x\left[1\right]+\cdots+y\left[K\right]x\left[M\right]\\ w\left[M-K+1\right] & = & y\left[K-M-1\right]x\left[0\right]+\cdots+y\left[K-1\right]x\left[M\right]\\ \vdots & \vdots & \vdots\\ w\left[-1\right] & = & y\left[1\right]x\left[0\right]+y\left[2\right]x\left[1\right]+\cdots+y\left[M+1\right]x\left[M\right]\\ w\left[0\right] & = & y\left[0\right]x\left[0\right]+y\left[1\right]x\left[1\right]+\cdots+y\left[M\right]x\left[M\right]\\ w\left[1\right] & = & y\left[0\right]x\left[1\right]+y\left[1\right]x\left[2\right]+\cdots+y\left[M-1\right]x\left[M\right]\\ w\left[2\right] & = & y\left[0\right]x\left[2\right]+y\left[1\right]x\left[3\right]+\cdots+y\left[M-2\right]x\left[M\right]\\ \vdots & \vdots & \vdots\\ w\left[M-1\right] & = & y\left[0\right]x\left[M-1\right]+y\left[1\right]x\left[M\right]\\ w\left[M\right] & = & y\left[0\right]x\left[M\right].\end{eqnarray*}
 
 
+The SciPy function :func:`correlate` implements this operation. Equivalent
+flags are available for this operation to return the full :math:`K+M+1` length
+sequence ('full') or a sequence with the same size as the largest sequence
+starting at :math:`w\left[-K+\left\lfloor \frac{M-1}{2}\right\rfloor \right]`
+('same') or a sequence where the values depend on all the values of the
+smallest sequence ('valid'). This final option returns the :math:`K-M+1`
+values :math:`w\left[M-K\right]` to :math:`w\left[0\right]` inclusive.
 
-The SciPy function ``signal.correlate`` implements this
-operation. Equivalent flags are available for this operation to return
-the full :math:`K+M+1` length sequence ('full') or a sequence with the
-same size as the largest sequence starting at
-:math:`w\left[-K+\left\lfloor \frac{M-1}{2}\right\rfloor \right]`
-('same') or a sequence where the values depend on all the values of
-the smallest sequence ('valid'). This final option returns the
-:math:`K-M+1` values :math:`w\left[M-K\right]` to
-:math:`w\left[0\right]` inclusive.
-
-The function :obj:`signal.correlate` can also take arbitrary :math:`N`
+The function :func:`correlate` can also take arbitrary :math:`N`
 -dimensional arrays as input and return the :math:`N` -dimensional
 convolution of the two arrays on output.
 
-When :math:`N=2,` :obj:`signal.correlate` and/or
-:obj:`signal.convolve` can be used to construct arbitrary image
-filters to perform actions such as blurring, enhancing, and
-edge-detection for an image.
+When :math:`N=2,` :func:`correlate` and/or :func:`convolve` can be used
+to construct arbitrary image filters to perform actions such as blurring,
+enhancing, and edge-detection for an image.
 
 Convolution is mainly used for filtering when one of the signals is
 much smaller than the other ( :math:`K\gg M` ), otherwise linear
@@ -319,9 +308,8 @@ The difference equation filter can be thought of as finding
 :math:`y\left[n\right]` recursively in terms of it's previous values
 
 .. math::
-   :nowrap:
-
-    \[ a_{0}y\left[n\right]=-a_{1}y\left[n-1\right]-\cdots-a_{N}y\left[n-N\right]+\cdots+b_{0}x\left[n\right]+\cdots+b_{M}x\left[n-M\right].\]
+    
+    a_{0}y\left[n\right]=-a_{1}y\left[n-1\right]-\cdots-a_{N}y\left[n-N\right]+\cdots+b_{0}x\left[n\right]+\cdots+b_{M}x\left[n-M\right].
 
 Often :math:`a_{0}=1` is chosen for normalization. The implementation
 in SciPy of this general difference equation filter is a little more
@@ -530,7 +518,9 @@ evaluations giving a factor of :math:`\sim 2` speed increase over the
 straightforward implementation.
 
 
-.. XXX: TODO
+XXX: TODO
+---------
+
 ..
 .. Detrend
 .. """""""
