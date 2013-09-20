@@ -22,7 +22,7 @@ from scipy.sparse import csc_matrix, SparseEfficiencyWarning
 from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg.matfuncs import (expm,
         ProductOperator, MatrixPowerOperator,
-        _is_upper_triangular)
+        _onenorm_matrix_power_nnm)
 from scipy.linalg import logm
 from scipy.misc import factorial
 import scipy.sparse
@@ -60,14 +60,29 @@ def _burkardt_13_power(n, p):
     return np.diag([large]*(n-b), b) + np.diag([small]*b, b-n)
 
 
+def test_onenorm_matrix_power_nnm():
+    np.random.seed(1234)
+    for n in range(1, 5):
+        for p in range(5):
+            M = np.random.random((n, n))
+            Mp = np.linalg.matrix_power(M, p)
+            observed = _onenorm_matrix_power_nnm(M, p)
+            expected = np.linalg.norm(Mp, 1)
+            assert_allclose(observed, expected)
+
+
 class TestExpM(TestCase):
-    def test_zero(self):
+    def test_zero_ndarray(self):
         a = array([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
 
     def test_zero_sparse(self):
         a = csc_matrix([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a).toarray(),[[1,0],[0,1]])
+
+    def test_zero_matrix(self):
+        a = np.matrix([[0.,0],[0,0]])
+        assert_array_almost_equal(expm(a),[[1,0],[0,1]])
 
     def test_bidiagonal_sparse(self):
         A = csc_matrix([
@@ -94,9 +109,10 @@ class TestExpM(TestCase):
     def test_padecases_dtype_complex(self):
         for dtype in [np.complex64, np.complex128]:
             for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
-                a = scale * eye(3, dtype=dtype)
-                e = exp(scale) * eye(3, dtype=dtype)
-                assert_array_almost_equal_nulp(expm(a), e, nulp=100)
+                A = scale * eye(3, dtype=dtype)
+                observed = expm(A)
+                expected = exp(scale) * eye(3, dtype=dtype)
+                assert_array_almost_equal_nulp(observed, expected, nulp=100)
 
     def test_padecases_dtype_sparse_float(self):
         # float32 and complex64 lead to errors in spsolve/UMFpack
