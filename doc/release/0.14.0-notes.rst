@@ -21,6 +21,15 @@ This release requires Python 2.6, 2.7 or 3.2-3.3 and NumPy 1.5.1 or greater.
 New features
 ============
 
+``scipy.stats`` improvements
+----------------------------
+
+Multivariate random variables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A new class `scipy.stats.multivariate_normal` with functionality for 
+multivariate normal random variables has been added.
+
 
 Deprecated features
 ===================
