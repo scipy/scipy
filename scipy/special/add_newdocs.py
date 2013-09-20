@@ -1577,13 +1577,14 @@ add_newdoc("scipy.special", "yve",
 
 add_newdoc("scipy.special", "zeta",
     """
-    y=zeta(x,q) returns the Riemann zeta function of two arguments:
-    sum((k+q)**(-x),k=0..inf)
+    y=zeta(x,q) returns the Riemann zeta function of two arguments (also 
+    known as the Hurwitz zeta function):
+    sum((k+q)**(-x), k=0..inf)
     """)
 
 add_newdoc("scipy.special", "zetac",
     """
-    y=zetac(x) returns 1.0 - the Riemann zeta function: sum(k**(-x), k=2..inf)
+    y=zetac(x) returns the Riemann zeta function minus 1.0: sum(k**(-x), k=2..inf)
     """)
 
 add_newdoc("scipy.special", "_struve_asymp_large_z",

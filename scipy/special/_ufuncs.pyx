@@ -7922,7 +7922,7 @@ cdef void *ufunc_zetac_ptr[4]
 cdef void *ufunc_zetac_data[2]
 cdef char ufunc_zetac_types[4]
 cdef char *ufunc_zetac_doc = (
-    "y=zetac(x) returns 1.0 - the Riemann zeta function: sum(k**(-x), k=2..inf)")
+    "y=zetac(x) returns the Riemann zeta function minus 1.0: sum(k**(-x), k=2..inf)")
 ufunc_zetac_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_zetac_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_zetac_types[0] = <char>NPY_FLOAT
