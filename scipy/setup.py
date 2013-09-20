@@ -15,6 +15,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('lib')
     config.add_subpackage('linalg')
     config.add_subpackage('misc')
+    config.add_subpackage('diff')
     config.add_subpackage('odr')
     config.add_subpackage('optimize')
     config.add_subpackage('signal')

@@ -6,12 +6,14 @@ from __future__ import division, print_function, absolute_import
 
 import math
 import warnings
+import functools
 
 from scipy.lib.six import callable, string_types, get_method_function
 from scipy.lib.six import exec_
 
 from scipy.misc import comb, derivative
 from scipy.misc.doccer import inherit_docstring_from
+from scipy.diff import Derivative
 from scipy import special
 from scipy import optimize
 from scipy import integrate
@@ -1198,7 +1200,23 @@ class rv_continuous(rv_generic):
         return cond
 
     def _pdf(self,x,*args):
-        return derivative(self._cdf,x,dx=1e-5,args=args,order=5)
+        # numdifftools uses vectorization internally
+        # but does not conformantly vectorize the args.
+        # We will do this manually.
+        # If Derivative is given f and x, where x is an array,
+        # then if it wants to internally evaluate at each entry of x
+        # with multiple dx values, then I want Derivative to internally
+        # add another dimension to the array.
+        # This way the other args provided to f would broadcast appropriately.
+        x_args = np.broadcast_arrays(x, *args)
+        x, args = x_args[0], x_args[1:]
+        dfx = np.empty_like(x)
+        for ind in np.ndindex(*x.shape):
+            local_args = [a[ind] for a in args]
+            def f(y):
+                return self._cdf(y, *local_args)
+            dfx[ind] = Derivative(f, vectorized=True)(x[ind])
+        return dfx
 
     ## Could also define any of these
     def _logpdf(self, x, *args):
