@@ -7899,8 +7899,20 @@ cdef void *ufunc_zeta_ptr[4]
 cdef void *ufunc_zeta_data[2]
 cdef char ufunc_zeta_types[6]
 cdef char *ufunc_zeta_doc = (
-    "y=zeta(x,q) returns the Riemann zeta function of two arguments:\n"
-    "sum((k+q)**(-x),k=0..inf)")
+    "zeta(x, q)\n"
+    "\n"
+    "The Riemann zeta function of two arguments (also known as the Hurwitz\n"
+    "zeta funtion).\n"
+    "\n"
+    "This function is defined as\n"
+    "\n"
+    ".. math:: \zeta(x, q) = \sum_{k=0}^{\infty} 1 / (k+q)^x,\n"
+    "\n"
+    "where ``x > 1`` and ``q > 0``.\n"
+    "\n"
+    "See also\n"
+    "--------\n"
+    "zetac")
 ufunc_zeta_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_zeta_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_zeta_types[0] = <char>NPY_FLOAT
@@ -7922,7 +7934,19 @@ cdef void *ufunc_zetac_ptr[4]
 cdef void *ufunc_zetac_data[2]
 cdef char ufunc_zetac_types[4]
 cdef char *ufunc_zetac_doc = (
-    "y=zetac(x) returns the Riemann zeta function minus 1.0: sum(k**(-x), k=2..inf)")
+    "zetac(x)\n"
+    "\n"
+    "The Riemann zeta function minus 1.\n"
+    "\n"
+    "This function is defined as\n"
+    "\n"
+    ".. math:: \zeta(x) = \sum_{k=2}^{\infty} 1 / k^x,\n"
+    "\n"
+    "where ``x > 1``.\n"
+    "\n"
+    "See also\n"
+    "--------\n"
+    "zeta")
 ufunc_zetac_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_zetac_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_zetac_types[0] = <char>NPY_FLOAT
