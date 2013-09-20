@@ -134,8 +134,9 @@ Utility Functions
 .. autosummary::
    :toctree: generated/
 
-   line_search - Return a step that satisfies the strong Wolfe conditions
+   approx_fprime - Approximate the gradient of a scalar function
    check_grad - Check the supplied derivative using finite differences
+   line_search - Return a step that satisfies the strong Wolfe conditions
 
    show_options - Show specific options optimization solvers
 
