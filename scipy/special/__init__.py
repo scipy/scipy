@@ -498,7 +498,7 @@ Other Special Functions
    spence       -- Dilogarithm integral.
    lambertw     -- Lambert W function
    zeta         -- Riemann zeta function of two arguments.
-   zetac        -- 1.0 - standard Riemann zeta function.
+   zetac        -- Standard Riemann zeta function minus 1.
 
 Convenience Functions
 ---------------------
