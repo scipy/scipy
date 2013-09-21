@@ -24,13 +24,17 @@ before_install:
   - pip install argparse
   - sudo apt-get update -qq
   - sudo apt-get install -qq libatlas-dev libatlas-base-dev liblapack-dev gfortran
+  - if [ "${TESTMODE}" == "full" ]; then sudo pip install coverage; fi
+  - if [ "${TESTMODE}" == "full" ]; then sudo pip install coveralls; fi
   - python -V
   - popd
 script:
-  - python runtests.py -g -m $TESTMODE
+  - if [ "${TESTMODE}" == "full" ]; then coverage run --rcfile=.travis_coveragerc runtests.py -g -m $TESTMODE --coverage; else $PYTHON runtests.py -g -m $TESTMODE; fi
 env:
   - TESTMODE=fast
 notifications:
   # Perhaps we should have status emails sent to the mailing list, but
   # let's wait to see what people think before turning that on.
   email: false
+after_success:
+    - if [ "${TESTMODE}" == "full" ]; then coveralls; fi

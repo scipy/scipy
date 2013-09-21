@@ -1,0 +1,5 @@
+
+[run]
+branch = True
+include =
+    /usr/local/lib/python*/*-packages/scipy*
