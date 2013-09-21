@@ -9,7 +9,7 @@ import numpy as np
 from scipy.lib.six import xrange
 
 from scipy.interpolate import interp1d, interp2d, lagrange, PPoly, ppform, \
-     splrep, splev, splantider
+     splrep, splev, splantider, splint
 
 from scipy.lib._gcutils import assert_deallocated
 
@@ -530,7 +530,6 @@ class TestPPoly(TestCase):
                 assert_allclose(pp2(pp2.x[1:]), pp2(endpoint),
                                 rtol=1e-7, err_msg="dx=%d k=%d" % (dx, k))
             
-
     def test_antiderivative_vs_spline(self):
         np.random.seed(1234)
         x = np.sort(np.r_[0, np.random.rand(11), 1])
@@ -546,6 +545,35 @@ class TestPPoly(TestCase):
             xi = np.linspace(0, 1, 200)
             assert_allclose(pp2(xi), splev(xi, spl2),
                             rtol=1e-7)
+
+    def test_integrate(self):
+        np.random.seed(1234)
+        x = np.sort(np.r_[0, np.random.rand(11), 1])
+        y = np.random.rand(len(x))
+
+        spl = splrep(x, y, s=0, k=5)
+        pp = PPoly.from_spline(spl, fill_value=np.nan)
+
+        a, b = 0.3, 0.9
+        ig = pp.integrate(a, b)
+
+        ipp = pp.antiderivative()
+        assert_allclose(ig, ipp(b) - ipp(a))
+
+        assert_allclose(ig, splint(a, b, spl))
+
+        # check fill value handling
+        pp = PPoly.from_spline(spl, fill_value=123)
+        assert_allclose(pp.integrate(-1, 0.5),
+                        splint(0, 0.5, spl) + 123)
+
+        pp = PPoly.from_spline(spl, fill_value=123)
+        assert_allclose(pp.integrate(0.5, 1.5),
+                        splint(0.5, 1, spl) + 123*0.5)
+
+        pp = PPoly.from_spline(spl, fill_value=123)
+        assert_allclose(pp.integrate(-1, 3),
+                        splint(0, 1, spl) + 123*3)
 
 
 class TestPpform(TestCase):

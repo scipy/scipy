@@ -656,6 +656,55 @@ class PPoly(_Interpolator1D):
 
         return pp
 
+    def integrate(self, a, b):
+        """
+        Compute a definite integral over a piecewise polynomial.
+
+        Parameters
+        ----------
+        a : float
+            Lower integration bound
+        b : float
+            Upper integration bound
+
+        Returns
+        -------
+        ig : array_like
+            Definite integral of the piecewise polynomial over [a, b]
+
+        """
+
+        # Swap integration bounds if needed
+        sign = 1
+        if b < a:
+            a, b = b, a
+            sign = -1
+
+        # Deal with integrals over fill values
+        if a < self.x[0]:
+            below_int = self.fill_value * (self.x[0] - a)
+        else:
+            below_int = 0
+        if b > self.x[-1]:
+            above_int = self.fill_value * (self.x[-1] - a)
+        else:
+            above_int = 0
+
+        # Compute the integral of the polynomial itself
+        range_int = np.empty((self.c.shape[2],), dtype=self.c.dtype)
+        _ppoly.integrate(self.c, self.x,
+                         max(a, self.x[0]),
+                         min(b, self.x[-1]),
+                         out=range_int)
+
+        # Sum the boundary integrals
+        range_int += above_int
+        range_int += below_int
+
+        # Return
+        range_int *= sign
+        return range_int
+
     @classmethod
     def from_spline(cls, tck, fill_value=None):
         """
