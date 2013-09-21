@@ -563,7 +563,7 @@ class PPoly(_Interpolator1D):
 
     def _evaluate(self, x, nu):
         out = np.empty((len(x), self.c.shape[2]), dtype=self.dtype)
-        has_out_of_bounds = _ppoly.evaluate(self.c, self.x, x, nu, out)
+        has_out_of_bounds = _ppoly.evaluate(self.c, self.x, x, nu, False, out)
         if has_out_of_bounds:
             out[~((x >= self.x[0]) & (x <= self.x[-1]))] = self.fill_value
         return out
@@ -575,7 +575,8 @@ class PPoly(_Interpolator1D):
         Parameters
         ----------
         n : int, optional
-            Order of derivative to evaluate. Default: 1
+            Order of derivative to evaluate. (Default: 1)
+            If negative, the antiderivative is returned.
 
         Returns
         -------
@@ -592,7 +593,7 @@ class PPoly(_Interpolator1D):
 
         """
         if nu < 0:
-            raise ValueError("Order of derivative cannot be negative")
+            return self.antiderivative(-nu)
 
         # reduce order
         if nu == 0:
@@ -607,6 +608,58 @@ class PPoly(_Interpolator1D):
         # construct a compatible polynomial
         pp = PPoly(c2, self.x, fill_value=self.fill_value)
         pp._y_extra_shape = self._y_extra_shape
+        return pp
+
+    def antiderivative(self, nu=1):
+        """
+        Construct a new piecewise polynomial representing the antiderivative.
+
+        Antiderivativative is also the indefinite integral of the function,
+        and derivative is its inverse operation.
+
+        Parameters
+        ----------
+        n : int, optional
+            Order of antiderivative to evaluate. (Default: 1)
+            If negative, the derivative is returned.
+
+        Returns
+        -------
+        pp : PPoly
+            Piecewise polynomial of order k2 = k + n representing
+            the antiderivative of this polynomial.
+
+        Notes
+        -----
+        The antiderivative returned by this function is continuous and
+        continuously differentiable to order n-1, up to floating point
+        rounding error.
+
+        """
+        if nu <= 0:
+            return self.derivative(-nu)
+
+        c = np.zeros((self.c.shape[0] + nu, self.c.shape[1], self.c.shape[2]),
+                     dtype=self.c.dtype)
+        c[:-nu] = self.c
+
+        # divide by the correct rising factorials
+        factor = spec.poch(np.arange(self.c.shape[0], 0, -1), nu)
+        c[:-nu] /= factor[:,None,None]
+
+        # fix continuity of added degrees of freedom
+        val = np.empty((c.shape[1], c.shape[2]), dtype=c.dtype)
+        for k in range(nu-1, -1, -1):
+            _ppoly.evaluate(c, self.x, self.x[1:], k,
+                            at_endpoint=True,
+                            out=val)
+            val /= spec.gamma(1 + k)
+            c[c.shape[0] - k - 1,1:,:] = np.cumsum(val, axis=0)[:-1,:]
+
+        # construct a compatible polynomial
+        pp = PPoly(c, self.x, fill_value=self.fill_value)
+        pp._y_extra_shape = self._y_extra_shape
+
         return pp
 
     @classmethod

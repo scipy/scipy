@@ -9,7 +9,7 @@ import numpy as np
 from scipy.lib.six import xrange
 
 from scipy.interpolate import interp1d, interp2d, lagrange, PPoly, ppform, \
-     splrep, splev
+     splrep, splev, splantider
 
 from scipy.lib._gcutils import assert_deallocated
 
@@ -481,6 +481,71 @@ class TestPPoly(TestCase):
         for dx in range(0, 10):
             assert_allclose(pp(xi, dx), pp.derivative(dx)(xi),
                             err_msg="dx=%d" % (dx,))
+
+    def test_antiderivative_simple(self):
+        np.random.seed(1234)
+        # [ p1(x) = 3*x**2 + 2*x + 1,
+        #   p2(x) = 1.6875]
+        c = np.array([[3, 2, 1], [0, 0, 1.6875]]).T
+        # [ pp1(x) = x**3 + x**2 + x,
+        #   pp2(x) = 1.6875*(x - 0.25) + pp1(0.25)]
+        ic = np.array([[1, 1, 1, 0], [0, 0, 1.6875, 0.328125]]).T[:,:,None]
+        # [ ppp1(x) = (1/4)*x**4 + (1/3)*x**3 + (1/2)*x**2,
+        #   ppp2(x) = (1.6875/2)*(x - 0.25)**2 + pp1(0.25)*x + ppp1(0.25)]
+        iic = np.array([[1/4, 1/3, 1/2, 0, 0],
+                        [0, 0, 1.6875/2, 0.328125, 0.037434895833333336]]).T[:,:,None]
+        x = np.array([0, 0.25, 1])
+
+        pp = PPoly(c, x, fill_value=np.nan)
+        ipp = pp.antiderivative()
+        iipp = pp.antiderivative(2)
+        iipp2 = ipp.antiderivative()
+
+        assert_allclose(ipp.x, x)
+        assert_allclose(ipp.c.T, ic.T)
+        assert_allclose(iipp.c.T, iic.T)
+        assert_allclose(iipp2.c.T, iic.T)
+
+    def test_antiderivative_vs_derivative(self):
+        np.random.seed(1234)
+        x = np.linspace(0, 1, 30)**2
+        y = np.random.rand(len(x))
+        spl = splrep(x, y, s=0, k=5)
+        pp = PPoly.from_spline(spl, fill_value=np.nan)
+
+        for dx in range(0, 10):
+            ipp = pp.antiderivative(dx)
+
+            # check that derivative is inverse op
+            pp2 = ipp.derivative(dx)
+            assert_allclose(pp.c, pp2.c)
+
+            # check continuity
+            for k in range(dx):
+                pp2 = ipp.derivative(k)
+
+                r = 1e-13
+                endpoint = r*pp2.x[:-1] + (1 - r)*pp2.x[1:]
+
+                assert_allclose(pp2(pp2.x[1:]), pp2(endpoint),
+                                rtol=1e-7, err_msg="dx=%d k=%d" % (dx, k))
+            
+
+    def test_antiderivative_vs_spline(self):
+        np.random.seed(1234)
+        x = np.sort(np.r_[0, np.random.rand(11), 1])
+        y = np.random.rand(len(x))
+
+        spl = splrep(x, y, s=0, k=5)
+        pp = PPoly.from_spline(spl, fill_value=np.nan)
+
+        for dx in range(0, 10):
+            pp2 = pp.antiderivative(dx)
+            spl2 = splantider(spl, dx)
+
+            xi = np.linspace(0, 1, 200)
+            assert_allclose(pp2(xi), splev(xi, spl2),
+                            rtol=1e-7)
 
 
 class TestPpform(TestCase):
