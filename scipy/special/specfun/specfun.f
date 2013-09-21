@@ -3084,7 +3084,7 @@ C
      &          .152746185967848D-01, .126781664768159D-01,
      &          .100475571822880D-01, .738993116334531D-02,
      &          .471272992695363D-02, .202681196887362D-02/
-        ID=7
+        ID=9
         A1=A-1.0D0
         B1=B-A-1.0D0
         C=12.0D0/X
@@ -3105,7 +3105,7 @@ C
               HU1=HU1+S*G
               D=D+2.0D0*G
 15         CONTINUE
-           IF (DABS(1.0D0-HU0/HU1).LT.1.0D-7) GO TO 25
+           IF (DABS(1.0D0-HU0/HU1).LT.1.0D-9) GO TO 25
            HU0=HU1
 20      CONTINUE
 25      CALL GAMMA2(A,GA)
@@ -3128,7 +3128,7 @@ C
               HU2=HU2+S*G
               D=D+2.0D0*G
 35         CONTINUE
-           IF (DABS(1.0D0-HU0/HU2).LT.1.0D-7) GO TO 45
+           IF (DABS(1.0D0-HU0/HU2).LT.1.0D-9) GO TO 45
            HU0=HU2
 40      CONTINUE
 45      CALL GAMMA2(A,GA)
@@ -4972,13 +4972,13 @@ C
         IF (B.NE.INT(B)) THEN
            CALL CHGUS(A,B,X,HU,ID1)
            MD=1
-           IF (ID1.GE.6) RETURN
+           IF (ID1.GE.9) RETURN
            HU1=HU
         ENDIF
         IF (IL1.OR.IL2.OR.IL3) THEN
            CALL CHGUL(A,B,X,HU,ID)
            MD=2
-           IF (ID.GE.6) RETURN
+           IF (ID.GE.9) RETURN
            IF (ID1.GT.ID) THEN
               MD=1
               ID=ID1
