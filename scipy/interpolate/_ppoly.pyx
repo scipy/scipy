@@ -69,6 +69,8 @@ def evaluate(double_or_complex[:,:,::1] c,
             raise ValueError("out and xp have incompatible shapes")
     if out.shape[1] != c.shape[2]:
         raise ValueError("out and c have incompatible shapes")
+    if c.shape[1] != x.shape[0] - 1:
+        raise ValueError("x and c have incompatible shapes")
 
     # evaluate
     a = x[0]
@@ -151,5 +153,91 @@ def evaluate(double_or_complex[:,:,::1] c,
                     z *= xval - x[interval]
 
             out[ip, jp] = res
+
+    return has_out_of_bounds
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.cdivision(True)
+def fix_continuity(double_or_complex[:,:,::1] c,
+                   double[::1] x,
+                   int order):
+    """
+    Make a piecewise polynomial continuously differentiable to given order.
+
+    Parameters
+    ----------
+    c : ndarray, shape (k, m, n)
+        Coefficients local polynomials of order `k-1` in `m` intervals.
+        There are `n` polynomials in each interval.
+        Coefficient of highest order-term comes first.
+
+        Coefficients c[-order-1:] are modified in-place.
+    x : ndarray, shape (m+1,)
+        Breakpoints of polynomials
+    order : int
+        Order up to which enforce piecewise differentiability.
+
+    """
+
+    cdef int ip, jp, kp, i, dx
+    cdef int interval
+    cdef int has_out_of_bounds
+    cdef double_or_complex z, res
+    cdef double a, b, prefactor, xval
+
+    # check derivative order
+    if dx < 0:
+        raise ValueError("Order of derivative cannot be negative")
+
+    # shape checks
+    if c.shape[1] != x.shape[0] - 1:
+        raise ValueError("x and c have incompatible shapes")
+    if order >= c.shape[0] - 1:
+        raise ValueError("order too large")
+    if order < 0:
+        raise ValueError("order negative")
+
+    # evaluate
+    a = x[0]
+    b = x[x.shape[0]-1]
+
+    interval = 0
+    has_out_of_bounds = 0
+
+    for ip in range(1, len(x)-1):
+        xval = x[ip]
+        interval = ip - 1
+
+        for jp in range(c.shape[2]):
+            # ensure continuity for derivatives, starting at the
+            # highest one (the lower derivatives depend on the higher
+            # ones, but not vice versa)
+            for dx in range(order, -1, -1):
+                # evaluate dx-th derivative of the polynomial in previous interval
+                res = 0
+                z = 1.0
+                for kp in range(c.shape[0]):
+                    # prefactor of term after differentiation
+                    if kp < dx:
+                        continue
+                    else:
+                        prefactor = 1.0
+                        for i in range(kp, kp - dx, -1):
+                            prefactor *= i
+
+                    res = res + c[c.shape[0] - kp - 1, interval, jp] * z * prefactor
+
+                    # compute x**max(k-dx,0)
+                    if kp < c.shape[0] - 1 and kp >= dx:
+                        z *= xval - x[interval]
+
+                # set dx-th coefficient of polynomial in current
+                # interval so that the dx-th derivative is continuous
+                for kp in range(dx):
+                    res /= kp + 1
+
+                c[c.shape[0] - dx - 1, ip, jp] = res
 
     return has_out_of_bounds

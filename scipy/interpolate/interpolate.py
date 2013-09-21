@@ -648,13 +648,7 @@ class PPoly(_Interpolator1D):
         c[:-nu] /= factor[:,None,None]
 
         # fix continuity of added degrees of freedom
-        val = np.empty((c.shape[1], c.shape[2]), dtype=c.dtype)
-        for k in range(nu-1, -1, -1):
-            _ppoly.evaluate(c, self.x, self.x[1:], k,
-                            at_endpoint=True,
-                            out=val)
-            val /= spec.gamma(1 + k)
-            c[c.shape[0] - k - 1,1:,:] = np.cumsum(val, axis=0)[:-1,:]
+        _ppoly.fix_continuity(c, self.x, nu)
 
         # construct a compatible polynomial
         pp = PPoly(c, self.x, fill_value=self.fill_value)
