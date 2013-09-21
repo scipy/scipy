@@ -9,7 +9,7 @@ import numpy as np
 from scipy.lib.six import xrange
 
 from scipy.interpolate import interp1d, interp2d, lagrange, PPoly, ppform, \
-     splrep, splev, splantider, splint
+     splrep, splev, splantider, splint, sproot
 
 from scipy.lib._gcutils import assert_deallocated
 
@@ -574,6 +574,45 @@ class TestPPoly(TestCase):
         pp = PPoly.from_spline(spl, fill_value=123)
         assert_allclose(pp.integrate(-1, 3),
                         splint(0, 1, spl) + 123*3)
+
+    def test_roots(self):
+        x = np.linspace(0, 1, 31)**2
+        y = np.sin(30*x)
+
+        spl = splrep(x, y, s=0, k=3)
+        pp = PPoly.from_spline(spl, fill_value=np.nan)
+
+        assert_allclose(pp.roots(), sproot(spl),
+                        atol=1e-15)
+
+    def test_roots_idzero(self):
+        # Roots for piecewise polynomials with identically zero
+        # sections.
+        c = np.array([[-1, 0.25], [0, 0], [-1, 0.25]]).T
+        x = np.array([0, 0.4, 0.6, 1.0])
+
+        pp = PPoly(c, x)
+        assert_array_equal(pp.roots(),
+                           [0.25, 0.4, np.nan, 0.6 + 0.25])
+
+    def test_roots_repeated(self):
+        # Check roots repeated in multiple sections are reported only
+        # once.
+
+        # [x**2 - 1, 1 - x**2]
+        c = np.array([[1, 0, -1], [-1, 0, 0]]).T
+        x = np.array([-2, 1, 2])
+
+        pp = PPoly(c, x)
+        assert_array_equal(pp.roots(), [-1, 1])
+
+    def test_roots_discont(self):
+        # Check that a discontinuity across zero is reported as root
+        c = np.array([[1], [-1]]).T
+        x = np.array([0, 0.5, 1])
+        pp = PPoly(c, x)
+        assert_array_equal(pp.roots(), [0.5])
+        assert_array_equal(pp.roots(discontinuity=False), [])
 
 
 class TestPpform(TestCase):

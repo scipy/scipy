@@ -11,11 +11,19 @@ cimport cython
 
 cdef double nan = np.nan
 
+cimport libc.stdlib
+
 ctypedef double complex double_complex
 
 ctypedef fused double_or_complex:
     double
     double complex
+
+cdef extern:
+    void dgeev_(char *jobvl, char *jobvr, int *n, double *a,
+                int *lda, double *wr, double *wi, double *vl, int *ldvl,
+                double *vr, int *ldvr, double *work, int *lwork,
+                int *info) nogil
 
 
 @cython.wraparound(False)
@@ -42,21 +50,18 @@ def evaluate(double_or_complex[:,:,::1] c,
     dx : int
         Order of derivative to evaluate.  The derivative is evaluated
         piecewise and may have discontinuities.
-
-    Returns
-    -------
     out : ndarray, shape (r, n)
         Value of each polynomial at each of the input points.
         For points outside the span ``x[0] ... x[-1]``,
         ``nan`` is returned.
+        This argument is modified in-place.
 
     """
 
-    cdef int ip, jp, kp, i
-    cdef int interval, high, low, mid
+    cdef int ip, jp
+    cdef int interval
     cdef int has_out_of_bounds
-    cdef double_or_complex z, res
-    cdef double prefactor, xval
+    cdef double xval
 
     # check derivative order
     if dx < 0:
@@ -119,8 +124,8 @@ def fix_continuity(double_or_complex[:,:,::1] c,
 
     cdef int ip, jp, kp, dx
     cdef int interval
-    cdef double_or_complex z, res
-    cdef double prefactor, xval
+    cdef double_or_complex res
+    cdef double xval
 
     # check derivative order
     if order < 0:
@@ -176,16 +181,16 @@ def integrate(double_or_complex[:,:,::1] c,
         Start point of integration.
     b : double
         End point of integration.
-    out
+    out : ndarray, shape (n,)
         Integral of the piecewise polynomial, assuming the polynomial
         is zero outside the range (x[0], x[-1]).
+        This argument is modified in-place.
 
     """
 
-    cdef int ip, jp, kp, dx
-    cdef int start_interval, end_interval, interval, sign
-    cdef double_or_complex z, res, va, vb, vtot
-    cdef double prefactor, xval
+    cdef int jp
+    cdef int start_interval, end_interval, interval
+    cdef double_or_complex va, vb, vtot
 
     # shape checks
     if c.shape[1] != x.shape[0] - 1:
@@ -226,6 +231,110 @@ def integrate(double_or_complex[:,:,::1] c,
             vtot = vtot + (vb - va)
 
         out[jp] = vtot
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.cdivision(True)
+def real_roots(double[:,:,::1] c, double[::1] x, int report_discont):
+    """
+    Compute real roots of a real-valued piecewise polynomial function.
+
+    If a section of the piecewise polynomial is identically zero, the
+    values (x[begin], nan) are appended to the root list.
+
+    If the piecewise polynomial is not continuous, and the sign
+    changes across a breakpoint, the breakpoint is added to the root
+    set if `report_discont` is True.
+
+    """
+    cdef list roots
+    cdef list cur_roots
+    cdef int interval, jp, k, i
+
+    cdef double *wr, *wi, last_root, va, vb
+    cdef void *workspace
+
+    if c.shape[1] != x.shape[0] - 1:
+        raise ValueError("x and c have incompatible shapes")
+
+    if c.shape[0] == 0:
+        return np.array([], dtype=float)
+
+    wr = <double*>libc.stdlib.malloc(c.shape[0] * sizeof(double))
+    wi = <double*>libc.stdlib.malloc(c.shape[0] * sizeof(double))
+    workspace = NULL
+
+    last_root = nan
+
+    roots = []
+    try:
+        for jp in range(c.shape[2]):
+            cur_roots = []
+            for interval in range(c.shape[1]):
+                # Check for sign change across intervals
+                if interval > 0 and report_discont:
+                    va = evaluate_poly1(x[interval] - x[interval-1], c, interval-1, jp, 0)
+                    vb = evaluate_poly1(0, c, interval, jp, 0)
+                    if (va < 0 and vb > 0) or (va > 0 and vb < 0):
+                        # sign change between intervals
+                        if x[interval] != last_root:
+                            last_root = x[interval]
+                            cur_roots.append(float(last_root))
+
+                # Compute first the complex roots
+                k = croots_poly1(c, interval, jp, wr, wi, &workspace)
+
+                # Check for errors and identically zero values
+                if k == -1:
+                    # Zero everywhere
+                    if x[interval] == x[interval+1]:
+                        # Only a point
+                        if x[interval] != last_root:
+                            last_root = x[interval]
+                            cur_roots.append(x[interval])
+                    else:
+                        # A real interval
+                        cur_roots.append(x[interval])
+                        cur_roots.append(np.nan)
+                        last_root = nan
+                    continue
+                elif k < -1:
+                    # An error occurred
+                    raise RuntimeError("Internal error in root finding; "
+                                       "please report this bug")
+                elif k == 0:
+                    # No roots
+                    continue
+
+                # Filter real roots
+                for i in range(k):
+                    # Check real root
+                    #
+                    # The reality of a root is a decision that can be left to LAPACK,
+                    # which has to determine this in any case.
+                    if wi[i] != 0:
+                        continue
+
+                    # Check interval
+                    wr[i] += x[interval]
+                    if not (x[interval] <= wr[i] <= x[interval+1]):
+                        continue
+
+                    # Add to list
+                    if wr[i] != last_root:
+                        last_root = wr[i]
+                        cur_roots.append(float(last_root))
+
+            # Construct roots
+            roots.append(np.array(cur_roots, dtype=float))
+    finally:
+        if workspace != NULL:
+            libc.stdlib.free(workspace)
+        libc.stdlib.free(wr)
+        libc.stdlib.free(wi)
+
+    return roots
 
 
 @cython.wraparound(False)
@@ -362,3 +471,89 @@ cdef double_or_complex evaluate_poly1(double s, double_or_complex[:,:,::1] c, in
             z *= s
 
     return res
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.cdivision(True)
+cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
+                      void **workspace) nogil:
+    """
+    Find all complex roots of a local polynomial.
+
+    Parameters
+    ----------
+    c : ndarray, shape (k, m, n)
+         Coefficients of polynomials of order k
+    ci, cj : int
+         Index of the local polynomial whose coefficients c[:,ci,cj] to use
+    wr, wi : double*
+         Allocated double arrays of size `k`. The complex roots are stored
+         here after call.
+    workspace : double**
+         Work space pointer. workspace[0] should be NULL on initial
+         call.  Multiple subsequent calls with same `k` can share the
+         same `workspace`.  If workspace[0] is non-NULL after the
+         calls, it must be freed with libc.stdlib.free.
+
+    Returns
+    -------
+    nroots : int
+        How many roots found for the polynomial.
+        If `-1`, the polynomial is identically zero.
+        If `< -1`, an error occurred.
+
+    Notes
+    -----
+    Uses LAPACK + the companion matrix method.
+
+    """
+    cdef double *a, *work
+    cdef int lwork, n, j, order
+    cdef int nworkspace, info
+
+    n = c.shape[0]
+
+    # Check actual polynomial order
+    for j in range(n):
+        if c[j,ci,cj] != 0:
+            order = n - 1 - j
+            break
+    else:
+        order = -1
+
+    if order < 0:
+        # Zero everywhere
+        return -1
+    elif order == 0:
+        # Nonzero constant polynomial: no roots
+        return 0
+
+    # Compute required workspace and allocate it
+    lwork = 1 + 8*n
+
+    if workspace[0] == NULL:
+        nworkspace = n*n + lwork
+        workspace[0] = libc.stdlib.malloc(nworkspace * sizeof(double))
+
+    a = <double*>workspace[0]
+    work = a + n*n
+
+    # Initialize the companion matrix, Fortran order
+    for j in range(order*order):
+        a[j] = 0
+    for j in range(order):
+        a[j + (order-1)*order] = -c[c.shape[0]-1-j,ci,cj]/c[c.shape[0]-1-order,ci,cj]
+        if j + 1 < order:
+            a[j+1 + order*j] = 1
+
+    # Compute companion matrix eigenvalues
+    info = 0
+    dgeev_("N", "N", &order, a, &order, <double*>wr, <double*>wi,
+           NULL, &order, NULL, &order, work, &lwork, &info)
+    if info != 0:
+        # Failure
+        return -2
+
+    # Return with roots
+    return order

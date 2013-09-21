@@ -725,6 +725,61 @@ class PPoly(_Interpolator1D):
         range_int *= sign
         return range_int
 
+    def roots(self, discontinuity=True):
+        """
+        Find real roots of the piecewise polynomial.
+
+        Parameters
+        ----------
+        discont : bool, optional
+            Whether to report sign changes across discontinuities as
+            breakpoints as roots.
+
+        Returns
+        -------
+        roots : ndarray
+            Roots of the polynomial(s).
+
+            If the PPoly object describes multiple polynomials, the
+            return value is an object array whose each element is an
+            ndarray containing the roots.
+
+        Notes
+        -----
+        This routine works only on real-valued polynomials.
+
+        If the piecewise polynomial contains sections that are
+        identically zero, the root list will contain the start point
+        of the corresponding interval, followed by a ``nan`` value.
+
+        If the polynomial is discontinuous across a breakpoint, and
+        there is a sign change across the breakpoint, this is reported
+        if the `discont` parameter is True.
+
+        Examples
+        --------
+
+        Finding roots of ``[x**2 - 1, (x - 1)**2]`` defined on intervals
+        ``[-2, 1], [1, 2]``:
+
+        >>> from scipy.interpolate import PPoly
+        >>> pp = PPoly(np.array([[1, 0, -1], [1, 0, 0]]).T, [-2, 1, 2])
+        >>> pp.roots()
+        array([-1.,  1.])
+
+        """
+        self._ensure_c_contiguous()
+
+        if np.issubdtype(self.c.dtype, np.complexfloating):
+            raise ValueError("Root finding is only for "
+                             "real-valued polynomials")
+
+        r = _ppoly.real_roots(self.c, self.x, bool(discontinuity))
+        if self._y_extra_shape == ():
+            return r[0]
+        else:
+            return np.array(r, dtype=object).reshape(self._y_extra_shape)
+
     @classmethod
     def from_spline(cls, tck, fill_value=None):
         """
