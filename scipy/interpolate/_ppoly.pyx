@@ -181,11 +181,10 @@ def fix_continuity(double_or_complex[:,:,::1] c,
 
     """
 
-    cdef int ip, jp, kp, i, dx
+    cdef int ip, jp, kp, dx
     cdef int interval
-    cdef int has_out_of_bounds
     cdef double_or_complex z, res
-    cdef double a, b, prefactor, xval
+    cdef double prefactor, xval
 
     # check derivative order
     if dx < 0:
@@ -200,12 +199,6 @@ def fix_continuity(double_or_complex[:,:,::1] c,
         raise ValueError("order negative")
 
     # evaluate
-    a = x[0]
-    b = x[x.shape[0]-1]
-
-    interval = 0
-    has_out_of_bounds = 0
-
     for ip in range(1, len(x)-1):
         xval = x[ip]
         interval = ip - 1
@@ -239,5 +232,3 @@ def fix_continuity(double_or_complex[:,:,::1] c,
                     res /= kp + 1
 
                 c[c.shape[0] - dx - 1, ip, jp] = res
-
-    return has_out_of_bounds
