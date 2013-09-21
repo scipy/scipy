@@ -502,6 +502,13 @@ class PPoly(_Interpolator1D):
         Polynomial breakpoints. These must be sorted in
         increasing order.
 
+    Attributes
+    ----------
+    x
+        Breakpoints
+    c
+        Coefficients of the polynomials
+
     Methods
     -------
     __call__
@@ -561,8 +568,19 @@ class PPoly(_Interpolator1D):
         y = self._evaluate(x, nu)
         return self._finish_y(y, x_shape)
 
+    def _ensure_c_contiguous(self):
+        """
+        c and x may be modified by the user. The Cython code expects
+        that they are C contiguous.
+        """
+        if not self.x.flags.c_contiguous:
+            self.x = self.x.copy()
+        if not self.c.flags.c_contiguous:
+            self.c = self.c.copy()
+
     def _evaluate(self, x, nu):
         out = np.empty((len(x), self.c.shape[2]), dtype=self.dtype)
+        self._ensure_c_contiguous()
         has_out_of_bounds = _ppoly.evaluate(self.c, self.x, x, nu, out)
         if has_out_of_bounds:
             out[~((x >= self.x[0]) & (x <= self.x[-1]))] = self.fill_value
@@ -648,6 +666,7 @@ class PPoly(_Interpolator1D):
         c[:-nu] /= factor[:,None,None]
 
         # fix continuity of added degrees of freedom
+        self._ensure_c_contiguous()
         _ppoly.fix_continuity(c, self.x, nu)
 
         # construct a compatible polynomial
@@ -692,6 +711,7 @@ class PPoly(_Interpolator1D):
 
         # Compute the integral of the polynomial itself
         range_int = np.empty((self.c.shape[2],), dtype=self.c.dtype)
+        self._ensure_c_contiguous()
         _ppoly.integrate(self.c, self.x,
                          max(a, self.x[0]),
                          min(b, self.x[-1]),
