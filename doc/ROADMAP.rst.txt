@@ -15,6 +15,10 @@ and tests) that's of high enough quality.
 
 General
 -------
+This roadmap will be evolving together with Scipy.  Updates can be submitted as
+pull requests and, unless they're very minor, have to be discussed on the
+scipy-dev mailing list.
+
 
 API changes
 ```````````
@@ -139,12 +143,8 @@ wavfile;
       specialized libraries.
     - raise errors instead of warnings if data not understood.
 
-netcdf:
-
-    - TODO: check issue list
-
-Other sub-modules (matlab, idl, harwell-boeing, arff, matrix market) are in
-good shape.
+Other sub-modules (matlab, netcdf, idl, harwell-boeing, arff, matrix market)
+are in good shape.
 
 
 lib
@@ -193,7 +193,8 @@ odr
 ---
 Rename the module to ``regression`` or ``fitting``, include
 ``optimize.curve_fit``. This module will then provide a home for other fitting
-functionality.
+functionality - what exactly needs to be worked out in more detail, a
+discussion can be found at https://github.com/scipy/scipy/pull/448.
 
 
 optimize
@@ -322,5 +323,4 @@ weave
 This is the only module that was not ported to Python 3.  Effectively it's
 deprecated (not recommended to use for new code).  In the future it should be
 removed from scipy (can be made into a separate module). 
-
 
