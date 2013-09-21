@@ -3513,9 +3513,9 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     Parameters
     ----------
-    f_obs : array
+    f_obs : array_like
         Observed frequencies in each category.
-    f_exp : array, optional
+    f_exp : array_like, optional
         Expected frequencies in each category.  By default the categories are
         assumed to be equally likely.
     ddof : int, optional
@@ -3719,9 +3719,9 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 
     Parameters
     ----------
-    f_obs : array
+    f_obs : array_like
         Observed frequencies in each category.
-    f_exp : array, optional
+    f_exp : array_like, optional
         Expected frequencies in each category.  By default the categories are
         assumed to be equally likely.
     ddof : int, optional
