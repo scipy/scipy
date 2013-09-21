@@ -7,8 +7,9 @@ python:
 matrix:
   include:
     - python: 2.7
-      env: TESTMODE=full
-      env: COVERAGE=--coverage
+      env:
+        - TESTMODE=full
+        - COVERAGE=--coverage
 before_install:
   - uname -a
   - free -m
