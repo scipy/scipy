@@ -637,6 +637,27 @@ class TestPPoly(TestCase):
         # Check that we checked a number of roots
         assert_(num > 100, repr(num))
 
+    def test_extend(self):
+        # Test adding new points to the piecewise polynomial
+        np.random.seed(1234)
+
+        order = 3
+        x = np.unique(np.r_[0, 10 * np.random.rand(30), 10])
+        c = 2*np.random.rand(order+1, len(x)-1, 2, 3) - 1
+
+        pp = PPoly(c[:,:9], x[:10])
+        pp.extend(c[:,9:], x[10:])
+
+        pp2 = PPoly(c[:,10:], x[10:])
+        pp2.extend(c[:,:10], x[:10], right=False)
+
+        pp3 = PPoly(c, x)
+
+        assert_array_equal(pp.c, pp3.c)
+        assert_array_equal(pp.x, pp3.x)
+        assert_array_equal(pp2.c, pp3.c)
+        assert_array_equal(pp2.x, pp3.x)
+
 
 class TestPpform(TestCase):
     def test_shape(self):

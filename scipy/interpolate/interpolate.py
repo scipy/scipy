@@ -506,9 +506,11 @@ class PPoly(_Interpolator1D):
     Attributes
     ----------
     x
-        Breakpoints
+        Breakpoints.
     c
-        Coefficients of the polynomials
+        Coefficients of the polynomials. They are reshaped
+        to a 3-dimensional array with the last dimension representing
+        the trailing dimensions of the original coefficient array.
 
     Methods
     -------
@@ -792,6 +794,63 @@ class PPoly(_Interpolator1D):
             r2 = np.empty((np.prod(self._y_extra_shape),), dtype=object)
             r2[...] = r
             return r2.reshape(self._y_extra_shape)
+
+    def extend(self, c, x, right=True):
+        """
+        Add additional breakpoints and coefficients to the polynomial.
+
+        Parameters
+        ----------
+        c : ndarray, size (k, m, ...)
+            Additional coefficients for polynomials in intervals
+            ``self.x[-1] <= x < x_right[0]``, ``x_right[0] <= x < x_right[1]``,
+            ..., ``x_right[m-2] <= x < x_right[m-1]``
+        x : ndarray, size (m,)
+            Additional breakpoints. Must be sorted and either to
+            the right or to the left of the current breakpoints.
+        right : bool, optional
+            Whether the new intervals are to the right or to the left
+            of the current intervals.
+
+        """
+        c = np.asarray(c)
+        x = np.asarray(x)
+        
+        if c.ndim < 2:
+            raise ValueError("invalid dimensions for c")
+        if x.ndim != 1:
+            raise ValueError("invalid dimensions for x")
+        if x.shape[0] != c.shape[1]:
+            raise ValueError("x and c have incompatible sizes")
+        if c.shape[2:] != self._y_extra_shape:
+            raise ValueError("c and self.c have incompatible shapes")
+        if right:
+            if x[0] < self.x[-1]:
+                raise ValueError("new x are not to the right of current ones")
+        else:
+            if x[-1] > self.x[0]:
+                raise ValueError("new x are not to the left of current ones")
+
+        if c.size == 0:
+            return
+
+        self._set_dtype(c.dtype, union=True)
+
+        c = c.reshape(c.shape[0], c.shape[1], -1)
+
+        k2 = max(c.shape[0], self.c.shape[0])
+        c2 = np.zeros((k2, self.c.shape[1] + c.shape[1], self.c.shape[2]),
+                      dtype=self.dtype)
+
+        if right:
+            c2[k2-self.c.shape[0]:, :self.c.shape[1], :] = self.c
+            c2[k2-c.shape[0]:, self.c.shape[1]:, :] = c
+            self.x = np.r_[self.x, x]
+        else:
+            c2[k2-self.c.shape[0]:, :c.shape[1], :] = c
+            c2[k2-c.shape[0]:, c.shape[1]:, :] = self.c
+            self.x = np.r_[x, self.x]
+        self.c = c2
 
     @classmethod
     def from_spline(cls, tck, fill_value=None):
