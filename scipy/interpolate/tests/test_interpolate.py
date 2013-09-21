@@ -614,6 +614,29 @@ class TestPPoly(TestCase):
         assert_array_equal(pp.roots(), [0.5])
         assert_array_equal(pp.roots(discontinuity=False), [])
 
+    def test_roots_random(self):
+        # Check high-order polynomials with random coefficients
+        np.random.seed(1234)
+
+        num = 0
+
+        for order in range(0, 20):
+            x = np.unique(np.r_[0, 10 * np.random.rand(30), 10])
+            c = 2*np.random.rand(order+1, len(x)-1, 2, 3) - 1
+
+            pp = PPoly(c, x)
+            r = pp.roots(discontinuity=False)
+
+            for i in range(2):
+                for j in range(3):
+                    if r[i,j].size > 0:
+                        # Check that the reported roots indeed are roots
+                        num += r[i,j].size
+                        assert_allclose(pp(r[i,j])[:,i,j], 0, atol=1e-7)
+
+        # Check that we checked a number of roots
+        assert_(num > 100, repr(num))
+
 
 class TestPpform(TestCase):
     def test_shape(self):

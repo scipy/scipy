@@ -544,6 +544,9 @@ class PPoly(_Interpolator1D):
         self._set_dtype(self.c.dtype)
 
         if self.c.ndim != 3:
+            if self.c.size == 0:
+                # reshape raises a difficult to understand error
+                raise ValueError("No coefficients")
             self.c = self.c.reshape(self.c.shape[0], self.c.shape[1], -1)
         self.c = np.ascontiguousarray(self.c, dtype=self.dtype)
 
@@ -785,7 +788,10 @@ class PPoly(_Interpolator1D):
         if self._y_extra_shape == ():
             return r[0]
         else:
-            return np.array(r, dtype=object).reshape(self._y_extra_shape)
+            # Careful when constructing the object array
+            r2 = np.empty((np.prod(self._y_extra_shape),), dtype=object)
+            r2[...] = r
+            return r2.reshape(self._y_extra_shape)
 
     @classmethod
     def from_spline(cls, tck, fill_value=None):
