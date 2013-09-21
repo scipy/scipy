@@ -17,6 +17,7 @@ ctypedef fused double_or_complex:
 def evaluate(double_or_complex[:,:,::1] c,
              double[::1] x,
              double[::1] xp,
+             int dx,
              double_or_complex[:,::1] out):
     """
     Evaluate a piecewise polynomial.
@@ -31,6 +32,9 @@ def evaluate(double_or_complex[:,:,::1] c,
         Breakpoints of polynomials
     xp : ndarray, shape (r,)
         Points to evaluate the piecewise polynomial at.
+    dx : int
+        Order of derivative to evaluate.  The derivative is evaluated
+        piecewise and may have discontinuities.
 
     Returns
     -------
@@ -41,11 +45,14 @@ def evaluate(double_or_complex[:,:,::1] c,
 
     """
 
-    cdef int ip, jp, kp
+    cdef int ip, jp, kp, i
     cdef int interval, high, low, mid
     cdef int has_out_of_bounds
     cdef double_or_complex z, res
-    cdef double a, b
+    cdef double a, b, prefactor
+
+    if dx < 0:
+        raise ValueError("Order of derivative cannot be negative")
 
     a = x[0]
     b = x[x.shape[0]-1]
@@ -99,9 +106,24 @@ def evaluate(double_or_complex[:,:,::1] c,
 
         z = 1.0
         for kp in range(c.shape[0]):
-            for jp in range(c.shape[2]):
-                out[ip, jp] = out[ip, jp] + c[c.shape[0] - kp - 1, interval, jp] * z
-            if kp < c.shape[0] - 1:
+            # prefactor of term after differentiation
+            if kp < dx:
+                continue
+            else:
+                prefactor = 1.0
+                for i in range(kp, kp - dx, -1):
+                    prefactor *= i
+
+            # sum terms
+            if prefactor == 1:
+                for jp in range(c.shape[2]):
+                    out[ip, jp] = out[ip, jp] + c[c.shape[0] - kp - 1, interval, jp] * z
+            else:
+                for jp in range(c.shape[2]):
+                    out[ip, jp] = out[ip, jp] + c[c.shape[0] - kp - 1, interval, jp] * z * prefactor
+
+            # compute x**max(k-dx,0)
+            if kp < c.shape[0] - 1 and kp >= dx:
                 z *= xp[ip] - x[interval]
 
     return has_out_of_bounds

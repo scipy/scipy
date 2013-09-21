@@ -442,7 +442,46 @@ class TestPPoly(TestCase):
         xi = np.linspace(0, 1, 200)
         assert_allclose(pp(xi), splev(xi, spl))
         assert_(np.isnan(pp([-0.1, 1.1])).all())
-        
+
+    def test_derivative_simple(self):
+        np.random.seed(1234)
+        c = np.array([[4, 3, 2, 1]]).T
+        dc = np.array([[3*4, 2*3, 2]]).T
+        ddc = np.array([[2*3*4, 1*2*3]]).T
+        x = np.array([0, 1])
+
+        pp = PPoly(c, x)
+        dpp = PPoly(dc, x)
+        ddpp = PPoly(ddc, x)
+
+        assert_allclose(pp.derivative().c, dpp.c)
+        assert_allclose(pp.derivative(2).c, ddpp.c)
+
+    def test_derivative_eval(self):
+        np.random.seed(1234)
+        x = np.sort(np.r_[0, np.random.rand(11), 1])
+        y = np.random.rand(len(x))
+
+        spl = splrep(x, y, s=0)
+        pp = PPoly.from_spline(spl, fill_value=np.nan)
+
+        xi = np.linspace(0, 1, 200)
+        for dx in range(0, 3):
+            assert_allclose(pp(xi, dx), splev(xi, spl, dx))
+
+    def test_derivative(self):
+        np.random.seed(1234)
+        x = np.sort(np.r_[0, np.random.rand(11), 1])
+        y = np.random.rand(len(x))
+
+        spl = splrep(x, y, s=0, k=5)
+        pp = PPoly.from_spline(spl, fill_value=np.nan)
+
+        xi = np.linspace(0, 1, 200)
+        for dx in range(0, 10):
+            assert_allclose(pp(xi, dx), pp.derivative(dx)(xi),
+                            err_msg="dx=%d" % (dx,))
+
 
 class TestPpform(TestCase):
     def test_shape(self):

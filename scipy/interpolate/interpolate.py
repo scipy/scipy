@@ -528,16 +528,86 @@ class PPoly(_Interpolator1D):
         self._y_axis = 0
         self._y_extra_shape = self.c.shape[2:]
         self._set_dtype(self.c.dtype)
-        self.c = np.ascontiguousarray(
-            self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
-            dtype=self.dtype)
 
-    def _evaluate(self, x):
+        if self.c.ndim != 3:
+            self.c = self.c.reshape(self.c.shape[0], self.c.shape[1], -1)
+        self.c = np.ascontiguousarray(self.c, dtype=self.dtype)
+
+    def __call__(self, x, nu=0):
+        """
+        Evaluate the piecewise polynomial or its derivative
+
+        Parameters
+        ----------
+        x : array-like
+            Points to evaluate the interpolant at.
+        nu : int, optional
+            Order of derivative to evaluate. Must be non-negative.
+
+        Returns
+        -------
+        y : array-like
+            Interpolated values. Shape is determined by replacing
+            the interpolation axis in the original array with the shape of x.
+
+        Notes
+        -----
+        Derivatives are evaluated piecewise for each polynomial
+        segment, even if the polynomial is not differentiable at the
+        breakpoints.
+
+        """
+        x, x_shape = self._prepare_x(x)
+        y = self._evaluate(x, nu)
+        return self._finish_y(y, x_shape)
+
+    def _evaluate(self, x, nu):
         out = np.empty((len(x), self.c.shape[2]), dtype=self.dtype)
-        has_out_of_bounds = _ppoly.evaluate(self.c, self.x, x, out)
+        has_out_of_bounds = _ppoly.evaluate(self.c, self.x, x, nu, out)
         if has_out_of_bounds:
             out[~((x >= self.x[0]) & (x <= self.x[-1]))] = self.fill_value
         return out
+
+    def derivative(self, nu=1):
+        """
+        Construct a new piecewise polynomial representing the derivative.
+
+        Parameters
+        ----------
+        n : int, optional
+            Order of derivative to evaluate. Default: 1
+
+        Returns
+        -------
+        pp : PPoly
+            Piecewise polynomial of order k2 = k - n representing the derivative
+            of this polynomial.
+
+        Notes
+        -----
+        If the piecewise polynomial is not differentiable at the
+        breakpoints, the piecewise polynomial returned by this
+        function does not agree with the real derivative at the
+        breakpoints.
+
+        """
+        if nu < 0:
+            raise ValueError("Order of derivative cannot be negative")
+
+        # reduce order
+        if nu == 0:
+            c2 = self.c.copy()
+        else:
+            c2 = self.c[:-nu,:,:].copy()
+
+        # multiply by the correct rising factorials
+        factor = spec.poch(np.arange(c2.shape[0], 0, -1), nu)
+        c2 *= factor[:,None,None]
+
+        # construct a compatible polynomial
+        pp = PPoly(c2, self.x, fill_value=self.fill_value)
+        pp._y_extra_shape = self._y_extra_shape
+        return pp
 
     @classmethod
     def from_spline(cls, tck, fill_value=None):
