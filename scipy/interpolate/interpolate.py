@@ -563,7 +563,7 @@ class PPoly(_Interpolator1D):
 
     def _evaluate(self, x, nu):
         out = np.empty((len(x), self.c.shape[2]), dtype=self.dtype)
-        has_out_of_bounds = _ppoly.evaluate(self.c, self.x, x, nu, False, out)
+        has_out_of_bounds = _ppoly.evaluate(self.c, self.x, x, nu, out)
         if has_out_of_bounds:
             out[~((x >= self.x[0]) & (x <= self.x[-1]))] = self.fill_value
         return out

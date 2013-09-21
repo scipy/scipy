@@ -18,7 +18,6 @@ def evaluate(double_or_complex[:,:,::1] c,
              double[::1] x,
              double[::1] xp,
              int dx,
-             int at_endpoint,
              double_or_complex[:,::1] out):
     """
     Evaluate a piecewise polynomial.
@@ -36,10 +35,6 @@ def evaluate(double_or_complex[:,:,::1] c,
     dx : int
         Order of derivative to evaluate.  The derivative is evaluated
         piecewise and may have discontinuities.
-    at_endpoint : bool
-        Evaluate the value of the polynomial at the endpoints of each
-        break points, xp[j]=x[j+1]. If True, the parameter `xp` is ignored
-        and `out` should be of length `x-1`.
 
     Returns
     -------
@@ -61,12 +56,8 @@ def evaluate(double_or_complex[:,:,::1] c,
         raise ValueError("Order of derivative cannot be negative")
 
     # shape checks
-    if at_endpoint:
-        if out.shape[0] != x.shape[0] - 1:
-            raise ValueError("at_endpoint given but out has wrong shape")
-    else:
-        if out.shape[0] != xp.shape[0]:
-            raise ValueError("out and xp have incompatible shapes")
+    if out.shape[0] != xp.shape[0]:
+        raise ValueError("out and xp have incompatible shapes")
     if out.shape[1] != c.shape[2]:
         raise ValueError("out and c have incompatible shapes")
     if c.shape[1] != x.shape[0] - 1:
@@ -80,51 +71,46 @@ def evaluate(double_or_complex[:,:,::1] c,
     has_out_of_bounds = 0
 
     for ip in range(len(xp)):
-        if at_endpoint:
-            # Evaluate at interval endpoints
-            xval = x[ip+1]
-            interval = ip
+        xval = xp[ip]
+
+        # Find correct interval
+        if not (a <= xval <= b):
+            # Out-of-bounds (or nan)
+            has_out_of_bounds = 1
+            for jp in range(c.shape[2]):
+                out[ip, jp] = nan
+            continue
+        elif xval == b:
+            # Make the interval closed from the right
+            interval = x.shape[0] - 2
         else:
-            xval = xp[ip]
-
-            # Find correct interval
-            if not (a <= xval <= b):
-                # Out-of-bounds (or nan)
-                has_out_of_bounds = 1
-                for jp in range(c.shape[2]):
-                    out[ip, jp] = nan
-                continue
-            elif xval == b:
-                # Make the interval closed from the right
-                interval = x.shape[0] - 2
+            # Find the interval the coordinate is in
+            # (binary search with locality)
+            if xval >= x[interval]:
+                low = interval
+                high = x.shape[0]-2
             else:
-                # Find the interval the coordinate is in
-                # (binary search with locality)
-                if xval >= x[interval]:
-                    low = interval
-                    high = x.shape[0]-2
+                low = 0
+                high = interval
+
+            if xval < x[low+1]:
+                high = low
+
+            while low < high:
+                mid = (high + low)//2
+                if xval < x[mid]:
+                    # mid < high
+                    high = mid
+                elif xval >= x[mid + 1]:
+                    low = mid + 1
                 else:
-                    low = 0
-                    high = interval
+                    # x[mid] <= xval < x[mid+1]
+                    low = mid
+                    break
 
-                if xval < x[low+1]:
-                    high = low
+            interval = low
 
-                while low < high:
-                    mid = (high + low)//2
-                    if xval < x[mid]:
-                        # mid < high
-                        high = mid
-                    elif xval >= x[mid + 1]:
-                        low = mid + 1
-                    else:
-                        # x[mid] <= xval < x[mid+1]
-                        low = mid
-                        break
-
-                interval = low
-
-                assert x[interval] <= xval < x[interval+1]
+            assert x[interval] <= xval < x[interval+1]
 
         # Evaluate the local polynomial(s)
         for jp in range(c.shape[2]):
