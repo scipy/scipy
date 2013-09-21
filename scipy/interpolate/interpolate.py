@@ -492,7 +492,8 @@ class PPoly(_Interpolator1D):
 
         S = sum(c[m, i] * (xp - x[i])**(k-m) for m in range(k+1))
 
-    where ``k`` is the degree of the polynomial.
+    where ``k`` is the degree of the polynomial. This representation
+    is the local power basis.
 
     Parameters
     ----------
@@ -513,6 +514,12 @@ class PPoly(_Interpolator1D):
     -------
     __call__
     from_spline
+
+    Notes
+    -----
+    High-order polynomials in the power basis can be numerically
+    unstable.  Precision problems can start to appear for orders
+    larger than 20-30.
 
     """
 
