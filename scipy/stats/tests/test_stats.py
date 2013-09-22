@@ -865,17 +865,13 @@ def test_cumfreq():
 def test_relfreq():
     a = np.array([1, 4, 2, 1, 3, 1])
     relfreqs, lowlim, binsize, extrapoints = stats.relfreq(a, numbins=4)
-    assert_array_almost_equal(relfreqs, array([0.5, 0.16666667, 0.16666667, 0.16666667]))
+    assert_array_almost_equal(relfreqs,
+                              array([0.5, 0.16666667, 0.16666667, 0.16666667]))
 
     # check array_like input is accepted
-    relfreqs2, lowlim, binsize, extrapoints = stats.relfreq([1, 4, 2, 1, 3, 1], numbins=4)
+    relfreqs2, lowlim, binsize, extrapoints = stats.relfreq([1, 4, 2, 1, 3, 1],
+                                                            numbins=4)
     assert_array_almost_equal(relfreqs, relfreqs2)
-
-
-# Utility
-def compare_results(res,desired):
-    for i in range(len(desired)):
-        assert_array_equal(res[i],desired[i])
 
 
 class TestGMean(TestCase):
@@ -2124,7 +2120,7 @@ def test_kurtosistest_too_few_samples():
     assert_raises(ValueError, stats.kurtosistest, x)
 
 
-def mannwhitneyu():
+def test_mannwhitneyu():
     x = np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
         1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1.,
         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
