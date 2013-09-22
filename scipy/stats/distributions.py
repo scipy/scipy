@@ -77,10 +77,10 @@ except ImportError:
 # These are the docstring parts used for substitution in specific
 # distribution docstrings
 
-docheaders = {'methods':"""\nMethods\n-------\n""",
-              'parameters':"""\nParameters\n---------\n""",
-              'notes':"""\nNotes\n-----\n""",
-              'examples':"""\nExamples\n--------\n"""}
+docheaders = {'methods': """\nMethods\n-------\n""",
+              'parameters': """\nParameters\n---------\n""",
+              'notes': """\nNotes\n-----\n""",
+              'examples': """\nExamples\n--------\n"""}
 
 _doc_rvs = \
 """rvs(%(shapes)s, loc=0, scale=1, size=1)
@@ -371,23 +371,23 @@ def _moment_from_stats(n, mu, mu2, g1, g2, moment_func, args):
         return 1.0
     elif (n == 1):
         if mu is None:
-            val = moment_func(1,*args)
+            val = moment_func(1, *args)
         else:
             val = mu
     elif (n == 2):
         if mu2 is None or mu is None:
-            val = moment_func(2,*args)
+            val = moment_func(2, *args)
         else:
             val = mu2 + mu*mu
     elif (n == 3):
         if g1 is None or mu2 is None or mu is None:
-            val = moment_func(3,*args)
+            val = moment_func(3, *args)
         else:
             mu3 = g1 * np.power(mu2, 1.5)  # 3rd central moment
             val = mu3+3*mu*mu2+mu*mu*mu  # 3rd non-central moment
     elif (n == 4):
         if g1 is None or g2 is None or mu2 is None or mu is None:
-            val = moment_func(4,*args)
+            val = moment_func(4, *args)
         else:
             mu4 = (g2+3.0)*(mu2**2.0)  # 4th central moment
             mu3 = g1*np.power(mu2, 1.5)  # 3rd central moment
@@ -506,9 +506,9 @@ def _lazywhere(cond, arrays, f, fillvalue):
     """
     np.where(cond, x, fillvalue) always evaluates x even where cond is False.
     This one only evaluates f(arr1[cond], arr2[cond], ...).
-    For example, 
+    For example,
     >>> a, b = np.array([1, 2, 3, 4]), np.array([5, 6, 7, 8])
-    >>> def f(a, b): 
+    >>> def f(a, b):
         return a*b
     >>> _lazywhere(a > 2, (a, b), f, np.nan)
     array([ nan,  nan,  21.,  32.])
@@ -550,7 +550,6 @@ def argsreduce(cond, *args):
     return [extract(cond, arr1 * expand_arr) for arr1 in newargs]
 
 
-
 parse_arg_template = """
 def _parse_args(self, %(shape_arg_str)s %(locscale_in)s):
     return (%(shape_arg_str)s), %(locscale_out)s
@@ -570,18 +569,17 @@ class rv_generic(object):
     """
     def __init__(self):
         super(rv_generic, self).__init__()
-        
+
         # figure out if _stats signature has 'moments' keyword
         sign = inspect.getargspec(get_method_function(self._stats))
         self._stats_has_moments = ((sign[2] is not None) or
                                    ('moments' in sign[0]))
 
-
     def _construct_argparser(self, names_to_inspect, locscale_in, locscale_out):
         """Construct the parser for the shape arguments.
 
         Generates the argument-parsing functions dynamically and attaches
-        them to the instance. 
+        them to the instance.
         Is supposed to be called in __init__ of a class for each distribution.
 
         If self.shapes is a non-empty string, interprets it as a comma-separated
@@ -654,7 +652,6 @@ class rv_generic(object):
         if not hasattr(self, 'numargs'):
             # allows more general subclassing with *args
             self.numargs = len(shapes)
-
 
     def freeze(self,*args,**kwds):
         """Freeze the distribution for the given arguments.
@@ -776,7 +773,6 @@ class rv_generic(object):
 
         return vals
 
-
     def stats(self,*args,**kwds):
         """
         Some statistics of the given RV
@@ -832,7 +828,7 @@ class rv_generic(object):
                 if mu is None:
                     mu = self._munp(1, *goodargs)
                 out0 = default.copy()
-                place(out0,cond,mu*scale+loc)
+                place(out0, cond, mu * scale + loc)
                 output.append(out0)
 
             if 'v' in moments:
@@ -840,12 +836,12 @@ class rv_generic(object):
                     mu2p = self._munp(2, *goodargs)
                     if mu is None:
                         mu = self._munp(1, *goodargs)
-                    mu2 = mu2p - mu*mu
+                    mu2 = mu2p - mu * mu
                     if np.isinf(mu):
                         #if mean is inf then var is also inf
                         mu2 = np.inf
                 out0 = default.copy()
-                place(out0,cond,mu2*scale*scale)
+                place(out0, cond, mu2 * scale * scale)
                 output.append(out0)
 
             if 's' in moments:
@@ -854,12 +850,12 @@ class rv_generic(object):
                     if mu is None:
                         mu = self._munp(1, *goodargs)
                     if mu2 is None:
-                        mu2p = self._munp(2 ,*goodargs)
-                        mu2 = mu2p - mu*mu
-                    mu3 = mu3p - 3*mu*mu2 - mu**3
+                        mu2p = self._munp(2, *goodargs)
+                        mu2 = mu2p - mu * mu
+                    mu3 = mu3p - 3 * mu * mu2 - mu**3
                     g1 = mu3 / np.power(mu2, 1.5)
                 out0 = default.copy()
-                place(out0,cond,g1)
+                place(out0, cond, g1)
                 output.append(out0)
 
             if 'k' in moments:
@@ -869,14 +865,14 @@ class rv_generic(object):
                         mu = self._munp(1, *goodargs)
                     if mu2 is None:
                         mu2p = self._munp(2, *goodargs)
-                        mu2 = mu2p - mu*mu
+                        mu2 = mu2p - mu * mu
                     if mu3 is None:
                         mu3p = self._munp(3, *goodargs)
-                        mu3 = mu3p - 3*mu*mu2 - mu**3
-                    mu4 = mu4p - 4*mu*mu3 - 6*mu*mu*mu2 - mu**4
+                        mu3 = mu3p - 3 * mu * mu2 - mu**3
+                    mu4 = mu4p - 4 * mu * mu3 - 6 * mu * mu * mu2 - mu**4
                     g2 = mu4 / mu2**2.0 - 3.0
                 out0 = default.copy()
-                place(out0,cond,g2)
+                place(out0, cond, g2)
                 output.append(out0)
         else:  # no valid args
             output = []
@@ -888,7 +884,6 @@ class rv_generic(object):
             return output[0]
         else:
             return tuple(output)
-
 
     def entropy(self, *args, **kwds):
         """
@@ -913,14 +908,13 @@ class rv_generic(object):
         place(output, (1-cond0), self.badvalue)
         goodargs = argsreduce(cond0, *args)
         # I don't know when or why vecentropy got broken when numargs == 0
-        # 09.08.2013: is this still relevant? cf check_vecentropy test 
+        # 09.08.2013: is this still relevant? cf check_vecentropy test
         # in tests/test_continuous_basic.py
         if self.numargs == 0:
             place(output,cond0, self._entropy() + log(scale))
         else:
             place(output, cond0, self.vecentropy(*goodargs) + log(scale))
         return output
-
 
     def moment(self, n, *args, **kwds):
         """
@@ -966,7 +960,6 @@ class rv_generic(object):
                 result += comb(n,k,exact=True)*(fac**k) * valk
             result += fac**n * val
             return result * loc**n
-
 
     def median(self, *args, **kwds):
         """
@@ -1381,10 +1374,6 @@ class rv_continuous(rv_generic):
             self._construct_default_doc(longname=longname, extradoc=extradoc)
         else:
             self._construct_doc()
-
-        ## This only works for old-style classes...
-        # self.__class__.__doc__ = self.__doc__
-
 
     def _construct_default_doc(self, longname=None, extradoc=None):
         """Construct instance docstring from the default template."""
@@ -3335,11 +3324,11 @@ class foldnorm_gen(rv_continuous):
         #
         c2 = c*c
         expfac = np.exp(-0.5*c2) / np.sqrt(2.*pi)
-        
+
         mu = 2.*expfac + c * special.erf(c/sqrt(2))
         mu2 = c2 + 1 - mu*mu
 
-        g1 = 2. * (mu*mu*mu  - c2*mu - expfac)
+        g1 = 2. * (mu*mu*mu - c2*mu - expfac)
         g1 /= np.power(mu2, 1.5)
 
         g2 = c2 * (c2 + 6.) + 3 + 8.*expfac*mu
@@ -4016,7 +4005,7 @@ class gumbel_r_gen(rv_continuous):
 
     """
     def _pdf(self, x):
-      return exp(self._logpdf(x))
+        return exp(self._logpdf(x))
 
     def _logpdf(self, x):
         return -x - exp(-x)
@@ -5163,7 +5152,7 @@ class nct_gen(rv_continuous):
         # e.g. http://www.jstor.org/stable/2332772 (gated)
         #
         mu, mu2, g1, g2 = None, None, None, None
-        
+
         gfac = gam(df/2.-0.5) / gam(df/2.)
         c11 = sqrt(df/2.) * gfac
         c20 = df / (df-2.)
