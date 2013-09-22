@@ -1407,20 +1407,21 @@ class _TestCommon:
                 assert_array_equal(todense(np.subtract(ax, bx)), np.subtract(a, b))
 
             # divide
-            if isscalarlike(bx):
-                # Rounding error may be different, as the sparse implementation
-                # computes a/b -> a * (1/b) if b is a scalar
-                assert_allclose(todense(np.divide(ax, bx)), np.divide(a, b),
-                                rtol=5e-15, atol=0)
-            else:
-                assert_array_equal(todense(np.divide(ax, bx)), np.divide(a, b))
+            with np.errstate(divide='ignore', invalid='ignore'):
+                if isscalarlike(bx):
+                    # Rounding error may be different, as the sparse implementation
+                    # computes a/b -> a * (1/b) if b is a scalar
+                    assert_allclose(todense(np.divide(ax, bx)), np.divide(a, b),
+                                    rtol=5e-15, atol=0)
+                else:
+                    assert_array_equal(todense(np.divide(ax, bx)), np.divide(a, b))
 
-            # true_divide
-            if isscalarlike(bx):
-                assert_allclose(todense(np.true_divide(ax, bx)), np.true_divide(a, b),
-                                rtol=5e-15, atol=0)
-            else:
-                assert_array_equal(todense(np.true_divide(ax, bx)), np.true_divide(a, b))
+                # true_divide
+                if isscalarlike(bx):
+                    assert_allclose(todense(np.true_divide(ax, bx)), np.true_divide(a, b),
+                                    rtol=5e-15, atol=0)
+                else:
+                    assert_array_equal(todense(np.true_divide(ax, bx)), np.true_divide(a, b))
 
         for i in a_items.keys():
             for j in b_items.keys():
