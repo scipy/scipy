@@ -4,7 +4,6 @@
 #
 from __future__ import division, print_function, absolute_import
 
-import math
 import warnings
 
 from scipy.lib.six import callable, string_types, get_method_function
@@ -20,14 +19,14 @@ from scipy.special import gammaln as gamln
 import keyword
 import re
 import inspect
-from numpy import all, where, arange, putmask, \
-     ravel, take, ones, sum, shape, product, reshape, \
-     zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin, \
-     arctan, tanh, ndarray, cos, cosh, sinh, newaxis, log1p, expm1
-from numpy import atleast_1d, polyval, ceil, place, extract, \
-     any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isinf, \
-     NINF, empty
-import numpy
+from numpy import (all, where, arange, putmask,
+     ravel, take, ones, sum, shape, product, reshape,
+     zeros, floor, logical_and, log, sqrt, exp, arctanh, tan, sin, arcsin,
+     arctan, tanh, ndarray, cos, cosh, sinh, newaxis, log1p, expm1)
+from numpy import (atleast_1d, polyval, ceil, place, extract,
+     any, argsort, argmax, vectorize, r_, asarray, nan, inf, pi, isinf,
+     NINF, empty)
+
 import numpy as np
 import numpy.random as mtrand
 from numpy import flatnonzero as nonzero
@@ -58,8 +57,8 @@ __all__ = [
            'boltzmann', 'randint', 'zipf', 'dlaplace', 'skellam'
           ]
 
-floatinfo = numpy.finfo(float)
-eps = numpy.finfo(float).eps
+floatinfo = np.finfo(float)
+eps = np.finfo(float).eps
 
 gam = special.gamma
 random = mtrand.random_sample
@@ -569,11 +568,20 @@ class rv_generic(object):
     and rv_continuous.
 
     """
+    def __init__(self):
+        super(rv_generic, self).__init__()
+        
+        # figure out if _stats signature has 'moments' keyword
+        sign = inspect.getargspec(get_method_function(self._stats))
+        self._stats_has_moments = ((sign[2] is not None) or
+                                   ('moments' in sign[0]))
+
+
     def _construct_argparser(self, names_to_inspect, locscale_in, locscale_out):
         """Construct the parser for the shape arguments.
 
-        Generates the argument-parsing functions dynamically.
-        Modifies the calling class.
+        Generates the argument-parsing functions dynamically and attaches
+        them to the instance. 
         Is supposed to be called in __init__ of a class for each distribution.
 
         If self.shapes is a non-empty string, interprets it as a comma-separated
@@ -648,6 +656,73 @@ class rv_generic(object):
             self.numargs = len(shapes)
 
 
+    def freeze(self,*args,**kwds):
+        """Freeze the distribution for the given arguments.
+
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution.  Should include all
+            the non-optional arguments, may include ``loc`` and ``scale``.
+
+        Returns
+        -------
+        rv_frozen : rv_frozen instance
+            The frozen distribution.
+
+        """
+        return rv_frozen(self,*args,**kwds)
+
+    def __call__(self, *args, **kwds):
+        return self.freeze(*args, **kwds)
+
+    # The actual calculation functions (no basic checking need be done)
+    # If these are defined, the others won't be looked at.
+    # Otherwise, the other set can be defined.
+    def _stats(self, *args, **kwds):
+        return None, None, None, None
+
+    #  Central moments
+    def _munp(self, n, *args):
+        return self.generic_moment(n, *args)
+
+    ## These are the methods you must define (standard form functions)
+    ## NB: generic _pdf, _logpdf, _cdf are different for
+    ## rv_continuous and rv_discrete hence are defined in there
+    def _argcheck(self, *args):
+        """Default check for correct values on args and keywords.
+
+        Returns condition array of 1's where arguments are correct and
+         0's where they are not.
+
+        """
+        cond = 1
+        for arg in args:
+            cond = logical_and(cond, (asarray(arg) > 0))
+        return cond
+
+    ##(return 1-d using self._size to get number)
+    def _rvs(self, *args):
+        ## Use basic inverse cdf algorithm for RV generation as default.
+        U = mtrand.sample(self._size)
+        Y = self._ppf(U, *args)
+        return Y
+
+    def _logcdf(self, x, *args):
+        return log(self._cdf(x, *args))
+
+    def _sf(self, x, *args):
+        return 1.0-self._cdf(x, *args)
+
+    def _logsf(self, x, *args):
+        return log(self._sf(x, *args))
+
+    def _ppf(self, q, *args):
+        return self._ppfvec(q,*args)
+
+    def _isf(self, q, *args):
+        return self._ppf(1.0-q, *args)  # use correct _ppf for subclasses
+
     # These are actually called, and should not be overwritten if you
     # want to keep error checking.
     def rvs(self, *args, **kwds):
@@ -681,7 +756,7 @@ class rv_generic(object):
         # self._size is total size of all output values
         self._size = product(size, axis=0)
         if self._size is not None and self._size > 1:
-            size = numpy.array(size, ndmin=1)
+            size = np.array(size, ndmin=1)
 
         if np.all(scale == 0):
             return loc*ones(size, 'd')
@@ -694,12 +769,201 @@ class rv_generic(object):
 
         # Cast to int if discrete
         if discrete:
-            if numpy.isscalar(vals):
+            if np.isscalar(vals):
                 vals = int(vals)
             else:
                 vals = vals.astype(int)
 
         return vals
+
+
+    def stats(self, *args, **kwds):
+        """
+        Some statistics of the given RV
+
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array_like, optional
+            location parameter (default=0)
+        scale : array_like, optional (discrete RVs only)
+            scale parameter (default=1)
+        moments : str, optional
+            composed of letters ['mvsk'] defining which moments to compute:
+            'm' = mean,
+            'v' = variance,
+            's' = (Fisher's) skew,
+            'k' = (Fisher's) kurtosis.
+            (default='mv')
+
+        Returns
+        -------
+        stats : sequence
+            of requested moments.
+
+        """
+        args, loc, scale, moments = self._parse_args_stats(*args, **kwds)
+        # scale = 1 by construction for discrete RVs
+        loc, scale = map(asarray, (loc, scale))
+        args = tuple(map(asarray, args))
+        cond = self._argcheck(*args) & (scale > 0) & (loc == loc)
+
+        if self._stats_has_moments:
+            mu, mu2, g1, g2 = self._stats(*args, **{'moments': moments})
+        else:
+            mu, mu2, g1, g2 = self._stats(*args)
+        if g1 is None:
+            mu3 = None
+        else:
+            mu3 = g1*np.power(mu2, 1.5)  # (mu2**1.5) breaks down for nan and inf
+        default = valarray(shape(cond), self.badvalue)
+        output = []
+
+        # Use only entries that are valid in calculation
+        if any(cond):
+            goodargs = argsreduce(cond, *(args + (scale, loc)))
+            scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
+            if 'm' in moments:
+                if mu is None:
+                    mu = self._munp(1.0, *goodargs)
+                out0 = default.copy()
+                place(out0, cond, mu*scale + loc)
+                output.append(out0)
+
+            if 'v' in moments:
+                if mu2 is None:
+                    mu2p = self._munp(2.0, *goodargs)
+                    if mu is None:
+                        mu = self._munp(1.0, *goodargs)
+                    mu2 = mu2p - mu*mu
+                    if np.isinf(mu):
+                        #if mean is inf then var is also inf
+                        mu2 = np.inf
+                out0 = default.copy()
+                place(out0, cond, mu2*scale*scale)
+                output.append(out0)
+
+            if 's' in moments:
+                if g1 is None:
+                    mu3p = self._munp(3.0, *goodargs)
+                    if mu is None:
+                        mu = self._munp(1.0, *goodargs)
+                    if mu2 is None:
+                        mu2p = self._munp(2.0, *goodargs)
+                        mu2 = mu2p - mu*mu
+                    mu3 = mu3p - 3*mu*mu2 - mu**3
+                    g1 = mu3 / np.power(mu2, 1.5) #mu2**1.5
+                out0 = default.copy()
+                place(out0, cond, g1)
+                output.append(out0)
+
+            if 'k' in moments:
+                if g2 is None:
+                    mu4p = self._munp(4.0, *goodargs)
+                    if mu is None:
+                        mu = self._munp(1.0, *goodargs)
+                    if mu2 is None:
+                        mu2p = self._munp(2.0, *goodargs)
+                        mu2 = mu2p - mu*mu
+                    if mu3 is None:
+                        mu3p = self._munp(3.0, *goodargs)
+                        mu3 = mu3p - 3*mu*mu2 - mu**3
+                    mu4 = mu4p - 4*mu*mu3 - 6*mu*mu*mu2 - mu**4
+                    g2 = mu4 / mu2**2.0 - 3.0
+                out0 = default.copy()
+                place(out0,cond, g2)
+                output.append(out0)
+        else:  # no valid args
+            output = []
+            for _ in moments:
+                out0 = default.copy()
+                output.append(out0)
+
+        if len(output) == 1:
+            return output[0]
+        else:
+            return tuple(output)
+
+
+    def entropy(self, *args, **kwds):
+        """
+        Differential entropy of the RV.
+
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+        loc : array_like, optional
+            Location parameter (default=0).
+        scale : array_like, optional  (continuous distributions only).
+            Scale parameter (default=1).
+
+        """
+        args, loc, scale = self._parse_args(*args, **kwds)
+        # NB: for discrete distributions scale=1 by construction in _parse_args
+        args = tuple(map(asarray, args))
+        cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
+        output = zeros(shape(cond0), 'd')
+        place(output, (1-cond0), self.badvalue)
+        goodargs = argsreduce(cond0, *args)
+        # I don't know when or why vecentropy got broken when numargs == 0
+        # 09.08.2013: is this still relevant? cf check_vecentropy test 
+        # in tests/test_continuous_basic.py
+        if self.numargs == 0:
+            place(output,cond0, self._entropy() + log(scale))
+        else:
+            place(output, cond0, self.vecentropy(*goodargs) + log(scale))
+        return output
+
+
+    def moment(self, n, *args, **kwds):
+        """
+        n'th order non-central moment of distribution.
+
+        Parameters
+        ----------
+        n : int, n>=1
+            Order of moment.
+        arg1, arg2, arg3,... : float
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+        kwds : keyword arguments, optional
+            These can include "loc" and "scale", as well as other keyword
+            arguments relevant for a given distribution.
+
+        """
+        args, loc, scale = self._parse_args(*args, **kwds)
+        if not (self._argcheck(*args) and (scale > 0)):
+            return nan
+        if (floor(n) != n):
+            raise ValueError("Moment must be an integer.")
+        if (n < 0):
+            raise ValueError("Moment must be positive.")
+        mu, mu2, g1, g2 = None, None, None, None
+        if (n > 0) and (n < 5):
+            if self._stats_has_moments:
+                mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'vk'}[n]}
+            else:
+                mdict = {}
+            mu, mu2, g1, g2 = self._stats(*args, **mdict)
+        val = _moment_from_stats(n, mu, mu2, g1, g2, self._munp, args)
+
+        # Convert to transformed  X = L + S*Y
+        # so E[X^n] = E[(L+S*Y)^n] = L^n sum(comb(n,k)*(S/L)^k E[Y^k],k=0...n)
+        if loc == 0:
+            return scale**n * val
+        else:
+            result = 0
+            fac = float(scale) / float(loc)
+            for k in range(n):
+                valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
+                result += comb(n,k,exact=True)*(fac**k) * valk
+            result += fac**n * val
+            return result * loc**n
+
 
     def median(self, *args, **kwds):
         """
@@ -1056,7 +1320,7 @@ class rv_continuous(rv_generic):
                  badvalue=None, name=None, longname=None,
                  shapes=None, extradoc=None):
 
-        rv_generic.__init__(self)
+        super(rv_continuous, self).__init__()
 
         if badvalue is None:
             badvalue = nan
@@ -1083,12 +1347,16 @@ class rv_continuous(rv_generic):
                                   locscale_out='loc, scale')
 
         # nin correction
-        self.vecfunc = vectorize(self._ppf_single_call, otypes='d')
-        self.vecfunc.nin = self.numargs + 1
-        self.vecentropy = vectorize(self._entropy, otypes='d')
+        self._ppfvec = vectorize(self._ppf_single,otypes='d')
+        self._ppfvec.nin = self.numargs + 1
+        self.vecentropy = vectorize(self._entropy,otypes='d')
         self.vecentropy.nin = self.numargs + 1
-        self.veccdf = vectorize(self._cdf_single_call, otypes='d')
-        self.veccdf.nin = self.numargs + 1
+        self._cdfvec = vectorize(self._cdf_single,otypes='d')
+        self._cdfvec.nin = self.numargs + 1
+
+        # backwards compatibility
+        self.vecfunc = self._ppfvec
+        self.veccdf = self._cdfvec
 
         self.extradoc = extradoc
         if momtype == 0:
@@ -1148,7 +1416,7 @@ class rv_continuous(rv_generic):
     def _ppf_to_solve(self, x, q,*args):
         return self.cdf(*(x, )+args)-q
 
-    def _ppf_single_call(self, q, *args):
+    def _ppf_single(self, q, *args):
         left = right = None
         if self.a > -np.inf:
             left = self.a
@@ -1187,60 +1455,21 @@ class rv_continuous(rv_generic):
     def _mom1_sc(self, m,*args):
         return integrate.quad(self._mom_integ1, 0, 1,args=(m,)+args)[0]
 
-    ## These are the methods you must define (standard form functions)
-    def _argcheck(self, *args):
-        # Default check for correct values on args and keywords.
-        # Returns condition array of 1's where arguments are correct and
-        #  0's where they are not.
-        cond = 1
-        for arg in args:
-            cond = logical_and(cond,(asarray(arg) > 0))
-        return cond
-
-    def _pdf(self,x,*args):
-        return derivative(self._cdf,x,dx=1e-5,args=args,order=5)
+    def _pdf(self, x, *args):
+        return derivative(self._cdf, x, dx=1e-5, args=args, order=5)
 
     ## Could also define any of these
     def _logpdf(self, x, *args):
         return log(self._pdf(x, *args))
 
-    ##(return 1-d using self._size to get number)
-    def _rvs(self, *args):
-        ## Use basic inverse cdf algorithm for RV generation as default.
-        U = mtrand.sample(self._size)
-        Y = self._ppf(U,*args)
-        return Y
-
-    def _cdf_single_call(self, x, *args):
+    def _cdf_single(self, x, *args):
         return integrate.quad(self._pdf, self.a, x, args=args)[0]
 
     def _cdf(self, x, *args):
-        return self.veccdf(x,*args)
+        return self._cdfvec(x, *args)
 
-    def _logcdf(self, x, *args):
-        return log(self._cdf(x, *args))
-
-    def _sf(self, x, *args):
-        return 1.0-self._cdf(x,*args)
-
-    def _logsf(self, x, *args):
-        return log(self._sf(x, *args))
-
-    def _ppf(self, q, *args):
-        return self.vecfunc(q,*args)
-
-    def _isf(self, q, *args):
-        return self._ppf(1.0-q,*args)  # use correct _ppf for subclasses
-
-    # The actual calculation functions (no basic checking need be done)
-    # If these are defined, the others won't be looked at.
-    # Otherwise, the other set can be defined.
-    def _stats(self,*args, **kwds):
-        return None, None, None, None
-
-    #  Central moments
-    def _munp(self,n,*args):
-        return self.generic_moment(n,*args)
+    ## generic _argcheck, _logcdf, _sf, _logsf, _ppf, _isf, _rvs are defined 
+    ## in rv_generic
 
     def pdf(self,x,*args,**kwds):
         """
@@ -1578,160 +1807,6 @@ class rv_continuous(rv_generic):
             return output[()]
         return output
 
-    def stats(self,*args,**kwds):
-        """
-        Some statistics of the given RV
-
-        Parameters
-        ----------
-        arg1, arg2, arg3,... : array_like
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
-        loc : array_like, optional
-            location parameter (default=0)
-        scale : array_like, optional
-            scale parameter (default=1)
-        moments : str, optional
-            composed of letters ['mvsk'] defining which moments to compute:
-            'm' = mean,
-            'v' = variance,
-            's' = (Fisher's) skew,
-            'k' = (Fisher's) kurtosis.
-            (default='mv')
-
-        Returns
-        -------
-        stats : sequence
-            of requested moments.
-
-        """
-        args, loc, scale, moments = self._parse_args_stats(*args, **kwds)
-        loc, scale = map(asarray, (loc, scale))
-        args = tuple(map(asarray, args))
-        cond = self._argcheck(*args) & (scale > 0) & (loc == loc)
-
-        signature = inspect.getargspec(get_method_function(self._stats))
-        if (signature[2] is not None) or ('moments' in signature[0]):
-            mu, mu2, g1, g2 = self._stats(*args,**{'moments':moments})
-        else:
-            mu, mu2, g1, g2 = self._stats(*args)
-        if g1 is None:
-            mu3 = None
-        else:
-            mu3 = g1*np.power(mu2,1.5)  # (mu2**1.5) breaks down for nan and inf
-        default = valarray(shape(cond), self.badvalue)
-        output = []
-
-        # Use only entries that are valid in calculation
-        if any(cond):
-            goodargs = argsreduce(cond, *(args+(scale,loc)))
-            scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
-            if 'm' in moments:
-                if mu is None:
-                    mu = self._munp(1.0,*goodargs)
-                out0 = default.copy()
-                place(out0,cond,mu*scale+loc)
-                output.append(out0)
-
-            if 'v' in moments:
-                if mu2 is None:
-                    mu2p = self._munp(2.0,*goodargs)
-                    if mu is None:
-                        mu = self._munp(1.0,*goodargs)
-                    mu2 = mu2p - mu*mu
-                    if np.isinf(mu):
-                        #if mean is inf then var is also inf
-                        mu2 = np.inf
-                out0 = default.copy()
-                place(out0,cond,mu2*scale*scale)
-                output.append(out0)
-
-            if 's' in moments:
-                if g1 is None:
-                    mu3p = self._munp(3.0,*goodargs)
-                    if mu is None:
-                        mu = self._munp(1.0,*goodargs)
-                    if mu2 is None:
-                        mu2p = self._munp(2.0,*goodargs)
-                        mu2 = mu2p - mu*mu
-                    mu3 = mu3p - 3*mu*mu2 - mu**3
-                    g1 = mu3 / np.power(mu2, 1.5)
-                out0 = default.copy()
-                place(out0,cond,g1)
-                output.append(out0)
-
-            if 'k' in moments:
-                if g2 is None:
-                    mu4p = self._munp(4.0,*goodargs)
-                    if mu is None:
-                        mu = self._munp(1.0,*goodargs)
-                    if mu2 is None:
-                        mu2p = self._munp(2.0,*goodargs)
-                        mu2 = mu2p - mu*mu
-                    if mu3 is None:
-                        mu3p = self._munp(3.0,*goodargs)
-                        mu3 = mu3p - 3*mu*mu2 - mu**3
-                    mu4 = mu4p - 4*mu*mu3 - 6*mu*mu*mu2 - mu**4
-                    g2 = mu4 / mu2**2.0 - 3.0
-                out0 = default.copy()
-                place(out0,cond,g2)
-                output.append(out0)
-        else:  # no valid args
-            output = []
-            for _ in moments:
-                out0 = default.copy()
-                output.append(out0)
-
-        if len(output) == 1:
-            return output[0]
-        else:
-            return tuple(output)
-
-    def moment(self, n, *args, **kwds):
-        """
-        n'th order non-central moment of distribution.
-
-        Parameters
-        ----------
-        n : int, n>=1
-            Order of moment.
-        arg1, arg2, arg3,... : float
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information).
-        kwds : keyword arguments, optional
-            These can include "loc" and "scale", as well as other keyword
-            arguments relevant for a given distribution.
-
-        """
-        args, loc, scale = self._parse_args(*args, **kwds)
-        if not (self._argcheck(*args) and (scale > 0)):
-            return nan
-        if (floor(n) != n):
-            raise ValueError("Moment must be an integer.")
-        if (n < 0):
-            raise ValueError("Moment must be positive.")
-        mu, mu2, g1, g2 = None, None, None, None
-        if (n > 0) and (n < 5):
-            signature = inspect.getargspec(get_method_function(self._stats))
-            if (signature[2] is not None) or ('moments' in signature[0]):
-                mdict = {'moments':{1:'m',2:'v',3:'vs',4:'vk'}[n]}
-            else:
-                mdict = {}
-            mu, mu2, g1, g2 = self._stats(*args,**mdict)
-        val = _moment_from_stats(n, mu, mu2, g1, g2, self._munp, args)
-
-        # Convert to transformed  X = L + S*Y
-        # so E[X^n] = E[(L+S*Y)^n] = L^n sum(comb(n,k)*(S/L)^k E[Y^k],k=0...n)
-        if loc == 0:
-            return scale**n * val
-        else:
-            result = 0
-            fac = float(scale) / float(loc)
-            for k in range(n):
-                valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
-                result += comb(n,k,exact=True)*(fac**k) * valk
-            result += fac**n * val
-            return result * loc**n
 
     def _nnlf(self, x, *args):
         return -sum(self._logpdf(x, *args),axis=0)
@@ -1954,26 +2029,6 @@ class rv_continuous(rv_generic):
         """This function is deprecated, use self.fit_loc_scale(data) instead."""
         return self.fit_loc_scale(data, *args)
 
-    def freeze(self,*args,**kwds):
-        """Freeze the distribution for the given arguments.
-
-        Parameters
-        ----------
-        arg1, arg2, arg3,... : array_like
-            The shape parameter(s) for the distribution.  Should include all
-            the non-optional arguments, may include ``loc`` and ``scale``.
-
-        Returns
-        -------
-        rv_frozen : rv_frozen instance
-            The frozen distribution.
-
-        """
-        return rv_frozen(self,*args,**kwds)
-
-    def __call__(self, *args, **kwds):
-        return self.freeze(*args, **kwds)
-
     def _entropy(self, *args):
         def integ(x):
             val = self._pdf(x, *args)
@@ -2023,6 +2078,7 @@ class rv_continuous(rv_generic):
 
         return output
 
+
     def expect(self, func=None, args=(), loc=0, scale=1, lb=None, ub=None,
                conditional=False, **kwds):
         """Calculate expected value of a function with respect to the distribution
@@ -2064,7 +2120,7 @@ class rv_continuous(rv_generic):
 
         """
         lockwds = {'loc': loc,
-                   'scale':scale}
+                   'scale': scale}
         self._argcheck(*args)
         if func is None:
             def fun(x, *args):
@@ -2126,8 +2182,8 @@ kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
 # loc = mu, scale = std
 # Keep these implementations out of the class definition so they can be reused
 # by other distributions.
-_norm_pdf_C = math.sqrt(2*pi)
-_norm_pdf_logC = math.log(_norm_pdf_C)
+_norm_pdf_C = np.sqrt(2*pi)
+_norm_pdf_logC = np.log(_norm_pdf_C)
 
 
 def _norm_pdf(x):
@@ -3734,7 +3790,7 @@ class gamma_gen(rv_continuous):
                 # log(a) - special.digamma(a) - log(xbar) + log(data.mean) = 0
                 s = log(xbar) - log(data).mean()
                 func = lambda a: log(a) - special.digamma(a) - s
-                aest = (3-s + math.sqrt((s-3)**2 + 24*s)) / (12*s)
+                aest = (3-s + np.sqrt((s-3)**2 + 24*s)) / (12*s)
                 xa = aest*(1-0.4)
                 xb = aest*(1+0.4)
                 a = optimize.brentq(func, xa, xb, disp=0)
@@ -4731,7 +4787,7 @@ class lognorm_gen(rv_continuous):
         mu = sqrt(p)
         mu2 = p*(p-1)
         g1 = sqrt((p-1))*(2+p)
-        g2 = numpy.polyval([1,2,3,0,-6.0],p)
+        g2 = np.polyval([1,2,3,0,-6.0],p)
         return mu, mu2, g1, g2
 
     def _entropy(self, s):
@@ -4775,7 +4831,7 @@ class gilbrat_gen(rv_continuous):
         mu = sqrt(p)
         mu2 = p * (p - 1)
         g1 = sqrt((p - 1)) * (2 + p)
-        g2 = numpy.polyval([1, 2, 3, 0, -6.0], p)
+        g2 = np.polyval([1, 2, 3, 0, -6.0], p)
         return mu, mu2, g1, g2
 
     def _entropy(self):
@@ -6404,7 +6460,7 @@ class rv_discrete(rv_generic):
                  moment_tol=1e-8,values=None,inc=1,longname=None,
                  shapes=None, extradoc=None):
 
-        super(rv_generic,self).__init__()
+        super(rv_discrete, self).__init__()
 
         if badvalue is None:
             badvalue = nan
@@ -6416,7 +6472,7 @@ class rv_discrete(rv_generic):
         self.name = name
         self.moment_tol = moment_tol
         self.inc = inc
-        self._cdfvec = vectorize(self._cdfsingle, otypes='d')
+        self._cdfvec = vectorize(self._cdf_single,otypes='d')
         self.return_integers = 1
         self.vecentropy = vectorize(self._entropy)
         self.shapes = shapes
@@ -6431,7 +6487,7 @@ class rv_discrete(rv_generic):
             self.a = self.xk[0]
             self.b = self.xk[-1]
             self.P = make_dict(self.xk, self.pk)
-            self.qvals = numpy.cumsum(self.pk,axis=0)
+            self.qvals = np.cumsum(self.pk,axis=0)
             self.F = make_dict(self.xk, self.qvals)
             self.Finv = reverse_dict(self.F)
             self._ppf = instancemethod(vectorize(_drv_ppf, otypes='d'),
@@ -6455,15 +6511,18 @@ class rv_discrete(rv_generic):
 
             # nin correction needs to be after we know numargs
             # correct nin for generic moment vectorization
-            self.vec_generic_moment = vectorize(_drv2_moment, otypes='d')
-            self.vec_generic_moment.nin = self.numargs + 2
-            self.generic_moment = instancemethod(self.vec_generic_moment,
+            _vec_generic_moment = vectorize(_drv2_moment, otypes='d')
+            _vec_generic_moment.nin = self.numargs + 2
+            self.generic_moment = instancemethod(_vec_generic_moment,
                                                  self, rv_discrete)
+
+            # backwards compatibility
+            self.vec_generic_moment = _vec_generic_moment
 
             # correct nin for ppf vectorization
             _vppf = vectorize(_drv2_ppfsingle, otypes='d')
             _vppf.nin = self.numargs + 2  # +1 is for self
-            self._vecppf = instancemethod(_vppf,
+            self._ppfvec = instancemethod(_vppf,
                                           self, rv_discrete)
 
         # now that self.numargs is defined, we can adjust nin
@@ -6517,52 +6576,24 @@ class rv_discrete(rv_generic):
                 self.__doc__ = self.__doc__.replace("%(shapes)s, ", "")
             self.__doc__ = doccer.docformat(self.__doc__, tempdict)
 
-    def _rvs(self, *args):
-        return self._ppf(mtrand.random_sample(self._size),*args)
-
     def _nonzero(self, k, *args):
         return floor(k) == k
 
-    def _argcheck(self, *args):
-        cond = 1
-        for arg in args:
-            cond &= (arg > 0)
-        return cond
-
     def _pmf(self, k, *args):
-        return self._cdf(k,*args) - self._cdf(k-1,*args)
+        return self._cdf(k, *args) - self._cdf(k-1, *args)
 
     def _logpmf(self, k, *args):
         return log(self._pmf(k, *args))
 
-    def _cdfsingle(self, k, *args):
-        m = arange(int(self.a),k+1)
-        return sum(self._pmf(m,*args),axis=0)
+    def _cdf_single(self, k, *args):
+        m = arange(int(self.a), k+1)
+        return sum(self._pmf(m, *args), axis=0)
 
     def _cdf(self, x, *args):
         k = floor(x)
-        return self._cdfvec(k,*args)
+        return self._cdfvec(k, *args)
 
-    def _logcdf(self, x, *args):
-        return log(self._cdf(x, *args))
-
-    def _sf(self, x, *args):
-        return 1.0-self._cdf(x,*args)
-
-    def _logsf(self, x, *args):
-        return log(self._sf(x, *args))
-
-    def _ppf(self, q, *args):
-        return self._vecppf(q, *args)
-
-    def _isf(self, q, *args):
-        return self._ppf(1-q,*args)
-
-    def _stats(self, *args):
-        return None, None, None, None
-
-    def _munp(self, n, *args):
-        return self.generic_moment(n, *args)
+    # generic _logcdf, _sf, _logsf, _ppf, _isf, _rvs defined in rv_generic
 
     def rvs(self, *args, **kwargs):
         """
@@ -6778,7 +6809,7 @@ class rv_discrete(rv_generic):
             return output[()]
         return output
 
-    def logsf(self,k,*args,**kwds):
+    def logsf(self, k, *args, **kwds):
         """
         Log of the survival function of the given RV.
 
@@ -6797,8 +6828,8 @@ class rv_discrete(rv_generic):
 
         Returns
         -------
-        sf : ndarray
-            Survival function evaluated at `k`.
+        logsf : ndarray
+            Log of the survival function evaluated at `k`.
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
@@ -6906,160 +6937,6 @@ class rv_discrete(rv_generic):
             return output[()]
         return output
 
-    def stats(self, *args, **kwds):
-        """
-        Some statistics of the given discrete RV.
-
-        Parameters
-        ----------
-        arg1, arg2, arg3,... : array_like
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information).
-        loc : array_like, optional
-            Location parameter (default=0).
-        moments : string, optional
-            Composed of letters ['mvsk'] defining which moments to compute:
-
-              - 'm' = mean,
-              - 'v' = variance,
-              - 's' = (Fisher's) skew,
-              - 'k' = (Fisher's) kurtosis.
-
-            The default is'mv'.
-
-        Returns
-        -------
-        stats : sequence
-            of requested moments.
-
-        """
-        try:
-            kwds["moments"] = kwds.pop("moment") # test suite is full of these; a feature?
-        except KeyError:
-            pass
-        args, loc, _, moments = self._parse_args_stats(*args, **kwds)
-        loc = asarray(loc)
-        args = tuple(map(asarray,args))
-        cond = self._argcheck(*args) & (loc == loc)
-
-        signature = inspect.getargspec(get_method_function(self._stats))
-        if (signature[2] is not None) or ('moments' in signature[0]):
-            mu, mu2, g1, g2 = self._stats(*args,**{'moments':moments})
-        else:
-            mu, mu2, g1, g2 = self._stats(*args)
-        if g1 is None:
-            mu3 = None
-        else:
-            mu3 = g1 * np.power(mu2, 1.5)
-        default = valarray(shape(cond), self.badvalue)
-        output = []
-
-        # Use only entries that are valid in calculation
-        goodargs = argsreduce(cond, *(args+(loc,)))
-        loc, goodargs = goodargs[-1], goodargs[:-1]
-
-        if 'm' in moments:
-            if mu is None:
-                mu = self._munp(1.0,*goodargs)
-            out0 = default.copy()
-            place(out0,cond,mu+loc)
-            output.append(out0)
-
-        if 'v' in moments:
-            if mu2 is None:
-                mu2p = self._munp(2.0,*goodargs)
-                if mu is None:
-                    mu = self._munp(1.0,*goodargs)
-                mu2 = mu2p - mu*mu
-            out0 = default.copy()
-            place(out0,cond,mu2)
-            output.append(out0)
-
-        if 's' in moments:
-            if g1 is None:
-                mu3p = self._munp(3.0,*goodargs)
-                if mu is None:
-                    mu = self._munp(1.0,*goodargs)
-                if mu2 is None:
-                    mu2p = self._munp(2.0,*goodargs)
-                    mu2 = mu2p - mu*mu
-                mu3 = mu3p - 3*mu*mu2 - mu**3
-                g1 = mu3 / np.power(mu2, 1.5)
-            out0 = default.copy()
-            place(out0,cond,g1)
-            output.append(out0)
-
-        if 'k' in moments:
-            if g2 is None:
-                mu4p = self._munp(4.0,*goodargs)
-                if mu is None:
-                    mu = self._munp(1.0,*goodargs)
-                if mu2 is None:
-                    mu2p = self._munp(2.0,*goodargs)
-                    mu2 = mu2p - mu*mu
-                if mu3 is None:
-                    mu3p = self._munp(3.0,*goodargs)
-                    mu3 = mu3p - 3*mu*mu2 - mu**3
-                mu4 = mu4p - 4*mu*mu3 - 6*mu*mu*mu2 - mu**4
-                g2 = mu4 / mu2**2.0 - 3.0
-            out0 = default.copy()
-            place(out0,cond,g2)
-            output.append(out0)
-
-        if len(output) == 1:
-            return output[0]
-        else:
-            return tuple(output)
-
-    def moment(self, n, *args, **kwds):
-        """
-        n'th non-central moment of the distribution
-
-        Parameters
-        ----------
-        n : int, n>=1
-            order of moment
-        arg1, arg2, arg3,... : float
-            The shape parameter(s) for the distribution (see docstring of the
-            instance object for more information)
-        loc : float, optional
-            location parameter (default=0)
-        scale : float, optional
-            scale parameter (default=1)
-
-        """
-        args, loc, scale = self._parse_args(*args, **kwds)
-        if not (self._argcheck(*args) and (scale > 0)):
-            return nan
-        if (floor(n) != n):
-            raise ValueError("Moment must be an integer.")
-        if (n < 0):
-            raise ValueError("Moment must be positive.")
-        mu, mu2, g1, g2 = None, None, None, None
-        if (n > 0) and (n < 5):
-            signature = inspect.getargspec(get_method_function(self._stats))
-            if (signature[2] is not None) or ('moments' in signature[0]):
-                dict = {'moments':{1:'m',2:'v',3:'vs',4:'vk'}[n]}
-            else:
-                dict = {}
-            mu, mu2, g1, g2 = self._stats(*args,**dict)
-        val = _moment_from_stats(n, mu, mu2, g1, g2, self._munp, args)
-
-        # Convert to transformed  X = L + S*Y
-        # so E[X^n] = E[(L+S*Y)^n] = L^n sum(comb(n,k)*(S/L)^k E[Y^k],k=0...n)
-        if loc == 0:
-            return scale**n * val
-        else:
-            result = 0
-            fac = float(scale) / float(loc)
-            for k in range(n):
-                valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
-                result += comb(n,k,exact=True)*(fac**k) * valk
-            result += fac**n * val
-            return result * loc**n
-
-    def freeze(self, *args, **kwds):
-        return rv_frozen(self, *args, **kwds)
 
     def _entropy(self, *args):
         if hasattr(self,'pk'):
@@ -7079,24 +6956,6 @@ class rv_discrete(rv_generic):
                 ent += term
             return ent
 
-    def entropy(self, *args, **kwds):
-        args, loc, _ = self._parse_args(*args, **kwds)
-        loc = asarray(loc)
-        args = list(map(asarray,args))
-        cond0 = self._argcheck(*args) & (loc == loc)
-        output = zeros(shape(cond0),'d')
-        place(output,(1-cond0),self.badvalue)
-        goodargs = argsreduce(cond0, *args)
-        # np.vectorize doesn't work when numargs == 0 in numpy 1.5.1
-        if self.numargs == 0:
-            place(output, cond0, self._entropy())
-        else:
-            place(output, cond0, self.vecentropy(*goodargs))
-
-        return output
-
-    def __call__(self, *args, **kwds):
-        return self.freeze(*args,**kwds)
 
     def expect(self, func=None, args=(), loc=0, lb=None, ub=None, conditional=False):
         """
@@ -7432,7 +7291,7 @@ class geom_gen(rv_discrete):
         qr = 1.0-p
         var = qr / p / p
         g1 = (2.0-p) / sqrt(qr)
-        g2 = numpy.polyval([1,-6,6],p)/(1.0-p)
+        g2 = np.polyval([1,-6,6],p)/(1.0-p)
         return mu, var, g1, g2
 geom = geom_gen(a=1,name='geom', longname="A geometric")
 
@@ -7937,7 +7796,7 @@ class skellam_gen(rv_discrete):
     """
     def _rvs(self, mu1, mu2):
         n = self._size
-        return np.random.poisson(mu1, n)-np.random.poisson(mu2, n)
+        return mtrand.poisson(mu1, n) - mtrand.poisson(mu2, n)
 
     def _pmf(self, x, mu1, mu2):
         px = np.where(x < 0, ncx2.pdf(2*mu2, 2*(1-x), 2*mu1)*2,

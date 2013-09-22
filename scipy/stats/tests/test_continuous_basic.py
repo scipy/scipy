@@ -222,9 +222,7 @@ def test_cont_basic():
         # if available
         if distfn.__class__._entropy != stats.rv_continuous._entropy:
             yield check_private_entropy, distfn, arg
-
         yield check_edge_support, distfn, arg
-
 
 
 @npt.dec.slow
@@ -283,6 +281,7 @@ def test_cont_basic_slow():
         if distfn.__class__._entropy != stats.rv_continuous._entropy:
             yield check_private_entropy, distfn, arg
         yield check_edge_support, distfn, arg
+
 
 @npt.dec.slow
 def test_moments():
@@ -482,11 +481,26 @@ def check_edge_support(distfn, args):
     # pdf(x=[a, b], *args) depends on the distribution
 
 
-@_silence_fp_errors
 def check_private_entropy(distfn, args):
     # compare a generic _entropy with the distribution-specific implementation
     npt.assert_allclose(distfn._entropy(*args),
                         stats.rv_continuous._entropy(distfn, *args))
+
+
+
+
+def check_edge_support(distfn, args):
+    """Make sure the x=self.a and self.b are handled correctly."""
+    x = [distfn.a, distfn.b]
+    npt.assert_equal(distfn.cdf(x, *args), [0.0, 1.0])
+    npt.assert_equal(distfn.logcdf(x, *args), [-np.inf, 0.0])
+
+    npt.assert_equal(distfn.sf(x, *args), [1.0, 0.0])
+    npt.assert_equal(distfn.logsf(x, *args), [0.0, -np.inf])
+
+    npt.assert_equal(distfn.ppf([0.0, 1.0], *args), x)
+    npt.assert_equal(distfn.isf([0.0, 1.0], *args), x[::-1])
+    # pdf(x=[a, b], *args) depends on the distribution
 
 
 if __name__ == "__main__":

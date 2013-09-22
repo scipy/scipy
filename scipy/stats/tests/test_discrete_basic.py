@@ -38,7 +38,7 @@ distdiscrete = [
 def test_discrete_basic():
     for distname, arg in distdiscrete:
         distfn = getattr(stats,distname)
-        # npt.assert_(stats.dlaplace.rvs(0.8) is not None)
+        #npt.assert_(stats.dlaplace.rvs(0.8) is not None)
         np.random.seed(9765456)
         rvs = distfn.rvs(size=2000,*arg)
         supp = np.unique(rvs)
@@ -60,7 +60,6 @@ def test_discrete_basic():
         alpha = 0.01
         yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
                       distname + ' chisquare'
-
 
     seen = set()
     for distname, arg in distdiscrete:
@@ -249,7 +248,7 @@ def assert_equal_inf_nan(v1,v2,msg):
 
 
 def check_sample_skew_kurt(distfn, arg, sk, ss, msg):
-    k,s = distfn.stats(moment='ks',*arg)
+    k,s = distfn.stats(moments='ks', *arg)
     check_sample_meanvar, sk, k, msg + 'sample skew test'
     check_sample_meanvar, ss, s, msg + 'sample kurtosis test'
 
