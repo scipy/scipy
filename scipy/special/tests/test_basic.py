@@ -1709,6 +1709,10 @@ class TestHyper(TestCase):
                                / (special.gamma(a)*special.gamma(2-b)))
         assert_array_almost_equal(hypu,hprl,12)
 
+    def test_hyperu_gh2287(self):
+        assert_almost_equal(special.hyperu(1, 1.5, 20.2),
+                            0.048360918656699191, 12)
+
 
 class TestBessel(TestCase):
     def test_itj0y0(self):
