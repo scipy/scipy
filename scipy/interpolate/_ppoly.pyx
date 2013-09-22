@@ -218,15 +218,15 @@ def integrate(double_or_complex[:,:,::1] c,
         for interval in range(start_interval, end_interval+1):
             # local antiderivative, end point
             if interval == end_interval:
-                vb = evaluate_poly1(b - x[interval], c, interval, jp, dx=-1)
+                vb = evaluate_poly1(b - x[interval], c, interval, jp, -1)
             else:
-                vb = evaluate_poly1(x[interval+1] - x[interval], c, interval, jp, dx=-1)
+                vb = evaluate_poly1(x[interval+1] - x[interval], c, interval, jp, -1)
 
             # local antiderivative, start point
             if interval == start_interval:
-                va = evaluate_poly1(a - x[interval], c, interval, jp, dx=-1)
+                va = evaluate_poly1(a - x[interval], c, interval, jp, -1)
             else:
-                va = evaluate_poly1(0, c, interval, jp, dx=-1)
+                va = evaluate_poly1(0, c, interval, jp, -1)
 
             # integral
             vtot = vtot + (vb - va)
