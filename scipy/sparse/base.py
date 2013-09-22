@@ -375,15 +375,63 @@ class spmatrix(object):
     # Other Arithmetic #
     ####################
 
-    def __truediv__(self, other):
+    def _divide(self, other, true_divide=False, rdivide=False):
         if isscalarlike(other):
-            return self * (1./other)
+            if rdivide:
+                if true_divide:
+                    return np.true_divide(other, self.todense())
+                else:
+                    return np.divide(other, self.todense())
+
+            if true_divide and np.can_cast(self.dtype, np.float_):
+                return self.astype(np.float_)._mul_scalar(1./other)
+            else:
+                r = self._mul_scalar(1./other)
+
+                scalar_dtype = np.asarray(other).dtype
+                if (np.issubdtype(self.dtype, np.integer)
+                        and np.issubdtype(scalar_dtype, np.integer)):
+                    return r.astype(self.dtype)
+                else:
+                    return r
+                    
+        elif isdense(other):
+            if not rdivide:
+                if true_divide:
+                    return np.true_divide(self.todense(), other)
+                else:
+                    return np.divide(self.todense(), other)
+            else:
+                if true_divide:
+                    return np.true_divide(other, self.todense())
+                else:
+                    return np.divide(other, self.todense())
+        elif isspmatrix(other):
+            if rdivide:
+                return other._divide(self, true_divide, rdivide=False)
+
+            self_csr = self.tocsr()
+            if true_divide and np.can_cast(self.dtype, np.float_):
+                return self_csr.astype(np.float_)._divide_sparse(other)
+            else:
+                return self_csr._divide_sparse(other)
         else:
-            return self.tocsr().__truediv__(other)
+            return NotImplemented
+
+    def __truediv__(self, other):
+        return self._divide(other, true_divide=True)
 
     def __div__(self, other):
         # Always do true division
-        return self.__truediv__(other)
+        return self._divide(other, true_divide=True)
+
+    def __rtruediv__(self, other):
+        # Implementing this as the inverse would be too magical -- bail out
+        return NotImplemented
+
+    def __rdiv__(self, other):
+        # Implementing this as the inverse would be too magical -- bail out
+        return NotImplemented
 
     def __neg__(self):
         return -self.tocsr()
@@ -702,6 +750,51 @@ class spmatrix(object):
             return out
         else:
             return np.zeros(self.shape, dtype=self.dtype, order=order)
+
+    def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
+        """Method for compatibility with NumPy's ufuncs and dot
+        functions.
+        """
+        if method != '__call__' or kwargs:
+            return NotImplemented
+
+        without_self = list(inputs)
+        del without_self[pos]
+        without_self = tuple(without_self)
+
+        if func is np.multiply:
+            return self.multiply(*without_self)
+        elif func is np.add:
+            return self.__add__(*without_self)
+        elif func is np.dot:
+            if pos == 0:
+                return self.__mul__(inputs[1])
+            else:
+                return self.__rmul__(inputs[0])
+        elif func is np.subtract:
+            if pos == 0:
+                return self.__sub__(inputs[1])
+            else:
+                return self.__rsub__(inputs[0])
+        elif func is np.divide:
+            true_divide = (sys.version_info[0] >= 3)
+            rdivide = (pos == 1)
+            return self._divide(*without_self,
+                                true_divide=true_divide,
+                                rdivide=rdivide)
+        elif func is np.true_divide:
+            rdivide = (pos == 1)
+            return self._divide(*without_self, true_divide=True, rdivide=rdivide)
+        elif func in (np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh,
+                      np.arcsinh, np.arctanh, np.rint, np.sign, np.expm1, np.log1p,
+                      np.deg2rad, np.rad2deg, np.floor, np.ceil, np.trunc, np.sqrt):
+            func_name = func.__name__
+            if hasattr(self, func_name):
+                return getattr(self, func_name)()
+            else:
+                return getattr(self.tocsr(), func_name)()
+        else:
+            return NotImplemented
 
 
 def isspmatrix(x):

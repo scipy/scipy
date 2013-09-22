@@ -18,6 +18,7 @@ Run tests if scipy is installed:
 Run tests if sparse is not installed:
   python tests/test_base.py
 """
+from distutils.version import LooseVersion
 
 import warnings
 
@@ -30,7 +31,7 @@ from numpy import arange, zeros, array, dot, matrix, asmatrix, asarray, \
 import random
 from numpy.testing import assert_raises, assert_equal, assert_array_equal, \
         assert_array_almost_equal, assert_almost_equal, assert_, \
-        dec, run_module_suite
+        dec, run_module_suite, assert_allclose
 
 import scipy.linalg
 
@@ -38,7 +39,7 @@ import scipy.sparse as sparse
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
         eye, isspmatrix, SparseEfficiencyWarning
-from scipy.sparse.sputils import supported_dtypes
+from scipy.sparse.sputils import supported_dtypes, isscalarlike
 from scipy.sparse.linalg import splu, expm, inv
 
 import nose
@@ -59,6 +60,11 @@ def _can_cast_samekind(dtype1, dtype2):
     else:
         return np.can_cast(dtype1, dtype2, casting='same_kind')
 
+def todense(a):
+    if isinstance(a, np.ndarray) or isscalarlike(a):
+        return a
+    return a.todense()
+
 
 class MultipliesWithMatrix(object):
     """Class that knows how to multiply with a sparse matrix."""
@@ -73,6 +79,7 @@ class MultipliesWithMatrix(object):
 #------------------------------------------------------------------------------
 # Generic tests
 #------------------------------------------------------------------------------
+
 
 # TODO check that spmatrix( ... , copy=X ) is respected
 # TODO test prune
@@ -962,19 +969,19 @@ class _TestCommon:
                     assert_almost_equal(sp_mult, dense_mult)
 
     def test_elementwise_divide(self):
-        expected = [[1,0,0,1],[1,0,1,0],[0,1,0,0]]
-        assert_array_equal((self.datsp / self.datsp).todense(),expected)
+        expected = [[1,np.nan,np.nan,1],[1,np.nan,1,np.nan],[np.nan,1,np.nan,np.nan]]
+        assert_array_equal(todense(self.datsp / self.datsp),expected)
 
         denom = self.spmatrix(matrix([[1,0,0,4],[-1,0,0,0],[0,8,0,-5]],'d'))
-        res = matrix([[1,0,0,0.5],[-3,0,inf,0],[0,0.25,0,0]],'d')
-        assert_array_equal((self.datsp / denom).todense(),res)
+        res = matrix([[1,np.nan,np.nan,0.5],[-3,np.nan,inf,np.nan],[np.nan,0.25,np.nan,np.nan]],'d')
+        assert_array_equal(todense(self.datsp / denom),res)
 
         # complex
         A = array([[1-2j,0+5j,-1+0j],[4-3j,-3+6j,5]])
         B = array([[5+2j,7-3j,-2+1j],[0-1j,-4+2j,9]])
         Asp = self.spmatrix(A)
         Bsp = self.spmatrix(B)
-        assert_almost_equal((Asp / Bsp).todense(), A/B)
+        assert_almost_equal(todense(Asp / Bsp), A/B)
 
     def test_pow(self):
         A = matrix([[1,0,2,0],[0,3,4,0],[0,5,0,0],[0,6,7,8]])
@@ -1244,20 +1251,6 @@ class _TestCommon:
         for x, y in zip(A, B):
             assert_equal(x.todense(), y)
 
-    # Eventually we'd like to allow matrix products between dense
-    # and sparse matrices using the normal dot() function:
-    # def test_dense_dot_sparse(self):
-    #    a = array([1.,2.,3.])
-    #    dense_dot_dense = dot(a, self.dat)
-    #    dense_dot_sparse = dot(a, self.datsp)
-    #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
-
-    # def test_sparse_dot_dense(self):
-    #    b = array([1.,2.,3.,4.])
-    #    dense_dot_dense = dot(self.dat, b)
-    #    dense_dot_sparse = dot(self.datsp, b)
-    #    assert_array_equal(dense_dot_dense, dense_dot_sparse)
-
     def test_size_zero_matrix_arithmetic(self):
         # Test basic matrix arithmatic with shapes like (0,0), (10,0),
         # (0, 3), etc.
@@ -1330,6 +1323,110 @@ class _TestCommon:
             assert_array_equal(spm.tolil().A, m)
             assert_array_equal(spm.todok().A, m)
             assert_array_equal(spm.tobsr().A, m)
+
+    def test_unary_ufunc_overrides(self):
+        def check(name):
+            if LooseVersion(np.version.version) < LooseVersion('1.9'):
+                if name == "sign":
+                    raise nose.SkipTest("sign conflicts with comparison op "
+                                        "support on Numpy < 1.9")
+                if self.spmatrix in (dok_matrix, lil_matrix):
+                    raise nose.SkipTest("Unary ops not implemented for dok/lil "
+                                        "with Numpy < 1.9")
+            X = self.spmatrix(np.arange(20).reshape(4, 5) / 20.)
+            X2 = getattr(np, name)(X)
+            assert_array_equal(X2.toarray(), getattr(np, name)(X.toarray()))
+        
+        for name in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
+                     "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
+                     "deg2rad", "rad2deg", "floor", "ceil", "trunc", "sqrt"]:
+            yield check, name
+
+    def test_binary_ufunc_overrides(self):
+        # data
+        a = np.array([[1, 2, 3],
+                      [4, 5, 0],
+                      [7, 8, 9]])
+        b = np.array([[9, 8, 7],
+                      [6, 0, 0],
+                      [3, 2, 1]])
+        c = 1.0
+        d = 1 + 2j
+        e = 5
+
+        asp = self.spmatrix(a)
+        bsp = self.spmatrix(b)
+
+        a_items = dict(dense=a, scalar=c, cplx_scalar=d, int_scalar=e, sparse=asp)
+        b_items = dict(dense=b, scalar=c, cplx_scalar=d, int_scalar=e, sparse=bsp)
+
+        @dec.skipif(LooseVersion(np.version.version) < LooseVersion('1.9'),
+                    "feature requires Numpy 1.9")
+        def check(i, j, dtype):
+            ax = a_items[i]
+            bx = b_items[j]
+
+            if isinstance(ax, self.spmatrix):
+                ax = ax.astype(dtype)
+            if isinstance(bx, self.spmatrix):
+                bx = bx.astype(dtype)
+
+            a = todense(ax)
+            b = todense(bx)
+
+            # -- associative
+
+            # multiply
+            assert_array_equal(todense(np.multiply(ax, bx)), np.multiply(a, b))
+
+            # add
+            if isscalarlike(ax) or isscalarlike(bx):
+                try:
+                    assert_array_equal(todense(np.add(ax, bx)),
+                                       np.add(a, b))
+                except TypeError:
+                    # Not implemented for all spmatrix types
+                    pass
+            else:
+                assert_array_equal(todense(np.add(ax, bx)), np.add(a, b))
+
+            # -- non-associative
+
+            # dot
+            assert_array_equal(todense(np.dot(ax, bx)), np.dot(a, b))
+
+            # subtract
+            if isscalarlike(ax) or isscalarlike(bx):
+                try:
+                    assert_array_equal(todense(np.subtract(ax, bx)),
+                                       np.subtract(a, b))
+                except TypeError:
+                    # Not implemented for all spmatrix types
+                    pass
+            else:
+                assert_array_equal(todense(np.subtract(ax, bx)), np.subtract(a, b))
+
+            # divide
+            if isscalarlike(bx):
+                # Rounding error may be different, as the sparse implementation
+                # computes a/b -> a * (1/b) if b is a scalar
+                assert_allclose(todense(np.divide(ax, bx)), np.divide(a, b),
+                                rtol=5e-15, atol=0)
+            else:
+                assert_array_equal(todense(np.divide(ax, bx)), np.divide(a, b))
+
+            # true_divide
+            if isscalarlike(bx):
+                assert_allclose(todense(np.true_divide(ax, bx)), np.true_divide(a, b),
+                                rtol=5e-15, atol=0)
+            else:
+                assert_array_equal(todense(np.true_divide(ax, bx)), np.true_divide(a, b))
+
+        for i in a_items.keys():
+            for j in b_items.keys():
+                for dtype in [np.int_, np.float_, np.complex_]:
+                    if i == 'sparse' or j == 'sparse':
+                        yield check, i, j, dtype
 
 
 class _TestInplaceArithmetic:
@@ -1797,11 +1894,6 @@ class _TestFancyIndexing:
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix(B)
 
-        def todense(a):
-            if isinstance(a, np.ndarray):
-                return a
-            return a.todense()
-
         # [i]
         assert_equal(A[[1,3]].todense(), B[[1,3]])
 
@@ -1894,12 +1986,6 @@ class _TestFancyIndexing:
     def test_fancy_indexing_boolean(self):
         random.seed(1234)  # make runs repeatable
 
-        # CSR matrix returns matrix in some cases
-        def todense(a):
-            if isinstance(a, (np.matrix, np.ndarray)):
-                return a
-            return a.todense()
-
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix(B)
 
@@ -1926,12 +2012,6 @@ class _TestFancyIndexing:
 
     def test_fancy_indexing_sparse_boolean(self):
         random.seed(1234)  # make runs repeatable
-
-        # CSR matrix returns matrix in some cases
-        def todense(a):
-            if isinstance(a, (np.matrix, np.ndarray)):
-                return a
-            return a.todense()
 
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix(B)
