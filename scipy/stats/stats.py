@@ -1669,8 +1669,9 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
         The weights for each value in `a`. Default is None, which gives each
         value a weight of 1.0
     printextras : bool, optional
-        If True, the number of extra points is printed to standard output.
-        Default is False.
+        If True, if there are extra points (i.e. the points that fall outside
+        the bin limits) a warning is raised saying how many of those points
+        there are.  Default is False.
 
     Returns
     -------
@@ -1693,7 +1694,7 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
     default if default limits is not set.
 
     """
-    a = np.ravel(a)               # flatten any >1D arrays
+    a = np.ravel(a)
     if defaultlimits is None:
         # no range given, so use values in `a`
         data_min = a.min()

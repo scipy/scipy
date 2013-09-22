@@ -125,6 +125,10 @@ class TestNanFunc(TestCase):
             np.seterr(**olderr)
         assert_(np.isnan(s))
 
+    def test_nanstd_bias_kw(self):
+        s = stats.nanstd(self.X, bias=True)
+        assert_approx_equal(s, np.std(self.X, ddof=0))
+
     def test_nanstd_negative_axis(self):
         x = np.array([1, 2, 3])
         assert_equal(stats.nanstd(x, -1), 1)
@@ -1371,6 +1375,8 @@ def test_percentileofscore():
               pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
                    score, kind=kind), result
 
+    assert_raises(ValueError, pcos, [1, 2, 3, 3, 4], 3, kind='unrecognized')
+
 
 PowerDivCase = namedtuple('Case', ['f_obs', 'f_exp', 'ddof', 'axis',
                                    'chi2',     # Pearson's
@@ -1850,6 +1856,11 @@ def test_ttest_rel():
     finally:
         np.seterr(**olderr)
 
+    # test incorrect input shape raise an error
+    x = np.arange(24)
+    assert_raises(ValueError, stats.ttest_rel, x.reshape((8, 3)),
+                  x.reshape((2, 3, 4)))
+
 
 def test_ttest_ind():
     # regression test
@@ -2034,6 +2045,14 @@ def test_normalitytests():
     yield assert_array_almost_equal, stats.normaltest(x), (st_normal, pv_normal)
     yield assert_array_almost_equal, stats.skewtest(x), (st_skew, pv_skew)
     yield assert_array_almost_equal, stats.kurtosistest(x), (st_kurt, pv_kurt)
+
+    # Test axis=None (equal to axis=0 for 1-D input)
+    yield (assert_array_almost_equal, stats.normaltest(x, axis=None),
+           (st_normal, pv_normal))
+    yield (assert_array_almost_equal, stats.skewtest(x, axis=None),
+           (st_skew, pv_skew))
+    yield (assert_array_almost_equal, stats.kurtosistest(x, axis=None),
+           (st_kurt, pv_kurt))
 
 
 class TestJarqueBera(TestCase):
@@ -2535,6 +2554,8 @@ class TestTrim(object):
         res1 = stats.trim_mean(a, 2/6., axis=None)
         res2 = stats.trim_mean(a.ravel(), 2/6.)
         assert_equal(res1, res2)
+
+        assert_raises(ValueError, stats.trim_mean, a, 0.6)
 
 
 class TestSigamClip(object):
