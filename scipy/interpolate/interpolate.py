@@ -511,11 +511,19 @@ class PPoly(_Interpolator1D):
         Coefficients of the polynomials. They are reshaped
         to a 3-dimensional array with the last dimension representing
         the trailing dimensions of the original coefficient array.
+    fill_value
+        The fill value passed in.
 
     Methods
     -------
     __call__
+    derivative
+    antiderivative
+    integrate
+    roots
+    extend
     from_spline
+    construct_fast
 
     Notes
     -----
@@ -524,6 +532,8 @@ class PPoly(_Interpolator1D):
     larger than 20-30.
 
     """
+
+    __slots__ = ('c', 'x', 'fill_value')
 
     def __init__(self, c, x, fill_value=None):
         _Interpolator1D.__init__(self)
@@ -540,6 +550,8 @@ class PPoly(_Interpolator1D):
             raise ValueError("at least 2 breakpoints are needed")
         if self.c.shape[1] != self.x.size-1:
             raise ValueError("number of coefficients != len(x)-1")
+        if np.any(self.x[1:] - self.x[:-1] < 0):
+            raise ValueError("x-coordinates are not in increasing order")
 
         self._y_axis = 0
         self._y_extra_shape = self.c.shape[2:]
@@ -551,6 +563,28 @@ class PPoly(_Interpolator1D):
                 raise ValueError("No coefficients")
             self.c = self.c.reshape(self.c.shape[0], self.c.shape[1], -1)
         self.c = np.ascontiguousarray(self.c, dtype=self.dtype)
+
+    @classmethod
+    def construct_fast(cls, c, x, fill_value=None):
+        """
+        Construct the piecewise polynomial without making checks.
+
+        Takes the same parameters as the constructor. Input arguments
+        `c` and `x` must be arrays of the correct shape and type.  The
+        `c` array can only be of dtypes float and complex, and `x`
+        array must have dtype float.
+
+        """
+        self = _Interpolator1D.__new__(cls)
+        self._y_extra_shape = c.shape[2:]
+        self.c = c.reshape(c.shape[0], c.shape[1], -1)
+        self.x = x
+        if fill_value is None:
+            fill_value = np.nan
+        self.fill_value = fill_value
+        self._y_axis = 0
+        self.dtype = c.dtype
+        return self
 
     def __call__(self, x, nu=0):
         """
@@ -872,7 +906,7 @@ class PPoly(_Interpolator1D):
             y = fitpack.splev(t[:-1], tck, der=m)
             cvals[k - m, :] = y/spec.gamma(m+1)
 
-        return cls(cvals, t, fill_value=fill_value)
+        return cls.construct_fast(cvals, t, fill_value=fill_value)
 
 
 # backward compatibility wrapper

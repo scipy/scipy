@@ -408,6 +408,21 @@ class TestPPoly(TestCase):
         p = PPoly(c, x)
         assert_allclose(p(0.3), 1*0.3**2 + 2*0.3 + 3)
         assert_allclose(p(0.7), 4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6)
+        assert_(np.isnan(p(-0.1)))
+
+    def test_construct_fast(self):
+        np.random.seed(1234)
+        c = np.array([[1, 4], [2, 5], [3, 6]], dtype=float)
+        x = np.array([0, 0.5, 1])
+        p = PPoly.construct_fast(c, x)
+        assert_allclose(p(0.3), 1*0.3**2 + 2*0.3 + 3)
+        assert_allclose(p(0.7), 4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6)
+        assert_(np.isnan(p(-0.1)))
+
+    def test_sort_check(self):
+        c = np.array([[1, 4], [2, 5], [3, 6]])
+        x = np.array([0, 1, 0.5])
+        assert_raises(ValueError, PPoly, c, x)
 
     def test_vs_alternative_implementations(self):
         np.random.seed(1234)
