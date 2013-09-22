@@ -1384,7 +1384,7 @@ class _TestCommon:
                 try:
                     assert_array_equal(todense(np.add(ax, bx)),
                                        np.add(a, b))
-                except TypeError:
+                except NotImplementedError:
                     # Not implemented for all spmatrix types
                     pass
             else:
@@ -1400,7 +1400,7 @@ class _TestCommon:
                 try:
                     assert_array_equal(todense(np.subtract(ax, bx)),
                                        np.subtract(a, b))
-                except TypeError:
+                except NotImplementedError:
                     # Not implemented for all spmatrix types
                     pass
             else:
