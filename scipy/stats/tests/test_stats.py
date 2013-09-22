@@ -47,31 +47,63 @@ TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12], float)
 ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
 
-class TestBasicStats(TestCase):
-    """ W.II.C. Compute basic statistic on all the variables.
-
-        The means should be the fifth value of all the variables (case FIVE).
-        The standard deviations should be "undefined" or missing for MISS,
-        0 for ZERO, and 2.738612788 (times 10 to a power) for all the other variables.
-        II. C. Basic Statistics
-    """
-
+class TestTrimmedStats(TestCase):
+    # TODO: write these tests to handle missing values properly
     dprec = np.finfo(np.float64).precision
 
-    # Really need to write these tests to handle missing values properly
-    def test_tmeanX(self):
+    def test_tmean(self):
         y = stats.tmean(X, (2, 8), (True, True))
-        assert_approx_equal(y, 5.0, significant=TestBasicStats.dprec)
+        assert_approx_equal(y, 5.0, significant=self.dprec)
 
-    def test_tvarX(self):
-        y = stats.tvar(X, (2, 8), (True, True))
-        assert_approx_equal(y, 4.6666666666666661,
-                            significant=TestBasicStats.dprec)
+        y1 = stats.tmean(X, limits=(2, 8), inclusive=(False, False))
+        y2 = stats.tmean(X, limits=None)
+        assert_approx_equal(y1, y2, significant=self.dprec)
 
-    def test_tstdX(self):
+    def test_tvar(self):
+        y = stats.tvar(X, limits=(2, 8), inclusive=(True, True))
+        assert_approx_equal(y, 4.6666666666666661, significant=self.dprec)
+
+        y = stats.tvar(X, limits=None)
+        assert_approx_equal(y, X.var(ddof=1), significant=self.dprec)
+
+    def test_tstd(self):
         y = stats.tstd(X, (2, 8), (True, True))
-        assert_approx_equal(y, 2.1602468994692865,
-                            significant=TestBasicStats.dprec)
+        assert_approx_equal(y, 2.1602468994692865, significant=self.dprec)
+
+        y = stats.tstd(X, limits=None)
+        assert_approx_equal(y, X.std(ddof=1), significant=self.dprec)
+
+    def test_tmin(self):
+        x = np.arange(10)
+        assert_equal(stats.tmin(x), 0)
+        assert_equal(stats.tmin(x, lowerlimit=0), 0)
+        assert_equal(stats.tmin(x, lowerlimit=0, inclusive=False), 1)
+
+        x = x.reshape((5, 2))
+        assert_equal(stats.tmin(x, lowerlimit=0, inclusive=False), [2, 1])
+        assert_equal(stats.tmin(x, axis=1), [0, 2, 4, 6, 8])
+        assert_equal(stats.tmin(x, axis=None), 0)
+
+    def test_tmax(self):
+        x = np.arange(10)
+        assert_equal(stats.tmax(x), 9)
+        assert_equal(stats.tmax(x, upperlimit=9),9)
+        assert_equal(stats.tmax(x, upperlimit=9, inclusive=False), 8)
+
+        x = x.reshape((5, 2))
+        assert_equal(stats.tmax(x, upperlimit=9, inclusive=False), [8, 7])
+        assert_equal(stats.tmax(x, axis=1), [1, 3, 5, 7, 9])
+        assert_equal(stats.tmax(x, axis=None), 9)
+
+    def test_tsem(self):
+        y = stats.tsem(X, limits=(3, 8), inclusive=(False, True))
+        y_ref = np.array([4, 5, 6, 7, 8])
+        assert_approx_equal(y, y_ref.std(ddof=1) / np.sqrt(y_ref.size),
+                            significant=self.dprec)
+
+        assert_approx_equal(stats.tsem(X, limits=[-1, 10]),
+                            stats.tsem(X, limits=None),
+                            significant=self.dprec)
 
 
 class TestNanFunc(TestCase):
