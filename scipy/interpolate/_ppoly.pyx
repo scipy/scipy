@@ -12,6 +12,7 @@ cimport cython
 cdef double nan = np.nan
 
 cimport libc.stdlib
+cimport libc.math
 
 ctypedef double complex double_complex
 
@@ -508,7 +509,7 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
     Uses LAPACK + the companion matrix method.
 
     """
-    cdef double *a, *work
+    cdef double *a, *work, a0, a1, a2, d
     cdef int lwork, n, j, order
     cdef int nworkspace, info
 
@@ -528,6 +529,49 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
     elif order == 0:
         # Nonzero constant polynomial: no roots
         return 0
+    elif order == 1:
+        # Low-order polynomial: a0*x + a1
+        a0 = c[n-1-order,ci,cj]
+        a1 = c[n-1-order+1,ci,cj]
+        wr[0] = -a1 / a0
+        wi[0] = 0
+        return 1
+    elif order == 2:
+        # Low-order polynomial: a0*x**2 + a1*x + a2
+        a0 = c[n-1-order,ci,cj]
+        a1 = c[n-1-order+1,ci,cj]
+        a2 = c[n-1-order+2,ci,cj]
+
+        d = a1*a1 - 4*a0*a2
+        if d < 0:
+            # no real roots
+            d = libc.math.sqrt(-d)
+            wr[0] = -a1/(2*a0)
+            wi[0] = -d/(2*a0)
+            wr[1] = -a1/(2*a0)
+            wi[1] = d/(2*a0)
+            return 2
+
+        d = libc.math.sqrt(d)
+
+        # avoid cancellation in subtractions
+        if d == 0:
+            wr[0] = -a1/(2*a0)
+            wi[0] = 0
+            wr[1] = -a1/(2*a0)
+            wi[1] = 0
+        elif a1 < 0:
+            wr[0] = (2*a2) / (-a1 + d) # == (-a1 - d)/(2*a0)
+            wi[0] = 0
+            wr[1] = (-a1 + d) / (2*a0)
+            wi[1] = 0
+        else:
+            wr[0] = (-a1 - d)/(2*a0)
+            wi[0] = 0
+            wr[1] = (2*a2) / (-a1 - d) # == (-a1 + d)/(2*a0)
+            wi[1] = 0
+
+        return 2
 
     # Compute required workspace and allocate it
     lwork = 1 + 8*n
@@ -543,7 +587,7 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
     for j in range(order*order):
         a[j] = 0
     for j in range(order):
-        a[j + (order-1)*order] = -c[c.shape[0]-1-j,ci,cj]/c[c.shape[0]-1-order,ci,cj]
+        a[j + (order-1)*order] = -c[n-1-j,ci,cj]/c[n-1-order,ci,cj]
         if j + 1 < order:
             a[j+1 + order*j] = 1
 
@@ -557,3 +601,55 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
 
     # Return with roots
     return order
+
+
+def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w):
+    """
+    Find roots of polynomials.
+
+    This function is for testing croots_poly1
+
+    Parameters
+    ----------
+    c : ndarray, (k, m, n)
+        Coefficients of several order-k polynomials
+    w : ndarray, (k, m, n)
+        Output argument --- roots of the polynomials.
+
+    """
+
+    cdef double *wr, *wi
+    cdef void *workspace
+    cdef int i, j, k, nroots
+
+    if (c.shape[0] != w.shape[0] or c.shape[1] != w.shape[1]
+            or c.shape[2] != w.shape[2]):
+        raise ValueError("c and w have incompatible shapes")
+    if c.shape[0] <= 0:
+        return
+
+    wr = <double*>libc.stdlib.malloc(c.shape[0] * sizeof(double))
+    wi = <double*>libc.stdlib.malloc(c.shape[0] * sizeof(double))
+    workspace = NULL
+
+    try:
+        for i in range(c.shape[1]):
+            for j in range(c.shape[2]):
+                for k in range(c.shape[0]):
+                    w[k,i,j] = nan
+
+                nroots = croots_poly1(c, i, j, wr, wi, &workspace)
+
+                if nroots == -1:
+                    continue
+                elif nroots < -1 or nroots >= c.shape[0]:
+                    raise RuntimeError("root-finding failed")
+
+                for k in range(nroots):
+                    w[k,i,j].real = wr[k]
+                    w[k,i,j].imag = wi[k]
+    finally:
+        if workspace != NULL:
+            libc.stdlib.free(workspace)
+        libc.stdlib.free(wr)
+        libc.stdlib.free(wi)

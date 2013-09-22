@@ -11,6 +11,8 @@ from scipy.lib.six import xrange
 from scipy.interpolate import interp1d, interp2d, lagrange, PPoly, ppform, \
      splrep, splev, splantider, splint, sproot
 
+from scipy.interpolate import _ppoly
+
 from scipy.lib._gcutils import assert_deallocated
 
 
@@ -651,6 +653,34 @@ class TestPPoly(TestCase):
 
         # Check that we checked a number of roots
         assert_(num > 100, repr(num))
+
+    def test_roots_croots(self):
+        # Test the complex root finding algorithm
+        np.random.seed(1234)
+
+        for k in range(1, 15):
+            c = np.random.rand(k, 1, 130)
+
+            if k == 3:
+                # add a case with zero discriminant
+                c[:,0,0] = 1, 2, 1
+            
+            w = np.empty(c.shape, dtype=complex)
+            _ppoly._croots_poly1(c, w)
+
+            if k == 1:
+                assert_(np.isnan(w).all())
+                continue
+
+            res = 0
+            cres = 0
+            for i in range(k):
+                res += c[i,None] * w**(k-1-i)
+                cres += abs(c[i,None] * w**(k-1-i))
+            res /= cres
+            res = res.ravel()
+            res = res[~np.isnan(res)]
+            assert_allclose(res, 0, atol=1e-10)
 
     def test_extend(self):
         # Test adding new points to the piecewise polynomial
