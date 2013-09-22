@@ -54,6 +54,7 @@ Filtering
    lfilter_zi    -- Compute an initial state zi for the lfilter function that
                  -- corresponds to the steady state of the step response.
    filtfilt      -- A forward-backward filter.
+   savgol_filter -- Filter a signal using the Savitzky-Golay filter.
 
    deconvolve    -- 1-d deconvolution using lfilter.
 
@@ -87,6 +88,8 @@ Filter design
                     -- FIR filter attenuation.
    kaiserord     -- Design a Kaiser window to limit ripple and width of
                     -- transition region.
+   savgol_coeffs -- Compute the FIR filter coefficients for a Savitzky-Golay
+                    -- filter.
    remez         -- Optimal FIR filter design.
 
    unique_roots  -- Unique roots and their multiplicities.
@@ -240,6 +243,7 @@ from .fir_filter_design import *
 from .ltisys import *
 from .windows import *
 from .signaltools import *
+from ._savitzky_golay import savgol_coeffs, savgol_filter
 from .spectral import *
 from .wavelets import *
 from ._peak_finding import *
