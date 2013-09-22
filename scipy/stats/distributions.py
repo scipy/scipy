@@ -7617,9 +7617,9 @@ class randint_gen(rv_discrete):
     -----
     The probability mass function for `randint` is::
 
-        randint.pmf(k) = 1./(max- min)
+        randint.pmf(k) = 1. / (max - min)
 
-    for ``k = min,...,max``.
+    for ``k = min, ..., max-1``.
 
     `randint` takes ``min`` and ``max`` as shape parameters.
 
@@ -7628,19 +7628,19 @@ class randint_gen(rv_discrete):
     """
     def _argcheck(self, min, max):
         self.a = min
-        self.b = max-1
+        self.b = max - 1
         return (max > min)
 
     def _pmf(self, k, min, max):
-        fact = 1.0 / (max - min)
-        return fact
+        p = np.ones_like(k) / (max - min)
+        return np.where((k >= min) & (k < max ), p, 0.)
 
     def _cdf(self, x, min, max):
         k = floor(x)
-        return (k-min+1)*1.0/(max-min)
+        return 1. * (k - min + 1.) / (max - min)
 
     def _ppf(self, q, min, max):
-        vals = ceil(q*(max-min)+min)-1
+        vals = ceil(q * (max - min) + min) - 1
         vals1 = (vals-1).clip(min, max)
         temp = self._cdf(vals1, min, max)
         return where(temp >= q, vals1, vals)
@@ -7649,9 +7649,9 @@ class randint_gen(rv_discrete):
         m2, m1 = asarray(max), asarray(min)
         mu = (m2 + m1 - 1.0) / 2
         d = m2 - m1
-        var = (d-1)*(d+1.0)/12.0
+        var = (d*d - 1) / 12.0
         g1 = 0.0
-        g2 = -6.0/5.0*(d*d+1.0)/(d-1.0)*(d+1.0)
+        g2 = -6.0/5.0 * (d*d + 1.0) / (d*d - 1.0)
         return mu, var, g1, g2
 
     def _rvs(self, min, max=None):

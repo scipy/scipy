@@ -81,14 +81,14 @@ def test_discrete_basic():
         if distfn.__class__._entropy != stats.rv_discrete._entropy:
             yield check_private_entropy, distfn, arg
 
-#@npt.dec.slow
+
 def test_moments():
     knf = npt.dec.knownfailureif
     for distname, arg in distdiscrete:
         distfn = getattr(stats,distname)
         m, v, s, k = distfn.stats(*arg, moments='mvsk')
 
-        cond = distname in ['zipf', 'randint']
+        cond = distname in ['zipf']
         yield knf(cond, distname + ' normalization fails')(
                 check_normalization), distfn, arg, distname
 
@@ -100,10 +100,9 @@ def test_moments():
         yield knf(distname=='zipf', 'zipf fails')(check_skew_expect),\
                 distfn, arg, m, v, s, distname
 
-        cond = distname in ['randint', 'zipf']
+        cond = distname in ['zipf']
         msg = distname + ' fails kurtosis'
         yield knf(cond, msg)(check_kurt_expect), distfn, arg, m, v, k, distname
-
 
 
 @npt.dec.slow
