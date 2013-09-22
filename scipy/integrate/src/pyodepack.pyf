@@ -1,0 +1,54 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module _pyodepack ! in 
+    interface  ! in :_pyodepack
+        module pyodepack ! in :_pyodepack:pyodepack.f90
+            subroutine odeint(func,neq,y0,t,rtol,atol,tcrit,h0,hmax,hmin,dfunc,jt,ml,mu,ixpr,mxstep,mxhnil,mxordn,mxords,yout,iostate,rout,iout) ! in :_pyodepack:pyodepack.f90:pyodepack
+                external func
+                integer, optional,intent(hide),check(len(y0)>=neq),depend(y0) :: neq=len(y0)
+                double precision dimension(neq),intent(in) :: y0
+                double precision dimension(:),intent(in) :: t
+                double precision dimension(:),intent(in) :: rtol
+                double precision dimension(:),intent(in) :: atol
+                double precision,dimension(:),intent(in) :: tcrit
+                double precision intent(in) :: h0
+                double precision intent(in) :: hmax
+                double precision intent(in) :: hmin
+                external dfunc
+                integer intent(in) :: jt
+                integer intent(in) :: ml
+                integer intent(in) :: mu
+                integer intent(in),check((ixpr == 0) || (ixpr == 1)) :: ixpr
+                integer intent(in),check(mxstep >= 0) :: mxstep
+                integer intent(in),check(mxhnil >= 0) :: mxhnil
+                integer intent(in),check(mxordn >= 0) :: mxordn
+                integer intent(in),check(mxords >= 0) :: mxords
+                double precision dimension(size(t),neq),intent(out),depend(t,neq) :: yout
+                integer intent(out) :: iostate
+                double precision dimension(size(t),5),intent(out),depend(t) :: rout
+                integer dimension(size(t),10),intent(out),depend(t) :: iout
+                interface odeint_user_interface ! in :_pyodepack:pyodepack.f90:pyodepack:odeint
+                    subroutine func(n,t,y,ydot) ! in :_pyodepack:pyodepack.f90:pyodepack:odeint:odeint_user_interface
+                        integer,intent(hide),check(len(y) >= n),depend(y) :: n=len(y)
+                        double precision intent(in) :: t
+                        double precision dimension(n),intent(in) :: y
+                        double precision dimension(n),intent(out),depend(n) :: ydot
+                    end subroutine func
+                    subroutine dfunc(n,t,y,ml,mu,jac,nrowjac) ! in :_pyodepack:pyodepack.f90:pyodepack:odeint:odeint_user_interface
+                        integer,intent(hide),check(len(y) >= n),depend(y) :: n=len(y)
+                        double precision intent(in) :: t
+                        double precision dimension(n),intent(in) :: y
+                        integer intent(hide) :: ml
+                        integer intent(hide) :: mu
+                        double precision dimension(nrowjac,n),intent(out),depend(nrowjac,n) :: jac
+                        integer intent(hide) :: nrowjac
+                    end subroutine dfunc
+                end interface odeint_user_interface
+            end subroutine odeint
+        end module pyodepack
+    end interface 
+end python module _pyodepack
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

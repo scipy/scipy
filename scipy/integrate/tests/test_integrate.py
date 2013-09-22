@@ -23,9 +23,13 @@ from scipy.integrate import odeint, ode, complex_ode
 class TestOdeint(TestCase):
     # Check integrate.odeint
     def _do_problem(self, problem):
+        jac = None
+        if hasattr(problem, 'jac'):
+            jac = problem.jac
         t = arange(0.0, problem.stop_t, 0.05)
-        z, infodict = odeint(problem.f, problem.z0, t, full_output=True)
-        assert_(problem.verify(z, t))
+        res = odeint(problem.f, problem.z0, t, jac,
+                     rtol=problem.rtol / 10, atol=problem.atol / 10)
+        assert_(problem.verify(res.y, t), problem.__class__)
 
     def test_odeint(self):
         for problem_cls in PROBLEMS:
@@ -38,14 +42,10 @@ class TestOdeint(TestCase):
 class TestOde(TestCase):
     # Check integrate.ode
     def _do_problem(self, problem, integrator, method='adams'):
-
-        # ode has callback arguments in different order than odeint
-        f = lambda t, z: problem.f(z, t)
         jac = None
         if hasattr(problem, 'jac'):
-            jac = lambda t, z: problem.jac(z, t)
-
-        ig = ode(f, jac)
+            jac = problem.jac
+        ig = ode(problem.f, jac)
         ig.set_integrator(integrator,
                           atol=problem.atol/10,
                           rtol=problem.rtol/10,
@@ -159,13 +159,10 @@ class TestOde(TestCase):
 class TestComplexOde(TestCase):
     # Check integrate.complex_ode
     def _do_problem(self, problem, integrator, method='adams'):
-
-        # ode has callback arguments in different order than odeint
-        f = lambda t, z: problem.f(z, t)
         jac = None
         if hasattr(problem, 'jac'):
-            jac = lambda t, z: problem.jac(z, t)
-        ig = complex_ode(f, jac)
+            jac = problem.jac
+        ig = complex_ode(problem.f, jac)
         ig.set_integrator(integrator,
                           atol=problem.atol/10,
                           rtol=problem.rtol/10,
@@ -356,7 +353,7 @@ class SimpleOscillator(ODE):
     k = 4.0
     m = 1.0
 
-    def f(self, z, t):
+    def f(self, t, z):
         tmp = zeros((2,2), float)
         tmp[0,1] = 1.0
         tmp[1,0] = -self.k / self.m
@@ -374,10 +371,10 @@ class ComplexExp(ODE):
     z0 = exp([1j,2j,3j,4j,5j])
     cmplx = True
 
-    def f(self, z, t):
+    def f(self, t, z):
         return 1j*z
 
-    def jac(self, z, t):
+    def jac(self, t, z):
         return 1j*eye(5)
 
     def verify(self, zs, t):
@@ -391,14 +388,55 @@ class Pi(ODE):
     z0 = [0]
     cmplx = True
 
-    def f(self, z, t):
+    def f(self, t, z):
         return array([1./(t - 10 + 1j)])
 
     def verify(self, zs, t):
         u = -2j*numpy.arctan(10)
         return allclose(u, zs[-1,:], atol=self.atol, rtol=self.rtol)
 
-PROBLEMS = [SimpleOscillator, ComplexExp, Pi]
+
+class LsodaOde(ODE):
+    r"""Example problem from LSODA.F"""
+    stop_t = 4.0e3
+    z0 = array([1.0, 0.0, 0.0], float)
+
+    stiff = True
+
+    rtol = 1.0e-4
+    atol = 1.0e-10
+
+    def f(self, t, z):
+        return [
+            -0.04 * z[0] + 1.0e4 * z[1] * z[2],
+            -(-0.04 * z[0] + 1.0e4 * z[1] * z[2]) - (3.0e7 * z[1] * z[1]),
+            3.0e7 * z[1] * z[1]
+        ]
+
+    def jac(self, t, z):
+        return [
+            [-0.04, 1.0e4 * z[2], 1.0e4 * z[1]],
+            [0.04, -1.0e4 * z[2] - 6.0e7 * z[1], -1.0e4 * z[1]],
+            [0, 6.0e7 * z[1], 0]
+        ]
+
+    def verify(self, zs, t):
+        u = array([1.831976e-1, 8.941773e-7, 8.168015e-1])
+        return allclose(u, zs[-1, :], atol=self.atol, rtol=self.rtol)
+
+
+PROBLEMS = [SimpleOscillator, ComplexExp, Pi, LsodaOde]
+
+#------------------------------------------------------------------------------
+
+
+def test_odeint_raises_callback_exception():
+    """Exceptions raised in callback functions properly propagate,
+    see gh-2570"""
+    def func(t, y):
+        raise TypeError
+    assert_raises(TypeError, odeint, func, [1.0, 0.0], [0.0, 0.1])
+
 
 #------------------------------------------------------------------------------
 

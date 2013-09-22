@@ -53,7 +53,7 @@ class Test_lsim2(object):
         u = np.array([0.0, 0.0, 1.0, 1.0, 0.0, 0.0])
         # Simple integrator:  x'(t) = u(t)
         system = ([1.0],[1.0, 0.0])
-        tout, y, x = lsim2(system, u, t, hmax=0.01)
+        tout, y, x = lsim2(system, u, t, max_step=0.01)
         expected_x = np.array([0.0, 0.0, 0.0, 0.1, 0.1, 0.1])
         assert_almost_equal(x[:,0], expected_x)
 

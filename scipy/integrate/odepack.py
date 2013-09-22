@@ -1,28 +1,33 @@
 # Author: Travis Oliphant
+#
+
 from __future__ import division, print_function, absolute_import
 
 __all__ = ['odeint']
 
-from . import _odepack
-from copy import copy
+import warnings
+from collections import namedtuple
+from . import _pyodepack
 
-_msgs = {2: "Integration successful.",
-         -1: "Excess work done on this call (perhaps wrong Dfun type).",
-         -2: "Excess accuracy requested (tolerances too small).",
-         -3: "Illegal input detected (internal error).",
-         -4: "Repeated error test failures (internal error).",
-         -5: "Repeated convergence failures (perhaps bad Jacobian or tolerances).",
-         -6: "Error weight became zero during problem.",
-         -7: "Internal workspace insufficient to finish (internal error)."
-         }
+_msgs = {
+    2: "Integration successful.",
+    -1: "Excess work done on this call (perhaps wrong dfunc type).",
+    -2: "Excess accuracy requested (tolerances too small).",
+    -3: "Illegal input detected (internal error).",
+    -4: "Repeated error test failures (internal error).",
+    -5: "Repeated convergence failures (perhaps bad Jacobian or tolerances).",
+    -6: "Error weight became zero during problem.",
+    -7: "Internal workspace insufficient to finish (internal error)."
+}
+
+Result = namedtuple('Result', 'y success infodict')
 
 
-def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
-           ml=None, mu=None, rtol=None, atol=None, tcrit=None, h0=0.0,
-           hmax=0.0, hmin=0.0, ixpr=0, mxstep=0, mxhnil=0, mxordn=12,
-           mxords=5, printmessg=0):
-    """
-    Integrate a system of ordinary differential equations.
+def odeint(func, y0, t, dfunc=None,
+           ml=None, mu=None, rtol=None, atol=None, tcrit=None, first_step=0.0,
+           max_step=0.0, min_step=0.0, ixpr=0, max_nosteps=0, max_msgs=0,
+           max_order_ns=12, max_order_s=5):
+    """Integrate a system of ordinary differential equations.
 
     Solve a system of ordinary differential equations using lsoda from the
     FORTRAN library odepack.
@@ -30,38 +35,29 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     Solves the initial value problem for stiff or non-stiff systems
     of first order ode-s::
 
-        dy/dt = func(y,t0,...)
+        dy/dt = func(t0, y, ...)
 
     where y can be a vector.
 
     Parameters
     ----------
-    func : callable(y, t0, ...)
+    func : callable(t0, y, ...)
         Computes the derivative of y at t0.
     y0 : array
         Initial condition on y (can be a vector).
     t : array
         A sequence of time points for which to solve for y.  The initial
         value point should be the first element of this sequence.
-    args : tuple, optional
-        Extra arguments to pass to function.
-    Dfun : callable(y, t0, ...)
+    dfunc : callable(t0, y, ...)
         Gradient (Jacobian) of `func`.
-    col_deriv : bool, optional
-        True if `Dfun` defines derivatives down columns (faster),
-        otherwise `Dfun` should define derivatives across rows.
-    full_output : bool, optional
-        True if to return a dictionary of optional outputs as the second output
-    printmessg : bool, optional
-        Whether to print the convergence message
 
     Returns
     -------
-    y : array, shape (len(t), len(y0))
-        Array containing the value of y for each desired time in t,
-        with the initial value `y0` in the first row.
-    infodict : dict, only returned if full_output == True
-        Dictionary containing additional output information
+    Result
+        The integration result represented as a `Result` object.
+        Its attributes are: `y`, the solution array, `success`, a boolean
+        flag indicating if the solver exited successfully and `infodict`
+        with additional output information:
 
         =======  ============================================================
         key      meaning
@@ -108,22 +104,22 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     tcrit : ndarray, optional
         Vector of critical points (e.g. singularities) where integration
         care should be taken.
-    h0 : float, (0: solver-determined), optional
+    first_step : float, (0: solver-determined), optional
         The step size to be attempted on the first step.
-    hmax : float, (0: solver-determined), optional
+    max_step : float, (0: solver-determined), optional
         The maximum absolute step size allowed.
-    hmin : float, (0: solver-determined), optional
+    min_step : float, (0: solver-determined), optional
         The minimum absolute step size allowed.
     ixpr : bool, optional
         Whether to generate extra printing at method switches.
-    mxstep : int, (0: solver-determined), optional
+    max_nosteps : int, (0: solver-determined), optional
         Maximum number of (internally defined) steps allowed for each
         integration point in t.
-    mxhnil : int, (0: solver-determined), optional
+    max_msgs : int, (0: solver-determined), optional
         Maximum number of messages printed.
-    mxordn : int, (0: solver-determined), optional
+    max_order_ns : int, (0: solver-determined), optional
         Maximum order to be allowed for the non-stiff (Adams) method.
-    mxords : int, (0: solver-determined), optional
+    max_order_s : int, (0: solver-determined), optional
         Maximum order to be allowed for the stiff (BDF) method.
 
     See Also
@@ -133,27 +129,47 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
 
     """
 
-    if ml is None:
-        ml = -1  # changed to zero inside function call
-    if mu is None:
-        mu = -1  # changed to zero inside function call
-    t = copy(t)
-    y0 = copy(y0)
-    output = _odepack.odeint(func, y0, t, args, Dfun, col_deriv, ml, mu,
-                             full_output, rtol, atol, tcrit, h0, hmax, hmin,
-                             ixpr, mxstep, mxhnil, mxordn, mxords)
-    if output[-1] < 0:
-        print(_msgs[output[-1]])
-        print("Run with full_output = 1 to get quantitative information.")
-    else:
-        if printmessg:
-            print(_msgs[output[-1]])
+    tol = 1.49012e-8
+    if rtol is None:
+        rtol = tol
+    if atol is None:
+        atol = tol
 
-    if full_output:
-        output[1]['message'] = _msgs[output[-1]]
+    jt = 1
+    if dfunc is None:
+        jt = 2
+        dfunc = lambda t, y: None
 
-    output = output[:-1]
-    if len(output) == 1:
-        return output[0]
+    if (ml is not None) and (mu is not None):
+        jt += 3
     else:
-        return output
+        ml = mu = -1
+
+    odeint = _pyodepack.pyodepack.odeint
+    y, iostate, rout, iout = odeint(func, y0, t, rtol, atol, tcrit,
+                                    first_step, max_step, min_step,
+                                    dfunc, jt, ml, mu,
+                                    ixpr, max_nosteps, max_msgs,
+                                    max_order_ns, max_order_s)
+    if iostate == 0:
+        raise MemoryError('Could not allocate work arrays')
+    elif iostate < 0:
+        with warnings.catch_warnings():
+            warnings.simplefilter("always")
+            warnings.warn(RuntimeWarning(_msgs[iostate]))
+
+    infodict = {
+        'hu': rout[:, 0],
+        'tcur': rout[:, 2],
+        'tolsf': rout[:, 3],
+        'tsw': rout[:, 4],
+        'nst': iout[:, 0],
+        'nfe': iout[:, 1],
+        'nje': iout[:, 2],
+        'nqu': iout[:, 3],
+        'imxer': iout[:, 5],
+        'lenrw': iout[:, 6],
+        'leniw': iout[:, 7],
+        'mused': iout[:, 8],
+    }
+    return Result(y, iostate == 2, infodict)

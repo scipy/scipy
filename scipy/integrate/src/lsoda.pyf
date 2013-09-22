@@ -43,9 +43,9 @@ python module lsoda
          integer intent(in),check(itask>0 && itask<6) :: itask
          integer intent(in,out),check(istate>0 && istate<4) :: istate
          integer intent(hide) :: iopt = 1
-         double precision dimension(lrw),intent(in,cache) :: rwork
+         double precision dimension(lrw),intent(inplace) :: rwork
          integer intent(hide),check(len(rwork)>=lrw),depend(rwork) :: lrw=len(rwork)
-         integer dimension(liw),intent(in,cache) :: iwork
+         integer dimension(liw),intent(inplace) :: iwork
          integer intent(hide),check(len(iwork)>=liw),depend(iwork) :: liw=len(iwork)
          integer intent(in) :: jt
        end subroutine lsoda

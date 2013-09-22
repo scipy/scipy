@@ -4,7 +4,7 @@ from bento.commands import hooks
 def pre_build(context):
     context.tweak_extension("_quadpack",
                             use="quadpack linpack_lite mach BLAS CLIB")
-    context.tweak_extension("_odepack",
+    context.tweak_extension("_pyodepack",
                             use="odepack linpack_lite mach BLAS CLIB")
     context.tweak_extension("vode",
                             features="c cshlib pyext bento f2py",

@@ -31,9 +31,11 @@ scipy/fftpack/_fftpackmodule.c
 scipy/fftpack/convolvemodule.c
 scipy/fftpack/src/dct.c
 scipy/fftpack/src/dst.c
-scipy/integrate/_dopmodule.c
-scipy/integrate/lsodamodule.c
-scipy/integrate/vodemodule.c
+scipy/integrate/src/_dopmodule.c
+scipy/integrate/src/lsodamodule.c
+scipy/integrate/src/vodemodule.c
+scipy/integrate/src/_pyodepack-f2pywrappers2.f90
+scipy/integrate/src/_pyodepackmodule.c
 scipy/interpolate/interpnd.c
 scipy/interpolate/src/dfitpack-f2pywrappers.f
 scipy/interpolate/src/dfitpackmodule.c
