@@ -1305,8 +1305,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     w : array
         Array of k eigenvalues
     v : array
-       An array of k eigenvectors
-       The v[i] is the eigenvector corresponding to the eigenvector w[i]
+        An array representing the `k` eigenvectors.  The column ``v[:, i]`` is
+        the eigenvector corresponding to the eigenvalue ``w[i]``.
 
     Other Parameters
     ----------------
