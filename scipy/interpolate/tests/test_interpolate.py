@@ -673,6 +673,30 @@ class TestPPoly(TestCase):
         assert_array_equal(pp2.c, pp3.c)
         assert_array_equal(pp2.x, pp3.x)
 
+    def test_extend_diff_orders(self):
+        # Test extending polynomial with different order one
+        np.random.seed(1234)
+
+        x = np.linspace(0, 1, 6)
+        c = np.random.rand(2, 5)
+
+        x2 = np.linspace(1, 2, 6)
+        c2 = np.random.rand(4, 5)
+
+        pp1 = PPoly(c, x)
+        pp2 = PPoly(c2, x2)
+
+        pp_comb = PPoly(c, x)
+        pp_comb.extend(c2, x2[1:])
+
+        # NB. doesn't match to pp1 at the endpoint, because pp1 is not
+        #     continuous with pp2 as we took random coefs.
+        xi1 = np.linspace(0, 1, 300, endpoint=False)
+        xi2 = np.linspace(1, 2, 300)
+
+        assert_allclose(pp1(xi1), pp_comb(xi1))
+        assert_allclose(pp2(xi2), pp_comb(xi2))
+
 
 class TestPpform(TestCase):
     def test_shape(self):
