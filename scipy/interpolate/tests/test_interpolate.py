@@ -5,6 +5,7 @@ from numpy.testing import assert_, assert_equal, assert_almost_equal, \
         dec, TestCase, run_module_suite, assert_allclose
 from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
+import warnings
 
 from scipy.lib.six import xrange
 
@@ -730,12 +731,15 @@ class TestPPoly(TestCase):
 
 class TestPpform(TestCase):
     def test_shape(self):
-        np.random.seed(1234)
-        c = np.random.rand(3, 12, 5, 6, 7)
-        x = np.sort(np.random.rand(13))
-        p = ppform(c, x)
-        xp = np.random.rand(3, 4)
-        assert_equal(p(xp).shape, (3, 4, 5, 6, 7))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+
+            np.random.seed(1234)
+            c = np.random.rand(3, 12, 5, 6, 7)
+            x = np.sort(np.random.rand(13))
+            p = ppform(c, x)
+            xp = np.random.rand(3, 4)
+            assert_equal(p(xp).shape, (3, 4, 5, 6, 7))
 
 
 def _ppoly_eval_1(c, x, xps):

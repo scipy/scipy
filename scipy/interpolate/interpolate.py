@@ -11,6 +11,7 @@ from numpy import shape, sometrue, array, transpose, searchsorted, \
 import numpy as np
 import scipy.special as spec
 import math
+import warnings
 
 from scipy.lib.six import xrange
 
@@ -919,6 +920,9 @@ class ppform(PPoly):
     """
 
     def __init__(self, coeffs, breaks, fill=0.0, sort=False):
+        warnings.warn("ppform is deprecated -- use PPoly instead",
+                      category=DeprecationWarning)
+
         if sort:
             breaks = np.sort(breaks)
         else:
