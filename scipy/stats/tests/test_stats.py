@@ -1059,25 +1059,22 @@ class TestScoreatpercentile(TestCase):
         assert_raises(ValueError, stats.scoreatpercentile, [1], -1)
 
 
-class TestItemfreq(TestCase):
+class TestItemfreq(object):
     a = [5, 7, 1, 2, 1, 5, 7] * 10
     b = [1, 2, 5, 7]
 
     def test_numeric_types(self):
         # Check itemfreq works for all dtypes (adapted from np.unique tests)
-        def _check_itemfreq(a, b, dt):
+        def _check_itemfreq(dt):
+            a = np.array(self.a, dt)
             v = stats.itemfreq(a)
             assert_array_equal(v[:, 0], [1, 2, 5, 7])
-            assert_array_equal(v[:, 1], np.bincount(v[:, 0]))
+            assert_array_equal(v[:, 1], np.array([20, 10, 20, 20], dtype=dt))
 
-        a, b = self.a, self.b
-        types = []
-        types.extend(np.typecodes['AllInteger'])
-        types.extend(np.typecodes['AllFloat'])
-        for dt in types:
-            aa = np.array(a, dt)
-            bb = np.array(b, dt)
-            yield _check_itemfreq, aa, bb, dt
+        dtypes = [np.int32, np.int64, np.float32, np.float64,
+                  np.complex64, np.complex128]
+        for dt in dtypes:
+            yield _check_itemfreq, dt
 
     def test_object_arrays(self):
         a, b = self.a, self.b
