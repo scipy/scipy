@@ -332,7 +332,8 @@ class dok_matrix(spmatrix, dict):
     def __add__(self, other):
         # First check if argument is a scalar
         if isscalarlike(other):
-            new = dok_matrix(self.shape, dtype=self.dtype)
+            res_dtype = upcast_scalar(self.dtype, other)
+            new = dok_matrix(self.shape, dtype=res_dtype)
             # Add this scalar to every element.
             M, N = self.shape
             for i in xrange(M):
@@ -346,7 +347,8 @@ class dok_matrix(spmatrix, dict):
                 raise ValueError("matrix dimensions are not equal")
             # We could alternatively set the dimensions to the the largest of
             # the two matrices to be summed.  Would this be a good idea?
-            new = dok_matrix(self.shape, dtype=self.dtype)
+            res_dtype = upcast(self.dtype, other.dtype)
+            new = dok_matrix(self.shape, dtype=res_dtype)
             new.update(self)
             for key in other.keys():
                 new[key] += other[key]
@@ -428,7 +430,8 @@ class dok_matrix(spmatrix, dict):
 
     def __truediv__(self, other):
         if isscalarlike(other):
-            new = dok_matrix(self.shape, dtype=self.dtype)
+            res_dtype = upcast_scalar(self.dtype, other)
+            new = dok_matrix(self.shape, dtype=res_dtype)
             # Multiply this scalar by every element.
             for (key, val) in iteritems(self):
                 new[key] = val / other
