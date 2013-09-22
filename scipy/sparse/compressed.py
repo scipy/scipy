@@ -413,19 +413,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         else:
             raise NotImplementedError
 
-    def __truediv__(self,other):
-        if isscalarlike(other):
-            return self * (1./other)
-
-        elif isspmatrix(other):
-            if other.shape != self.shape:
-                raise ValueError('inconsistent shapes')
-
-            return self._binopt(other,'_eldiv_')
-
-        else:
-            raise NotImplementedError
-
     def multiply(self, other):
         """Point-wise multiplication by another matrix, vector, or
         scalar.
@@ -923,3 +910,27 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         A = self.__class__((data, indices, indptr), shape=self.shape)
 
         return A
+
+    def _divide_sparse(self, other):
+        """
+        Divide this matrix by a second sparse matrix.
+        """
+        if other.shape != self.shape:
+            raise ValueError('inconsistent shapes')
+
+        r = self._binopt(other, '_eldiv_')
+
+        if np.issubdtype(r.dtype, np.inexact):
+            # Eldiv leaves entries outside the combined sparsity
+            # pattern empty, so they must be filled manually. They are
+            # always nan, so that the matrix is completely full.
+            out = np.empty(self.shape, dtype=self.dtype)
+            out.fill(np.nan)
+            r = r.tocoo()
+            out[r.row, r.col] = r.data
+            out = np.matrix(out)
+        else:
+            # integers types go with nan <-> 0
+            out = r
+
+        return out

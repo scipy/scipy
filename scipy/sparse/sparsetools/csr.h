@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <functional>
 
+#include "util.h"
 #include "dense.h"
 
 /*
@@ -916,7 +917,7 @@ void csr_eldiv_csr(const I n_row, const I n_col,
                    const I Bp[], const I Bj[], const T Bx[],
                          I Cp[],       I Cj[],       T Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::divides<T>());
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,safe_divides<T>());
 }
 
 
