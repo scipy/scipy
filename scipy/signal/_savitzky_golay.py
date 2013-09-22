@@ -1,8 +1,10 @@
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from scipy.linalg import lstsq
 from math import factorial
 from scipy.ndimage import convolve1d
-from _arraytools import axis_slice
+from ._arraytools import axis_slice
 
 
 def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
