@@ -7638,16 +7638,16 @@ class randint_gen(rv_discrete):
         return (high > low)
 
     def _pmf(self, k, low, high):
-        fact = 1.0 / (high - low)
-        return fact
+        p = np.ones_like(k) / (high - low)
+        return np.where((k >= low) & (k < high), p, 0.)
 
     def _cdf(self, x, low, high):
         k = floor(x)
-        return (k-low + 1) * 1.0 / (high - low)
+        return (k - low + 1.) / (high - low)
 
     def _ppf(self, q, low, high):
-        vals = ceil(q*(high - low) + low) - 1
-        vals1 = (vals-1).clip(low, high)
+        vals = ceil(q * (high - low) + low) - 1
+        vals1 = (vals - 1).clip(low, high)
         temp = self._cdf(vals1, low, high)
         return where(temp >= q, vals1, vals)
 
@@ -7655,9 +7655,9 @@ class randint_gen(rv_discrete):
         m2, m1 = asarray(high), asarray(low)
         mu = (m2 + m1 - 1.0) / 2
         d = m2 - m1
-        var = (d-1)*(d+1.0)/12.0
+        var = (d*d - 1) / 12.0
         g1 = 0.0
-        g2 = -6.0/5.0*(d*d+1.0)/(d-1.0)*(d+1.0)
+        g2 = -6.0/5.0 * (d*d + 1.0) / (d*d - 1.0)
         return mu, var, g1, g2
 
     def _rvs(self, low, high=None):
@@ -7669,7 +7669,7 @@ class randint_gen(rv_discrete):
 
     def _entropy(self, low, high):
         return log(high - low)
-randint = randint_gen(name='randint',longname='A discrete uniform '
+randint = randint_gen(name='randint', longname='A discrete uniform '
                       '(random integer)')
 
 
