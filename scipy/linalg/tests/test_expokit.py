@@ -7,11 +7,11 @@ import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal, \
     assert_array_almost_equal_nulp
 
-from scipy.linalg.expowrap import expm
+from scipy.linalg.expokit import expm
 
-from scipy.linalg.expokit import dgchbv, dgexpv, dgpadm, dgphiv, dmexpv, dnchbv, \
-    dschbv, dsexpv, dspadm, dsphiv, zgchbv, zgexpv, zgpadm, zgphiv, zhexpv,  \
-    zhpadm, zhphiv, znchbv
+#from scipy.linalg.expokit import dgchbv, dgexpv, dgpadm, dgphiv, dmexpv, dnchbv, \
+#    dschbv, dsexpv, dspadm, dsphiv, zgchbv, zgexpv, zgpadm, zgphiv, zhexpv,  \
+#    zhpadm, zhphiv, znchbv
 
 
 class TestPADM(TestCase):
