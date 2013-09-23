@@ -18,8 +18,8 @@
 !   zhpadm, zhphiv, znchbv
 !
 
-python module expokit
-    interface expokit_user_interface
+python module _expokit
+    interface _expokit_user_interface
 
 
 !   Padé approximation routines
@@ -31,6 +31,14 @@ python module expokit
         full, using the irreducible rational Pade approximation to the 
         exponential function exp(x) = r(x) = (+/-)( I + 2*(q(x)/p(x)) ),
         combined with scaling-and-squaring.
+
+        Required args:
+            - h
+            - iexph
+            - ns
+            - iflag
+        Optional args:  
+            - t
         '''
         integer intent(hide) :: ideg=6
         integer intent(hide),depend(h) :: m=shape(h,1)
@@ -59,7 +67,7 @@ python module expokit
         complex*16 dimension(ldh,m) :: h
         integer intent(hide),depend(h) :: ldh=shape(h,0)
         complex*16 intent(out),dimension(lwsp) :: wsp
-! integer, optional,intent(inout),check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
+!   integer, optional,intent(inout),check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
         integer intent(hide),depend(m,ideg) :: lwsp=4*m*m+ideg+1
         integer intent(hide),dimension(m),depend(m) :: ipiv
         integer intent(inout) :: iexph
@@ -81,7 +89,7 @@ python module expokit
         double precision dimension(ldh,m) :: h
         integer intent(hide),depend(h) :: ldh=shape(h,0)
         double precision intent(out),dimension(lwsp) :: wsp
-        ! integer, optional,intent(inout),check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
+!   integer, optional,intent(inout),check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
         integer intent(hide),depend(m,ideg) :: lwsp=4*m*m+ideg+1
         integer intent(hide),dimension(m),depend(m) :: ipiv
         integer intent(inout) :: iexph
@@ -103,7 +111,7 @@ python module expokit
         complex*16 dimension(ldh,m) :: h
         integer intent(hide),depend(h) :: ldh=shape(h,0)
         complex*16 intent(out),dimension(lwsp) :: wsp
-        ! integer, optional,intent(inout),check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
+!       integer, optional,intent(inout),check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
         integer intent(hide),depend(m,ideg) :: lwsp=4*m*m+ideg+1
         integer intent(hide),dimension(m),depend(m) :: ipiv
         integer intent(inout) :: iexph
@@ -175,10 +183,24 @@ python module expokit
         techniques and the matrix under consideration interacts only
         via the external routine `matvec' performing the matrix-vector 
         product (matrix-free method).
+
+        Required Args:
+            v
+            tol
+            anorm
+            matvec
+            itrace
+            iflag
+
+        Optional Args:
+            m
+            t
+        Returns:
+            w, wsp
         '''
         use dgexpv__user__routines
         use dmatvec__user__routines
-!        integer, optional,check(len(v)>=n),depend(v) :: n=len(v)
+!   integer, optional,check(len(v)>=n),depend(v) :: n=len(v)
         integer, intent(hide),depend(v) :: n=len(v)
         integer, optional :: m=min(30,len(v)-1)
         double precision optional :: t=1.
@@ -187,12 +209,11 @@ python module expokit
         double precision intent(inout) :: tol
         double precision :: anorm
         double precision intent(out),dimension(lwsp) :: wsp
-!        integer, optional,check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
-!       #  if ( lwsp.lt.n*(m+2)+5*(m+2)**2+ideg+1 ) iflag = -1
-!        integer intent(hide),depend(n,m)      :: lwsp=n*(m+1)+n+((m+2)^2)+4*((m+2)^2)+7
+!   integer, optional,check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
+!   #  if ( lwsp.lt.n*(m+2)+5*(m+2)**2+ideg+1 ) iflag = -1
         integer intent(hide),depend(n,m)      :: lwsp=n*(m+1)+n+((m+2)*(m+2))+4*((m+2)*(m+2))+7
         integer intent(hide),dimension(liwsp) :: iwsp
-!        integer, optional,check(len(iwsp)>=liwsp),depend(iwsp) :: liwsp=len(iwsp)
+!   integer, optional,check(len(iwsp)>=liwsp),depend(iwsp) :: liwsp=len(iwsp)
         integer, intent(hide),depend(m) :: liwsp=m+2
         external matvec
         integer intent(inout) :: itrace
@@ -216,7 +237,7 @@ python module expokit
         product (matrix-free method).
         '''
         use cmatvec__user__routines
-!        integer, optional,check(len(v)>=n),depend(v) :: n=len(v)
+!   integer, optional,check(len(v)>=n),depend(v) :: n=len(v)
         integer intent(hide),depend(v) :: n=len(v)
         integer, optional :: m=min(30,len(v)-1)
         double precision optional :: t=1.
@@ -225,10 +246,10 @@ python module expokit
         double precision intent(inout) :: tol
         double precision :: anorm
         complex*16 intent(out),dimension(lwsp) :: wsp
-!        integer, optional,check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
+!   integer, optional,check(len(wsp)>=lwsp),depend(wsp) :: lwsp=len(wsp)
         integer intent(hide),depend(n,m)      :: lwsp=n*(m+1)+n+((m+2)*(m+2))+4*((m+2)*(m+2))+7
         integer intent(hide),dimension(liwsp) :: iwsp
-!        integer, optional,check(len(iwsp)>=liwsp),depend(iwsp) :: liwsp=len(iwsp)
+!   integer, optional,check(len(iwsp)>=liwsp),depend(iwsp) :: liwsp=len(iwsp)
         integer intent(hide),depend(m)        :: liwsp=m+2
         external matvec
         integer intent(inout) :: itrace
@@ -468,5 +489,5 @@ python module expokit
     end python module cmatvec__user__routines
 
 
-    end interface expokit_user_interface
-end python module expokit
+    end interface _expokit_user_interface
+end python module _expokit

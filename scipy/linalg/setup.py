@@ -162,8 +162,9 @@ def configuration(parent_package='',top_path=None):
                          )
 
     # expokit:
-    config.add_extension('expokit',
-                         [join('src','expokit.f')],
+    config.add_extension('_expokit',
+                         ['_expokit.pyf.src',
+                             join('src','expokit.f')],
                          extra_info = lapack_opt
                          )
 
