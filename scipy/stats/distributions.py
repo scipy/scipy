@@ -5866,23 +5866,23 @@ class vonmises_gen(rv_continuous):
 
     The probability density function for `vonmises` is::
 
-        vonmises.pdf(x, b) = exp(b*cos(x)) / (2*pi*I[0](b))
+        vonmises.pdf(x, kappa) = exp(kappa * cos(x)) / (2*pi*I[0](kappa))
 
-    for ``-pi <= x <= pi``, ``b > 0``.
+    for ``-pi <= x <= pi``, ``kappa > 0``.
 
     %(example)s
 
     """
-    def _rvs(self, b):
-        return mtrand.vonmises(0.0, b, size=self._size)
+    def _rvs(self, kappa):
+        return mtrand.vonmises(0.0, kappa, size=self._size)
 
-    def _pdf(self, x, b):
-        return exp(b*cos(x)) / (2*pi*special.i0(b))
+    def _pdf(self, x, kappa):
+        return exp(kappa * cos(x)) / (2*pi*special.i0(kappa))
 
-    def _cdf(self, x, b):
-        return vonmises_cython.von_mises_cdf(b,x)
+    def _cdf(self, x, kappa):
+        return vonmises_cython.von_mises_cdf(kappa, x)
 
-    def _stats_skip(self, b):
+    def _stats_skip(self, kappa):
         return 0, None, 0, None
 vonmises = vonmises_gen(name='vonmises')
 
