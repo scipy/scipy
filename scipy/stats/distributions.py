@@ -7617,36 +7617,39 @@ class randint_gen(rv_discrete):
     -----
     The probability mass function for `randint` is::
 
-        randint.pmf(k) = 1./(max- min)
+        randint.pmf(k) = 1./(high - low)
 
-    for ``k = min,...,max``.
+    for ``k = low, ..., high - 1``.
 
-    `randint` takes ``min`` and ``max`` as shape parameters.
+    `randint` takes ``low`` and ``high`` as shape parameters.
+
+    Note the difference to the numpy ``random_integers`` which
+    returns integers on a *closed* interval ``[low, high]``.
 
     %(example)s
 
     """
-    def _argcheck(self, min, max):
-        self.a = min
-        self.b = max-1
-        return (max > min)
+    def _argcheck(self, low, high):
+        self.a = low
+        self.b = high - 1
+        return (high > low)
 
-    def _pmf(self, k, min, max):
-        fact = 1.0 / (max - min)
+    def _pmf(self, k, low, high):
+        fact = 1.0 / (high - low)
         return fact
 
-    def _cdf(self, x, min, max):
+    def _cdf(self, x, low, high):
         k = floor(x)
-        return (k-min+1)*1.0/(max-min)
+        return (k-low + 1) * 1.0 / (high - low)
 
-    def _ppf(self, q, min, max):
-        vals = ceil(q*(max-min)+min)-1
-        vals1 = (vals-1).clip(min, max)
-        temp = self._cdf(vals1, min, max)
+    def _ppf(self, q, low, high):
+        vals = ceil(q*(high - low) + low) - 1
+        vals1 = (vals-1).clip(low, high)
+        temp = self._cdf(vals1, low, high)
         return where(temp >= q, vals1, vals)
 
-    def _stats(self, min, max):
-        m2, m1 = asarray(max), asarray(min)
+    def _stats(self, low, high):
+        m2, m1 = asarray(high), asarray(low)
         mu = (m2 + m1 - 1.0) / 2
         d = m2 - m1
         var = (d-1)*(d+1.0)/12.0
@@ -7654,15 +7657,15 @@ class randint_gen(rv_discrete):
         g2 = -6.0/5.0*(d*d+1.0)/(d-1.0)*(d+1.0)
         return mu, var, g1, g2
 
-    def _rvs(self, min, max=None):
-        """An array of *size* random integers >= min and < max.
+    def _rvs(self, low, high=None):
+        """An array of *size* random integers >= ``low`` and < ``high``.
 
-        If max is None, then range is >=0  and < min
+        If ``high`` is ``None``, then range is >=0  and < low
         """
-        return mtrand.randint(min, max, self._size)
+        return mtrand.randint(low, high, self._size)
 
-    def _entropy(self, min, max):
-        return log(max-min)
+    def _entropy(self, low, high):
+        return log(high - low)
 randint = randint_gen(name='randint',longname='A discrete uniform '
                       '(random integer)')
 
