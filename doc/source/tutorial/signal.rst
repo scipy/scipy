@@ -465,21 +465,134 @@ Note that the output signal :math:`y[n]` has the same length as the length as
 the input signal :math:`x[n]`.
 
 
+Analysis of Linear Systems
+""""""""""""""""""""""""""
+
+Linear system described a linear difference equation can be fully described by
+the coefficient vectors a and b as was done above; an alternative
+representation is to provide a factor :math:`k`, :math:`N_z` zeros :math:`z_k`
+and :math:`N_p` poles :math:`p_k`, respectively, to describe the system by
+means of its transfer function :math:`H(z)` according to
+
+.. math::
+
+   H(z) = k \frac{ (z-z_1)(z-z_2)...(z-z_{N_z})}{ (z-p_1)(z-p_2)...(z-p_{N_p})}
+
+This alternative representation can be obtain wit hthe scipy function
+:func:`tf2zpk`; the inverse is provided by :func:`zpk2tf`.
+
+For the example from above we have
+
+>>> b = np.array([1.0/2, 1.0/4])
+>>> a = np.array([1.0, -1.0/3])
+>>> signal.tf2zpk(b, a)
+[-0.5] [ 0.33333333] 0.5
+
+i.e. the system has a zero at :math:`z=-1/2` and a pole at :math:`z=1/3`. 
+
+The scipy function :func:`freqz` allows calculation of the frequency response
+of a system described by the coeffcients :math:`a_k` and :math:`b_k`. See the
+help of the :func:`freqz` function of a comprehensive example.
+
+
 Filter Design
 ^^^^^^^^^^^^^
 
-TODO
-correct freqz help function - display is not dB!!!
-
+Time-discrete filters can be classified into finite response (FIR) filters and
+infinite response (IIR) filters. FIR filters provide a linear phase response,
+whereas IIR filters do not exhibit this behaviour. Scipy provides functions
+for designing both types of filters.
 
 FIR Filter
 """"""""""
+
+The function :func:`firwin` designs filters according to the window method.
+Depending on the provided arguments, the function returns different filter
+types (e.g. low-pass, band-pass...).
+
+The example below designs a low-pass and a band-stop filter, respectively.
+
+.. plot::
+
+   >>> import numpy as np
+   >>> import scipy.signal as signal
+   >>> import matplotlib.pyplot as plt
+
+   >>> b1 = signal.firwin(40, 0.5)
+   >>> b2 = signal.firwin(41, [0.3, 0.8])
+   >>> w1, h1 = signal.freqz(b1)
+   >>> w2, h2 = signal.freqz(b2)
+
+   >>> plt.title('Digital filter frequency response')
+   >>> plt.plot(w1, 20*np.log10(np.abs(h1)), 'b')
+   >>> plt.plot(w2, 20*np.log10(np.abs(h2)), 'r')
+   >>> plt.ylabel('Amplitude Response (dB)')
+   >>> plt.xlabel('Frequency (rad/sample)')
+   >>> plt.grid()
+   >>> plt.show()
+
+Note that :func:`firwin` uses per default a normalized frequency defined such
+that the value :math:`1` corresponds to the Nyquist frequency, whereas the
+function :func:`freqz` is defined such that the value :math:`\pi` corresponds
+to the Nyquist frequency.
+
+
+The function :func:`firwin2` allows design of almost arbitrary frequency
+responses by specifying an array of corner frequencies and corresponding
+gains, respectively.
+
+The example below designs a filter with such an arbitrary amplitude response.
+
+.. plot::
+
+   >>> import numpy as np
+   >>> import scipy.signal as signal
+   >>> import matplotlib.pyplot as plt
+
+   >>> b = signal.firwin2(150, [0.0, 0.3, 0.6, 1.0], [1.0, 2.0, 0.5, 0.0])
+   >>> w, h = signal.freqz(b)
+
+   >>> plt.title('Digital filter frequency response')
+   >>> plt.plot(w, np.abs(h))
+   >>> plt.title('Digital filter frequency response')
+   >>> plt.ylabel('Amplitude Response')
+   >>> plt.xlabel('Frequency (rad/sample)')
+   >>> plt.grid()
+   >>> plt.show()
+
+Note the linear scaling of the y-axis and the different definition of the
+Nyquist frequency in :func:`firwin2` and :func:`freqz` (as explained above).
 
 
 IIR Filter
 """"""""""
 
+Scipy provides two functions to directly design IIR :func:`iirdesign` and
+:func:`iirfilter` where the filter type (e.g. elliptic) is passed as an
+argument and several more filter design functions for specific filter types;
+e.g. :func:`ellip`.
 
+The example below designs an elliptic low-pass filter with defined passband
+and stopband ripple, repsectively. Note the much lower filter order (order 4)
+compared with the FIR filters from the examples above in order to reach the same 
+stop-band attenuation of :math:`\approx 60` dB.
+
+.. plot::
+
+   >>> import numpy as np
+   >>> import scipy.signal as signal
+   >>> import matplotlib.pyplot as plt
+
+   >>> b, a = signal.iirfilter(4, Wn=0.2, rp=5, rs=60, btype='lowpass', ftype='ellip')
+   >>> w, h = signal.freqz(b, a)
+
+   >>> plt.title('Digital filter frequency response')
+   >>> plt.plot(w, 20*np.log10(np.abs(h)))
+   >>> plt.title('Digital filter frequency response')
+   >>> plt.ylabel('Amplitude Response [dB]')
+   >>> plt.xlabel('Frequency (rad/sample)')
+   >>> plt.grid()
+   >>> plt.show()
 
 
 Other filters
@@ -557,6 +670,50 @@ where :math:`H` is 2 for positive frequencies, :math:`0` for negative
 frequencies and :math:`1` for zero-frequencies.
 
 
+Analog Filter Design
+^^^^^^^^^^^^^^^^^^^^
+
+The functions :func:`iirdesign`, :func:`iirfilter`, and the filter design
+functions for specific filter types (e.g. :func:`ellip`) all have a flag
+`analog` which allows design of analog filters as well.
+
+The example below designs an analog (IIR) filter, obtains via :func:`tf2zpk`
+the poles and zeros and plots them in the complex s-plane. The zeros at
+:math:`\omega \approx 150` and :math:`\omega \approx 300` can be clearly seen
+in the amplitude response.
+
+
+.. plot::
+
+   >>> import numpy as np
+   >>> import scipy.signal as signal
+   >>> import matplotlib.pyplot as plt
+
+   >>> b, a = signal.iirdesign(wp=100, ws=200, gpass=2.0, gstop=40., analog=True)
+   >>> w, h = signal.freqs(b, a)
+
+   >>> plt.title('Analog filter frequency response')
+   >>> plt.plot(w, 20*np.log10(np.abs(h)))
+   >>> plt.ylabel('Amplitude Response [dB]')
+   >>> plt.xlabel('Frequency')
+   >>> plt.grid()
+   >>> plt.show()
+
+
+   >>> z, p, k = signal.tf2zpk(b, a)
+
+   >>> plt.plot(np.real(z), np.imag(z), 'xb')
+   >>> plt.plot(np.real(p), np.imag(p), 'or')
+   >>> plt.legend(['Zeros', 'Poles'], loc=2)
+
+   >>> plt.title('Pole / Zero Plot')
+   >>> plt.ylabel('Real')
+   >>> plt.xlabel('Imaginary')
+   >>> plt.grid()
+   >>> plt.show()
+
+
+
 Least-Squares Spectral Analysis
 -------------------------------
 
@@ -629,9 +786,6 @@ This requires :math:`N_{f}(2N_{t}+3)` trigonometric function
 evaluations giving a factor of :math:`\sim 2` speed increase over the
 straightforward implementation.
 
-
-XXX: TODO
----------
 
 ..
 .. Detrend
