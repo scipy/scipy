@@ -128,9 +128,9 @@ def freqs(b, a, worN=None, plot=None):
     >>> w, h = freqs(b, a, worN=np.logspace(-1, 2, 1000))
 
     >>> import matplotlib.pyplot as plt
-    >>> plt.semilogx(w, abs(h))
+    >>> plt.semilogx(w, 20 * np.log10(abs(h)))
     >>> plt.xlabel('Frequency')
-    >>> plt.ylabel('Amplitude response')
+    >>> plt.ylabel('Amplitude response [dB]')
     >>> plt.grid()
     >>> plt.show()
 
@@ -208,9 +208,9 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     >>> plt.title('Digital filter frequency response')
     >>> ax1 = fig.add_subplot(111)
 
-    >>> plt.semilogy(w, np.abs(h), 'b')
-    >>> plt.ylabel('Amplitude (dB)', color='b')
-    >>> plt.xlabel('Frequency (rad/sample)')
+    >>> plt.plot(w, 20 * np.log10(abs(h)), 'b')
+    >>> plt.ylabel('Amplitude [dB]', color='b')
+    >>> plt.xlabel('Frequency [rad/sample]')
 
     >>> ax2 = ax1.twinx()
     >>> angles = np.unwrap(np.angle(h))
