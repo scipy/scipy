@@ -714,45 +714,113 @@ in the amplitude response.
 
 
 
-Least-Squares Spectral Analysis
--------------------------------
+Spectral Analysis
+------------------
 
-Least-squares spectral analysis (LSSA) is a method of estimating a frequency
-spectrum, based on a least squares fit of sinusoids to data samples, similar to
-Fourier analysis. Fourier analysis, the most used spectral method in science,
-generally boosts long-periodic noise in long gapped records; LSSA mitigates
-such problems.
+Periodogram Measurements
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The scipy function :func:`periodogram` provides a method to estimate the
+spectral density using the periodogram method.
+
+The example below calculates the periodogram of a sine signal in white
+Gaussian noise.
+
+.. plot::
+
+   >>> import numpy as np
+   >>> import scipy.signal as signal
+   >>> import matplotlib.pyplot as plt
+
+   >>> fs = 10e3
+   >>> N = 1e5
+   >>> amp = 2*np.sqrt(2)
+   >>> freq = 1270.0
+   >>> noise_power = 0.001 * fs / 2
+   >>> time = np.arange(N) / fs
+   >>> x = amp*np.sin(2*np.pi*freq*time)
+   >>> x += np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+
+   >>> f, Pper_spec = signal.periodogram(x, fs, 'flattop', scaling='spectrum')
+
+   >>> plt.semilogy(f, Pper_spec)
+   >>> plt.xlabel('frequency [Hz]')
+   >>> plt.ylabel('PSD')
+   >>> plt.grid()
+   >>> plt.show()
+
+
+
+Spectral Analysis using Welch's Method
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+An improved method, especially with respect to noise immunity, is Welch's
+method which is implemented by the scipy function :func:`welch`.
+
+The example below estimates the spectrum using Welch's method and uses the
+same parameters as the example above. Note the much smoother noise floor of
+the spectogram.
+
+
+.. plot::
+
+   >>> import numpy as np
+   >>> import scipy.signal as signal
+   >>> import matplotlib.pyplot as plt
+
+   >>> fs = 10e3
+   >>> N = 1e5
+   >>> amp = 2*np.sqrt(2)
+   >>> freq = 1270.0
+   >>> noise_power = 0.001 * fs / 2
+   >>> time = np.arange(N) / fs
+   >>> x = amp*np.sin(2*np.pi*freq*time)
+   >>> x += np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+
+   >>> f, Pwelch_spec = signal.welch(x, fs, scaling='spectrum')
+
+   >>> plt.semilogy(f, Pwelch_spec)
+   >>> plt.xlabel('frequency [Hz]')
+   >>> plt.ylabel('PSD')
+   >>> plt.grid()
+   >>> plt.show()
 
 
 Lomb-Scargle Periodograms (:func:`lombscargle`)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Least-squares spectral analysis (LSSA) is a method of estimating a frequency
+spectrum, based on a least squares fit of sinusoids to data samples, similar
+to Fourier analysis. Fourier analysis, the most used spectral method in
+science, generally boosts long-periodic noise in long gapped records; LSSA
+mitigates such problems.
+
+
 The Lomb-Scargle method performs spectral analysis on unevenly sampled data and
 is known to be a powerful way to find, and test the significance of, weak
 periodic signals.
 
-For a time series comprising :math:`N_{t}` measurements
-:math:`X_{j}\equiv X(t_{j})` sampled at times :math:`t_{j}` where
-:math:`(j = 1, \ldots, N_{t})`, assumed to have been scaled and shifted
-such that its mean is zero and its variance is unity, the normalized
-Lomb-Scargle periodogram at frequency :math:`f` is
+For a time series comprising :math:`N_{t}` measurements :math:`X_{j}\equiv
+X(t_{j})` sampled at times :math:`t_{j}` where :math:`(j = 1, \ldots, N_{t})`,
+assumed to have been scaled and shifted such that its mean is zero and its
+variance is unity, the normalized Lomb-Scargle periodogram at frequency
+:math:`f` is
 
 .. math::
 
     P_{n}(f) \frac{1}{2}\left\{\frac{\left[\sum_{j}^{N_{t}}X_{j}\cos\omega(t_{j}-\tau)\right]^{2}}{\sum_{j}^{N_{t}}\cos^{2}\omega(t_{j}-\tau)}+\frac{\left[\sum_{j}^{N_{t}}X_{j}\sin\omega(t_{j}-\tau)\right]^{2}}{\sum_{j}^{N_{t}}\sin^{2}\omega(t_{j}-\tau)}\right\}.
 
-Here, :math:`\omega \equiv 2\pi f` is the angular frequency.
-The frequency dependent time offset :math:`\tau` is given by
+Here, :math:`\omega \equiv 2\pi f` is the angular frequency. The frequency
+dependent time offset :math:`\tau` is given by
 
 .. math::
 
     \tan 2\omega\tau = \frac{\sum_{j}^{N_{t}}\sin 2\omega t_{j}}{\sum_{j}^{N_{t}}\cos 2\omega t_{j}}.
 
-The :func:`~scipy.signal.lombscargle` function
-calculates the periodogram using a slightly
-modified algorithm due to Townsend [3]_ which allows the
-periodogram to be calculated using only a single pass through
-the input arrays for each frequency.
+The :func:`lombscargle` function calculates the periodogram using a slightly
+modified algorithm due to Townsend [3]_ which allows the periodogram to be
+calculated using only a single pass through the input arrays for each
+frequency.
 
 The equation is refactored as:
 
@@ -782,14 +850,41 @@ while the sums are
     SS &= \sum_{j}^{N_{t}} \sin^{2}\omega t_{j}\\
     CS &= \sum_{j}^{N_{t}} \cos\omega t_{j}\sin\omega t_{j}.
 
-This requires :math:`N_{f}(2N_{t}+3)` trigonometric function
-evaluations giving a factor of :math:`\sim 2` speed increase over the
-straightforward implementation.
+This requires :math:`N_{f}(2N_{t}+3)` trigonometric function evaluations
+giving a factor of :math:`\sim 2` speed increase over the straightforward
+implementation.
 
 
-..
-.. Detrend
-.. """""""
+Detrend
+-------
+
+Scipy provides the function :func:`detrend` to remove a constant or linear
+trend in a data series in order to see effect of higher order.
+
+The example below removes the constant and linear trend of a 2-nd order
+polynomial time series and plots the remaining signal components.
+
+.. plot::
+
+   >>> import numpy as np
+   >>> import scipy.signal as signal
+   >>> import matplotlib.pyplot as plt
+
+   >>> t = np.linspace(-10, 10, 20)
+   >>> y = 1 + t + 0.01*t**2
+   >>> yconst = signal.detrend(y, type='constant')
+   >>> ylin = signal.detrend(y, type='linear')
+
+   >>> plt.plot(t, y, '-rx')
+   >>> plt.plot(t, yconst, '-bo')
+   >>> plt.plot(t, ylin, '-k+')
+   >>> plt.grid()
+   >>> plt.legend(['signal', 'const. detrend', 'linear detrend'])
+   >>> plt.show()
+
+
+
+
 ..
 .. Filter design
 .. -------------
