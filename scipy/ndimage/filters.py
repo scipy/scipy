@@ -967,10 +967,10 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         raise RuntimeError('rank not within filter footprint size')
     if rank == 0:
         return minimum_filter(input, None, footprint, output, mode, cval,
-                              origin)
+                              origins)
     elif rank == filter_size - 1:
         return maximum_filter(input, None, footprint, output, mode, cval,
-                              origin)
+                              origins)
     else:
         output, return_value = _ni_support._get_output(output, input)
         mode = _ni_support._extend_mode_to_code(mode)
