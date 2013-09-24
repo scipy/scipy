@@ -1034,6 +1034,20 @@ class TestNdimage:
                                   footprint=footprint, origin=[-1, 0])
             assert_array_almost_equal(expected, output)
 
+    def test_rank15(self):
+        "rank filter 15"
+        expected = [[2, 3, 1, 4, 1],
+                [5, 3, 7, 1, 1],
+                [5, 5, 3, 3, 3]]
+        footprint = [[1, 0, 1], [0, 1, 0]]
+        for type in self.types:
+            array = numpy.array([[3, 2, 5, 1, 4],
+                                    [5, 8, 3, 7, 1],
+                                    [5, 6, 9, 3, 5]], type)
+            output = ndimage.rank_filter(array, 0,
+                                  footprint=footprint, origin=[-1, 0])
+            assert_array_almost_equal(expected, output)
+
     def test_generic_filter1d01(self):
         weights = numpy.array([1.1, 2.2, 3.3])
 
