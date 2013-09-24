@@ -136,7 +136,7 @@ if not release:
 try:
     from sphinx.setup_command import BuildDoc
     HAVE_SPHINX = True
-except ImportError:
+except:
     HAVE_SPHINX = False
 
 if HAVE_SPHINX:
