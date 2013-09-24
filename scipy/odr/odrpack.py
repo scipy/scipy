@@ -970,9 +970,9 @@ class ODR(object):
         if self.iprint is None:
             self.iprint = 0
 
-        ip = [self.iprint / 1000 % 10,
-              self.iprint / 100 % 10,
-              self.iprint / 10 % 10,
+        ip = [self.iprint // 1000 % 10,
+              self.iprint // 100 % 10,
+              self.iprint // 10 % 10,
               self.iprint % 10]
 
         # make a list to convert iprint digits to/from argument inputs
