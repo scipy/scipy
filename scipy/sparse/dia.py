@@ -184,6 +184,16 @@ class dia_matrix(_data_matrix):
     def _mul_multimatrix(self, other):
         return np.hstack([self._mul_vector(col).reshape(-1,1) for col in other.T])
 
+    def setdiag(self, values, k=0):
+        M, N = self.shape
+        if (not k in self.offsets):
+            raise ValueError(
+                "dia matrix does not support assignment for unknown diagonals. "
+                "Known offsets are: %s" % self.offsets)
+        self.data[self.offsets == k, :] = values
+
+    setdiag.__doc__ = _data_matrix.setdiag.__doc__
+
     def todia(self,copy=False):
         if copy:
             return self.copy()
