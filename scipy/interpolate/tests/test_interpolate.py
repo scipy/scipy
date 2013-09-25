@@ -411,7 +411,6 @@ class TestPPoly(TestCase):
         p = PPoly(c, x)
         assert_allclose(p(0.3), 1*0.3**2 + 2*0.3 + 3)
         assert_allclose(p(0.7), 4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6)
-        assert_(np.isnan(p(-0.1)))
 
     def test_construct_fast(self):
         np.random.seed(1234)
@@ -420,7 +419,6 @@ class TestPPoly(TestCase):
         p = PPoly.construct_fast(c, x)
         assert_allclose(p(0.3), 1*0.3**2 + 2*0.3 + 3)
         assert_allclose(p(0.7), 4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6)
-        assert_(np.isnan(p(-0.1)))
 
     def test_sort_check(self):
         c = np.array([[1, 4], [2, 5], [3, 6]])
@@ -434,7 +432,7 @@ class TestPPoly(TestCase):
 
         p = PPoly(c, x)
 
-        xp = np.r_[0.3, -0.1, 0.5, 0.33, 1.1, 2.1, 0.6]
+        xp = np.r_[0.3, 0.5, 0.33, 0.6]
         expected = _ppoly_eval_1(c, x, xp)
         assert_allclose(p(xp), expected)
 
@@ -455,11 +453,10 @@ class TestPPoly(TestCase):
         y = np.random.rand(len(x))
 
         spl = splrep(x, y, s=0)
-        pp = PPoly.from_spline(spl, fill_value=np.nan)
+        pp = PPoly.from_spline(spl)
 
         xi = np.linspace(0, 1, 200)
         assert_allclose(pp(xi), splev(xi, spl))
-        assert_(np.isnan(pp([-0.1, 1.1])).all())
 
     def test_derivative_simple(self):
         np.random.seed(1234)
@@ -481,7 +478,7 @@ class TestPPoly(TestCase):
         y = np.random.rand(len(x))
 
         spl = splrep(x, y, s=0)
-        pp = PPoly.from_spline(spl, fill_value=np.nan)
+        pp = PPoly.from_spline(spl)
 
         xi = np.linspace(0, 1, 200)
         for dx in range(0, 3):
@@ -493,7 +490,7 @@ class TestPPoly(TestCase):
         y = np.random.rand(len(x))
 
         spl = splrep(x, y, s=0, k=5)
-        pp = PPoly.from_spline(spl, fill_value=np.nan)
+        pp = PPoly.from_spline(spl)
 
         xi = np.linspace(0, 1, 200)
         for dx in range(0, 10):
@@ -514,7 +511,7 @@ class TestPPoly(TestCase):
                         [0, 0, 1.6875/2, 0.328125, 0.037434895833333336]]).T[:,:,None]
         x = np.array([0, 0.25, 1])
 
-        pp = PPoly(c, x, fill_value=np.nan)
+        pp = PPoly(c, x)
         ipp = pp.antiderivative()
         iipp = pp.antiderivative(2)
         iipp2 = ipp.antiderivative()
@@ -529,7 +526,7 @@ class TestPPoly(TestCase):
         x = np.linspace(0, 1, 30)**2
         y = np.random.rand(len(x))
         spl = splrep(x, y, s=0, k=5)
-        pp = PPoly.from_spline(spl, fill_value=np.nan)
+        pp = PPoly.from_spline(spl)
 
         for dx in range(0, 10):
             ipp = pp.antiderivative(dx)
@@ -554,7 +551,7 @@ class TestPPoly(TestCase):
         y = np.random.rand(len(x))
 
         spl = splrep(x, y, s=0, k=5)
-        pp = PPoly.from_spline(spl, fill_value=np.nan)
+        pp = PPoly.from_spline(spl)
 
         for dx in range(0, 10):
             pp2 = pp.antiderivative(dx)
@@ -570,7 +567,7 @@ class TestPPoly(TestCase):
         y = np.random.rand(len(x))
 
         spl = splrep(x, y, s=0, k=5)
-        pp = PPoly.from_spline(spl, fill_value=np.nan)
+        pp = PPoly.from_spline(spl)
 
         a, b = 0.3, 0.9
         ig = pp.integrate(a, b)
@@ -580,25 +577,12 @@ class TestPPoly(TestCase):
 
         assert_allclose(ig, splint(a, b, spl))
 
-        # check fill value handling
-        pp = PPoly.from_spline(spl, fill_value=123)
-        assert_allclose(pp.integrate(-1, 0.5),
-                        splint(0, 0.5, spl) + 123)
-
-        pp = PPoly.from_spline(spl, fill_value=123)
-        assert_allclose(pp.integrate(0.5, 1.5),
-                        splint(0.5, 1, spl) + 123*0.5)
-
-        pp = PPoly.from_spline(spl, fill_value=123)
-        assert_allclose(pp.integrate(-1, 3),
-                        splint(0, 1, spl) + 123*3)
-
     def test_roots(self):
         x = np.linspace(0, 1, 31)**2
         y = np.sin(30*x)
 
         spl = splrep(x, y, s=0, k=3)
-        pp = PPoly.from_spline(spl, fill_value=np.nan)
+        pp = PPoly.from_spline(spl)
 
         assert_allclose(pp.roots(), sproot(spl),
                         atol=1e-15)

@@ -61,7 +61,6 @@ def evaluate(double_or_complex[:,:,::1] c,
 
     cdef int ip, jp
     cdef int interval
-    cdef int has_out_of_bounds
     cdef double xval
 
     # check derivative order
@@ -78,7 +77,6 @@ def evaluate(double_or_complex[:,:,::1] c,
 
     # evaluate
     interval = 0
-    has_out_of_bounds = 0
 
     for ip in range(len(xp)):
         xval = xp[ip]
@@ -86,17 +84,16 @@ def evaluate(double_or_complex[:,:,::1] c,
         # Find correct interval
         i = find_interval(x, xval, interval)
         if i < 0:
-            has_out_of_bounds = 1
+            # xval was nan etc
             for jp in range(c.shape[2]):
                 out[ip, jp] = nan
             continue
-        interval = i
+        else:
+            interval = i
 
         # Evaluate the local polynomial(s)
         for jp in range(c.shape[2]):
             out[ip, jp] = evaluate_poly1(xval - x[interval], c, interval, jp, dx)
-
-    return has_out_of_bounds
 
 
 @cython.wraparound(False)
@@ -346,6 +343,8 @@ cdef int find_interval(double[::1] x,
                        int prev_interval=0) nogil:
     """
     Find an interval such that x[interval] <= xval < x[interval+1]
+    or interval == 0 and xval < x[0]
+    or interval == n-2 and xval > x[n-1]
 
     Parameters
     ----------
@@ -359,9 +358,7 @@ cdef int find_interval(double[::1] x,
     Returns
     -------
     interval : int
-        Interval where previous point was found, or
-        -1 below lower bound, -2 if above upper bound,
-        or -3 if nan.
+        Suitable interval or -1 if nan.
 
     """
     cdef int interval, high, low, mid
@@ -377,11 +374,14 @@ cdef int find_interval(double[::1] x,
     if not (a <= xval <= b):
         # Out-of-bounds (or nan)
         if xval < a:
-            interval = -1 # below
+            # below
+            interval = 0 
         elif xval > b:
-            interval = -2 # above
+            # above
+            interval = x.shape[0] - 2
         else:
-            interval = -3 # nan or something
+            # nan or something
+            interval = -1
     elif xval == b:
         # Make the interval closed from the right
         interval = x.shape[0] - 2

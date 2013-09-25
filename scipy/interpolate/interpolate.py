@@ -512,8 +512,6 @@ class PPoly(_Interpolator1D):
         Coefficients of the polynomials. They are reshaped
         to a 3-dimensional array with the last dimension representing
         the trailing dimensions of the original coefficient array.
-    fill_value
-        The fill value passed in.
 
     Methods
     -------
@@ -534,16 +532,13 @@ class PPoly(_Interpolator1D):
 
     """
 
-    __slots__ = ('c', 'x', 'fill_value')
+    __slots__ = ('c', 'x')
 
-    def __init__(self, c, x, fill_value=None):
+    def __init__(self, c, x):
         _Interpolator1D.__init__(self)
 
         self.c = np.asarray(c)
         self.x = np.ascontiguousarray(x, dtype=np.float64)
-        if fill_value is None:
-            fill_value = np.nan
-        self.fill_value = fill_value
 
         if self.x.ndim != 1:
             raise ValueError("x must be 1-dimensional")
@@ -566,7 +561,7 @@ class PPoly(_Interpolator1D):
         self.c = np.ascontiguousarray(self.c, dtype=self.dtype)
 
     @classmethod
-    def construct_fast(cls, c, x, fill_value=None):
+    def construct_fast(cls, c, x):
         """
         Construct the piecewise polynomial without making checks.
 
@@ -580,9 +575,6 @@ class PPoly(_Interpolator1D):
         self._y_extra_shape = c.shape[2:]
         self.c = c.reshape(c.shape[0], c.shape[1], -1)
         self.x = x
-        if fill_value is None:
-            fill_value = np.nan
-        self.fill_value = fill_value
         self._y_axis = 0
         self.dtype = c.dtype
         return self
@@ -628,9 +620,7 @@ class PPoly(_Interpolator1D):
     def _evaluate(self, x, nu):
         out = np.empty((len(x), self.c.shape[2]), dtype=self.dtype)
         self._ensure_c_contiguous()
-        has_out_of_bounds = _ppoly.evaluate(self.c, self.x, x, nu, out)
-        if has_out_of_bounds:
-            out[~((x >= self.x[0]) & (x <= self.x[-1]))] = self.fill_value
+        _ppoly.evaluate(self.c, self.x, x, nu, out)
         return out
 
     def derivative(self, nu=1):
@@ -671,7 +661,7 @@ class PPoly(_Interpolator1D):
         c2 *= factor[:,None,None]
 
         # construct a compatible polynomial
-        pp = PPoly(c2, self.x, fill_value=self.fill_value)
+        pp = PPoly(c2, self.x)
         pp._y_extra_shape = self._y_extra_shape
         return pp
 
@@ -717,7 +707,7 @@ class PPoly(_Interpolator1D):
         _ppoly.fix_continuity(c, self.x, nu)
 
         # construct a compatible polynomial
-        pp = PPoly(c, self.x, fill_value=self.fill_value)
+        pp = PPoly(c, self.x)
         pp._y_extra_shape = self._y_extra_shape
 
         return pp
@@ -746,27 +736,13 @@ class PPoly(_Interpolator1D):
             a, b = b, a
             sign = -1
 
-        # Deal with integrals over fill values
-        if a < self.x[0]:
-            below_int = self.fill_value * (self.x[0] - a)
-        else:
-            below_int = 0
-        if b > self.x[-1]:
-            above_int = self.fill_value * (self.x[-1] - a)
-        else:
-            above_int = 0
-
-        # Compute the integral of the polynomial itself
+        # Compute the integral
         range_int = np.empty((self.c.shape[2],), dtype=self.c.dtype)
         self._ensure_c_contiguous()
         _ppoly.integrate(self.c, self.x,
                          max(a, self.x[0]),
                          min(b, self.x[-1]),
                          out=range_int)
-
-        # Sum the boundary integrals
-        range_int += above_int
-        range_int += below_int
 
         # Return
         range_int *= sign
@@ -888,7 +864,7 @@ class PPoly(_Interpolator1D):
         self.c = c2
 
     @classmethod
-    def from_spline(cls, tck, fill_value=None):
+    def from_spline(cls, tck):
         """
         Construct a piecewise polynomial from a spline
 
@@ -896,8 +872,6 @@ class PPoly(_Interpolator1D):
         ----------
         tck
             A spline, as returned by `splrep`
-        fill_value
-            Value to use for extrapolation
 
         """
         t, c, k = tck
@@ -907,7 +881,7 @@ class PPoly(_Interpolator1D):
             y = fitpack.splev(t[:-1], tck, der=m)
             cvals[k - m, :] = y/spec.gamma(m+1)
 
-        return cls.construct_fast(cvals, t, fill_value=fill_value)
+        return cls.construct_fast(cvals, t)
 
 
 # backward compatibility wrapper
@@ -928,7 +902,7 @@ class ppform(PPoly):
         else:
             breaks = np.asarray(breaks)
 
-        PPoly.__init__(self, coeffs, breaks, fill_value=fill)
+        PPoly.__init__(self, coeffs, breaks)
 
         self.coeffs = self.c
         self.breaks = self.x
@@ -936,6 +910,11 @@ class ppform(PPoly):
         self.fill = fill
         self.a = self.breaks[0]
         self.b = self.breaks[-1]
+
+    def _evaluate(self, x, nu):
+        out = PPoly._evaluate(x, nu)
+        out[~((x >= self.a) & (x <= self.b))] = self.fill
+        return out
 
     @classmethod
     def fromspline(cls, xk, cvals, order, fill=0.0):
