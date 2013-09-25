@@ -84,21 +84,28 @@ def _check_roundtrip(realfile, rate, dtype, channels):
 
 def test_write_roundtrip():
     for realfile in (False, True):
-        for signed in ('i', 'u', 'f'):
+        for dtypechar in ('i', 'u', 'f', 'g', 'q'):
             for size in (1, 2, 4, 8):
-                if size == 1 and signed == 'i':
+                if size == 1 and dtypechar == 'i':
                     # signed 8-bit integer PCM is not allowed
                     continue
-                if size > 1 and signed == 'u':
+                if size > 1 and dtypechar == 'u':
                     # unsigned > 8-bit integer PCM is not allowed
                     continue
-                if (size == 1 or size == 2) and signed == 'f':
+                if (size == 1 or size == 2) and dtypechar == 'f':
                     # 8- or 16-bit float PCM is not expected
                     continue
+                if dtypechar in 'gq':
+                    # no size allowed for these types
+                    if size == 1:
+                        size = ''
+                    else:
+                        continue
+
                 for endianness in ('>', '<'):
                     if size == 1 and endianness == '<':
                         continue
                     for rate in (8000, 32000):
                         for channels in (1, 2, 5):
-                            dt = np.dtype('%s%s%d' % (endianness, signed, size))
+                            dt = np.dtype('%s%s%s' % (endianness, dtypechar, size))
                             yield _check_roundtrip, realfile, rate, dt, channels
