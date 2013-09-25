@@ -838,6 +838,10 @@ class _TestCommon:
             c = b + a
             assert_array_equal(c, b.todense() + a)
 
+            c = b + b.tocsr()
+            assert_array_equal(c.todense(),
+                               b.todense() + b.todense())
+
         for dtype in self.checked_dtypes:
             yield check, dtype
 
@@ -846,9 +850,9 @@ class _TestCommon:
             dat = self.dat_dtypes[dtype]
             datsp = self.datsp_dtypes[dtype]
 
-            a = self.dat.copy()
+            a = dat.copy()
             a[0,2] = 2.0
-            b = self.datsp
+            b = datsp
             c = a + b
             assert_array_equal(c, a + b.todense())
 
@@ -1384,7 +1388,7 @@ class _TestCommon:
                 try:
                     assert_array_equal(todense(np.add(ax, bx)),
                                        np.add(a, b))
-                except TypeError:
+                except NotImplementedError:
                     # Not implemented for all spmatrix types
                     pass
             else:
@@ -1400,7 +1404,7 @@ class _TestCommon:
                 try:
                     assert_array_equal(todense(np.subtract(ax, bx)),
                                        np.subtract(a, b))
-                except TypeError:
+                except NotImplementedError:
                     # Not implemented for all spmatrix types
                     pass
             else:
@@ -2710,6 +2714,18 @@ class TestDOK(sparse_test_class(slicing=False,
             A = A + 10
             B = matrix([[10, 0], [10, 10], [30, 10]])
             assert_array_equal(A.todense(), B)
+
+            A = A + 1j
+            B = B + 1j
+            assert_array_equal(A.todense(), B)
+
+    def test_dok_divide_scalar(self):
+        A = self.spmatrix((3,2))
+        A[0,1] = -10
+        A[2,0] = 20
+
+        assert_array_equal((A/1j).todense(), A.todense()/1j)
+        assert_array_equal((A/9).todense(), A.todense()/9)
 
     def test_convert(self):
         # Test provided by Andrew Straw.  Fails in SciPy <= r1477.
