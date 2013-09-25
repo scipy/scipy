@@ -238,10 +238,8 @@ def write(filename, rate, data):
         fid.write(struct.pack('<i', data.nbytes))
         if data.dtype.byteorder == '>' or (data.dtype.byteorder == '=' and sys.byteorder == 'big'):
             data = data.byteswap()
-        if sys.version_info[0] >= 3:
-            fid.write(data.ravel().data)
-        else:
-            fid.write(data.tostring())
+        _array_tofile(fid, data)
+
         # Determine file size and place it in correct
         #  position at start of the file.
         size = fid.tell()
@@ -253,3 +251,12 @@ def write(filename, rate, data):
             fid.close()
         else:
             fid.seek(0)
+
+
+if sys.version_info[0] >= 3:
+    def _array_tofile(fid, data):
+        # ravel gives a c-contiguous buffer
+        fid.write(data.ravel().view('b').data)
+else:
+    def _array_tofile(fid, data):
+        fid.write(data.tostring())
