@@ -429,9 +429,6 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         options.
     options : dict, optional
         A dictionary of solver options.
-            xtol : float
-                Relative error in solution `xopt` acceptable for
-                convergence.
             maxiter : int
                 Maximum number of iterations to perform.
             disp : bool
@@ -495,7 +492,12 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
     if tol is not None:
         options = dict(options)
-        options.setdefault('xtol', tol)
+        if meth == 'bounded' and 'xatol' not in options:
+            warn("Method 'bounded' does not support relative tolerance in x; "
+                 "defaulting to absolute tolerance.", RuntimeWarning)
+            options['xatol'] = tol
+        else:
+            options.setdefault('xtol', tol)
 
     if meth == 'brent':
         return _minimize_scalar_brent(fun, bracket, args, **options)
