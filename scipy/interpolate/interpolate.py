@@ -506,9 +506,9 @@ class PPoly(_Interpolator1D):
 
     Attributes
     ----------
-    x
+    x : ndarray
         Breakpoints.
-    c
+    c : ndarray
         Coefficients of the polynomials. They are reshaped
         to a 3-dimensional array with the last dimension representing
         the trailing dimensions of the original coefficient array.
@@ -579,7 +579,7 @@ class PPoly(_Interpolator1D):
         self.dtype = c.dtype
         return self
 
-    def __call__(self, x, nu=0):
+    def __call__(self, x, nu=0, extrapolate=True):
         """
         Evaluate the piecewise polynomial or its derivative
 
@@ -589,6 +589,9 @@ class PPoly(_Interpolator1D):
             Points to evaluate the interpolant at.
         nu : int, optional
             Order of derivative to evaluate. Must be non-negative.
+        extrapolate : bool, optional
+            Whether to extrapolate to ouf-of-bounds points based on first
+            and last intervals, or to return NaNs.
 
         Returns
         -------
@@ -604,7 +607,7 @@ class PPoly(_Interpolator1D):
 
         """
         x, x_shape = self._prepare_x(x)
-        y = self._evaluate(x, nu)
+        y = self._evaluate(x, nu, extrapolate)
         return self._finish_y(y, x_shape)
 
     def _ensure_c_contiguous(self):
@@ -617,10 +620,11 @@ class PPoly(_Interpolator1D):
         if not self.c.flags.c_contiguous:
             self.c = self.c.copy()
 
-    def _evaluate(self, x, nu):
+    def _evaluate(self, x, nu, extrapolate):
         out = np.empty((len(x), self.c.shape[2]), dtype=self.dtype)
         self._ensure_c_contiguous()
-        _ppoly.evaluate(self.c, self.x, x, nu, out)
+        _ppoly.evaluate(self.c, self.x, x, nu,
+                        bool(extrapolate), out)
         return out
 
     def derivative(self, nu=1):
@@ -712,7 +716,7 @@ class PPoly(_Interpolator1D):
 
         return pp
 
-    def integrate(self, a, b):
+    def integrate(self, a, b, extrapolate=True):
         """
         Compute a definite integral over a piecewise polynomial.
 
@@ -722,6 +726,9 @@ class PPoly(_Interpolator1D):
             Lower integration bound
         b : float
             Upper integration bound
+        extrapolate : bool, optional
+            Whether to extrapolate to ouf-of-bounds points based on first
+            and last intervals, or to return NaNs.
 
         Returns
         -------
@@ -739,16 +746,14 @@ class PPoly(_Interpolator1D):
         # Compute the integral
         range_int = np.empty((self.c.shape[2],), dtype=self.c.dtype)
         self._ensure_c_contiguous()
-        _ppoly.integrate(self.c, self.x,
-                         max(a, self.x[0]),
-                         min(b, self.x[-1]),
+        _ppoly.integrate(self.c, self.x, a, b, bool(extrapolate),
                          out=range_int)
 
         # Return
         range_int *= sign
         return range_int
 
-    def roots(self, discontinuity=True):
+    def roots(self, discontinuity=True, extrapolate=True):
         """
         Find real roots of the piecewise polynomial.
 
@@ -757,6 +762,9 @@ class PPoly(_Interpolator1D):
         discont : bool, optional
             Whether to report sign changes across discontinuities as
             breakpoints as roots.
+        extrapolate : bool, optional
+            Whether to return roots from the polynomial extrapolated
+            based on first and last intervals.
 
         Returns
         -------
@@ -797,7 +805,8 @@ class PPoly(_Interpolator1D):
             raise ValueError("Root finding is only for "
                              "real-valued polynomials")
 
-        r = _ppoly.real_roots(self.c, self.x, bool(discontinuity))
+        r = _ppoly.real_roots(self.c, self.x, bool(discontinuity),
+                              bool(extrapolate))
         if self._y_extra_shape == ():
             return r[0]
         else:
@@ -911,8 +920,11 @@ class ppform(PPoly):
         self.a = self.breaks[0]
         self.b = self.breaks[-1]
 
-    def _evaluate(self, x, nu):
-        out = PPoly._evaluate(x, nu)
+    def __call__(self, x):
+        return PPoly.__call__(self, x, 0, False)
+
+    def _evaluate(self, x, nu, extrapolate):
+        out = PPoly._evaluate(self, x, nu, extrapolate)
         out[~((x >= self.a) & (x <= self.b))] = self.fill
         return out
 

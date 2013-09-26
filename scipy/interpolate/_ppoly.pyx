@@ -34,6 +34,7 @@ def evaluate(double_or_complex[:,:,::1] c,
              double[::1] x,
              double[::1] xp,
              int dx,
+             int extrapolate,
              double_or_complex[:,::1] out):
     """
     Evaluate a piecewise polynomial.
@@ -82,7 +83,7 @@ def evaluate(double_or_complex[:,:,::1] c,
         xval = xp[ip]
 
         # Find correct interval
-        i = find_interval(x, xval, interval)
+        i = find_interval(x, xval, interval, extrapolate)
         if i < 0:
             # xval was nan etc
             for jp in range(c.shape[2]):
@@ -165,6 +166,7 @@ def integrate(double_or_complex[:,:,::1] c,
               double[::1] x,
               double a,
               double b,
+              int extrapolate,
               double_or_complex[::1] out):
     """
     Compute integral over a piecewise polynomial.
@@ -201,13 +203,15 @@ def integrate(double_or_complex[:,:,::1] c,
         raise ValueError("Integral bounds not in order")
 
     # find intervals
-    start_interval = find_interval(x, a)
+    start_interval = find_interval(x, a, 0, extrapolate)
     if start_interval < 0:
-        raise ValueError("a out of range")
+        out[:] = nan
+        return
 
-    end_interval = find_interval(x, b)
+    end_interval = find_interval(x, b, 0, extrapolate)
     if end_interval < 0:
-        raise ValueError("b out of range")
+        out[:] = nan
+        return
 
     # evaluate
     for jp in range(c.shape[2]):
@@ -234,7 +238,8 @@ def integrate(double_or_complex[:,:,::1] c,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def real_roots(double[:,:,::1] c, double[::1] x, int report_discont):
+def real_roots(double[:,:,::1] c, double[::1] x, int report_discont,
+               int extrapolate):
     """
     Compute real roots of a real-valued piecewise polynomial function.
 
@@ -248,9 +253,10 @@ def real_roots(double[:,:,::1] c, double[::1] x, int report_discont):
     """
     cdef list roots
     cdef list cur_roots
-    cdef int interval, jp, k, i
+    cdef int interval, jp, k, i, p
 
     cdef double *wr, *wi, last_root, va, vb
+    cdef double f, df, dx
     cdef void *workspace
 
     if c.shape[1] != x.shape[0] - 1:
@@ -314,10 +320,27 @@ def real_roots(double[:,:,::1] c, double[::1] x, int report_discont):
                     if wi[i] != 0:
                         continue
 
+                    # Refine root by one Newton iteration
+                    f = evaluate_poly1(wr[i], c, interval, jp, 0)
+                    df = evaluate_poly1(wr[i], c, interval, jp, 1)
+                    if df != 0:
+                        dx = f/df
+                        if abs(dx) < abs(wr[i]):
+                            wr[i] = wr[i] - dx
+
                     # Check interval
                     wr[i] += x[interval]
-                    if not (x[interval] <= wr[i] <= x[interval+1]):
-                        continue
+                    if interval == 0 and extrapolate:
+                        # Half-open to the left
+                        if not wr[i] <= x[interval+1]:
+                            continue
+                    elif interval == c.shape[1] - 1 and extrapolate:
+                        # Half-open to the right
+                        if not wr[i] >= x[interval]:
+                            continue
+                    else:
+                        if not (x[interval] <= wr[i] <= x[interval+1]):
+                            continue
 
                     # Add to list
                     if wr[i] != last_root:
@@ -340,7 +363,8 @@ def real_roots(double[:,:,::1] c, double[::1] x, int report_discont):
 @cython.cdivision(True)
 cdef int find_interval(double[::1] x,
                        double xval,
-                       int prev_interval=0) nogil:
+                       int prev_interval=0,
+                       int extrapolate=1) nogil:
     """
     Find an interval such that x[interval] <= xval < x[interval+1]
     or interval == 0 and xval < x[0]
@@ -373,14 +397,14 @@ cdef int find_interval(double[::1] x,
 
     if not (a <= xval <= b):
         # Out-of-bounds (or nan)
-        if xval < a:
+        if xval < a and extrapolate:
             # below
-            interval = 0 
-        elif xval > b:
+            interval = 0
+        elif xval > b and extrapolate:
             # above
             interval = x.shape[0] - 2
         else:
-            # nan or something
+            # nan or no extrapolation
             interval = -1
     elif xval == b:
         # Make the interval closed from the right

@@ -574,8 +574,13 @@ class TestPPoly(TestCase):
 
         ipp = pp.antiderivative()
         assert_allclose(ig, ipp(b) - ipp(a))
-
         assert_allclose(ig, splint(a, b, spl))
+
+        a, b = -0.3, 0.9
+        ig = pp.integrate(a, b, extrapolate=True)
+        assert_allclose(ig, ipp(b) - ipp(a))
+
+        assert_(np.isnan(pp.integrate(a, b, extrapolate=False)).all())
 
     def test_roots(self):
         x = np.linspace(0, 1, 31)**2
@@ -584,8 +589,9 @@ class TestPPoly(TestCase):
         spl = splrep(x, y, s=0, k=3)
         pp = PPoly.from_spline(spl)
 
-        assert_allclose(pp.roots(), sproot(spl),
-                        atol=1e-15)
+        r = pp.roots()
+        r = r[(r >= 0) & (r <= 1)]
+        assert_allclose(r, sproot(spl), atol=1e-15)
 
     def test_roots_idzero(self):
         # Roots for piecewise polynomials with identically zero
@@ -601,12 +607,13 @@ class TestPPoly(TestCase):
         # Check roots repeated in multiple sections are reported only
         # once.
 
-        # [x**2 - 1, 1 - x**2]
+        # [(x + 2)**2 - 1, 1 - (x - 1)**2]
         c = np.array([[1, 0, -1], [-1, 0, 0]]).T
         x = np.array([-2, 1, 2])
 
         pp = PPoly(c, x)
-        assert_array_equal(pp.roots(), [-1, 1])
+        assert_array_equal(pp.roots(), [-3, -1, 1])
+        assert_array_equal(pp.roots(extrapolate=False), [-1, 1])
 
     def test_roots_discont(self):
         # Check that a discontinuity across zero is reported as root
@@ -622,19 +629,25 @@ class TestPPoly(TestCase):
 
         num = 0
 
-        for order in range(0, 20):
-            x = np.unique(np.r_[0, 10 * np.random.rand(30), 10])
-            c = 2*np.random.rand(order+1, len(x)-1, 2, 3) - 1
+        for extrapolate in (True, False):
+            for order in range(0, 20):
+                x = np.unique(np.r_[0, 10 * np.random.rand(30), 10])
+                c = 2*np.random.rand(order+1, len(x)-1, 2, 3) - 1
 
-            pp = PPoly(c, x)
-            r = pp.roots(discontinuity=False)
+                pp = PPoly(c, x)
+                r = pp.roots(discontinuity=False, extrapolate=extrapolate)
 
-            for i in range(2):
-                for j in range(3):
-                    if r[i,j].size > 0:
-                        # Check that the reported roots indeed are roots
-                        num += r[i,j].size
-                        assert_allclose(pp(r[i,j])[:,i,j], 0, atol=1e-7)
+                for i in range(2):
+                    for j in range(3):
+                        rr = r[i,j]
+                        if rr.size > 0:
+                            # Check that the reported roots indeed are roots
+                            num += rr.size
+                            val = pp(rr, extrapolate=extrapolate)[:,i,j]
+                            cmpval = pp(rr, nu=1, extrapolate=extrapolate)[:,i,j]
+                            assert_allclose(val/cmpval, 0, atol=1e-7,
+                                            err_msg="(%r) r = %s" % (extrapolate,
+                                                                     repr(rr),))
 
         # Check that we checked a number of roots
         assert_(num > 100, repr(num))
