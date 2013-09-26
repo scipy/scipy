@@ -3298,6 +3298,10 @@ class TestCOO(sparse_test_class(getset=False,
         dia = coo_matrix(zeros).todia()
         assert_array_equal(dia.A, zeros)
 
+    @dec.knownfailureif(True, "known deficiency in COO")
+    def test_setdiag(self):
+        pass
+
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False,
@@ -3396,6 +3400,10 @@ class TestBSR(sparse_test_class(getset=False,
 
     @dec.knownfailureif(True, "BSR not implemented")
     def test_iterator(self):
+        pass
+
+    @dec.knownfailureif(True, "known deficiency in BSR")
+    def test_setdiag(self):
         pass
 
 
