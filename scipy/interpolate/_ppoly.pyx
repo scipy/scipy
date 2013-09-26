@@ -490,7 +490,8 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
          Index of the local polynomial whose coefficients c[:,ci,cj] to use
     wr, wi : double*
          Allocated double arrays of size `k`. The complex roots are stored
-         here after call.
+         here after call. The roots are sorted in increasing order according
+         to the real part.
     workspace : double**
          Work space pointer. workspace[0] should be NULL on initial
          call.  Multiple subsequent calls with same `k` can share the
@@ -509,8 +510,8 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
     Uses LAPACK + the companion matrix method.
 
     """
-    cdef double *a, *work, a0, a1, a2, d
-    cdef int lwork, n, j, order
+    cdef double *a, *work, a0, a1, a2, d, br, bi
+    cdef int lwork, n, i, j, order
     cdef int nworkspace, info
 
     n = c.shape[0]
@@ -598,6 +599,22 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
     if info != 0:
         # Failure
         return -2
+
+    # Sort roots (insertion sort)
+    for i in range(order):
+        br = wr[i]
+        bi = wi[i]
+        for j in range(i - 1, -1, -1):
+            if wr[j] > br:
+                wr[j+1] = wr[j]
+                wi[j+1] = wi[j]
+            else:
+                wr[j+1] = br
+                wi[j+1] = bi
+                break
+        else:
+            wr[0] = br
+            wi[0] = bi
 
     # Return with roots
     return order
