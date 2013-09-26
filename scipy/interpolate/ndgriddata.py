@@ -69,18 +69,18 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
 def griddata(points, values, xi, method='linear', fill_value=np.nan):
     """
-    Interpolate unstructured N-dimensional data.
+    Interpolate unstructured D-dimensional data.
 
     .. versionadded:: 0.9
 
     Parameters
     ----------
-    points : ndarray of floats, shape (N, ndim)
+    points : ndarray of floats, shape (n, D)
         Data point coordinates. Can either be an array of
-        size (N, ndim), or a tuple of `ndim` arrays.
-    values : ndarray of float or complex, shape (N,)
+        shape (n, D), or a tuple of `ndim` arrays.
+    values : ndarray of float or complex, shape (n,)
         Data values.
-    xi : ndarray of float, shape (M, ndim)
+    xi : ndarray of float, shape (M, D)
         Points at which to interpolate data.
 
     method : {'linear', 'nearest', 'cubic'}, optional
