@@ -1486,6 +1486,71 @@ class _TestCommon:
 
 
 class _TestInplaceArithmetic:
+    @dec.skipif(LooseVersion(np.version.version) < LooseVersion('1.9'),
+                "Not implemented with Numpy < 1.9")
+    def test_inplace_dense_method(self):
+        # Check that ndarray inplace ops work
+        a = np.ones((3, 4))
+        b = self.spmatrix(a)
+
+        def check(op):
+            x = a.copy()
+            y = a.copy()
+
+            x = getattr(x, op)(a)
+            y = getattr(y, op)(b)
+
+            assert_array_equal(x, y, err_msg=op)
+
+        for op in ['__iadd__', '__isub__',
+                   '__imul__', '__idiv__',
+                   '__ifloordiv__', '__itruediv__']:
+            c = dec.knownfailureif(
+                op == '__ifloordiv__',
+                "sparse floordiv not implemented")(check)
+            yield c, op
+
+    def test_inplace_dense_syntax(self):
+        # Same as test_inplace_dense_method, but with the syntax
+        a = np.ones((3, 4))
+        b = self.spmatrix(a)
+
+        x = a.copy()
+        y = a.copy()
+        x += a
+        y += b
+        assert_array_equal(x, y)
+
+        x = a.copy()
+        y = a.copy()
+        x -= a
+        y -= b
+        assert_array_equal(x, y)
+
+        if not (LooseVersion(np.version.version) < LooseVersion('1.9')):
+            # These operations don't work properly without __numpy_ufunc__,
+            # due to missing or incompatible __r*__ implementations
+
+            # This is elementwise product
+            x = a.copy()
+            y = a.copy()
+            x *= a
+            y *= b
+            assert_array_equal(x, y)
+
+            x = a.copy()
+            y = a.copy()
+            x /= a
+            y /= b
+            assert_array_equal(x, y)
+
+            # XXX: floor division is not implemented
+            #x = a.copy()
+            #y = a.copy()
+            #x //= a
+            #y //= b
+            #assert_array_equal(x, y)
+    
     def test_imul_scalar(self):
         def check(dtype):
             dat = self.dat_dtypes[dtype]
