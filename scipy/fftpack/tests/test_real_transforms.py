@@ -358,9 +358,6 @@ class TestOverwrite(object):
             routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
         if not should_overwrite:
             assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
-        else:
-            if (x2 == x).all():
-                raise AssertionError("no overwrite in %s" % sig)
 
     def _check_1d(self, routine, dtype, shape, axis, overwritable_dtypes):
         np.random.seed(1234)
