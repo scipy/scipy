@@ -497,7 +497,7 @@ class TestDet(TestCase):
             a = random([n,n]) + 2j*random([n,n])
             d1 = det(a)
             d2 = basic_det(a)
-            assert_almost_equal(d1,d2)
+            assert_allclose(d1, d2, rtol=1e-13)
 
     def test_check_finite(self):
         a = [[1,2],[3,4]]

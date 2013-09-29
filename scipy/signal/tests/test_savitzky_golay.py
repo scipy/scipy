@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (run_module_suite, assert_allclose, assert_equal,
-                           assert_array_equal)
+                           assert_almost_equal, assert_array_equal)
 
 from scipy.ndimage import convolve1d
 
@@ -152,11 +152,11 @@ def test_sg_filter_trivial():
     # (1, 0) at 0. This is just the average of the three values, hence 1.0.
     x = np.array([3.0])
     y = savgol_filter(x, 3, 1, mode='constant')
-    assert_equal(y, [1.0])
+    assert_almost_equal(y, [1.0], decimal=15)
 
     x = np.array([3.0])
     y = savgol_filter(x, 3, 1, mode='nearest')
-    assert_equal(y, [3.0])
+    assert_almost_equal(y, [3.0], decimal=15)
 
 
 def test_sg_filter_basic():
