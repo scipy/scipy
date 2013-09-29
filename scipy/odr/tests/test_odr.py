@@ -42,6 +42,7 @@ class TestODR(TestCase):
         explicit_odr = ODR(explicit_dat, explicit_mod, beta0=[1500.0, -50.0, -0.1],
                        ifixx=[0,0,1,1,1,1,1,1,1,1,1,0])
         explicit_odr.set_job(deriv=2)
+        explicit_odr.set_iprint(init=0, iter=0, final=0)
 
         out = explicit_odr.run()
         assert_array_almost_equal(
