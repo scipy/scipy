@@ -268,7 +268,7 @@ class interp2d(object):
 class interp1d(_Interpolator1D):
     """
     interp1d(x, y, kind='linear', axis=-1, copy=True, bounds_error=True,
-             fill_value=np.nan)
+             assume_sorted=False, fill_value=np.nan)
 
     Interpolate a 1-D function.
 
@@ -279,7 +279,7 @@ class interp1d(_Interpolator1D):
     Parameters
     ----------
     x : (N,) array_like
-        A 1-D array of monotonically increasing real values.
+        A 1-D array of real values.
     y : (...,N,...) array_like
         A N-D array of real values. The length of `y` along the interpolation
         axis must be equal to the length of `x`.
@@ -301,6 +301,9 @@ class interp1d(_Interpolator1D):
         a value outside of the range of x (where extrapolation is
         necessary). If False, out of bounds values are assigned `fill_value`.
         By default, an error is raised.
+    assume_sorted : bool, optional
+        If False, values of `x` can be in any order and they are sorted first.
+	If True, `x` has to be an array of monotonically increasing values.    
     fill_value : float, optional
         If provided, then this value will be used to fill in for requested
         points outside of the data range. If not provided, then the default
@@ -328,7 +331,8 @@ class interp1d(_Interpolator1D):
     """
 
     def __init__(self, x, y, kind='linear', axis=-1,
-                 copy=True, bounds_error=True, fill_value=np.nan):
+                 copy=True, bounds_error=True, assume_sorted=False,
+		 fill_value=np.nan):
         """ Initialize a 1D linear interpolation class."""
         _Interpolator1D.__init__(self, x, y, axis=axis)
 
@@ -348,6 +352,12 @@ class interp1d(_Interpolator1D):
                                       "routines for other types." % kind)
         x = array(x, copy=self.copy)
         y = array(y, copy=self.copy)
+
+
+	if not assume_sorted:
+		ind = np.argsort(x)
+		x = x[ind]
+		np.take(y,ind,axis=axis,out=y)
 
         if x.ndim != 1:
             raise ValueError("the x array must have exactly one dimension.")
