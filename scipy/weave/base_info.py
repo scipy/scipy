@@ -148,9 +148,6 @@ class info_list(UserList.UserList):
     def define_macros(self):
         return self.get_unique_values('define_macros')
 
-    def sources(self):
-        return self.get_unique_values('sources')
-
     def warnings(self):
         return self.get_unique_values('warnings')
 
