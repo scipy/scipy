@@ -268,7 +268,7 @@ class interp2d(object):
 class interp1d(_Interpolator1D):
     """
     interp1d(x, y, kind='linear', axis=-1, copy=True, bounds_error=True,
-             assume_sorted=False, fill_value=np.nan)
+             fill_value=np.nan, assume_sorted=False)
 
     Interpolate a 1-D function.
 
@@ -301,13 +301,14 @@ class interp1d(_Interpolator1D):
         a value outside of the range of x (where extrapolation is
         necessary). If False, out of bounds values are assigned `fill_value`.
         By default, an error is raised.
-    assume_sorted : bool, optional
-        If False, values of `x` can be in any order and they are sorted first.
-	If True, `x` has to be an array of monotonically increasing values.    
     fill_value : float, optional
         If provided, then this value will be used to fill in for requested
         points outside of the data range. If not provided, then the default
         is NaN.
+    assume_sorted : bool, optional
+        If False, values of `x` can be in any order and they are sorted first.
+	If True, `x` has to be an array of monotonically increasing values.    
+
 
     See Also
     --------
@@ -331,8 +332,8 @@ class interp1d(_Interpolator1D):
     """
 
     def __init__(self, x, y, kind='linear', axis=-1,
-                 copy=True, bounds_error=True, assume_sorted=False,
-                 fill_value=np.nan):
+                 copy=True, bounds_error=True, fill_value=np.nan,
+                 assume_sorted=False):
         """ Initialize a 1D linear interpolation class."""
         _Interpolator1D.__init__(self, x, y, axis=axis)
 
