@@ -177,7 +177,7 @@ class TestInterp1D(object):
         """
 
         interp10 = interp1d(self.x10, self.y10)
-	interp10_unsorted = interp1d(self.x10[::-1], self.y10[::-1])		
+        interp10_unsorted = interp1d(self.x10[::-1], self.y10[::-1])		
 
         assert_array_almost_equal(
             interp10_unsorted(self.x10),
