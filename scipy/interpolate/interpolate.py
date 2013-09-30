@@ -10,6 +10,7 @@ from numpy import shape, sometrue, array, transpose, searchsorted, \
                   dot, poly1d, asarray, intp
 import numpy as np
 import scipy.special as spec
+from scipy.misc import comb
 import math
 import warnings
 
@@ -672,7 +673,12 @@ class PPoly(_PPolyBase):
     roots
     extend
     from_spline
+    from_bernstein_basis
     construct_fast
+
+    See also
+    --------
+    BPoly : piecewise polynomials in the Bernstein basis
 
     Notes
     -----
@@ -896,14 +902,115 @@ class PPoly(_PPolyBase):
 
         return cls.construct_fast(cvals, t)
 
+    @classmethod
+    def from_bernstein_basis(cls, bp):
+        """
+        Construct a piecewise polynomial in the power basis
+        from a polynomial in Bernstein basis.
+
+        Parameters
+        ----------
+        bp : A Bernstein basis polynomial, as created by BPoly
+
+        """
+        dx = np.diff(bp.x)
+        k = bp.c.shape[0] - 1  # polynomial order
+
+        c = np.zeros_like(bp.c)
+        for a in range(k+1):
+            factor = (-1)**(a) * comb(k, a) * bp.c[a, ...]
+            for s in range(a, k+1):
+                val = comb(k-a, s-a) * (-1)**s
+                c[k-s, ...] += factor * val / dx[:, None]**s
+        return cls.construct_fast(c, bp.x)
+
 
 class BPoly(_PPolyBase):
+    """
+    Piecewise polynomial in terms of coefficients and breakpoints
+
+    The polynomial in the ``i``-th interval is ``x[i] <= xp < x[i+1]``
+    is written in the Bernstein polynomial basis::
+
+        S = sum(c[m, i] * b(m, k; x) for m in range(k+1))
+
+    where ``k`` is the degree of the polynomial, and::
+
+        b(m, k; x) = comb(k, m) * t**k * (1-t)**(k-m)
+
+    with ``t = (x - x[i]) / (x[i+1] - x[i])``.
+
+    Parameters
+    ----------
+    c : ndarray, shape (k, m, ...)
+        Polynomial coefficients, order `k` and `m` intervals
+    x : ndarray, shape (m+1,)
+        Polynomial breakpoints. These must be sorted in
+        increasing order.
+
+    Attributes
+    ----------
+    x : ndarray
+        Breakpoints.
+    c : ndarray
+        Coefficients of the polynomials. They are reshaped
+        to a 3-dimensional array with the last dimension representing
+        the trailing dimensions of the original coefficient array.
+
+    Methods
+    -------
+    __call__
+    extend
+    from_spline
+    construct_fast
+    from_power_basis
+
+    See also
+    --------
+    PPoly : piecewise polynomials in the power basis
+
+    Examples
+    --------
+
+    >>> x = [0, 1]
+    >>> c = [[1], [2], [3]]
+    >>> bp = BPoly(c, x)
+
+    This creates a 2nd order polynomial 
+    ..math::
+
+        B(x) = 1 b_{0, 2}(x) + 2 b_{1, 2}(x) + 3 b_{2, 2}(x),\
+             = 1 * (1-x)^2 + 2 * 2 x (1 - x) + 3 * x^2
+
+    """
     def _evaluate(self, x, nu, extrapolate):
         out = np.empty((len(x), self.c.shape[2]), dtype=self.dtype)
         self._ensure_c_contiguous()
         _ppoly.evaluate_bernstein(self.c, self.x, x, nu,
                         bool(extrapolate), out)
         return out
+
+    @classmethod
+    def from_power_basis(cls, pp):
+        """
+        Construct a piecewise polynomial in Bernstein basis 
+        from a power basis polynomial.
+
+        Parameters
+        ----------
+        pp : A piecewise polynomial in the power basis, as created by PPoly 
+
+        """
+        dx = np.diff(pp.x)
+        k = pp.c.shape[0] - 1 # polynomial order
+
+        c = np.zeros_like(pp.c)
+        for a in range(k+1):
+            factor = pp.c[a, ...] / comb(k, k-a)   * dx[:, None]**(k-a)
+            for j in range(k-a, k+1):
+                c[j, ...] += factor * comb(j, k-a)
+
+        return cls.construct_fast(c, pp.x)
 
 
 # backward compatibility wrapper

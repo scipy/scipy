@@ -783,6 +783,30 @@ class TestBPoly(TestCase):
         assert_allclose(bp(1.7), 2 * (0.7/2)**2)
 
 
+class TestConversions(TestCase):
+
+    def test_bp_from_pp(self):
+        x = [0, 1, 3]
+        c = [[3, 2], [1, 8], [4, 3]]
+        pp = PPoly(c, x)
+        bp = BPoly.from_power_basis(pp)
+        pp1 = PPoly.from_bernstein_basis(bp)
+
+        for xp in [0.1, 1.4]:
+            assert_allclose(pp(xp), bp(xp))
+            assert_allclose(pp(xp), pp1(xp))
+
+    def test_pp_from_bp(self):
+        x = [0, 1, 3]
+        c = [[3, 3], [1, 1], [4, 2]]
+        bp = BPoly(c, x)
+        pp = PPoly.from_bernstein_basis(bp)
+        bp1 = BPoly.from_power_basis(pp)
+
+        for xp in [0.1, 1.4]:
+            assert_allclose(bp(xp), pp(xp))
+            assert_allclose(bp(xp), bp1(xp))
+
 
 class TestPpform(TestCase):
     def test_shape(self):
