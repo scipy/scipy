@@ -353,8 +353,7 @@ class interp1d(_Interpolator1D):
         x = array(x, copy=self.copy)
         y = array(y, copy=self.copy)
 
-
-	if not assume_sorted:
+        if not assume_sorted:
             ind = np.argsort(x)
             x = x[ind]
             np.take(y,ind,axis=axis,out=y)
