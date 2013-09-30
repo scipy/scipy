@@ -3,7 +3,7 @@
 from __future__ import division, print_function, absolute_import
 
 __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
-           'ppform', 'lagrange', 'PPoly']
+           'ppform', 'lagrange', 'PPoly', 'BPoly']
 
 from numpy import shape, sometrue, array, transpose, searchsorted, \
                   ones, logical_or, atleast_1d, atleast_2d, ravel, \
@@ -485,53 +485,10 @@ class interp1d(_Interpolator1D):
         return out_of_bounds
 
 
-class PPoly(_Interpolator1D):
+class _PPolyBase(_Interpolator1D):
     """
-    Piecewise polynomial in terms of coefficients and breakpoints
-
-    The polynomial in the ith interval is ``x[i] <= xp < x[i+1]``::
-
-        S = sum(c[m, i] * (xp - x[i])**(k-m) for m in range(k+1))
-
-    where ``k`` is the degree of the polynomial. This representation
-    is the local power basis.
-
-    Parameters
-    ----------
-    c : ndarray, shape (k, m, ...)
-        Polynomial coefficients, order `k` and `m` intervals
-    x : ndarray, shape (m+1,)
-        Polynomial breakpoints. These must be sorted in
-        increasing order.
-
-    Attributes
-    ----------
-    x : ndarray
-        Breakpoints.
-    c : ndarray
-        Coefficients of the polynomials. They are reshaped
-        to a 3-dimensional array with the last dimension representing
-        the trailing dimensions of the original coefficient array.
-
-    Methods
-    -------
-    __call__
-    derivative
-    antiderivative
-    integrate
-    roots
-    extend
-    from_spline
-    construct_fast
-
-    Notes
-    -----
-    High-order polynomials in the power basis can be numerically
-    unstable.  Precision problems can start to appear for orders
-    larger than 20-30.
-
+    Base class for piecewise polynomials.
     """
-
     __slots__ = ('c', 'x')
 
     def __init__(self, c, x):
@@ -579,6 +536,73 @@ class PPoly(_Interpolator1D):
         self.dtype = c.dtype
         return self
 
+    def _ensure_c_contiguous(self):
+        """
+        c and x may be modified by the user. The Cython code expects
+        that they are C contiguous.
+        """
+        if not self.x.flags.c_contiguous:
+            self.x = self.x.copy()
+        if not self.c.flags.c_contiguous:
+            self.c = self.c.copy()
+
+    def extend(self, c, x, right=True):
+        """
+        Add additional breakpoints and coefficients to the polynomial.
+
+        Parameters
+        ----------
+        c : ndarray, size (k, m, ...)
+            Additional coefficients for polynomials in intervals
+            ``self.x[-1] <= x < x_right[0]``, ``x_right[0] <= x < x_right[1]``,
+            ..., ``x_right[m-2] <= x < x_right[m-1]``
+        x : ndarray, size (m,)
+            Additional breakpoints. Must be sorted and either to
+            the right or to the left of the current breakpoints.
+        right : bool, optional
+            Whether the new intervals are to the right or to the left
+            of the current intervals.
+
+        """
+        c = np.asarray(c)
+        x = np.asarray(x)
+        
+        if c.ndim < 2:
+            raise ValueError("invalid dimensions for c")
+        if x.ndim != 1:
+            raise ValueError("invalid dimensions for x")
+        if x.shape[0] != c.shape[1]:
+            raise ValueError("x and c have incompatible sizes")
+        if c.shape[2:] != self._y_extra_shape:
+            raise ValueError("c and self.c have incompatible shapes")
+        if right:
+            if x[0] < self.x[-1]:
+                raise ValueError("new x are not to the right of current ones")
+        else:
+            if x[-1] > self.x[0]:
+                raise ValueError("new x are not to the left of current ones")
+
+        if c.size == 0:
+            return
+
+        self._set_dtype(c.dtype, union=True)
+
+        c = c.reshape(c.shape[0], c.shape[1], -1)
+
+        k2 = max(c.shape[0], self.c.shape[0])
+        c2 = np.zeros((k2, self.c.shape[1] + c.shape[1], self.c.shape[2]),
+                      dtype=self.dtype)
+
+        if right:
+            c2[k2-self.c.shape[0]:, :self.c.shape[1], :] = self.c
+            c2[k2-c.shape[0]:, self.c.shape[1]:, :] = c
+            self.x = np.r_[self.x, x]
+        else:
+            c2[k2-self.c.shape[0]:, :c.shape[1], :] = c
+            c2[k2-c.shape[0]:, c.shape[1]:, :] = self.c
+            self.x = np.r_[x, self.x]
+        self.c = c2
+
     def __call__(self, x, nu=0, extrapolate=True):
         """
         Evaluate the piecewise polynomial or its derivative
@@ -610,16 +634,53 @@ class PPoly(_Interpolator1D):
         y = self._evaluate(x, nu, extrapolate)
         return self._finish_y(y, x_shape)
 
-    def _ensure_c_contiguous(self):
-        """
-        c and x may be modified by the user. The Cython code expects
-        that they are C contiguous.
-        """
-        if not self.x.flags.c_contiguous:
-            self.x = self.x.copy()
-        if not self.c.flags.c_contiguous:
-            self.c = self.c.copy()
 
+class PPoly(_PPolyBase):
+    """
+    Piecewise polynomial in terms of coefficients and breakpoints
+
+    The polynomial in the ith interval is ``x[i] <= xp < x[i+1]``::
+
+        S = sum(c[m, i] * (xp - x[i])**(k-m) for m in range(k+1))
+
+    where ``k`` is the degree of the polynomial. This representation
+    is the local power basis.
+
+    Parameters
+    ----------
+    c : ndarray, shape (k, m, ...)
+        Polynomial coefficients, order `k` and `m` intervals
+    x : ndarray, shape (m+1,)
+        Polynomial breakpoints. These must be sorted in
+        increasing order.
+
+    Attributes
+    ----------
+    x : ndarray
+        Breakpoints.
+    c : ndarray
+        Coefficients of the polynomials. They are reshaped
+        to a 3-dimensional array with the last dimension representing
+        the trailing dimensions of the original coefficient array.
+
+    Methods
+    -------
+    __call__
+    derivative
+    antiderivative
+    integrate
+    roots
+    extend
+    from_spline
+    construct_fast
+
+    Notes
+    -----
+    High-order polynomials in the power basis can be numerically
+    unstable.  Precision problems can start to appear for orders
+    larger than 20-30.
+
+    """
     def _evaluate(self, x, nu, extrapolate):
         out = np.empty((len(x), self.c.shape[2]), dtype=self.dtype)
         self._ensure_c_contiguous()
@@ -815,63 +876,6 @@ class PPoly(_Interpolator1D):
             r2[...] = r
             return r2.reshape(self._y_extra_shape)
 
-    def extend(self, c, x, right=True):
-        """
-        Add additional breakpoints and coefficients to the polynomial.
-
-        Parameters
-        ----------
-        c : ndarray, size (k, m, ...)
-            Additional coefficients for polynomials in intervals
-            ``self.x[-1] <= x < x_right[0]``, ``x_right[0] <= x < x_right[1]``,
-            ..., ``x_right[m-2] <= x < x_right[m-1]``
-        x : ndarray, size (m,)
-            Additional breakpoints. Must be sorted and either to
-            the right or to the left of the current breakpoints.
-        right : bool, optional
-            Whether the new intervals are to the right or to the left
-            of the current intervals.
-
-        """
-        c = np.asarray(c)
-        x = np.asarray(x)
-        
-        if c.ndim < 2:
-            raise ValueError("invalid dimensions for c")
-        if x.ndim != 1:
-            raise ValueError("invalid dimensions for x")
-        if x.shape[0] != c.shape[1]:
-            raise ValueError("x and c have incompatible sizes")
-        if c.shape[2:] != self._y_extra_shape:
-            raise ValueError("c and self.c have incompatible shapes")
-        if right:
-            if x[0] < self.x[-1]:
-                raise ValueError("new x are not to the right of current ones")
-        else:
-            if x[-1] > self.x[0]:
-                raise ValueError("new x are not to the left of current ones")
-
-        if c.size == 0:
-            return
-
-        self._set_dtype(c.dtype, union=True)
-
-        c = c.reshape(c.shape[0], c.shape[1], -1)
-
-        k2 = max(c.shape[0], self.c.shape[0])
-        c2 = np.zeros((k2, self.c.shape[1] + c.shape[1], self.c.shape[2]),
-                      dtype=self.dtype)
-
-        if right:
-            c2[k2-self.c.shape[0]:, :self.c.shape[1], :] = self.c
-            c2[k2-c.shape[0]:, self.c.shape[1]:, :] = c
-            self.x = np.r_[self.x, x]
-        else:
-            c2[k2-self.c.shape[0]:, :c.shape[1], :] = c
-            c2[k2-c.shape[0]:, c.shape[1]:, :] = self.c
-            self.x = np.r_[x, self.x]
-        self.c = c2
-
     @classmethod
     def from_spline(cls, tck):
         """
@@ -891,6 +895,15 @@ class PPoly(_Interpolator1D):
             cvals[k - m, :] = y/spec.gamma(m+1)
 
         return cls.construct_fast(cvals, t)
+
+
+class BPoly(_PPolyBase):
+    def _evaluate(self, x, nu, extrapolate):
+        out = np.empty((len(x), self.c.shape[2]), dtype=self.dtype)
+        self._ensure_c_contiguous()
+        _ppoly.evaluate_bernstein(self.c, self.x, x, nu,
+                        bool(extrapolate), out)
+        return out
 
 
 # backward compatibility wrapper

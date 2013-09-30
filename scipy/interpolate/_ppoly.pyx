@@ -694,3 +694,129 @@ def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w):
             libc.stdlib.free(workspace)
         libc.stdlib.free(wr)
         libc.stdlib.free(wi)
+
+
+####### Bernstein basis businness
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.cdivision(True)
+cdef double_or_complex evaluate_bpoly1(double_or_complex s, double_or_complex[:,:,::1] c, int ci, int cj) nogil:
+    """
+    Evaluate polynomial in the Berstein basis in a single interval.
+
+    A Berstein polynomial is defined as ..math::
+
+    b_{j, k} = comb(k, j) x^{j} (1-x)^{k-j}
+
+    with ``0 <= x <= 1``
+
+    Parameters
+    ----------
+    s : double
+        Polynomial x-value
+    c : double[:,:,:]
+        Polynomial coefficients. c[:,ci,cj] will be used
+    ci, cj : int
+        Which of the coefs to use
+
+    """
+    cdef int k, j
+    cdef double_or_complex res, s1, comb
+
+    k = c.shape[0] - 1  # polynomial order
+    s1 = 1. - s
+
+    # special-case lowest orders
+    if k == 0:
+        res = c[0, ci, cj]
+    elif k == 1: 
+        res = c[0, ci, cj] * s1 + c[1, ci, cj] * s
+    elif k == 2:
+        res = c[0, ci, cj] * s1*s1 + c[1, ci, cj] * 2.*s1*s + c[2, ci, cj] * s*s
+    elif k == 3:
+        res = (c[0, ci, cj] * s1*s1*s1 + c[1, ci, cj] * 3.*s1*s1*s +
+               c[2, ci, cj] * 3.*s1*s*s + c[3, ci, cj] * s*s*s)
+    else:
+        # XX: replace with de Casteljau's algorithm is needs be
+        res, comb = 0., 1.
+        for j in range(k+1):
+            res += comb * s**j * s1**(k-j) * c[j, ci, cj]
+            comb *= 1. * (k-j) / (j+1.)
+
+    return res
+
+#
+# Only differs from _ppoly by evaluate_bpoly1, not evaluate_poly1; FIXME: dedupe
+#
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.cdivision(True)
+def evaluate_bernstein(double_or_complex[:,:,::1] c,
+             double[::1] x,
+             double[::1] xp,
+             int dx,
+             int extrapolate,
+             double_or_complex[:,::1] out):
+    """
+    Evaluate a piecewise polynomial in the Bernstein basis.
+
+    Parameters
+    ----------
+    c : ndarray, shape (k, m, n)
+        Coefficients local polynomials of order `k-1` in `m` intervals.
+        There are `n` polynomials in each interval.
+        Coefficient of highest order-term comes first.
+    x : ndarray, shape (m+1,)
+        Breakpoints of polynomials
+    xp : ndarray, shape (r,)
+        Points to evaluate the piecewise polynomial at.
+    dx : int
+        Order of derivative to evaluate.  The derivative is evaluated
+        piecewise and may have discontinuities.
+    out : ndarray, shape (r, n)
+        Value of each polynomial at each of the input points.
+        For points outside the span ``x[0] ... x[-1]``,
+        ``nan`` is returned.
+        This argument is modified in-place.
+
+    """
+
+    cdef int ip, jp
+    cdef int interval
+    cdef double xval
+    cdef double_or_complex s
+
+    # check derivative order
+    if dx != 0:
+        raise NotImplementedError("Cannot do derivatives in the B-basis yet.")
+
+    # shape checks
+    if out.shape[0] != xp.shape[0]:
+        raise ValueError("out and xp have incompatible shapes")
+    if out.shape[1] != c.shape[2]:
+        raise ValueError("out and c have incompatible shapes")
+    if c.shape[1] != x.shape[0] - 1:
+        raise ValueError("x and c have incompatible shapes")
+
+    # evaluate
+    interval = 0
+
+    for ip in range(len(xp)):
+        xval = xp[ip]
+
+        # Find correct interval
+        i = find_interval(x, xval, interval, extrapolate)
+        if i < 0:
+            # xval was nan etc
+            for jp in range(c.shape[2]):
+                out[ip, jp] = nan
+            continue
+        else:
+            interval = i
+
+        # Evaluate the local polynomial(s)
+        for jp in range(c.shape[2]):
+            s = (xval - x[interval]) / (x[interval+1] - x[interval]) 
+            out[ip, jp] = evaluate_bpoly1(s, c, interval, jp)
+
