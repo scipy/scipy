@@ -2377,9 +2377,9 @@ class TestLegendreFunctions(TestCase):
             for n in range(4):
                 for m in range(1, n):
                     lp = special.clpmn(m, n, z)
-                    assert_equal(lp[1][1,1:], np.inf)
+                    assert_(np.isinf(lp[1][1,1:]).all())
                     lp = special.lpmn(m, n, z)
-                    assert_equal(lp[1][1,1:], np.inf)
+                    assert_(np.isinf(lp[1][1,1:]).all())
 
     def test_lpmn(self):
         lp = special.lpmn(0,2,.5)
