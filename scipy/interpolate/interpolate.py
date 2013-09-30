@@ -332,7 +332,7 @@ class interp1d(_Interpolator1D):
 
     def __init__(self, x, y, kind='linear', axis=-1,
                  copy=True, bounds_error=True, assume_sorted=False,
-		 fill_value=np.nan):
+                 fill_value=np.nan):
         """ Initialize a 1D linear interpolation class."""
         _Interpolator1D.__init__(self, x, y, axis=axis)
 
@@ -355,9 +355,9 @@ class interp1d(_Interpolator1D):
 
 
 	if not assume_sorted:
-		ind = np.argsort(x)
-		x = x[ind]
-		np.take(y,ind,axis=axis,out=y)
+            ind = np.argsort(x)
+            x = x[ind]
+            np.take(y,ind,axis=axis,out=y)
 
         if x.ndim != 1:
             raise ValueError("the x array must have exactly one dimension.")
