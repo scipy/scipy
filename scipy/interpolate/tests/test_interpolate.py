@@ -777,10 +777,31 @@ class TestBPoly(TestCase):
     def test_two_intervals(self):
         x = [0, 1, 3]
         c = [[3, 0], [0, 0], [0, 2]]
-        bp = BPoly(c, x)  # [3*(1-x)**2, 2*(x/2)**2]
+        bp = BPoly(c, x)  # [3*(1-x)**2, 2*((x-1)/2)**2]
 
         assert_allclose(bp(0.4), 3 * 0.6*0.6)
         assert_allclose(bp(1.7), 2 * (0.7/2)**2)
+
+
+class TestBPolyCalculus(TestCase):
+
+    def setUp(self):
+        self.x = [0, 1, 3]
+        self.c = [[3, 0], [0, 0], [0, 2]]
+        self.bp = BPoly(self.c, self.x)  # [3*(1-x)**2, 2*((x-1)/2)**2]
+
+    def test_derivative(self):
+        bp_der = self.bp.derivative()
+
+        assert_allclose(bp_der(0.4), -6*(0.6))
+        assert_allclose(bp_der(1.7), 0.7)
+
+        #make sure it's consistent w/ power basis
+        pp = PPoly.from_bernstein_basis(self.bp)
+        pp_der = pp.derivative()
+        
+        for xp in [0.4, 1.7]:
+            assert_allclose(bp_der(xp), pp_der(xp))
 
 
 class TestConversions(TestCase):

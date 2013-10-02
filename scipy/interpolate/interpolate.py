@@ -961,6 +961,7 @@ class BPoly(_PPolyBase):
     -------
     __call__
     extend
+    derivative
     from_spline
     construct_fast
     from_power_basis
@@ -1006,11 +1007,56 @@ class BPoly(_PPolyBase):
 
         c = np.zeros_like(pp.c)
         for a in range(k+1):
-            factor = pp.c[a, ...] / comb(k, k-a)   * dx[:, None]**(k-a)
+            factor = pp.c[a, ...] / comb(k, k-a) * dx[:, None]**(k-a)
             for j in range(k-a, k+1):
                 c[j, ...] += factor * comb(j, k-a)
 
         return cls.construct_fast(c, pp.x)
+
+    def derivative(self, nu=1):
+        """
+        Construct a new piecewise polynomial representing the derivative.
+
+        Parameters
+        ----------
+        n : int, optional
+            Order of derivative to evaluate. (Default: 1)
+            If negative, the antiderivative is returned.
+
+        Returns
+        -------
+        bp : BPoly
+            Piecewise polynomial of order k2 = k - n representing the derivative
+            of this polynomial.
+
+        """
+        if nu < 0:
+            return self.antiderivative(-nu)
+
+        if nu > 1:
+            raise NotImplementedError('Higher order derivatives.')
+
+        # reduce order
+        if nu == 0:
+            c2 = self.c.copy()
+        else:
+            # For a polynomial 
+            #    B(x) = \sum_{a=0}^{k} c_a b_{a, k}(x),
+            # we use the fact that 
+            #   b'_{a, k} = k ( b_{a-1, k-1} - b_{a, k-1} ),
+            # which leads to
+            #   B'(x) = \sum_{a=0}^{k-1} (c_{a+1} - c_a) b_{a, k-1}
+            #
+            # finally, for an interval [y, y + dy] with dy != 1,
+            # we need to correct for an extra power of dy
+
+            k = self.c.shape[0] - 1
+            c2 = k * np.diff(self.c, axis=0) / np.diff(self.x)[:, None, None]
+
+        # construct a compatible polynomial
+        pp = BPoly(c2, self.x)
+        pp._y_extra_shape = self._y_extra_shape
+        return pp
 
 
 # backward compatibility wrapper
