@@ -70,21 +70,22 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,lb=Non
     
     print(tableau)
     
+  
     
-def simplex_standard_maximization(c,A,b):
+def linprog(c,A_ub,b_ub):
     """
     
     """
-    AA = np.asarray(A) 
-    bb = np.asarray(b) 
+    Aub = np.asarray(A_ub) 
+    bub = np.asarray(b_ub) 
     cc = np.asarray(c) 
     
-    m = len(b)
+    mub = len(b)
     n = len(c)
     
-    A_rows, A_cols = AA.shape
+    A_rows, A_cols = Aub.shape
     
-    if not A_rows == m:
+    if not A_rows == mub:
         # raise here
         print("Number of rows in A must be equal to the size of b")
     if not A_cols == n:
@@ -92,22 +93,22 @@ def simplex_standard_maximization(c,A,b):
         print("Number of columsn in A must be equal to the size of c")
         
     # Add slack variables for our upper-bound constraints
-    n_slack = m
+    n_slack = mub
     
     # Create the tableau
-    T = np.zeros([m+1,n+n_slack+1])
+    T = np.zeros([mub+1,n+n_slack+1])
     
     # Insert objective into tableau
     T[-1,:n] = -cc
     
     # Add A to the tableau
-    T[:m,:n] = AA
+    T[:mub,:n] = Aub
     
     # Add the slack variables to the tableau
-    T[:m,n:n+n_slack] = np.eye(n_slack)    
+    T[:mub,n:n+n_slack] = np.eye(n_slack)    
     
     # At b to the tableau
-    T[:-1,-1] = bb
+    T[:-1,-1] = bub
     
     # Tableau Finished
     print(T)
@@ -127,7 +128,7 @@ def simplex_standard_maximization(c,A,b):
         print(pivcol)
     
         # Find the minimizer of b[x_to_enter]/a[i,x_to_enter]
-        test = bb/AA[:,pivcol]
+        test = bub/Aub[:,pivcol]
         print(test)
         pivrow = np.argmin(test)
         
@@ -177,7 +178,7 @@ if __name__ == "__main__":
          [3,1]]
     b = [1,1]
     
-    simplex_standard_maximization(c,A,b)
+    linprog(c,A,b)
     
     
     
