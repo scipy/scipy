@@ -43,7 +43,7 @@ cdef extern from "setjmp.h" nogil:
 # Define the clockwise constant
 cdef extern from "qhull/src/user.h":
     cdef enum:
-        qh_ORIENTclock = 0
+        qh_ORIENTclock
 
 cdef extern from "qhull/src/qset.h":
     ctypedef union setelemT:
