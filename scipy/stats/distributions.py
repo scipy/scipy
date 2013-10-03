@@ -7617,9 +7617,9 @@ class randint_gen(rv_discrete):
     -----
     The probability mass function for `randint` is::
 
-        randint.pmf(k) = 1./(max- min)
+        randint.pmf(k) = 1. / (max - min)
 
-    for ``k = min,...,max``.
+    for ``k = min, ..., max-1``.
 
     `randint` takes ``min`` and ``max`` as shape parameters.
 
@@ -7628,19 +7628,19 @@ class randint_gen(rv_discrete):
     """
     def _argcheck(self, min, max):
         self.a = min
-        self.b = max-1
+        self.b = max - 1
         return (max > min)
 
     def _pmf(self, k, min, max):
-        fact = 1.0 / (max - min)
-        return fact
+        p = np.ones_like(k) / (max - min)
+        return np.where((k >= min) & (k < max ), p, 0.)
 
     def _cdf(self, x, min, max):
         k = floor(x)
-        return (k-min+1)*1.0/(max-min)
+        return 1. * (k - min + 1.) / (max - min)
 
     def _ppf(self, q, min, max):
-        vals = ceil(q*(max-min)+min)-1
+        vals = ceil(q * (max - min) + min) - 1
         vals1 = (vals-1).clip(min, max)
         temp = self._cdf(vals1, min, max)
         return where(temp >= q, vals1, vals)
@@ -7649,9 +7649,9 @@ class randint_gen(rv_discrete):
         m2, m1 = asarray(max), asarray(min)
         mu = (m2 + m1 - 1.0) / 2
         d = m2 - m1
-        var = (d-1)*(d+1.0)/12.0
+        var = (d*d - 1) / 12.0
         g1 = 0.0
-        g2 = -6.0/5.0*(d*d+1.0)/(d-1.0)*(d+1.0)
+        g2 = -6.0/5.0 * (d*d + 1.0) / (d*d - 1.0)
         return mu, var, g1, g2
 
     def _rvs(self, min, max=None):
@@ -7677,7 +7677,7 @@ class zipf_gen(rv_discrete):
     -----
     The probability mass function for `zipf` is::
 
-        zipf.pmf(k) = 1/(zeta(a)*k**a)
+        zipf.pmf(k, a) = 1/(zeta(a) * k**a)
 
     for ``k >= 1``.
 
@@ -7693,27 +7693,13 @@ class zipf_gen(rv_discrete):
         return a > 1
 
     def _pmf(self, k, a):
-        Pk = 1.0 / asarray(special.zeta(a,1) * k**a)
+        Pk = 1.0 / special.zeta(a, 1) / k**a 
         return Pk
 
     def _munp(self, n, a):
-        return special.zeta(a-n,1) / special.zeta(a,1)
-
-    def _stats(self, a):
-        sv = special.errprint(0)
-        fac = asarray(special.zeta(a,1))
-        mu = special.zeta(a-1.0,1)/fac
-        mu2p = special.zeta(a-2.0,1)/fac
-        var = mu2p - mu*mu
-        mu3p = special.zeta(a-3.0,1)/fac
-        mu3 = mu3p - 3*mu*mu2p + 2*mu**3
-        g1 = mu3 / asarray(np.power(var, 1.5))
-
-        mu4p = special.zeta(a-4.0,1)/fac
-        sv = special.errprint(sv)
-        mu4 = mu4p - 4*mu3p*mu + 6*mu2p*mu*mu - 3*mu**4
-        g2 = mu4 / asarray(var**2) - 3.0
-        return mu, var, g1, g2
+        return _lazywhere(a > n + 1, (a, n),
+                lambda a, n: special.zeta(a - n, 1) / special.zeta(a, 1),
+                np.inf)
 zipf = zipf_gen(a=1,name='zipf', longname='A Zipf')
 
 
