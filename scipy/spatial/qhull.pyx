@@ -669,7 +669,7 @@ cdef class _Qhull:
 
             swapped_neighours = neighbors[orientation_mask_2d]
             swapped_neighours[:, [0, 1]] = swapped_neighours[:, [1, 0]]
-            neighbors[orientation_mask_2d] = swapped_neighourss
+            neighbors[orientation_mask_2d] = swapped_neighours
         return facets, neighbors, equations, coplanar[:ncoplanar]
 
     @cython.final
