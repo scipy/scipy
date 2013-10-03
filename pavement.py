@@ -427,7 +427,12 @@ def _bdist_wininst(pyver, cfg_env=None):
             cfg_env[k] = v
     else:
         cfg_env = WINDOWS_ENV
-    subprocess.check_call(cmd, env=cfg_env)
+    try:
+        subprocess.check_call(cmd, env=cfg_env)
+    except subprocess.CalledProcessError:
+        # Too many open files to compile in one go, so re-run.
+        print('RESTART WINDOWS BUILD.  See gh-2709.')
+        subprocess.check_call(cmd, env=cfg_env)
 
 
 #--------------------
