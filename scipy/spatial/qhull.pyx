@@ -16,7 +16,6 @@ cimport numpy as np
 cimport cython
 cimport qhull
 cimport setlist
-
 from numpy.compat import asbytes
 
 __all__ = ['Delaunay', 'ConvexHull', 'Voronoi', 'tsearch']
@@ -534,6 +533,9 @@ cdef class _Qhull:
         """
         Return array of simplical facets currently in Qhull.
 
+        If the result is a 2 dimensional delaunay triangulation then both the
+        neighbours and the simplices are oriented.
+
         Returns
         -------
         facets : array of int, shape (nfacets, ndim+1)
@@ -558,9 +560,11 @@ cdef class _Qhull:
         cdef np.ndarray[np.npy_int, ndim=2] coplanar
         cdef np.ndarray[np.double_t, ndim=2] equations
         cdef np.ndarray[np.npy_int, ndim=1] id_map
+        cdef np.ndarray[np.npy_uint, ndim=1] orientation_mask_2d
         cdef double dist
         cdef int facet_ndim
         cdef int numpoints
+        cdef unsigned int orient_simplices
 
         facet_ndim = self.ndim
         numpoints = self.numpoints
@@ -595,6 +599,13 @@ cdef class _Qhull:
         neighbors = np.zeros((j, facet_ndim), dtype=np.intc)
         equations = np.zeros((j, facet_ndim+1), dtype=np.double)
 
+
+        # Build an orientation mask for 2D delaunay triangulations
+        # facet_ndim == 3 implies a 2D delaunay triangulation
+        orient_simplices = self._is_delaunay and facet_ndim == 3
+        if orient_simplices:
+            orientation_mask_2d = np.zeros(j, dtype=np.uintc)
+
         ncoplanar = 0
         coplanar = np.zeros((10, 3), dtype=np.intc)
 
@@ -606,6 +617,9 @@ cdef class _Qhull:
                 if self._is_delaunay and facet.upperdelaunay != qh_qh.UPPERdelaunay:
                     facet = facet.next
                     continue
+
+                if orient_simplices:
+                    orientation_mask_2d[j] = facet.toporient
 
                 # Save vertex info
                 for i in xrange(facet_ndim):
@@ -648,6 +662,14 @@ cdef class _Qhull:
                 j += 1
                 facet = facet.next
 
+        if orient_simplices:
+            swapped_facets = facets[orientation_mask_2d]
+            swapped_facets[:, [0, 1]] = swapped_facets[:, [1, 0]]
+            facets[orientation_mask_2d] = swapped_facets
+
+            swapped_neighours = neighbors[orientation_mask_2d]
+            swapped_neighours[:, [0, 1]] = swapped_neighours[:, [1, 0]]
+            neighbors[orientation_mask_2d] = swapped_neighours
         return facets, neighbors, equations, coplanar[:ncoplanar]
 
     @cython.final
@@ -1549,6 +1571,7 @@ class Delaunay(_QhullUser):
         Coordinates of input points.
     simplices : ndarray of ints, shape (nsimplex, ndim+1)
         Indices of the points forming the simplices in the triangulation.
+        In 2D the simplices are guaranteed to be oriented.
     neighbors : ndarray of ints, shape (nsimplex, ndim+1)
         Indices of neighbor simplices for each simplex.
         The kth neighbor is opposite to the kth vertex.
