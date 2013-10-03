@@ -40,6 +40,11 @@ cdef extern from "setjmp.h" nogil:
     int setjmp(jmp_buf STATE) nogil
     void longjmp(jmp_buf STATE, int VALUE) nogil
 
+# Define the clockwise constant
+cdef extern from "qhull/src/user.h":
+    cdef enum:
+        qh_ORIENTclock = 0
+
 cdef extern from "qhull/src/qset.h":
     ctypedef union setelemT:
         void *p
@@ -561,6 +566,8 @@ cdef class _Qhull:
         cdef double dist
         cdef int facet_ndim
         cdef int numpoints
+        cdef unsigned int lower_bound
+        cdef unsigned int swapped_index
 
         facet_ndim = self.ndim
         numpoints = self.numpoints
@@ -607,21 +614,40 @@ cdef class _Qhull:
                     facet = facet.next
                     continue
 
-                # Save vertex info
-                for i in xrange(facet_ndim):
+                # Use a lower bound so that the tight loop in high dimensions
+                # is not affected by the conditional below
+                lower_bound = 0
+                if (self._is_delaunay and
+                    facet.toporient == qh_ORIENTclock and facet_ndim == 3):
+                    # Swap the first and second indices to maintain a
+                    # counter-clockwise orientation.
+                    for i in xrange(2):
+                        # Save the vertex info
+                        swapped_index = 1 ^ i
+                        vertex = <vertexT*>facet.vertices.e[i].p
+                        ipoint = qh_pointid(vertex.point)
+                        facets[j, swapped_index] = ipoint
+
+                        # Save the neighbor info
+                        neighbor = <facetT*>facet.neighbors.e[i].p
+                        neighbors[j, swapped_index] = id_map[neighbor.id]
+
+                    lower_bound = 2
+
+                for i in xrange(lower_bound, facet_ndim):
+                    # Save the vertex info
                     vertex = <vertexT*>facet.vertices.e[i].p
                     ipoint = qh_pointid(vertex.point)
                     facets[j, i] = ipoint
 
-                # Save neighbor info
-                for i in xrange(facet_ndim):
+                    # Save the neighbor info
                     neighbor = <facetT*>facet.neighbors.e[i].p
-                    neighbors[j,i] = id_map[neighbor.id]
+                    neighbors[j, i] = id_map[neighbor.id]
 
                 # Save simplex equation info
                 for i in xrange(facet_ndim):
-                    equations[j,i] = facet.normal[i]
-                equations[j,facet_ndim] = facet.offset
+                    equations[j, i] = facet.normal[i]
+                equations[j, facet_ndim] = facet.offset
 
                 # Save coplanar info
                 if facet.coplanarset:
@@ -634,15 +660,15 @@ cdef class _Qhull:
                                 tmp = coplanar
                                 coplanar = None
                                 try:
-                                    tmp.resize(2*ncoplanar+1, 3)
+                                    tmp.resize(2 * ncoplanar + 1, 3)
                                 except ValueError:
                                     # Work around Cython issue on Python 2.4
                                     tmp = np.resize(tmp, (2*ncoplanar+1, 3))
                                 coplanar = tmp
 
-                        coplanar[ncoplanar,0] = qh_pointid(point)
-                        coplanar[ncoplanar,1] = id_map[facet.id]
-                        coplanar[ncoplanar,2] = qh_pointid(vertex.point)
+                        coplanar[ncoplanar, 0] = qh_pointid(point)
+                        coplanar[ncoplanar, 1] = id_map[facet.id]
+                        coplanar[ncoplanar, 2] = qh_pointid(vertex.point)
                         ncoplanar += 1
 
                 j += 1
