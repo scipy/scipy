@@ -171,44 +171,44 @@ example that follows.
 
    Cubic-spline
 
-   >>> x = np.arange(0,2*np.pi+np.pi/4,2*np.pi/8)
+   >>> x = np.arange(0, 2*np.pi+np.pi/4, 2*np.pi/8)
    >>> y = np.sin(x)
-   >>> tck = interpolate.splrep(x,y,s=0)
+   >>> tck = interpolate.splrep(x, y, s=0)
    >>> xnew = np.arange(0,2*np.pi,np.pi/50)
-   >>> ynew = interpolate.splev(xnew,tck,der=0)
+   >>> ynew = interpolate.splev(xnew, tck, der=0)
 
    >>> plt.figure()
-   >>> plt.plot(x,y,'x',xnew,ynew,xnew,np.sin(xnew),x,y,'b')
-   >>> plt.legend(['Linear','Cubic Spline', 'True'])
-   >>> plt.axis([-0.05,6.33,-1.05,1.05])
+   >>> plt.plot(x, y, 'x', xnew, ynew, xnew, np.sin(xnew), x, y, 'b')
+   >>> plt.legend(['Linear', 'Cubic Spline', 'True'])
+   >>> plt.axis([-0.05, 6.33, -1.05, 1.05])
    >>> plt.title('Cubic-spline interpolation')
    >>> plt.show()
 
    Derivative of spline
 
-   >>> yder = interpolate.splev(xnew,tck,der=1)
+   >>> yder = interpolate.splev(xnew, tck, der=1)
    >>> plt.figure()
    >>> plt.plot(xnew,yder,xnew,np.cos(xnew),'--')
    >>> plt.legend(['Cubic Spline', 'True'])
-   >>> plt.axis([-0.05,6.33,-1.05,1.05])
+   >>> plt.axis([-0.05, 6.33, -1.05, 1.05])
    >>> plt.title('Derivative estimation from spline')
    >>> plt.show()
 
    Integral of spline
 
-   >>> def integ(x,tck,constant=-1):
+   >>> def integ(x, tck, constant=-1):
    >>>     x = np.atleast_1d(x)
    >>>     out = np.zeros(x.shape, dtype=x.dtype)
    >>>     for n in xrange(len(out)):
-   >>>         out[n] = interpolate.splint(0,x[n],tck)
+   >>>         out[n] = interpolate.splint(0, x[n], tck)
    >>>     out += constant
    >>>     return out
    >>>
-   >>> yint = integ(xnew,tck)
+   >>> yint = integ(xnew, tck)
    >>> plt.figure()
-   >>> plt.plot(xnew,yint,xnew,-np.cos(xnew),'--')
+   >>> plt.plot(xnew, yint, xnew, -np.cos(xnew), '--')
    >>> plt.legend(['Cubic Spline', 'True'])
-   >>> plt.axis([-0.05,6.33,-1.05,1.05])
+   >>> plt.axis([-0.05, 6.33, -1.05, 1.05])
    >>> plt.title('Integral estimation from spline')
    >>> plt.show()
 
@@ -219,16 +219,16 @@ example that follows.
 
    Parametric spline
 
-   >>> t = np.arange(0,1.1,.1)
+   >>> t = np.arange(0, 1.1, .1)
    >>> x = np.sin(2*np.pi*t)
    >>> y = np.cos(2*np.pi*t)
-   >>> tck,u = interpolate.splprep([x,y],s=0)
-   >>> unew = np.arange(0,1.01,0.01)
-   >>> out = interpolate.splev(unew,tck)
+   >>> tck,u = interpolate.splprep([x,y], s=0)
+   >>> unew = np.arange(0, 1.01, 0.01)
+   >>> out = interpolate.splev(unew, tck)
    >>> plt.figure()
-   >>> plt.plot(x,y,'x',out[0],out[1],np.sin(2*np.pi*unew),np.cos(2*np.pi*unew),x,y,'b')
-   >>> plt.legend(['Linear','Cubic Spline', 'True'])
-   >>> plt.axis([-1.05,1.05,-1.05,1.05])
+   >>> plt.plot(x, y, 'x', out[0], out[1], np.sin(2*np.pi*unew), np.cos(2*np.pi*unew), x, y, 'b')
+   >>> plt.legend(['Linear', 'Cubic Spline', 'True'])
+   >>> plt.axis([-1.05, 1.05, -1.05, 1.05])
    >>> plt.title('Spline of parametrically-defined curve')
    >>> plt.show()
 
@@ -276,29 +276,29 @@ spline.
 
    InterpolatedUnivariateSpline
 
-   >>> x = np.arange(0,2*np.pi+np.pi/4,2*np.pi/8)
+   >>> x = np.arange(0, 2*np.pi+np.pi/4, 2*np.pi/8)
    >>> y = np.sin(x)
-   >>> s = interpolate.InterpolatedUnivariateSpline(x,y)
-   >>> xnew = np.arange(0,2*np.pi,np.pi/50)
+   >>> s = interpolate.InterpolatedUnivariateSpline(x, y)
+   >>> xnew = np.arange(0, 2*np.pi, np.pi/50)
    >>> ynew = s(xnew)
 
    >>> plt.figure()
-   >>> plt.plot(x,y,'x',xnew,ynew,xnew,np.sin(xnew),x,y,'b')
-   >>> plt.legend(['Linear','InterpolatedUnivariateSpline', 'True'])
-   >>> plt.axis([-0.05,6.33,-1.05,1.05])
+   >>> plt.plot(x, y, 'x', xnew, ynew, xnew, np.sin(xnew), x, y, 'b')
+   >>> plt.legend(['Linear', 'InterpolatedUnivariateSpline', 'True'])
+   >>> plt.axis([-0.05, 6.33, -1.05, 1.05])
    >>> plt.title('InterpolatedUnivariateSpline')
    >>> plt.show()
 
    LSQUnivarateSpline with non-uniform knots
 
-   >>> t = [np.pi/2-.1,np.pi/2+.1,3*np.pi/2-.1,3*np.pi/2+.1]
-   >>> s = interpolate.LSQUnivariateSpline(x,y,t,k=2)
+   >>> t = [np.pi/2-.1, np.pi/2+.1, 3*np.pi/2-.1, 3*np.pi/2+.1]
+   >>> s = interpolate.LSQUnivariateSpline(x, y, t, k=2)
    >>> ynew = s(xnew)
 
    >>> plt.figure()
-   >>> plt.plot(x,y,'x',xnew,ynew,xnew,np.sin(xnew),x,y,'b')
-   >>> plt.legend(['Linear','LSQUnivariateSpline', 'True'])
-   >>> plt.axis([-0.05,6.33,-1.05,1.05])
+   >>> plt.plot(x, y, 'x', xnew, ynew, xnew, np.sin(xnew), x, y, 'b')
+   >>> plt.legend(['Linear', 'LSQUnivariateSpline', 'True'])
+   >>> plt.axis([-0.05, 6.33, -1.05, 1.05])
    >>> plt.title('Spline with Specified Interior Knots')
    >>> plt.show()
 
@@ -353,23 +353,23 @@ passed in :obj:`mgrid <numpy.mgrid>`.
 
    Define function over sparse 20x20 grid
 
-   >>> x,y = np.mgrid[-1:1:20j,-1:1:20j]
-   >>> z = (x+y)*np.exp(-6.0*(x*x+y*y))
+   >>> x, y = np.mgrid[-1:1:20j, -1:1:20j]
+   >>> z = (x+y) * np.exp(-6.0*(x*x+y*y))
 
    >>> plt.figure()
-   >>> plt.pcolor(x,y,z)
+   >>> plt.pcolor(x, y, z)
    >>> plt.colorbar()
    >>> plt.title("Sparsely sampled function.")
    >>> plt.show()
 
    Interpolate function over new 70x70 grid
 
-   >>> xnew,ynew = np.mgrid[-1:1:70j,-1:1:70j]
-   >>> tck = interpolate.bisplrep(x,y,z,s=0)
-   >>> znew = interpolate.bisplev(xnew[:,0],ynew[0,:],tck)
+   >>> xnew, ynew = np.mgrid[-1:1:70j, -1:1:70j]
+   >>> tck = interpolate.bisplrep(x, y, z, s=0)
+   >>> znew = interpolate.bisplev(xnew[:,0], ynew[0,:], tck)
 
    >>> plt.figure()
-   >>> plt.pcolor(xnew,ynew,znew)
+   >>> plt.pcolor(xnew, ynew, znew)
    >>> plt.colorbar()
    >>> plt.title("Interpolated function.")
    >>> plt.show()
