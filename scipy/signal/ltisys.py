@@ -174,9 +174,12 @@ def ss2tf(A, B, C, D, input=0):
 
     Returns
     -------
-    num, den : 1D ndarray
-        Numerator and denominator polynomials (as sequences)
-        respectively.
+    num, den : 2Dndarray, 1D ndarray
+        Representations of the numerator(s) and denominator of the 
+        resulting transfer function(s). `num` has one row for each of the 
+        system's outputs. Each row is a sequence representation of the 
+        numerator polynomial. `den` is a sequence representation of the 
+        denominator polynomial.
 
     """
     # transfer function is C (sI - A)**(-1) B + D
