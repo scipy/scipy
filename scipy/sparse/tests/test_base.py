@@ -934,6 +934,8 @@ class _TestCommon:
         E = array([[3],[2],[1]])
         F = array([[8,6,3],[-4,3,2],[6,6,6]])
         G = [1, 2, 3]
+        H = np.ones((3, 4))
+        J = H.T
 
         # Rank 1 arrays can't be cast as spmatrices (A and C) so leave
         # them out.
@@ -941,9 +943,14 @@ class _TestCommon:
         Dsp = self.spmatrix(D)
         Esp = self.spmatrix(E)
         Fsp = self.spmatrix(F)
+        Hsp = self.spmatrix(H)
+        Hspp = self.spmatrix(H[0,None])
+        Jsp = self.spmatrix(J)
+        Jspp = self.spmatrix(J[:,0,None])
 
-        matrices = [A, B, C, D, E, F, G]
-        spmatrices = [Bsp, Dsp, Esp, Fsp]
+        matrices = [A, B, C, D, E, F, G, H, J]
+        spmatrices = [Bsp, Dsp, Esp, Fsp, Hsp, Hspp, Jsp, Jspp]
+
         # sparse/sparse
         for i in spmatrices:
             for j in spmatrices:
