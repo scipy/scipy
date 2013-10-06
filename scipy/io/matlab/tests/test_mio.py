@@ -20,10 +20,8 @@ import shutil
 import gzip
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_equal, assert_raises, run_module_suite)
-from numpy.testing.utils import WarningManager
-
-from nose.tools import assert_true
+                           assert_equal, assert_raises, run_module_suite,
+                           assert_)
 
 import numpy as np
 from numpy import array
@@ -251,16 +249,16 @@ def types_compatible(var1, var2):
 def _check_level(label, expected, actual):
     """ Check one level of a potentially nested array """
     if SP.issparse(expected):  # allow different types of sparse matrices
-        assert_true(SP.issparse(actual))
+        assert_(SP.issparse(actual))
         assert_array_almost_equal(actual.todense(),
                                   expected.todense(),
                                   err_msg=label,
                                   decimal=5)
         return
     # Check types are as expected
-    assert_true(types_compatible(expected, actual),
-           "Expected type %s, got %s at %s" %
-                (type(expected), type(actual), label))
+    assert_(types_compatible(expected, actual),
+            "Expected type %s, got %s at %s" %
+            (type(expected), type(actual), label))
     # A field in a record array may not be an ndarray
     # A scalar from a record array will be type np.void
     if not isinstance(expected,
@@ -268,11 +266,10 @@ def _check_level(label, expected, actual):
         assert_equal(expected, actual)
         return
     # This is an ndarray-like thing
-    assert_true(expected.shape == actual.shape,
-                msg='Expected shape %s, got %s at %s' % (expected.shape,
-                                                         actual.shape,
-                                                         label)
-                )
+    assert_(expected.shape == actual.shape,
+            msg='Expected shape %s, got %s at %s' % (expected.shape,
+                                                     actual.shape,
+                                                     label))
     ex_dtype = expected.dtype
     if ex_dtype.hasobject:  # array of objects
         if isinstance(expected, MatlabObject):
@@ -302,7 +299,7 @@ def _load_check_case(name, files, case):
         label = "test %s; file %s" % (name, file_name)
         for k, expected in case.items():
             k_label = "%s, variable %s" % (label, k)
-            assert_true(k in matdict, "Missing key at %s" % k_label)
+            assert_(k in matdict, "Missing key at %s" % k_label)
             _check_level(k_label, expected, matdict[k])
 
 
@@ -338,8 +335,8 @@ def test_load():
         expected = case['expected']
         filt = pjoin(test_data_path, 'test%s_*.mat' % name)
         files = glob(filt)
-        assert_true(len(files) > 0,
-                    "No files for test %s using filter %s" % (name, filt))
+        assert_(len(files) > 0,
+                "No files for test %s using filter %s" % (name, filt))
         yield _load_check_case, name, files, expected
 
 
@@ -351,8 +348,8 @@ def test_whos():
         classes = case['classes']
         filt = pjoin(test_data_path, 'test%s_*.mat' % name)
         files = glob(filt)
-        assert_true(len(files) > 0,
-                    "No files for test %s using filter %s" % (name, filt))
+        assert_(len(files) > 0,
+                "No files for test %s using filter %s" % (name, filt))
         yield _whos_check_case, name, files, expected, classes
 
 
@@ -427,7 +424,7 @@ def test_mat73():
     # Check any hdf5 files raise an error
     filenames = glob(
         pjoin(test_data_path, 'testhdf5*.mat'))
-    assert_true(len(filenames) > 0)
+    assert_(len(filenames) > 0)
     for filename in filenames:
         fp = open(filename, 'rb')
         assert_raises(NotImplementedError,
@@ -548,12 +545,12 @@ def test_use_small_element():
     sio.truncate(0)
     sio.seek(0)
     wtr.put_variables({'aaaa': arr})
-    yield assert_true, w_sz - len(sio.getvalue()) > 4
+    yield assert_, w_sz - len(sio.getvalue()) > 4
     # Whereas increasing name size makes less difference
     sio.truncate(0)
     sio.seek(0)
     wtr.put_variables({'aaaaaa': arr})
-    yield assert_true, len(sio.getvalue()) - w_sz < 4
+    yield assert_, len(sio.getvalue()) - w_sz < 4
 
 
 def test_save_dict():
@@ -622,7 +619,7 @@ def test_compression():
     compressed_len = len(stream.getvalue())
     vals = loadmat(stream)
     yield assert_array_equal, vals['arr'], arr
-    yield assert_true, raw_len > compressed_len
+    yield assert_, raw_len > compressed_len
     # Concatenate, test later
     arr2 = arr.copy()
     arr2[0,0] = 1
@@ -657,8 +654,8 @@ def test_skip_variable():
     # Prove that it loads with loadmat
     #
     d = loadmat(filename, struct_as_record=True)
-    yield assert_true, 'first' in d
-    yield assert_true, 'second' in d
+    yield assert_, 'first' in d
+    yield assert_, 'second' in d
     #
     # Make the factory
     #
@@ -667,7 +664,7 @@ def test_skip_variable():
     # This is where the factory breaks with an error in MatMatrixGetter.to_next
     #
     d = factory.get_variables('second')
-    yield assert_true, 'second' in d
+    yield assert_, 'second' in d
     factory.mat_stream.close()
 
 
@@ -680,7 +677,7 @@ def test_empty_struct():
     a = d['a']
     assert_equal(a.shape, (1,1))
     assert_equal(a.dtype, np.dtype(np.object))
-    assert_true(a[0,0] is None)
+    assert_(a[0,0] is None)
     stream = BytesIO()
     arr = np.array((), dtype='U')
     # before ticket fix, this used to give data type not understood
@@ -870,7 +867,7 @@ def test_func_read():
     rdr = MatFile5Reader(fp)
     d = rdr.get_variables()
     fp.close()
-    assert_true(isinstance(d['testfunc'], MatlabFunction))
+    assert_(isinstance(d['testfunc'], MatlabFunction))
     stream = BytesIO()
     wtr = MatFile5Writer(stream)
     assert_raises(MatWriteError, wtr.put_variables, d)
@@ -919,9 +916,9 @@ def test_scalar_squeeze():
     in_d = {'scalar': [[0.1]], 'string': 'my name', 'st':{'one':1, 'two':2}}
     savemat(stream, in_d)
     out_d = loadmat(stream, squeeze_me=True)
-    assert_true(isinstance(out_d['scalar'], float))
-    assert_true(isinstance(out_d['string'], string_types))
-    assert_true(isinstance(out_d['st'], np.ndarray))
+    assert_(isinstance(out_d['scalar'], float))
+    assert_(isinstance(out_d['string'], string_types))
+    assert_(isinstance(out_d['st'], np.ndarray))
 
 
 def test_str_round():

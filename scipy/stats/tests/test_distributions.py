@@ -10,7 +10,6 @@ import sys
 from numpy.testing import (TestCase, run_module_suite, assert_equal,
     assert_array_equal, assert_almost_equal, assert_array_almost_equal,
     assert_allclose, assert_, assert_raises, rand, dec)
-from numpy.testing.utils import WarningManager
 from nose import SkipTest
 
 import numpy
@@ -1433,15 +1432,13 @@ def test_ksone_fit_freeze():
          -0.10943985, -0.35243174, 0.06897665, -0.03553363, -0.0701746,
          -0.06037974, 0.37670779, -0.21684405])
 
-    olderr = np.seterr(invalid='ignore')
-    warn_ctx = WarningManager()
-    warn_ctx.__enter__()
     try:
-        warnings.simplefilter('ignore', UserWarning)
-        warnings.simplefilter('ignore', RuntimeWarning)
-        stats.ksone.fit(d)
+        olderr = np.seterr(invalid='ignore')
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            warnings.simplefilter('ignore', RuntimeWarning)
+            stats.ksone.fit(d)
     finally:
-        warn_ctx.__exit__()
         np.seterr(**olderr)
 
 

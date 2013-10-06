@@ -6,8 +6,9 @@ import warnings
 from io import BytesIO
 
 import numpy as np
-from numpy.testing import assert_equal, assert_, assert_raises, assert_array_equal
-from numpy.testing.utils import WarningManager
+from numpy.testing import (assert_equal, assert_, assert_raises,
+    assert_array_equal, run_module_suite)
+
 from scipy.io import wavfile
 
 
@@ -17,14 +18,10 @@ def datafile(fn):
 
 def test_read_1():
     for mmap in [False, True]:
-        warn_ctx = WarningManager()
-        warn_ctx.__enter__()
-        try:
+        with warnings.catch_warnings():
             warnings.simplefilter('ignore', wavfile.WavFileWarning)
             rate, data = wavfile.read(datafile('test-44100-le-1ch-4bytes.wav'),
                                       mmap=mmap)
-        finally:
-            warn_ctx.__exit__()
 
         assert_equal(rate, 44100)
         assert_(np.issubdtype(data.dtype, np.int32))
@@ -109,3 +106,7 @@ def test_write_roundtrip():
                         for channels in (1, 2, 5):
                             dt = np.dtype('%s%s%s' % (endianness, dtypechar, size))
                             yield _check_roundtrip, realfile, rate, dt, channels
+
+
+if __name__ == "__main__":
+    run_module_suite()

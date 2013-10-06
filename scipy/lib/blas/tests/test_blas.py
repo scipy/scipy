@@ -16,9 +16,8 @@ import math
 import warnings
 
 from numpy import array
-from numpy.testing import assert_equal, assert_almost_equal, \
-        assert_array_almost_equal, TestCase, run_module_suite
-from numpy.testing.utils import WarningManager
+from numpy.testing import (assert_equal, assert_almost_equal,
+        assert_array_almost_equal, TestCase, run_module_suite)
 from scipy.lib.blas import fblas
 from scipy.lib.blas import cblas
 from scipy.lib.blas import get_blas_funcs
@@ -238,13 +237,9 @@ class TestBLAS(TestCase):
         b = array([[1],[1],[1]])
 
         # get_blas_funcs is deprecated, silence the warning
-        warn_ctx = WarningManager()
-        warn_ctx.__enter__()
-        try:
+        with warnings.catch_warnings():
             warnings.simplefilter('ignore', DeprecationWarning)
             gemm, = get_blas_funcs(('gemm',),(a,b))
-        finally:
-            warn_ctx.__exit__()
 
         assert_array_almost_equal(gemm(1,a,b),[[3]],15)
 
