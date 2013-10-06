@@ -556,6 +556,7 @@ class TestDLaplace(TestCase):
 
 
 class TestInvGamma(TestCase):
+    @dec.skipif(np.__version__ < '1.7', "assert_* funcs broken with inf/nan")
     def test_invgamma_inf_gh_1866(self):
         # invgamma's moments are only finite for a>n
         # specific numbers checked w/ boost 1.54
@@ -588,8 +589,7 @@ class TestF(TestCase):
         # no warnings should be generated for dfd = 2, 4, 6, 8 (div by zero)
         with warnings.catch_warnings():
             warnings.simplefilter('error', RuntimeWarning)
-            mvsk = stats.f.stats(dfn=[11]*4,
-                                 dfd=[2, 4, 6, 8], moments='mvsk')
+            stats.f.stats(dfn=[11]*4, dfd=[2, 4, 6, 8], moments='mvsk')
 
     @dec.knownfailureif(True, 'f stats does not properly broadcast')
     def test_stats_broadcast(self):
