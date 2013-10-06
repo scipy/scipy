@@ -179,7 +179,7 @@ class TestUtilities(object):
         # |1 \|
         # +---+
 
-        assert_equal(tri.vertices, [[3, 1, 2], [3, 1, 0]])
+        assert_equal(tri.vertices, [[1, 3, 2], [3, 1, 0]])
 
         for p in [(0.25, 0.25, 1),
                   (0.75, 0.75, 0),
@@ -227,7 +227,7 @@ class TestUtilities(object):
         # |1 \|
         # +---+
 
-        assert_equal(tri.convex_hull, [[1, 2], [3, 2], [1, 0], [3, 0]])
+        assert_equal(tri.convex_hull, [[3, 2], [1, 2], [1, 0], [3, 0]])
 
     def _check_barycentric_transforms(self, tri, err_msg="",
                                       unit_cube=False,
@@ -417,7 +417,7 @@ class TestDelaunay(object):
         points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.double)
         tri = qhull.Delaunay(points)
 
-        assert_equal(tri.vertices, [[3, 1, 2], [3, 1, 0]])
+        assert_equal(tri.vertices, [[1, 3, 2], [3, 1, 0]])
         assert_equal(tri.neighbors, [[-1, -1, 1], [-1, -1, 0]])
 
     def test_duplicate_points(self):
@@ -472,7 +472,7 @@ class TestDelaunay(object):
         points = [(0, 0), (0, 1), (1, 0), (0.5, 0.5), (1.1, 1.1)]
         tri = qhull.Delaunay(points, furthest_site=True)
 
-        expected = np.array([(1, 4, 0), (2, 4, 0)])  # from Qhull
+        expected = np.array([(1, 4, 0), (4, 2, 0)])  # from Qhull
         assert_array_equal(tri.simplices, expected)
 
     def test_incremental(self):
