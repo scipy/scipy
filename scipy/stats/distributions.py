@@ -5,6 +5,7 @@
 from __future__ import division, print_function, absolute_import
 
 import math
+import sys
 import warnings
 
 from scipy.lib.six import callable, string_types, get_method_function
@@ -1086,11 +1087,12 @@ class rv_continuous(rv_generic):
                 hstr = "A "
             longname = hstr + name
 
-        # generate docstring for subclass instances
-        if self.__doc__ is None:
-            self._construct_default_doc(longname=longname, extradoc=extradoc)
-        else:
-            self._construct_doc()
+        if sys.flags.optimize < 2:
+            # Skip adding docstrings if interpreter is run with -OO
+            if self.__doc__ is None:
+                self._construct_default_doc(longname=longname, extradoc=extradoc)
+            else:
+                self._construct_doc()
 
         ## This only works for old-style classes...
         # self.__class__.__doc__ = self.__doc__
@@ -3779,17 +3781,18 @@ class erlang_gen(gamma_gen):
     def fit(self, data, *args, **kwds):
         return super(erlang_gen, self).fit(data, *args, **kwds)
 
-    fit.__doc__ = (rv_continuous.fit.__doc__ +
-        """
-        Notes
-        -----
-        The Erlang distribution is generally defined to have integer values
-        for the shape parameter.  This is not enforced by the `erlang` class.
-        When fitting the distribution, it will generally return a non-integer
-        value for the shape parameter.  By using the keyword argument
-        `f0=<integer>`, the fit method can be constrained to fit the data to
-        a specific integer shape parameter.
-        """)
+    if fit.__doc__ is not None:
+        fit.__doc__ = (rv_continuous.fit.__doc__ +
+            """
+            Notes
+            -----
+            The Erlang distribution is generally defined to have integer values
+            for the shape parameter.  This is not enforced by the `erlang` class.
+            When fitting the distribution, it will generally return a non-integer
+            value for the shape parameter.  By using the keyword argument
+            `f0=<integer>`, the fit method can be constrained to fit the data to
+            a specific integer shape parameter.
+            """)
 erlang = erlang_gen(a=0.0, name='erlang')
 
 
@@ -6421,17 +6424,17 @@ class rv_discrete(rv_generic):
             else:
                 hstr = "A "
             longname = hstr + name
-        if self.__doc__ is None:
-            self._construct_default_doc(longname=longname, extradoc=extradoc)
-        else:
-            self._construct_doc()
 
-        #discrete RV do not have the scale parameter, remove it
-        self.__doc__ = self.__doc__.replace(
-            '\n    scale : array_like, optional\n        scale parameter (default=1)','')
+        if sys.flags.optimize < 2:
+            # Skip adding docstrings if interpreter is run with -OO
+            if self.__doc__ is None:
+                self._construct_default_doc(longname=longname, extradoc=extradoc)
+            else:
+                self._construct_doc()
 
-        ## This only works for old-style classes...
-        # self.__class__.__doc__ = self.__doc__
+            #discrete RV do not have the scale parameter, remove it
+            self.__doc__ = self.__doc__.replace('\n    scale : array_like, '
+                            'optional\n        scale parameter (default=1)', '')
 
 
     def _construct_default_doc(self, longname=None, extradoc=None):

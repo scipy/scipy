@@ -337,7 +337,9 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
 
 
 def check_scale_docstring(distfn):
-    npt.assert_('scale' not in distfn.__doc__)
+    if distfn.__doc__ is not None:
+        # Docstrings can be stripped if interpreter is run with -OO
+        npt.assert_('scale' not in distfn.__doc__)
 
 
 if __name__ == "__main__":
