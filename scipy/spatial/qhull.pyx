@@ -1575,6 +1575,7 @@ class Delaunay(_QhullUser):
         Coordinates of input points.
     simplices : ndarray of ints, shape (nsimplex, ndim+1)
         Indices of the points forming the simplices in the triangulation.
+        For 2-D, the points are oriented counterclockwise.
     neighbors : ndarray of ints, shape (nsimplex, ndim+1)
         Indices of neighbor simplices for each simplex.
         The kth neighbor is opposite to the kth vertex.
