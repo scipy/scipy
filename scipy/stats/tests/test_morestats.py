@@ -6,15 +6,13 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 
-from numpy.testing import TestCase, run_module_suite, assert_array_equal, \
-    assert_almost_equal, assert_array_less, assert_array_almost_equal, \
-    assert_raises, assert_, assert_allclose, assert_equal
-from numpy.testing.utils import WarningManager
-
-import scipy.stats as stats
-
 import numpy as np
 from numpy.random import RandomState
+from numpy.testing import (TestCase, run_module_suite, assert_array_equal,
+    assert_almost_equal, assert_array_less, assert_array_almost_equal,
+    assert_raises, assert_, assert_allclose, assert_equal)
+
+import scipy.stats as stats
 
 
 g1 = [1.006, 0.996, 0.998, 1.000, 0.992, 0.993, 1.002, 0.999, 0.994, 1.000]
@@ -92,14 +90,10 @@ class TestAnsari(TestCase):
         parekh = np.array((107, 108, 106, 98, 105, 103, 110, 105, 104,
                            100, 96, 108, 103, 104, 114, 114, 113, 108, 106, 99))
 
-        warn_ctx = WarningManager()
-        warn_ctx.__enter__()
-        try:
+        with warnings.catch_warnings():
             warnings.filterwarnings('ignore',
                         message="Ties preclude use of exact statistic.")
             W, pval = stats.ansari(ramsay, parekh)
-        finally:
-            warn_ctx.__exit__()
 
         assert_almost_equal(W,185.5,11)
         assert_almost_equal(pval,0.18145819972867083,11)

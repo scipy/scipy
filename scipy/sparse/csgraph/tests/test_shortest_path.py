@@ -1,11 +1,10 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import \
-    assert_array_almost_equal, assert_raises, TestCase, dec
-from scipy.sparse.csgraph import \
-    shortest_path, dijkstra, floyd_warshall, johnson,\
-    bellman_ford, construct_dist_matrix, NegativeCycleError
+from numpy.testing import (assert_array_almost_equal, assert_raises, dec,
+    run_module_suite)
+from scipy.sparse.csgraph import (shortest_path, dijkstra, johnson,
+    bellman_ford, construct_dist_matrix, NegativeCycleError)
 
 
 directed_G = np.array([[0, 3, 3, 0, 0],
@@ -171,5 +170,4 @@ def test_masked_input():
 
 
 if __name__ == '__main__':
-    import nose
-    nose.runmodule()
+    run_module_suite()

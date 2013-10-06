@@ -4,7 +4,6 @@ import inspect
 
 import numpy.testing as npt
 import numpy as np
-import nose
 from scipy.lib.six import xrange
 
 from scipy import stats
@@ -28,7 +27,7 @@ distdiscrete = [
     ['planck', (0.51,)],   # 4.1
     ['poisson', (0.6,)],
     ['randint', (7, 31)],
-    ['skellam', (15, 8)], 
+    ['skellam', (15, 8)],
     ['zipf',     (4,)]    # arg=4 is ok,
                            # Zipf broken for arg = 2, e.g. weird .stats
                            # looking closer, mean, var should be inf for arg=2
@@ -253,14 +252,13 @@ def check_sample_skew_kurt(distfn, arg, sk, ss, msg):
     check_sample_meanvar, ss, s, msg + 'sample kurtosis test'
 
 
-def check_entropy(distfn,arg,msg):
+def check_entropy(distfn, arg, msg):
     ent = distfn.entropy(*arg)
-    # print 'Entropy =', ent
     npt.assert_(not np.isnan(ent), msg + 'test Entropy is nan')
 
 
 def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
-    '''perform chisquare test for random sample of a discrete distribution
+    """Perform chisquare test for random sample of a discrete distribution
 
     Parameters
     ----------
@@ -277,20 +275,14 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
         0 if test passes, 1 if test fails
 
     uses global variable debug for printing results
-    '''
 
-    # define parameters for test
-##    n=2000
+    """
     n = len(rvs)
     nsupp = 20
     wsupp = 1.0/nsupp
 
-##    distfn = getattr(stats, distname)
-##    np.random.seed(9765456)
-##    rvs = distfn.rvs(size=n,*arg)
-
     # construct intervals with minimum mass 1/nsupp
-    # intervalls are left-half-open as in a cdf difference
+    # intervals are left-half-open as in a cdf difference
     distsupport = xrange(max(distfn.a, -1000), min(distfn.b, 1000) + 1)
     last = 0
     distsupp = [max(distfn.a, -1000)]
@@ -362,7 +354,9 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
 
 
 def check_scale_docstring(distfn):
-    npt.assert_('scale' not in distfn.__doc__)
+    if distfn.__doc__ is not None:
+        # Docstrings can be stripped if interpreter is run with -OO
+        npt.assert_('scale' not in distfn.__doc__)
 
 def check_private_entropy(distfn, args):
     # compare a generic _entropy with the distribution-specific implementation
@@ -370,5 +364,4 @@ def check_private_entropy(distfn, args):
                         stats.rv_discrete._entropy(distfn, *args))
 
 if __name__ == "__main__":
-    # nose.run(argv=['', __file__])
-    nose.runmodule(argv=[__file__,'-s'], exit=False)
+    npt.run_module_suite()

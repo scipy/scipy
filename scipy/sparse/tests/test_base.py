@@ -1347,7 +1347,7 @@ class _TestCommon:
             X = self.spmatrix(np.arange(20).reshape(4, 5) / 20.)
             X2 = getattr(np, name)(X)
             assert_array_equal(X2.toarray(), getattr(np, name)(X.toarray()))
-        
+
         for name in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
                      "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
                      "deg2rad", "rad2deg", "floor", "ceil", "trunc", "sqrt"]:
@@ -3128,6 +3128,7 @@ class TestBSR(sparse_test_class(getset=False,
     @dec.knownfailureif(True, "BSR not implemented")
     def test_iterator(self):
         pass
+
 
 if __name__ == "__main__":
     run_module_suite()

@@ -29,7 +29,12 @@ EXTRA_PATH = ['/usr/lib/ccache', '/usr/lib/f90cache',
 
 # ---------------------------------------------------------------------
 
-__doc__ = __doc__.format(**globals())
+
+if __doc__ is None:
+    __doc__ = "Run without -OO if you want usage info"
+else:
+    __doc__ = __doc__.format(**globals())
+
 
 import sys
 import os
@@ -126,7 +131,7 @@ def main(argv):
         fn = os.path.join(dst_dir, 'coverage_html.js')
         if os.path.isdir(dst_dir) and os.path.isfile(fn):
             shutil.rmtree(dst_dir)
-        extra_argv += ['--cover-html', 
+        extra_argv += ['--cover-html',
                        '--cover-html-dir='+dst_dir]
 
     if args.build_only:

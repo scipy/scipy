@@ -1889,8 +1889,13 @@ def test_sqeuclidean_dtypes():
         assert_equal(d1, d2)
         assert_equal(d1, np.float64(np.iinfo(dtype).max) ** 2)
 
-    for dtype in [np.float16, np.float32, np.float64, np.float128,
-                  np.complex64, np.complex128]:
+    dtypes = [np.float32, np.float64, np.complex64, np.complex128]
+    for dtype in ['float16', 'float128']:
+        # These aren't present in older numpy versions
+        if hasattr(np, dtype):
+            dtypes.append(getattr(np, dtype))
+
+    for dtype in dtypes:
         d = sqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
         assert_equal(d.dtype, dtype)
 
