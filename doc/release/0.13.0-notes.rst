@@ -6,7 +6,7 @@ SciPy 0.13.0 Release Notes
 
 .. contents::
 
-SciPy 0.13.0 is the culmination of 5 months of hard work. It contains
+SciPy 0.13.0 is the culmination of 7 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and
 better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
@@ -312,6 +312,7 @@ one patch to this release, names in alphabetical order):
 * Alexander J. Dunlap +
 * endolith
 * André Gaul +
+* Christoph Gohlke
 * Ralf Gommers
 * Alex Griffing +
 * Blake Griffith +
@@ -353,11 +354,12 @@ one patch to this release, names in alphabetical order):
 * Pauli Virtanen
 * Stefan van der Walt
 * Warren Weckesser
+* Pedro Werneck +
 * Nils Werner +
 * Michael Wimmer +
 * Nathan Woods +
 * Tony S. Yu +
 
-A total of 63 people contributed to this release.
+A total of 65 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 

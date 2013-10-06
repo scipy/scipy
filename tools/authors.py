@@ -62,6 +62,7 @@ NAME_MAP = {
     u('mdroe'): u('Michael Droettboom'),
     u('pbrod'): u('Per Brodtkorb'),
     u('pierregm'): u('Pierre GM'),
+    u('pjwerneck'): u('Pedro Werneck'),
     u('rgommers'): u('Ralf Gommers'),
     u('sebhaase'): u('Sebastian Haase'),
     u('SytseK'): u('Sytse Knypstra'),
