@@ -4,6 +4,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
+from numpy.testing import run_module_suite
 from scipy import sparse
 
 from scipy.sparse import csgraph
@@ -66,5 +67,4 @@ def test_graph_laplacian():
 
 
 if __name__ == '__main__':
-    import nose
-    nose.runmodule()
+    run_module_suite()

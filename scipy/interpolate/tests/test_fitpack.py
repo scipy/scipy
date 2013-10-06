@@ -1,14 +1,13 @@
 from __future__ import division, print_function, absolute_import
 
 import os
-import warnings
 
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose, assert_, \
-    TestCase, assert_raises
+from numpy.testing import (assert_equal, assert_allclose, assert_,
+    TestCase, assert_raises, run_module_suite)
 from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
-from scipy.interpolate.fitpack import splrep, splev, bisplrep, bisplev, \
-     sproot, splprep, splint, spalde, splder, splantider, insert
+from scipy.interpolate.fitpack import (splrep, splev, bisplrep, bisplev,
+     sproot, splprep, splint, spalde, splder, splantider, insert)
 
 
 def data_file(basename):
@@ -358,6 +357,4 @@ class TestBisplrep(object):
 
 
 if __name__ == "__main__":
-    __put_prints = True
-    import nose
-    nose.runmodule()
+    run_module_suite()

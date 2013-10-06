@@ -10,8 +10,8 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import random
 
-from numpy.testing import assert_array_almost_equal, dec, \
-        decorate_methods
+from numpy.testing import (assert_array_almost_equal, dec,
+        decorate_methods, run_module_suite)
 from numpy.testing.utils import WarningManager
 
 from scipy import rand, matrix, diag, eye
@@ -196,6 +196,6 @@ class TestFactorization(_DeprecationAccept):
 for cls in [TestSolvers, TestFactorization]:
     decorate_methods(cls, _umfpack_skip)
 
+
 if __name__ == "__main__":
-    import nose
-    nose.run(argv=['', __file__])
+    run_module_suite()
