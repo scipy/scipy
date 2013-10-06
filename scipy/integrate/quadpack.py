@@ -9,6 +9,8 @@ import sys
 import numpy
 from numpy import Inf
 
+from scipy.lib.six import callable
+
 __all__ = ['quad', 'dblquad', 'tplquad', 'nquad', 'quad_explain']
 
 
