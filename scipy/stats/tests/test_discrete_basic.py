@@ -28,7 +28,7 @@ distdiscrete = [
     ['planck', (0.51,)],   # 4.1
     ['poisson', (0.6,)],
     ['randint', (7, 31)],
-    ['skellam', (15, 8)], 
+    ['skellam', (15, 8)],
     ['zipf',     (4,)]    # arg=4 is ok,
                            # Zipf broken for arg = 2, e.g. weird .stats
                            # looking closer, mean, var should be inf for arg=2
@@ -362,7 +362,9 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
 
 
 def check_scale_docstring(distfn):
-    npt.assert_('scale' not in distfn.__doc__)
+    if distfn.__doc__ is not None:
+        # Docstrings can be stripped if interpreter is run with -OO
+        npt.assert_('scale' not in distfn.__doc__)
 
 def check_private_entropy(distfn, args):
     # compare a generic _entropy with the distribution-specific implementation
