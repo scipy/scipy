@@ -4,6 +4,7 @@
 #
 from __future__ import division, print_function, absolute_import
 
+import sys
 import warnings
 
 from scipy.lib.six import callable, string_types, get_method_function
@@ -1369,11 +1370,12 @@ class rv_continuous(rv_generic):
                 hstr = "A "
             longname = hstr + name
 
-        # generate docstring for subclass instances
-        if self.__doc__ is None:
-            self._construct_default_doc(longname=longname, extradoc=extradoc)
-        else:
-            self._construct_doc()
+        if sys.flags.optimize < 2:
+            # Skip adding docstrings if interpreter is run with -OO
+            if self.__doc__ is None:
+                self._construct_default_doc(longname=longname, extradoc=extradoc)
+            else:
+                self._construct_doc()
 
     def _construct_default_doc(self, longname=None, extradoc=None):
         """Construct instance docstring from the default template."""
@@ -1460,7 +1462,7 @@ class rv_continuous(rv_generic):
     def _cdf(self, x, *args):
         return self._cdfvec(x, *args)
 
-    ## generic _argcheck, _logcdf, _sf, _logsf, _ppf, _isf, _rvs are defined 
+    ## generic _argcheck, _logcdf, _sf, _logsf, _ppf, _isf, _rvs are defined
     ## in rv_generic
 
     def pdf(self,x,*args,**kwds):
@@ -3258,8 +3260,8 @@ class f_gen(rv_continuous):
         v1, v2 = 1. * dfn, 1. * dfd
         v2_2, v2_4, v2_6, v2_8 = v2 - 2., v2 - 4., v2 - 6., v2 - 8.
 
-        mu = _lazywhere(v2 > 2, (v2, v2_2), 
-                lambda v2, v2_2: v2 / v2_2, 
+        mu = _lazywhere(v2 > 2, (v2, v2_2),
+                lambda v2, v2_2: v2 / v2_2,
                 np.inf)
 
         mu2 = _lazywhere(v2 > 4, (v1, v2, v2_2, v2_4),
@@ -3273,7 +3275,7 @@ class f_gen(rv_continuous):
                 np.nan)
         g1 *= np.sqrt(8.)
 
-        g2 = _lazywhere(v2 > 8, (g1, v2_6, v2_8), 
+        g2 = _lazywhere(v2 > 8, (g1, v2_6, v2_8),
                 lambda g1, v2_6, v2_8: (8 + g1 * g1 * v2_6) / v2_8,
                 np.nan)
         g2 *= 3. / 2.
@@ -3851,17 +3853,18 @@ class erlang_gen(gamma_gen):
     def fit(self, data, *args, **kwds):
         return super(erlang_gen, self).fit(data, *args, **kwds)
 
-    fit.__doc__ = (rv_continuous.fit.__doc__ +
-        """
-        Notes
-        -----
-        The Erlang distribution is generally defined to have integer values
-        for the shape parameter.  This is not enforced by the `erlang` class.
-        When fitting the distribution, it will generally return a non-integer
-        value for the shape parameter.  By using the keyword argument
-        `f0=<integer>`, the fit method can be constrained to fit the data to
-        a specific integer shape parameter.
-        """)
+    if fit.__doc__ is not None:
+        fit.__doc__ = (rv_continuous.fit.__doc__ +
+            """
+            Notes
+            -----
+            The Erlang distribution is generally defined to have integer values
+            for the shape parameter.  This is not enforced by the `erlang` class.
+            When fitting the distribution, it will generally return a non-integer
+            value for the shape parameter.  By using the keyword argument
+            `f0=<integer>`, the fit method can be constrained to fit the data to
+            a specific integer shape parameter.
+            """)
 erlang = erlang_gen(a=0.0, name='erlang')
 
 
@@ -4294,10 +4297,10 @@ class invgamma_gen(rv_continuous):
 
         g1, g2 = None, None
         if 's' in moments:
-            g1 = _lazywhere(a > 3, (a,), 
+            g1 = _lazywhere(a > 3, (a,),
                     lambda x: 4. * np.sqrt(x - 2.) / (x - 3.), np.nan)
         if 'k' in moments:
-            g2 = _lazywhere(a > 4, (a,), 
+            g2 = _lazywhere(a > 4, (a,),
                     lambda x: 6. * (5. * x - 11.) / (x - 3.) / (x - 4.), np.nan)
         return m1, m2, g1, g2
 
@@ -5173,7 +5176,7 @@ class nct_gen(rv_continuous):
             c42 = df / (df-4.) - c11*c11 * (df-1.) / (df-3.)
             c42 *= 6.*df / (df-2.)
             c40 = 3.*df*df / (df-2.) / (df-4.)
-            
+
             mu4 = c44 * nc**4 + c42*nc**2 + c40
             g2 = np.where(df > 4, mu4/mu2**2 - 3.,
                                   np.nan)
@@ -5541,7 +5544,7 @@ class rdist_gen(rv_continuous):
         return res
 
     def _munp(self, n, c):
-        numerator = (1 - (n % 2)) * special.beta((n + 1.0) / 2, c / 2.0) 
+        numerator = (1 - (n % 2)) * special.beta((n + 1.0) / 2, c / 2.0)
         return numerator / special.beta(1. / 2, c / 2.)
 rdist = rdist_gen(a=-1.0, b=1.0, name="rdist")
 
@@ -6532,17 +6535,17 @@ class rv_discrete(rv_generic):
             else:
                 hstr = "A "
             longname = hstr + name
-        if self.__doc__ is None:
-            self._construct_default_doc(longname=longname, extradoc=extradoc)
-        else:
-            self._construct_doc()
 
-        #discrete RV do not have the scale parameter, remove it
-        self.__doc__ = self.__doc__.replace(
-            '\n    scale : array_like, optional\n        scale parameter (default=1)','')
+        if sys.flags.optimize < 2:
+            # Skip adding docstrings if interpreter is run with -OO
+            if self.__doc__ is None:
+                self._construct_default_doc(longname=longname, extradoc=extradoc)
+            else:
+                self._construct_doc()
 
-        ## This only works for old-style classes...
-        # self.__class__.__doc__ = self.__doc__
+            #discrete RV do not have the scale parameter, remove it
+            self.__doc__ = self.__doc__.replace('\n    scale : array_like, '
+                            'optional\n        scale parameter (default=1)', '')
 
 
     def _construct_default_doc(self, longname=None, extradoc=None):

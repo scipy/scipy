@@ -7,8 +7,7 @@ import warnings
 import numpy as np
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
         assert_array_almost_equal, assert_allclose, TestCase, run_module_suite
-from numpy.testing.utils import WarningManager
-from numpy import array, diff, linspace, meshgrid, ones, pi, roll, shape
+from numpy import array, diff, linspace, meshgrid, ones, pi, shape
 from scipy.interpolate.fitpack import bisplrep, bisplev
 from scipy.interpolate.fitpack2 import UnivariateSpline, \
     LSQBivariateSpline, SmoothBivariateSpline, RectBivariateSpline, \
@@ -113,17 +112,12 @@ class TestLSQBivariateSpline(TestCase):
         s = 0.1
         tx = [1+s,3-s]
         ty = [1+s,3-s]
-        warn_ctx = WarningManager()
-        warn_ctx.__enter__()
-        try:
+        with warnings.catch_warnings():
             # This seems to fail (ier=1, see ticket 1642).
             warnings.simplefilter('ignore', UserWarning)
             lut = LSQBivariateSpline(x,y,z,tx,ty,kx=1,ky=1)
-        finally:
-            warn_ctx.__exit__()
 
         tx, ty = lut.get_knots()
-
         for xa, xb in zip(tx[:-1], tx[1:]):
             for ya, yb in zip(ty[:-1], ty[1:]):
                 for t in [0.1, 0.5, 0.9]:
@@ -193,14 +187,10 @@ class TestSmoothBivariateSpline(TestCase):
         y = [1,2,3,1,2,3,1,2,3]
         z = array([0,7,8,3,4,7,1,3,4])
 
-        warn_ctx = WarningManager()
-        warn_ctx.__enter__()
-        try:
+        with warnings.catch_warnings():
             # This seems to fail (ier=1, see ticket 1642).
             warnings.simplefilter('ignore', UserWarning)
             lut = SmoothBivariateSpline(x, y, z, kx=1, ky=1, s=0)
-        finally:
-            warn_ctx.__exit__()
 
         tx = [1,2,4]
         ty = [1,2,3]

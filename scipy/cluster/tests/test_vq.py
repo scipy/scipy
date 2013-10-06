@@ -10,7 +10,6 @@ import warnings
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal, \
         TestCase, run_module_suite, assert_raises
-from numpy.testing.utils import WarningManager
 
 from scipy.cluster.vq import kmeans, kmeans2, py_vq, py_vq2, vq, ClusterError
 try:
@@ -114,22 +113,17 @@ class TestKMean(TestCase):
         assert_array_almost_equal(code1, CODET2)
 
     def test_kmeans_lost_cluster(self):
-        """This will cause kmean to have a cluster with no points."""
+        # This will cause kmean to have a cluster with no points.
         data = np.fromfile(DATAFILE1, sep=", ")
         data = data.reshape((200, 2))
         initk = np.array([[-1.8127404, -0.67128041],
                          [2.04621601, 0.07401111],
                          [-2.31149087,-0.05160469]])
 
-        res = kmeans(data, initk)
-
-        warn_ctx = WarningManager()
-        warn_ctx.__enter__()
-        try:
+        kmeans(data, initk)
+        with warnings.catch_warnings():
             warnings.simplefilter('ignore', UserWarning)
-            res = kmeans2(data, initk, missing='warn')
-        finally:
-            warn_ctx.__exit__()
+            kmeans2(data, initk, missing='warn')
 
         assert_raises(ClusterError, kmeans2, data, initk, missing='raise')
 
@@ -172,15 +166,11 @@ class TestKMean(TestCase):
         kmeans2(data[:, :1], 3, minit='points')  # special case (1-D)
 
         # minit='random' can give warnings, filter those
-        warn_ctx = WarningManager()
-        warn_ctx.__enter__()
-        try:
+        with warnings.catch_warnings():
             warnings.filterwarnings('ignore',
                         message="One of the clusters is empty. Re-run")
             kmeans2(data, 3, minit='random')
             kmeans2(data[:, :1], 3, minit='random')  # special case (1-D)
-        finally:
-            warn_ctx.__exit__()
 
     def test_kmeans2_empty(self):
         """Ticket #505."""

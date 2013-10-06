@@ -5,12 +5,11 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import re
-import inspect
+import sys
 
 from numpy.testing import (TestCase, run_module_suite, assert_equal,
     assert_array_equal, assert_almost_equal, assert_array_almost_equal,
     assert_allclose, assert_, assert_raises, rand, dec)
-from numpy.testing.utils import WarningManager
 from nose import SkipTest
 
 import numpy
@@ -20,6 +19,10 @@ from scipy import special
 import scipy.stats as stats
 from scipy.stats.distributions import argsreduce
 from scipy.special import xlogy
+
+
+# python -OO strips docstrings
+DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 
 
 def kolmogorov_check(diststr, args=(), N=20, significance=0.01):
@@ -552,6 +555,7 @@ class TestDLaplace(TestCase):
 
 
 class TestInvGamma(TestCase):
+    @dec.skipif(np.__version__ < '1.7', "assert_* funcs broken with inf/nan")
     def test_invgamma_inf_gh_1866(self):
         # invgamma's moments are only finite for a>n
         # specific numbers checked w/ boost 1.54
@@ -584,13 +588,12 @@ class TestF(TestCase):
         # no warnings should be generated for dfd = 2, 4, 6, 8 (div by zero)
         with warnings.catch_warnings():
             warnings.simplefilter('error', RuntimeWarning)
-            mvsk = stats.f.stats(dfn=[11]*4, 
-                                 dfd=[2, 4, 6, 8], moments='mvsk')
+            stats.f.stats(dfn=[11]*4, dfd=[2, 4, 6, 8], moments='mvsk')
 
     @dec.knownfailureif(True, 'f stats does not properly broadcast')
     def test_stats_broadcast(self):
         # stats do not fully broadcast just yet
-        mv = stats.f.stats(dfn=11, dfd=[11, 12])        
+        mv = stats.f.stats(dfn=11, dfd=[11, 12])
 
 
 def test_rvgeneric_std():
@@ -1287,6 +1290,7 @@ def test_regression_tukey_lambda():
     assert_((p[2] == 0.0).any())
 
 
+@dec.skipif(DOCSTRINGS_STRIPPED)
 def test_regression_ticket_1421():
     assert_('pdf(x, mu, loc=0, scale=1)' not in stats.poisson.__doc__)
     assert_('pmf(x,' in stats.poisson.__doc__)
@@ -1428,15 +1432,13 @@ def test_ksone_fit_freeze():
          -0.10943985, -0.35243174, 0.06897665, -0.03553363, -0.0701746,
          -0.06037974, 0.37670779, -0.21684405])
 
-    olderr = np.seterr(invalid='ignore')
-    warn_ctx = WarningManager()
-    warn_ctx.__enter__()
     try:
-        warnings.simplefilter('ignore', UserWarning)
-        warnings.simplefilter('ignore', RuntimeWarning)
-        stats.ksone.fit(d)
+        olderr = np.seterr(invalid='ignore')
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            warnings.simplefilter('ignore', RuntimeWarning)
+            stats.ksone.fit(d)
     finally:
-        warn_ctx.__exit__()
         np.seterr(**olderr)
 
 
@@ -1541,10 +1543,10 @@ def test_stats_shapes_argcheck():
     mv2_augmented = tuple(np.r_[_, np.nan] for _ in mv2)
     assert_equal(mv2_augmented, mv3)
 
-    # FIXME: this is only a quick-and-dirty test of a quick-and-dirty bugfix. 
-    # stats method with multiple shape parameters is not properly vectorized 
+    # FIXME: this is only a quick-and-dirty test of a quick-and-dirty bugfix.
+    # stats method with multiple shape parameters is not properly vectorized
     # anyway, so some distributions may or may not fail.
-    
+
 
 ## Test subclassing distributions w/ explicit shapes
 
@@ -1671,9 +1673,9 @@ class TestSubclassingExplicitShapes(TestCase):
                 return stats.norm._pdf(x) * extra_kwarg + offset
 
         dist = _dist_gen(shapes='offset, extra_kwarg')
-        assert_equal(dist.pdf(0.5, offset=111, extra_kwarg=33), 
+        assert_equal(dist.pdf(0.5, offset=111, extra_kwarg=33),
                      stats.norm.pdf(0.5)*33 + 111)
-        assert_equal(dist.pdf(0.5, 111, 33), 
+        assert_equal(dist.pdf(0.5, 111, 33),
                      stats.norm.pdf(0.5)*33 + 111)
 
     def test_extra_kwarg(self):
@@ -1712,6 +1714,7 @@ class TestSubclassingNoShapes(TestCase):
         dummy_distr = _distr2_gen(name='dummy')
         assert_almost_equal(dummy_distr.pdf(1, a=1), 1)
 
+    @dec.skipif(DOCSTRINGS_STRIPPED)
     def test_signature_inspection(self):
         # check that _pdf signature inspection works correctly, and is used in
         # the class docstring
@@ -1722,6 +1725,7 @@ class TestSubclassingNoShapes(TestCase):
                          dummy_distr.__doc__)
         assert_(len(res) == 1)
 
+    @dec.skipif(DOCSTRINGS_STRIPPED)
     def test_signature_inspection_2args(self):
         # same for 2 shape params and both _pdf and _cdf defined
         dummy_distr = _distr6_gen(name='dummy')
@@ -1734,14 +1738,14 @@ class TestSubclassingNoShapes(TestCase):
     def test_signature_inspection_2args_incorrect_shapes(self):
         # both _pdf and _cdf defined, but shapes are inconsistent: raises
         try:
-            dummy_distr = _distr3_gen(name='dummy')
+            _distr3_gen(name='dummy')
         except TypeError:
             pass
         else:
             raise AssertionError('TypeError not raised.')
 
     def test_defaults_raise(self):
-        # default arguments should raise 
+        # default arguments should raise
         class _dist_gen(stats.rv_continuous):
             def _pdf(self, x, a=42):
                 return 42
@@ -1762,6 +1766,7 @@ class TestSubclassingNoShapes(TestCase):
         assert_raises(TypeError, _dist_gen, **dict(name='dummy'))
 
 
+@dec.skipif(DOCSTRINGS_STRIPPED)
 def test_docstrings():
     badones = [',\s*,', '\(\s*,', '^\s*:']
     for distname in stats.__all__:
