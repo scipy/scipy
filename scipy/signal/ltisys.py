@@ -174,18 +174,18 @@ def ss2tf(A, B, C, D, input=0):
 
     Returns
     -------
-    num, den : 2Dndarray, 1D ndarray
-        Representations of the numerator(s) and denominator of the 
-        resulting transfer function(s). `num` has one row for each of the 
-        system's outputs. Each row is a sequence representation of the 
-        numerator polynomial. `den` is a sequence representation of the 
-        denominator polynomial.
+    num : 2-D ndarray
+        Numerator(s) of the resulting transfer function(s).  `num` has one row
+        for each of the system's outputs. Each row is a sequence representation
+        of the numerator polynomial.
+    den : 1-D ndarray
+        Denominator of the resulting transfer function(s).  `den` is a sequence
+        representation of the denominator polynomial.
 
     """
     # transfer function is C (sI - A)**(-1) B + D
     A, B, C, D = map(asarray, (A, B, C, D))
-    # Check consistency and
-    #     make them all rank-2 arrays
+    # Check consistency and make them all rank-2 arrays
     A, B, C, D = abcd_normalize(A, B, C, D)
 
     nout, nin = D.shape
