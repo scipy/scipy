@@ -270,7 +270,7 @@ def ricker(points, a):
 
     It models the function:
 
-        ``A (1 - x^2/a^2) exp(-t^2/2 a^2)``,
+        ``A (1 - x^2/a^2) exp(-x^2/2 a^2)``,
 
     where ``A = 2/sqrt(3a)pi^1/3``.
 
@@ -304,9 +304,9 @@ def ricker(points, a):
     A = 2 / (np.sqrt(3 * a) * (np.pi**0.25))
     wsq = a**2
     vec = np.arange(0, points) - (points - 1.0) / 2
-    tsq = vec**2
-    mod = (1 - tsq / wsq)
-    gauss = np.exp(-tsq / (2 * wsq))
+    xsq = vec**2
+    mod = (1 - xsq / wsq)
+    gauss = np.exp(-xsq / (2 * wsq))
     total = A * mod * gauss
     return total
 
