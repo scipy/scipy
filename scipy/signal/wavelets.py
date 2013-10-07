@@ -270,7 +270,7 @@ def ricker(points, a):
 
     It models the function:
 
-        ``A (1 - x^2/a^2) exp(-t^2/a^2)``,
+        ``A (1 - x^2/a^2) exp(-t^2/2 a^2)``,
 
     where ``A = 2/sqrt(3a)pi^1/3``.
 
