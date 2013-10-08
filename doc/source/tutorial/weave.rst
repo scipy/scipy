@@ -885,11 +885,11 @@ Microsoft VC++ installed.
 When ``inline`` is first run, you'll notice that pause and some trash printed
 to the screen. The "trash" is actually part of the compiler's output that
 distutils does not supress. The name of the extension file,
-``sc_bighonkingnumber.cpp``, is generated from the md5 check sum of the C/C++
-code fragment. On Unix or windows machines with only gcc installed, the trash
-will not appear. On the second call, the code fragment is not compiled since
-it already exists, and only the answer is returned. Now kill the interpreter
-and restart, and run the same code with a different string.
+``sc_bighonkingnumber.cpp``, is generated from the SHA-256 check sum of the
+C/C++ code fragment. On Unix or windows machines with only gcc installed, the
+trash will not appear. On the second call, the code fragment is not compiled
+since it already exists, and only the answer is returned. Now kill the
+interpreter and restart, and run the same code with a different string.
 
 ::
 
@@ -1151,8 +1151,8 @@ A quick look at the code
 ------------------------
 
 ``weave`` generates a C++ file holding an extension function for each
-``inline`` code snippet. These file names are generated using from the md5
-signature of the code snippet and saved to a location specified by the
+``inline`` code snippet. These file names are generated using from the
+SHA-256 signature of the code snippet and saved to a location specified by the
 PYTHONCOMPILED environment variable (discussed later). The cpp files are
 generally about 200-400 lines long and include quite a few functions to
 support type conversions, etc. However, the actual compiled function is
@@ -2401,10 +2401,10 @@ built before.
 
 .. note::
   If we were willing to always pay the penalty of building the C++
-  code for a module, we could store the md5 checksum of the C++ code
+  code for a module, we could store the SHA-256 checksum of the C++ code
   along with some information about the compiler, platform, etc. Then,
   ``ext_module.compile()`` could try importing the module before it
-  actually compiles it, check the md5 checksum and other meta-data in
+  actually compiles it, check the SHA-256 checksum and other meta-data in
   the imported module with the meta-data of the code it just produced
   and only compile the code if the module didn't exist or the
   meta-data didn't match. This would reduce the above code to::
