@@ -86,13 +86,13 @@ def getmodule(object):
 def expr_to_filename(expr):
     """ Convert an arbitrary expr string to a valid file name.
 
-        The name is based on the md5 check sum for the string and
+        The name is based on the SHA-256 check sum for the string and
         Something that was a little more human readable would be
         nice, but the computer doesn't seem to care.
     """
-    import scipy.weave.md5_load as md5
+    from hashlib import sha256
     base = 'sc_'
-    return base + md5.new(expr).hexdigest()
+    return base + sha256(expr).hexdigest()
 
 
 def unique_file(d,expr):
