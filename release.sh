@@ -42,7 +42,6 @@ paver dmg -p 2.7  # 32/64-bit version
 
 paver bdist_superpack -p 2.7
 paver bdist_superpack -p 2.6
-paver bdist_superpack -p 3.1
 paver bdist_superpack -p 3.2
 
 
