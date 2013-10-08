@@ -152,6 +152,11 @@ def _raw_fft(x, n, axis, direction, overwrite_x, work_function):
     elif n != x.shape[axis]:
         x, copy_made = _fix_shape(x,n,axis)
         overwrite_x = overwrite_x or copy_made
+
+    if n < 1:
+        raise ValueError("Invalid number of FFT data points "
+                         "(%d) specified." % n)
+
     if axis == -1 or axis == len(x.shape)-1:
         r = work_function(x,n,direction,overwrite_x=overwrite_x)
     else:
@@ -252,6 +257,10 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
         tmp, copy_made = _fix_shape(tmp,n,axis)
         overwrite_x = overwrite_x or copy_made
 
+    if n < 1:
+        raise ValueError("Invalid number of FFT data points "
+                         "(%d) specified." % n)
+
     if axis == -1 or axis == len(tmp.shape) - 1:
         return work_function(tmp,n,1,0,overwrite_x)
 
@@ -317,6 +326,10 @@ def ifft(x, n=None, axis=-1, overwrite_x=False):
     elif n != tmp.shape[axis]:
         tmp, copy_made = _fix_shape(tmp,n,axis)
         overwrite_x = overwrite_x or copy_made
+
+    if n < 1:
+        raise ValueError("Invalid number of FFT data points "
+                         "(%d) specified." % n)
 
     if axis == -1 or axis == len(tmp.shape) - 1:
         return work_function(tmp,n,-1,1,overwrite_x)
@@ -480,7 +493,8 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
 
     for dim in s:
         if dim < 1:
-            raise ValueError("Invalid number of FFT data points (%d) specified." % s)
+            raise ValueError("Invalid number of FFT data points "
+                             "(%s) specified." % (s,))
 
     # No need to swap axes, array is in C order
     if noaxes:
