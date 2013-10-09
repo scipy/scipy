@@ -235,7 +235,7 @@ def build_extension(module_path,compiler_name='',build_dir=None,
     # dag. We keep having to add directories to the path to keep
     # object files separated from each other.  gcc2.x and gcc3.x C++
     # object files are not compatible, so we'll stick them in a sub
-    # dir based on their version.  This will add an md5 check sum
+    # dir based on their version. This will add a SHA-256 check sum
     # of the compiler binary to the directory name to keep objects
     # from different compilers in different locations.
 
