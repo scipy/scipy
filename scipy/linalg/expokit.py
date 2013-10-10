@@ -10,7 +10,7 @@ from scipy.sparse.linalg import LinearOperator
 
 
 def expm(A, t=None ):
-    """Compute the matrix exponential - exp(t*A) - using Padé approximation.
+    """Compute the matrix exponential - exp(t*A) - using Pade approximation.
 
     Parameters
     ----------
