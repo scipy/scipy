@@ -11,9 +11,9 @@ import scipy.sparse
 
 
 
-class BenchmarkExpm(TestCase):
+class BenchmarkOneNormEst(TestCase):
 
-    def bench_expm_sparse_vs_dense(self):
+    def bench_onenormest(self):
 
         # print headers and define the column formats
         print()
