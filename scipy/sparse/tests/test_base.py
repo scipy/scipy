@@ -1344,9 +1344,26 @@ class _TestCommon:
                 if self.spmatrix in (dok_matrix, lil_matrix):
                     raise nose.SkipTest("Unary ops not implemented for dok/lil "
                                         "with Numpy < 1.9")
+            ufunc = getattr(np, name)
+
             X = self.spmatrix(np.arange(20).reshape(4, 5) / 20.)
-            X2 = getattr(np, name)(X)
-            assert_array_equal(X2.toarray(), getattr(np, name)(X.toarray()))
+            X0 = ufunc(X.toarray())
+
+            X2 = ufunc(X)
+            assert_array_equal(X2.toarray(), X0)
+
+            if not (LooseVersion(np.version.version) < LooseVersion('1.9')):
+                # the out argument doesn't work on Numpy < 1.9
+                out = np.zeros_like(X0)
+                X3 = ufunc(X, out=out)
+                assert_(X3 is out)
+                assert_array_equal(todense(X3), ufunc(todense(X)))
+
+                out = csc_matrix(out.shape, dtype=out.dtype)
+                out[:,1] = 999
+                X4 = ufunc(X, out=out)
+                assert_(X4 is out)
+                assert_array_equal(todense(X4), ufunc(todense(X)))
 
         for name in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
                      "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
@@ -1385,54 +1402,81 @@ class _TestCommon:
             a = todense(ax)
             b = todense(bx)
 
+            def check_one(ufunc, allclose=False):
+                # without out argument
+                expected = ufunc(a, b)
+                got = ufunc(ax, bx)
+                if allclose:
+                    assert_allclose(todense(got), expected,
+                                    rtol=5e-15, atol=0)
+                else:
+                    assert_array_equal(todense(got), expected)
+
+                # with out argument
+                out = np.zeros(got.shape, dtype=got.dtype)
+                out.fill(np.nan)
+                got = ufunc(ax, bx, out=out)
+                assert_(got is out)
+                if allclose:
+                    assert_allclose(todense(got), expected,
+                                    rtol=5e-15, atol=0)
+                else:
+                    assert_array_equal(todense(got), expected)
+
+                out = csr_matrix(got.shape, dtype=out.dtype)
+                out[0,:] = 999
+                got = ufunc(ax, bx, out=out)
+                assert_(got is out)
+                if allclose:
+                    assert_allclose(todense(got), expected,
+                                    rtol=5e-15, atol=0)
+                else:
+                    assert_array_equal(todense(got), expected)
+
             # -- associative
 
             # multiply
-            assert_array_equal(todense(np.multiply(ax, bx)), np.multiply(a, b))
+            check_one(np.multiply)
 
             # add
             if isscalarlike(ax) or isscalarlike(bx):
                 try:
-                    assert_array_equal(todense(np.add(ax, bx)),
-                                       np.add(a, b))
+                    check_one(np.add)
                 except NotImplementedError:
                     # Not implemented for all spmatrix types
                     pass
             else:
-                assert_array_equal(todense(np.add(ax, bx)), np.add(a, b))
+                check_one(np.add)
 
             # -- non-associative
 
             # dot
-            assert_array_equal(todense(np.dot(ax, bx)), np.dot(a, b))
+            check_one(np.dot)
 
             # subtract
             if isscalarlike(ax) or isscalarlike(bx):
                 try:
-                    assert_array_equal(todense(np.subtract(ax, bx)),
-                                       np.subtract(a, b))
+                    check_one(np.subtract)
                 except NotImplementedError:
                     # Not implemented for all spmatrix types
                     pass
             else:
-                assert_array_equal(todense(np.subtract(ax, bx)), np.subtract(a, b))
+                check_one(np.subtract)
 
             # divide
             with np.errstate(divide='ignore', invalid='ignore'):
                 if isscalarlike(bx):
                     # Rounding error may be different, as the sparse implementation
                     # computes a/b -> a * (1/b) if b is a scalar
-                    assert_allclose(todense(np.divide(ax, bx)), np.divide(a, b),
-                                    rtol=5e-15, atol=0)
+                    check_one(np.divide, allclose=True)
                 else:
-                    assert_array_equal(todense(np.divide(ax, bx)), np.divide(a, b))
+                    check_one(np.divide)
 
                 # true_divide
                 if isscalarlike(bx):
-                    assert_allclose(todense(np.true_divide(ax, bx)), np.true_divide(a, b),
-                                    rtol=5e-15, atol=0)
+                    check_one(np.true_divide, allclose=True)
                 else:
-                    assert_array_equal(todense(np.true_divide(ax, bx)), np.true_divide(a, b))
+                    check_one(np.true_divide)
 
         for i in a_items.keys():
             for j in b_items.keys():
@@ -1442,6 +1486,71 @@ class _TestCommon:
 
 
 class _TestInplaceArithmetic:
+    @dec.skipif(LooseVersion(np.version.version) < LooseVersion('1.9'),
+                "Not implemented with Numpy < 1.9")
+    def test_inplace_dense_method(self):
+        # Check that ndarray inplace ops work
+        a = np.ones((3, 4))
+        b = self.spmatrix(a)
+
+        def check(op):
+            x = a.copy()
+            y = a.copy()
+
+            x = getattr(x, op)(a)
+            y = getattr(y, op)(b)
+
+            assert_array_equal(x, y, err_msg=op)
+
+        for op in ['__iadd__', '__isub__',
+                   '__imul__', '__idiv__',
+                   '__ifloordiv__', '__itruediv__']:
+            c = dec.knownfailureif(
+                op == '__ifloordiv__',
+                "sparse floordiv not implemented")(check)
+            yield c, op
+
+    def test_inplace_dense_syntax(self):
+        # Same as test_inplace_dense_method, but with the syntax
+        a = np.ones((3, 4))
+        b = self.spmatrix(a)
+
+        x = a.copy()
+        y = a.copy()
+        x += a
+        y += b
+        assert_array_equal(x, y)
+
+        x = a.copy()
+        y = a.copy()
+        x -= a
+        y -= b
+        assert_array_equal(x, y)
+
+        if not (LooseVersion(np.version.version) < LooseVersion('1.9')):
+            # These operations don't work properly without __numpy_ufunc__,
+            # due to missing or incompatible __r*__ implementations
+
+            # This is elementwise product
+            x = a.copy()
+            y = a.copy()
+            x *= a
+            y *= b
+            assert_array_equal(x, y)
+
+            x = a.copy()
+            y = a.copy()
+            x /= a
+            y /= b
+            assert_array_equal(x, y)
+
+            # XXX: floor division is not implemented
+            #x = a.copy()
+            #y = a.copy()
+            #x //= a
+            #y //= b
+            #assert_array_equal(x, y)
+    
     def test_imul_scalar(self):
         def check(dtype):
             dat = self.dat_dtypes[dtype]
