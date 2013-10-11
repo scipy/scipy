@@ -29,10 +29,6 @@ class FractionalMatrixPowerError(np.linalg.LinAlgError):
     pass
 
 
-def _has_complex_dtype_char(A):
-    return A.dtype.char in ('F', 'D', 'G')
-
-
 def _count_nonzero(x):
     """np.count_nonzero not available in numpy 1.5.x"""
     return np.sum(x != 0)
@@ -641,7 +637,7 @@ def _remainder_matrix_power(A, t):
         Z = None
         T = A
     else:
-        if not _has_complex_dtype_char(A):
+        if np.isrealobj(A):
             T, Z = schur(A)
             if not np.array_equal(T, np.triu(T)):
                 T, Z = rsf2csf(T, Z)
@@ -658,9 +654,8 @@ def _remainder_matrix_power(A, t):
 
     # If the triangular matrix is real and has a negative
     # entry on the diagonal, then force the matrix to be complex.
-    if not _has_complex_dtype_char(T):
-        if np.min(T_diag) < 0:
-            T = T.astype(complex)
+    if np.isrealobj(T) and np.min(T_diag) < 0:
+        T = T.astype(complex)
 
     # Get the fractional power of the triangular matrix,
     # and de-triangularize it if necessary.
@@ -785,7 +780,7 @@ def _logm_triu(T):
     # Construct T0 with the appropriate type,
     # depending on the dtype and the spectrum of T.
     T_diag = np.diag(T)
-    keep_it_real = (not _has_complex_dtype_char(T)) and (np.min(T_diag) >= 0)
+    keep_it_real = np.isrealobj(T) and np.min(T_diag) >= 0
     if keep_it_real:
         T0 = T
     else:
@@ -880,7 +875,7 @@ def logm(A):
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
     n, n = A.shape
-    keep_it_real = not _has_complex_dtype_char(A)
+    keep_it_real = np.isrealobj(A)
     try:
         if np.array_equal(A, np.triu(A)):
             A_diag = np.diag(A)
