@@ -33,6 +33,12 @@ class NearestNDInterpolator(NDInterpolatorBase):
         Data point coordinates.
     values : (Npoints,) ndarray of float or complex
         Data values.
+    rescale : boolean, optional
+        Rescale points to unit cube before performing interpolation.
+        This is useful if some of the input dimensions have
+        incommensurable units and differ by many orders of magnitude.
+
+        .. versionadded:: 0.14.0
 
     Notes
     -----
@@ -40,11 +46,11 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     """
 
-    def __init__(self, x, y):
-        x = _ndim_coords_from_arrays(x)
-        self._check_init_shape(x, y)
-        self.tree = cKDTree(x)
-        self.points = x
+    def __init__(self, x, y, rescale=False):
+        NDInterpolatorBase.__init__(self, x, y, rescale=rescale,
+                                    need_contiguous=False,
+                                    need_values=False)
+        self.tree = cKDTree(self.points)
         self.values = y
 
     def __call__(self, *args):
@@ -59,6 +65,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
         """
         xi = _ndim_coords_from_arrays(args)
         xi = self._check_call_shape(xi)
+        xi = self._scale_x(xi)
         dist, i = self.tree.query(xi)
         return self.values[i]
 
@@ -67,7 +74,8 @@ class NearestNDInterpolator(NDInterpolatorBase):
 # Convenience interface function
 #------------------------------------------------------------------------------
 
-def griddata(points, values, xi, method='linear', fill_value=np.nan):
+def griddata(points, values, xi, method='linear', fill_value=np.nan,
+             rescale=False):
     """
     Interpolate unstructured D-dimensional data.
 
@@ -82,7 +90,6 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan):
         Data values.
     xi : ndarray of float, shape (M, D)
         Points at which to interpolate data.
-
     method : {'linear', 'nearest', 'cubic'}, optional
         Method of interpolation. One of
 
@@ -105,12 +112,17 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan):
           piecewise cubic, continuously differentiable (C1), and
           approximately curvature-minimizing polynomial surface. See
           `CloughTocher2DInterpolator` for more details.
-
     fill_value : float, optional
         Value used to fill in for requested points outside of the
         convex hull of the input points.  If not provided, then the
         default is ``nan``. This option has no effect for the
         'nearest' method.
+    rescale : boolean, optional
+        Rescale points to unit cube before performing interpolation.
+        This is useful if some of the input dimensions have
+        incommensurable units and differ by many orders of magnitude.
+
+        .. versionadded:: 0.14.0
 
 
     Examples
@@ -183,13 +195,15 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan):
                       fill_value=fill_value)
         return ip(xi)
     elif method == 'nearest':
-        ip = NearestNDInterpolator(points, values)
+        ip = NearestNDInterpolator(points, values, rescale=rescale)
         return ip(xi)
     elif method == 'linear':
-        ip = LinearNDInterpolator(points, values, fill_value=fill_value)
+        ip = LinearNDInterpolator(points, values, fill_value=fill_value,
+                                  rescale=rescale)
         return ip(xi)
     elif method == 'cubic' and ndim == 2:
-        ip = CloughTocher2DInterpolator(points, values, fill_value=fill_value)
+        ip = CloughTocher2DInterpolator(points, values, fill_value=fill_value,
+                                        rescale=rescale)
         return ip(xi)
     else:
         raise ValueError("Unknown interpolation method %r for "
