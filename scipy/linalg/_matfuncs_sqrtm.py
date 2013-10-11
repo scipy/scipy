@@ -22,10 +22,6 @@ class SqrtmError(np.linalg.LinAlgError):
     pass
 
 
-def _has_complex_dtype_char(A):
-    return A.dtype.char in ('F', 'D', 'G')
-
-
 def _sqrtm_triu(T, blocksize=64):
     """
     Matrix square root of an upper triangular matrix.
@@ -53,7 +49,7 @@ def _sqrtm_triu(T, blocksize=64):
 
     """
     T_diag = np.diag(T)
-    keep_it_real = (not _has_complex_dtype_char(T)) and (np.min(T_diag) >= 0)
+    keep_it_real = np.isrealobj(T) and np.min(T_diag) >= 0
     if not keep_it_real:
         T_diag = T_diag.astype(complex)
     R = np.diag(np.sqrt(T_diag))
@@ -152,7 +148,7 @@ def sqrtm(A, disp=True, blocksize=64):
         raise ValueError("Non-matrix input to matrix function.")
     if blocksize < 1:
         raise ValueError("The blocksize should be at least 1.")
-    keep_it_real = not _has_complex_dtype_char(A)
+    keep_it_real = np.isrealobj(A)
     if keep_it_real:
         T, Z = schur(A)
         if not np.array_equal(T, np.triu(T)):
