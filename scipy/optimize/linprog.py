@@ -7,6 +7,9 @@ Functions
    :toctree: generated/
 
     linprog
+    lpsimplex
+    verbose_callback
+    terse_callback
 
 """
 
@@ -14,7 +17,11 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
-__all__ = ['linprog']
+from .optimize import Result, _check_unknown_options
+
+__all__ = ['linprog','lpsimplex','verbose_callback','terse_callback']
+
+__docformat__ = "restructuredtext en"
 
 
 def verbose_callback(xk,**kwargs):
@@ -188,25 +195,23 @@ def lpsimplex(tableau,n,n_slack,n_artificial,maxiter=1000,phase=2,callback=None,
 
     Returns
     -------
-    x : ndarray
-        The independent variable vector which optimizes the linear programming problem.
-    nit : int
-        The number of iterations performed.
-    status : int
-        An integer representing the exit status of the optimization::
-       -1 : Invalid arguments
-        0 : Optimization terminated successfully
-        1 : Optimization terminated successfully, single feasible solution
-        2 : Iteration limit reached
-        3 : Problem appears to be infeasible
-        4 : Problem appears to be unbounded
-    message : str
-        A string descriptor of the exit status of the optimization.
+    res : Result
+        The optimization result represented as a ``Result`` object.
+        Important attributes are: ``x`` the solution array, ``success`` a
+        Boolean flag indicating if the optimizer exited successfully and
+        ``message`` which describes the cause of the termination. Possible
+        values for the ``status`` attribute are:
+        -1 : Invalid arguments
+         0 : Optimization terminated successfully
+         1 : Optimization terminated successfully, single feasible solution
+         2 : Iteration limit reached
+         3 : Problem appears to be infeasible
+         4 : Problem appears to be unbounded
+
+        See `Result` for a description of other attributes.
     """
 
     nit = nit0
-    status = -2
-    message = ""
 
     if phase not in (1,2):
         status = -1
@@ -323,6 +328,14 @@ def lpsimplex(tableau,n,n_slack,n_artificial,maxiter=1000,phase=2,callback=None,
             else:
                 message = "Optimization terminated successfully."
                 status = 0
+
+    bv_map = np.sum(tableau[:,:-1] != 0, 0)  # bv_map is the sum of the nonzero elements in each column
+    basic_cols = np.where(bv_map == 1)[0]    # Columns with basic variables
+    x.fill(0.0)
+    for col in basic_cols:
+        if col < n:
+            nonzero_row = np.nonzero(tableau[:-1,col])[0][0]
+            x[col] = tableau[nonzero_row,-1] / tableau[nonzero_row,col]
 
     return x, nit, status, message
 
@@ -555,29 +568,33 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,objtyp
                                              phase=2,callback=callback,nit0=nit1)
 
     # Optimization complete at this point
+    obj_mult = -1 if objtype == "min" else 1
 
     if status in (0,1):
-        fstar = T[-1,-1]
-        if objtype == "min":
-            fstar *= -1
-        print(message)
-        print("         Current function value: {: <12.6f}".format(fstar))
-        print("         Iterations: {:d}".format(nit2))
+        fstar = T[-1,-1] * obj_mult
+        if disp:
+            print(message)
+            print("         Current function value: {: <12.6f}".format(fstar))
+            print("         Iterations: {:d}".format(nit2))
     else:
-        print(message)
-        print("         Iterations: {:d}".format(nit2))
+        if disp:
+            print(message)
+            print("         Iterations: {:d}".format(nit2))
+
+    return Result(x=x, fun=T[-1,-1]*obj_mult, nit=int(nit2), status=int(status),
+                  message=message, success=(status in (0,1)))
 
 
 if __name__ == "__main__":
     #http://www.dam.brown.edu/people/huiwang/classes/am121/Archive/simplex_121_c.pdf
-    #
-    #c = [3,2]
-    #b_ub = [10,8,4]
-    #A_ub = [[2,1],
-    #        [1,1],
-    #        [1,0]]
-    #
-    #linprog(c,A_ub=A_ub,b_ub=b_ub,type='max')
+
+    c = [3,2]
+    b_ub = [10,8,4]
+    A_ub = [[2,1],
+            [1,1],
+            [1,0]]
+
+    print(linprog(c,A_ub=A_ub,b_ub=b_ub,objtype='max',disp=False))
     #
     #print("\n\n\n")
     #
