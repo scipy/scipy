@@ -755,6 +755,8 @@ class spmatrix(object):
         """Method for compatibility with NumPy's ufuncs and dot
         functions.
         """
+
+        out = kwargs.pop('out', None)
         if method != '__call__' or kwargs:
             return NotImplemented
 
@@ -763,38 +765,47 @@ class spmatrix(object):
         without_self = tuple(without_self)
 
         if func is np.multiply:
-            return self.multiply(*without_self)
+            result = self.multiply(*without_self)
         elif func is np.add:
-            return self.__add__(*without_self)
+            result = self.__add__(*without_self)
         elif func is np.dot:
             if pos == 0:
-                return self.__mul__(inputs[1])
+                result = self.__mul__(inputs[1])
             else:
-                return self.__rmul__(inputs[0])
+                result = self.__rmul__(inputs[0])
         elif func is np.subtract:
             if pos == 0:
-                return self.__sub__(inputs[1])
+                result = self.__sub__(inputs[1])
             else:
-                return self.__rsub__(inputs[0])
+                result = self.__rsub__(inputs[0])
         elif func is np.divide:
             true_divide = (sys.version_info[0] >= 3)
             rdivide = (pos == 1)
-            return self._divide(*without_self,
-                                true_divide=true_divide,
-                                rdivide=rdivide)
+            result = self._divide(*without_self,
+                                  true_divide=true_divide,
+                                  rdivide=rdivide)
         elif func is np.true_divide:
             rdivide = (pos == 1)
-            return self._divide(*without_self, true_divide=True, rdivide=rdivide)
+            result = self._divide(*without_self, true_divide=True, rdivide=rdivide)
         elif func in (np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh,
                       np.arcsinh, np.arctanh, np.rint, np.sign, np.expm1, np.log1p,
                       np.deg2rad, np.rad2deg, np.floor, np.ceil, np.trunc, np.sqrt):
             func_name = func.__name__
             if hasattr(self, func_name):
-                return getattr(self, func_name)()
+                result = getattr(self, func_name)()
             else:
-                return getattr(self.tocsr(), func_name)()
+                result = getattr(self.tocsr(), func_name)()
         else:
             return NotImplemented
+
+        if out is not None:
+            if not isinstance(out, spmatrix) and isinstance(result, spmatrix):
+                out[...] = result.todense()
+            else:
+                out[...] = result
+            result = out
+
+        return result
 
 
 def isspmatrix(x):
