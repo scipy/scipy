@@ -78,31 +78,45 @@ def logm(A, disp=True):
         return F, errest
 
 
-def expm(A, q=None):
+def expm(A, q=None, method=None):
     """
-    Compute the matrix exponential using Pade approximation.
+    Compute the matrix exponential.
 
     Parameters
     ----------
     A : (N, N) array_like
         Matrix to be exponentiated
+    method : {'higham', 'expokit'}, optional
+        Method to use for computation. Either 'higham' or 'expokit'.
+        Default: 'higham'
 
     Returns
     -------
     expm : (N, N) ndarray
         Matrix exponential of `A`
+    Notes
+    -----
+    The 'higham' method implements algorithm (6.1) of reference [1]
+    which is a simplification of algorithm (5.1).
+
+    The 'expokit' method computes the matrix exponential using the
+    EXPOKIT [2] library.
 
     References
     ----------
-    N. J. Higham,
-    "The Scaling and Squaring Method for the Matrix Exponential Revisited",
-    SIAM. J. Matrix Anal. & Appl. 26, 1179 (2005).
+    .. [1] Awad H. Al-Mohy and Nicholas J. Higham (2009)
+           "A New Scaling and Squaring Algorithm for the Matrix Exponential."
+           SIAM Journal on Matrix Analysis and Applications.
+           31 (3). pp. 970-989. ISSN 1095-7162
+    .. [2] Roger B. Sidje,
+           "EXPOKIT: A Software Package for Computing Matrix Exponentials",
+           ACM Trans. Math. Softw. 24(1), 130-156 (1998).
 
     """
     if q:
         warnings.warn("argument q=... in scipy.linalg.expm is deprecated.")
     import scipy.sparse.linalg
-    return scipy.sparse.linalg.expm(A)
+    return scipy.sparse.linalg.expm(A, method=method)
 
 
 # deprecated, but probably should be left there in the long term

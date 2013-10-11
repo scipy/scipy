@@ -22,8 +22,7 @@ from scipy.sparse import csc_matrix, SparseEfficiencyWarning
 from scipy.sparse.construct import eye as speye
 from scipy.sparse.linalg.matfuncs import (ProductOperator, MatrixPowerOperator,
         _onenorm_matrix_power_nnm)
-from scipy.sparse.linalg.matfuncs import expm as higham_expm
-from scipy.linalg.expokit import expm as expokit_expm
+from scipy.sparse.linalg.matfuncs import expm
 from scipy.linalg import logm
 from scipy.misc import factorial
 import scipy.sparse
@@ -477,11 +476,17 @@ class BaseBurkardtExpM(object):
 
 
 class TestHighamExpM(BaseExpM, BaseBurkardtExpM, TestCase):
-    expm = staticmethod(higham_expm)
+    @staticmethod
+    def expm(*a, **kw):
+        kw['method'] = 'higham'
+        return expm(*a, **kw)
 
 
 class TestExpokitExpM(BaseBurkardtExpM, TestCase):
-    expm = staticmethod(expokit_expm)
+    @staticmethod
+    def expm(*a, **kw):
+        kw['method'] = 'expokit'
+        return expm(*a, **kw)
 
     @decorators.knownfailureif(True, 'expokit expm gives nans for this matrix')
     def test_burkardt_14(self):

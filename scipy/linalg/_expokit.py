@@ -1,15 +1,17 @@
+from __future__ import division, print_function, absolute_import
+
 #
 # Author: Alex LB Leach, November 2012
 #
 
 import numpy as np
-from scipy.linalg._expokit import dgpadm, zgpadm, dspadm, zhpadm, \
-                                  dgexpv, zgexpv
+from scipy.linalg._expokit_f import dgpadm, zgpadm, dspadm, zhpadm, \
+                                    dgexpv, zgexpv
 from scipy.sparse.base import isspmatrix
 from scipy.sparse.linalg import LinearOperator
 
 
-def expm(A, t=None ):
+def expm(A, t=None):
     """Compute the matrix exponential - exp(t*A) - using Pade approximation.
 
     Parameters

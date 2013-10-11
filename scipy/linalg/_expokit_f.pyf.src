@@ -18,7 +18,7 @@
 !   zhpadm, zhphiv, znchbv
 !
 
-python module _expokit
+python module _expokit_f
     interface _expokit_user_interface
 
 
@@ -490,4 +490,4 @@ python module _expokit
 
 
     end interface _expokit_user_interface
-end python module _expokit
+end python module _expokit_f

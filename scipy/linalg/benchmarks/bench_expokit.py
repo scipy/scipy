@@ -1,27 +1,24 @@
 #!/usr/bin/env python 
+from __future__ import division, print_function, absolute_import
 
 import numpy as np
 np.seterr(all='raise')
 
 from numpy import random 
-from numpy.testing import TestCase, decorators
+from numpy.testing import TestCase, decorators, run_module_suite
 
-from scipy.linalg.expokit import expm as expm_expokit
-
-#from scipy.linalg._expokit import dgpadm, zgpadm, dspadm, zhpadm, \
-#                                  dgexpv, zgexpv
-
-from scipy.linalg import expm as pyexpm
+from scipy.linalg import expm
 from scipy.sparse.base import isspmatrix
 
 import logging
 import time
+import sys
 
 
 REPEAT = 1000   #: Number of times to repeat TimeExpokit test
 
 MINARRSIZE  = 5
-MAXARRSIZE = 50
+MAXARRSIZE = 1000
 STRIDE = 5
 PRECISION = 10
 
@@ -33,8 +30,8 @@ class CompareAccuracy(TestCase):
         Compare results to specified precision, and raise
         :class:`AssertionError` if there are differences.
         """
-        padm = expm_expokit(array)
-        pypd = pyexpm(array)
+        padm = expm(array, method="expokit")
+        pypd = expm(array, method="higham")
         #test = (padm == pypd).all()
         test = np.array_equal(padm, pypd)
         if test is False:
@@ -88,31 +85,43 @@ class TimeExpokit(TestCase):
 
     def bench_times(self):
         global TEST_ARRAY, TEST_CARRAY
-        print("Times averaged over {0} iterations".format(REPEAT))
+        print("Times averaged over max. {0} iterations".format(REPEAT))
         print("Array size".ljust(25) +
               "EXPOKIT times".ljust(25) +
               "SciPy times".ljust(25) )
-        for arrsize in xrange(MINARRSIZE, MAXARRSIZE + 1, STRIDE):
+        sizes = list(range(MINARRSIZE, MAXARRSIZE + 1, STRIDE))
+        j = 2
+        while j < len(sizes):
+            del sizes[j::2]
+            j += 1
+        for arrsize in sizes:
             TEST_ARRAY, TEST_CARRAY = make_arrays(arrsize)
-            print('{0}'.format(arrsize).ljust(25)),
+            print('{0}'.format(arrsize).ljust(25), end='')
             self.time_expokit()
             self.time_scipy()
+            sys.stdout.write('\n')
 
     def time_expokit(self):
         times = []
+        start = time.time()
         for i in range(REPEAT):
             tm = time.time()
-            expm_expokit(TEST_ARRAY)
+            expm(TEST_ARRAY, method="expokit")
             times.append(time.time() - tm)
-        print('{0:.03f} += {1:.03f}'.format(np.mean(times), np.std(times)).ljust(25)),
+            if tm - start > 2.0:
+                break
+        print('{0:.06f} += {1:.06f}'.format(np.mean(times), np.std(times)).ljust(25), end=''),
 
     def time_scipy(self):
         times = []
+        start = time.time()
         for i in range(REPEAT):
             tm = time.time()
-            pyexpm(TEST_ARRAY)
+            expm(TEST_ARRAY, method="higham")
             times.append(time.time() - tm)
-        print('{0:.03f} += {1:.03f}'.format(np.mean(times), np.std(times) ).ljust(25))
+            if tm - start > 2.0:
+                break
+        print('{0:.06f} += {1:.06f}'.format(np.mean(times), np.std(times) ).ljust(25), end='')
 
 def make_arrays(arrsize):
     """Return a real and complex array, using host's default data-types."""

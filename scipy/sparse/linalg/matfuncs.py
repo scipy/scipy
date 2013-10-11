@@ -30,6 +30,7 @@ import scipy.sparse
 import scipy.sparse.linalg
 from scipy.sparse.linalg.interface import LinearOperator
 
+from scipy.linalg import _expokit
 
 UPPER_TRIANGULAR = 'upper_triangular'
 
@@ -532,7 +533,7 @@ class _ExpmPadeHelper(object):
 
 
 
-def expm(A):
+def expm(A, method=None):
     """
     Compute the matrix exponential using Pade approximation.
 
@@ -547,10 +548,17 @@ def expm(A):
     -------
     expA : (M,M) ndarray
         Matrix exponential of `A`
+    method : {'higham', 'expokit'}, optional
+        Method to use for computation. Either 'higham' or 'expokit'.
+        Default: 'higham'
 
     Notes
     -----
-    This is algorithm (6.1) which is a simplification of algorithm (5.1).
+    The 'higham' method implements algorithm (6.1) of reference [1]
+    which is a simplification of algorithm (5.1).
+
+    The 'expokit' method computes the matrix exponential using the
+    EXPOKIT [2] library.
 
     References
     ----------
@@ -558,8 +566,25 @@ def expm(A):
            "A New Scaling and Squaring Algorithm for the Matrix Exponential."
            SIAM Journal on Matrix Analysis and Applications.
            31 (3). pp. 970-989. ISSN 1095-7162
+    .. [2] Roger B. Sidje,
+           "EXPOKIT: A Software Package for Computing Matrix Exponentials",
+           ACM Trans. Math. Softw. 24(1), 130-156 (1998).
 
     """
+    if method is None:
+        method = 'higham'
+    else:
+        method = method.lower()
+
+    if method == 'higham':
+        return _expm_higham(A)
+    elif method == 'expokit':
+        return _expokit.expm(A)
+    else:
+        raise ValueError("Unknown method %r" % (method,))
+
+
+def _expm_higham(A):
     # Detect upper triangularity.
     structure = UPPER_TRIANGULAR if _is_upper_triangular(A) else None
 
