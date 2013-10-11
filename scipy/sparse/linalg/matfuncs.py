@@ -319,6 +319,9 @@ def _onenormest_product(operator_seq,
         Request a norm-maximizing linear operator input vector if True.
     compute_w : bool, optional
         Request a norm-maximizing linear operator output vector if True.
+    structure : str, optional
+        A string describing the structure of all operators.
+        Only `upper_triangular` is currently supported.
 
     Returns
     -------
@@ -347,14 +350,39 @@ class _ExpmPadeHelper(object):
     other properties of the matrix.
 
     """
-    def __init__(self, A, structure=None):
+    def __init__(self, A, structure=None, use_exact_onenorm=False):
+        """
+        Initialize the object.
+
+        Parameters
+        ----------
+        A : a dense or sparse square numpy matrix or ndarray
+            The matrix to be exponentiated.
+        structure : str, optional
+            A string describing the structure of matrix `A`.
+            Only `upper_triangular` is currently supported.
+        use_exact_onenorm : bool, optional
+            If True then only the exact one-norm of matrix powers and products
+            will be used. Otherwise, the one-norm of powers and products
+            may intially be estimated.
+        """
         self.A = A
         self._A2 = None
         self._A4 = None
         self._A6 = None
         self._A8 = None
+        self._A10 = None
+        self._d4_exact = None
+        self._d6_exact = None
+        self._d8_exact = None
+        self._d10_exact = None
+        self._d4_approx = None
+        self._d6_approx = None
+        self._d8_approx = None
+        self._d10_approx = None
         self.ident = _ident_like(A)
         self.structure = structure
+        self.use_exact_onenorm = use_exact_onenorm
     @property
     def A2(self):
         if self._A2 is None:
@@ -379,6 +407,76 @@ class _ExpmPadeHelper(object):
             self._A8 = _smart_matrix_product(
                     self.A6, self.A2, structure=self.structure)
         return self._A8
+    @property
+    def A10(self):
+        if self._A10 is None:
+            self._A10 = _smart_matrix_product(
+                    self.A4, self.A6, structure=self.structure)
+        return self._A10
+    @property
+    def d4_tight(self):
+        if self._d4_exact is None:
+            self._d4_exact = _onenorm(self.A4)**(1/4.)
+        return self._d4_exact
+    @property
+    def d6_tight(self):
+        if self._d6_exact is None:
+            self._d6_exact = _onenorm(self.A6)**(1/6.)
+        return self._d6_exact
+    @property
+    def d8_tight(self):
+        if self._d8_exact is None:
+            self._d8_exact = _onenorm(self.A8)**(1/8.)
+        return self._d8_exact
+    @property
+    def d10_tight(self):
+        if self._d10_exact is None:
+            self._d10_exact = _onenorm(self.A10)**(1/10.)
+        return self._d10_exact
+    @property
+    def d4_loose(self):
+        if self.use_exact_onenorm:
+            return self.d4_tight
+        if self._d4_exact is not None:
+            return self._d4_exact
+        else:
+            if self._d4_approx is None:
+                self._d4_approx = _onenormest_matrix_power(self.A2, 2,
+                        structure=self.structure)**(1/4.)
+            return self._d4_approx
+    @property
+    def d6_loose(self):
+        if self.use_exact_onenorm:
+            return self.d6_tight
+        if self._d6_exact is not None:
+            return self._d6_exact
+        else:
+            if self._d6_approx is None:
+                self._d6_approx = _onenormest_matrix_power(self.A2, 3,
+                        structure=self.structure)**(1/6.)
+            return self._d6_approx
+    @property
+    def d8_loose(self):
+        if self.use_exact_onenorm:
+            return self.d8_tight
+        if self._d8_exact is not None:
+            return self._d8_exact
+        else:
+            if self._d8_approx is None:
+                self._d8_approx = _onenormest_matrix_power(self.A4, 2,
+                        structure=self.structure)**(1/8.)
+            return self._d8_approx
+    @property
+    def d10_loose(self):
+        if self.use_exact_onenorm:
+            return self.d10_tight
+        if self._d10_exact is not None:
+            return self._d10_exact
+        else:
+            if self._d10_approx is None:
+                self._d10_approx = _onenormest_product((self.A4, self.A6),
+                        structure=self.structure)**(1/10.)
+            return self._d10_approx
     def pade3(self):
         b = (120., 60., 12., 1.)
         U = _smart_matrix_product(self.A,
@@ -465,28 +563,27 @@ def expm(A):
     # Detect upper triangularity.
     structure = UPPER_TRIANGULAR if _is_upper_triangular(A) else None
 
+    # Hardcode a matrix order threshold for exact vs. estimated one-norms.
+    use_exact_onenorm = A.shape[0] < 200
+
     # Track functions of A to help compute the matrix exponential.
-    h = _ExpmPadeHelper(A, structure=structure)
+    h = _ExpmPadeHelper(
+            A, structure=structure, use_exact_onenorm=use_exact_onenorm)
 
     # Try Pade order 3.
-    d4 = _onenormest_matrix_power(h.A2, 2, structure=structure)**(1/4.)
-    d6 = _onenormest_matrix_power(h.A2, 3, structure=structure)**(1/6.)
-    eta_1 = max(d4, d6)
+    eta_1 = max(h.d4_loose, h.d6_loose)
     if eta_1 < 1.495585217958292e-002 and _ell(h.A, 3) == 0:
         U, V = h.pade3()
         return _solve_P_Q(U, V, structure=structure)
 
     # Try Pade order 5.
-    d4 = _onenorm(h.A4)**(1/4.)
-    eta_2 = max(d4, d6)
+    eta_2 = max(h.d4_tight, h.d6_loose)
     if eta_2 < 2.539398330063230e-001 and _ell(h.A, 5) == 0:
         U, V = h.pade5()
         return _solve_P_Q(U, V, structure=structure)
 
     # Try Pade orders 7 and 9.
-    d6 = _onenorm(h.A6)**(1/6.)
-    d8 = _onenormest_matrix_power(h.A4, 2, structure=structure)**(1/8.)
-    eta_3 = max(d6, d8)
+    eta_3 = max(h.d6_tight, h.d8_loose)
     if eta_3 < 9.504178996162932e-001 and _ell(h.A, 7) == 0:
         U, V = h.pade7()
         return _solve_P_Q(U, V, structure=structure)
@@ -495,8 +592,7 @@ def expm(A):
         return _solve_P_Q(U, V, structure=structure)
 
     # Use Pade order 13.
-    d10 = _onenormest_product((h.A4, h.A6), structure=structure)**(1/10.)
-    eta_4 = max(d8, d10)
+    eta_4 = max(h.d8_loose, h.d10_loose)
     eta_5 = min(eta_3, eta_4)
     theta_13 = 4.25
     s = max(int(np.ceil(np.log2(eta_5 / theta_13))), 0)
