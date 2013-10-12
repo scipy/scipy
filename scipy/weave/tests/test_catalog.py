@@ -2,16 +2,201 @@ from __future__ import absolute_import, print_function
 
 import sys
 import os
+import stat
+import tempfile
 
-from numpy.testing import TestCase, assert_
+from distutils.dir_util import remove_tree
+
+from numpy.testing import TestCase, assert_, dec
+from numpy.testing.noseclasses import KnownFailureTest
 
 from scipy.weave import catalog
 from weave_test_utils import clear_temp_catalog, restore_temp_catalog, \
         empty_temp_dir, cleanup_temp_dir
 
+skip_on_windows = dec.skipif(sys.platform == 'win32',
+                             "Test works only on posix")
+
+def samefile(a, b):
+    try:
+        return os.path.samefile(a, b)
+    except AttributeError:
+        return os.path.realpath(a) == os.path.realpath(b)
+
+
+class TestIntermediateDir(TestCase):
+    """
+    Tests for intermediate dir (store of .cpp and .o during builds).
+    These tests test whether intermediate dir is safe. If it's not,
+    new one should be created.
+    """
+    def dirs_are_valid(self, wrong_dir, tmpdir):
+        """ test if new dir is created and is consistent """
+        new_im_dir = catalog.intermediate_dir(tmpdir)
+        assert_(not samefile(new_im_dir, wrong_dir))
+        new_im_dir2 = catalog.intermediate_dir(tmpdir)
+        assert_(samefile(new_im_dir, new_im_dir2))
+
+    @skip_on_windows
+    def test_ownership(self):
+        """ test if intermediate dir is owned by correct user """
+        im_dir = catalog.intermediate_dir()
+        im_dir_stat = os.stat(im_dir)
+        proc_uid = os.getuid()
+        assert_(proc_uid == im_dir_stat.st_uid)
+        r_im_dir_stat = os.stat(os.path.dirname(im_dir))
+        assert_(proc_uid == r_im_dir_stat.st_uid)
+
+    @skip_on_windows
+    def test_incorrect_ownership(self):
+        """
+        test if new intermediate dir is created when there is only one
+        im dir owned by improper user
+        """
+        import pwd
+        tmpdir = tempfile.mkdtemp()
+        try:
+            im_dir = catalog.create_intermediate_dir(tmpdir)
+            root_im_dir = os.path.dirname(im_dir)
+            nobody = pwd.getpwnam('nobody')[2]
+            nobody_g = pwd.getpwnam('nobody')[3]
+            try:
+                os.chown(root_im_dir, nobody, nobody_g)
+            except OSError:
+                raise KnownFailureTest("Can't change owner.")
+            else:
+                self.dirs_are_valid(im_dir, tmpdir)
+        finally:
+            remove_tree(tmpdir)
+
+    @skip_on_windows
+    def test_permissions(self):
+        """ im dir should have permissions 0700 """
+        im_dir = catalog.intermediate_dir()
+        im_dir_stat = os.stat(im_dir)
+        assert_(stat.S_IMODE(im_dir_stat.st_mode) == 0o0700)
+        r_im_dir_stat = os.stat(os.path.dirname(im_dir))
+        assert_(stat.S_IMODE(r_im_dir_stat.st_mode) == 0o0700)
+
+    @skip_on_windows
+    def test_incorrect_permissions(self):
+        """
+        if permissions on existing im dir are not correct,
+        new one should be created
+        """
+        tmpdir = tempfile.mkdtemp()
+        try:
+            im_dir = catalog.create_intermediate_dir(tmpdir)
+            root_im_dir = os.path.dirname(im_dir)
+            try:
+                os.chmod(root_im_dir, 0o777)
+            except OSError:
+                raise KnownFailureTest("Can't set file permissions.")
+            else:
+                self.dirs_are_valid(im_dir, tmpdir)
+        finally:
+            remove_tree(tmpdir)
+
+    @skip_on_windows
+    def test_symlink(self):
+        """ im dir shouldn't be a symlink """
+        r_im_dir = os.path.dirname(catalog.intermediate_dir())
+        assert_(os.path.islink(r_im_dir) is False)
+
+    @skip_on_windows
+    def test_symlink_raise(self):
+        """ if existing im dir is a symlink, new one should be created """
+        tmpdir = tempfile.mkdtemp()
+        try:
+            im_dir = catalog.create_intermediate_dir(tmpdir)
+            root_im_dir = os.path.dirname(im_dir)
+
+            tempdir = tempfile.mkdtemp(prefix='scipy-test', dir=tmpdir)
+            try:
+                os.rename(root_im_dir, tempdir)
+            except OSError:
+                raise KnownFailureTest("Can't move intermediate dir.")
+
+            try:
+                os.symlink(tempdir, root_im_dir)
+            except OSError:
+                raise KnownFailureTest(
+                    "Can't create symlink to intermediate dir.")
+            else:
+                self.dirs_are_valid(im_dir, tmpdir)
+        finally:
+            remove_tree(tmpdir)
+
 
 class TestDefaultDir(TestCase):
+    """
+    Tests for 'catalog.default_dir()'.
+    These should verified posix and win default_dir function.
+    """
+    def test_win(self):
+        # test if default_dir for Windows platform is accessible
+        #
+        # since default_dir_win() does not have any Windows specific code,
+        # let's test it everywhere
+        d = catalog.default_dir_win()
+        assert_(catalog.is_writable(d))
+
+    @skip_on_windows
+    def test_posix(self):
+        # test if posix default_dir is writable
+        d = catalog.default_dir_posix()
+        assert_(catalog.is_writable(d))
+
+    @skip_on_windows
+    def test_posix_home_inaccessible(self):
+        # what happens when home catalog dir is innaccessible
+        tmpdir = tempfile.mkdtemp()
+        try:
+            d_dir = catalog.default_dir_posix(tmpdir)
+
+            try:
+                os.chmod(d_dir, 0o000)
+            except OSError:
+                raise KnownFailureTest("Can't change permissions of default_dir.")
+
+            new_ddir = catalog.default_dir_posix(tmpdir)
+            assert_(not os.path.samefile(new_ddir, d_dir))
+            new_ddir2 = catalog.default_dir_posix(tmpdir)
+            assert_(os.path.samefile(new_ddir, new_ddir2))
+        finally:
+            os.chmod(d_dir, 0o700)
+            remove_tree(tmpdir)
+
+    @skip_on_windows
+    def test_posix_dirs_inaccessible(self):
+        # test if new dir is created if both implicit dirs are not valid
+        tmpdir = tempfile.mkdtemp()
+        try:
+            d_dir = catalog.default_dir_posix(tmpdir)
+
+            try:
+                os.chmod(d_dir, 0o000)
+            except OSError:
+                raise KnownFailureTest("Can't change permissions of default_dir.")
+
+            d_dir2 = catalog.default_dir_posix(tmpdir)
+
+            try:
+                os.chmod(d_dir2, 0o000)
+            except OSError:
+                raise KnownFailureTest("Can't change permissions of default_dir.")
+
+            new_ddir = catalog.default_dir_posix(tmpdir)
+            assert_(not (os.path.samefile(new_ddir, d_dir) or os.path.samefile(new_ddir, d_dir2)))
+            new_ddir2 = catalog.default_dir_posix(tmpdir)
+            assert_(os.path.samefile(new_ddir, new_ddir2))
+        finally:
+            os.chmod(d_dir, 0o700)
+            os.chmod(d_dir2, 0o700)
+            remove_tree(tmpdir)
+
     def test_is_writable(self):
+        # default_dir has to be writable
         path = catalog.default_dir()
         name = os.path.join(path,'dummy_catalog')
         test_file = open(name,'w')
@@ -42,13 +227,13 @@ class TestCatalogPath(TestCase):
         assert_(d == os.path.abspath(in_path))
         assert_(f == catalog.os_dependent_catalog_name())
 
+    @skip_on_windows
     def test_user(path):
-        if sys.platform != 'win32':
-            in_path = '~'
-            path = catalog.catalog_path(in_path)
-            d,f = os.path.split(path)
-            assert_(d == os.path.expanduser(in_path))
-            assert_(f == catalog.os_dependent_catalog_name())
+        in_path = '~'
+        path = catalog.catalog_path(in_path)
+        d,f = os.path.split(path)
+        assert_(d == os.path.expanduser(in_path))
+        assert_(f == catalog.os_dependent_catalog_name())
 
     def test_module(self):
         # hand it a module and see if it uses the parent directory
@@ -94,14 +279,10 @@ class TestGetCatalog(TestCase):
                 os.remove(cat_file)
         return pardir
 
-    def remove_dir(self,d):
-        import distutils.dir_util
-        distutils.dir_util.remove_tree(d)
-
     def test_nonexistent_catalog_is_none(self):
         pardir = self.get_test_dir(erase=1)
         cat = catalog.get_catalog(pardir,'r')
-        self.remove_dir(pardir)
+        remove_tree(pardir)
         assert_(cat is None)
 
     def test_create_catalog(self):
@@ -109,7 +290,7 @@ class TestGetCatalog(TestCase):
         cat = catalog.get_catalog(pardir,'c')
         assert_(cat is not None)
         cat.close()
-        self.remove_dir(pardir)
+        remove_tree(pardir)
 
 
 class TestCatalog(TestCase):
