@@ -63,7 +63,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         the corresponding residual. For all methods but 'hybr' and 'lm'.
     options : dict, optional
         A dictionary of solver options. E.g. `xtol` or `maxiter`, see
-        ``show_options('root', method)`` for details.
+        :obj:`show_options()` for details.
 
     Returns
     -------
@@ -73,6 +73,10 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         Boolean flag indicating if the algorithm exited successfully and
         ``message`` which describes the cause of the termination. See
         `Result` for a description of other attributes.
+
+    See also
+    --------
+    show_options : Additional options accepted by the solvers
 
     Notes
     -----
