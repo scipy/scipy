@@ -47,31 +47,63 @@ TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12], float)
 ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
 
-class TestBasicStats(TestCase):
-    """ W.II.C. Compute basic statistic on all the variables.
-
-        The means should be the fifth value of all the variables (case FIVE).
-        The standard deviations should be "undefined" or missing for MISS,
-        0 for ZERO, and 2.738612788 (times 10 to a power) for all the other variables.
-        II. C. Basic Statistics
-    """
-
+class TestTrimmedStats(TestCase):
+    # TODO: write these tests to handle missing values properly
     dprec = np.finfo(np.float64).precision
 
-    # Really need to write these tests to handle missing values properly
-    def test_tmeanX(self):
+    def test_tmean(self):
         y = stats.tmean(X, (2, 8), (True, True))
-        assert_approx_equal(y, 5.0, significant=TestBasicStats.dprec)
+        assert_approx_equal(y, 5.0, significant=self.dprec)
 
-    def test_tvarX(self):
-        y = stats.tvar(X, (2, 8), (True, True))
-        assert_approx_equal(y, 4.6666666666666661,
-                            significant=TestBasicStats.dprec)
+        y1 = stats.tmean(X, limits=(2, 8), inclusive=(False, False))
+        y2 = stats.tmean(X, limits=None)
+        assert_approx_equal(y1, y2, significant=self.dprec)
 
-    def test_tstdX(self):
+    def test_tvar(self):
+        y = stats.tvar(X, limits=(2, 8), inclusive=(True, True))
+        assert_approx_equal(y, 4.6666666666666661, significant=self.dprec)
+
+        y = stats.tvar(X, limits=None)
+        assert_approx_equal(y, X.var(ddof=1), significant=self.dprec)
+
+    def test_tstd(self):
         y = stats.tstd(X, (2, 8), (True, True))
-        assert_approx_equal(y, 2.1602468994692865,
-                            significant=TestBasicStats.dprec)
+        assert_approx_equal(y, 2.1602468994692865, significant=self.dprec)
+
+        y = stats.tstd(X, limits=None)
+        assert_approx_equal(y, X.std(ddof=1), significant=self.dprec)
+
+    def test_tmin(self):
+        x = np.arange(10)
+        assert_equal(stats.tmin(x), 0)
+        assert_equal(stats.tmin(x, lowerlimit=0), 0)
+        assert_equal(stats.tmin(x, lowerlimit=0, inclusive=False), 1)
+
+        x = x.reshape((5, 2))
+        assert_equal(stats.tmin(x, lowerlimit=0, inclusive=False), [2, 1])
+        assert_equal(stats.tmin(x, axis=1), [0, 2, 4, 6, 8])
+        assert_equal(stats.tmin(x, axis=None), 0)
+
+    def test_tmax(self):
+        x = np.arange(10)
+        assert_equal(stats.tmax(x), 9)
+        assert_equal(stats.tmax(x, upperlimit=9),9)
+        assert_equal(stats.tmax(x, upperlimit=9, inclusive=False), 8)
+
+        x = x.reshape((5, 2))
+        assert_equal(stats.tmax(x, upperlimit=9, inclusive=False), [8, 7])
+        assert_equal(stats.tmax(x, axis=1), [1, 3, 5, 7, 9])
+        assert_equal(stats.tmax(x, axis=None), 9)
+
+    def test_tsem(self):
+        y = stats.tsem(X, limits=(3, 8), inclusive=(False, True))
+        y_ref = np.array([4, 5, 6, 7, 8])
+        assert_approx_equal(y, y_ref.std(ddof=1) / np.sqrt(y_ref.size),
+                            significant=self.dprec)
+
+        assert_approx_equal(stats.tsem(X, limits=[-1, 10]),
+                            stats.tsem(X, limits=None),
+                            significant=self.dprec)
 
 
 class TestNanFunc(TestCase):
@@ -124,6 +156,10 @@ class TestNanFunc(TestCase):
         finally:
             np.seterr(**olderr)
         assert_(np.isnan(s))
+
+    def test_nanstd_bias_kw(self):
+        s = stats.nanstd(self.X, bias=True)
+        assert_approx_equal(s, np.std(self.X, ddof=0))
 
     def test_nanstd_negative_axis(self):
         x = np.array([1, 2, 3])
@@ -829,17 +865,13 @@ def test_cumfreq():
 def test_relfreq():
     a = np.array([1, 4, 2, 1, 3, 1])
     relfreqs, lowlim, binsize, extrapoints = stats.relfreq(a, numbins=4)
-    assert_array_almost_equal(relfreqs, array([0.5, 0.16666667, 0.16666667, 0.16666667]))
+    assert_array_almost_equal(relfreqs,
+                              array([0.5, 0.16666667, 0.16666667, 0.16666667]))
 
     # check array_like input is accepted
-    relfreqs2, lowlim, binsize, extrapoints = stats.relfreq([1, 4, 2, 1, 3, 1], numbins=4)
+    relfreqs2, lowlim, binsize, extrapoints = stats.relfreq([1, 4, 2, 1, 3, 1],
+                                                            numbins=4)
     assert_array_almost_equal(relfreqs, relfreqs2)
-
-
-# Utility
-def compare_results(res,desired):
-    for i in range(len(desired)):
-        assert_array_equal(res[i],desired[i])
 
 
 class TestGMean(TestCase):
@@ -1023,25 +1055,22 @@ class TestScoreatpercentile(TestCase):
         assert_raises(ValueError, stats.scoreatpercentile, [1], -1)
 
 
-class TestItemfreq(TestCase):
+class TestItemfreq(object):
     a = [5, 7, 1, 2, 1, 5, 7] * 10
     b = [1, 2, 5, 7]
 
     def test_numeric_types(self):
         # Check itemfreq works for all dtypes (adapted from np.unique tests)
-        def _check_itemfreq(a, b, dt):
+        def _check_itemfreq(dt):
+            a = np.array(self.a, dt)
             v = stats.itemfreq(a)
             assert_array_equal(v[:, 0], [1, 2, 5, 7])
-            assert_array_equal(v[:, 1], np.bincount(v[:, 0]))
+            assert_array_equal(v[:, 1], np.array([20, 10, 20, 20], dtype=dt))
 
-        a, b = self.a, self.b
-        types = []
-        types.extend(np.typecodes['AllInteger'])
-        types.extend(np.typecodes['AllFloat'])
-        for dt in types:
-            aa = np.array(a, dt)
-            bb = np.array(b, dt)
-            yield _check_itemfreq, aa, bb, dt
+        dtypes = [np.int32, np.int64, np.float32, np.float64,
+                  np.complex64, np.complex128]
+        for dt in dtypes:
+            yield _check_itemfreq, dt
 
     def test_object_arrays(self):
         a, b = self.a, self.b
@@ -1370,6 +1399,8 @@ def test_percentileofscore():
         yield assert_equal, \
               pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
                    score, kind=kind), result
+
+    assert_raises(ValueError, pcos, [1, 2, 3, 3, 4], 3, kind='unrecognized')
 
 
 PowerDivCase = namedtuple('Case', ['f_obs', 'f_exp', 'ddof', 'axis',
@@ -1850,6 +1881,11 @@ def test_ttest_rel():
     finally:
         np.seterr(**olderr)
 
+    # test incorrect input shape raise an error
+    x = np.arange(24)
+    assert_raises(ValueError, stats.ttest_rel, x.reshape((8, 3)),
+                  x.reshape((2, 3, 4)))
+
 
 def test_ttest_ind():
     # regression test
@@ -2035,6 +2071,14 @@ def test_normalitytests():
     yield assert_array_almost_equal, stats.skewtest(x), (st_skew, pv_skew)
     yield assert_array_almost_equal, stats.kurtosistest(x), (st_kurt, pv_kurt)
 
+    # Test axis=None (equal to axis=0 for 1-D input)
+    yield (assert_array_almost_equal, stats.normaltest(x, axis=None),
+           (st_normal, pv_normal))
+    yield (assert_array_almost_equal, stats.skewtest(x, axis=None),
+           (st_skew, pv_skew))
+    yield (assert_array_almost_equal, stats.kurtosistest(x, axis=None),
+           (st_kurt, pv_kurt))
+
 
 class TestJarqueBera(TestCase):
     def test_jarque_bera_stats(self):
@@ -2076,7 +2120,7 @@ def test_kurtosistest_too_few_samples():
     assert_raises(ValueError, stats.kurtosistest, x)
 
 
-def mannwhitneyu():
+def test_mannwhitneyu():
     x = np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
         1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1.,
         1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
@@ -2535,6 +2579,8 @@ class TestTrim(object):
         res1 = stats.trim_mean(a, 2/6., axis=None)
         res2 = stats.trim_mean(a.ravel(), 2/6.)
         assert_equal(res1, res2)
+
+        assert_raises(ValueError, stats.trim_mean, a, 0.6)
 
 
 class TestSigamClip(object):
