@@ -28,12 +28,10 @@ distdiscrete = [
     ['poisson', (0.6,)],
     ['randint', (7, 31)],
     ['skellam', (15, 8)],
-    ['zipf',     (4,)]    # arg=4 is ok,
-                           # Zipf broken for arg = 2, e.g. weird .stats
-                           # looking closer, mean, var should be inf for arg=2
+    ['zipf',     (6.5,)]
 ]
 
-#@npt.dec.slow
+
 def test_discrete_basic():
     for distname, arg in distdiscrete:
         distfn = getattr(stats,distname)
@@ -80,29 +78,23 @@ def test_discrete_basic():
         if distfn.__class__._entropy != stats.rv_discrete._entropy:
             yield check_private_entropy, distfn, arg
 
-#@npt.dec.slow
+
 def test_moments():
     knf = npt.dec.knownfailureif
     for distname, arg in distdiscrete:
         distfn = getattr(stats,distname)
         m, v, s, k = distfn.stats(*arg, moments='mvsk')
-
-        cond = distname in ['zipf', 'randint']
-        yield knf(cond, distname + ' normalization fails')(
-                check_normalization), distfn, arg, distname
+        yield check_normalization, distfn, arg, distname
 
         # compare `stats` and `moment` methods
         yield check_moment, distfn, arg, m, v, distname
         yield check_mean_expect, distfn, arg, m, distname
-        yield knf(distname=='zipf', 'zipf fails')(check_var_expect),\
-                distfn, arg, m, v, distname
-        yield knf(distname=='zipf', 'zipf fails')(check_skew_expect),\
-                distfn, arg, m, v, s, distname
+        yield check_var_expect, distfn, arg, m, v, distname
+        yield check_skew_expect, distfn, arg, m, v, s, distname
 
-        cond = distname in ['randint', 'zipf']
+        cond = distname in ['zipf']
         msg = distname + ' fails kurtosis'
         yield knf(cond, msg)(check_kurt_expect), distfn, arg, m, v, k, distname
-
 
 
 @npt.dec.slow
