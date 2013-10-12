@@ -113,7 +113,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
                 Maximum number of iterations to perform.
             disp : bool
                 Set to True to print convergence messages.
-        For method-specific options, see `show_options('minimize', method)`.
+        For method-specific options, see :func:`show_options()`.
     callback : callable, optional
         Called after each iteration, as ``callback(xk)``, where ``xk`` is the
         current parameter vector.
@@ -130,8 +130,9 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
 
     See also
     --------
-    minimize_scalar: Interface to minimization algorithms for scalar
-        univariate functions.
+    minimize_scalar : Interface to minimization algorithms for scalar
+        univariate functions
+    show_options : Additional options accepted by the solvers
 
     Notes
     -----
@@ -434,6 +435,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
             disp : bool
                 Set to True to print convergence messages.
 
+        See :func:`show_options()` for solver-specific options.
+
     Returns
     -------
     res : Result
@@ -445,8 +448,9 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
     See also
     --------
-    minimize: Interface to minimization algorithms for scalar multivariate
-        functions.
+    minimize : Interface to minimization algorithms for scalar multivariate
+        functions
+    show_options : Additional options accepted by the solvers
 
     Notes
     -----
