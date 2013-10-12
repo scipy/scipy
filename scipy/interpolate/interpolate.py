@@ -1051,7 +1051,7 @@ class BPoly(_PPolyBase):
             # we need to correct for an extra power of dy
 
             k = self.c.shape[0] - 1
-            c2 = k * np.diff(self.c, axis=0) / np.diff(self.x)[:, None, None]
+            c2 = k * np.diff(self.c, axis=0) / np.diff(self.x)[None, :, None]
 
         # construct a compatible polynomial
         pp = BPoly(c2, self.x)
