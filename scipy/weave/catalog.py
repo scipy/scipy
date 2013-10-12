@@ -180,6 +180,11 @@ def default_dir_posix(tmp_dir=None):
         home_dir = os.path.expanduser('~')
     tmp_dir = tmp_dir or tempfile.gettempdir()
 
+    xdg_cache = (os.environ.get("XDG_CACHE_HOME", None) or
+                 os.path.join(home_dir, '.cache'))
+    xdg_temp_dir = os.path.join(xdg_cache, 'scipy', python_name)
+    path_candidates.append(xdg_temp_dir)
+
     home_temp_dir_name = '.' + python_name
     home_temp_dir = os.path.join(home_dir, home_temp_dir_name)
     path_candidates.append(home_temp_dir)
