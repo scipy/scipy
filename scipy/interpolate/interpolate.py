@@ -1182,6 +1182,43 @@ def _construct_from_derivatives(xa, xb, ya, yb):
     return c
 
 
+def _raise_degree(c, d):
+    """Raise a degree of a polynomial in the Bernstein basis.
+
+    Given the coefficients of a polynomial degree `k`, return (the 
+    coefficients of) the equivalent polynomial of degree `k+d`.
+
+    Parameters
+    ----------
+    c : array_like
+        coefficient array, 1D
+    d : integer
+
+    Returns
+    -------
+    array
+        coefficient array, 1D array of length `c.shape[0] + d`
+
+    Notes
+    -----
+    This uses the fact that a Berstein polynomial `b_{a, k}` can be
+    identically represented as a linear combination of polynomials of
+    a higher degree `k+d`:
+
+        ..math:: b_{a, k} = comb(k, a) \sum_{j=0}^{d} b_{a+j, k+d} \
+                            comb(d, j) / comb(k+d, a+j)
+
+    """
+    k = c.shape[0] - 1
+    out = np.zeros(c.shape[0] + d)
+
+    for a in range(c.shape[0]):
+        f = c[a] * comb(k, a)
+        for j in range(d+1):
+            out[a+j] += f * comb(d, j) / comb(k+d, a+j)
+    return out
+
+
 # backward compatibility wrapper
 class ppform(PPoly):
     """

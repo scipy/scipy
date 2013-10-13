@@ -9,9 +9,10 @@ import warnings
 
 from scipy.lib.six import xrange
 
-from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly, ppform, 
-     splrep, splev, splantider, splint, sproot)
-from scipy.interpolate.interpolate import _construct_from_derivatives
+from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
+         ppform, splrep, splev, splantider, splint, sproot)
+from scipy.interpolate.interpolate import (_construct_from_derivatives, 
+        _raise_degree)
 
 from scipy.interpolate import _ppoly
 
@@ -936,6 +937,19 @@ class TestFromDerivatives(TestCase):
         for j in range(6):
             assert_allclose([pp(0.), pp(1.)], [ya[j], yb[j]])
             pp = pp.derivative()
+
+    def test_raise_degree(self):
+        np.random.seed(12345)
+        x = [0, 1]
+        k, d = 8, 5
+        c = np.random.random(k)
+        bp = BPoly(c[:, None], x)
+
+        c1 = _raise_degree(c, d)
+        bp1 = BPoly(c1[:, None], x)
+
+        xp = np.linspace(0, 1, 11)
+        assert_allclose(bp(xp), bp1(xp))
 
 
 class TestPpform(TestCase):
