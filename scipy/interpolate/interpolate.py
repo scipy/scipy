@@ -1010,11 +1010,11 @@ class BPoly(_PPolyBase):
 
     Notes
     -----
-    Properties of Bernstein polynomials are well documented in the literature. 
+    Properties of Bernstein polynomials are well documented in the literature.
     Here's a non-exhaustive list:
     [1]_ http://en.wikipedia.org/wiki/Bernstein_polynomial
-    [2]_ Kenneth I. Joy, Bernstein polynomials, 
-       http://www.idav.ucdavis.edu/education/CAGDNotes/Bernstein-Polynomials.pdf
+    [2]_ Kenneth I. Joy, Bernstein polynomials,
+      http://www.idav.ucdavis.edu/education/CAGDNotes/Bernstein-Polynomials.pdf
     [3]_ E. H. Doha, A. H. Bhrawy, and M. A. Saker, Boundary Value Problems,
          vol 2011, article ID 829546, doi:10.1155/2011/829543
 
@@ -1025,11 +1025,10 @@ class BPoly(_PPolyBase):
     >>> c = [[1], [2], [3]]
     >>> bp = BPoly(c, x)
 
-    This creates a 2nd order polynomial 
-    ..math::
+    This creates a 2nd order polynomial
 
-        B(x) = 1 b_{0, 2}(x) + 2 b_{1, 2}(x) + 3 b_{2, 2}(x),\
-             = 1 * (1-x)^2 + 2 * 2 x (1 - x) + 3 * x^2
+      ..math:: B(x) = 1 b_{0, 2}(x) + 2 b_{1, 2}(x) + 3 b_{2, 2}(x),\
+                     = 1 * (1-x)^2 + 2 * 2 x (1 - x) + 3 * x^2
 
     """
     def _evaluate(self, x, nu, extrapolate, out):
@@ -1039,7 +1038,7 @@ class BPoly(_PPolyBase):
     @classmethod
     def from_power_basis(cls, pp, extrapolate=None):
         """
-        Construct a piecewise polynomial in Bernstein basis 
+        Construct a piecewise polynomial in Bernstein basis
         from a power basis polynomial.
 
         Parameters
@@ -1052,7 +1051,7 @@ class BPoly(_PPolyBase):
 
         """
         dx = np.diff(pp.x)
-        k = pp.c.shape[0] - 1 # polynomial order
+        k = pp.c.shape[0] - 1   # polynomial order
 
         c = np.zeros_like(pp.c)
         for a in range(k+1):
@@ -1107,6 +1106,80 @@ class BPoly(_PPolyBase):
         pp = BPoly.construct_fast(c2, self.x, self.extrapolate)
         pp._y_extra_shape = self._y_extra_shape
         return pp
+
+
+def _construct_from_derivatives(xa, xb, ya, yb):
+    """Compute the coefficients of a polynomial in the Bernstein basis 
+    given the values and derivatives at the edges.
+
+    Return the coefficients of a polynomial in the Bernstein basis
+    defined on `[xa, xb]` and having the values and derivatives at the
+    endpoints `xa` and `xb` as specified by `ya` and `yb`, respectively.
+    The polynomial constructed is of the minimal possible degree, i.e.,
+    if the lengths of `ya` and `yb` are `na` and `nb`, the degree of the
+    polynomial is `na + nb - 1`.
+
+    Parameters
+    ----------
+    xa : float
+        Left-hand end point of the interval
+    xb : float
+        Right-hand end point of the interval
+    ya : array_like
+        Derivatives at `xa`. `ya[0]` is the value of the function, and
+        `ya[i]` for `i > 0` is the value of the `i`-th derivative.
+    yb : array_like
+        Derivatives at `xb`.
+
+    Returns
+    -------
+    array
+        coefficient array of a polynomial having specified derivatives
+
+    Notes
+    -----
+    This uses several facts from life of Bernstein basis functions.
+    First of all,
+
+        ..math:: b'_{a, n} = n (b_{a-1, n-1} - b_{a, n-1})
+
+    If B(x) is a linear combination of the form
+
+        ..math:: B(x) = \sum_{a=0}^{n} c_a b_{a, n},
+
+    then :math: B'(x) = n \sum_{a=0}^{n-1} (c_{a+1} - c_{a}) b_{a, n-1}.
+    Iterating the latter one, one finds for the q-th derivative
+
+        ..math:: B^{q}(x) = n!/(n-q)! \sum_{a=0}^{n-q} Q_a b_{a, n-q},
+
+    with
+
+      ..math:: Q_a = \sum_{j=0}^{q} (-)^{j+q} comb(q, j) c_{j+a}
+
+    This way, only `a=0` contributes to :math: `B^{q}(x = xa)`, and 
+    `c_q` are found one by one by iterating `q = 0, ..., na`.
+
+    At `x = xb` it's the same with `a = n - q`. 
+
+    """
+    na, nb = len(ya), len(yb)
+    n = na + nb
+    c = np.empty(na+nb)
+
+    # compute coefficients of a polynomial degree na+nb-1
+    # walk left-to-right
+    for q in range(0, na):
+        c[q] = ya[q] / spec.poch(n - q, q) * (xb - xa)**q
+        for j in range(0, q):
+            c[q] -= (-1)**(j+q) * comb(q, j) * c[j]
+
+    # now walk right-to-left
+    for q in range(0, nb):
+        c[-q-1] = yb[q] / spec.poch(n - q, q) * (-1)**q * (xb - xa)**q
+        for j in range(0, q):
+            c[-q-1] -= (-1)**(j+1) * comb(q, j+1) * c[-q+j]
+
+    return c
 
 
 # backward compatibility wrapper
