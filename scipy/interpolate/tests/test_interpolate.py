@@ -841,9 +841,8 @@ class TestBPolyCalculus(TestCase):
         for d in range(k):
             bp = bp.derivative()
             pp = pp.derivative()
-            for xp in np.linspace(x[0], x[-1], 11):
-                assert_allclose(bp(xp), pp(xp))
-
+            xp = np.linspace(x[0], x[-1], 21)
+            assert_allclose(bp(xp), pp(xp))
 
 class TestConversions(TestCase):
 
@@ -854,9 +853,9 @@ class TestConversions(TestCase):
         bp = BPoly.from_power_basis(pp)
         pp1 = PPoly.from_bernstein_basis(bp)
 
-        for xp in [0.1, 1.4]:
-            assert_allclose(pp(xp), bp(xp))
-            assert_allclose(pp(xp), pp1(xp))
+        xp = [0.1, 1.4]
+        assert_allclose(pp(xp), bp(xp))
+        assert_allclose(pp(xp), pp1(xp))
 
     def test_bp_from_pp_random(self):
         np.random.seed(1234)
@@ -867,9 +866,9 @@ class TestConversions(TestCase):
         bp = BPoly.from_power_basis(pp)
         pp1 = PPoly.from_bernstein_basis(bp)
 
-        for xp in np.linspace(x[0], x[-1], 11):
-            assert_allclose(pp(xp), bp(xp))
-            assert_allclose(pp(xp), pp1(xp))
+        xp = np.linspace(x[0], x[-1], 21)
+        assert_allclose(pp(xp), bp(xp))
+        assert_allclose(pp(xp), pp1(xp))
 
     def test_pp_from_bp(self):
         x = [0, 1, 3]
@@ -878,9 +877,9 @@ class TestConversions(TestCase):
         pp = PPoly.from_bernstein_basis(bp)
         bp1 = BPoly.from_power_basis(pp)
 
-        for xp in [0.1, 1.4]:
-            assert_allclose(bp(xp), pp(xp))
-            assert_allclose(bp(xp), bp1(xp))
+        xp = [0.1, 1.4]
+        assert_allclose(bp(xp), pp(xp))
+        assert_allclose(bp(xp), bp1(xp))
 
     def test_bp_from_pp_random(self):
         np.random.seed(1234)
@@ -891,9 +890,9 @@ class TestConversions(TestCase):
         pp = PPoly.from_bernstein_basis(bp)
         bp1 = BPoly.from_power_basis(pp)
 
-        for xp in np.linspace(x[0], x[-1], 11):
-            assert_allclose(pp(xp), bp(xp))
-            assert_allclose(pp(xp), bp1(xp))
+        xp = np.linspace(x[0], x[-1], 21)
+        assert_allclose(pp(xp), bp(xp))
+        assert_allclose(pp(xp), bp1(xp))
 
 
 class TestPpform(TestCase):

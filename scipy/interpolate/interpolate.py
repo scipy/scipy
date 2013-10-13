@@ -955,8 +955,9 @@ class PPoly(_PPolyBase):
             for s in range(a, k+1):
                 val = comb(k-a, s-a) * (-1)**s
                 c[k-s, ...] += factor * val / dx[:, None]**s
-
-        return cls.construct_fast(c, bp.x, extrapolate)
+        pp = cls.construct_fast(c, bp.x, extrapolate)
+        pp._y_extra_shape = bp._y_extra_shape
+        return pp
 
 
 class BPoly(_PPolyBase):
@@ -1048,8 +1049,9 @@ class BPoly(_PPolyBase):
             factor = pp.c[a, ...] / comb(k, k-a) * dx[:, None]**(k-a)
             for j in range(k-a, k+1):
                 c[j, ...] += factor * comb(j, k-a)
-
-        return cls.construct_fast(c, pp.x, extrapolate)
+        bp = cls.construct_fast(c, pp.x, extrapolate)
+        bp._y_extra_shape = pp._y_extra_shape
+        return bp
 
     def derivative(self, nu=1):
         """
