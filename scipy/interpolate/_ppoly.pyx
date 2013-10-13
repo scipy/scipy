@@ -798,10 +798,11 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
     dx : int
         Order of derivative to evaluate.  The derivative is evaluated
         piecewise and may have discontinuities.
+    extrapolate : int, optional
+        Whether to extrapolate to ouf-of-bounds points based on first
+        and last intervals, or to return NaNs.
     out : ndarray, shape (r, n)
         Value of each polynomial at each of the input points.
-        For points outside the span ``x[0] ... x[-1]``,
-        ``nan`` is returned.
         This argument is modified in-place.
 
     """
