@@ -725,6 +725,27 @@ class TestPPoly(TestCase):
         assert_allclose(pp1(xi1), pp_comb(xi1))
         assert_allclose(pp2(xi2), pp_comb(xi2))
 
+    def test_extrapolate_attr(self):
+        # [ 1 - x**2 ]
+        c = np.array([[-1, 0, 1]]).T
+        x = np.array([0, 1])
+
+        for extrapolate in [True, False, None]:
+            pp = PPoly(c, x, extrapolate=extrapolate)
+            pp_d = pp.derivative()
+            pp_i = pp.antiderivative()
+
+            if extrapolate is False:
+                assert_(np.isnan(pp([-0.1, 1.1])).all())
+                assert_(np.isnan(pp_i([-0.1, 1.1])).all())
+                assert_(np.isnan(pp_d([-0.1, 1.1])).all())
+                assert_equal(pp.roots(), [1])
+            else:
+                assert_allclose(pp([-0.1, 1.1]), [1-0.1**2, 1-1.1**2])
+                assert_(not np.isnan(pp_i([-0.1, 1.1])).any())
+                assert_(not np.isnan(pp_d([-0.1, 1.1])).any())
+                assert_allclose(pp.roots(), [1, -1])
+
 
 class TestBPoly(TestCase):
 
@@ -781,6 +802,21 @@ class TestBPoly(TestCase):
 
         assert_allclose(bp(0.4), 3 * 0.6*0.6)
         assert_allclose(bp(1.7), 2 * (0.7/2)**2)
+
+    def test_extrapolate_attr(self):
+        x = [0, 2]
+        c = [[3], [1], [4]]
+        bp = BPoly(c, x)
+
+        for extrapolate in [True, False, None]:
+            bp = BPoly(c, x, extrapolate=extrapolate)
+            bp_d = bp.derivative()
+            if extrapolate is False:
+                assert_(np.isnan(bp([-0.1, 2.1])).all())
+                assert_(np.isnan(bp_d([-0.1, 2.1])).all())
+            else:
+                assert_(not np.isnan(bp([-0.1, 2.1])).any())
+                assert_(not np.isnan(bp_d([-0.1, 2.1])).any())
 
 
 class TestBPolyCalculus(TestCase):

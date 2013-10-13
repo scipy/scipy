@@ -13,6 +13,8 @@ import scipy.special as spec
 from scipy.misc import comb
 import math
 import warnings
+import functools
+import operator
 
 from scipy.lib.six import xrange
 
@@ -28,6 +30,11 @@ def reduce_sometrue(a):
         all = sometrue(all, axis=0)
     return all
 
+def prod(x):
+    """Product of a list of numbers; ~40x faster vs np.prod for Python tuples"""
+    if len(x) == 0:
+        return 1
+    return functools.reduce(operator.mul, x)
 
 def lagrange(x, w):
     """
@@ -490,13 +497,16 @@ class _PPolyBase(_Interpolator1D):
     """
     Base class for piecewise polynomials.
     """
-    __slots__ = ('c', 'x')
+    __slots__ = ('c', 'x', 'extrapolate')
 
-    def __init__(self, c, x):
+    def __init__(self, c, x, extrapolate=None):
         _Interpolator1D.__init__(self)
 
         self.c = np.asarray(c)
         self.x = np.ascontiguousarray(x, dtype=np.float64)
+        if extrapolate is None:
+            extrapolate = True
+        self.extrapolate = bool(extrapolate)
 
         if self.x.ndim != 1:
             raise ValueError("x must be 1-dimensional")
@@ -519,7 +529,7 @@ class _PPolyBase(_Interpolator1D):
         self.c = np.ascontiguousarray(self.c, dtype=self.dtype)
 
     @classmethod
-    def construct_fast(cls, c, x):
+    def construct_fast(cls, c, x, extrapolate=None):
         """
         Construct the piecewise polynomial without making checks.
 
@@ -531,10 +541,13 @@ class _PPolyBase(_Interpolator1D):
         """
         self = _Interpolator1D.__new__(cls)
         self._y_extra_shape = c.shape[2:]
-        self.c = c.reshape(c.shape[0], c.shape[1], -1)
+        self.c = c.reshape(c.shape[0], c.shape[1], prod(self._y_extra_shape))
         self.x = x
         self._y_axis = 0
         self.dtype = c.dtype
+        if extrapolate is None:
+            extrapolate = True
+        self.extrapolate = extrapolate
         return self
 
     def _ensure_c_contiguous(self):
@@ -604,7 +617,7 @@ class _PPolyBase(_Interpolator1D):
             self.x = np.r_[x, self.x]
         self.c = c2
 
-    def __call__(self, x, nu=0, extrapolate=True):
+    def __call__(self, x, nu=0, extrapolate=None):
         """
         Evaluate the piecewise polynomial or its derivative
 
@@ -633,6 +646,8 @@ class _PPolyBase(_Interpolator1D):
         ``[a, b]``.
 
         """
+        if extrapolate is None:
+            extrapolate = self.extrapolate
         x, x_shape = self._prepare_x(x)
         y = self._evaluate(x, nu, extrapolate)
         return self._finish_y(y, x_shape)
@@ -656,6 +671,9 @@ class PPoly(_PPolyBase):
     x : ndarray, shape (m+1,)
         Polynomial breakpoints. These must be sorted in
         increasing order.
+    extrapolate : bool, optional
+        Whether to extrapolate to ouf-of-bounds points based on first
+        and last intervals, or to return NaNs. Default: True.
 
     Attributes
     ----------
@@ -735,7 +753,7 @@ class PPoly(_PPolyBase):
         c2 *= factor[:,None,None]
 
         # construct a compatible polynomial
-        pp = PPoly(c2, self.x)
+        pp = PPoly.construct_fast(c2, self.x, self.extrapolate)
         pp._y_extra_shape = self._y_extra_shape
         return pp
 
@@ -781,12 +799,12 @@ class PPoly(_PPolyBase):
         _ppoly.fix_continuity(c, self.x, nu)
 
         # construct a compatible polynomial
-        pp = PPoly(c, self.x)
+        pp = PPoly.construct_fast(c, self.x, self.extrapolate)
         pp._y_extra_shape = self._y_extra_shape
 
         return pp
 
-    def integrate(self, a, b, extrapolate=True):
+    def integrate(self, a, b, extrapolate=None):
         """
         Compute a definite integral over a piecewise polynomial.
 
@@ -806,6 +824,8 @@ class PPoly(_PPolyBase):
             Definite integral of the piecewise polynomial over [a, b]
 
         """
+        if extrapolate is None:
+            extrapolate = self.extrapolate
 
         # Swap integration bounds if needed
         sign = 1
@@ -823,7 +843,7 @@ class PPoly(_PPolyBase):
         range_int *= sign
         return range_int
 
-    def roots(self, discontinuity=True, extrapolate=True):
+    def roots(self, discontinuity=True, extrapolate=None):
         """
         Find real roots of the piecewise polynomial.
 
@@ -869,6 +889,9 @@ class PPoly(_PPolyBase):
         array([-1.,  1.])
 
         """
+        if extrapolate is None:
+            extrapolate = self.extrapolate
+
         self._ensure_c_contiguous()
 
         if np.issubdtype(self.c.dtype, np.complexfloating):
@@ -881,12 +904,12 @@ class PPoly(_PPolyBase):
             return r[0]
         else:
             # Careful when constructing the object array
-            r2 = np.empty((np.prod(self._y_extra_shape),), dtype=object)
+            r2 = np.empty((prod(self._y_extra_shape),), dtype=object)
             r2[...] = r
             return r2.reshape(self._y_extra_shape)
 
     @classmethod
-    def from_spline(cls, tck):
+    def from_spline(cls, tck, extrapolate=None):
         """
         Construct a piecewise polynomial from a spline
 
@@ -894,6 +917,9 @@ class PPoly(_PPolyBase):
         ----------
         tck
             A spline, as returned by `splrep`
+        extrapolate : bool, optional
+            Whether to extrapolate to ouf-of-bounds points based on first
+            and last intervals, or to return NaNs. Default: True.
 
         """
         t, c, k = tck
@@ -903,17 +929,21 @@ class PPoly(_PPolyBase):
             y = fitpack.splev(t[:-1], tck, der=m)
             cvals[k - m, :] = y/spec.gamma(m+1)
 
-        return cls.construct_fast(cvals, t)
+        return cls.construct_fast(cvals, t, extrapolate)
 
     @classmethod
-    def from_bernstein_basis(cls, bp):
+    def from_bernstein_basis(cls, bp, extrapolate=None):
         """
         Construct a piecewise polynomial in the power basis
         from a polynomial in Bernstein basis.
 
         Parameters
         ----------
-        bp : A Bernstein basis polynomial, as created by BPoly
+        bp : BPoly
+            A Bernstein basis polynomial, as created by BPoly
+        extrapolate : bool, optional
+            Whether to extrapolate to ouf-of-bounds points based on first
+            and last intervals, or to return NaNs. Default: True.
 
         """
         dx = np.diff(bp.x)
@@ -925,7 +955,8 @@ class PPoly(_PPolyBase):
             for s in range(a, k+1):
                 val = comb(k-a, s-a) * (-1)**s
                 c[k-s, ...] += factor * val / dx[:, None]**s
-        return cls.construct_fast(c, bp.x)
+
+        return cls.construct_fast(c, bp.x, extrapolate)
 
 
 class BPoly(_PPolyBase):
@@ -950,6 +981,9 @@ class BPoly(_PPolyBase):
     x : ndarray, shape (m+1,)
         Polynomial breakpoints. These must be sorted in
         increasing order.
+    extrapolate : bool, optional
+        Whether to extrapolate to ouf-of-bounds points based on first
+        and last intervals, or to return NaNs. Default: True.
 
     Attributes
     ----------
@@ -987,22 +1021,27 @@ class BPoly(_PPolyBase):
              = 1 * (1-x)^2 + 2 * 2 x (1 - x) + 3 * x^2
 
     """
+
     def _evaluate(self, x, nu, extrapolate):
         out = np.empty((len(x), self.c.shape[2]), dtype=self.dtype)
         self._ensure_c_contiguous()
         _ppoly.evaluate_bernstein(self.c, self.x, x, nu,
-                        bool(extrapolate), out)
+                                  bool(extrapolate), out)
         return out
 
     @classmethod
-    def from_power_basis(cls, pp):
+    def from_power_basis(cls, pp, extrapolate=None):
         """
         Construct a piecewise polynomial in Bernstein basis 
         from a power basis polynomial.
 
         Parameters
         ----------
-        pp : A piecewise polynomial in the power basis, as created by PPoly 
+        pp : PPoly
+            A piecewise polynomial in the power basis
+        extrapolate : bool, optional
+            Whether to extrapolate to ouf-of-bounds points based on first
+            and last intervals, or to return NaNs. Default: True.
 
         """
         dx = np.diff(pp.x)
@@ -1014,7 +1053,7 @@ class BPoly(_PPolyBase):
             for j in range(k-a, k+1):
                 c[j, ...] += factor * comb(j, k-a)
 
-        return cls.construct_fast(c, pp.x)
+        return cls.construct_fast(c, pp.x, extrapolate)
 
     def derivative(self, nu=1):
         """
@@ -1057,7 +1096,7 @@ class BPoly(_PPolyBase):
             c2 = k * np.diff(self.c, axis=0) / np.diff(self.x)[None, :, None]
 
         # construct a compatible polynomial
-        pp = BPoly(c2, self.x)
+        pp = BPoly.construct_fast(c2, self.x, self.extrapolate)
         pp._y_extra_shape = self._y_extra_shape
         return pp
 

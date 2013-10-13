@@ -762,7 +762,7 @@ cdef double_or_complex evaluate_bpoly1(double_or_complex s, double_or_complex[:,
         res = (c[0, ci, cj] * s1*s1*s1 + c[1, ci, cj] * 3.*s1*s1*s +
                c[2, ci, cj] * 3.*s1*s*s + c[3, ci, cj] * s*s*s)
     else:
-        # XX: replace with de Casteljau's algorithm is needs be
+        # XXX: replace with de Casteljau's algorithm, if needs be
         res, comb = 0., 1.
         for j in range(k+1):
             res += comb * s**j * s1**(k-j) * c[j, ci, cj]
@@ -771,7 +771,7 @@ cdef double_or_complex evaluate_bpoly1(double_or_complex s, double_or_complex[:,
     return res
 
 #
-# Only differs from _ppoly by evaluate_poly1 -> evaluate_bpoly1
+# Evaluation; only differs from _ppoly by evaluate_poly1 -> evaluate_bpoly1
 #
 @cython.wraparound(False)
 @cython.boundscheck(False)
