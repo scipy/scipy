@@ -752,7 +752,7 @@ class TestBPoly(TestCase):
     def test_simple(self):
         x = [0, 1]
         c = [[3]]
-        bp  = BPoly(c, x)
+        bp = BPoly(c, x)
         assert_allclose(bp(0.1), 3.)
 
     def test_simple2(self):
@@ -794,7 +794,7 @@ class TestBPoly(TestCase):
         xval = 0.1
         s = xval / 2  # s = (x - xa) / (xb - xa)
         assert_allclose(bp(xval), 3 * (1-s)*(1-s) + 1 * 2*s*(1-s) + 4 * s*s)
-    
+
     def test_two_intervals(self):
         x = [0, 1, 3]
         c = [[3, 0], [0, 0], [0, 2]]
@@ -821,23 +821,28 @@ class TestBPoly(TestCase):
 
 class TestBPolyCalculus(TestCase):
 
-    def setUp(self):
-        self.x = [0, 1, 3]
-        self.c = [[3, 0], [0, 0], [0, 2]]
-        self.bp = BPoly(self.c, self.x)  # [3*(1-x)**2, 2*((x-1)/2)**2]
-
     def test_derivative(self):
-        bp_der = self.bp.derivative()
-
+        x = [0, 1, 3]
+        c = [[3, 0], [0, 0], [0, 2]]
+        bp = BPoly(c, x)  # [3*(1-x)**2, 2*((x-1)/2)**2]
+        bp_der = bp.derivative()
         assert_allclose(bp_der(0.4), -6*(0.6))
         assert_allclose(bp_der(1.7), 0.7)
 
-        #make sure it's consistent w/ power basis
-        pp = PPoly.from_bernstein_basis(self.bp)
-        pp_der = pp.derivative()
-        
-        for xp in [0.4, 1.7]:
-            assert_allclose(bp_der(xp), pp_der(xp))
+    def test_derivative_ppoly(self):
+        # make sure it's consistent w/ power basis
+        np.random.seed(1234)
+        m, k = 5, 8   # number of intervals, order
+        x = np.sort(np.random.random(m))
+        c = np.random.random((k, m-1))
+        bp = BPoly(c, x)
+        pp = PPoly.from_bernstein_basis(bp)
+
+        for d in range(k):
+            bp = bp.derivative()
+            pp = pp.derivative()
+            for xp in np.linspace(x[0], x[-1], 11):
+                assert_allclose(bp(xp), pp(xp))
 
 
 class TestConversions(TestCase):
@@ -853,6 +858,19 @@ class TestConversions(TestCase):
             assert_allclose(pp(xp), bp(xp))
             assert_allclose(pp(xp), pp1(xp))
 
+    def test_bp_from_pp_random(self):
+        np.random.seed(1234)
+        m, k = 5, 8   # number of intervals, order
+        x = np.sort(np.random.random(m))
+        c = np.random.random((k, m-1))
+        pp = PPoly(c, x)
+        bp = BPoly.from_power_basis(pp)
+        pp1 = PPoly.from_bernstein_basis(bp)
+
+        for xp in np.linspace(x[0], x[-1], 11):
+            assert_allclose(pp(xp), bp(xp))
+            assert_allclose(pp(xp), pp1(xp))
+
     def test_pp_from_bp(self):
         x = [0, 1, 3]
         c = [[3, 3], [1, 1], [4, 2]]
@@ -863,6 +881,19 @@ class TestConversions(TestCase):
         for xp in [0.1, 1.4]:
             assert_allclose(bp(xp), pp(xp))
             assert_allclose(bp(xp), bp1(xp))
+
+    def test_bp_from_pp_random(self):
+        np.random.seed(1234)
+        m, k = 5, 8   # number of intervals, order
+        x = np.sort(np.random.random(m))
+        c = np.random.random((k, m-1))
+        bp = BPoly(c, x)
+        pp = PPoly.from_bernstein_basis(bp)
+        bp1 = BPoly.from_power_basis(pp)
+
+        for xp in np.linspace(x[0], x[-1], 11):
+            assert_allclose(pp(xp), bp(xp))
+            assert_allclose(pp(xp), bp1(xp))
 
 
 class TestPpform(TestCase):
