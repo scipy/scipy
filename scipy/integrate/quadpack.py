@@ -99,7 +99,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     maxp1 : float or int, optional
         An upper bound on the number of Chebyshev moments.
     limlst : int, optional
-        Upper bound on the number of cylces (>=3) for use with a sinusoidal
+        Upper bound on the number of cycles (>=3) for use with a sinusoidal
         weighting and an infinite end-point.
 
     See Also
