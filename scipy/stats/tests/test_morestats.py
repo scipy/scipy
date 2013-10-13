@@ -12,7 +12,7 @@ from numpy.testing import (TestCase, run_module_suite, assert_array_equal,
     assert_almost_equal, assert_array_less, assert_array_almost_equal,
     assert_raises, assert_, assert_allclose, assert_equal, dec)
 
-import scipy.stats as stats
+from scipy import stats
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
@@ -393,6 +393,10 @@ class TestProbplot(TestCase):
         assert_allclose(osr, np.sort(x))
         assert_allclose(osm, osm_expected)
 
+        res, res_fit = stats.probplot(x, fit=True)
+        res_fit_expected = [1.05361841, 0.31297795, 0.98741609]
+        assert_allclose(res_fit, res_fit_expected)
+
     def test_sparams_keyword(self):
         np.random.seed(123456)
         x = stats.norm.rvs(size=100)
@@ -408,8 +412,16 @@ class TestProbplot(TestCase):
         # Check giving (loc, scale) params for normal distribution
         osm, osr = stats.probplot(x, sparams=(), fit=False)
 
-    def test_fit(self):
-        pass
+    def test_dist_keyword(self):
+        np.random.seed(12345)
+        x = stats.norm.rvs(size=20)
+        osm1, osr1 = stats.probplot(x, fit=False, dist='t', sparams=(3,))
+        osm2, osr2 = stats.probplot(x, fit=False, dist=stats.t, sparams=(3,))
+        assert_allclose(osm1, osm2)
+        assert_allclose(osr1, osr2)
+
+        assert_raises(ValueError, stats.probplot, x, dist='wrong-dist-name')
+        assert_raises(ValueError, stats.probplot, x, dist=[])
 
     @dec.skipif(not have_matplotlib)
     def test_plot_kwarg(self):

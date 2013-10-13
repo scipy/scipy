@@ -7,17 +7,18 @@ from __future__ import division, print_function, absolute_import
 import math
 import warnings
 
+import numpy as np
+from numpy import (isscalar, r_, log, sum, around, unique, asarray,
+     zeros, arange, sort, amin, amax, any, where, atleast_1d, sqrt, ceil,
+     floor, array, poly1d, compress, not_equal, pi, exp, ravel, angle)
+from numpy.testing.decorators import setastest
+
+from scipy.lib.six import string_types
+from scipy import optimize
 from . import statlib
 from . import stats
 from .stats import find_repeats
 from . import distributions
-from numpy import isscalar, r_, log, sum, around, unique, asarray
-from numpy import zeros, arange, sort, amin, amax, any, where, \
-     atleast_1d, sqrt, ceil, floor, array, poly1d, compress, not_equal, \
-     pi, exp, ravel, angle
-import numpy as np
-import scipy.optimize as optimize
-from numpy.testing.decorators import setastest
 
 
 __all__ = ['mvsdist',
@@ -248,6 +249,39 @@ def kstatvar(data,n=2):
         raise ValueError("Only n=1 or n=2 supported.")
 
 
+def _calc_uniform_order_statistic_medians(x):
+    """See Notes section of `probplot` for details."""
+    N = len(x)
+    osm_uniform = np.zeros(N, dtype=np.float64)
+    osm_uniform[-1] = 0.5**(1.0 / N)
+    osm_uniform[0] = 1 - osm_uniform[-1]
+    i = np.arange(2, N)
+    osm_uniform[1:-1] = (i - 0.3175) / (N + 0.365)
+    return osm_uniform
+
+
+def _parse_dist_kw(dist):
+    """Parse `dist` keyword.
+
+    `dist` can be a distribution name as string, or a stats.distributions
+    instance.  Several functions take `dist` as a keyword, hence this utility
+    function.
+    """
+    if isinstance(dist, distributions.rv_generic):
+        pass
+    elif isinstance(dist, string_types):
+        try:
+            dist = getattr(distributions, dist)
+        except AttributeError:
+            raise ValueError("%s is not a valid distribution name" % dist)
+    else:
+        msg = ("`dist` should be a stats.distributions instance or a string "
+              "with the name of such a distribution.")
+        raise ValueError(msg)
+
+    return dist
+
+
 def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     """
     Calculate quantiles for a probability plot, and optionally show the plot.
@@ -348,33 +382,17 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     >>> plt.show()
 
     """
-    N = len(x)
-    Ui = zeros(N) * 1.0
-    Ui[-1] = 0.5**(1.0 / N)
-    Ui[0] = 1 - Ui[-1]
-    i = arange(2, N)
-    Ui[1:-1] = (i - 0.3175) / (N + 0.365)
-    try:
-        ppf_func = eval('distributions.%s.ppf' % dist)
-    except AttributeError:
-        raise ValueError("%s is not a valid distribution with a ppf." % dist)
+    x = np.asarray(x)
+    osm_uniform = _calc_uniform_order_statistic_medians(x)
+    dist = _parse_dist_kw(dist)
     if sparams is None:
         sparams = ()
     if isscalar(sparams):
         sparams = (sparams,)
     if not isinstance(sparams, tuple):
         sparams = tuple(sparams)
-    """
-    res = inspect.getargspec(ppf_func)
-    if not ('loc' == res[0][-2] and 'scale' == res[0][-1] and \
-            0.0==res[-1][-2] and 1.0==res[-1][-1]):
-        raise ValueError("Function has does not have default location "
-              "and scale parameters\n  that are 0.0 and 1.0 respectively.")
-    if (len(sparams) < len(res[0])-len(res[-1])-1) or \
-       (len(sparams) > len(res[0])-3):
-        raise ValueError("Incorrect number of shape parameters.")
-    """
-    osm = ppf_func(Ui, *sparams)
+
+    osm = dist.ppf(osm_uniform, *sparams)
     osr = sort(x)
     if fit or (plot is not None):
         # perform a linear fit.
@@ -420,38 +438,19 @@ def ppcc_max(x, brack=(0.0,1.0), dist='tukeylambda'):
 
     See also ppcc_plot
     """
-    try:
-        ppf_func = eval('distributions.%s.ppf' % dist)
-    except AttributeError:
-        raise ValueError("%s is not a valid distribution with a ppf." % dist)
-    """
-    res = inspect.getargspec(ppf_func)
-    if not ('loc' == res[0][-2] and 'scale' == res[0][-1] and \
-            0.0==res[-1][-2] and 1.0==res[-1][-1]):
-        raise ValueError("Function has does not have default location "
-              "and scale parameters\n  that are 0.0 and 1.0 respectively.")
-    if (1 < len(res[0])-len(res[-1])-1) or \
-       (1 > len(res[0])-3):
-        raise ValueError("Must be a one-parameter family.")
-    """
-    N = len(x)
-    # compute uniform median statistics
-    Ui = zeros(N)*1.0
-    Ui[-1] = 0.5**(1.0/N)
-    Ui[0] = 1-Ui[-1]
-    i = arange(2,N)
-    Ui[1:-1] = (i-0.3175)/(N+0.365)
+    dist = _parse_dist_kw(dist)
+    osm_uniform = _calc_uniform_order_statistic_medians(x)
     osr = sort(x)
     # this function computes the x-axis values of the probability plot
     #  and computes a linear regression (including the correlation)
     #  and returns 1-r so that a minimization function maximizes the
     #  correlation
-
     def tempfunc(shape, mi, yvals, func):
         xvals = func(mi, shape)
         r, prob = stats.pearsonr(xvals, yvals)
         return 1-r
-    return optimize.brent(tempfunc, brack=brack, args=(Ui, osr, ppf_func))
+
+    return optimize.brent(tempfunc, brack=brack, args=(osm_uniform, osr, dist.ppf))
 
 
 def ppcc_plot(x,a,b,dist='tukeylambda', plot=None, N=80):
@@ -472,8 +471,8 @@ def ppcc_plot(x,a,b,dist='tukeylambda', plot=None, N=80):
     if plot is not None:
         plot.plot(svals, ppcc, 'x')
         plot.title('(%s) PPCC Plot' % dist)
-        plot.xlabel('Prob Plot Corr. Coef.')  # ,deltay=-0.01)
-        plot.ylabel('Shape Values')  # ,deltax=-0.01)
+        plot.xlabel('Prob Plot Corr. Coef.')
+        plot.ylabel('Shape Values')
     return svals, ppcc
 
 
@@ -568,24 +567,19 @@ def boxcox(x,lmbda=None,alpha=None):
 
 
 def boxcox_normmax(x,brack=(-1.0,1.0)):
-    N = len(x)
-    # compute uniform median statistics
-    Ui = zeros(N)*1.0
-    Ui[-1] = 0.5**(1.0/N)
-    Ui[0] = 1-Ui[-1]
-    i = arange(2,N)
-    Ui[1:-1] = (i-0.3175)/(N+0.365)
+    osm_uniform = _calc_uniform_order_statistic_medians(x)
     # this function computes the x-axis values of the probability plot
     #  and computes a linear regression (including the correlation)
     #  and returns 1-r so that a minimization function maximizes the
     #  correlation
-    xvals = distributions.norm.ppf(Ui)
+    xvals = distributions.norm.ppf(osm_uniform)
 
     def tempfunc(lmbda, xvals, samps):
         y = boxcox(samps,lmbda)
         yvals = sort(y)
         r, prob = stats.pearsonr(xvals, yvals)
         return 1-r
+
     return optimize.brent(tempfunc, brack=brack, args=(xvals, x))
 
 
@@ -594,16 +588,18 @@ def boxcox_normplot(x,la,lb,plot=None,N=80):
     ppcc = svals*0.0
     k = 0
     for sval in svals:
-        # JP: this doesn't use sval, creates constant ppcc, and horizontal line
-        z = boxcox(x,sval)  # JP: this was missing
+        # This doesn't use sval, creates constant ppcc, and horizontal line
+        z = boxcox(x,sval)
         r1,r2 = probplot(z,dist='norm',fit=1)
         ppcc[k] = r2[-1]
         k += 1
+
     if plot is not None:
         plot.plot(svals, ppcc, 'x')
         plot.title('Box-Cox Normality Plot')
         plot.xlabel('Prob Plot Corr. Coef.')
         plot.ylabel('Transformation parameter')
+
     return svals, ppcc
 
 
