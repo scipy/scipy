@@ -649,8 +649,10 @@ class _PPolyBase(_Interpolator1D):
         if extrapolate is None:
             extrapolate = self.extrapolate
         x, x_shape = self._prepare_x(x)
-        y = self._evaluate(x, nu, extrapolate)
-        return self._finish_y(y, x_shape)
+        out = np.empty((len(x), self.c.shape[2]), dtype=self.dtype)
+        self._ensure_c_contiguous()
+        self._evaluate(x, nu, extrapolate, out)  # modifies `out` in-place
+        return self._finish_y(out, x_shape)
 
 
 class PPoly(_PPolyBase):
@@ -707,12 +709,10 @@ class PPoly(_PPolyBase):
     larger than 20-30.
 
     """
-    def _evaluate(self, x, nu, extrapolate):
-        out = np.empty((len(x), self.c.shape[2]), dtype=self.dtype)
-        self._ensure_c_contiguous()
-        _ppoly.evaluate(self.c, self.x, x, nu,
+    def _evaluate(self, x, nu, extrapolate, out):
+        # modifies `out` in-place
+        _ppoly.evaluate(self.c, self.x, 1.*x, nu,
                         bool(extrapolate), out)
-        return out
 
     def derivative(self, nu=1):
         """
@@ -1021,13 +1021,9 @@ class BPoly(_PPolyBase):
              = 1 * (1-x)^2 + 2 * 2 x (1 - x) + 3 * x^2
 
     """
-
-    def _evaluate(self, x, nu, extrapolate):
-        out = np.empty((len(x), self.c.shape[2]), dtype=self.dtype)
-        self._ensure_c_contiguous()
-        _ppoly.evaluate_bernstein(self.c, self.x, x, nu,
-                                  bool(extrapolate), out)
-        return out
+    def _evaluate(self, x, nu, extrapolate, out):
+        _ppoly.evaluate_bernstein(self.c, self.x, 1.*x, nu,
+                        bool(extrapolate), out)
 
     @classmethod
     def from_power_basis(cls, pp, extrapolate=None):
@@ -1131,8 +1127,8 @@ class ppform(PPoly):
     def __call__(self, x):
         return PPoly.__call__(self, x, 0, False)
 
-    def _evaluate(self, x, nu, extrapolate):
-        out = PPoly._evaluate(self, x, nu, extrapolate)
+    def _evaluate(self, x, nu, extrapolate, out):
+        PPoly._evaluate(self, x, nu, extrapolate, out)
         out[~((x >= self.a) & (x <= self.b))] = self.fill
         return out
 
