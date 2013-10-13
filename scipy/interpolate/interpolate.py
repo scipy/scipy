@@ -628,7 +628,9 @@ class _PPolyBase(_Interpolator1D):
         -----
         Derivatives are evaluated piecewise for each polynomial
         segment, even if the polynomial is not differentiable at the
-        breakpoints.
+        breakpoints. The polynomial intervals are considered half-open,
+        ``[a, b)``, except for the last interval which is closed
+        ``[a, b]``.
 
         """
         x, x_shape = self._prepare_x(x)
@@ -712,10 +714,11 @@ class PPoly(_PPolyBase):
 
         Notes
         -----
-        If the piecewise polynomial is not differentiable at the
-        breakpoints, the piecewise polynomial returned by this
-        function does not agree with the real derivative at the
-        breakpoints.
+        Derivatives are evaluated piecewise for each polynomial
+        segment, even if the polynomial is not differentiable at the
+        breakpoints. The polynomial intervals are considered half-open,
+        ``[a, b)``, except for the last interval which is closed
+        ``[a, b]``.
 
         """
         if nu < 0:
@@ -826,8 +829,8 @@ class PPoly(_PPolyBase):
 
         Parameters
         ----------
-        discont : bool, optional
-            Whether to report sign changes across discontinuities as
+        discontinuity : bool, optional
+            Whether to report sign changes across discontinuities at
             breakpoints as roots.
         extrapolate : bool, optional
             Whether to return roots from the polynomial extrapolated

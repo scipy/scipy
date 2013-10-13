@@ -607,13 +607,13 @@ class TestPPoly(TestCase):
         # Check roots repeated in multiple sections are reported only
         # once.
 
-        # [(x + 2)**2 - 1, 1 - (x - 1)**2]
+        # [(x + 1)**2 - 1, -x**2] ; x == 0 is a repeated root
         c = np.array([[1, 0, -1], [-1, 0, 0]]).T
-        x = np.array([-2, 1, 2])
+        x = np.array([-1, 0, 1])
 
         pp = PPoly(c, x)
-        assert_array_equal(pp.roots(), [-3, -1, 1])
-        assert_array_equal(pp.roots(extrapolate=False), [-1, 1])
+        assert_array_equal(pp.roots(), [-2, 0])
+        assert_array_equal(pp.roots(extrapolate=False), [0])
 
     def test_roots_discont(self):
         # Check that a discontinuity across zero is reported as root
