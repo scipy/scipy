@@ -64,7 +64,7 @@ def norm(a, ord=None):
 
     Examples
     --------
-    >>> from numpy import linalg as LA
+    >>> from scipy.linalg import norm
     >>> a = np.arange(9) - 4
     >>> a
     array([-4, -3, -2, -1,  0,  1,  2,  3,  4])
@@ -74,41 +74,41 @@ def norm(a, ord=None):
            [-1,  0,  1],
            [ 2,  3,  4]])
 
-    >>> LA.norm(a)
+    >>> norm(a)
     7.745966692414834
-    >>> LA.norm(b)
+    >>> norm(b)
     7.745966692414834
-    >>> LA.norm(b, 'fro')
+    >>> norm(b, 'fro')
     7.745966692414834
-    >>> LA.norm(a, np.inf)
+    >>> norm(a, np.inf)
     4
-    >>> LA.norm(b, np.inf)
+    >>> norm(b, np.inf)
     9
-    >>> LA.norm(a, -np.inf)
+    >>> norm(a, -np.inf)
     0
-    >>> LA.norm(b, -np.inf)
+    >>> norm(b, -np.inf)
     2
 
-    >>> LA.norm(a, 1)
+    >>> norm(a, 1)
     20
-    >>> LA.norm(b, 1)
+    >>> norm(b, 1)
     7
-    >>> LA.norm(a, -1)
+    >>> norm(a, -1)
     -4.6566128774142013e-010
-    >>> LA.norm(b, -1)
+    >>> norm(b, -1)
     6
-    >>> LA.norm(a, 2)
+    >>> norm(a, 2)
     7.745966692414834
-    >>> LA.norm(b, 2)
+    >>> norm(b, 2)
     7.3484692283495345
 
-    >>> LA.norm(a, -2)
+    >>> norm(a, -2)
     nan
-    >>> LA.norm(b, -2)
+    >>> norm(b, -2)
     1.8570331885190563e-016
-    >>> LA.norm(a, 3)
+    >>> norm(a, 3)
     5.8480354764257312
-    >>> LA.norm(a, -3)
+    >>> norm(a, -3)
     nan
 
     """
@@ -121,8 +121,6 @@ def norm(a, ord=None):
         nrm2 = getattr(blas, func_name)
         return nrm2(a)
     return np.linalg.norm(a, ord=ord)
-
-norm.__doc__ = np.linalg.norm.__doc__
 
 
 def _datacopied(arr, original):
