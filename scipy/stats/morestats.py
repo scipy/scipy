@@ -250,9 +250,10 @@ def kstatvar(data,n=2):
 
 def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     """
-    Calculate quantiles for a probability plot of sample data against a
-    specified theoretical distribution.
+    Calculate quantiles for a probability plot, and optionally show the plot.
 
+    Generates a probability plot of sample data against the quantiles of a
+    specified theoretical distribution (the normal distribution by default).
     `probplot` optionally calculates a best-fit line for the data and plots the
     results using Matplotlib or a given plot function.
 
@@ -261,7 +262,8 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     x : array_like
         Sample/response data from which `probplot` creates the plot.
     sparams : tuple, optional
-        Distribution-specific shape parameters (location(s) and scale(s)).
+        Distribution-specific shape parameters (shape parameters plus location
+        and scale).
     dist : str, optional
         Distribution function name. The default is 'norm' for a normal
         probability plot.
@@ -270,16 +272,17 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
         True (default).
     plot : object, optional
         If given, plots the quantiles and least squares fit.
-        `plot` is an object with methods "plot", "title", "xlabel", "ylabel"
-        and "text". The matplotlib.pyplot module or a Matplotlib axes object
-        can be used, or a custom object with the same methods.
-        By default, no plot is created.
+        `plot` is an object that has to have methods "plot" and "text".
+        The `matplotlib.pyplot` module or a Matplotlib Axes object can be used,
+        or a custom object with the same methods.
+        Default is None, which means that no plot is created.
 
     Returns
     -------
     (osm, osr) : tuple of ndarrays
         Tuple of theoretical quantiles (osm, or order statistic medians) and
-        ordered responses (osr).
+        ordered responses (osr).  `osr` is simply sorted input `x`.
+        For details on how `osm` is calculated see the Notes section.
     (slope, intercept, r) : tuple of floats, optional
         Tuple  containing the result of the least-squares fit, if that is
         performed by `probplot`. `r` is the square root of the coefficient of
@@ -292,9 +295,26 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     ``plot.show()`` or ``plot.savefig('figname.png')`` should be used after
     calling `probplot`.
 
+    `probplot` generates a probability plot, which should not be confused with
+    a Q-Q or a P-P plot.  Statsmodels has more extensive functionality of this
+    type, see ``statsmodels.api.ProbPlot``.
+
+    The formula used for the theoretical quantiles (horizontal axis of the
+    probability plot) is Filliben's estimate::
+
+        quantiles = dist.ppf(val), for
+
+                0.5**(1/n),                  for i = n
+          val = (i - 0.3175) / (n + 0.365),  for i = 2, ..., n-1
+                1 - 0.5**(1/n),              for i = 1
+
+    where ``i`` indicates the i-th ordered value and ``n`` is the total number
+    of values.
+
     Examples
     --------
-    >>> import scipy.stats as stats
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
     >>> nsample = 100
     >>> np.random.seed(7654321)
 
@@ -310,7 +330,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     >>> x = stats.t.rvs(25, size=nsample)
     >>> res = stats.probplot(x, plot=plt)
 
-    A mixture of 2 normal distributions with broadcasting:
+    A mixture of two normal distributions with broadcasting:
 
     >>> ax3 = plt.subplot(223)
     >>> x = stats.norm.rvs(loc=[0,5], scale=[1,1.5],
@@ -322,6 +342,10 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     >>> ax4 = plt.subplot(224)
     >>> x = stats.norm.rvs(loc=0, scale=1, size=nsample)
     >>> res = stats.probplot(x, plot=plt)
+
+    Show the results with Matplotlib:
+
+    >>> plt.show()
 
     """
     N = len(x)
@@ -355,19 +379,34 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     if fit or (plot is not None):
         # perform a linear fit.
         slope, intercept, r, prob, sterrest = stats.linregress(osm, osr)
-    if plot is not None:
-        plot.plot(osm, osr, 'o', osm, slope*osm + intercept)
-        plot.title('Probability Plot')
-        plot.xlabel('Quantiles')
-        plot.ylabel('Ordered Values')
 
+    if plot is not None:
+        plot.plot(osm, osr, 'bo', osm, slope*osm + intercept, 'r-')
+        try:
+            if hasattr(plot, 'set_title'):
+                # Matplotlib Axes instance or something that looks like it
+                plot.set_title('Probability Plot')
+                plot.set_xlabel('Quantiles')
+                plot.set_ylabel('Ordered Values')
+            else:
+                # matplotlib.pyplot module
+                plot.title('Probability Plot')
+                plot.xlabel('Quantiles')
+                plot.ylabel('Ordered Values')
+        except:
+            # Not an MPL object or something that looks (enough) like it.
+            # Don't crash on adding labels or title
+            pass
+
+        # Add R^2 value to the plot as text
         xmin = amin(osm)
         xmax = amax(osm)
         ymin = amin(x)
         ymax = amax(x)
         posx = xmin + 0.70 * (xmax - xmin)
         posy = ymin + 0.01 * (ymax - ymin)
-        plot.text(posx, posy, "r^2=%1.4f" % r)
+        plot.text(posx, posy, "$R^2=%1.4f$" % r)
+
     if fit:
         return (osm, osr), (slope, intercept, r)
     else:
