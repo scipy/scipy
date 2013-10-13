@@ -117,7 +117,7 @@ class TestBartlett(TestCase):
         assert_almost_equal(pval,0.0136358632781,7)
 
     def test_bad_arg(self):
-        """Too few args raises ValueError."""
+        # Too few args raises ValueError.
         assert_raises(ValueError, stats.bartlett, [1])
 
 
@@ -130,7 +130,8 @@ class TestLevene(TestCase):
         assert_almost_equal(pval,0.0990829755522,7)
 
     def test_trimmed1(self):
-        """Test that center='trimmed' gives the same result as center='mean' when proportiontocut=0."""
+        # Test that center='trimmed' gives the same result as center='mean'
+        # when proportiontocut=0.
         W1, pval1 = stats.levene(g1, g2, g3, center='mean')
         W2, pval2 = stats.levene(g1, g2, g3, center='trimmed', proportiontocut=0.0)
         assert_almost_equal(W1, W2)
@@ -185,11 +186,11 @@ class TestBinomP(TestCase):
         assert_almost_equal(pval,0.38249155957481695,11)
 
     def test_bad_len_x(self):
-        """Length of x must be 1 or 2."""
+        # Length of x must be 1 or 2.
         assert_raises(ValueError, stats.binom_test, [1,2,3])
 
     def test_bad_n(self):
-        """len(x) is 1, but n is invalid."""
+        # len(x) is 1, but n is invalid.
         # Missing n
         assert_raises(ValueError, stats.binom_test, [100])
         # n less than x[0]
@@ -224,7 +225,8 @@ class TestFligner(TestCase):
                            (3.2282229927203536, 0.072379187848207877), 11)
 
     def test_trimmed1(self):
-        """Test that center='trimmed' gives the same result as center='mean' when proportiontocut=0."""
+        # Test that center='trimmed' gives the same result as center='mean'
+        # when proportiontocut=0.
         Xsq1, pval1 = stats.fligner(g1, g2, g3, center='mean')
         Xsq2, pval2 = stats.fligner(g1, g2, g3, center='trimmed', proportiontocut=0.0)
         assert_almost_equal(Xsq1, Xsq2)
@@ -264,7 +266,7 @@ class TestFligner(TestCase):
         assert_raises(ValueError, stats.fligner, x, x, center='trim')
 
     def test_bad_num_args(self):
-        """Too few args raises ValueError."""
+        # Too few args raises ValueError.
         assert_raises(ValueError, stats.fligner, [1])
 
 
@@ -370,46 +372,46 @@ class TestMood(TestCase):
 
 
 def test_wilcoxon_bad_arg():
-    """Raise ValueError when two args of different lengths are given or
-       zero_method is unknwon"""
+    # Raise ValueError when two args of different lengths are given or
+    # zero_method is unknown.
     assert_raises(ValueError, stats.wilcoxon, [1], [1,2])
     assert_raises(ValueError, stats.wilcoxon, [1,2], [1,2], "dummy")
 
 
 def test_mvsdist_bad_arg():
-    """Raise ValueError if fewer than two data points are given."""
+    # Raise ValueError if fewer than two data points are given.
     data = [1]
     assert_raises(ValueError, stats.mvsdist, data)
 
 
 def test_kstat_bad_arg():
-    """Raise ValueError if n > 4 or n > 1."""
+    # Raise ValueError if n > 4 or n > 1.
     data = [1]
     n = 10
     assert_raises(ValueError, stats.kstat, data, n=n)
 
 
 def test_kstatvar_bad_arg():
-    """Raise ValueError is n is not 1 or 2."""
+    # Raise ValueError is n is not 1 or 2.
     data = [1]
     n = 10
     assert_raises(ValueError, stats.kstatvar, data, n=n)
 
 
 def test_probplot_bad_arg():
-    """Raise ValueError when given an invalid distribution."""
+    # Raise ValueError when given an invalid distribution.
     data = [1]
     assert_raises(ValueError, stats.probplot, data, dist="plate_of_shrimp")
 
 
 def test_ppcc_max_bad_arg():
-    """Raise ValueError when given an invalid distribution."""
+    # Raise ValueError when given an invalid distribution.
     data = [1]
     assert_raises(ValueError, stats.ppcc_max, data, dist="plate_of_shrimp")
 
 
 def test_boxcox_bad_arg():
-    """Raise ValueError if any data value is negative."""
+    # Raise ValueError if any data value is negative.
     x = np.array([-1])
     assert_raises(ValueError, stats.boxcox, x)
 
