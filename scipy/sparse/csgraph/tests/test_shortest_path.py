@@ -39,6 +39,14 @@ undirected_SP = np.array([[0, 3, 3, 1, 2],
                           [1, 2, 4, 0, 2],
                           [2, 4, 5, 2, 0]], dtype=float)
 
+undirected_SP_limit_2 = np.array([[0, -9999, -9999, 1, 2],
+                                  [-9999, 0, -9999, 2, -9999],
+                                  [-9999, -9999, 0, -9999, -9999],
+                                  [1, 2, -9999, 0, 2],
+                                  [2, -9999, -9999, 2, 0]], dtype=float)
+
+undirected_SP_limit_0 = - 9999 * (np.ones((5, 5), dtype=float) - np.eye(5))
+
 undirected_pred = np.array([[-9999, 0, 0, 0, 0],
                             [1, -9999, 0, 1, 1],
                             [2, 0, -9999, 0, 0],
@@ -46,6 +54,20 @@ undirected_pred = np.array([[-9999, 0, 0, 0, 0],
                             [4, 4, 0, 4, -9999]], dtype=float)
 
 methods = ['auto', 'FW', 'D', 'BF', 'J']
+
+
+def test_dijkstra_limit():
+    limits = [0, 2, np.inf]
+    results = [undirected_SP_limit_0,
+               undirected_SP_limit_2,
+               undirected_SP]
+
+    def check(limit, result):
+        SP = dijkstra(undirected_G, directed=False, limit=limit)
+        assert_array_almost_equal(SP, undirected_SP)
+
+    for limit, result in zip(limits, results):
+        yield check, limit, result
 
 
 @dec.skipif(np.version.short_version < '1.6', "Can't test arrays with infs.")

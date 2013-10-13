@@ -49,8 +49,8 @@ def shortest_path(csgraph, method='auto',
         The N x N array of distances representing the input graph.
     method : string ['auto'|'FW'|'D'], optional
         Algorithm to use for shortest paths.  Options are:
-        
-           'auto' -- (default) select the best among 'FW', 'D', 'BF', or 'J' 
+
+           'auto' -- (default) select the best among 'FW', 'D', 'BF', or 'J'
                      based on the input data.
 
            'FW'   -- Floyd-Warshall algorithm.  Computational cost is
@@ -320,7 +320,7 @@ cdef void _floyd_warshall(
 
 def dijkstra(csgraph, directed=True, indices=None,
              return_predecessors=False,
-             unweighted=False):
+             unweighted=False, limit=np.inf):
     """
     dijkstra(csgraph, directed=True, indices=None, return_predecessors=False,
              unweighted=False)
@@ -348,6 +348,11 @@ def dijkstra(csgraph, directed=True, indices=None,
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
         find the path such that the number of edges is minimized.
+    limit : float, optional
+        The maximum distance to calculate. Using a smaller limit will
+        decrease computation time by aborting calculations between pairs
+        that are separated by a distance > limit.
+        .. versionadded:: 0.14.0
 
     Returns
     -------
@@ -375,7 +380,7 @@ def dijkstra(csgraph, directed=True, indices=None,
     Also, this routine does not work for graphs with negative
     distances.  Negative distances can lead to infinite cycles that must
     be handled by specialized algorithms such as Bellman-Ford's algorithm
-    or Johnson's algorithm.    
+    or Johnson's algorithm.
     """
     global NULL_IDX
 
@@ -390,7 +395,7 @@ def dijkstra(csgraph, directed=True, indices=None,
                       "cycles. Consider johnson or bellman_ford.")
 
     N = csgraph.shape[0]
-    
+
     #------------------------------
     # intitialize/validate indices
     if indices is None:
@@ -403,6 +408,10 @@ def dijkstra(csgraph, directed=True, indices=None,
         indices[indices < 0] += N
         if np.any(indices < 0) or np.any(indices >= N):
             raise ValueError("indices out of range 0...N")
+
+    if not np.isscalar(limit):
+        raise ValueError('limit must be numeric (float)')
+    limit = float(limit)
 
     #------------------------------
     # initialize dist_matrix for output
@@ -426,7 +435,7 @@ def dijkstra(csgraph, directed=True, indices=None,
     if directed:
         _dijkstra_directed(indices,
                            csr_data, csgraph.indices, csgraph.indptr,
-                           dist_matrix, predecessor_matrix)
+                           dist_matrix, predecessor_matrix, limit)
     else:
         csgraphT = csgraph.T.tocsr()
         if unweighted:
@@ -436,7 +445,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         _dijkstra_undirected(indices,
                              csr_data, csgraph.indices, csgraph.indptr,
                              csrT_data, csgraphT.indices, csgraphT.indptr,
-                             dist_matrix, predecessor_matrix)
+                             dist_matrix, predecessor_matrix, limit)
 
     if return_predecessors:
         return (dist_matrix.reshape(return_shape),
@@ -451,13 +460,14 @@ cdef _dijkstra_directed(
             np.ndarray[ITYPE_t, ndim=1, mode='c'] csr_indices,
             np.ndarray[ITYPE_t, ndim=1, mode='c'] csr_indptr,
             np.ndarray[DTYPE_t, ndim=2, mode='c'] dist_matrix,
-            np.ndarray[ITYPE_t, ndim=2, mode='c'] pred):
+            np.ndarray[ITYPE_t, ndim=2, mode='c'] pred,
+            DTYPE_t limit):
     cdef unsigned int Nind = dist_matrix.shape[0]
     cdef unsigned int N = dist_matrix.shape[1]
     cdef unsigned int i, k, j_source, j_current
     cdef ITYPE_t j
 
-    cdef DTYPE_t weight
+    cdef DTYPE_t next_val
 
     cdef int return_pred = (pred.size > 0)
 
@@ -484,16 +494,16 @@ cdef _dijkstra_directed(
                 j_current = csr_indices[j]
                 current_node = &nodes[j_current]
                 if current_node.state != SCANNED:
-                    weight = csr_weights[j]
+                    next_val = v.val + csr_weights[j]
                     if current_node.state == NOT_IN_HEAP:
                         current_node.state = IN_HEAP
-                        current_node.val = v.val + weight
+                        current_node.val = next_val
                         insert_node(&heap, current_node)
                         if return_pred:
                             pred[i, j_current] = v.index
-                    elif current_node.val > v.val + weight:
+                    elif current_node.val > next_val && next_val <= limit:
                         decrease_val(&heap, current_node,
-                                     v.val + weight)
+                                     next_val)
                         if return_pred:
                             pred[i, j_current] = v.index
 
@@ -512,13 +522,14 @@ cdef _dijkstra_undirected(
             np.ndarray[ITYPE_t, ndim=1, mode='c'] csrT_indices,
             np.ndarray[ITYPE_t, ndim=1, mode='c'] csrT_indptr,
             np.ndarray[DTYPE_t, ndim=2, mode='c'] dist_matrix,
-            np.ndarray[ITYPE_t, ndim=2, mode='c'] pred):
+            np.ndarray[ITYPE_t, ndim=2, mode='c'] pred,
+            DTYPE_t limit):
     cdef unsigned int Nind = dist_matrix.shape[0]
     cdef unsigned int N = dist_matrix.shape[1]
     cdef unsigned int i, k, j_source, j_current
     cdef ITYPE_t j
 
-    cdef DTYPE_t weight
+    cdef DTYPE_t next_val
 
     cdef int return_pred = (pred.size > 0)
 
@@ -545,16 +556,16 @@ cdef _dijkstra_undirected(
                 j_current = csr_indices[j]
                 current_node = &nodes[j_current]
                 if current_node.state != SCANNED:
-                    weight = csr_weights[j]
+                    next_val = v.val + csr_weights[j]
                     if current_node.state == NOT_IN_HEAP:
                         current_node.state = IN_HEAP
-                        current_node.val = v.val + weight
+                        current_node.val = next_val
                         insert_node(&heap, current_node)
                         if return_pred:
                             pred[i, j_current] = v.index
-                    elif current_node.val > v.val + weight:
+                    elif current_node.val > next_val && next_val <= limit:
                         decrease_val(&heap, current_node,
-                                     v.val + weight)
+                                     next_val)
                         if return_pred:
                             pred[i, j_current] = v.index
 
@@ -562,16 +573,15 @@ cdef _dijkstra_undirected(
                 j_current = csrT_indices[j]
                 current_node = &nodes[j_current]
                 if current_node.state != SCANNED:
-                    weight = csrT_weights[j]
+                    next_val = v.val + csrT_weights[j]
                     if current_node.state == NOT_IN_HEAP:
                         current_node.state = IN_HEAP
-                        current_node.val = v.val + weight
+                        current_node.val = next_val
                         insert_node(&heap, current_node)
                         if return_pred:
                             pred[i, j_current] = v.index
-                    elif current_node.val > v.val + weight:
-                        decrease_val(&heap, current_node,
-                                     v.val + weight)
+                    elif current_node.val > next_val && next_val <= limit:
+                        decrease_val(&heap, current_node, next_val)
                         if return_pred:
                             pred[i, j_current] = v.index
 
@@ -589,7 +599,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
                  unweighted=False)
 
     Compute the shortest path lengths using the Bellman-Ford algorithm.
-    
+
     The Bellman-ford algorithm can robustly deal with graphs with negative
     weights.  If a negative cycle is detected, an error is raised.  For
     graphs without negative edge weights, dijkstra's algorithm may be faster.
@@ -902,7 +912,7 @@ def johnson(csgraph, directed=True, indices=None,
     csr_data = csgraph.data.copy()
 
     #------------------------------
-    # here we first add a single node to the graph, connected by a 
+    # here we first add a single node to the graph, connected by a
     # directed edge of weight zero to each node, and perform bellman-ford
     if directed:
         ret = _johnson_directed(csr_data, csgraph.indices,
@@ -952,7 +962,7 @@ cdef void _johnson_add_weights(
             np.ndarray[DTYPE_t, ndim=1, mode='c'] dist_array):
     # let w(u, v) = w(u, v) + h(u) - h(v)
     cdef unsigned int j, k, N = dist_array.shape[0]
-    
+
     for j from 0 <= j < N:
         for k from csr_indptr[j] <= k < csr_indptr[j + 1]:
             csr_weights[k] += dist_array[j]
@@ -983,7 +993,7 @@ cdef int _johnson_directed(
                 d2 = dist_array[csr_indices[k]]
                 if d1 + w12 < d2:
                     dist_array[csr_indices[k]] = d1 + w12
-                    
+
     # check for negative-weight cycles
     for j from 0 <= j < N:
         d1 = dist_array[j]
@@ -1023,7 +1033,7 @@ cdef int _johnson_undirected(
                     dist_array[ind_k] = d1 + w12
                 if d2 + w12 < d1:
                     dist_array[j] = d1 = d2 + w12
-                    
+
     # check for negative-weight cycles
     for j from 0 <= j < N:
         d1 = dist_array[j]
@@ -1034,7 +1044,7 @@ cdef int _johnson_undirected(
                 return j
 
     return -1
-        
+
 
 ######################################################################
 # FibonacciNode structure
