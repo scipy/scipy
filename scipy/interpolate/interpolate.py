@@ -964,14 +964,14 @@ class BPoly(_PPolyBase):
     """
     Piecewise polynomial in terms of coefficients and breakpoints
 
-    The polynomial in the ``i``-th interval is ``x[i] <= xp < x[i+1]``
+    The polynomial in the ``i``-th interval ``x[i] <= xp < x[i+1]``
     is written in the Bernstein polynomial basis::
 
-        S = sum(c[m, i] * b(m, k; x) for m in range(k+1))
+        S = sum(c[a, i] * b(a, k; x) for a in range(k+1))
 
     where ``k`` is the degree of the polynomial, and::
 
-        b(m, k; x) = comb(k, m) * t**k * (1-t)**(k-m)
+        b(a, k; x) = comb(k, a) * t**k * (1-t)**(k-a)
 
     with ``t = (x - x[i]) / (x[i+1] - x[i])``.
 
@@ -1007,6 +1007,16 @@ class BPoly(_PPolyBase):
     See also
     --------
     PPoly : piecewise polynomials in the power basis
+
+    Notes
+    -----
+    Properties of Bernstein polynomials are well documented in the literature. 
+    Here's a non-exhaustive list:
+    [1]_ http://en.wikipedia.org/wiki/Bernstein_polynomial
+    [2]_ Kenneth I. Joy, Bernstein polynomials, 
+       http://www.idav.ucdavis.edu/education/CAGDNotes/Bernstein-Polynomials.pdf
+    [3]_ E. H. Doha, A. H. Bhrawy, and M. A. Saker, Boundary Value Problems,
+         vol 2011, article ID 829546, doi:10.1155/2011/829543
 
     Examples
     --------
@@ -1059,14 +1069,14 @@ class BPoly(_PPolyBase):
 
         Parameters
         ----------
-        n : int, optional
+        nu : int, optional
             Order of derivative to evaluate. (Default: 1)
             If negative, the antiderivative is returned.
 
         Returns
         -------
         bp : BPoly
-            Piecewise polynomial of order k2 = k - n representing the derivative
+            Piecewise polynomial of order k2 = k - nu representing the derivative
             of this polynomial.
 
         """

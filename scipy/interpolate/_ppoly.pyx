@@ -731,7 +731,7 @@ cdef double_or_complex evaluate_bpoly1(double_or_complex s, double_or_complex[:,
 
     A Berstein polynomial is defined as ..math::
 
-    b_{j, k} = comb(k, j) x^{j} (1-x)^{k-j}
+        b_{j, k} = comb(k, j) x^{j} (1-x)^{k-j}
 
     with ``0 <= x <= 1``
 
