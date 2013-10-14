@@ -410,7 +410,7 @@ def dijkstra(csgraph, directed=True, indices=None,
             raise ValueError("indices out of range 0...N")
 
     if not np.isscalar(limit):
-        raise ValueError('limit must be numeric (float)')
+        raise TypeError('limit must be numeric (float)')
     limit = float(limit)
 
     #------------------------------
