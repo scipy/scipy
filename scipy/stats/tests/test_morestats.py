@@ -421,7 +421,17 @@ class TestProbplot(TestCase):
         assert_allclose(osr1, osr2)
 
         assert_raises(ValueError, stats.probplot, x, dist='wrong-dist-name')
-        assert_raises(ValueError, stats.probplot, x, dist=[])
+        assert_raises(AttributeError, stats.probplot, x, dist=[])
+
+        class custom_dist(object):
+            """Some class that looks just enough like a distribution."""
+            def ppf(self, q):
+                return stats.norm.ppf(q, loc=2)
+
+        osm1, osr1 = stats.probplot(x, sparams=(2,), fit=False)
+        osm2, osr2 = stats.probplot(x, dist=custom_dist(), fit=False)
+        assert_allclose(osm1, osm2)
+        assert_allclose(osr1, osr2)
 
     @dec.skipif(not have_matplotlib)
     def test_plot_kwarg(self):

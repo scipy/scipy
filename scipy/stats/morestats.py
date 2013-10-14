@@ -260,12 +260,20 @@ def _calc_uniform_order_statistic_medians(x):
     return osm_uniform
 
 
-def _parse_dist_kw(dist):
+def _parse_dist_kw(dist, enforce_subclass=True):
     """Parse `dist` keyword.
 
-    `dist` can be a distribution name as string, or a stats.distributions
-    instance.  Several functions take `dist` as a keyword, hence this utility
-    function.
+    Parameters
+    ----------
+    dist : str or stats.distributions instance.
+        Several functions take `dist` as a keyword, hence this utility
+        function.
+    enforce_subclass : bool, optional
+        If True (default), `dist` needs to be a `stats.rv_generic` instance.
+        It can sometimes be useful to set this keyword to False, if a function
+        wants to accept objects that just look somewhat like such an instance
+        (for example, they have a ``ppf`` method).
+
     """
     if isinstance(dist, distributions.rv_generic):
         pass
@@ -274,7 +282,7 @@ def _parse_dist_kw(dist):
             dist = getattr(distributions, dist)
         except AttributeError:
             raise ValueError("%s is not a valid distribution name" % dist)
-    else:
+    elif enforce_subclass:
         msg = ("`dist` should be a stats.distributions instance or a string "
               "with the name of such a distribution.")
         raise ValueError(msg)
@@ -298,9 +306,11 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     sparams : tuple, optional
         Distribution-specific shape parameters (shape parameters plus location
         and scale).
-    dist : str, optional
-        Distribution function name. The default is 'norm' for a normal
-        probability plot.
+    dist : str or stats.distributions instance, optional
+        Distribution or distribution function name. The default is 'norm' for a
+        normal probability plot.  Objects that look enough like a
+        stats.distributions instance (i.e. they have a ``ppf`` method) are also
+        accepted.
     fit : bool, optional
         Fit a least-squares regression (best-fit) line to the sample data if
         True (default).
@@ -377,6 +387,15 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     >>> x = stats.norm.rvs(loc=0, scale=1, size=nsample)
     >>> res = stats.probplot(x, plot=plt)
 
+    Produce a new figure with a loggamma distribution, using the ``dist`` and
+    ``sparams`` keywords:
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> x = stats.loggamma.rvs(c=2.5, size=500)
+    >>> stats.probplot(x, dist=stats.loggamma, sparams=(2.5,), plot=ax)
+    >>> ax.set_title("Probplot for loggamma dist with shape parameter 2.5")
+
     Show the results with Matplotlib:
 
     >>> plt.show()
@@ -384,7 +403,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     """
     x = np.asarray(x)
     osm_uniform = _calc_uniform_order_statistic_medians(x)
-    dist = _parse_dist_kw(dist)
+    dist = _parse_dist_kw(dist, enforce_subclass=False)
     if sparams is None:
         sparams = ()
     if isscalar(sparams):
