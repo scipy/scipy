@@ -39,13 +39,14 @@ undirected_SP = np.array([[0, 3, 3, 1, 2],
                           [1, 2, 4, 0, 2],
                           [2, 4, 5, 2, 0]], dtype=float)
 
-undirected_SP_limit_2 = np.array([[0, -9999, -9999, 1, 2],
-                                  [-9999, 0, -9999, 2, -9999],
-                                  [-9999, -9999, 0, -9999, -9999],
-                                  [1, 2, -9999, 0, 2],
-                                  [2, -9999, -9999, 2, 0]], dtype=float)
+undirected_SP_limit_2 = np.array([[0, np.inf, np.inf, 1, 2],
+                                  [np.inf, 0, np.inf, 2, np.inf],
+                                  [np.inf, np.inf, 0, np.inf, np.inf],
+                                  [1, 2, np.inf, 0, 2],
+                                  [2, np.inf, np.inf, 2, 0]], dtype=float)
 
-undirected_SP_limit_0 = - 9999 * (np.ones((5, 5), dtype=float) - np.eye(5))
+undirected_SP_limit_0 = np.ones((5, 5), dtype=float) - np.eye(5)
+undirected_SP_limit_0[undirected_SP_limit_0 > 0] = np.inf
 
 undirected_pred = np.array([[-9999, 0, 0, 0, 0],
                             [1, -9999, 0, 1, 1],
@@ -64,7 +65,7 @@ def test_dijkstra_limit():
 
     def check(limit, result):
         SP = dijkstra(undirected_G, directed=False, limit=limit)
-        assert_array_almost_equal(SP, undirected_SP)
+        assert_array_almost_equal(SP, result)
 
     for limit, result in zip(limits, results):
         yield check, limit, result

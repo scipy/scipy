@@ -495,17 +495,18 @@ cdef _dijkstra_directed(
                 current_node = &nodes[j_current]
                 if current_node.state != SCANNED:
                     next_val = v.val + csr_weights[j]
-                    if current_node.state == NOT_IN_HEAP:
-                        current_node.state = IN_HEAP
-                        current_node.val = next_val
-                        insert_node(&heap, current_node)
-                        if return_pred:
-                            pred[i, j_current] = v.index
-                    elif current_node.val > next_val && next_val <= limit:
-                        decrease_val(&heap, current_node,
-                                     next_val)
-                        if return_pred:
-                            pred[i, j_current] = v.index
+                    if next_val <= limit:
+                        if current_node.state == NOT_IN_HEAP:
+                            current_node.state = IN_HEAP
+                            current_node.val = next_val
+                            insert_node(&heap, current_node)
+                            if return_pred:
+                                pred[i, j_current] = v.index
+                        elif current_node.val > next_val:
+                            decrease_val(&heap, current_node,
+                                         next_val)
+                            if return_pred:
+                                pred[i, j_current] = v.index
 
             #v has now been scanned: add the distance to the results
             dist_matrix[i, v.index] = v.val
@@ -557,33 +558,35 @@ cdef _dijkstra_undirected(
                 current_node = &nodes[j_current]
                 if current_node.state != SCANNED:
                     next_val = v.val + csr_weights[j]
-                    if current_node.state == NOT_IN_HEAP:
-                        current_node.state = IN_HEAP
-                        current_node.val = next_val
-                        insert_node(&heap, current_node)
-                        if return_pred:
-                            pred[i, j_current] = v.index
-                    elif current_node.val > next_val && next_val <= limit:
-                        decrease_val(&heap, current_node,
-                                     next_val)
-                        if return_pred:
-                            pred[i, j_current] = v.index
+                    if next_val <= limit:
+                        if current_node.state == NOT_IN_HEAP:
+                            current_node.state = IN_HEAP
+                            current_node.val = next_val
+                            insert_node(&heap, current_node)
+                            if return_pred:
+                                pred[i, j_current] = v.index
+                        elif current_node.val > next_val:
+                            decrease_val(&heap, current_node,
+                                         next_val)
+                            if return_pred:
+                                pred[i, j_current] = v.index
 
             for j from csrT_indptr[v.index] <= j < csrT_indptr[v.index + 1]:
                 j_current = csrT_indices[j]
                 current_node = &nodes[j_current]
                 if current_node.state != SCANNED:
                     next_val = v.val + csrT_weights[j]
-                    if current_node.state == NOT_IN_HEAP:
-                        current_node.state = IN_HEAP
-                        current_node.val = next_val
-                        insert_node(&heap, current_node)
-                        if return_pred:
-                            pred[i, j_current] = v.index
-                    elif current_node.val > next_val && next_val <= limit:
-                        decrease_val(&heap, current_node, next_val)
-                        if return_pred:
-                            pred[i, j_current] = v.index
+                    if next_val <= limit:
+                        if current_node.state == NOT_IN_HEAP:
+                            current_node.state = IN_HEAP
+                            current_node.val = next_val
+                            insert_node(&heap, current_node)
+                            if return_pred:
+                                pred[i, j_current] = v.index
+                        elif current_node.val > next_val:
+                            decrease_val(&heap, current_node, next_val)
+                            if return_pred:
+                                pred[i, j_current] = v.index
 
             #v has now been scanned: add the distance to the results
             dist_matrix[i, v.index] = v.val
@@ -932,7 +935,7 @@ def johnson(csgraph, directed=True, indices=None,
     if directed:
         _dijkstra_directed(indices,
                            csr_data, csgraph.indices, csgraph.indptr,
-                           dist_matrix, predecessor_matrix)
+                           dist_matrix, predecessor_matrix, np.inf)
     else:
         csgraphT = csr_matrix((csr_data, csgraph.indices, csgraph.indptr),
                           csgraph.shape).T.tocsr()
@@ -941,7 +944,7 @@ def johnson(csgraph, directed=True, indices=None,
         _dijkstra_undirected(indices,
                              csr_data, csgraph.indices, csgraph.indptr,
                              csgraphT.data, csgraphT.indices, csgraphT.indptr,
-                             dist_matrix, predecessor_matrix)
+                             dist_matrix, predecessor_matrix, np.inf)
 
     #------------------------------
     # correct the distance matrix for the bellman-ford weights
