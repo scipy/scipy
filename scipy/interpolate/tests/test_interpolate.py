@@ -951,6 +951,90 @@ class TestFromDerivatives(TestCase):
         xp = np.linspace(0, 1, 11)
         assert_allclose(bp(xp), bp1(xp))
 
+    def test_xi_yi(self):
+        assert_raises(ValueError, BPoly.from_derivatives, [0, 1], [0])
+
+    def test_coords_order(self):
+        xi = [0, 0, 1]
+        yi = [[0], [0], [0]]
+        assert_raises(ValueError, BPoly.from_derivatives, xi, yi)
+
+    def test_zeros(self):
+        xi = [0, 1, 2, 3]
+        yi = [[0, 0], [0], [0, 0], [0, 0]]  # NB: will have to raise the degree
+        pp = BPoly.from_derivatives(xi, yi)
+        assert_(pp.c.shape == (4, 3, 1))
+
+        ppd = pp.derivative()
+        for xp in [0., 0.1, 1., 1.1, 1.9, 2., 2.5]:
+            assert_allclose([pp(xp), ppd(xp)], [0., 0.])
+
+    def _make_random_mk(self, m, k):
+        # k derivatives at each breakpoint
+        np.random.seed(1234)
+        xi = np.asarray([1. * j**2 for j in range(m+1)])
+        yi = [np.random.random(k) for j in range(m+1)]
+        return xi, yi
+
+    def test_random_12(self):
+        m, k = 5, 12
+        xi, yi = self._make_random_mk(m, k)
+        pp = BPoly.from_derivatives(xi, yi)
+
+        for order in range(k//2):
+            assert_allclose(pp(xi), [yy[order]  for yy in yi])
+            pp = pp.derivative()
+
+    def test_order_zero(self):
+        m, k = 5, 12
+        xi, yi = self._make_random_mk(m, k)
+        assert_raises(ValueError, BPoly.from_derivatives, 
+                **dict(xi=xi, yi=yi, orders=0))
+
+    def test_orders_too_high(self):
+        m, k = 5, 12
+        xi, yi = self._make_random_mk(m, k)
+
+        pp = BPoly.from_derivatives(xi, yi, orders=2*k-1)   # this is still ok
+        assert_raises(ValueError, BPoly.from_derivatives,   # but this is not
+                **dict(xi=xi, yi=yi, orders=2*k))
+
+    def test_orders_global(self):
+        m, k = 5, 12
+        xi, yi = self._make_random_mk(m, k)
+       
+        # ok, this is confusing. Local polynomials will be of the order 5
+        # which means that up to the 2nd derivatives will be used at each point
+        order = 5
+        pp = BPoly.from_derivatives(xi, yi, orders=order)
+
+        for j in range(order//2+1):
+            assert_allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12))
+            pp = pp.derivative()
+        assert_(not np.allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12)))
+        
+        # now repeat with `order` being even: on each interval, it uses
+        # order//2 'derivatives' @ the right-hand endpoint and
+        # order//2+1 @ 'derivatives' the left-hand endpoint
+        order = 6
+        pp = BPoly.from_derivatives(xi, yi, orders=order)
+        for j in range(order//2):
+            assert_allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12))
+            pp = pp.derivative()    
+        assert_(not np.allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12)))
+
+    def test_orders_local(self):
+        m, k = 7, 12
+        xi, yi = self._make_random_mk(m, k)
+
+        orders = [o + 1 for o in range(m)]
+        for i, x in enumerate(xi[1:-1]):
+            pp = BPoly.from_derivatives(xi, yi, orders=orders)
+            for j in range(orders[i] // 2 + 1):
+                assert_allclose(pp(x - 1e-12), pp(x + 1e-12))
+                pp = pp.derivative()
+            assert_(not np.allclose(pp(x - 1e-12), pp(x + 1e-12)))
+   
 
 class TestPpform(TestCase):
     def test_shape(self):
