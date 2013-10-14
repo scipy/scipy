@@ -57,6 +57,7 @@ undirected_pred = np.array([[-9999, 0, 0, 0, 0],
 methods = ['auto', 'FW', 'D', 'BF', 'J']
 
 
+@dec.skipif(np.version.short_version < '1.6', "Can't test arrays with infs.")
 def test_dijkstra_limit():
     limits = [0, 2, np.inf]
     results = [undirected_SP_limit_0,
