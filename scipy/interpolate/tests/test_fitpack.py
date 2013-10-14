@@ -4,10 +4,11 @@ import os
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_allclose, assert_,
-    TestCase, assert_raises, run_module_suite)
+    TestCase, assert_raises, run_module_suite, assert_almost_equal)
 from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
+from scipy import interpolate
 from scipy.interpolate.fitpack import (splrep, splev, bisplrep, bisplev,
-     sproot, splprep, splint, spalde, splder, splantider, insert)
+     sproot, splprep, splint, spalde, splder, splantider, insert, dblint)
 
 
 def data_file(basename):
@@ -354,6 +355,22 @@ class TestBisplrep(object):
         # code to crash when compiled with -O3
         bisplrep(data[:,0], data[:,1], data[:,2], kx=3, ky=3, s=0,
                  full_output=True)
+
+
+def test_dblint():
+    # Basic test to see it runs and gives the correct result on a trivial
+    # problem.  Note that `dblint` is not exposed in the interpolate namespace.
+    x = np.linspace(0, 1)
+    y = np.linspace(0, 1)
+    xx, yy = np.meshgrid(x, y)
+    rect = interpolate.RectBivariateSpline(x, y, 4 * xx * yy)
+    tck = list(rect.tck)
+    tck.extend(rect.degrees)
+
+    assert_almost_equal(dblint(0, 1, 0, 1, tck), 1)
+    assert_almost_equal(dblint(0, 0.5, 0, 1, tck), 0.25)
+    assert_almost_equal(dblint(0.5, 1, 0, 1, tck), 0.75)
+    assert_almost_equal(dblint(-100, 100, -100, 100, tck), 1)
 
 
 if __name__ == "__main__":

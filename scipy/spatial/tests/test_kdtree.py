@@ -703,7 +703,7 @@ def test_query_pairs_single_node_compiled():
 
 
 def test_ball_point_ints():
-    """Regression test for #1373."""
+    # Regression test for #1373.
     x, y = np.mgrid[0:4, 0:4]
     points = list(zip(x.ravel(), y.ravel()))
     tree = KDTree(points)
@@ -716,7 +716,7 @@ def test_ball_point_ints():
 
 
 def test_kdtree_comparisons():
-    """Regression test: node comparisons were done wrong in 0.12 w/Py3."""
+    # Regression test: node comparisons were done wrong in 0.12 w/Py3.
     nodes = [KDTree.node() for _ in range(3)]
     assert_equal(sorted(nodes), sorted(nodes[::-1]))
 
