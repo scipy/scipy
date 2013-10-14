@@ -714,6 +714,13 @@ def test_ball_point_ints():
     assert_equal(sorted([4, 8, 9, 12]),
                  sorted(tree.query_ball_point((2, 0), 1)))
 
+
+def test_kdtree_comparisons():
+    """Regression test: node comparisons were done wrong in 0.12 w/Py3."""
+    nodes = [KDTree.node() for _ in range(3)]
+    assert_equal(sorted(nodes), sorted(nodes[::-1]))
+
+
 # cKDTree is specialized to type double points, so no need to make
 # a unit test corresponding to test_ball_point_ints()
 
