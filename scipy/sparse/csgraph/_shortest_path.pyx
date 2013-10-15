@@ -349,9 +349,10 @@ def dijkstra(csgraph, directed=True, indices=None,
         the path between each point such that the sum of weights is minimized,
         find the path such that the number of edges is minimized.
     limit : float, optional
-        The maximum distance to calculate. Using a smaller limit will
-        decrease computation time by aborting calculations between pairs
-        that are separated by a distance > limit.
+        The maximum distance to calculate, must be >= 0. Using a smaller limit
+        will decrease computation time by aborting calculations between pairs
+        that are separated by a distance > limit. For such pairs, the distance
+        will be equal to np.inf (i.e., not connected).
         .. versionadded:: 0.14.0
 
     Returns
@@ -412,6 +413,8 @@ def dijkstra(csgraph, directed=True, indices=None,
     if not np.isscalar(limit):
         raise TypeError('limit must be numeric (float)')
     limit = float(limit)
+    if limit < 0:
+        raise ValueError('limit must be >= 0')
 
     #------------------------------
     # initialize dist_matrix for output
