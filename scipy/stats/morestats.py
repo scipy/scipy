@@ -607,6 +607,7 @@ def boxcox(x, lmbda=None, alpha=None):
     >>> plt.show()
 
     """
+    x = np.asarray(x)
     if any(x < 0):
         raise ValueError("Data must be positive.")
 

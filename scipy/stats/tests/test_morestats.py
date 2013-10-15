@@ -497,10 +497,43 @@ def test_ppcc_max_bad_arg():
     assert_raises(ValueError, stats.ppcc_max, data, dist="plate_of_shrimp")
 
 
-def test_boxcox_bad_arg():
-    # Raise ValueError if any data value is negative.
-    x = np.array([-1])
-    assert_raises(ValueError, stats.boxcox, x)
+class TestBoxcox(TestCase):
+
+    def test_fixed_lmbda(self):
+        np.random.seed(12345)
+        x = stats.loggamma.rvs(5, size=50) + 5
+        xt = stats.boxcox(x, lmbda=1)
+        assert_allclose(xt, x - 1)
+        xt = stats.boxcox(x, lmbda=-1)
+        assert_allclose(xt, 1 - 1/x)
+
+        xt = stats.boxcox(x, lmbda=0)
+        assert_allclose(xt, np.log(x))
+
+        # Also test that array_like input works
+        xt = stats.boxcox(list(x), lmbda=0)
+        assert_allclose(xt, np.log(x))
+
+    def test_lmbda_None(self):
+        np.random.seed(1234567)
+        # Start from normal rv's, do inverse transform to check that
+        # optimization function gets close to the right answer.
+        np.random.seed(1245)
+        lmbda = 2.5
+        x = stats.norm.rvs(loc=10, size=50000)
+        x_inv = (x * lmbda + 1)**(-lmbda)
+        xt, maxlog = stats.boxcox(x_inv)
+
+        assert_almost_equal(maxlog, -1 / lmbda, decimal=2)
+
+    def test_alpha(self):
+        # TODO
+        pass
+
+    def test_boxcox_bad_arg(self):
+        # Raise ValueError if any data value is negative.
+        x = np.array([-1])
+        assert_raises(ValueError, stats.boxcox, x)
 
 
 class TestCircFuncs(TestCase):
