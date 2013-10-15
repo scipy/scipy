@@ -603,13 +603,9 @@ def approx_fprime(xk, f, epsilon, *args):
     """
     f0 = f(*((xk,) + args))
     grad = numpy.zeros((len(xk),), float)
-    ei = numpy.zeros((len(xk),), float)
-    for k in range(len(xk)):
-        ei[k] = 1.0
-        d = epsilon * ei
-        grad[k] = (f(*((xk + d,) + args)) - f0) / d[k]
-        ei[k] = 0.0
-
+    ei = numpy.ones((len(xk),), float)
+    d = epsilon * ei
+    grad = (f(*((xk + d,) + args)) - f0) / d
     return grad
 
 
