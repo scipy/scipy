@@ -19,12 +19,12 @@ import numpy as np
 
 from .optimize import Result, _check_unknown_options
 
-__all__ = ['linprog','lpsimplex','verbose_callback','terse_callback']
+__all__ = ['linprog','lpsimplex','liprog_verbose_callback','linprog_terse_callback']
 
 __docformat__ = "restructuredtext en"
 
 
-def verbose_callback(xk,**kwargs):
+def linprog_verbose_callback(xk,**kwargs):
     """
     This is a sample callback for use with linprog, demonstrating the callback interface.
     This callback produces detailed output to sys.stdout before each iteration and after
@@ -66,30 +66,37 @@ def verbose_callback(xk,**kwargs):
     t_rows,t_cols = tableau.shape
 
     saved_printoptions = np.get_printoptions()
-    np.set_printoptions(linewidth=128,
+    np.set_printoptions(linewidth=256,
                         formatter={'float':lambda x: "{: 12.4f}".format(x)})
     if complete:
-        print("-------- Iteration Complete --------\n".format(iter))
+        print("-------- Iteration Complete --------\n")
+    elif iter < 0:
+        print("--------- Initial Tableau - Phase {:d} ----------\n".format(phase))
+        print(" " + "".join(["{:>13}".format(columns[i]) for i in range(t_cols)]))
+        print("" + str(tableau) + "\n")
+
     else:
         print("-------- Iteration {:d} --------\n".format(iter))
-    print("Tableau:")
-    print(" " + "".join(["{:>13}".format(columns[i]) for i in range(t_cols)]))
-    print("" + str(tableau) + "\n")
-    print("Pivot Element: T[{:.0f},{:.0f}]\n".format(pivrow,pivcol))
-    print("Basic Variables:"),
-    for basic_var in basics:
-        print("{:<5s} = {: f}".format(basic_var[0],basic_var[1]))
-    print()
-    print("Current Solution:")
-    print("x = ", xk)
-    print()
-    print("Current Objective Value:")
-    print("f = ", tableau[-1,-1])
-    print()
+
+    if iter >= 0:
+        print("Tableau:")
+        print(" " + "".join(["{:>13}".format(columns[i]) for i in range(t_cols)]))
+        print("" + str(tableau) + "\n")
+        print("Pivot Element: T[{:.0f},{:.0f}]\n".format(pivrow,pivcol))
+        print("Basic Variables:"),
+        for basic_var in basics:
+            print("{:<5s} = {: f}".format(basic_var[0],basic_var[1]))
+        print()
+        print("Current Solution:")
+        print("x = ", xk)
+        print()
+        print("Current Objective Value:")
+        print("f = ", tableau[-1,-1])
+        print()
     np.set_printoptions(**saved_printoptions)
 
 
-def terse_callback(xk, **kwargs):
+def linprog_terse_callback(xk, **kwargs):
     """
     This is a sample callback for use with linprog, demonstrating the callback interface.
     This callback produces brief output to sys.stdout before each iteration and after
@@ -203,10 +210,9 @@ def lpsimplex(tableau,n,n_slack,n_artificial,maxiter=1000,phase=2,callback=None,
         values for the ``status`` attribute are:
         -1 : Invalid arguments
          0 : Optimization terminated successfully
-         1 : Optimization terminated successfully, single feasible solution
-         2 : Iteration limit reached
-         3 : Problem appears to be infeasible
-         4 : Problem appears to be unbounded
+         1 : Iteration limit reached
+         2 : Problem appears to be infeasible
+         3 : Problem appears to be unbounded
 
         See `Result` for a description of other attributes.
     """
@@ -226,108 +232,109 @@ def lpsimplex(tableau,n,n_slack,n_artificial,maxiter=1000,phase=2,callback=None,
     pivrow = 0
     pivcol = 0
 
-    if phase == 2 and t_cols == t_rows:
-        # This is just Ax=b
-        x = np.linalg.solve(tableau[:-1,:-1], tableau[:-1,-1])
-        status = 1
-        message = "Optimization terminated successfully.  (Single feasible solution)"
-        return x, status, message, status
-    else:
-        status = -2
-        message = ""
-        cycle = 0
-        x = np.zeros([n])
+    status = None
+    message = ""
+    cycle = 0
+    x = np.zeros([n])
+
+    if not callback is None:
+        index_to_varname = {}
+        for i in range(n):
+            index_to_varname[i] = 'x[{:d}]'.format(i)
+        for i in range(n_slack):
+            index_to_varname[n+i] = 's[{:d}]'.format(i)
+        for i in range(n_artificial):
+            index_to_varname[n+n_slack+i] = 'a[{:d}]'.format(i)
+        column_headers = [index_to_varname[i] for i in range(t_cols - 1)] + ["RHS"]
+
+        callback(x, **{"tableau": tableau,
+                        "iter":-1,
+                        "vars":column_headers,
+                        "pivot":(np.nan,np.nan),
+                        "phase":phase,
+                        "basics":[],
+                        "complete": False })
+
+    while nit < maxiter and status is None:
+
+        if nit > 2**n:
+            if np.all(tableau == tableau0):
+                cycle += 1
+
+        # Find the most negative value in bottom row of tableau
+        pivcol = np.argmin(tableau[-1,:-1])
+
+        # sort the pivot column so that later we don't bother with rows where the value
+        # in pivot column is negative
+        if phase == 1:
+            pivcol_sortorder = np.argsort(tableau[:-2, pivcol])[:,np.newaxis]
+        else:
+            pivcol_sortorder = np.argsort(tableau[:-1, pivcol])[:,np.newaxis]
+
+        # Now row quotient has three columns: the original row index,
+        # the value in the pivot column, and the RHS value
+        row_quotient = np.hstack([pivcol_sortorder, tableau[pivcol_sortorder, pivcol], tableau[pivcol_sortorder, -1]])
+        # Pare down row_quotient by removing those rows where the value in the pivot column is non-positive
+        row_quotient = row_quotient[row_quotient[:,1] > 0]
+
+        # Replace the 2nd column the ratio of the RHS value / pivot column value
+        row_quotient[:,1] = row_quotient[:,2] / row_quotient[:,1]
+
+        # Sort row quotient
+        # With the negative column values removed, we now want to use the row with the minimum
+        # quotient (in column 1) as the pivot row.
+        try:
+            row_quotient = row_quotient[row_quotient[:,1].argsort(),:1]
+            pivrow = row_quotient[cycle][0]
+        except IndexError:
+            pivrow = np.nan
+            if cycle > 0:
+                message = "Optimization failed. The problem appears to be unbounded. Unable to recover from cycling."
+            status = 4
+            message = "Optimization failed. The problem appears to be unbounded."
+            break
+
+        if cycle > 0:
+            cycle = 0
+
+        pivval = tableau[pivrow,pivcol]
+        tableau[pivrow,:] = tableau[pivrow,:] / pivval
+        for irow in range(tableau.shape[0]):
+            if irow != pivrow:
+                tableau[irow,:] = tableau[irow,:] - tableau[pivrow,:]*tableau[irow,pivcol]
+
+        if np.all(tableau[-1,:-1] >= -1.0E-12):
+            status = 0
 
         if not callback is None:
-            index_to_varname = {}
-            for i in range(n):
-                index_to_varname[i] = 'x[{:d}]'.format(i)
-            for i in range(n_slack):
-                index_to_varname[n+i] = 's[{:d}]'.format(i)
-            for i in range(n_artificial):
-                index_to_varname[n+n_slack+i] = 'a[{:d}]'.format(i)
+            bv_map = np.sum(tableau[:,:-1] != 0, 0)  # bv_map is the sum of the nonzero elements in each column
+            basic_cols = np.where(bv_map == 1)[0]    # Columns with basic variables
+            basic_vars = []
+            x.fill(0.0)
+            for i in basic_cols:
+                nonzero_row = np.nonzero(tableau[:-1,i])[0][0]
+                basic_vars.append((column_headers[i], tableau[nonzero_row,-1] / tableau[nonzero_row,i]))
 
-            column_headers = [index_to_varname[i] for i in range(t_cols - 1)] + ["RHS"]
+                if i < n:
+                    x[i] = basic_vars[-1][1]
 
-        while nit < maxiter and status == -2:
+            callback(x, **{"tableau": tableau,
+                            "iter":nit,
+                            "vars":column_headers,
+                            "pivot":(pivrow,pivcol),
+                            "phase":phase,
+                            "basics":basic_vars,
+                            "complete": (not status is None) and phase == 2})
 
-            if nit > 2**n:
-                if np.all(tableau == tableau0):
-                    cycle += 1
+        nit += 1
 
-            # Find the most negative value in bottom row of tableau
-            pivcol = np.argmin(tableau[-1,:-1])
-
-            # sort the pivot column so that later we don't bother with rows where the value
-            # in pivot column is negative
-            if phase == 1:
-                pivcol_sortorder = np.argsort(tableau[:-2, pivcol])[:,np.newaxis]
-            else:
-                pivcol_sortorder = np.argsort(tableau[:-1, pivcol])[:,np.newaxis]
-
-            # Now row quotient has three columns: the original row index,
-            # the value in the pivot column, and the RHS value
-            row_quotient = np.hstack([pivcol_sortorder, tableau[pivcol_sortorder, pivcol], tableau[pivcol_sortorder, -1]])
-            # Pare down row_quotient by removing those rows where the value in the pivot column is non-positive
-            row_quotient = row_quotient[row_quotient[:,1] > 0]
-
-            # Replace the 2nd column the ratio of the RHS value / pivot column value
-            row_quotient[:,1] = row_quotient[:,2] / row_quotient[:,1]
-
-            # Sort row quotient
-            # With the negative column values removed, we now want to use the row with the minimum
-            # quotient (in column 1) as the pivot row.
-            try:
-                row_quotient = row_quotient[row_quotient[:,1].argsort(),:1]
-                pivrow = row_quotient[cycle][0]
-            except IndexError:
-                pivrow = np.nan
-                if cycle > 0:
-                    message = "Optimization failed. The problem appears to be unbounded. Unable to recover from cycling."
-                status = 4
-                message = "Optimization failed. The problem appears to be unbounded."
-                break
-
-            if cycle > 0:
-                cycle = 0
-
-            pivval = tableau[pivrow,pivcol]
-            tableau[pivrow,:] = tableau[pivrow,:] / pivval
-            for irow in range(tableau.shape[0]):
-                if irow != pivrow:
-                    tableau[irow,:] = tableau[irow,:] - tableau[pivrow,:]*tableau[irow,pivcol]
-
-            if np.all(tableau[-1,:-1] >= 0):
-                status = 0
-
-            if not callback is None:
-                bv_map = np.sum(tableau[:,:-1] != 0, 0)  # bv_map is the sum of the nonzero elements in each column
-                basic_cols = np.where(bv_map == 1)[0]    # Columns with basic variables
-                basic_vars = []
-                x.fill(0.0)
-                for i in basic_cols:
-                    nonzero_row = np.nonzero(tableau[:-1,i])[0][0]
-                    basic_vars.append((column_headers[i], tableau[nonzero_row,-1] / tableau[nonzero_row,i]))
-
-                    if i < n:
-                        x[i] = basic_vars[-1][1]
-
-                callback(x, **{"tableau": tableau,
-                                "iter":nit,
-                                "vars":column_headers,
-                                "pivot":(pivrow,pivcol),
-                                "phase":phase,
-                                "basics":basic_vars,
-                                "complete":status != -2 and phase == 2})
-            nit += 1
-
+    else:
+        if nit >= maxiter:
+            message = "Iteration limit reached."
+            status = 1
         else:
-            if nit >= maxiter:
-                message = "Iteration limit reached."
-                status = 2
-            else:
-                message = "Optimization terminated successfully."
-                status = 0
+            message = "Optimization terminated successfully."
+            status = 0
 
     bv_map = np.sum(tableau[:,:-1] != 0, 0)  # bv_map is the sum of the nonzero elements in each column
     basic_cols = np.where(bv_map == 1)[0]    # Columns with basic variables
@@ -390,11 +397,12 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,objtyp
         Returns True if the algorithm succeeded in finding an optimal solution.
     status : int
         An integer representing the exit status of the optimization::
-       -1 : Invalid arguments
-        0 : Optimization terminated successfully.
-        1 : Optimization terminated successfully, single feasible solution.
-        2 : Problem appears to be infeasible
-        3 : Problem appears to be unbounded
+        -1 : Invalid arguments
+         0 : Optimization terminated successfully
+         1 : Optimization terminated successfully, single feasible solution
+         2 : Iteration limit reached
+         3 : Problem appears to be infeasible
+         4 : Problem appears to be unbounded
     nit : int
         The number of iterations performed.
     message : str
@@ -405,18 +413,45 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,objtyp
         The nonbasic variables.
     """
     status = 0
-    message = "Optimization terminated successfully"
+    message = ""
     nit1 = 0  # Iterations used in Phase 1
-
-    Aeq = np.asarray(A_eq) if not A_eq is None else np.empty([0,0])
-    Aub = np.asarray(A_ub) if not A_ub is None else np.empty([0,0])
-    Alb = np.asarray(A_lb) if not A_lb is None else np.empty([0,0])
-
-    beq = np.ravel(np.asarray(b_eq)) if not b_eq is None else np.empty([0])
-    bub = np.ravel(np.asarray(b_ub)) if not b_ub is None else np.empty([0])
-    blb = np.ravel(np.asarray(b_lb)) if not b_lb is None else np.empty([0])
+    nit2 = 0  # Iterations used after Phase 2
 
     cc = np.asarray(c)
+
+    Aeq_in = np.asarray(A_eq) if not A_eq is None else np.empty([0,len(cc)])
+    Aub_in = np.asarray(A_ub) if not A_ub is None else np.empty([0,len(cc)])
+    Alb_in = np.asarray(A_lb) if not A_lb is None else np.empty([0,len(cc)])
+
+    beq_in = np.ravel(np.asarray(b_eq)) if not b_eq is None else np.empty([0])
+    bub_in = np.ravel(np.asarray(b_ub)) if not b_ub is None else np.empty([0])
+    blb_in = np.ravel(np.asarray(b_lb)) if not b_lb is None else np.empty([0])
+
+    # Adjust the data if we have negative resource constraints in b_ub or b_lb.
+    # Since the RHS of the tableau should be positive, we must multiply both
+    # sides of these constraints by -1.  However, when doing so the inequality sign
+    # flips and upper bounds become lower bounds, and vice-versa.
+    pos_ub_A = Aub_in[ np.where(bub_in >= 0), :][0] if not len(Aub_in) == 0 else np.empty([0,len(cc)])
+    pos_ub_b = bub_in[ np.where(bub_in >= 0), :][0] if not len(bub_in) == 0 else np.empty([0])
+    neg_lb_A = Alb_in[ np.where(blb_in < 0), :][0] if not len(Alb_in) == 0 else np.empty([0,len(cc)])
+    neg_lb_b = blb_in[ np.where(blb_in < 0), :][0] if not len(blb_in) == 0 else np.empty([0])
+    Aub = np.vstack([pos_ub_A,-neg_lb_A])
+    bub = np.concatenate([pos_ub_b,-neg_lb_b])
+
+    pos_lb_A = Alb_in[np.where(blb_in >= 0),:][0] if not len(Alb_in) == 0 else np.empty([0,len(cc)])
+    pos_lb_b = blb_in[np.where(blb_in >= 0),:][0] if not len(blb_in) == 0 else np.empty([0])
+    neg_ub_A = Aub_in[np.where(bub_in < 0),:][0] if not len(Aub_in) == 0 else np.empty([0,len(cc)])
+    neg_ub_b = bub_in[np.where(bub_in < 0),:][0] if not len(bub_in) == 0 else np.empty([0])
+    Alb = np.vstack([pos_lb_A,-neg_ub_A])
+    blb = np.concatenate([pos_lb_b,-neg_ub_b])
+
+    # For equality constraints we can just multiply by -1
+    pos_eq_A = Aeq_in[ np.where(beq_in >= 0), :][0] if not len(Aeq_in) == 0 else np.empty([0,len(cc)])
+    pos_eq_b = beq_in[ np.where(beq_in >= 0), :][0] if not len(beq_in) == 0 else np.empty([0])
+    neg_eq_A = Aeq_in[ np.where(beq_in < 0), :][0] if not len(Aeq_in) == 0 else np.empty([0,len(cc)])
+    neg_eq_b = beq_in[ np.where(beq_in < 0), :][0] if not len(beq_in) == 0 else np.empty([0])
+    Aeq = np.vstack([ pos_eq_A, -neg_eq_A ])
+    beq = np.concatenate([ pos_eq_b, -neg_eq_b ])
 
     mub = len(bub)
     mlb = len(blb)
@@ -424,19 +459,28 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,objtyp
     n = len(c)
 
     try:
-        Aub_rows, Aub_cols = Aub.shape
+        if not Aub is None:
+            Aub_rows, Aub_cols = Aub.shape
+        else:
+            Aub_rows, Aub_cols = 0,0
     except ValueError:
         status = -1
         message = "Invalid input.  A_ub must be two-dimensional"
 
     try:
-        Alb_rows, Alb_cols = Alb.shape
+        if not Alb is None:
+            Alb_rows, Alb_cols = Alb.shape
+        else:
+            Alb_rows, Alb_cols = 0,0
     except ValueError:
         status = -1
         message = "Invalid input.  A_lb must be two-dimensional"
 
     try:
-        Aeq_rows, Aeq_cols = Aeq.shape
+        if not Aeq is None:
+            Aeq_rows, Aeq_cols = Aeq.shape
+        else:
+            Aeq_rows, Aeq_cols = 0,0
     except ValueError:
         status = -1
         message = "Invalid input.  A_eq must be two-dimensional"
@@ -453,15 +497,15 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,objtyp
         status = -1
         message = "Invalid input.  The number of rows in A_ub must be equal to the number of values in b_ub"
 
-    if Aeq_cols != n:
+    if Aeq_cols > 0 and Aeq_cols != n:
         status = -1
         message = "Invalid input.  Number of columns in A_eq must be equal to the size of c"
 
-    if Alb_cols != n:
+    if Alb_cols > 0 and Alb_cols != n:
         status = -1
         message = "Invalid input.  Number of columns in A_lb must be equal to the size of c"
 
-    if Aub_cols != n:
+    if Aub_cols > 0 and Aub_cols != n:
         status = -1
         message = "Invalid input.  Number of columns in A_ub must be equal to the size of c"
 
@@ -486,7 +530,7 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,objtyp
         status = -1
         message = "Invalid input. Argument 'objtype' Must be one of 'max' or 'min'.  Got " + str(objtype)
 
-    if status == -1:
+    if status == 0:
         # b will become the RHS of the tableau
         b = np.zeros(meq+mlb+mub+1)
 
@@ -517,18 +561,17 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,objtyp
         # 2. the row has a slack/surplus variable with a sign opposite of the RHS
         # a_rows tracks those rows of the tableau with artificial variables
         a_rows = range(meq)
-        for i in range(n_slack + n_surplus):
+        for i in range(mlb+mub):
             if b[meq+i] * T[meq+i,n+i] < 0:
                 n_artificial += 1
-                a_rows.append(i)
+                a_rows.append(meq+i)
 
         # Concatenate the artificial variable columns to the tableau
         T = np.hstack([T, np.zeros([T.shape[0], n_artificial])])
         c = 0
-        for i in range(mlb+mub):
-            if i in a_rows:
-                T[i, n+n_slack+n_surplus+c] = 1
-                c += 1
+        #for i in range(mlb+mub):
+        for i in range(len(a_rows)):
+            T[a_rows[i], n+n_slack+n_surplus+i] = 1
 
         # Add the RHS column (b)
         T = np.hstack([T, np.reshape(b,[len(b),1])])
@@ -537,11 +580,6 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,objtyp
         if n_artificial > 0:
             T = np.vstack([T, np.zeros([1, T.shape[1]])])
             T[-1,n+n_slack+n_surplus:-1] = 1
-
-            # Put into correct form by ensuring RHS is entirely positive
-            for i in range(T.shape[0]):
-                if T[i,-1] < 0:
-                    T[i,:] *= -1
 
             # Make the artificial variables basic feasible variables by subtracting each
             # row with an artificial variable from the Phase 1 objective
@@ -552,37 +590,40 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,objtyp
 
             # if pseudo objective is zero, remove the last row from the tableau and
             # proceed to phase 2
-            if T[-1,-1] == 0:
+            if abs(T[-1,-1]) < 1.0E-12:
                 # Remove the pseudo-objective row from the tableau
                 T = T[:-1,:]
                 # Remove the artificial variable columns from the tableau
                 T = np.delete(T,np.s_[n+n_slack+n_surplus:n+n_slack+n_surplus+n_artificial],1)
             else:
-                print("Optimization Failed.  The problem appears to be infeasible")
-                status = 2
-                message = "Unable to find a feasible starting point.  The problem appears to be infeasible"
-                return
+                status = 3
+                message = "Optimization Failed.  Unable to find a feasible starting point."
 
         # Tableau Finished
-        x, nit2, status, message = lpsimplex(T,n,n_surplus+n_slack,n_artificial,maxiter=maxiter,
-                                             phase=2,callback=callback,nit0=nit1)
+        if status == 0:
+            x, nit2, status, message = lpsimplex(T,n,n_surplus+n_slack,n_artificial,maxiter=maxiter,
+                                                 phase=2,callback=callback,nit0=nit1)
 
-    # Optimization complete at this point
-    obj_mult = -1 if objtype == "min" else 1
+        # Optimization complete at this point
+        objmult = -1.0 if objtype == "min" else 1.0
 
-    if status in (0,1):
-        fstar = T[-1,-1] * obj_mult
-        if disp:
-            print(message)
-            print("         Current function value: {: <12.6f}".format(fstar))
-            print("         Iterations: {:d}".format(nit2))
+        if status in (0,1):
+            fstar = T[-1,-1] * objmult
+            if disp:
+                print(message)
+                print("         Current function value: {: <12.6f}".format(fstar))
+                print("         Iterations: {:d}".format(nit2))
+        else:
+            if disp:
+                print(message)
+                print("         Iterations: {:d}".format(nit2))
+
+        return Result(x=x, fun=T[-1,-1]*objmult, nit=int(nit2), status=int(status),
+                      message=message, success=(status in (0,1)))
     else:
-        if disp:
-            print(message)
-            print("         Iterations: {:d}".format(nit2))
-
-    return Result(x=x, fun=T[-1,-1]*obj_mult, nit=int(nit2), status=int(status),
-                  message=message, success=(status in (0,1)))
+        print(message)
+        return Result(x=np.zeros_like(cc), fun=0.0, nit=0, status=int(status),
+                      message=message, success=False)
 
 
 if __name__ == "__main__":
