@@ -275,6 +275,13 @@ which work for masked arrays.
    fligner
    mood
 
+.. autosummary::
+   :toctree: generated/
+
+   boxcox
+   boxcox_normmax
+   boxcox_llf
+
 Contingency table functions
 ===========================
 
@@ -295,6 +302,7 @@ Plot-tests
    ppcc_max
    ppcc_plot
    probplot
+   boxcox_normplot
 
 
 Masked statistics functions

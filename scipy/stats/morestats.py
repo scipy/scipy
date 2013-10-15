@@ -535,7 +535,7 @@ def _boxcox_conf_interval(x, lmax, alpha):
     return lmminus, lmplus
 
 
-def boxcox(x,lmbda=None,alpha=None):
+def boxcox(x, lmbda=None, alpha=None):
     """
     Return a positive dataset transformed by a Box-Cox power transformation.
 
@@ -566,21 +566,64 @@ def boxcox(x,lmbda=None,alpha=None):
         tuple of floats represents the minimum and maximum confidence limits
         given `alpha`.
 
+    See Also
+    --------
+    probplot, boxcox_normplot, boxcox_normmax, boxcox_llf
+
+    Notes
+    -----
+    The Box-Cox transform is given by::
+
+        y = (x**lmbda - 1) / lmbda,  for lmbda > 0
+            log(x),                  for lmbda = 0
+
+    `boxcox` requires the input data to be positives.  Sometimes a Box-Cox
+    transformation provides a shift parameter to achieve this; `boxcox` does
+    not.  Such a shift parameter is equivalent to adding a positive constant to
+    `x` before calling `boxcox`.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    We generate some random variates from a non-normal distribution and make a
+    probability plot for it, to show it is non-normal in the tails:
+
+    >>> fig = plt.figure()
+    >>> ax1 = fig.add_subplot(211)
+    >>> x = stats.loggamma.rvs(5, size=500) + 5
+    >>> stats.probplot(x, dist=stats.norm, plot=ax1)
+    >>> ax1.set_xlabel('')
+    >>> ax1.set_title('Probplot against normal distribution')
+
+    We now use `boxcox` to transform the data so it's closest to normal:
+
+    >>> ax2 = fig.add_subplot(212)
+    >>> xt, _ = stats.boxcox(x)
+    >>> stats.probplot(xt, dist=stats.norm, plot=ax2)
+    >>> ax2.set_title('Probplot after Box-Cox transformation')
+
+    >>> plt.show()
+
     """
     if any(x < 0):
         raise ValueError("Data must be positive.")
+
     if lmbda is not None:  # single transformation
-        lmbda = lmbda*(x == x)
-        y = where(lmbda == 0, log(x), (x**lmbda - 1)/lmbda)
+        lmbda = lmbda * (x == x)  # equal to ``lmbda * np.ones(x.shape)``
+        y = where(lmbda == 0, log(x), (x**lmbda - 1) / lmbda)
         return y
 
     # Otherwise find the lmbda that maximizes the log-likelihood function.
     def tempfunc(lmb, data):  # function to minimize
-        return -boxcox_llf(lmb,data)
-    lmax = optimize.brent(tempfunc, brack=(-2.0,2.0),args=(x,))
+        return -boxcox_llf(lmb, data)
+
+    lmax = optimize.brent(tempfunc, brack=(-2., 2), args=(x,))
     y = boxcox(x, lmax)
     if alpha is None:
         return y, lmax
+
     # Otherwise find confidence interval
     interval = _boxcox_conf_interval(x, lmax, alpha)
     return y, lmax, interval
