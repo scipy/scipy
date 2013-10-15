@@ -221,7 +221,7 @@ def lpsimplex(tableau,n,n_slack,n_artificial,maxiter=1000,phase=2,callback=None,
 
     if phase not in (1,2):
         status = -1
-        pass
+        message = "Invalid input to lpsimplex.  Phase must be 1 or 2."
 
     # Make a copy of the tableau that will be used to detect cycling
     tableau0 = np.empty_like(tableau)
@@ -290,7 +290,7 @@ def lpsimplex(tableau,n,n_slack,n_artificial,maxiter=1000,phase=2,callback=None,
             pivrow = np.nan
             if cycle > 0:
                 message = "Optimization failed. The problem appears to be unbounded. Unable to recover from cycling."
-            status = 4
+            status = 3
             message = "Optimization failed. The problem appears to be unbounded."
             break
 
@@ -399,10 +399,9 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,objtyp
         An integer representing the exit status of the optimization::
         -1 : Invalid arguments
          0 : Optimization terminated successfully
-         1 : Optimization terminated successfully, single feasible solution
-         2 : Iteration limit reached
-         3 : Problem appears to be infeasible
-         4 : Problem appears to be unbounded
+         1 : Iteration limit reached
+         2 : Problem appears to be infeasible
+         3 : Problem appears to be unbounded
     nit : int
         The number of iterations performed.
     message : str
@@ -516,10 +515,10 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,objtyp
     n_surplus = mlb
 
     # Add artificial variables for the equality constraints (more may be added later)
-    n_artificial = meq
+    n_artificial = meq+mlb
 
     # Create the tableau
-    T = np.zeros([meq+mlb+mub+1,n+n_slack+n_surplus])
+    T = np.zeros([meq+mlb+mub+1,n+n_slack+n_surplus+n_artificial])
 
     # Insert objective into tableau
     if objtype.lower()[:3] == "max":
@@ -560,18 +559,15 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,objtyp
         # 1. the row is an equality constraint
         # 2. the row has a slack/surplus variable with a sign opposite of the RHS
         # a_rows tracks those rows of the tableau with artificial variables
-        a_rows = range(meq)
-        for i in range(mlb+mub):
-            if b[meq+i] * T[meq+i,n+i] < 0:
-                n_artificial += 1
-                a_rows.append(meq+i)
 
-        # Concatenate the artificial variable columns to the tableau
-        T = np.hstack([T, np.zeros([T.shape[0], n_artificial])])
-        c = 0
-        #for i in range(mlb+mub):
-        for i in range(len(a_rows)):
-            T[a_rows[i], n+n_slack+n_surplus+i] = 1
+        # We need artificial variables if:
+        # 1. the row is an equality constraint
+        # 2. the row has a slack/surplus variable with an opposite side of the RHS
+        # Since the constraints have been reworked such that the RHS is entirely
+        # nonnegative, the artificial variables apply to the first (meq+mlb)
+        # rows.
+        #
+        T[:meq+mlb, n+n_slack+n_surplus:n+n_slack+n_surplus+n_artificial] = np.eye(meq+mlb)
 
         # Add the RHS column (b)
         T = np.hstack([T, np.reshape(b,[len(b),1])])
@@ -583,7 +579,7 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,objtyp
 
             # Make the artificial variables basic feasible variables by subtracting each
             # row with an artificial variable from the Phase 1 objective
-            for r in a_rows:
+            for r in range(meq+mlb):
                 T[-1,:] = T[-1,:] - T[r,:]
 
             x, nit1, status, message = lpsimplex(T,n,n_surplus+n_slack,n_artificial,phase=1,callback=callback,maxiter=maxiter)
@@ -596,7 +592,7 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,objtyp
                 # Remove the artificial variable columns from the tableau
                 T = np.delete(T,np.s_[n+n_slack+n_surplus:n+n_slack+n_surplus+n_artificial],1)
             else:
-                status = 3
+                status = 2
                 message = "Optimization Failed.  Unable to find a feasible starting point."
 
         # Tableau Finished
@@ -621,6 +617,7 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,objtyp
         return Result(x=x, fun=T[-1,-1]*objmult, nit=int(nit2), status=int(status),
                       message=message, success=(status in (0,1)))
     else:
+        # Invalid inputs provided
         print(message)
         return Result(x=np.zeros_like(cc), fun=0.0, nit=0, status=int(status),
                       message=message, success=False)
