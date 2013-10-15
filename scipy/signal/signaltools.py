@@ -1323,7 +1323,7 @@ def resample(x, num, t=None, axis=0, window=None):
             W = window
         else:
             W = ifftshift(get_window(window, Nx))
-        newshape = ones(len(x.shape), dtype=int)
+        newshape = [1] * x.ndim
         newshape[axis] = len(W)
         W.shape = newshape
         X = X * W
