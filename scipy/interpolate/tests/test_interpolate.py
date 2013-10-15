@@ -414,6 +414,22 @@ class TestPPoly(TestCase):
         assert_allclose(p(0.3), 1*0.3**2 + 2*0.3 + 3)
         assert_allclose(p(0.7), 4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6)
 
+    def test_multi_shape(self):
+        c = np.random.rand(6, 2, 1, 2, 3)
+        x = np.array([0, 0.5, 1])
+        p = PPoly(c, x)
+        assert_equal(p.x.shape, x.shape)
+        assert_equal(p.c.shape, c.shape)
+        assert_equal(p(0.3).shape, c.shape[2:])
+
+        assert_equal(p(np.random.rand(5,6)).shape,
+                     (5,6) + c.shape[2:])
+
+        dp = p.derivative()
+        assert_equal(dp.c.shape, (5, 2, 1, 2, 3))
+        ip = p.antiderivative()
+        assert_equal(ip.c.shape, (7, 2, 1, 2, 3))
+
     def test_construct_fast(self):
         np.random.seed(1234)
         c = np.array([[1, 4], [2, 5], [3, 6]], dtype=float)
@@ -506,11 +522,11 @@ class TestPPoly(TestCase):
         c = np.array([[3, 2, 1], [0, 0, 1.6875]]).T
         # [ pp1(x) = x**3 + x**2 + x,
         #   pp2(x) = 1.6875*(x - 0.25) + pp1(0.25)]
-        ic = np.array([[1, 1, 1, 0], [0, 0, 1.6875, 0.328125]]).T[:,:,None]
+        ic = np.array([[1, 1, 1, 0], [0, 0, 1.6875, 0.328125]]).T
         # [ ppp1(x) = (1/4)*x**4 + (1/3)*x**3 + (1/2)*x**2,
         #   ppp2(x) = (1.6875/2)*(x - 0.25)**2 + pp1(0.25)*x + ppp1(0.25)]
         iic = np.array([[1/4, 1/3, 1/2, 0, 0],
-                        [0, 0, 1.6875/2, 0.328125, 0.037434895833333336]]).T[:,:,None]
+                        [0, 0, 1.6875/2, 0.328125, 0.037434895833333336]]).T
         x = np.array([0, 0.25, 1])
 
         pp = PPoly(c, x)
@@ -789,6 +805,19 @@ class TestBPoly(TestCase):
                              2 * 4 * 0.7 * 0.3**3 +
                                  0.3**4)
 
+    def test_multi_shape(self):
+        c = np.random.rand(6, 2, 1, 2, 3)
+        x = np.array([0, 0.5, 1])
+        p = BPoly(c, x)
+        assert_equal(p.x.shape, x.shape)
+        assert_equal(p.c.shape, c.shape)
+        assert_equal(p(0.3).shape, c.shape[2:])
+        assert_equal(p(np.random.rand(5,6)).shape,
+                     (5,6)+c.shape[2:])
+
+        dp = p.derivative()
+        assert_equal(dp.c.shape, (5, 2, 1, 2, 3))
+
     def test_interval_length(self):
         x = [0, 2]
         c = [[3], [1], [4]]
@@ -846,7 +875,7 @@ class TestBPolyCalculus(TestCase):
             xp = np.linspace(x[0], x[-1], 21)
             assert_allclose(bp(xp), pp(xp))
 
-class TestConversions(TestCase):
+class TestPolyConversions(TestCase):
 
     def test_bp_from_pp(self):
         x = [0, 1, 3]
@@ -883,21 +912,8 @@ class TestConversions(TestCase):
         assert_allclose(bp(xp), pp(xp))
         assert_allclose(bp(xp), bp1(xp))
 
-    def test_bp_from_pp_random(self):
-        np.random.seed(1234)
-        m, k = 5, 8   # number of intervals, order
-        x = np.sort(np.random.random(m))
-        c = np.random.random((k, m-1))
-        bp = BPoly(c, x)
-        pp = PPoly.from_bernstein_basis(bp)
-        bp1 = BPoly.from_power_basis(pp)
 
-        xp = np.linspace(x[0], x[-1], 21)
-        assert_allclose(pp(xp), bp(xp))
-        assert_allclose(pp(xp), bp1(xp))
-
-
-class TestFromDerivatives(TestCase):
+class TestBPolyFromDerivatives(TestCase):
     def test_make_poly_1(self):
         c1 = _construct_from_derivatives(0, 1, [2], [3])
         assert_allclose(c1, [2., 3.])
@@ -963,7 +979,7 @@ class TestFromDerivatives(TestCase):
         xi = [0, 1, 2, 3]
         yi = [[0, 0], [0], [0, 0], [0, 0]]  # NB: will have to raise the degree
         pp = BPoly.from_derivatives(xi, yi)
-        assert_(pp.c.shape == (4, 3, 1))
+        assert_(pp.c.shape == (4, 3))
 
         ppd = pp.derivative()
         for xp in [0., 0.1, 1., 1.1, 1.9, 2., 2.5]:

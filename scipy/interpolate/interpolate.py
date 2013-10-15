@@ -493,15 +493,13 @@ class interp1d(_Interpolator1D):
         return out_of_bounds
 
 
-class _PPolyBase(_Interpolator1D):
+class _PPolyBase(object):
     """
     Base class for piecewise polynomials.
     """
     __slots__ = ('c', 'x', 'extrapolate')
 
     def __init__(self, c, x, extrapolate=None):
-        _Interpolator1D.__init__(self)
-
         self.c = np.asarray(c)
         self.x = np.ascontiguousarray(x, dtype=np.float64)
         if extrapolate is None:
@@ -512,21 +510,24 @@ class _PPolyBase(_Interpolator1D):
             raise ValueError("x must be 1-dimensional")
         if self.x.size < 2:
             raise ValueError("at least 2 breakpoints are needed")
+        if self.c.ndim < 2:
+            raise ValueError("c must have at least 2 dimensions")
+        if self.c.shape[0] == 0:
+            raise ValueError("polynomial must be at least of order 0")
         if self.c.shape[1] != self.x.size-1:
             raise ValueError("number of coefficients != len(x)-1")
         if np.any(self.x[1:] - self.x[:-1] < 0):
             raise ValueError("x-coordinates are not in increasing order")
 
-        self._y_axis = 0
-        self._y_extra_shape = self.c.shape[2:]
-        self._set_dtype(self.c.dtype)
+        dtype = self._get_dtype(self.c.dtype)
+        self.c = np.ascontiguousarray(self.c, dtype=dtype)
 
-        if self.c.ndim != 3:
-            if self.c.size == 0:
-                # reshape raises a difficult to understand error
-                raise ValueError("No coefficients")
-            self.c = self.c.reshape(self.c.shape[0], self.c.shape[1], -1)
-        self.c = np.ascontiguousarray(self.c, dtype=self.dtype)
+    def _get_dtype(self, dtype):
+        if np.issubdtype(dtype, np.complexfloating) \
+               or np.issubdtype(self.c.dtype, np.complexfloating):
+            return np.complex_
+        else:
+            return np.float_
 
     @classmethod
     def construct_fast(cls, c, x, extrapolate=None):
@@ -539,12 +540,9 @@ class _PPolyBase(_Interpolator1D):
         array must have dtype float.
 
         """
-        self = _Interpolator1D.__new__(cls)
-        self._y_extra_shape = c.shape[2:]
-        self.c = c.reshape(c.shape[0], c.shape[1], prod(self._y_extra_shape))
+        self = object.__new__(cls)
+        self.c = c
         self.x = x
-        self._y_axis = 0
-        self.dtype = c.dtype
         if extrapolate is None:
             extrapolate = True
         self.extrapolate = extrapolate
@@ -587,7 +585,7 @@ class _PPolyBase(_Interpolator1D):
             raise ValueError("invalid dimensions for x")
         if x.shape[0] != c.shape[1]:
             raise ValueError("x and c have incompatible sizes")
-        if c.shape[2:] != self._y_extra_shape:
+        if c.shape[2:] != self.c.shape[2:] or c.ndim != self.c.ndim:
             raise ValueError("c and self.c have incompatible shapes")
         if right:
             if x[0] < self.x[-1]:
@@ -599,22 +597,21 @@ class _PPolyBase(_Interpolator1D):
         if c.size == 0:
             return
 
-        self._set_dtype(c.dtype, union=True)
-
-        c = c.reshape(c.shape[0], c.shape[1], -1)
+        dtype = self._get_dtype(c.dtype)
 
         k2 = max(c.shape[0], self.c.shape[0])
-        c2 = np.zeros((k2, self.c.shape[1] + c.shape[1], self.c.shape[2]),
-                      dtype=self.dtype)
+        c2 = np.zeros((k2, self.c.shape[1] + c.shape[1]) + self.c.shape[2:],
+                      dtype=dtype)
 
         if right:
-            c2[k2-self.c.shape[0]:, :self.c.shape[1], :] = self.c
-            c2[k2-c.shape[0]:, self.c.shape[1]:, :] = c
+            c2[k2-self.c.shape[0]:, :self.c.shape[1]] = self.c
+            c2[k2-c.shape[0]:, self.c.shape[1]:] = c
             self.x = np.r_[self.x, x]
         else:
-            c2[k2-self.c.shape[0]:, :c.shape[1], :] = c
-            c2[k2-c.shape[0]:, c.shape[1]:, :] = self.c
+            c2[k2-self.c.shape[0]:, :c.shape[1]] = c
+            c2[k2-c.shape[0]:, c.shape[1]:] = self.c
             self.x = np.r_[x, self.x]
+
         self.c = c2
 
     def __call__(self, x, nu=0, extrapolate=None):
@@ -648,11 +645,13 @@ class _PPolyBase(_Interpolator1D):
         """
         if extrapolate is None:
             extrapolate = self.extrapolate
-        x, x_shape = self._prepare_x(x)
-        out = np.empty((len(x), self.c.shape[2]), dtype=self.dtype)
+        x = np.asarray(x)
+        x_shape = x.shape
+        x = np.ascontiguousarray(x.ravel(), dtype=np.float_)
+        out = np.empty((len(x), prod(self.c.shape[2:])), dtype=self.c.dtype)
         self._ensure_c_contiguous()
-        self._evaluate(x, nu, extrapolate, out)  # modifies `out` in-place
-        return self._finish_y(out, x_shape)
+        self._evaluate(x, nu, extrapolate, out)
+        return out.reshape(x_shape + self.c.shape[2:])
 
 
 class PPoly(_PPolyBase):
@@ -709,10 +708,10 @@ class PPoly(_PPolyBase):
     larger than 20-30.
 
     """
+
     def _evaluate(self, x, nu, extrapolate, out):
-        # modifies `out` in-place
-        _ppoly.evaluate(self.c, self.x, 1.*x, nu,
-                        bool(extrapolate), out)
+        _ppoly.evaluate(self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+                        self.x, 1.*x, nu, bool(extrapolate), out)
 
     def derivative(self, nu=1):
         """
@@ -746,16 +745,18 @@ class PPoly(_PPolyBase):
         if nu == 0:
             c2 = self.c.copy()
         else:
-            c2 = self.c[:-nu,:,:].copy()
+            c2 = self.c[:-nu,:].copy()
+
+        if c2.shape[0] == 0:
+            # derivative of order 0 is zero
+            c2 = np.zeros((1,) + c2.shape[1:], dtype=c2.dtype)
 
         # multiply by the correct rising factorials
         factor = spec.poch(np.arange(c2.shape[0], 0, -1), nu)
-        c2 *= factor[:,None,None]
+        c2 *= factor[(slice(None),) + (None,)*(c2.ndim-1)]
 
         # construct a compatible polynomial
-        pp = PPoly.construct_fast(c2, self.x, self.extrapolate)
-        pp._y_extra_shape = self._y_extra_shape
-        return pp
+        return PPoly.construct_fast(c2, self.x, self.extrapolate)
 
     def antiderivative(self, nu=1):
         """
@@ -786,23 +787,21 @@ class PPoly(_PPolyBase):
         if nu <= 0:
             return self.derivative(-nu)
 
-        c = np.zeros((self.c.shape[0] + nu, self.c.shape[1], self.c.shape[2]),
+        c = np.zeros((self.c.shape[0] + nu, self.c.shape[1]) + self.c.shape[2:],
                      dtype=self.c.dtype)
         c[:-nu] = self.c
 
         # divide by the correct rising factorials
         factor = spec.poch(np.arange(self.c.shape[0], 0, -1), nu)
-        c[:-nu] /= factor[:,None,None]
+        c[:-nu] /= factor[(slice(None),) + (None,)*(c.ndim-1)]
 
         # fix continuity of added degrees of freedom
         self._ensure_c_contiguous()
-        _ppoly.fix_continuity(c, self.x, nu)
+        _ppoly.fix_continuity(c.reshape(c.shape[0], c.shape[1], -1),
+                              self.x, nu)
 
         # construct a compatible polynomial
-        pp = PPoly.construct_fast(c, self.x, self.extrapolate)
-        pp._y_extra_shape = self._y_extra_shape
-
-        return pp
+        return PPoly.construct_fast(c, self.x, self.extrapolate)
 
     def integrate(self, a, b, extrapolate=None):
         """
@@ -834,14 +833,15 @@ class PPoly(_PPolyBase):
             sign = -1
 
         # Compute the integral
-        range_int = np.empty((self.c.shape[2],), dtype=self.c.dtype)
+        range_int = np.empty((prod(self.c.shape[2:]),), dtype=self.c.dtype)
         self._ensure_c_contiguous()
-        _ppoly.integrate(self.c, self.x, a, b, bool(extrapolate),
+        _ppoly.integrate(self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+                         self.x, a, b, bool(extrapolate),
                          out=range_int)
 
         # Return
         range_int *= sign
-        return range_int
+        return range_int.reshape(self.c.shape[2:])
 
     def roots(self, discontinuity=True, extrapolate=None):
         """
@@ -898,15 +898,15 @@ class PPoly(_PPolyBase):
             raise ValueError("Root finding is only for "
                              "real-valued polynomials")
 
-        r = _ppoly.real_roots(self.c, self.x, bool(discontinuity),
+        r = _ppoly.real_roots(self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+                              self.x, bool(discontinuity),
                               bool(extrapolate))
-        if self._y_extra_shape == ():
+        if self.c.ndim == 2:
             return r[0]
         else:
-            # Careful when constructing the object array
-            r2 = np.empty((prod(self._y_extra_shape),), dtype=object)
+            r2 = np.empty(prod(self.c.shape[2:]), dtype=object)
             r2[...] = r
-            return r2.reshape(self._y_extra_shape)
+            return r2.reshape(self.c.shape[2:])
 
     @classmethod
     def from_spline(cls, tck, extrapolate=None):
@@ -949,15 +949,19 @@ class PPoly(_PPolyBase):
         dx = np.diff(bp.x)
         k = bp.c.shape[0] - 1  # polynomial order
 
+        rest = (None,)*(bp.c.ndim-2)
+
         c = np.zeros_like(bp.c)
         for a in range(k+1):
-            factor = (-1)**(a) * comb(k, a) * bp.c[a, ...]
+            factor = (-1)**(a) * comb(k, a) * bp.c[a]
             for s in range(a, k+1):
                 val = comb(k-a, s-a) * (-1)**s
-                c[k-s, ...] += factor * val / dx[:, None]**s
-        pp = cls.construct_fast(c, bp.x, extrapolate)
-        pp._y_extra_shape = bp._y_extra_shape
-        return pp
+                c[k-s] += factor * val / dx[(slice(None),)+rest]**s
+
+        if extrapolate is None:
+            extrapolate = bp.extrapolate
+
+        return cls.construct_fast(c, bp.x, extrapolate)
 
 
 class BPoly(_PPolyBase):
@@ -1031,9 +1035,11 @@ class BPoly(_PPolyBase):
                      = 1 * (1-x)^2 + 2 * 2 x (1 - x) + 3 * x^2
 
     """
+
     def _evaluate(self, x, nu, extrapolate, out):
-        _ppoly.evaluate_bernstein(self.c, self.x, 1.*x, nu,
-                        bool(extrapolate), out)
+        _ppoly.evaluate_bernstein(
+            self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+            self.x, x, nu, bool(extrapolate), out)
 
     @classmethod
     def from_power_basis(cls, pp, extrapolate=None):
@@ -1053,18 +1059,22 @@ class BPoly(_PPolyBase):
         dx = np.diff(pp.x)
         k = pp.c.shape[0] - 1   # polynomial order
 
+        rest = (None,)*(pp.c.ndim-2)
+
         c = np.zeros_like(pp.c)
         for a in range(k+1):
-            factor = pp.c[a, ...] / comb(k, k-a) * dx[:, None]**(k-a)
+            factor = pp.c[a, ...] / comb(k, k-a) * dx[(slice(None),)+rest]**(k-a)
             for j in range(k-a, k+1):
                 c[j, ...] += factor * comb(j, k-a)
-        bp = cls.construct_fast(c, pp.x, extrapolate)
-        bp._y_extra_shape = pp._y_extra_shape
-        return bp
+
+        if extrapolate is None:
+            extrapolate = pp.extrapolate
+
+        return cls.construct_fast(c, pp.x, extrapolate)
 
     @staticmethod
     def from_derivatives(xi, yi, orders=None, direction=None,
-            axis=0, extrapolate=None):
+                         axis=0, extrapolate=None):
         """Construct a piecewise polynomial in the Bernstein basis,
         compatible with the specified values and derivatives at breakpoints.
 
@@ -1193,10 +1203,13 @@ class BPoly(_PPolyBase):
 
         """
         if nu < 0:
-            return self.antiderivative(-nu)
+            raise NotImplementedError('Antiderivative not implemented.')
 
         if nu > 1:
-            raise NotImplementedError('Higher order derivatives.')
+            bp = self
+            for k in range(nu):
+                bp = bp.derivative()
+            return bp
 
         # reduce order
         if nu == 0:
@@ -1212,13 +1225,18 @@ class BPoly(_PPolyBase):
             # finally, for an interval [y, y + dy] with dy != 1,
             # we need to correct for an extra power of dy
 
+            rest = (None,)*(self.c.ndim-2)
+
             k = self.c.shape[0] - 1
-            c2 = k * np.diff(self.c, axis=0) / np.diff(self.x)[None, :, None]
+            dx = np.diff(self.x)[(None, slice(None))+rest]
+            c2 = k * np.diff(self.c, axis=0) / dx
+
+        if c2.shape[0] == 0:
+            # derivative of order 0 is zero
+            c2 = np.zeros((1,) + c2.shape[1:], dtype=c2.dtype)
 
         # construct a compatible polynomial
-        pp = BPoly.construct_fast(c2, self.x, self.extrapolate)
-        pp._y_extra_shape = self._y_extra_shape
-        return pp
+        return BPoly.construct_fast(c2, self.x, self.extrapolate)
 
 
 def _construct_from_derivatives(xa, xb, ya, yb):
