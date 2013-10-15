@@ -92,15 +92,52 @@ class TestLinprog(TestCase):
 
         res = linprog(c,A_lb=A_lb,b_lb=b_lb,objtype='max',disp=False)
 
-        assert_(res.status == 4,"Test of linprog response to an unbounded problem failed.")
+        assert_(res.status == 3,"Test of linprog response to an unbounded problem failed.")
+
 
     def test_linprog_infeasible(self):
         """ Test linrpog response to an infeasible problem """
         c = [1,1]
+
+        A_lb = [[1,1]]
+        b_lb = [5]
+
         A_ub = [[1,0],
                 [0,1]]
-        b_ub = [5,5]
-        res = linprog(c,A_ub=A_ub,b_ub=b_ub,objtype='max',disp=True)
+        b_ub = [2,2]
+
+        res = linprog(c,A_lb=A_lb,b_lb=b_lb,A_ub=A_ub,b_ub=b_ub,objtype='max',disp=False)
+
+        assert_(not res.success,"Test of linprog with an infeasible problem errantly ended with success")
+
+        assert_(res.status == 2,"Test of linprog with an infeasible problem did not acknowledge its infeasibility")
+
+
+    def test_nontrivial_problem(self):
+        """ Test linprog for a problem involving all constraint types, negative resource limits, and rounding issues. """
+        c = [-1,8,4,-6]
+
+        A_ub = [[-7,-7,6,9]]
+        b_ub = [-3]
+
+        A_eq = [[-10,1,1,-8]]
+        b_eq = [-4]
+
+        A_lb = [[-1,1,3,0],
+                [-10,10,7,-7],
+                [-6,1,-3,-4]]
+        b_lb = [-6,6,-6]
+
+        res = linprog(c,A_ub=A_ub,b_ub=b_ub,A_lb=A_lb,b_lb=b_lb,A_eq=A_eq,b_eq=b_eq,objtype='min',disp=False)
+
+        assert_(res.status == 0,
+                "Test of linprog with nontrivial problem failed.  Expected status = 0, got {:d}.".format(res.status))
+
+        assert_(res.fun == 7083/1391,
+                "Test of linprog with nontrivial problem converged but yielded unexpected result (fun)")
+
+        assert_array_almost_equal(res.x,[101/1391,1462/1391,0,752/1391],
+                                  err_msg="Test of linprog with nontrivial problem converged but yielded unexpected result (x)")
 
 if __name__ == "__main__":
     run_module_suite()
