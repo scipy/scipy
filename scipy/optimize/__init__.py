@@ -167,7 +167,7 @@ from .nonlin import *
 from .slsqp import fmin_slsqp
 from .nnls import nnls
 from ._basinhopping import basinhopping
-from .linprog import linprog
+from .linprog import linprog, lpsimplex, linprog_verbose_callback, linprog_terse_callback
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
