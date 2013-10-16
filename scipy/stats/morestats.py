@@ -522,7 +522,9 @@ def boxcox_llf(lmb, data):
     .. math::
 
         llf = (\lambda - 1) \sum_i(\log(x_i)) -
-              N/2 \log(\sum_i (y_i - \bar{y})^2 / N)
+              N/2 \log(\sum_i (y_i - \bar{y})^2 / N),
+
+    where ``y`` is the Box-Cox transformed input data ``x``.
 
     Examples
     -----
@@ -570,7 +572,11 @@ def boxcox_llf(lmb, data):
     >>> plt.show()
 
     """
-    N = len(data)
+    data = np.asarray(data)
+    N = data.size
+    if N == 0:
+        return np.nan
+
     y = boxcox(data, lmb)
     y_mean = np.mean(y, axis=0)
     llf = (lmb - 1) * np.sum(np.log(data), axis=0)
@@ -653,6 +659,11 @@ def boxcox(x, lmbda=None, alpha=None):
     not.  Such a shift parameter is equivalent to adding a positive constant to
     `x` before calling `boxcox`.
 
+    References
+    ----------
+    G.E.P. Box and D.R. Cox, "An Analysis of Transformations", Journal of the
+    Royal Statistical Society B, 26, 211-252 (1964).
+
     Examples
     --------
     >>> from scipy import stats
@@ -679,6 +690,9 @@ def boxcox(x, lmbda=None, alpha=None):
 
     """
     x = np.asarray(x)
+    if x.size == 0:
+        return x
+
     if any(x < 0):
         raise ValueError("Data must be positive.")
 

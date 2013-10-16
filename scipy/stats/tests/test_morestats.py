@@ -497,6 +497,32 @@ def test_ppcc_max_bad_arg():
     assert_raises(ValueError, stats.ppcc_max, data, dist="plate_of_shrimp")
 
 
+class TestBoxcox_llf(TestCase):
+
+    def test_basic(self):
+        np.random.seed(54321)
+        x = stats.norm.rvs(size=10000, loc=10)
+        lmbda = 1
+        llf = stats.boxcox_llf(lmbda, x)
+        llf_expected = -x.size / 2. * np.log(np.sum(x.std()**2))
+        assert_allclose(llf, llf_expected)
+
+    def test_array_like(self):
+        np.random.seed(54321)
+        x = stats.norm.rvs(size=100, loc=10)
+        lmbda = 1
+        llf = stats.boxcox_llf(lmbda, x)
+        llf2 = stats.boxcox_llf(lmbda, list(x))
+        assert_allclose(llf, llf2, rtol=1e-12)
+
+    def test_2d_input(self):
+        # TODO
+        pass
+
+    def test_empty(self):
+        assert_(np.isnan(stats.boxcox_llf(1, [])))
+
+
 class TestBoxcox(TestCase):
 
     def test_fixed_lmbda(self):
@@ -534,6 +560,9 @@ class TestBoxcox(TestCase):
         # Raise ValueError if any data value is negative.
         x = np.array([-1])
         assert_raises(ValueError, stats.boxcox, x)
+
+    def test_empty(self):
+        assert_(stats.boxcox([]).shape == (0,))
 
 
 class TestCircFuncs(TestCase):
