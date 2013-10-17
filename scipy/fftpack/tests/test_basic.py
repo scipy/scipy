@@ -168,6 +168,10 @@ class _TestFFTBase(TestCase):
             y = fftpack.zrfft(x)
             assert_array_almost_equal(y,y2)
 
+    def test_invalid_sizes(self):
+        assert_raises(ValueError, fft, [])
+        assert_raises(ValueError, fft, [[1,1],[2,2]], -5)
+
 
 class TestDoubleFFT(_TestFFTBase):
     def setUp(self):
@@ -273,6 +277,10 @@ class _TestIFFTBase(TestCase):
             self.assertTrue(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
                             (size, self.rdt))
 
+    def test_invalid_sizes(self):
+        assert_raises(ValueError, ifft, [])
+        assert_raises(ValueError, ifft, [[1,1],[2,2]], -5)
+
 
 class TestDoubleIFFT(_TestIFFTBase):
     def setUp(self):
@@ -313,6 +321,10 @@ class _TestRFFTBase(TestCase):
                 y1[2*k] = y2[k].imag
             y = fftpack.drfft(x)
             assert_array_almost_equal(y,y1)
+
+    def test_invalid_sizes(self):
+        assert_raises(ValueError, rfft, [])
+        assert_raises(ValueError, rfft, [[1,1],[2,2]], -5)
 
 
 class TestRFFTDouble(_TestRFFTBase):
@@ -394,9 +406,13 @@ class _TestIRFFTBase(TestCase):
             self.assertTrue(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
                             (size, self.rdt))
 
+    def test_invalid_sizes(self):
+        assert_raises(ValueError, irfft, [])
+        assert_raises(ValueError, irfft, [[1,1],[2,2]], -5)
+
+
 # self.ndec is bogus; we should have a assert_array_approx_equal for number of
 # significant digits
-
 
 class TestIRFFTDouble(_TestIRFFTBase):
     def setUp(self):
@@ -424,6 +440,10 @@ class Testfft2(TestCase):
         y = fft2(x, shape=(8,8), axes=(-3,-2))
         y_r = numpy.fft.fftn(x, s=(8, 8), axes=(-3, -2))
         assert_array_almost_equal(y, y_r)
+
+    def test_invalid_sizes(self):
+        assert_raises(ValueError, fft2, [[]])
+        assert_raises(ValueError, fft2, [[1,1],[2,2]], (4, -3))
 
 
 class TestFftnSingle(TestCase):
@@ -610,6 +630,11 @@ class TestFftn(TestCase):
         x = zeros((4, 4, 2))
         assert_raises(ValueError, fftn, x, shape=(8, 8, 2, 1))
 
+    def test_invalid_sizes(self):
+        assert_raises(ValueError, fftn, [[]])
+        assert_raises(ValueError, fftn, [[1,1],[2,2]], (4, -3))
+
+
 
 class _TestIfftn(TestCase):
     dtype = None
@@ -633,6 +658,11 @@ class _TestIfftn(TestCase):
             x = random([size,size]) + 1j*random([size,size])
             assert_array_almost_equal_nulp(ifftn(fftn(x)),x,self.maxnlp)
             assert_array_almost_equal_nulp(fftn(ifftn(x)),x,self.maxnlp)
+
+    def test_invalid_sizes(self):
+        assert_raises(ValueError, ifftn, [[]])
+        assert_raises(ValueError, ifftn, [[1,1],[2,2]], (4, -3))
+
 
 
 class TestIfftnDouble(_TestIfftn):
