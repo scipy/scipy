@@ -972,11 +972,11 @@ class TestBPolyFromDerivatives(TestCase):
         np.random.seed(12345)
         x = [0, 1]
         k, d = 8, 5
-        c = np.random.random(k)
-        bp = BPoly(c[:, None], x)
+        c = np.random.random((k, 1, 2, 3, 4))
+        bp = BPoly(c, x)
 
         c1 = BPoly._raise_degree(c, d)
-        bp1 = BPoly(c1[:, None], x)
+        bp1 = BPoly(c1, x)
 
         xp = np.linspace(0, 1, 11)
         assert_allclose(bp(xp), bp1(xp))
