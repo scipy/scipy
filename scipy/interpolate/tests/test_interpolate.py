@@ -404,7 +404,7 @@ class TestLagrange(TestCase):
         assert_array_almost_equal(p.coeffs,pl.coeffs)
 
 
-class TestPPolyCommn(TestCase):
+class TestPPolyCommon(TestCase):
     # test basic functionality for PPoly and BPoly
     def test_sort_check(self):
         c = np.array([[1, 4], [2, 5], [3, 6]])
@@ -889,8 +889,8 @@ class TestBPolyCalculus(TestCase):
             xp = np.linspace(x[0], x[-1], 21)
             assert_allclose(bp(xp), pp(xp))
 
-class TestPolyConversions(TestCase):
 
+class TestPolyConversions(TestCase):
     def test_bp_from_pp(self):
         x = [0, 1, 3]
         c = [[3, 2], [1, 8], [4, 3]]
@@ -1064,7 +1064,14 @@ class TestBPolyFromDerivatives(TestCase):
                 assert_allclose(pp(x - 1e-12), pp(x + 1e-12))
                 pp = pp.derivative()
             assert_(not np.allclose(pp(x - 1e-12), pp(x + 1e-12)))
-   
+
+    def test_yi_trailing_dims(self):
+        m, k = 7, 5
+        xi = np.sort(np.random.random(m+1))
+        yi = np.random.random((m+1, k, 6, 7, 8))
+        pp = BPoly.from_derivatives(xi, yi)
+        assert_equal(pp.c.shape, (2*k, m, 6, 7, 8))
+
 
 class TestPpform(TestCase):
     def test_shape(self):

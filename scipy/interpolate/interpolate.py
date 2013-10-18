@@ -1121,11 +1121,11 @@ class BPoly(_PPolyBase):
 
         rest = (None,)*(pp.c.ndim-2)
 
-        c = np.zeros_like(pp.c, dtype=pp.c.dtype)
+        c = np.zeros_like(pp.c)
         for a in range(k+1):
-            factor = pp.c[a, ...] / comb(k, k-a) * dx[(slice(None),)+rest]**(k-a)
+            factor = pp.c[a] / comb(k, k-a) * dx[(slice(None),)+rest]**(k-a)
             for j in range(k-a, k+1):
-                c[j, ...] += factor * comb(j, k-a)
+                c[j] += factor * comb(j, k-a)
 
         if extrapolate is None:
             extrapolate = pp.extrapolate
@@ -1244,8 +1244,8 @@ class BPoly(_PPolyBase):
                 b = BPoly._raise_degree(b, k - len(b))
             c.append(b)
 
-        c = np.asarray(c).T
-        return BPoly(c, xi, extrapolate)
+        c = np.asarray(c)
+        return BPoly(c.swapaxes(0, 1), xi, extrapolate)
 
     @staticmethod
     def _construct_from_derivatives(xa, xb, ya, yb):
@@ -1302,9 +1302,21 @@ class BPoly(_PPolyBase):
         At `x = xb` it's the same with `a = n - q`. 
 
         """
+        ya, yb = np.asarray(ya), np.asarray(yb)
+        if ya.shape[1:] != yb.shape[1:]:
+            raise ValueError('ya and yb have incompatible dimensions.')
+
+        dta, dtb = ya.dtype, yb.dtype
+        if (np.issubdtype(dta, np.complexfloating)
+               or np.issubdtype(dtb, np.complexfloating)):
+            dt = np.complex_
+        else:
+            dt = np.float_
+
         na, nb = len(ya), len(yb)
         n = na + nb
-        c = np.empty(na+nb)
+
+        c = np.empty((na+nb,) + ya.shape[1:], dtype=dt)
 
         # compute coefficients of a polynomial degree na+nb-1
         # walk left-to-right
