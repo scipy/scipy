@@ -711,7 +711,7 @@ class PPoly(_PPolyBase):
 
     def _evaluate(self, x, nu, extrapolate, out):
         _ppoly.evaluate(self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
-                        self.x, 1.*x, nu, bool(extrapolate), out)
+                        self.x, x, nu, bool(extrapolate), out)
 
     def derivative(self, nu=1):
         """
