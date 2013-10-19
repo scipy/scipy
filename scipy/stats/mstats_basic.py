@@ -49,12 +49,10 @@ from scipy.lib.six import iteritems
 import itertools
 import warnings
 
-
-# import scipy.stats as stats
 from . import stats
+from . import distributions
 import scipy.special as special
 import scipy.misc as misc
-# import scipy.stats.futil as futil
 from . import futil
 
 
@@ -68,23 +66,24 @@ Notes
 
 
 def _chk_asarray(a, axis):
+    # Always returns a masked array, raveled for axis=None
+    a = ma.asanyarray(a)
     if axis is None:
         a = ma.ravel(a)
         outaxis = 0
     else:
-        a = ma.asanyarray(a)
         outaxis = axis
     return a, outaxis
 
 
 def _chk2_asarray(a, b, axis):
+    a = ma.asanyarray(a)
+    b = ma.asanyarray(b)
     if axis is None:
         a = ma.ravel(a)
         b = ma.ravel(b)
         outaxis = 0
     else:
-        a = ma.asanyarray(a)
-        b = ma.asanyarray(b)
         outaxis = axis
     return a, b, outaxis
 
@@ -1666,7 +1665,7 @@ skewtest.__doc__ = stats.skewtest.__doc__
 
 def kurtosistest(a, axis=0):
     a, axis = _chk_asarray(a, axis)
-    n = float(a.count(axis=axis))
+    n = a.count(axis=axis)
     if np.min(n) < 20:
         warnings.warn(
             "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" %
@@ -1680,10 +1679,15 @@ def kurtosistest(a, axis=0):
     A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
     term1 = 1 - 2./(9.0*A)
     denom = 1 + x*ma.sqrt(2/(A-4.0))
-    denom[denom < 0] = masked
+    if np.ma.isMaskedArray(denom):
+        # For multi-dimensional array input
+        denom[denom < 0] = masked
+    elif denom < 0:
+        denom = masked
+
     term2 = ma.power((1-2.0/A)/denom,1/3.0)
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))
-    return Z, (1.0-stats.zprob(Z))*2
+    return Z, 2 * distributions.norm.sf(np.abs(Z))
 kurtosistest.__doc__ = stats.kurtosistest.__doc__
 
 

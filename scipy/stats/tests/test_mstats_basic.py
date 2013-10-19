@@ -14,7 +14,8 @@ import scipy.stats.mstats as mstats
 from scipy import stats
 from numpy.testing import TestCase, run_module_suite
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
-    assert_array_almost_equal, assert_array_almost_equal_nulp, assert_)
+    assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
+    assert_allclose)
 
 
 class TestMquantiles(TestCase):
@@ -538,6 +539,42 @@ def test_plotting_positions():
     """Regression test for #1256"""
     pos = mstats.plotting_positions(np.arange(3), 0, 0)
     assert_array_almost_equal(pos.data, np.array([0.25, 0.5, 0.75]))
+
+
+class TestNormalitytests():
+
+    def test_vs_nonmasked(self):
+        x = np.array((-2,-1,0,1,2,3)*4)**2
+        assert_array_almost_equal(mstats.normaltest(x), stats.normaltest(x))
+        assert_array_almost_equal(mstats.skewtest(x), stats.skewtest(x))
+        assert_array_almost_equal(mstats.kurtosistest(x),
+                                  stats.kurtosistest(x))
+
+    def test_axis_None(self):
+        # Test axis=None (equal to axis=0 for 1-D input)
+        x = np.array((-2,-1,0,1,2,3)*4)**2
+        assert_allclose(mstats.normaltest(x, axis=None), mstats.normaltest(x))
+        assert_allclose(mstats.skewtest(x, axis=None), mstats.skewtest(x))
+        assert_allclose(mstats.kurtosistest(x, axis=None),
+                        mstats.kurtosistest(x))
+
+    def test_maskedarray_input(self):
+        # Add some masked values, test result doesn't change
+        x = np.array((-2,-1,0,1,2,3)*4)**2
+        xm = np.ma.array(np.r_[np.inf, x, 10],
+                         mask=np.r_[True, [False] * x.size, True])
+        assert_allclose(mstats.normaltest(xm), stats.normaltest(x))
+        assert_allclose(mstats.skewtest(xm), stats.skewtest(x))
+        assert_allclose(mstats.kurtosistest(xm), stats.kurtosistest(x))
+
+    def test_nd_input(self):
+        x = np.array((-2,-1,0,1,2,3)*4)**2
+        x_2d = np.vstack([x] * 2).T
+        for func in [mstats.normaltest, mstats.skewtest, mstats.kurtosistest]:
+            res_1d = func(x)
+            res_2d = func(x_2d)
+            assert_allclose(res_2d[0], [res_1d[0]] * 2)
+            assert_allclose(res_2d[1], [res_1d[1]] * 2)
 
 
 if __name__ == "__main__":
