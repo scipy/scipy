@@ -29,7 +29,12 @@ EXTRA_PATH = ['/usr/lib/ccache', '/usr/lib/f90cache',
 
 # ---------------------------------------------------------------------
 
-__doc__ = __doc__.format(**globals())
+
+if __doc__ is None:
+    __doc__ = "Run without -OO if you want usage info"
+else:
+    __doc__ = __doc__.format(**globals())
+
 
 import sys
 import os
@@ -43,6 +48,8 @@ import subprocess
 import time
 import imp
 from argparse import ArgumentParser, REMAINDER
+
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
@@ -122,11 +129,11 @@ def main(argv):
         sys.exit(1)
 
     if args.coverage:
-        dst_dir = os.path.join('build', 'coverage')
+        dst_dir = os.path.join(ROOT_DIR, 'build', 'coverage')
         fn = os.path.join(dst_dir, 'coverage_html.js')
         if os.path.isdir(dst_dir) and os.path.isfile(fn):
             shutil.rmtree(dst_dir)
-        extra_argv += ['--cover-html', 
+        extra_argv += ['--cover-html',
                        '--cover-html-dir='+dst_dir]
 
     if args.build_only:
@@ -150,11 +157,28 @@ def main(argv):
         __import__(PROJECT_MODULE)
         test = sys.modules[PROJECT_MODULE].test
 
-    result = test(args.mode,
-                  verbose=args.verbose,
-                  extra_argv=extra_argv,
-                  doctests=args.doctests,
-                  coverage=args.coverage)
+    # Run the tests under build/test
+    test_dir = os.path.join(ROOT_DIR, 'build', 'test')
+
+    try:
+        shutil.rmtree(test_dir)
+    except OSError:
+        pass
+    try:
+        os.makedirs(test_dir)
+    except OSError:
+        pass
+
+    cwd = os.getcwd()
+    try:
+        os.chdir(test_dir)
+        result = test(args.mode,
+                      verbose=args.verbose,
+                      extra_argv=extra_argv,
+                      doctests=args.doctests,
+                      coverage=args.coverage)
+    finally:
+        os.chdir(cwd)
 
     if result.wasSuccessful():
         sys.exit(0)
@@ -172,15 +196,14 @@ def build_project(args):
 
     """
 
-    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
-    root_ok = [os.path.exists(os.path.join(root_dir, fn))
+    root_ok = [os.path.exists(os.path.join(ROOT_DIR, fn))
                for fn in PROJECT_ROOT_FILES]
     if not all(root_ok):
         print("To build the project, run runtests.py in "
               "git checkout or unpacked source")
         sys.exit(1)
 
-    dst_dir = os.path.join(root_dir, 'build', 'testenv')
+    dst_dir = os.path.join(ROOT_DIR, 'build', 'testenv')
 
     env = dict(os.environ)
     cmd = [sys.executable, 'setup.py']
@@ -192,28 +215,31 @@ def build_project(args):
         # assume everyone uses gcc/gfortran
         env['OPT'] = '-O0 -ggdb'
         env['FOPT'] = '-O0 -ggdb'
-        cmd += ["build", "--debug"]
+        cmd += ["build"]
 
     cmd += ['install', '--prefix=' + dst_dir]
 
+    log_filename = os.path.join(ROOT_DIR, 'build.log')
+
     if args.show_build_log:
-        ret = subprocess.call(cmd, env=env, cwd=root_dir)
+        ret = subprocess.call(cmd, env=env, cwd=ROOT_DIR)
     else:
+        log_filename = os.path.join(ROOT_DIR, 'build.log')
         print("Building, see build.log...")
-        with open('build.log', 'w') as log:
+        with open(log_filename, 'w') as log:
             p = subprocess.Popen(cmd, env=env, stdout=log, stderr=log,
-                                 cwd=root_dir)
+                                 cwd=ROOT_DIR)
 
         # Wait for it to finish, and print something to indicate the
         # process is alive, but only if the log file has grown (to
         # allow continuous integration environments kill a hanging
         # process accurately if it produces no output)
         last_blip = time.time()
-        last_log_size = os.stat('build.log').st_size
+        last_log_size = os.stat(log_filename).st_size
         while p.poll() is None:
             time.sleep(0.5)
             if time.time() - last_blip > 60:
-                log_size = os.stat('build.log').st_size
+                log_size = os.stat(log_filename).st_size
                 if log_size > last_log_size:
                     print("    ... build in progress")
                     last_blip = time.time()
@@ -225,7 +251,7 @@ def build_project(args):
         print("Build OK")
     else:
         if not args.show_build_log:
-            with open('build.log', 'r') as f:
+            with open(log_filename, 'r') as f:
                 print(f.read())
             print("Build failed!")
         sys.exit(1)

@@ -431,29 +431,29 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             elif self.shape == (1,1):
                 return other.__mul__(self.tocsc().data[0])
             # A row times a column.
-            elif self.shape[1] == other.shape[0] == 1:
+            elif self.shape[1] == other.shape[0] and self.shape[1] == 1:
                 return self._mul_sparse_matrix(other.tocsc())
-            elif self.shape[0] == other.shape[1] == 1:
+            elif self.shape[0] == other.shape[1] and self.shape[0] == 1:
                 return other._mul_sparse_matrix(self.tocsc())
             # Row vector times matrix. other is a row.
             elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
                 other = dia_matrix((other.toarray().ravel(), [0]),
-                                    shape=self.shape)
+                                    shape=(other.shape[1], other.shape[1]))
                 return self._mul_sparse_matrix(other)
             # self is a row.
             elif self.shape[0] == 1 and self.shape[1] == other.shape[1]:
                 copy = dia_matrix((self.toarray().ravel(), [0]),
-                                    shape=other.shape)
+                                    shape=(self.shape[1], self.shape[1]))
                 return other._mul_sparse_matrix(copy)
             # Column vector times matrix. other is a column.
             elif other.shape[1] == 1 and self.shape[0] == other.shape[0]:
                 other = dia_matrix((other.toarray().ravel(), [0]),
-                                    shape=self.shape)
+                                    shape=(other.shape[0], other.shape[0]))
                 return other._mul_sparse_matrix(self)
             # self is a column.
             elif self.shape[1] == 1 and self.shape[0] == other.shape[0]:
                 copy = dia_matrix((self.toarray().ravel(), [0]),
-                                    shape=other.shape)
+                                    shape=(self.shape[0], self.shape[0]))
                 return copy._mul_sparse_matrix(other)
             else:
                 raise ValueError("inconsistent shapes")

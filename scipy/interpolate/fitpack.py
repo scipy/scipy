@@ -1052,7 +1052,7 @@ def dblint(xa,xb,ya,yb,tck):
         The value of the resulting integral.
     """
     tx,ty,c,kx,ky = tck
-    return dfitpack.dblint(tx,ty,c,kx,ky,xb,xe,yb,ye)
+    return dfitpack.dblint(tx,ty,c,kx,ky,xa,xb,ya,yb)
 
 
 def insert(x,tck,m=1,per=0):

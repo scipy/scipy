@@ -1,11 +1,19 @@
 from __future__ import division, print_function, absolute_import
 
+from distutils.version import LooseVersion
+import sys
+
 import numpy as np
-from numpy.testing import assert_, assert_allclose
+from numpy.testing import assert_, assert_allclose, dec
 import scipy.special.orthogonal as orth
 
 from scipy.special._testutils import FuncData
 
+# Early Numpy versions have bugs in ufunc keyword argument parsing
+numpy_version_requirement = dec.skipif(
+    LooseVersion(np.version.version) < LooseVersion('1.6')
+    and sys.version_info[0] >= 3,
+    "Bug in Numpy < 1.6 on Python 3")
 
 def test_eval_chebyt():
     n = np.arange(0, 10000, 7)
@@ -190,58 +198,72 @@ class TestRecurrence(object):
         finally:
             np.seterr(**olderr)
 
+    @numpy_version_requirement
     def test_jacobi(self):
         self.check_poly(orth.eval_jacobi,
                    param_ranges=[(-0.99, 10), (-0.99, 10)], x_range=[-1, 1])
 
+    @numpy_version_requirement
     def test_sh_jacobi(self):
         self.check_poly(orth.eval_sh_jacobi,
                    param_ranges=[(1, 10), (0, 1)], x_range=[0, 1])
 
+    @numpy_version_requirement
     def test_gegenbauer(self):
         self.check_poly(orth.eval_gegenbauer,
                    param_ranges=[(-0.499, 10)], x_range=[-1, 1])
 
+    @numpy_version_requirement
     def test_chebyt(self):
         self.check_poly(orth.eval_chebyt,
                    param_ranges=[], x_range=[-1, 1])
 
+    @numpy_version_requirement
     def test_chebyu(self):
         self.check_poly(orth.eval_chebyu,
                    param_ranges=[], x_range=[-1, 1])
 
+    @numpy_version_requirement
     def test_chebys(self):
         self.check_poly(orth.eval_chebys,
                    param_ranges=[], x_range=[-2, 2])
 
+    @numpy_version_requirement
     def test_chebyc(self):
         self.check_poly(orth.eval_chebyc,
                    param_ranges=[], x_range=[-2, 2])
 
+    @numpy_version_requirement
     def test_sh_chebyt(self):
         self.check_poly(orth.eval_sh_chebyt,
                    param_ranges=[], x_range=[0, 1])
 
+    @numpy_version_requirement
     def test_sh_chebyu(self):
         self.check_poly(orth.eval_sh_chebyu,
                    param_ranges=[], x_range=[0, 1])
 
+    @numpy_version_requirement
     def test_legendre(self):
         self.check_poly(orth.eval_legendre,
                    param_ranges=[], x_range=[-1, 1])
 
+    @numpy_version_requirement
     def test_sh_legendre(self):
         self.check_poly(orth.eval_sh_legendre,
                    param_ranges=[], x_range=[0, 1])
 
+    @numpy_version_requirement
     def test_genlaguerre(self):
         self.check_poly(orth.eval_genlaguerre,
                    param_ranges=[(-0.99, 10)], x_range=[0, 100])
 
+    @numpy_version_requirement
     def test_laguerre(self):
         self.check_poly(orth.eval_laguerre,
                    param_ranges=[], x_range=[0, 100])
 
+    @numpy_version_requirement
     def test_hermite(self):
         v =  orth.eval_hermite(70, 1.0)
         a = -1.457076485701412e60 

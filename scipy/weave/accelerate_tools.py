@@ -12,7 +12,7 @@ from __future__ import absolute_import, print_function
 
 from types import InstanceType, XRangeType
 import inspect
-import scipy.weave.md5_load as md5
+from hashlib import sha256
 import scipy.weave as weave
 from numpy.testing import assert_
 
@@ -364,7 +364,7 @@ class accelerate(object):
         return fast
 
     def identifier(self,signature):
-        # Build an MD5 checksum
+        # Build a SHA-256 checksum
         f = self.function
         co = f.func_code
         identifier = str(signature) + \
@@ -372,7 +372,7 @@ class accelerate(object):
                      str(co.co_consts) + \
                      str(co.co_varnames) + \
                      co.co_code
-        return 'F'+md5.md5(identifier).hexdigest()
+        return 'F' + sha256(identifier).hexdigest()
 
     def accelerate(self,signature,identifier):
         P = Python2CXX(self.function,signature,name=identifier)

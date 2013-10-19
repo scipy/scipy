@@ -3085,6 +3085,7 @@ C
      &          .100475571822880D-01, .738993116334531D-02,
      &          .471272992695363D-02, .202681196887362D-02/
         ID=9
+C       DLMF 13.4.4, integration up to C=12/X
         A1=A-1.0D0
         B1=B-A-1.0D0
         C=12.0D0/X
@@ -3110,6 +3111,8 @@ C
 20      CONTINUE
 25      CALL GAMMA2(A,GA)
         HU1=HU1/GA
+C       DLMF 13.4.4 with substitution t=C/(1-u)
+C       integration u from 0 to 1, i.e. t from C=12/X to infinity
         DO 40 M=2,10,2
            HU2=0.0D0
            G=0.5D0/M
@@ -4985,7 +4988,7 @@ C
               HU=HU1
            ENDIF
         ENDIF
-        IF (A.GE.0.0) THEN
+        IF (A.GE.1.0) THEN
            IF (BN.AND.(BL1.OR.BL2.OR.BL3)) THEN
               CALL CHGUBI(A,B,X,HU,ID)
               MD=3
@@ -8114,6 +8117,9 @@ C                ID --- Estimated number of significant digits
 C       Routine called: GAMMA2 for computing gamma function
 C       ======================================================
 C
+C       DLMF 13.2.42 with prefactors rewritten according to
+C       DLMF 5.5.3, M(a, b, x) with DLMF 13.2.2
+C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         ID=-100
         PI=3.141592653589793D0
@@ -9329,6 +9335,8 @@ C
         NM=0
         IF (IL1) NM=ABS(A)
         IF (IL2) NM=ABS(AA)
+C       IL1: DLMF 13.2.7 with k=-s-a
+C       IL2: DLMF 13.2.8
         IF (IL1.OR.IL2) THEN
            HU=1.0D0
            R=1.0D0
@@ -9339,6 +9347,7 @@ C
            HU=X**(-A)*HU
            ID=10
         ELSE
+C       DLMF 13.7.3
            HU=1.0D0
            R=1.0D0
            DO 15 K=1,25

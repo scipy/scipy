@@ -33,8 +33,6 @@ from numpy.testing import assert_equal, assert_almost_equal, \
         assert_, rand, dec, TestCase, run_module_suite, assert_allclose, \
         assert_raises
 
-from numpy.testing.utils import WarningManager
-
 from scipy import special
 import scipy.special._ufuncs as cephes
 from scipy.special import ellipk
@@ -649,13 +647,9 @@ class TestCephes(TestCase):
         cephes.pdtrc(0,1)
 
     def test_pdtri(self):
-        warn_ctx = WarningManager()
-        warn_ctx.__enter__()
-        try:
+        with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
             cephes.pdtri(0.5,0.5)
-        finally:
-            warn_ctx.__exit__()
 
     def test_pdtrik(self):
         cephes.pdtrik(0.5,1)
@@ -2724,9 +2718,7 @@ def test_agm_simple():
 
 
 def test_legacy():
-    warn_ctx = WarningManager()
-    warn_ctx.__enter__()
-    try:
+    with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
 
         # Legacy behavior: truncating arguments to integers
@@ -2745,8 +2737,6 @@ def test_legacy():
         assert_equal(special.yn(1, 0.3), special.yn(1.8, 0.3))
         assert_equal(special.smirnov(1, 0.3), special.smirnov(1.8, 0.3))
         assert_equal(special.smirnovi(1, 0.3), special.smirnovi(1.8, 0.3))
-    finally:
-        warn_ctx.__exit__()
 
 
 @with_special_errors
@@ -2781,6 +2771,7 @@ def test_xlog1py():
                      (1, 1e-30)], dtype=float)
     w1 = np.vectorize(xfunc)(z1[:,0], z1[:,1])
     assert_func_equal(special.xlog1py, w1, z1, rtol=1e-13, atol=1e-13)
+
 
 if __name__ == "__main__":
     run_module_suite()

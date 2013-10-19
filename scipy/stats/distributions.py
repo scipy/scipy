@@ -4,6 +4,7 @@
 #
 from __future__ import division, print_function, absolute_import
 
+import sys
 import warnings
 
 from scipy.lib.six import callable, string_types, get_method_function
@@ -1369,11 +1370,12 @@ class rv_continuous(rv_generic):
                 hstr = "A "
             longname = hstr + name
 
-        # generate docstring for subclass instances
-        if self.__doc__ is None:
-            self._construct_default_doc(longname=longname, extradoc=extradoc)
-        else:
-            self._construct_doc()
+        if sys.flags.optimize < 2:
+            # Skip adding docstrings if interpreter is run with -OO
+            if self.__doc__ is None:
+                self._construct_default_doc(longname=longname, extradoc=extradoc)
+            else:
+                self._construct_doc()
 
     def _construct_default_doc(self, longname=None, extradoc=None):
         """Construct instance docstring from the default template."""
@@ -1460,7 +1462,7 @@ class rv_continuous(rv_generic):
     def _cdf(self, x, *args):
         return self._cdfvec(x, *args)
 
-    ## generic _argcheck, _logcdf, _sf, _logsf, _ppf, _isf, _rvs are defined 
+    ## generic _argcheck, _logcdf, _sf, _logsf, _ppf, _isf, _rvs are defined
     ## in rv_generic
 
     def pdf(self,x,*args,**kwds):
@@ -3258,8 +3260,8 @@ class f_gen(rv_continuous):
         v1, v2 = 1. * dfn, 1. * dfd
         v2_2, v2_4, v2_6, v2_8 = v2 - 2., v2 - 4., v2 - 6., v2 - 8.
 
-        mu = _lazywhere(v2 > 2, (v2, v2_2), 
-                lambda v2, v2_2: v2 / v2_2, 
+        mu = _lazywhere(v2 > 2, (v2, v2_2),
+                lambda v2, v2_2: v2 / v2_2,
                 np.inf)
 
         mu2 = _lazywhere(v2 > 4, (v1, v2, v2_2, v2_4),
@@ -3273,7 +3275,7 @@ class f_gen(rv_continuous):
                 np.nan)
         g1 *= np.sqrt(8.)
 
-        g2 = _lazywhere(v2 > 8, (g1, v2_6, v2_8), 
+        g2 = _lazywhere(v2 > 8, (g1, v2_6, v2_8),
                 lambda g1, v2_6, v2_8: (8 + g1 * g1 * v2_6) / v2_8,
                 np.nan)
         g2 *= 3. / 2.
@@ -3851,17 +3853,18 @@ class erlang_gen(gamma_gen):
     def fit(self, data, *args, **kwds):
         return super(erlang_gen, self).fit(data, *args, **kwds)
 
-    fit.__doc__ = (rv_continuous.fit.__doc__ +
-        """
-        Notes
-        -----
-        The Erlang distribution is generally defined to have integer values
-        for the shape parameter.  This is not enforced by the `erlang` class.
-        When fitting the distribution, it will generally return a non-integer
-        value for the shape parameter.  By using the keyword argument
-        `f0=<integer>`, the fit method can be constrained to fit the data to
-        a specific integer shape parameter.
-        """)
+    if fit.__doc__ is not None:
+        fit.__doc__ = (rv_continuous.fit.__doc__ +
+            """
+            Notes
+            -----
+            The Erlang distribution is generally defined to have integer values
+            for the shape parameter.  This is not enforced by the `erlang` class.
+            When fitting the distribution, it will generally return a non-integer
+            value for the shape parameter.  By using the keyword argument
+            `f0=<integer>`, the fit method can be constrained to fit the data to
+            a specific integer shape parameter.
+            """)
 erlang = erlang_gen(a=0.0, name='erlang')
 
 
@@ -4294,10 +4297,10 @@ class invgamma_gen(rv_continuous):
 
         g1, g2 = None, None
         if 's' in moments:
-            g1 = _lazywhere(a > 3, (a,), 
+            g1 = _lazywhere(a > 3, (a,),
                     lambda x: 4. * np.sqrt(x - 2.) / (x - 3.), np.nan)
         if 'k' in moments:
-            g2 = _lazywhere(a > 4, (a,), 
+            g2 = _lazywhere(a > 4, (a,),
                     lambda x: 6. * (5. * x - 11.) / (x - 3.) / (x - 4.), np.nan)
         return m1, m2, g1, g2
 
@@ -5173,7 +5176,7 @@ class nct_gen(rv_continuous):
             c42 = df / (df-4.) - c11*c11 * (df-1.) / (df-3.)
             c42 *= 6.*df / (df-2.)
             c40 = 3.*df*df / (df-2.) / (df-4.)
-            
+
             mu4 = c44 * nc**4 + c42*nc**2 + c40
             g2 = np.where(df > 4, mu4/mu2**2 - 3.,
                                   np.nan)
@@ -5541,7 +5544,7 @@ class rdist_gen(rv_continuous):
         return res
 
     def _munp(self, n, c):
-        numerator = (1 - (n % 2)) * special.beta((n + 1.0) / 2, c / 2.0) 
+        numerator = (1 - (n % 2)) * special.beta((n + 1.0) / 2, c / 2.0)
         return numerator / special.beta(1. / 2, c / 2.)
 rdist = rdist_gen(a=-1.0, b=1.0, name="rdist")
 
@@ -5968,9 +5971,9 @@ class vonmises_gen(rv_continuous):
 
     The probability density function for `vonmises` is::
 
-        vonmises.pdf(x, b) = exp(b*cos(x)) / (2*pi*I[0](b))
+        vonmises.pdf(x, kappa) = exp(kappa * cos(x)) / (2*pi*I[0](kappa))
 
-    for ``-pi <= x <= pi``, ``b > 0``.
+    for ``-pi <= x <= pi``, ``kappa > 0``.
 
     See Also
     --------
@@ -5980,16 +5983,16 @@ class vonmises_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, b):
-        return mtrand.vonmises(0.0, b, size=self._size)
+    def _rvs(self, kappa):
+        return mtrand.vonmises(0.0, kappa, size=self._size)
 
-    def _pdf(self, x, b):
-        return exp(b*cos(x)) / (2*pi*special.i0(b))
+    def _pdf(self, x, kappa):
+        return exp(kappa * cos(x)) / (2*pi*special.i0(kappa))
 
-    def _cdf(self, x, b):
-        return vonmises_cython.von_mises_cdf(b,x)
+    def _cdf(self, x, kappa):
+        return vonmises_cython.von_mises_cdf(kappa, x)
 
-    def _stats_skip(self, b):
+    def _stats_skip(self, kappa):
         return 0, None, 0, None
 vonmises = vonmises_gen(name='vonmises')
 vonmises_line = vonmises_gen(a=-np.pi, b=np.pi, name='vonmises_line')
@@ -6532,17 +6535,17 @@ class rv_discrete(rv_generic):
             else:
                 hstr = "A "
             longname = hstr + name
-        if self.__doc__ is None:
-            self._construct_default_doc(longname=longname, extradoc=extradoc)
-        else:
-            self._construct_doc()
 
-        #discrete RV do not have the scale parameter, remove it
-        self.__doc__ = self.__doc__.replace(
-            '\n    scale : array_like, optional\n        scale parameter (default=1)','')
+        if sys.flags.optimize < 2:
+            # Skip adding docstrings if interpreter is run with -OO
+            if self.__doc__ is None:
+                self._construct_default_doc(longname=longname, extradoc=extradoc)
+            else:
+                self._construct_doc()
 
-        ## This only works for old-style classes...
-        # self.__class__.__doc__ = self.__doc__
+            #discrete RV do not have the scale parameter, remove it
+            self.__doc__ = self.__doc__.replace('\n    scale : array_like, '
+                            'optional\n        scale parameter (default=1)', '')
 
 
     def _construct_default_doc(self, longname=None, extradoc=None):
@@ -7617,53 +7620,56 @@ class randint_gen(rv_discrete):
     -----
     The probability mass function for `randint` is::
 
-        randint.pmf(k) = 1./(max- min)
+        randint.pmf(k) = 1./(high - low)
 
-    for ``k = min,...,max``.
+    for ``k = low, ..., high - 1``.
 
-    `randint` takes ``min`` and ``max`` as shape parameters.
+    `randint` takes ``low`` and ``high`` as shape parameters.
+
+    Note the difference to the numpy ``random_integers`` which
+    returns integers on a *closed* interval ``[low, high]``.
 
     %(example)s
 
     """
-    def _argcheck(self, min, max):
-        self.a = min
-        self.b = max-1
-        return (max > min)
+    def _argcheck(self, low, high):
+        self.a = low
+        self.b = high - 1
+        return (high > low)
 
-    def _pmf(self, k, min, max):
-        fact = 1.0 / (max - min)
-        return fact
+    def _pmf(self, k, low, high):
+        p = np.ones_like(k) / (high - low)
+        return np.where((k >= low) & (k < high), p, 0.)
 
-    def _cdf(self, x, min, max):
+    def _cdf(self, x, low, high):
         k = floor(x)
-        return (k-min+1)*1.0/(max-min)
+        return (k - low + 1.) / (high - low)
 
-    def _ppf(self, q, min, max):
-        vals = ceil(q*(max-min)+min)-1
-        vals1 = (vals-1).clip(min, max)
-        temp = self._cdf(vals1, min, max)
+    def _ppf(self, q, low, high):
+        vals = ceil(q * (high - low) + low) - 1
+        vals1 = (vals - 1).clip(low, high)
+        temp = self._cdf(vals1, low, high)
         return where(temp >= q, vals1, vals)
 
-    def _stats(self, min, max):
-        m2, m1 = asarray(max), asarray(min)
+    def _stats(self, low, high):
+        m2, m1 = asarray(high), asarray(low)
         mu = (m2 + m1 - 1.0) / 2
         d = m2 - m1
-        var = (d-1)*(d+1.0)/12.0
+        var = (d*d - 1) / 12.0
         g1 = 0.0
-        g2 = -6.0/5.0*(d*d+1.0)/(d-1.0)*(d+1.0)
+        g2 = -6.0/5.0 * (d*d + 1.0) / (d*d - 1.0)
         return mu, var, g1, g2
 
-    def _rvs(self, min, max=None):
-        """An array of *size* random integers >= min and < max.
+    def _rvs(self, low, high=None):
+        """An array of *size* random integers >= ``low`` and < ``high``.
 
-        If max is None, then range is >=0  and < min
+        If ``high`` is ``None``, then range is >=0  and < low
         """
-        return mtrand.randint(min, max, self._size)
+        return mtrand.randint(low, high, self._size)
 
-    def _entropy(self, min, max):
-        return log(max-min)
-randint = randint_gen(name='randint',longname='A discrete uniform '
+    def _entropy(self, low, high):
+        return log(high - low)
+randint = randint_gen(name='randint', longname='A discrete uniform '
                       '(random integer)')
 
 
@@ -7677,7 +7683,7 @@ class zipf_gen(rv_discrete):
     -----
     The probability mass function for `zipf` is::
 
-        zipf.pmf(k) = 1/(zeta(a)*k**a)
+        zipf.pmf(k, a) = 1/(zeta(a) * k**a)
 
     for ``k >= 1``.
 
@@ -7693,27 +7699,13 @@ class zipf_gen(rv_discrete):
         return a > 1
 
     def _pmf(self, k, a):
-        Pk = 1.0 / asarray(special.zeta(a,1) * k**a)
+        Pk = 1.0 / special.zeta(a, 1) / k**a
         return Pk
 
     def _munp(self, n, a):
-        return special.zeta(a-n,1) / special.zeta(a,1)
-
-    def _stats(self, a):
-        sv = special.errprint(0)
-        fac = asarray(special.zeta(a,1))
-        mu = special.zeta(a-1.0,1)/fac
-        mu2p = special.zeta(a-2.0,1)/fac
-        var = mu2p - mu*mu
-        mu3p = special.zeta(a-3.0,1)/fac
-        mu3 = mu3p - 3*mu*mu2p + 2*mu**3
-        g1 = mu3 / asarray(np.power(var, 1.5))
-
-        mu4p = special.zeta(a-4.0,1)/fac
-        sv = special.errprint(sv)
-        mu4 = mu4p - 4*mu3p*mu + 6*mu2p*mu*mu - 3*mu**4
-        g2 = mu4 / asarray(var**2) - 3.0
-        return mu, var, g1, g2
+        return _lazywhere(a > n + 1, (a, n),
+                lambda a, n: special.zeta(a - n, 1) / special.zeta(a, 1),
+                np.inf)
 zipf = zipf_gen(a=1,name='zipf', longname='A Zipf')
 
 

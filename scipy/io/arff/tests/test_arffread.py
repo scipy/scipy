@@ -12,11 +12,12 @@ else:
 
 import numpy as np
 
-from numpy.testing import TestCase, assert_array_almost_equal, assert_equal, \
-        assert_, assert_raises
+from numpy.testing import (TestCase, assert_array_almost_equal, assert_equal,
+        assert_, assert_raises, run_module_suite)
 
 from scipy.io.arff.arffread import loadarff
 from scipy.io.arff.arffread import read_header, parse_type, ParseArffError
+
 
 data_path = pjoin(os.path.dirname(__file__), 'data')
 
@@ -116,5 +117,4 @@ class HeaderTest(TestCase):
         assert_(attrs[4][1] == '{class0, class1, class2, class3}')
 
 if __name__ == "__main__":
-    import nose
-    nose.run(argv=['', __file__])
+    run_module_suite()

@@ -30,110 +30,7 @@ def quad_explain(output=sys.stdout):
     None
 
     """
-    output.write("""
-Extra information for quad() inputs and outputs:
-
-  If full_output is non-zero, then the third output argument (infodict)
-  is a dictionary with entries as tabulated below.  For infinite limits, the
-  range is transformed to (0,1) and the optional outputs are given with
-  respect to this transformed range.  Let M be the input argument limit and
-  let K be infodict['last'].  The entries are:
-
-  'neval' : The number of function evaluations.
-  'last'  : The number, K, of subintervals produced in the subdivision process.
-  'alist' : A rank-1 array of length M, the first K elements of which are the
-            left end points of the subintervals in the partition of the
-            integration range.
-  'blist' : A rank-1 array of length M, the first K elements of which are the
-            right end points of the subintervals.
-  'rlist' : A rank-1 array of length M, the first K elements of which are the
-            integral approximations on the subintervals.
-  'elist' : A rank-1 array of length M, the first K elements of which are the
-            moduli of the absolute error estimates on the subintervals.
-  'iord'  : A rank-1 integer array of length M, the first L elements of
-            which are pointers to the error estimates over the subintervals
-            with L=K if K<=M/2+2 or L=M+1-K otherwise. Let I be the sequence
-            infodict['iord'] and let E be the sequence infodict['elist'].
-            Then E[I[1]], ..., E[I[L]] forms a decreasing sequence.
-
-  If the input argument points is provided (i.e. it is not None), the
-  following additional outputs are placed in the output dictionary.  Assume the
-  points sequence is of length P.
-
-  'pts'   : A rank-1 array of length P+2 containing the integration limits
-            and the break points of the intervals in ascending order.
-            This is an array giving the subintervals over which integration
-            will occur.
-  'level' : A rank-1 integer array of length M (=limit), containing the
-            subdivision levels of the subintervals, i.e., if (aa,bb) is a
-            subinterval of (pts[1], pts[2]) where pts[0] and pts[2] are
-            adjacent elements of infodict['pts'], then (aa,bb) has level l if
-            |bb-aa|=|pts[2]-pts[1]| * 2**(-l).
-  'ndin'  : A rank-1 integer array of length P+2.  After the first integration
-            over the intervals (pts[1], pts[2]), the error estimates over some
-            of the intervals may have been increased artificially in order to
-            put their subdivision forward.  This array has ones in slots
-            corresponding to the subintervals for which this happens.
-
-Weighting the integrand:
-
-  The input variables, weight and wvar, are used to weight the integrand by
-  a select list of functions.  Different integration methods are used
-  to compute the integral with these weighting functions.  The possible values
-  of weight and the corresponding weighting functions are.
-
-  'cos'     : cos(w*x)                            : wvar = w
-  'sin'     : sin(w*x)                            : wvar = w
-  'alg'     : g(x) = ((x-a)**alpha)*((b-x)**beta) : wvar = (alpha, beta)
-  'alg-loga': g(x)*log(x-a)                       : wvar = (alpha, beta)
-  'alg-logb': g(x)*log(b-x)                       : wvar = (alpha, beta)
-  'alg-log' : g(x)*log(x-a)*log(b-x)              : wvar = (alpha, beta)
-  'cauchy'  : 1/(x-c)                             : wvar = c
-
-  wvar holds the parameter w, (alpha, beta), or c depending on the weight
-  selected.  In these expressions, a and b are the integration limits.
-
-  For the 'cos' and 'sin' weighting, additional inputs and outputs are
-  available.
-
-  For finite integration limits, the integration is performed using a
-  Clenshaw-Curtis method which uses Chebyshev moments.  For repeated
-  calculations, these moments are saved in the output dictionary:
-
-  'momcom' : The maximum level of Chebyshev moments that have been computed,
-             i.e., if M_c is infodict['momcom'] then the moments have been
-             computed for intervals of length |b-a|* 2**(-l), l=0,1,...,M_c.
-  'nnlog'  : A rank-1 integer array of length M(=limit), containing the
-             subdivision levels of the subintervals, i.e., an element of this
-             array is equal to l if the corresponding subinterval is
-             |b-a|* 2**(-l).
-  'chebmo' : A rank-2 array of shape (25, maxp1) containing the computed
-             Chebyshev moments.  These can be passed on to an integration
-             over the same interval by passing this array as the second
-             element of the sequence wopts and passing infodict['momcom'] as
-             the first element.
-
-  If one of the integration limits is infinite, then a Fourier integral is
-  computed (assuming w neq 0).  If full_output is 1 and a numerical error
-  is encountered, besides the error message attached to the output tuple,
-  a dictionary is also appended to the output tuple which translates the
-  error codes in the array info['ierlst'] to English messages.  The output
-  information dictionary contains the following entries instead of 'last',
-  'alist', 'blist', 'rlist', and 'elist':
-
-  'lst'    : The number of subintervals needed for the integration (call it K_f).
-  'rslst'  : A rank-1 array of length M_f=limlst, whose first K_f elements
-             contain the integral contribution over the interval (a+(k-1)c,
-             a+kc) where c = (2*floor(|w|) + 1) * pi / |w| and k=1,2,...,K_f.
-  'erlst'  : A rank-1 array of length M_f containing the error estimate
-             corresponding to the interval in the same position in
-             infodict['rslist'].
-  'ierlst' : A rank-1 integer array of length M_f containing an error flag
-             corresponding to the interval in the same position in
-             infodict['rslist'].  See the explanation dictionary (last entry
-             in the output tuple) for the meaning of the codes.
-""")
-    return
+    output.write(quad.__doc__)
 
 
 def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
@@ -144,9 +41,6 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     Integrate func from `a` to `b` (possibly infinite interval) using a
     technique from the Fortran library QUADPACK.
-
-    Run scipy.integrate.quad_explain() for more information on the
-    more esoteric inputs and outputs.
 
     Parameters
     ----------
@@ -196,7 +90,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         singularities, discontinuities). The sequence does not have
         to be sorted.
     weight : float or int, optional
-        String indicating weighting function.
+        String indicating weighting function. Full explanation for this
+        and the remaining arguments can be found below.
     wvar : optional
         Variables for use with weighting functions.
     wopts : optional
@@ -204,7 +99,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     maxp1 : float or int, optional
         An upper bound on the number of Chebyshev moments.
     limlst : int, optional
-        Upper bound on the number of cylces (>=3) for use with a sinusoidal
+        Upper bound on the number of cycles (>=3) for use with a sinusoidal
         weighting and an infinite end-point.
 
     See Also
@@ -219,6 +114,134 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     simps : integrator for sampled data
     romb : integrator for sampled data
     scipy.special : for coefficients and roots of orthogonal polynomials
+
+    Notes
+    -----
+
+    **Extra information for quad() inputs and outputs**
+
+    If full_output is non-zero, then the third output argument
+    (infodict) is a dictionary with entries as tabulated below.  For
+    infinite limits, the range is transformed to (0,1) and the
+    optional outputs are given with respect to this transformed range.
+    Let M be the input argument limit and let K be infodict['last'].
+    The entries are:
+
+    'neval'
+        The number of function evaluations.
+    'last'
+        The number, K, of subintervals produced in the subdivision process.
+    'alist'
+        A rank-1 array of length M, the first K elements of which are the
+        left end points of the subintervals in the partition of the
+        integration range.
+    'blist'
+        A rank-1 array of length M, the first K elements of which are the
+        right end points of the subintervals.
+    'rlist'
+        A rank-1 array of length M, the first K elements of which are the
+        integral approximations on the subintervals.
+    'elist'
+        A rank-1 array of length M, the first K elements of which are the
+        moduli of the absolute error estimates on the subintervals.
+    'iord'
+        A rank-1 integer array of length M, the first L elements of
+        which are pointers to the error estimates over the subintervals
+        with L=K if K<=M/2+2 or L=M+1-K otherwise. Let I be the sequence
+        infodict['iord'] and let E be the sequence infodict['elist'].
+        Then E[I[1]], ..., E[I[L]] forms a decreasing sequence.
+
+    If the input argument points is provided (i.e. it is not None),
+    the following additional outputs are placed in the output
+    dictionary.  Assume the points sequence is of length P.
+
+    'pts'
+        A rank-1 array of length P+2 containing the integration limits
+        and the break points of the intervals in ascending order.
+        This is an array giving the subintervals over which integration
+        will occur.
+    'level'
+        A rank-1 integer array of length M (=limit), containing the
+        subdivision levels of the subintervals, i.e., if (aa,bb) is a
+        subinterval of (pts[1], pts[2]) where pts[0] and pts[2] are
+        adjacent elements of infodict['pts'], then (aa,bb) has level l if
+        |bb-aa|=|pts[2]-pts[1]| * 2**(-l).
+    'ndin'
+        A rank-1 integer array of length P+2.  After the first integration
+        over the intervals (pts[1], pts[2]), the error estimates over some
+        of the intervals may have been increased artificially in order to
+        put their subdivision forward.  This array has ones in slots
+        corresponding to the subintervals for which this happens.
+
+    **Weighting the integrand**
+
+    The input variables, *weight* and *wvar*, are used to weight the
+    integrand by a select list of functions.  Different integration
+    methods are used to compute the integral with these weighting
+    functions.  The possible values of weight and the corresponding
+    weighting functions are.
+
+    ==========  ===================================   =====================
+    ``weight``  Weight function used                  ``wvar``
+    ==========  ===================================   =====================
+    'cos'       cos(w*x)                              wvar = w
+    'sin'       sin(w*x)                              wvar = w
+    'alg'       g(x) = ((x-a)**alpha)*((b-x)**beta)   wvar = (alpha, beta)
+    'alg-loga'  g(x)*log(x-a)                         wvar = (alpha, beta)
+    'alg-logb'  g(x)*log(b-x)                         wvar = (alpha, beta)
+    'alg-log'   g(x)*log(x-a)*log(b-x)                wvar = (alpha, beta)
+    'cauchy'    1/(x-c)                               wvar = c
+    ==========  ===================================   =====================
+
+    wvar holds the parameter w, (alpha, beta), or c depending on the weight
+    selected.  In these expressions, a and b are the integration limits.
+
+    For the 'cos' and 'sin' weighting, additional inputs and outputs are
+    available.
+
+    For finite integration limits, the integration is performed using a
+    Clenshaw-Curtis method which uses Chebyshev moments.  For repeated
+    calculations, these moments are saved in the output dictionary:
+    
+    'momcom'
+        The maximum level of Chebyshev moments that have been computed,
+        i.e., if M_c is infodict['momcom'] then the moments have been
+        computed for intervals of length |b-a|* 2**(-l), l=0,1,...,M_c.
+    'nnlog'
+        A rank-1 integer array of length M(=limit), containing the
+        subdivision levels of the subintervals, i.e., an element of this
+        array is equal to l if the corresponding subinterval is
+        |b-a|* 2**(-l).
+    'chebmo'
+        A rank-2 array of shape (25, maxp1) containing the computed
+        Chebyshev moments.  These can be passed on to an integration
+        over the same interval by passing this array as the second
+        element of the sequence wopts and passing infodict['momcom'] as
+        the first element.
+
+    If one of the integration limits is infinite, then a Fourier integral is
+    computed (assuming w neq 0).  If full_output is 1 and a numerical error
+    is encountered, besides the error message attached to the output tuple,
+    a dictionary is also appended to the output tuple which translates the
+    error codes in the array info['ierlst'] to English messages.  The output
+    information dictionary contains the following entries instead of 'last',
+    'alist', 'blist', 'rlist', and 'elist':
+
+    'lst'
+        The number of subintervals needed for the integration (call it K_f).
+    'rslst'
+        A rank-1 array of length M_f=limlst, whose first K_f elements
+        contain the integral contribution over the interval (a+(k-1)c,
+        a+kc) where c = (2*floor(|w|) + 1) * pi / |w| and k=1,2,...,K_f.
+    'erlst'
+        A rank-1 array of length M_f containing the error estimate
+        corresponding to the interval in the same position in
+        infodict['rslist'].
+    'ierlst'
+        A rank-1 integer array of length M_f containing an error flag
+        corresponding to the interval in the same position in
+        infodict['rslist'].  See the explanation dictionary (last entry
+        in the output tuple) for the meaning of the codes.
 
     Examples
     --------

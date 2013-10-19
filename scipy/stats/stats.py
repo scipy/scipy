@@ -711,19 +711,22 @@ def mask_to_limits(a, limits, inclusive):
             am = ma.masked_less(am, lower_limit)
         else:
             am = ma.masked_less_equal(am, lower_limit)
+
     if upper_limit is not None:
         if upper_include:
             am = ma.masked_greater(am, upper_limit)
         else:
             am = ma.masked_greater_equal(am, upper_limit)
+
     if am.count() == 0:
         raise ValueError("No array values within given limits")
+
     return am
 
 
 def tmean(a, limits=None, inclusive=(True, True)):
     """
-    Compute the trimmed mean
+    Compute the trimmed mean.
 
     This function finds the arithmetic mean of given values, ignoring values
     outside the given `limits`.
@@ -731,12 +734,12 @@ def tmean(a, limits=None, inclusive=(True, True)):
     Parameters
     ----------
     a : array_like
-        array of values
+        Array of values.
     limits : None or (lower limit, upper limit), optional
         Values in the input array less than the lower limit or greater than the
-        upper limit will be ignored. When limits is None, then all values are
-        used. Either of the limit values in the tuple can also be None
-        representing a half-open interval.  The default value is None.
+        upper limit will be ignored.  When limits is None (default), then all
+        values are used.  Either of the limit values in the tuple can also be
+        None representing a half-open interval.
     inclusive : (bool, bool), optional
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to the lower or upper limits
@@ -748,15 +751,8 @@ def tmean(a, limits=None, inclusive=(True, True)):
 
     """
     a = asarray(a)
-
-    # Cast to a float if this is an integer array. If it is already a float
-    # array, leave it as is to preserve its precision.
-    if issubclass(a.dtype.type, np.integer):
-        a = a.astype(float)
-
-    # No trimming.
     if limits is None:
-        return np.mean(a,None)
+        return np.mean(a, None)
 
     am = mask_to_limits(a.ravel(), limits, inclusive)
     return am.mean()
@@ -779,7 +775,7 @@ def tvar(a, limits=None, inclusive=(True, True)):
     Parameters
     ----------
     a : array_like
-        array of values
+        Array of values.
     limits : None or (lower limit, upper limit), optional
         Values in the input array less than the lower limit or greater than the
         upper limit will be ignored. When limits is None, then all values are
@@ -794,6 +790,11 @@ def tvar(a, limits=None, inclusive=(True, True)):
     -------
     tvar : float
         Trimmed variance.
+
+    Notes
+    -----
+    `tvar` computes the unbiased sample variance, i.e. it uses a correction
+    factor ``n / (n - 1)``.
 
     """
     a = asarray(a)
@@ -838,7 +839,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     return ma.minimum.reduce(am, axis)
 
 
-def tmax(a, upperlimit, axis=0, inclusive=True):
+def tmax(a, upperlimit=None, axis=0, inclusive=True):
     """
     Compute the trimmed maximum
 
@@ -895,13 +896,18 @@ def tstd(a, limits=None, inclusive=(True, True)):
     -------
     tstd : float
 
+    Notes
+    -----
+    `tstd` computes the unbiased sample standard deviation, i.e. it uses a
+    correction factor ``n / (n - 1)``.
+
     """
     return np.sqrt(tvar(a, limits, inclusive))
 
 
 def tsem(a, limits=None, inclusive=(True, True)):
     """
-    Compute the trimmed standard error of the mean
+    Compute the trimmed standard error of the mean.
 
     This function finds the standard error of the mean for given
     values, ignoring values outside the given `limits`.
@@ -924,14 +930,19 @@ def tsem(a, limits=None, inclusive=(True, True)):
     -------
     tsem : float
 
+    Notes
+    -----
+    `tsem` uses unbiased sample standard deviation, i.e. it uses a
+    correction factor ``n / (n - 1)``.
+
     """
     a = np.asarray(a).ravel()
     if limits is None:
-        n = float(len(a))
-        return a.std()/np.sqrt(n)
-    am = mask_to_limits(a.ravel(), limits, inclusive)
+        return a.std(ddof=1) / np.sqrt(a.size)
+
+    am = mask_to_limits(a, limits, inclusive)
     sd = np.sqrt(masked_var(am))
-    return sd / am.count()
+    return sd / np.sqrt(am.count())
 
 
 #####################################
@@ -1669,8 +1680,9 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
         The weights for each value in `a`. Default is None, which gives each
         value a weight of 1.0
     printextras : bool, optional
-        If True, the number of extra points is printed to standard output.
-        Default is False.
+        If True, if there are extra points (i.e. the points that fall outside
+        the bin limits) a warning is raised saying how many of those points
+        there are.  Default is False.
 
     Returns
     -------
@@ -1693,7 +1705,7 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
     default if default limits is not set.
 
     """
-    a = np.ravel(a)               # flatten any >1D arrays
+    a = np.ravel(a)
     if defaultlimits is None:
         # no range given, so use values in `a`
         data_min = a.min()

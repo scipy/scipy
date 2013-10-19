@@ -13,6 +13,9 @@
 .deps
 .libs
 .tox
+.project
+.pydevproject
+.settings
 cythonize.dat
 _configtest.c
 build.log
