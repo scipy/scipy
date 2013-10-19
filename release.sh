@@ -35,6 +35,7 @@ if [ -z "$gpp" ]; then
     exit 1
 fi
 paver dmg -p 2.7  # 32/64-bit version
+paver dmg -p 3.3  # 32/64-bit version
 
 paver bdist_superpack -p 2.7
 paver bdist_superpack -p 2.6
@@ -48,7 +49,6 @@ paver bdist_superpack -p 3.3
 #export MACOSX_DEPLOYMENT_TARGET=10.3
 #paver dmg -p 2.6
 #paver dmg -p 2.7  # 32-bit version
-#export CC=/usr/bin/gcc-4.0  # necessary on 10.6, not sure about 10.5
 
 
 paver write_release_and_log

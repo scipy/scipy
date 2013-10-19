@@ -196,10 +196,10 @@ LIBGFORTRAN_A_PATH = "/usr/local/lib/libgfortran.a"
 
 def parse_numpy_version(pyexec):
     if isinstance(pyexec, str):
-        cmd = [pyexec, "-c", "'import numpy; print numpy.version.version'"]
+        cmd = [pyexec, "-c", "'import numpy; print(numpy.version.version)'"]
     else:
         # sequence for pyexec
-        cmd = pyexec + ["-c", "'import numpy; print numpy.version.version'"]
+        cmd = pyexec + ["-c", "'import numpy; print(numpy.version.version)'"]
 
     # Execute in shell because launching python from python does not work
     # (hangs)
@@ -219,7 +219,7 @@ def bootstrap():
     """create virtualenv in ./install"""
     try:
         import virtualenv
-    except ImportError, e:
+    except ImportError:
         raise RuntimeError("virtualenv is needed for bootstrap")
 
     bdir = options.bootstrap_dir
@@ -427,7 +427,12 @@ def _bdist_wininst(pyver, cfg_env=None):
             cfg_env[k] = v
     else:
         cfg_env = WINDOWS_ENV
-    subprocess.check_call(cmd, env=cfg_env)
+    try:
+        subprocess.check_call(cmd, env=cfg_env)
+    except subprocess.CalledProcessError:
+        # Too many open files to compile in one go, so re-run.
+        print('RESTART WINDOWS BUILD.  See gh-2709.')
+        subprocess.check_call(cmd, env=cfg_env)
 
 
 #--------------------
