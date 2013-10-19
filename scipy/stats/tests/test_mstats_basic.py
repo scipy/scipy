@@ -522,6 +522,13 @@ class TestNormalitytests():
         assert_array_almost_equal(mstats.kurtosistest(x),
                                   stats.kurtosistest(x))
 
+        funcs = [stats.normaltest, stats.skewtest, stats.kurtosistest]
+        mfuncs = [mstats.normaltest, mstats.skewtest, mstats.kurtosistest]
+        x = [1, 2, 3, 4]
+        for func, mfunc in zip(funcs, mfuncs):
+            assert_raises(ValueError, func, x)
+            assert_raises(ValueError, mfunc, x)
+
     def test_axis_None(self):
         # Test axis=None (equal to axis=0 for 1-D input)
         x = np.array((-2,-1,0,1,2,3)*4)**2
