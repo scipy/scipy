@@ -1,8 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
-from numpy import vectorize
+from numpy import vectorize, deprecate
 from numpy.random import random_sample
 
 __all__ = ['randwppf', 'randwcdf']
@@ -13,7 +11,8 @@ __all__ = ['randwppf', 'randwcdf']
 # General purpose continuous
 ######################################
 
-
+@deprecate(message="Deprecated in scipy 0.14.0, use "
+                   "distribution-specific rvs() method instead")
 def randwppf(ppf, args=(), size=None):
     """
     returns an array of randomly distributed integers of a distribution
@@ -25,13 +24,11 @@ def randwppf(ppf, args=(), size=None):
     function must accept an array of q values to compute over.
 
     """
-    warnings.warn("randwppf is deprecated, use "
-                  "distribution-specific rvs() method instead",
-                        category=DeprecationWarning)
     U = random_sample(size=size)
     return ppf(*(U,)+args)
 
-
+@deprecate(message="Deprecated in scipy 0.14.0, use "
+                   "distribution-specific rvs() method instead")
 def randwcdf(cdf, mean=1.0, args=(), size=None):
     """
     Returns an array of randomly distributed integers given a CDF.
@@ -63,9 +60,6 @@ def randwcdf(cdf, mean=1.0, args=(), size=None):
     `cdf` parameter.
 
     """
-    warnings.warn("randwcdf is deprecated, use "
-                  "distribution-specific rvs() method instead",
-                        category=DeprecationWarning)
     import scipy.optimize as optimize
 
     def _ppfopt(x, q, *nargs):
