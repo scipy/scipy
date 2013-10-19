@@ -35,6 +35,7 @@ if [ -z "$gpp" ]; then
     exit 1
 fi
 paver dmg -p 2.7  # 32/64-bit version
+paver dmg -p 3.3  # 32/64-bit version
 
 paver bdist_superpack -p 2.7
 paver bdist_superpack -p 2.6
