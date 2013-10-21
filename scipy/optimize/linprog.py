@@ -50,7 +50,7 @@ def linprog_verbose_callback(xk,**kwargs):
             The current iteration number.
         pivot : tuple(int,int)
             The index of the tableau selected as the next pivot, or nan if no pivot exists
-        basics : list[tuple(str,float)]
+        basics : list[tuple(int,float)]
             A list of the current basic variables.  Each element contains the name of a basic variable and
             its value.
         complete : bool
@@ -86,7 +86,7 @@ def linprog_verbose_callback(xk,**kwargs):
             print("Pivot Element: T[{:.0f},{:.0f}]\n".format(pivrow,pivcol))
         print("Basic Variables:"),
         for basic_var in basics:
-            print("{:<5s} = {: f}".format(basic_var[0],basic_var[1]))
+            print("{:<5s} = {: f}".format(columns[basic_var[0]],basic_var[1]))
         print()
         print("Current Solution:")
         print("x = ", xk)
@@ -122,8 +122,8 @@ def linprog_terse_callback(xk, **kwargs):
             The current iteration number.
         pivot : tuple(int,int)
             The index of the tableau selected as the next pivot, or nan if no pivot exists
-        basics : list[tuple(str,float)]
-            A list of the current basic variables.  Each element contains the name of a basic variable and
+        basics : list[tuple(int,float)]
+            A list of the current basic variables.  Each element contains the index of a basic variable and
             its value.
         complete : bool
             True if the simplex algorithm has completed (and this is the final call to callback), otherwise False.
@@ -134,6 +134,39 @@ def linprog_terse_callback(xk, **kwargs):
         print("Iter:   X:")
     print("{: <5d}   ".format(iter),end="")
     print(xk)
+
+
+def _get_basics(tableau):
+    """
+    Given a tableau, return the indices of the basic columns and the corresponding
+    values of the basic variables.
+
+    Parameters
+    ----------
+    tableau : array_like
+        A 2-D array representing the current for of the tableau for the simplex method in standard form.
+
+    Returns
+    -------
+    indices : array_like
+        An array of ints where each value is the index of a basic column in the tableau.
+    values : array_like
+        An array of floats where each value is the value of a basic variable whose column
+        is given by the corresponding index in indices.
+    """
+    indices = []
+    values = []
+    count = 0
+    n,m = tableau.shape
+    for col in range(m-1):
+        ones_in_col = tableau[:,col] == 1.0
+        zeros_in_col = tableau[:,col] == 0.0
+        if ones_in_col.sum() == 1 and zeros_in_col.sum() == n-1:
+            # Column is basic
+            nonzero_row = np.nonzero(tableau[:-1,col])[0][0]
+            indices.append(col)
+            values.append(tableau[nonzero_row,-1])
+    return np.asarray(indices,dtype=np.int),np.asarray(values,dtype=np.float64)
 
 
 def lpsimplex(tableau,n,n_slack,n_artificial,maxiter=1000,phase=2,callback=None,tol=1.0E-12,nit0=0):
@@ -239,7 +272,7 @@ def lpsimplex(tableau,n,n_slack,n_artificial,maxiter=1000,phase=2,callback=None,
     status = None
     message = ""
     cycle = 0
-    x = np.zeros([n])
+    x = np.zeros(n)
 
     if not callback is None:
         index_to_varname = {}
@@ -297,16 +330,14 @@ def lpsimplex(tableau,n,n_slack,n_artificial,maxiter=1000,phase=2,callback=None,
             status = 0
 
         if not callback is None:
-            bv_map = np.sum(tableau[:,:-1] != 0, 0)  # bv_map is the sum of the nonzero elements in each column
-            basic_cols = np.where(bv_map == 1)[0]    # Columns with basic variables
-            basic_vars = []
+            basic_i,basic_val = _get_basics(tableau)
+            basic_vars = zip(basic_i.tolist(),basic_val.tolist())
             x.fill(0.0)
-            for i in basic_cols:
-                nonzero_row = np.nonzero(tableau[:-1,i])[0][0]
-                basic_vars.append((column_headers[i], tableau[nonzero_row,-1] / tableau[nonzero_row,i]))
-
-                if i < n:
-                    x[i] = basic_vars[-1][1]
+            for i in range(len(basic_vars)):
+                if basic_i[i] < n:
+                    x[basic_i[i]] = basic_val[i]
+                else:
+                    break
 
             callback(x, **{"tableau": tableau,
                             "iter":nit,
@@ -333,13 +364,13 @@ def lpsimplex(tableau,n,n_slack,n_artificial,maxiter=1000,phase=2,callback=None,
             message = "Optimization terminated successfully."
             status = 0
 
-    bv_map = np.sum(tableau[:,:-1] != 0, 0)  # bv_map is the sum of the nonzero elements in each column
-    basic_cols = np.where(bv_map == 1)[0]    # Columns with basic variables
+    basic_i,basic_val = _get_basics(tableau)
     x.fill(0.0)
-    for col in basic_cols:
-        if col < n:
-            nonzero_row = np.nonzero(tableau[:-1,col])[0][0]
-            x[col] = tableau[nonzero_row,-1] / tableau[nonzero_row,col]
+    for i in range(len(basic_i)):
+        if basic_i[i] < n:
+            x[basic_i[i]] = basic_val[i]
+        else:
+            break
 
     return x, nit, status, message
 
@@ -419,6 +450,13 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
         The basic variables.
     nbv : tuple
         The nonbasic variables.
+
+    References
+    ----------
+    .. [1] Hillier, S.H. and Lieberman, G.J. (1995), "Introduction to Mathematical
+           Programming", McGraw-Hill, Chapter 4.
+
+
     """
     status = 0
     message = ""
@@ -465,17 +503,14 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
             message = "Invalid input.  Length of bounds is inconsistent with the length of c"
         else:
             try:
-                L = np.asarray([val[0] for val in bounds],dtype=np.float64)
-                U = np.asarray([val[1] for val in bounds],dtype=np.float64)
+                for i in range(n):
+                    if len(bounds[0]) != 2:
+                        raise IndexError()
+                    L[i] = bounds[i][0] if not bounds[i][0] is None else -np.inf
+                    U[i] = bounds[i][1] if not bounds[i][1] is None else np.inf
             except IndexError as err:
                 status = -1
                 message = "Invalid input.  bounds must be a n x 2 sequence/array where n = len(c)."
-
-    for i in range(n):
-        if L[i] is None:
-            L[i] = -np.inf
-        if U[i] is None:
-            U[i] = np.inf
 
     if np.any(L == -np.inf):
         # If any lower-bound constraint is a free variable
@@ -523,7 +558,6 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
     # Now find negative lower bounds (finite or infinite) which require a change of variables or free variables
     # and handle them appropriately
     for i in range(0,n):
-
         if L[i] < 0:
             if np.isfinite(L[i]) and L[i] < 0:
                 # Add a change of variables for x[i]
@@ -723,15 +757,14 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
                                                  phase=2,callback=callback,tol=tol,nit0=nit1)
 
         # For those variables with finite negative lower bounds, reverse the change of variables
-        masked_L = ma.array(L,mask=np.isinf(L),fill_value=0.0)
-        x = x + masked_L.data
+        masked_L = ma.array(L,mask=np.isinf(L),fill_value=0.0).filled()
+        x = x + masked_L
 
         # For those variables with infinite negative lower bounds, take x[i] as the difference between x[i] and the floor variable.
         if have_floor_variable:
             for i in range(1,n):
                 if np.isinf(L[i]):
                     x[i] -= x[0]
-
             x = x[1:]
 
         # Optimization complete at this point
