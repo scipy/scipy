@@ -128,8 +128,7 @@ class TestLinprog(TestCase):
                                   err_msg="Test of linprog with nontrivial problem converged but yielded unexpected result (x)")
 
     def test_negative_variable(self):
-        """ Test linprog with a problem with one unbounded variable and another with a negative lower bound.
-        """
+        """ Test linprog with a problem with one unbounded variable and another with a negative lower bound. """
         c = [-1,4]
 
         A_ub = [[-3,1],
