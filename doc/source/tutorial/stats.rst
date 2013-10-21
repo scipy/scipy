@@ -192,7 +192,7 @@ to set the ``loc`` parameter. Let's see:
     4.983550784784704
 
 Thus, to explain the output of the example of the last section:
-``norm.rvs(5)` generates a normally distributed random variate with
+``norm.rvs(5)`` generates a normally distributed random variate with
 mean ``loc=5``.
 
 I prefer to set the ``loc`` and ``scale`` parameter explicitly, by

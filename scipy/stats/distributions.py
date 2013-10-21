@@ -900,6 +900,14 @@ class rv_generic(object):
         scale : array_like, optional  (continuous distributions only).
             Scale parameter (default=1).
 
+        Notes
+        -----
+        Entropy is defined base `e`:
+        
+        >>> drv = rv_discrete(values=((0, 1), (0.5, 0.5)))
+        >>> np.allclose(drv.entropy(), np.log(2.0))
+        True
+
         """
         args, loc, scale = self._parse_args(*args, **kwds)
         # NB: for discrete distributions scale=1 by construction in _parse_args

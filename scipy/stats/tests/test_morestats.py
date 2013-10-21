@@ -10,9 +10,17 @@ import numpy as np
 from numpy.random import RandomState
 from numpy.testing import (TestCase, run_module_suite, assert_array_equal,
     assert_almost_equal, assert_array_less, assert_array_almost_equal,
-    assert_raises, assert_, assert_allclose, assert_equal)
+    assert_raises, assert_, assert_allclose, assert_equal, dec)
 
-import scipy.stats as stats
+from scipy import stats
+
+# Matplotlib is not a scipy dependency but is optionally used in probplot, so
+# check if it's available
+try:
+    import matplotlib.pyplot as plt
+    have_matplotlib = True
+except:
+    have_matplotlib = False
 
 
 g1 = [1.006, 0.996, 0.998, 1.000, 0.992, 0.993, 1.002, 0.999, 0.994, 1.000]
@@ -117,7 +125,7 @@ class TestBartlett(TestCase):
         assert_almost_equal(pval,0.0136358632781,7)
 
     def test_bad_arg(self):
-        """Too few args raises ValueError."""
+        # Too few args raises ValueError.
         assert_raises(ValueError, stats.bartlett, [1])
 
 
@@ -130,7 +138,8 @@ class TestLevene(TestCase):
         assert_almost_equal(pval,0.0990829755522,7)
 
     def test_trimmed1(self):
-        """Test that center='trimmed' gives the same result as center='mean' when proportiontocut=0."""
+        # Test that center='trimmed' gives the same result as center='mean'
+        # when proportiontocut=0.
         W1, pval1 = stats.levene(g1, g2, g3, center='mean')
         W2, pval2 = stats.levene(g1, g2, g3, center='trimmed', proportiontocut=0.0)
         assert_almost_equal(W1, W2)
@@ -185,11 +194,11 @@ class TestBinomP(TestCase):
         assert_almost_equal(pval,0.38249155957481695,11)
 
     def test_bad_len_x(self):
-        """Length of x must be 1 or 2."""
+        # Length of x must be 1 or 2.
         assert_raises(ValueError, stats.binom_test, [1,2,3])
 
     def test_bad_n(self):
-        """len(x) is 1, but n is invalid."""
+        # len(x) is 1, but n is invalid.
         # Missing n
         assert_raises(ValueError, stats.binom_test, [100])
         # n less than x[0]
@@ -224,7 +233,8 @@ class TestFligner(TestCase):
                            (3.2282229927203536, 0.072379187848207877), 11)
 
     def test_trimmed1(self):
-        """Test that center='trimmed' gives the same result as center='mean' when proportiontocut=0."""
+        # Test that center='trimmed' gives the same result as center='mean'
+        # when proportiontocut=0.
         Xsq1, pval1 = stats.fligner(g1, g2, g3, center='mean')
         Xsq2, pval2 = stats.fligner(g1, g2, g3, center='trimmed', proportiontocut=0.0)
         assert_almost_equal(Xsq1, Xsq2)
@@ -264,7 +274,7 @@ class TestFligner(TestCase):
         assert_raises(ValueError, stats.fligner, x, x, center='trim')
 
     def test_bad_num_args(self):
-        """Too few args raises ValueError."""
+        # Too few args raises ValueError.
         assert_raises(ValueError, stats.fligner, [1])
 
 
@@ -369,47 +379,126 @@ class TestMood(TestCase):
         assert_raises(ValueError, stats.mood, [1], [])
 
 
+class TestProbplot(TestCase):
+
+    def test_basic(self):
+        np.random.seed(12345)
+        x = stats.norm.rvs(size=20)
+        osm, osr = stats.probplot(x, fit=False)
+        osm_expected = [-1.8241636, -1.38768012, -1.11829229, -0.91222575,
+                        -0.73908135, -0.5857176 , -0.44506467, -0.31273668,
+                        -0.18568928, -0.06158146, 0.06158146, 0.18568928,
+                        0.31273668, 0.44506467, 0.5857176, 0.73908135,
+                        0.91222575, 1.11829229, 1.38768012, 1.8241636]
+        assert_allclose(osr, np.sort(x))
+        assert_allclose(osm, osm_expected)
+
+        res, res_fit = stats.probplot(x, fit=True)
+        res_fit_expected = [1.05361841, 0.31297795, 0.98741609]
+        assert_allclose(res_fit, res_fit_expected)
+
+    def test_sparams_keyword(self):
+        np.random.seed(123456)
+        x = stats.norm.rvs(size=100)
+        # Check that None, () and 0 (loc=0, for normal distribution) all work
+        # and give the same results
+        osm1, osr1 = stats.probplot(x, sparams=None, fit=False)
+        osm2, osr2 = stats.probplot(x, sparams=0, fit=False)
+        osm3, osr3 = stats.probplot(x, sparams=(), fit=False)
+        assert_allclose(osm1, osm2)
+        assert_allclose(osm1, osm3)
+        assert_allclose(osr1, osr2)
+        assert_allclose(osr1, osr3)
+        # Check giving (loc, scale) params for normal distribution
+        osm, osr = stats.probplot(x, sparams=(), fit=False)
+
+    def test_dist_keyword(self):
+        np.random.seed(12345)
+        x = stats.norm.rvs(size=20)
+        osm1, osr1 = stats.probplot(x, fit=False, dist='t', sparams=(3,))
+        osm2, osr2 = stats.probplot(x, fit=False, dist=stats.t, sparams=(3,))
+        assert_allclose(osm1, osm2)
+        assert_allclose(osr1, osr2)
+
+        assert_raises(ValueError, stats.probplot, x, dist='wrong-dist-name')
+        assert_raises(AttributeError, stats.probplot, x, dist=[])
+
+        class custom_dist(object):
+            """Some class that looks just enough like a distribution."""
+            def ppf(self, q):
+                return stats.norm.ppf(q, loc=2)
+
+        osm1, osr1 = stats.probplot(x, sparams=(2,), fit=False)
+        osm2, osr2 = stats.probplot(x, dist=custom_dist(), fit=False)
+        assert_allclose(osm1, osm2)
+        assert_allclose(osr1, osr2)
+
+    @dec.skipif(not have_matplotlib)
+    def test_plot_kwarg(self):
+        np.random.seed(7654321)
+        fig = plt.figure()
+        fig.add_subplot(111)
+        x = stats.t.rvs(3, size=100)
+        res1, fitres1 = stats.probplot(x, plot=plt)
+        plt.close()
+        res2, fitres2 = stats.probplot(x, plot=None)
+        res3 = stats.probplot(x, fit=False, plot=plt)
+        plt.close()
+        res4 = stats.probplot(x, fit=False, plot=None)
+        # Check that results are consistent between combinations of `fit` and
+        # `plot` keywords.
+        assert_(len(res1) == len(res2) == len(res3) == len(res4) == 2)
+        assert_allclose(res1, res2)
+        assert_allclose(res1, res3)
+        assert_allclose(res1, res4)
+        assert_allclose(fitres1, fitres2)
+
+        # Check that a Matplotlib Axes object is accepted
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        stats.probplot(x, fit=False, plot=ax)
+        plt.close()
+
+    def test_probplot_bad_args(self):
+        # Raise ValueError when given an invalid distribution.
+        assert_raises(ValueError, stats.probplot, [1], dist="plate_of_shrimp")
+
+
 def test_wilcoxon_bad_arg():
-    """Raise ValueError when two args of different lengths are given or
-       zero_method is unknwon"""
+    # Raise ValueError when two args of different lengths are given or
+    # zero_method is unknown.
     assert_raises(ValueError, stats.wilcoxon, [1], [1,2])
     assert_raises(ValueError, stats.wilcoxon, [1,2], [1,2], "dummy")
 
 
 def test_mvsdist_bad_arg():
-    """Raise ValueError if fewer than two data points are given."""
+    # Raise ValueError if fewer than two data points are given.
     data = [1]
     assert_raises(ValueError, stats.mvsdist, data)
 
 
 def test_kstat_bad_arg():
-    """Raise ValueError if n > 4 or n > 1."""
+    # Raise ValueError if n > 4 or n > 1.
     data = [1]
     n = 10
     assert_raises(ValueError, stats.kstat, data, n=n)
 
 
 def test_kstatvar_bad_arg():
-    """Raise ValueError is n is not 1 or 2."""
+    # Raise ValueError is n is not 1 or 2.
     data = [1]
     n = 10
     assert_raises(ValueError, stats.kstatvar, data, n=n)
 
 
-def test_probplot_bad_arg():
-    """Raise ValueError when given an invalid distribution."""
-    data = [1]
-    assert_raises(ValueError, stats.probplot, data, dist="plate_of_shrimp")
-
-
 def test_ppcc_max_bad_arg():
-    """Raise ValueError when given an invalid distribution."""
+    # Raise ValueError when given an invalid distribution.
     data = [1]
     assert_raises(ValueError, stats.ppcc_max, data, dist="plate_of_shrimp")
 
 
 def test_boxcox_bad_arg():
-    """Raise ValueError if any data value is negative."""
+    # Raise ValueError if any data value is negative.
     x = np.array([-1])
     assert_raises(ValueError, stats.boxcox, x)
 
