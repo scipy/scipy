@@ -127,5 +127,29 @@ class TestLinprog(TestCase):
         assert_array_almost_equal(res.x,[101/1391,1462/1391,0,752/1391],
                                   err_msg="Test of linprog with nontrivial problem converged but yielded unexpected result (x)")
 
+    def test_negative_variable(self):
+        """ Test linprog with a problem with one unbounded variable and another with a negative lower bound.
+        """
+        c = [-1,4]
+
+        A_ub = [[-3,1],
+                [1,2]]
+
+        b_ub = [6,4]
+
+        x0_bounds = (-np.inf,np.inf)
+        x1_bounds = (-3,np.inf)
+
+        res = linprog(c,A_ub=A_ub,b_ub=b_ub,bounds=(x0_bounds,x1_bounds),objtype='max',disp=False)
+
+        assert_(res.status == 0,
+                "Test of linprog with negative variable failed.  Expected status = 0, got {:d}.".format(res.status))
+
+        assert_allclose(res.fun,80/7,err_msg="Test of linprog with negative variable converged but yielded unexpected result.")
+
+        assert_array_almost_equal(res.x,[-8/7,18/7],
+                                  err_msg="Test of linprog with negative variable converged but yielded unexpected result (x)")
+
+
 if __name__ == "__main__":
     run_module_suite()
