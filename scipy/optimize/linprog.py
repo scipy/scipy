@@ -451,6 +451,45 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
     nbv : tuple
         The nonbasic variables.
 
+    Examples
+    --------
+    Consider the following problem:
+
+    Minimize: f = -1*x[0] + 4*x[1]
+
+    Subject to: -3*x[0] + 1*x[1] <= 6
+                 1*x[0] + 2*x[1] <= 4
+                            x[1] >= -3
+
+    where:  -inf <= x[0] <= inf
+
+    This problem deviates from the standard linear programming problem.  In standard form, linear programming problems
+    assume the variables x are non-negative.  Since the variables don't have standard bounds where 0 <= x <= inf, the
+    bounds of the variables must be explicitly set.
+
+    There are two upper-bound constraints, which can be expressed as
+
+    dot(A_ub,x) <= b_ub
+
+    The input for this problem is as follows:
+    >>> c = [-1,4]
+    >>> A_ub = [[-3,1],
+    >>>         [1,2]]
+    >>> b_ub = [6,4]
+    >>> x0_bounds = (-np.inf,np.inf)
+    >>> x1_bounds = (-3,np.inf)
+    >>> res = linprog(c,A_ub=A_ub,b_ub=b_ub,bounds=(x0_bounds,x1_bounds),objtype='max',disp=True)
+    >>> print(res)
+    Optimization terminated successfully.
+         Current function value: 11.428571
+         Iterations: 2
+    status: 0
+    success: True
+    fun: 11.428571428571429
+    x: array([-1.14285714,  2.57142857])
+    message: 'Optimization terminated successfully.'
+    nit: 2
+
     References
     ----------
     .. [1] Hillier, S.H. and Lieberman, G.J. (1995), "Introduction to Mathematical
