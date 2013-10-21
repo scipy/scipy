@@ -756,7 +756,7 @@ class PPoly(_PPolyBase):
         c2 *= factor[(slice(None),) + (None,)*(c2.ndim-1)]
 
         # construct a compatible polynomial
-        return PPoly.construct_fast(c2, self.x, self.extrapolate)
+        return self.construct_fast(c2, self.x, self.extrapolate)
 
     def antiderivative(self, nu=1):
         """
@@ -801,7 +801,7 @@ class PPoly(_PPolyBase):
                               self.x, nu)
 
         # construct a compatible polynomial
-        return PPoly.construct_fast(c, self.x, self.extrapolate)
+        return self.construct_fast(c, self.x, self.extrapolate)
 
     def integrate(self, a, b, extrapolate=None):
         """
@@ -1092,7 +1092,7 @@ class BPoly(_PPolyBase):
             c2 = np.zeros((1,) + c2.shape[1:], dtype=c2.dtype)
 
         # construct a compatible polynomial
-        return BPoly.construct_fast(c2, self.x, self.extrapolate)
+        return self.construct_fast(c2, self.x, self.extrapolate)
 
     def extend(self, c, x, right=True):
         k = max(self.c.shape[0], c.shape[0])
@@ -1132,8 +1132,8 @@ class BPoly(_PPolyBase):
 
         return cls.construct_fast(c, pp.x, extrapolate)
 
-    @staticmethod
-    def from_derivatives(xi, yi, orders=None, direction=None,
+    @classmethod
+    def from_derivatives(cls, xi, yi, orders=None, direction=None,
                          axis=0, extrapolate=None):
         """Construct a piecewise polynomial in the Bernstein basis,
         compatible with the specified values and derivatives at breakpoints.
@@ -1245,7 +1245,7 @@ class BPoly(_PPolyBase):
             c.append(b)
 
         c = np.asarray(c)
-        return BPoly(c.swapaxes(0, 1), xi, extrapolate)
+        return cls(c.swapaxes(0, 1), xi, extrapolate)
 
     @staticmethod
     def _construct_from_derivatives(xa, xb, ya, yb):
