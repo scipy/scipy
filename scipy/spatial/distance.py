@@ -1882,7 +1882,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     22. ``Y = cdist(XA, XB, 'wminkowski')``
 
        Computes the weighted Minkowski distance between the
-       vectors. (see sokalsneath function documentation)
+       vectors. (see wminkowski function documentation)
 
     23. ``Y = cdist(XA, XB, f)``
 
