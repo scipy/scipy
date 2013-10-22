@@ -2773,5 +2773,46 @@ def test_xlog1py():
     assert_func_equal(special.xlog1py, w1, z1, rtol=1e-13, atol=1e-13)
 
 
+class TestStirling(TestCase):
+
+    def test_stirling_1(self):
+        assert_equal(special.stirling_1(5, 0), 0)
+        assert_equal(special.stirling_1(5, 1), 24)
+        assert_equal(special.stirling_1(5, 2), 50)
+        assert_equal(special.stirling_1(5, 3), 35)
+        assert_equal(special.stirling_1(5, 4), 10)
+        assert_equal(special.stirling_1(5, 5), 1)
+        assert_equal(special.stirling_1(5, 6), 0)
+
+    def test_stirling_x_non_integer(self):
+        assert_raises(ValueError, special.stirling_1, 10.4, 4)
+        assert_raises(ValueError, special.stirling_1, 10, 4.1)
+        assert_raises(ValueError, special.stirling_1, 10.4, 4.1)
+
+        assert_raises(ValueError, special.stirling_2, 10.4, 4)
+        assert_raises(ValueError, special.stirling_2, 10, 4.1)
+        assert_raises(ValueError, special.stirling_2, 10.4, 4.1)
+
+
+    def test_stirling_x_neg_input(self):
+        assert_raises(ValueError, special.stirling_1, 10, -4)
+        assert_raises(ValueError, special.stirling_1, -10, 4)
+        assert_raises(ValueError, special.stirling_1, -10, -4)
+
+        assert_raises(ValueError, special.stirling_2, 10, -4)
+        assert_raises(ValueError, special.stirling_2, -10, 4)
+        assert_raises(ValueError, special.stirling_2, -10, -4)
+
+
+    def test_stirling_2(self):
+        assert_equal(special.stirling_2(5, 0), 0)
+        assert_equal(special.stirling_2(5, 1), 1)
+        assert_equal(special.stirling_2(5, 2), 15)
+        assert_equal(special.stirling_2(5, 3), 25)
+        assert_equal(special.stirling_2(5, 4), 10)
+        assert_equal(special.stirling_2(5, 5), 1)
+        assert_equal(special.stirling_2(5, 6), 0)
+
+
 if __name__ == "__main__":
     run_module_suite()
