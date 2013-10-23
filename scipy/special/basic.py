@@ -743,11 +743,15 @@ def clpmn(m,n,z,type=3):
 
     Notes
     -----
-    Phase conventions are chosen according to [1] such that the
-    function is analytic. The cut lies on the interval (-1, 1).
-    Approaching the cut from above or below in general yields a phase
+    By default, i.e. for ``type=3``, phase conventions are chosen according
+    to [1] such that the function is analytic. The cut lies on the interval
+    (-1, 1). Approaching the cut from above or below in general yields a phase
     factor with respect to Ferrer's function of the first kind
     (cf. `lpmn`).
+
+    For ``type=2`` a cut at |x|>1 is chosen. Approaching the real values
+    on the interval (-1, 1) in the complex plane yields Ferrer's function
+    of the first kind.
 
     References
     ----------

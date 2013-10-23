@@ -277,6 +277,7 @@ C
 C       sqrt(1 - z^2) with branch cut on |x|>1
            ZS=(1.0D0-Z*Z)
            ZQ=-CDSQRT(ZS)
+           LS=-1
         ELSE
 C       sqrt(z^2 - 1) with branch cut between [-1, 1]
            ZS=(Z*Z-1.0D0)
@@ -284,6 +285,7 @@ C       sqrt(z^2 - 1) with branch cut between [-1, 1]
            IF (X.LT.0D0) THEN
               ZQ=-ZQ
            END IF
+           LS=1
         END IF
         DO 25 I=1,M
 C       DLMF 14.7.15
@@ -300,12 +302,13 @@ C       DLMF 14.10.3
         CPD(0,0)=(0.0D0,0.0D0)
         DO 40 J=1,N
 C       DLMF 14.10.5
-40         CPD(0,J)=J*(Z*CPM(0,J)-CPM(0,J-1))/ZS
+40         CPD(0,J)=LS*J*(Z*CPM(0,J)-CPM(0,J-1))/ZS
         DO 45 I=1,M
         DO 45 J=I,N
-C       derivative of DLMF 14.7.11 & DLMF 14.10.6
-           CPD(I,J)=-I*Z*CPM(I,J)/ZS+(J+I)*(J-I+1.0D0)
-     &              /ZQ*CPM(I-1,J)
+C       derivative of DLMF 14.7.11 & DLMF 14.10.6 for type 3
+C       derivative of DLMF 14.7.8 & DLMF 14.10.1 for type 2
+           CPD(I,J)=LS*(-I*Z*CPM(I,J)/ZS+(J+I)*(J-I+1.0D0)
+     &                  /ZQ*CPM(I-1,J))
 45      CONTINUE
         RETURN
         END
