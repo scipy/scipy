@@ -1265,6 +1265,30 @@ class TestNct(TestCase):
         assert_equal(k, np.nan)
 
 
+class TestNorminvgauss(TestCase):
+    def test_accuracy_cdf_tails(self):
+        pass  #TODO
+
+    def test_accuracy_ppf_tails(self):
+        pass  #TODO
+
+    def test_broadcasting_shape_args(self):
+        # Test that the result is self-consistent.
+        a = [2, 2.5, 3]
+        b = -1
+        assert_allclose([stats.norminvgauss.pdf(1, val, b) for val in a],
+                        stats.norminvgauss.pdf(1, a, b), rtol=1e-15)
+        assert_allclose([stats.norminvgauss.cdf(1, val, b) for val in a],
+                        stats.norminvgauss.cdf(1, a, b), rtol=1e-15)
+        # And the 2-D case:
+        b = np.linspace(-0.5, -1.5, num=4)[:, np.newaxis]
+        a2, b2 = np.broadcast_arrays(a, b)
+        expected = [stats.norminvgauss.cdf(0.5, aval, bval) for (aval, bval) in
+                    zip(a2.ravel(), b2.ravel())]
+        assert_allclose(stats.norminvgauss.cdf(0.5, a, b).ravel(),
+                        expected, rtol=1e-15)
+
+
 def test_regression_ticket_1316():
     # The following was raising an exception, because _construct_default_doc()
     # did not handle the default keyword extradoc=None.  See ticket #1316.
