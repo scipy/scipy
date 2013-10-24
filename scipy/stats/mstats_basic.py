@@ -1339,7 +1339,6 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
             else:
                 upidx = n - np.round(n*up_limit)
             a[idx[upidx:]] = masked
-        nsize = a.count()
         a[idx[:lowidx]] = a[idx[lowidx]]
         a[idx[upidx:]] = a[idx[upidx-1]]
         winstd = a.std(ddof=1)
@@ -1363,7 +1362,6 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
     #
     (loinc, upinc) = inclusive
     if (axis is None):
-        shp = a.shape
         return _trimmed_stde_1D(a.ravel(),lolim,uplim,loinc,upinc)
     else:
         if a.ndim > 2:
