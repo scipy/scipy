@@ -68,20 +68,20 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
             - 'trust-ncg'
 
     jac : bool or callable, optional
-        Jacobian of objective function. Only for CG, BFGS, Newton-CG,
-        L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg.
+        Jacobian (gradient) of objective function. Only for CG, BFGS,
+        Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg.
         If `jac` is a Boolean and is True, `fun` is assumed to return the
-        value of Jacobian along with the objective function. If False, the
-        Jacobian will be estimated numerically.
-        `jac` can also be a callable returning the Jacobian of the
+        gradient along with the objective function. If False, the
+        gradient will be estimated numerically.
+        `jac` can also be a callable returning the gradient of the
         objective. In this case, it must accept the same arguments as `fun`.
     hess, hessp : callable, optional
-        Hessian of objective function or Hessian of objective function
-        times an arbitrary vector p.  Only for Newton-CG,
-        dogleg, trust-ncg.
+        Hessian (matrix of second-order derivatives) of objective function or
+        Hessian of objective function times an arbitrary vector p.  Only for
+        Newton-CG, dogleg, trust-ncg.
         Only one of `hessp` or `hess` needs to be given.  If `hess` is
         provided, then `hessp` will be ignored.  If neither `hess` nor
-        `hessp` is provided, then the hessian product will be approximated
+        `hessp` is provided, then the Hessian product will be approximated
         using finite differences on `jac`. `hessp` must compute the Hessian
         times an arbitrary vector.
     bounds : sequence, optional
