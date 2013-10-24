@@ -20,9 +20,9 @@ before_install:
   - ulimit -a
   - mkdir builds
   - pushd builds
-  - pip install nose
-  - pip install numpy
-  - pip install Cython
+  - pip install --upgrade pip setuptools  # Upgrade pip and setuptools to get ones with `wheel` support
+  - pip --version
+  - time pip install --find-links http://wheels.astropy.org/ --find-links http://wheels2.astropy.org/ --use-wheel --use-mirrors nose numpy Cython mpmath argparse
   # mpmath for scipy.special tests
   - pip install mpmath
   # For Python 2.6 we also need argparse
