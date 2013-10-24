@@ -345,7 +345,7 @@ class dok_matrix(spmatrix, dict):
         elif isinstance(other, dok_matrix):
             if other.shape != self.shape:
                 raise ValueError("matrix dimensions are not equal")
-            # We could alternatively set the dimensions to the the largest of
+            # We could alternatively set the dimensions to the largest of
             # the two matrices to be summed.  Would this be a good idea?
             res_dtype = upcast(self.dtype, other.dtype)
             new = dok_matrix(self.shape, dtype=res_dtype)

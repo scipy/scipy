@@ -15,7 +15,7 @@ stored in a rectangular array.
    :toctree: generated/
 
    pdist   -- pairwise distances between observation vectors.
-   cdist   -- distances between between two collections of observation vectors
+   cdist   -- distances between two collections of observation vectors
    squareform -- convert distance matrix to a condensed one and vice versa
 
 Predicates for checking the validity of distance matrices, both

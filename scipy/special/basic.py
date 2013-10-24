@@ -92,7 +92,7 @@ def jnjnp_zeros(nt):
     Returns
     -------
     zo[l-1] : ndarray
-        Value of the lth zero of of Jn(x) and Jn'(x). Of length `nt`.
+        Value of the lth zero of Jn(x) and Jn'(x). Of length `nt`.
     n[l-1] : ndarray
         Order of the Jn(x) or Jn'(x) associated with lth zero. Of length `nt`.
     m[l-1] : ndarray
