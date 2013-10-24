@@ -58,7 +58,7 @@ Filter functions
 .. currentmodule:: scipy.ndimage.filters
 
 The functions described in this section all perform some type of spatial
-filtering of the the input array: the elements in the output are some function
+filtering of the input array: the elements in the output are some function
 of the values in the neighborhood of the corresponding input element. We refer
 to this neighborhood of elements as the filter kernel, which is often
 rectangular in shape but may also have an arbitrary footprint. Many

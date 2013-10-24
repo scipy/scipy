@@ -1702,7 +1702,7 @@ dictionary. Look at the examples/md5_speed.py file for the test run.
 Catalog search paths and the PYTHONCOMPILED variable
 ----------------------------------------------------
 
-The default location for catalog files on Unix is is ~/.pythonXX_compiled
+The default location for catalog files on Unix is ~/.pythonXX_compiled
 where XX is version of Python being used. If this directory doesn't exist, it
 is created the first time a catalog is used. The directory must be writable.
 If, for any reason it isn't, then the catalog attempts to create a directory
