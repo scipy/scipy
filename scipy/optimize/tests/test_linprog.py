@@ -29,7 +29,7 @@ class TestLinprog(TestCase):
                 [1,1],
                 [1,0]]
 
-        res = (linprog(c,A_ub=A_ub,b_ub=b_ub,objtype='max',disp=False))
+        res = (linprog(c,A_ub=A_ub,b_ub=b_ub,objtype='max'))
 
         assert_(res.status == 0,
                 "Test of linprog upper bound constraints failed.  Expected status = 0, got {:d}.".format(res.status))
@@ -47,7 +47,7 @@ class TestLinprog(TestCase):
         A_ub = [[0,3]]
         b_ub = [2]
 
-        res = linprog(c,A_ub=A_ub,b_ub=b_ub,A_lb=A_lb,b_lb=b_lb,objtype='min',disp=False)
+        res = linprog(c,A_ub=A_ub,b_ub=b_ub,A_lb=A_lb,b_lb=b_lb,objtype='min')
 
         assert_(res.status == 0,
                 "Test of linprog minimization failed.  Expected status = 0, got {:d}.".format(res.status))
@@ -65,7 +65,7 @@ class TestLinprog(TestCase):
 
         b_ub = [1,100,10000]
 
-        res = linprog(c,A_ub=A_ub,b_ub=b_ub,objtype='max',disp=False)
+        res = linprog(c,A_ub=A_ub,b_ub=b_ub,objtype='max')
 
         assert_(res.status == 0,
                 "Test of linprog recovery from cycling failed.  Expected status = 0, got {:d}.".format(res.status))
@@ -80,7 +80,7 @@ class TestLinprog(TestCase):
                 [1,1]]
         b_lb = [1,2]
 
-        res = linprog(c,A_lb=A_lb,b_lb=b_lb,objtype='max',disp=False)
+        res = linprog(c,A_lb=A_lb,b_lb=b_lb,objtype='max')
 
         assert_(res.status == 3,"Test of linprog response to an unbounded problem failed.")
 
@@ -95,7 +95,7 @@ class TestLinprog(TestCase):
                 [0,1]]
         b_ub = [2,2]
 
-        res = linprog(c,A_lb=A_lb,b_lb=b_lb,A_ub=A_ub,b_ub=b_ub,objtype='max',disp=False)
+        res = linprog(c,A_lb=A_lb,b_lb=b_lb,A_ub=A_ub,b_ub=b_ub,objtype='max')
 
         assert_(not res.success,"Test of linprog with an infeasible problem errantly ended with success")
 
@@ -116,7 +116,7 @@ class TestLinprog(TestCase):
                 [-6,1,-3,-4]]
         b_lb = [-6,6,-6]
 
-        res = linprog(c,A_ub=A_ub,b_ub=b_ub,A_lb=A_lb,b_lb=b_lb,A_eq=A_eq,b_eq=b_eq,objtype='min',disp=False)
+        res = linprog(c,A_ub=A_ub,b_ub=b_ub,A_lb=A_lb,b_lb=b_lb,A_eq=A_eq,b_eq=b_eq,objtype='min')
 
         assert_(res.status == 0,
                 "Test of linprog with nontrivial problem failed.  Expected status = 0, got {:d}.".format(res.status))
@@ -139,7 +139,7 @@ class TestLinprog(TestCase):
         x0_bounds = (-np.inf,np.inf)
         x1_bounds = (-3,np.inf)
 
-        res = linprog(c,A_ub=A_ub,b_ub=b_ub,bounds=(x0_bounds,x1_bounds),objtype='max',disp=False)
+        res = linprog(c,A_ub=A_ub,b_ub=b_ub,bounds=(x0_bounds,x1_bounds),objtype='max')
 
         assert_(res.status == 0,
                 "Test of linprog with negative variable failed.  Expected status = 0, got {:d}.".format(res.status))
