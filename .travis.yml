@@ -18,19 +18,13 @@ before_install:
   - free -m
   - df -h
   - ulimit -a
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq libatlas-dev libatlas-base-dev liblapack-dev gfortran
   - mkdir builds
   - pushd builds
   - pip install --upgrade pip setuptools  # Upgrade pip and setuptools to get ones with `wheel` support
-  - pip --version
-  - time pip install --find-links http://wheels.astropy.org/ --find-links http://wheels2.astropy.org/ --use-wheel --use-mirrors nose numpy Cython mpmath argparse
-  # mpmath for scipy.special tests
-  - pip install mpmath
-  # For Python 2.6 we also need argparse
-  - pip install argparse
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq libatlas-dev libatlas-base-dev liblapack-dev gfortran
-  - if [ "${TESTMODE}" == "full" ]; then pip install coverage; fi
-  - if [ "${TESTMODE}" == "full" ]; then pip install coveralls; fi
+  - pip install --find-links http://wheels.astropy.org/ --find-links http://wheels2.astropy.org/ --use-wheel --use-mirrors nose numpy Cython mpmath argparse
+  - if [ "${TESTMODE}" == "full" ]; then pip install coverage coveralls; fi
   - python -V
   - popd
 script:
