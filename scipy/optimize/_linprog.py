@@ -380,7 +380,149 @@ def lpsimplex(tableau,n,n_slack,n_artificial,maxiter=1000,phase=2,callback=None,
     return x, nit, status, message
 
 
-def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
+def _simplex(H,basis,indx,s,maxiter=1000):
+    """
+    Solve a linear programming problem in "standard maximization form" using the Simplex Method.
+
+    Maximize :math:`f = c^T x`
+
+    subject to
+
+    .. math::
+
+        Ax = b
+        x_i >= 0
+        b_j >= 0
+
+    Parameters
+    ----------
+    H : array_like
+        A 2-D array representing the simplex tableau corresponding to the maximization problem.
+        It should have the form:
+
+        [[A[0,0], A[0,1], ..., A[0,n_total], b[0]],
+         [A[1,0], A[1,1], ..., A[1,n_total], b[1]],
+         .
+         .
+         .
+         [A[m,0], A[m,1], ..., A[m,n_total], b[m]],
+         [c[0],   c[1], ...,   c[n_total],    0]]
+
+        for a Phase 2 problem, or the form:
+
+        [[A[0,0], A[0,1], ..., A[0,n_total], b[0]],
+         [A[1,0], A[1,1], ..., A[1,n_total], b[1]],
+         .
+         .
+         .
+         [A[m,0], A[m,1], ..., A[m,n_total], b[m]],
+         [c[0],   c[1], ...,   c[n_total],   0],
+         [c'[0],  c'[1], ...,  c'[n_total],  0]]
+
+         for a Phase 1 problem (a Problem in which a basic feasible solution is sought
+         prior to maximizing the actual objective. n_total is the total of all variables:
+    basis : sequence of int
+        The indices of the columns that represent the current basis.
+    indx : sequence of int
+        Indices of the columns that represent the independent variables x.
+    s : int
+        Indices which phase of the simplex method is being used.
+        s = 1 for Phase 1 or s = 2 for Phase 2.
+    maxiter : int
+        The maximum number of iterations allowed before the algorithm is
+        aborted.
+
+    Return
+    ------
+    iter : int
+        The number of iterations performed.
+    status : int
+        A flag indicating the status of the solution
+        0 : Optimization terminated successfully
+        1 : Iteration limit reached
+        3 : Problem appears to be unbounded
+        4 : Singular matrix
+    """
+    status = None
+    if s == 1:
+        s0 = 2
+    elif s == 2:
+        s0 = 1
+    n1 = H.shape[0]
+    sol = False
+    iter = 0
+    while iter < maxiter:
+        q = H[-1, :-1] # last row, all columns but last
+        jp = argmin(q)
+        fm = q[jp]
+        if fm >= 0:
+            is_bounded = True    # bounded solution
+            sol = True
+            status = 0
+        else:
+            q = H[:-s0,jp]
+            ip = argmax(q)
+            hm = q[ip]
+            if hm <= 0:
+                is_bounded = False # unbounded solution
+                sol = True
+                status = 3
+            else:
+                h1 = zeros(n1-s0)
+                for i in xrange(n1-s0):
+                    if H[i,jp] > 0:
+                        h1[i] = H[i,-1]/H[i,jp]
+                    else:
+                        h1[i] = Inf
+                ip = argmin(h1)
+                #minh1 = h1[ip]
+                basis[ip] = indx[jp]
+                if not _pivot(H,ip,jp):
+                    sol = True
+                    status = 4
+        if sol:
+            # Solution acquired
+            break
+        iter += 1
+    else:
+        # Maximum iterations reached
+        status = 1
+    return iter, status
+
+def _pivot(H,ip,jp):
+    """ Perform a Gauss-Jordan pivot in the matrix/tableau H, where ip
+        is the pivot row and jp is the pivot column.
+
+        Parameters
+        ----------
+        H : array-like
+            A 2D array representing the matrix or tableau on which the
+            pivot operation is to be performed.  If the pivot is successful
+            H is modified to reflect the result of the pivot operation.
+        ip : int
+            The row of the pivot element.
+        jp : int
+            The column of the pivot element.
+
+        Return
+        ------
+        False if the pivot element value is zero, otherwise True.
+    """
+    n, m = H.shape
+    piv = H[ip,jp]
+    if piv == 0:
+        return False
+    else:
+        H[ip,:] /= piv
+        for i in xrange(n):
+            if i != ip:
+                H[i,:] -= H[i,jp]*H[ip,:]
+    return True
+
+
+
+
+def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
             bounds=None,maxiter=1000,disp=False,callback=None,
             tol=1.0E-12,**unknown_options):
     """
@@ -388,26 +530,21 @@ def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=No
 
     maximize:     c^T * x
 
-    subject to:   A_eq * x == b_eq
-                  A_lb * x >= b_lb
-                  A_ub * x <= b_ub
+    subject to:   A_ub * x <= b_ub
+                  A_eq * x == b_eq
 
     Parameters
     ----------
     c : array_like
         Coefficients of the linear objective function to be maximized.
-    A_eq : array_like
-        2-D array which, when matrix-multiplied by x, gives the values of the equality constraints at x.
-    b_eq : array_like
-        1-D array of values representing the RHS of each equality constraint (row) in A_eq.
-    A_lb :
-        2-D array which, when matrix-multiplied by x, gives the values of the lower-bound inequality constraints at x.
-    b_lb : array_like
-        1-D array of values representing the lower-bound of each inequality constraint (row) in A_lb.
     A_ub :
         2-D array which, when matrix-multiplied by x, gives the values of the upper-bound inequality constraints at x.
     b_ub : array_like
         1-D array of values representing the upper-bound of each inequality constraint (row) in A_ub.
+    A_eq : array_like
+        2-D array which, when matrix-multiplied by x, gives the values of the equality constraints at x.
+    b_eq : array_like
+        1-D array of values representing the RHS of each equality constraint (row) in A_eq.
     bounds : array_like
         The bounds for each independent variable in the solution, which can take one of three forms::
         None : The default bounds, all variables are restricted to be non-negative.
@@ -482,7 +619,8 @@ def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=No
     >>> b_ub = [6,4]
     >>> x0_bounds = (-np.inf,np.inf)
     >>> x1_bounds = (-3,np.inf)
-    >>> res = linprog(c,A_ub=A_ub,b_ub=b_ub,bounds=(x0_bounds,x1_bounds),objtype='max',disp=True)
+    >>> res = linprog(c,A_ub=A_ub,b_ub=b_ub,bounds=(x0_bounds,x1_bounds),
+    ... options={"disp":True})
     >>> print(res)
     Optimization terminated successfully.
          Current function value: 11.428571
@@ -496,15 +634,19 @@ def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=No
 
     References
     ----------
-    .. [1] Hillier, S.H. and Lieberman, G.J. (1995), "Introduction to
+    .. [1] Dantzig, George B., Linear programming and extensions. Rand
+           Corporation Research Study Princeton Univ. Press, Princeton, NJ, 1963
+    .. [2] Hillier, S.H. and Lieberman, G.J. (1995), "Introduction to
            Mathematical Programming", McGraw-Hill, Chapter 4.
-
 
     """
     status = 0
-    message = ""
-    nit1 = 0  # Iterations used in Phase 1
-    nit2 = 0  # Iterations used after Phase 2
+    messages = { 0 : "Optimization terminated successfully.",
+                 1 : "Iteration limit reached.",
+                 2 : "Optiization failed. Unable to find a feasible"
+                     " starting point.",
+                 3 : "Optimization failed. The problem appears to be unbounded.",
+                 4 : "Optimization failed. Singular matrix encountered."}
     have_floor_variable = False
 
     cc = np.asarray(c)
@@ -515,24 +657,14 @@ def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=No
     # The number of variables as given by c
     n = len(c)
 
+    # Convert the input arguments to arrays (sized to zero if not provided)
     Aeq = np.asarray(A_eq) if not A_eq is None else np.empty([0,len(cc)])
     Aub = np.asarray(A_ub) if not A_ub is None else np.empty([0,len(cc)])
-    Alb = np.asarray(A_lb) if not A_lb is None else np.empty([0,len(cc)])
-
     beq = np.ravel(np.asarray(b_eq)) if not b_eq is None else np.empty([0])
     bub = np.ravel(np.asarray(b_ub)) if not b_ub is None else np.empty([0])
-    blb = np.ravel(np.asarray(b_lb)) if not b_lb is None else np.empty([0])
 
     # Analyze the bounds and determine what modifications to me made to
     # the constraints in order to accommodate them.
-    # http://www.sce.carleton.ca/faculty/chinneck/po/Chapter5.pdf
-    # 1. if lb == 0 and ub == inf:
-    #        do nothing
-    # 2. if abs(ub) != inf:
-    # 3. if abs(lb) != inf:
-    # 4. if lb is -inf:
-    # 5. if lb == inf or ub == -inf:
-    #        invalid inputs
     L = np.zeros(n,dtype=np.float64)
     U = np.ones(n,dtype=np.float64)*np.inf
     if bounds is None or len(bounds) == 0:
@@ -567,7 +699,6 @@ def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=No
         U = np.concatenate([np.array([np.inf]),U])
         cc = np.concatenate([np.array([0]),cc])
         Aeq = np.hstack([np.zeros([Aeq.shape[0],1]),Aeq])
-        Alb = np.hstack([np.zeros([Alb.shape[0],1]),Alb])
         Aub = np.hstack([np.zeros([Aub.shape[0],1]),Aub])
         have_floor_variable = True
 
@@ -589,17 +720,17 @@ def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=No
             message = "Invalid input.  Upper bound may not be -infinity"
 
         if np.isfinite(L[i]) and L[i] > 0:
-            # Add a new lower-bound constraint
-            Alb = np.vstack([Alb_in, np.zeros(n)])
-            Alb[-1,i] = 1
-            blb = np.concatenate([blb_in,np.array([L[i]])])
+            # Add a new lower-bound (negative upper-bound) constraint
+            Aub = np.vstack([Aub, np.zeros(n)])
+            Aub[-1,i] = -1
+            bub = np.concatenate([bub,np.array([-L[i]])])
             L[i] = 0
 
         if np.isfinite(U[i]):
             # Add a new upper-bound constraint
-            Aub = np.vstack([Aub_in, np.zeros(n)])
+            Aub = np.vstack([Aub, np.zeros(n)])
             Aub[-1,i] = 1
-            bub = np.concatenate([bub_in,np.array([U[i]])])
+            bub = np.concatenate([bub,np.array([U[i]])])
             U[i] = np.inf
 
     # Now find negative lower bounds (finite or infinite) which require a
@@ -613,7 +744,6 @@ def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=No
                 # and subtract the product of that and L[i] to the RHS b
                 beq[:] = beq[:] - Aeq[:,i] * L[i]
                 bub[:] = bub[:] - Aub[:,i] * L[i]
-                blb[:] = blb[:] - Alb[:,i] * L[i]
                 # We now have a nonzero initial value for the objective
                 # function as well.
                 f0 = f0 - cc[i] * L[i]
@@ -621,7 +751,6 @@ def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=No
                 # This is an unrestricted variable, let x[i] = u[i] - v[0]
                 # where v is the first column in all matrices.
                 Aeq[:,0] = Aeq[:,0] - Aeq[:,i]
-                Alb[:,0] = Alb[:,0] - Alb[:,i]
                 Aub[:,0] = Aub[:,0] - Aub[:,i]
                 cc[0] = cc[0] - cc[i]
 
@@ -633,20 +762,16 @@ def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=No
     # The number of upper bound constraints (rows in A_ub and elements in b_ub)
     mub = len(bub)
 
-    # The number of lower bound constraints (rows in A_lb and elements in b_lb)
-    mlb = len(blb)
-
     # The number of equality constraints (rows in A_eq and elements in b_eq)
     meq = len(beq)
+
+    m = mub+meq
 
     # The number of slack variables (one for each of the upper-bound constraints)
     n_slack = mub
 
-    # The number of surplus variables (one for each of the lower-bound constraints)
-    n_surplus = mlb
-
-    # The number of artificial variables (one for each equality constraint and lower-bound constraint)
-    n_artificial = meq+mlb+mub
+    # The number of artificial variables (one for each constraint)
+    n_artificial = m
 
     try:
         if not Aub is None:
@@ -656,15 +781,6 @@ def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=No
     except ValueError:
         status = -1
         message = "Invalid input.  A_ub must be two-dimensional"
-
-    try:
-        if not Alb is None:
-            Alb_rows, Alb_cols = Alb.shape
-        else:
-            Alb_rows, Alb_cols = 0,0
-    except ValueError:
-        status = -1
-        message = "Invalid input.  A_lb must be two-dimensional"
 
     try:
         if not Aeq is None:
@@ -680,11 +796,6 @@ def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=No
         message = "Invalid input.  The number of rows in A_eq must be equal " \
                   "to the number of values in b_eq"
 
-    if Alb_rows != mlb:
-        status = -1
-        message = "Invalid input.  The number of rows in A_lb must be equal " \
-                  "to the number of values in b_lb"
-
     if Aub_rows != mub:
         status = -1
         message = "Invalid input.  The number of rows in A_ub must be equal " \
@@ -695,141 +806,139 @@ def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=No
         message = "Invalid input.  Number of columns in A_eq must be equal " \
                   "to the size of c"
 
-    if Alb_cols > 0 and Alb_cols != n:
-        status = -1
-        message = "Invalid input.  Number of columns in A_lb must be equal " \
-                  "to the size of c"
-
     if Aub_cols > 0 and Aub_cols != n:
         status = -1
         message = "Invalid input.  Number of columns in A_ub must be equal " \
                   "to the size of c"
 
-    # Create the tableau
-    T = np.zeros([meq+mlb+mub+2,n+n_slack+n_surplus+n_artificial+1])
-
-    # Insert objective into tableau
-    T[-2,:n] = cc  # minimize
-    T[-2,-1] = f0
-
-    #if objtype.lower()[:3] == "max":
-    #    T[-2,:n] = -cc  # maximize
-    #    T[-2,-1] = -f0
-    #elif objtype.lower()[:3] == "min":
-    #    T[-2,:n] = cc  # minimize
-    #    T[-2,-1] = f0
-    #else:
-    #    status = -1
-    #    message = "Invalid input. Argument 'objtype' must " \
-    #              "be 'max' or 'min'.  Got " + str(objtype)
-
-    if status == 0:
-        b = T[:-1,-1]
-
-        if meq > 0:
-            # Add Aeq to the tableau
-            T[:meq,:n] = Aeq
-            # Add beq to the tableau
-            b[:meq] = beq
-        if mlb > 0:
-            # Add Alb to the tableau
-            T[meq:meq+mlb,:n] = Alb
-            # Add blb to the tableau
-            b[meq:meq+mlb] = blb
-            # Add surplus variables to the tableau
-            np.fill_diagonal(T[meq:meq+mlb,n:n+n_surplus], -1)
-        if mub > 0:
-            # Add Aub to the tableau
-            T[meq+mlb:meq+mlb+mub,:n] = Aub
-            # At bub to the tableau
-            b[meq+mlb:meq+mlb+mub] = bub
-            # Add the slack variables to the tableau
-            np.fill_diagonal(T[meq+mlb:meq+mlb+mub,
-                             n+n_surplus:n+n_surplus+n_slack], 1)
-
-        # No negative resource constraints are allowed.
-        # Note that this reverses the sign of the slack/surplus variables since
-        # multiplication of an inequality by a negative flips the sign.
-        for i in range(meq+mlb+mub):
-            if b[i] < 0:
-                b[i] *= -1
-                T[i,:-1] *= -1
-
-        T[:n_artificial, n+n_slack+n_surplus:n+n_slack+n_surplus+n_artificial] \
-            = np.eye(n_artificial)
-
-        # Add an objective term to each of the artificial variable columns
-        T[-1,n+n_slack+n_surplus:-1] = 1
-
-        # Make the artificial variables basic feasible variables by subtracting
-        # each row with an artificial variable from the Phase 1 objective
-        for r in range(n_artificial):
-            T[-1,:] = T[-1,:] - T[r,:]
-
-        x, nit1, status, message = lpsimplex(T,n,n_surplus+n_slack,n_artificial,
-                                             phase=1,callback=callback,
-                                             maxiter=maxiter,tol=tol)
-
-        # if pseudo objective is zero, remove the last row from the tableau and
-        # proceed to phase 2
-        if abs(T[-1,-1]) < tol:
-            # Remove the pseudo-objective row from the tableau
-            T = T[:-1,:]
-            # Remove the artificial variable columns from the tableau
-            T = np.delete(T,np.s_[n+n_slack+n_surplus:n+n_slack+
-                                                      n_surplus+n_artificial],1)
-        else:
-            status = 2
-            message = "Optimization Failed.  Unable to find a feasible starting point."
-
-        # Tableau Finished
-        if status == 0:
-            x, nit2, status, message = lpsimplex(T,n,n_surplus+n_slack,
-                                                 n_artificial,maxiter=maxiter,
-                                                 phase=2,callback=callback,
-                                                 tol=tol,nit0=nit1)
-
-        # For those variables with finite negative lower bounds,
-        # reverse the change of variables
-        masked_L = ma.array(L,mask=np.isinf(L),fill_value=0.0).filled()
-        x = x + masked_L
-
-        # For those variables with infinite negative lower bounds,
-        # take x[i] as the difference between x[i] and the floor variable.
-        if have_floor_variable:
-            for i in range(1,n):
-                if np.isinf(L[i]):
-                    x[i] -= x[0]
-            x = x[1:]
-
-        # Optimization complete at this point
-        obj = -T[-1,-1]
-
-        if status in (0,1):
-            if disp:
-                print(message)
-                print("         Current function value: {: <12.6f}".format(obj))
-                print("         Iterations: {:d}".format(nit2))
-        else:
-            if disp:
-                print(message)
-                print("         Iterations: {:d}".format(nit2))
-
-        return Result(x=x,fun=obj,nit=int(nit2),status=int(status),
-                      message=message,success=(status == 0))
-    else:
+    if status != 0:
         # Invalid inputs provided
-        print(message)
+        if disp:
+            print(message)
         return Result(x=np.zeros_like(cc),fun=0.0,nit=0,status=int(status),
                       message=message, success=False)
 
+    # Create the tableau
+    T = np.zeros([m+2,n+n_slack+n_artificial+1])
+
+    # Insert objective into tableau
+    T[-2,:n] = cc
+    T[-2,-1] = f0
+
+    b = T[:-1,-1]
+
+    if meq > 0:
+        # Add Aeq to the tableau
+        T[:meq,:n] = Aeq
+        # Add beq to the tableau
+        b[:meq] = beq
+    if mub > 0:
+        # Add Aub to the tableau
+        T[meq:meq+mub,:n] = Aub
+        # At bub to the tableau
+        b[meq:meq+mub] = bub
+        # Add the slack variables to the tableau
+        np.fill_diagonal(T[meq:m,n:n+n_slack], 1)
+
+    # No negative resource constraints are allowed.
+    # Note that this reverses the sign of the slack/surplus variables since
+    # multiplication of an inequality by a negative flips the sign.
+    for i in range(m):
+        if b[i] < 0:
+            b[i] *= -1
+            T[i,:-1] *= -1
+
+    T[:n_artificial, n+n_slack:n+n_slack+n_artificial] \
+        = np.eye(n_artificial)
+
+    # Add an objective term to each of the artificial variable columns
+    T[-1,n+n_slack:-1] = 1
+
+    # Make the artificial variables basic feasible variables by subtracting
+    # each row with an artificial variable from the Phase 1 objective
+    for r in range(n_artificial):
+        T[-1,:] = T[-1,:] - T[r,:]
+
+    x, nit1, status, message = lpsimplex(T,n,n_slack,n_artificial,
+                                         phase=1,callback=callback,
+                                         maxiter=maxiter,tol=tol)
+
+    #basis = np.arange(n,n+m)
+    #xindex = np.arange(n)
+    #
+    #nit1, status = _simplex(H,basis,xindex,1,maxiter)
+    #
+    #if status != 0:
+    #    return Result(x=np.zeros(n),fun=np.nan,nit=nit1,status=int(status),
+    #                  message=messages[status], success=False)
+
+    #optx = zeros(n+m)
+    #for i in xrange(m):
+    #    optx[basis[i]] = T[i,-1]
+    #x = optx[:n]
+
+    # if pseudo objective is zero, remove the last row from the tableau and
+    # proceed to phase 2
+    if abs(T[-1,-1]) < tol:
+        # Remove the pseudo-objective row from the tableau
+        T = T[:-1,:]
+        # Remove the artificial variable columns from the tableau
+        T = np.delete(T,np.s_[n+n_slack:n+n_slack+n_artificial],1)
+    else:
+        status = 2
+        message = "Optimization Failed.  Unable to find a feasible starting point."
+
+    if status != 0:
+        # Failure to find a feasible starting point
+        if disp:
+            print(message)
+        return Result(x=x,fun=-T[-1,-1],nit=nit1,status=int(status),
+                      message=message, success=False)
+
+    # Tableau Finished
+    if status == 0:
+        x, nit2, status, message = lpsimplex(T,n,n_slack,
+                                             n_artificial,maxiter=maxiter,
+                                             phase=2,callback=callback,
+                                             tol=tol,nit0=nit1)
+
+    # For those variables with finite negative lower bounds,
+    # reverse the change of variables
+    masked_L = ma.array(L,mask=np.isinf(L),fill_value=0.0).filled()
+    x = x + masked_L
+
+    # For those variables with infinite negative lower bounds,
+    # take x[i] as the difference between x[i] and the floor variable.
+    if have_floor_variable:
+        for i in range(1,n):
+            if np.isinf(L[i]):
+                x[i] -= x[0]
+        x = x[1:]
+
+    # Optimization complete at this point
+    obj = -T[-1,-1]
+
+    if status in (0,1):
+        if disp:
+            print(message)
+            print("         Current function value: {: <12.6f}".format(obj))
+            print("         Iterations: {:d}".format(nit2))
+    else:
+        if disp:
+            print(message)
+            print("         Iterations: {:d}".format(nit2))
+
+    return Result(x=x,fun=obj,nit=int(nit2),status=int(status),
+                  message=message,success=(status == 0))
 
 
 
 
 
-def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
-            bounds=None,method='simplex',callback=None,tol=1.0E-12,
+
+
+def linprog(c,A_eq=None,b_eq=None,A_ub=None,b_ub=None,
+            bounds=None,method='simplex',callback=None,
             options=None):
     """
     Minimize a linear objective function subject to linear
@@ -839,9 +948,8 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
 
     Minimize:     c^T * x
 
-    Subject to:   A_eq * x == b_eq
-                  A_lb * x >= b_lb
-                  A_ub * x <= b_ub
+    Subject to:   A_ub * x <= b_ub
+                  A_eq * x == b_eq
 
     .. versionadded:: 0.14.0
 
@@ -849,24 +957,18 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
     ----------
     c : array_like
         Coefficients of the linear objective function to be minimized.
-    A_eq : array_like
-        2-D array which, when matrix-multiplied by x, gives the values of the
-        equality constraints at x.
-    b_eq : array_like
-        1-D array of values representing the RHS of each equality constraint
-        (row) in A_eq.
-    A_lb :
-        2-D array which, when matrix-multiplied by x, gives the values of the
-        lower-bound inequality constraints at x.
-    b_lb : array_like
-        1-D array of values representing the lower-bound of each inequality
-        constraint (row) in A_lb.
     A_ub :
         2-D array which, when matrix-multiplied by x, gives the values of the
         upper-bound inequality constraints at x.
     b_ub : array_like
         1-D array of values representing the upper-bound of each inequality
         constraint (row) in A_ub.
+    A_eq : array_like
+        2-D array which, when matrix-multiplied by x, gives the values of the
+        equality constraints at x.
+    b_eq : array_like
+        1-D array of values representing the RHS of each equality constraint
+        (row) in A_eq.
     objtype : str
         The type of objective function represented by c.  Must be either 'max'
         (default) or 'min'
@@ -890,13 +992,6 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
         "phase" : Whether the algorithm is in Phase 1 or Phase 2.
         "bv" : A structured array containing a string representation of each
                basic variable and its current value.
-    tol : float, optional
-        Tolerance for termination.
-
-        For the simplex method this indicates how close to zero the solution
-        must be at the end of Phase 1 for the Phase 1 solution to be considered
-        feasible, and how close to positive the objective row of the tableau
-        must be for the solution to be considered converged.
     options : dict, optional
         A dictionary of solver options. All methods accept the following
         generic options:
@@ -951,7 +1046,7 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
     dot(A_ub,x) <= b_ub
 
     The input for this problem is as follows:
-    >>> c = [-1,4]
+    >>> c = [1,-4] # Note the reversed coefficients for maximization
     >>> A_ub = [[-3,1],
     >>>         [1,2]]
     >>> b_ub = [6,4]
@@ -961,14 +1056,17 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
     ...               objtype='max',disp=True)
     >>> print(res)
     Optimization terminated successfully.
-         Current function value: 11.428571
+         Current function value: -11.428571
          Iterations: 2
     status: 0
     success: True
-    fun: 11.428571428571429
+    fun: -11.428571428571429
     x: array([-1.14285714,  2.57142857])
     message: 'Optimization terminated successfully.'
     nit: 2
+
+    Note the actual objective value is 11.428571.  In this case we minimized
+    the negative of the objective function.
 
     References
     ----------
@@ -1007,9 +1105,8 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
         options = {}
 
     if meth == 'simplex':
-        return _linprog_simplex(c,A_eq=A_eq,b_eq=b_eq,A_lb=A_lb,b_lb=b_lb,
-                                A_ub=A_ub,b_ub=b_ub,bounds=bounds,
-                                callback=callback,tol=tol,**options)
+        return _linprog_simplex(c,A_ub=A_ub,b_ub=b_ub,A_eq=A_eq,b_eq=b_eq,
+                                bounds=bounds,callback=callback,**options)
     else:
         raise ValueError('Unknown solver %s' % method)
 

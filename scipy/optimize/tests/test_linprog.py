@@ -41,13 +41,12 @@ class TestLinprog(TestCase):
         """ Minimize linear function subject to linear, non-negative variables. """
         #  http://www.statslab.cam.ac.uk/~ff271/teaching/opt/notes/notes8.pdf
         c = [6,3]
-        A_lb = [[1, 1],
-                [2,-1]]
-        b_lb = [1,1]
-        A_ub = [[0,3]]
-        b_ub = [2]
+        A_ub = [[ 0, 3],
+                [-1,-1],
+                [-2, 1]]
+        b_ub = [2,-1,-1]
 
-        res = linprog(c,A_ub=A_ub,b_ub=b_ub,A_lb=A_lb,b_lb=b_lb)
+        res = linprog(c,A_ub=A_ub,b_ub=b_ub)
 
         assert_(res.status == 0,
                 "Test of linprog minimization failed.  Expected status = 0, got {:d}.".format(res.status))
@@ -76,26 +75,24 @@ class TestLinprog(TestCase):
     def test_linprog_unbounded(self):
         """ Test linprog response to an unbounded problem """
         c = np.array([1,1])*-1 # maximize
-        A_lb = [[1,-1],
-                [1,1]]
-        b_lb = [1,2]
+        A_ub = [[-1,1],
+                [-1,-1]]
+        b_ub = [-1,-2]
 
-        res = linprog(c,A_lb=A_lb,b_lb=b_lb)
+        res = linprog(c,A_ub=A_ub,b_ub=b_ub)
 
         assert_(res.status == 3,"Test of linprog response to an unbounded problem failed.")
 
     def test_linprog_infeasible(self):
         """ Test linrpog response to an infeasible problem """
-        c = [1,1]
-
-        A_lb = [[1,1]]
-        b_lb = [5]
+        c = [-1,-1]
 
         A_ub = [[1,0],
-                [0,1]]
-        b_ub = [2,2]
+                [0,1],
+                [-1,-1]]
+        b_ub = [2,2,-5]
 
-        res = linprog(c,A_lb=A_lb,b_lb=b_lb,A_ub=A_ub,b_ub=b_ub,objtype='max')
+        res = linprog(c,A_ub=A_ub,b_ub=b_ub)
 
         assert_(not res.success,"Test of linprog with an infeasible problem errantly ended with success")
 
@@ -105,18 +102,21 @@ class TestLinprog(TestCase):
         """ Test linprog for a problem involving all constraint types, negative resource limits, and rounding issues. """
         c = [-1,8,4,-6]
 
-        A_ub = [[-7,-7,6,9]]
-        b_ub = [-3]
+        A_ub = [[-7,-7,6,9],
+                [1,-1,-3,0],
+                [10,-10,-7,7],
+                [6,-1,3,4]]
+        b_ub = [-3,6,-6,6]
 
         A_eq = [[-10,1,1,-8]]
         b_eq = [-4]
 
-        A_lb = [[-1,1,3,0],
-                [-10,10,7,-7],
-                [-6,1,-3,-4]]
-        b_lb = [-6,6,-6]
+        #A_lb = [[-1,1,3,0],
+        #        [-10,10,7,-7],
+        #        [-6,1,-3,-4]]
+        #b_lb = [-6,6,-6]
 
-        res = linprog(c,A_ub=A_ub,b_ub=b_ub,A_lb=A_lb,b_lb=b_lb,A_eq=A_eq,b_eq=b_eq)
+        res = linprog(c,A_ub=A_ub,b_ub=b_ub,A_eq=A_eq,b_eq=b_eq)
 
         assert_(res.status == 0,
                 "Test of linprog with nontrivial problem failed.  Expected status = 0, got {:d}.".format(res.status))
