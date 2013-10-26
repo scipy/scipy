@@ -23,13 +23,13 @@ class TestLinprog(TestCase):
     def test_linprog_upper_bound_constraints(self):
         """ Maximize a linear function subject to only linear upper bound constraints. """
         #  http://www.dam.brown.edu/people/huiwang/classes/am121/Archive/simplex_121_c.pdf
-        c = [3,2]
+        c = np.array([3,2])*-1 # maximize
         b_ub = [10,8,4]
         A_ub = [[2,1],
                 [1,1],
                 [1,0]]
 
-        res = (linprog(c,A_ub=A_ub,b_ub=b_ub,objtype='max'))
+        res = (linprog(c,A_ub=A_ub,b_ub=b_ub))
 
         assert_(res.status == 0,
                 "Test of linprog upper bound constraints failed.  Expected status = 0, got {:d}.".format(res.status))
@@ -47,7 +47,7 @@ class TestLinprog(TestCase):
         A_ub = [[0,3]]
         b_ub = [2]
 
-        res = linprog(c,A_ub=A_ub,b_ub=b_ub,A_lb=A_lb,b_lb=b_lb,objtype='min')
+        res = linprog(c,A_ub=A_ub,b_ub=b_ub,A_lb=A_lb,b_lb=b_lb)
 
         assert_(res.status == 0,
                 "Test of linprog minimization failed.  Expected status = 0, got {:d}.".format(res.status))
@@ -58,14 +58,14 @@ class TestLinprog(TestCase):
     def test_linprog_cyclic_recovery(self):
         """ Test linprogs recovery from cycling using the Klee-Minty problem """
         #  Klee-Minty  http://www.math.ubc.ca/~israel/m340/kleemin3.pdf
-        c = [100,10,1]
+        c = np.array([100,10,1])*-1 # maximize
         A_ub = [[1, 0, 0],
                 [20, 1, 0],
                 [200,20, 1]]
 
         b_ub = [1,100,10000]
 
-        res = linprog(c,A_ub=A_ub,b_ub=b_ub,objtype='max')
+        res = linprog(c,A_ub=A_ub,b_ub=b_ub)
 
         assert_(res.status == 0,
                 "Test of linprog recovery from cycling failed.  Expected status = 0, got {:d}.".format(res.status))
@@ -75,12 +75,12 @@ class TestLinprog(TestCase):
 
     def test_linprog_unbounded(self):
         """ Test linprog response to an unbounded problem """
-        c = [1,1]
+        c = np.array([1,1])*-1 # maximize
         A_lb = [[1,-1],
                 [1,1]]
         b_lb = [1,2]
 
-        res = linprog(c,A_lb=A_lb,b_lb=b_lb,objtype='max')
+        res = linprog(c,A_lb=A_lb,b_lb=b_lb)
 
         assert_(res.status == 3,"Test of linprog response to an unbounded problem failed.")
 
@@ -116,7 +116,7 @@ class TestLinprog(TestCase):
                 [-6,1,-3,-4]]
         b_lb = [-6,6,-6]
 
-        res = linprog(c,A_ub=A_ub,b_ub=b_ub,A_lb=A_lb,b_lb=b_lb,A_eq=A_eq,b_eq=b_eq,objtype='min')
+        res = linprog(c,A_ub=A_ub,b_ub=b_ub,A_lb=A_lb,b_lb=b_lb,A_eq=A_eq,b_eq=b_eq)
 
         assert_(res.status == 0,
                 "Test of linprog with nontrivial problem failed.  Expected status = 0, got {:d}.".format(res.status))
@@ -129,7 +129,7 @@ class TestLinprog(TestCase):
 
     def test_negative_variable(self):
         """ Test linprog with a problem with one unbounded variable and another with a negative lower bound. """
-        c = [-1,4]
+        c = np.array([-1,4])*-1 # maximize
 
         A_ub = [[-3,1],
                 [1,2]]
@@ -139,12 +139,12 @@ class TestLinprog(TestCase):
         x0_bounds = (-np.inf,np.inf)
         x1_bounds = (-3,np.inf)
 
-        res = linprog(c,A_ub=A_ub,b_ub=b_ub,bounds=(x0_bounds,x1_bounds),objtype='max')
+        res = linprog(c,A_ub=A_ub,b_ub=b_ub,bounds=(x0_bounds,x1_bounds))
 
         assert_(res.status == 0,
                 "Test of linprog with negative variable failed.  Expected status = 0, got {:d}.".format(res.status))
 
-        assert_allclose(res.fun,80/7,err_msg="Test of linprog with negative variable converged but yielded unexpected result.")
+        assert_allclose(res.fun,-80/7,err_msg="Test of linprog with negative variable converged but yielded unexpected result.")
 
         assert_array_almost_equal(res.x,[-8/7,18/7],
                                   err_msg="Test of linprog with negative variable converged but yielded unexpected result (x)")
