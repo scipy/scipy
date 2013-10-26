@@ -381,7 +381,7 @@ def lpsimplex(tableau,n,n_slack,n_artificial,maxiter=1000,phase=2,callback=None,
 
 
 def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
-            bounds=None,objtype='max',maxiter=1000,disp=False,callback=None,
+            bounds=None,maxiter=1000,disp=False,callback=None,
             tol=1.0E-12,**unknown_options):
     """
     Solve the following linear programming problem via a two-phase simplex algorithm.
@@ -416,8 +416,6 @@ def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=No
         [(lb_0,ub_0),(lb_1,ub_1),...] : If an n x 2 sequence is provided, each variable x_i will be bounded by lb_i
                   and ub_i.
         Infinite bounds are specified using -np.inf (negative) or np.inf (positive).
-    objtype : str
-        The type of objective function represented by c.  Must be either 'max' (default) or 'min'
     maxiter : int
        The maximum number of iterations to perform.
     disp : bool
@@ -711,16 +709,19 @@ def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=No
     T = np.zeros([meq+mlb+mub+2,n+n_slack+n_surplus+n_artificial+1])
 
     # Insert objective into tableau
-    if objtype.lower()[:3] == "max":
-        T[-2,:n] = -cc  # maximize
-        T[-2,-1] = -f0
-    elif objtype.lower()[:3] == "min":
-        T[-2,:n] = cc  # minimize
-        T[-2,-1] = f0
-    else:
-        status = -1
-        message = "Invalid input. Argument 'objtype' must " \
-                  "be 'max' or 'min'.  Got " + str(objtype)
+    T[-2,:n] = cc  # minimize
+    T[-2,-1] = f0
+
+    #if objtype.lower()[:3] == "max":
+    #    T[-2,:n] = -cc  # maximize
+    #    T[-2,-1] = -f0
+    #elif objtype.lower()[:3] == "min":
+    #    T[-2,:n] = cc  # minimize
+    #    T[-2,-1] = f0
+    #else:
+    #    status = -1
+    #    message = "Invalid input. Argument 'objtype' must " \
+    #              "be 'max' or 'min'.  Got " + str(objtype)
 
     if status == 0:
         b = T[:-1,-1]
@@ -802,8 +803,7 @@ def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=No
             x = x[1:]
 
         # Optimization complete at this point
-        objmult = -1.0 if objtype == "min" else 1.0
-        obj = T[-1,-1] * objmult
+        obj = -T[-1,-1]
 
         if status in (0,1):
             if disp:
@@ -829,17 +829,17 @@ def _linprog_simplex(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=No
 
 
 def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
-            objtype='max',bounds=None,method='simplex',callback=None,
-            tol=1.0E-12,options=None):
+            bounds=None,method='simplex',callback=None,tol=1.0E-12,
+            options=None):
     """
-    Minimize or maximize a linear objective function subject to linear
+    Minimize a linear objective function subject to linear
     equality and inequality constraints.
 
     Linear Programming is intended to solve the following problem form:
 
-    maximize:     c^T * x
+    Minimize:     c^T * x
 
-    subject to:   A_eq * x == b_eq
+    Subject to:   A_eq * x == b_eq
                   A_lb * x >= b_lb
                   A_ub * x <= b_ub
 
@@ -848,7 +848,7 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
     Parameters
     ----------
     c : array_like
-        Coefficients of the linear objective function to be maximized.
+        Coefficients of the linear objective function to be minimized.
     A_eq : array_like
         2-D array which, when matrix-multiplied by x, gives the values of the
         equality constraints at x.
@@ -905,21 +905,6 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
             disp : bool
                 Set to True to print convergence messages.
         For method-specific options, see :func:`show_options()`.
-    callback : callable
-        If a callback function is provide, it will be called within each
-        iteration of the simplex algorithm. The callback must have the signature
-        `callback(xk,**kwargs)` where xk is the current solution vector
-        and kwargs is a dictionary containing the following::
-        "tableau" : The current Simplex algorithm tableau
-        "nit" : The current iteration.
-        "pivot" : The pivot (row,column) used for the next iteration.
-        "phase" : Whether the algorithm is in Phase 1 or Phase 2.
-        "bv" : A structured array containing a string representation of each
-               basic variable and its current value.
-    tol : float
-        The tolerance which determines when a solution is "close enough" to zero
-        in Phase 1 to be considered a basic feasible solution or close enough to
-        positive to to serve as an optimal solution.
 
     Returns
     -------
@@ -1024,8 +1009,7 @@ def linprog(c,A_eq=None,b_eq=None,A_lb=None,b_lb=None,A_ub=None,b_ub=None,
     if meth == 'simplex':
         return _linprog_simplex(c,A_eq=A_eq,b_eq=b_eq,A_lb=A_lb,b_lb=b_lb,
                                 A_ub=A_ub,b_ub=b_ub,bounds=bounds,
-                                objtype=objtype,callback=callback,
-                                tol=tol,**options)
+                                callback=callback,tol=tol,**options)
     else:
         raise ValueError('Unknown solver %s' % method)
 
