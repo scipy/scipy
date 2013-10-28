@@ -20,7 +20,7 @@ import numpy.ma as ma
 
 from .optimize import Result, _check_unknown_options
 
-__all__ = ['linprog','lpsimplex','liprog_verbose_callback','linprog_terse_callback']
+__all__ = ['linprog', '_lpsimplex','liprog_verbose_callback','linprog_terse_callback']
 
 __docformat__ = "restructuredtext en"
 
@@ -39,7 +39,7 @@ def linprog_verbose_callback(xk,**kwargs):
         A dictionary containing the following parameters:
 
         tableau : array_like
-            The current tableau of the simplex algorithm.  Its structure is defined in lpsimplex.
+            The current tableau of the simplex algorithm.  Its structure is defined in _lpsimplex.
         vars : tuple(str,...)
             Column headers for each column in tableau. "x[i]" for actual variables,
             "s[i]" for slack surplus variables, "a[i]" for artificial variables,
@@ -57,11 +57,10 @@ def linprog_verbose_callback(xk,**kwargs):
             True if the simplex algorithm has completed (and this is the final call to callback), otherwise False.
     """
     tableau = kwargs["tableau"]
-    columns = kwargs["vars"]
     iter = kwargs["iter"]
     pivrow,pivcol = kwargs["pivot"]
     phase = kwargs["phase"]
-    basics = kwargs["basics"]
+    basis = kwargs["basis"]
     complete = kwargs["complete"]
 
     t_rows,t_cols = tableau.shape
@@ -80,13 +79,11 @@ def linprog_verbose_callback(xk,**kwargs):
         print("Tableau:")
 
     if iter >= 0:
-        print(" " + "".join(["{:>13}".format(columns[i]) for i in range(t_cols)]))
+        #print(" " + "".join(["{:>13}".format(columns[i]) for i in range(t_cols)]))
         print("" + str(tableau) + "\n")
         if not complete:
             print("Pivot Element: T[{:.0f},{:.0f}]\n".format(pivrow,pivcol))
-        print("Basic Variables:"),
-        for basic_var in basics:
-            print("{:<5s} = {: f}".format(columns[basic_var[0]],basic_var[1]))
+        print("Basic Variables:",basis)
         print()
         print("Current Solution:")
         print("x = ", xk)
@@ -111,7 +108,7 @@ def linprog_terse_callback(xk, **kwargs):
         A dictionary containing the following parameters:
 
         tableau : array_like
-            The current tableau of the simplex algorithm.  Its structure is defined in lpsimplex.
+            The current tableau of the simplex algorithm.  Its structure is defined in _lpsimplex.
         vars : tuple(str,...)
             Column headers for each column in tableau. "x[i]" for actual variables,
             "s[i]" for slack surplus variables, "a[i]" for artificial variables,
@@ -136,40 +133,9 @@ def linprog_terse_callback(xk, **kwargs):
     print(xk)
 
 
-def _get_basics(tableau):
-    """
-    Given a tableau, return the indices of the basic columns and the corresponding
-    values of the basic variables.
-
-    Parameters
-    ----------
-    tableau : array_like
-        A 2-D array representing the current for of the tableau for the simplex method in standard form.
-
-    Returns
-    -------
-    indices : array_like
-        An array of ints where each value is the index of a basic column in the tableau.
-    values : array_like
-        An array of floats where each value is the value of a basic variable whose column
-        is given by the corresponding index in indices.
-    """
-    indices = []
-    values = []
-    count = 0
-    n,m = tableau.shape
-    for col in range(m-1):
-        ones_in_col = tableau[:,col] == 1.0
-        zeros_in_col = tableau[:,col] == 0.0
-        if ones_in_col.sum() == 1 and zeros_in_col.sum() == n-1:
-            # Column is basic
-            nonzero_row = np.nonzero(tableau[:-1,col])[0][0]
-            indices.append(col)
-            values.append(tableau[nonzero_row,-1])
-    return np.asarray(indices,dtype=np.int),np.asarray(values,dtype=np.float64)
 
 
-def lpsimplex(tableau,n,n_slack,n_artificial,maxiter=1000,phase=2,callback=None,tol=1.0E-12,nit0=0):
+def _lpsimplex(tableau,n,n_slack,basis,maxiter=1000,phase=2,callback=None,tol=1.0E-12,nit0=0):
     """
     Solve a linear programming problem in "standard maximization form" using the Simplex Method.
 
@@ -209,14 +175,15 @@ def lpsimplex(tableau,n,n_slack,n_artificial,maxiter=1000,phase=2,callback=None,
          [c'[0],  c'[1], ...,  c'[n_total],  0]]
 
          for a Phase 1 problem (a Problem in which a basic feasible solution is sought
-         prior to maximizing the actual objective. n_total is the total of all variables:
-
+         prior to maximizing the actual objective. The tableau is modified in
+         place by _lpsimplex.
     n : int
         The number of true variables in the problem.
     n_slack : int
         The number of slack/surplus variables in the problem.
-    n_artificial : int
-        The number of artificial variables in the problem.
+    basis : array
+        An array of the indices of the basic variables, such that basis[i]
+        contains the column corresponding to the basic variable for row i.
     maxiter : int
         The maximum number of iterations to perform before aborting the optimization.
     phase : int
@@ -255,271 +222,82 @@ def lpsimplex(tableau,n,n_slack,n_artificial,maxiter=1000,phase=2,callback=None,
     """
 
     nit = nit0
-
-    if phase not in (1,2):
-        status = -1
-        message = "Invalid input to lpsimplex.  Phase must be 1 or 2."
-
-    # Make a copy of the tableau that will be used to detect cycling
-    tableau0 = np.empty_like(tableau)
-    tableau0[:,:] = tableau
-
-    t_rows, t_cols = tableau.shape
-
-    pivrow = 0
-    pivcol = 0
-
-    status = None
-    message = ""
+    complete = False
     cycle = 0
-    x = np.zeros(n)
+    solution = np.zeros(tableau.shape[1]-1,dtype=np.float64)
 
-    if not callback is None:
-        index_to_varname = {}
-        for i in range(n):
-            index_to_varname[i] = 'x[{:d}]'.format(i)
-        for i in range(n_slack):
-            index_to_varname[n+i] = 's[{:d}]'.format(i)
-        for i in range(n_artificial):
-            index_to_varname[n+n_slack+i] = 'a[{:d}]'.format(i)
-        column_headers = [index_to_varname[i] for i in range(t_cols - 1)] + ["RHS"]
+    if phase == 1:
+        m = tableau.shape[0]-2
+    elif phase == 2:
+        m = tableau.shape[0]-1
+    else:
+        status = -1
+        complete = True
 
-    while nit < maxiter and status is None:
-
-        if nit > 2**n:
-            if np.all(tableau == tableau0):
-                cycle += 1
+    while not complete:
 
         # Find the most negative value in bottom row of tableau
         pivcol = np.argmin(tableau[-1,:-1])
 
-        # sort the pivot column so that later we don't bother with rows where
-        # the value in pivot column is negative
-        if phase == 1:
-            pivcol_sortorder = np.argsort(tableau[:-2, pivcol])[:,np.newaxis]
-        else:
-            pivcol_sortorder = np.argsort(tableau[:-1, pivcol])[:,np.newaxis]
-
-        # Now row quotient has three columns: the original row index,
-        # the value in the pivot column, and the RHS value
-        row_quotient = np.hstack([pivcol_sortorder,
-                                  tableau[pivcol_sortorder, pivcol],
-                                  tableau[pivcol_sortorder, -1]])
-        # Pare down row_quotient by removing those rows where the value in the
-        # pivot column is non-positive
-        row_quotient = row_quotient[row_quotient[:,1] > 0]
-
-        # Replace the 2nd column the ratio of the RHS value / pivot column value
-        row_quotient[:,1] = row_quotient[:,2] / row_quotient[:,1]
-
-        # Sort row quotient
-        # With the negative column values removed, we now want to use the row with the minimum
-        # quotient (in column 1) as the pivot row.
-        try:
-            row_quotient = row_quotient[row_quotient[:,1].argsort(),:1]
-            pivrow = row_quotient[cycle][0]
-        except IndexError:
-            pivrow = np.nan
-            if cycle > 0:
-                message = "Optimization failed. The problem appears to " \
-                          "be unbounded. Unable to recover from cycling."
-            status = 3
-            message = "Optimization failed. The problem appears to be unbounded."
-            break
-
-        if cycle > 0:
-            cycle = 0
-
-        if np.all(tableau[-1,:-1] >= -tol):
+        if tableau[-1,pivcol] >= -tol:
             status = 0
+            complete = True
+        else:
+
+            errflag_save = np.geterr()["divide"]
+            np.seterr(divide = "ignore")
+            pivcol_quotients = tableau[:m,-1] / tableau[:m,pivcol]
+            pivcol_sortorder = np.argsort(pivcol_quotients)
+            num_nonpos = np.count_nonzero(pivcol_quotients <= 0)
+            np.seterr(divide=errflag_save)
+
+            if num_nonpos == m:
+                # No valid pivot, problem unbounded
+                status = 3
+                complete = True
+                pivrow = None
+            else:
+                # Note cycle allows a slightly less optimal
+                # choice in the pivot row if cycling has been
+                # detected.
+                pivrow = pivcol_sortorder[num_nonpos+cycle]
 
         if not callback is None:
-            basic_i,basic_val = _get_basics(tableau)
-            basic_vars = zip(basic_i.tolist(),basic_val.tolist())
-            x.fill(0.0)
-            for i in range(len(basic_vars)):
-                if basic_i[i] < n:
-                    x[basic_i[i]] = basic_val[i]
-                else:
-                    break
+            solution[:] = 0
+            solution[basis[:m]] = tableau[:m,-1]
+            callback(solution[:n], **{"tableau": tableau,
+                                      "iter":nit,
+                                      "pivot":(pivrow,pivcol),
+                                      "phase":phase,
+                                      "basis":basis,
+                                      "complete": complete and phase == 2})
 
-            callback(x, **{"tableau": tableau,
-                            "iter":nit,
-                            "vars":column_headers,
-                            "pivot":(pivrow,pivcol),
-                            "phase":phase,
-                            "basics":basic_vars,
-                            "complete": (not status is None) and phase == 2})
-
-        if status is None:
-            pivval = tableau[pivrow,pivcol]
-            tableau[pivrow,:] = tableau[pivrow,:] / pivval
-            for irow in range(tableau.shape[0]):
-                if irow != pivrow:
-                    tableau[irow,:] = tableau[irow,:] \
-                                      - tableau[pivrow,:]*tableau[irow,pivcol]
-
-            nit += 1
-
-    else:
-        if nit >= maxiter:
-            message = "Iteration limit reached."
+        if nit >= maxiter and not complete:
+            # Iteration limit exceeded
             status = 1
-        else:
-            message = "Optimization terminated successfully."
-            status = 0
-
-    basic_i,basic_val = _get_basics(tableau)
-    x.fill(0.0)
-    for i in range(len(basic_i)):
-        if basic_i[i] < n:
-            x[basic_i[i]] = basic_val[i]
-        else:
-            break
-
-    return x, nit, status, message
+            complete = True
 
 
-def _simplex(H,basis,indx,s,maxiter=1000):
-    """
-    Solve a linear programming problem in "standard maximization form" using the Simplex Method.
-
-    Maximize :math:`f = c^T x`
-
-    subject to
-
-    .. math::
-
-        Ax = b
-        x_i >= 0
-        b_j >= 0
-
-    Parameters
-    ----------
-    H : array_like
-        A 2-D array representing the simplex tableau corresponding to the maximization problem.
-        It should have the form:
-
-        [[A[0,0], A[0,1], ..., A[0,n_total], b[0]],
-         [A[1,0], A[1,1], ..., A[1,n_total], b[1]],
-         .
-         .
-         .
-         [A[m,0], A[m,1], ..., A[m,n_total], b[m]],
-         [c[0],   c[1], ...,   c[n_total],    0]]
-
-        for a Phase 2 problem, or the form:
-
-        [[A[0,0], A[0,1], ..., A[0,n_total], b[0]],
-         [A[1,0], A[1,1], ..., A[1,n_total], b[1]],
-         .
-         .
-         .
-         [A[m,0], A[m,1], ..., A[m,n_total], b[m]],
-         [c[0],   c[1], ...,   c[n_total],   0],
-         [c'[0],  c'[1], ...,  c'[n_total],  0]]
-
-         for a Phase 1 problem (a Problem in which a basic feasible solution is sought
-         prior to maximizing the actual objective. n_total is the total of all variables:
-    basis : sequence of int
-        The indices of the columns that represent the current basis.
-    indx : sequence of int
-        Indices of the columns that represent the independent variables x.
-    s : int
-        Indices which phase of the simplex method is being used.
-        s = 1 for Phase 1 or s = 2 for Phase 2.
-    maxiter : int
-        The maximum number of iterations allowed before the algorithm is
-        aborted.
-
-    Return
-    ------
-    iter : int
-        The number of iterations performed.
-    status : int
-        A flag indicating the status of the solution
-        0 : Optimization terminated successfully
-        1 : Iteration limit reached
-        3 : Problem appears to be unbounded
-        4 : Singular matrix
-    """
-    status = None
-    if s == 1:
-        s0 = 2
-    elif s == 2:
-        s0 = 1
-    n1 = H.shape[0]
-    sol = False
-    iter = 0
-    while iter < maxiter:
-        q = H[-1, :-1] # last row, all columns but last
-        jp = argmin(q)
-        fm = q[jp]
-        if fm >= 0:
-            is_bounded = True    # bounded solution
-            sol = True
-            status = 0
-        else:
-            q = H[:-s0,jp]
-            ip = argmax(q)
-            hm = q[ip]
-            if hm <= 0:
-                is_bounded = False # unbounded solution
-                sol = True
-                status = 3
+        if not complete:
+            if nit >= maxiter:
+                status = 1
+                complete = True
             else:
-                h1 = zeros(n1-s0)
-                for i in xrange(n1-s0):
-                    if H[i,jp] > 0:
-                        h1[i] = H[i,-1]/H[i,jp]
-                    else:
-                        h1[i] = Inf
-                ip = argmin(h1)
-                #minh1 = h1[ip]
-                basis[ip] = indx[jp]
-                if not _pivot(H,ip,jp):
-                    sol = True
-                    status = 4
-        if sol:
-            # Solution acquired
-            break
-        iter += 1
-    else:
-        # Maximum iterations reached
-        status = 1
-    return iter, status
+                # variable represented by pivcol enters
+                # variable in basis[pivrow] leaves
+                basis[pivrow] = pivcol
+                pivval = tableau[pivrow,pivcol]
+                tableau[pivrow,:] = tableau[pivrow,:] / pivval
+                for irow in range(tableau.shape[0]):
+                    if irow != pivrow:
+                        tableau[irow,:] = tableau[irow,:] \
+                                        - tableau[pivrow,:]*tableau[irow,pivcol]
+                nit += 1
 
-def _pivot(H,ip,jp):
-    """ Perform a Gauss-Jordan pivot in the matrix/tableau H, where ip
-        is the pivot row and jp is the pivot column.
+    solution[:] = 0
+    solution[basis[:m]] = tableau[:m,-1]
 
-        Parameters
-        ----------
-        H : array-like
-            A 2D array representing the matrix or tableau on which the
-            pivot operation is to be performed.  If the pivot is successful
-            H is modified to reflect the result of the pivot operation.
-        ip : int
-            The row of the pivot element.
-        jp : int
-            The column of the pivot element.
-
-        Return
-        ------
-        False if the pivot element value is zero, otherwise True.
-    """
-    n, m = H.shape
-    piv = H[ip,jp]
-    if piv == 0:
-        return False
-    else:
-        H[ip,:] /= piv
-        for i in xrange(n):
-            if i != ip:
-                H[i,:] -= H[i,jp]*H[ip,:]
-    return True
-
-
+    return solution[:n], nit, status
 
 
 def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
@@ -643,7 +421,7 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
     status = 0
     messages = { 0 : "Optimization terminated successfully.",
                  1 : "Iteration limit reached.",
-                 2 : "Optiization failed. Unable to find a feasible"
+                 2 : "Optimzation failed. Unable to find a feasible"
                      " starting point.",
                  3 : "Optimization failed. The problem appears to be unbounded.",
                  4 : "Optimization failed. Singular matrix encountered."}
@@ -859,23 +637,13 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
     for r in range(n_artificial):
         T[-1,:] = T[-1,:] - T[r,:]
 
-    x, nit1, status, message = lpsimplex(T,n,n_slack,n_artificial,
-                                         phase=1,callback=callback,
-                                         maxiter=maxiter,tol=tol)
 
-    #basis = np.arange(n,n+m)
-    #xindex = np.arange(n)
-    #
-    #nit1, status = _simplex(H,basis,xindex,1,maxiter)
-    #
-    #if status != 0:
-    #    return Result(x=np.zeros(n),fun=np.nan,nit=nit1,status=int(status),
-    #                  message=messages[status], success=False)
+    # The initial basis consist of the artificial variables
+    basis = np.arange(n+n_slack,n+n_slack+n_artificial)
 
-    #optx = zeros(n+m)
-    #for i in xrange(m):
-    #    optx[basis[i]] = T[i,-1]
-    #x = optx[:n]
+    x, nit1, status  = _lpsimplex(T,n,n_slack,basis,
+                                  phase=1,callback=callback,
+                                  maxiter=maxiter,tol=tol)
 
     # if pseudo objective is zero, remove the last row from the tableau and
     # proceed to phase 2
@@ -895,12 +663,13 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
         return Result(x=x,fun=-T[-1,-1],nit=nit1,status=int(status),
                       message=message, success=False)
 
-    # Tableau Finished
-    if status == 0:
-        x, nit2, status, message = lpsimplex(T,n,n_slack,
-                                             n_artificial,maxiter=maxiter,
-                                             phase=2,callback=callback,
-                                             tol=tol,nit0=nit1)
+    # Phase 2
+    basis = basis[np.where(basis < n+n_slack)]
+    x, nit2, status = _lpsimplex(T,n,n_slack,basis,
+                                 maxiter=maxiter-nit1,
+                                 phase=2,
+                                 callback=callback,
+                                 tol=tol,nit0=nit1)
 
     # For those variables with finite negative lower bounds,
     # reverse the change of variables
@@ -920,16 +689,16 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
 
     if status in (0,1):
         if disp:
-            print(message)
+            print(messages[int(status)])
             print("         Current function value: {: <12.6f}".format(obj))
             print("         Iterations: {:d}".format(nit2))
     else:
         if disp:
-            print(message)
+            print(messages[int(status)])
             print("         Iterations: {:d}".format(nit2))
 
     return Result(x=x,fun=obj,nit=int(nit2),status=int(status),
-                  message=message,success=(status == 0))
+                  message=messages[int(status)],success=(status == 0))
 
 
 

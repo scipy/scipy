@@ -111,11 +111,6 @@ class TestLinprog(TestCase):
         A_eq = [[-10,1,1,-8]]
         b_eq = [-4]
 
-        #A_lb = [[-1,1,3,0],
-        #        [-10,10,7,-7],
-        #        [-6,1,-3,-4]]
-        #b_lb = [-6,6,-6]
-
         res = linprog(c,A_ub=A_ub,b_ub=b_ub,A_eq=A_eq,b_eq=b_eq)
 
         assert_(res.status == 0,
