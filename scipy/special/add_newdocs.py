@@ -1513,6 +1513,8 @@ add_newdoc("scipy.special", "xlogy",
 
     Compute ``x*log(y)`` so that the result is 0 if `x = 0`.
 
+    .. versionadded:: 0.13.0
+
     Parameters
     ----------
     x : array_like
@@ -1532,6 +1534,8 @@ add_newdoc("scipy.special", "xlog1py",
     xlog1py(x, y)
 
     Compute ``x*log1p(y)`` so that the result is 0 if `x = 0`.
+
+    .. versionadded:: 0.13.0
 
     Parameters
     ----------
