@@ -543,13 +543,15 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
     # The number of equality constraints (rows in A_eq and elements in b_eq)
     meq = len(beq)
 
+    # The total number of constraints
     m = mub+meq
 
     # The number of slack variables (one for each of the upper-bound constraints)
     n_slack = mub
 
-    # The number of artificial variables (one for each constraint)
-    n_artificial = m
+    # The number of artificial variables (one for each lower-bound and equality
+    # constraint)
+    n_artificial = meq + np.count_nonzero(bub < 0)
 
     try:
         if not Aub is None:
@@ -593,7 +595,7 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
         # Invalid inputs provided
         if disp:
             print(message)
-        return Result(x=np.zeros_like(cc),fun=0.0,nit=0,status=int(status),
+        return Result(x=np.zeros_like(cc),fun=0.0,nit=0,status=status,
                       message=message, success=False)
 
     # Create the tableau
@@ -603,7 +605,7 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
     T[-2,:n] = cc
     T[-2,-1] = f0
 
-    b = T[:-1,-1]
+    b = T[:-2,-1]
 
     if meq > 0:
         # Add Aeq to the tableau
@@ -618,32 +620,38 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
         # Add the slack variables to the tableau
         np.fill_diagonal(T[meq:m,n:n+n_slack], 1)
 
-    # No negative resource constraints are allowed.
-    # Note that this reverses the sign of the slack/surplus variables since
-    # multiplication of an inequality by a negative flips the sign.
+    # Further setup the tableau
+    # If a row corresponds to an equality constraint or a negative b (a lower
+    # bound constraint), then an artificial variable is added for that row.
+    # Also, if b is negative, first flip the signs in that constraint.
+    slcount = 0
+    avcount = 0
+    basis = np.zeros(m,dtype=int)
+    r_artificial = np.zeros(n_artificial,dtype=int)
     for i in range(m):
-        if b[i] < 0:
-            b[i] *= -1
-            T[i,:-1] *= -1
-
-    T[:n_artificial, n+n_slack:n+n_slack+n_artificial] \
-        = np.eye(n_artificial)
-
-    # Add an objective term to each of the artificial variable columns
-    T[-1,n+n_slack:-1] = 1
+        if i < meq or b[i] < 0:
+            # basic variable i is in column n+n_slack+avcount
+            basis[i] = n+n_slack+avcount
+            r_artificial[avcount] = i
+            avcount += 1
+            if b[i] < 0:
+                b[i] *= -1
+                T[i,:-1] *= -1
+            T[i,basis[i]] = 1
+            T[-1,basis[i]] = 1
+        else:
+            # basic variable i is in column n+slcount
+            basis[i] = n+slcount
+            slcount += 1
 
     # Make the artificial variables basic feasible variables by subtracting
     # each row with an artificial variable from the Phase 1 objective
-    for r in range(n_artificial):
+    for r in r_artificial:
         T[-1,:] = T[-1,:] - T[r,:]
 
-
-    # The initial basis consist of the artificial variables
-    basis = np.arange(n+n_slack,n+n_slack+n_artificial)
-
-    x, nit1, status  = _lpsimplex(T,n,n_slack,basis,
-                                  phase=1,callback=callback,
-                                  maxiter=maxiter,tol=tol)
+    x, nit1, status = _lpsimplex(T,n,n_slack,basis,
+                                 phase=1,callback=callback,
+                                 maxiter=maxiter,tol=tol)
 
     # if pseudo objective is zero, remove the last row from the tableau and
     # proceed to phase 2
@@ -660,11 +668,10 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
         # Failure to find a feasible starting point
         if disp:
             print(message)
-        return Result(x=x,fun=-T[-1,-1],nit=nit1,status=int(status),
+        return Result(x=x,fun=-T[-1,-1],nit=nit1,status=status,
                       message=message, success=False)
 
     # Phase 2
-    basis = basis[np.where(basis < n+n_slack)]
     x, nit2, status = _lpsimplex(T,n,n_slack,basis,
                                  maxiter=maxiter-nit1,
                                  phase=2,
@@ -689,21 +696,16 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
 
     if status in (0,1):
         if disp:
-            print(messages[int(status)])
+            print(messages[status])
             print("         Current function value: {: <12.6f}".format(obj))
             print("         Iterations: {:d}".format(nit2))
     else:
         if disp:
-            print(messages[int(status)])
+            print(messages[status])
             print("         Iterations: {:d}".format(nit2))
 
-    return Result(x=x,fun=obj,nit=int(nit2),status=int(status),
-                  message=messages[int(status)],success=(status == 0))
-
-
-
-
-
+    return Result(x=x,fun=obj,nit=int(nit2),status=status,
+                  message=messages[status],success=(status == 0))
 
 
 def linprog(c,A_eq=None,b_eq=None,A_ub=None,b_ub=None,
