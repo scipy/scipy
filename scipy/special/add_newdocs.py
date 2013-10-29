@@ -499,6 +499,8 @@ add_newdoc('scipy.special', 'expit',
     The expit function is defined as expit(x) = 1/(1+exp(-x)).
     Note that expit is the inverse logit function.
 
+    .. versionadded:: 0.10.0
+
     Parameters
     ----------
     x : ndarray
@@ -513,7 +515,7 @@ add_newdoc('scipy.special', 'expit',
     Notes
     -----
     As a ufunc logit takes a number of optional
-    keywork arguments. For more information
+    keyword arguments. For more information
     see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
     """)
 
@@ -1044,6 +1046,8 @@ add_newdoc('scipy.special', 'logit',
     Note that logit(0) = -inf, logit(1) = inf, and logit(p)
     for p<0 or p>1 yields nan.
 
+    .. versionadded:: 0.10.0
+
     Parameters
     ----------
     x : ndarray
@@ -1058,7 +1062,7 @@ add_newdoc('scipy.special', 'logit',
     Notes
     -----
     As a ufunc logit takes a number of optional
-    keywork arguments. For more information
+    keyword arguments. For more information
     see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
     """)
 
