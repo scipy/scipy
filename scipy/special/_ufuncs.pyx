@@ -3875,6 +3875,8 @@ cdef char *ufunc_expit_doc = (
     "The expit function is defined as expit(x) = 1/(1+exp(-x)).\n"
     "Note that expit is the inverse logit function.\n"
     "\n"
+    ".. versionadded:: 0.10.0\n"
+    "\n"
     "Parameters\n"
     "----------\n"
     "x : ndarray\n"
@@ -3889,7 +3891,7 @@ cdef char *ufunc_expit_doc = (
     "Notes\n"
     "-----\n"
     "As a ufunc logit takes a number of optional\n"
-    "keywork arguments. For more information\n"
+    "keyword arguments. For more information\n"
     "see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_")
 ufunc_expit_loops[0] = <np.PyUFuncGenericFunction>loop_f_f__As_f_f
 ufunc_expit_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
@@ -5714,6 +5716,8 @@ cdef char *ufunc_logit_doc = (
     "Note that logit(0) = -inf, logit(1) = inf, and logit(p)\n"
     "for p<0 or p>1 yields nan.\n"
     "\n"
+    ".. versionadded:: 0.10.0\n"
+    "\n"
     "Parameters\n"
     "----------\n"
     "x : ndarray\n"
@@ -5728,7 +5732,7 @@ cdef char *ufunc_logit_doc = (
     "Notes\n"
     "-----\n"
     "As a ufunc logit takes a number of optional\n"
-    "keywork arguments. For more information\n"
+    "keyword arguments. For more information\n"
     "see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_")
 ufunc_logit_loops[0] = <np.PyUFuncGenericFunction>loop_f_f__As_f_f
 ufunc_logit_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
