@@ -3157,11 +3157,19 @@ def show_options(solver=None, method=None):
 
     *simplex* options:
 
-        tol : float
+        maxiter : int, optional
+            Maximum number of iterations to make.
+
+        tol : float, optional
             The tolerance which determines when the Phase 1 objective is
             sufficiently close to zero to be considered a basic feasible
             solution or when the Phase 2 objective coefficients are close
             enough to positive for the objective to be considered optimal.
+
+        bland : bool, optional
+            If True, choose pivots using Bland's rule.  In problems which
+            fail to converge due to cycling, using Bland's rule can provide
+            convergence at the expense of a less optimal path about the simplex.
 
     """
     import textwrap
