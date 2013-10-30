@@ -135,7 +135,7 @@ def linprog_terse_callback(xk, **kwargs):
 
 
 
-def _lpsimplex(tableau,n,n_slack,basis,maxiter=1000,phase=2,callback=None,tol=1.0E-12,nit0=0):
+def _lpsimplex(T,n,n_slack,basis,maxiter=1000,phase=2,callback=None,tol=1.0E-12,nit0=0):
     """
     Solve a linear programming problem in "standard maximization form" using the Simplex Method.
 
@@ -151,8 +151,8 @@ def _lpsimplex(tableau,n,n_slack,basis,maxiter=1000,phase=2,callback=None,tol=1.
 
     Parameters
     ----------
-    tableau : array_like
-        A 2-D array representing the simplex tableau corresponding to the maximization problem.
+    T : array_like
+        A 2-D array representing the simplex T corresponding to the maximization problem.
         It should have the form:
 
         [[A[0,0], A[0,1], ..., A[0,n_total], b[0]],
@@ -175,7 +175,7 @@ def _lpsimplex(tableau,n,n_slack,basis,maxiter=1000,phase=2,callback=None,tol=1.
          [c'[0],  c'[1], ...,  c'[n_total],  0]]
 
          for a Phase 1 problem (a Problem in which a basic feasible solution is sought
-         prior to maximizing the actual objective. The tableau is modified in
+         prior to maximizing the actual objective. The T is modified in
          place by _lpsimplex.
     n : int
         The number of true variables in the problem.
@@ -188,12 +188,12 @@ def _lpsimplex(tableau,n,n_slack,basis,maxiter=1000,phase=2,callback=None,tol=1.
         The maximum number of iterations to perform before aborting the optimization.
     phase : int
         The phase of the optimization being executed.  In phase 1 a basic feasible solution is sought and
-        the tableau has an additional row representing an alternate objective function.
+        the T has an additional row representing an alternate objective function.
     callback : callable
         If a callback function is provided, it will be called within each iteration of the simplex algorithm.
         The callback must have the signature `callback(xk,**kwargs)` where xk is the current solution vector
         and kwargs is a dictionary containing the following::
-        "tableau" : The current Simplex algorithm tableau
+        "T" : The current Simplex algorithm T
         "nit" : The current iteration.
         "pivot" : The pivot (row,column) used for the next iteration.
         "phase" : Whether the algorithm is in Phase 1 or Phase 2.
@@ -220,52 +220,46 @@ def _lpsimplex(tableau,n,n_slack,basis,maxiter=1000,phase=2,callback=None,tol=1.
 
         See `Result` for a description of other attributes.
     """
-
     nit = nit0
     complete = False
     cycle = 0
-    solution = np.zeros(tableau.shape[1]-1,dtype=np.float64)
+    solution = np.zeros(T.shape[1]-1,dtype=np.float64)
+
+    # Suppress division by zero warnings
+    errflag_save = np.geterr()["divide"]
+    np.seterr(divide = "ignore")
 
     if phase == 1:
-        m = tableau.shape[0]-2
+        m = T.shape[0]-2
     elif phase == 2:
-        m = tableau.shape[0]-1
+        m = T.shape[0]-1
     else:
-        status = -1
-        complete = True
+        raise ValueError("Arugment 'phase' must be 1 or 2")
 
     while not complete:
 
-        # Find the most negative value in bottom row of tableau
-        pivcol = np.argmin(tableau[-1,:-1])
+        # Find the most negative value in bottom row of T
+        pivcol = np.argwhere( T[-1,:-1] == np.min(T[-1,:-1])).ravel()[0]
 
-        if tableau[-1,pivcol] >= -tol:
+        if T[-1,pivcol] >= -tol:
             status = 0
             complete = True
         else:
-
-            errflag_save = np.geterr()["divide"]
-            np.seterr(divide = "ignore")
-            pivcol_quotients = tableau[:m,-1] / tableau[:m,pivcol]
-            pivcol_sortorder = np.argsort(pivcol_quotients)
-            num_nonpos = np.count_nonzero(pivcol_quotients <= 0)
-            np.seterr(divide=errflag_save)
-
-            if num_nonpos == m:
+            q = T[:m,-1] / T[:m,pivcol] # Quotients for the minimum quotient rule
+            pos_q = np.argwhere( q > tol).ravel() # Indices of the positive q
+            
+            if len(pos_q) == 0:
                 # No valid pivot, problem unbounded
                 status = 3
                 complete = True
                 pivrow = None
             else:
-                # Note cycle allows a slightly less optimal
-                # choice in the pivot row if cycling has been
-                # detected.
-                pivrow = pivcol_sortorder[num_nonpos+cycle]
+                pivrow = np.argwhere( q == np.min(q[pos_q])).ravel()[0]
 
         if not callback is None:
             solution[:] = 0
-            solution[basis[:m]] = tableau[:m,-1]
-            callback(solution[:n], **{"tableau": tableau,
+            solution[basis[:m]] = T[:m,-1]
+            callback(solution[:n], **{"tableau": T,
                                       "iter":nit,
                                       "pivot":(pivrow,pivcol),
                                       "phase":phase,
@@ -286,16 +280,18 @@ def _lpsimplex(tableau,n,n_slack,basis,maxiter=1000,phase=2,callback=None,tol=1.
                 # variable represented by pivcol enters
                 # variable in basis[pivrow] leaves
                 basis[pivrow] = pivcol
-                pivval = tableau[pivrow,pivcol]
-                tableau[pivrow,:] = tableau[pivrow,:] / pivval
-                for irow in range(tableau.shape[0]):
+                pivval = T[pivrow,pivcol]
+                T[pivrow,:] = T[pivrow,:] / pivval
+                for irow in range(T.shape[0]):
                     if irow != pivrow:
-                        tableau[irow,:] = tableau[irow,:] \
-                                        - tableau[pivrow,:]*tableau[irow,pivcol]
+                        T[irow,:] = T[irow,:] - T[pivrow,:]*T[irow,pivcol]
                 nit += 1
 
     solution[:] = 0
-    solution[basis[:m]] = tableau[:m,-1]
+    solution[basis[:m]] = T[:m,-1]
+
+    # Return the division by zero warning flag to its original state
+    np.seterr(divide=errflag_save)
 
     return solution[:n], nit, status
 
