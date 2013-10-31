@@ -1,5 +1,8 @@
 """
-A basic linear programming function using a simplex method.
+A top-level linear programming interface. Currently this interface only
+solves linear programming problems via the Simplex Method.
+
+.. versionadded:: 0.14.0
 
 Functions
 ---------
@@ -7,9 +10,8 @@ Functions
    :toctree: generated/
 
     linprog
-    lpsimplex
-    verbose_callback
-    terse_callback
+    _linprog_simplex
+    _solve_simplex
 
 """
 
@@ -233,16 +235,16 @@ def _solve_simplex(T,n,basis,maxiter=1000,phase=2,callback=None,tol=1.0E-12,
     complete = False
     solution = np.zeros(T.shape[1]-1,dtype=np.float64)
 
-    # Suppress division by zero warnings
-    errflag_save = np.geterr()["divide"]
-    np.seterr(divide="ignore")
-
     if phase == 1:
         m = T.shape[0]-2
     elif phase == 2:
         m = T.shape[0]-1
     else:
-        raise ValueError("Arugment 'phase' must be 1 or 2")
+        raise ValueError("Arugment 'phase' to _solve_simplex must be 1 or 2")
+
+    # Suppress division by zero warnings
+    errflag_save = np.geterr()["divide"]
+    np.seterr(divide="ignore")
 
     while not complete:
         # Find the most negative value in bottom row of T.
@@ -286,9 +288,9 @@ def _solve_simplex(T,n,basis,maxiter=1000,phase=2,callback=None,tol=1.0E-12,
             solution[:] = 0
             solution[basis[:m]] = T[:m,-1]
             callback(solution[:n], **{"tableau": T,
+                                      "phase":phase,
                                       "iter":nit,
                                       "pivot":(pivrow,pivcol),
-                                      "phase":phase,
                                       "basis":basis,
                                       "complete": complete and phase == 2})
 
