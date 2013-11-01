@@ -421,13 +421,11 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
 
     The input for this problem is as follows:
     >>> c = [-1,4]
-    >>> A_ub = [[-3,1],
-    >>>         [1,2]]
-    >>> b_ub = [6,4]
-    >>> x0_bounds = (-np.inf,np.inf)
-    >>> x1_bounds = (-3,np.inf)
-    >>> res = linprog(c,A_ub=A_ub,b_ub=b_ub,bounds=(x0_bounds,x1_bounds),
-    ... options={"disp":True})
+    >>> A = [[-3,1],[1,2]]
+    >>> b = [6,4]
+    >>> x0_bounds = (None,None)
+    >>> x1_bounds = (-3,None)
+    >>> res = linprog(c,A,b,bounds=(x0_bounds,x1_bounds),options={"disp":True})
     >>> print(res)
     Optimization terminated successfully.
          Current function value: 11.428571
@@ -436,6 +434,7 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
     success: True
     fun: 11.428571428571429
     x: array([-1.14285714,  2.57142857])
+    slack: array([], dtype=np.float64)
     message: 'Optimization terminated successfully.'
     nit: 2
 
