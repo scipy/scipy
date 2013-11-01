@@ -9,7 +9,7 @@ from scipy.lib.six import xrange
 
 from numpy import exp, log, asarray, arange, newaxis, hstack, product, array, \
                   where, zeros, extract, place, pi, sqrt, eye, poly1d, dot, \
-                  r_, rollaxis, sum, fromstring, asanyarray
+                  r_, rollaxis, sum, fromstring, asanyarray, multiply
 
 __all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb',
            'central_diff_weights', 'derivative', 'pade', 'lena', 'ascent', 'face']
@@ -83,7 +83,7 @@ def logsumexp(a, axis=None, b=None):
             b = b.ravel()
         else:
             b = rollaxis(b, axis)
-        out = log(sum(b * exp(a - a_max), axis=0))
+        out = log(sum(multiply(b, exp(a - a_max)), axis=0))
     else:
         out = log(sum(exp(a - a_max), axis=0))
     out += a_max
