@@ -53,6 +53,10 @@ def logsumexp(a, axis=None, b=None):
     only handles two arguments. `logaddexp.reduce` is similar to this
     function, but may be less stable.
 
+    This function preserves ndarray subclasses, and works also with
+    matrices and masked arrays (it uses `asanyarray` instead of `asarray`
+    for parameters).
+
     Examples
     --------
     >>> from scipy.misc import logsumexp
