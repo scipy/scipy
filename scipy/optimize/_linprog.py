@@ -85,7 +85,7 @@ def linprog_verbose_callback(xk,**kwargs):
         print("x = ", xk)
         print()
         print("Current Objective Value:")
-        print("f = ", tableau[-1,-1])
+        print("f = ", -tableau[-1,-1])
         print()
     np.set_printoptions(**saved_printoptions)
 
@@ -195,8 +195,7 @@ def _solve_simplex(T,n,basis,maxiter=1000,phase=2,callback=None,tol=1.0E-12,
         "nit" : The current iteration.
         "pivot" : The pivot (row,column) used for the next iteration.
         "phase" : Whether the algorithm is in Phase 1 or Phase 2.
-        "bv" : A structured array containing a string representation of each
-        basic variable and its current value.
+        "basis" : The indices of the columns of the basic variables.
     tol : float
         The tolerance which determines when a solution is "close enough" to
         zero in Phase 1 to be considered a basic feasible solution or close
@@ -377,30 +376,27 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
     Returns
     -------
     A scipy.optimize.Result consisting of the following fields::
-    x : ndarray
-        The independent variable vector which optimizes the linear programming
-        problem.
-    slack : ndarray
-        The values of the slack variables.  Each slack variable corresponds
-        to an inequality constraint.  If the slack is zero, then the
-        corresponding constraint is active.
-    success : bool
-        Returns True if the algorithm succeeded in finding an optimal solution.
-    status : int
-        An integer representing the exit status of the optimization::
-        -1 : Invalid arguments
-         0 : Optimization terminated successfully
-         1 : Iteration limit reached
-         2 : Problem appears to be infeasible
-         3 : Problem appears to be unbounded
-    nit : int
-        The number of iterations performed.
-    message : str
-        A string descriptor of the exit status of the optimization.
-    bv : tuple
-        The basic variables.
-    nbv : tuple
-        The nonbasic variables.
+        x : ndarray
+            The independent variable vector which optimizes the linear
+            programming problem.
+        slack : ndarray
+            The values of the slack variables.  Each slack variable corresponds
+            to an inequality constraint.  If the slack is zero, then the
+            corresponding constraint is active.
+        success : bool
+            Returns True if the algorithm succeeded in finding an optimal
+            solution.
+        status : int
+            An integer representing the exit status of the optimization::
+            -1 : Invalid arguments
+             0 : Optimization terminated successfully
+             1 : Iteration limit reached
+             2 : Problem appears to be infeasible
+             3 : Problem appears to be unbounded
+        nit : int
+            The number of iterations performed.
+        message : str
+            A string descriptor of the exit status of the optimization.
 
     Examples
     --------
@@ -806,26 +802,28 @@ def linprog(c,A_eq=None,b_eq=None,A_ub=None,b_ub=None,
 
     Returns
     -------
-    x : ndarray
-        The independent variable vector which optimizes the
-        linear programming problem.
-    success : bool
-        Returns True if the algorithm succeeded in finding an optimal solution.
-    status : int
-        An integer representing the exit status of the optimization::
-        -1 : Invalid arguments
-         0 : Optimization terminated successfully
-         1 : Iteration limit reached
-         2 : Problem appears to be infeasible
-         3 : Problem appears to be unbounded
-    nit : int
-        The number of iterations performed.
-    message : str
-        A string descriptor of the exit status of the optimization.
-    bv : tuple
-        The basic variables.
-    nbv : tuple
-        The nonbasic variables.
+    A scipy.optimize.Result consisting of the following fields::
+        x : ndarray
+            The independent variable vector which optimizes the linear
+            programming problem.
+        slack : ndarray
+            The values of the slack variables.  Each slack variable corresponds
+            to an inequality constraint.  If the slack is zero, then the
+            corresponding constraint is active.
+        success : bool
+            Returns True if the algorithm succeeded in finding an optimal
+            solution.
+        status : int
+            An integer representing the exit status of the optimization::
+            -1 : Invalid arguments
+             0 : Optimization terminated successfully
+             1 : Iteration limit reached
+             2 : Problem appears to be infeasible
+             3 : Problem appears to be unbounded
+        nit : int
+            The number of iterations performed.
+        message : str
+            A string descriptor of the exit status of the optimization.
 
     Examples
     --------
@@ -849,14 +847,12 @@ def linprog(c,A_eq=None,b_eq=None,A_ub=None,b_ub=None,
     dot(A_ub,x) <= b_ub
 
     The input for this problem is as follows:
-    >>> c = [1,-4] # Note the reversed coefficients for maximization
-    >>> A_ub = [[-3,1],
-    >>>         [1,2]]
-    >>> b_ub = [6,4]
-    >>> x0_bounds = (-np.inf,np.inf)
-    >>> x1_bounds = (-3,np.inf)
-    >>> res = linprog(c,A_ub=A_ub,b_ub=b_ub,bounds=(x0_bounds,x1_bounds),
-    ...               disp=True)
+    >>> c = [-1,4]
+    >>> A = [[-3,1],[1,2]]
+    >>> b = [6,4]
+    >>> x0_bounds = (None,None)
+    >>> x1_bounds = (-3,None)
+    >>> res = linprog(c,A,b,bounds=(x0_bounds,x1_bounds),options={"disp":True})
     >>> print(res)
     Optimization terminated successfully.
          Current function value: -11.428571
