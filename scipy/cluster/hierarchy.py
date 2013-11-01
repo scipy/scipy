@@ -1910,8 +1910,8 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
         'lastp': the last ``p`` non-singleton formed in the linkage
           are the only non-leaf nodes in the linkage; they correspond
-          to to rows ``Z[n-p-2:end]`` in ``Z``. All other
-          non-singleton clusters are contracted into leaf nodes.
+          to rows ``Z[n-p-2:end]`` in ``Z``. All other non-singleton
+          clusters are contracted into leaf nodes.
 
         'mlab': This corresponds to MATLAB(TM) behavior. (not
           implemented yet)
@@ -2235,7 +2235,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     ivl is a list to store the labels of the leaf nodes. The leaf_label_func
     is called whenever ivl != None, labels == None, and
     leaf_label_func != None. When ivl != None and labels != None, the
-    labels list is used only for labeling the the leaf nodes. When
+    labels list is used only for labeling the leaf nodes. When
     ivl == None, no labels are generated for leaf nodes.
 
     When get_leaves==True, a list of leaves is built as they are visited

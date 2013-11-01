@@ -27,7 +27,7 @@ from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
 from .anneal import _minimize_anneal
 
-# contrained minimization
+# constrained minimization
 from .lbfgsb import _minimize_lbfgsb
 from .tnc import _minimize_tnc
 from .cobyla import _minimize_cobyla

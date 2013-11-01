@@ -197,7 +197,7 @@ def inline(code,arg_names=[],local_dict=None, global_dict=None,
         On Unix, it'll probably use the same compiler that was used when
         compiling Python. Cygwin's behavior should be similar.
     verbose : {0,1,2}, optional
-        Specifies how much much information is printed during the compile
+        Specifies how much information is printed during the compile
         phase of inlining code.  0 is silent (except on windows with msvc
         where it still prints some garbage). 1 informs you when compiling
         starts, finishes, and how long it took.  2 prints out the command

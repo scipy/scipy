@@ -193,7 +193,7 @@ Raw Statistical Functions
 .. autosummary::
    :toctree: generated/
 
-   bdtr       -- Sum of terms 0 through k of of the binomial pdf.
+   bdtr       -- Sum of terms 0 through k of the binomial pdf.
    bdtrc      -- Sum of terms k+1 through n of the binomial pdf.
    bdtri      -- Inverse of bdtr
    btdtr      -- Integral from 0 to x of beta pdf.

@@ -96,6 +96,14 @@ Enhancements to ``scipy.stats``
   ``stats.contingency.expected_freq``.
 
 
+Enhancements to ``scipy.special``
+---------------------------------
+
+The functions ``logit(p) = log(p/(1-p))``
+and ``expit(x) = 1/(1+exp(-x))`` have been implemented as
+``scipy.special.logit`` and ``scipy.special.expit`` respectively.
+
+
 Basic support for Harwell-Boeing file format for sparse matrices
 ----------------------------------------------------------------
 

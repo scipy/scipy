@@ -399,7 +399,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         exp( -(func(xnew) - func(xold)) / T )
 
     So, for best results, ``T`` should to be comparable to the typical
-    difference in function value between between local minima
+    difference in function values between local minima.
 
     References
     ----------
