@@ -9,7 +9,7 @@ from scipy.lib.six import xrange
 
 from numpy import exp, log, asarray, arange, newaxis, hstack, product, array, \
                   where, zeros, extract, place, pi, sqrt, eye, poly1d, dot, \
-                  r_, rollaxis, sum, fromstring
+                  r_, rollaxis, sum, fromstring, asanyarray
 
 __all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb',
            'central_diff_weights', 'derivative', 'pade', 'lena', 'ascent', 'face']
@@ -71,14 +71,14 @@ def logsumexp(a, axis=None, b=None):
     >>> np.log(np.sum(b*np.exp(a)))
     9.9170178533034647
     """
-    a = asarray(a)
+    a = asanyarray(a)
     if axis is None:
         a = a.ravel()
     else:
         a = rollaxis(a, axis)
     a_max = a.max(axis=0)
     if b is not None:
-        b = asarray(b)
+        b = asanyarray(b)
         if axis is None:
             b = b.ravel()
         else:

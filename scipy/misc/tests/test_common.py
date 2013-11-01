@@ -60,6 +60,9 @@ def test_logsumexp():
     assert_array_almost_equal(np.exp(logsumexp(logX, axis=0)), X.sum(axis=0))
     assert_array_almost_equal(np.exp(logsumexp(logX, axis=1)), X.sum(axis=1))
 
+    x = np.ma.array([0, 1, 2], mask=[1, 0, 0])
+    assert_array_almost_equal(logsumexp(x), np.log(np.sum(np.exp(x))))
+
 
 def test_logsumexp_b():
     a = np.arange(200)
