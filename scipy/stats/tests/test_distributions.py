@@ -813,6 +813,18 @@ class TestEntropy(TestCase):
         assert_almost_equal(stats.entropy([0, 1, 2]), 0.63651416829481278,
                             decimal=12)
 
+    def test_entropy_2d(self):
+        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
+        qk = [[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]]
+        assert_array_almost_equal(stats.entropy(pk, qk),
+                [0.1933259, 0.18609809])
+
+    def test_entropy_2d_zero(self):
+        pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
+        qk = [[0.0, 0.1], [0.3, 0.6], [0.5, 0.3]]
+        assert_array_almost_equal(stats.entropy(pk, qk),
+                [np.inf, 0.18609809])
+
 
 def TestArgsreduce():
     a = array([1,3,2,1,2,3,3])
