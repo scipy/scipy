@@ -6138,8 +6138,8 @@ def entropy(pk, qk=None, base=None):
         mask = (qk == 0.0) & (pk != 0.0)
         qk[mask] = 1.0 #Avoid the divide-by-zero warning
         quotient = pk / qk
-        quotient[mask] = inf
         vec = -special.xlogy(pk, quotient)
+        vec[mask] = -inf
     S = -sum(vec, axis=0)
     if base is not None:
         S /= log(base)
