@@ -6136,7 +6136,7 @@ def entropy(pk, qk=None, base=None):
         # If qk is zero anywhere, then unless pk is zero at those places
         #   too, the relative entropy is infinite.
         mask = (qk == 0.0) & (pk != 0.0)
-        qk[mask] = 1.0 #Avoid the divide-by-zero warning
+        qk[mask] = 1.0  # Avoid the divide-by-zero warning
         quotient = pk / qk
         vec = -special.xlogy(pk, quotient)
         vec[mask] = -inf
