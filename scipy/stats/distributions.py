@@ -6135,9 +6135,12 @@ def entropy(pk, qk=None, base=None):
         qk = 1.0*qk / sum(qk, axis=0)
         # If qk is zero anywhere, then unless pk is zero at those places
         #   too, the relative entropy is infinite.
-        if any(take(pk, nonzero(qk == 0.0), axis=0) != 0.0, 0):
-            return inf
-        vec = -special.xlogy(pk, pk / qk)
+        mask = qk == 0.0
+        qk[mask] = 1.0  # Avoid the divide-by-zero warning
+        quotient = pk / qk
+        vec = -special.xlogy(pk, quotient)
+        vec[mask & (pk != 0.0)] = -inf
+        vec[mask & (pk == 0.0)] = 0.0
     S = -sum(vec, axis=0)
     if base is not None:
         S /= log(base)
