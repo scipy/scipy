@@ -825,6 +825,10 @@ class TestEntropy(TestCase):
         assert_array_almost_equal(stats.entropy(pk, qk),
                 [np.inf, 0.18609809])
 
+        pk[0][0] = 0.0
+        assert_array_almost_equal(stats.entropy(pk, qk),
+                [0.17403988, 0.18609809])
+
 
 def TestArgsreduce():
     a = array([1,3,2,1,2,3,3])
