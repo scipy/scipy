@@ -61,7 +61,7 @@ def configuration(parent_package='',top_path=None):
 
     # Extension specfun
     config.add_extension('specfun',
-                         sources=['specfun.pyf'],
+                         sources=['specfun.pyf', 'cplx.c'],
                          f2py_options=['--no-wrap-functions'],
                          depends=specfun_src,
                          define_macros=[],
@@ -70,7 +70,7 @@ def configuration(parent_package='',top_path=None):
     # Extension _ufuncs
     headers = ['*.h', join('c_misc', '*.h'), join('cephes', '*.h')]
     ufuncs_src = ['_ufuncs.c', 'sf_error.c', '_logit.c.src',
-                  "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c"]
+                  "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c", 'cplx.c']
     ufuncs_dep = (headers + ufuncs_src + amos_src + c_misc_src + cephes_src
                   + mach_src + cdf_src + specfun_src)
     config.add_extension('_ufuncs',

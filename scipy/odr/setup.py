@@ -24,7 +24,7 @@ def configuration(parent_package='', top_path=None):
     odrpack_src = [join('odrpack', x) for x in libodr_files]
     config.add_library('odrpack', sources=odrpack_src)
 
-    sources = ['__odrpack.c']
+    sources = ['__odrpack.c', '__powidf2.c']
     libraries = ['odrpack'] + blas_info.pop('libraries', [])
     include_dirs = ['.'] + blas_info.pop('include_dirs', [])
     config.add_extension('__odrpack',

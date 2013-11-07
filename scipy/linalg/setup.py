@@ -117,7 +117,7 @@ def configuration(parent_package='',top_path=None):
                                       'src', 'id_dist', 'src'),
                                  routines_to_split)
     fnames = [join('src', 'id_dist', 'src', f) for f in fnames]
-    config.add_extension('_interpolative', fnames + ["interpolative.pyf"],
+    config.add_extension('_interpolative', fnames + ["interpolative.pyf", "cexp.c"],
                          extra_info = lapack_opt
                          )
 
