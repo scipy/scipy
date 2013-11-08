@@ -372,12 +372,16 @@ def sph_inkn(n,z):
         raise ValueError("arguments must be scalars.")
     if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if iscomplex(z) or less(z,0):
-        nm,In,Inp,kn,knp = specfun.csphik(n,z)
+    if (n < 1):
+        n1 = 1
     else:
-        nm,In,Inp = specfun.sphi(n,z)
-        nm,kn,knp = specfun.sphk(n,z)
-    return In,Inp,kn,knp
+        n1 = n
+    if iscomplex(z) or less(z,0):
+        nm,In,Inp,kn,knp = specfun.csphik(n1,z)
+    else:
+        nm,In,Inp = specfun.sphi(n1,z)
+        nm,kn,knp = specfun.sphk(n1,z)
+    return In[:(n+1)],Inp[:(n+1)],kn[:(n+1)],knp[:(n+1)]
 
 
 def riccati_jn(n,x):
