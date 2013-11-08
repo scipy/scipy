@@ -158,6 +158,10 @@ def test_sg_filter_trivial():
     y = savgol_filter(x, 3, 1, mode='nearest')
     assert_almost_equal(y, [3.0], decimal=15)
 
+    x = np.array([1.0] * 3)
+    y = savgol_filter(x, 3, 1, mode='wrap')
+    assert_almost_equal(y, [1.0, 1.0, 1.0], decimal=15)
+
 
 def test_sg_filter_basic():
     # Some basic test cases for savgol_filter().
@@ -167,6 +171,9 @@ def test_sg_filter_basic():
 
     y = savgol_filter(x, 3, 1, mode='mirror')
     assert_allclose(y, [5.0 / 3, 4.0 / 3, 5.0 / 3])
+
+    y = savgol_filter(x, 3, 1, mode='wrap')
+    assert_allclose(y, [4.0 / 3, 4.0 / 3, 4.0 / 3])
 
 
 def test_sg_filter_2d():
