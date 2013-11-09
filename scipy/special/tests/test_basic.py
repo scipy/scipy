@@ -2658,6 +2658,21 @@ class TestSpherical(TestCase):
         inkn = r_[special.sph_inkn(1,.2)]
         assert_array_almost_equal(inkn,spikn,10)
 
+    def test_sph_in_kn_order0(self):
+        x = 1.
+        sph_i0 = special.sph_in(0, x)
+        sph_i0_expected = np.array([np.sinh(x)/x,
+                                    np.cosh(x)/x-np.sinh(x)/x**2])
+        assert_array_almost_equal(r_[sph_i0], sph_i0_expected)
+        sph_k0 = special.sph_kn(0, x)
+        sph_k0_expected = np.array([0.5*pi*exp(-x)/x,
+                                    -0.5*pi*exp(-x)*(1/x+1/x**2)])
+        assert_array_almost_equal(r_[sph_k0], sph_k0_expected)
+        sph_i0k0 = special.sph_inkn(0, x)
+        assert_array_almost_equal(r_[sph_i0+sph_k0],
+                                  r_[sph_i0k0],
+                                  10)
+
     def test_sph_jn(self):
         s1 = special.sph_jn(2,.2)
         s10 = -s1[0][1]
