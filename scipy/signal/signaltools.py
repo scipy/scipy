@@ -209,20 +209,20 @@ def fftconvolve(in1, in2, mode="full"):
     s2 = array(in2.shape)
     complex_result = (np.issubdtype(in1.dtype, np.complex) or
                       np.issubdtype(in2.dtype, np.complex))
-    size = s1 + s2 - 1
+    shape = s1 + s2 - 1
 
     if mode == "valid":
         _check_valid_mode_shapes(s1, s2)
 
     # Always use 2**n-sized FFT
-    fsize = 2 ** np.ceil(np.log2(size)).astype(int)
-    fslice = tuple([slice(0, int(sz)) for sz in size])
+    fshape = 2 ** np.ceil(np.log2(shape)).astype(int)
+    fslice = tuple([slice(0, int(sz)) for sz in shape])
     if not complex_result:
-        ret = irfftn(rfftn(in1, fsize) *
-                     rfftn(in2, fsize), fsize)[fslice].copy()
+        ret = irfftn(rfftn(in1, fshape) *
+                     rfftn(in2, fshape), fshape)[fslice].copy()
         ret = ret.real
     else:
-        ret = ifftn(fftn(in1, fsize) * fftn(in2, fsize))[fslice].copy()
+        ret = ifftn(fftn(in1, fshape) * fftn(in2, fshape))[fslice].copy()
 
     if mode == "full":
         return ret
