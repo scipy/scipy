@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy import vectorize
+from numpy import vectorize, deprecate
 from numpy.random import random_sample
 
 __all__ = ['randwppf', 'randwcdf']
@@ -11,7 +11,8 @@ __all__ = ['randwppf', 'randwcdf']
 # General purpose continuous
 ######################################
 
-
+@deprecate(message="Deprecated in scipy 0.14.0, use "
+                   "distribution-specific rvs() method instead")
 def randwppf(ppf, args=(), size=None):
     """
     returns an array of randomly distributed integers of a distribution
@@ -26,7 +27,8 @@ def randwppf(ppf, args=(), size=None):
     U = random_sample(size=size)
     return ppf(*(U,)+args)
 
-
+@deprecate(message="Deprecated in scipy 0.14.0, use "
+                   "distribution-specific rvs() method instead")
 def randwcdf(cdf, mean=1.0, args=(), size=None):
     """
     Returns an array of randomly distributed integers given a CDF.
