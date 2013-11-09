@@ -123,6 +123,7 @@ Special Matrices
    block_diag - Construct a block diagonal matrix from submatrices
    circulant - Circulant matrix
    companion - Companion matrix
+   dft - Discrete Fourier transform matrix
    hadamard - Hadamard matrix of order 2**n
    hankel - Hankel matrix
    hilbert - Hilbert matrix
