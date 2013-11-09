@@ -219,7 +219,7 @@ the function using Newton-CG method is shown in the following example:
 
     >>> res = minimize(rosen, x0, method='Newton-CG',
     ...                jac=rosen_der, hess=rosen_hess,
-    ...                options={'avextol': 1e-8, 'disp': True})
+    ...                options={'xtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 19
@@ -256,7 +256,7 @@ elements:
 Code which makes use of this Hessian product to minimize the
 Rosenbrock function using :func:`minimize` follows:
 
-    >>> def rosen_hess_p(x,p):
+    >>> def rosen_hess_p(x, p):
     ...     x = np.asarray(x)
     ...     Hp = np.zeros_like(x)
     ...     Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
@@ -266,8 +266,8 @@ Rosenbrock function using :func:`minimize` follows:
     ...     return Hp
 
     >>> res = minimize(rosen, x0, method='Newton-CG',
-    ...                jac=rosen_der, hess=rosen_hess_p,
-    ...                options={'avextol': 1e-8, 'disp': True})
+    ...                jac=rosen_der, hessp=rosen_hess_p,
+    ...                options={'xtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 20
@@ -328,7 +328,7 @@ The objective function and its derivative are defined as follows.
 
 Note that since :func:`minimize` only minimizes functions, the ``sign``
 parameter is introduced to multiply the objective function (and its
-derivative by -1) in order to perform a maximization.
+derivative) by -1 in order to perform a maximization.
 
 Then constraints are defined as a sequence of dictionaries, with keys
 ``type``, ``fun`` and ``jac``.
@@ -427,21 +427,21 @@ This is shown in the following example:
 
 .. plot::
 
-   >>> from numpy import *
-   >>> x = arange(0,6e-2,6e-2/30)
-   >>> A,k,theta = 10, 1.0/3e-2, pi/6
-   >>> y_true = A*sin(2*pi*k*x+theta)
+   >>> from numpy import arange, sin, pi, random, array
+   >>> x = arange(0, 6e-2, 6e-2 / 30)
+   >>> A, k, theta = 10, 1.0 / 3e-2, pi / 6
+   >>> y_true = A * sin(2 * pi * k * x + theta)
    >>> y_meas = y_true + 2*random.randn(len(x))
 
    >>> def residuals(p, y, x):
-   ...     A,k,theta = p
-   ...     err = y-A*sin(2*pi*k*x+theta)
+   ...     A, k, theta = p
+   ...     err = y - A * sin(2 * pi * k * x + theta)
    ...     return err
 
    >>> def peval(x, p):
-   ...     return p[0]*sin(2*pi*p[1]*x+p[2])
+   ...     return p[0] * sin(2 * pi * p[1] * x + p[2])
 
-   >>> p0 = [8, 1/2.3e-2, pi/3]
+   >>> p0 = [8, 1 / 2.3e-2, pi / 3]
    >>> print(array(p0))
    [  8.      43.4783   1.0472]
 
@@ -454,7 +454,7 @@ This is shown in the following example:
    [ 10.      33.3333   0.5236]
 
    >>> import matplotlib.pyplot as plt
-   >>> plt.plot(x,peval(x,plsq[0]),x,y_meas,'o',x,y_true)
+   >>> plt.plot(x, peval(x, plsq[0]),x,y_meas,'o',x,y_true)
    >>> plt.title('Least-squares fit to noisy data')
    >>> plt.legend(['Fit', 'Noisy', 'True'])
    >>> plt.show()
