@@ -5667,10 +5667,11 @@ C       Input  : a  --- Parameter
 C                b  --- Parameter ( b <> 0,-1,-2,... )
 C                x  --- Argument
 C       Output:  HG --- M(a,b,x)
-C       Routine called: GAMMA2 for computing Г(x)
+C       Routine called: CGAMA for computing complex ln[Г(x)]
 C       ===================================================
 C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        IMPLICIT DOUBLE PRECISION (A-B,D-H,O-Z)
+        IMPLICIT COMPLEX*16 (C)
         PI=3.141592653589793D0
         A0=A
         A1=A
@@ -5722,10 +5723,16 @@ C
                  IF (HG.NE.0D0.AND.DABS(RG/HG).LT.1.0D-15) GO TO 25
 15            CONTINUE
            ELSE
-              CALL GAMMA2(A,TA)
-              CALL GAMMA2(B,TB)
+              Y=0.0D0
+              CALL CGAMA(A,Y,0,TAR,TAI)
+              CTA=CMPLX(TAR,TAI,8)
+              Y=0.0D0
+              CALL CGAMA(B,Y,0,TBR,TBI)
+              CTB=CMPLX(TBR,TBI,8)
               XG=B-A
-              CALL GAMMA2(XG,TBA)
+              Y=0.0D0
+              CALL CGAMA(XG,Y,0,TBAR,TBAI)
+              CTBA=CMPLX(TBAR,TBAI,8)
               SUM1=1.0D0
               SUM2=1.0D0
               R1=1.0D0
@@ -5735,8 +5742,8 @@ C
                  R2=-R2*(B-A+I-1.0D0)*(A-I)/(X*I)
                  SUM1=SUM1+R1
 20               SUM2=SUM2+R2
-              HG1=TB/TBA*X**(-A)*DCOS(PI*A)*SUM1
-              HG2=TB/TA*DEXP(X)*X**(A-B)*SUM2
+              HG1=DBLE(CDEXP(CTB-CTBA))*X**(-A)*DCOS(PI*A)*SUM1
+              HG2=DBLE(CDEXP(CTB-CTA+X))*X**(A-B)*SUM2
               HG=HG1+HG2
            ENDIF
 25         IF (N.EQ.0) Y0=HG
@@ -6011,7 +6018,7 @@ C       Input :  a --- Parameter
 C                b --- Parameter
 C                z --- Complex argument
 C       Output:  CHG --- M(a,b,z)
-C       Routine called: GAMMA2 for computing gamma function
+C       Routine called: CGAMA for computing complex ln[Г(x)]
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A,B,D-H,O-Y)
@@ -6067,10 +6074,16 @@ C
                     CHW=CHG
 15               CONTINUE
               ELSE
-                 CALL GAMMA2(A,G1)
-                 CALL GAMMA2(B,G2)
+                 Y=0.0D0
+                 CALL CGAMA(A,Y,0,G1R,G1I)
+                 CG1=CMPLX(G1R,G1I,8)
+                 Y=0.0D0
+                 CALL CGAMA(B,Y,0,G2R,G2I)
+                 CG2=CMPLX(G2R,G2I,8)
                  BA=B-A
-                 CALL GAMMA2(BA,G3)
+                 Y=0.0D0
+                 CALL CGAMA(BA,Y,0,G3R,G3I)
+                 CG3=CMPLX(G3R,G3I,8)
                  CS1=(1.0D0,0.0D0)
                  CS2=(1.0D0,0.0D0)
                  CR1=(1.0D0,0.0D0)
@@ -6093,8 +6106,8 @@ C
                  IF (PHI.GT.-1.5*PI.AND.PHI.LE.-0.5*PI) NS=-1
                  CFAC=CDEXP(NS*CI*PI*A)
                  IF (Y.EQ.0.0D0) CFAC=DCOS(PI*A)
-                 CHG1=G2/G3*Z**(-A)*CFAC*CS1
-                 CHG2=G2/G1*CDEXP(Z)*Z**(A-B)*CS2
+                 CHG1=CDEXP(CG2-CG3)*Z**(-A)*CFAC*CS1
+                 CHG2=CDEXP(CG2-CG1+Z)*Z**(A-B)*CS2
                  CHG=CHG1+CHG2
               ENDIF
 25            IF (N.EQ.0) CY0=CHG

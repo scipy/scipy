@@ -1650,6 +1650,11 @@ class TestHyper(TestCase):
             result = special.hyp1f1(a,b,c)
             assert_(abs(expected - result)/expected < 1e-4)
 
+    def test_hyp1f1_gh2957(self):
+        hyp1 = special.hyp1f1(0.5, 1.5, -709.7827128933)
+        hyp2 = special.hyp1f1(0.5, 1.5, -709.7827128934)
+        assert_almost_equal(hyp1, hyp2, 12)
+
     def test_hyp1f2(self):
         pass
 
