@@ -3251,6 +3251,9 @@ def ttest_ind(a, b, axis=0, equal_var=True):
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
+    if a.size == 0 or b.size == 0:
+        return (np.nan, np.nan)
+
     v1 = np.var(a, axis, ddof=1)
     v2 = np.var(b, axis, ddof=1)
     n1 = a.shape[axis]
@@ -3334,6 +3337,9 @@ def ttest_rel(a, b, axis=0):
     a, b, axis = _chk2_asarray(a, b, axis)
     if a.shape[axis] != b.shape[axis]:
         raise ValueError('unequal length arrays')
+
+    if a.size == 0 or b.size == 0:
+        return (np.nan, np.nan)
 
     n = a.shape[axis]
     df = float(n - 1)

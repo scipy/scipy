@@ -15,7 +15,7 @@ from scipy import stats
 from numpy.testing import TestCase, run_module_suite
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
-    assert_allclose)
+    assert_allclose, assert_raises)
 
 
 class TestMquantiles(TestCase):
@@ -547,6 +547,71 @@ class TestNormalitytests():
             res_2d = func(x_2d)
             assert_allclose(res_2d[0], [res_1d[0]] * 2)
             assert_allclose(res_2d[1], [res_1d[1]] * 2)
+
+
+class TestTtest_rel():
+
+    def test_vs_nonmasked(self):
+        np.random.seed(1234567)
+        outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
+
+        # 1-D inputs
+        res1 = stats.ttest_rel(outcome[:, 0], outcome[:, 1])
+        res2 = mstats.ttest_rel(outcome[:, 0], outcome[:, 1])
+        assert_allclose(res1, res2)
+
+        # 2-D inputs
+        res1 = stats.ttest_rel(outcome[:, 0], outcome[:, 1], axis=None)
+        res2 = mstats.ttest_rel(outcome[:, 0], outcome[:, 1], axis=None)
+        assert_allclose(res1, res2)
+        res1 = stats.ttest_rel(outcome[:, :2], outcome[:, 2:], axis=0)
+        res2 = mstats.ttest_rel(outcome[:, :2], outcome[:, 2:], axis=0)
+        assert_allclose(res1, res2)
+
+        # Check default is axis=0
+        res3 = mstats.ttest_rel(outcome[:, :2], outcome[:, 2:])
+        assert_allclose(res2, res3)
+
+    def test_invalid_input_size(self):
+        assert_raises(ValueError, mstats.ttest_rel,
+                      np.arange(10), np.arange(11))
+        x = np.arange(24)
+        assert_raises(ValueError, mstats.ttest_rel,
+                      x.reshape(2, 3, 4), x.reshape(2, 4, 3), axis=1)
+        assert_raises(ValueError, mstats.ttest_rel,
+                      x.reshape(2, 3, 4), x.reshape(2, 4, 3), axis=2)
+
+    def test_empty(self):
+        res1 = mstats.ttest_rel([], [])
+        assert_(np.all(np.isnan(res1)))
+
+
+class TestTtest_ind():
+
+    def test_vs_nonmasked(self):
+        np.random.seed(1234567)
+        outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
+
+        # 1-D inputs
+        res1 = stats.ttest_ind(outcome[:, 0], outcome[:, 1])
+        res2 = mstats.ttest_ind(outcome[:, 0], outcome[:, 1])
+        assert_allclose(res1, res2)
+
+        # 2-D inputs
+        res1 = stats.ttest_ind(outcome[:, 0], outcome[:, 1], axis=None)
+        res2 = mstats.ttest_ind(outcome[:, 0], outcome[:, 1], axis=None)
+        assert_allclose(res1, res2)
+        res1 = stats.ttest_ind(outcome[:, :2], outcome[:, 2:], axis=0)
+        res2 = mstats.ttest_ind(outcome[:, :2], outcome[:, 2:], axis=0)
+        assert_allclose(res1, res2)
+
+        # Check default is axis=0
+        res3 = mstats.ttest_ind(outcome[:, :2], outcome[:, 2:])
+        assert_allclose(res2, res3)
+
+    def test_empty(self):
+        res1 = mstats.ttest_ind([], [])
+        assert_(np.all(np.isnan(res1)))
 
 
 if __name__ == "__main__":
