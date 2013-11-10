@@ -49,12 +49,10 @@ from scipy.lib.six import iteritems
 import itertools
 import warnings
 
-
-# import scipy.stats as stats
 from . import stats
+from . import distributions
 import scipy.special as special
 import scipy.misc as misc
-# import scipy.stats.futil as futil
 from . import futil
 
 
@@ -68,23 +66,24 @@ Notes
 
 
 def _chk_asarray(a, axis):
+    # Always returns a masked array, raveled for axis=None
+    a = ma.asanyarray(a)
     if axis is None:
         a = ma.ravel(a)
         outaxis = 0
     else:
-        a = ma.asanyarray(a)
         outaxis = axis
     return a, outaxis
 
 
 def _chk2_asarray(a, b, axis):
+    a = ma.asanyarray(a)
+    b = ma.asanyarray(b)
     if axis is None:
         a = ma.ravel(a)
         b = ma.ravel(b)
         outaxis = 0
     else:
-        a = ma.asanyarray(a)
-        b = ma.asanyarray(b)
         outaxis = axis
     return a, b, outaxis
 
@@ -763,38 +762,48 @@ def sen_seasonal_slopes(x):
 #---- --- Inferential statistics ---
 #####--------------------------------------------------------------------------
 
-def ttest_onesamp(a, popmean):
-    a = ma.asarray(a)
-    x = a.mean(axis=None)
-    v = a.var(axis=None,ddof=1)
-    n = a.count(axis=None)
-    df = n-1
-    svar = ((n-1)*v) / float(df)
-    t = (x-popmean)/ma.sqrt(svar*(1.0/n))
-    prob = betai(0.5*df,0.5,df/(df+t*t))
-    return t,prob
-ttest_onesamp.__doc__ = stats.ttest_1samp.__doc__
-ttest_1samp = ttest_onesamp
+def ttest_1samp(a, popmean, axis=0):
+    a, axis = _chk_asarray(a, axis)
+    if a.size == 0:
+        return (np.nan, np.nan)
+
+    x = a.mean(axis=axis)
+    v = a.var(axis=axis, ddof=1)
+    n = a.count(axis=axis)
+    df = n - 1.
+    svar = ((n - 1) * v) / df
+    t = (x - popmean) / ma.sqrt(svar / n)
+    prob = betai(0.5 * df, 0.5, df / (df + t*t))
+    return t, prob
+ttest_1samp.__doc__ = stats.ttest_1samp.__doc__
+ttest_onesamp = ttest_1samp
 
 
 def ttest_ind(a, b, axis=0):
     a, b, axis = _chk2_asarray(a, b, axis)
+    if a.size == 0 or b.size == 0:
+        return (np.nan, np.nan)
+
     (x1, x2) = (a.mean(axis), b.mean(axis))
     (v1, v2) = (a.var(axis=axis, ddof=1), b.var(axis=axis, ddof=1))
     (n1, n2) = (a.count(axis), b.count(axis))
-    df = n1+n2-2
-    svar = ((n1-1)*v1+(n2-1)*v2) / float(df)
+    df = n1 + n2 - 2.
+    svar = ((n1-1)*v1+(n2-1)*v2) / df
     t = (x1-x2)/ma.sqrt(svar*(1.0/n1 + 1.0/n2))  # N-D COMPUTATION HERE!!!!!!
     t = ma.filled(t, 1)           # replace NaN t-values with 1.0
-    probs = betai(0.5*df,0.5,float(df)/(df+t*t)).reshape(t.shape)
+    probs = betai(0.5 * df, 0.5, df/(df + t*t)).reshape(t.shape)
     return t, probs.squeeze()
 ttest_ind.__doc__ = stats.ttest_ind.__doc__
 
 
-def ttest_rel(a,b,axis=None):
+def ttest_rel(a, b, axis=0):
     a, b, axis = _chk2_asarray(a, b, axis)
     if len(a) != len(b):
         raise ValueError('unequal length arrays')
+
+    if a.size == 0 or b.size == 0:
+        return (np.nan, np.nan)
+
     (x1, x2) = (a.mean(axis), b.mean(axis))
     (v1, v2) = (a.var(axis=axis, ddof=1), b.var(axis=axis, ddof=1))
     n = a.count(axis)
@@ -1650,9 +1659,9 @@ def skewtest(a, axis=0):
     b2 = skew(a,axis)
     n = a.count(axis)
     if np.min(n) < 8:
-        warnings.warn(
-            "skewtest only valid for n>=8 ... continuing anyway, n=%i" %
-            np.min(n))
+        raise ValueError(
+            "skewtest is not valid with less than 8 samples; %i samples"
+            " were given." % np.min(n))
     y = b2 * ma.sqrt(((n+1)*(n+3)) / (6.0*(n-2)))
     beta2 = (3.0*(n*n+27*n-70)*(n+1)*(n+3)) / ((n-2.0)*(n+5)*(n+7)*(n+9))
     W2 = -1 + ma.sqrt(2*(beta2-1))
@@ -1666,7 +1675,11 @@ skewtest.__doc__ = stats.skewtest.__doc__
 
 def kurtosistest(a, axis=0):
     a, axis = _chk_asarray(a, axis)
-    n = a.count(axis=axis).astype(float)
+    n = a.count(axis=axis)
+    if np.min(n) < 5:
+        raise ValueError(
+            "kurtosistest requires at least 5 observations; %i observations"
+            " were given." % np.min(n))
     if np.min(n) < 20:
         warnings.warn(
             "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" %
@@ -1680,10 +1693,15 @@ def kurtosistest(a, axis=0):
     A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
     term1 = 1 - 2./(9.0*A)
     denom = 1 + x*ma.sqrt(2/(A-4.0))
-    denom[denom < 0] = masked
+    if np.ma.isMaskedArray(denom):
+        # For multi-dimensional array input
+        denom[denom < 0] = masked
+    elif denom < 0:
+        denom = masked
+
     term2 = ma.power((1-2.0/A)/denom,1/3.0)
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))
-    return Z, (1.0-stats.zprob(Z))*2
+    return Z, 2 * distributions.norm.sf(np.abs(Z))
 kurtosistest.__doc__ = stats.kurtosistest.__doc__
 
 
