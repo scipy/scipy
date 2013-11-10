@@ -549,6 +549,7 @@ class TestNormalitytests():
             assert_allclose(res_2d[1], [res_1d[1]] * 2)
 
 
+#TODO: for all ttest functions, add tests with masked array inputs
 class TestTtest_rel():
 
     def test_vs_nonmasked(self):
@@ -611,6 +612,34 @@ class TestTtest_ind():
 
     def test_empty(self):
         res1 = mstats.ttest_ind([], [])
+        assert_(np.all(np.isnan(res1)))
+
+
+class TestTtest_1samp():
+
+    def test_vs_nonmasked(self):
+        np.random.seed(1234567)
+        outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
+
+        # 1-D inputs
+        res1 = stats.ttest_1samp(outcome[:, 0], 1)
+        res2 = mstats.ttest_1samp(outcome[:, 0], 1)
+        assert_allclose(res1, res2)
+
+        # 2-D inputs
+        res1 = stats.ttest_1samp(outcome[:, 0], outcome[:, 1], axis=None)
+        res2 = mstats.ttest_1samp(outcome[:, 0], outcome[:, 1], axis=None)
+        assert_allclose(res1, res2)
+        res1 = stats.ttest_1samp(outcome[:, :2], outcome[:, 2:], axis=0)
+        res2 = mstats.ttest_1samp(outcome[:, :2], outcome[:, 2:], axis=0)
+        assert_allclose(res1, res2)
+
+        # Check default is axis=0
+        res3 = mstats.ttest_1samp(outcome[:, :2], outcome[:, 2:])
+        assert_allclose(res2, res3)
+
+    def test_empty(self):
+        res1 = mstats.ttest_1samp([], 1)
         assert_(np.all(np.isnan(res1)))
 
 

@@ -762,18 +762,21 @@ def sen_seasonal_slopes(x):
 #---- --- Inferential statistics ---
 #####--------------------------------------------------------------------------
 
-def ttest_onesamp(a, popmean):
-    a = ma.asarray(a)
-    x = a.mean(axis=None)
-    v = a.var(axis=None,ddof=1)
-    n = a.count(axis=None)
-    df = n-1
-    svar = ((n-1)*v) / float(df)
-    t = (x-popmean)/ma.sqrt(svar*(1.0/n))
-    prob = betai(0.5*df,0.5,df/(df+t*t))
-    return t,prob
-ttest_onesamp.__doc__ = stats.ttest_1samp.__doc__
-ttest_1samp = ttest_onesamp
+def ttest_1samp(a, popmean, axis=0):
+    a, axis = _chk_asarray(a, axis)
+    if a.size == 0:
+        return (np.nan, np.nan)
+
+    x = a.mean(axis=axis)
+    v = a.var(axis=axis, ddof=1)
+    n = a.count(axis=axis)
+    df = n - 1.
+    svar = ((n - 1) * v) / df
+    t = (x - popmean) / ma.sqrt(svar / n)
+    prob = betai(0.5 * df, 0.5, df / (df + t*t))
+    return t, prob
+ttest_1samp.__doc__ = stats.ttest_1samp.__doc__
+ttest_onesamp = ttest_1samp
 
 
 def ttest_ind(a, b, axis=0):

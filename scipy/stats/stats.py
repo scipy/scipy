@@ -3150,7 +3150,7 @@ def ttest_1samp(a, popmean, axis=0):
     t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t)
 
-    return t,prob
+    return t, prob
 
 
 def _ttest_finish(df,t):
