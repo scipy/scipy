@@ -420,6 +420,18 @@ def hstack(blocks, format=None, dtype=None):
             [3, 4, 6]])
 
     """
+    if format in (None,'csc') and all(b.format == 'csc' for b in blocks):
+        # Fast path for hstacking CSC matrices
+        data = np.concatenate(b.data for b in blocks)
+        indices = np.concatenate(b.indices for b in blocks)
+        indptr = []
+        last_indptr = 0
+        for b in blocks:
+            indptr.append(b.indptr[:-1] + last_indptr)
+            last_indptr += b.indptr[-1]
+        indptr.append(last_indptr)
+        indptr = np.concatenate(indptr)
+        return csc_matrix((data, indices, indptr), shape=(blocks[0].shape[0], sum(b.shape[1] for b in blocks)))
     return bmat([blocks], format=format, dtype=dtype)
 
 
