@@ -443,9 +443,6 @@ def hstack(blocks, format=None, dtype=None):
             [3, 4, 6]])
 
     """
-    if format in (None,'csc') and all(b.format == 'csc' for b in blocks):
-        # Fast path for hstacking CSC matrices
-        return _compressed_sparse_stack(blocks, 0)
     return bmat([blocks], format=format, dtype=dtype)
 
 
@@ -477,9 +474,6 @@ def vstack(blocks, format=None, dtype=None):
             [5, 6]])
 
     """
-    if format in (None,'csr') and all(b.format == 'csr' for b in blocks):
-        # Fast path for vstacking CSR matrices
-        return _compressed_sparse_stack(blocks, 1)
     return bmat([[b] for b in blocks], format=format, dtype=dtype)
 
 
