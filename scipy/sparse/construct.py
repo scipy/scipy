@@ -393,6 +393,29 @@ def kronsum(A, B, format=None):
     return (L+R).asformat(format)  # since L + R is not always same format
 
 
+def _compressed_sparse_stack(blocks, axis):
+    data = np.concatenate([b.data for b in blocks])
+    indices = np.concatenate([b.indices for b in blocks])
+    indptr = []
+    last_indptr = 0
+    constant_dim = blocks[0].shape[axis]
+    sum_dim = 0
+    for b in blocks:
+        if b.shape[axis] != constant_dim:
+            raise ValueError('incompatible dimensions for axis %d' % axis)
+        sum_dim += b.shape[~axis]
+        indptr.append(b.indptr[:-1] + last_indptr)
+        last_indptr += b.indptr[-1]
+    indptr.append([last_indptr])
+    indptr = np.concatenate(indptr)
+    if axis == 1:
+        return csr_matrix((data, indices, indptr),
+                          shape=(sum_dim, constant_dim))
+    else:
+        return csc_matrix((data, indices, indptr),
+                          shape=(constant_dim, sum_dim))
+
+
 def hstack(blocks, format=None, dtype=None):
     """
     Stack sparse matrices horizontally (column wise)
@@ -464,8 +487,9 @@ def bmat(blocks, format=None, dtype=None):
         Grid of sparse matrices with compatible shapes.
         An entry of None implies an all-zero matrix.
     format : {'bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil'}, optional
-        The sparse format of the result (e.g. "csr").  If not given, the matrix
-        is returned in "coo" format.
+        The sparse format of the result (e.g. "csr").  By default an
+        appropriate sparse matrix format is returned.
+        This choice is subject to change.
     dtype : dtype specifier, optional
         The data-type of the output matrix.  If not given, the dtype is
         determined from that of `blocks`.
@@ -473,7 +497,6 @@ def bmat(blocks, format=None, dtype=None):
     Returns
     -------
     bmat : sparse matrix
-        A "coo" sparse matrix or type of sparse matrix identified by `format`.
 
     See Also
     --------
@@ -503,6 +526,14 @@ def bmat(blocks, format=None, dtype=None):
         raise ValueError('blocks must have rank 2')
 
     M,N = blocks.shape
+
+    # check for fast path cases
+    if (N == 1 and format in (None, 'csr')
+        and all(b is not None and b.format == 'csr' for b in blocks.flat)):
+        return _compressed_sparse_stack(blocks[:,0], 1)
+    elif (M == 1 and format in (None, 'csc')
+          and all(b is not None and b.format == 'csc' for b in blocks.flat)):
+        return _compressed_sparse_stack(blocks[0,:], 0)
 
     block_mask = np.zeros(blocks.shape, dtype=np.bool)
     brow_lengths = np.zeros(blocks.shape[0], dtype=np.intc)
