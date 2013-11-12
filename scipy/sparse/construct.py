@@ -493,8 +493,9 @@ def bmat(blocks, format=None, dtype=None):
         Grid of sparse matrices with compatible shapes.
         An entry of None implies an all-zero matrix.
     format : {'bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil'}, optional
-        The sparse format of the result (e.g. "csr").  If not given, the matrix
-        is returned in "coo" format.
+        The sparse format of the result (e.g. "csr").  By default an
+        appropriate sparse matrix format is returned.
+        This choice is subject to change.
     dtype : dtype specifier, optional
         The data-type of the output matrix.  If not given, the dtype is
         determined from that of `blocks`.
@@ -502,7 +503,6 @@ def bmat(blocks, format=None, dtype=None):
     Returns
     -------
     bmat : sparse matrix
-        A "coo" sparse matrix or type of sparse matrix identified by `format`.
 
     See Also
     --------
@@ -532,6 +532,14 @@ def bmat(blocks, format=None, dtype=None):
         raise ValueError('blocks must have rank 2')
 
     M,N = blocks.shape
+
+    # check for fast path cases
+    if (M == 1 and format in (None, 'csr')
+        and all(b is not None and b.format == 'csr' for b in blocks.flat)):
+        return _compressed_sparse_stack(blocks, 1)
+    elif (N == 1 and format in (None, 'csc')
+          and all(b is not None and b.format == 'csc' for b in blocks.flat)):
+        return _compressed_sparse_stack(blocks, 0)
 
     block_mask = np.zeros(blocks.shape, dtype=np.bool)
     brow_lengths = np.zeros(blocks.shape[0], dtype=np.intc)
