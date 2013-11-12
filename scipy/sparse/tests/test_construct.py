@@ -276,6 +276,8 @@ class TestConstructUtils(TestCase):
                            [3, 4],
                            [5, 6]])
         assert_equal(construct.vstack([A,B]).todense(), expected)
+        assert_equal(construct.vstack([A.tocsr(),B.tocsr()]).todense(),
+                     expected)
 
     def test_hstack(self):
 
@@ -285,6 +287,8 @@ class TestConstructUtils(TestCase):
         expected = matrix([[1, 2, 5],
                            [3, 4, 6]])
         assert_equal(construct.hstack([A,B]).todense(), expected)
+        assert_equal(construct.hstack([A.tocsc(),B.tocsc()]).todense(),
+                     expected)
 
     def test_bmat(self):
 
