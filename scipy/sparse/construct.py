@@ -393,6 +393,28 @@ def kronsum(A, B, format=None):
     return (L+R).asformat(format)  # since L + R is not always same format
 
 
+def _compressed_sparse_stack(blocks, axis):
+    data = np.concatenate([b.data for b in blocks])
+    indices = np.concatenate([b.indices for b in blocks])
+    indptr = []
+    last_indptr = 0
+    constant_dim = blocks[0].shape[axis]
+    sum_dim = 0
+    for b in blocks:
+        if b.shape[axis] != constant_dim:
+            raise ValueError('incompatible dimensions for axis %d' % axis)
+        sum_dim += b.shape[~axis]
+        indptr.extend(b.indptr[:-1] + last_indptr)
+        last_indptr += b.indptr[-1]
+    indptr.append(last_indptr)
+    if axis == 1:
+        return csr_matrix((data, indices, indptr),
+                          shape=(sum_dim, constant_dim))
+    else:
+        return csc_matrix((data, indices, indptr),
+                          shape=(constant_dim, sum_dim))
+
+
 def hstack(blocks, format=None, dtype=None):
     """
     Stack sparse matrices horizontally (column wise)
@@ -422,16 +444,7 @@ def hstack(blocks, format=None, dtype=None):
     """
     if format in (None,'csc') and all(b.format == 'csc' for b in blocks):
         # Fast path for hstacking CSC matrices
-        data = np.concatenate(b.data for b in blocks)
-        indices = np.concatenate(b.indices for b in blocks)
-        indptr = []
-        last_indptr = 0
-        for b in blocks:
-            indptr.append(b.indptr[:-1] + last_indptr)
-            last_indptr += b.indptr[-1]
-        indptr.append(last_indptr)
-        indptr = np.concatenate(indptr)
-        return csc_matrix((data, indices, indptr), shape=(blocks[0].shape[0], sum(b.shape[1] for b in blocks)))
+        return _compressed_sparse_stack(blocks, 0)
     return bmat([blocks], format=format, dtype=dtype)
 
 
@@ -463,6 +476,9 @@ def vstack(blocks, format=None, dtype=None):
             [5, 6]])
 
     """
+    if format in (None,'csr') and all(b.format == 'csr' for b in blocks):
+        # Fast path for vstacking CSR matrices
+        return _compressed_sparse_stack(blocks, 1)
     return bmat([[b] for b in blocks], format=format, dtype=dtype)
 
 
