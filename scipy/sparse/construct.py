@@ -534,12 +534,12 @@ def bmat(blocks, format=None, dtype=None):
     M,N = blocks.shape
 
     # check for fast path cases
-    if (M == 1 and format in (None, 'csr')
+    if (N == 1 and format in (None, 'csr')
         and all(b is not None and b.format == 'csr' for b in blocks.flat)):
-        return _compressed_sparse_stack(blocks, 1)
-    elif (N == 1 and format in (None, 'csc')
+        return _compressed_sparse_stack(blocks[:,0], 1)
+    elif (M == 1 and format in (None, 'csc')
           and all(b is not None and b.format == 'csc' for b in blocks.flat)):
-        return _compressed_sparse_stack(blocks, 0)
+        return _compressed_sparse_stack(blocks[0,:], 0)
 
     block_mask = np.zeros(blocks.shape, dtype=np.bool)
     brow_lengths = np.zeros(blocks.shape[0], dtype=np.intc)
