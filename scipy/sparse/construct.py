@@ -404,9 +404,10 @@ def _compressed_sparse_stack(blocks, axis):
         if b.shape[axis] != constant_dim:
             raise ValueError('incompatible dimensions for axis %d' % axis)
         sum_dim += b.shape[~axis]
-        indptr.extend(b.indptr[:-1] + last_indptr)
+        indptr.append(b.indptr[:-1] + last_indptr)
         last_indptr += b.indptr[-1]
-    indptr.append(last_indptr)
+    indptr.append([last_indptr])
+    indptr = np.concatenate(indptr)
     if axis == 1:
         return csr_matrix((data, indices, indptr),
                           shape=(sum_dim, constant_dim))
