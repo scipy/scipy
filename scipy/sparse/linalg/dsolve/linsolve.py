@@ -97,7 +97,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         b = b.squeeze()
 
     else:
-        if isspmatrix(b) and not (isspmatrix_csc(b) or isspmatrix_csr(b)):
+        if not (isspmatrix_csc(b) or isspmatrix_csr(b)):
             b = csc_matrix(b)
             warn('solve requires b be CSC or CSR matrix format',
                  SparseEfficiencyWarning)
