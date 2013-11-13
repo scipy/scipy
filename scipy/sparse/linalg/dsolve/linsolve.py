@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 from warnings import warn
 
-from numpy import asarray, empty, where, squeeze, prod
+from numpy import asarray, empty, where, ravel, prod
 from scipy.sparse import isspmatrix_csc, isspmatrix_csr, isspmatrix, \
         SparseEfficiencyWarning, csc_matrix
 
@@ -85,24 +85,16 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     """
     if not (isspmatrix_csc(A) or isspmatrix_csr(A)):
         A = csc_matrix(A)
-        warn('spsolve requires A be CSC or CSR matrix format', SparseEfficiencyWarning)
+        warn('spsolve requires A be CSC or CSR matrix format',
+                SparseEfficiencyWarning)
 
-    # b.size gives a different answer for dense vs sparse:
-    # use prod(b.shape)
-    b_is_vector = (max(b.shape) == prod(b.shape))
+    # b is a vector only if b have shape (n,) or (n, 1)
+    b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
 
-    if b_is_vector:
-        if isspmatrix(b):
-            b = b.toarray()
-        b = b.squeeze()
-
-    else:
-        if not (isspmatrix_csc(b) or isspmatrix_csr(b)):
-            b = csc_matrix(b)
-            warn('solve requires b be CSC or CSR matrix format',
-                 SparseEfficiencyWarning)
-        if b.ndim != 2:
-            raise ValueError("b must be either a vector or a matrix")
+    if not (b_is_vector or isspmatrix_csc(b) or isspmatrix_csr(b)):
+        b = csc_matrix(b)
+        warn('spsolve requires b be CSC or CSR matrix format',
+                SparseEfficiencyWarning)
 
     A.sort_indices()
     A = A.asfptype()  # upcast to a floating point format
@@ -152,7 +144,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         tempj = empty(M, dtype=int)
         x = A.__class__(b.shape)
         for j in range(b.shape[1]):
-            xj = Afactsolve(squeeze(b[:, j].toarray()))
+            xj = Afactsolve(ravel(b[:, j].toarray()))
             w = where(xj != 0.0)[0]
             tempj.fill(j)
             x = x + A.__class__((xj[w], (w, tempj[:len(w)])),
