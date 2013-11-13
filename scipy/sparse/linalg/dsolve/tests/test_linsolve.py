@@ -98,6 +98,23 @@ class TestLinsolve(TestCase):
 
             assert_array_almost_equal(X, sX.todense())
 
+    def test_shape_compatibility(self):
+        A = csc_matrix([[1.]])
+        x = array([[1., 2., 3.]])
+        b = csc_matrix([[1., 2., 3.]])
+        assert_array_almost_equal(x, spsolve(A, b).todense())
+
+        A = csc_matrix((3, 3))
+        b = csc_matrix((1, 3))
+        assert_raises(ValueError, spsolve, A, b)
+
+    def test_ndarray_support(self):
+        A = array([[1., 2.], [2., 0.]])
+        x = array([[1., 1.], [0.5, -0.5]]) 
+        b = array([[2., 0.], [2., 2.]])
+
+        assert_array_almost_equal(x, spsolve(A, b).todense())
+
 
 class TestSplu(object):
     def setUp(self):
