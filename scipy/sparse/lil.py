@@ -242,7 +242,7 @@ class lil_matrix(spmatrix, IndexMixin):
 
         return self.__class__([[self._get1(iii, jjj) for iii, jjj in
                                 zip(ii, jj)] for ii, jj in
-                               zip(i.tolist(), j.tolist())])
+                               zip(i.tolist(), j.tolist())], dtype=self.dtype)
 
     def _insertat2(self, row, data, j, x):
         """ helper for __setitem__: insert a value in the given row/data at
