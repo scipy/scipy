@@ -4236,6 +4236,8 @@ def betai(a, b, x):
 _msg = """`glm` is deprecated in scipy 0.13.0 and will be removed in 0.14.0.
 Use `ttest_ind` for the same functionality in scipy.stats, or `statsmodels.OLS`
 for a more full-featured general linear model."""
+
+
 @np.deprecate_with_doc(_msg)
 def glm(data, para):
     """

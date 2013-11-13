@@ -15,6 +15,7 @@ numpy_version_requirement = dec.skipif(
     and sys.version_info[0] >= 3,
     "Bug in Numpy < 1.6 on Python 3")
 
+
 def test_eval_chebyt():
     n = np.arange(0, 10000, 7)
     x = 2*np.random.rand() - 1
@@ -265,8 +266,6 @@ class TestRecurrence(object):
 
     @numpy_version_requirement
     def test_hermite(self):
-        v =  orth.eval_hermite(70, 1.0)
-        a = -1.457076485701412e60 
+        v = orth.eval_hermite(70, 1.0)
+        a = -1.457076485701412e60
         assert_allclose(v,a)
-
-        

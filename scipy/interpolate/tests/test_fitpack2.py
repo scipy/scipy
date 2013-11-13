@@ -328,6 +328,7 @@ class TestRectBivariateSpline(TestCase):
         lut = RectBivariateSpline(x,y,z)
         assert_allclose(lut(x, y), lut(x[:,None], y[None,:], grid=False))
 
+
 class TestRectSphereBivariateSpline(TestCase):
     def test_defaults(self):
         y = linspace(0.01, 2*pi-0.01, 7)

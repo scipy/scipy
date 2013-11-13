@@ -801,11 +801,11 @@ def test_corrupted_data():
             rdr = MatFile5Reader(fp)
             assert_raises(exc, rdr.get_variables)
 
+
 def test_corrupted_data_check_can_be_disabled():
     with open(pjoin(test_data_path, 'corrupted_zlib_data.mat'), 'rb') as fp:
         rdr = MatFile5Reader(fp, verify_compressed_data_integrity=False)
         rdr.get_variables()
-
 
 
 def test_read_both_endian():
@@ -1049,7 +1049,7 @@ def test_empty_sparse():
     sio = BytesIO()
     import scipy.sparse
     empty_sparse = scipy.sparse.csr_matrix([[0,0],[0,0]])
-    savemat(sio, dict(x = empty_sparse))
+    savemat(sio, dict(x=empty_sparse))
     sio.seek(0)
     res = loadmat(sio)
     assert_array_equal(res['x'].shape, empty_sparse.shape)

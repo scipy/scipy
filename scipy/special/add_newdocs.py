@@ -1350,7 +1350,7 @@ add_newdoc("scipy.special", "poch",
 
     For positive integer `m` it reads::
 
-        (z)_m = z * (z + 1) * ... * (z + m - 1) 
+        (z)_m = z * (z + 1) * ... * (z + m - 1)
     """)
 
 add_newdoc("scipy.special", "pro_ang1",
@@ -1634,4 +1634,3 @@ add_newdoc("scipy.special", "_struve_bessel_series",
     """
     Function for testing struve & modstruve
     """)
-

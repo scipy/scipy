@@ -60,6 +60,7 @@ def _can_cast_samekind(dtype1, dtype2):
     else:
         return np.can_cast(dtype1, dtype2, casting='same_kind')
 
+
 def todense(a):
     if isinstance(a, np.ndarray) or isscalarlike(a):
         return a
@@ -1550,7 +1551,7 @@ class _TestInplaceArithmetic:
             #x //= a
             #y //= b
             #assert_array_equal(x, y)
-    
+
     def test_imul_scalar(self):
         def check(dtype):
             dat = self.dat_dtypes[dtype]

@@ -213,6 +213,7 @@ class TestComplexOde(TestCase):
                 continue
             self._do_problem(problem, 'dop853')
 
+
 class TestSolout(TestCase):
     # Check integrate.ode correctly handles solout for dopri5 and dop853
     def _run_solout_test(self, integrator):
@@ -222,11 +223,14 @@ class TestSolout(TestCase):
         t0 = 0.0
         tend = 10.0
         y0 = [1.0, 2.0]
+
         def solout(t, y):
             ts.append(t)
             ys.append(y.copy())
+
         def rhs(t, y):
             return [y[0] + y[1], -y[1]**2]
+
         ig = ode(rhs).set_integrator(integrator)
         ig.set_solout(solout)
         ig.set_initial_value(y0, t0)
@@ -247,13 +251,16 @@ class TestSolout(TestCase):
         t0 = 0.0
         tend = 10.0
         y0 = [1.0, 2.0]
+
         def solout(t, y):
             ts.append(t)
             ys.append(y.copy())
             if t > tend/2.0:
                 return -1
+
         def rhs(t, y):
             return [y[0] + y[1], -y[1]**2]
+
         ig = ode(rhs).set_integrator(integrator)
         ig.set_solout(solout)
         ig.set_initial_value(y0, t0)
@@ -278,11 +285,14 @@ class TestComplexSolout(TestCase):
         t0 = 0.0
         tend = 20.0
         y0 = [0.0]
+
         def solout(t, y):
             ts.append(t)
             ys.append(y.copy())
+
         def rhs(t, y):
             return [1.0/(t - 10.0 - 1j)]
+
         ig = complex_ode(rhs).set_integrator(integrator)
         ig.set_solout(solout)
         ig.set_initial_value(y0, t0)
@@ -303,13 +313,16 @@ class TestComplexSolout(TestCase):
         t0 = 0.0
         tend = 20.0
         y0 = [0.0]
+
         def solout(t, y):
             ts.append(t)
             ys.append(y.copy())
             if t > tend/2.0:
                 return -1
+
         def rhs(t, y):
             return [1.0/(t - 10.0 - 1j)]
+
         ig = complex_ode(rhs).set_integrator(integrator)
         ig.set_solout(solout)
         ig.set_initial_value(y0, t0)

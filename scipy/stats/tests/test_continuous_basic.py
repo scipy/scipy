@@ -424,7 +424,7 @@ def check_distribution_rvs(dist, args, alpha, rvs):
 
 
 def check_vecentropy(distfn, args):
-    npt.assert_equal( distfn.vecentropy(*args), distfn._entropy(*args) )
+    npt.assert_equal(distfn.vecentropy(*args), distfn._entropy(*args))
 
 
 def check_named_args(distfn, x, shape_args, defaults, meths):
@@ -485,8 +485,6 @@ def check_private_entropy(distfn, args):
     # compare a generic _entropy with the distribution-specific implementation
     npt.assert_allclose(distfn._entropy(*args),
                         stats.rv_continuous._entropy(distfn, *args))
-
-
 
 
 def check_edge_support(distfn, args):

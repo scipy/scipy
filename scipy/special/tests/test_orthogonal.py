@@ -149,8 +149,6 @@ class TestHermite(TestCase):
         assert_almost_equal(w.sum(), np.sqrt(np.pi))
 
 
-
-
 class _test_sh_legendre(TestCase):
 
     def test_sh_legendre(self):

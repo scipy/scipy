@@ -167,7 +167,7 @@ class TestNQuad(TestCase):
                         (x0 - 0.2*x3 - 0.5 - 0.25*x1 > 0) else 0)
 
         def opts_basic(*args):
-            return {'points' : [0.2*args[2] + 0.5 + 0.25*args[0]]}
+            return {'points': [0.2*args[2] + 0.5 + 0.25*args[0]]}
 
         res = nquad(func1, [[0,1], [-1,1], [.13,.8], [-.15,1]],
                     opts=[opts_basic, {}, {}, {}])
@@ -175,25 +175,34 @@ class TestNQuad(TestCase):
 
     def test_variable_limits(self):
         scale = .1
+
         def func2(x0, x1, x2, x3, t0, t1):
             return x0*x1*x3**2 + np.sin(x2) + 1 + (1 if x0 + t1*x1 - t0 > 0 else 0)
+
         def lim0(x1, x2, x3, t0, t1):
             return [scale * (x1**2 + x2 + np.cos(x3)*t0*t1 + 1) - 1,
                     scale * (x1**2 + x2 + np.cos(x3)*t0*t1 + 1) + 1]
+
         def lim1(x2, x3, t0, t1):
             return [scale * (t0*x2 + t1*x3) - 1,
                     scale * (t0*x2 + t1*x3) + 1]
+
         def lim2(x3, t0, t1):
             return [scale * (x3 + t0**2*t1**3) - 1,
                     scale * (x3 + t0**2*t1**3) + 1]
+
         def lim3(t0, t1):
             return [scale * (t0 + t1) - 1, scale * (t0 + t1) + 1]
+
         def opts0(x1, x2, x3, t0, t1):
             return {'points':[t0 - t1*x1]}
+
         def opts1(x2, x3, t0, t1):
             return {}
+
         def opts2(x3, t0, t1):
             return {}
+
         def opts3(t0, t1):
             return {}
 
@@ -218,12 +227,16 @@ class TestNQuad(TestCase):
     def test_square_separate_fn_ranges_and_opts(self):
         def f(y, x):
             return 1.0
+
         def fn_range0(*args):
             return (-1, 1)
+
         def fn_range1(*args):
             return (-1, 1)
+
         def fn_opt0(*args):
             return {}
+
         def fn_opt1(*args):
             return {}
 
@@ -234,8 +247,10 @@ class TestNQuad(TestCase):
     def test_square_aliased_fn_ranges_and_opts(self):
         def f(y, x):
             return 1.0
+
         def fn_range(*args):
             return (-1, 1)
+
         def fn_opt(*args):
             return {}
 
@@ -265,9 +280,8 @@ class TestNQuad(TestCase):
         def func3d(x0, x1, x2, c0, c1):
             return x0**2 + c0 * x1**3 - x0 * x1 + 1 + c1 * np.sin(x2)
 
-
-        res = tplquad(func3d, -1, 2, lambda x:-2, lambda x:2,
-                      lambda x, y : -np.pi, lambda x, y : np.pi,
+        res = tplquad(func3d, -1, 2, lambda x: -2, lambda x: 2,
+                      lambda x, y: -np.pi, lambda x, y: np.pi,
                       args=(2, 3))
         res2 = nquad(func3d, [[-np.pi, np.pi], [-2, 2], (-1, 2)], args=(2, 3))
         assert_almost_equal(res, res2)

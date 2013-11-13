@@ -383,56 +383,66 @@ class _ExpmPadeHelper(object):
         self.ident = _ident_like(A)
         self.structure = structure
         self.use_exact_onenorm = use_exact_onenorm
+
     @property
     def A2(self):
         if self._A2 is None:
             self._A2 = _smart_matrix_product(
                     self.A, self.A, structure=self.structure)
         return self._A2
+
     @property
     def A4(self):
         if self._A4 is None:
             self._A4 = _smart_matrix_product(
                     self.A2, self.A2, structure=self.structure)
         return self._A4
+
     @property
     def A6(self):
         if self._A6 is None:
             self._A6 = _smart_matrix_product(
                     self.A4, self.A2, structure=self.structure)
         return self._A6
+
     @property
     def A8(self):
         if self._A8 is None:
             self._A8 = _smart_matrix_product(
                     self.A6, self.A2, structure=self.structure)
         return self._A8
+
     @property
     def A10(self):
         if self._A10 is None:
             self._A10 = _smart_matrix_product(
                     self.A4, self.A6, structure=self.structure)
         return self._A10
+
     @property
     def d4_tight(self):
         if self._d4_exact is None:
             self._d4_exact = _onenorm(self.A4)**(1/4.)
         return self._d4_exact
+
     @property
     def d6_tight(self):
         if self._d6_exact is None:
             self._d6_exact = _onenorm(self.A6)**(1/6.)
         return self._d6_exact
+
     @property
     def d8_tight(self):
         if self._d8_exact is None:
             self._d8_exact = _onenorm(self.A8)**(1/8.)
         return self._d8_exact
+
     @property
     def d10_tight(self):
         if self._d10_exact is None:
             self._d10_exact = _onenorm(self.A10)**(1/10.)
         return self._d10_exact
+
     @property
     def d4_loose(self):
         if self.use_exact_onenorm:
@@ -444,6 +454,7 @@ class _ExpmPadeHelper(object):
                 self._d4_approx = _onenormest_matrix_power(self.A2, 2,
                         structure=self.structure)**(1/4.)
             return self._d4_approx
+
     @property
     def d6_loose(self):
         if self.use_exact_onenorm:
@@ -455,6 +466,7 @@ class _ExpmPadeHelper(object):
                 self._d6_approx = _onenormest_matrix_power(self.A2, 3,
                         structure=self.structure)**(1/6.)
             return self._d6_approx
+
     @property
     def d8_loose(self):
         if self.use_exact_onenorm:
@@ -466,6 +478,7 @@ class _ExpmPadeHelper(object):
                 self._d8_approx = _onenormest_matrix_power(self.A4, 2,
                         structure=self.structure)**(1/8.)
             return self._d8_approx
+
     @property
     def d10_loose(self):
         if self.use_exact_onenorm:
@@ -477,6 +490,7 @@ class _ExpmPadeHelper(object):
                 self._d10_approx = _onenormest_product((self.A4, self.A6),
                         structure=self.structure)**(1/10.)
             return self._d10_approx
+
     def pade3(self):
         b = (120., 60., 12., 1.)
         U = _smart_matrix_product(self.A,
@@ -484,6 +498,7 @@ class _ExpmPadeHelper(object):
                 structure=self.structure)
         V = b[2]*self.A2 + b[0]*self.ident
         return U, V
+
     def pade5(self):
         b = (30240., 15120., 3360., 420., 30., 1.)
         U = _smart_matrix_product(self.A,
@@ -491,6 +506,7 @@ class _ExpmPadeHelper(object):
                 structure=self.structure)
         V = b[4]*self.A4 + b[2]*self.A2 + b[0]*self.ident
         return U, V
+
     def pade7(self):
         b = (17297280., 8648640., 1995840., 277200., 25200., 1512., 56., 1.)
         U = _smart_matrix_product(self.A,
@@ -498,6 +514,7 @@ class _ExpmPadeHelper(object):
                 structure=self.structure)
         V = b[6]*self.A6 + b[4]*self.A4 + b[2]*self.A2 + b[0]*self.ident
         return U, V
+
     def pade9(self):
         b = (17643225600., 8821612800., 2075673600., 302702400., 30270240.,
                 2162160., 110880., 3960., 90., 1.)
@@ -508,6 +525,7 @@ class _ExpmPadeHelper(object):
         V = (b[8]*self.A8 + b[6]*self.A6 + b[4]*self.A4 +
                 b[2]*self.A2 + b[0]*self.ident)
         return U, V
+
     def pade13_scaled(self, s):
         b = (64764752532480000., 32382376266240000., 7771770303897600.,
                 1187353796428800., 129060195264000., 10559470521600.,
@@ -529,7 +547,6 @@ class _ExpmPadeHelper(object):
                 structure=self.structure)
         V = V2 + b[6]*B6 + b[4]*B4 + b[2]*B2 + b[0]*self.ident
         return U, V
-
 
 
 def expm(A):
@@ -786,4 +803,3 @@ def _ell(A, m):
     log2_alpha_div_u = np.log2(alpha/u)
     value = int(np.ceil(log2_alpha_div_u / (2 * m)))
     return max(value, 0)
-

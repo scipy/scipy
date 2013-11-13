@@ -388,7 +388,7 @@ def _h_gen_roots_and_weights(n, mu, factor, func):
     """
     if n < 1:
         raise ValueError("n must be positive.")
-    
+
     bn = np.sqrt(np.arange(1,n, dtype=np.float64)/factor)
     c = np.diag(bn, -1)
     x = linalg.eigvalsh(c, overwrite_a=True)
@@ -412,7 +412,7 @@ def _h_gen_roots_and_weights(n, mu, factor, func):
         return [x, w, mu]
     else:
         return x, w
- 
+
 
 def h_roots(n, mu=0):
     """[x,w] = h_roots(n)
@@ -422,7 +422,7 @@ def h_roots(n, mu=0):
     [-inf,inf] with weighting function exp(-x**2).
     """
     return _h_gen_roots_and_weights(n, mu, 2.0, cephes.eval_hermite)
-   
+
 
 def hermite(n, monic=0):
     """Return the nth order Hermite polynomial, H_n(x), orthogonal over

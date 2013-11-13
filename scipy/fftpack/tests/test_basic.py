@@ -635,7 +635,6 @@ class TestFftn(TestCase):
         assert_raises(ValueError, fftn, [[1,1],[2,2]], (4, -3))
 
 
-
 class _TestIfftn(TestCase):
     dtype = None
     cdtype = None
@@ -662,7 +661,6 @@ class _TestIfftn(TestCase):
     def test_invalid_sizes(self):
         assert_raises(ValueError, ifftn, [[]])
         assert_raises(ValueError, ifftn, [[1,1],[2,2]], (4, -3))
-
 
 
 class TestIfftnDouble(_TestIfftn):

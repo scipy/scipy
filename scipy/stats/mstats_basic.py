@@ -283,6 +283,7 @@ hmean.__doc__ = stats.hmean.__doc__
 
 def mode(a, axis=0):
     a, axis = _chk_asarray(a, axis)
+
     def _mode1D(a):
         (rep,cnt) = find_repeats(a)
         if not cnt.ndim:

@@ -66,7 +66,7 @@ pathological_data_2 = np.array([
 ])
 
 bug_2850_chunks = [np.random.rand(10, 2),
-                   np.array([[0,0], [0,1], [1,0], [1,1]]) # add corners
+                   np.array([[0,0], [0,1], [1,0], [1,1]])  # add corners
                    ]
 
 # same with some additional chunks
@@ -91,6 +91,7 @@ INCREMENTAL_DATASETS = {
     'bug-2850': (bug_2850_chunks, None),
     'bug-2850-2': (bug_2850_chunks_2, None),
 }
+
 
 def _add_inc_data(name, chunksize):
     """

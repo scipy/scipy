@@ -223,12 +223,12 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
 
     This function is most efficient when `n` is a power of two, and least
     efficient when `n` is prime.
-    
+
     If the data type of `x` is real, a "real FFT" algorithm is automatically
     used, which roughly halves the computation time.  To increase efficiency
-    a little further, use `rfft`, which does the same calculation, but only 
-    outputs half of the symmetrical spectrum.  If the data is both real and 
-    symmetrical, the `dct` can again double the efficiency, by generating 
+    a little further, use `rfft`, which does the same calculation, but only
+    outputs half of the symmetrical spectrum.  If the data is both real and
+    symmetrical, the `dct` can again double the efficiency, by generating
     half of the spectrum from half of the signal.
 
     Examples
@@ -304,10 +304,10 @@ def ifft(x, n=None, axis=-1, overwrite_x=False):
     -----
     This function is most efficient when `n` is a power of two, and least
     efficient when `n` is prime.
-    
+
     If the data type of `x` is real, a "real IFFT" algorithm is automatically
     used, which roughly halves the computation time.
-    
+
     """
     tmp = _asfarray(x)
 
@@ -362,15 +362,15 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
     -------
     z : real ndarray
         The returned real array contains::
-    
+
           [y(0),Re(y(1)),Im(y(1)),...,Re(y(n/2))]              if n is even
           [y(0),Re(y(1)),Im(y(1)),...,Re(y(n/2)),Im(y(n/2))]   if n is odd
-    
+
         where::
-    
+
           y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k*2*pi/n)
           j = 0..n-1
-    
+
         Note that ``y(-j) == y(n-j).conjugate()``.
 
     See Also
@@ -380,7 +380,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
     Notes
     -----
     Within numerical accuracy, ``y == rfft(irfft(y))``.
-    
+
     Examples
     --------
     >>> a = [9, -9, 1, 3]

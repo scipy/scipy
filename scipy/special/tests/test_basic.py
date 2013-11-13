@@ -2348,8 +2348,8 @@ class TestLegendreFunctions(TestCase):
                            [0.0000, 0.0000, 3*(z*z-1)]]),
                     array([[0.0000, 1.0000, 3*z],
                            [0.0000, z/sqrt(z*z-1), 3*(2*z*z-1)/sqrt(z*z-1)],
-                           [0.0000, 0.0000, 6*z]]))
-                       ,7)
+                           [0.0000, 0.0000, 6*z]])),
+                    7)
 
     def test_clpmn_close_to_real_2(self):
         eps = 1e-10
@@ -2360,8 +2360,8 @@ class TestLegendreFunctions(TestCase):
         clp_minus = special.clpmn(m, n, x-1j*eps, 2)[0][m, n]
         assert_array_almost_equal(array([clp_plus, clp_minus]),
                                   array([special.lpmv(m, n, x),
-                                         special.lpmv(m, n, x)])
-                                  ,7)
+                                         special.lpmv(m, n, x)]),
+                                  7)
 
     def test_clpmn_close_to_real_3(self):
         eps = 1e-10
@@ -2372,8 +2372,8 @@ class TestLegendreFunctions(TestCase):
         clp_minus = special.clpmn(m, n, x-1j*eps, 3)[0][m, n]
         assert_array_almost_equal(array([clp_plus, clp_minus]),
                                   array([special.lpmv(m, n, x)*np.exp(-0.5j*m*np.pi),
-                                         special.lpmv(m, n, x)*np.exp(0.5j*m*np.pi)])
-                                  ,7)
+                                         special.lpmv(m, n, x)*np.exp(0.5j*m*np.pi)]),
+                                  7)
 
     def test_clpmn_across_unit_circle(self):
         eps = 1e-7
@@ -2403,10 +2403,10 @@ class TestLegendreFunctions(TestCase):
             for z in zvals:
                 for h in [1e-3, 1e-3j]:
                     approx_derivative = (special.clpmn(m, n, z+0.5*h, type)[0]
-                                         -special.clpmn(m, n, z-0.5*h, type)[0])/h
+                                         - special.clpmn(m, n, z-0.5*h, type)[0])/h
                     assert_allclose(special.clpmn(m, n, z, type)[1],
                                     approx_derivative,
-                                    rtol=1e-4) 
+                                    rtol=1e-4)
 
     def test_lpmn(self):
         lp = special.lpmn(0,2,.5)

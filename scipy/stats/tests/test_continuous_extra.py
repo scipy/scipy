@@ -151,7 +151,7 @@ def test_rice_zero_b():
     # see e.g. Abramovich & Stegun 9.6.7 & 9.6.10
     b = 1e-8
     npt.assert_allclose(stats.rice.pdf(x, 0), stats.rice.pdf(x, b),
-            atol = b, rtol=0)
+            atol=b, rtol=0)
 
 
 def test_rice_rvs():
