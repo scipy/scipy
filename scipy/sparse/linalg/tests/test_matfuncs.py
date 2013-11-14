@@ -20,9 +20,9 @@ from numpy.testing import (TestCase, run_module_suite,
 
 from scipy.sparse import csc_matrix, SparseEfficiencyWarning
 from scipy.sparse.construct import eye as speye
-from scipy.sparse.linalg.matfuncs import (expm,
-        ProductOperator, MatrixPowerOperator,
+from scipy.sparse.linalg.matfuncs import (ProductOperator, MatrixPowerOperator,
         _onenorm_matrix_power_nnm)
+from scipy.sparse.linalg.matfuncs import expm
 from scipy.linalg import logm
 from scipy.misc import factorial
 import scipy.sparse
@@ -71,18 +71,19 @@ def test_onenorm_matrix_power_nnm():
             assert_allclose(observed, expected)
 
 
-class TestExpM(TestCase):
+class BaseExpM(object):
+    """Base class for testing multiple expm implementations."""
     def test_zero_ndarray(self):
         a = array([[0.,0],[0,0]])
-        assert_array_almost_equal(expm(a),[[1,0],[0,1]])
+        assert_array_almost_equal(self.expm(a),[[1,0],[0,1]])
 
     def test_zero_sparse(self):
         a = csc_matrix([[0.,0],[0,0]])
-        assert_array_almost_equal(expm(a).toarray(),[[1,0],[0,1]])
+        assert_array_almost_equal(self.expm(a).toarray(),[[1,0],[0,1]])
 
     def test_zero_matrix(self):
         a = np.matrix([[0.,0],[0,0]])
-        assert_array_almost_equal(expm(a),[[1,0],[0,1]])
+        assert_array_almost_equal(self.expm(a),[[1,0],[0,1]])
 
     def test_bidiagonal_sparse(self):
         A = csc_matrix([
@@ -95,14 +96,14 @@ class TestExpM(TestCase):
             [e1, 3*e1, 15*(e2 - 2*e1)],
             [0, e1, 5*(e2 - e1)],
             [0, 0, e2]], dtype=float)
-        observed = expm(A).toarray()
+        observed = self.expm(A).toarray()
         assert_array_almost_equal(observed, expected)
 
     def test_padecases_dtype_float(self):
         for dtype in [np.float32, np.float64]:
             for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
                 A = scale * eye(3, dtype=dtype)
-                observed = expm(A)
+                observed = self.expm(A)
                 expected = exp(scale) * eye(3, dtype=dtype)
                 assert_array_almost_equal_nulp(observed, expected, nulp=100)
 
@@ -110,7 +111,7 @@ class TestExpM(TestCase):
         for dtype in [np.complex64, np.complex128]:
             for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
                 A = scale * eye(3, dtype=dtype)
-                observed = expm(A)
+                observed = self.expm(A)
                 expected = exp(scale) * eye(3, dtype=dtype)
                 assert_array_almost_equal_nulp(observed, expected, nulp=100)
 
@@ -122,7 +123,8 @@ class TestExpM(TestCase):
             for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
                 a = scale * speye(3, 3, dtype=dtype, format='csc')
                 e = exp(scale) * eye(3, dtype=dtype)
-                assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
+                assert_array_almost_equal_nulp(
+                        self.expm(a).toarray(), e, nulp=100)
 
     def test_padecases_dtype_sparse_complex(self):
         # float32 and complex64 lead to errors in spsolve/UMFpack
@@ -132,7 +134,8 @@ class TestExpM(TestCase):
             for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
                 a = scale * speye(3, 3, dtype=dtype, format='csc')
                 e = exp(scale) * eye(3, dtype=dtype)
-                assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
+                assert_array_almost_equal_nulp(
+                        self.expm(a).toarray(), e, nulp=100)
 
     def test_logm_consistency(self):
         random.seed(1234)
@@ -143,7 +146,7 @@ class TestExpM(TestCase):
                     A = (eye(n) + random.rand(n, n) * scale).astype(dtype)
                     if np.iscomplexobj(A):
                         A = A + 1j * random.rand(n, n) * scale
-                    assert_array_almost_equal(expm(logm(A)), A)
+                    assert_array_almost_equal(self.expm(logm(A)), A)
 
     def test_triangularity_perturbation(self):
         # Experiment (1) of
@@ -166,7 +169,7 @@ class TestExpM(TestCase):
             [0.00000000000000000e+00, 0.00000000000000000e+00,
              0.00000000000000000e+00, -1.17947533272554850e+00]],
             dtype=float)
-        assert_allclose(expm(A_logm), A, rtol=1e-4)
+        assert_allclose(self.expm(A_logm), A, rtol=1e-4)
 
         # Perturb the upper triangular matrix by tiny amounts,
         # so that it becomes technically not upper triangular.
@@ -175,10 +178,14 @@ class TestExpM(TestCase):
         n = 4
         A_logm_perturbed = A_logm.copy()
         A_logm_perturbed[1, 0] = tiny
-        A_expm_logm_perturbed = expm(A_logm_perturbed)
+        A_expm_logm_perturbed = self.expm(A_logm_perturbed)
         rtol = 1e-4
         atol = 100 * tiny
         assert_(not np.allclose(A_expm_logm_perturbed, A, rtol=rtol, atol=atol))
+
+
+class BaseBurkardtExpM(object):
+    """Base class for testing multiple expm implementations."""
 
     def test_burkardt_1(self):
         # This matrix is diagonal.
@@ -217,7 +224,7 @@ class TestExpM(TestCase):
             [exp1, 0],
             [0, exp2],
             ], dtype=float)
-        actual = expm(A)
+        actual = self.expm(A)
         assert_allclose(actual, desired)
 
     def test_burkardt_2(self):
@@ -231,7 +238,7 @@ class TestExpM(TestCase):
             [39.322809708033859, 46.166301438885753],
             [46.166301438885768, 54.711576854329110],
             ], dtype=float)
-        actual = expm(A)
+        actual = self.expm(A)
         assert_allclose(actual, desired)
 
     def test_burkardt_3(self):
@@ -252,7 +259,7 @@ class TestExpM(TestCase):
                 39*np.expm1(-38) / (38*exp1),
                 -1/(38*exp1) + 39/(38*exp39)],
             ], dtype=float)
-        actual = expm(A)
+        actual = self.expm(A)
         assert_allclose(actual, desired)
 
     def test_burkardt_4(self):
@@ -267,7 +274,7 @@ class TestExpM(TestCase):
         V = np.array([[1, -1/2], [-2, 3/2]], dtype=float)
         w = np.array([-17, -1], dtype=float)
         desired = np.dot(U * np.exp(w), V)
-        actual = expm(A)
+        actual = self.expm(A)
         assert_allclose(actual, desired)
 
     def test_burkardt_5(self):
@@ -287,7 +294,7 @@ class TestExpM(TestCase):
             [0, 0, 1, 6],
             [0, 0, 0, 1],
             ], dtype=float)
-        actual = expm(A)
+        actual = self.expm(A)
         assert_allclose(actual, desired)
 
     def test_burkardt_6(self):
@@ -303,7 +310,7 @@ class TestExpM(TestCase):
             [exp1, exp1],
             [0, exp1],
             ], dtype=float)
-        actual = expm(A)
+        actual = self.expm(A)
         assert_allclose(actual, desired)
 
     def test_burkardt_7(self):
@@ -321,7 +328,7 @@ class TestExpM(TestCase):
             [exp1, exp1],
             [0, exp1],
             ], dtype=float)
-        actual = expm(A)
+        actual = self.expm(A)
         assert_allclose(actual, desired)
 
     def test_burkardt_8(self):
@@ -338,7 +345,7 @@ class TestExpM(TestCase):
             [-9*exp16 + exp4, -9*exp16 + 5*exp4, -2*exp16 + 2*exp4],
             [16*exp16,        16*exp16,           4*exp16         ],
             ], dtype=float) * 0.25
-        actual = expm(A)
+        actual = self.expm(A)
         assert_allclose(actual, desired)
 
     def test_burkardt_9(self):
@@ -356,7 +363,7 @@ class TestExpM(TestCase):
             [823.7630, 679.4257, 603.5524, 610.8500],
             [998.4355, 823.7630, 731.2510, 740.7038],
             ], dtype=float)
-        actual = expm(A)
+        actual = self.expm(A)
         assert_allclose(actual, desired)
 
     def test_burkardt_10(self):
@@ -373,7 +380,7 @@ class TestExpM(TestCase):
             [127.7810855231823, 183.7651386463682, 91.88256932318415],
             [127.7810855231824, 163.6796017231806, 111.9681062463718],
             ], dtype=float)
-        actual = expm(A)
+        actual = self.expm(A)
         assert_allclose(actual, desired)
 
     def test_burkardt_11(self):
@@ -399,7 +406,7 @@ class TestExpM(TestCase):
                 1.012918429302482E+17,
                 1.692944112408493E+17],
             ], dtype=float)
-        actual = expm(A)
+        actual = self.expm(A)
         assert_allclose(actual, desired)
 
     def test_burkardt_12(self):
@@ -417,7 +424,7 @@ class TestExpM(TestCase):
             [-5.632570799891469, 1.471517758499875, 0.4060058435250609],
             [-4.934938326088363, 1.103638317328798, 0.5413411267617766],
             ], dtype=float)
-        actual = expm(A)
+        actual = self.expm(A)
         assert_allclose(actual, desired)
 
     def test_burkardt_13(self):
@@ -448,7 +455,7 @@ class TestExpM(TestCase):
                 assert_equal(np.min(Ap), 0)
                 assert_allclose(np.max(Ap), np.power(10, -np.floor(p/n)*n))
                 desired += Ap / factorial(p)
-            actual = expm(_burkardt_13_power(n, 1))
+            actual = self.expm(_burkardt_13_power(n, 1))
             assert_allclose(actual, desired)
 
     def test_burkardt_14(self):
@@ -464,8 +471,26 @@ class TestExpM(TestCase):
             [-5743067.77947947, -0.0152830038686819, -4526542.71278401],
             [0.447722977849494, 1.54270484519591e-09, 0.463480648837651],
             ], dtype=float)
-        actual = expm(A)
+        actual = self.expm(A)
         assert_allclose(actual, desired)
+
+
+class TestHighamExpM(BaseExpM, BaseBurkardtExpM, TestCase):
+    @staticmethod
+    def expm(*a, **kw):
+        kw['method'] = 'higham'
+        return expm(*a, **kw)
+
+
+class TestExpokitExpM(BaseBurkardtExpM, TestCase):
+    @staticmethod
+    def expm(*a, **kw):
+        kw['method'] = 'expokit'
+        return expm(*a, **kw)
+
+    @decorators.knownfailureif(True, 'expokit expm gives nans for this matrix')
+    def test_burkardt_14(self):
+        BaseBurkardtExpM.test_burkardt_14(self)
 
 
 class TestOperators(TestCase):
