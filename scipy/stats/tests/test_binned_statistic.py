@@ -219,6 +219,8 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(bcount, count1adj)
     
     def test_range(self):
+        np.random.seed(9865)
+        
         x = np.arange(30)
         data = np.random.random(30)
         
@@ -229,6 +231,8 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(bins, bins_range)
     
     def test_range_2(self):
+        np.random.seed(9865)
+        
         x = np.arange(30)
         data = np.random.random(30)
         
