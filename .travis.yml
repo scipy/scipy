@@ -20,6 +20,8 @@ before_install:
   - ulimit -a
   - mkdir builds
   - pushd builds
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq libatlas-dev libatlas-base-dev liblapack-dev gfortran
   - pip install nose
   - pip install numpy
   - pip install Cython
@@ -27,8 +29,6 @@ before_install:
   - pip install mpmath
   # For Python 2.6 we also need argparse
   - pip install argparse
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq libatlas-dev libatlas-base-dev liblapack-dev gfortran
   - if [ "${TESTMODE}" == "full" ]; then pip install coverage; fi
   - if [ "${TESTMODE}" == "full" ]; then pip install coveralls; fi
   - python -V
