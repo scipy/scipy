@@ -232,8 +232,8 @@ class TestBinnedStatistic(object):
         x = np.arange(30)
         data = np.random.random(30)
         
-        mean, bins, _ = stats.binned_statistic(x[:15], data[:15])
-        mean_range, bins_range, _ = stats.binned_statistic(x, data, range=(0, 14))
+        mean, bins, _ = binned_statistic(x[:15], data[:15])
+        mean_range, bins_range, _ = binned_statistic(x, data, range=(0, 14))
         
         assert_array_almost_equal(mean, mean_range)
         assert_array_almost_equal(bins, bins_range)  
