@@ -179,7 +179,7 @@ class dok_matrix(spmatrix, dict):
                                  or last >= self.shape[0]:
                         raise IndexError('index out of bounds')
                     newshape = (last-first+1, 1)
-                    new = dok_matrix(newshape)
+                    new = dok_matrix(newshape, dtype=self.dtype)
                     # ** This uses linear time in the size m of dimension 0:
                     # new[0:seq[-1]-seq[0]+1, 0] = \
                     #         [self.get((element, j), 0) for element in seq]
@@ -214,7 +214,7 @@ class dok_matrix(spmatrix, dict):
                          or last >= self.shape[1]:
                 raise IndexError("index out of bounds")
             newshape = (1, last-first+1)
-            new = dok_matrix(newshape)
+            new = dok_matrix(newshape, dtype=self.dtype)
             # ** This uses linear time in the size n of dimension 1:
             # new[0, 0:seq[-1]-seq[0]+1] = \
             #         [self.get((i, element), 0) for element in seq]

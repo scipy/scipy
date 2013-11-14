@@ -1691,6 +1691,11 @@ class _TestSolve:
 
 
 class _TestSlicing:
+    def test_dtype_preservation(self):
+        assert_equal(self.spmatrix((1,10), dtype=np.int16)[0,1:5].dtype, np.int16)
+        assert_equal(self.spmatrix((1,10), dtype=np.int32)[0,1:5].dtype, np.int32)
+        assert_equal(self.spmatrix((1,10), dtype=np.float32)[0,1:5].dtype, np.float32)
+        assert_equal(self.spmatrix((1,10), dtype=np.float64)[0,1:5].dtype, np.float64)
     def test_get_horiz_slice(self):
         B = asmatrix(arange(50.).reshape(5,10))
         A = self.spmatrix(B)
