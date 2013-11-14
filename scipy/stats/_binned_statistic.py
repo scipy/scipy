@@ -46,7 +46,7 @@ def binned_statistic(x, values, statistic='mean',
         bins in the given range (10, by default). If `bins` is a sequence,
         it defines the bin edges, including the rightmost edge, allowing
         for non-uniform bin widths.
-    range : (float, float), optional
+    range : (float, float) or [(float, float)], optional
         The lower and upper range of the bins.  If not provided, range
         is simply ``(x.min(), x.max())``.  Values outside the range are
         ignored.
@@ -93,6 +93,10 @@ def binned_statistic(x, values, statistic='mean',
 
     if N != 1:
         bins = [np.asarray(bins, float)]
+    
+    if range is not None:
+        if len(range) == 2:
+            range = [range]
 
     medians, edges, xy = binned_statistic_dd([x], values, statistic,
                                              bins, range)
