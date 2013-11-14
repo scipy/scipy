@@ -823,6 +823,13 @@ def maximum_filter1d(input, size, axis=-1, output=None,
     %(mode)s
     %(cval)s
     %(origin)s
+
+    Returns
+    -------
+    maximum1d : ndarray, None
+        Maximum-filtered array with same shape as input.
+        None if `output` is not None
+
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
