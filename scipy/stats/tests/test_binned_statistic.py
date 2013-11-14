@@ -217,6 +217,31 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(bc, bc2)
         count1adj = count1[count1.nonzero()]
         assert_array_almost_equal(bcount, count1adj)
+    
+    def test_range(self):
+        np.random.seed(9865)
+        
+        x = np.arange(30)
+        data = np.random.random(30)
+        
+        mean, bins, _ = binned_statistic(x[:15], data[:15])
+        mean_range, bins_range, _ = binned_statistic(x, data, range=[(0, 14)])
+        
+        assert_array_almost_equal(mean, mean_range)
+        assert_array_almost_equal(bins, bins_range)
+    
+    def test_range_2(self):
+        np.random.seed(9865)
+        
+        x = np.arange(30)
+        data = np.random.random(30)
+        
+        mean, bins, _ = binned_statistic(x[:15], data[:15])
+        mean_range, bins_range, _ = binned_statistic(x, data, range=(0, 14))
+        
+        assert_array_almost_equal(mean, mean_range)
+        assert_array_almost_equal(bins, bins_range)  
+    
 
 
 if __name__ == "__main__":
