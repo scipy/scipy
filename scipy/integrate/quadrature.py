@@ -248,7 +248,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     if x is None:
         d = dx
     else:
-        d = diff(x, axis=axis)
+        d = diff(x)
 
     nd = len(y.shape)
     slice1 = tupleset((slice(None),)*nd, axis, slice(1, None))
