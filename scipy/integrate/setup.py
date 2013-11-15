@@ -47,7 +47,7 @@ def configuration(parent_package='',top_path=None):
             continue
         newblas[key] = blas_opt[key]
     config.add_extension('_odepack',
-                         sources=['_odepackmodule.c'],
+                         sources=['_odepackmodule.c', '__powidf2.c'],
                          libraries=libs,
                          depends=(['__odepack.h','multipack.h']
                                   + odepack_src + linpack_lite_src
@@ -56,7 +56,7 @@ def configuration(parent_package='',top_path=None):
 
     # vode
     config.add_extension('vode',
-                         sources=['vode.pyf'],
+                         sources=['vode.pyf', '__powidf2.c'],
                          libraries=libs,
                          depends=(odepack_src + linpack_lite_src
                                   + mach_src),
@@ -64,7 +64,7 @@ def configuration(parent_package='',top_path=None):
 
     # lsoda
     config.add_extension('lsoda',
-                         sources=['lsoda.pyf'],
+                         sources=['lsoda.pyf', '__powidf2.c'],
                          libraries=libs,
                          depends=(odepack_src + linpack_lite_src
                                   + mach_src),

@@ -27,7 +27,7 @@ def configuration(parent_package='',top_path=None):
                        include_dirs=[join('ARPACK', 'SRC')])
 
     config.add_extension('_arpack',
-                         sources='arpack.pyf.src',
+                         sources=['arpack.pyf.src', 'cplx.c'],
                          libraries=['arpack_scipy'],
                          extra_info=lapack_opt,
                          depends=arpack_sources,

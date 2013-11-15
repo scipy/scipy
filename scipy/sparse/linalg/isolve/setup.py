@@ -36,6 +36,7 @@ def configuration(parent_package='',top_path=None):
     sources = Util + methods + ['_iterative.pyf.src']
     sources = [join('iterative', x) for x in sources]
     sources += get_g77_abi_wrappers(lapack_opt)
+    sources.append('cplx.c')
 
     config.add_extension('_iterative',
                          sources=sources,

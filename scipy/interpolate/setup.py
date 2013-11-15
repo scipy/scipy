@@ -23,7 +23,7 @@ def configuration(parent_package='',top_path=None):
                          )
 
     config.add_extension('dfitpack',
-                         sources=['src/fitpack.pyf'],
+                         sources=['src/fitpack.pyf', '__powidf2.c'],
                          libraries=['fitpack'],
                          depends=fitpack_src,
                          )
