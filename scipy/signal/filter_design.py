@@ -677,7 +677,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
                              "elliptic filter.")
         z, p, k = typefunc(N, rp, rs)
     else:
-        raise NotImplementedError("%s not implemented in iirfilter." % ftype)
+        raise NotImplementedError("'%s' not implemented in iirfilter." % ftype)
 
     b, a = zpk2tf(z, p, k)
 
@@ -2130,13 +2130,17 @@ def besselap(N):
 
 filter_dict = {'butter': [buttap, buttord],
                'butterworth': [buttap, buttord],
+
                'cauer': [ellipap, ellipord],
                'elliptic': [ellipap, ellipord],
                'ellip': [ellipap, ellipord],
+
                'bessel': [besselap],
+
                'cheby1': [cheb1ap, cheb1ord],
                'chebyshev1': [cheb1ap, cheb1ord],
                'chebyshevi': [cheb1ap, cheb1ord],
+
                'cheby2': [cheb2ap, cheb2ord],
                'chebyshev2': [cheb2ap, cheb2ord],
                'chebyshevii': [cheb2ap, cheb2ord],
@@ -2146,14 +2150,19 @@ band_dict = {'band': 'bandpass',
              'bandpass': 'bandpass',
              'pass': 'bandpass',
              'bp': 'bandpass',
+
              'bs': 'bandstop',
              'bandstop': 'bandstop',
              'bands': 'bandstop',
              'stop': 'bandstop',
+
              'l': 'lowpass',
              'low': 'lowpass',
              'lowpass': 'lowpass',
+             'lp': 'lowpass',
+
              'high': 'highpass',
              'highpass': 'highpass',
              'h': 'highpass',
+             'hp': 'highpass',
              }
