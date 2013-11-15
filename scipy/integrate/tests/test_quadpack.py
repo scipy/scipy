@@ -12,6 +12,7 @@ from scipy.lib.six import xrange
 
 try:
     import ctypes
+    import ctypes.util
     _ctypes_missing = False
 except ImportError:
     _ctypes_missing = True
@@ -28,7 +29,7 @@ class TestCtypesQuad(TestCase):
     @dec.skipif(_ctypes_missing, msg="Ctypes library could not be found")
     def setUp(self):
         if sys.platform == 'win32':
-            file = 'msvcrt.dll'
+            file = ctypes.util.find_msvcrt()
         elif sys.platform == 'darwin':
             file = 'libm.dylib'
         else:
