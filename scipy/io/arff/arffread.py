@@ -161,7 +161,7 @@ def get_nom_val(atrv):
     >>> get_nom_val("{floup, bouga, fl, ratata}")
     ('floup', 'bouga', 'fl', 'ratata')
     """
-    r_nominal = re.compile('{(..+)}')
+    r_nominal = re.compile('{(.+)}')
     m = r_nominal.match(atrv)
     if m:
         return tuple(i.strip() for i in m.group(1).split(','))
