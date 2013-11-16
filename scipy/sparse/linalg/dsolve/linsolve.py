@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 from warnings import warn
 
-from numpy import asarray, empty, where, ravel, prod
+from numpy import asarray, empty, ravel, nonzero
 from scipy.sparse import isspmatrix_csc, isspmatrix_csr, isspmatrix, \
         SparseEfficiencyWarning, csc_matrix
 
@@ -89,12 +89,10 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
                 SparseEfficiencyWarning)
 
     # b is a vector only if b have shape (n,) or (n, 1)
+    b_is_sparse = isspmatrix(b)
+    if not b_is_sparse:
+        b = asarray(b)
     b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
-
-    if not (b_is_vector or isspmatrix_csc(b) or isspmatrix_csr(b)):
-        b = csc_matrix(b)
-        warn('spsolve requires b be CSC or CSR matrix format',
-                SparseEfficiencyWarning)
 
     A.sort_indices()
     A = A.asfptype()  # upcast to a floating point format
@@ -110,45 +108,60 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     use_umfpack = use_umfpack and useUmfpack
 
-    if b_is_vector and isUmfpack and use_umfpack:
-        if noScikit:
-            warn('scipy.sparse.linalg.dsolve.umfpack will be removed,'
-                    ' install scikits.umfpack instead', DeprecationWarning)
-        if A.dtype.char not in 'dD':
-            raise ValueError("convert matrix data to double, please, using"
-                  " .astype(), or set linsolve.useUmfpack = False")
-
-        b = asarray(b, dtype=A.dtype).reshape(-1)
-
-        family = {'d': 'di', 'D': 'zi'}
-        umf = umfpack.UmfpackContext(family[A.dtype.char])
-        x = umf.linsolve(umfpack.UMFPACK_A, A, b,
-                         autoTranspose=True)
-
-    elif b_is_vector:
-        if isspmatrix_csc(A):
-            flag = 1  # CSC format
-        elif isspmatrix_csr(A):
-            flag = 0  # CSR format
+    if b_is_vector:
+        if b_is_sparse:
+            b_vec = b.toarray()
         else:
-            A = csc_matrix(A)
-            flag = 1
+            b_vec = b
+        b_vec = asarray(b_vec, dtype=A.dtype).ravel()
 
-        b = asarray(b, dtype=A.dtype)
-        options = dict(ColPerm=permc_spec)
-        x = _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr, b, flag,
-                          options=options)[0]
+        if isUmfpack and use_umfpack:
+            if noScikit:
+                warn('scipy.sparse.linalg.dsolve.umfpack will be removed,'
+                        ' install scikits.umfpack instead', DeprecationWarning)
+            if A.dtype.char not in 'dD':
+                raise ValueError("convert matrix data to double, please, using"
+                      " .astype(), or set linsolve.useUmfpack = False")
+
+            family = {'d': 'di', 'D': 'zi'}
+            umf = umfpack.UmfpackContext(family[A.dtype.char])
+            x = umf.linsolve(umfpack.UMFPACK_A, A, b_vec,
+                             autoTranspose=True)
+
+        else:
+            if isspmatrix_csc(A):
+                flag = 1  # CSC format
+            else:
+                flag = 0  # CSR format
+            options = dict(ColPerm=permc_spec)
+            x = _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr, b_vec, flag,
+                              options=options)[0]
     else:
-        # Cover the case where b is also a matrix
-        Afactsolve = factorized(A)
-        tempj = empty(M, dtype=int)
-        x = A.__class__(b.shape)
-        for j in range(b.shape[1]):
-            xj = Afactsolve(ravel(b[:, j].toarray()))
-            w = where(xj != 0.0)[0]
-            tempj.fill(j)
-            x = x + A.__class__((xj[w], (w, tempj[:len(w)])),
-                                shape=b.shape, dtype=A.dtype)
+        # Cover the case where b is a matrix
+        if b_is_sparse:
+            Afactsolve = factorized(A)
+            tempj = empty(M, dtype=int)
+            x = A.__class__(b.shape)
+
+            if not (isspmatrix_csr(b) or isspmatrix_csc(b)):
+                warn('spsolve requires sparse b be in CSC or CSR matrix format',
+                     SparseEfficiencyWarning)
+                b = csc_matrix(b)
+
+            for j in range(b.shape[1]):
+                col = b[:, j].toarray()
+                xj = Afactsolve(ravel(col))
+                w = nonzero(xj)[0]
+                tempj.fill(j)
+                x = x + A.__class__((xj[w], (w, tempj[:len(w)])),
+                                    shape=b.shape, dtype=A.dtype)
+        else:
+            # Dense b
+            Afactsolve = factorized(A)
+            x = empty(b.shape, dtype=A.dtype)
+            for j in range(b.shape[1]):
+                x[:,j] = Afactsolve(b[:,j])
+
     return x
 
 

@@ -91,7 +91,7 @@ class TestSolvers(_DeprecationAccept):
         """Solve with UMFPACK: double precision, sparse rhs"""
         linsolve.use_solver(useUmfpack=True)
         a = self.a.astype('d')
-        b = csc_matrix(self.b)
+        b = csc_matrix(self.b).T
         x = linsolve.spsolve(a, b)
         # print x
         # print "Error: ", a*x-b

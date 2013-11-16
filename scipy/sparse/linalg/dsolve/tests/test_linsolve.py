@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 
+import numpy as np
 from numpy import array, finfo, arange, eye, all, unique, ones, dot, matrix
 import numpy.random as random
 from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal, \
@@ -9,13 +10,20 @@ from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal,
 
 import scipy.linalg
 from scipy.linalg import norm, inv
-from scipy.sparse import spdiags, SparseEfficiencyWarning, csc_matrix, csr_matrix
+from scipy.sparse import spdiags, SparseEfficiencyWarning, csc_matrix, csr_matrix, \
+     isspmatrix, dok_matrix, lil_matrix, bsr_matrix
 from scipy.sparse.linalg.dsolve import spsolve, use_solver, splu, spilu
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
 # TODO add more comprehensive tests
 use_solver(useUmfpack=False)
+
+def toarray(a):
+    if isspmatrix(a):
+        return a.toarray()
+    else:
+        return a
 
 
 class TestLinsolve(TestCase):
@@ -99,10 +107,54 @@ class TestLinsolve(TestCase):
             assert_array_almost_equal(X, sX.todense())
 
     def test_shape_compatibility(self):
-        A = csc_matrix([[1.]])
-        x = array([[1., 2., 3.]])
-        b = csc_matrix([[1., 2., 3.]])
-        assert_array_almost_equal(x, spsolve(A, b).todense())
+        A = csc_matrix([[1., 0], [0, 2]])
+        bs = [
+            [1, 6],
+            array([1, 6]),
+            [[1], [6]],
+            array([[1], [6]]),
+            csc_matrix([[1], [6]]),
+            csr_matrix([[1], [6]]),
+            dok_matrix([[1], [6]]),
+            bsr_matrix([[1], [6]]),
+            array([[1., 2., 3.], [6., 8., 10.]]),
+            csc_matrix([[1., 2., 3.], [6., 8., 10.]]),
+            csr_matrix([[1., 2., 3.], [6., 8., 10.]]),
+            dok_matrix([[1., 2., 3.], [6., 8., 10.]]),
+            bsr_matrix([[1., 2., 3.], [6., 8., 10.]]),
+            ]
+
+        for b in bs:
+            x = np.linalg.solve(A.toarray(), toarray(b))
+            for spmattype in [csc_matrix, csr_matrix, dok_matrix, lil_matrix]:
+                x1 = spsolve(spmattype(A), b, use_umfpack=True)
+                x2 = spsolve(spmattype(A), b, use_umfpack=False)
+
+                # check solution
+                if x.ndim == 2 and x.shape[1] == 1:
+                    # interprets also these as "vectors"
+                    x = x.ravel()
+
+                assert_array_almost_equal(toarray(x1), x, err_msg=repr((b, spmattype, 1)))
+                assert_array_almost_equal(toarray(x2), x, err_msg=repr((b, spmattype, 2)))
+
+                # dense vs. sparse output  ("vectors" are always dense)
+                if isspmatrix(b) and x.ndim > 1:
+                    assert_(isspmatrix(x1), repr((b, spmattype, 1)))
+                    assert_(isspmatrix(x2), repr((b, spmattype, 2)))
+                else:
+                    assert_(isinstance(x1, np.ndarray), repr((b, spmattype, 1)))
+                    assert_(isinstance(x2, np.ndarray), repr((b, spmattype, 2)))
+
+                # check output shape
+                if x.ndim == 1:
+                    # "vector"
+                    assert_equal(x1.shape, (A.shape[1],))
+                    assert_equal(x2.shape, (A.shape[1],))
+                else:
+                    # "matrix"
+                    assert_equal(x1.shape, x.shape)
+                    assert_equal(x2.shape, x.shape)
 
         A = csc_matrix((3, 3))
         b = csc_matrix((1, 3))
@@ -113,7 +165,7 @@ class TestLinsolve(TestCase):
         x = array([[1., 1.], [0.5, -0.5]]) 
         b = array([[2., 0.], [2., 2.]])
 
-        assert_array_almost_equal(x, spsolve(A, b).todense())
+        assert_array_almost_equal(x, spsolve(A, b))
 
 
 class TestSplu(object):
