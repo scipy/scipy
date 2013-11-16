@@ -18,8 +18,10 @@ def _uses_veclib(info):
 
     return False
 
+
 def uses_accelerate(info):
     return _uses_veclib(info)
+
 
 def uses_mkl(info):
     r_mkl = re.compile("mkl_core")
@@ -137,7 +139,7 @@ def split_fortran_files(source_dir, subroutines=None):
                     if nfile + 1 == num_files:
                         fn.writelines(lines[subs[nfile]:])
                     else:
-                        fn.writelines(lines[subs[nfile] : subs[nfile+1]])
+                        fn.writelines(lines[subs[nfile]:subs[nfile+1]])
 
         return new_fnames
 

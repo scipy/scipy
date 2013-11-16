@@ -2601,7 +2601,7 @@ def show_options(solver=None, method=None):
             If `jac` is approximated, use this value for the step size.
 
     *Nelder-Mead* options:
-    
+
         xtol : float
             Relative error in solution `xopt` acceptable for convergence.
         ftol : float

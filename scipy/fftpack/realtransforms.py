@@ -110,9 +110,9 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
     References
     ----------
-    .. [1] 'A Fast Cosine Transform in One and Two Dimensions', by J. 
-           Makhoul, `IEEE Transactions on acoustics, speech and signal 
-           processing` vol. 28(1), pp. 27-34, 
+    .. [1] 'A Fast Cosine Transform in One and Two Dimensions', by J.
+           Makhoul, `IEEE Transactions on acoustics, speech and signal
+           processing` vol. 28(1), pp. 27-34,
            http://dx.doi.org/10.1109/TASSP.1980.1163351 (1980).
     .. [2] Wikipedia, "Discrete cosine transform",
            http://en.wikipedia.org/wiki/Discrete_cosine_transform
@@ -323,7 +323,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     **Type II**
 
     There are several definitions of the DST-II; we use the following
-    for ``norm=None``.  DST-II assumes the input is odd around n=-1/2 and 
+    for ``norm=None``.  DST-II assumes the input is odd around n=-1/2 and
     n=N-1/2; the output is odd around k=-1 and even around k=N-1 ::
 
                 N-1

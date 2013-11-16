@@ -1538,7 +1538,6 @@ class TestPowerDivergence(object):
                    mobs, case.f_exp, case.ddof, case.axis,
                    2/3, case.cr)
 
-
     def test_axis(self):
         case0 = power_div_1d_cases[0]
         case1 = power_div_1d_cases[1]
@@ -1709,22 +1708,22 @@ def test_power_divergence_against_cressie_read_data():
         ]).reshape(-1, 2)
     table5 = np.array([
         # lambda, statistic
-        -10.0,  72.2e3,
-         -5.0,  28.9e1,
-         -3.0,  65.6,
-         -2.0,  40.6,
-         -1.5,  34.0,
-         -1.0,  29.5,
-         -0.5,  26.5,
-          0.0,  24.6,
-          0.5,  23.4,
+        -10.0, 72.2e3,
+         -5.0, 28.9e1,
+         -3.0, 65.6,
+         -2.0, 40.6,
+         -1.5, 34.0,
+         -1.0, 29.5,
+         -0.5, 26.5,
+          0.0, 24.6,
+          0.5, 23.4,
           0.67, 23.1,
-          1.0,  22.7,
-          1.5,  22.6,
-          2.0,  22.9,
-          3.0,  24.8,
-          5.0,  35.5,
-         10.0,  21.4e1,
+          1.0, 22.7,
+          1.5, 22.6,
+          2.0, 22.9,
+          3.0, 24.8,
+          5.0, 35.5,
+         10.0, 21.4e1,
         ]).reshape(-1, 2)
 
     for lambda_, expected_stat in table5:
@@ -2423,6 +2422,7 @@ def test_binomtest():
     assert_approx_equal(stats.binom_test(50,100,0.1), 5.8320387857343647e-024,
                             significant=12, err_msg='fail forp=%f' % p)
 
+
 def test_binomtest2():
     # test added for issue #2384
     res2 = [
@@ -2444,6 +2444,7 @@ def test_binomtest2():
     for k in range(1, 11):
         res1 = [stats.binom_test(v, k, 0.5) for v in range(k + 1)]
         assert_almost_equal(res1, res2[k-1], decimal=10)
+
 
 def test_binomtest3():
     # test added for issue #2384
@@ -2528,6 +2529,7 @@ def test_binomtest3():
     assert_almost_equal(res4_p1, binom_testp1, decimal=13)
     assert_almost_equal(res4_m1, binom_testm1, decimal=13)
 
+
 class TestTrim(object):
     # test trim functions
     def test_trim1(self):
@@ -2550,7 +2552,7 @@ class TestTrim(object):
 
     def test_trim_mean(self):
         # don't use pre-sorted arrays
-        a = np.array([ 4,  8,  2,  0,  9,  5, 10,  1,  7,  3,  6])
+        a = np.array([4, 8, 2, 0, 9, 5, 10, 1, 7, 3, 6])
         idx = np.array([3, 5, 0, 1, 2, 4])
         a2 = np.arange(24).reshape(6, 4)[idx, :]
         a3 = np.arange(24).reshape(6, 4, order='F')[idx, :]
@@ -2563,8 +2565,8 @@ class TestTrim(object):
         assert_equal(stats.trim_mean(a4, 2/6.),
                      np.array([9., 10., 11., 12., 13., 14.]))
         # shuffled arange(24) as array_like
-        a = [7, 11, 12, 21, 16,  6, 22,  1,  5,  0, 18, 10, 17,  9, 19, 15, 23,
-             20,  2, 14,  4, 13,  8,  3]
+        a = [7, 11, 12, 21, 16, 6, 22, 1, 5, 0, 18, 10, 17, 9, 19, 15, 23,
+             20, 2, 14, 4, 13, 8, 3]
         assert_equal(stats.trim_mean(a, 2/6.), 11.5)
         assert_equal(stats.trim_mean([5,4,3,1,2,0], 2/6.), 2.5)
 

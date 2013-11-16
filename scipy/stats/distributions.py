@@ -640,14 +640,14 @@ class rv_generic(object):
         dct = dict(shape_arg_str=shapes_str,
                    locscale_in=locscale_in,
                    locscale_out=locscale_out,
-                  )
+                   )
         ns = {}
         exec_(parse_arg_template % dct, ns)
         # NB: attach to the instance, not class
         for name in ['_parse_args', '_parse_args_stats', '_parse_args_rvs']:
             setattr(self, name,
-                instancemethod(ns[name], self, self.__class__)
-            )
+                    instancemethod(ns[name], self, self.__class__)
+                    )
 
         self.shapes = ', '.join(shapes) if shapes else None
         if not hasattr(self, 'numargs'):
@@ -903,7 +903,7 @@ class rv_generic(object):
         Notes
         -----
         Entropy is defined base `e`:
-        
+
         >>> drv = rv_discrete(values=((0, 1), (0.5, 0.5)))
         >>> np.allclose(drv.entropy(), np.log(2.0))
         True
@@ -1809,7 +1809,6 @@ class rv_continuous(rv_generic):
             return output[()]
         return output
 
-
     def _nnlf(self, x, *args):
         return -sum(self._logpdf(x, *args),axis=0)
 
@@ -2079,7 +2078,6 @@ class rv_continuous(rv_generic):
             place(output, cond0, self.vecentropy(*goodargs) + log(scale))
 
         return output
-
 
     def expect(self, func=None, args=(), loc=0, scale=1, lb=None, ub=None,
                conditional=False, **kwds):
@@ -3005,7 +3003,7 @@ class dweibull_gen(rv_continuous):
         return where(q > 0.5, fac, -fac)
 
     def _munp(self, n, c):
-        return (1 - n%2) * special.gamma(1.0 + 1.0 * n / c)
+        return (1 - (n % 2)) * special.gamma(1.0 + 1.0 * n / c)
 
     # since we know that all odd moments are zeros, return them at once.
     # returning Nones from _stats makes the public stats call _munp
@@ -4136,7 +4134,7 @@ class halflogistic_gen(rv_continuous):
 
     """
     def _pdf(self, x):
-       return exp(self._logpdf(x))
+        return exp(self._logpdf(x))
 
     def _logpdf(self, x):
         return log(2) - x - 2. * special.log1p(exp(-x))
@@ -4650,10 +4648,10 @@ class logistic_gen(rv_continuous):
         return mtrand.logistic(size=self._size)
 
     def _pdf(self, x):
-       return exp(self._logpdf(x))
+        return exp(self._logpdf(x))
 
     def _logpdf(self, x):
-        return -x -2. * special.log1p(exp(-x))
+        return -x - 2. * special.log1p(exp(-x))
 
     def _cdf(self, x):
         return special.expit(x)
@@ -6558,7 +6556,6 @@ class rv_discrete(rv_generic):
             self.__doc__ = self.__doc__.replace('\n    scale : array_like, '
                             'optional\n        scale parameter (default=1)', '')
 
-
     def _construct_default_doc(self, longname=None, extradoc=None):
         """Construct instance docstring from the rv_discrete template."""
         if extradoc is None:
@@ -6948,7 +6945,6 @@ class rv_discrete(rv_generic):
             return output[()]
         return output
 
-
     def _entropy(self, *args):
         if hasattr(self,'pk'):
             return entropy(self.pk)
@@ -6966,7 +6962,6 @@ class rv_discrete(rv_generic):
                 k += 1
                 ent += term
             return ent
-
 
     def expect(self, func=None, args=(), loc=0, lb=None, ub=None, conditional=False):
         """

@@ -11,6 +11,7 @@ __all__ = ['randwppf', 'randwcdf']
 # General purpose continuous
 ######################################
 
+
 @deprecate(message="Deprecated in scipy 0.14.0, use "
                    "distribution-specific rvs() method instead")
 def randwppf(ppf, args=(), size=None):
@@ -26,6 +27,7 @@ def randwppf(ppf, args=(), size=None):
     """
     U = random_sample(size=size)
     return ppf(*(U,)+args)
+
 
 @deprecate(message="Deprecated in scipy 0.14.0, use "
                    "distribution-specific rvs() method instead")

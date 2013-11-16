@@ -394,7 +394,7 @@ class spmatrix(object):
                     return r.astype(self.dtype)
                 else:
                     return r
-                    
+
         elif isdense(other):
             if not rdivide:
                 if true_divide:

@@ -130,6 +130,7 @@ class TestLinearOperator(TestCase):
 
             assert_(isinstance(C**2, interface._PowerLinearOperator))
 
+
 class TestAsLinearOperator(TestCase):
     def setUp(self):
         self.cases = []

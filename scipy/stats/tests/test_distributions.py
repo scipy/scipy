@@ -576,10 +576,10 @@ class TestInvGamma(TestCase):
 
             a = [1.1, 3.1, 5.6]
             mvsk = stats.invgamma.stats(a=a, moments='mvsk')
-            expected = ([10., 0.476190476, 0.2173913043],      # mmm
-                        [np.inf, 0.2061430632, 0.01312749422], # vvv
-                        [np.nan, 41.95235392, 2.919025532],    # sss
-                        [np.nan, np.nan, 24.51923076])         # kkk
+            expected = ([10., 0.476190476, 0.2173913043],       # mmm
+                        [np.inf, 0.2061430632, 0.01312749422],  # vvv
+                        [np.nan, 41.95235392, 2.919025532],     # sss
+                        [np.nan, np.nan, 24.51923076])          # kkk
             for x, y in zip(mvsk, expected):
                 assert_almost_equal(x, y)
 
@@ -1272,11 +1272,11 @@ class TestNct(TestCase):
 
     def test_nct_inf_moments(self):
         # n-th moment of nct only exists for df > n
-        m, v, s, k = stats.nct.stats(df=1.9, nc = 0.3, moments='mvsk')
+        m, v, s, k = stats.nct.stats(df=1.9, nc=0.3, moments='mvsk')
         assert_(np.isfinite(m))
         assert_equal([v, s, k], [np.inf, np.nan, np.nan])
 
-        m, v, s, k = stats.nct.stats(df=3.1, nc = 0.3, moments='mvsk')
+        m, v, s, k = stats.nct.stats(df=3.1, nc=0.3, moments='mvsk')
         assert_(np.isfinite([m, v, s]).all())
         assert_equal(k, np.nan)
 
@@ -1617,7 +1617,7 @@ class TestSubclassingExplicitShapes(TestCase):
 
     def test_wrong_shapes_2(self):
         dummy_distr = _distr_gen(name='dummy', shapes='a, b, c')
-        dct =dict(a=1, b=2, c=3)
+        dct = dict(a=1, b=2, c=3)
         assert_raises(TypeError, dummy_distr.pdf, 1, **dct)
 
     def test_shapes_string(self):
@@ -1655,7 +1655,6 @@ class TestSubclassingExplicitShapes(TestCase):
         dct = dict(name='dummy', shapes='a, b, c, lambda')
         assert_raises(SyntaxError, _distr_gen, **dct)
 
-
     def test_shapes_signature(self):
         # test explicit shapes which agree w/ the signature of _pdf
         class _dist_gen(stats.rv_continuous):
@@ -1665,7 +1664,6 @@ class TestSubclassingExplicitShapes(TestCase):
         dist = _dist_gen(shapes='a')
         assert_equal(dist.pdf(0.5, a=2), stats.norm.pdf(0.5)*2)
 
-
     def test_shapes_signature_inconsistent(self):
         # test explicit shapes which do not agree w/ the signature of _pdf
         class _dist_gen(stats.rv_continuous):
@@ -1674,7 +1672,6 @@ class TestSubclassingExplicitShapes(TestCase):
 
         dist = _dist_gen(shapes='a, b')
         assert_raises(TypeError, dist.pdf, 0.5, **dict(a=1, b=2))
-
 
     def test_star_args(self):
         # test _pdf with only starargs
@@ -1715,7 +1712,6 @@ class TestSubclassingExplicitShapes(TestCase):
 
         dist = _distr_gen(shapes='extra_kwarg')
         assert_equal(dist.pdf(1, extra_kwarg=3), stats.norm.pdf(1))
-
 
     def shapes_empty_string(self):
         # shapes='' is equivalent to shapes=None
@@ -1798,7 +1794,7 @@ def test_docstrings():
         dist = getattr(stats, distname)
         if isinstance(dist, (stats.rv_discrete, stats.rv_continuous)):
             for regex in badones:
-                assert_( re.search(regex, dist.__doc__) is None)
+                assert_(re.search(regex, dist.__doc__) is None)
 
 
 if __name__ == "__main__":

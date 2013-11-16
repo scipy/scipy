@@ -35,6 +35,7 @@ class MatWriteError(Exception):
 class MatReadWarning(UserWarning):
     pass
 
+
 doc_dict = \
     {'file_arg':
          '''file_name : str
@@ -300,7 +301,7 @@ def matdims(arr, oned_as='column'):
     shape = arr.shape
     if shape == ():  # scalar
         return (1,1)
-    if reduce(operator.mul, shape) == 0: # zero elememts
+    if reduce(operator.mul, shape) == 0:  # zero elememts
         return (0,) * np.max([arr.ndim, 2])
     if len(shape) == 1:  # 1D
         if oned_as == 'column':

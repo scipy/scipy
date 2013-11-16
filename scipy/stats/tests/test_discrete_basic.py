@@ -28,7 +28,7 @@ distdiscrete = [
     ['poisson', (0.6,)],
     ['randint', (7, 31)],
     ['skellam', (15, 8)],
-    ['zipf',     (6.5,)]
+    ['zipf', (6.5,)]
 ]
 
 
@@ -349,6 +349,7 @@ def check_scale_docstring(distfn):
     if distfn.__doc__ is not None:
         # Docstrings can be stripped if interpreter is run with -OO
         npt.assert_('scale' not in distfn.__doc__)
+
 
 def check_private_entropy(distfn, args):
     # compare a generic _entropy with the distribution-specific implementation

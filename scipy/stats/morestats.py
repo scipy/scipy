@@ -460,6 +460,7 @@ def ppcc_max(x, brack=(0.0,1.0), dist='tukeylambda'):
     dist = _parse_dist_kw(dist)
     osm_uniform = _calc_uniform_order_statistic_medians(x)
     osr = sort(x)
+
     # this function computes the x-axis values of the probability plot
     #  and computes a linear regression (including the correlation)
     #  and returns 1-r so that a minimization function maximizes the

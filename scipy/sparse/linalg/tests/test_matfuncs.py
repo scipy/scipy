@@ -28,6 +28,7 @@ from scipy.misc import factorial
 import scipy.sparse
 import scipy.sparse.linalg
 
+
 def _burkardt_13_power(n, p):
     """
     A helper function for testing matrix functions.
@@ -334,9 +335,9 @@ class TestExpM(TestCase):
             [4, 4, 16],
             ], dtype=float)
         desired = np.array([
-            [13*exp16 - exp4, 13*exp16 - 5*exp4,  2*exp16 - 2*exp4],
+            [13*exp16 - exp4, 13*exp16 - 5*exp4, 2*exp16 - 2*exp4],
             [-9*exp16 + exp4, -9*exp16 + 5*exp4, -2*exp16 + 2*exp4],
-            [16*exp16,        16*exp16,           4*exp16         ],
+            [16*exp16, 16*exp16, 4*exp16],
             ], dtype=float) * 0.25
         actual = expm(A)
         assert_allclose(actual, desired)

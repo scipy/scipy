@@ -10,7 +10,6 @@ from numpy.testing import (Tester, TestCase, assert_allclose)
 import scipy.sparse
 
 
-
 class BenchmarkOneNormEst(TestCase):
 
     def bench_onenormest(self):

@@ -8,8 +8,8 @@ def check_normalization(distfn, args, distname):
     norm_moment = distfn.moment(0, *args)
     npt.assert_allclose(norm_moment, 1.0)
 
-    # this is a temporary plug: either ncf or expect is problematic; 
-	# best be marked as a knownfail, but I've no clue how to do it.
+    # this is a temporary plug: either ncf or expect is problematic;
+    # best be marked as a knownfail, but I've no clue how to do it.
     if distname == "ncf":
         atol, rtol = 1e-5, 0
     else:
@@ -58,7 +58,7 @@ def check_var_expect(distfn, arg, m, v, msg):
 def check_skew_expect(distfn, arg, m, v, s, msg):
     if np.isfinite(s):
         m3e = distfn.expect(lambda x: np.power(x-m, 3), arg)
-        npt.assert_almost_equal(m3e, s * np.power(v, 1.5), 
+        npt.assert_almost_equal(m3e, s * np.power(v, 1.5),
                 decimal=5, err_msg=msg + ' - skew')
     else:
         npt.assert_(np.isnan(s))
@@ -71,4 +71,3 @@ def check_kurt_expect(distfn, arg, m, v, k, msg):
                 err_msg=msg + ' - kurtosis')
     else:
         npt.assert_(np.isnan(k))
-

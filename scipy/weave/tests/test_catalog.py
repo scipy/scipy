@@ -17,6 +17,7 @@ from weave_test_utils import clear_temp_catalog, restore_temp_catalog, \
 skip_on_windows = dec.skipif(sys.platform == 'win32',
                              "Test works only on posix")
 
+
 def samefile(a, b):
     try:
         return os.path.samefile(a, b)
