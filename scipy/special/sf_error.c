@@ -5,10 +5,6 @@
 
 #include "sf_error.h"
 
-#if PY_VERSION_HEX < 0x02050000
-  #define PyErr_WarnEx(category, message, stacklevel) PyErr_Warn(category, message)
-#endif
-
 const char *sf_error_messages[] = {
     "no error",
     "singularity",
