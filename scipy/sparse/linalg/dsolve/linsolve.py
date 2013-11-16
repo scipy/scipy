@@ -90,11 +90,17 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     # b is a vector only if b have shape (n,) or (n, 1)
     b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
+    b_is_sparse_matrix = isspmatrix(b)
 
-    if not (b_is_vector or isspmatrix_csc(b) or isspmatrix_csr(b)):
-        b = csc_matrix(b)
-        warn('spsolve requires b be CSC or CSR matrix format',
-                SparseEfficiencyWarning)
+    if b_is_vector:
+        if b_is_sparse_matrix:
+            b = b.toarray()
+    else:
+        if not (isspmatrix_csc(b) or isspmatrix_csr(b)):
+            warn('spsolve requires b be CSC or CSR matrix format',
+                    SparseEfficiencyWarning)
+            if b_is_sparse_matrix:
+                b = csc_matrix(b)
 
     A.sort_indices()
     A = A.asfptype()  # upcast to a floating point format
@@ -118,7 +124,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             raise ValueError("convert matrix data to double, please, using"
                   " .astype(), or set linsolve.useUmfpack = False")
 
-        b = asarray(b, dtype=A.dtype).reshape(-1)
+        b = asarray(b, dtype=A.dtype).ravel()
 
         family = {'d': 'di', 'D': 'zi'}
         umf = umfpack.UmfpackContext(family[A.dtype.char])
@@ -134,7 +140,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             A = csc_matrix(A)
             flag = 1
 
-        b = asarray(b, dtype=A.dtype)
+        b = asarray(b, dtype=A.dtype).ravel()
         options = dict(ColPerm=permc_spec)
         x = _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr, b, flag,
                           options=options)[0]
@@ -144,7 +150,8 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         tempj = empty(M, dtype=int)
         x = A.__class__(b.shape)
         for j in range(b.shape[1]):
-            xj = Afactsolve(ravel(b[:, j].toarray()))
+            xj = Afactsolve(ravel(b[:, j].toarray() if b_is_sparse_matrix else
+                                  b[:, j]))
             w = where(xj != 0.0)[0]
             tempj.fill(j)
             x = x + A.__class__((xj[w], (w, tempj[:len(w)])),
