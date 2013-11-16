@@ -27,6 +27,7 @@ test3 = os.path.join(data_path, 'test3.arff')
 
 test4 = pjoin(data_path, 'test4.arff')
 test5 = pjoin(data_path, 'test5.arff')
+test6 = pjoin(data_path, 'test6.arff')
 expect4_data = [(0.1, 0.2, 0.3, 0.4, 'class1'),
         (-0.1, -0.2, -0.3, -0.4, 'class2'),
         (1, 2, 3, 4, 'class3')]
@@ -47,6 +48,10 @@ class DataTest(TestCase):
     def test2(self):
         """Parsing trivial file with some comments in the data section."""
         self._test(test5)
+
+    def test3(self):
+        """Parsing trivial file with nominal attribute of 1 character."""
+        self._test(test6)
 
     def _test(self, test_file):
         data, meta = loadarff(test_file)
