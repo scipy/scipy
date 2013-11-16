@@ -93,7 +93,7 @@ the specified type.
 static int
 satisfies(PyArrayObject *a, int requirements, NumarrayType t)
 {
-        int type_ok = (a->descr->type_num == t) || (t == tAny);
+        int type_ok = (t == tAny) || PyArray_EquivTypenums(a->descr->type_num, t);
 
         if (PyArray_ISCARRAY(a))
                 return type_ok;

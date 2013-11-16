@@ -156,7 +156,7 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
     for(jj = 0; jj < size; jj++) {
         int pchange = 0;
         if (mask) {
-            switch(mask->descr->type_num) {
+            switch(NI_NormalizeType(mask->descr->type_num)) {
             CASE_GET_MASK(msk_value, pm, Bool);
             CASE_GET_MASK(msk_value, pm, UInt8);
             CASE_GET_MASK(msk_value, pm, UInt16);
@@ -175,7 +175,7 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
                 return 0;
             }
         }
-        switch (input->descr->type_num) {
+        switch (NI_NormalizeType(input->descr->type_num)) {
         CASE_NI_ERODE_POINT(pi, out, oo, struct_size, Bool, msk_value,
                                                 bdr_value, border_flag_value, center_is_true,
                                                 true, false, pchange);
@@ -215,7 +215,7 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
             goto exit;
         }
-        switch (output->descr->type_num) {
+        switch (NI_NormalizeType(output->descr->type_num)) {
         CASE_OUTPUT(po, out, Bool);
         CASE_OUTPUT(po, out, UInt8);
         CASE_OUTPUT(po, out, UInt16);
@@ -397,7 +397,7 @@ int NI_BinaryErosion2(PyArrayObject* array, PyArrayObject* strct,
         NI_ITERATOR_GOTO(ii, current_coordinates1, ibase, pi);
         NI_FILTER_GOTO(fi, ii, 0, oo);
 
-        switch (array->descr->type_num) {
+        switch (NI_NormalizeType(array->descr->type_num)) {
         CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
                                             oo, array->nd, list1, list2, current_coordinates1,
                                             current_coordinates2, block1, block2,
