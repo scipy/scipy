@@ -360,17 +360,17 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
         default:
             break;
         }
-        if (input->descr->type_num == tComplex64 ||
-                input->descr->type_num == tComplex128) {
+        if (NI_NormalizeType(input->descr->type_num) == tComplex64 ||
+                NI_NormalizeType(input->descr->type_num) == tComplex128) {
             double tmp_r = 0.0, tmp_i = 0.0;
-            switch (input->descr->type_num) {
+            switch (NI_NormalizeType(input->descr->type_num)) {
                 CASE_FOURIER_FILTER_RC(pi, tmp, tmp_r, tmp_i, Complex64);
                 CASE_FOURIER_FILTER_RC(pi, tmp, tmp_r, tmp_i, Complex128);
             default:
                 PyErr_SetString(PyExc_RuntimeError, "data type not supported");
                 goto exit;
             }
-            switch (output->descr->type_num) {
+            switch (NI_NormalizeType(output->descr->type_num)) {
                 CASE_FOURIER_OUT_CC(po, tmp_r, tmp_i, Complex64);
                 CASE_FOURIER_OUT_CC(po, tmp_r, tmp_i, Complex128);
             default:
@@ -378,7 +378,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
                 goto exit;
             }
         } else {
-            switch (input->descr->type_num) {
+            switch (NI_NormalizeType(input->descr->type_num)) {
                 CASE_FOURIER_FILTER_RR(pi, tmp, Bool)
                 CASE_FOURIER_FILTER_RR(pi, tmp, UInt8)
                 CASE_FOURIER_FILTER_RR(pi, tmp, UInt16)
@@ -396,7 +396,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
                 PyErr_SetString(PyExc_RuntimeError, "data type not supported");
                 goto exit;
             }
-            switch (output->descr->type_num) {
+            switch (NI_NormalizeType(output->descr->type_num)) {
                 CASE_FOURIER_OUT_RR(po, tmp, Float32);
                 CASE_FOURIER_OUT_RR(po, tmp, Float64);
                 CASE_FOURIER_OUT_RC(po, tmp, Complex64);
@@ -508,7 +508,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
                 tmp += params[kk][ii.coordinates[kk]];
         sint = sin(tmp);
         cost = cos(tmp);
-        switch (input->descr->type_num) {
+        switch (NI_NormalizeType(input->descr->type_num)) {
             CASE_FOURIER_SHIFT_R(pi, tmp, r, i, cost, sint, Bool)
             CASE_FOURIER_SHIFT_R(pi, tmp, r, i, cost, sint, UInt8)
             CASE_FOURIER_SHIFT_R(pi, tmp, r, i, cost, sint, UInt16)
@@ -528,7 +528,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
             goto exit;
         }
-        switch (output->descr->type_num) {
+        switch (NI_NormalizeType(output->descr->type_num)) {
             CASE_FOURIER_OUT_CC(po, r, i, Complex64);
             CASE_FOURIER_OUT_CC(po, r, i, Complex128);
         default:

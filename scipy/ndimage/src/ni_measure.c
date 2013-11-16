@@ -96,7 +96,7 @@ int NI_FindObjects(PyArrayObject* input, npy_intp max_label,
     }
     /* iterate over all points: */
     for(jj = 0 ; jj < size; jj++) {
-        switch (input->descr->type_num) {
+        switch (NI_NormalizeType(input->descr->type_num)) {
         CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
                                                      max_label, ii,  Bool);
         CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
@@ -347,7 +347,7 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
     }
     /* iterate over array: */
     for(jj = 0; jj < size; jj++) {
-        NI_GET_LABEL(pm, label, labels->descr->type_num);
+        NI_GET_LABEL(pm, label, NI_NormalizeType(labels->descr->type_num));
         if (min_label >= 0) {
             if (label >= min_label && label <= max_label) {
                 idx = indices[label - min_label];
@@ -360,7 +360,7 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
         }
         if (doit) {
             double val;
-            NI_GET_VALUE(pi, val, input->descr->type_num);
+            NI_GET_VALUE(pi, val, NI_NormalizeType(input->descr->type_num));
             if (sum)
                 sum[idx] += val;
             if (total)
@@ -411,7 +411,7 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
                 pm = (void *)PyArray_DATA(labels);
             }
             for(jj = 0; jj < size; jj++) {
-                NI_GET_LABEL(pm, label, labels->descr->type_num);
+                NI_GET_LABEL(pm, label, NI_NormalizeType(labels->descr->type_num));
                 if (min_label >= 0) {
                     if (label >= min_label && label <= max_label) {
                         idx = indices[label - min_label];
@@ -424,7 +424,7 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
                 }
                 if (doit) {
                     double val;
-                    NI_GET_VALUE(pi, val, input->descr->type_num);
+                    NI_GET_VALUE(pi, val, NI_NormalizeType(input->descr->type_num));
                     val = val - sum[idx] / total[idx];
                     variance[idx] += val * val;
                 }
@@ -479,7 +479,7 @@ int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels,
     }
     /* iterate over array: */
     for(jj = 0; jj < size; jj++) {
-        NI_GET_LABEL(pm, label, labels->descr->type_num);
+        NI_GET_LABEL(pm, label, NI_NormalizeType(labels->descr->type_num));
         if (min_label >= 0) {
             if (label >= min_label && label <= max_label) {
                 idx = indices[label - min_label];
@@ -492,7 +492,7 @@ int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels,
         }
         if (doit) {
             double val;
-            NI_GET_VALUE(pi, val, input->descr->type_num);
+            NI_GET_VALUE(pi, val, NI_NormalizeType(input->descr->type_num));
             sum[idx] += val;
             for(kk = 0; kk < input->nd; kk++)
                 center_of_mass[idx * input->nd + kk] += val * ii.coordinates[kk];
@@ -552,7 +552,7 @@ int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
         size *= input->dimensions[qq];
     /* iterate over array: */
     for(jj = 0; jj < size; jj++) {
-        NI_GET_LABEL(pm, label, labels->descr->type_num);
+        NI_GET_LABEL(pm, label, NI_NormalizeType(labels->descr->type_num));
         if (min_label >= 0) {
             if (label >= min_label && label <= max_label) {
                 idx = indices[label - min_label];
@@ -566,7 +566,7 @@ int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
         if (doit) {
             int bin;
             double val;
-            NI_GET_VALUE(pi, val, input->descr->type_num);
+            NI_GET_VALUE(pi, val, NI_NormalizeType(input->descr->type_num));
             if (val >= min && val < max) {
                 bin = (int)((val - min) / bsize);
                 ++(ph[idx][bin]);
@@ -692,7 +692,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     maxval = 0;
     for(jj = 0; jj < size; jj++) {
         int ival = 0;
-        switch(input->descr->type_num) {
+        switch(NI_NormalizeType(input->descr->type_num)) {
         CASE_GET_INPUT(ival, pi, UInt8);
         CASE_GET_INPUT(ival, pi, UInt16);
         default:
@@ -731,7 +731,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     for(jj = 0; jj < size; jj++) {
         /* get marker */
         int label = 0;
-        switch(markers->descr->type_num) {
+        switch(NI_NormalizeType(markers->descr->type_num)) {
         CASE_GET_LABEL(label, pm, UInt8);
         CASE_GET_LABEL(label, pm, UInt16);
         CASE_GET_LABEL(label, pm, UInt32);
@@ -746,7 +746,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
             goto exit;
         }
-        switch(output->descr->type_num) {
+        switch(NI_NormalizeType(output->descr->type_num)) {
         CASE_PUT_LABEL(label, pl, UInt8);
         CASE_PUT_LABEL(label, pl, UInt16);
         CASE_PUT_LABEL(label, pl, UInt32);
@@ -869,7 +869,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
                     if (!(p->done)) {
                         /* If the neighbor was not processed yet: */
                         int max, pval, vval, wvp, pcost, label, p_idx, v_idx;
-                        switch(input->descr->type_num) {
+                        switch(NI_NormalizeType(input->descr->type_num)) {
                         CASE_WINDEX1(v_index, p_index, strides, input->strides,
                                                  input->nd, i_contiguous, p_idx, v_idx, pi,
                                                  vval, pval, UInt8);
@@ -894,7 +894,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
                                  adapt the cost and the label of the neighbor: */
                             int idx;
                             p->cost = max;
-                            switch(output->descr->type_num) {
+                            switch(NI_NormalizeType(output->descr->type_num)) {
                             CASE_WINDEX2(v_index, strides, output->strides, input->nd,
                                                      idx, o_contiguous, label, pl, UInt8);
                             CASE_WINDEX2(v_index, strides, output->strides, input->nd,
@@ -918,7 +918,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
                                                                 "data type not supported");
                                 goto exit;
                             }
-                            switch(output->descr->type_num) {
+                            switch(NI_NormalizeType(output->descr->type_num)) {
                             CASE_WINDEX3(p_index, strides, output->strides, input->nd,
                                                      idx, o_contiguous, label, pl, UInt8);
                             CASE_WINDEX3(p_index, strides, output->strides, input->nd,
