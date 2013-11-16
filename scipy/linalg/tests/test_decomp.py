@@ -24,6 +24,7 @@ from scipy.linalg import eig, eigvals, lu, svd, svdvals, cholesky, qr, \
      qz
 from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
      dsbev, dsbevd, dsbevx, zhbevd, zhbevx
+from scipy.linalg.misc import norm
 
 from numpy import array, transpose, sometrue, diag, ones, linalg, \
      argsort, zeros, arange, float32, complex64, dot, conj, identity, \
@@ -204,6 +205,11 @@ class TestEig(object):
 
         assert_array_almost_equal(sort(w[isfinite(w)]), sort(wt[isfinite(wt)]),
                                   err_msg=msg)
+
+        length = np.empty(len(vr))
+        for i in xrange(len(vr)):
+            length[i] = norm(vr[:, i])
+        assert_array_almost_equal(length, np.ones(length.size), err_msg=msg)
 
     def test_singular(self):
         """Test singular pair"""

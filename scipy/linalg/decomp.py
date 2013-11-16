@@ -21,8 +21,9 @@ import numpy
 from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, \
         isfinite, inexact, nonzero, iscomplexobj, cast, flatnonzero, conj
 # Local imports
+from scipy.lib.six import xrange
 from scipy.linalg import calc_lwork
-from .misc import LinAlgError, _datacopied
+from .misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs
 from .blas import get_blas_funcs
 
@@ -71,6 +72,12 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b):
             vl = _make_complex_eigvecs(w, vl, t)
         if right:
             vr = _make_complex_eigvecs(w, vr, t)
+
+    # the eigenvectors returned rfom the lapack function are NOT normalized
+    for i in xrange(vr.shape[0]):
+        vr[:, i] /= norm(vr[:, i])
+        vl[:, i] /= norm(vl[:, i])
+
     if not (left or right):
         return w
     if left:
