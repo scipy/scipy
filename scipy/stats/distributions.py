@@ -30,7 +30,6 @@ from numpy import (atleast_1d, polyval, ceil, place, extract,
 
 import numpy as np
 import numpy.random as mtrand
-from numpy import flatnonzero as nonzero
 from . import vonmises_cython
 from ._tukeylambda_stats import tukeylambda_variance as _tlvar, \
                                 tukeylambda_kurtosis as _tlkurt

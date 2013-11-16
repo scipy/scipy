@@ -177,7 +177,7 @@ pysum = sum  # save it before it gets overwritten
 
 # Scipy imports.
 from scipy.lib.six import callable, string_types
-from numpy import array, asarray, dot, ma, zeros, sum
+from numpy import array, asarray, ma, zeros, sum
 import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
@@ -187,7 +187,7 @@ from . import distributions
 
 from ._rank import rankdata, tiecorrect
 
-__all__ = ['find_repeats', 'gmean', 'hmean', 'cmedian', 'mode',
+__all__ = ['find_repeats', 'gmean', 'hmean', 'mode',
            'tmean', 'tvar', 'tmin', 'tmax', 'tstd', 'tsem',
            'moment', 'variation', 'skew', 'kurtosis', 'describe',
            'skewtest', 'kurtosistest', 'normaltest', 'jarque_bera',
@@ -201,8 +201,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'cmedian', 'mode',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'zprob', 'chisqprob', 'ksprob', 'fprob', 'betai',
-           'glm', 'f_value_wilks_lambda',
-           'f_value', 'f_value_multivariate',
+           'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
            'ss', 'square_of_sums',
            'fastsort', 'rankdata',
            'nanmean', 'nanstd', 'nanmedian',
@@ -564,66 +563,6 @@ def hmean(a, axis=0, dtype=None):
         return size / np.sum(1.0/a, axis=axis, dtype=dtype)
     else:
         raise ValueError("Harmonic mean only defined if all elements greater than zero")
-
-
-@np.deprecate(message="Deprecated in scipy 0.13.0 - use numpy.median instead.")
-def cmedian(a, numbins=1000):
-    """
-    Returns the computed median value of an array.
-
-    All of the values in the input array are used. The input array is first
-    histogrammed using `numbins` bins. The bin containing the median is
-    selected by searching for the halfway point in the cumulative histogram.
-    The median value is then computed by linearly interpolating across that
-    bin.
-
-    Parameters
-    ----------
-    a : array_like
-        Input array.
-    numbins : int
-        The number of bins used to histogram the data. More bins give greater
-        accuracy to the approximation of the median.
-
-    Returns
-    -------
-    cmedian : float
-        An approximation of the median.
-
-    References
-    ----------
-    [CRCProbStat2000]_ Section 2.2.6
-
-    .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
-       Probability and Statistics Tables and Formulae. Chapman & Hall: New
-       York. 2000.
-
-    """
-    # TODO: numpy.median() always seems to be a better choice.
-    # A better version of this function would take already-histogrammed data
-    # and compute the median from that.
-    a = np.ravel(a)
-    n = float(len(a))
-
-    # We will emulate the (fixed!) bounds selection scheme used by
-    # scipy.stats.histogram(), but use numpy.histogram() since it is faster.
-    amin = a.min()
-    amax = a.max()
-    estbinwidth = (amax - amin)/float(numbins - 1)
-    binsize = (amax - amin + estbinwidth) / float(numbins)
-    (hist, bins) = np.histogram(a, numbins,
-        range=(amin-binsize*0.5, amax+binsize*0.5))
-    binsize = bins[1] - bins[0]
-    cumhist = np.cumsum(hist)           # make cumulative histogram
-    cfbin = np.searchsorted(cumhist, n/2.0)
-    LRL = bins[cfbin]      # get lower read limit of that bin
-    if cfbin == 0:
-        cfbelow = 0.0
-    else:
-        cfbelow = cumhist[cfbin-1]       # cum. freq. below bin
-    freq = hist[cfbin]                  # frequency IN the 50%ile bin
-    median = LRL + ((n/2.0-cfbelow)/float(freq))*binsize  # MEDIAN
-    return median
 
 
 def mode(a, axis=0):
@@ -4228,94 +4167,10 @@ def betai(a, b, x):
     x = np.where(x < 1.0, x, 1.0)  # if x > 1 then return 1.0
     return special.betainc(a, b, x)
 
+
 #####################################
 #######  ANOVA CALCULATIONS  #######
 #####################################
-
-
-_msg = """`glm` is deprecated in scipy 0.13.0 and will be removed in 0.14.0.
-Use `ttest_ind` for the same functionality in scipy.stats, or `statsmodels.OLS`
-for a more full-featured general linear model."""
-
-
-@np.deprecate_with_doc(_msg)
-def glm(data, para):
-    """
-    Calculates a linear model fit ...
-    anova/ancova/lin-regress/t-test/etc. Taken from:
-
-    Returns
-    -------
-    statistic, p-value ???
-
-    References
-    ----------
-    Peterson et al. Statistical limitations in functional neuroimaging
-    I. Non-inferential methods and statistical models.  Phil Trans Royal Soc
-    Lond B 354: 1239-1260.
-
-    """
-    def _unique_rows(inarray):
-        """Returns unique items in the FIRST dimension of the passed array. Only
-        works on arrays NOT including string items (e.g., type 'O' or 'c').
-        """
-        inarray = asarray(inarray)
-        uniques = np.array([inarray[0]])
-        if len(uniques.shape) == 1:            # IF IT'S A 1D ARRAY
-            for item in inarray[1:]:
-                if np.add.reduce(np.equal(uniques,item).flat) == 0:
-                    try:
-                        uniques = np.concatenate([uniques,np.array[np.newaxis,:]])
-                    except TypeError:
-                        uniques = np.concatenate([uniques,np.array([item])])
-        else:                                  # IT MUST BE A 2+D ARRAY
-            if inarray.dtype.char != 'O':  # not an Object array
-                for item in inarray[1:]:
-                    if not np.sum(np.alltrue(np.equal(uniques,item),1),axis=0):
-                        try:
-                            uniques = np.concatenate([uniques,item[np.newaxis,:]])
-                        except TypeError:    # the item to add isn't a list
-                            uniques = np.concatenate([uniques,np.array([item])])
-                    else:
-                        pass  # this item is already in the uniques array
-            else:   # must be an Object array, alltrue/equal functions don't work
-                for item in inarray[1:]:
-                    newflag = 1
-                    for unq in uniques:  # NOTE: cmp --> 0=same, -1=<, 1=>
-                        test = np.sum(abs(np.array(list(map(cmp,item,unq)))),axis=0)
-                        if test == 0:   # if item identical to any 1 row in uniques
-                            newflag = 0  # then not a novel item to add
-                            break
-                    if newflag == 1:
-                        try:
-                            uniques = np.concatenate([uniques,item[np.newaxis,:]])
-                        except TypeError:    # the item to add isn't a list
-                            uniques = np.concatenate([uniques,np.array([item])])
-        return uniques
-
-    if len(para) != len(data):
-        raise ValueError("data and para must be same length in aglm")
-    n = len(para)
-    p = _unique_rows(para)
-    x = zeros((n,len(p)))  # design matrix
-    for l in range(len(p)):
-        x[:,l] = para == p[l]
-    # fixme: normal equations are bad. Use linalg.lstsq instead.
-    b = dot(dot(linalg.inv(dot(np.transpose(x),x)),  # i.e., b=inv(X'X)X'Y
-                    np.transpose(x)),data)
-    diffs = (data - dot(x,b))
-    s_sq = 1./(n-len(p)) * dot(np.transpose(diffs), diffs)
-
-    if len(p) == 2:  # ttest_ind
-        c = array([1,-1])
-        df = n-2
-        fact = np.sum(1.0/np.sum(x,0),axis=0)  # i.e., 1/n1 + 1/n2 + 1/n3 ...
-        t = dot(c,b) / np.sqrt(s_sq*fact)
-        probs = betai(0.5*df,0.5,float(df)/(df+t*t))
-        return t, probs
-    else:
-        raise ValueError("only ttest_ind implemented")
-
 
 def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
     """Calculation of Wilks lambda F-statistic for multivarite data, per
