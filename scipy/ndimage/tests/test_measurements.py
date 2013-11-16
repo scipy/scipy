@@ -343,6 +343,14 @@ def test_label_structuring_elements():
             r += 1
 
 
+def test_label_default_dtype():
+    test_array = np.random.rand(10, 10)
+    label, no_features = ndimage.label(test_array > 0.5)
+    assert_(label.dtype in (np.int32, np.int64))
+    # Shouldn't raise an exception
+    ndimage.find_objects(label)
+
+
 def test_find_objects01():
     "find_objects 1"
     data = np.ones([], dtype=int)
