@@ -112,11 +112,11 @@ finally:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/0.13.0-notes.rst'
+RELEASE = 'doc/release/0.13.1-notes.rst'
 
 # Start/end of the log (from git)
 LOG_START = 'v0.12.0'
-LOG_END = 'v0.13.0'
+LOG_END = 'v0.13.1'
 
 
 #-------------------------------------------------------
@@ -491,8 +491,10 @@ def bdist_mpkg():
 def _build_mpkg(pyver):
     numver = parse_numpy_version(MPKG_PYTHON[pyver])
     numverstr = ".".join(["%i" % i for i in numver])
-    if not numver == (1, 5, 1):
-        raise ValueError("Scipy 0.9.x should be built against numpy 1.5.1, (detected %s)" % numverstr)
+    if pyver[0] == '2' and (not numver == (1, 5, 1)):
+        raise ValueError("Scipy 0.13.x should be built against numpy 1.5.1, (detected %s)" % numverstr)
+    elif pyver[0] == '3' and (not numver == (1, 7, 1)):
+        raise ValueError("Scipy 0.13.x should be built against numpy 1.7.1, (detected %s)" % numverstr)
 
     prepare_static_gfortran_runtime("build")
     # account for differences between Python 2.7.1 versions from python.org
@@ -502,8 +504,6 @@ def _build_mpkg(pyver):
         ldflags = "-undefined dynamic_lookup -bundle -arch i386 -arch ppc -Wl,-search_paths_first"
     ldflags += " -L%s" % os.path.join(os.path.dirname(__file__), "build")
 
-    if pyver == "2.5":
-        sh("CC=gcc-4.0 LDFLAGS='%s' %s setupegg.py bdist_mpkg" % (ldflags, MPKG_PYTHON[pyver]))
     sh("LDFLAGS='%s' %s setupegg.py bdist_mpkg" % (ldflags, MPKG_PYTHON[pyver]))
 
 
