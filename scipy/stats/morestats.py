@@ -336,7 +336,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     Notes
     -----
     Even if `plot` is given, the figure is not shown or saved by `probplot`;
-    ``plot.show()`` or ``plot.savefig('figname.png')`` should be used after
+    ``plt.show()`` or ``plt.savefig('figname.png')`` should be used after
     calling `probplot`.
 
     `probplot` generates a probability plot, which should not be confused with
@@ -534,7 +534,7 @@ def boxcox_llf(lmb, data):
     >>> np.random.seed(1245)
 
     Generate some random variates and calculate Box-Cox log-likelihood values
-    for them for a range of ``lmbda``s:
+    for them for a range of ``lmbda`` values:
 
     >>> x = stats.loggamma.rvs(5, loc=10, size=1000)
     >>> lmbdas = np.linspace(-2, 10)
@@ -587,28 +587,33 @@ def boxcox_llf(lmb, data):
 def _boxcox_conf_interval(x, lmax, alpha):
     # Need to find the lambda for which
     #  f(x,lmbda) >= f(x,lmax) - 0.5*chi^2_alpha;1
-    fac = 0.5*distributions.chi2.ppf(1-alpha,1)
-    target = boxcox_llf(lmax,x)-fac
+    fac = 0.5 * distributions.chi2.ppf(1 - alpha, 1)
+    target = boxcox_llf(lmax, x) - fac
 
-    def rootfunc(lmbda,data,target):
-        return boxcox_llf(lmbda,data) - target
+    def rootfunc(lmbda, data, target):
+        return boxcox_llf(lmbda, data) - target
+
     # Find positive endpont
-    newlm = lmax+0.5
+    newlm = lmax + 0.5
     N = 0
-    while (rootfunc(newlm,x,target) > 0.0) and (N < 500):
+    while (rootfunc(newlm, x, target) > 0.0) and (N < 500):
         newlm += 0.1
         N += 1
+
     if N == 500:
         raise RuntimeError("Could not find endpoint.")
-    lmplus = optimize.brentq(rootfunc,lmax,newlm,args=(x,target))
-    newlm = lmax-0.5
+
+    lmplus = optimize.brentq(rootfunc, lmax, newlm, args=(x, target))
+    newlm = lmax - 0.5
     N = 0
-    while (rootfunc(newlm,x,target) > 0.0) and (N < 500):
+    while (rootfunc(newlm, x, target) > 0.0) and (N < 500):
         newlm += 0.1
         N += 1
+
     if N == 500:
         raise RuntimeError("Could not find endpoint.")
-    lmminus = optimize.brentq(rootfunc, newlm, lmax, args=(x,target))
+
+    lmminus = optimize.brentq(rootfunc, newlm, lmax, args=(x, target))
     return lmminus, lmplus
 
 
@@ -715,44 +720,125 @@ def boxcox(x, lmbda=None, alpha=None):
     return y, lmax, interval
 
 
-def boxcox_normmax(x,brack=(-1.0,1.0)):
+def boxcox_normmax(x, brack=(-1.0, 1.0)):
     osm_uniform = _calc_uniform_order_statistic_medians(x)
-    # this function computes the x-axis values of the probability plot
-    #  and computes a linear regression (including the correlation)
-    #  and returns 1-r so that a minimization function maximizes the
-    #  correlation
     xvals = distributions.norm.ppf(osm_uniform)
 
     def tempfunc(lmbda, xvals, samps):
-        y = boxcox(samps,lmbda)
+        """This function computes the x-axis values of the probability plot and
+        computes a linear regression (including the correlation) and returns
+        ``1 - r`` so that a minimization function maximizes the correlation.
+        """
+        y = boxcox(samps, lmbda)
         yvals = sort(y)
         r, prob = stats.pearsonr(xvals, yvals)
-        return 1-r
+        return 1 - r
 
     return optimize.brent(tempfunc, brack=brack, args=(xvals, x))
 
 
-def boxcox_normplot(x,la,lb,plot=None,N=80):
-    svals = r_[la:lb:complex(N)]
-    ppcc = svals*0.0
-    k = 0
-    for sval in svals:
-        # This doesn't use sval, creates constant ppcc, and horizontal line
-        z = boxcox(x,sval)
-        r1,r2 = probplot(z,dist='norm',fit=1)
-        ppcc[k] = r2[-1]
-        k += 1
+def boxcox_normplot(x, la, lb, plot=None, N=80):
+    """Compute parameters for a Box-Cox normality plot, optionally show it.
+
+    A Box-Cox normality plot shows graphically what the best transformation
+    parameter is to use in `boxcox` for obtained a distribution that is close
+    to normal.
+
+    Parameters
+    ----------
+    x : array_like
+        Input array.
+    la, lb : scalar
+        The lower and upper bounds for the ``lmbda`` values to pass to `boxcox`
+        for Box-Cox transformations.  These are also the limits of the
+        horizontal axis of the plot if that is generated.
+    plot : object, optional
+        If given, plots the quantiles and least squares fit.
+        `plot` is an object that has to have methods "plot" and "text".
+        The `matplotlib.pyplot` module or a Matplotlib Axes object can be used,
+        or a custom object with the same methods.
+        Default is None, which means that no plot is created.
+    N : int, optional
+        Number of points on the horizontal axis (equally distributed from
+        `la` to `lb`).
+
+    Returns
+    -------
+    lmbdas : ndarray
+        The ``lmbda`` values for which a Box-Cox transform was done.
+    ppcc : ndarray
+        Probability Plot Correlelation Coefficient, as obtained from `probplot`
+        when fitting the Box-Cox transformed input `x` against a normal
+        distribution.
+
+    See Also
+    --------
+    probplot, boxcox, boxcox_normmax, boxcox_llf, ppcc_max
+
+    Notes
+    -----
+    Even if `plot` is given, the figure is not shown or saved by
+    `boxcox_normplot`; ``plt.show()`` or ``plt.savefig('figname.png')``
+    should be used after calling `probplot`.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    Generate some non-normally distributed data, and create a Box-Cox plot:
+
+    >>> x = stats.loggamma.rvs(5, size=500) + 5
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> stats.boxcox_normplot(x, -20, 20, plot=ax)
+
+    Determine and plot the optimal ``lmbda`` to transform ``x`` and plot it in
+    the same plot:
+
+    >>> _, maxlog = stats.boxcox(x)
+    >>> ax.axvline(maxlog, color='r')
+
+    >>> plt.show()
+
+    """
+    x = np.asarray(x)
+    if x.size == 0:
+        return x
+
+    if lb <= la:
+        raise ValueError("`lb` has to be larger than `la`.")
+
+    lmbdas = np.linspace(la, lb, num=N)
+    ppcc = lmbdas * 0.0
+    for i, val in enumerate(lmbdas):
+        # Determine for each lmbda the correlation coefficient of transformed x
+        z = boxcox(x, lmbda=val)
+        _, r2 = probplot(z, dist='norm', fit=True)
+        ppcc[i] = r2[-1]
 
     if plot is not None:
-        plot.plot(svals, ppcc, 'x')
-        plot.title('Box-Cox Normality Plot')
-        plot.xlabel('Prob Plot Corr. Coef.')
-        plot.ylabel('Transformation parameter')
+        plot.plot(lmbdas, ppcc, 'x')
+        try:
+            if hasattr(plot, 'set_title'):
+                # Matplotlib Axes instance or something that looks like it
+                plot.set_title('Box-Cox Normality Plot')
+                plot.set_ylabel('Prob Plot Corr. Coef.')
+                plot.set_xlabel('$\lambda$')
+            else:
+                # matplotlib.pyplot module
+                plot.title('Box-Cox Normality Plot')
+                plot.ylabel('Prob Plot Corr. Coef.')
+                plot.xlabel('$\lambda$')
+        except:
+            # Not an MPL object or something that looks (enough) like it.
+            # Don't crash on adding labels or title
+            pass
 
-    return svals, ppcc
+    return lmbdas, ppcc
 
 
-def shapiro(x,a=None,reta=False):
+def shapiro(x, a=None, reta=False):
     """
     Perform the Shapiro-Wilk test for normality.
 
