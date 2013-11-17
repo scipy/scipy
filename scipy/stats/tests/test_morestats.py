@@ -565,6 +565,43 @@ class TestBoxcox(TestCase):
         assert_(stats.boxcox([]).shape == (0,))
 
 
+class TestBoxcoxNormplot(TestCase):
+    def setUp(self):
+        np.random.seed(7654321)
+        self.x = stats.loggamma.rvs(5, size=500) + 5
+
+    def test_basic(self):
+        N = 5
+        lmbdas, ppcc = stats.boxcox_normplot(self.x, -10, 10, N=N)
+        ppcc_expected = [0.57783375, 0.83610988, 0.97524311, 0.99756057,
+                         0.95843297]
+        assert_allclose(lmbdas, np.linspace(-10, 10, num=N))
+        assert_allclose(ppcc, ppcc_expected)
+
+    @dec.skipif(not have_matplotlib)
+    def test_plot_kwarg(self):
+        # Check with the matplotlib.pyplot module
+        fig = plt.figure()
+        fig.add_subplot(111)
+        stats.boxcox_normplot(self.x, -20, 20, plot=plt)
+        plt.close()
+
+        # Check that a Matplotlib Axes object is accepted
+        fig.add_subplot(111)
+        ax = fig.add_subplot(111)
+        stats.boxcox_normplot(self.x, -20, 20, plot=ax)
+        plt.close()
+
+    def test_invalid_inputs(self):
+        # `lb` has to be larger than `la`
+        assert_raises(ValueError, stats.boxcox_normplot, self.x, 1, 0)
+        # `x` can not contain negative values
+        assert_raises(ValueError, stats.boxcox_normplot, [-1, 1] , 0, 1)
+
+    def test_empty(self):
+        assert_(stats.boxcox_normplot([], 0, 1).size == 0)
+
+
 class TestCircFuncs(TestCase):
     def test_circfuncs(self):
         x = np.array([355,5,2,359,10,350])
