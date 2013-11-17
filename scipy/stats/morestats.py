@@ -501,7 +501,7 @@ def boxcox_llf(lmb, data):
 
     Parameters
     ----------
-    lmbda : scalar
+    lmb : scalar
         Parameter for Box-Cox transformation.  See `boxcox` for details.
     data : array_like
         Data to calculate Box-Cox log-likelihood for.
@@ -593,7 +593,7 @@ def _boxcox_conf_interval(x, lmax, alpha):
     def rootfunc(lmbda, data, target):
         return boxcox_llf(lmbda, data) - target
 
-    # Find positive endpont
+    # Find positive endpoint of interval in which answer is to be found
     newlm = lmax + 0.5
     N = 0
     while (rootfunc(newlm, x, target) > 0.0) and (N < 500):
@@ -604,10 +604,12 @@ def _boxcox_conf_interval(x, lmax, alpha):
         raise RuntimeError("Could not find endpoint.")
 
     lmplus = optimize.brentq(rootfunc, lmax, newlm, args=(x, target))
+
+    # Now find negative interval in the same way
     newlm = lmax - 0.5
     N = 0
     while (rootfunc(newlm, x, target) > 0.0) and (N < 500):
-        newlm += 0.1
+        newlm -= 0.1
         N += 1
 
     if N == 500:
@@ -618,7 +620,7 @@ def _boxcox_conf_interval(x, lmax, alpha):
 
 
 def boxcox(x, lmbda=None, alpha=None):
-    """
+    r"""
     Return a positive dataset transformed by a Box-Cox power transformation.
 
     Parameters
@@ -633,8 +635,7 @@ def boxcox(x, lmbda=None, alpha=None):
     alpha : {None, float}, optional
         If `alpha` is not None, return the ``100 * (1-alpha)%`` confidence
         interval for `lmbda` as the third output argument.
-
-        If `alpha` is not None it must be between 0.0 and 1.0.
+        Must be between 0.0 and 1.0.
 
     Returns
     -------
@@ -663,6 +664,16 @@ def boxcox(x, lmbda=None, alpha=None):
     transformation provides a shift parameter to achieve this; `boxcox` does
     not.  Such a shift parameter is equivalent to adding a positive constant to
     `x` before calling `boxcox`.
+
+    The confidence limits returned when `alpha` is provided give the interval
+    where:
+
+    .. math::
+
+        llf(\hat{\lambda}) - llf(\lambda) < \frac{1}{2}\chi^2(1 - \alpha, 1),
+
+    with ``llf`` the log-likelihood function and :math:`\chi^2` the chi-squared
+    function.
 
     References
     ----------
@@ -703,7 +714,7 @@ def boxcox(x, lmbda=None, alpha=None):
 
     if lmbda is not None:  # single transformation
         lmbda = lmbda * (x == x)  # equal to ``lmbda * np.ones(x.shape)``
-        y = where(lmbda == 0, log(x), (x**lmbda - 1) / lmbda)
+        y = np.where(lmbda == 0, log(x), (x**lmbda - 1) / lmbda)
         return y
 
     # Otherwise find the lmbda that maximizes the log-likelihood function.
@@ -712,12 +723,13 @@ def boxcox(x, lmbda=None, alpha=None):
 
     lmax = optimize.brent(tempfunc, brack=(-2., 2), args=(x,))
     y = boxcox(x, lmax)
+
     if alpha is None:
         return y, lmax
-
-    # Otherwise find confidence interval
-    interval = _boxcox_conf_interval(x, lmax, alpha)
-    return y, lmax, interval
+    else:
+        # Find confidence interval
+        interval = _boxcox_conf_interval(x, lmax, alpha)
+        return y, lmax, interval
 
 
 def boxcox_normmax(x, brack=(-1.0, 1.0)):

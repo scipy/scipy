@@ -553,8 +553,21 @@ class TestBoxcox(TestCase):
         assert_almost_equal(maxlog, -1 / lmbda, decimal=2)
 
     def test_alpha(self):
-        # TODO
-        pass
+        np.random.seed(1234)
+        x = stats.loggamma.rvs(5, size=50) + 5
+
+        # Some regular values for alpha, on a small sample size
+        _, _, interval = stats.boxcox(x, alpha=0.75)
+        assert_allclose(interval, [4.004485780226041, 5.138756355035744])
+        _, _, interval = stats.boxcox(x, alpha=0.05)
+        assert_allclose(interval, [1.2138178554857557, 8.209033272375663])
+
+        # Try some extreme values, see we don't hit the N=500 limit
+        x = stats.loggamma.rvs(7, size=500) + 15
+        _, _, interval = stats.boxcox(x, alpha=0.001)
+        assert_allclose(interval, [0.3988867, 11.40553131])
+        _, _, interval = stats.boxcox(x, alpha=0.999)
+        assert_allclose(interval, [5.83316246, 5.83735292])
 
     def test_boxcox_bad_arg(self):
         # Raise ValueError if any data value is negative.
