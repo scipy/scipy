@@ -42,15 +42,15 @@ expect_missing['yap'] = expect_missing_raw[:, 1]
 
 class DataTest(TestCase):
     def test1(self):
-        """Parsing trivial file with nothing."""
+        # Parsing trivial file with nothing.
         self._test(test4)
 
     def test2(self):
-        """Parsing trivial file with some comments in the data section."""
+        # Parsing trivial file with some comments in the data section.
         self._test(test5)
 
     def test3(self):
-        """Parsing trivial file with nominal attribute of 1 character."""
+        # Parsing trivial file with nominal attribute of 1 character.
         self._test(test6)
 
     def _test(self, test_file):
@@ -61,7 +61,7 @@ class DataTest(TestCase):
         assert_equal(meta.types(), expected_types)
 
     def test_filelike(self):
-        """Test reading from file-like object (StringIO)"""
+        # Test reading from file-like object (StringIO)
         f1 = open(test1)
         data1, meta1 = loadarff(f1)
         f1.close()
@@ -81,7 +81,7 @@ class MissingDataTest(TestCase):
 
 class HeaderTest(TestCase):
     def test_type_parsing(self):
-        """Test parsing type of attribute from their value."""
+        # Test parsing type of attribute from their value.
         ofile = open(test2)
         rel, attrs = read_header(ofile)
         ofile.close()
@@ -93,7 +93,7 @@ class HeaderTest(TestCase):
             assert_(parse_type(attrs[i][1]) == expected[i])
 
     def test_badtype_parsing(self):
-        """Test parsing wrong type of attribute from their value."""
+        # Test parsing wrong type of attribute from their value.
         ofile = open(test3)
         rel, attrs = read_header(ofile)
         ofile.close()
@@ -102,7 +102,7 @@ class HeaderTest(TestCase):
             assert_raises(ParseArffError, parse_type, value)
 
     def test_fullheader1(self):
-        """Parsing trivial header with nothing."""
+        # Parsing trivial header with nothing.
         ofile = open(test1)
         rel, attrs = read_header(ofile)
         ofile.close()
@@ -115,11 +115,11 @@ class HeaderTest(TestCase):
         for i in range(4):
             assert_(attrs[i][0] == 'attr%d' % i)
             assert_(attrs[i][1] == 'REAL')
-        classes = attrs[4][1]
 
         # Test nominal attribute
         assert_(attrs[4][0] == 'class')
         assert_(attrs[4][1] == '{class0, class1, class2, class3}')
+
 
 if __name__ == "__main__":
     run_module_suite()

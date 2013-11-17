@@ -188,7 +188,6 @@ _symmetric_pattern_example = '''\
 
 class TestMMIOCoordinate(TestCase):
     def test_read_general(self):
-        """read a general matrix"""
         fn = mktemp()
         f = open(fn,'w')
         f.write(_general_example)
@@ -203,7 +202,6 @@ class TestMMIOCoordinate(TestCase):
         assert_array_almost_equal(a,b)
 
     def test_read_hermitian(self):
-        """read a hermitian matrix"""
         fn = mktemp()
         f = open(fn,'w')
         f.write(_hermitian_example)
@@ -218,7 +216,6 @@ class TestMMIOCoordinate(TestCase):
         assert_array_almost_equal(a,b)
 
     def test_read_skew(self):
-        """read a skew-symmetric matrix"""
         fn = mktemp()
         f = open(fn,'w')
         f.write(_skew_example)
@@ -233,7 +230,6 @@ class TestMMIOCoordinate(TestCase):
         assert_array_almost_equal(a,b)
 
     def test_read_symmetric(self):
-        """read a symmetric matrix"""
         fn = mktemp()
         f = open(fn,'w')
         f.write(_symmetric_example)
@@ -248,7 +244,6 @@ class TestMMIOCoordinate(TestCase):
         assert_array_almost_equal(a,b)
 
     def test_read_symmetric_pattern(self):
-        """read a symmetric pattern matrix"""
         fn = mktemp()
         f = open(fn,'w')
         f.write(_symmetric_pattern_example)

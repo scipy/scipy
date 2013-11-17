@@ -38,8 +38,7 @@ test_data_path = pjoin(dirname(__file__), 'data')
 
 
 def mlarr(*args, **kwargs):
-    ''' Convenience function to return matlab-compatible 2D array
-    '''
+    """Convenience function to return matlab-compatible 2D array."""
     arr = np.array(*args, **kwargs)
     arr.shape = matdims(arr)
     return arr
@@ -231,10 +230,10 @@ case_table5_rt.append(
 
 
 def types_compatible(var1, var2):
-    ''' Check if types are same or compatible
+    """Check if types are same or compatible.
 
-    0d numpy scalars are compatible with bare python scalars
-    '''
+    0-D numpy scalars are compatible with bare python scalars.
+    """
     type1 = type(var1)
     type2 = type(var2)
     if type1 is type2:
@@ -448,7 +447,6 @@ def test_warnings():
 
 
 def test_regression_653():
-    """Regression test for #653."""
     assert_raises(TypeError, savemat, BytesIO(), {'d':{1:2}}, format='5')
 
 
@@ -457,7 +455,6 @@ def test_structname_len():
     lim = 31
     fldname = 'a' * lim
     st1 = np.zeros((1,1), dtype=[(fldname, object)])
-    mat_stream = BytesIO()
     savemat(BytesIO(), {'longstruct': st1}, format='5')
     fldname = 'a' * (lim+1)
     st1 = np.zeros((1,1), dtype=[(fldname, object)])
@@ -477,7 +474,6 @@ def test_long_field_names():
     lim = 63
     fldname = 'a' * lim
     st1 = np.zeros((1,1), dtype=[(fldname, object)])
-    mat_stream = BytesIO()
     savemat(BytesIO(), {'longstruct': st1}, format='5',long_field_names=True)
     fldname = 'a' * (lim+1)
     st1 = np.zeros((1,1), dtype=[(fldname, object)])
@@ -494,7 +490,6 @@ def test_long_field_names_in_struct():
     st1 = np.zeros((1,1), dtype=[(fldname, object)])
     cell[0,0] = st1
     cell[0,1] = st1
-    mat_stream = BytesIO()
     savemat(BytesIO(), {'longstruct': cell}, format='5',long_field_names=True)
     #
     # Check to make sure it fails with long field names off
@@ -510,12 +505,10 @@ def test_cell_with_one_thing_in_it():
     cells = np.ndarray((1,2),dtype=object)
     cells[0,0] = 'Hello'
     cells[0,1] = 'World'
-    mat_stream = BytesIO()
     savemat(BytesIO(), {'x': cells}, format='5')
 
     cells = np.ndarray((1,1),dtype=object)
     cells[0,0] = 'Hello, world'
-    mat_stream = BytesIO()
     savemat(BytesIO(), {'x': cells}, format='5')
 
 
@@ -796,7 +789,8 @@ def test_empty_string():
 
 def test_corrupted_data():
     import zlib
-    for exc, fname in [(ValueError, 'corrupted_zlib_data.mat'), (zlib.error, 'corrupted_zlib_checksum.mat')]:
+    for exc, fname in [(ValueError, 'corrupted_zlib_data.mat'),
+                       (zlib.error, 'corrupted_zlib_checksum.mat')]:
         with open(pjoin(test_data_path, fname), 'rb') as fp:
             rdr = MatFile5Reader(fp)
             assert_raises(exc, rdr.get_variables)
@@ -1018,7 +1012,7 @@ def test_varmats_from_mat():
 
 
 def test_one_by_zero():
-    ''' Test 1x0 chars get read correctly '''
+    # Test 1x0 chars get read correctly
     func_eg = pjoin(test_data_path, 'one_by_zero_char.mat')
     fp = open(func_eg, 'rb')
     rdr = MatFile5Reader(fp)
