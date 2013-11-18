@@ -602,10 +602,7 @@ class _TestCommon:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
 
     def test_setdiag(self):
-        #yoh: could not find a better way to deduce 'format' for the
-        #given matrix
-        format_ = self.spmatrix.__module__.split('.')[-1]
-        m = scipy.sparse.identity(3, format=format_)
+        m = self.spmatrix(np.eye(3))
         values = [3, 2, 1]
         # it is out of limits
         assert_raises(ValueError, m.setdiag, values, k=4)
