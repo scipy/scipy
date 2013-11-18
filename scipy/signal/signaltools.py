@@ -8,15 +8,15 @@ import warnings
 from . import sigtools
 from scipy.lib.six import callable
 from scipy import linalg
-from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2, fftn, \
-        ifftn, fftfreq
+from scipy.fftpack import (fft, ifft, ifftshift, fft2, ifft2, fftn,
+                           ifftn, fftfreq)
 from numpy.fft import rfftn, irfftn
-from numpy import polyadd, polymul, polydiv, polysub, roots, \
-        poly, polyval, polyder, cast, asarray, isscalar, atleast_1d, \
-        ones, real_if_close, zeros, array, arange, where, rank, \
-        newaxis, product, ravel, sum, r_, iscomplexobj, take, \
-        argsort, allclose, expand_dims, unique, prod, sort, reshape, \
-        transpose, dot, mean, ndarray, atleast_2d
+from numpy import (allclose, arange, argsort, array, asarray,
+                   atleast_1d, atleast_2d, cast, dot, expand_dims,
+                   iscomplexobj, isscalar, mean, ndarray, newaxis, ones,
+                   poly, polyadd, polyder, polydiv, polymul, polysub, polyval,
+                   prod, product, r_, rank, ravel, real_if_close, reshape,
+                   roots, sort, sum, take, transpose, unique, where, zeros)
 import numpy as np
 from scipy.misc import factorial
 from .windows import get_window
@@ -41,7 +41,7 @@ def _valfrommode(mode):
     except KeyError:
         if mode not in [0, 1, 2]:
             raise ValueError("Acceptable mode flags are 'valid' (0),"
-                    " 'same' (1), or 'full' (2).")
+                             " 'same' (1), or 'full' (2).")
         val = mode
     return val
 
@@ -52,7 +52,8 @@ def _bvalfromboundary(boundary):
     except KeyError:
         if val not in [0, 1, 2]:
             raise ValueError("Acceptable boundary flags are 'fill', 'wrap'"
-                    " (or 'circular'), \n  and 'symm' (or 'symmetric').")
+                             " (or 'circular'), \n  and 'symm'"
+                             " (or 'symmetric').")
         val = boundary << 2
     return val
 
@@ -332,7 +333,7 @@ def order_filter(a, domain, rank):
     for k in range(len(size)):
         if (size[k] % 2) != 1:
             raise ValueError("Each dimension of domain argument "
-                    " should have an odd number of elements.")
+                             " should have an odd number of elements.")
     return sigtools._order_filterND(a, domain, rank)
 
 
@@ -1123,8 +1124,8 @@ def residue(b, a, tol=1e-3, rtype='avg'):
                 term2 = polymul(bn, polyder(an, 1))
                 bn = polysub(term1, term2)
                 an = polymul(an, an)
-            r[indx + m - 1] = polyval(bn, pout[n]) / polyval(an, pout[n]) \
-                          / factorial(sig - m)
+            r[indx + m - 1] = (polyval(bn, pout[n]) / polyval(an, pout[n])
+                               / factorial(sig - m))
         indx += sig
     return r / rscale, p, k
 
@@ -1211,7 +1212,7 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
                 a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
 
                      r[0]                   r[-1]
-             = --------------- + ... + ---------------- + k[0] + k[1]z**(-1) ...
+             = --------------- + ... + ---------------- + k[0] + k[1]z**(-1)...
                (1-p[0]z**(-1))         (1-p[-1]z**(-1))
 
     If there are any repeated roots (closer than tol), then the partial
@@ -1348,6 +1349,7 @@ def resample(x, num, t=None, axis=0, window=None):
         return y, new_t
 
 
+
 def detrend(data, axis=-1, type='linear', bp=0):
     """
     Remove linear trend along axis from data.
@@ -1400,7 +1402,7 @@ def detrend(data, axis=-1, type='linear', bp=0):
         bp = sort(unique(r_[0, bp, N]))
         if np.any(bp > N):
             raise ValueError("Breakpoints must be less than length "
-                    "of data along given axis.")
+                             "of data along given axis.")
         Nreg = len(bp) - 1
         # Restructure data so that axis is along first dimension and
         #  all other dimensions are collapsed into second dimension
@@ -1639,7 +1641,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     if padtype not in ['even', 'odd', 'constant', None]:
         raise ValueError(("Unknown value '%s' given to padtype.  padtype must "
                          "be 'even', 'odd', 'constant', or None.") %
-                            padtype)
+                         padtype)
 
     b = np.asarray(b)
     a = np.asarray(a)
