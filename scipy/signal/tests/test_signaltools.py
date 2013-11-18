@@ -9,7 +9,7 @@ from numpy.testing import (TestCase, run_module_suite, assert_equal,
 import scipy.signal as signal
 from scipy.signal import (correlate, convolve, convolve2d, fftconvolve,
      hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, tf2zpk,
-     invres)
+     invres, vectorstrength)
 
 
 from numpy import array, arange
@@ -848,6 +848,154 @@ class TestPartialFractionExpansion(TestCase):
         p = [0, -2, -2, -5]
         k = []
         assert_raises(ValueError, invres, r, p, k, rtype='median')
+
+
+class TestVectorstrength(TestCase):
+    def test_single_1dperiod(self):
+        events = np.array([.5])
+        period = 5.
+        targ_strength = 1.
+        targ_phase = .1
+
+        strength, phase = vectorstrength(events, period)
+
+        assert_equal(strength.ndim, 0)
+        assert_equal(phase.ndim, 0)
+        assert_almost_equal(strength, targ_strength)
+        assert_almost_equal(phase, 2*np.pi*targ_phase)
+
+    def test_single_2dperiod(self):
+        events = np.array([.5])
+        period = [1, 2, 5.]
+        targ_strength = [1.]*3
+        targ_phase = np.array([.5, .25, .1])
+
+        strength, phase = vectorstrength(events, period)
+
+        assert_equal(strength.ndim, 1)
+        assert_equal(phase.ndim, 1)
+        assert_array_almost_equal(strength, targ_strength)
+        assert_almost_equal(phase, 2*np.pi*targ_phase)
+
+    def test_equal_1dperiod(self):
+        events = np.array([.25, .25, .25, .25, .25, .25])
+        period = 2
+        targ_strength = 1.
+        targ_phase = .125
+
+        strength, phase = vectorstrength(events, period)
+
+        assert_equal(strength.ndim, 0)
+        assert_equal(phase.ndim, 0)
+        assert_almost_equal(strength, targ_strength)
+        assert_almost_equal(phase, 2*np.pi*targ_phase)
+
+    def test_equal_2dperiod(self):
+        events = np.array([.25, .25, .25, .25, .25, .25])
+        period = [1, 2,]
+        targ_strength = [1.]*2
+        targ_phase = np.array([.25, .125])
+
+        strength, phase = vectorstrength(events, period)
+
+        assert_equal(strength.ndim, 1)
+        assert_equal(phase.ndim, 1)
+        assert_almost_equal(strength, targ_strength)
+        assert_almost_equal(phase, 2*np.pi*targ_phase)
+
+    def test_spaced_1dperiod(self):
+        events = np.array([.1, 1.1, 2.1, 4.1, 10.1])
+        period = 1
+        targ_strength = 1.
+        targ_phase = .1
+
+        strength, phase = vectorstrength(events, period)
+
+        assert_equal(strength.ndim, 0)
+        assert_equal(phase.ndim, 0)
+        assert_almost_equal(strength, targ_strength)
+        assert_almost_equal(phase, 2*np.pi*targ_phase)
+
+    def test_spaced_2dperiod(self):
+        events = np.array([.1, 1.1, 2.1, 4.1, 10.1])
+        period = [1, .5]
+        targ_strength = [1.]*2
+        targ_phase = np.array([.1, .2])
+
+        strength, phase = vectorstrength(events, period)
+
+        assert_equal(strength.ndim, 1)
+        assert_equal(phase.ndim, 1)
+        assert_almost_equal(strength, targ_strength)
+        assert_almost_equal(phase, 2*np.pi*targ_phase)
+
+    def test_partial_1dperiod(self):
+        events = np.array([.25, .5, .75])
+        period = 1
+        targ_strength = 1./3.
+        targ_phase = .5
+
+        strength, phase = vectorstrength(events, period)
+
+        assert_equal(strength.ndim, 0)
+        assert_equal(phase.ndim, 0)
+        assert_almost_equal(strength, targ_strength)
+        assert_almost_equal(phase, 2*np.pi*targ_phase)
+
+    def test_partial_2dperiod(self):
+        events = np.array([.25, .5, .75])
+        period = [1., 1., 1., 1.]
+        targ_strength = [1./3.]*4
+        targ_phase = np.array([.5, .5, .5, .5])
+
+        strength, phase = vectorstrength(events, period)
+
+        assert_equal(strength.ndim, 1)
+        assert_equal(phase.ndim, 1)
+        assert_almost_equal(strength, targ_strength)
+        assert_almost_equal(phase, 2*np.pi*targ_phase)
+
+    def test_opposite_1dperiod(self):
+        events = np.array([0, .25, .5, .75])
+        period = 1.
+        targ_strength = 0
+
+        strength, phase = vectorstrength(events, period)
+
+        assert_equal(strength.ndim, 0)
+        assert_equal(phase.ndim, 0)
+        assert_almost_equal(strength, targ_strength)
+
+    def test_opposite_2dperiod(self):
+        events = np.array([0, .25, .5, .75])
+        period = [1.]*10
+        targ_strength = [0.]*10
+
+        strength, phase = vectorstrength(events, period)
+
+        assert_equal(strength.ndim, 1)
+        assert_equal(phase.ndim, 1)
+        assert_almost_equal(strength, targ_strength)
+
+    def test_2d_events_ValueError(self):
+        events = np.array([[1, 2]])
+        period = 1.
+        assert_raises(ValueError, vectorstrength, events, period)
+
+    def test_2d_period_ValueError(self):
+        events = 1.
+        period = np.array([[1]])
+        assert_raises(ValueError, vectorstrength, events, period)
+
+    def test_zero_period_ValueError(self):
+        events = 1.
+        period = 0
+        assert_raises(ValueError, vectorstrength, events, period)
+
+    def test_negative_period_ValueError(self):
+        events = 1.
+        period = -1
+        assert_raises(ValueError, vectorstrength, events, period)
 
 
 if __name__ == "__main__":

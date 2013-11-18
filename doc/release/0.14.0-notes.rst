@@ -39,6 +39,15 @@ Multivariate random variables
 A new class `scipy.stats.multivariate_normal` with functionality for 
 multivariate normal random variables has been added.
 
+``scipy.signals`` improvements
+----------------------------
+
+Vector Strength
+^^^^^^^^^^^^^^^
+
+The new function `scipy.signals.vectorstrength` computes the vector strength,
+a measure of phase synchrony, of a set of events.
+
 
 Deprecated features
 ===================
