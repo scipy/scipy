@@ -182,11 +182,15 @@ class dia_matrix(_data_matrix):
         return np.hstack([self._mul_vector(col).reshape(-1,1) for col in other.T])
 
     def setdiag(self, values, k=0):
-        if k not in self.offsets:
-            self.offsets = self.offsets.append((k,))
-            self.data = self.data.vstack((self.data, values))
-        else:
+        M, N = self.shape
+        if k <= -M or k >= N:
+            raise ValueError('k exceeds matrix dimensions')
+        if k in self.offsets:
             self.data[self.offsets == k, :] = values
+        else:
+            self.offsets = np.append(self.offsets, (k,))
+            self.data = np.vstack((self.data, np.empty((1,N))))
+            self.data[-1, :] = values
 
     setdiag.__doc__ = _data_matrix.setdiag.__doc__
 
