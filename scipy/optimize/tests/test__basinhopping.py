@@ -236,7 +236,7 @@ class TestBasinHopping(TestCase):
         # are accepted.
         accept_test = MyAcceptTest()
         i = 1
-        #there's no point in running it more than a few steps.
+        # there's no point in running it more than a few steps.
         res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
                            niter=10, disp=self.disp, accept_test=accept_test)
         assert_(accept_test.been_called)
@@ -245,15 +245,26 @@ class TestBasinHopping(TestCase):
         # test passing a custom callback function
         # This makes sure it's being used.  It also returns True after 10 steps
         # to ensure that it's stopping early.
-
         callback = MyCallBack()
         i = 1
-        #there's no point in running it more than a few steps.
+        # there's no point in running it more than a few steps.
         res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
                            niter=30, disp=self.disp, callback=callback)
         assert_(callback.been_called)
         assert_("callback" in res.message[0])
         assert_(res.nit == 10)
+
+    def test_minimizer_fail(self):
+        # test if a minimizer fails
+        i = 1
+        self.kwargs["options"] = dict(maxiter=0)
+        self.niter = 10
+        self.disp = True
+        res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
+                           niter=self.niter, disp=self.disp)
+        # the number of failed minimizations should be the number of
+        # iterations + 1
+        assert_(res.nit + 1 == res.minimization_failures)
 
 
 class Test_Storage(TestCase):
@@ -285,9 +296,9 @@ class Test_RandomDisplacement(TestCase):
         self.x0 = np.zeros([self.N])
 
     def test_random(self):
-        #the mean should be 0
-        #the variance should be (2*stepsize)**2 / 12
-        #note these tests are random, they will fail from time to time
+        # the mean should be 0
+        # the variance should be (2*stepsize)**2 / 12
+        # note these tests are random, they will fail from time to time
         x = self.displace(self.x0)
         v = (2. * self.stepsize) ** 2 / 12
         self.assertAlmostEqual(np.mean(x), 0., 1)
@@ -300,8 +311,8 @@ class Test_Metropolis(TestCase):
         self.met = Metropolis(self.T)
 
     def test_boolean_return(self):
-        #the return must be a bool.  else an error will be raised in
-        #basinhopping
+        # the return must be a bool.  else an error will be raised in
+        # basinhopping
         ret = self.met(f_new=0., f_old=1.)
         assert isinstance(ret, bool)
 
@@ -309,12 +320,12 @@ class Test_Metropolis(TestCase):
         self.assertTrue(self.met(f_new=0., f_old=1.))
 
     def test_KeyError(self):
-        #should raise KeyError if kwargs f_old or f_new is not passed
+        # should raise KeyError if kwargs f_old or f_new is not passed
         self.assertRaises(KeyError, self.met, f_old=1.)
         self.assertRaises(KeyError, self.met, f_new=1.)
 
     def test_accept(self):
-        #test that steps are randomly accepted for f_new > f_old
+        # test that steps are randomly accepted for f_new > f_old
         one_accept = False
         one_reject = False
         for i in range(1000):
@@ -338,7 +349,7 @@ class Test_AdaptiveStepsize(TestCase):
                                           accept_rate=self.target_accept_rate)
 
     def test_adaptive_increase(self):
-        #if few steps are rejected, the stepsize should increase
+        # if few steps are rejected, the stepsize should increase
         x = 0.
         self.takestep(x)
         self.takestep.report(False)
@@ -348,7 +359,7 @@ class Test_AdaptiveStepsize(TestCase):
         self.assertTrue(self.ts.stepsize > self.stepsize)
 
     def test_adaptive_decrease(self):
-        #if few steps are rejected, the stepsize should increase
+        # if few steps are rejected, the stepsize should increase
         x = 0.
         self.takestep(x)
         self.takestep.report(True)
@@ -358,7 +369,7 @@ class Test_AdaptiveStepsize(TestCase):
         self.assertTrue(self.ts.stepsize < self.stepsize)
 
     def test_all_accepted(self):
-        #test that everything works OK if all steps were accepted
+        # test that everything works OK if all steps were accepted
         x = 0.
         for i in range(self.takestep.interval + 1):
             self.takestep(x)
@@ -366,7 +377,7 @@ class Test_AdaptiveStepsize(TestCase):
         self.assertTrue(self.ts.stepsize > self.stepsize)
 
     def test_all_rejected(self):
-        #test that everything works OK if all steps were rejected
+        # test that everything works OK if all steps were rejected
         x = 0.
         for i in range(self.takestep.interval + 1):
             self.takestep(x)
