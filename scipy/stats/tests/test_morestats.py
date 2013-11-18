@@ -516,8 +516,15 @@ class TestBoxcox_llf(TestCase):
         assert_allclose(llf, llf2, rtol=1e-12)
 
     def test_2d_input(self):
-        # TODO
-        pass
+        # Note: boxcox_llf() was already working with 2-D input (sort of), so
+        # keep it like that.  boxcox() doesn't work with 2-D input though, due
+        # to brent() returning a scalar.
+        np.random.seed(54321)
+        x = stats.norm.rvs(size=100, loc=10)
+        lmbda = 1
+        llf = stats.boxcox_llf(lmbda, x)
+        llf2 = stats.boxcox_llf(lmbda, np.vstack([x, x]).T)
+        assert_allclose([llf, llf], llf2, rtol=1e-12)
 
     def test_empty(self):
         assert_(np.isnan(stats.boxcox_llf(1, [])))

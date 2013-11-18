@@ -573,7 +573,7 @@ def boxcox_llf(lmb, data):
 
     """
     data = np.asarray(data)
-    N = data.size
+    N = data.shape[0]
     if N == 0:
         return np.nan
 
@@ -626,7 +626,7 @@ def boxcox(x, lmbda=None, alpha=None):
     Parameters
     ----------
     x : ndarray
-        Input array.
+        Input array.  Should be 1-dimensional.
     lmbda : {None, scalar}, optional
         If `lmbda` is not None, do the transformation for that value.
 
