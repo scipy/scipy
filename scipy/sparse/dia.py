@@ -185,12 +185,11 @@ class dia_matrix(_data_matrix):
         return np.hstack([self._mul_vector(col).reshape(-1,1) for col in other.T])
 
     def setdiag(self, values, k=0):
-        M, N = self.shape
-        if (not k in self.offsets):
-            raise ValueError(
-                "dia matrix does not support assignment for unknown diagonals. "
-                "Known offsets are: %s" % self.offsets)
-        self.data[self.offsets == k, :] = values
+        if k not in self.offsets:
+            self.offsets = self.offsets.append((k,))
+            self.data = self.data.vstack((self.data, values))
+        else:
+            self.data[self.offsets == k, :] = values
 
     setdiag.__doc__ = _data_matrix.setdiag.__doc__
 
