@@ -612,7 +612,11 @@ class _TestCommon:
         m.setdiag(values)
         assert_array_equal(m.diagonal(), values)
 
-        # TODO: test setting offdiagonals (k!=0)
+        # test setting offdiagonals (k!=0)
+        m.setdiag((9,), k=2)
+        assert_array_equal(m.A[0,2], 9)
+        m.setdiag((9,), k=-2)
+        assert_array_equal(m.A[2,0], 9)
 
     def test_nonzero(self):
         A = array([[1, 0, 1],[0, 1, 1],[0, 0, 1]])
