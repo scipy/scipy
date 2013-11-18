@@ -1,5 +1,5 @@
 """
-Tests for the stats.mstats module (support for maskd arrays)
+Tests for the stats.mstats module (support for masked arrays)
 """
 from __future__ import division, print_function, absolute_import
 
@@ -494,6 +494,8 @@ class TestMisc(TestCase):
         result = mstats.friedmanchisquare(*x)
         assert_almost_equal(result[0], 2.0156, 4)
         assert_almost_equal(result[1], 0.5692, 4)
+
+
 
 
 def test_regress_simple():
