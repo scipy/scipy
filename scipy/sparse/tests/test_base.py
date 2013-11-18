@@ -2130,13 +2130,15 @@ class _TestFancyIndexing:
 
         assert_equal(todense(A[I, J]), B[I, J])
 
-        Z = np.ones((5, 11), dtype=bool)
-        Y = np.ones((6, 10), dtype=bool)
+        Z1 = np.zeros((6, 11), dtype=bool)
+        Z2 = np.zeros((6, 11), dtype=bool)
+        Z2[0,-1] = True
+        Z3 = np.zeros((6, 11), dtype=bool)
+        Z3[-1,0] = True
 
-        assert_raises(IndexError, A.__getitem__, Z)
-        assert_raises(IndexError, A.__getitem__, ~Z)
-        assert_raises(IndexError, A.__getitem__, Y)
-        assert_raises(IndexError, A.__getitem__, ~Y)
+        assert_equal(A[Z1], np.array([]))
+        assert_raises(IndexError, A.__getitem__, Z2)
+        assert_raises(IndexError, A.__getitem__, Z3)
         assert_raises((IndexError, ValueError), A.__getitem__, (X, 1))
 
     def test_fancy_indexing_sparse_boolean(self):
