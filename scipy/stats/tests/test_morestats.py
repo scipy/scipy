@@ -585,6 +585,28 @@ class TestBoxcox(TestCase):
         assert_(stats.boxcox([]).shape == (0,))
 
 
+class TestBoxcoxNormmax(TestCase):
+    def setUp(self):
+        np.random.seed(12345)
+        self.x = stats.loggamma.rvs(5, size=50) + 5
+
+    def test_pearsonr(self):
+        maxlog = stats.boxcox_normmax(self.x)
+        assert_allclose(maxlog, 1.804465325046)
+
+    def test_mle(self):
+        maxlog = stats.boxcox_normmax(self.x, method='mle')
+        assert_allclose(maxlog, 1.758101454114)
+
+        # Check that boxcox() uses 'mle'
+        _, maxlog_boxcox = stats.boxcox(self.x)
+        assert_allclose(maxlog_boxcox, maxlog)
+
+    def test_all(self):
+        maxlog_all = stats.boxcox_normmax(self.x, method='all')
+        assert_allclose(maxlog_all, [1.804465325046, 1.758101454114])
+
+
 class TestBoxcoxNormplot(TestCase):
     def setUp(self):
         np.random.seed(7654321)
