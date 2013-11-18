@@ -258,6 +258,8 @@ class csr_matrix(_cs_matrix, IndexMixin):
             elif issequence(col):                     # [[1,2],[1,2]]
                 row = asindices(row)
                 col = asindices(col)
+                if len(row) == 0 or len(col) == 0:
+                    return csr_matrix((0,0))
                 if row.ndim == 1:
                     if row.shape != col.shape:
                         raise IndexError('number of row and column indices differ')
