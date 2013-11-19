@@ -67,4 +67,20 @@ class LJ(object):
     def get_gradient(self, coords):
         e, g = self.get_energy_gradient(coords)
         return g
-    
+
+class Booth(object):
+#    target_E = 0.
+#    target_coords = np.array([1., 3.])
+#    xmin = np.array([-10., -10.])
+##    xmin = np.array([0., 0.])
+#    xmax = np.array([10., 10.])
+    def fun(self, coords):
+        x, y = coords
+        return (x + 2.*y - 7.)**2 + (2.*x + y - 5.)**2
+
+    def der(self, coords):
+        x, y = coords
+        dx = 2.*(x + 2.*y - 7.) + 4.*(2.*x + y - 5.)
+        dy = 4.*(x + 2.*y - 7.) + 2.*(2.*x + y - 5.)
+        return np.array([dx, dy])
+

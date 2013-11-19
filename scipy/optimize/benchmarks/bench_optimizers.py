@@ -46,7 +46,7 @@ class BenchOptimizers(object):
         results = sorted(results, key=lambda x: (x.nfail, x.mean_time))
         print("")
         print("---------------------------------------------------------")
-        print("Optimizer benchmark on the %s" % (self.function_name))
+        print("Optimizer benchmark: %s" % (self.function_name))
         print("averaged over %d starting configurations" % (results[0].ntrials))
         print("      Optimizer   nfail  nfev   njev   nhev   time")
         print("---------------------------------------------------------")
@@ -148,7 +148,16 @@ def bench_sin_1d():
         b.bench_run(np.random.uniform(-2,2,1))
     b.print_results()
 
-def test_LJ():
+def bench_booth():
+    s = funcs.Booth()
+#    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
+    b = BenchOptimizers("Booth's function",
+                        fun=s.fun, der=s.der, hess=None)
+    for i in xrange(10):
+        b.bench_run(np.random.uniform(0,10,2))
+    b.print_results()
+
+def bench_LJ():
     s = funcs.LJ()
 #    print "checking gradient", scipy.optimize.check_grad(s.get_energy, s.get_gradient, np.random.uniform(-2,2,3*4))
     natoms = 4
@@ -164,7 +173,8 @@ def main():
     bench_simple_quadratic()
     bench_asymetric_quadratic()
     bench_sin_1d()
-    test_LJ()
+    bench_booth()
+    bench_LJ()
 
 if __name__ == "__main__":
     main()
