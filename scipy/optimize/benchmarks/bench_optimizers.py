@@ -157,9 +157,18 @@ def bench_booth():
         b.bench_run(np.random.uniform(0,10,2))
     b.print_results()
 
+def bench_beale():
+    s = funcs.Beale()
+    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
+    b = BenchOptimizers("Beale's function",
+                        fun=s.fun, der=s.der, hess=None)
+    for i in xrange(10):
+        b.bench_run(np.random.uniform(0,10,2))
+    b.print_results()
+
 def bench_LJ():
     s = funcs.LJ()
-#    print "checking gradient", scipy.optimize.check_grad(s.get_energy, s.get_gradient, np.random.uniform(-2,2,3*4))
+    print "checking gradient", scipy.optimize.check_grad(s.get_energy, s.get_gradient, np.random.uniform(-2,2,3*4))
     natoms = 4
     b = BenchOptimizers("%d atom Lennard Jones potential" % (natoms),
                         fun=s.get_energy, der=s.get_gradient, hess=None)
@@ -174,6 +183,7 @@ def main():
     bench_asymetric_quadratic()
     bench_sin_1d()
     bench_booth()
+    bench_beale()
     bench_LJ()
 
 if __name__ == "__main__":

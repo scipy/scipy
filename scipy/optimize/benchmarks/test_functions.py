@@ -84,3 +84,19 @@ class Booth(object):
         dy = 4.*(x + 2.*y - 7.) + 2.*(2.*x + y - 5.)
         return np.array([dx, dy])
 
+class Beale(object):
+#    target_E = 0.
+#    target_coords = np.array([3., 0.5])
+#    xmin = np.array([-4.5, -4.5])
+##    xmin = np.array([0., 0.])
+#    xmax = np.array([4.5, 4.5])
+    def fun(self, coords):
+        x, y = coords
+        return (1.5 - x + x*y)**2 + (2.25 - x + x * y**2)**2 + (2.625 - x + x * y**3)**2
+        
+    def der(self, coords):
+        x, y = coords
+        dx = 2. * (1.5 - x + x*y) * (-1. + y) + 2. * (2.25 - x + x * y**2) * (-1. + y**2) + 2. * (2.625 - x + x * y**3) * (-1. + y**3)
+        dy = 2. * (1.5 - x + x*y) * (x) +       2. * (2.25 - x + x * y**2) * (2. * y * x) + 2. * (2.625 - x + x * y**3) * (3. * x * y**2)
+        return np.array([dx, dy])
+
