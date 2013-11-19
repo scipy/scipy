@@ -133,7 +133,7 @@ def bench_simple_quadratic():
 def bench_asymetric_quadratic():
     s = funcs.AsymmetricQuadratic()
 #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
-    b = BenchOptimizers("function x**2 - x",
+    b = BenchOptimizers("function sum(x**2) + x[0]",
                         fun=s.fun, der=s.der, hess=s.hess)
     for i in xrange(10):
         b.bench_run(np.random.uniform(-2,2,3))
