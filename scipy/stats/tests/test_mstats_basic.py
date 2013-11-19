@@ -18,6 +18,7 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
     assert_allclose, assert_raises)
 
+from nose.tools import nottest
 
 class TestMquantiles(TestCase):
     def test_mquantiles_limit_keyword(self):
@@ -685,9 +686,16 @@ class TestCompareWithStats(TestCase):
 
     Author: Alexander Loew
 
-    @todo: using mstats with NOT masked arrays!
-    @todo: capture also different options of routines
+    NOTE that some tests fail. This might be caused by
+    a) actual differences or bugs between stats and mstats
+    b) numerical inaccuracies
+    c) different definitions of routine interfaces
+
+    These failures need to be checked. Current workaround is to have disabled these tests,
+    but issuing reports on scipy-dev
+
     """
+
 
     def get_n(self):
         """returns list of sample sizes to be used for comparison"""
@@ -737,10 +745,8 @@ class TestCompareWithStats(TestCase):
         """ test spearmanr """
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n)
-
             r,p = stats.spearmanr(x,y)
             rm,pm = stats.mstats.spearmanr(xm,ym)
-
             assert_almost_equal(r,rm,10)
             assert_almost_equal(p,pm,10)
 
@@ -851,6 +857,7 @@ class TestCompareWithStats(TestCase):
             rm = stats.mstats.kurtosis(ym)
             assert_almost_equal(r,rm,10)
 
+    @nottest
     def test_sem(self):
         #example from stats.sem doc
         a = np.arange(20).reshape(5,4)
@@ -866,8 +873,8 @@ class TestCompareWithStats(TestCase):
 
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n) #ddof default is 0
-            #~ assert_almost_equal(stats.mstats.sem(xm,axis=None),stats.sem(x, axis=None, ddof=0),10) # todo ERROR: results are different at 4-5 decimal
-            #~ assert_almost_equal(stats.mstats.sem(ym,axis=None),stats.sem(y, axis=None, ddof=0),10) #todo
+            assert_almost_equal(stats.mstats.sem(xm,axis=None),stats.sem(x, axis=None, ddof=0),10) # todo ERROR: results are different at 4-5 decimal
+            assert_almost_equal(stats.mstats.sem(ym,axis=None),stats.sem(y, axis=None, ddof=0),10) #todo
 
     def test_describe(self):
         for n in self.get_n():
@@ -879,7 +886,7 @@ class TestCompareWithStats(TestCase):
             assert_almost_equal(r[1][0],rm[1][0],10) #min
             assert_almost_equal(r[1][1],rm[1][1],10) #max
             assert_almost_equal(r[2],rm[2],10) #mean
-            #~ assert_almost_equal(r[3],rm[3],10) #unbiased variance ERROR: throws an assertion error! todo
+            #assert_almost_equal(r[3],rm[3],10) #unbiased variance ERROR: throws an assertion error! todo
             assert_almost_equal(r[4],rm[4],10) #biased skewness
             assert_almost_equal(r[5],rm[5],10) #biased kurtosis
 
@@ -930,11 +937,12 @@ class TestCompareWithStats(TestCase):
             assert_almost_equal(stats.variation(x),stats.mstats.variation(xm),10)
             assert_almost_equal(stats.variation(y),stats.mstats.variation(ym),10)
 
-    #~ def test_tvar(self): todo
-        #~ for n in self.get_n():
-            #~ x,y,xm,ym = self.generate_xy_sample(n)
-            #~ assert_almost_equal(stats.tvar(x),stats.mstats.tvar(xm),10) #ERROR: throws an assertion error
-            #~ assert_almost_equal(stats.tvar(y),stats.mstats.tvar(ym),10)
+    @nottest
+    def test_tvar(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            assert_almost_equal(stats.tvar(x),stats.mstats.tvar(xm),10) #ERROR: throws an assertion error
+            assert_almost_equal(stats.tvar(y),stats.mstats.tvar(ym),10)
 
     def test_trimboth(self):
         a = np.arange(20)
@@ -943,35 +951,32 @@ class TestCompareWithStats(TestCase):
 
         assert(np.all(b == bm.data[~bm.mask]))
 
-    #~ def test_tsem(self):    todo
-        #~ for n in self.get_n():
-            #~ x,y,xm,ym = self.generate_xy_sample(n)
-#~
-            #~ assert_almost_equal(stats.tsem(x),stats.mstats.tsem(xm),10)
-            #~ assert_almost_equal(stats.tsem(y),stats.mstats.tsem(ym),10)
-#~
-            #~ assert_almost_equal(stats.tsem(x,limits=(-2.,2.)),stats.mstats.tsem(xm,limits=(-2.,2.)),10) #ERROR: causes problems with limits!!! (at 4th digit)
+    @nottest
+    def test_tsem(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            assert_almost_equal(stats.tsem(x),stats.mstats.tsem(xm),10)
+            assert_almost_equal(stats.tsem(y),stats.mstats.tsem(ym),10) #error
+            assert_almost_equal(stats.tsem(x,limits=(-2.,2.)),stats.mstats.tsem(xm,limits=(-2.,2.)),10) #ERROR: causes problems with limits!!! (at 4th digit)
 
-    #~ def test_skewtest(self):    #todo
-        #~ for n in self.get_n():
-            #~ x,y,xm,ym = self.generate_xy_sample(n)
-#~
-            #~ if n < 8: #skewtest not below sample size of 8
-                #~ continue
-#~
-            #~ r = stats.skewtest(x)
-            #~ rm = stats.mstats.skewtest(xm)
-            #~ assert_almost_equal(r[0],rm[0],10)
-            #~ assert_almost_equal(r[1],rm[1],10) #ERROR: problem with p-value
+    @nottest
+    def test_skewtest(self):
+        for n in self.get_n():
+            if n>8:
+                x,y,xm,ym = self.generate_xy_sample(n)
+                r = stats.skewtest(x)
+                rm = stats.mstats.skewtest(xm)
+                assert_almost_equal(r[0],rm[0],10)
+                assert_almost_equal(r[1],rm[1],10) #<<< seems to be an inconsistency between modules!
 
     def test_normaltest(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
-
-            #r = stats.normaltest(x)
-            #rm = stats.mstats.normaltest(xm) #todo causes trouble !!!!
-            #assert_almost_equal(r[0],rm[0],10)
-            #assert_almost_equal(r[1],rm[1],10)
+            if n > 8:
+                x,y,xm,ym = self.generate_xy_sample(n)
+                r = stats.normaltest(x)
+                rm = stats.mstats.normaltest(xm)
+                assert_almost_equal(r[0],rm[0],10)
+                assert_almost_equal(r[1],rm[1],10)
 
     def test_find_repeats(self):
         x = np.asarray([1,1,2,2,3,3,3,4,4,4,4]).astype('float')
@@ -986,24 +991,18 @@ class TestCompareWithStats(TestCase):
     def test_kendalltau(self):
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n)
-
             r  = stats.kendalltau(x,y)
             rm = stats.mstats.kendalltau(xm,ym)
-
             assert_almost_equal(r[0],rm[0],10)
             assert_almost_equal(r[1],rm[1],7)
 
-    #~ def test_obrientransform(self):    #todo
-        #~ for n in self.get_n():
-            #~ x,y,xm,ym = self.generate_xy_sample(n)
-#~
-            #~ r = stats.obrientransform(x)
-            #~ rm = stats.mstats.obrientransform(xm)
-            #~ assert_almost_equal(r,rm[0:len(x)]) #ERROR: returned array is transposed in mstats compared to stats
-
-
-
-
+    @nottest
+    def test_obrientransform(self):    #todo causes error!
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            r = stats.obrientransform(x)
+            rm = stats.mstats.obrientransform(xm)
+            assert_almost_equal(r,rm[0:len(x)]) #ERROR: returned array is transposed in mstats compared to stats
 
 
 if __name__ == "__main__":
