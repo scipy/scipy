@@ -1005,5 +1005,92 @@ class TestCompareWithStats(TestCase):
             assert_almost_equal(r,rm[0:len(x)]) #ERROR: returned array is transposed in mstats compared to stats
 
 
+
+
+def print_stats_mstats_comparison():
+    """
+    Routine to print statistical functions in scipy.stats module
+    The routine generates a list of functions in scipy.stats, scipy.mstats
+    and list in which functions common unittests for comparison have been
+    implemented.
+
+    :author Alexander Loew
+    """
+    __author__ = "Alexander Loew"
+
+    from scipy import stats
+
+    astats = stats.__all__
+    amstats = stats.mstats_basic.__all__
+    #todo append further functions beyond basic !!!! --> one single list !!!
+
+    #list that defines which unittests have already been implemented to compare stats and mstats
+    implemented = ['linregress','pearsonr','spearmanr','gmean','hmean','skew','moment','signaltonoise','betai','zscore','kurtosis','sem','describe','rankdata','tmean','tmax','tmin','zmap','variation','tvar','trimboth','tsem','skewtest','normaltest','find_repeats','kendalltau','obrientransform']
+
+    sep = ' | '
+    stats_missing_in_mstats=[]
+
+    show_only_both = True #print only routines that exist in both libraries
+
+    print('*** Routines in scipy.stats ***')
+    print('Routine Name:'.ljust(20) + sep + 'stats'.center(5) + sep + 'mstats'.center(5) + sep + 'test implemented'.center(5))
+    for s in astats:
+        if s in amstats: #in both
+            out = sep + 'X'.center(5) + sep + 'X'.center(6) + sep
+        else:
+            stats_missing_in_mstats.append(s)
+            out = sep + 'X'.center(5) + sep + ' '.center(6) + sep
+            if show_only_both:
+                continue
+
+        #implemented as unittest with comparison to scipy.stats ?
+        if s in implemented:
+            out = out + 'X'.center(5)
+        else:
+            out = out + ' '.center(5)
+
+        out = s.ljust(20) + out
+
+        print(out)
+
+
+    #/// print routines in scipy.stats.mstats which are NOT included in scipy.stats
+    print ('')
+    print ('*** Routines in scipy.stats.mstats which are *not* included in scipy.stats ***')
+    for m in amstats:
+        if m not in astats:
+            out = sep + ' '.center(5) + sep + 'X'.center(6) + sep
+        else:
+            continue
+
+        if m in implemented:
+            out = out + 'X'.center(5)
+        else:
+            out = out + ' '.center(5)
+
+        out = m.ljust(20) + out
+        print (out)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 if __name__ == "__main__":
     run_module_suite()
