@@ -1610,8 +1610,9 @@ def buttap(N):
 
     """
     z = numpy.array([])
-    n = numpy.arange(1, N + 1)
-    p = numpy.exp(1j * (2 * n - 1) / (2.0 * N) * pi) * 1j
+    m = numpy.arange(-N+1, N, 2)
+    # Middle value is 0 to ensure an exactly real pole
+    p = -numpy.exp(1j * pi * m / (2 * N))
     k = 1
     return z, p, k
 
