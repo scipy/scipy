@@ -121,6 +121,7 @@ def test_label01():
     data = np.ones([])
     out, n = ndimage.label(data)
     assert_array_almost_equal(out, 1)
+    assert_equal(n, 1)
 
 
 def test_label02():
@@ -128,6 +129,7 @@ def test_label02():
     data = np.zeros([])
     out, n = ndimage.label(data)
     assert_array_almost_equal(out, 0)
+    assert_equal(n, 0)
 
 
 def test_label03():
@@ -135,6 +137,7 @@ def test_label03():
     data = np.ones([1])
     out, n = ndimage.label(data)
     assert_array_almost_equal(out, [1])
+    assert_equal(n, 1)
 
 
 def test_label04():
@@ -142,6 +145,7 @@ def test_label04():
     data = np.zeros([1])
     out, n = ndimage.label(data)
     assert_array_almost_equal(out, [0])
+    assert_equal(n, 0)
 
 
 def test_label05():
@@ -149,6 +153,7 @@ def test_label05():
     data = np.ones([5])
     out, n = ndimage.label(data)
     assert_array_almost_equal(out, [1, 1, 1, 1, 1])
+    assert_equal(n, 1)
 
 
 def test_label06():
@@ -156,6 +161,7 @@ def test_label06():
     data = np.array([1, 0, 1, 1, 0, 1])
     out, n = ndimage.label(data)
     assert_array_almost_equal(out, [1, 0, 2, 2, 0, 3])
+    assert_equal(n, 3)
 
 
 def test_label07():
@@ -173,6 +179,7 @@ def test_label07():
                                [0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0],
                                [0, 0, 0, 0, 0, 0]])
+    assert_equal(n, 0)
 
 
 def test_label08():
@@ -190,6 +197,7 @@ def test_label08():
                                [3, 3, 0, 0, 0, 0],
                                [3, 3, 0, 0, 0, 0],
                                [0, 0, 0, 4, 4, 0]])
+    assert_equal(n, 4)
 
 
 def test_label09():
@@ -208,6 +216,7 @@ def test_label09():
                                [2, 2, 0, 0, 0, 0],
                                [2, 2, 0, 0, 0, 0],
                                [0, 0, 0, 3, 3, 0]])
+    assert_equal(n, 3)
 
 
 def test_label10():
@@ -222,6 +231,7 @@ def test_label10():
                                [0, 1, 1, 0, 1, 0],
                                [0, 1, 1, 1, 1, 0],
                                [0, 0, 0, 0, 0, 0]])
+    assert_equal(n, 1)
 
 
 def test_label11():
