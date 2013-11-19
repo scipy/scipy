@@ -402,6 +402,10 @@ cpdef _label(np.ndarray input,
             mergetable[FOREGROUND] = -1  # should never be encountered
             mergetable[2] = 1  # labels started here
             dest_label = 2
+            # next_region is still the original value -> we found no regions
+            # set dest_label to 1 so we return 0
+            if next_region < 3:
+                dest_label = 1
             for src_label in range(3, next_region):
                 # labels that map to themselves are new regions
                 if mergetable[src_label] == src_label:
