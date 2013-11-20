@@ -4,8 +4,8 @@ Unit tests for the basin hopping global minimization algorithm.
 from __future__ import division, print_function, absolute_import
 import copy
 
-from numpy.testing import TestCase, run_module_suite, \
-    assert_almost_equal, assert_
+from numpy.testing import *
+from numpy.testing.utils import *
 import numpy as np
 from numpy import cos, sin
 
@@ -139,10 +139,10 @@ class TestBasinHopping(TestCase):
         # test the TypeErrors are raised on bad input
         i = 1
         # if take_step is passed, it must be callable
-        self.assertRaises(TypeError, basinhopping, func2d, self.x0[i],
+        assert_raises(TypeError, basinhopping, func2d, self.x0[i],
                           take_step=1)
         # if accept_test is passed, it must be callable
-        self.assertRaises(TypeError, basinhopping, func2d, self.x0[i],
+        assert_raises(TypeError, basinhopping, func2d, self.x0[i],
                           accept_test=1)
         # accept_test must return bool or string "force_accept"
 
@@ -151,10 +151,10 @@ class TestBasinHopping(TestCase):
 
         def bad_accept_test2(*args, **kwargs):
             return "not force_accept"
-        self.assertRaises(ValueError, basinhopping, func2d, self.x0[i],
+        assert_raises(ValueError, basinhopping, func2d, self.x0[i],
                           minimizer_kwargs=self.kwargs,
                           accept_test=bad_accept_test1)
-        self.assertRaises(ValueError, basinhopping, func2d, self.x0[i],
+        assert_raises(ValueError, basinhopping, func2d, self.x0[i],
                           minimizer_kwargs=self.kwargs,
                           accept_test=bad_accept_test2)
 
@@ -171,7 +171,7 @@ class TestBasinHopping(TestCase):
         res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
                            niter=self.niter, disp=self.disp)
         assert_almost_equal(res.x, self.sol[i], self.tol)
-        self.assertTrue(res.nfev > 0)
+        assert_(res.nfev > 0)
 
     def test_njev(self):
         # test njev is returned correctly
@@ -182,8 +182,8 @@ class TestBasinHopping(TestCase):
         res = basinhopping(func2d, self.x0[i],
                            minimizer_kwargs=minimizer_kwargs, niter=self.niter,
                            disp=self.disp)
-        self.assertTrue(res.nfev > 0)
-        self.assertEqual(res.nfev, res.njev)
+        assert_(res.nfev > 0)
+        assert_equal(res.nfev, res.njev)
 
     def test_2d_nograd(self):
         # test 2d minimizations without gradient
@@ -252,7 +252,7 @@ class TestBasinHopping(TestCase):
                            niter=30, disp=self.disp, callback=callback)
         assert_(callback.been_called)
         assert_("callback" in res.message[0])
-        assert_(res.nit == 10)
+        assert_equal(res.nit, 10)
 
     def test_minimizer_fail(self):
         # test if a minimizer fails
@@ -264,7 +264,7 @@ class TestBasinHopping(TestCase):
                            niter=self.niter, disp=self.disp)
         # the number of failed minimizations should be the number of
         # iterations + 1
-        assert_(res.nit + 1 == res.minimization_failures)
+        assert_equal(res.nit + 1, res.minimization_failures)
 
 
 class Test_Storage(TestCase):
@@ -276,16 +276,16 @@ class Test_Storage(TestCase):
     def test_higher_f_rejected(self):
         ret = self.storage.update(self.x0 + 1, self.f0 + 1)
         x, f = self.storage.get_lowest()
-        self.assertEqual(self.x0, x)
-        self.assertEqual(self.f0, f)
-        self.assertFalse(ret)
+        assert_equal(self.x0, x)
+        assert_equal(self.f0, f)
+        assert_(not ret)
 
     def test_lower_f_accepted(self):
         ret = self.storage.update(self.x0 + 1, self.f0 - 1)
         x, f = self.storage.get_lowest()
-        self.assertNotEqual(self.x0, x)
-        self.assertNotEqual(self.f0, f)
-        self.assertTrue(ret)
+        assert_(self.x0 != x)
+        assert_(self.f0 != f)
+        assert_(ret)
 
 
 class Test_RandomDisplacement(TestCase):
@@ -301,8 +301,8 @@ class Test_RandomDisplacement(TestCase):
         # note these tests are random, they will fail from time to time
         x = self.displace(self.x0)
         v = (2. * self.stepsize) ** 2 / 12
-        self.assertAlmostEqual(np.mean(x), 0., 1)
-        self.assertAlmostEqual(np.var(x), v, 1)
+        assert_almost_equal(np.mean(x), 0., 1)
+        assert_almost_equal(np.var(x), v, 1)
 
 
 class Test_Metropolis(TestCase):
@@ -317,12 +317,12 @@ class Test_Metropolis(TestCase):
         assert isinstance(ret, bool)
 
     def test_lower_f_accepted(self):
-        self.assertTrue(self.met(f_new=0., f_old=1.))
+        assert_(self.met(f_new=0., f_old=1.))
 
     def test_KeyError(self):
         # should raise KeyError if kwargs f_old or f_new is not passed
-        self.assertRaises(KeyError, self.met, f_old=1.)
-        self.assertRaises(KeyError, self.met, f_new=1.)
+        assert_raises(KeyError, self.met, f_old=1.)
+        assert_raises(KeyError, self.met, f_new=1.)
 
     def test_accept(self):
         # test that steps are randomly accepted for f_new > f_old
@@ -336,8 +336,8 @@ class Test_Metropolis(TestCase):
                 one_accept = True
             else:
                 one_reject = True
-        self.assertTrue(one_accept)
-        self.assertTrue(one_reject)
+        assert_(one_accept)
+        assert_(one_reject)
 
 
 class Test_AdaptiveStepsize(TestCase):
@@ -356,7 +356,7 @@ class Test_AdaptiveStepsize(TestCase):
         for i in range(self.takestep.interval):
             self.takestep(x)
             self.takestep.report(True)
-        self.assertTrue(self.ts.stepsize > self.stepsize)
+        assert_(self.ts.stepsize > self.stepsize)
 
     def test_adaptive_decrease(self):
         # if few steps are rejected, the stepsize should increase
@@ -366,7 +366,7 @@ class Test_AdaptiveStepsize(TestCase):
         for i in range(self.takestep.interval):
             self.takestep(x)
             self.takestep.report(False)
-        self.assertTrue(self.ts.stepsize < self.stepsize)
+        assert_(self.ts.stepsize < self.stepsize)
 
     def test_all_accepted(self):
         # test that everything works OK if all steps were accepted
@@ -374,7 +374,7 @@ class Test_AdaptiveStepsize(TestCase):
         for i in range(self.takestep.interval + 1):
             self.takestep(x)
             self.takestep.report(True)
-        self.assertTrue(self.ts.stepsize > self.stepsize)
+        assert_(self.ts.stepsize > self.stepsize)
 
     def test_all_rejected(self):
         # test that everything works OK if all steps were rejected
@@ -382,7 +382,7 @@ class Test_AdaptiveStepsize(TestCase):
         for i in range(self.takestep.interval + 1):
             self.takestep(x)
             self.takestep.report(False)
-        self.assertTrue(self.ts.stepsize < self.stepsize)
+        assert_(self.ts.stepsize < self.stepsize)
 
 
 if __name__ == "__main__":
