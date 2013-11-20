@@ -223,6 +223,9 @@ def fftconvolve(in1, in2, mode="full"):
         return _centered(ret, s1)
     elif mode == "valid":
         return _centered(ret, s1 - s2 + 1)
+    else:
+        raise ValueError("Acceptable mode flags are 'valid',"
+                         " 'same', or 'full'.")
 
 
 def convolve(in1, in2, mode='full'):
