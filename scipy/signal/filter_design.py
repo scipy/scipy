@@ -1759,6 +1759,8 @@ def cheb1ap(N, rp):
     defined as the point at which the gain first drops below -`rp`.
 
     """
+    if N == 0:
+        return numpy.array([]), numpy.array([]), 1
     z = numpy.array([])
     eps = numpy.sqrt(10 ** (0.1 * rp) - 1.0)
     n = numpy.arange(1, N + 1)
@@ -1836,6 +1838,8 @@ def ellipap(N, rp, rs):
     and 12.
 
     """
+    if N == 0:
+        return numpy.array([]), numpy.array([]), 1
     if N == 1:
         p = -sqrt(1.0 / (10 ** (0.1 * rp) - 1.0))
         k = -p
