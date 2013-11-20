@@ -55,7 +55,7 @@ class _BenchOptimizers(object):
         print("")
         print("=========================================================")
         print("Optimizer benchmark: %s" % (self.function_name))
-        print("extra kwargs: %s" % (str(self.minimizer_kwargs)))
+        print("dimensions: %d, extra kwargs: %s" % (results[0].ndim, str(self.minimizer_kwargs)))
         print("averaged over %d starting configurations" % (results[0].ntrials))
         print("  Optimizer    nfail   nfev    njev    nhev    time")
         print("---------------------------------------------------------")
@@ -79,6 +79,10 @@ class _BenchOptimizers(object):
             newres.mean_time = np.mean([r.time for r in result_list])
             newres.ntrials = len(result_list)
             newres.nfail = len([r for r in result_list if not r.success])
+            try:
+                newres.ndim = len(result_list[0].x)
+            except TypeError:
+                newres.ndim = 1
             averaged_results[name] = newres
         return averaged_results.values()
     
