@@ -2,13 +2,14 @@ import time
 from collections import defaultdict
 
 import numpy as np
+from numpy.testing import Tester
 
 import scipy.optimize
 from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
 import test_functions as funcs
 
 
-class BenchOptimizers(object):
+class _BenchOptimizers(object):
     """a framework for benchmarking the optimizer
     
     Parameters
@@ -19,12 +20,19 @@ class BenchOptimizers(object):
         function that returns the derivitive (jacobian, gradient) of fun
     hess : callable
         function that returns the hessian of fun
+    minimizer_kwargs : kwargs
+        additional keywords passed to the minimizer.  e.g. tol, maxiter
     """
-    def __init__(self, function_name, fun, der=None, hess=None):
+    def __init__(self, function_name, fun, der=None, hess=None,
+                  **minimizer_kwargs):
         self.function_name = function_name
         self.fun = fun
         self.der = der
         self.hess = hess
+        self.minimizer_kwargs = minimizer_kwargs
+        if "tol" not in minimizer_kwargs:
+            minimizer_kwargs["tol"] = 1e-4
+            
         self.results = []
 
     def reset(self):
@@ -45,13 +53,14 @@ class BenchOptimizers(object):
         results = self.average_results()
         results = sorted(results, key=lambda x: (x.nfail, x.mean_time))
         print("")
-        print("---------------------------------------------------------")
+        print("=========================================================")
         print("Optimizer benchmark: %s" % (self.function_name))
+        print("extra kwargs: %s" % (str(self.minimizer_kwargs)))
         print("averaged over %d starting configurations" % (results[0].ntrials))
-        print("      Optimizer   nfail  nfev   njev   nhev   time")
+        print("  Optimizer    nfail   nfev    njev    nhev    time")
         print("---------------------------------------------------------")
         for res in results:
-            print("%15s   %4d   %4d   %4d   %4d   %.6g" % 
+            print("%11s  | %4d  | %4d  | %4d  | %4d  | %.6g" % 
                   (res.name, res.nfail, res.mean_nfev, res.mean_njev, res.mean_nhev, res.mean_time))
     
     def average_results(self):
@@ -73,9 +82,9 @@ class BenchOptimizers(object):
             averaged_results[name] = newres
         return averaged_results.values()
     
-    def bench_run(self, x0):
+    def bench_run(self, x0, **minimizer_kwargs):
         """do an optimization test starting at x0 for all the optimizers"""
-        kwargs = dict(tol=1e-4)
+        kwargs = self.minimizer_kwargs
         
         fonly_methods = ["COBYLA", 'Powell']
         for method in fonly_methods:
@@ -105,11 +114,9 @@ class BenchOptimizers(object):
                 t1 = time.time()
                 self.add_result(res, t1-t0, method)
 
-
-
 def bench_rosenbrock():
-    b = BenchOptimizers("Rosenbrock function",
-                        fun=rosen, der=rosen_der, hess=rosen_hess)
+    b = _BenchOptimizers("Rosenbrock function",
+                         fun=rosen, der=rosen_der, hess=rosen_hess)
     
 #    # do a single test
 #    b.bench_run([0.8, 1.2, 0.7])
@@ -121,11 +128,20 @@ def bench_rosenbrock():
         b.bench_run(np.random.uniform(-3,3,3))
     b.print_results()
 
+def bench_rosenbrock_tight():
+    b = _BenchOptimizers("Rosenbrock function",
+                         fun=rosen, der=rosen_der, hess=rosen_hess,
+                         tol=1e-8)
+    # average over multiple starting points
+    for i in xrange(10):
+        b.bench_run(np.random.uniform(-3,3,3))
+    b.print_results()
+
 def bench_simple_quadratic():
     s = funcs.SimpleQuadratic()
 #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
-    b = BenchOptimizers("simple quadratic function",
-                        fun=s.fun, der=s.der, hess=s.hess)
+    b = _BenchOptimizers("simple quadratic function",
+                         fun=s.fun, der=s.der, hess=s.hess)
     for i in xrange(10):
         b.bench_run(np.random.uniform(-2,2,3))
     b.print_results()
@@ -133,8 +149,8 @@ def bench_simple_quadratic():
 def bench_asymetric_quadratic():
     s = funcs.AsymmetricQuadratic()
 #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
-    b = BenchOptimizers("function sum(x**2) + x[0]",
-                        fun=s.fun, der=s.der, hess=s.hess)
+    b = _BenchOptimizers("function sum(x**2) + x[0]",
+                         fun=s.fun, der=s.der, hess=s.hess)
     for i in xrange(10):
         b.bench_run(np.random.uniform(-2,2,3))
     b.print_results()
@@ -142,8 +158,8 @@ def bench_asymetric_quadratic():
 def bench_sin_1d():
     fun = lambda x: np.sin(x[0])
     der = lambda x: np.array([np.cos(x[0])])
-    b = BenchOptimizers("1d sin function",
-                        fun=fun, der=der, hess=None)
+    b = _BenchOptimizers("1d sin function",
+                         fun=fun, der=der, hess=None)
     for i in xrange(10):
         b.bench_run(np.random.uniform(-2,2,1))
     b.print_results()
@@ -151,27 +167,27 @@ def bench_sin_1d():
 def bench_booth():
     s = funcs.Booth()
 #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
-    b = BenchOptimizers("Booth's function",
-                        fun=s.fun, der=s.der, hess=None)
+    b = _BenchOptimizers("Booth's function",
+                         fun=s.fun, der=s.der, hess=None)
     for i in xrange(10):
         b.bench_run(np.random.uniform(0,10,2))
     b.print_results()
 
 def bench_beale():
     s = funcs.Beale()
-    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
-    b = BenchOptimizers("Beale's function",
-                        fun=s.fun, der=s.der, hess=None)
+#    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
+    b = _BenchOptimizers("Beale's function",
+                         fun=s.fun, der=s.der, hess=None)
     for i in xrange(10):
         b.bench_run(np.random.uniform(0,10,2))
     b.print_results()
 
 def bench_LJ():
     s = funcs.LJ()
-    print "checking gradient", scipy.optimize.check_grad(s.get_energy, s.get_gradient, np.random.uniform(-2,2,3*4))
+#    print "checking gradient", scipy.optimize.check_grad(s.get_energy, s.get_gradient, np.random.uniform(-2,2,3*4))
     natoms = 4
-    b = BenchOptimizers("%d atom Lennard Jones potential" % (natoms),
-                        fun=s.get_energy, der=s.get_gradient, hess=None)
+    b = _BenchOptimizers("%d atom Lennard Jones potential" % (natoms),
+                         fun=s.get_energy, der=s.get_gradient, hess=None)
     for i in xrange(10):
         b.bench_run(np.random.uniform(-2,2,natoms*3))
     b.print_results()
@@ -187,4 +203,4 @@ def main():
     bench_LJ()
 
 if __name__ == "__main__":
-    main()
+    Tester().bench(extra_argv=dict())
