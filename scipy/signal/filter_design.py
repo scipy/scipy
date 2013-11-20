@@ -643,15 +643,15 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     try:
         btype = band_dict[btype]
     except KeyError:
-        raise ValueError("%s is an invalid bandtype for filter." % btype)
+        raise ValueError("'%s' is an invalid bandtype for filter." % btype)
 
     try:
         typefunc = filter_dict[ftype][0]
     except KeyError:
-        raise ValueError("%s is not a valid basic iir filter." % ftype)
+        raise ValueError("'%s' is not a valid basic IIR filter." % ftype)
 
     if output not in ['ba', 'zpk']:
-        raise ValueError("%s is not a valid output form." % output)
+        raise ValueError("'%s' is not a valid output form." % output)
 
     if rp is not None and rp < 0:
         raise ValueError("passband ripple (rp) must be positive")
@@ -692,16 +692,19 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         z, p, k = _zpklp2lp(z, p, k, wo=warped)
     elif btype == 'highpass':
         z, p, k = _zpklp2hp(z, p, k, wo=warped)
-    elif btype == 'bandpass':
-        bw = warped[1] - warped[0]
-        wo = sqrt(warped[0] * warped[1])
-        z, p, k = _zpklp2bp(z, p, k, wo=wo, bw=bw)
-    elif btype == 'bandstop':
-        bw = warped[1] - warped[0]
-        wo = sqrt(warped[0] * warped[1])
-        z, p, k = _zpklp2bs(z, p, k, wo=wo, bw=bw)
+    elif btype in ('bandpass', 'bandstop'):
+        try:
+            bw = warped[1] - warped[0]
+            wo = sqrt(warped[0] * warped[1])
+        except IndexError:
+            raise ValueError('Wn must specify start and stop frequencies')
+
+        if btype == 'bandpass':
+            z, p, k = _zpklp2bp(z, p, k, wo=wo, bw=bw)
+        elif btype == 'bandstop':
+            z, p, k = _zpklp2bs(z, p, k, wo=wo, bw=bw)
     else:
-        raise NotImplementedError("%s not implemented in iirfilter." % btype)
+        raise NotImplementedError("'%s' not implemented in iirfilter." % btype)
 
     # Find discrete equivalent if necessary
     if not analog:
