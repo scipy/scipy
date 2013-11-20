@@ -5,9 +5,10 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy
-from numpy import atleast_1d, poly, polyval, roots, real, asarray, allclose, \
-    resize, pi, absolute, logspace, r_, sqrt, tan, log10, arctan, arcsinh, \
-    cos, exp, cosh, arccosh, ceil, conjugate, zeros, sinh
+from numpy import (atleast_1d, poly, polyval, roots, real, asarray, allclose,
+    resize, pi, absolute, logspace, r_, sqrt, tan, log10, arctan, arcsinh,
+    cos, exp, cosh, arccosh, ceil, conjugate, zeros, sinh, append,
+    concatenate, prod, ones)
 from numpy import mintypecode
 from scipy import special, optimize
 from scipy.misc import comb
@@ -679,8 +680,6 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     else:
         raise NotImplementedError("'%s' not implemented in iirfilter." % ftype)
 
-    b, a = zpk2tf(z, p, k)
-
     # Pre-warp frequencies for digital filter design
     if not analog:
         fs = 2.0
@@ -690,29 +689,165 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     # transform to lowpass, bandpass, highpass, or bandstop
     if btype == 'lowpass':
-        b, a = lp2lp(b, a, wo=warped)
+        z, p, k = _zpklp2lp(z, p, k, wo=warped)
     elif btype == 'highpass':
-        b, a = lp2hp(b, a, wo=warped)
+        z, p, k = _zpklp2hp(z, p, k, wo=warped)
     elif btype == 'bandpass':
         bw = warped[1] - warped[0]
         wo = sqrt(warped[0] * warped[1])
-        b, a = lp2bp(b, a, wo=wo, bw=bw)
+        z, p, k = _zpklp2bp(z, p, k, wo=wo, bw=bw)
     elif btype == 'bandstop':
         bw = warped[1] - warped[0]
         wo = sqrt(warped[0] * warped[1])
-        b, a = lp2bs(b, a, wo=wo, bw=bw)
+        z, p, k = _zpklp2bs(z, p, k, wo=wo, bw=bw)
     else:
         raise NotImplementedError("%s not implemented in iirfilter." % btype)
 
     # Find discrete equivalent if necessary
     if not analog:
-        b, a = bilinear(b, a, fs=fs)
+        z, p, k = _zpkbilinear(z, p, k, fs=fs)
 
     # Transform to proper out type (pole-zero, state-space, numer-denom)
     if output == 'zpk':
-        return tf2zpk(b, a)
-    else:
-        return b, a
+        return z, p, k
+    elif output == 'ba':
+        return zpk2tf(z, p, k)
+
+
+# TODO: merge these into existing functions or make public versions
+
+def _zpkbilinear(z, p, k, fs):
+    """
+    Transform a set of poles and zeros from the analog s-plane to the digital
+    z-plane using Tustin's method, which maintains the shape of the
+    frequency response.
+    """
+    degree = len(p) - len(z)
+    if degree < 0:
+        raise ValueError("Improper transfer function. "
+                         "Must have at least as many poles as zeros.")
+
+    # Compensate for gain change
+    k *= real(prod(2*fs - z) / prod(2*fs - p))
+
+    # Bilinear transform the poles and zeros
+    p = (2*fs + p) / (2*fs - p)
+    z = (2*fs + z) / (2*fs - z)
+
+    # Any zeros that were at infinity get moved to the Nyquist frequency
+    z = append(z, -ones(degree))
+
+    return z, p, k
+
+
+def _zpklp2lp(z, p, k, wo=1.0):
+    """
+    Convert analog prototype lowpass filter to lowpass filter with cutoff
+    frequency `wo`.
+    """
+    z = atleast_1d(z)
+    p = atleast_1d(p)
+
+    # Scale all points radially from origin to shift cutoff frequency
+    z = z * wo
+    p = p * wo
+
+    # Each shifted pole decreases gain by wo, each shifted zero increases it.
+    # Cancel out the net change to keep overall gain the same
+    k *= wo**(len(p) - len(z))
+
+    return z, p, k
+
+
+def _zpklp2hp(z, p, k, wo=1.0):
+    """
+    Convert analog prototype lowpass filter to highpass filter with cutoff
+    frequency `wo`.
+    """
+    z = atleast_1d(z)
+    p = atleast_1d(p)
+
+    # Cancel out gain change caused by inversion
+    k *= real(prod(-z) / prod(-p))
+
+    # Invert positions radially about unit circle to convert LPF to HPF
+    # Scale all points radially from origin to shift cutoff frequency
+    z = wo / z
+    p = wo / p
+
+    # If lowpass had zeros at infinity, inverting moves them to origin.
+    z = append(z, zeros(len(p) - len(z)))
+
+    return z, p, k
+
+
+def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
+    """
+    Convert analog prototype lowpass filter to bandpass filter with center
+    frequency `wo` and bandwidth `bw`.
+
+    This is the "wideband" transformation, producing a passband with
+    geometric (log frequency) symmetry.
+    """
+    z = atleast_1d(z)
+    p = atleast_1d(p)
+
+    degree = len(p) - len(z) # Relative degree of the transfer function
+
+    # Scale poles and zeros to desired bandwidth
+    pbw = p * bw/2
+    zbw = z * bw/2
+
+    # Square root needs to produce complex, not nan
+    pbw = pbw.astype(complex)
+    zbw = zbw.astype(complex)
+
+    # Duplicate poles and zeros and shift from baseband to +wo and -wo
+    p = concatenate((pbw + sqrt(pbw**2 - wo**2), pbw - sqrt(pbw**2 - wo**2)))
+    z = concatenate((zbw + sqrt(zbw**2 - wo**2), zbw - sqrt(zbw**2 - wo**2)))
+
+    # Move half of any zeros that were at infinity to the origin for BPF
+    z = append(z, zeros(degree))
+
+    # Cancel out gain change from frequency scaling
+    k *= bw**degree
+
+    return z, p, k
+
+
+def _zpklp2bs(z, p, k, wo=1.0, bw=1.0):
+    """
+    Convert analog prototype lowpass filter to bandstop filter with center
+    frequency `wo` and bandwidth `bw`
+
+    This is the "wideband" transformation, producing a stopband with
+    geometric (log frequency) symmetry.
+    """
+    z = atleast_1d(z)
+    p = atleast_1d(p)
+
+    degree = len(p) - len(z) # Relative degree of the transfer function
+
+    # Cancel out gain change caused by inversion
+    k *= real(prod(-z) / prod(-p))
+
+    # Invert to a highpass filter with desired bandwidth
+    pbw = (bw/2) / p
+    zbw = (bw/2) / z
+
+    # Square root needs to produce complex, not nan
+    pbw = pbw.astype(complex)
+    zbw = zbw.astype(complex)
+
+    # Duplicate poles and zeros and shift from baseband to +wo and -wo
+    p = concatenate((pbw + sqrt(pbw**2 - wo**2), pbw - sqrt(pbw**2 - wo**2)))
+    z = concatenate((zbw + sqrt(zbw**2 - wo**2), zbw - sqrt(zbw**2 - wo**2)))
+
+    # Move any zeros that were at infinity to the center of the stopband
+    z = append(z, +1j*wo * ones(degree))
+    z = append(z, -1j*wo * ones(degree))
+
+    return z, p, k
 
 
 def butter(N, Wn, btype='low', analog=False, output='ba'):
