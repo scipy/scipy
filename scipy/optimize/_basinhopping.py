@@ -69,11 +69,10 @@ class BasinHoppingRunner(object):
 
         # do initial minimization
         minres = minimizer(self.x)
-        if hasattr(minres, "success"):
-            if not minres.success:
-                self.res.minimization_failures += 1
-                if self.disp:
-                    print("warning: basinhopping: local minimization failure")
+        if not minres.success:
+            self.res.minimization_failures += 1
+            if self.disp:
+                print("warning: basinhopping: local minimization failure")
         self.x = np.copy(minres.x)
         self.energy = minres.fun
         if self.disp:
@@ -104,11 +103,10 @@ class BasinHoppingRunner(object):
         minres = self.minimizer(x_after_step)
         x_after_quench = minres.x
         energy_after_quench = minres.fun
-        if hasattr(minres, "success"):
-            if not minres.success:
-                self.res.minimization_failures += 1
-                if self.disp:
-                    print("warning: basinhopping: local minimization failure")
+        if not minres.success:
+            self.res.minimization_failures += 1
+            if self.disp:
+                print("warning: basinhopping: local minimization failure")
         if hasattr(minres, "nfev"):
             self.res.nfev += minres.nfev
         if hasattr(minres, "njev"):

@@ -39,18 +39,6 @@ def func2d(x):
     return f, df
 
 
-class Minimizer(object):
-    def __init__(self, func, **kwargs):
-        self.kwargs = kwargs
-        self.func = func
-
-    def __call__(self, x0, **newkwargs):
-        #combine the two kwargs
-        kwargs = dict(list(newkwargs.items()) + list(self.kwargs.items()))
-        res = minimize(self.func, x0, **kwargs)
-        return res
-
-
 class MyTakeStep1(RandomDisplacement):
     """use a copy of displace, but have it set a special parameter to
     make sure it's actually being used."""
