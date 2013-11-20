@@ -2,7 +2,7 @@ import time
 from collections import defaultdict
 
 import numpy as np
-from numpy.testing import Tester
+from numpy.testing import Tester, TestCase
 
 import scipy.optimize
 from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
@@ -114,93 +114,87 @@ class _BenchOptimizers(object):
                 t1 = time.time()
                 self.add_result(res, t1-t0, method)
 
-def bench_rosenbrock():
-    b = _BenchOptimizers("Rosenbrock function",
-                         fun=rosen, der=rosen_der, hess=rosen_hess)
+class BenchSmoothUnbounded(TestCase):
+    """Benchmark the optimizers with smooth, unbounded, functions"""
+    def bench_rosenbrock(self):
+        b = _BenchOptimizers("Rosenbrock function",
+                             fun=rosen, der=rosen_der, hess=rosen_hess)
+        for i in xrange(10):
+            b.bench_run(np.random.uniform(-3,3,3))
+        b.print_results()
     
-#    # do a single test
-#    b.bench_run([0.8, 1.2, 0.7])
-#    b.print_results()
+    def bench_rosenbrock_tight(self):
+        b = _BenchOptimizers("Rosenbrock function",
+                             fun=rosen, der=rosen_der, hess=rosen_hess,
+                             tol=1e-8)
+        for i in xrange(10):
+            b.bench_run(np.random.uniform(-3,3,3))
+        b.print_results()
     
-    # average over multiple starting points
-    b.reset()
-    for i in xrange(10):
-        b.bench_run(np.random.uniform(-3,3,3))
-    b.print_results()
-
-def bench_rosenbrock_tight():
-    b = _BenchOptimizers("Rosenbrock function",
-                         fun=rosen, der=rosen_der, hess=rosen_hess,
-                         tol=1e-8)
-    # average over multiple starting points
-    for i in xrange(10):
-        b.bench_run(np.random.uniform(-3,3,3))
-    b.print_results()
-
-def bench_simple_quadratic():
-    s = funcs.SimpleQuadratic()
-#    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
-    b = _BenchOptimizers("simple quadratic function",
-                         fun=s.fun, der=s.der, hess=s.hess)
-    for i in xrange(10):
-        b.bench_run(np.random.uniform(-2,2,3))
-    b.print_results()
-
-def bench_asymetric_quadratic():
-    s = funcs.AsymmetricQuadratic()
-#    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
-    b = _BenchOptimizers("function sum(x**2) + x[0]",
-                         fun=s.fun, der=s.der, hess=s.hess)
-    for i in xrange(10):
-        b.bench_run(np.random.uniform(-2,2,3))
-    b.print_results()
-
-def bench_sin_1d():
-    fun = lambda x: np.sin(x[0])
-    der = lambda x: np.array([np.cos(x[0])])
-    b = _BenchOptimizers("1d sin function",
-                         fun=fun, der=der, hess=None)
-    for i in xrange(10):
-        b.bench_run(np.random.uniform(-2,2,1))
-    b.print_results()
-
-def bench_booth():
-    s = funcs.Booth()
-#    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
-    b = _BenchOptimizers("Booth's function",
-                         fun=s.fun, der=s.der, hess=None)
-    for i in xrange(10):
-        b.bench_run(np.random.uniform(0,10,2))
-    b.print_results()
-
-def bench_beale():
-    s = funcs.Beale()
-#    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
-    b = _BenchOptimizers("Beale's function",
-                         fun=s.fun, der=s.der, hess=None)
-    for i in xrange(10):
-        b.bench_run(np.random.uniform(0,10,2))
-    b.print_results()
-
-def bench_LJ():
-    s = funcs.LJ()
-#    print "checking gradient", scipy.optimize.check_grad(s.get_energy, s.get_gradient, np.random.uniform(-2,2,3*4))
-    natoms = 4
-    b = _BenchOptimizers("%d atom Lennard Jones potential" % (natoms),
-                         fun=s.get_energy, der=s.get_gradient, hess=None)
-    for i in xrange(10):
-        b.bench_run(np.random.uniform(-2,2,natoms*3))
-    b.print_results()
-
-
-def main():
-    bench_rosenbrock()
-    bench_simple_quadratic()
-    bench_asymetric_quadratic()
-    bench_sin_1d()
-    bench_booth()
-    bench_beale()
-    bench_LJ()
+    def bench_simple_quadratic(self):
+        s = funcs.SimpleQuadratic()
+    #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
+        b = _BenchOptimizers("simple quadratic function",
+                             fun=s.fun, der=s.der, hess=s.hess)
+        for i in xrange(10):
+            b.bench_run(np.random.uniform(-2,2,3))
+        b.print_results()
+    
+    def bench_asymetric_quadratic(self):
+        s = funcs.AsymmetricQuadratic()
+    #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
+        b = _BenchOptimizers("function sum(x**2) + x[0]",
+                             fun=s.fun, der=s.der, hess=s.hess)
+        for i in xrange(10):
+            b.bench_run(np.random.uniform(-2,2,3))
+        b.print_results()
+    
+    def bench_sin_1d(self):
+        fun = lambda x: np.sin(x[0])
+        der = lambda x: np.array([np.cos(x[0])])
+        b = _BenchOptimizers("1d sin function",
+                             fun=fun, der=der, hess=None)
+        for i in xrange(10):
+            b.bench_run(np.random.uniform(-2,2,1))
+        b.print_results()
+    
+    def bench_booth(self):
+        s = funcs.Booth()
+    #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
+        b = _BenchOptimizers("Booth's function",
+                             fun=s.fun, der=s.der, hess=None)
+        for i in xrange(10):
+            b.bench_run(np.random.uniform(0,10,2))
+        b.print_results()
+    
+    def bench_beale(self):
+        s = funcs.Beale()
+    #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
+        b = _BenchOptimizers("Beale's function",
+                             fun=s.fun, der=s.der, hess=None)
+        for i in xrange(10):
+            b.bench_run(np.random.uniform(0,10,2))
+        b.print_results()
+    
+    def bench_LJ(self):
+        s = funcs.LJ()
+    #    print "checking gradient", scipy.optimize.check_grad(s.get_energy, s.get_gradient, np.random.uniform(-2,2,3*4))
+        natoms = 4
+        b = _BenchOptimizers("%d atom Lennard Jones potential" % (natoms),
+                             fun=s.get_energy, der=s.get_gradient, hess=None)
+        for i in xrange(10):
+            b.bench_run(np.random.uniform(-2,2,natoms*3))
+        b.print_results()
+    
+    
+#def main():
+#    bench_rosenbrock()
+#    bench_simple_quadratic()
+#    bench_asymetric_quadratic()
+#    bench_sin_1d()
+#    bench_booth()
+#    bench_beale()
+#    bench_LJ()
 
 if __name__ == "__main__":
     Tester().bench(extra_argv=dict())
