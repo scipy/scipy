@@ -6,9 +6,9 @@ import warnings
 
 import numpy
 from numpy import (atleast_1d, poly, polyval, roots, real, asarray, allclose,
-    resize, pi, absolute, logspace, r_, sqrt, tan, log10, arctan, arcsinh,
-    cos, exp, cosh, arccosh, ceil, conjugate, zeros, sinh, append,
-    concatenate, prod, ones)
+                   resize, pi, absolute, logspace, r_, sqrt, tan, log10,
+                   arctan, arcsinh, cos, exp, cosh, arccosh, ceil, conjugate,
+                   zeros, sinh, append, concatenate, prod, ones)
 from numpy import mintypecode
 from scipy import special, optimize
 from scipy.misc import comb
@@ -1747,6 +1747,8 @@ def buttap(N):
     of 1.
 
     """
+    if abs(int(N)) != N:
+        raise ValueError("Filter order must be a positive integer")
     z = numpy.array([])
     n = numpy.arange(1, N + 1)
     p = numpy.exp(1j * (2 * n - 1) / (2.0 * N) * pi) * 1j
@@ -1762,7 +1764,9 @@ def cheb1ap(N, rp):
     defined as the point at which the gain first drops below -`rp`.
 
     """
-    if N == 0:
+    if abs(int(N)) != N:
+        raise ValueError("Filter order must be a positive integer")
+    elif N == 0:
         return numpy.array([]), numpy.array([]), 1
     z = numpy.array([])
     eps = numpy.sqrt(10 ** (0.1 * rp) - 1.0)
@@ -1785,6 +1789,8 @@ def cheb2ap(N, rs):
     defined as the point at which the gain first reaches -`rs`.
 
     """
+    if abs(int(N)) != N:
+        raise ValueError("Filter order must be a positive integer")
     de = 1.0 / sqrt(10 ** (0.1 * rs) - 1)
     mu = arcsinh(1.0 / de) / N
 
@@ -1841,9 +1847,11 @@ def ellipap(N, rp, rs):
     and 12.
 
     """
-    if N == 0:
+    if abs(int(N)) != N:
+        raise ValueError("Filter order must be a positive integer")
+    elif N == 0:
         return numpy.array([]), numpy.array([]), 1
-    if N == 1:
+    elif N == 1:
         p = -sqrt(1.0 / (10 ** (0.1 * rp) - 1.0))
         k = -p
         z = []
@@ -2266,7 +2274,7 @@ def besselap(N):
              -.2373280669322028974199184 - 1.211476658382565356579418j,
              -.2373280669322028974199184 + 1.211476658382565356579418j]
     else:
-        raise ValueError("Bessel Filter not supported for order %d" % N)
+        raise ValueError("Bessel Filter not supported for order %s" % N)
 
     return asarray(z), asarray(p), k
 
