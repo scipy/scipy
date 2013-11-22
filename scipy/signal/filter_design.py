@@ -1748,7 +1748,7 @@ def buttap(N):
 
     """
     if abs(int(N)) != N:
-        raise ValueError("Filter order must be a positive integer")
+        raise ValueError("Filter order must be a nonnegative integer")
     z = numpy.array([])
     n = numpy.arange(1, N + 1)
     p = numpy.exp(1j * (2 * n - 1) / (2.0 * N) * pi) * 1j
@@ -1765,7 +1765,7 @@ def cheb1ap(N, rp):
 
     """
     if abs(int(N)) != N:
-        raise ValueError("Filter order must be a positive integer")
+        raise ValueError("Filter order must be a nonnegative integer")
     elif N == 0:
         return numpy.array([]), numpy.array([]), 1
     z = numpy.array([])
@@ -1790,7 +1790,7 @@ def cheb2ap(N, rs):
 
     """
     if abs(int(N)) != N:
-        raise ValueError("Filter order must be a positive integer")
+        raise ValueError("Filter order must be a nonnegative integer")
     de = 1.0 / sqrt(10 ** (0.1 * rs) - 1)
     mu = arcsinh(1.0 / de) / N
 
@@ -1848,7 +1848,7 @@ def ellipap(N, rp, rs):
 
     """
     if abs(int(N)) != N:
-        raise ValueError("Filter order must be a positive integer")
+        raise ValueError("Filter order must be a nonnegative integer")
     elif N == 0:
         return numpy.array([]), numpy.array([]), 1
     elif N == 1:
