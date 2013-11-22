@@ -9,7 +9,7 @@ from scipy.lib.six import xrange
 
 from numpy import exp, log, asarray, arange, newaxis, hstack, product, array, \
                   where, zeros, extract, place, pi, sqrt, eye, poly1d, dot, \
-                  r_, rollaxis, sum, fromstring
+                  r_, rollaxis, sum, fromstring, asanyarray, multiply
 
 __all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb',
            'central_diff_weights', 'derivative', 'pade', 'lena', 'ascent', 'face']
@@ -53,6 +53,10 @@ def logsumexp(a, axis=None, b=None):
     only handles two arguments. `logaddexp.reduce` is similar to this
     function, but may be less stable.
 
+    This function preserves ndarray subclasses, and works also with
+    matrices and masked arrays (it uses `asanyarray` instead of `asarray`
+    for parameters).
+
     Examples
     --------
     >>> from scipy.misc import logsumexp
@@ -71,19 +75,19 @@ def logsumexp(a, axis=None, b=None):
     >>> np.log(np.sum(b*np.exp(a)))
     9.9170178533034647
     """
-    a = asarray(a)
+    a = asanyarray(a)
     if axis is None:
         a = a.ravel()
     else:
         a = rollaxis(a, axis)
     a_max = a.max(axis=0)
     if b is not None:
-        b = asarray(b)
+        b = asanyarray(b)
         if axis is None:
             b = b.ravel()
         else:
             b = rollaxis(b, axis)
-        out = log(sum(b * exp(a - a_max), axis=0))
+        out = log(sum(multiply(b, exp(a - a_max)), axis=0))
     else:
         out = log(sum(exp(a - a_max), axis=0))
     out += a_max

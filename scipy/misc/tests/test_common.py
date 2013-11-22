@@ -60,6 +60,13 @@ def test_logsumexp():
     assert_array_almost_equal(np.exp(logsumexp(logX, axis=0)), X.sum(axis=0))
     assert_array_almost_equal(np.exp(logsumexp(logX, axis=1)), X.sum(axis=1))
 
+    x = np.ma.array([0, 1, 2], mask=[1, 0, 0])
+    assert_array_almost_equal(logsumexp(x.compressed()),
+                              np.log(np.sum(np.exp(x.compressed()))))
+    X = np.matrix([[1, 2], [3, 4]])
+    assert_array_almost_equal(logsumexp(X),
+                              np.log(np.sum(np.exp(X))))
+
 
 def test_logsumexp_b():
     a = np.arange(200)
@@ -84,6 +91,11 @@ def test_logsumexp_b():
                                 (B * X).sum(axis=0))
     assert_array_almost_equal(np.exp(logsumexp(logX, b=B, axis=1)),
                                 (B * X).sum(axis=1))
+
+    X = np.matrix([[1, 2], [3, 4]])
+    b = np.array([[1, 2], [3, 4]])
+    assert_array_almost_equal(logsumexp(X, None, b),
+                              np.log(np.sum(np.multiply(b, np.exp(X)))))
 
 
 def test_face():
