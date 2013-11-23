@@ -894,8 +894,8 @@ class TestCompareWithStats(TestCase):
     def test_tmin(self):
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n)
-            #~ assert_almost_equal(stats.tmin(x),stats.mstats.tmin(xm),10) #ERROR: causes trouble without keyword lowerlimit in mstats
-            #~ assert_almost_equal(stats.tmin(y),stats.mstats.tmin(ym),10) #todo
+            assert_equal(stats.tmin(x),stats.mstats.tmin(xm))
+            assert_equal(stats.tmin(y),stats.mstats.tmin(ym))
 
             assert_almost_equal(stats.tmin(x,lowerlimit=-1.),stats.mstats.tmin(xm,lowerlimit=-1.),10)
             assert_almost_equal(stats.tmin(y,lowerlimit=-1.),stats.mstats.tmin(ym,lowerlimit=-1.),10)

@@ -1024,6 +1024,8 @@ def trima(a, limits=None, inclusive=(True,True)):
     if limits is None:
         return a
     (lower_lim, upper_lim) = limits
+    if (lower_lim is None) and (upper_lim is None):
+        return a
     (lower_in, upper_in) = inclusive
     condition = False
     if lower_lim is not None:
@@ -1394,7 +1396,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     print(a)
     print(a.mask)
     am = trima(a, (lowerlimit, None), (inclusive, False))
-    print('Da sammer')
+    #print('Da sammer')
     return ma.minimum.reduce(am, axis)
 tmin.__doc__ = stats.tmin.__doc__
 
