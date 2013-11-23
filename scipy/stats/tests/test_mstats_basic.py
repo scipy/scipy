@@ -719,8 +719,8 @@ class TestCompareWithStats(TestCase):
             r,p   = stats.pearsonr(x,y)
             rm,pm = stats.mstats.pearsonr(xm,ym)
 
-            assert_almost_equal(r,rm,10)
-            assert_almost_equal(p,pm,10)
+            assert_almost_equal(r,rm,14)
+            assert_almost_equal(p,pm,14)
 
     def test_spearmanr(self):
         """ test spearmanr """
@@ -728,8 +728,8 @@ class TestCompareWithStats(TestCase):
             x,y,xm,ym = self.generate_xy_sample(n)
             r,p = stats.spearmanr(x,y)
             rm,pm = stats.mstats.spearmanr(xm,ym)
-            assert_almost_equal(r,rm,10)
-            assert_almost_equal(p,pm,10)
+            assert_almost_equal(r,rm,14)
+            assert_almost_equal(p,pm,14)
 
     def test_gmean(self):
         for n in self.get_n():
@@ -926,12 +926,11 @@ class TestCompareWithStats(TestCase):
 
         assert(np.all(b == bm.data[~bm.mask]))
 
-    @nottest
     def test_tsem(self):
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n)
-            assert_almost_equal(stats.tsem(x),stats.mstats.tsem(xm),10)
-            assert_almost_equal(stats.tsem(y),stats.mstats.tsem(ym),10) #error
+            assert_equal(stats.tsem(x),stats.mstats.tsem(xm))
+            assert_equal(stats.tsem(y),stats.mstats.tsem(ym))
             assert_almost_equal(stats.tsem(x,limits=(-2.,2.)),stats.mstats.tsem(xm,limits=(-2.,2.)),10) #ERROR: causes problems with limits!!! (at 4th digit)
 
     def test_skewtest(self):
