@@ -432,7 +432,7 @@ class TestVariability(TestCase):
 
     def test_sem(self):
         # This is not in R, so used: sqrt(var(testcase)*3/4) / sqrt(3)
-        y = mstats.sem(self.testcase)
+        y = mstats.sem(self.testcase,ddof=1)
         assert_almost_equal(y,0.6454972244)
 
     def test_zmap(self):
@@ -836,13 +836,13 @@ class TestCompareWithStats(TestCase):
             rm = stats.mstats.kurtosis(ym)
             assert_almost_equal(r,rm,10)
 
-    @nottest
+
     def test_sem(self):
         #example from stats.sem doc
         a = np.arange(20).reshape(5,4)
         am = np.ma.array(a)
-        r = stats.sem(a)
-        rm = stats.mstats.sem(am)
+        r = stats.sem(a,ddof=1)
+        rm = stats.mstats.sem(am,ddof=1.)
 
         assert(np.all(abs(r - 2.82842712)<1.E-5 ))
         assert(np.all(abs(rm - 2.82842712)<1.E-5))
@@ -852,8 +852,12 @@ class TestCompareWithStats(TestCase):
 
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n) #ddof default is 0
-            assert_almost_equal(stats.mstats.sem(xm,axis=None),stats.sem(x, axis=None, ddof=0),10) # todo ERROR: results are different at 4-5 decimal
-            assert_almost_equal(stats.mstats.sem(ym,axis=None),stats.sem(y, axis=None, ddof=0),10) #todo
+            assert_equal(stats.mstats.sem(xm,axis=None,ddof=0),stats.sem(x, axis=None, ddof=0))
+            assert_equal(stats.mstats.sem(ym,axis=None,ddof=0),stats.sem(y, axis=None, ddof=0))
+
+            assert_equal(stats.mstats.sem(xm,axis=None,ddof=1),stats.sem(x, axis=None, ddof=1))
+            assert_equal(stats.mstats.sem(ym,axis=None,ddof=1),stats.sem(y, axis=None, ddof=1))
+
 
     def test_describe(self):
         for n in self.get_n():
