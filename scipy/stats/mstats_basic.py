@@ -1386,7 +1386,15 @@ tmean.__doc__ = stats.tmean.__doc__
 
 
 def tvar(a, limits=None, inclusive=(True,True)):
-    return trima(a, limits=limits, inclusive=inclusive).var()
+    a = a.astype(float).ravel()
+
+    if limits is None:
+        n = (~a.mask).sum() #todo: better way to do that?
+    else:
+        raise ValueError, 'Todo: not implemented yet!' #todo: write also unittest for routine WITH limits
+    r=trima(a, limits=limits, inclusive=inclusive).var()*(n/(n-1.))
+
+    return r
 tvar.__doc__ = stats.tvar.__doc__
 
 

@@ -878,19 +878,13 @@ class TestCompareWithStats(TestCase):
             x,y,xm,ym = self.generate_xy_sample(n)
             r  = stats.rankdata(x)
             rm = stats.mstats.rankdata(x)
-
             assert(np.all( (r-rm) == 0. ))
 
     def test_tmean(self):
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n)
-
-            assert_almost_equal(stats.tmean(x),stats.mstats.tmean(xm),10)
-            assert_almost_equal(stats.tmean(y),stats.mstats.tmean(ym),10)
-
-            #assert_almost_equal(stats.tmean(x,limits=(1.,3.)),stats.mstats.tmean(xm,limits=(1.,0.7)),10)
-            #assert_almost_equal(stats.tmean(y,limits=(0.5,0.7)),stats.mstats.tmean(ym,limits=(0.5,0.7)),10)
-
+            assert_equal(stats.tmean(x),stats.mstats.tmean(xm))
+            assert_equal(stats.tmean(y),stats.mstats.tmean(ym))
 
     def test_tmax(self):
         for n in self.get_n():
@@ -920,7 +914,6 @@ class TestCompareWithStats(TestCase):
             assert_almost_equal(stats.variation(x),stats.mstats.variation(xm),10)
             assert_almost_equal(stats.variation(y),stats.mstats.variation(ym),10)
 
-    @nottest
     def test_tvar(self):
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n)
