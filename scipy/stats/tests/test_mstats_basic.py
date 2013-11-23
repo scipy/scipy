@@ -970,13 +970,16 @@ class TestCompareWithStats(TestCase):
             assert_almost_equal(r[0],rm[0],10)
             assert_almost_equal(r[1],rm[1],7)
 
-    @nottest
-    def test_obrientransform(self):    #todo causes error!
+
+    def test_obrientransform(self):
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n)
             r = stats.obrientransform(x)
             rm = stats.mstats.obrientransform(xm)
-            assert_almost_equal(r,rm[0:len(x)]) #ERROR: returned array is transposed in mstats compared to stats
+            #todo: note that the routines are not consistent, as they return
+            #results which are transposed to each other. For reasons of backward
+            #compatability, this was kept like that at the moment
+            assert_almost_equal(r.T,rm[0:len(x)])
 
 
 
