@@ -519,7 +519,7 @@ def test_plotting_positions():
 
 class TestNormalitytests():
 
-    def test_vs_nonmasked(self):
+    def test_vs_nonmasked(self): #todo: This test does only make sense, if a masked array is used!
         x = np.array((-2,-1,0,1,2,3)*4)**2
         assert_array_almost_equal(mstats.normaltest(x), stats.normaltest(x))
         assert_array_almost_equal(mstats.skewtest(x), stats.skewtest(x))
@@ -934,15 +934,14 @@ class TestCompareWithStats(TestCase):
             assert_almost_equal(stats.tsem(y),stats.mstats.tsem(ym),10) #error
             assert_almost_equal(stats.tsem(x,limits=(-2.,2.)),stats.mstats.tsem(xm,limits=(-2.,2.)),10) #ERROR: causes problems with limits!!! (at 4th digit)
 
-    @nottest
     def test_skewtest(self):
         for n in self.get_n():
             if n>8:
                 x,y,xm,ym = self.generate_xy_sample(n)
                 r = stats.skewtest(x)
                 rm = stats.mstats.skewtest(xm)
-                assert_almost_equal(r[0],rm[0],10)
-                assert_almost_equal(r[1],rm[1],10) #<<< seems to be an inconsistency between modules!
+                assert_equal(r[0],rm[0])
+                assert_equal(r[1],rm[1])
 
     def test_normaltest(self):
         for n in self.get_n():
