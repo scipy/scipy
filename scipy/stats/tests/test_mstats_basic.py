@@ -882,16 +882,16 @@ class TestCompareWithStats(TestCase):
     def test_describe(self):
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n)
-            r  = stats.describe(x)
-            rm = stats.mstats.describe(xm)
+            r  = stats.describe(x,ddof=1)
+            rm = stats.mstats.describe(xm,ddof=1)
 
-            assert_almost_equal(r[0],rm[0],10) #n
-            assert_almost_equal(r[1][0],rm[1][0],10) #min
-            assert_almost_equal(r[1][1],rm[1][1],10) #max
-            assert_almost_equal(r[2],rm[2],10) #mean
-            #assert_almost_equal(r[3],rm[3],10) #unbiased variance ERROR: throws an assertion error! todo
-            assert_almost_equal(r[4],rm[4],10) #biased skewness
-            assert_almost_equal(r[5],rm[5],10) #biased kurtosis
+            assert_equal(r[0],rm[0]) #n
+            assert_equal(r[1][0],rm[1][0]) #min
+            assert_equal(r[1][1],rm[1][1]) #max
+            assert_equal(r[2],rm[2]) #mean
+            assert_equal(r[3],rm[3]) #unbiased variance
+            assert_equal(r[4],rm[4]) #biased skewness
+            assert_equal(r[5],rm[5]) #biased kurtosis
 
     def test_rankdata(self):
         for n in self.get_n():
@@ -915,7 +915,7 @@ class TestCompareWithStats(TestCase):
     def test_tmin(self):
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n)
-            #~ todo assert_almost_equal(stats.tmin(x),stats.mstats.tmin(xm),10) #ERROR: causes trouble without keyword lowerlimit in mstats
+            #~ assert_almost_equal(stats.tmin(x),stats.mstats.tmin(xm),10) #ERROR: causes trouble without keyword lowerlimit in mstats
             #~ assert_almost_equal(stats.tmin(y),stats.mstats.tmin(ym),10) #todo
 
             assert_almost_equal(stats.tmin(x,lowerlimit=-1.),stats.mstats.tmin(xm,lowerlimit=-1.),10)
@@ -952,7 +952,7 @@ class TestCompareWithStats(TestCase):
             x,y,xm,ym = self.generate_xy_sample(n)
             assert_equal(stats.tsem(x),stats.mstats.tsem(xm))
             assert_equal(stats.tsem(y),stats.mstats.tsem(ym))
-            assert_almost_equal(stats.tsem(x,limits=(-2.,2.)),stats.mstats.tsem(xm,limits=(-2.,2.)),10) #ERROR: causes problems with limits!!! (at 4th digit)
+            assert_equal(stats.tsem(x,limits=(-2.,2.)),stats.mstats.tsem(xm,limits=(-2.,2.)))
 
     def test_skewtest(self):
         for n in self.get_n():
