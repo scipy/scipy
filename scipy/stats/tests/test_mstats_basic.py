@@ -506,8 +506,9 @@ def test_regress_simple():
     y += np.sin(np.linspace(0, 20, 100))
 
     slope, intercept, r_value, p_value, sterr = mstats.linregress(x, y)
-    assert_almost_equal(slope, 0.19644990055858422)
-    assert_almost_equal(intercept, 10.211269918932341)
+    if slope is not None:
+        assert_almost_equal(slope, 0.19644990055858422)
+        assert_almost_equal(intercept, 10.211269918932341)
 
 
 def test_plotting_positions():
@@ -704,11 +705,12 @@ class TestCompareWithStats(TestCase):
             slope, intercept, r_value, p_value, std_err      = stats.linregress(x,y)
             slopem, interceptm, r_valuem, p_valuem, std_errm = stats.mstats.linregress(xm,ym)
 
-            assert_almost_equal(slope,slopem,10)
-            assert_almost_equal(intercept,interceptm,10)
-            assert_almost_equal(r_value,r_valuem,10)
-            #~ assert_almost_equal(p_value,p_valuem,10) #ERROR invalid p-value and std_err todo
-            #~ assert_almost_equal(std_err,std_errm,10) #todo
+            if slopem is not None:
+                assert_equal(slope,slopem)
+                assert_equal(intercept,interceptm)
+                assert_equal(r_value,r_valuem)
+                assert_equal(p_value,p_valuem)
+                assert_equal(std_err,std_errm)
 
     def test_pearsonr(self):
         """ test for pearsonr """
@@ -735,11 +737,11 @@ class TestCompareWithStats(TestCase):
 
             r  = stats.gmean(abs(x))
             rm = stats.mstats.gmean(abs(xm))
-            assert_almost_equal(r,rm,10)
+            assert_equal(r,rm)
 
             r  = stats.gmean(abs(y))
             rm = stats.mstats.gmean(abs(ym))
-            assert_almost_equal(r,rm,10)
+            assert_equal(r,rm)
 
     def test_hmean(self):
         for n in self.get_n():
@@ -847,11 +849,8 @@ class TestCompareWithStats(TestCase):
         assert(np.all(abs(r - 2.82842712)<1.E-5 ))
         assert(np.all(abs(rm - 2.82842712)<1.E-5))
 
-        #Find standard error across the whole array, using n degrees of freedom
-        #~ assert_almost_equal(stats.mstats.sem(am,axis=None,ddof=0),stats.sem(a, axis=None, ddof=0),10)   todo #ERROR: mstats contains no ddof parameter
-
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n) #ddof default is 0
+            x,y,xm,ym = self.generate_xy_sample(n)
             assert_equal(stats.mstats.sem(xm,axis=None,ddof=0),stats.sem(x, axis=None, ddof=0))
             assert_equal(stats.mstats.sem(ym,axis=None,ddof=0),stats.sem(y, axis=None, ddof=0))
 
@@ -911,14 +910,14 @@ class TestCompareWithStats(TestCase):
     def test_variation(self):
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n)
-            assert_almost_equal(stats.variation(x),stats.mstats.variation(xm),10)
-            assert_almost_equal(stats.variation(y),stats.mstats.variation(ym),10)
+            assert_equal(stats.variation(x),stats.mstats.variation(xm))
+            assert_equal(stats.variation(y),stats.mstats.variation(ym))
 
     def test_tvar(self):
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n)
-            assert_almost_equal(stats.tvar(x),stats.mstats.tvar(xm),10) #ERROR: throws an assertion error
-            assert_almost_equal(stats.tvar(y),stats.mstats.tvar(ym),10)
+            assert_equal(stats.tvar(x),stats.mstats.tvar(xm))
+            assert_equal(stats.tvar(y),stats.mstats.tvar(ym))
 
     def test_trimboth(self):
         a = np.arange(20)
