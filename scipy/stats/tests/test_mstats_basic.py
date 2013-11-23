@@ -527,8 +527,9 @@ def test_regress_simple():
     y += np.sin(np.linspace(0, 20, 100))
 
     slope, intercept, r_value, p_value, sterr = mstats.linregress(x, y)
-    assert_almost_equal(slope, 0.19644990055858422)
-    assert_almost_equal(intercept, 10.211269918932341)
+    if slope is not None:
+        assert_almost_equal(slope, 0.19644990055858422)
+        assert_almost_equal(intercept, 10.211269918932341)
 
 
 def test_plotting_positions():
@@ -539,7 +540,7 @@ def test_plotting_positions():
 
 class TestNormalitytests():
 
-    def test_vs_nonmasked(self):
+    def test_vs_nonmasked(self): #todo: This test does only make sense, if a masked array is used!
         x = np.array((-2,-1,0,1,2,3)*4)**2
         assert_array_almost_equal(mstats.normaltest(x), stats.normaltest(x))
         assert_array_almost_equal(mstats.skewtest(x), stats.skewtest(x))
@@ -725,11 +726,12 @@ class TestCompareWithStats(TestCase):
             slope, intercept, r_value, p_value, std_err      = stats.linregress(x,y)
             slopem, interceptm, r_valuem, p_valuem, std_errm = stats.mstats.linregress(xm,ym)
 
-            assert_almost_equal(slope,slopem,10)
-            assert_almost_equal(intercept,interceptm,10)
-            assert_almost_equal(r_value,r_valuem,10)
-            #~ assert_almost_equal(p_value,p_valuem,10) #ERROR invalid p-value and std_err todo
-            #~ assert_almost_equal(std_err,std_errm,10) #todo
+            if slopem is not None:
+                assert_equal(slope,slopem)
+                assert_equal(intercept,interceptm)
+                assert_equal(r_value,r_valuem)
+                assert_equal(p_value,p_valuem)
+                assert_equal(std_err,std_errm)
 
     def test_pearsonr(self):
         """ test for pearsonr """
@@ -738,8 +740,8 @@ class TestCompareWithStats(TestCase):
             r,p   = stats.pearsonr(x,y)
             rm,pm = stats.mstats.pearsonr(xm,ym)
 
-            assert_almost_equal(r,rm,10)
-            assert_almost_equal(p,pm,10)
+            assert_almost_equal(r,rm,14)
+            assert_almost_equal(p,pm,14)
 
     def test_spearmanr(self):
         """ test spearmanr """
@@ -747,8 +749,8 @@ class TestCompareWithStats(TestCase):
             x,y,xm,ym = self.generate_xy_sample(n)
             r,p = stats.spearmanr(x,y)
             rm,pm = stats.mstats.spearmanr(xm,ym)
-            assert_almost_equal(r,rm,10)
-            assert_almost_equal(p,pm,10)
+            assert_almost_equal(r,rm,14)
+            assert_almost_equal(p,pm,14)
 
     def test_gmean(self):
         for n in self.get_n():
@@ -756,11 +758,11 @@ class TestCompareWithStats(TestCase):
 
             r  = stats.gmean(abs(x))
             rm = stats.mstats.gmean(abs(xm))
-            assert_almost_equal(r,rm,10)
+            assert_equal(r,rm)
 
             r  = stats.gmean(abs(y))
             rm = stats.mstats.gmean(abs(ym))
-            assert_almost_equal(r,rm,10)
+            assert_equal(r,rm)
 
     def test_hmean(self):
         for n in self.get_n():
@@ -857,24 +859,25 @@ class TestCompareWithStats(TestCase):
             rm = stats.mstats.kurtosis(ym)
             assert_almost_equal(r,rm,10)
 
-    @nottest
+
     def test_sem(self):
         #example from stats.sem doc
         a = np.arange(20).reshape(5,4)
         am = np.ma.array(a)
-        r = stats.sem(a)
-        rm = stats.mstats.sem(am)
+        r = stats.sem(a,ddof=1)
+        rm = stats.mstats.sem(am,ddof=1.)
 
         assert(np.all(abs(r - 2.82842712)<1.E-5 ))
         assert(np.all(abs(rm - 2.82842712)<1.E-5))
 
-        #Find standard error across the whole array, using n degrees of freedom
-        #~ assert_almost_equal(stats.mstats.sem(am,axis=None,ddof=0),stats.sem(a, axis=None, ddof=0),10)   todo #ERROR: mstats contains no ddof parameter
-
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n) #ddof default is 0
-            assert_almost_equal(stats.mstats.sem(xm,axis=None),stats.sem(x, axis=None, ddof=0),10) # todo ERROR: results are different at 4-5 decimal
-            assert_almost_equal(stats.mstats.sem(ym,axis=None),stats.sem(y, axis=None, ddof=0),10) #todo
+            x,y,xm,ym = self.generate_xy_sample(n)
+            assert_equal(stats.mstats.sem(xm,axis=None,ddof=0),stats.sem(x, axis=None, ddof=0))
+            assert_equal(stats.mstats.sem(ym,axis=None,ddof=0),stats.sem(y, axis=None, ddof=0))
+
+            assert_equal(stats.mstats.sem(xm,axis=None,ddof=1),stats.sem(x, axis=None, ddof=1))
+            assert_equal(stats.mstats.sem(ym,axis=None,ddof=1),stats.sem(y, axis=None, ddof=1))
+
 
     def test_describe(self):
         for n in self.get_n():
@@ -895,19 +898,13 @@ class TestCompareWithStats(TestCase):
             x,y,xm,ym = self.generate_xy_sample(n)
             r  = stats.rankdata(x)
             rm = stats.mstats.rankdata(x)
-
             assert(np.all( (r-rm) == 0. ))
 
     def test_tmean(self):
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n)
-
-            assert_almost_equal(stats.tmean(x),stats.mstats.tmean(xm),10)
-            assert_almost_equal(stats.tmean(y),stats.mstats.tmean(ym),10)
-
-            #assert_almost_equal(stats.tmean(x,limits=(1.,3.)),stats.mstats.tmean(xm,limits=(1.,0.7)),10)
-            #assert_almost_equal(stats.tmean(y,limits=(0.5,0.7)),stats.mstats.tmean(ym,limits=(0.5,0.7)),10)
-
+            assert_equal(stats.tmean(x),stats.mstats.tmean(xm))
+            assert_equal(stats.tmean(y),stats.mstats.tmean(ym))
 
     def test_tmax(self):
         for n in self.get_n():
@@ -934,15 +931,14 @@ class TestCompareWithStats(TestCase):
     def test_variation(self):
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n)
-            assert_almost_equal(stats.variation(x),stats.mstats.variation(xm),10)
-            assert_almost_equal(stats.variation(y),stats.mstats.variation(ym),10)
+            assert_equal(stats.variation(x),stats.mstats.variation(xm))
+            assert_equal(stats.variation(y),stats.mstats.variation(ym))
 
-    @nottest
     def test_tvar(self):
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n)
-            assert_almost_equal(stats.tvar(x),stats.mstats.tvar(xm),10) #ERROR: throws an assertion error
-            assert_almost_equal(stats.tvar(y),stats.mstats.tvar(ym),10)
+            assert_equal(stats.tvar(x),stats.mstats.tvar(xm))
+            assert_equal(stats.tvar(y),stats.mstats.tvar(ym))
 
     def test_trimboth(self):
         a = np.arange(20)
@@ -951,23 +947,21 @@ class TestCompareWithStats(TestCase):
 
         assert(np.all(b == bm.data[~bm.mask]))
 
-    @nottest
     def test_tsem(self):
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n)
-            assert_almost_equal(stats.tsem(x),stats.mstats.tsem(xm),10)
-            assert_almost_equal(stats.tsem(y),stats.mstats.tsem(ym),10) #error
+            assert_equal(stats.tsem(x),stats.mstats.tsem(xm))
+            assert_equal(stats.tsem(y),stats.mstats.tsem(ym))
             assert_almost_equal(stats.tsem(x,limits=(-2.,2.)),stats.mstats.tsem(xm,limits=(-2.,2.)),10) #ERROR: causes problems with limits!!! (at 4th digit)
 
-    @nottest
     def test_skewtest(self):
         for n in self.get_n():
             if n>8:
                 x,y,xm,ym = self.generate_xy_sample(n)
                 r = stats.skewtest(x)
                 rm = stats.mstats.skewtest(xm)
-                assert_almost_equal(r[0],rm[0],10)
-                assert_almost_equal(r[1],rm[1],10) #<<< seems to be an inconsistency between modules!
+                assert_equal(r[0],rm[0])
+                assert_equal(r[1],rm[1])
 
     def test_normaltest(self):
         for n in self.get_n():
@@ -996,13 +990,16 @@ class TestCompareWithStats(TestCase):
             assert_almost_equal(r[0],rm[0],10)
             assert_almost_equal(r[1],rm[1],7)
 
-    @nottest
-    def test_obrientransform(self):    #todo causes error!
+
+    def test_obrientransform(self):
         for n in self.get_n():
             x,y,xm,ym = self.generate_xy_sample(n)
             r = stats.obrientransform(x)
             rm = stats.mstats.obrientransform(xm)
-            assert_almost_equal(r,rm[0:len(x)]) #ERROR: returned array is transposed in mstats compared to stats
+            #todo: note that the routines are not consistent, as they return
+            #results which are transposed to each other. For reasons of backward
+            #compatability, this was kept like that at the moment
+            assert_almost_equal(r.T,rm[0:len(x)])
 
 
 

@@ -630,6 +630,11 @@ if stats.pointbiserialr.__doc__:
 
 
 def linregress(*args):
+    """
+    linear regression calculation
+
+    the function of stats is used for that purpose
+    """
     if len(args) == 1:  # more than 1D array?
         args = ma.array(args[0], copy=True)
         if len(args) == 2:
@@ -645,27 +650,13 @@ def linregress(*args):
     if m is not nomask:
         x = ma.array(x,mask=m)
         y = ma.array(y,mask=m)
-    n = len(x)
-    (xmean, ymean) = (x.mean(), y.mean())
-    (xm, ym) = (x-xmean, y-ymean)
-    (Sxx, Syy) = (ma.add.reduce(xm*xm), ma.add.reduce(ym*ym))
-    Sxy = ma.add.reduce(xm*ym)
-    r_den = ma.sqrt(Sxx*Syy)
-    if r_den == 0.0:
-        r = 0.0
-    else:
-        r = Sxy / r_den
-        if (r > 1.0):
-            r = 1.0  # from numerical error
-    # z = 0.5*log((1.0+r+TINY)/(1.0-r+TINY))
-    df = n-2
-    t = r * ma.sqrt(df/(1.0-r*r))
-    prob = betai(0.5*df,0.5,df/(df+t*t))
-    slope = Sxy / Sxx
-    intercept = ymean - slope*xmean
-    sterrest = ma.sqrt(1.-r*r) * y.std()
-    return slope, intercept, r, prob, sterrest
 
+    #use same routine as stats for regression, return None, if invalid number of samples
+    if (~m).sum() > 1:
+        slope, intercept, r, prob, sterrest = stats.linregress(x.data[~m],y.data[~m])
+        return slope, intercept, r, prob, sterrest
+    else:
+        return None, None, None, None, None
 if stats.linregress.__doc__:
     linregress.__doc__ = stats.linregress.__doc__ + genmissingvaldoc
 
@@ -1357,7 +1348,15 @@ tmean.__doc__ = stats.tmean.__doc__
 
 
 def tvar(a, limits=None, inclusive=(True,True)):
-    return trima(a, limits=limits, inclusive=inclusive).var()
+    a = a.astype(float).ravel()
+
+    if limits is None:
+        n = (~a.mask).sum() #todo: better way to do that?
+    else:
+        raise ValueError, 'Todo: not implemented yet!' #todo: write also unittest for routine WITH limits
+    r=trima(a, limits=limits, inclusive=inclusive).var()*(n/(n-1.))
+
+    return r
 tvar.__doc__ = stats.tvar.__doc__
 
 
@@ -1379,10 +1378,10 @@ def tsem(a, limits=None, inclusive=(True,True)):
     a = ma.asarray(a).ravel()
     if limits is None:
         n = float(a.count())
-        return a.std()/ma.sqrt(n)
+        return a.std(ddof=1)/ma.sqrt(n)
     am = trima(a.ravel(), limits, inclusive)
-    sd = np.sqrt(am.var())
-    return sd / am.count()
+    sd = np.sqrt(am.var(ddof=1))
+    return sd / np.sqrt(am.count())
 tsem.__doc__ = stats.tsem.__doc__
 
 
@@ -1946,12 +1945,58 @@ def signaltonoise(data, axis=0):
     return m/sd
 
 
-def sem(a, axis=0, ddof=1):
+def sem(a, axis=0, ddof=0):
+    """
+    Calculates the standard error of the mean (or standard error of
+    measurement) of the values in the input array.
+
+    Parameters
+    ----------
+    a : array_like
+        An array containing the values for which the standard error is
+        returned.
+    axis : int or None, optional.
+        If axis is None, ravel `a` first. If axis is an integer, this will be
+        the axis over which to operate. Defaults to 0.
+    ddof : int, optional
+        Delta degrees-of-freedom. How many degrees of freedom to adjust
+        for bias in limited samples relative to the population estimate
+        of variance. Defaults to 0.
+
+    Returns
+    -------
+    s : ndarray or float
+        The standard error of the mean in the sample(s), along the input axis.
+
+    Notes
+    -----
+    The default value for `ddof` is different to the default (0) used by other
+    ddof containing routines, such as np.std nd stats.nanstd.
+
+    The default for `ddof` is also different from the same function in stats.py
+    This is because an older version of this functions always used ddof=0. To
+    be backward compatible, ddof=0 is continued to be the default.
+
+    Examples
+    --------
+    Find standard error along the first axis:
+
+    >>> from scipy import stats
+    >>> a = np.arange(20).reshape(5,4)
+    >>> stats.sem(a)
+    array([ 2.8284,  2.8284,  2.8284,  2.8284])
+
+    Find standard error across the whole array, using n degrees of freedom:
+
+    >>> stats.sem(a, axis=None, ddof=0)
+    1.2893796958227628
+
+    """
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis=axis)
-    s = a.std(axis=axis, ddof=ddof) / ma.sqrt(n)
+    s = a.std(axis=axis,ddof=ddof) / ma.sqrt(n) #todo: does it need to be n-ddof in the denominator ???
     return s
-sem.__doc__ = stats.sem.__doc__
+#sem.__doc__ = stats.sem.__doc__
 
 zmap = stats.zmap
 zscore = stats.zscore
