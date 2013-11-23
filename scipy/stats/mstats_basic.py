@@ -1391,7 +1391,10 @@ tvar.__doc__ = stats.tvar.__doc__
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     a, axis = _chk_asarray(a, axis)
+    print(a)
+    print(a.mask)
     am = trima(a, (lowerlimit, None), (inclusive, False))
+    print('Da sammer')
     return ma.minimum.reduce(am, axis)
 tmin.__doc__ = stats.tmin.__doc__
 
@@ -1565,7 +1568,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 kurtosis.__doc__ = stats.kurtosis.__doc__
 
 
-def describe(a, axis=0):
+def describe(a, axis=0,ddof=0):
     """
     Computes several descriptive statistics of the passed array.
 
@@ -1574,6 +1577,10 @@ def describe(a, axis=0):
     a : array
 
     axis : int or None
+
+    ddof : int
+        degree of freedom (default 0); note that default ddof is different
+        from the same routine in stats.describe
 
     Returns
     -------
@@ -1610,7 +1617,7 @@ def describe(a, axis=0):
     n = a.count(axis)
     mm = (ma.minimum.reduce(a), ma.maximum.reduce(a))
     m = a.mean(axis)
-    v = a.var(axis)
+    v = a.var(axis,ddof=ddof)
     sk = skew(a, axis)
     kurt = kurtosis(a, axis)
     return n, mm, m, v, sk, kurt

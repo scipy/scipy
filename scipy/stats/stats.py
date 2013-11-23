@@ -1131,7 +1131,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals
 
 
-def describe(a, axis=0):
+def describe(a, axis=0,ddof=1):
     """
     Computes several descriptive statistics of the passed array.
 
@@ -1142,6 +1142,9 @@ def describe(a, axis=0):
     axis : int or None
        axis along which statistics are calculated. If axis is None, then data
        array is raveled. The default axis is zero.
+    ddof : int
+        degree of freedom (default 1)
+
 
     Returns
     -------
@@ -1171,7 +1174,7 @@ def describe(a, axis=0):
     n = a.shape[axis]
     mm = (np.min(a, axis=axis), np.max(a, axis=axis))
     m = np.mean(a, axis=axis)
-    v = np.var(a, axis=axis, ddof=1)
+    v = np.var(a, axis=axis, ddof=ddof)
     sk = skew(a, axis)
     kurt = kurtosis(a, axis)
     return n, mm, m, v, sk, kurt
