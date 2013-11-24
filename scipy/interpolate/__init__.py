@@ -28,6 +28,7 @@ Univariate interpolation
    krogh_interpolate
    piecewise_polynomial_interpolate
    pchip_interpolate
+   PPoly
 
 
 Multivariate interpolation

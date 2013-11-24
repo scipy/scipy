@@ -25,7 +25,31 @@ class _Interpolator1D(object):
     actual interpolator can assume the y-data is of shape (n, r) where
     `n` is the number of x-points, and `r` the number of variables,
     and use self.dtype as the y-data type.
+
+    Attributes
+    ----------
+    _y_axis
+        Axis along which the interpolation goes in the original array
+    _y_extra_shape
+        Additional trailing shape of the input arrays, excluding
+        the interpolation axis.
+    dtype
+        Dtype of the y-data arrays. Can be set via set_dtype, which
+        forces it to be float or complex.
+
+    Methods
+    -------
+    __call__
+    _prepare_x
+    _finish_y
+    _reshape_yi
+    _set_yi
+    _set_dtype
+    _evaluate
+
     """
+
+    __slots__ = ('_y_axis', '_y_extra_shape', 'dtype')
 
     def __init__(self, xi=None, yi=None, axis=None):
         self._y_axis = axis
@@ -53,6 +77,12 @@ class _Interpolator1D(object):
         x, x_shape = self._prepare_x(x)
         y = self._evaluate(x)
         return self._finish_y(y, x_shape)
+
+    def _evaluate(self, x):
+        """
+        Actually evaluate the value of the interpolator.
+        """
+        raise NotImplementedError()
 
     def _prepare_x(self, x):
         """Reshape input x array to 1-D"""
