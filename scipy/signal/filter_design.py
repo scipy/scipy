@@ -721,9 +721,33 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
 def _zpkbilinear(z, p, k, fs):
     """
+    Return a digital filter from an analog one using a bilinear transform.
+
     Transform a set of poles and zeros from the analog s-plane to the digital
-    z-plane using Tustin's method, which maintains the shape of the
-    frequency response.
+    z-plane using Tustin's method, which substitutes ``(z-1) / (z+1)`` for
+    ``s``, maintaining the shape of the frequency response.
+
+    Parameters
+    ----------
+    z : ndarray
+        Zeros of the analog IIR filter transfer function.
+    p : ndarray
+        Poles of the analog IIR filter transfer function.
+    k : float
+        System gain of the analog IIR filter transfer function.
+    fs : float
+        Sample rate, as ordinary frequency (e.g. hertz). No prewarping is 
+        done in this function.
+
+    Returns
+    -------
+    z : ndarray
+        Zeros of the transformed digital filter transfer function.
+    p : ndarray
+        Poles of the transformed digital filter transfer function.
+    k : float
+        System gain of the transformed digital filter.
+
     """
     degree = len(p) - len(z)
     if degree < 0:
@@ -745,8 +769,33 @@ def _zpkbilinear(z, p, k, fs):
 
 def _zpklp2lp(z, p, k, wo=1.0):
     """
-    Convert analog prototype lowpass filter to lowpass filter with cutoff
-    frequency `wo`.
+    Transform a lowpass filter prototype to a different frequency.
+
+    Return an analog low-pass filter with cutoff frequency `wo`
+    from an analog low-pass filter prototype with unity cutoff frequency,
+    using zeros, poles, and gain ('zpk') representation.
+
+    Parameters
+    ----------
+    z : ndarray
+        Zeros of the analog IIR filter transfer function.
+    p : ndarray
+        Poles of the analog IIR filter transfer function.
+    k : float
+        System gain of the analog IIR filter transfer function.
+    wo : float
+        Desired cutoff, as angular frequency (e.g. rad/s).
+        Defaults to no change.
+
+    Returns
+    -------
+    z : ndarray
+        Zeros of the transformed low-pass filter transfer function.
+    p : ndarray
+        Poles of the transformed low-pass filter transfer function.
+    k : float
+        System gain of the transformed low-pass filter.
+
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -764,8 +813,33 @@ def _zpklp2lp(z, p, k, wo=1.0):
 
 def _zpklp2hp(z, p, k, wo=1.0):
     """
-    Convert analog prototype lowpass filter to highpass filter with cutoff
-    frequency `wo`.
+    Transform a lowpass filter prototype to a highpass filter.
+
+    Return an analog high-pass filter with cutoff frequency `wo`
+    from an analog low-pass filter prototype with unity cutoff frequency,
+    using zeros, poles, and gain ('zpk') representation.
+
+    Parameters
+    ----------
+    z : ndarray
+        Zeros of the analog IIR filter transfer function.
+    p : ndarray
+        Poles of the analog IIR filter transfer function.
+    k : float
+        System gain of the analog IIR filter transfer function.
+    wo : float
+        Desired cutoff, as angular frequency (e.g. rad/s).
+        Defaults to no change.
+
+    Returns
+    -------
+    z : ndarray
+        Zeros of the transformed high-pass filter transfer function.
+    p : ndarray
+        Poles of the transformed high-pass filter transfer function.
+    k : float
+        System gain of the transformed high-pass filter.
+
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -786,11 +860,39 @@ def _zpklp2hp(z, p, k, wo=1.0):
 
 def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
     """
-    Convert analog prototype lowpass filter to bandpass filter with center
-    frequency `wo` and bandwidth `bw`.
+    Transform a lowpass filter prototype to a bandpass filter.
+
+    Return an analog band-pass filter with center frequency `wo` and
+    bandwidth `bw` from an analog low-pass filter prototype with unity
+    cutoff frequency, using zeros, poles, and gain ('zpk') representation.
 
     This is the "wideband" transformation, producing a passband with
-    geometric (log frequency) symmetry.
+    geometric (log frequency) symmetry about `wo`.
+
+    Parameters
+    ----------
+    z : ndarray
+        Zeros of the analog IIR filter transfer function.
+    p : ndarray
+        Poles of the analog IIR filter transfer function.
+    k : float
+        System gain of the analog IIR filter transfer function.
+    wo : float
+        Desired passband center, as angular frequency (e.g. rad/s).
+        Defaults to no change.
+    bw : float
+        Desired passband width, as angular frequency (e.g. rad/s).
+        Defaults to 1.
+
+    Returns
+    -------
+    z : ndarray
+        Zeros of the transformed band-pass filter transfer function.
+    p : ndarray
+        Poles of the transformed band-pass filter transfer function.
+    k : float
+        System gain of the transformed band-pass filter.
+
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -820,11 +922,39 @@ def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
 
 def _zpklp2bs(z, p, k, wo=1.0, bw=1.0):
     """
-    Convert analog prototype lowpass filter to bandstop filter with center
-    frequency `wo` and bandwidth `bw`
+    Transform a lowpass filter prototype to a highpass filter.
+
+    Return an analog band-stop filter with center frequency `wo` and
+    stopband width `bw` from an analog low-pass filter prototype with unity
+    cutoff frequency, using zeros, poles, and gain ('zpk') representation.
 
     This is the "wideband" transformation, producing a stopband with
-    geometric (log frequency) symmetry.
+    geometric (log frequency) symmetry about `wo`.
+
+    Parameters
+    ----------
+    z : ndarray
+        Zeros of the analog IIR filter transfer function.
+    p : ndarray
+        Poles of the analog IIR filter transfer function.
+    k : float
+        System gain of the analog IIR filter transfer function.
+    wo : float
+        Desired stopband center, as angular frequency (e.g. rad/s).
+        Defaults to no change.
+    bw : float
+        Desired stopband width, as angular frequency (e.g. rad/s).
+        Defaults to 1.
+
+    Returns
+    -------
+    z : ndarray
+        Zeros of the transformed band-stop filter transfer function.
+    p : ndarray
+        Poles of the transformed band-stop filter transfer function.
+    k : float
+        System gain of the transformed band-stop filter.
+
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
