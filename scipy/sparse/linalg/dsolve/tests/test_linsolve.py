@@ -10,8 +10,8 @@ from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal,
 import scipy.linalg
 from scipy.linalg import norm, inv
 from scipy.sparse import spdiags, SparseEfficiencyWarning, \
-csc_matrix, csr_matrix, bsr_matrix, coo_matrix, dia_matrix, \
-dok_matrix, lil_matrix
+    csc_matrix, csr_matrix, bsr_matrix, coo_matrix, dia_matrix, \
+    dok_matrix, lil_matrix
 from scipy.sparse.linalg.dsolve import spsolve, use_solver, splu, spilu
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
@@ -112,7 +112,7 @@ class TestLinsolve(TestCase):
 
     def test_ndarray_support(self):
         A = array([[1., 2.], [2., 0.]])
-        x = array([[1., 1.], [0.5, -0.5]]) 
+        x = array([[1., 1.], [0.5, -0.5]])
         b = array([[2., 0.], [2., 2.]])
 
         assert_array_almost_equal(x, spsolve(A, b).todense())
@@ -121,10 +121,9 @@ class TestLinsolve(TestCase):
         A = csc_matrix([[1., 2.], [2., 0.]])
 
         b_vec = [[2.5], [1.]]
-        x_vec = [.5, 1.]
+        x_vec = [[.5], [1.]]
         b_vec_s = [
                 array(b_vec),
-                array(b_vec).flatten(),
                 csc_matrix(b_vec),
                 csr_matrix(b_vec),
                 bsr_matrix(b_vec),
@@ -145,6 +144,8 @@ class TestLinsolve(TestCase):
                 lil_matrix(b_mat),
                 ]
 
+        assert_array_almost_equal(array(x_vec).flatten(),
+                spsolve(A, array(b_vec).flatten()))
         for b in b_vec_s:
             assert_array_almost_equal(x_vec, spsolve(A, b))
         for b in b_mat_s:

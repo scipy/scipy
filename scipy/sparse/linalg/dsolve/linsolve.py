@@ -89,7 +89,8 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
                 SparseEfficiencyWarning)
 
     # b is a vector only if b have shape (n,) or (n, 1)
-    b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
+    b_is_squeezed = b.ndim == 1
+    b_is_vector = (b_is_squeezed or (b.ndim == 2 and b.shape[1] == 1))
     b_is_sparse_matrix = isspmatrix(b)
 
     if b_is_vector:
@@ -156,6 +157,10 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             tempj.fill(j)
             x = x + A.__class__((xj[w], (w, tempj[:len(w)])),
                                 shape=b.shape, dtype=A.dtype)
+
+    if b_is_vector and not b_is_squeezed:
+        x = x.reshape((M, 1))
+
     return x
 
 
