@@ -22,7 +22,7 @@ __all__ = ['fmin_cobyla']
 
 
 def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
-                rhoend=1e-4, iprint=1, maxfun=1000, disp=None, catol=1e-6):
+                rhoend=1e-4, iprint=1, maxfun=1000, disp=None, catol=2e-4):
     """
     Minimize a function using the Constrained Optimization BY Linear
     Approximation (COBYLA) method. This method wraps a FORTRAN
@@ -176,7 +176,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
 
 def _minimize_cobyla(fun, x0, args=(), constraints=(),
                      rhobeg=1.0, tol=1e-4, iprint=1, maxiter=1000,
-                     disp=False, catol=1e-6, **unknown_options):
+                     disp=False, catol=2e-4, **unknown_options):
     """
     Minimize a scalar function of one or more variables using the
     Constrained Optimization BY Linear Approximation (COBYLA) algorithm.
