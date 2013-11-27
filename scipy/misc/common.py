@@ -243,7 +243,7 @@ def factorialk(n,k,exact=True):
         raise NotImplementedError
 
 
-def comb(N,k,exact=False):
+def comb(N,k,exact=False,repetition=False):
     """
     The number of combinations of N things taken k at a time.
 
@@ -258,6 +258,9 @@ def comb(N,k,exact=False):
     exact : bool, optional
         If `exact` is False, then floating point precision is used, otherwise
         exact long integer is computed.
+    repetition : bool, optional
+        If `repetition` is True, then the number of combinations with
+        repetition is computed.
 
     Returns
     -------
@@ -277,8 +280,12 @@ def comb(N,k,exact=False):
     array([ 120.,  210.])
     >>> sc.comb(10, 3, exact=True)
     120L
+    >>> sc.comb(10, 3, exact=True, repetition=True)
+    220L
 
     """
+    if repetition:
+        return comb(N + k - 1, k, exact)
     if exact:
         if (k > N) or (N < 0) or (k < 0):
             return 0
