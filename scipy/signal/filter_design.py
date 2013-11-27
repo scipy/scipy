@@ -442,7 +442,7 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
 
 def lp2bs(b, a, wo=1.0, bw=1.0):
     """
-    Transform a lowpass filter prototype to a highpass filter.
+    Transform a lowpass filter prototype to a bandstop filter.
 
     Return an analog band-stop filter with center frequency `wo` and
     bandwidth `bw` from an analog low-pass filter prototype with unity
@@ -922,7 +922,7 @@ def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
 
 def _zpklp2bs(z, p, k, wo=1.0, bw=1.0):
     """
-    Transform a lowpass filter prototype to a highpass filter.
+    Transform a lowpass filter prototype to a bandstop filter.
 
     Return an analog band-stop filter with center frequency `wo` and
     stopband width `bw` from an analog low-pass filter prototype with unity
