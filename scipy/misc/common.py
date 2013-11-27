@@ -90,14 +90,14 @@ def logsumexp(a, axis=None, b=None):
     return out
 
 
-def factorial(n,exact=0):
+def factorial(n,exact=False):
     """
     The factorial function, n! = special.gamma(n+1).
 
     If exact is 0, then floating point precision is used, otherwise
     exact long integer is computed.
 
-    - Array argument accepted only for exact=0 case.
+    - Array argument accepted only for exact=False case.
     - If n<0, the return value is 0.
 
     Parameters
@@ -198,7 +198,7 @@ def factorial2(n, exact=False):
         return vals
 
 
-def factorialk(n,k,exact=1):
+def factorialk(n,k,exact=True):
     """
     n(!!...!)  = multifactorial of order k
     k times
@@ -243,7 +243,7 @@ def factorialk(n,k,exact=1):
         raise NotImplementedError
 
 
-def comb(N,k,exact=0):
+def comb(N,k,exact=False):
     """
     The number of combinations of N things taken k at a time.
 
@@ -255,8 +255,8 @@ def comb(N,k,exact=0):
         Number of things.
     k : int, ndarray
         Number of elements taken.
-    exact : int, optional
-        If `exact` is 0, then floating point precision is used, otherwise
+    exact : bool, optional
+        If `exact` is False, then floating point precision is used, otherwise
         exact long integer is computed.
 
     Returns
@@ -266,7 +266,7 @@ def comb(N,k,exact=0):
 
     Notes
     -----
-    - Array arguments accepted only for exact=0 case.
+    - Array arguments accepted only for exact=False case.
     - If k > N, N < 0, or k < 0, then a 0 is returned.
 
     Examples
