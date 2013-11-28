@@ -70,7 +70,7 @@ class _BenchOptimizers(object):
             grouped_results[res.name].append(res)
         
         averaged_results = dict()
-        for name, result_list in grouped_results.iteritems():
+        for name, result_list in grouped_results.items():
             newres = scipy.optimize.Result()
             newres.name = name
             newres.mean_nfev = np.mean([r.nfev for r in result_list])
@@ -123,7 +123,7 @@ class BenchSmoothUnbounded(TestCase):
     def bench_rosenbrock(self):
         b = _BenchOptimizers("Rosenbrock function",
                              fun=rosen, der=rosen_der, hess=rosen_hess)
-        for i in xrange(10):
+        for i in range(10):
             b.bench_run(np.random.uniform(-3,3,3))
         b.print_results()
     
@@ -131,7 +131,7 @@ class BenchSmoothUnbounded(TestCase):
         b = _BenchOptimizers("Rosenbrock function",
                              fun=rosen, der=rosen_der, hess=rosen_hess,
                              tol=1e-8)
-        for i in xrange(10):
+        for i in range(10):
             b.bench_run(np.random.uniform(-3,3,3))
         b.print_results()
     
@@ -140,7 +140,7 @@ class BenchSmoothUnbounded(TestCase):
     #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
         b = _BenchOptimizers("simple quadratic function",
                              fun=s.fun, der=s.der, hess=s.hess)
-        for i in xrange(10):
+        for i in range(10):
             b.bench_run(np.random.uniform(-2,2,3))
         b.print_results()
     
@@ -149,7 +149,7 @@ class BenchSmoothUnbounded(TestCase):
     #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
         b = _BenchOptimizers("function sum(x**2) + x[0]",
                              fun=s.fun, der=s.der, hess=s.hess)
-        for i in xrange(10):
+        for i in range(10):
             b.bench_run(np.random.uniform(-2,2,3))
         b.print_results()
     
@@ -158,7 +158,7 @@ class BenchSmoothUnbounded(TestCase):
         der = lambda x: np.array([np.cos(x[0])])
         b = _BenchOptimizers("1d sin function",
                              fun=fun, der=der, hess=None)
-        for i in xrange(10):
+        for i in range(10):
             b.bench_run(np.random.uniform(-2,2,1))
         b.print_results()
     
@@ -167,7 +167,7 @@ class BenchSmoothUnbounded(TestCase):
     #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
         b = _BenchOptimizers("Booth's function",
                              fun=s.fun, der=s.der, hess=None)
-        for i in xrange(10):
+        for i in range(10):
             b.bench_run(np.random.uniform(0,10,2))
         b.print_results()
     
@@ -176,7 +176,7 @@ class BenchSmoothUnbounded(TestCase):
     #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
         b = _BenchOptimizers("Beale's function",
                              fun=s.fun, der=s.der, hess=None)
-        for i in xrange(10):
+        for i in range(10):
             b.bench_run(np.random.uniform(0,10,2))
         b.print_results()
     
@@ -186,7 +186,7 @@ class BenchSmoothUnbounded(TestCase):
         natoms = 4
         b = _BenchOptimizers("%d atom Lennard Jones potential" % (natoms),
                              fun=s.get_energy, der=s.get_gradient, hess=None)
-        for i in xrange(10):
+        for i in range(10):
             b.bench_run(np.random.uniform(-2,2,natoms*3))
         b.print_results()
     
