@@ -2164,6 +2164,11 @@ class _TestFancyIndexing:
         assert_raises(IndexError, A.__getitem__, Ysp)
         assert_raises((IndexError, ValueError), A.__getitem__, (Xsp, 1))
 
+    def test_fancy_indexing_regression_3087(self):
+        mat = self.spmatrix(array([[1, 0, 0], [0,1,0], [1,0,0]]))
+        desired_cols = np.ravel(mat.sum(0)) > 0
+        assert_equal(mat[:, desired_cols].A, [[1, 0], [0, 1], [1, 0]])
+
 
 class _TestFancyIndexingAssign:
     def test_bad_index_assign(self):
