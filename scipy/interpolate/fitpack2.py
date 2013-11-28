@@ -64,7 +64,8 @@ if iopt=-1:
 # UnivariateSpline, ext parameter can be an int or a string
 _extrap_modes = {0: 0, 'extrapolate': 0,
                  1: 1, 'zeros': 1,
-                 2: 2, 'raise': 2}
+                 2: 2, 'raise': 2,
+                 3: 3, 'const': 3}
 
 
 class UnivariateSpline(object):
@@ -104,6 +105,7 @@ class UnivariateSpline(object):
         * if ext=0 or 'extrapolate', return the extrapolated value.
         * if ext=1 or 'zeros', return 0
         * if ext=2 or 'raise', raise a ValueError
+        * if ext=3 of 'const', return the boundary value.
 
         The default value is 0.
 
@@ -163,8 +165,10 @@ class UnivariateSpline(object):
                        * if ext=0 or 'extrapolate', return the extrapolated value.
                        * if ext=1 or 'zeros', return 0
                        * if ext=2 or 'raise', raise a ValueError
+                       * if ext=3 or 'const', return the boundary value.
 
                        The default value is 0.
+
         """
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         try:
@@ -276,9 +280,11 @@ class UnivariateSpline(object):
             * if ext=0 or 'extrapolate', return the extrapolated value.
             * if ext=1 or 'zeros', return 0
             * if ext=2 or 'raise', raise a ValueError
+            * if ext=3 or 'const', return the boundary value.
 
             The default value is 0, passed from the initialization of 
             UnivariateSpline.
+
         """
         x = np.asarray(x)
         # empty input yields empty output
@@ -843,7 +849,8 @@ class BivariateSpline(_BivariateSplineBase):
     def _from_tck(cls, tck):
         """Construct a spline object from given tck and degree"""
         self = cls.__new__(cls)
-        assert len(tck) == 5, "tck should be a 5 element tuple of tx, ty, c, kx, ky"
+        if len(tck) != 5:
+            raise ValueError("tck should be a 5 element tuple of tx, ty, c, kx, ky")
         self.tck = tck[:3]
         self.degrees = tck[3:]
         return self
