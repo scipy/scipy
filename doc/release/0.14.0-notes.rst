@@ -55,6 +55,13 @@ scipy.special.lpmn
 it should be used instead.
 
 
+scipy.stats
+-----------
+
+The deprecated functions ``glm``, ``oneway`` and ``cmedian`` have been removed
+from ``scipy.stats``.
+
+
 Other changes
 =============
 

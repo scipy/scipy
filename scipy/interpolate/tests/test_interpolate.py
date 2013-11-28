@@ -1,5 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
+from distutils.version import LooseVersion
+
 from numpy.testing import assert_, assert_equal, assert_almost_equal, \
         assert_array_almost_equal, assert_raises, assert_array_equal, \
         dec, TestCase, run_module_suite, assert_allclose
@@ -475,8 +477,10 @@ class TestPPolyCommon(TestCase):
             assert_equal(np.shape(p(0.5)), ())
             assert_equal(np.shape(p(np.array(0.5))), ())
 
-            # can't use dtype=object
-            assert_raises(ValueError, p, np.array([[0.1, 0.2], [0.4]]))
+            if LooseVersion(np.version.version) >= LooseVersion('1.7'):
+                # can't use dtype=object (with any numpy; what fails is
+                # constructing the object array here for old numpy)
+                assert_raises(ValueError, p, np.array([[0.1, 0.2], [0.4]]))
 
 
 class TestPolySubclassing(TestCase):
@@ -511,7 +515,7 @@ class TestPolySubclassing(TestCase):
 
     def test_conversions(self):
         pp, bp = self._make_polynomials()
-        
+
         pp1 = self.P.from_bernstein_basis(bp)
         assert_equal(pp1.__class__, self.P)
 
@@ -668,7 +672,7 @@ class TestPPoly(TestCase):
 
                 assert_allclose(pp2(pp2.x[1:]), pp2(endpoint),
                                 rtol=1e-7, err_msg="dx=%d k=%d" % (dx, k))
-            
+
     def test_antiderivative_vs_spline(self):
         np.random.seed(1234)
         x = np.sort(np.r_[0, np.random.rand(11), 1])
@@ -786,7 +790,7 @@ class TestPPoly(TestCase):
             if k == 3:
                 # add a case with zero discriminant
                 c[:,0,0] = 1, 2, 1
-            
+
             w = np.empty(c.shape, dtype=complex)
             _ppoly._croots_poly1(c, w)
 
@@ -844,7 +848,7 @@ class TestBPoly(TestCase):
         x = [0, 1]
         c = [[3], [1], [4]]
         bp = BPoly(c, x)   # 3 * (1-x)**2 + 2 * x (1-x) + 4 * x**2
-        assert_allclose(bp(0.2), 
+        assert_allclose(bp(0.2),
                 3 * 0.8*0.8 + 1 * 2*0.2*0.8 + 4 * 0.2*0.2)
 
     def test_simple4(self):
@@ -1064,7 +1068,7 @@ class TestBPolyFromDerivatives(TestCase):
     def test_order_zero(self):
         m, k = 5, 12
         xi, yi = self._make_random_mk(m, k)
-        assert_raises(ValueError, BPoly.from_derivatives, 
+        assert_raises(ValueError, BPoly.from_derivatives,
                 **dict(xi=xi, yi=yi, orders=0))
 
     def test_orders_too_high(self):
@@ -1078,7 +1082,7 @@ class TestBPolyFromDerivatives(TestCase):
     def test_orders_global(self):
         m, k = 5, 12
         xi, yi = self._make_random_mk(m, k)
-       
+
         # ok, this is confusing. Local polynomials will be of the order 5
         # which means that up to the 2nd derivatives will be used at each point
         order = 5
@@ -1088,7 +1092,7 @@ class TestBPolyFromDerivatives(TestCase):
             assert_allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12))
             pp = pp.derivative()
         assert_(not np.allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12)))
-        
+
         # now repeat with `order` being even: on each interval, it uses
         # order//2 'derivatives' @ the right-hand endpoint and
         # order//2+1 @ 'derivatives' the left-hand endpoint
@@ -1096,7 +1100,7 @@ class TestBPolyFromDerivatives(TestCase):
         pp = BPoly.from_derivatives(xi, yi, orders=order)
         for j in range(order//2):
             assert_allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12))
-            pp = pp.derivative()    
+            pp = pp.derivative()
         assert_(not np.allclose(pp(xi[1:-1] - 1e-12), pp(xi[1:-1] + 1e-12)))
 
     def test_orders_local(self):

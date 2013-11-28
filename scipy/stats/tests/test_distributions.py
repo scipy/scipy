@@ -819,6 +819,7 @@ class TestEntropy(TestCase):
         assert_array_almost_equal(stats.entropy(pk, qk),
                 [0.1933259, 0.18609809])
 
+    @dec.skipif(np.__version__ < '1.7', "assert_* funcs broken with inf/nan")
     def test_entropy_2d_zero(self):
         pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
         qk = [[0.0, 0.1], [0.3, 0.6], [0.5, 0.3]]
