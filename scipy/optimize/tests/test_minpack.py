@@ -362,6 +362,19 @@ class TestCurveFit(TestCase):
         perr = np.sqrt(np.diag(pcov))
         assert_allclose(perr, [3*0.30714756, 3*0.85045308], rtol=1e-3)
 
+        # infinite variances
+
+        def f_flat(x, a, b):
+            return a*x
+
+        popt, pcov = curve_fit(f_flat, xdata, ydata, p0=[2, 0], sigma=sigma)
+        assert_(pcov.shape == (2, 2))
+        assert_array_equal(pcov, np.inf)
+
+        popt, pcov = curve_fit(f, xdata[:2], ydata[:2], p0=[2, 0])
+        assert_(pcov.shape == (2, 2))
+        assert_array_equal(pcov, np.inf)
+
 
 class TestFixedPoint(TestCase):
 

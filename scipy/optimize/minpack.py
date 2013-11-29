@@ -551,12 +551,16 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False, **kw):
         msg = "Optimal parameters not found: " + errmsg
         raise RuntimeError(msg)
 
-    if not absolute_sigma:
-        if len(ydata) > len(p0) and pcov is not None:
+    if pcov is None:
+        # indeterminate covariance
+        pcov = zeros((len(popt), len(popt)), dtype=float)
+        pcov.fill(inf)
+    elif not absolute_sigma:
+        if len(ydata) > len(p0):
             s_sq = (asarray(func(popt, *args))**2).sum() / (len(ydata) - len(p0))
             pcov = pcov * s_sq
         else:
-            pcov = inf
+            pcov.fill(inf)
 
     if return_full:
         return popt, pcov, infodict, errmsg, ier
