@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 from warnings import warn
 
-from numpy import asarray, empty, where, squeeze, prod
+from numpy import asarray, empty, where, ravel, prod
 from scipy.sparse import isspmatrix_csc, isspmatrix_csr, isspmatrix, \
         SparseEfficiencyWarning, csc_matrix
 
@@ -85,24 +85,23 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     """
     if not (isspmatrix_csc(A) or isspmatrix_csr(A)):
         A = csc_matrix(A)
-        warn('spsolve requires A be CSC or CSR matrix format', SparseEfficiencyWarning)
+        warn('spsolve requires A be CSC or CSR matrix format',
+                SparseEfficiencyWarning)
 
-    # b.size gives a different answer for dense vs sparse:
-    # use prod(b.shape)
-    b_is_vector = (max(b.shape) == prod(b.shape))
+    # b is a vector only if b have shape (n,) or (n, 1)
+    b_is_squeezed = b.ndim == 1
+    b_is_vector = (b_is_squeezed or (b.ndim == 2 and b.shape[1] == 1))
+    b_is_sparse_matrix = isspmatrix(b)
 
     if b_is_vector:
-        if isspmatrix(b):
+        if b_is_sparse_matrix:
             b = b.toarray()
-        b = b.squeeze()
-
     else:
-        if isspmatrix(b) and not (isspmatrix_csc(b) or isspmatrix_csr(b)):
-            b = csc_matrix(b)
-            warn('solve requires b be CSC or CSR matrix format',
-                 SparseEfficiencyWarning)
-        if b.ndim != 2:
-            raise ValueError("b must be either a vector or a matrix")
+        if not (isspmatrix_csc(b) or isspmatrix_csr(b)):
+            warn('spsolve requires b be CSC or CSR matrix format',
+                    SparseEfficiencyWarning)
+            if b_is_sparse_matrix:
+                b = csc_matrix(b)
 
     A.sort_indices()
     A = A.asfptype()  # upcast to a floating point format
@@ -126,7 +125,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             raise ValueError("convert matrix data to double, please, using"
                   " .astype(), or set linsolve.useUmfpack = False")
 
-        b = asarray(b, dtype=A.dtype).reshape(-1)
+        b = asarray(b, dtype=A.dtype).ravel()
 
         family = {'d': 'di', 'D': 'zi'}
         umf = umfpack.UmfpackContext(family[A.dtype.char])
@@ -142,7 +141,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             A = csc_matrix(A)
             flag = 1
 
-        b = asarray(b, dtype=A.dtype)
+        b = asarray(b, dtype=A.dtype).ravel()
         options = dict(ColPerm=permc_spec)
         x = _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr, b, flag,
                           options=options)[0]
@@ -152,11 +151,16 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         tempj = empty(M, dtype=int)
         x = A.__class__(b.shape)
         for j in range(b.shape[1]):
-            xj = Afactsolve(squeeze(b[:, j].toarray()))
+            xj = Afactsolve(ravel(b[:, j].toarray() if b_is_sparse_matrix else
+                                  b[:, j]))
             w = where(xj != 0.0)[0]
             tempj.fill(j)
             x = x + A.__class__((xj[w], (w, tempj[:len(w)])),
                                 shape=b.shape, dtype=A.dtype)
+
+    if b_is_vector and not b_is_squeezed:
+        x = x.reshape((M, 1))
+
     return x
 
 

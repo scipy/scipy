@@ -9,7 +9,9 @@ from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal,
 
 import scipy.linalg
 from scipy.linalg import norm, inv
-from scipy.sparse import spdiags, SparseEfficiencyWarning, csc_matrix, csr_matrix
+from scipy.sparse import spdiags, SparseEfficiencyWarning, \
+    csc_matrix, csr_matrix, bsr_matrix, coo_matrix, dia_matrix, \
+    dok_matrix, lil_matrix
 from scipy.sparse.linalg.dsolve import spsolve, use_solver, splu, spilu
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
@@ -97,6 +99,57 @@ class TestLinsolve(TestCase):
             X = scipy.linalg.solve(M, N)
 
             assert_array_almost_equal(X, sX.todense())
+
+    def test_shape_compatibility(self):
+        A = csc_matrix([[1.]])
+        x = array([[1., 2., 3.]])
+        b = csc_matrix([[1., 2., 3.]])
+        assert_array_almost_equal(x, spsolve(A, b).todense())
+
+        A = csc_matrix((3, 3))
+        b = csc_matrix((1, 3))
+        assert_raises(ValueError, spsolve, A, b)
+
+    def test_ndarray_support(self):
+        A = array([[1., 2.], [2., 0.]])
+        x = array([[1., 1.], [0.5, -0.5]])
+        b = array([[2., 0.], [2., 2.]])
+
+        assert_array_almost_equal(x, spsolve(A, b).todense())
+
+    def test_various_types_of_b(self):
+        A = csc_matrix([[1., 2.], [2., 0.]])
+
+        b_vec = [[2.5], [1.]]
+        x_vec = [[.5], [1.]]
+        b_vec_s = [
+                array(b_vec),
+                csc_matrix(b_vec),
+                csr_matrix(b_vec),
+                bsr_matrix(b_vec),
+                dia_matrix(b_vec),
+                dok_matrix(b_vec),
+                lil_matrix(b_vec),
+                ]
+
+        b_mat = [[2., 0.], [2., 2.]]
+        x_mat = [[1., 1.], [0.5, -0.5]]
+        b_mat_s = [
+                array(b_mat),
+                csc_matrix(b_mat),
+                csr_matrix(b_mat),
+                bsr_matrix(b_mat),
+                dia_matrix(b_mat),
+                dok_matrix(b_mat),
+                lil_matrix(b_mat),
+                ]
+
+        assert_array_almost_equal(array(x_vec).flatten(),
+                spsolve(A, array(b_vec).flatten()))
+        for b in b_vec_s:
+            assert_array_almost_equal(x_vec, spsolve(A, b))
+        for b in b_mat_s:
+            assert_array_almost_equal(x_mat, spsolve(A, b).todense())
 
 
 class TestSplu(object):
