@@ -298,10 +298,9 @@ def comb(N,k,exact=False,repetition=False):
         k,N = asarray(k), asarray(N)
         lgam = special.gammaln
         cond = (k <= N) & (N >= 0) & (k >= 0)
-        sv = special.errprint(0)
         vals = exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1))
-        sv = special.errprint(sv)
-        return where(cond, vals, 0.0)
+        vals[~cond] = 0
+        return vals
 
 
 def perm(N, k, exact=False):
@@ -351,10 +350,9 @@ def perm(N, k, exact=False):
         from scipy import special
         k, N = asarray(k), asarray(N)
         cond = (k <= N) & (N >= 0) & (k >= 0)
-        sv = special.errprint(0)
         vals = special.poch(N - k + 1, k)
-        sv = special.errprint(sv)
-        return where(cond, vals, 0.0)
+        vals[~cond] = 0
+        return vals
 
 
 def central_diff_weights(Np, ndiv=1):
