@@ -1382,11 +1382,10 @@ def tvar(a, limits=None, inclusive=(True,True)):
     a = a.astype(float).ravel()
 
     if limits is None:
-        n = (~a.mask).sum() #todo: better way to do that?
+        n = (~a.mask).sum()  # todo: better way to do that?
+        r = trima(a, limits=limits, inclusive=inclusive).var()*(n/(n-1.))
     else:
-        raise ValueError, 'Todo: not implemented yet!' #todo: write also unittest for routine WITH limits
-    r=trima(a, limits=limits, inclusive=inclusive).var()*(n/(n-1.))
-
+        raise ValueError('mstats.tvar() with limits not implemented yet so far')
     return r
 tvar.__doc__ = stats.tvar.__doc__
 
@@ -1671,7 +1670,7 @@ def skewtest(a, axis=0):
         else:
             x = a.data[~a.mask]
     else:
-        x=a
+        x = a
     return stats.skewtest(x,axis=axis)
 skewtest.__doc__ = stats.skewtest.__doc__
 
@@ -2020,7 +2019,7 @@ def sem(a, axis=0, ddof=0):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis=axis)
-    s = a.std(axis=axis,ddof=ddof) / ma.sqrt(n) #todo: does it need to be n-ddof in the denominator ???
+    s = a.std(axis=axis,ddof=ddof) / ma.sqrt(n)  # todo: does it need to be n-ddof in the denominator ???
     return s
 #sem.__doc__ = stats.sem.__doc__
 
