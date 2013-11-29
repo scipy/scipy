@@ -4378,17 +4378,17 @@ class invweibull_gen(rv_continuous):
 
     """
     def _pdf(self, x, c):
-        xc1 = x**(-c-1.0)
-        xc2 = x**(-c)
+        xc1 = np.power(x, -c - 1.0)
+        xc2 = np.power(x, -c)
         xc2 = exp(-xc2)
-        return c*xc1*xc2
+        return c * xc1 * xc2
 
     def _cdf(self, x, c):
-        xc1 = x**(-c)
+        xc1 = np.power(x, -c)
         return exp(-xc1)
 
     def _ppf(self, q, c):
-        return pow(-log(q),asarray(-1.0/c))
+        return np.power(-log(q), -1.0/c)
 
     def _munp(self, n, c):
         return special.gamma(1 - n / c)
@@ -7270,10 +7270,10 @@ class geom_gen(rv_discrete):
         return (p <= 1) & (p >= 0)
 
     def _pmf(self, k, p):
-        return (1-p)**(k-1) * p
+        return np.power(1-p, k-1) * p
 
     def _logpmf(self, k, p):
-        return (k-1)*log(1-p) + log(p)
+        return (k-1) * log(1-p) + log(p)
 
     def _cdf(self, x, p):
         k = floor(x)
@@ -7439,7 +7439,7 @@ class logser_gen(rv_discrete):
         return (p > 0) & (p < 1)
 
     def _pmf(self, k, p):
-        return -p**k * 1.0 / k / log(1 - p)
+        return -np.power(p, k) * 1.0 / k / log(1 - p)
 
     def _stats(self, p):
         r = log(1 - p)
