@@ -368,8 +368,9 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
         iteration cost, but may be necessary for convergence.
         Default is 20.
     maxiter : int, optional
-        Maximum number of iterations.  Iteration will stop after maxiter
-        steps even if the specified tolerance has not been achieved.
+        Maximum number of iterations (restart cycles).  Iteration will stop
+        after maxiter steps even if the specified tolerance has not been
+        achieved.
     xtype : {'f','d','F','D'}
         This parameter is DEPRECATED --- avoid using it.
 
