@@ -9,7 +9,7 @@ from scipy.lib.six import xrange
 
 from numpy import exp, log, asarray, arange, newaxis, hstack, product, array, \
                   where, zeros, extract, place, pi, sqrt, eye, poly1d, dot, \
-                  r_, rollaxis, sum, fromstring
+                  r_, rollaxis, sum, fromstring, ndarray
 
 __all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb', 'perm',
            'central_diff_weights', 'derivative', 'pade', 'lena', 'ascent', 'face']
@@ -299,7 +299,8 @@ def comb(N,k,exact=False,repetition=False):
         lgam = special.gammaln
         cond = (k <= N) & (N >= 0) & (k >= 0)
         vals = exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1))
-        vals[~cond] = 0
+        if isinstance(vals, ndarray):
+            vals[~cond] = 0
         return vals
 
 
@@ -351,7 +352,8 @@ def perm(N, k, exact=False):
         k, N = asarray(k), asarray(N)
         cond = (k <= N) & (N >= 0) & (k >= 0)
         vals = special.poch(N - k + 1, k)
-        vals[~cond] = 0
+        if isinstance(vals, ndarray):
+            vals[~cond] = 0
         return vals
 
 

@@ -96,10 +96,12 @@ def test_ascent():
 
 def test_comb():
     assert_array_almost_equal(comb([10, 10], [3, 4]), [120., 210.])
+    assert_almost_equal(comb(10, 3), 120.)
     assert_equal(comb(10, 3, exact=True), 120)
     assert_equal(comb(10, 3, exact=True, repetition=True), 220)
 
 
 def test_perm():
     assert_array_almost_equal(perm([10, 10], [3, 4]), [720., 5040.])
+    assert_almost_equal(perm(10, 3), 720.)
     assert_equal(perm(10, 3, exact=True), 720)
