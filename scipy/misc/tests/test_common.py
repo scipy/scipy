@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_almost_equal, \
                           assert_array_almost_equal, assert_equal
 
-from scipy.misc import pade, logsumexp, face, ascent, comb
+from scipy.misc import pade, logsumexp, face, ascent, comb, perm
 
 
 def test_pade_trivial():
