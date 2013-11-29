@@ -1008,7 +1008,5 @@ class TestCompareWithStats(TestCase):
             rm = stats.mstats.obrientransform(xm)
             assert_almost_equal(r.T,rm[0:len(x)])
 
-
-
 if __name__ == "__main__":
     run_module_suite()

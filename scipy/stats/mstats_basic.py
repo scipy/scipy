@@ -646,12 +646,12 @@ def linregress(*args):
     else:
         x = ma.array(args[0]).flatten()
         y = ma.array(args[1]).flatten()
-    m = ma.mask_or(ma.getmask(x), ma.getmask(y))
+    m = ma.mask_or(ma.getmask(x), ma.getmask(y), shrink=False)
     if m is not nomask:
-        x = ma.array(x,mask=m)
-        y = ma.array(y,mask=m)
+        x = ma.array(x, mask=m)
+        y = ma.array(y, mask=m)
 
-    #use same routine as stats for regression, return None, if invalid number of samples
+    # use same routine as stats for regression, return None, if invalid number of samples
     if (~m).sum() > 1:
         slope, intercept, r, prob, sterrest = stats.linregress(x.data[~m],y.data[~m])
         return slope, intercept, r, prob, sterrest
@@ -1353,11 +1353,10 @@ def tvar(a, limits=None, inclusive=(True,True)):
     a = a.astype(float).ravel()
 
     if limits is None:
-        n = (~a.mask).sum() #todo: better way to do that?
+        n = (~a.mask).sum()  # todo: better way to do that?
+        r = trima(a, limits=limits, inclusive=inclusive).var()*(n/(n-1.))
     else:
-        raise ValueError, 'Todo: not implemented yet!' #todo: write also unittest for routine WITH limits
-    r=trima(a, limits=limits, inclusive=inclusive).var()*(n/(n-1.))
-
+        raise ValueError('mstats.tvar() with limits not implemented yet so far')
     return r
 tvar.__doc__ = stats.tvar.__doc__
 
@@ -2003,7 +2002,7 @@ def sem(a, axis=0, ddof=0):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis=axis)
-    s = a.std(axis=axis,ddof=ddof) / ma.sqrt(n) #todo: does it need to be n-ddof in the denominator ???
+    s = a.std(axis=axis,ddof=ddof) / ma.sqrt(n)  # todo: does it need to be n-ddof in the denominator ???
     return s
 #sem.__doc__ = stats.sem.__doc__
 
