@@ -27,8 +27,6 @@ def test_cont_extra():
               ' ppf limit test'
         yield check_isf_limits, distfn, arg, distname + \
               ' isf limit test'
-        yield check_loc_scale, distfn, arg, distname + \
-              ' loc, scale test'
 
 
 @npt.dec.slow
@@ -77,14 +75,6 @@ def check_isf_limits(distfn,arg,msg):
     assert_equal_inf_nan(distfn.b,low, msg + 'isf upper bound')
     npt.assert_(np.isnan(below), msg + 'isf out of bounds - below')
     npt.assert_(np.isnan(above), msg + 'isf out of bounds - above')
-
-
-def check_loc_scale(distfn,arg,msg):
-    m,v = distfn.stats(*arg)
-    loc, scale = 10.0, 10.0
-    mt,vt = distfn.stats(loc=loc, scale=scale, *arg)
-    assert_equal_inf_nan(m*scale+loc,mt,msg + 'mean')
-    assert_equal_inf_nan(v*scale*scale,vt,msg + 'var')
 
 
 def assert_equal_inf_nan(v1,v2,msg):

@@ -194,9 +194,6 @@ def test_cont_basic():
 
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
-        # the sample skew kurtosis test has known failures, not very good distance measure
-        # yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
-        yield check_moment, distfn, arg, m, v, distname
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
         yield check_pdf, distfn, arg, distname
@@ -245,10 +242,6 @@ def test_cont_basic_slow():
         m, v = distfn.stats(*arg)
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
-        # the sample skew kurtosis test has known failures, not very good distance measure
-        # yield check_sample_skew_kurt, distfn, arg, sskew, skurt, distname
-        # vonmises and ksone are not supposed to fully work
-        yield check_moment, distfn, arg, m, v, distname
         yield check_cdf_ppf, distfn, arg, distname
         yield check_sf_isf, distfn, arg, distname
         yield check_pdf, distfn, arg, distname
@@ -299,6 +292,8 @@ def test_moments():
         yield knf(cond2, msg)(check_var_expect), distfn, arg, m, v, distname
         yield knf(cond2, msg)(check_skew_expect), distfn, arg, m, v, s, distname
         yield knf(cond2, msg)(check_kurt_expect), distfn, arg, m, v, k, distname
+        yield check_loc_scale, distfn, arg, m, v, distname
+        yield check_moment, distfn, arg, m, v, distname
 
 
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
@@ -481,6 +476,14 @@ def check_edge_support(distfn, args):
     npt.assert_equal(distfn.ppf([0.0, 1.0], *args), x)
     npt.assert_equal(distfn.isf([0.0, 1.0], *args), x[::-1])
     # pdf(x=[a, b], *args) depends on the distribution
+
+
+def check_loc_scale(distfn, arg, m, v, msg):
+    loc, scale = 10.0, 10.0
+    mt, vt = distfn.stats(loc=loc, scale=scale, *arg)
+    npt.assert_allclose(m*scale + loc, mt)
+    npt.assert_allclose(v*scale*scale, vt)
+
 
 
 if __name__ == "__main__":
