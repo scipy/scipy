@@ -528,6 +528,8 @@ class TestDLaplace(TestCase):
         val = stats.dlaplace(1.5).rvs(3)
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
+        assert_(stats.dlaplace.rvs(0.8) is not None)
+
 
     def test_stats(self):
         # compare the explicit formulas w/ direct summation using pmf

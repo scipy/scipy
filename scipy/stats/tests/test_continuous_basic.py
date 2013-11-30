@@ -1,8 +1,5 @@
 from __future__ import division, print_function, absolute_import
 
-import warnings
-import inspect
-
 import numpy as np
 import numpy.testing as npt
 
@@ -10,7 +7,7 @@ from scipy import stats
 from common_tests import (check_normalization, check_moment, check_mean_expect,
         check_var_expect, check_skew_expect, check_kurt_expect,
         check_entropy, check_private_entropy, NUMPY_BELOW_1_7,
-        check_edge_support)
+        check_edge_support, check_named_args)
 
 """
 Test all continuous distributions.
@@ -189,8 +186,6 @@ def test_cont_basic():
         rvs = distfn.rvs(size=sn, *arg)
         sm = rvs.mean()
         sv = rvs.var()
-        skurt = stats.kurtosis(rvs)
-        sskew = stats.skew(rvs)
         m, v = distfn.stats(*arg)
 
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
@@ -241,8 +236,6 @@ def test_cont_basic_slow():
         rvs = distfn.rvs(size=sn,*arg)
         sm = rvs.mean()
         sv = rvs.var()
-        skurt = stats.kurtosis(rvs)
-        sskew = stats.skew(rvs)
         m, v = distfn.stats(*arg)
         yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
               'sample mean test'
@@ -309,40 +302,32 @@ def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
 
 
 def check_sample_mean(sm,v,n, popmean):
-    """
-from stats.stats.ttest_1samp(a, popmean):
-Calculates the t-obtained for the independent samples T-test on ONE group
-of scores a, given a population mean.
-
-Returns: t-value, two-tailed prob
-"""
-##    a = asarray(a)
-##    x = np.mean(a)
-##    v = np.var(a, ddof=1)
-##    n = len(a)
+    # from stats.stats.ttest_1samp(a, popmean):
+    # Calculates the t-obtained for the independent samples T-test on ONE group
+    # of scores a, given a population mean.
+    #
+    # Returns: t-value, two-tailed prob
     df = n-1
     svar = ((n-1)*v) / float(df)    # looks redundant
-    t = (sm-popmean)/np.sqrt(svar*(1.0/n))
-    prob = stats.betai(0.5*df,0.5,df/(df+t*t))
+    t = (sm-popmean) / np.sqrt(svar*(1.0/n))
+    prob = stats.betai(0.5*df, 0.5, df/(df+t*t))
 
     # return t,prob
-    npt.assert_(prob > 0.01, 'mean fail, t,prob = %f, %f, m,sm=%f,%f' % (t,prob,popmean,sm))
+    npt.assert_(prob > 0.01, 'mean fail, t,prob = %f, %f, m, sm=%f,%f' %
+            (t, prob, popmean, sm))
 
 
 def check_sample_var(sv,n, popvar):
-    '''
-two-sided chisquare test for sample variance equal to hypothesized variance
-    '''
+    # two-sided chisquare test for sample variance equal to hypothesized variance
     df = n-1
     chi2 = (n-1)*popvar/float(popvar)
     pval = stats.chisqprob(chi2,df)*2
-    npt.assert_(pval > 0.01, 'var fail, t,pval = %f, %f, v,sv=%f,%f' % (chi2,pval,popvar,sv))
+    npt.assert_(pval > 0.01, 'var fail, t, pval = %f, %f, v, sv=%f, %f' %
+            (chi2,pval,popvar,sv))
 
 
 def check_sample_skew_kurt(distfn, arg, ss, sk, msg):
     skew,kurt = distfn.stats(moments='sk',*arg)
-##    skew = distfn.stats(moment='s',*arg)[()]
-##    kurt = distfn.stats(moment='k',*arg)[()]
     check_sample_meanvar(sk, kurt, msg + 'sample kurtosis test')
     check_sample_meanvar(ss, skew, msg + 'sample skew test')
 
@@ -426,46 +411,6 @@ def check_distribution_rvs(dist, args, alpha, rvs):
 
 def check_vecentropy(distfn, args):
     npt.assert_equal(distfn.vecentropy(*args), distfn._entropy(*args))
-
-
-def check_named_args(distfn, x, shape_args, defaults, meths):
-    # Check calling w/ named arguments.
-
-    # check consistency of shapes, numargs and _parse signature
-    signature = inspect.getargspec(distfn._parse_args)
-    npt.assert_(signature.varargs is None)
-    npt.assert_(signature.keywords is None)
-    npt.assert_(signature.defaults == defaults)
-
-    shape_argnames = signature.args[1:-len(defaults)]  # self, a, b, loc=0, scale=1
-    if distfn.shapes:
-        shapes_ = distfn.shapes.replace(',',' ').split()
-    else:
-        shapes_ = ''
-    npt.assert_(len(shapes_) == distfn.numargs)
-    npt.assert_(len(shapes_) == len(shape_argnames))
-
-    # check calling w/ named arguments
-    shape_args = list(shape_args)
-
-    vals = [meth(x, *shape_args) for meth in meths]
-    npt.assert_(np.all(np.isfinite(vals)))
-
-    names, a, k = shape_argnames[:], shape_args[:], {}
-    while names:
-        k.update({names.pop(): a.pop()})
-        v = [meth(x, *a, **k) for meth in meths]
-        npt.assert_array_equal(vals, v)
-        if not 'n' in k.keys():
-            # `n` is first parameter of moment(), so can't be used as named arg
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", UserWarning)
-                npt.assert_equal(distfn.moment(3, *a, **k),
-                                 distfn.moment(3, *shape_args))
-
-    # unknown arguments should not go through:
-    k.update({'kaboom': 42})
-    npt.assert_raises(TypeError, distfn.cdf, x, **k)
 
 
 def check_loc_scale(distfn, arg, m, v, msg):
