@@ -412,7 +412,7 @@ def check_distribution_rvs(dist, args, alpha, rvs):
 def check_vecentropy(distfn, args):
     npt.assert_equal(distfn.vecentropy(*args), distfn._entropy(*args))
 
-
+@npt.dec.skipif(NUMPY_BELOW_1_7)
 def check_loc_scale(distfn, arg, m, v, msg):
     loc, scale = 10.0, 10.0
     mt, vt = distfn.stats(loc=loc, scale=scale, *arg)
