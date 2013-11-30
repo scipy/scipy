@@ -674,7 +674,7 @@ then decompositions of :math:`\mathbf{A}` can be found so that
 
 where :math:`\mathbf{L}` is lower-triangular and :math:`\mathbf{U}` is
 upper triangular. Notice that :math:`\mathbf{L}=\mathbf{U}^{H}.` The
-command :obj:`linagl.cholesky` computes the cholesky
+command :obj:`linalg.cholesky` computes the cholesky
 factorization. For using cholesky factorization to solve systems of
 equations there are also :obj:`linalg.cho_factor` and
 :obj:`linalg.cho_solve` routines that work similarly to their LU
