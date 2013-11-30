@@ -428,7 +428,7 @@ def check_vecentropy(distfn, args):
 
 
 def check_named_args(distfn, x, shape_args, defaults, meths):
-    """Check calling w/ named arguments."""
+    # Check calling w/ named arguments.
 
     # check consistency of shapes, numargs and _parse signature
     signature = inspect.getargspec(distfn._parse_args)
@@ -468,7 +468,7 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
 
 
 def check_edge_support(distfn, args):
-    """Make sure the x=self.a and self.b are handled correctly."""
+    # Make sure the x=self.a and self.b are handled correctly.
     x = [distfn.a, distfn.b]
     npt.assert_equal(distfn.cdf(x, *args), [0.0, 1.0])
     npt.assert_equal(distfn.logcdf(x, *args), [-np.inf, 0.0])
@@ -485,20 +485,6 @@ def check_private_entropy(distfn, args):
     # compare a generic _entropy with the distribution-specific implementation
     npt.assert_allclose(distfn._entropy(*args),
                         stats.rv_continuous._entropy(distfn, *args))
-
-
-def check_edge_support(distfn, args):
-    """Make sure the x=self.a and self.b are handled correctly."""
-    x = [distfn.a, distfn.b]
-    npt.assert_equal(distfn.cdf(x, *args), [0.0, 1.0])
-    npt.assert_equal(distfn.logcdf(x, *args), [-np.inf, 0.0])
-
-    npt.assert_equal(distfn.sf(x, *args), [1.0, 0.0])
-    npt.assert_equal(distfn.logsf(x, *args), [0.0, -np.inf])
-
-    npt.assert_equal(distfn.ppf([0.0, 1.0], *args), x)
-    npt.assert_equal(distfn.isf([0.0, 1.0], *args), x[::-1])
-    # pdf(x=[a, b], *args) depends on the distribution
 
 
 if __name__ == "__main__":

@@ -25,19 +25,6 @@ from scipy.special import xlogy
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 
 
-def kolmogorov_check(diststr, args=(), N=20, significance=0.01):
-    qtest = stats.ksoneisf(significance, N)
-    cdf = eval('stats.'+diststr+'.cdf')
-    dist = eval('stats.'+diststr)
-    # Get random numbers
-    kwds = {'size':N}
-    vals = numpy.sort(dist.rvs(*args, **kwds))
-    cdfvals = cdf(vals, *args)
-    q = max(abs(cdfvals - np.arange(1.0, N+1)/N))
-    assert_(q < qtest, msg="Failed q=%f, bound=%f, alpha=%f" % (q, qtest, significance))
-    return
-
-
 # generate test cases to test cdf and distribution consistency
 dists = ['uniform','norm','lognorm','expon','beta',
          'powerlaw','bradford','burr','fisk','cauchy','halfcauchy',
@@ -333,7 +320,7 @@ class TestHypergeom(TestCase):
         assert_almost_equal(hgpmf, 0.0010114963068932233, 11)
 
     def test_precision2(self):
-        """Test hypergeom precision for large numbers.  See #1218."""
+        # Test hypergeom precision for large numbers.  See #1218.
         # Results compared with those from R.
         oranges = 9.9e4
         pears = 1.1e5
@@ -906,7 +893,7 @@ class TestFitMethod(object):
             yield check, func, dist, args, alpha
 
     def test_fix_fit_2args_lognorm(self):
-        """Regression test for #1551."""
+        # Regression test for #1551.
         np.random.seed(12345)
         with np.errstate(all='ignore'):
             x = stats.lognorm.rvs(0.25, 0., 20.0, size=20)
@@ -1023,11 +1010,10 @@ class TestFitMethod(object):
 
 
 class TestFrozen(TestCase):
-    """Test that a frozen distribution gives the same results as the original object.
-
-    Only tested for the normal distribution (with loc and scale specified) and for the
-    gamma distribution (with a shape parameter specified).
-    """
+    # Test that a frozen distribution gives the same results as the original object.
+    #
+    # Only tested for the normal distribution (with loc and scale specified)
+    # and for the gamma distribution (with a shape parameter specified).
     def test_norm(self):
         dist = stats.norm
         frozen = stats.norm(loc=10.0, scale=3.0)
@@ -1142,12 +1128,10 @@ class TestFrozen(TestCase):
 
 
 class TestExpect(TestCase):
-    """Test for expect method.
-
-    Uses normal distribution and beta distribution for finite bounds, and
-    hypergeom for discrete distribution with finite support
-
-    """
+    # Test for expect method.
+    #
+    # Uses normal distribution and beta distribution for finite bounds, and
+    # hypergeom for discrete distribution with finite support
     def test_norm(self):
         v = stats.norm.expect(lambda x: (x-5)*(x-5), loc=5, scale=2)
         assert_almost_equal(v, 4, decimal=14)
@@ -1591,13 +1575,13 @@ class _distr3_gen(stats.rv_continuous):
         return a + b
 
     def _cdf(self, x, a):
-        """Different # of shape params from _pdf, to be able to check that
-        inspection catches the inconsistency."""
+        # Different # of shape params from _pdf, to be able to check that
+        # inspection catches the inconsistency."""
         return 42 * a + x
 
 
 class _distr6_gen(stats.rv_continuous):
-    #Two shape parameters (both _pdf and _cdf defined, consistent shapes.)
+    # Two shape parameters (both _pdf and _cdf defined, consistent shapes.)
     def _pdf(self, x, a, b):
         return a*x + b
 
@@ -1606,7 +1590,7 @@ class _distr6_gen(stats.rv_continuous):
 
 
 class TestSubclassingExplicitShapes(TestCase):
-    """Construct a distribution w/ explicit shapes parameter and test it."""
+    # Construct a distribution w/ explicit shapes parameter and test it.
 
     def test_correct_shapes(self):
         dummy_distr = _distr_gen(name='dummy', shapes='a')
@@ -1725,7 +1709,7 @@ class TestSubclassingExplicitShapes(TestCase):
 
 
 class TestSubclassingNoShapes(TestCase):
-    """Construct a distribution w/o explicit shapes parameter and test it."""
+    # Construct a distribution w/o explicit shapes parameter and test it.
 
     def test_only__pdf(self):
         dummy_distr = _distr_gen(name='dummy')
