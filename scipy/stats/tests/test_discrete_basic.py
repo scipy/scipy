@@ -8,7 +8,8 @@ from scipy.lib.six import xrange
 
 from scipy import stats
 from common_tests import (check_normalization, check_moment, check_mean_expect,
-        check_var_expect, check_skew_expect, check_kurt_expect)
+        check_var_expect, check_skew_expect, check_kurt_expect,
+        check_entropy, check_private_entropy)
 
 DECIMAL_meanvar = 0  # 1  # was 0
 
@@ -73,10 +74,10 @@ def test_discrete_basic():
         yield check_named_args, distfn, k, arg, locscale_defaults, meths
         yield check_scale_docstring, distfn
 
-        # compare a generic _entropy w/ distribution-specific implementation,
-        # if available
+        # Entropy
+        yield check_entropy, distfn, arg, distname
         if distfn.__class__._entropy != stats.rv_discrete._entropy:
-            yield check_private_entropy, distfn, arg
+            yield check_private_entropy, distfn, arg, stats.rv_discrete
 
 
 def test_moments():
@@ -105,8 +106,6 @@ def test_discrete_extra():
               ' ppf limit test'
         yield check_isf_limits, distfn, arg, distname + \
               ' isf limit test'
-        yield check_entropy, distfn, arg, distname + \
-              ' entropy nan test'
 
 
 @npt.dec.skipif(True)
@@ -244,10 +243,6 @@ def check_sample_skew_kurt(distfn, arg, sk, ss, msg):
     check_sample_meanvar, ss, s, msg + 'sample kurtosis test'
 
 
-def check_entropy(distfn, arg, msg):
-    ent = distfn.entropy(*arg)
-    npt.assert_(not np.isnan(ent), msg + 'test Entropy is nan')
-
 
 def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
     """Perform chisquare test for random sample of a discrete distribution
@@ -350,11 +345,6 @@ def check_scale_docstring(distfn):
         # Docstrings can be stripped if interpreter is run with -OO
         npt.assert_('scale' not in distfn.__doc__)
 
-
-def check_private_entropy(distfn, args):
-    # compare a generic _entropy with the distribution-specific implementation
-    npt.assert_allclose(distfn._entropy(*args),
-                        stats.rv_discrete._entropy(distfn, *args))
 
 if __name__ == "__main__":
     npt.run_module_suite()

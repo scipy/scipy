@@ -8,7 +8,8 @@ import numpy.testing as npt
 
 from scipy import stats
 from common_tests import (check_normalization, check_moment, check_mean_expect,
-        check_var_expect, check_skew_expect, check_kurt_expect)
+        check_var_expect, check_skew_expect, check_kurt_expect,
+        check_entropy, check_private_entropy, NUMPY_BELOW_1_7)
 
 """
 Test all continuous distributions.
@@ -215,15 +216,15 @@ def test_cont_basic():
         x = spec_x.get(distname, 0.5)
         yield check_named_args, distfn, x, arg, locscale_defaults, meths
 
-        # this asserts the vectorization of _entropy w/ no shape parameters
-        # NB: broken for older versions of numpy
+        # Entropy
+        skp = npt.dec.skipif
+        yield check_entropy, distfn, arg, distname
+
         if distfn.numargs == 0:
-            if np.__version__ > '1.7':
-                yield check_vecentropy, distfn, arg
-        # compare a generic _entropy w/ distribution-specific implementation,
-        # if available
+            yield skp(NUMPY_BELOW_1_7)(check_vecentropy), distfn, arg
         if distfn.__class__._entropy != stats.rv_continuous._entropy:
-            yield check_private_entropy, distfn, arg
+            yield check_private_entropy, distfn, arg, stats.rv_continuous
+
         yield check_edge_support, distfn, arg
 
 
@@ -270,15 +271,16 @@ def test_cont_basic_slow():
             arg = (3,)
         yield check_named_args, distfn, x, arg, locscale_defaults, meths
 
-        # this asserts the vectorization of _entropy w/ no shape parameters
-        # NB: broken for older versions of numpy
+        # Entropy
+        skp = npt.dec.skipif
+        ks_cond = distname in ['ksone', 'kstwobign']
+        yield skp(ks_cond)(check_entropy), distfn, arg, distname
+
         if distfn.numargs == 0:
-            if np.__version__ > '1.7':
-                yield check_vecentropy, distfn, arg
-        # compare a generic _entropy w/ distribution-specific implementation,
-        # if available
+            yield skp(NUMPY_BELOW_1_7)(check_vecentropy), distfn, arg
         if distfn.__class__._entropy != stats.rv_continuous._entropy:
-            yield check_private_entropy, distfn, arg
+            yield check_private_entropy, distfn, arg, stats.rv_continuous
+
         yield check_edge_support, distfn, arg
 
 
@@ -479,12 +481,6 @@ def check_edge_support(distfn, args):
     npt.assert_equal(distfn.ppf([0.0, 1.0], *args), x)
     npt.assert_equal(distfn.isf([0.0, 1.0], *args), x[::-1])
     # pdf(x=[a, b], *args) depends on the distribution
-
-
-def check_private_entropy(distfn, args):
-    # compare a generic _entropy with the distribution-specific implementation
-    npt.assert_allclose(distfn._entropy(*args),
-                        stats.rv_continuous._entropy(distfn, *args))
 
 
 if __name__ == "__main__":

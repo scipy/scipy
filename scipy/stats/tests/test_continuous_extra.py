@@ -36,8 +36,7 @@ def _est_cont_skip():
     for distname, arg in distcont:
         distfn = getattr(stats, distname)
         #entropy test checks only for isnan, currently 6 isnan left
-        yield check_entropy, distfn, arg, distname + \
-              ' entropy nan test'
+
         # _ppf test has 1 failure be design
         yield check_ppf_private, distfn, arg, distname + \
               ' _ppf private test'
@@ -86,12 +85,6 @@ def check_loc_scale(distfn,arg,msg):
     mt,vt = distfn.stats(loc=loc, scale=scale, *arg)
     assert_equal_inf_nan(m*scale+loc,mt,msg + 'mean')
     assert_equal_inf_nan(v*scale*scale,vt,msg + 'var')
-
-
-def check_entropy(distfn,arg,msg):
-    ent = distfn.entropy(*arg)
-    #print 'Entropy =', ent
-    npt.assert_(not np.isnan(ent), msg + 'test Entropy is nan')
 
 
 def assert_equal_inf_nan(v1,v2,msg):

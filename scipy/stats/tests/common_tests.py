@@ -3,6 +3,10 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import numpy.testing as npt
 
+from distutils.version import LooseVersion
+
+NUMPY_BELOW_1_7 = LooseVersion(np.version.version) < LooseVersion('1.7')
+
 
 def check_normalization(distfn, args, distname):
     norm_moment = distfn.moment(0, *args)
@@ -71,3 +75,15 @@ def check_kurt_expect(distfn, arg, m, v, k, msg):
                 err_msg=msg + ' - kurtosis')
     else:
         npt.assert_(np.isnan(k))
+
+
+def check_entropy(distfn, arg, msg):
+    ent = distfn.entropy(*arg)
+    npt.assert_(not np.isnan(ent), msg + 'test Entropy is nan')
+
+
+def check_private_entropy(distfn, args, superclass):
+    # compare a generic _entropy with the distribution-specific implementation
+    npt.assert_allclose(distfn._entropy(*args),
+                        superclass._entropy(distfn, *args))
+
