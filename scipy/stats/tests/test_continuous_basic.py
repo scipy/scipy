@@ -225,6 +225,9 @@ def test_cont_basic():
 
         yield check_edge_support, distfn, arg
 
+        knf = npt.dec.knownfailureif
+        yield knf(distname == 'truncnorm')(check_ppf_private), distfn, arg,\
+                distname
 
 @npt.dec.slow
 def test_cont_basic_slow():
@@ -465,13 +468,17 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     npt.assert_raises(TypeError, distfn.cdf, x, **k)
 
 
-
 def check_loc_scale(distfn, arg, m, v, msg):
     loc, scale = 10.0, 10.0
     mt, vt = distfn.stats(loc=loc, scale=scale, *arg)
     npt.assert_allclose(m*scale + loc, mt)
     npt.assert_allclose(v*scale*scale, vt)
 
+
+def check_ppf_private(distfn, arg, msg):
+    #fails by design for truncnorm self.nb not defined
+    ppfs = distfn._ppf(np.array([0.1, 0.5, 0.9]), *arg)
+    npt.assert_(not np.any(np.isnan(ppfs)), msg + 'ppf private is nan')
 
 
 if __name__ == "__main__":

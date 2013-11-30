@@ -18,17 +18,6 @@ from test_continuous_basic import distcont
 DECIMAL = 5
 
 
-@npt.dec.slow
-def _est_cont_skip():
-    for distname, arg in distcont:
-        distfn = getattr(stats, distname)
-        #entropy test checks only for isnan, currently 6 isnan left
-
-        # _ppf test has 1 failure be design
-        yield check_ppf_private, distfn, arg, distname + \
-              ' _ppf private test'
-
-
 def test_540_567():
     # test for nan returned in tickets 540, 567
     npt.assert_almost_equal(stats.norm.cdf(-1.7624320982),0.03899815971089126,
@@ -38,12 +27,6 @@ def test_540_567():
     npt.assert_almost_equal(stats.norm.cdf(1.38629436112, loc=0.950273420309,
                             scale=0.204423758009),0.98353464004309321,
                             decimal=10, err_msg='test_540_567')
-
-
-def check_ppf_private(distfn,arg,msg):
-    #fails by design for trunk norm self.nb not defined
-    ppfs = distfn._ppf(np.array([0.1,0.5,0.9]), *arg)
-    npt.assert_(not np.any(np.isnan(ppfs)), msg + 'ppf private is nan')
 
 
 def test_erlang_runtimewarning():
