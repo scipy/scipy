@@ -2,8 +2,8 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 import numpy.testing as npt
-
 from distutils.version import LooseVersion
+from scipy import stats
 
 NUMPY_BELOW_1_7 = LooseVersion(np.version.version) < LooseVersion('1.7')
 
@@ -86,4 +86,24 @@ def check_private_entropy(distfn, args, superclass):
     # compare a generic _entropy with the distribution-specific implementation
     npt.assert_allclose(distfn._entropy(*args),
                         superclass._entropy(distfn, *args))
+
+
+def check_edge_support(distfn, args):
+    # Make sure the x=self.a and self.b are handled correctly.
+    x = [distfn.a, distfn.b]
+    if isinstance(distfn, stats.rv_continuous):
+        npt.assert_equal(distfn.cdf(x, *args), [0.0, 1.0])
+        npt.assert_equal(distfn.logcdf(x, *args), [-np.inf, 0.0])
+
+        npt.assert_equal(distfn.sf(x, *args), [1.0, 0.0])
+        npt.assert_equal(distfn.logsf(x, *args), [0.0, -np.inf])
+
+    if isinstance(distfn, stats.rv_discrete):
+        x = [distfn.a - 1, distfn.b]
+    npt.assert_equal(distfn.ppf([0.0, 1.0], *args), x)
+    npt.assert_equal(distfn.isf([0.0, 1.0], *args), x[::-1])
+
+    # out-of-bounds for isf & ppf
+    npt.assert_(np.isnan(distfn.isf([-1, 2], *args)).all())
+    npt.assert_(np.isnan(distfn.ppf([-1, 2], *args)).all())
 

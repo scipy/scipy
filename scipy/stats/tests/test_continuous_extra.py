@@ -19,17 +19,6 @@ DECIMAL = 5
 
 
 @npt.dec.slow
-def test_cont_extra():
-    for distname, arg in distcont[:]:
-        distfn = getattr(stats, distname)
-
-        yield check_ppf_limits, distfn, arg, distname + \
-              ' ppf limit test'
-        yield check_isf_limits, distfn, arg, distname + \
-              ' isf limit test'
-
-
-@npt.dec.slow
 def _est_cont_skip():
     for distname, arg in distcont:
         distfn = getattr(stats, distname)
@@ -51,40 +40,10 @@ def test_540_567():
                             decimal=10, err_msg='test_540_567')
 
 
-def check_ppf_limits(distfn,arg,msg):
-    below,low,upp,above = distfn.ppf([-1,0,1,2], *arg)
-    #print distfn.name, distfn.a, low, distfn.b, upp
-    #print distfn.name,below,low,upp,above
-    assert_equal_inf_nan(distfn.a,low, msg + 'ppf lower bound')
-    assert_equal_inf_nan(distfn.b,upp, msg + 'ppf upper bound')
-    npt.assert_(np.isnan(below), msg + 'ppf out of bounds - below')
-    npt.assert_(np.isnan(above), msg + 'ppf out of bounds - above')
-
-
 def check_ppf_private(distfn,arg,msg):
     #fails by design for trunk norm self.nb not defined
     ppfs = distfn._ppf(np.array([0.1,0.5,0.9]), *arg)
     npt.assert_(not np.any(np.isnan(ppfs)), msg + 'ppf private is nan')
-
-
-def check_isf_limits(distfn,arg,msg):
-    below,low,upp,above = distfn.isf([-1,0,1,2], *arg)
-    #print distfn.name, distfn.a, low, distfn.b, upp
-    #print distfn.name,below,low,upp,above
-    assert_equal_inf_nan(distfn.a,upp, msg + 'isf lower bound')
-    assert_equal_inf_nan(distfn.b,low, msg + 'isf upper bound')
-    npt.assert_(np.isnan(below), msg + 'isf out of bounds - below')
-    npt.assert_(np.isnan(above), msg + 'isf out of bounds - above')
-
-
-def assert_equal_inf_nan(v1,v2,msg):
-    npt.assert_(not np.isnan(v1))
-    if not np.isinf(v1):
-        npt.assert_almost_equal(v1, v2, decimal=DECIMAL, err_msg=msg +
-                                   ' - finite')
-    else:
-        npt.assert_(np.isinf(v2) or np.isnan(v2),
-               msg + ' - infinite, v2=%s' % str(v2))
 
 
 def test_erlang_runtimewarning():

@@ -9,7 +9,8 @@ import numpy.testing as npt
 from scipy import stats
 from common_tests import (check_normalization, check_moment, check_mean_expect,
         check_var_expect, check_skew_expect, check_kurt_expect,
-        check_entropy, check_private_entropy, NUMPY_BELOW_1_7)
+        check_entropy, check_private_entropy, NUMPY_BELOW_1_7,
+        check_edge_support)
 
 """
 Test all continuous distributions.
@@ -463,19 +464,6 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     k.update({'kaboom': 42})
     npt.assert_raises(TypeError, distfn.cdf, x, **k)
 
-
-def check_edge_support(distfn, args):
-    # Make sure the x=self.a and self.b are handled correctly.
-    x = [distfn.a, distfn.b]
-    npt.assert_equal(distfn.cdf(x, *args), [0.0, 1.0])
-    npt.assert_equal(distfn.logcdf(x, *args), [-np.inf, 0.0])
-
-    npt.assert_equal(distfn.sf(x, *args), [1.0, 0.0])
-    npt.assert_equal(distfn.logsf(x, *args), [0.0, -np.inf])
-
-    npt.assert_equal(distfn.ppf([0.0, 1.0], *args), x)
-    npt.assert_equal(distfn.isf([0.0, 1.0], *args), x[::-1])
-    # pdf(x=[a, b], *args) depends on the distribution
 
 
 def check_loc_scale(distfn, arg, m, v, msg):
