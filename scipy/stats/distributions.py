@@ -16,6 +16,7 @@ from scipy import special
 from scipy import optimize
 from scipy import integrate
 from scipy.special import gammaln as gamln
+from scipy.interpolate import BPoly
 
 import keyword
 import re
@@ -5724,11 +5725,31 @@ class semicircular_gen(rv_continuous):
     %(example)s
 
     """
+    def __init__(self, *arg, **kwarg):
+        super(semicircular_gen, self).__init__(*arg, **kwarg)
+
+        def cheb_nodes(N):
+            arg = (2*np.arange(1, N+1) - 1.) * np.pi / 2. / N
+            return np.cos(arg)[::-1]
+
+        # tabulate the ppf: in fact, tabulate q = cdf(x) and interpolate x(q)
+        # Also use the derivatives, using the fact that dx/dq = 1 / (dq/dx), 
+        # since pdf is zero at the boundaries, do not use the derivative 
+        # exactly at the boundary.
+        x_nodes = cheb_nodes(47)
+        qq = [0.] + [self.cdf(x) for x in x_nodes] + [1.]
+        xx = [[x, 1./self.pdf(x)] for x in x_nodes]
+        xx = [[-1.]] + xx + [[1.]]
+        self.bp = BPoly.from_derivatives(qq, xx)
+
     def _pdf(self, x):
         return 2.0/pi*sqrt(1-x*x)
 
     def _cdf(self, x):
         return 0.5+1.0/pi*(x*sqrt(1-x*x) + arcsin(x))
+
+    def _ppf(self, q):
+        return self.bp(q)
 
     def _stats(self):
         return 0, 0.25, 0, -1.0

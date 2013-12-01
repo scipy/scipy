@@ -158,7 +158,7 @@ distmissing = ['wald', 'gausshyper', 'genexpon', 'rv_continuous',
 
 distmiss = [[dist,args] for dist,args in distcont if dist in distmissing]
 distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
-            'vonmises', 'vonmises_line', 'mielke', 'semicircular',
+            'vonmises', 'vonmises_line', 'mielke',
             'cosine', 'invweibull', 'powerlognorm', 'johnsonsu', 'kstwobign']
 # distslow are sorted by speed (very slow to slow)
 
