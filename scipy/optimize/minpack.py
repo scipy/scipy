@@ -448,7 +448,7 @@ def _weighted_general_function(params, xdata, ydata, function, weights):
     return weights * (function(xdata, *params) - ydata)
 
 
-def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
+def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False, **kw):
     """
     Use non-linear least squares to fit a function, f, to data.
 
@@ -470,9 +470,19 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
         values will all be 1 (if the number of parameters for the function
         can be determined using introspection, otherwise a ValueError
         is raised).
-    sigma : None or N-length sequence
-        If not None, this vector will be used as relative weights in the
+    sigma : None or N-length sequence, optional
+        If not None, these values are used as weights in the
         least-squares problem.
+    absolute_sigma : bool, optional
+        If False, `sigma` denotes relative weights of the data points.
+        The returned covariance matrix `pcov` is based on *estimated*
+        errors in the data, and is not affected by the overall
+        magnitude of the values in `sigma`. Only the relative
+        magnitudes of the `sigma` values matter.
+
+        If True, `sigma` describes one standard deviation errors of
+        the input data points. The estimated covariance in `pcov` is
+        based on these values.
 
     Returns
     -------
@@ -480,8 +490,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
         Optimal values for the parameters so that the sum of the squared error
         of ``f(xdata, *popt) - ydata`` is minimized
     pcov : 2d array
-        The estimated covariance of popt.  The diagonals provide the variance
-        of the parameter estimate.
+        The estimated covariance of popt. The diagonals provide the variance
+        of the parameter estimate. To compute one standard deviation errors
+        on the parameters use ``perr = np.sqrt(np.diag(pcov))``.
+
+        How the `sigma` parameter affects the estimated covariance
+        depends on `absolute_sigma` argument, as described above.
 
     See Also
     --------
@@ -497,13 +511,13 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
     >>> import numpy as np
     >>> from scipy.optimize import curve_fit
     >>> def func(x, a, b, c):
-    ...     return a*np.exp(-b*x) + c
+    ...     return a * np.exp(-b * x) + c
 
-    >>> x = np.linspace(0,4,50)
-    >>> y = func(x, 2.5, 1.3, 0.5)
-    >>> yn = y + 0.2*np.random.normal(size=len(x))
+    >>> xdata = np.linspace(0, 4, 50)
+    >>> y = func(xdata, 2.5, 1.3, 0.5)
+    >>> ydata = y + 0.2 * np.random.normal(size=len(xdata))
 
-    >>> popt, pcov = curve_fit(func, x, yn)
+    >>> popt, pcov = curve_fit(func, xdata, ydata)
 
     """
     if p0 is None:
@@ -537,11 +551,16 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
         msg = "Optimal parameters not found: " + errmsg
         raise RuntimeError(msg)
 
-    if (len(ydata) > len(p0)) and pcov is not None:
-        s_sq = (func(popt, *args)**2).sum()/(len(ydata)-len(p0))
-        pcov = pcov * s_sq
-    else:
-        pcov = inf
+    if pcov is None:
+        # indeterminate covariance
+        pcov = zeros((len(popt), len(popt)), dtype=float)
+        pcov.fill(inf)
+    elif not absolute_sigma:
+        if len(ydata) > len(p0):
+            s_sq = (asarray(func(popt, *args))**2).sum() / (len(ydata) - len(p0))
+            pcov = pcov * s_sq
+        else:
+            pcov.fill(inf)
 
     if return_full:
         return popt, pcov, infodict, errmsg, ier

@@ -336,6 +336,45 @@ class TestCurveFit(TestCase):
         popt, pcov = curve_fit(f_double_gauss, x, y, guess, maxfev=10000)
         assert_allclose(popt, good, rtol=1e-5)
 
+    def test_pcov(self):
+        xdata = np.array([0, 1, 2, 3, 4, 5])
+        ydata = np.array([1, 1, 5, 7, 8, 12])
+        sigma = np.array([1, 2, 1, 2, 1, 2])
+
+        def f(x, a, b):
+            return a*x + b
+
+        popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=sigma)
+        perr_scaled = np.sqrt(np.diag(pcov))
+        assert_allclose(perr_scaled, [ 0.20659803, 0.57204404], rtol=1e-3)
+
+        popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=3*sigma)
+        perr_scaled = np.sqrt(np.diag(pcov))
+        assert_allclose(perr_scaled, [ 0.20659803, 0.57204404], rtol=1e-3)
+
+        popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=sigma,
+                               absolute_sigma=True)
+        perr = np.sqrt(np.diag(pcov))
+        assert_allclose(perr, [0.30714756, 0.85045308], rtol=1e-3)
+
+        popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=3*sigma,
+                               absolute_sigma=True)
+        perr = np.sqrt(np.diag(pcov))
+        assert_allclose(perr, [3*0.30714756, 3*0.85045308], rtol=1e-3)
+
+        # infinite variances
+
+        def f_flat(x, a, b):
+            return a*x
+
+        popt, pcov = curve_fit(f_flat, xdata, ydata, p0=[2, 0], sigma=sigma)
+        assert_(pcov.shape == (2, 2))
+        assert_array_equal(pcov, np.inf)
+
+        popt, pcov = curve_fit(f, xdata[:2], ydata[:2], p0=[2, 0])
+        assert_(pcov.shape == (2, 2))
+        assert_array_equal(pcov, np.inf)
+
 
 class TestFixedPoint(TestCase):
 
