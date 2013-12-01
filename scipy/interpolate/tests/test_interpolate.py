@@ -16,7 +16,7 @@ from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          RegularGridInterpolator, LinearNDInterpolator, NearestNDInterpolator,
          RectBivariateSpline, interpn, NdPPoly)
 
-from scipy.special import poch
+from scipy.special import poch, gamma
 
 from scipy.interpolate import _ppoly
 
@@ -1698,6 +1698,75 @@ class TestNdPPoly(object):
         v2 = _ppoly4d_eval(c, (x, y, z, u), xi, yi, zi, ui)
         assert_allclose(v1, v2)
 
+    def test_deriv_1d(self):
+        np.random.seed(1234)
+
+        c = np.random.rand(4, 5)
+        x = np.linspace(0, 1, 5+1)
+
+        p = NdPPoly(c, (x,))
+
+        # derivative
+        dp = p.derivative(nu=[1])
+        p1 = PPoly(c, x)
+        dp1 = p1.derivative()
+        assert_allclose(dp.c, dp1.c)
+
+        # antiderivative
+        dp = p.antiderivative(nu=[2])
+        p1 = PPoly(c, x)
+        dp1 = p1.antiderivative(2)
+        assert_allclose(dp.c, dp1.c)
+
+    def test_deriv_3d(self):
+        np.random.seed(1234)
+
+        c = np.random.rand(4, 5, 6, 7, 8, 9)
+        x = np.linspace(0, 1, 7+1)
+        y = np.linspace(0, 1, 8+1)**2
+        z = np.linspace(0, 1, 9+1)**3
+
+        p = NdPPoly(c, (x, y, z))
+
+        # differentiate vs x
+        p1 = PPoly(c.transpose(0, 3, 1, 2, 4, 5), x)
+        dp = p.derivative(nu=[2])
+        dp1 = p1.derivative(2)
+        assert_allclose(dp.c,
+                        dp1.c.transpose(0, 2, 3, 1, 4, 5))
+
+        # antidifferentiate vs y
+        p1 = PPoly(c.transpose(1, 4, 0, 2, 3, 5), y)
+        dp = p.antiderivative(nu=[0, 1, 0])
+        dp1 = p1.antiderivative(1)
+        assert_allclose(dp.c,
+                        dp1.c.transpose(2, 0, 3, 4, 1, 5))
+
+        # differentiate vs z
+        p1 = PPoly(c.transpose(2, 5, 0, 1, 3, 4), z)
+        dp = p.derivative(nu=[0, 0, 3])
+        dp1 = p1.derivative(3)
+        assert_allclose(dp.c,
+                        dp1.c.transpose(2, 3, 0, 4, 5, 1))
+
+    def test_deriv_3d_simple(self):
+        # Integrate to obtain function x y**2 z**4 / (2! 4!)
+
+        c = np.ones((1, 1, 1, 3, 4, 5))
+        x = np.linspace(0, 1, 3+1)**1
+        y = np.linspace(0, 1, 4+1)**2
+        z = np.linspace(0, 1, 5+1)**3
+
+        p = NdPPoly(c, (x, y, z))
+        ip = p.antiderivative((1, 0, 4))
+        ip = ip.antiderivative((0, 2, 0))
+
+        xi = np.random.rand(20)
+        yi = np.random.rand(20)
+        zi = np.random.rand(20)
+
+        assert_allclose(ip((xi, yi, zi)),
+                        xi * yi**2 * zi**4 / (gamma(3)*gamma(5)))
 
 def _ppoly_eval_1(c, x, xps):
     """Evaluate piecewise polynomial manually"""

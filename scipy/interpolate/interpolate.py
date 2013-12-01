@@ -1697,7 +1697,6 @@ class NdPPoly(object):
         dtype = self._get_dtype(self.c.dtype)
         self.c = np.ascontiguousarray(self.c, dtype=dtype)
 
-
     @classmethod
     def construct_fast(cls, c, x, extrapolate=None):
         """
@@ -1717,7 +1716,6 @@ class NdPPoly(object):
         self.extrapolate = extrapolate
         return self
 
-
     def _get_dtype(self, dtype):
         if np.issubdtype(dtype, np.complexfloating) \
                or np.issubdtype(self.c.dtype, np.complexfloating):
@@ -1725,13 +1723,11 @@ class NdPPoly(object):
         else:
             return np.float_
 
-
     def _ensure_c_contiguous(self):
         if not self.c.flags.c_contiguous:
             self.c = self.c.copy()
         if not isinstance(self.x, tuple):
             self.x = tuple(self.x)
-
 
     def __call__(self, x, nu=None, extrapolate=None):
         """
@@ -1795,6 +1791,154 @@ class NdPPoly(object):
                            out)
 
         return out.reshape(x_shape[:-1] + self.c.shape[2*ndim:])
+
+    @classmethod
+    def _derivative_one(cls, c, x, nu, axis):
+        """
+        Compute 1D derivative along a selected dimension
+        """
+        if nu < 0:
+            return cls._antiderivative_one(c, x, -nu, axis)
+
+        ndim = len(x)
+        axis = axis % ndim
+
+        perm = list(range(ndim))
+        perm[0], perm[axis] = perm[axis], perm[0]
+        perm = perm + list(range(ndim, c.ndim))
+
+        c = c.transpose(perm)
+
+        # reduce order
+        if nu == 0:
+            c2 = c.copy()
+        else:
+            c2 = c[:-nu].copy()
+
+        if c2.shape[0] == 0:
+            # derivative of order 0 is zero
+            c2 = np.zeros((1,) + c2.shape[1:], dtype=c2.dtype)
+
+        # multiply by the correct rising factorials
+        factor = spec.poch(np.arange(c2.shape[0], 0, -1), nu)
+        c2 *= factor[(slice(None),) + (None,)*(c2.ndim-1)]
+
+        return c2.transpose(perm)
+
+    @classmethod
+    def _antiderivative_one(cls, c, x, nu, axis):
+        """
+        Compute 1D antiderivative along a selected dimension
+        """
+        if nu <= 0:
+            return cls._derivative_one(c, x, -nu, axis)
+
+        ndim = len(x)
+        axis = axis % ndim
+
+        perm = list(range(ndim))
+        perm[0], perm[axis] = perm[axis], perm[0]
+        perm = perm + list(range(ndim, c.ndim))
+
+        c = c.transpose(perm)
+
+        c2 = np.zeros((c.shape[0] + nu,) + c.shape[1:],
+                     dtype=c.dtype)
+        c2[:-nu] = c
+
+        # divide by the correct rising factorials
+        factor = spec.poch(np.arange(c.shape[0], 0, -1), nu)
+        c2[:-nu] /= factor[(slice(None),) + (None,)*(c.ndim-1)]
+
+        # fix continuity of added degrees of freedom
+        perm2 = list(range(c2.ndim))
+        perm2[1], perm2[ndim+axis] = perm2[ndim+axis], perm2[1]
+
+        c2 = c2.transpose(perm2)
+        c2 = c2.copy()
+        _ppoly.fix_continuity(c2.reshape(c2.shape[0], c2.shape[1], -1),
+                              x[axis], nu-1)
+
+        c2 = c2.transpose(perm2)
+        c2 = c2.transpose(perm)
+        return c2.copy()
+
+    def derivative(self, nu):
+        """
+        Construct a new piecewise polynomial representing the derivative.
+
+        Parameters
+        ----------
+        nu : ndim-tuple of int
+            Order of derivatives to evaluate for each dimension.
+            If negative, the antiderivative is returned.
+
+        Returns
+        -------
+        pp : NdPPoly
+            Piecewise polynomial of orders (k[0] - nu[0], ..., k[n] - nu[n])
+            representing the derivative of this polynomial.
+
+        Notes
+        -----
+        Derivatives are evaluated piecewise for each polynomial
+        segment, even if the polynomial is not differentiable at the
+        breakpoints. The polynomial intervals in each dimension are
+        considered half-open, ``[a, b)``, except for the last interval
+        which is closed ``[a, b]``.
+
+        """
+
+        c2 = self.c
+        for axis, n in enumerate(nu):
+            if n != 0:
+                c2 = self._derivative_one(c2, self.x, n, axis)
+
+        if c2 is self.c:
+            # always make a copy
+            c2 = c2.copy()
+
+        # construct a compatible polynomial
+        return self.construct_fast(c2, self.x, self.extrapolate)
+
+    def antiderivative(self, nu):
+        """
+        Construct a new piecewise polynomial representing the antiderivative.
+
+        Antiderivativative is also the indefinite integral of the function,
+        and derivative is its inverse operation.
+
+        Parameters
+        ----------
+        nu : ndim-tuple of int
+            Order of derivatives to evaluate for each dimension.
+            If negative, the derivative is returned.
+
+        Returns
+        -------
+        pp : PPoly
+            Piecewise polynomial of order k2 = k + n representing
+            the antiderivative of this polynomial.
+
+        Notes
+        -----
+        The antiderivative returned by this function is continuous and
+        continuously differentiable to order n-1, up to floating point
+        rounding error.
+
+        """
+
+        c2 = self.c
+        for axis, n in enumerate(nu):
+            if n != 0:
+                c2 = self._antiderivative_one(c2, self.x, n, axis)
+
+        if c2 is self.c:
+            # always make a copy
+            c2 = c2.copy()
+
+        # construct a compatible polynomial
+        return self.construct_fast(c2, self.x, self.extrapolate)
 
 
 class RegularGridInterpolator(object):
