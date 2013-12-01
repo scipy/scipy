@@ -1030,6 +1030,20 @@ class TestPPoly(TestCase):
             assert_allclose(pp2(xi), splev(xi, spl2),
                             rtol=1e-7)
 
+    def test_antiderivative_continuity(self):
+        c = np.array([[2, 1, 2, 2], [2, 1, 3, 3]]).T
+        x = np.array([0, 0.5, 1])
+
+        p = PPoly(c, x)
+        ip = p.antiderivative()
+
+        # check continuity
+        assert_allclose(ip(0.5 - 1e-9), ip(0.5 + 1e-9), rtol=1e-8)
+
+        # check that only lowest order coefficients were changed
+        p2 = ip.derivative()
+        assert_allclose(p2.c, p.c)
+
     def test_integrate(self):
         np.random.seed(1234)
         x = np.sort(np.r_[0, np.random.rand(11), 1])
