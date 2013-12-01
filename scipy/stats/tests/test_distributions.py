@@ -775,7 +775,7 @@ class TestSemicircular(TestCase):
         def ppf(q):
             return brentq(lambda x: stats.semicircular.cdf(x) - q, -1., 1.)
         assert_allclose(stats.semicircular.ppf(qq), [ppf(q) for q in qq],
-                atol=1e-5, rtol=1e-5)
+                atol=1e-7, rtol=1e-10)
 
 
 class TestArrayArgument(TestCase):  # test for ticket:992
