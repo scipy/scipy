@@ -483,6 +483,15 @@ These are not universal functions:
    kerp_zeros   -- [+]Zeros of derivative of Kelvin function ker x
    keip_zeros   -- [+]Zeros of derivative of Kelvin function kei x
 
+Combinatorics
+-------------
+
+.. autosummary::
+    :toctree: generated/
+
+    comb    -- [+]Combinations of N things taken k at a time, "N choose k"
+    perm    -- [+]Permutations of N things taken k at a time, "k-permutations of N"
+
 Other Special Functions
 -----------------------
 

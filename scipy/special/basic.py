@@ -10,7 +10,7 @@ from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \
         where, mgrid, cos, sin, exp, place, seterr, issubdtype, extract, \
         less, vectorize, inexact, nan, zeros, sometrue, atleast_1d
 from ._ufuncs import ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
-        hankel1, hankel2, yv, kv, gammaln, ndtri, errprint
+        hankel1, hankel2, yv, kv, gammaln, ndtri, errprint, poch
 from . import _ufuncs
 import types
 from . import specfun
@@ -19,15 +19,15 @@ import warnings
 
 __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'ber_zeros', 'bernoulli', 'berp_zeros', 'bessel_diff_formula',
-           'bi_zeros', 'clpmn', 'digamma', 'diric', 'ellipk', 'erf_zeros', 'erfcinv',
-           'erfinv', 'errprint', 'euler', 'fresnel_zeros',
+           'bi_zeros', 'comb', 'clpmn', 'digamma', 'diric', 'ellipk', 'erf_zeros',
+           'erfcinv', 'erfinv', 'errprint', 'euler', 'fresnel_zeros',
            'fresnelc_zeros', 'fresnels_zeros', 'gamma', 'gammaln', 'h1vp',
            'h2vp', 'hankel1', 'hankel2', 'hyp0f1', 'iv', 'ivp', 'jn_zeros',
            'jnjnp_zeros', 'jnp_zeros', 'jnyn_zeros', 'jv', 'jvp', 'kei_zeros',
            'keip_zeros', 'kelvin_zeros', 'ker_zeros', 'kerp_zeros', 'kv',
            'kvp', 'lmbda', 'lpmn', 'lpn', 'lqmn', 'lqn', 'mathieu_a',
            'mathieu_b', 'mathieu_even_coef', 'mathieu_odd_coef', 'ndtri',
-           'obl_cv_seq', 'pbdn_seq', 'pbdv_seq', 'pbvv_seq',
+           'obl_cv_seq', 'pbdn_seq', 'pbdv_seq', 'pbvv_seq', 'perm',
            'polygamma', 'pro_cv_seq', 'psi', 'riccati_jn', 'riccati_yn',
            'sinc', 'sph_harm', 'sph_in', 'sph_inkn',
            'sph_jn', 'sph_jnyn', 'sph_kn', 'sph_yn', 'y0_zeros', 'y1_zeros',
@@ -1145,3 +1145,115 @@ def agm(a,b):
     """
     s = a + b + 0.0
     return (pi / 4) * s / ellipkm1(4 * a * b / s ** 2)
+
+
+def comb(N,k,exact=False,repetition=False):
+    """
+    The number of combinations of N things taken k at a time.
+
+    This is often expressed as "N choose k".
+
+    Parameters
+    ----------
+    N : int, ndarray
+        Number of things.
+    k : int, ndarray
+        Number of elements taken.
+    exact : bool, optional
+        If `exact` is False, then floating point precision is used, otherwise
+        exact long integer is computed.
+    repetition : bool, optional
+        If `repetition` is True, then the number of combinations with
+        repetition is computed.
+
+    Returns
+    -------
+    val : int, ndarray
+        The total number of combinations.
+
+    Notes
+    -----
+    - Array arguments accepted only for exact=False case.
+    - If k > N, N < 0, or k < 0, then a 0 is returned.
+
+    Examples
+    --------
+    >>> k = np.array([3, 4])
+    >>> n = np.array([10, 10])
+    >>> sc.comb(n, k, exact=False)
+    array([ 120.,  210.])
+    >>> sc.comb(10, 3, exact=True)
+    120L
+    >>> sc.comb(10, 3, exact=True, repetition=True)
+    220L
+
+    """
+    if repetition:
+        return comb(N + k - 1, k, exact)
+    if exact:
+        if (k > N) or (N < 0) or (k < 0):
+            return 0
+        val = 1
+        for j in xrange(min(k, N-k)):
+            val = (val*(N-j))//(j+1)
+        return val
+    else:
+        k,N = asarray(k), asarray(N)
+        lgam = gammaln
+        cond = (k <= N) & (N >= 0) & (k >= 0)
+        vals = exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1))
+        if isinstance(vals, np.ndarray):
+            vals[~cond] = 0
+        return vals
+
+
+def perm(N, k, exact=False):
+    """
+    Permutations of N things taken k at a time, i.e., k-permutations of N.
+
+    It's also known as "partial permutations".
+
+    Parameters
+    ----------
+    N : int, ndarray
+        Number of things.
+    k : int, ndarray
+        Number of elements taken.
+    exact : bool, optional
+        If `exact` is False, then floating point precision is used, otherwise
+        exact long integer is computed.
+
+    Returns
+    -------
+    val : int, ndarray
+        The number of k-permutations of N.
+
+    Notes
+    -----
+    - Array arguments accepted only for exact=False case.
+    - If k > N, N < 0, or k < 0, then a 0 is returned.
+
+    Examples
+    --------
+    >>> k = np.array([3, 4])
+    >>> n = np.array([10, 10])
+    >>> perm(n, k)
+    array([  720.,  5040.])
+    >>> perm(10, 3, exact=True)
+    720
+
+    """
+    if exact:
+        if (k > N) or (N < 0) or (k < 0):
+            return 0
+        val = 1
+        for i in xrange(N - k + 1, N + 1):
+            val *= i
+        return val
+    else:
+        k, N = asarray(k), asarray(N)
+        cond = (k <= N) & (N >= 0) & (k >= 0)
+        vals = poch(N - k + 1, k)
+        if isinstance(vals, np.ndarray):
+            vals[~cond] = 0
+        return vals

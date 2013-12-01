@@ -11,7 +11,7 @@ from numpy import exp, log, asarray, arange, newaxis, hstack, product, array, \
                   where, zeros, extract, place, pi, sqrt, eye, poly1d, dot, \
                   r_, rollaxis, sum, fromstring, ndarray
 
-__all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb', 'perm',
+__all__ = ['logsumexp', 'factorial','factorial2','factorialk',
            'central_diff_weights', 'derivative', 'pade', 'lena', 'ascent', 'face']
 
 # XXX: the factorial functions could move to scipy.special, and the others
@@ -241,120 +241,6 @@ def factorialk(n,k,exact=True):
         return val
     else:
         raise NotImplementedError
-
-
-def comb(N,k,exact=False,repetition=False):
-    """
-    The number of combinations of N things taken k at a time.
-
-    This is often expressed as "N choose k".
-
-    Parameters
-    ----------
-    N : int, ndarray
-        Number of things.
-    k : int, ndarray
-        Number of elements taken.
-    exact : bool, optional
-        If `exact` is False, then floating point precision is used, otherwise
-        exact long integer is computed.
-    repetition : bool, optional
-        If `repetition` is True, then the number of combinations with
-        repetition is computed.
-
-    Returns
-    -------
-    val : int, ndarray
-        The total number of combinations.
-
-    Notes
-    -----
-    - Array arguments accepted only for exact=False case.
-    - If k > N, N < 0, or k < 0, then a 0 is returned.
-
-    Examples
-    --------
-    >>> k = np.array([3, 4])
-    >>> n = np.array([10, 10])
-    >>> sc.comb(n, k, exact=False)
-    array([ 120.,  210.])
-    >>> sc.comb(10, 3, exact=True)
-    120L
-    >>> sc.comb(10, 3, exact=True, repetition=True)
-    220L
-
-    """
-    if repetition:
-        return comb(N + k - 1, k, exact)
-    if exact:
-        if (k > N) or (N < 0) or (k < 0):
-            return 0
-        val = 1
-        for j in xrange(min(k, N-k)):
-            val = (val*(N-j))//(j+1)
-        return val
-    else:
-        from scipy import special
-        k,N = asarray(k), asarray(N)
-        lgam = special.gammaln
-        cond = (k <= N) & (N >= 0) & (k >= 0)
-        vals = exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1))
-        if isinstance(vals, ndarray):
-            vals[~cond] = 0
-        return vals
-
-
-def perm(N, k, exact=False):
-    """
-    Permutations of N things taken k at a time, i.e., k-permutations of N.
-
-    It's also known as "partial permutations".
-
-    Parameters
-    ----------
-    N : int, ndarray
-        Number of things.
-    k : int, ndarray
-        Number of elements taken.
-    exact : bool, optional
-        If `exact` is False, then floating point precision is used, otherwise
-        exact long integer is computed.
-
-    Returns
-    -------
-    val : int, ndarray
-        The number of k-permutations of N.
-
-    Notes
-    -----
-    - Array arguments accepted only for exact=False case.
-    - If k > N, N < 0, or k < 0, then a 0 is returned.
-
-    Examples
-    --------
-    >>> k = np.array([3, 4])
-    >>> n = np.array([10, 10])
-    >>> perm(n, k)
-    array([  720.,  5040.])
-    >>> perm(10, 3, exact=True)
-    720
-
-    """
-    if exact:
-        if (k > N) or (N < 0) or (k < 0):
-            return 0
-        val = 1
-        for i in xrange(N - k + 1, N + 1):
-            val *= i
-        return val
-    else:
-        from scipy import special
-        k, N = asarray(k), asarray(N)
-        cond = (k <= N) & (N >= 0) & (k >= 0)
-        vals = special.poch(N - k + 1, k)
-        if isinstance(vals, ndarray):
-            vals[~cond] = 0
-        return vals
 
 
 def central_diff_weights(Np, ndiv=1):

@@ -2,7 +2,6 @@ from __future__ import division, print_function, absolute_import
 
 import math
 import numpy as np
-from scipy.misc import comb
 from scipy.lib.six import xrange
 from scipy.lib.six import string_types
 
@@ -702,6 +701,7 @@ def invhilbert(n, exact=False):
     42475099528537378560L
 
     """
+    from scipy.special import comb
     if exact:
         if n > 14:
             dtype = object
@@ -743,7 +743,7 @@ def pascal(n, kind='symmetric', exact=True):
         If `exact` is True, the result is either an array of type
         numpy.uint64 (if n <= 35) or an object array of Python long integers.
         If `exact` is False, the coefficients in the matrix are computed using
-        `scipy.misc.comb` with `exact=False`.  The result will be a floating
+        `scipy.special.comb` with `exact=False`.  The result will be a floating
         point array, and the values in the array will not be the exact
         coefficients, but this version is much faster than `exact=True`.
 
@@ -772,12 +772,13 @@ def pascal(n, kind='symmetric', exact=True):
            [1, 3, 3, 1]], dtype=uint64)
     >>> pascal(50)[-1, -1]
     25477612258980856902730428600L
-    >>> from scipy.misc import comb
+    >>> from scipy.special import comb
     >>> comb(98, 49, exact=True)
     25477612258980856902730428600L
 
     """
 
+    from scipy.special import comb
     if kind not in ['symmetric', 'lower', 'upper']:
         raise ValueError("kind must be 'symmetric', 'lower', or 'upper'")
 

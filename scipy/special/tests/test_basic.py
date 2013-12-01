@@ -1061,6 +1061,19 @@ class TestBeta(TestCase):
         assert_almost_equal(comp,.5,5)
 
 
+class TestCombinatorics(TestCase):
+    def test_comb(self):
+        assert_array_almost_equal(special.comb([10, 10], [3, 4]), [120., 210.])
+        assert_almost_equal(special.comb(10, 3), 120.)
+        assert_equal(special.comb(10, 3, exact=True), 120)
+        assert_equal(special.comb(10, 3, exact=True, repetition=True), 220)
+
+    def test_perm(self):
+        assert_array_almost_equal(special.perm([10, 10], [3, 4]), [720., 5040.])
+        assert_almost_equal(special.perm(10, 3), 720.)
+        assert_equal(special.perm(10, 3, exact=True), 720)
+
+
 class TestTrigonometric(TestCase):
     def test_cbrt(self):
         cb = special.cbrt(27)

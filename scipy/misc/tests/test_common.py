@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_almost_equal, \
                           assert_array_almost_equal, assert_equal
 
-from scipy.misc import pade, logsumexp, face, ascent, comb, perm
+from scipy.misc import pade, logsumexp, face, ascent
 
 
 def test_pade_trivial():
@@ -92,16 +92,3 @@ def test_face():
 
 def test_ascent():
     assert_equal(ascent().shape, (512, 512))
-
-
-def test_comb():
-    assert_array_almost_equal(comb([10, 10], [3, 4]), [120., 210.])
-    assert_almost_equal(comb(10, 3), 120.)
-    assert_equal(comb(10, 3, exact=True), 120)
-    assert_equal(comb(10, 3, exact=True, repetition=True), 220)
-
-
-def test_perm():
-    assert_array_almost_equal(perm([10, 10], [3, 4]), [720., 5040.])
-    assert_almost_equal(perm(10, 3), 720.)
-    assert_equal(perm(10, 3, exact=True), 720)
