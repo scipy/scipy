@@ -10,7 +10,7 @@ from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \
         where, mgrid, cos, sin, exp, place, seterr, issubdtype, extract, \
         less, vectorize, inexact, nan, zeros, sometrue, atleast_1d
 from ._ufuncs import ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
-        hankel1, hankel2, yv, kv, gammaln, ndtri, errprint, poch
+        hankel1, hankel2, yv, kv, gammaln, ndtri, errprint, poch, binom
 from . import _ufuncs
 import types
 from . import specfun
@@ -1199,9 +1199,8 @@ def comb(N,k,exact=False,repetition=False):
         return val
     else:
         k,N = asarray(k), asarray(N)
-        lgam = gammaln
         cond = (k <= N) & (N >= 0) & (k >= 0)
-        vals = exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1))
+        vals = binom(N, k)
         if isinstance(vals, np.ndarray):
             vals[~cond] = 0
         return vals
