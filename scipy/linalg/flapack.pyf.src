@@ -16,6 +16,68 @@ interface
 
    include 'flapack_user.pyf.src'
 
+   subroutine <prefix2>tgsen(ijob,wantq,wantz,select,n,a,lda,b,ldb,alphar,alphai,beta,q,ldq,z,ldz,m,pl,pr,dif,work,lwork,iwork,liwork,info)
+
+   callstatement (*f2py_func)(&ijob,&wantq,&wantz,select,&n,a,&lda,b,&ldb,alphar,alphai,beta,q,&ldq,z,&ldz,&m,&pl,&pr,dif,work,&lwork,iwork,&liwork,&info)
+   callprotoargument int*,int*,int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*,int*,int*
+
+     integer intent(hide) :: ijob=4
+     integer intent(hide),check(wantq==0||wantq==1) :: wantq=1
+     integer intent(hide),check(wantz==0||wantz==1) :: wantz=1
+     logical intent(in),dimension(n) :: select
+     integer intent(hide),depend(a) :: n=shape(a,1)
+     <ftype2> intent(in,out,copy),dimension(lda,*) :: a
+     integer intent(hide),depend(a) :: lda=shape(a,0)
+     <ftype2> intent(in,out,copy),dimension(ldb,*) :: b
+     integer intent(hide),depend(b) :: ldb=shape(b,0)
+     <ftype2> intent(out),dimension(n) :: alphar
+     <ftype2> intent(out),dimension(n) :: alphai
+     <ftype2> intent(out),dimension(n) :: beta
+     <ftype2> intent(in,out,copy),dimension(ldq,*) :: q
+     integer intent(hide),depend(q) :: ldq=shape(q,0)
+     <ftype2> intent(in,out,copy),dimension(ldz,*) :: z
+     integer intent(hide),depend(z) :: ldz=shape(z,0)
+     integer intent(out) :: m
+     <ftype2> intent(out) :: pl
+     <ftype2> intent(out) :: pr
+     <ftype2> intent(out),dimension(2) :: dif
+     <ftype2> intent(out),dimension(MAX(lwork,1)) :: work
+     integer optional,intent(in),depend(m,n),check(lwork == -1 || lwork >= MAX(4*n+16,2*m*(n-m))) :: lwork=MAX(4*n+16,2*m*(n-m))
+     integer intent(out),dimension(MAX(1,liwork)) :: iwork
+     integer optional,intent(in),depend(n),check(liwork == -1 || liwork >= n+6) :: liwork=n+6
+     integer intent(out) :: info
+   end subroutine <prefix2>tgsen
+
+   subroutine <prefix2c>tgsen(ijob,wantq,wantz,select,n,a,lda,b,ldb,alpha,beta,q,ldq,z,ldz,m,pl,pr,dif,work,lwork,iwork,liwork,info)
+   callstatement (*f2py_func)(&ijob,&wantq,&wantz,select,&n,a,&lda,b,&ldb,alpha,beta,q,&ldq,z,&ldz,&m,&pl,&pr,dif,work,&lwork,iwork,&liwork,&info)
+   callprotoargument int*,int*,int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,int*,int*,int*,int*
+
+     integer intent(hide) :: ijob=4
+     integer intent(hide),check(wantq==0||wantq==1) :: wantq=1
+     integer intent(hide),check(wantz==0||wantz==1) :: wantz=1
+     logical intent(in),dimension(n) :: select
+     integer intent(hide),depend(a) :: n=shape(a,1)
+     <ftype2c> intent(in,out,copy),dimension(lda,*) :: a
+     integer intent(hide),depend(a) :: lda=shape(a,0)
+     <ftype2c> intent(in,out,copy),dimension(ldb,*) :: b
+     integer intent(hide),depend(b) :: ldb=shape(b,0)
+     <ftype2c> intent(out),dimension(n) :: alpha
+     <ftype2c> intent(out),dimension(n) :: beta
+     <ftype2c> intent(in,out,copy),dimension(ldq,*) :: q
+     integer intent(hide),depend(q) :: ldq=shape(q,0)
+     <ftype2c> intent(in,out,copy),dimension(ldz,*) :: z
+     integer intent(hide),depend(z) :: ldz=shape(z,0)
+     integer intent(out) :: m
+     <ftype2> intent(out) :: pl
+     <ftype2> intent(out) :: pr
+     <ftype2> intent(out),dimension(2) :: dif
+     <ftype2c> intent(out),dimension(MAX(lwork,1)) :: work
+     integer optional,intent(in),depend(m,n),check(lwork == -1 || lwork >= 2*m*(n-m)) :: lwork=2*m*(n-m)
+     integer intent(out),dimension(MAX(1,liwork)):: iwork
+     integer optional,intent(in),depend(n),check(liwork == -1 || liwork>=n+2) :: liwork=n+2
+     integer intent(out) :: info
+   end subroutine <prefix2c>tgsen
+
    subroutine <prefix2>gges(jobvsl,jobvsr,sort_t,<prefix2>select,n,a,lda,b,ldb,sdim,alphar,alphai,beta,vsl,ldvsl,vsr,ldvsr,work,lwork,bwork,info)
 
      ! For a pair of N-by-N real nonsymmetric matrices (A,B) computes
@@ -1071,7 +1133,6 @@ interface
      threadsafe
      callstatement (*f2py_func)(&m,&n,a,&m,jpvt,tau,work,&lwork,&info)
      callprotoargument int*,int*,<ctype2>*,int*,int*,<ctype2>*,<ctype2>*,int*,int*
-
      integer intent(hide),depend(a):: m = shape(a,0)
      integer intent(hide),depend(a):: n = shape(a,1)
      <ftype2> dimension(m,n),intent(in,out,copy,out=qr,aligned8) :: a
