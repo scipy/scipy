@@ -183,11 +183,14 @@ class dia_matrix(_data_matrix):
 
     def setdiag(self, values, k=0):
         M, N = self.shape
-        if (not k in self.offsets):
-            raise ValueError(
-                "dia matrix does not support assignment for unknown diagonals. "
-                "Known offsets are: %s" % self.offsets)
-        self.data[self.offsets == k, :] = values
+        if k <= -M or k >= N:
+            raise ValueError('k exceeds matrix dimensions')
+        if k in self.offsets:
+            self.data[self.offsets == k, :] = values
+        else:
+            self.offsets = np.append(self.offsets, (k,))
+            self.data = np.vstack((self.data, np.empty((1,N))))
+            self.data[-1, :] = values
 
     setdiag.__doc__ = _data_matrix.setdiag.__doc__
 
