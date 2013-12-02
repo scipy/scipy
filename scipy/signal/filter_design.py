@@ -1905,7 +1905,9 @@ def cheb1ap(N, rp):
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
     elif N == 0:
-        return numpy.array([]), numpy.array([]), 1
+        # Avoid divide-by-zero error
+        # Even order filters have DC gain of -rp dB
+        return numpy.array([]), numpy.array([]), numpy.sqrt(10 ** (0.1 * -rp))
     z = numpy.array([])
     eps = numpy.sqrt(10 ** (0.1 * rp) - 1.0)
     n = numpy.arange(1, N + 1)
@@ -1929,6 +1931,9 @@ def cheb2ap(N, rs):
     """
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
+    elif N == 0:
+        # Avoid divide-by-zero warning
+        return numpy.array([]), numpy.array([]), 1
     de = 1.0 / sqrt(10 ** (0.1 * rs) - 1)
     mu = arcsinh(1.0 / de) / N
 
@@ -1988,7 +1993,9 @@ def ellipap(N, rp, rs):
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
     elif N == 0:
-        return numpy.array([]), numpy.array([]), 1
+        # Avoid divide-by-zero warning
+        # Even order filters have DC gain of -rp dB
+        return numpy.array([]), numpy.array([]), numpy.sqrt(10 ** (0.1 * -rp))
     elif N == 1:
         p = -sqrt(1.0 / (10 ** (0.1 * rp) - 1.0))
         k = -p
