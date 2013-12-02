@@ -1,14 +1,14 @@
 from __future__ import division, print_function, absolute_import
 
-import inspect
-
 import numpy.testing as npt
 import numpy as np
 from scipy.lib.six import xrange
 
 from scipy import stats
 from common_tests import (check_normalization, check_moment, check_mean_expect,
-        check_var_expect, check_skew_expect, check_kurt_expect)
+        check_var_expect, check_skew_expect, check_kurt_expect,
+        check_entropy, check_private_entropy, check_edge_support,
+        check_named_args)
 
 DECIMAL_meanvar = 0  # 1  # was 0
 
@@ -35,7 +35,6 @@ distdiscrete = [
 def test_discrete_basic():
     for distname, arg in distdiscrete:
         distfn = getattr(stats,distname)
-        #npt.assert_(stats.dlaplace.rvs(0.8) is not None)
         np.random.seed(9765456)
         rvs = distfn.rvs(size=2000,*arg)
         supp = np.unique(rvs)
@@ -58,6 +57,8 @@ def test_discrete_basic():
         yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
                       distname + ' chisquare'
 
+        yield check_edge_support, distfn, arg
+
     seen = set()
     for distname, arg in distdiscrete:
         if distname in seen:
@@ -73,10 +74,10 @@ def test_discrete_basic():
         yield check_named_args, distfn, k, arg, locscale_defaults, meths
         yield check_scale_docstring, distfn
 
-        # compare a generic _entropy w/ distribution-specific implementation,
-        # if available
+        # Entropy
+        yield check_entropy, distfn, arg, distname
         if distfn.__class__._entropy != stats.rv_discrete._entropy:
-            yield check_private_entropy, distfn, arg
+            yield check_private_entropy, distfn, arg, stats.rv_discrete
 
 
 def test_moments():
@@ -95,18 +96,6 @@ def test_moments():
         cond = distname in ['zipf']
         msg = distname + ' fails kurtosis'
         yield knf(cond, msg)(check_kurt_expect), distfn, arg, m, v, k, distname
-
-
-@npt.dec.slow
-def test_discrete_extra():
-    for distname, arg in distdiscrete:
-        distfn = getattr(stats,distname)
-        yield check_ppf_limits, distfn, arg, distname + \
-              ' ppf limit test'
-        yield check_isf_limits, distfn, arg, distname + \
-              ' isf limit test'
-        yield check_entropy, distfn, arg, distname + \
-              ' entropy nan test'
 
 
 @npt.dec.skipif(True)
@@ -204,49 +193,12 @@ def check_oth(distfn, arg, msg):
     npt.assert_(distfn.cdf(median_sf + 1, *arg) > 0.5)
     npt.assert_equal(distfn.isf(0.5, *arg), distfn.ppf(0.5, *arg))
 
-# next 3 functions copied from test_continous_extra
-#    adjusted
-
-
-def check_ppf_limits(distfn,arg,msg):
-    below,low,upp,above = distfn.ppf([-1,0,1,2], *arg)
-    # print distfn.name, distfn.a, low, distfn.b, upp
-    # print distfn.name,below,low,upp,above
-    assert_equal_inf_nan(distfn.a-1,low, msg + 'ppf lower bound')
-    assert_equal_inf_nan(distfn.b,upp, msg + 'ppf upper bound')
-    npt.assert_(np.isnan(below), msg + 'ppf out of bounds - below')
-    npt.assert_(np.isnan(above), msg + 'ppf out of bounds - above')
-
-
-def check_isf_limits(distfn,arg,msg):
-    below,low,upp,above = distfn.isf([-1,0,1,2], *arg)
-    # print distfn.name, distfn.a, low, distfn.b, upp
-    # print distfn.name,below,low,upp,above
-    assert_equal_inf_nan(distfn.a-1,upp, msg + 'isf lower bound')
-    assert_equal_inf_nan(distfn.b,low, msg + 'isf upper bound')
-    npt.assert_(np.isnan(below), msg + 'isf out of bounds - below')
-    npt.assert_(np.isnan(above), msg + 'isf out of bounds - above')
-
-
-def assert_equal_inf_nan(v1,v2,msg):
-    npt.assert_(not np.isnan(v1))
-    if not np.isinf(v1):
-        npt.assert_almost_equal(v1, v2, decimal=10, err_msg=msg +
-                                   ' - finite')
-    else:
-        npt.assert_(np.isinf(v2) or np.isnan(v2),
-               msg + ' - infinite, v2=%s' % str(v2))
-
 
 def check_sample_skew_kurt(distfn, arg, sk, ss, msg):
     k,s = distfn.stats(moments='ks', *arg)
     check_sample_meanvar, sk, k, msg + 'sample skew test'
     check_sample_meanvar, ss, s, msg + 'sample kurtosis test'
 
-
-def check_entropy(distfn, arg, msg):
-    ent = distfn.entropy(*arg)
-    npt.assert_(not np.isnan(ent), msg + 'test Entropy is nan')
 
 
 def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
@@ -306,55 +258,11 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
            ' at arg = %s with pval = %s' % (msg,str(arg),str(pval)))
 
 
-def check_named_args(distfn, x, shape_args, defaults, meths):
-    """Check calling w/ named arguments."""
-    ### This is a copy-paste from test_continuous_basic.py; dedupe?
-
-    # check consistency of shapes, numargs and _parse signature
-    signature = inspect.getargspec(distfn._parse_args)
-    npt.assert_(signature.varargs is None)
-    npt.assert_(signature.keywords is None)
-    npt.assert_(signature.defaults == defaults)
-
-    shape_argnames = signature.args[1:-len(defaults)]  # self, a, b, loc=0, scale=1
-    if distfn.shapes:
-        shapes_ = distfn.shapes.replace(',', ' ').split()
-    else:
-        shapes_ = ''
-    npt.assert_(len(shapes_) == distfn.numargs)
-    npt.assert_(len(shapes_) == len(shape_argnames))
-
-    # check calling w/ named arguments
-    shape_args = list(shape_args)
-
-    vals = [meth(x, *shape_args) for meth in meths]
-    npt.assert_(np.all(np.isfinite(vals)))
-
-    names, a, k = shape_argnames[:], shape_args[:], {}
-    while names:
-        k.update({names.pop(): a.pop()})
-        v = [meth(x, *a, **k) for meth in meths]
-        npt.assert_array_equal(vals, v)
-        if not 'n' in k.keys():
-            # `n` is first parameter of moment(), so can't be used as named arg
-            npt.assert_equal(distfn.moment(3, *a, **k),
-                             distfn.moment(3, *shape_args))
-
-    # unknown arguments should not go through:
-    k.update({'kaboom': 42})
-    npt.assert_raises(TypeError, distfn.cdf, x, **k)
-
-
 def check_scale_docstring(distfn):
     if distfn.__doc__ is not None:
         # Docstrings can be stripped if interpreter is run with -OO
         npt.assert_('scale' not in distfn.__doc__)
 
-
-def check_private_entropy(distfn, args):
-    # compare a generic _entropy with the distribution-specific implementation
-    npt.assert_allclose(distfn._entropy(*args),
-                        stats.rv_discrete._entropy(distfn, *args))
 
 if __name__ == "__main__":
     npt.run_module_suite()

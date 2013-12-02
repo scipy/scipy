@@ -25,19 +25,6 @@ from scipy.special import xlogy
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 
 
-def kolmogorov_check(diststr, args=(), N=20, significance=0.01):
-    qtest = stats.ksoneisf(significance, N)
-    cdf = eval('stats.'+diststr+'.cdf')
-    dist = eval('stats.'+diststr)
-    # Get random numbers
-    kwds = {'size':N}
-    vals = numpy.sort(dist.rvs(*args, **kwds))
-    cdfvals = cdf(vals, *args)
-    q = max(abs(cdfvals - np.arange(1.0, N+1)/N))
-    assert_(q < qtest, msg="Failed q=%f, bound=%f, alpha=%f" % (q, qtest, significance))
-    return
-
-
 # generate test cases to test cdf and distribution consistency
 dists = ['uniform','norm','lognorm','expon','beta',
          'powerlaw','bradford','burr','fisk','cauchy','halfcauchy',
@@ -333,7 +320,7 @@ class TestHypergeom(TestCase):
         assert_almost_equal(hgpmf, 0.0010114963068932233, 11)
 
     def test_precision2(self):
-        """Test hypergeom precision for large numbers.  See #1218."""
+        # Test hypergeom precision for large numbers.  See #1218.
         # Results compared with those from R.
         oranges = 9.9e4
         pears = 1.1e5
@@ -541,6 +528,8 @@ class TestDLaplace(TestCase):
         val = stats.dlaplace(1.5).rvs(3)
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
+        assert_(stats.dlaplace.rvs(0.8) is not None)
+
 
     def test_stats(self):
         # compare the explicit formulas w/ direct summation using pmf
@@ -906,7 +895,7 @@ class TestFitMethod(object):
             yield check, func, dist, args, alpha
 
     def test_fix_fit_2args_lognorm(self):
-        """Regression test for #1551."""
+        # Regression test for #1551.
         np.random.seed(12345)
         with np.errstate(all='ignore'):
             x = stats.lognorm.rvs(0.25, 0., 20.0, size=20)
@@ -1023,11 +1012,10 @@ class TestFitMethod(object):
 
 
 class TestFrozen(TestCase):
-    """Test that a frozen distribution gives the same results as the original object.
-
-    Only tested for the normal distribution (with loc and scale specified) and for the
-    gamma distribution (with a shape parameter specified).
-    """
+    # Test that a frozen distribution gives the same results as the original object.
+    #
+    # Only tested for the normal distribution (with loc and scale specified)
+    # and for the gamma distribution (with a shape parameter specified).
     def test_norm(self):
         dist = stats.norm
         frozen = stats.norm(loc=10.0, scale=3.0)
@@ -1142,12 +1130,10 @@ class TestFrozen(TestCase):
 
 
 class TestExpect(TestCase):
-    """Test for expect method.
-
-    Uses normal distribution and beta distribution for finite bounds, and
-    hypergeom for discrete distribution with finite support
-
-    """
+    # Test for expect method.
+    #
+    # Uses normal distribution and beta distribution for finite bounds, and
+    # hypergeom for discrete distribution with finite support
     def test_norm(self):
         v = stats.norm.expect(lambda x: (x-5)*(x-5), loc=5, scale=2)
         assert_almost_equal(v, 4, decimal=14)
@@ -1280,6 +1266,75 @@ class TestNct(TestCase):
         m, v, s, k = stats.nct.stats(df=3.1, nc=0.3, moments='mvsk')
         assert_(np.isfinite([m, v, s]).all())
         assert_equal(k, np.nan)
+
+
+class TestRice(TestCase):
+    def test_rice_zero_b(self):
+        # rice distribution should work with b=0, cf gh-2164
+        x = [0.2, 1., 5.]
+        assert_(np.isfinite(stats.rice.pdf(x, b=0.)).all())
+        assert_(np.isfinite(stats.rice.logpdf(x, b=0.)).all())
+        assert_(np.isfinite(stats.rice.cdf(x, b=0.)).all())
+        assert_(np.isfinite(stats.rice.logcdf(x, b=0.)).all())
+
+        q = [0.1, 0.1, 0.5, 0.9]
+        assert_(np.isfinite(stats.rice.ppf(q, b=0.)).all())
+
+        mvsk = stats.rice.stats(0, moments='mvsk')
+        assert_(np.isfinite(mvsk).all())
+
+        # furthermore, pdf is continuous as b\to 0
+        # rice.pdf(x, b\to 0) = x exp(-x^2/2) + O(b^2)
+        # see e.g. Abramovich & Stegun 9.6.7 & 9.6.10
+        b = 1e-8
+        assert_allclose(stats.rice.pdf(x, 0), stats.rice.pdf(x, b),
+                atol=b, rtol=0)
+
+    def test_rice_rvs(self):
+        rvs = stats.rice.rvs
+        assert_equal(rvs(b=3.).size, 1)
+        assert_equal(rvs(b=3., size=(3, 5)).shape, (3, 5))
+
+
+class TestErlang(TestCase):
+    def test_erlang_runtimewarning(self):
+        # erlang should generate a RuntimeWarning if a non-integer
+        # shape parameter is used.
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+
+            # The non-integer shape parameter 1.3 should trigger a RuntimeWarning
+            assert_raises(RuntimeWarning,
+                              stats.erlang.rvs, 1.3, loc=0, scale=1, size=4)
+
+            # Calling the fit method with `f0` set to an integer should
+            # *not* trigger a RuntimeWarning.  It should return the same
+            # values as gamma.fit(...).
+            data = [0.5, 1.0, 2.0, 4.0]
+            result_erlang = stats.erlang.fit(data, f0=1)
+            result_gamma = stats.gamma.fit(data, f0=1)
+            assert_allclose(result_erlang, result_gamma, rtol=1e-3)
+
+
+class TestRdist(TestCase):
+    @dec.slow
+    def test_rdist_cdf_gh1285(self):
+        # check workaround in rdist._cdf for issue gh-1285.
+        distfn = stats.rdist
+        values = [0.001, 0.5, 0.999]
+        assert_almost_equal(distfn.cdf(distfn.ppf(values, 541.0), 541.0),
+                                values, decimal=5)
+
+
+def test_540_567():
+    # test for nan returned in tickets 540, 567
+    assert_almost_equal(stats.norm.cdf(-1.7624320982),0.03899815971089126,
+                            decimal=10, err_msg='test_540_567')
+    assert_almost_equal(stats.norm.cdf(-1.7624320983),0.038998159702449846,
+                            decimal=10, err_msg='test_540_567')
+    assert_almost_equal(stats.norm.cdf(1.38629436112, loc=0.950273420309,
+                            scale=0.204423758009),0.98353464004309321,
+                            decimal=10, err_msg='test_540_567')
 
 
 def test_regression_ticket_1316():
@@ -1591,13 +1646,13 @@ class _distr3_gen(stats.rv_continuous):
         return a + b
 
     def _cdf(self, x, a):
-        """Different # of shape params from _pdf, to be able to check that
-        inspection catches the inconsistency."""
+        # Different # of shape params from _pdf, to be able to check that
+        # inspection catches the inconsistency."""
         return 42 * a + x
 
 
 class _distr6_gen(stats.rv_continuous):
-    #Two shape parameters (both _pdf and _cdf defined, consistent shapes.)
+    # Two shape parameters (both _pdf and _cdf defined, consistent shapes.)
     def _pdf(self, x, a, b):
         return a*x + b
 
@@ -1606,7 +1661,7 @@ class _distr6_gen(stats.rv_continuous):
 
 
 class TestSubclassingExplicitShapes(TestCase):
-    """Construct a distribution w/ explicit shapes parameter and test it."""
+    # Construct a distribution w/ explicit shapes parameter and test it.
 
     def test_correct_shapes(self):
         dummy_distr = _distr_gen(name='dummy', shapes='a')
@@ -1725,7 +1780,7 @@ class TestSubclassingExplicitShapes(TestCase):
 
 
 class TestSubclassingNoShapes(TestCase):
-    """Construct a distribution w/o explicit shapes parameter and test it."""
+    # Construct a distribution w/o explicit shapes parameter and test it.
 
     def test_only__pdf(self):
         dummy_distr = _distr_gen(name='dummy')
