@@ -736,7 +736,7 @@ def _zpkbilinear(z, p, k, fs):
     k : float
         System gain of the analog IIR filter transfer function.
     fs : float
-        Sample rate, as ordinary frequency (e.g. hertz). No prewarping is 
+        Sample rate, as ordinary frequency (e.g. hertz). No prewarping is
         done in this function.
 
     Returns
@@ -1106,6 +1106,10 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
     Type I filters roll off faster than Type II (`cheby2`), but Type II
     filters do not have any ripple in the passband.
 
+    The equiripple passband has N maxima or minima (for example, a
+    5th-order filter has 3 maxima and 2 minima).  Consequently, the DC gain is
+    unity for odd-order filters, or -rp dB for even-order filters.
+
     Examples
     --------
     Plot the filter's frequency response, showing the critical points:
@@ -1266,6 +1270,10 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
     type II filter (`cheby2`).  As `rs` approaches 0, it becomes a Chebyshev
     type I filter (`cheby1`).  As both approach 0, it becomes a Butterworth
     filter (`butter`).
+
+    The equiripple passband has N maxima or minima (for example, a
+    5th-order filter has 3 maxima and 2 minima).  Consequently, the DC gain is
+    unity for odd-order filters, or -rp dB for even-order filters.
 
     Examples
     --------
