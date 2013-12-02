@@ -110,8 +110,13 @@ def correlate(in1, in2, mode='full'):
     in1 = asarray(in1)
     in2 = asarray(in2)
 
-    val = _valfrommode(mode)
-
+    # Don't use _valfrommode, since correlate should not accept numeric modes
+    try:
+        val = _modedict[mode]
+    except KeyError:
+        raise ValueError("Acceptable mode flags are 'valid',"
+                         " 'same', or 'full'.")
+    
     if rank(in1) == rank(in2) == 0:
         return in1 * in2
     elif not in1.ndim == in2.ndim:
