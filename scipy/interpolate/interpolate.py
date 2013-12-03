@@ -3,7 +3,7 @@
 from __future__ import division, print_function, absolute_import
 
 __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
-           'ppform', 'lagrange', 'PPoly', 'BPoly']
+           'ppform', 'lagrange', 'PPoly', 'BPoly', 'Akima1D']
 
 from numpy import shape, sometrue, array, transpose, searchsorted, \
                   ones, logical_or, atleast_1d, atleast_2d, ravel, \
@@ -578,7 +578,7 @@ class _PPolyBase(object):
         """
         c = np.asarray(c)
         x = np.asarray(x)
-        
+
         if c.ndim < 2:
             raise ValueError("invalid dimensions for c")
         if x.ndim != 1:
@@ -1071,9 +1071,9 @@ class BPoly(_PPolyBase):
         if nu == 0:
             c2 = self.c.copy()
         else:
-            # For a polynomial 
+            # For a polynomial
             #    B(x) = \sum_{a=0}^{k} c_a b_{a, k}(x),
-            # we use the fact that 
+            # we use the fact that
             #   b'_{a, k} = k ( b_{a-1, k-1} - b_{a, k-1} ),
             # which leads to
             #   B'(x) = \sum_{a=0}^{k-1} (c_{a+1} - c_a) b_{a, k-1}
@@ -1146,21 +1146,21 @@ class BPoly(_PPolyBase):
             `yi[i][j]` is the `j`-th derivative known at `xi[i]`
         orders : None or int or array_like of ints. Default: None.
             Specifies the degree of local polynomials. If not None, some
-            derivatives are ignored. 
+            derivatives are ignored.
         axis : int, optional
             Interpolation axis, default is 0.
         extrapolate : bool, optional
             Whether to extrapolate to ouf-of-bounds points based on first
-            and last intervals, or to return NaNs. Default: True.        
+            and last intervals, or to return NaNs. Default: True.
 
         Notes
         -----
         If `k` derivatives are specified at a breakpoint `x`, the
-        constructed polynomial is exactly `k` times continuously 
+        constructed polynomial is exactly `k` times continuously
         differentiable at `x`, unless the `order` is provided explicitly.
         In the latter case, the smoothness of the polynomial at
         the breakpoint is controlled by the `order`.
-        
+
         Deduces the number of derivatives to match at each end
         from `order` and the number of derivatives available. If
         possible it uses the same number of derivatives from
@@ -1168,7 +1168,7 @@ class BPoly(_PPolyBase):
         extra one from y2. In any case if not enough derivatives
         are available at one end or another it draws enough to
         make up the total from the other end.
-        
+
         If the order is too high and not enough derivatives are available,
         an exception is raised.
 
@@ -1199,7 +1199,7 @@ class BPoly(_PPolyBase):
             raise NotImplementedError
         if direction is not None:
             raise NotImplementedError
-            
+
         xi = np.asarray(xi)
         if len(xi) != len(yi):
             raise ValueError("xi and yi need to have the same length")
@@ -1217,7 +1217,7 @@ class BPoly(_PPolyBase):
             if isinstance(orders, integer_types):
                 orders = [orders] * m
             k = max(k, max(orders))
-            
+
             if any(o <= 0 for o in orders):
                 raise ValueError("Orders must be positive.")
 
@@ -1249,7 +1249,7 @@ class BPoly(_PPolyBase):
 
     @staticmethod
     def _construct_from_derivatives(xa, xb, ya, yb):
-        """Compute the coefficients of a polynomial in the Bernstein basis 
+        """Compute the coefficients of a polynomial in the Bernstein basis
         given the values and derivatives at the edges.
 
         Return the coefficients of a polynomial in the Bernstein basis
@@ -1296,10 +1296,10 @@ class BPoly(_PPolyBase):
 
           ..math:: Q_a = \sum_{j=0}^{q} (-)^{j+q} comb(q, j) c_{j+a}
 
-        This way, only `a=0` contributes to :math: `B^{q}(x = xa)`, and 
+        This way, only `a=0` contributes to :math: `B^{q}(x = xa)`, and
         `c_q` are found one by one by iterating `q = 0, ..., na`.
 
-        At `x = xb` it's the same with `a = n - q`. 
+        At `x = xb` it's the same with `a = n - q`.
 
         """
         ya, yb = np.asarray(ya), np.asarray(yb)
@@ -1372,6 +1372,94 @@ class BPoly(_PPolyBase):
             for j in range(d+1):
                 out[a+j] += f * comb(d, j) / comb(k+d, a+j)
         return out
+
+
+class Akima1D(PPoly):
+    """
+    1D Akima interpolator
+
+    Fit piecewise cubic polynomials, given vectors x and y. The interpolation
+    method by Akima uses a continuously differentiable sub-spline built from
+    piecewise cubic polynomials. The resultant curve passes through the given
+    data points and will appear smooth and natural.
+
+    Parameters
+    ----------
+    x : ndarray, shape (m, )
+        1D array of monotonically increasing real values.
+    y : ndarray, shape (m, )
+        1D array of real values. y's length must be equal to the length of x.
+
+    Methods
+    -------
+    __call__
+
+    Notes
+    -----
+    Use only for precise data, as the fitted curve passes through the given
+    points exactly. This routine is useful for plotting a pleasingly smooth
+    curve through a few given points for purposes of plotting.
+
+    References
+    ----------
+    [1] A new method of interpolation and smooth curve fitting based
+        on local procedures. Hiroshi Akima, J. ACM, October 1970, 17(4),
+        589-602.
+
+    """
+
+    def __init__(self, x, y):
+        # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
+        # http://www.mathworks.de/matlabcentral/fileexchange/1814-akima-interpolation
+        if np.any(np.diff(x) < 0.):
+            raise ValueError("x must be strictly ascending")
+        if x.ndim != 1:
+            raise ValueError("x must be 1-dimensional")
+        if x.size < 2:
+            raise ValueError("at least 2 breakpoints are needed")
+        if x.shape != y.shape:
+            raise ValueError("x.shape must equal y.shape")
+
+        # determine slopes between breakpoints
+        m = np.empty(x.size + 3)
+        dx = np.diff(x)
+        m[2:-2] = np.diff(y) / dx
+
+        # add two additional points on the left ...
+        m[1] = 2. * m[2] - m[3]
+        m[0] = 2. * m[1] - m[2]
+        # ... and on the right
+        m[-2] = 2. * m[-3] - m[-4]
+        m[-1] = 2. * m[-2] - m[-3]
+
+        # if m1 == m2 != m3 == m4, the slope at the breakpoint is not defined.
+        # This is the fill value:
+        t = .5 * (m[3:] + m[:-3])
+        # get the denominator of the slope t
+        dm = np.abs(np.diff(m))
+        f1 = dm[2:]
+        f2 = dm[:-2]
+        f12 = f1 + f2
+        # These are the indices where the the slope at breakpoint is defined:
+        id_ = np.nonzero(f12 > 1e-9 * np.max(f12))[0]
+        # set the slope at breakpoint
+        t[id_] = (f1[id_] * m[id_ + 1] + f2[id_] * m[id_ + 2]) / f12[id_]
+
+        # calculate the higher order coefficients
+        c = (3. * m[2:-2] - 2. * t[:-1] - t[1:]) / dx
+        d = (t[:-1] + t[1:] - 2. * m[2:-2]) / dx ** 2
+
+        coeff = np.zeros((4, x.size - 1))
+        coeff[3] = y[:-1]
+        coeff[2] = t[:-1]
+        coeff[1] = c
+        coeff[0] = d
+
+        super(Akima1D, self).__init__(coeff, x, extrapolate=False)
+
+    def extend(self):
+        raise NotImplementedError("Extending a 1D Akima interpolator is not "
+                "yet implemented")
 
 
 # backward compatibility wrapper

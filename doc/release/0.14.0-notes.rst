@@ -21,6 +21,15 @@ This release requires Python 2.6, 2.7 or 3.2-3.3 and NumPy 1.5.1 or greater.
 New features
 ============
 
+``scipy.interpolate`` improvements
+----------------------------------
+
+Akima interpolation in 1D
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The new class `scipy.interpolate.Akima1D` implements the piecewise cubic
+polynomial interpolation scheme devised by H. Akima.
+
 ``scipy.linalg`` improvements
 -----------------------------
 
