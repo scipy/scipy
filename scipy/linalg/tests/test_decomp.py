@@ -1973,6 +1973,10 @@ class TestQZ(TestCase):
         assert_(all(diag(BB) >= 0))
 
 
+def _make_pos(X):
+    # the decompositions can have different signs than verified results
+    return np.sign(X)*X
+
 class TestOrdQZ(TestCase):
     @classmethod
     def setupClass(cls):
@@ -2014,10 +2018,10 @@ class TestOrdQZ(TestCase):
 
         beta = np.array([1.9004562,0.28571429,0.28571429,1])
 
-        assert_array_almost_equal(ret[0], AA, 6)
-        assert_array_almost_equal(ret[1], BB, 6)
-        assert_array_almost_equal(ret[4], Q, 6)
-        assert_array_almost_equal(ret[5], Z, 6)
+        assert_array_almost_equal(_make_pos(ret[0]), _make_pos(AA), 6)
+        assert_array_almost_equal(_make_pos(ret[1]), _make_pos(BB), 6)
+        assert_array_almost_equal(_make_pos(ret[4]), _make_pos(Q), 6)
+        assert_array_almost_equal(_make_pos(ret[5]), _make_pos(Z), 6)
         assert_array_almost_equal(ret[2], alpha, 6)
         assert_array_almost_equal(ret[3], beta, 6)
 
@@ -2028,10 +2032,10 @@ class TestOrdQZ(TestCase):
         alpha = np.array([19.032866-57.098599j,11.881807-29.704517j,10.960871-3.653624j,21.872209-27.340262j])
         beta = np.array([6.3442888+0j,5.9409034+0j,3.6536237+0j,5.4680524+0j])
 
-        assert_array_almost_equal(retc[0], AA, 5)
-        assert_array_almost_equal(retc[1], BB, 6)
-        assert_array_almost_equal(retc[4], Q, 6)
-        assert_array_almost_equal(retc[5], Z, 6)
+        assert_array_almost_equal(_make_pos(retc[0]), _make_pos(AA), 5)
+        assert_array_almost_equal(_make_pos(retc[1]), _make_pos(BB), 6)
+        assert_array_almost_equal(_make_pos(retc[4]), _make_pos(Q), 6)
+        assert_array_almost_equal(_make_pos(retc[5]), _make_pos(Z), 6)
         assert_array_almost_equal(retc[2], alpha, 6)
         assert_array_almost_equal(retc[3], beta, 6)
 
@@ -2044,10 +2048,10 @@ class TestOrdQZ(TestCase):
         Z = np.array([0.99605611,0.0056917492,0.062609241,0.062609241,0.081834137,-0.44454492,-0.63074678,-0.63074678,-0.034284168,-0.89573848,0.31343036,0.31343036,0,5.1446441e-17,0.70710678,-0.70710678]).reshape(4,4, order='F')
         alpha = np.array([3.8009124+0j,0.8571429+1.1428571j,0.8571429-1.1428571j,4+0j])
         beta = np.array([1.9004562,0.28571429,0.28571429,1])
-        assert_array_almost_equal(ret[0], AA, 6)
-        assert_array_almost_equal(ret[1], BB, 6)
-        assert_array_almost_equal(ret[4], Q, 6)
-        assert_array_almost_equal(ret[5], Z, 6)
+        assert_array_almost_equal(_make_pos(ret[0]), _make_pos(AA), 6)
+        assert_array_almost_equal(_make_pos(ret[1]), _make_pos(BB), 6)
+        assert_array_almost_equal(_make_pos(ret[4]), _make_pos(Q), 6)
+        assert_array_almost_equal(_make_pos(ret[5]), _make_pos(Z), 6)
         assert_array_almost_equal(ret[2], alpha, 6)
         assert_array_almost_equal(ret[3], beta, 6)
 
@@ -2058,10 +2062,10 @@ class TestOrdQZ(TestCase):
         alpha = np.array([19.032866-57.098599j,11.881807-29.704517j,10.960871-3.653624j,21.872209-27.340262j])
         beta = np.array([6.3442888+0j,5.9409034+0j,3.6536237+0j,5.4680524+0j])
 
-        assert_array_almost_equal(retc[0], AA, 5)
-        assert_array_almost_equal(retc[1], BB, 6)
-        assert_array_almost_equal(retc[4], Q, 6)
-        assert_array_almost_equal(retc[5], Z, 6)
+        assert_array_almost_equal(_make_pos(retc[0]), _make_pos(AA), 5)
+        assert_array_almost_equal(_make_pos(retc[1]), _make_pos(BB), 6)
+        assert_array_almost_equal(_make_pos(retc[4]), _make_pos(Q), 6)
+        assert_array_almost_equal(_make_pos(retc[5]), _make_pos(Z), 6)
         assert_array_almost_equal(retc[2], alpha, 6)
         assert_array_almost_equal(retc[3], beta, 6)
 
@@ -2074,10 +2078,10 @@ class TestOrdQZ(TestCase):
         Z = np.array([0.99605611,0.0056917492,0.062609241,0.062609241,0.081834137,-0.44454492,-0.63074678,-0.63074678,-0.034284168,-0.89573848,0.31343036,0.31343036,0,5.1446441e-17,0.70710678,-0.70710678]).reshape(4,4, order='F')
         alpha = np.array([3.8009124+0j,0.8571429+1.1428571j,0.8571429-1.1428571j,4+0j])
         beta = np.array([1.9004562,0.28571429,0.28571429,1])
-        assert_array_almost_equal(ret[0], AA, 6)
-        assert_array_almost_equal(ret[1], BB, 6)
-        assert_array_almost_equal(ret[4], Q, 6)
-        assert_array_almost_equal(ret[5], Z, 6)
+        assert_array_almost_equal(_make_pos(ret[0]), _make_pos(AA), 6)
+        assert_array_almost_equal(_make_pos(ret[1]), _make_pos(BB), 6)
+        assert_array_almost_equal(_make_pos(ret[4]), _make_pos(Q), 6)
+        assert_array_almost_equal(_make_pos(ret[5]), _make_pos(Z), 6)
         assert_array_almost_equal(ret[2], alpha, 6)
         assert_array_almost_equal(ret[3], beta, 6)
 
@@ -2088,10 +2092,10 @@ class TestOrdQZ(TestCase):
         alpha = np.array([19.032866-57.098599j,11.881807-29.704517j,10.960871-3.653624j,21.872209-27.340262j])
         beta = np.array([6.3442888+0j,5.9409034+0j,3.6536237+0j,5.4680524+0j])
 
-        assert_array_almost_equal(retc[0], AA, 5)
-        assert_array_almost_equal(retc[1], BB, 6)
-        assert_array_almost_equal(retc[4], Q, 6)
-        assert_array_almost_equal(retc[5], Z, 6)
+        assert_array_almost_equal(_make_pos(retc[0]), _make_pos(AA), 5)
+        assert_array_almost_equal(_make_pos(retc[1]), _make_pos(BB), 6)
+        assert_array_almost_equal(_make_pos(retc[4]), _make_pos(Q), 6)
+        assert_array_almost_equal(_make_pos(retc[5]), _make_pos(Z), 6)
         assert_array_almost_equal(retc[2], alpha, 6)
         assert_array_almost_equal(retc[3], beta, 6)
 
@@ -2104,10 +2108,10 @@ class TestOrdQZ(TestCase):
         Z = np.array([0.99605611,0.0056917492,0.062609241,0.062609241,0.081834137,-0.44454492,-0.63074678,-0.63074678,-0.034284168,-0.89573848,0.31343036,0.31343036,0,5.1446441e-17,0.70710678,-0.70710678]).reshape(4,4, order='F')
         alpha = np.array([3.8009124+0j,0.8571429+1.1428571j,0.8571429-1.1428571j,4+0j])
         beta = np.array([1.9004562,0.28571429,0.28571429,1])
-        assert_array_almost_equal(ret[0], AA, 6)
-        assert_array_almost_equal(ret[1], BB, 6)
-        assert_array_almost_equal(ret[4], Q, 6)
-        assert_array_almost_equal(ret[5], Z, 6)
+        assert_array_almost_equal(_make_pos(ret[0]), _make_pos(AA), 6)
+        assert_array_almost_equal(_make_pos(ret[1]), _make_pos(BB), 6)
+        assert_array_almost_equal(_make_pos(ret[4]), _make_pos(Q), 6)
+        assert_array_almost_equal(_make_pos(ret[5]), _make_pos(Z), 6)
         assert_array_almost_equal(ret[2], alpha, 6)
         assert_array_almost_equal(ret[3], beta, 6)
 
@@ -2118,10 +2122,10 @@ class TestOrdQZ(TestCase):
         alpha = np.array([19.032866-57.098599j,11.881807-29.704517j,10.960871-3.653624j,21.872209-27.340262j])
         beta = np.array([6.3442888+0j,5.9409034+0j,3.6536237+0j,5.4680524+0j])
 
-        assert_array_almost_equal(retc[0], AA, 5)
-        assert_array_almost_equal(retc[1], BB, 6)
-        assert_array_almost_equal(retc[4], Q, 6)
-        assert_array_almost_equal(retc[5], Z, 6)
+        assert_array_almost_equal(_make_pos(retc[0]), _make_pos(AA), 5)
+        assert_array_almost_equal(_make_pos(retc[1]), _make_pos(BB), 6)
+        assert_array_almost_equal(_make_pos(retc[4]), _make_pos(Q), 6)
+        assert_array_almost_equal(_make_pos(retc[5]), _make_pos(Z), 6)
         assert_array_almost_equal(retc[2], alpha, 6)
         assert_array_almost_equal(retc[3], beta, 6)
 
@@ -2135,10 +2139,10 @@ class TestOrdQZ(TestCase):
         Z = np.array([0.99605611,0.0056917492,0.062609241,0.062609241,-0.0014000161,-0.040374311,0.71938213,-0.69343875,0.088676378,-0.09375821,-0.69083549,-0.71140159,-0.0026019471,-0.99475973,0.03627338,0.095553937]).reshape(4,4, order='F')
         alpha = np.array([3.8009124+0j,9.2033029+0j,0.8571429+1.1428571j,0.8571429-1.1428571j])
         beta = np.array([1.9004562,2.3008257,0.28571429,0.28571429])
-        assert_array_almost_equal(ret[0], AA, 6)
-        assert_array_almost_equal(ret[1], BB, 6)
-        assert_array_almost_equal(ret[4], Q, 6)
-        assert_array_almost_equal(ret[5], Z, 6)
+        assert_array_almost_equal(_make_pos(ret[0]), _make_pos(AA), 6)
+        assert_array_almost_equal(_make_pos(ret[1]), _make_pos(BB), 6)
+        assert_array_almost_equal(_make_pos(ret[4]), _make_pos(Q), 6)
+        assert_array_almost_equal(_make_pos(ret[5]), _make_pos(Z), 6)
         assert_array_almost_equal(ret[2], alpha, 6)
         assert_array_almost_equal(ret[3], beta, 6)
 
@@ -2149,10 +2153,10 @@ class TestOrdQZ(TestCase):
         alpha = np.array([19.032866-57.098599j,11.881807-29.704517j,10.960871-3.653624j,21.872209-27.340262j])
         beta = np.array([6.3442888+0j,5.9409034+0j,3.6536237+0j,5.4680524+0j])
 
-        assert_array_almost_equal(retc[0], AA, 5)
-        assert_array_almost_equal(retc[1], BB, 6)
-        assert_array_almost_equal(retc[4], Q, 6)
-        assert_array_almost_equal(retc[5], Z, 6)
+        assert_array_almost_equal(_make_pos(retc[0]), _make_pos(AA), 5)
+        assert_array_almost_equal(_make_pos(retc[1]), _make_pos(BB), 6)
+        assert_array_almost_equal(_make_pos(retc[4]), _make_pos(Q), 6)
+        assert_array_almost_equal(_make_pos(retc[5]), _make_pos(Z), 6)
         assert_array_almost_equal(retc[2], alpha, 6)
         assert_array_almost_equal(retc[3], beta, 6)
 
@@ -2169,10 +2173,10 @@ class TestOrdQZ(TestCase):
 
         #NOTE: I suppose these are only equal up to an arbitrary scaling
         #      more of these may pop up on different systems
-        assert_array_almost_equal(np.abs(ret[0]), np.abs(AA), 6)
-        assert_array_almost_equal(np.abs(ret[1]), np.abs(BB), 6)
-        assert_array_almost_equal(np.abs(ret[4]), np.abs(Q), 6)
-        assert_array_almost_equal(np.abs(ret[5]), np.abs(Z), 6)
+        assert_array_almost_equal(_make_pos(ret[0]), _make_pos(AA), 6)
+        assert_array_almost_equal(_make_pos(ret[1]), _make_pos(BB), 6)
+        assert_array_almost_equal(_make_pos(ret[4]), _make_pos(Q), 6)
+        assert_array_almost_equal(_make_pos(ret[5]), _make_pos(Z), 6)
         assert_array_almost_equal(ret[2], alpha, 6)
         assert_array_almost_equal(ret[3], beta, 6)
 
@@ -2183,10 +2187,10 @@ class TestOrdQZ(TestCase):
         alpha = np.array([19.032866-57.098599j,11.881807-29.704517j,10.960871-3.653624j,21.872209-27.340262j])
         beta = np.array([6.3442888+0j,5.9409034+0j,3.6536237+0j,5.4680524+0j])
 
-        assert_array_almost_equal(retc[0], AA, 5)
-        assert_array_almost_equal(retc[1], BB, 6)
-        assert_array_almost_equal(retc[4], Q, 6)
-        assert_array_almost_equal(retc[5], Z, 6)
+        assert_array_almost_equal(_make_pos(retc[0]), _make_pos(AA), 5)
+        assert_array_almost_equal(_make_pos(retc[1]), _make_pos(BB), 6)
+        assert_array_almost_equal(_make_pos(retc[4]), _make_pos(Q), 6)
+        assert_array_almost_equal(_make_pos(retc[5]), _make_pos(Z), 6)
         assert_array_almost_equal(retc[2], alpha, 6)
         assert_array_almost_equal(retc[3], beta, 6)
 
