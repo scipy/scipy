@@ -9,9 +9,9 @@ from scipy.lib.six import xrange
 
 from numpy import exp, log, asarray, arange, newaxis, hstack, product, array, \
                   where, zeros, extract, place, pi, sqrt, eye, poly1d, dot, \
-                  r_, rollaxis, sum, fromstring
+                  r_, rollaxis, sum, fromstring, ndarray
 
-__all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb',
+__all__ = ['logsumexp', 'factorial','factorial2','factorialk',
            'central_diff_weights', 'derivative', 'pade', 'lena', 'ascent', 'face']
 
 # XXX: the factorial functions could move to scipy.special, and the others
@@ -90,14 +90,14 @@ def logsumexp(a, axis=None, b=None):
     return out
 
 
-def factorial(n,exact=0):
+def factorial(n,exact=False):
     """
     The factorial function, n! = special.gamma(n+1).
 
     If exact is 0, then floating point precision is used, otherwise
     exact long integer is computed.
 
-    - Array argument accepted only for exact=0 case.
+    - Array argument accepted only for exact=False case.
     - If n<0, the return value is 0.
 
     Parameters
@@ -198,7 +198,7 @@ def factorial2(n, exact=False):
         return vals
 
 
-def factorialk(n,k,exact=1):
+def factorialk(n,k,exact=True):
     """
     n(!!...!)  = multifactorial of order k
     k times
@@ -241,60 +241,6 @@ def factorialk(n,k,exact=1):
         return val
     else:
         raise NotImplementedError
-
-
-def comb(N,k,exact=0):
-    """
-    The number of combinations of N things taken k at a time.
-
-    This is often expressed as "N choose k".
-
-    Parameters
-    ----------
-    N : int, ndarray
-        Number of things.
-    k : int, ndarray
-        Number of elements taken.
-    exact : int, optional
-        If `exact` is 0, then floating point precision is used, otherwise
-        exact long integer is computed.
-
-    Returns
-    -------
-    val : int, ndarray
-        The total number of combinations.
-
-    Notes
-    -----
-    - Array arguments accepted only for exact=0 case.
-    - If k > N, N < 0, or k < 0, then a 0 is returned.
-
-    Examples
-    --------
-    >>> k = np.array([3, 4])
-    >>> n = np.array([10, 10])
-    >>> sc.comb(n, k, exact=False)
-    array([ 120.,  210.])
-    >>> sc.comb(10, 3, exact=True)
-    120L
-
-    """
-    if exact:
-        if (k > N) or (N < 0) or (k < 0):
-            return 0
-        val = 1
-        for j in xrange(min(k, N-k)):
-            val = (val*(N-j))//(j+1)
-        return val
-    else:
-        from scipy import special
-        k,N = asarray(k), asarray(N)
-        lgam = special.gammaln
-        cond = (k <= N) & (N >= 0) & (k >= 0)
-        sv = special.errprint(0)
-        vals = exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1))
-        sv = special.errprint(sv)
-        return where(cond, vals, 0.0)
 
 
 def central_diff_weights(Np, ndiv=1):
