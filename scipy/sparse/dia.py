@@ -196,22 +196,18 @@ class dia_matrix(_data_matrix):
         return self.tocoo().tocsc()
 
     def tocoo(self):
-        num_data = len(self.data)
-        len_data = self.data.shape[1]
+        num_rows, num_cols = self.shape
+        num_offsets, offset_len = self.data.shape
+        offset_inds = np.arange(offset_len)
 
-        row = np.arange(len_data).reshape(1,-1).repeat(num_data,axis=0)
-        col = row.copy()
-
-        for i,k in enumerate(self.offsets):
-            row[i,:] -= k
-
-        row,col,data = row.ravel(),col.ravel(),self.data.ravel()
-
+        row = offset_inds - self.offsets[:,None]
         mask = (row >= 0)
-        mask &= (row < self.shape[0])
-        mask &= (col < self.shape[1])
-        mask &= data != 0
-        row,col,data = row[mask],col[mask],data[mask]
+        mask &= (row < num_rows)
+        mask &= (offset_inds < num_cols)
+        mask &= self.data != 0
+        row = row[mask]
+        col = np.tile(offset_inds, num_offsets)[mask.ravel()]
+        data = self.data[mask]
 
         from .coo import coo_matrix
         return coo_matrix((data,(row,col)), shape=self.shape)
