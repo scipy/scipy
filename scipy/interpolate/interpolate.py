@@ -1760,6 +1760,8 @@ class NdPPoly(object):
         """
         if extrapolate is None:
             extrapolate = self.extrapolate
+        else:
+            extrapolate = bool(extrapolate)
 
         ndim = len(self.x)
 
@@ -1932,6 +1934,116 @@ class NdPPoly(object):
 
         p._ensure_c_contiguous()
         return p
+
+    def integrate_1d(self, a, b, axis, extrapolate=None):
+        r"""
+        Compute NdPPoly representation for one dimensional definite integral
+
+        The result is a piecewise polynomial representing the integral:
+
+        .. math::
+
+           p(y, z, ...) = \int_a^b dx\, p(x, y, z, ...)
+
+        where the dimension integrated over is specified with the
+        `axis` parameter.
+
+        Parameters
+        ----------
+        a, b : float
+            Lower and upper bound for integration.
+        axis : int
+            Dimension over which to compute the 1D integrals
+        extrapolate : bool, optional
+            Whether to extrapolate to ouf-of-bounds points based on first
+            and last intervals, or to return NaNs.
+
+        Returns
+        -------
+        ig : NdPPoly or array-like
+            Definite integral of the piecewise polynomial over [a, b].
+            If the polynomial was 1-dimensional, an array is returned,
+            otherwise, an NdPPoly object.
+
+        """
+        if extrapolate is None:
+            extrapolate = self.extrapolate
+        else:
+            extrapolate = bool(extrapolate)
+        
+        ndim = len(self.x)
+        axis = int(axis) % ndim
+
+        # Reuse 1D integration routines
+        c = self.c
+        swap = list(range(c.ndim))
+        swap.insert(0, swap[axis])
+        del swap[axis + 1]
+        swap.insert(1, swap[ndim + axis])
+        del swap[ndim + axis + 1]
+
+        c = c.transpose(swap)
+        p = PPoly.construct_fast(c.reshape(c.shape[0], c.shape[1], -1),
+                                 self.x[axis],
+                                 extrapolate=extrapolate)
+        out = p.integrate(a, b, extrapolate=extrapolate)
+
+        # Construct result
+        if ndim == 1:
+            return out.reshape(c.shape[2:])
+        else:
+            c = out.reshape(c.shape[2:])
+            x = self.x[:axis] + self.x[axis+1:]
+            return self.construct_fast(c, x, extrapolate=extrapolate)
+
+    def integrate(self, ranges, extrapolate=None):
+        """
+        Compute a definite integral over a piecewise polynomial.
+
+        Parameters
+        ----------
+        ranges : ndim-tuple of 2-tuples float
+            Sequence of lower and upper bounds for each dimension,
+            ``[(a[0], b[0]), ..., (a[ndim-1], b[ndim-1])]``
+        extrapolate : bool, optional
+            Whether to extrapolate to ouf-of-bounds points based on first
+            and last intervals, or to return NaNs.
+
+        Returns
+        -------
+        ig : array_like
+            Definite integral of the piecewise polynomial over
+            [a[0], b[0]] x ... x [a[ndim-1], b[ndim-1]]
+
+        """
+
+        ndim = len(self.x)
+
+        if extrapolate is None:
+            extrapolate = self.extrapolate
+        else:
+            extrapolate = bool(extrapolate)
+        
+
+        if not hasattr(ranges, '__len__') or len(ranges) != ndim:
+            raise ValueError("Range not a sequence of correct length")
+
+        self._ensure_c_contiguous()
+
+        # Reuse 1D integration routine
+        c = self.c
+        for n, (a, b) in enumerate(ranges):
+            swap = list(range(c.ndim))
+            swap.insert(1, swap[ndim - n])
+            del swap[ndim - n + 1]
+
+            c = c.transpose(swap)
+
+            p = PPoly.construct_fast(c, self.x[n], extrapolate=extrapolate)
+            out = p.integrate(a, b, extrapolate=extrapolate)
+            c = out.reshape(c.shape[2:])
+
+        return c
 
 
 class RegularGridInterpolator(object):

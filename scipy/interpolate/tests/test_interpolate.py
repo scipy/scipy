@@ -22,6 +22,8 @@ from scipy.interpolate import _ppoly
 
 from scipy._lib._gcutils import assert_deallocated
 
+from scipy.integrate import nquad
+
 
 class TestInterp2D(TestCase):
     def test_interp2d(self):
@@ -1767,6 +1769,66 @@ class TestNdPPoly(object):
 
         assert_allclose(ip((xi, yi, zi)),
                         xi * yi**2 * zi**4 / (gamma(3)*gamma(5)))
+
+    def test_integrate_2d(self):
+        np.random.seed(1234)
+        c = np.random.rand(4, 5, 16, 17)
+        x = np.linspace(0, 1, 16+1)**1
+        y = np.linspace(0, 1, 17+1)**2
+
+        # make continuously differentiable so that nquad() has an
+        # easier time
+        c = c.transpose(0, 2, 1, 3)
+        cx = c.reshape(c.shape[0], c.shape[1], -1).copy()
+        _ppoly.fix_continuity(cx, x, 2)
+        c = cx.reshape(c.shape)
+        c = c.transpose(0, 2, 1, 3)
+        c = c.transpose(1, 3, 0, 2)
+        cx = c.reshape(c.shape[0], c.shape[1], -1).copy()
+        _ppoly.fix_continuity(cx, y, 2)
+        c = cx.reshape(c.shape)
+        c = c.transpose(2, 0, 3, 1).copy()
+
+        # Check integration
+        p = NdPPoly(c, (x, y))
+
+        for ranges in [[(0, 1), (0, 1)],
+                       [(0, 0.5), (0, 1)],
+                       [(0, 1), (0, 0.5)],
+                       [(0.3, 0.7), (0.6, 0.2)]]:
+
+            ig = p.integrate(ranges)
+            ig2, err2 = nquad(lambda x, y: p((x, y)), ranges,
+                              opts=[dict(epsrel=1e-5, epsabs=1e-5)]*2)
+            assert_allclose(ig, ig2, rtol=1e-5, atol=1e-5,
+                            err_msg=repr(ranges))
+
+    def test_integrate_1d(self):
+        np.random.seed(1234)
+        c = np.random.rand(4, 5, 6, 16, 17, 18)
+        x = np.linspace(0, 1, 16+1)**1
+        y = np.linspace(0, 1, 17+1)**2
+        z = np.linspace(0, 1, 18+1)**3
+
+        # Check 1D integration
+        p = NdPPoly(c, (x, y, z))
+
+        u = np.random.rand(200)
+        v = np.random.rand(200)
+        a, b = 0.2, 0.7
+
+        px = p.integrate_1d(a, b, axis=0)
+        pax = p.antiderivative((1, 0, 0))
+        assert_allclose(px((u, v)), pax((b, u, v)) - pax((a, u, v)))
+
+        py = p.integrate_1d(a, b, axis=1)
+        pay = p.antiderivative((0, 1, 0))
+        assert_allclose(py((u, v)), pay((u, b, v)) - pay((u, a, v)))
+
+        pz = p.integrate_1d(a, b, axis=2)
+        paz = p.antiderivative((0, 0, 1))
+        assert_allclose(pz((u, v)), paz((u, v, b)) - paz((u, v, a)))
+
 
 def _ppoly_eval_1(c, x, xps):
     """Evaluate piecewise polynomial manually"""
