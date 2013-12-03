@@ -353,7 +353,7 @@ class TestCheby1(TestCase):
         # 0-order filter is just a passthrough
         # Even-order filters have DC gain of -rp dB
         b, a = cheby1(0, 10*np.log10(2), 1, analog=True)
-        assert_array_equal(b, [1/np.sqrt(2)])
+        assert_array_almost_equal(b, [1/np.sqrt(2)])
         assert_array_equal(a, [1])
 
         # 1-order filter is same for all types
@@ -485,7 +485,7 @@ class TestEllip(TestCase):
         # Even-order filters have DC gain of -rp dB
         # Stopband ripple factor doesn't matter
         b, a = ellip(0, 10*np.log10(2), 123.456, 1, analog=True)
-        assert_array_equal(b, [1/np.sqrt(2)])
+        assert_array_almost_equal(b, [1/np.sqrt(2)])
         assert_array_equal(a, [1])
 
         # 1-order filter is same for all types
