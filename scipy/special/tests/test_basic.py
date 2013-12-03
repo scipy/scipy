@@ -1068,10 +1068,24 @@ class TestCombinatorics(TestCase):
         assert_equal(special.comb(10, 3, exact=True), 120)
         assert_equal(special.comb(10, 3, exact=True, repetition=True), 220)
 
+    def test_comb_zeros(self):
+        assert_equal(special.comb(2, 3, exact=True), 0)
+        assert_equal(special.comb(-1, 3, exact=True), 0)
+        assert_equal(special.comb(2, -1, exact=True), 0)
+        assert_array_almost_equal(special.comb([2, -1, 2, 10], [3, 3, -1, 3]),
+                [0., 0., 0., 120.])
+
     def test_perm(self):
         assert_array_almost_equal(special.perm([10, 10], [3, 4]), [720., 5040.])
         assert_almost_equal(special.perm(10, 3), 720.)
         assert_equal(special.perm(10, 3, exact=True), 720)
+
+    def test_perm_zeros(self):
+        assert_equal(special.perm(2, 3, exact=True), 0)
+        assert_equal(special.perm(-1, 3, exact=True), 0)
+        assert_equal(special.perm(2, -1, exact=True), 0)
+        assert_array_almost_equal(special.perm([2, -1, 2, 10], [3, 3, -1, 3]),
+                [0., 0., 0., 720.])
 
 
 class TestTrigonometric(TestCase):
