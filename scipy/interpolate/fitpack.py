@@ -553,7 +553,7 @@ def splev(x, tck, der=0, ext=0):
     -------
     y : ndarray or list of ndarrays
         An array of values representing the spline function evaluated at
-        the points in ``x``.  If `tck` was returned from splrep, then this
+        the points in ``x``.  If `tck` was returned from `splprep`, then this
         is a list of arrays representing the curve in N-dimensional space.
 
     See Also
