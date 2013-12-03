@@ -187,6 +187,20 @@ class dia_matrix(_data_matrix):
         else:
             return self
 
+    def transpose(self):
+        num_rows, num_cols = self.shape
+        max_dim = max(self.shape)
+        # flip diagonal offsets
+        offsets = -self.offsets
+        # re-align the data matrix
+        r = np.arange(len(offsets), dtype=np.intc)[:,None]
+        c = np.arange(num_rows, dtype=np.intc) - (offsets % max_dim)[:,None]
+        pad_amount = max(0, max_dim-self.data.shape[1])
+        data = np.hstack((self.data, np.zeros((self.data.shape[0], pad_amount),
+                                              dtype=self.data.dtype)))
+        data = data[r,c]
+        return dia_matrix((data, offsets), shape=(num_cols,num_rows))
+
     def tocsr(self):
         #this could be faster
         return self.tocoo().tocsr()
@@ -204,7 +218,7 @@ class dia_matrix(_data_matrix):
         mask = (row >= 0)
         mask &= (row < num_rows)
         mask &= (offset_inds < num_cols)
-        mask &= self.data != 0
+        mask &= (self.data != 0)
         row = row[mask]
         col = np.tile(offset_inds, num_offsets)[mask.ravel()]
         data = self.data[mask]
