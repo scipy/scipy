@@ -130,6 +130,8 @@ Inferential Stats
    wilcoxon
    kruskal
    friedmanchisquare
+   stouffers_method
+   fishers_method
 
 Probability Calculations
 ------------------------
@@ -204,7 +206,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'zprob', 'chisqprob', 'ksprob', 'fprob', 'betai',
            'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
            'ss', 'square_of_sums', 'fastsort', 'rankdata', 'nanmean',
-           'nanstd', 'nanmedian', ]
+           'nanstd', 'nanmedian', 'stouffers_method', 'fishers_method', ]
 
 
 def _chk_asarray(a, axis):
@@ -4254,6 +4256,67 @@ def friedmanchisquare(*args):
     ssbn = pysum(pysum(data)**2)
     chisq = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
     return chisq, chisqprob(chisq,k-1)
+
+
+def fishers_method(p):
+    """
+    Fisher's method (aka Fisher's combined probability test)
+    of combining the results (p-values) from several independent
+    tests bearing upon the same overall hypothesis (H0).
+
+    Parameters
+    ----------
+    p : array_like of p-values
+
+    Returns
+    -------
+    Xsq : float
+        chi2 value
+    p-value : float
+        p-value
+
+    References
+    ----------
+    http://en.wikipedia.org/wiki/Fisher's_method
+    """
+    Xsq = -2 * np.sum(np.log(p))
+    pval = 1 - distributions.chi2.cdf(Xsq, 2 * len(p))
+
+    return (Xsq, pval)
+
+
+def stouffers_method(p, w=None):
+    """
+    Stouffer's Z-score method of combining the results (p-values)
+    from several independent tests bearing upon the same
+    overall hypothesis (H0).
+
+    Parameters
+    ----------
+    p : array_like of p-values
+    w : array_like of weights (optional)
+
+    Returns
+    -------
+    Z : float
+        Z-score
+    p-value : float
+        p-value
+
+    References
+    ----------
+    http://en.wikipedia.org/wiki/Fisher's_method#Relation_to_Stouffer.27s_Z-score_method
+    """
+    if w is None:
+        w = np.ones(len(p)) / len(p)
+    elif len(w) != len(p):
+        raise ValueError("Length of p and w must equal!")
+
+    Zi = distributions.norm.isf(p)
+    Z = np.sum(w * Zi) / ((np.sum(w ** 2)) ** 0.5)
+    p = 1 - distributions.norm.cdf(Z)
+
+    return (Z, p)
 
 
 #####################################

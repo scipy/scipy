@@ -2826,5 +2826,19 @@ class TestKruskal(TestCase):
         assert_approx_equal(p, stats.chisqprob(h, 2))
 
 
+class TestFisher(TestCase):
+
+    def test_fisher(self):
+        xsq, p = stats.fishers_method(np.array((.01, .2, .3)))
+        assert_approx_equal(p, 0.022, significant=2)
+
+    def test_stouffer(self):
+        Z, p = stats.stouffers_method(np.array((.01, .2, .3)))
+        assert_approx_equal(p, 0.017, significant=2)
+
+    def test_stouffer2(self):
+        Z, p = stats.stouffers_method(np.array((.5, .5, .5)))
+        assert_approx_equal(p, 0.5, significant=4)
+
 if __name__ == "__main__":
     run_module_suite()
