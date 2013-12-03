@@ -1792,55 +1792,56 @@ class NdPPoly(object):
 
         return out.reshape(x_shape[:-1] + self.c.shape[2*ndim:])
 
-    @classmethod
-    def _derivative_one(cls, c, x, nu, axis):
+    def _derivative_inplace(self, nu, axis):
         """
-        Compute 1D derivative along a selected dimension
+        Compute 1D derivative along a selected dimension in-place
+        May result to non-contiguous c array.
         """
         if nu < 0:
-            return cls._antiderivative_one(c, x, -nu, axis)
+            return self._antiderivative_inplace(-nu, axis)
 
-        ndim = len(x)
+        ndim = len(self.x)
         axis = axis % ndim
-
-        perm = list(range(ndim))
-        perm[0], perm[axis] = perm[axis], perm[0]
-        perm = perm + list(range(ndim, c.ndim))
-
-        c = c.transpose(perm)
 
         # reduce order
         if nu == 0:
-            c2 = c.copy()
+            # noop
+            return
         else:
-            c2 = c[:-nu].copy()
+            sl = [slice(None)]*ndim
+            sl[axis] = slice(None, -nu, None)
+            c2 = self.c[sl]
 
-        if c2.shape[0] == 0:
+        if c2.shape[axis] == 0:
             # derivative of order 0 is zero
-            c2 = np.zeros((1,) + c2.shape[1:], dtype=c2.dtype)
+            shp = list(c2.shape)
+            shp[axis] = 1
+            c2 = np.zeros(shp, dtype=c2.dtype)
 
         # multiply by the correct rising factorials
-        factor = spec.poch(np.arange(c2.shape[0], 0, -1), nu)
-        c2 *= factor[(slice(None),) + (None,)*(c2.ndim-1)]
+        factor = spec.poch(np.arange(c2.shape[axis], 0, -1), nu)
+        sl = [None]*c2.ndim
+        sl[axis] = slice(None)
+        c2 *= factor[sl]
 
-        return c2.transpose(perm)
+        self.c = c2
 
-    @classmethod
-    def _antiderivative_one(cls, c, x, nu, axis):
+    def _antiderivative_inplace(self, nu, axis):
         """
         Compute 1D antiderivative along a selected dimension
+        May result to non-contiguous c array.
         """
         if nu <= 0:
-            return cls._derivative_one(c, x, -nu, axis)
+            return self._derivative_inplace(-nu, axis)
 
-        ndim = len(x)
+        ndim = len(self.x)
         axis = axis % ndim
 
         perm = list(range(ndim))
         perm[0], perm[axis] = perm[axis], perm[0]
-        perm = perm + list(range(ndim, c.ndim))
+        perm = perm + list(range(ndim, self.c.ndim))
 
-        c = c.transpose(perm)
+        c = self.c.transpose(perm)
 
         c2 = np.zeros((c.shape[0] + nu,) + c.shape[1:],
                      dtype=c.dtype)
@@ -1857,11 +1858,13 @@ class NdPPoly(object):
         c2 = c2.transpose(perm2)
         c2 = c2.copy()
         _ppoly.fix_continuity(c2.reshape(c2.shape[0], c2.shape[1], -1),
-                              x[axis], nu-1)
+                              self.x[axis], nu-1)
 
         c2 = c2.transpose(perm2)
         c2 = c2.transpose(perm)
-        return c2.copy()
+
+        # Done
+        self.c = c2
 
     def derivative(self, nu):
         """
@@ -1888,18 +1891,13 @@ class NdPPoly(object):
         which is closed ``[a, b]``.
 
         """
+        p = self.construct_fast(self.c.copy(), self.x, self.extrapolate)
 
-        c2 = self.c
         for axis, n in enumerate(nu):
-            if n != 0:
-                c2 = self._derivative_one(c2, self.x, n, axis)
+            p._derivative_inplace(n, axis)
 
-        if c2 is self.c:
-            # always make a copy
-            c2 = c2.copy()
-
-        # construct a compatible polynomial
-        return self.construct_fast(c2, self.x, self.extrapolate)
+        p._ensure_c_contiguous()
+        return p
 
     def antiderivative(self, nu):
         """
@@ -1927,18 +1925,13 @@ class NdPPoly(object):
         rounding error.
 
         """
+        p = self.construct_fast(self.c.copy(), self.x, self.extrapolate)
 
-        c2 = self.c
         for axis, n in enumerate(nu):
-            if n != 0:
-                c2 = self._antiderivative_one(c2, self.x, n, axis)
+            p._antiderivative_inplace(n, axis)
 
-        if c2 is self.c:
-            # always make a copy
-            c2 = c2.copy()
-
-        # construct a compatible polynomial
-        return self.construct_fast(c2, self.x, self.extrapolate)
+        p._ensure_c_contiguous()
+        return p
 
 
 class RegularGridInterpolator(object):
