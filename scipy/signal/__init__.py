@@ -224,6 +224,7 @@ Spectral Analysis
    periodogram    -- Computes a (modified) periodogram
    welch          -- Compute a periodogram using Welch's method
    lombscargle    -- Computes the Lomb-Scargle periodogram
+   vectorstrength -- Computes the vector strength
 
 """
 from __future__ import division, print_function, absolute_import

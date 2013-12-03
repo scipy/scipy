@@ -8,15 +8,15 @@ import warnings
 from . import sigtools
 from scipy.lib.six import callable
 from scipy import linalg
-from scipy.fftpack import fft, ifft, ifftshift, fft2, ifft2, fftn, \
-        ifftn, fftfreq
+from scipy.fftpack import (fft, ifft, ifftshift, fft2, ifft2, fftn,
+                           ifftn, fftfreq)
 from numpy.fft import rfftn, irfftn
-from numpy import polyadd, polymul, polydiv, polysub, roots, \
-        poly, polyval, polyder, cast, asarray, isscalar, atleast_1d, \
-        ones, real_if_close, zeros, array, arange, where, rank, \
-        newaxis, product, ravel, sum, r_, iscomplexobj, take, \
-        argsort, allclose, expand_dims, unique, prod, sort, reshape, \
-        transpose, dot, mean, ndarray, atleast_2d
+from numpy import (allclose, angle, arange, argsort, array, asarray,
+                   atleast_1d, atleast_2d, cast, dot, exp, expand_dims,
+                   iscomplexobj, isscalar, mean, ndarray, newaxis, ones, pi,
+                   poly, polyadd, polyder, polydiv, polymul, polysub, polyval,
+                   prod, product, r_, rank, ravel, real_if_close, reshape,
+                   roots, sort, sum, take, transpose, unique, where, zeros)
 import numpy as np
 from scipy.misc import factorial
 from .windows import get_window
@@ -26,7 +26,8 @@ __all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
            'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
            'lfiltic', 'deconvolve', 'hilbert', 'hilbert2', 'cmplx_sort',
            'unique_roots', 'invres', 'invresz', 'residue', 'residuez',
-           'resample', 'detrend', 'lfilter_zi', 'filtfilt', 'decimate']
+           'resample', 'detrend', 'lfilter_zi', 'filtfilt', 'decimate',
+           'vectorstrength']
 
 
 _modedict = {'valid': 0, 'same': 1, 'full': 2}
@@ -41,7 +42,7 @@ def _valfrommode(mode):
     except KeyError:
         if mode not in [0, 1, 2]:
             raise ValueError("Acceptable mode flags are 'valid' (0),"
-                    " 'same' (1), or 'full' (2).")
+                             " 'same' (1), or 'full' (2).")
         val = mode
     return val
 
@@ -52,7 +53,8 @@ def _bvalfromboundary(boundary):
     except KeyError:
         if val not in [0, 1, 2]:
             raise ValueError("Acceptable boundary flags are 'fill', 'wrap'"
-                    " (or 'circular'), \n  and 'symm' (or 'symmetric').")
+                             " (or 'circular'), \n  and 'symm'"
+                             " (or 'symmetric').")
         val = boundary << 2
     return val
 
@@ -332,7 +334,7 @@ def order_filter(a, domain, rank):
     for k in range(len(size)):
         if (size[k] % 2) != 1:
             raise ValueError("Each dimension of domain argument "
-                    " should have an odd number of elements.")
+                             " should have an odd number of elements.")
     return sigtools._order_filterND(a, domain, rank)
 
 
@@ -1123,8 +1125,8 @@ def residue(b, a, tol=1e-3, rtype='avg'):
                 term2 = polymul(bn, polyder(an, 1))
                 bn = polysub(term1, term2)
                 an = polymul(an, an)
-            r[indx + m - 1] = polyval(bn, pout[n]) / polyval(an, pout[n]) \
-                          / factorial(sig - m)
+            r[indx + m - 1] = (polyval(bn, pout[n]) / polyval(an, pout[n])
+                               / factorial(sig - m))
         indx += sig
     return r / rscale, p, k
 
@@ -1211,7 +1213,7 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
                 a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
 
                      r[0]                   r[-1]
-             = --------------- + ... + ---------------- + k[0] + k[1]z**(-1) ...
+             = --------------- + ... + ---------------- + k[0] + k[1]z**(-1)...
                (1-p[0]z**(-1))         (1-p[-1]z**(-1))
 
     If there are any repeated roots (closer than tol), then the partial
@@ -1348,6 +1350,84 @@ def resample(x, num, t=None, axis=0, window=None):
         return y, new_t
 
 
+def vectorstrength(events, period):
+    '''
+    Determine the vector strength of the events corresponding to the given
+    period.
+
+    The vector strength is a measure of phase synchrony, how well the
+    timing of the events is synchronized to a single period of a periodic
+    signal.
+
+    If multiple periods are used, calculate the vector strength of each.
+    This is called the "resonating vector strength".
+
+    Parameters
+    ----------
+    events : 1D array_like
+        An array of time points containing the timing of the events.
+    period : float or array_like
+        The period of the signal that the events should synchronize to.
+        The period is in the same units as `events`.  It can also be an array
+        of periods, in which case the outputs are arrays of the same length.
+
+    Returns
+    -------
+    strength : float or 1D array
+        The strength of the synchronization.  1.0 is perfect synchronization
+        and 0.0 is no synchronization.  If `period` is an array, this is also
+        an array with each element containing the vector strength at the
+        corresponding period.
+    phase : float or array
+        The phase that the events are most strongly synchronized to in radians.
+        If `period` is an array, this is also an array with each element
+        containing the phase for the corresponding period.
+
+    References
+    ----------
+    van Hemmen, JL, Longtin, A, and Vollmayr, AN. Testing resonating vector
+        strength: Auditory system, electric fish, and noise.
+        Chaos 21, 047508 (2011);
+        doi: 10.1063/1.3670512
+    van Hemmen, JL.  Vector strength after Goldberg, Brown, and von Mises:
+        biological and mathematical perspectives.  Biol Cybern.
+        2013 Aug;107(4):385-96. doi: 10.1007/s00422-013-0561-7.
+    van Hemmen, JL and Vollmayr, AN.  Resonating vector strength: what happens
+        when we vary the "probing" frequency while keeping the spike times
+        fixed.  Biol Cybern. 2013 Aug;107(4):491-94.
+        doi: 10.1007/s00422-013-0560-8
+    '''
+    events = asarray(events)
+    period = asarray(period)
+    if events.ndim > 1:
+        raise ValueError('events cannot have dimensions more than 1')
+    if period.ndim > 1:
+        raise ValueError('period cannot have dimensions more than 1')
+
+    # we need to know later if period was originally a scalar
+    scalarperiod = not period.ndim
+
+    events = atleast_2d(events)
+    period = atleast_2d(period)
+    if (period <= 0).any():
+        raise ValueError('periods must be positive')
+
+    # this converts the times to vectors
+    vectors = exp(dot(2j*pi/period.T, events))
+
+    # the vector strength is just the magnitude of the mean of the vectors
+    # the vector phase is the angle of the mean of the vectors
+    vectormean = mean(vectors, axis=1)
+    strength = abs(vectormean)
+    phase = angle(vectormean)
+
+    # if the original period was a scalar, return scalars
+    if scalarperiod:
+        strength = strength[0]
+        phase = phase[0]
+    return strength, phase
+
+
 def detrend(data, axis=-1, type='linear', bp=0):
     """
     Remove linear trend along axis from data.
@@ -1400,7 +1480,7 @@ def detrend(data, axis=-1, type='linear', bp=0):
         bp = sort(unique(r_[0, bp, N]))
         if np.any(bp > N):
             raise ValueError("Breakpoints must be less than length "
-                    "of data along given axis.")
+                             "of data along given axis.")
         Nreg = len(bp) - 1
         # Restructure data so that axis is along first dimension and
         #  all other dimensions are collapsed into second dimension
@@ -1639,7 +1719,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     if padtype not in ['even', 'odd', 'constant', None]:
         raise ValueError(("Unknown value '%s' given to padtype.  padtype must "
                          "be 'even', 'odd', 'constant', or None.") %
-                            padtype)
+                         padtype)
 
     b = np.asarray(b)
     a = np.asarray(a)
