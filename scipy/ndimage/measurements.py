@@ -156,7 +156,7 @@ def label(input, structure=None, output=None):
     # Use 32 bits if it's large enough for this image.
     # _ni_label.label()  needs two entries for background and
     # foreground tracking
-    need_64bits = input.size < (2**31 - 2)
+    need_64bits = input.size >= (2**31 - 2)
 
     if isinstance(output, numpy.ndarray):
         if output.shape != input.shape:
