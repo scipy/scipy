@@ -1907,7 +1907,7 @@ def cheb1ap(N, rp):
     elif N == 0:
         # Avoid divide-by-zero error
         # Even order filters have DC gain of -rp dB
-        return numpy.array([]), numpy.array([]), numpy.sqrt(10 ** (0.1 * -rp))
+        return numpy.array([]), numpy.array([]), 10**(-rp/20)
     z = numpy.array([])
     eps = numpy.sqrt(10 ** (0.1 * rp) - 1.0)
     n = numpy.arange(1, N + 1)
@@ -1995,7 +1995,7 @@ def ellipap(N, rp, rs):
     elif N == 0:
         # Avoid divide-by-zero warning
         # Even order filters have DC gain of -rp dB
-        return numpy.array([]), numpy.array([]), numpy.sqrt(10 ** (0.1 * -rp))
+        return numpy.array([]), numpy.array([]), 10**(-rp/20)
     elif N == 1:
         p = -sqrt(1.0 / (10 ** (0.1 * rp) - 1.0))
         k = -p
