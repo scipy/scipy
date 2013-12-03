@@ -1072,6 +1072,7 @@ class TestCombinatorics(TestCase):
         assert_equal(special.comb(2, 3, exact=True), 0)
         assert_equal(special.comb(-1, 3, exact=True), 0)
         assert_equal(special.comb(2, -1, exact=True), 0)
+        assert_equal(special.comb(2, -1, exact=False), 0)
         assert_array_almost_equal(special.comb([2, -1, 2, 10], [3, 3, -1, 3]),
                 [0., 0., 0., 120.])
 
@@ -1084,6 +1085,7 @@ class TestCombinatorics(TestCase):
         assert_equal(special.perm(2, 3, exact=True), 0)
         assert_equal(special.perm(-1, 3, exact=True), 0)
         assert_equal(special.perm(2, -1, exact=True), 0)
+        assert_equal(special.perm(2, -1, exact=False), 0)
         assert_array_almost_equal(special.perm([2, -1, 2, 10], [3, 3, -1, 3]),
                 [0., 0., 0., 720.])
 

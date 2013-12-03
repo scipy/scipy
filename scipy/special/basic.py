@@ -1203,6 +1203,8 @@ def comb(N,k,exact=False,repetition=False):
         vals = binom(N, k)
         if isinstance(vals, np.ndarray):
             vals[~cond] = 0
+        elif not cond:
+            vals = np.float64(0)
         return vals
 
 
@@ -1255,4 +1257,6 @@ def perm(N, k, exact=False):
         vals = poch(N - k + 1, k)
         if isinstance(vals, np.ndarray):
             vals[~cond] = 0
+        elif not cond:
+            vals = np.float64(0)
         return vals
