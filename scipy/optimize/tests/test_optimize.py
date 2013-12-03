@@ -504,6 +504,18 @@ class TestOptimize(object):
                        'cobyla', 'slsqp']:
             yield check, method
 
+    def test_slsqp_respect_bounds(self):
+        # github issue 3108
+        def f(x):
+            return sum((x - np.array([1., 2., 3., 4.]))**2)
+        def cons(x):
+            a = np.array([[-1, -1, -1, -1], [-3, -3, -2, -1]])
+            return np.concatenate([np.dot(a, x) + np.array([5, 10]), x])
+        x0 = np.array([0.5, 1., 1.5, 2.])
+        res = optimize.minimize(f, x0, method='slsqp',
+                                constraints={'type': 'ineq', 'fun': cons})
+        assert_allclose(res.x, np.array([0., 2, 5, 8])/3, atol=1e-12)
+
 
 class TestLBFGSBBounds(TestCase):
     """ Tests for L-BFGS-B with bounds """
