@@ -201,7 +201,9 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     Method *SLSQP* uses Sequential Least SQuares Programming to minimize a
     function of several variables with any combination of bounds, equality
     and inequality constraints. The method wraps the SLSQP Optimization
-    subroutine originally implemented by Dieter Kraft [12]_.
+    subroutine originally implemented by Dieter Kraft [12]_. Note that the
+    wrapper handles infinite values in bounds by converting them into large
+    floating values.
 
     References
     ----------
