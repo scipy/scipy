@@ -3,12 +3,13 @@
 from __future__ import division, print_function, absolute_import
 
 __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
-           'ppform', 'lagrange', 'PPoly', 'BPoly']
+           'ppform', 'lagrange', 'PPoly', 'BPoly', 'Akima']
 
 from numpy import shape, sometrue, array, transpose, searchsorted, \
                   ones, logical_or, atleast_1d, atleast_2d, ravel, \
                   dot, poly1d, asarray, intp
 import numpy as np
+from numpy.lib.stride_tricks import as_strided
 import scipy.special as spec
 from scipy.misc import comb
 import math
@@ -1385,6 +1386,103 @@ class BPoly(_PPolyBase):
             for j in range(d+1):
                 out[a+j] += f * comb(d, j) / comb(k+d, a+j)
         return out
+
+
+class Akima(PPoly):
+    """
+    Akima interpolator
+
+    Fit piecewise cubic polynomials, given vectors x and y. The interpolation
+    method by Akima uses a continuously differentiable sub-spline built from
+    piecewise cubic polynomials. The resultant curve passes through the given
+    data points and will appear smooth and natural.
+
+    Parameters
+    ----------
+    x : ndarray, shape (m, )
+        1-D array of monotonically increasing real values.
+    y : ndarray, shape (m, ...)
+        N-D array of real values. The length of *y* along the first axis must
+        be equal to the length of *x*.
+    axis : int, optional
+        Specifies the axis of *y* along which to interpolate. Interpolation
+        defaults to the last axis of *y*.
+
+    Methods
+    -------
+    __call__
+
+    Notes
+    -----
+    .. versionadded:: 0.14
+
+    Use only for precise data, as the fitted curve passes through the given
+    points exactly. This routine is useful for plotting a pleasingly smooth
+    curve through a few given points for purposes of plotting.
+
+    References
+    ----------
+    [1] A new method of interpolation and smooth curve fitting based
+        on local procedures. Hiroshi Akima, J. ACM, October 1970, 17(4),
+        589-602.
+
+    """
+
+    def __init__(self, x, y):
+        # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
+        # http://www.mathworks.de/matlabcentral/fileexchange/1814-akima-interpolation
+        if np.any(np.diff(x) < 0.):
+            raise ValueError("x must be strictly ascending")
+        if x.ndim != 1:
+            raise ValueError("x must be 1-dimensional")
+        if x.size < 2:
+            raise ValueError("at least 2 breakpoints are needed")
+        if x.size != y.shape[0]:
+            raise ValueError("x.shape must equal y.shape[0]")
+
+        # determine slopes between breakpoints
+        m = np.empty((x.size + 3, ) + y.shape[1:])
+        dx = np.diff(x)
+        for i in range(y.ndim - 1):
+            dx = as_strided(dx, strides=(0, ) + dx.strides,
+                            shape=dx.shape + (y.shape[i + 1], ))
+        m[2:-2] = np.diff(y, axis=0) / dx
+
+        # add two additional points on the left ...
+        m[1] = 2. * m[2] - m[3]
+        m[0] = 2. * m[1] - m[2]
+        # ... and on the right
+        m[-2] = 2. * m[-3] - m[-4]
+        m[-1] = 2. * m[-2] - m[-3]
+
+        # if m1 == m2 != m3 == m4, the slope at the breakpoint is not defined.
+        # This is the fill value:
+        t = .5 * (m[3:] + m[:-3])
+        # get the denominator of the slope t
+        dm = np.abs(np.diff(m, axis=0))
+        f1 = dm[2:]
+        f2 = dm[:-2]
+        f12 = f1 + f2
+        # These are the indices where the the slope at breakpoint is defined:
+        id_ = np.nonzero(f12 > 1e-9 * np.max(f12))[0]
+        # set the slope at breakpoint
+        t[id_] = (f1[id_] * m[id_ + 1] + f2[id_] * m[id_ + 2]) / f12[id_]
+
+        # calculate the higher order coefficients
+        c = (3. * m[2:-2] - 2. * t[:-1] - t[1:]) / dx
+        d = (t[:-1] + t[1:] - 2. * m[2:-2]) / dx ** 2
+
+        coeff = np.zeros((4, x.size - 1) + y.shape[1:])
+        coeff[3] = y[:-1]
+        coeff[2] = t[:-1]
+        coeff[1] = c
+        coeff[0] = d
+
+        super(Akima, self).__init__(coeff, x, extrapolate=False)
+
+    def extend(self):
+        raise NotImplementedError("Extending a 1D Akima interpolator is not "
+                "yet implemented")
 
 
 # backward compatibility wrapper
