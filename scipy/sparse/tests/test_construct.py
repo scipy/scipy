@@ -276,8 +276,11 @@ class TestConstructUtils(TestCase):
                            [3, 4],
                            [5, 6]])
         assert_equal(construct.vstack([A,B]).todense(), expected)
+        assert_equal(construct.vstack([A,B], dtype=np.float32).dtype, np.float32)
         assert_equal(construct.vstack([A.tocsr(),B.tocsr()]).todense(),
                      expected)
+        assert_equal(construct.vstack([A.tocsr(),B.tocsr()], dtype=np.float32).dtype,
+                     np.float32)
 
     def test_hstack(self):
 
@@ -287,8 +290,11 @@ class TestConstructUtils(TestCase):
         expected = matrix([[1, 2, 5],
                            [3, 4, 6]])
         assert_equal(construct.hstack([A,B]).todense(), expected)
+        assert_equal(construct.hstack([A,B], dtype=np.float32).dtype, np.float32)
         assert_equal(construct.hstack([A.tocsc(),B.tocsc()]).todense(),
                      expected)
+        assert_equal(construct.hstack([A.tocsc(),B.tocsc()], dtype=np.float32).dtype,
+                     np.float32)
 
     def test_bmat(self):
 
