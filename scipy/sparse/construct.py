@@ -535,10 +535,16 @@ def bmat(blocks, format=None, dtype=None):
     # check for fast path cases
     if (N == 1 and format in (None, 'csr')
         and all(isinstance(b, csr_matrix) for b in blocks.flat)):
-        return _compressed_sparse_stack(blocks[:,0], 0)
+        A = _compressed_sparse_stack(blocks[:,0], 0)
+        if dtype is not None:
+            A = A.astype(dtype)
+        return A
     elif (M == 1 and format in (None, 'csc')
           and all(isinstance(b, csc_matrix) for b in blocks.flat)):
-        return _compressed_sparse_stack(blocks[0,:], 1)
+        A = _compressed_sparse_stack(blocks[0,:], 1)
+        if dtype is not None:
+            A = A.astype(dtype)
+        return A
 
     block_mask = np.zeros(blocks.shape, dtype=np.bool)
     brow_lengths = np.zeros(blocks.shape[0], dtype=np.intc)
