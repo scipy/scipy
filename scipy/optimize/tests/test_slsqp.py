@@ -4,10 +4,24 @@ Unit test for SLSQP optimization.
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_, assert_array_almost_equal, TestCase, \
-                          assert_allclose, run_module_suite
+                          assert_allclose, assert_equal, run_module_suite
 import numpy as np
 
 from scipy.optimize import fmin_slsqp, minimize
+
+
+class MyCallBack(object):
+    """pass a custom callback function
+
+    This makes sure it's being used.
+    """
+    def __init__(self):
+        self.been_called = False
+        self.ncalls = 0
+
+    def __call__(self, x):
+        self.been_called = True
+        self.ncalls += 1
 
 
 class TestSLSQP(TestCase):
@@ -297,6 +311,15 @@ class TestSLSQP(TestCase):
     def test_integer_bounds(self):
         # this should not raise an exception
         fmin_slsqp(lambda z: z**2 - 1, [0], bounds=[[0, 1]], iprint=0)
+
+    def test_callback(self):
+        """ Minimize, method='SLSQP': unbounded, approximated jacobian. Check for callback"""
+        callback = MyCallBack()
+        res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
+                       method='SLSQP', callback=callback, options=self.opts)
+        assert_(res['success'], res['message'])
+        assert_(callback.been_called)
+        assert_equal(callback.ncalls, res['nit'])
 
 if __name__ == "__main__":
     run_module_suite()
