@@ -799,14 +799,14 @@
       END
       DOUBLE PRECISION FUNCTION PHINVS(P)
 *
-*	ALGORITHM AS241  APPL. STATIST. (1988) VOL. 37, NO. 3
+*   ALGORITHM AS241  APPL. STATIST. (1988) VOL. 37, NO. 3
 *
-*	Produces the normal deviate Z corresponding to a given lower
-*	tail area of P.
+*   Produces the normal deviate Z corresponding to a given lower
+*   tail area of P.
 *
-*	The hash sums below are the sums of the mantissas of the
-*	coefficients.   They are included for use in checking
-*	transcription.
+*   The hash sums below are the sums of the mantissas of the
+*   coefficients.   They are included for use in checking
+*   transcription.
 *
       DOUBLE PRECISION SPLIT1, SPLIT2, CONST1, CONST2, 
      *     A0, A1, A2, A3, A4, A5, A6, A7, B1, B2, B3, B4, B5, B6, B7, 
@@ -856,7 +856,7 @@
      *     D7 = 1.05075 00716 44416 84324D-9 )
 *     HASH SUM CD    49.33206 50330 16102 89036
 *
-*	Coefficients for P near 0 or 1.
+*   Coefficients for P near 0 or 1.
 *
       PARAMETER (
      *     E0 = 6.65790 46435 01103 77720D0,

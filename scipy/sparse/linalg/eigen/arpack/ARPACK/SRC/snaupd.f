@@ -538,8 +538,8 @@ c        %------------------------%
 c        | Set default parameters |
 c        %------------------------%
 c
-         if (nb .le. 0)				nb = 1
-         if (tol .le. zero)			tol = wslamch('EpsMach')
+         if (nb .le. 0)             nb = 1
+         if (tol .le. zero)         tol = wslamch('EpsMach')
 c
 c        %----------------------------------------------%
 c        | NP is the number of additional steps to      |

@@ -511,11 +511,11 @@ c        %------------------------%
 c        | Set default parameters |
 c        %------------------------%
 c
-         if (nb .le. 0)				nb = 1
-         if (tol .le. 0.0D+0  )			tol = dlamch ('EpsMach')
+         if (nb .le. 0)             nb = 1
+         if (tol .le. 0.0D+0  )         tol = dlamch ('EpsMach')
          if (ishift .ne. 0  .and.
      &       ishift .ne. 1  .and.
-     &       ishift .ne. 2) 			ishift = 1
+     &       ishift .ne. 2)             ishift = 1
 c
 c        %----------------------------------------------%
 c        | NP is the number of additional steps to      |

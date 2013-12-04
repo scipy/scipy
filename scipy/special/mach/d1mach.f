@@ -190,15 +190,15 @@ C     ON FIRST CALL, IF NO DATA UNCOMMENTED, TEST MACHINE TYPES.
 *#include <math.h>
 *double d1mach_(long *i)
 *{
-*	switch(*i){
-*	  case 1: return DBL_MIN;
-*	  case 2: return DBL_MAX;
-*	  case 3: return DBL_EPSILON/FLT_RADIX;
-*	  case 4: return DBL_EPSILON;
-*	  case 5: return log10(FLT_RADIX);
-*	  }
-*	fprintf(stderr, "invalid argument: d1mach(%ld)\n", *i);
-*	exit(1); return 0; /* some compilers demand return values */
+*   switch(*i){
+*     case 1: return DBL_MIN;
+*     case 2: return DBL_MAX;
+*     case 3: return DBL_EPSILON/FLT_RADIX;
+*     case 4: return DBL_EPSILON;
+*     case 5: return log10(FLT_RADIX);
+*     }
+*   fprintf(stderr, "invalid argument: d1mach(%ld)\n", *i);
+*   exit(1); return 0; /* some compilers demand return values */
 *}
       END
       SUBROUTINE I1MCRY(A, A1, B, C, D)
