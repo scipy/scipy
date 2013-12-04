@@ -13,9 +13,10 @@ Run tests if linalg is not installed:
 """
 
 import numpy as np
-from numpy.testing import (TestCase, assert_equal, assert_array_almost_equal,
-        assert_array_equal, assert_raises, assert_, assert_allclose,
-        run_module_suite, dec)
+from numpy.testing import (TestCase, assert_equal, assert_almost_equal,
+                           assert_array_almost_equal, assert_array_equal,
+                           assert_raises, assert_, assert_allclose,
+                           run_module_suite, dec)
 
 from scipy._lib.six import xrange
 
@@ -1981,218 +1982,128 @@ class TestOrdQZ(TestCase):
     @classmethod
     def setupClass(cls):
         #http://www.nag.com/lapack-ex/node119.html
-        cls.A1 = [[-21.10-22.50j, 53.5-50.5j, -34.5+127.5j,   7.5+ 0.5j],
-                [ -0.46- 7.78j, -3.5-37.5j, -15.5+ 58.5j, -10.5- 1.5j],
-                [  4.30- 5.50j, 39.7-17.1j, -68.5+ 12.5j,  -7.5- 3.5j],
-                [  5.50+ 4.40j, 14.4+43.3j, -32.5- 46.0j, -19.0-32.5j]]
-
-        cls.B1 = [[1.0-5.0j,  1.6+1.2j, -3+0j,  0.0-1.0j],
-                [0.8-0.6j,  3.0-5.0j, -4+3j, -2.4-3.2j],
-                [1.0+0.0j,  2.4+1.8j, -4-5j,  0.0-3.0j],
-                [0.0+1.0j, -1.8+2.4j,  0-4j,  4.0-5.0j]]
-
-        #http://www.nag.com/numeric/fl/nagdoc_fl23/xhtml/F08/f08yuf.xml
-        cls.A2 = [[3.9, 12.5, -34.5, -0.5],
+        cls.A1 = np.array(
+                  [[3.9, 12.5, -34.5, -0.5],
                   [4.3, 21.5, -47.5,  7.5],
                   [4.3, 21.5, -43.5,  3.5],
-                  [4.4, 26.0, -46.0,  6.0]]
+                  [4.4, 26.0, -46.0,  6.0]] )
 
-        cls.B2 = [[1,    2,   -3,    1],
+        cls.B1 = np.array(
+                  [[1,    2,   -3,    1],
                   [1,    3,   -5,    4],
                   [1,    3,   -4,    3],
-                  [1,    3,   -4,    4]]
+                  [1,    3,   -4,    4]] )
+
+        # example with the eigenvalues
+        # -0.33891648, 1.61217396+0.74013521j, 1.61217396-0.74013521j, 0.61244091
+        # thus featuring:
+        #  * one complex conjugate eigenvalue pair,
+        #  * one eigenvalue in the lhp
+        #  * 2 eigenvalues in the unit circle
+        #  * 2 non-real eigenvalues
+        cls.A2 = np.array(
+                    [[ 5.,  1.,  3.,  3.],
+                    [ 4.,  4.,  2.,  7.],
+                    [ 7.,  4.,  1.,  3.],
+                    [ 0.,  4.,  8.,  7.]] )
+        cls.B2 = np.array(
+                    [[  8.,  10.,   6.,  10.],
+                    [  7.,   7.,   2.,   9.],
+                    [  9.,   1.,   6.,   6.],
+                    [  5.,   1.,   4.,   7.]] )
 
     def qz_decomp(self, sort):
         retc = ordqz(self.A1, self.B1, sort=sort)
         ret = ordqz(self.A2, self.B2, sort=sort)
         return retc, ret
 
+    def check(self, A, B, sort, AA, BB, alpha, beta, Q, Z):
+        I = np.eye(*A.shape)
+        # make sure Q and Z are orthogonal
+        assert_array_almost_equal(Q.dot(Q.T.conj()), I)
+        assert_array_almost_equal(Z.dot(Z.T.conj()), I)
+        # check factorization
+        assert_array_almost_equal(Q.dot(AA), A.dot(Z))
+        assert_array_almost_equal(Q.dot(BB), B.dot(Z))
+        # check shape of AA and BB
+        assert_array_equal(np.tril(AA, -2), np.zeros(AA.shape))
+        assert_array_equal(np.tril(BB, -1), np.zeros(BB.shape))
+        # check eigenvalues
+        for i in range(A.shape[0]):
+            # does the current diagonal element belong to a 2-by-2 block
+            # that was already checked?
+            if i>0 and A[i,i-1]!=0:
+                continue
+            # take care of 2-by-2 blocks
+            if i<AA.shape[0]-1 and AA[i+1,i]!=0:
+                evals, _ = eig(AA[i:i+2,i:i+2], BB[i:i+2,i:i+2])
+                # make sure the pair of complex conjugate eigenvalues
+                # is ordered consistently (positive imaginary part first)
+                if evals[0].imag<0:
+                    evals = evals[[1,0]]
+                tmp = alpha[i:i+2]/beta[i:i+2]
+                if tmp[0].imag<0:
+                    tmp = tmp[[1,0]]
+                assert_array_almost_equal(evals, tmp)
+            else:
+                assert_almost_equal(AA[i,i]/BB[i,i], alpha[i]/beta[i])
+        sortfun = sort
+        if sortfun=='lhp':
+            sortfun = lambda x, y: (x/y).real < 0
+        if sortfun=='rhp':
+            sortfun = lambda x, y: (x/y).real > 0
+        if sortfun=='iuc':
+            sortfun = lambda x, y: np.abs(x/y) < 1
+        if sortfun=='ouc':
+            sortfun = lambda x, y: np.abs(x/y) > 1
+        lastsort = True
+        for i in range(A.shape[0]):
+            cursort = sortfun(alpha[i], beta[i])
+            # once the sorting criterion was not matched all subsequent
+            # eigenvalues also shouldn't match
+            if not lastsort:
+                assert(not cursort)
+            lastsort = cursort
+
     def test_lhp(self):
         retc, ret = self.qz_decomp('lhp')
 
-        AA = np.array([3.8009124,0,0,0,31.326007,3.3505033,-1.1917719,0,-61.484579,7.0743975,1.4098383,0,-66.835913,6.6921805,4.3789854,4]).reshape(4,4, order='F')
-        BB = np.array([1.9004562,0,0,0,-1.0777155,1.1761301,0,0,-5.6252427,0,0.44739052,0,-9.9872675,1.7510516,1.0900942,1]).reshape(4,4, order='F')
-        Q = np.array([0.46421544,0.5001547,0.5001547,0.53309902,0.81158541,-0.069745165,-0.069745165,-0.5758475,0.35472967,-0.49495544,-0.49495544,0.6198428,-5.1446441e-17,-0.70710678,0.70710678,-2.6129692e-16]).reshape(4,4, order='F')
-        Z = np.array([0.99605611,0.0056917492,0.062609241,0.062609241,0.081834137,-0.44454492,-0.63074678,-0.63074678,-0.034284168,-0.89573848,0.31343036,0.31343036,0,5.1446441e-17,0.70710678,-0.70710678]).reshape(4,4, order='F')
-        alpha = np.array([3.8009124+0j,0.8571429+1.1428571j,0.8571429-1.1428571j,4+0j])
-
-        beta = np.array([1.9004562,0.28571429,0.28571429,1])
-
-        assert_array_almost_equal(_make_pos(ret[0]), _make_pos(AA), 6)
-        assert_array_almost_equal(_make_pos(ret[1]), _make_pos(BB), 6)
-        assert_array_almost_equal(_make_pos(ret[4]), _make_pos(Q), 6)
-        assert_array_almost_equal(_make_pos(ret[5]), _make_pos(Z), 6)
-        assert_array_almost_equal(ret[2], alpha, 6)
-        assert_array_almost_equal(ret[3], beta, 6)
-
-        AA = np.array([19.032866-57.098599j,0+0j,0+0j,0+0j,53.591008-89.817363j,11.881807-29.704517j,0+0j,0+0j,-81.314389-63.23015j,3.562401+27.628744j,10.960871-3.653624j,0+0j,106.66236-44.78565j,-0.671227-16.421491j,-25.022595-8.20105j,21.872209-27.340262j]).reshape(4,4, order='F')
-        BB = np.array([6.3442888+0j,0+0j,0+0j,0+0j,3.3985707+0.7118681j,5.9409034+0j,0+0j,0+0j,-0.5152148-2.3819993j,-2.448032-0.3426854j,3.6536237+0j,0+0j,6.5818279+2.4299126j,5.738543-0.701704j,-1.4095633-3.9325993j,5.4680524+0j]).reshape(4,4, order='F')
-        Q = np.array([-0.33470657+0.73867906j,-0.12765678+0.24928313j,-0.35574675+0.03964875j,-0.01260687-0.36823867j,0.28719654-0.47887692j,-0.02822341+0.49985504j,-0.46147008-0.08220771j,0.15079047-0.44169324j,0.1725492+0.00934949j,0.15410474-0.8007515j,-0.39385085+0.02581433j,0.15171685-0.35550704j,0.014427512-0.021236947j,-0.008729687-0.076698163j,-0.14636881-0.68916673j,-0.70486246-0.01327859j]).reshape(4,4, order='F')
-        Z = np.array([-0.92400308-0.1976751j,-0.17156151+0.07925235j,-0.07925235-0.17156151j,0.17156151-0.07925235j,0.24595945+0.20899497j,-0.59434294+0.09047415j,0.09428785-0.50823988j,0.50823988+0.09428785j,-0.005425149+0.054207723j,0.74673436-0.21270731j,0.01019951-0.44382847j,0.44382847+0.01019951j,0+0j,-1.092077e-16-3.6895218e-16j,0.70335189-0.07277443j,-0.07277443-0.70335189j]).reshape(4,4, order='F')
-        alpha = np.array([19.032866-57.098599j,11.881807-29.704517j,10.960871-3.653624j,21.872209-27.340262j])
-        beta = np.array([6.3442888+0j,5.9409034+0j,3.6536237+0j,5.4680524+0j])
-
-        assert_array_almost_equal(_make_pos(retc[0]), _make_pos(AA), 5)
-        assert_array_almost_equal(_make_pos(retc[1]), _make_pos(BB), 6)
-        assert_array_almost_equal(_make_pos(retc[4]), _make_pos(Q), 6)
-        assert_array_almost_equal(_make_pos(retc[5]), _make_pos(Z), 6)
-        assert_array_almost_equal(retc[2], alpha, 6)
-        assert_array_almost_equal(retc[3], beta, 6)
+        self.check(self.A1, self.B1, 'lhp', *retc)
+        self.check(self.A2, self.B2, 'lhp', *ret)
 
     def test_rhp(self):
         retc, ret = self.qz_decomp('rhp')
 
-        AA = np.array([3.8009124,0,0,0,31.326007,3.3505033,-1.1917719,0,-61.484579,7.0743975,1.4098383,0,-66.835913,6.6921805,4.3789854,4]).reshape(4,4, order='F')
-        BB = np.array([1.9004562,0,0,0,-1.0777155,1.1761301,0,0,-5.6252427,0,0.44739052,0,-9.9872675,1.7510516,1.0900942,1]).reshape(4,4, order='F')
-        Q = np.array([0.46421544,0.5001547,0.5001547,0.53309902,0.81158541,-0.069745165,-0.069745165,-0.5758475,0.35472967,-0.49495544,-0.49495544,0.6198428,-5.1446441e-17,-0.70710678,0.70710678,-2.6129692e-16]).reshape(4,4, order='F')
-        Z = np.array([0.99605611,0.0056917492,0.062609241,0.062609241,0.081834137,-0.44454492,-0.63074678,-0.63074678,-0.034284168,-0.89573848,0.31343036,0.31343036,0,5.1446441e-17,0.70710678,-0.70710678]).reshape(4,4, order='F')
-        alpha = np.array([3.8009124+0j,0.8571429+1.1428571j,0.8571429-1.1428571j,4+0j])
-        beta = np.array([1.9004562,0.28571429,0.28571429,1])
-        assert_array_almost_equal(_make_pos(ret[0]), _make_pos(AA), 6)
-        assert_array_almost_equal(_make_pos(ret[1]), _make_pos(BB), 6)
-        assert_array_almost_equal(_make_pos(ret[4]), _make_pos(Q), 6)
-        assert_array_almost_equal(_make_pos(ret[5]), _make_pos(Z), 6)
-        assert_array_almost_equal(ret[2], alpha, 6)
-        assert_array_almost_equal(ret[3], beta, 6)
-
-        AA = np.array([19.032866-57.098599j,0+0j,0+0j,0+0j,53.591008-89.817363j,11.881807-29.704517j,0+0j,0+0j,-81.314389-63.23015j,3.562401+27.628744j,10.960871-3.653624j,0+0j,106.66236-44.78565j,-0.671227-16.421491j,-25.022595-8.20105j,21.872209-27.340262j]).reshape(4,4, order='F')
-        BB = np.array([6.3442888+0j,0+0j,0+0j,0+0j,3.3985707+0.7118681j,5.9409034+0j,0+0j,0+0j,-0.5152148-2.3819993j,-2.448032-0.3426854j,3.6536237+0j,0+0j,6.5818279+2.4299126j,5.738543-0.701704j,-1.4095633-3.9325993j,5.4680524+0j]).reshape(4,4, order='F')
-        Q = np.array([-0.33470657+0.73867906j,-0.12765678+0.24928313j,-0.35574675+0.03964875j,-0.01260687-0.36823867j,0.28719654-0.47887692j,-0.02822341+0.49985504j,-0.46147008-0.08220771j,0.15079047-0.44169324j,0.1725492+0.00934949j,0.15410474-0.8007515j,-0.39385085+0.02581433j,0.15171685-0.35550704j,0.014427512-0.021236947j,-0.008729687-0.076698163j,-0.14636881-0.68916673j,-0.70486246-0.01327859j]).reshape(4,4, order='F')
-        Z = np.array([-0.92400308-0.1976751j,-0.17156151+0.07925235j,-0.07925235-0.17156151j,0.17156151-0.07925235j,0.24595945+0.20899497j,-0.59434294+0.09047415j,0.09428785-0.50823988j,0.50823988+0.09428785j,-0.005425149+0.054207723j,0.74673436-0.21270731j,0.01019951-0.44382847j,0.44382847+0.01019951j,0+0j,-1.092077e-16-3.6895218e-16j,0.70335189-0.07277443j,-0.07277443-0.70335189j]).reshape(4,4, order='F')
-        alpha = np.array([19.032866-57.098599j,11.881807-29.704517j,10.960871-3.653624j,21.872209-27.340262j])
-        beta = np.array([6.3442888+0j,5.9409034+0j,3.6536237+0j,5.4680524+0j])
-
-        assert_array_almost_equal(_make_pos(retc[0]), _make_pos(AA), 5)
-        assert_array_almost_equal(_make_pos(retc[1]), _make_pos(BB), 6)
-        assert_array_almost_equal(_make_pos(retc[4]), _make_pos(Q), 6)
-        assert_array_almost_equal(_make_pos(retc[5]), _make_pos(Z), 6)
-        assert_array_almost_equal(retc[2], alpha, 6)
-        assert_array_almost_equal(retc[3], beta, 6)
+        self.check(self.A1, self.B1, 'rhp', *retc)
+        self.check(self.A2, self.B2, 'rhp', *ret)
 
     def test_iuc(self):
         retc, ret = self.qz_decomp('iuc')
 
-        AA = np.array([3.8009124,0,0,0,31.326007,3.3505033,-1.1917719,0,-61.484579,7.0743975,1.4098383,0,-66.835913,6.6921805,4.3789854,4]).reshape(4,4, order='F')
-        BB = np.array([1.9004562,0,0,0,-1.0777155,1.1761301,0,0,-5.6252427,0,0.44739052,0,-9.9872675,1.7510516,1.0900942,1]).reshape(4,4, order='F')
-        Q = np.array([0.46421544,0.5001547,0.5001547,0.53309902,0.81158541,-0.069745165,-0.069745165,-0.5758475,0.35472967,-0.49495544,-0.49495544,0.6198428,-5.1446441e-17,-0.70710678,0.70710678,-2.6129692e-16]).reshape(4,4, order='F')
-        Z = np.array([0.99605611,0.0056917492,0.062609241,0.062609241,0.081834137,-0.44454492,-0.63074678,-0.63074678,-0.034284168,-0.89573848,0.31343036,0.31343036,0,5.1446441e-17,0.70710678,-0.70710678]).reshape(4,4, order='F')
-        alpha = np.array([3.8009124+0j,0.8571429+1.1428571j,0.8571429-1.1428571j,4+0j])
-        beta = np.array([1.9004562,0.28571429,0.28571429,1])
-        assert_array_almost_equal(_make_pos(ret[0]), _make_pos(AA), 6)
-        assert_array_almost_equal(_make_pos(ret[1]), _make_pos(BB), 6)
-        assert_array_almost_equal(_make_pos(ret[4]), _make_pos(Q), 6)
-        assert_array_almost_equal(_make_pos(ret[5]), _make_pos(Z), 6)
-        assert_array_almost_equal(ret[2], alpha, 6)
-        assert_array_almost_equal(ret[3], beta, 6)
-
-        AA = np.array([19.032866-57.098599j,0+0j,0+0j,0+0j,53.591008-89.817363j,11.881807-29.704517j,0+0j,0+0j,-81.314389-63.23015j,3.562401+27.628744j,10.960871-3.653624j,0+0j,106.66236-44.78565j,-0.671227-16.421491j,-25.022595-8.20105j,21.872209-27.340262j]).reshape(4,4, order='F')
-        BB = np.array([6.3442888+0j,0+0j,0+0j,0+0j,3.3985707+0.7118681j,5.9409034+0j,0+0j,0+0j,-0.5152148-2.3819993j,-2.448032-0.3426854j,3.6536237+0j,0+0j,6.5818279+2.4299126j,5.738543-0.701704j,-1.4095633-3.9325993j,5.4680524+0j]).reshape(4,4, order='F')
-        Q = np.array([-0.33470657+0.73867906j,-0.12765678+0.24928313j,-0.35574675+0.03964875j,-0.01260687-0.36823867j,0.28719654-0.47887692j,-0.02822341+0.49985504j,-0.46147008-0.08220771j,0.15079047-0.44169324j,0.1725492+0.00934949j,0.15410474-0.8007515j,-0.39385085+0.02581433j,0.15171685-0.35550704j,0.014427512-0.021236947j,-0.008729687-0.076698163j,-0.14636881-0.68916673j,-0.70486246-0.01327859j]).reshape(4,4, order='F')
-        Z = np.array([-0.92400308-0.1976751j,-0.17156151+0.07925235j,-0.07925235-0.17156151j,0.17156151-0.07925235j,0.24595945+0.20899497j,-0.59434294+0.09047415j,0.09428785-0.50823988j,0.50823988+0.09428785j,-0.005425149+0.054207723j,0.74673436-0.21270731j,0.01019951-0.44382847j,0.44382847+0.01019951j,0+0j,-1.092077e-16-3.6895218e-16j,0.70335189-0.07277443j,-0.07277443-0.70335189j]).reshape(4,4, order='F')
-        alpha = np.array([19.032866-57.098599j,11.881807-29.704517j,10.960871-3.653624j,21.872209-27.340262j])
-        beta = np.array([6.3442888+0j,5.9409034+0j,3.6536237+0j,5.4680524+0j])
-
-        assert_array_almost_equal(_make_pos(retc[0]), _make_pos(AA), 5)
-        assert_array_almost_equal(_make_pos(retc[1]), _make_pos(BB), 6)
-        assert_array_almost_equal(_make_pos(retc[4]), _make_pos(Q), 6)
-        assert_array_almost_equal(_make_pos(retc[5]), _make_pos(Z), 6)
-        assert_array_almost_equal(retc[2], alpha, 6)
-        assert_array_almost_equal(retc[3], beta, 6)
+        self.check(self.A1, self.B1, 'iuc', *retc)
+        self.check(self.A2, self.B2, 'iuc', *ret)
 
     def test_ouc(self):
         retc, ret = self.qz_decomp('ouc')
 
-        AA = np.array([3.8009124,0,0,0,31.326007,3.3505033,-1.1917719,0,-61.484579,7.0743975,1.4098383,0,-66.835913,6.6921805,4.3789854,4]).reshape(4,4, order='F')
-        BB = np.array([1.9004562,0,0,0,-1.0777155,1.1761301,0,0,-5.6252427,0,0.44739052,0,-9.9872675,1.7510516,1.0900942,1]).reshape(4,4, order='F')
-        Q = np.array([0.46421544,0.5001547,0.5001547,0.53309902,0.81158541,-0.069745165,-0.069745165,-0.5758475,0.35472967,-0.49495544,-0.49495544,0.6198428,-5.1446441e-17,-0.70710678,0.70710678,-2.6129692e-16]).reshape(4,4, order='F')
-        Z = np.array([0.99605611,0.0056917492,0.062609241,0.062609241,0.081834137,-0.44454492,-0.63074678,-0.63074678,-0.034284168,-0.89573848,0.31343036,0.31343036,0,5.1446441e-17,0.70710678,-0.70710678]).reshape(4,4, order='F')
-        alpha = np.array([3.8009124+0j,0.8571429+1.1428571j,0.8571429-1.1428571j,4+0j])
-        beta = np.array([1.9004562,0.28571429,0.28571429,1])
-        assert_array_almost_equal(_make_pos(ret[0]), _make_pos(AA), 6)
-        assert_array_almost_equal(_make_pos(ret[1]), _make_pos(BB), 6)
-        assert_array_almost_equal(_make_pos(ret[4]), _make_pos(Q), 6)
-        assert_array_almost_equal(_make_pos(ret[5]), _make_pos(Z), 6)
-        assert_array_almost_equal(ret[2], alpha, 6)
-        assert_array_almost_equal(ret[3], beta, 6)
-
-        AA = np.array([19.032866-57.098599j,0+0j,0+0j,0+0j,53.591008-89.817363j,11.881807-29.704517j,0+0j,0+0j,-81.314389-63.23015j,3.562401+27.628744j,10.960871-3.653624j,0+0j,106.66236-44.78565j,-0.671227-16.421491j,-25.022595-8.20105j,21.872209-27.340262j]).reshape(4,4, order='F')
-        BB = np.array([6.3442888+0j,0+0j,0+0j,0+0j,3.3985707+0.7118681j,5.9409034+0j,0+0j,0+0j,-0.5152148-2.3819993j,-2.448032-0.3426854j,3.6536237+0j,0+0j,6.5818279+2.4299126j,5.738543-0.701704j,-1.4095633-3.9325993j,5.4680524+0j]).reshape(4,4, order='F')
-        Q = np.array([-0.33470657+0.73867906j,-0.12765678+0.24928313j,-0.35574675+0.03964875j,-0.01260687-0.36823867j,0.28719654-0.47887692j,-0.02822341+0.49985504j,-0.46147008-0.08220771j,0.15079047-0.44169324j,0.1725492+0.00934949j,0.15410474-0.8007515j,-0.39385085+0.02581433j,0.15171685-0.35550704j,0.014427512-0.021236947j,-0.008729687-0.076698163j,-0.14636881-0.68916673j,-0.70486246-0.01327859j]).reshape(4,4, order='F')
-        Z = np.array([-0.92400308-0.1976751j,-0.17156151+0.07925235j,-0.07925235-0.17156151j,0.17156151-0.07925235j,0.24595945+0.20899497j,-0.59434294+0.09047415j,0.09428785-0.50823988j,0.50823988+0.09428785j,-0.005425149+0.054207723j,0.74673436-0.21270731j,0.01019951-0.44382847j,0.44382847+0.01019951j,0+0j,-1.092077e-16-3.6895218e-16j,0.70335189-0.07277443j,-0.07277443-0.70335189j]).reshape(4,4, order='F')
-        alpha = np.array([19.032866-57.098599j,11.881807-29.704517j,10.960871-3.653624j,21.872209-27.340262j])
-        beta = np.array([6.3442888+0j,5.9409034+0j,3.6536237+0j,5.4680524+0j])
-
-        assert_array_almost_equal(_make_pos(retc[0]), _make_pos(AA), 5)
-        assert_array_almost_equal(_make_pos(retc[1]), _make_pos(BB), 6)
-        assert_array_almost_equal(_make_pos(retc[4]), _make_pos(Q), 6)
-        assert_array_almost_equal(_make_pos(retc[5]), _make_pos(Z), 6)
-        assert_array_almost_equal(retc[2], alpha, 6)
-        assert_array_almost_equal(retc[3], beta, 6)
+        self.check(self.A1, self.B1, 'ouc', *retc)
+        self.check(self.A2, self.B2, 'ouc', *ret)
 
     def test_ref(self):
         # real eigenvalues first (top-left corner)
-        retc, ret = self.qz_decomp(lambda x,y : (x/y).imag == 0)
+        sort = lambda x, y: (x/y).imag == 0
+        retc, ret = self.qz_decomp(sort)
 
-        AA = np.array([3.8009124,0,0,0,-69.450536,9.2033029,0,0,50.313493,-0.20013819,1.4278921,0.90193207,-43.288415,5.9880706,4.4452956,-1.1961991]).reshape(4,4, order='F')
-        BB = np.array([1.9004562,0,0,0,-10.228464,2.3008257,0,0,0.8658216,0.79150329,0.81014638,0,-5.2133694,0.42617635,0,-0.28228962]).reshape(4,4, order='F')
-        Q = np.array([0.46421544,0.5001547,0.5001547,0.53309902,0.78861995,-0.5986435,0.015406,-0.13952488,0.29148041,0.5637949,-0.010738433,-0.77269604,-0.27860684,-0.27130525,0.86573242,-0.31508582]).reshape(4,4, order='F')
-        Z = np.array([0.99605611,0.0056917492,0.062609241,0.062609241,-0.0014000161,-0.040374311,0.71938213,-0.69343875,0.088676378,-0.09375821,-0.69083549,-0.71140159,-0.0026019471,-0.99475973,0.03627338,0.095553937]).reshape(4,4, order='F')
-        alpha = np.array([3.8009124+0j,9.2033029+0j,0.8571429+1.1428571j,0.8571429-1.1428571j])
-        beta = np.array([1.9004562,2.3008257,0.28571429,0.28571429])
-        assert_array_almost_equal(_make_pos(ret[0]), _make_pos(AA), 6)
-        assert_array_almost_equal(_make_pos(ret[1]), _make_pos(BB), 6)
-        assert_array_almost_equal(_make_pos(ret[4]), _make_pos(Q), 6)
-        assert_array_almost_equal(_make_pos(ret[5]), _make_pos(Z), 6)
-        assert_array_almost_equal(ret[2], alpha, 6)
-        assert_array_almost_equal(ret[3], beta, 6)
-
-        AA = np.array([19.032866-57.098599j,0+0j,0+0j,0+0j,53.591008-89.817363j,11.881807-29.704517j,0+0j,0+0j,-81.314389-63.23015j,3.562401+27.628744j,10.960871-3.653624j,0+0j,106.66236-44.78565j,-0.671227-16.421491j,-25.022595-8.20105j,21.872209-27.340262j]).reshape(4,4, order='F')
-        BB = np.array([6.3442888+0j,0+0j,0+0j,0+0j,3.3985707+0.7118681j,5.9409034+0j,0+0j,0+0j,-0.5152148-2.3819993j,-2.448032-0.3426854j,3.6536237+0j,0+0j,6.5818279+2.4299126j,5.738543-0.701704j,-1.4095633-3.9325993j,5.4680524+0j]).reshape(4,4, order='F')
-        Q = np.array([-0.33470657+0.73867906j,-0.12765678+0.24928313j,-0.35574675+0.03964875j,-0.01260687-0.36823867j,0.28719654-0.47887692j,-0.02822341+0.49985504j,-0.46147008-0.08220771j,0.15079047-0.44169324j,0.1725492+0.00934949j,0.15410474-0.8007515j,-0.39385085+0.02581433j,0.15171685-0.35550704j,0.014427512-0.021236947j,-0.008729687-0.076698163j,-0.14636881-0.68916673j,-0.70486246-0.01327859j]).reshape(4,4, order='F')
-        Z = np.array([-0.92400308-0.1976751j,-0.17156151+0.07925235j,-0.07925235-0.17156151j,0.17156151-0.07925235j,0.24595945+0.20899497j,-0.59434294+0.09047415j,0.09428785-0.50823988j,0.50823988+0.09428785j,-0.005425149+0.054207723j,0.74673436-0.21270731j,0.01019951-0.44382847j,0.44382847+0.01019951j,0+0j,-1.092077e-16-3.6895218e-16j,0.70335189-0.07277443j,-0.07277443-0.70335189j]).reshape(4,4, order='F')
-        alpha = np.array([19.032866-57.098599j,11.881807-29.704517j,10.960871-3.653624j,21.872209-27.340262j])
-        beta = np.array([6.3442888+0j,5.9409034+0j,3.6536237+0j,5.4680524+0j])
-
-        assert_array_almost_equal(_make_pos(retc[0]), _make_pos(AA), 5)
-        assert_array_almost_equal(_make_pos(retc[1]), _make_pos(BB), 6)
-        assert_array_almost_equal(_make_pos(retc[4]), _make_pos(Q), 6)
-        assert_array_almost_equal(_make_pos(retc[5]), _make_pos(Z), 6)
-        assert_array_almost_equal(retc[2], alpha, 6)
-        assert_array_almost_equal(retc[3], beta, 6)
+        self.check(self.A1, self.B1, sort, *retc)
+        self.check(self.A2, self.B2, sort, *ret)
 
     def test_cef(self):
         # complex eigenvalues first (top-left corner)
-        retc, ret = self.qz_decomp(lambda x,y : (x/y).imag != 0)
+        sort = lambda x, y: (x/y).imag != 0
+        retc, ret = self.qz_decomp(sort)
 
-        AA = np.array([-38.566045,6.827259,0,0,41.488305,-5.2440468,0,0,37.280946,-12.954511,0.6172134,0,65.427303,-15.481901,3.2524997,4]).reshape(4,4, order='F')
-        BB = np.array([-3.3680259,0,0,0,0,0.96209781,0,0,4.9227912,-1.1839165,0.3086067,0,9.6963058,-2.9877598,1.0271052,1]).reshape(4,4, order='F')
-        Q = np.array([-0.55213781,-0.51056501,-0.51056501,-0.41688197,-0.6787574,0.069936641,0.069936641,0.72767172,0.48418203,-0.48418203,-0.48418203,0.54470478,-5.1446441e-17,-0.70710678,0.70710678,-2.6129692e-16]).reshape(4,4, order='F')
-        Z = np.array([0.8775433,0.17550866,-0.31552691,-0.31552691,0.4375571,0.08751142,0.63280547,0.63280547,0.19611614,-0.98058068,-2.3869795e-15,-2.4980018e-15,0,5.1446441e-17,0.70710678,-0.70710678]).reshape(4,4, order='F')
-        alpha = np.array([0.8571429+1.1428571j,0.8571429-1.1428571j,0.6172134+0j,4+0j])
-        beta = np.array([0.28571429,0.28571429,0.3086067,1])
-
-        #NOTE: I suppose these are only equal up to an arbitrary scaling
-        #      more of these may pop up on different systems
-        assert_array_almost_equal(_make_pos(ret[0]), _make_pos(AA), 6)
-        assert_array_almost_equal(_make_pos(ret[1]), _make_pos(BB), 6)
-        assert_array_almost_equal(_make_pos(ret[4]), _make_pos(Q), 6)
-        assert_array_almost_equal(_make_pos(ret[5]), _make_pos(Z), 6)
-        assert_array_almost_equal(ret[2], alpha, 6)
-        assert_array_almost_equal(ret[3], beta, 6)
-
-        AA = np.array([19.032866-57.098599j,0+0j,0+0j,0+0j,53.591008-89.817363j,11.881807-29.704517j,0+0j,0+0j,-81.314389-63.23015j,3.562401+27.628744j,10.960871-3.653624j,0+0j,106.66236-44.78565j,-0.671227-16.421491j,-25.022595-8.20105j,21.872209-27.340262j]).reshape(4,4, order='F')
-        BB = np.array([6.3442888+0j,0+0j,0+0j,0+0j,3.3985707+0.7118681j,5.9409034+0j,0+0j,0+0j,-0.5152148-2.3819993j,-2.448032-0.3426854j,3.6536237+0j,0+0j,6.5818279+2.4299126j,5.738543-0.701704j,-1.4095633-3.9325993j,5.4680524+0j]).reshape(4,4, order='F')
-        Q = np.array([-0.33470657+0.73867906j,-0.12765678+0.24928313j,-0.35574675+0.03964875j,-0.01260687-0.36823867j,0.28719654-0.47887692j,-0.02822341+0.49985504j,-0.46147008-0.08220771j,0.15079047-0.44169324j,0.1725492+0.00934949j,0.15410474-0.8007515j,-0.39385085+0.02581433j,0.15171685-0.35550704j,0.014427512-0.021236947j,-0.008729687-0.076698163j,-0.14636881-0.68916673j,-0.70486246-0.01327859j]).reshape(4,4, order='F')
-        Z = np.array([-0.92400308-0.1976751j,-0.17156151+0.07925235j,-0.07925235-0.17156151j,0.17156151-0.07925235j,0.24595945+0.20899497j,-0.59434294+0.09047415j,0.09428785-0.50823988j,0.50823988+0.09428785j,-0.005425149+0.054207723j,0.74673436-0.21270731j,0.01019951-0.44382847j,0.44382847+0.01019951j,0+0j,-1.092077e-16-3.6895218e-16j,0.70335189-0.07277443j,-0.07277443-0.70335189j]).reshape(4,4, order='F')
-        alpha = np.array([19.032866-57.098599j,11.881807-29.704517j,10.960871-3.653624j,21.872209-27.340262j])
-        beta = np.array([6.3442888+0j,5.9409034+0j,3.6536237+0j,5.4680524+0j])
-
-        assert_array_almost_equal(_make_pos(retc[0]), _make_pos(AA), 5)
-        assert_array_almost_equal(_make_pos(retc[1]), _make_pos(BB), 6)
-        assert_array_almost_equal(_make_pos(retc[4]), _make_pos(Q), 6)
-        assert_array_almost_equal(_make_pos(retc[5]), _make_pos(Z), 6)
-        assert_array_almost_equal(retc[2], alpha, 6)
-        assert_array_almost_equal(retc[3], beta, 6)
+        self.check(self.A1, self.B1, sort, *retc)
+        self.check(self.A2, self.B2, sort, *ret)
 
 
 class TestDatacopied(TestCase):
