@@ -65,9 +65,9 @@ def approx_jacobian(x,func,epsilon,*args):
 
 
 def fmin_slsqp(func, x0, eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
-                bounds=[], fprime=None, fprime_eqcons=None,
-                fprime_ieqcons=None, args=(), iter = 100, acc = 1.0E-6,
-                iprint = 1, disp = None, full_output = 0, epsilon = _epsilon, callback = None):
+               bounds=[], fprime=None, fprime_eqcons=None,
+               fprime_ieqcons=None, args=(), iter = 100, acc=1.0E-6,
+               iprint=1, disp=None, full_output=0, epsilon=_epsilon, callback=None):
     """
     Minimize a function using Sequential Least SQuares Programming
 
@@ -227,9 +227,6 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             `verbosity` is ignored and set to 0.
         maxiter : int
             Maximum number of iterations.
-        callback : callable, optional
-            Called after each iteration, as ``callback(x)``, where ``x`` is the
-            current parameter vector.
 
     This function is called by the `minimize` function with
     `method=SLSQP`. It is not supposed to be called directly.
