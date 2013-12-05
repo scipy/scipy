@@ -65,9 +65,9 @@ def approx_jacobian(x,func,epsilon,*args):
 
 
 def fmin_slsqp(func, x0, eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
-                bounds=[], fprime=None, fprime_eqcons=None,
-                fprime_ieqcons=None, args=(), iter = 100, acc = 1.0E-6,
-                iprint = 1, disp = None, full_output = 0, epsilon = _epsilon):
+               bounds=[], fprime=None, fprime_eqcons=None,
+               fprime_ieqcons=None, args=(), iter = 100, acc=1.0E-6,
+               iprint=1, disp=None, full_output=0, epsilon=_epsilon, callback=None):
     """
     Minimize a function using Sequential Least SQuares Programming
 
@@ -132,6 +132,10 @@ def fmin_slsqp(func, x0, eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
         information.
     epsilon : float
         The step size for finite-difference derivative estimates.
+    callback : callable, optional
+        Called after each iteration, as ``callback(x)``, where ``x`` is the
+        current parameter vector.
+
 
     Returns
     -------
@@ -178,7 +182,8 @@ def fmin_slsqp(func, x0, eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
             'ftol': acc,
             'iprint': iprint,
             'disp': iprint != 0,
-            'eps': epsilon}
+            'eps': epsilon,
+            'callback': callback}
 
     # Build the constraints as a tuple of dictionaries
     cons = ()
@@ -207,7 +212,7 @@ def fmin_slsqp(func, x0, eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
 def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                     constraints=(),
                     maxiter=100, ftol=1.0E-6, iprint=1, disp=False,
-                    eps=_epsilon,
+                    eps=_epsilon, callback=None,
                     **unknown_options):
     """
     Minimize a scalar function of one or more variables using Sequential
@@ -395,6 +400,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
         # Call SLSQP
         slsqp(m, meq, x, xl, xu, fx, c, g, a, acc, majiter, mode, w, jw)
+
+        # call callback if major iteration has incremented
+        if callback is not None and majiter > majiter_prev:
+            callback(x)
 
         # Print the status of the current iterate if iprint > 2 and the
         # major iteration has incremented
