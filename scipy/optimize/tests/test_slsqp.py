@@ -313,7 +313,7 @@ class TestSLSQP(TestCase):
         fmin_slsqp(lambda z: z**2 - 1, [0], bounds=[[0, 1]], iprint=0)
 
     def test_callback(self):
-        # Minimize, method='SLSQP': unbounded, approximated jacobian. Check for callback"""
+        # Minimize, method='SLSQP': unbounded, approximated jacobian. Check for callback
         callback = MyCallBack()
         res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
                        method='SLSQP', callback=callback, options=self.opts)
