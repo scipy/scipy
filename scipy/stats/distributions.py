@@ -83,92 +83,92 @@ docheaders = {'methods': """\nMethods\n-------\n""",
               'notes': """\nNotes\n-----\n""",
               'examples': """\nExamples\n--------\n"""}
 
-_doc_rvs = \
-"""rvs(%(shapes)s, loc=0, scale=1, size=1)
+_doc_rvs = """\
+rvs(%(shapes)s, loc=0, scale=1, size=1)
     Random variates.
 """
-_doc_pdf = \
-"""pdf(x, %(shapes)s, loc=0, scale=1)
+_doc_pdf = """\
+pdf(x, %(shapes)s, loc=0, scale=1)
     Probability density function.
 """
-_doc_logpdf = \
-"""logpdf(x, %(shapes)s, loc=0, scale=1)
+_doc_logpdf = """\
+logpdf(x, %(shapes)s, loc=0, scale=1)
     Log of the probability density function.
 """
-_doc_pmf = \
-"""pmf(x, %(shapes)s, loc=0, scale=1)
+_doc_pmf = """\
+pmf(x, %(shapes)s, loc=0, scale=1)
     Probability mass function.
 """
-_doc_logpmf = \
-"""logpmf(x, %(shapes)s, loc=0, scale=1)
+_doc_logpmf = """\
+logpmf(x, %(shapes)s, loc=0, scale=1)
     Log of the probability mass function.
 """
-_doc_cdf = \
-"""cdf(x, %(shapes)s, loc=0, scale=1)
+_doc_cdf = """\
+cdf(x, %(shapes)s, loc=0, scale=1)
     Cumulative density function.
 """
-_doc_logcdf = \
-"""logcdf(x, %(shapes)s, loc=0, scale=1)
+_doc_logcdf = """\
+logcdf(x, %(shapes)s, loc=0, scale=1)
     Log of the cumulative density function.
 """
-_doc_sf = \
-"""sf(x, %(shapes)s, loc=0, scale=1)
+_doc_sf = """\
+sf(x, %(shapes)s, loc=0, scale=1)
     Survival function (1-cdf --- sometimes more accurate).
 """
-_doc_logsf = \
-"""logsf(x, %(shapes)s, loc=0, scale=1)
+_doc_logsf = """\
+logsf(x, %(shapes)s, loc=0, scale=1)
     Log of the survival function.
 """
-_doc_ppf = \
-"""ppf(q, %(shapes)s, loc=0, scale=1)
+_doc_ppf = """\
+ppf(q, %(shapes)s, loc=0, scale=1)
     Percent point function (inverse of cdf --- percentiles).
 """
-_doc_isf = \
-"""isf(q, %(shapes)s, loc=0, scale=1)
+_doc_isf = """\
+isf(q, %(shapes)s, loc=0, scale=1)
     Inverse survival function (inverse of sf).
 """
-_doc_moment = \
-"""moment(n, %(shapes)s, loc=0, scale=1)
+_doc_moment = """\
+moment(n, %(shapes)s, loc=0, scale=1)
     Non-central moment of order n
 """
-_doc_stats = \
-"""stats(%(shapes)s, loc=0, scale=1, moments='mv')
+_doc_stats = """\
+stats(%(shapes)s, loc=0, scale=1, moments='mv')
     Mean('m'), variance('v'), skew('s'), and/or kurtosis('k').
 """
-_doc_entropy = \
-"""entropy(%(shapes)s, loc=0, scale=1)
+_doc_entropy = """\
+entropy(%(shapes)s, loc=0, scale=1)
     (Differential) entropy of the RV.
 """
-_doc_fit = \
-"""fit(data, %(shapes)s, loc=0, scale=1)
+_doc_fit = """\
+fit(data, %(shapes)s, loc=0, scale=1)
     Parameter estimates for generic data.
 """
-_doc_expect = \
-"""expect(func, %(shapes)s, loc=0, scale=1, lb=None, ub=None, conditional=False, **kwds)
+_doc_expect = """\
+expect(func, %(shapes)s, loc=0, scale=1, lb=None, ub=None, conditional=False, **kwds)
     Expected value of a function (of one argument) with respect to the distribution.
 """
-_doc_expect_discrete = \
-"""expect(func, %(shapes)s, loc=0, lb=None, ub=None, conditional=False)
+_doc_expect_discrete = """\
+expect(func, %(shapes)s, loc=0, lb=None, ub=None, conditional=False)
     Expected value of a function (of one argument) with respect to the distribution.
 """
-_doc_median = \
-"""median(%(shapes)s, loc=0, scale=1)
+_doc_median = """\
+median(%(shapes)s, loc=0, scale=1)
     Median of the distribution.
 """
-_doc_mean = \
-"""mean(%(shapes)s, loc=0, scale=1)
+_doc_mean = """\
+mean(%(shapes)s, loc=0, scale=1)
     Mean of the distribution.
 """
-_doc_var = \
-"""var(%(shapes)s, loc=0, scale=1)
+_doc_var = """\
+var(%(shapes)s, loc=0, scale=1)
     Variance of the distribution.
 """
-_doc_std = \
-"""std(%(shapes)s, loc=0, scale=1)
+_doc_std = """\
+std(%(shapes)s, loc=0, scale=1)
     Standard deviation of the distribution.
 """
-_doc_interval = \
-"""interval(alpha, %(shapes)s, loc=0, scale=1)
+_doc_interval = """\
+interval(alpha, %(shapes)s, loc=0, scale=1)
     Endpoints of the range that contains alpha percent of the distribution
 """
 _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
@@ -180,8 +180,7 @@ _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
 
 # Note that the two lines for %(shapes) are searched for and replaced in
 # rv_continuous and rv_discrete - update there if the exact string changes
-_doc_default_callparams = \
-"""
+_doc_default_callparams = """\
 Parameters
 ----------
 x : array_like
@@ -201,14 +200,13 @@ moments : str, optional
     'm' = mean, 'v' = variance, 's' = (Fisher's) skew and
     'k' = (Fisher's) kurtosis. (default='mv')
 """
-_doc_default_longsummary = \
-"""Continuous random variables are defined from a standard form and may
+_doc_default_longsummary = """\
+Continuous random variables are defined from a standard form and may
 require some shape parameters to complete its specification.  Any
 optional keyword parameters can be passed to the methods of the RV
 object as given below:
 """
-_doc_default_frozen_note = \
-"""
+_doc_default_frozen_note = """
 Alternatively, the object may be called (as a function) to fix the shape,
 location, and scale parameters returning a "frozen" continuous RV object:
 
@@ -216,8 +214,8 @@ rv = %(name)s(%(shapes)s, loc=0, scale=1)
     - Frozen RV object with the same methods but holding the given shape,
       location, and scale fixed.
 """
-_doc_default_example = \
-"""Examples
+_doc_default_example = """\
+Examples
 --------
 >>> from scipy.stats import %(name)s
 >>> numargs = %(name)s.numargs
@@ -301,8 +299,7 @@ docdict_discrete['allmethods'] = docheaders['methods'] + _doc_allmethods
 
 docdict_discrete['longsummary'] = _doc_default_longsummary.replace(
     'Continuous', 'Discrete')
-_doc_default_frozen_note = \
-"""
+_doc_default_frozen_note = """
 Alternatively, the object may be called (as a function) to fix the shape and
 location parameters returning a "frozen" discrete RV object:
 
@@ -312,8 +309,8 @@ rv = %(name)s(%(shapes)s, loc=0)
 """
 docdict_discrete['frozennote'] = _doc_default_frozen_note
 
-_doc_default_discrete_example = \
-"""Examples
+_doc_default_discrete_example = """\
+Examples
 --------
 >>> from scipy.stats import %(name)s
 >>> [ %(shapes)s ] = [<Replace with reasonable values>]
