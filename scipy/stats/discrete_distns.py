@@ -7,22 +7,13 @@ from __future__ import division, print_function, absolute_import
 import sys
 import warnings
 
-from scipy.lib.six import callable, string_types, get_method_function
-from scipy.lib.six import exec_
-
-from scipy.misc import comb, derivative
-from scipy.misc.doccer import inherit_docstring_from
+from scipy.misc import derivative
 from scipy import special
-from scipy import optimize
-from scipy import integrate
 from scipy.special import gammaln as gamln
 
-import keyword
-import re
-import inspect
 from numpy import (all, where, arange, putmask, ravel, take, ones, sum, shape,
                    product, reshape, zeros, floor, logical_and, log, sqrt, exp,
-                   arctanh, tan, sin, arcsin, arctan, tanh, ndarray, cos, cosh,
+                   tanh, ndarray, cosh,
                    sinh, newaxis, log1p, expm1)
 
 from numpy import (atleast_1d, polyval, ceil, place, extract, any, argsort,
@@ -31,10 +22,9 @@ from numpy import (atleast_1d, polyval, ceil, place, extract, any, argsort,
 
 import numpy as np
 import numpy.random as mtrand
-from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
-                                 tukeylambda_kurtosis as _tlkurt)
 
 from ._distn_infrastructure import (
+        instancemethod,
         rv_generic, docdict_discrete, argsreduce, valarray,
         _lazywhere,
         _ncx2_pdf, _ncx2_cdf,
@@ -46,21 +36,10 @@ __all__ = [
     'boltzmann', 'randint', 'zipf', 'dlaplace', 'skellam'
 ]
 
-floatinfo = np.finfo(float)
 eps = np.finfo(float).eps
-
-gam = special.gamma
-random = mtrand.random_sample
 
 import types
 from scipy.misc import doccer
-
-try:
-    from new import instancemethod
-except ImportError:
-    # Python 3
-    def instancemethod(func, obj, cls):
-        return types.MethodType(func, obj)
 
 
 # DISCRETE DISTRIBUTIONS
