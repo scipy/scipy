@@ -35,7 +35,13 @@ from . import vonmises_cython
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 
-from ._distn_infrastructure import rv_generic, docdict
+from ._distn_infrastructure import (
+        rv_generic, argsreduce, valarray,
+        docdict, docheaders,
+        _skew,
+        _lazywhere,
+        _ncx2_log_pdf, _ncx2_pdf, _ncx2_cdf,
+        )
 
 __all__ = [
     'rv_continuous',
@@ -3974,16 +3980,13 @@ class ncx2_gen(rv_continuous):
         return mtrand.noncentral_chisquare(df, nc, self._size)
 
     def _logpdf(self, x, df, nc):
-        a = asarray(df/2.0)
-        fac = (-nc/2.0 - x/2.0 + (a-1)*np.log(x) - a*np.log(2) -
-               special.gammaln(a))
-        return fac + np.nan_to_num(np.log(special.hyp0f1(a, nc * x/4.0)))
+        return _ncx2_log_pdf(x, df, nc)
 
     def _pdf(self, x, df, nc):
-        return np.exp(self._logpdf(x, df, nc))
+        return _ncx2_pdf(x, df, nc)
 
     def _cdf(self, x, df, nc):
-        return special.chndtr(x, df, nc)
+        return _ncx2_cdf(x, df, nc)
 
     def _ppf(self, q, df, nc):
         return special.chndtrix(q, df, nc)

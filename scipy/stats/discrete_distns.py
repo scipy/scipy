@@ -34,7 +34,11 @@ import numpy.random as mtrand
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 
-from ._distn_infrastructure import rv_generic, docdict_discrete
+from ._distn_infrastructure import (
+        rv_generic, docdict_discrete, argsreduce, valarray,
+        _lazywhere,
+        _ncx2_pdf, _ncx2_cdf,
+        )
 
 __all__ = [
     'entropy', 'rv_discrete', 'binom', 'bernoulli',
@@ -1773,15 +1777,17 @@ class skellam_gen(rv_discrete):
         return mtrand.poisson(mu1, n) - mtrand.poisson(mu2, n)
 
     def _pmf(self, x, mu1, mu2):
-        px = np.where(x < 0, ncx2.pdf(2*mu2, 2*(1-x), 2*mu1)*2,
-                      ncx2.pdf(2*mu1, 2*(x+1), 2*mu2)*2)
+        px = np.where(x < 0,
+                _ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
+                _ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
         # ncx2.pdf() returns nan's for extremely low probabilities
         return px
 
     def _cdf(self, x, mu1, mu2):
         x = np.floor(x)
-        px = np.where(x < 0, ncx2.cdf(2*mu2, -2*x, 2*mu1),
-                      1-ncx2.cdf(2*mu1, 2*(x+1), 2*mu2))
+        px = np.where(x < 0,
+                _ncx2_cdf(2*mu2, -2*x, 2*mu1),
+                1-_ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):

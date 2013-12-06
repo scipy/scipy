@@ -537,6 +537,21 @@ def _parse_args_stats(self, %(shape_arg_str)s %(locscale_in)s, moments='mv'):
     return (%(shape_arg_str)s), %(locscale_out)s, moments
 """
 
+# Both the continuous and discrete distributions depend on ncx2.
+# I think the function name is a clever abbreviation for noncentral chi squared.
+
+def _ncx2_log_pdf(x, df, nc):
+    a = asarray(df/2.0)
+    fac = (-nc/2.0 - x/2.0 + (a-1)*np.log(x) - a*np.log(2) -
+           special.gammaln(a))
+    return fac + np.nan_to_num(np.log(special.hyp0f1(a, nc * x/4.0)))
+
+def _ncx2_pdf(x, df, nc):
+    return np.exp(_ncx2_log_pdf(x, df, nc))
+
+def _ncx2_cdf(q, df, nc):
+    return special.chndtrix(q, df, nc)
+
 
 class rv_generic(object):
     """Class which encapsulates common functionality between rv_discrete
