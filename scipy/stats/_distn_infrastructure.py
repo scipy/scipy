@@ -549,8 +549,8 @@ def _ncx2_log_pdf(x, df, nc):
 def _ncx2_pdf(x, df, nc):
     return np.exp(_ncx2_log_pdf(x, df, nc))
 
-def _ncx2_cdf(q, df, nc):
-    return special.chndtrix(q, df, nc)
+def _ncx2_cdf(x, df, nc):
+    return special.chndtr(x, df, nc)
 
 
 class rv_generic(object):
