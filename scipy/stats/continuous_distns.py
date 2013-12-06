@@ -35,6 +35,8 @@ from . import vonmises_cython
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 
+from ._distn_infrastructure import rv_generic, docdict
+
 __all__ = [
     'rv_continuous',
     'ksone', 'kstwobign', 'norm', 'alpha', 'anglit', 'arcsine',
@@ -53,10 +55,7 @@ __all__ = [
     'powernorm', 'rdist', 'rayleigh', 'reciprocal', 'rice',
     'recipinvgauss', 'semicircular', 'triang', 'truncexpon',
     'truncnorm', 'tukeylambda', 'uniform', 'vonmises', 'vonmises_line',
-    'wald', 'wrapcauchy', 'entropy', 'rv_discrete', 'binom', 'bernoulli',
-    'nbinom', 'geom', 'hypergeom', 'logser', 'poisson', 'planck',
-    'boltzmann', 'randint', 'zipf', 'dlaplace', 'skellam'
-]
+    'wald', 'wrapcauchy']
 
 floatinfo = np.finfo(float)
 eps = np.finfo(float).eps

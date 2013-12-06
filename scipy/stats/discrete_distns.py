@@ -31,12 +31,13 @@ from numpy import (atleast_1d, polyval, ceil, place, extract, any, argsort,
 
 import numpy as np
 import numpy.random as mtrand
-from . import vonmises_cython
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 
+from ._distn_infrastructure import rv_generic, docdict_discrete
+
 __all__ = [
-    'rv_discrete', 'binom', 'bernoulli',
+    'entropy', 'rv_discrete', 'binom', 'bernoulli',
     'nbinom', 'geom', 'hypergeom', 'logser', 'poisson', 'planck',
     'boltzmann', 'randint', 'zipf', 'dlaplace', 'skellam'
 ]
