@@ -7,19 +7,16 @@ from __future__ import division, print_function, absolute_import
 import sys
 import warnings
 
-from scipy.lib.six import callable, string_types, get_method_function
-from scipy.lib.six import exec_
+from scipy.lib.six import callable, string_types
 
-from scipy.misc import comb, derivative
+from scipy.misc import derivative
+from scipy.special import comb
 from scipy.misc.doccer import inherit_docstring_from
 from scipy import special
 from scipy import optimize
 from scipy import integrate
 from scipy.special import gammaln as gamln
 
-import keyword
-import re
-import inspect
 from numpy import (all, where, arange, putmask, ravel, take, ones, sum, shape,
                    product, reshape, zeros, floor, logical_and, log, sqrt, exp,
                    arctanh, tan, sin, arcsin, arctan, tanh, ndarray, cos, cosh,
@@ -71,13 +68,6 @@ random = mtrand.random_sample
 
 import types
 from scipy.misc import doccer
-
-try:
-    from new import instancemethod
-except ImportError:
-    # Python 3
-    def instancemethod(func, obj, cls):
-        return types.MethodType(func, obj)
 
 
 ##  continuous random variables: implement maybe later
