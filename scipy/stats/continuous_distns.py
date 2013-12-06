@@ -35,7 +35,7 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
 from ._distn_infrastructure import (
         rv_generic, argsreduce, valarray,
         docdict, docheaders,
-        _skew,
+        _skew, _kurtosis,
         _lazywhere,
         _ncx2_log_pdf, _ncx2_pdf, _ncx2_cdf,
         )
