@@ -4,26 +4,18 @@
 #
 from __future__ import division, print_function, absolute_import
 
-import sys
-import warnings
-
-from scipy.lib.six import callable, string_types, get_method_function
+from scipy.lib.six import string_types, get_method_function
 from scipy.lib.six import exec_
 
-from scipy.misc import comb, derivative
-from scipy.misc.doccer import inherit_docstring_from
+from scipy.special import comb
 from scipy import special
-from scipy import optimize
-from scipy import integrate
-from scipy.special import gammaln as gamln
 
 import keyword
 import re
 import inspect
 from numpy import (all, where, arange, putmask, ravel, take, ones, sum, shape,
                    product, reshape, zeros, floor, logical_and, log, sqrt, exp,
-                   arctanh, tan, sin, arcsin, arctan, tanh, ndarray, cos, cosh,
-                   sinh, newaxis, log1p, expm1)
+                   ndarray)
 
 from numpy import (atleast_1d, polyval, ceil, place, extract, any, argsort,
                    argmax, vectorize, r_, asarray, nan, inf, pi, isinf, NINF,
@@ -31,18 +23,8 @@ from numpy import (atleast_1d, polyval, ceil, place, extract, any, argsort,
 
 import numpy as np
 import numpy.random as mtrand
-from . import vonmises_cython
-from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
-                                 tukeylambda_kurtosis as _tlkurt)
-
-floatinfo = np.finfo(float)
-eps = np.finfo(float).eps
-
-gam = special.gamma
-random = mtrand.random_sample
 
 import types
-from scipy.misc import doccer
 
 try:
     from new import instancemethod
@@ -567,7 +549,8 @@ class rv_generic(object):
                                    ('moments' in sign[0]))
 
     def _construct_argparser(self, names_to_inspect,
-                             locscale_in, locscale_out):
+                             locscale_in, locscale_out,
+                             morevars=None):
         """Construct the parser for the shape arguments.
 
         Generates the argument-parsing functions dynamically and attaches
@@ -605,7 +588,10 @@ class rv_generic(object):
                 try:
                     meth = get_method_function(getattr(self, name))
                 except:
-                    meth = globals()[name]
+                    try:
+                        meth = globals()[name]
+                    except KeyError:
+                        meth = morevars[name]
                 shapes_args = inspect.getargspec(meth)
                 shapes_list.append(shapes_args.args)
 

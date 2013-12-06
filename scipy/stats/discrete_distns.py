@@ -487,12 +487,14 @@ class rv_discrete(rv_generic):
             self._construct_argparser(names_to_inspect=['_drv_pmf'],
                                       locscale_in='loc=0',
                                       # scale=1 for discrete RVs
-                                      locscale_out='loc, 1')
+                                      locscale_out='loc, 1',
+                                      morevars=globals())
         else:
             self._construct_argparser(names_to_inspect=['_pmf', '_cdf'],
                                       locscale_in='loc=0',
                                       # scale=1 for discrete RVs
-                                      locscale_out='loc, 1')
+                                      locscale_out='loc, 1',
+                                      morevars=globals())
 
             # nin correction needs to be after we know numargs
             # correct nin for generic moment vectorization
