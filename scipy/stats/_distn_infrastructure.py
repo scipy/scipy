@@ -4,7 +4,7 @@
 #
 from __future__ import division, print_function, absolute_import
 
-from scipy.lib.six import string_types, get_method_function
+from scipy.lib.six import string_types
 from scipy.lib.six import exec_
 
 from scipy.special import comb
@@ -544,13 +544,11 @@ class rv_generic(object):
         super(rv_generic, self).__init__()
 
         # figure out if _stats signature has 'moments' keyword
-        sign = inspect.getargspec(get_method_function(self._stats))
+        sign = inspect.getargspec(self._stats)
         self._stats_has_moments = ((sign[2] is not None) or
                                    ('moments' in sign[0]))
 
-    def _construct_argparser(self, names_to_inspect,
-                             locscale_in, locscale_out,
-                             morevars=None):
+    def _construct_argparser(self, meths_to_inspect, locscale_in, locscale_out):
         """Construct the parser for the shape arguments.
 
         Generates the argument-parsing functions dynamically and attaches
@@ -560,7 +558,7 @@ class rv_generic(object):
         If self.shapes is a non-empty string, interprets it as a
         comma-separated list of shape parameters.
 
-        Otherwise inspects the call signatures of `names_to_inspect`
+        Otherwise inspects the call signatures of `meths_to_inspect`
         and constructs the argument-parsing functions from these.
         In this case also sets `shapes` and `numargs`.
         """
@@ -582,16 +580,7 @@ class rv_generic(object):
             # find out the call signatures (_pdf, _cdf etc), deduce shape
             # arguments
             shapes_list = []
-            for name in names_to_inspect:
-                # look for names in instance methods, then global namespace
-                # the latter is needed for rv_discrete with explicit `values`
-                try:
-                    meth = get_method_function(getattr(self, name))
-                except:
-                    try:
-                        meth = globals()[name]
-                    except KeyError:
-                        meth = morevars[name]
+            for meth in meths_to_inspect:
                 shapes_args = inspect.getargspec(meth)
                 shapes_list.append(shapes_args.args)
 

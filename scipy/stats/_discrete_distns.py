@@ -463,17 +463,15 @@ class rv_discrete(rv_generic):
                                                  self, rv_discrete)
             self.moment_gen = instancemethod(_drv_moment_gen,
                                              self, rv_discrete)
-            self._construct_argparser(names_to_inspect=['_drv_pmf'],
+            self._construct_argparser(meths_to_inspect=[_drv_pmf],
                                       locscale_in='loc=0',
                                       # scale=1 for discrete RVs
-                                      locscale_out='loc, 1',
-                                      morevars=globals())
+                                      locscale_out='loc, 1')
         else:
-            self._construct_argparser(names_to_inspect=['_pmf', '_cdf'],
+            self._construct_argparser(meths_to_inspect=[self._pmf, self._cdf],
                                       locscale_in='loc=0',
                                       # scale=1 for discrete RVs
-                                      locscale_out='loc, 1',
-                                      morevars=globals())
+                                      locscale_out='loc, 1')
 
             # nin correction needs to be after we know numargs
             # correct nin for generic moment vectorization

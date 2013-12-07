@@ -312,7 +312,7 @@ class rv_continuous(rv_generic):
         self.expandarr = 1
 
         self.shapes = shapes
-        self._construct_argparser(names_to_inspect=['_pdf', '_cdf'],
+        self._construct_argparser(meths_to_inspect=[self._pdf, self._cdf],
                                   locscale_in='loc=0, scale=1',
                                   locscale_out='loc, scale')
 
