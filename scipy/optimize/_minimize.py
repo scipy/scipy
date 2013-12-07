@@ -34,7 +34,7 @@ from .cobyla import _minimize_cobyla
 from .slsqp import _minimize_slsqp
 
 
-def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
+def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
              callback=None, options=None):
     """
@@ -67,6 +67,8 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
             - 'dogleg'
             - 'trust-ncg'
 
+        If not given, chosen to be one of ``BFGS``, ``L-BFGS-B``, ``SLSQP``,
+        depending if the problem has constraints or bounds.
     jac : bool or callable, optional
         Jacobian (gradient) of objective function. Only for CG, BFGS,
         Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg.
@@ -303,6 +305,16 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     It should converge to the theoretical solution (1.4 ,1.7).
 
     """
+
+    if method is None:
+        # Select automatically
+        if constraints:
+            method = 'SLSQP'
+        elif bounds is not None:
+            method = 'L-BFGS-B'
+        else:
+            method = 'BFGS'
+
     meth = method.lower()
     if options is None:
         options = {}
