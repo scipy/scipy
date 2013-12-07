@@ -8,5 +8,5 @@ from __future__ import division, print_function, absolute_import
 from ._distn_infrastructure import argsreduce, rv_generic
 
 # Import distributions.
-from .continuous_distns import *
-from .discrete_distns import *
+from ._continuous_distns import *
+from ._discrete_distns import *
