@@ -53,6 +53,9 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_nnls', sources=[join('nnls', x)
                                           for x in ["nnls.f","nnls.pyf"]])
 
+    sources = ["bvls.f90", "bvls.pyf"]
+    config.add_extension('_bvls', sources=[join('bvls', x) for x in sources])
+
     config.add_data_dir('tests')
     config.add_data_dir('benchmarks')
     return config

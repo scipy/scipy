@@ -1,0 +1,21 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module _bvls ! in 
+    interface  ! in :_bvls
+        subroutine bvls(a,b,bnd,x,rnorm,nsetp,w,index_bn,ierr) ! in :_bvls:bvls.f90
+            real(kind=kind(one)) dimension(:,:),intent(inout) :: a
+            real(kind=kind(one)) dimension(:),intent(inout) :: b
+            real(kind=kind(one)) dimension(:,:),intent(in) :: bnd
+            real(kind=kind(one)) dimension(:),intent(inout) :: x
+            real(kind=kind(one)),intent(out) :: rnorm
+            integer,intent(out) :: nsetp
+            real(kind=kind(one)) dimension(:),intent(in) :: w
+            integer dimension(:),intent(in) :: index_bn
+            integer,intent(out) :: ierr
+        end subroutine bvls
+    end interface 
+end python module _bvls
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

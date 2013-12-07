@@ -11,6 +11,7 @@ def pre_build(context):
     context.tweak_extension("minpack2", features=f2py_features, use=use)
     context.tweak_extension("_nnls", features=f2py_features, use=use)
     context.tweak_extension("_slsqp", features=f2py_features, use=use)
+    context.tweak_extension("_bvls", features=f2py_features, use=use)
 
     context.tweak_extension("_zeros", features=features, use=use)
     context.tweak_extension("_minpack", features=features, use=use)

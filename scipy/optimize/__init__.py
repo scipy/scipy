@@ -172,6 +172,7 @@ from .cobyla import fmin_cobyla
 from .nonlin import *
 from .slsqp import fmin_slsqp
 from .nnls import nnls
+from .bvls import bounded_lstsq
 from ._basinhopping import basinhopping
 
 __all__ = [s for s in dir() if not s.startswith('_')]
