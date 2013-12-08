@@ -11,6 +11,7 @@ from common_tests import (check_normalization, check_moment, check_mean_expect,
         check_named_args)
 
 DECIMAL_meanvar = 0  # 1  # was 0
+knf = npt.dec.knownfailureif
 
 distdiscrete = [
     ['bernoulli',(0.3,)],
@@ -44,7 +45,9 @@ def test_discrete_basic():
         yield check_sample_meanvar, rvs.mean(), m, distname + ' sample mean test'
         yield check_sample_meanvar, rvs.var(), v, distname + ' sample var test'
         yield check_cdf_ppf, distfn, arg, supp, distname + ' cdf_ppf'
-        yield check_pmf_cdf, distfn, arg, distname + ' pmf_cdf'
+
+        cond = distname == 'skellam'
+        yield knf(cond, 'ncx2 accuracy')(check_pmf_cdf), distfn, arg, distname + ' pmf_cdf'
 
         yield check_oth, distfn, arg, distname + ' oth'
         skurt = stats.kurtosis(rvs)
@@ -80,7 +83,6 @@ def test_discrete_basic():
 
 
 def test_moments():
-    knf = npt.dec.knownfailureif
     for distname, arg in distdiscrete:
         distfn = getattr(stats,distname)
         m, v, s, k = distfn.stats(*arg, moments='mvsk')
@@ -159,13 +161,11 @@ def check_ppf_ppf(distfn, arg):
 
 
 def check_pmf_cdf(distfn, arg, msg):
-    startind = np.int(distfn._ppf(0.01,*arg)-1)
-    index = list(range(startind,startind+10))
-    cdfs = distfn.cdf(index,*arg)
-    npt.assert_almost_equal(cdfs, distfn.pmf(index, *arg).cumsum() +
-                            cdfs[0] - distfn.pmf(index[0],*arg),
-                            decimal=4, err_msg=msg + 'pmf-cdf')
-
+    startind = np.int(distfn.ppf(0.01, *arg) - 1)
+    index = list(range(startind, startind + 10))
+    cdfs, pmfs_cum = distfn.cdf(index,*arg), distfn.pmf(index, *arg).cumsum()
+    npt.assert_allclose(cdfs - cdfs[0], pmfs_cum - pmfs_cum[0],
+            atol=1e-10, rtol=1e-10)
 
 def check_generic_moment(distfn, arg, m, k, decim):
     npt.assert_almost_equal(distfn.generic_moment(k,*arg), m, decimal=decim,
