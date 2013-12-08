@@ -43,8 +43,7 @@ def test_discrete_basic():
         # yield npt.assert_almost_equal, rvs.mean(), m, 2, 'mean' # does not work
         yield check_sample_meanvar, rvs.mean(), m, distname + ' sample mean test'
         yield check_sample_meanvar, rvs.var(), v, distname + ' sample var test'
-        yield check_cdf_ppf, distfn, arg, distname + ' cdf_ppf'
-        yield check_cdf_ppf2, distfn, arg, supp, distname + ' cdf_ppf'
+        yield check_cdf_ppf, distfn, arg, supp, distname + ' cdf_ppf'
         yield check_pmf_cdf, distfn, arg, distname + ' pmf_cdf'
 
         yield check_oth, distfn, arg, distname + ' oth'
@@ -128,19 +127,15 @@ def check_sample_var(sm,m,msg):
     npt.assert_almost_equal(sm, m, decimal=DECIMAL_meanvar, err_msg=msg + 'var')
 
 
-def check_cdf_ppf(distfn,arg,msg):
-    ppf05 = distfn.ppf(0.5,*arg)
-    cdf05 = distfn.cdf(ppf05,*arg)
-    npt.assert_almost_equal(distfn.ppf(cdf05-1e-6,*arg),ppf05,
-                            err_msg=msg + 'ppf-cdf-median')
-    npt.assert_((distfn.ppf(cdf05+1e-4,*arg) > ppf05), msg + 'ppf-cdf-next')
-
-
-def check_cdf_ppf2(distfn,arg,supp,msg):
-    npt.assert_array_equal(distfn.ppf(distfn.cdf(supp,*arg),*arg),
+def check_cdf_ppf(distfn, arg, supp, msg):
+    # cdf is a step function, and ppf(q) = min{k : cdf(k) >= q, k integer}
+    npt.assert_array_equal(distfn.ppf(distfn.cdf(supp, *arg), *arg),
                            supp, msg + '-roundtrip')
-    npt.assert_array_equal(distfn.ppf(distfn.cdf(supp,*arg)-1e-8,*arg),
+    npt.assert_array_equal(distfn.ppf(distfn.cdf(supp, *arg) - 1e-8, *arg),
                            supp, msg + '-roundtrip')
+    supp1 = supp[supp < distfn.b]
+    npt.assert_array_equal(distfn.ppf(distfn.cdf(supp1, *arg) + 1e-8, *arg),
+                     supp1 + distfn.inc, msg + 'ppf-cdf-next')
     # -1e-8 could cause an error if pmf < 1e-8
 
 
