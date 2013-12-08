@@ -3,6 +3,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+from warnings import warn
+
 import numpy
 from numpy import asarray, tan, exp, ones, squeeze, sign, \
     all, log, sqrt, pi, shape, array, minimum, where, random
@@ -499,6 +501,9 @@ def _minimize_anneal(func, x0, args=(),
     This function is called by the `minimize` function with
     `method=anneal`. It is not supposed to be called directly.
     """
+    warn('Simulated annealing is deprecated in scipy 0.14+, '
+            'use basinhopping instead', DeprecationWarning)
+
     _check_unknown_options(unknown_options)
     maxeval = maxfev
     feps = ftol
