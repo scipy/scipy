@@ -40,10 +40,8 @@ def test_discrete_basic():
         m, v = distfn.stats(*arg)
         yield check_cdf_ppf, distfn, arg, supp, distname + ' cdf_ppf'
 
-        cond = distname == 'skellam'
-        yield knf(cond, 'ncx2 accuracy')(check_pmf_cdf), distfn, arg,\
-                distname + ' pmf_cdf'
-        yield check_oth, distfn, arg, distname + ' oth'
+        yield check_pmf_cdf, distfn, arg, distname
+        yield check_oth, distfn, arg, supp, distname + ' oth'
         yield check_edge_support, distfn, arg
 
         alpha = 0.01
@@ -104,12 +102,16 @@ def check_cdf_ppf(distfn, arg, supp, msg):
     # -1e-8 could cause an error if pmf < 1e-8
 
 
-def check_pmf_cdf(distfn, arg, msg):
+def check_pmf_cdf(distfn, arg, distname):
     startind = np.int(distfn.ppf(0.01, *arg) - 1)
     index = list(range(startind, startind + 10))
     cdfs, pmfs_cum = distfn.cdf(index,*arg), distfn.pmf(index, *arg).cumsum()
+
+    atol, rtol = 1e-10, 1e-10
+    if distname == 'skellam':    # ncx2 accuracy
+        atol, rtol = 1e-5, 1e-5
     npt.assert_allclose(cdfs - cdfs[0], pmfs_cum - pmfs_cum[0],
-            atol=1e-10, rtol=1e-10)
+            atol=atol, rtol=rtol)
 
 
 def check_moment_frozen(distfn, arg, m, k):
@@ -117,16 +119,18 @@ def check_moment_frozen(distfn, arg, m, k):
             atol=1e-10, rtol=1e-10)
 
 
-def check_oth(distfn, arg, msg):
+def check_oth(distfn, arg, supp, msg):
     # checking other methods of distfn
-    meanint = round(float(distfn.stats(*arg)[0]))  # closest integer to mean
-    npt.assert_almost_equal(distfn.sf(meanint, *arg), 1 -
-                            distfn.cdf(meanint, *arg), decimal=8)
-    median_sf = distfn.isf(0.5, *arg)
+    npt.assert_allclose(distfn.sf(supp, *arg), 1. - distfn.cdf(supp, *arg),
+            atol=1e-10, rtol=1e-10)
 
+    q = np.linspace(0.01, 0.99, 20)
+    npt.assert_allclose(distfn.isf(q, *arg), distfn.ppf(1. - q, *arg),
+            atol=1e-10, rtol=1e-10)
+
+    median_sf = distfn.isf(0.5, *arg)
     npt.assert_(distfn.sf(median_sf - 1, *arg) > 0.5)
     npt.assert_(distfn.cdf(median_sf + 1, *arg) > 0.5)
-    npt.assert_equal(distfn.isf(0.5, *arg), distfn.ppf(0.5, *arg))
 
 
 def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
