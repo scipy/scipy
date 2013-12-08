@@ -112,11 +112,11 @@ finally:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/0.13.2-notes.rst'
+RELEASE = 'doc/release/0.13.3-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v0.13.1'
-LOG_END = 'v0.13.2'
+LOG_START = 'v0.13.2'
+LOG_END = 'v0.13.3'
 
 
 #-------------------------------------------------------
