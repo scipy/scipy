@@ -6,7 +6,7 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm',
-           'expm_frechet', 'fractional_matrix_power']
+           'expm_frechet', 'expm_cond', 'fractional_matrix_power']
 
 from numpy import asarray, Inf, dot, eye, diag, exp, \
      product, logical_not, ravel, transpose, conjugate, \
@@ -24,7 +24,7 @@ from .special_matrices import triu, all_mat
 from .decomp import eig
 from .decomp_svd import orth, svd
 from .decomp_schur import schur, rsf2csf
-from ._expm_frechet import expm_frechet
+from ._expm_frechet import expm_frechet, expm_cond
 from ._matfuncs_sqrtm import sqrtm
 import warnings
 

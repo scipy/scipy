@@ -10,20 +10,24 @@ from __future__ import division, print_function, absolute_import
 
 import random
 import warnings
+import functools
 
 import numpy as np
 from numpy import array, identity, dot, sqrt, double
 from numpy.testing import (TestCase, run_module_suite,
-        assert_array_equal,
+        assert_array_equal, assert_array_less,
         assert_array_almost_equal, assert_array_almost_equal_nulp,
         assert_allclose, assert_, assert_raises, decorators)
 
 import scipy.linalg
-from scipy.linalg import funm, signm, logm, sqrtm, expm, expm_frechet
-from scipy.linalg import fractional_matrix_power
+from scipy.linalg import norm
+from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
+        expm, expm_frechet, expm_cond)
 from scipy.linalg.matfuncs import expm2, expm3
 from scipy.linalg import _matfuncs_inv_ssq
 import scipy.linalg._expm_frechet
+
+from scipy.optimize import fmin_l_bfgs_b
 
 
 def _get_al_mohy_higham_2012_experiment_1():
@@ -667,6 +671,68 @@ class TestExpmFrechet(TestCase):
                 A, E, method='blockEnlarge')
         assert_allclose(sps_expm, blockEnlarge_expm)
         assert_allclose(sps_frechet, blockEnlarge_frechet)
+
+
+def _help_expm_cond_search(A, A_norm, X, X_norm, eps, p):
+    p = np.reshape(p, A.shape)
+    p_norm = norm(p)
+    perturbation = eps * p * (A_norm / p_norm)
+    X_prime = expm(A + perturbation)
+    scaled_relative_error = norm(X_prime - X) / (X_norm * eps)
+    return -scaled_relative_error
+
+def _normalized_like(A, B):
+    return A * (scipy.linalg.norm(B) / scipy.linalg.norm(A))
+
+def _relative_error(f, A, perturbation):
+    X = f(A)
+    X_prime = f(A + perturbation)
+    return norm(X_prime - X) / norm(X)
+
+class TestExpmConditionNumber(TestCase):
+
+    def test_expm_cond_smoke(self):
+        np.random.seed(1234)
+        for n in range(1, 4):
+            A = np.random.randn(n, n)
+            kappa = expm_cond(A)
+            assert_array_less(0, kappa)
+
+    @decorators.slow
+    def test_expm_cond_fuzz(self):
+        np.random.seed(12345)
+        eps = 1e-5
+        nsamples = 10
+        for i in range(nsamples):
+            n = np.random.randint(2, 5)
+            A = np.random.randn(n, n)
+            A_norm = scipy.linalg.norm(A)
+            X = expm(A)
+            X_norm = scipy.linalg.norm(X)
+            kappa = expm_cond(A)
+
+            # Look for the small perturbation that gives the greatest
+            # relative error.
+            f = functools.partial(_help_expm_cond_search,
+                    A, A_norm, X, X_norm, eps)
+            guess = np.ones(n*n)
+            xopt, yopt, info = fmin_l_bfgs_b(f, guess, approx_grad=True)
+            p_best = eps * _normalized_like(np.reshape(xopt, A.shape), A)
+            p_best_relerr = _relative_error(expm, A, p_best)
+            assert_allclose(p_best_relerr, -yopt * eps)
+
+            # Check that the identified perturbation indeed gives greater
+            # relative error than random perturbations with similar norms.
+            for j in range(5):
+                p_rand = eps * _normalized_like(np.random.randn(*A.shape), A)
+                assert_allclose(norm(p_best), norm(p_rand))
+                p_rand_relerr = _relative_error(expm, A, p_rand)
+                assert_array_less(p_rand_relerr, p_best_relerr)
+
+            # The worst relative error should not be much greater than
+            # eps times the condition number kappa.
+            # In the limit as eps approaches zero it should never be greater.
+            assert_array_less(p_best_relerr, (1 + 2*eps) * eps * kappa)
 
 
 if __name__ == "__main__":
