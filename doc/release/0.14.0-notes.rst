@@ -52,6 +52,12 @@ a measure of phase synchrony, of a set of events.
 Deprecated features
 ===================
 
+``anneal``
+----------
+
+The global minimization function `scipy.optimize.anneal` is deprecated.
+All users should use the `scipy.optimize.basinhopping` function instead.
+
 
 Backwards incompatible changes
 ==============================

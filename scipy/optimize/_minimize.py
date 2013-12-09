@@ -59,7 +59,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             - 'CG'
             - 'BFGS'
             - 'Newton-CG'
-            - 'Anneal'
+            - 'Anneal (deprecated as of scipy version 0.14.0)'
             - 'L-BFGS-B'
             - 'TNC'
             - 'COBYLA'
@@ -316,6 +316,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             method = 'BFGS'
 
     meth = method.lower()
+    # deprecated methods
+    if meth == 'anneal':
+        warn('Method %s is deprecated in scipy 0.14.0' % method,
+                DeprecationWarning)
     if options is None:
         options = {}
     # check if optional parameters are supported by the selected method
