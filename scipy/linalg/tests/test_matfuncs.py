@@ -729,7 +729,7 @@ class TestExpmConditionNumber(TestCase):
                 p_rand_relerr = _relative_error(expm, A, p_rand)
                 assert_array_less(p_rand_relerr, p_best_relerr)
 
-            # The worst relative error should not be much greater than
+            # The greatest relative error should not be much greater than
             # eps times the condition number kappa.
             # In the limit as eps approaches zero it should never be greater.
             assert_array_less(p_best_relerr, (1 + 2*eps) * eps * kappa)
