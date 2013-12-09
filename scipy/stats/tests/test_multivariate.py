@@ -47,6 +47,20 @@ def test_logpdf():
     assert_allclose(d1, np.log(d2))
 
 
+def test_return_rank():
+    # Check that the rank is detected and returned correctly.
+    np.random.seed(1234)
+    n = 4
+    mean = np.random.randn(n)
+    x = np.random.randn(n)
+    for expected_rank in range(1, n+1):
+        s = np.random.randn(n, expected_rank)
+        cov = np.dot(s, s.T)
+        for f in (multivariate_normal.logpdf, multivariate_normal.pdf):
+            out, rank = f(x, mean, cov, return_rank=True)
+            assert_equal(rank, expected_rank)
+
+
 def test_large_pseudo_determinant():
     # Check that large pseudo-determinants are handled appropriately.
 
