@@ -118,7 +118,7 @@ def _pinv_1d(v, eps=1e-5):
 
 
 def _psd_pinv_decomposed_log_pdet(mat, cond=None, rcond=None,
-        lower=True, return_rank=False, check_finite=True):
+        lower=True, check_finite=True):
     """
     Compute a decomposition of the pseudo-inverse and the logarithm of
     the pseudo-determinant of a symmetric positive semi-definite
@@ -140,8 +140,6 @@ def _psd_pinv_decomposed_log_pdet(mat, cond=None, rcond=None,
     lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
         triangle of `mat`. (Default: lower)
-    return_rank : bool, optional
-        if True, return the effective rank of the matrix
     check_finite : boolean, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -154,7 +152,7 @@ def _psd_pinv_decomposed_log_pdet(mat, cond=None, rcond=None,
     log_pdet : float
         Logarithm of the pseudo-determinant of the matrix.
     rank : int
-        The effective rank of the matrix.  Returned if return_rank == True
+        The effective rank of the matrix.
 
     """
     # Compute the symmetric eigendecomposition.
@@ -187,11 +185,7 @@ def _psd_pinv_decomposed_log_pdet(mat, cond=None, rcond=None,
     U = np.multiply(u, np.sqrt(s_pinv))
     d = s[s > eps]
     log_pdet = np.sum(np.log(d))
-
-    if return_rank:
-        return U, log_pdet, len(d)
-    else:
-        return U, log_pdet
+    return U, log_pdet, len(d)
 
 
 _doc_default_callparams = """\
@@ -199,8 +193,6 @@ mean : array_like, optional
     Mean of the distribution (default zero)
 cov : array_like, optional
     Covariance matrix of the distribution (default one)
-return_rank : bool, optional
-    if True, return the effective rank of the matrix (default False)
 """
 
 _doc_callparams_note = \
@@ -238,9 +230,9 @@ class multivariate_normal_gen(object):
 
     Methods
     -------
-    pdf(x, mean=None, cov=1, return_rank=False)
+    pdf(x, mean=None, cov=1)
         Probability density function.
-    logpdf(x, mean=None, cov=1, return_rank=False)
+    logpdf(x, mean=None, cov=1)
         Log of the probability density function.
     rvs(mean=None, cov=1, size=1)
         Draw random samples from a multivariate normal distribution.
@@ -313,7 +305,7 @@ class multivariate_normal_gen(object):
         """
         return multivariate_normal_frozen(mean, cov)
 
-    def _logpdf(self, x, mean, prec_U, log_det_cov):
+    def _logpdf(self, x, mean, prec_U, log_det_cov, rank):
         """
         Parameters
         ----------
@@ -327,6 +319,8 @@ class multivariate_normal_gen(object):
             is the precision matrix, i.e. inverse of the covariance matrix.
         log_det_cov : float
             Logarithm of the determinant of the covariance matrix
+        rank : int
+            Rank of the covariance matrix.
 
         Notes
         -----
@@ -334,12 +328,11 @@ class multivariate_normal_gen(object):
         called directly; use 'logpdf' instead.
 
         """
-        dim = x.shape[-1]
         dev = x - mean
         maha = np.sum(np.square(np.dot(dev, prec_U)), axis=-1)
-        return -0.5 * (dim * _LOG_2PI + log_det_cov + maha)
+        return -0.5 * (rank * _LOG_2PI + log_det_cov + maha)
 
-    def logpdf(self, x, mean, cov, return_rank=False):
+    def logpdf(self, x, mean, cov):
         """
         Log of the multivariate normal probability density function.
 
@@ -361,16 +354,11 @@ class multivariate_normal_gen(object):
         """
         dim, mean, cov = _process_parameters(None, mean, cov)
         x = _process_quantiles(x, dim)
-        prec_U, log_det_cov, rank = _psd_pinv_decomposed_log_pdet(
-                cov, return_rank=True)
-        out = self._logpdf(x, mean, prec_U, log_det_cov)
-        out = _squeeze_output(out)
-        if return_rank:
-            return out, rank
-        else:
-            return out
+        prec_U, log_det_cov, rank = _psd_pinv_decomposed_log_pdet(cov)
+        out = self._logpdf(x, mean, prec_U, log_det_cov, rank)
+        return _squeeze_output(out)
 
-    def pdf(self, x, mean, cov, return_rank=False):
+    def pdf(self, x, mean, cov):
         """
         Multivariate normal probability density function.
 
@@ -392,14 +380,9 @@ class multivariate_normal_gen(object):
         """
         dim, mean, cov = _process_parameters(None, mean, cov)
         x = _process_quantiles(x, dim)
-        prec_U, log_det_cov, rank = _psd_pinv_decomposed_log_pdet(
-                cov, return_rank=True)
-        out = np.exp(self._logpdf(x, mean, prec_U, log_det_cov))
-        out = _squeeze_output(out)
-        if return_rank:
-            return out, rank
-        else:
-            return out
+        prec_U, log_det_cov, rank = _psd_pinv_decomposed_log_pdet(cov)
+        out = np.exp(self._logpdf(x, mean, prec_U, log_det_cov, rank))
+        return _squeeze_output(out)
 
     def rvs(self, mean=None, cov=1, size=1):
         """
@@ -476,25 +459,20 @@ class multivariate_normal_frozen(object):
 
         """
         self.dim, self.mean, self.cov = _process_parameters(None, mean, cov)
-        info = _psd_pinv_decomposed_log_pdet(self.cov, return_rank=True)
-        self.prec_U, self._log_det_cov, self._rank = info
+        info = _psd_pinv_decomposed_log_pdet(self.cov)
+        self.prec_U, self._log_det_cov, self.rank = info
         self._mnorm = multivariate_normal_gen()
 
-    def logpdf(self, x, return_rank=False):
+    def logpdf(self, x):
         x = _process_quantiles(x, self.dim)
-        out = self._mnorm._logpdf(x, self.mean, self.prec_U, self._log_det_cov)
+        out = self._mnorm._logpdf(
+                x, self.mean, self.prec_U, self._log_det_cov, self.rank)
         out = _squeeze_output(out)
-        if return_rank:
-            return out, self._rank
-        else:
-            return out
+        return out
 
-    def pdf(self, x, return_rank=False):
+    def pdf(self, x):
         out = np.exp(self.logpdf(x))
-        if return_rank:
-            return out, self._rank
-        else:
-            return out
+        return out
 
     def rvs(self, size=1):
         return self._mnorm.rvs(self.mean, self.cov, size)

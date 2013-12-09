@@ -11,11 +11,10 @@ import numpy
 import numpy as np
 
 import scipy.linalg
-import scipy.stats._multivariate
+from scipy.stats._multivariate import (
+        multivariate_normal_frozen, _psd_pinv_decomposed_log_pdet)
 from scipy.stats import multivariate_normal
 from scipy.stats import norm
-
-from scipy.stats._multivariate import _psd_pinv_decomposed_log_pdet
 
 from scipy.integrate import romb
 
@@ -47,8 +46,8 @@ def test_logpdf():
     assert_allclose(d1, np.log(d2))
 
 
-def test_return_rank():
-    # Check that the rank is detected and returned correctly.
+def test_rank():
+    # Check that the rank is detected correctly.
     np.random.seed(1234)
     n = 4
     mean = np.random.randn(n)
@@ -56,9 +55,29 @@ def test_return_rank():
     for expected_rank in range(1, n+1):
         s = np.random.randn(n, expected_rank)
         cov = np.dot(s, s.T)
-        for f in (multivariate_normal.logpdf, multivariate_normal.pdf):
-            out, rank = f(x, mean, cov, return_rank=True)
-            assert_equal(rank, expected_rank)
+        distn = multivariate_normal_frozen(mean, cov)
+        assert_equal(distn.rank, expected_rank)
+
+
+def test_degenerate_distributions():
+    for n in range(1, 5):
+        mu = np.zeros(n)
+        x = np.random.randn(n)
+        for k in range(1, n+1):
+            s = np.random.randn(k, k)
+            cov_kk = np.dot(s, s.T)
+            cov_nn = np.zeros((n, n))
+            cov_nn[:k, :k] = cov_kk
+            distn_kk = multivariate_normal_frozen(np.zeros(k), cov_kk)
+            distn_nn = multivariate_normal_frozen(np.zeros(n), cov_nn)
+            assert_equal(distn_kk.rank, k)
+            assert_equal(distn_nn.rank, k)
+            pdf_kk = distn_kk.pdf(x[:k])
+            pdf_nn = distn_nn.pdf(x[:n])
+            assert_allclose(pdf_kk, pdf_nn)
+            logpdf_kk = distn_kk.logpdf(x[:k])
+            logpdf_nn = distn_nn.logpdf(x[:n])
+            assert_allclose(logpdf_kk, logpdf_nn)
 
 
 def test_large_pseudo_determinant():
@@ -84,7 +103,7 @@ def test_large_pseudo_determinant():
     #assert_allclose(np.linalg.slogdet(cov[:npos, :npos]), (1, large_total_log))
 
     # Check the pseudo-determinant.
-    U, log_pdet = scipy.stats._multivariate._psd_pinv_decomposed_log_pdet(cov)
+    U, log_pdet, rank = _psd_pinv_decomposed_log_pdet(cov)
     assert_allclose(log_pdet, large_total_log)
 
 
@@ -174,9 +193,9 @@ def test_pseudodet_pinv():
 
     # Set cond so that the lowest eigenvalue is below the cutoff
     cond = 1e-5
-    U, log_pdet = _psd_pinv_decomposed_log_pdet(cov, cond)
+    U, log_pdet, rank = _psd_pinv_decomposed_log_pdet(cov, cond)
     pinv = np.dot(U, U.T)
-    _, log_pdet_pinv = _psd_pinv_decomposed_log_pdet(pinv, cond)
+    _, log_pdet_pinv, rank = _psd_pinv_decomposed_log_pdet(pinv, cond)
 
     # Check that the log pseudo-determinant agrees with the sum
     # of the logs of all but the smallest eigenvalue
