@@ -57,9 +57,9 @@ def test_cont_fit_smoke_test():
     # This test only checks for plumbing errors and does not check good fits.
     # It is fast enough to run without --mode=full.
 
-    fit_sizes = [10, 50]
-    thresh_percent = 1e5
-    thresh_min = 1e5
+    fit_sizes = [5]
+    thresh_percent = 1e10
+    thresh_min = 1e10
 
     for distname, arg in distcont:
         if distname not in skip_fit:
