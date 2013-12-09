@@ -203,7 +203,6 @@ Overall this module is in reasonably good shape, however it is missing a few
 more good global optimizers as well as large-scale optimizers.  These should be
 added.  Other things that are needed:
 
-  - deprecate ``anneal``, it just doesn't work well enough.
   - deprecate the ``fmin_*`` functions in the documentation, ``minimize`` is
     preferred.
   - clearly define what's out of scope for this module.
