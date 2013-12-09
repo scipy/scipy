@@ -59,7 +59,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             - 'CG'
             - 'BFGS'
             - 'Newton-CG'
-            - 'Anneal'
+            - 'Anneal (deprecated as of scipy version 0.14.0)'
             - 'L-BFGS-B'
             - 'TNC'
             - 'COBYLA'
