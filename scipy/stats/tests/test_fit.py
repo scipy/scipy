@@ -12,9 +12,6 @@ from test_continuous_basic import distcont
 # this is not a proper statistical test for convergence, but only
 # verifies that the estimate and true values don't differ by too much
 
-fit_sizes = [1000, 5000]  # sample sizes to try
-thresh_percent = 0.25  # percent of true parameters for fail cut-off
-thresh_min = 0.75  # minimum difference estimate - true to fail test
 
 failing_fits = [
         'burr',
@@ -47,12 +44,30 @@ def test_cont_fit():
     # parameters with fit method of continuous distributions
     # Note: is slow, some distributions don't converge with sample size <= 10000
 
+    fit_sizes = [1000, 5000]  # sample sizes to try
+    thresh_percent = 0.25  # percent of true parameters for fail cut-off
+    thresh_min = 0.75  # minimum difference estimate - true to fail test
+
     for distname, arg in distcont:
         if distname not in skip_fit:
-            yield check_cont_fit, distname,arg
+            yield (check_cont_fit,
+                    fit_sizes, thresh_percent, thresh_min, distname, arg)
+
+def test_cont_fit_smoke_test():
+    # This test only checks for plumbing errors and does not check good fits.
+    # It is fast enough to run without --mode=full.
+
+    fit_sizes = [5]
+    thresh_percent = 1e10
+    thresh_min = 1e10
+
+    for distname, arg in distcont:
+        if distname not in skip_fit:
+            yield (check_cont_fit,
+                    fit_sizes, thresh_percent, thresh_min, distname, arg)
 
 
-def check_cont_fit(distname,arg):
+def check_cont_fit(fit_sizes, thresh_percent, thresh_min, distname, arg):
     if distname in failing_fits:
         # Skip failing fits unless overridden
         xfail = True
