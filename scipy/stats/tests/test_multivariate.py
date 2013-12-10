@@ -11,8 +11,7 @@ import numpy
 import numpy as np
 
 import scipy.linalg
-from scipy.stats._multivariate import (
-        multivariate_normal_frozen, _psd_pinv_decomposed_log_pdet)
+from scipy.stats._multivariate import _psd_pinv_decomposed_log_pdet
 from scipy.stats import multivariate_normal
 from scipy.stats import norm
 
@@ -55,7 +54,7 @@ def test_rank():
     for expected_rank in range(1, n+1):
         s = np.random.randn(n, expected_rank)
         cov = np.dot(s, s.T)
-        distn = multivariate_normal_frozen(mean, cov)
+        distn = multivariate_normal(mean, cov)
         assert_equal(distn.rank, expected_rank)
 
 
@@ -68,8 +67,8 @@ def test_degenerate_distributions():
             cov_kk = np.dot(s, s.T)
             cov_nn = np.zeros((n, n))
             cov_nn[:k, :k] = cov_kk
-            distn_kk = multivariate_normal_frozen(np.zeros(k), cov_kk)
-            distn_nn = multivariate_normal_frozen(np.zeros(n), cov_nn)
+            distn_kk = multivariate_normal(np.zeros(k), cov_kk)
+            distn_nn = multivariate_normal(np.zeros(n), cov_nn)
             assert_equal(distn_kk.rank, k)
             assert_equal(distn_nn.rank, k)
             pdf_kk = distn_kk.pdf(x[:k])
