@@ -708,6 +708,18 @@ class TestExpmConditionNumber(TestCase):
         kappa = expm_cond(A)
         assert_array_less(1e36, kappa)
 
+    def test_univariate(self):
+        np.random.seed(12345)
+        for x in np.linspace(-5, 5, num=11):
+            A = np.array([[x]])
+            assert_allclose(expm_cond(A), abs(x))
+        for x in np.logspace(-2, 2, num=11):
+            A = np.array([[x]])
+            assert_allclose(expm_cond(A), abs(x))
+        for i in range(10):
+            A = np.random.randn(1, 1)
+            assert_allclose(expm_cond(A), np.absolute(A)[0, 0])
+
     @decorators.slow
     def test_expm_cond_fuzz(self):
         np.random.seed(12345)
