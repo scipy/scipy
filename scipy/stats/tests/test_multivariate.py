@@ -11,7 +11,7 @@ import numpy
 import numpy as np
 
 import scipy.linalg
-from scipy.stats._multivariate import _psd_pinv_decomposed_log_pdet
+from scipy.stats._multivariate import _PSD
 from scipy.stats import multivariate_normal
 from scipy.stats import norm
 
@@ -55,7 +55,7 @@ def test_rank():
         s = np.random.randn(n, expected_rank)
         cov = np.dot(s, s.T)
         distn = multivariate_normal(mean, cov)
-        assert_equal(distn.rank, expected_rank)
+        assert_equal(distn.cov_info.rank, expected_rank)
 
 
 def test_degenerate_distributions():
@@ -69,8 +69,8 @@ def test_degenerate_distributions():
             cov_nn[:k, :k] = cov_kk
             distn_kk = multivariate_normal(np.zeros(k), cov_kk)
             distn_nn = multivariate_normal(np.zeros(n), cov_nn)
-            assert_equal(distn_kk.rank, k)
-            assert_equal(distn_nn.rank, k)
+            assert_equal(distn_kk.cov_info.rank, k)
+            assert_equal(distn_nn.cov_info.rank, k)
             pdf_kk = distn_kk.pdf(x[:k])
             pdf_nn = distn_nn.pdf(x[:n])
             assert_allclose(pdf_kk, pdf_nn)
@@ -102,8 +102,8 @@ def test_large_pseudo_determinant():
     #assert_allclose(np.linalg.slogdet(cov[:npos, :npos]), (1, large_total_log))
 
     # Check the pseudo-determinant.
-    U, log_pdet, rank = _psd_pinv_decomposed_log_pdet(cov)
-    assert_allclose(log_pdet, large_total_log)
+    psd = _PSD(cov)
+    assert_allclose(psd.log_pdet, large_total_log)
 
 
 def test_broadcasting():
@@ -192,33 +192,32 @@ def test_pseudodet_pinv():
 
     # Set cond so that the lowest eigenvalue is below the cutoff
     cond = 1e-5
-    U, log_pdet, rank = _psd_pinv_decomposed_log_pdet(cov, cond)
-    pinv = np.dot(U, U.T)
-    _, log_pdet_pinv, rank = _psd_pinv_decomposed_log_pdet(pinv, cond)
+    psd = _PSD(cov, cond=cond)
+    psd_pinv = _PSD(psd.pinv, cond=cond)
 
     # Check that the log pseudo-determinant agrees with the sum
     # of the logs of all but the smallest eigenvalue
-    assert_allclose(log_pdet, np.sum(np.log(s[:-1])))
+    assert_allclose(psd.log_pdet, np.sum(np.log(s[:-1])))
     # Check that the pseudo-determinant of the pseudo-inverse
     # agrees with 1 / pseudo-determinant
-    assert_allclose(-log_pdet, log_pdet_pinv)
+    assert_allclose(-psd.log_pdet, psd_pinv.log_pdet)
 
 
 def test_exception_nonsquare_cov():
     cov = [[1, 2, 3], [4, 5, 6]]
-    assert_raises(ValueError, _psd_pinv_decomposed_log_pdet, cov)
+    assert_raises(ValueError, _PSD, cov)
 
 
 def test_exception_nonfinite_cov():
     cov_nan = [[1, 0], [0, np.nan]]
-    assert_raises(ValueError, _psd_pinv_decomposed_log_pdet, cov_nan)
+    assert_raises(ValueError, _PSD, cov_nan)
     cov_inf = [[1, 0], [0, np.inf]]
-    assert_raises(ValueError, _psd_pinv_decomposed_log_pdet, cov_inf)
+    assert_raises(ValueError, _PSD, cov_inf)
 
 
 def test_exception_non_psd_cov():
     cov = [[1, 0], [0, -1]]
-    assert_raises(ValueError, _psd_pinv_decomposed_log_pdet, cov)
+    assert_raises(ValueError, _PSD, cov)
 
 
 def test_R_values():
