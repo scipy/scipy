@@ -698,6 +698,16 @@ class TestExpmConditionNumber(TestCase):
             kappa = expm_cond(A)
             assert_array_less(0, kappa)
 
+    def test_expm_bad_condition_number(self):
+        A = np.array([
+            [-1.128679820,  9.614183771e4,  -4.524855739e9,  2.924969411e14],
+            [0, -1.201010529,  9.634696872e4, -4.681048289e9],
+            [0, 0,  -1.132893222,  9.532491830e4],
+            [0, 0, 0, -1.179475332],
+            ])
+        kappa = expm_cond(A)
+        assert_array_less(1e36, kappa)
+
     @decorators.slow
     def test_expm_cond_fuzz(self):
         np.random.seed(12345)
