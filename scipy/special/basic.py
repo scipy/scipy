@@ -1147,7 +1147,7 @@ def agm(a,b):
     return (pi / 4) * s / ellipkm1(4 * a * b / s ** 2)
 
 
-def comb(N,k,exact=False,repetition=False):
+def comb(N, k, exact=False, repetition=False):
     """
     The number of combinations of N things taken k at a time.
 
@@ -1191,6 +1191,8 @@ def comb(N,k,exact=False,repetition=False):
     if repetition:
         return comb(N + k - 1, k, exact)
     if exact:
+        N = int(N)
+        k = int(k)
         if (k > N) or (N < 0) or (k < 0):
             return 0
         val = 1
