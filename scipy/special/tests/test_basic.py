@@ -1068,6 +1068,14 @@ class TestCombinatorics(TestCase):
         assert_equal(special.comb(10, 3, exact=True), 120)
         assert_equal(special.comb(10, 3, exact=True, repetition=True), 220)
 
+    def test_comb_with_np_int64(self):
+        n = 70
+        k = 30
+        np_n = np.int64(n)
+        np_k = np.int64(k)
+        assert_equal(special.comb(np_n, np_k, exact=True),
+                     special.comb(n, k, exact=True))
+
     def test_comb_zeros(self):
         assert_equal(special.comb(2, 3, exact=True), 0)
         assert_equal(special.comb(-1, 3, exact=True), 0)
