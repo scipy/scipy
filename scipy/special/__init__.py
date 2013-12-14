@@ -227,6 +227,7 @@ Raw Statistical Functions
    tklmbda    -- Tukey-Lambda CDF
    logit      --
    expit      --
+   boxcox     -- Compute the Box-Cox transformation.
 
 Gamma and Related Functions
 ---------------------------

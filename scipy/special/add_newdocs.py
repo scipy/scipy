@@ -1634,3 +1634,39 @@ add_newdoc("scipy.special", "_struve_bessel_series",
     """
     Function for testing struve & modstruve
     """)
+
+add_newdoc("scipy.special", "boxcox",
+    """
+    boxcox(x, lmbda)
+
+    Compute the Box-Cox transformation.
+
+    The Box-Cox transformation is::
+
+        y = (x**lmbda - 1) / lmbda  if lmbda != 0
+            log(x)                  if lmbda == 0
+
+    Returns `nan` if ``x < 0`` unless `lmbda` is a nonzero integer.
+    Returns `-inf` if ``x == 0`` and ``lmbda <= 0``.
+
+    .. versionadded:: 0.14.0
+
+    Parameters
+    ----------
+    x : array_like
+        Data to be transformed.
+    lmbda : array_like
+        Power parameter of the Box-Cox transform. 
+
+    Returns
+    -------
+    y : array
+        Transformed data.
+
+    Examples
+    --------
+    >>> boxcox([1, 4, 10], 2.5)
+    array([   0.        ,   12.4       ,  126.09110641])
+    >>> boxcox(2, [0, 1, 2])
+    array([ 0.69314718,  1.        ,  1.5       ])
+    """)
