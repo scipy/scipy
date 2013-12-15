@@ -114,7 +114,7 @@ int ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu, double
     return -1;
   }
   if (multipack_jac_transpose == 1) 
-    MATRIXC2F(pd, result_array->data, *n, *nrowpd)
+    MATRIXC2F(pd, result_array->data, *nrowpd, *n)
   else
     memcpy(pd, result_array->data, (*n)*(*nrowpd)*sizeof(double));
 

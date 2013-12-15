@@ -96,11 +96,20 @@ the result tuple when the full_output argument is non-zero.
     diag = (double *)ap_diag -> data; \
     mode = 2; } }
 
-#define MATRIXC2F(jac,data,n,m) {double *p1=(double *)(jac), *p2, *p3=(double *)(data);\
-int i,j;\
-for (j=0;j<(m);p3++,j++) \
-  for (p2=p3,i=0;i<(n);p2+=(m),i++,p1++) \
-    *p1 = *p2; }
+/*
+ *  MATRIXC2F(jac, data, n, m)
+ *
+ *  Copy a C-contiguous matrix at `data` to an F-contiguous matrix at `jac`.
+ *  `n` and `m` are the number of rows and columns of the matrix, respectively.
+ */
+#define MATRIXC2F(jac, data, n, m) \
+{ \
+  double *p1 = (double *)(jac), *p2, *p3 = (double *)(data); \
+  int i, j; \
+  for (j = 0; j < (m); p3++, j++) \
+    for (p2 = p3, i = 0; i < (n); p2 += (m), i++, p1++) \
+      *p1 = *p2; \
+}
 
 static PyObject *multipack_python_function=NULL;
 static PyObject *multipack_python_jacobian=NULL;
