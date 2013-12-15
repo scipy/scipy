@@ -9,8 +9,7 @@ from common_tests import (check_normalization, check_moment, check_mean_expect,
         check_var_expect, check_skew_expect, check_kurt_expect,
         check_entropy, check_private_entropy, check_edge_support,
         check_named_args)
-
-DECIMAL_meanvar = 0  # 1  # was 0
+knf = npt.dec.knownfailureif
 
 distdiscrete = [
     ['bernoulli',(0.3,)],
@@ -34,30 +33,20 @@ distdiscrete = [
 
 def test_discrete_basic():
     for distname, arg in distdiscrete:
-        distfn = getattr(stats,distname)
+        distfn = getattr(stats, distname)
         np.random.seed(9765456)
-        rvs = distfn.rvs(size=2000,*arg)
+        rvs = distfn.rvs(size=2000, *arg)
         supp = np.unique(rvs)
         m, v = distfn.stats(*arg)
-        # yield npt.assert_almost_equal(rvs.mean(), m, decimal=4,err_msg='mean')
-        # yield npt.assert_almost_equal, rvs.mean(), m, 2, 'mean' # does not work
-        yield check_sample_meanvar, rvs.mean(), m, distname + ' sample mean test'
-        yield check_sample_meanvar, rvs.var(), v, distname + ' sample var test'
-        yield check_cdf_ppf, distfn, arg, distname + ' cdf_ppf'
-        yield check_cdf_ppf2, distfn, arg, supp, distname + ' cdf_ppf'
-        yield check_pmf_cdf, distfn, arg, distname + ' pmf_cdf'
+        yield check_cdf_ppf, distfn, arg, supp, distname + ' cdf_ppf'
 
-        yield check_oth, distfn, arg, distname + ' oth'
-        skurt = stats.kurtosis(rvs)
-        sskew = stats.skew(rvs)
-        yield check_sample_skew_kurt, distfn, arg, skurt, sskew, \
-                      distname + ' skew_kurt'
+        yield check_pmf_cdf, distfn, arg, distname
+        yield check_oth, distfn, arg, supp, distname + ' oth'
+        yield check_edge_support, distfn, arg
 
         alpha = 0.01
         yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
                       distname + ' chisquare'
-
-        yield check_edge_support, distfn, arg
 
     seen = set()
     for distname, arg in distdiscrete:
@@ -81,7 +70,6 @@ def test_discrete_basic():
 
 
 def test_moments():
-    knf = npt.dec.knownfailureif
     for distname, arg in distdiscrete:
         distfn = getattr(stats,distname)
         m, v, s, k = distfn.stats(*arg, moments='mvsk')
@@ -97,108 +85,52 @@ def test_moments():
         msg = distname + ' fails kurtosis'
         yield knf(cond, msg)(check_kurt_expect), distfn, arg, m, v, k, distname
 
-
-@npt.dec.skipif(True)
-def test_discrete_private():
-    # testing private methods mostly for debugging
-    #   some tests might fail by design,
-    #   e.g. incorrect definition of distfn.a and distfn.b
-    for distname, arg in distdiscrete:
-        distfn = getattr(stats,distname)
-        rvs = distfn.rvs(size=10000,*arg)
-        m,v = distfn.stats(*arg)
-
-        yield check_ppf_ppf, distfn, arg
-        yield check_cdf_ppf_private, distfn, arg, distname
-        yield check_generic_moment, distfn, arg, m, 1, 3   # last is decimal
-        yield check_generic_moment, distfn, arg, v+m*m, 2, 3  # last is decimal
-        yield check_moment_frozen, distfn, arg, m, 1, 3   # last is decimal
-        yield check_moment_frozen, distfn, arg, v+m*m, 2, 3  # last is decimal
+        # frozen distr moments
+        yield check_moment_frozen, distfn, arg, m, 1
+        yield check_moment_frozen, distfn, arg, v+m*m, 2
 
 
-def check_sample_meanvar(sm,m,msg):
-    if not np.isinf(m):
-        npt.assert_almost_equal(sm, m, decimal=DECIMAL_meanvar, err_msg=msg +
-                                ' - finite moment')
-    else:
-        npt.assert_(sm > 10000, msg='infinite moment, sm = ' + str(sm))
-
-
-def check_sample_var(sm,m,msg):
-    npt.assert_almost_equal(sm, m, decimal=DECIMAL_meanvar, err_msg=msg + 'var')
-
-
-def check_cdf_ppf(distfn,arg,msg):
-    ppf05 = distfn.ppf(0.5,*arg)
-    cdf05 = distfn.cdf(ppf05,*arg)
-    npt.assert_almost_equal(distfn.ppf(cdf05-1e-6,*arg),ppf05,
-                            err_msg=msg + 'ppf-cdf-median')
-    npt.assert_((distfn.ppf(cdf05+1e-4,*arg) > ppf05), msg + 'ppf-cdf-next')
-
-
-def check_cdf_ppf2(distfn,arg,supp,msg):
-    npt.assert_array_equal(distfn.ppf(distfn.cdf(supp,*arg),*arg),
+def check_cdf_ppf(distfn, arg, supp, msg):
+    # cdf is a step function, and ppf(q) = min{k : cdf(k) >= q, k integer}
+    npt.assert_array_equal(distfn.ppf(distfn.cdf(supp, *arg), *arg),
                            supp, msg + '-roundtrip')
-    npt.assert_array_equal(distfn.ppf(distfn.cdf(supp,*arg)-1e-8,*arg),
+    npt.assert_array_equal(distfn.ppf(distfn.cdf(supp, *arg) - 1e-8, *arg),
                            supp, msg + '-roundtrip')
+    supp1 = supp[supp < distfn.b]
+    npt.assert_array_equal(distfn.ppf(distfn.cdf(supp1, *arg) + 1e-8, *arg),
+                     supp1 + distfn.inc, msg + 'ppf-cdf-next')
     # -1e-8 could cause an error if pmf < 1e-8
 
 
-def check_cdf_ppf_private(distfn,arg,msg):
-    ppf05 = distfn._ppf(0.5,*arg)
-    cdf05 = distfn.cdf(ppf05,*arg)
-    npt.assert_almost_equal(distfn._ppf(cdf05-1e-6,*arg),ppf05,
-                            err_msg=msg + '_ppf-cdf-median ')
-    npt.assert_((distfn._ppf(cdf05+1e-4,*arg) > ppf05), msg + '_ppf-cdf-next')
+def check_pmf_cdf(distfn, arg, distname):
+    startind = np.int(distfn.ppf(0.01, *arg) - 1)
+    index = list(range(startind, startind + 10))
+    cdfs, pmfs_cum = distfn.cdf(index,*arg), distfn.pmf(index, *arg).cumsum()
+
+    atol, rtol = 1e-10, 1e-10
+    if distname == 'skellam':    # ncx2 accuracy
+        atol, rtol = 1e-5, 1e-5
+    npt.assert_allclose(cdfs - cdfs[0], pmfs_cum - pmfs_cum[0],
+            atol=atol, rtol=rtol)
 
 
-def check_ppf_ppf(distfn, arg):
-    npt.assert_(distfn.ppf(0.5,*arg) < np.inf)
-    ppfs = distfn.ppf([0.5,0.9],*arg)
-    ppf_s = [distfn._ppf(0.5,*arg), distfn._ppf(0.9,*arg)]
-    npt.assert_(np.all(ppfs < np.inf))
-    npt.assert_(ppf_s[0] == distfn.ppf(0.5,*arg))
-    npt.assert_(ppf_s[1] == distfn.ppf(0.9,*arg))
-    npt.assert_(ppf_s[0] == ppfs[0])
-    npt.assert_(ppf_s[1] == ppfs[1])
+def check_moment_frozen(distfn, arg, m, k):
+    npt.assert_allclose(distfn(*arg).moment(k), m,
+            atol=1e-10, rtol=1e-10)
 
 
-def check_pmf_cdf(distfn, arg, msg):
-    startind = np.int(distfn._ppf(0.01,*arg)-1)
-    index = list(range(startind,startind+10))
-    cdfs = distfn.cdf(index,*arg)
-    npt.assert_almost_equal(cdfs, distfn.pmf(index, *arg).cumsum() +
-                            cdfs[0] - distfn.pmf(index[0],*arg),
-                            decimal=4, err_msg=msg + 'pmf-cdf')
-
-
-def check_generic_moment(distfn, arg, m, k, decim):
-    npt.assert_almost_equal(distfn.generic_moment(k,*arg), m, decimal=decim,
-                            err_msg=str(distfn) + ' generic moment test')
-
-
-def check_moment_frozen(distfn, arg, m, k, decim):
-    npt.assert_almost_equal(distfn(*arg).moment(k), m, decimal=decim,
-                            err_msg=str(distfn) + ' frozen moment test')
-
-
-def check_oth(distfn, arg, msg):
+def check_oth(distfn, arg, supp, msg):
     # checking other methods of distfn
-    meanint = round(float(distfn.stats(*arg)[0]))  # closest integer to mean
-    npt.assert_almost_equal(distfn.sf(meanint, *arg), 1 -
-                            distfn.cdf(meanint, *arg), decimal=8)
-    median_sf = distfn.isf(0.5, *arg)
+    npt.assert_allclose(distfn.sf(supp, *arg), 1. - distfn.cdf(supp, *arg),
+            atol=1e-10, rtol=1e-10)
 
+    q = np.linspace(0.01, 0.99, 20)
+    npt.assert_allclose(distfn.isf(q, *arg), distfn.ppf(1. - q, *arg),
+            atol=1e-10, rtol=1e-10)
+
+    median_sf = distfn.isf(0.5, *arg)
     npt.assert_(distfn.sf(median_sf - 1, *arg) > 0.5)
     npt.assert_(distfn.cdf(median_sf + 1, *arg) > 0.5)
-    npt.assert_equal(distfn.isf(0.5, *arg), distfn.ppf(0.5, *arg))
-
-
-def check_sample_skew_kurt(distfn, arg, sk, ss, msg):
-    k,s = distfn.stats(moments='ks', *arg)
-    check_sample_meanvar, sk, k, msg + 'sample skew test'
-    check_sample_meanvar, ss, s, msg + 'sample kurtosis test'
-
 
 
 def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
