@@ -20,7 +20,8 @@ import warnings
 __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'ber_zeros', 'bernoulli', 'berp_zeros', 'bessel_diff_formula',
            'bi_zeros', 'clpmn', 'comb', 'digamma', 'diric', 'ellipk', 'erf_zeros',
-           'erfcinv', 'erfinv', 'errprint', 'euler', 'fresnel_zeros',
+           'erfcinv', 'erfinv', 'errprint', 'euler', 'factorial',
+           'factorialk', 'factorial2', 'fresnel_zeros',
            'fresnelc_zeros', 'fresnels_zeros', 'gamma', 'gammaln', 'h1vp',
            'h2vp', 'hankel1', 'hankel2', 'hyp0f1', 'iv', 'ivp', 'jn_zeros',
            'jnjnp_zeros', 'jnp_zeros', 'jnyn_zeros', 'jv', 'jvp', 'kei_zeros',
@@ -1262,3 +1263,151 @@ def perm(N, k, exact=False):
         elif not cond:
             vals = np.float64(0)
         return vals
+
+
+def factorial(n,exact=False):
+    """
+    The factorial function, n! = special.gamma(n+1).
+
+    If exact is 0, then floating point precision is used, otherwise
+    exact long integer is computed.
+
+    - Array argument accepted only for exact=False case.
+    - If n<0, the return value is 0.
+
+    Parameters
+    ----------
+    n : int or array_like of ints
+        Calculate ``n!``.  Arrays are only supported with `exact` set
+        to False.  If ``n < 0``, the return value is 0.
+    exact : bool, optional
+        The result can be approximated rapidly using the gamma-formula
+        above.  If `exact` is set to True, calculate the
+        answer exactly using integer arithmetic. Default is False.
+
+    Returns
+    -------
+    nf : float or int
+        Factorial of `n`, as an integer or a float depending on `exact`.
+
+    Examples
+    --------
+    >>> arr = np.array([3,4,5])
+    >>> sc.factorial(arr, exact=False)
+    array([   6.,   24.,  120.])
+    >>> sc.factorial(5, exact=True)
+    120L
+
+    """
+    if exact:
+        if n < 0:
+            return 0
+        val = 1
+        for k in xrange(1,n+1):
+            val *= k
+        return val
+    else:
+        n = asarray(n)
+        vals = gamma(n+1)
+        return where(n >= 0,vals,0)
+
+
+def factorial2(n, exact=False):
+    """
+    Double factorial.
+
+    This is the factorial with every second value skipped, i.e.,
+    ``7!! = 7 * 5 * 3 * 1``.  It can be approximated numerically as::
+
+      n!! = special.gamma(n/2+1)*2**((m+1)/2)/sqrt(pi)  n odd
+          = 2**(n/2) * (n/2)!                           n even
+
+    Parameters
+    ----------
+    n : int or array_like
+        Calculate ``n!!``.  Arrays are only supported with `exact` set
+        to False.  If ``n < 0``, the return value is 0.
+    exact : bool, optional
+        The result can be approximated rapidly using the gamma-formula
+        above (default).  If `exact` is set to True, calculate the
+        answer exactly using integer arithmetic.
+
+    Returns
+    -------
+    nff : float or int
+        Double factorial of `n`, as an int or a float depending on
+        `exact`.
+
+    Examples
+    --------
+    >>> factorial2(7, exact=False)
+    array(105.00000000000001)
+    >>> factorial2(7, exact=True)
+    105L
+
+    """
+    if exact:
+        if n < -1:
+            return 0
+        if n <= 0:
+            return 1
+        val = 1
+        for k in xrange(n,0,-2):
+            val *= k
+        return val
+    else:
+        n = asarray(n)
+        vals = zeros(n.shape,'d')
+        cond1 = (n % 2) & (n >= -1)
+        cond2 = (1-(n % 2)) & (n >= -1)
+        oddn = extract(cond1,n)
+        evenn = extract(cond2,n)
+        nd2o = oddn / 2.0
+        nd2e = evenn / 2.0
+        place(vals,cond1,gamma(nd2o+1)/sqrt(pi)*pow(2.0,nd2o+0.5))
+        place(vals,cond2,gamma(nd2e+1) * pow(2.0,nd2e))
+        return vals
+
+
+def factorialk(n,k,exact=True):
+    """
+    n(!!...!)  = multifactorial of order k
+    k times
+
+    Parameters
+    ----------
+    n : int
+        Calculate multifactorial. If `n` < 0, the return value is 0.
+    exact : bool, optional
+        If exact is set to True, calculate the answer exactly using
+        integer arithmetic.
+
+    Returns
+    -------
+    val : int
+        Multi factorial of `n`.
+
+    Raises
+    ------
+    NotImplementedError
+        Raises when exact is False
+
+    Examples
+    --------
+    >>> sc.factorialk(5, 1, exact=True)
+    120L
+    >>> sc.factorialk(5, 3, exact=True)
+    10L
+
+    """
+    if exact:
+        if n < 1-k:
+            return 0
+        if n <= 0:
+            return 1
+        val = 1
+        for j in xrange(n,0,-k):
+            val = val*j
+        return val
+    else:
+        raise NotImplementedError
