@@ -18,9 +18,9 @@ systems that don't have PIL installed.
    central_diff_weights - Weights for an n-point central m-th derivative
    comb - Combinations of N things taken k at a time, "N choose k" (imported from scipy.special)
    derivative - Find the n-th derivative of a function at a point
-   factorial  - The factorial function, n! = special.gamma(n+1)
-   factorial2 - Double factorial, (n!)!
-   factorialk - (...((n!)!)!...)! where there are k '!'
+   factorial  - The factorial function, n! = special.gamma(n+1) (imported from scipy.special)
+   factorial2 - Double factorial, (n!)! (imported from scipy.special)
+   factorialk - (...((n!)!)!...)! where there are k '!' (imported from scipy.special)
    fromimage - Return a copy of a PIL image as a numpy array
    imfilter - Simple filtering of an image
    imread - Read an image file from a filename

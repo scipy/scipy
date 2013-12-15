@@ -1394,7 +1394,7 @@ class TestExp(TestCase):
 
 class TestFactorialFunctions(TestCase):
     def test_factorial(self):
-        assert_array_almost_equal([6., 34., 120.],
+        assert_array_almost_equal([6., 24., 120.],
                 special.factorial([3, 4, 5], exact=False))
         assert_equal(special.factorial(5, exact=True), 120)
 
