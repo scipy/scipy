@@ -15,6 +15,7 @@ from numpy.testing.decorators import setastest
 
 from scipy.lib.six import string_types
 from scipy import optimize
+from scipy import special
 from . import statlib
 from . import stats
 from .stats import find_repeats
@@ -504,12 +505,15 @@ def boxcox_llf(lmb, data):
     lmb : scalar
         Parameter for Box-Cox transformation.  See `boxcox` for details.
     data : array_like
-        Data to calculate Box-Cox log-likelihood for.
+        Data to calculate Box-Cox log-likelihood for.  If `data` is
+        multi-dimensional, the log-likelihood is calculated along the first
+        axis.
 
     Returns
     -------
-    llf : float
-        Box-Cox log-likelihood of `data` given `lmbda`.
+    llf : float or ndarray
+        Box-Cox log-likelihood of `data` given `lmb`.  A float for 1-D `data`,
+        an array otherwise.
 
     See Also
     --------
@@ -517,7 +521,7 @@ def boxcox_llf(lmb, data):
 
     Notes
     -----
-    The Box-Cox log likelihood function is defined here as
+    The Box-Cox log-likelihood function is defined here as
 
     .. math::
 
@@ -660,7 +664,7 @@ def boxcox(x, lmbda=None, alpha=None):
         y = (x**lmbda - 1) / lmbda,  for lmbda > 0
             log(x),                  for lmbda = 0
 
-    `boxcox` requires the input data to be positives.  Sometimes a Box-Cox
+    `boxcox` requires the input data to be positive.  Sometimes a Box-Cox
     transformation provides a shift parameter to achieve this; `boxcox` does
     not.  Such a shift parameter is equivalent to adding a positive constant to
     `x` before calling `boxcox`.
@@ -709,13 +713,11 @@ def boxcox(x, lmbda=None, alpha=None):
     if x.size == 0:
         return x
 
-    if any(x < 0):
+    if any(x <= 0):
         raise ValueError("Data must be positive.")
 
     if lmbda is not None:  # single transformation
-        lmbda = lmbda * (x == x)  # equal to ``lmbda * np.ones(x.shape)``
-        y = np.where(lmbda == 0, log(x), (x**lmbda - 1) / lmbda)
-        return y
+        return special.boxcox(x, lmbda)
 
     # If lmbda=None, find the lmbda that maximizes the log-likelihood function.
     lmax = boxcox_normmax(x, method='mle')
@@ -927,7 +929,7 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
                 plot.title('Box-Cox Normality Plot')
                 plot.ylabel('Prob Plot Corr. Coef.')
                 plot.xlabel('$\lambda$')
-        except:
+        except Exception:
             # Not an MPL object or something that looks (enough) like it.
             # Don't crash on adding labels or title
             pass
