@@ -1392,6 +1392,22 @@ class TestExp(TestCase):
         assert_array_almost_equal(ex1,exrl1,8)
 
 
+class TestFactorialFunctions(TestCase):
+    def test_factorial(self):
+        assert_array_almost_equal([6., 34., 120.],
+                special.factorial([3, 4, 5], exact=False))
+        assert_equal(special.factorial(5, exact=True), 120)
+
+    def test_factorial2(self):
+        assert_array_almost_equal([105., 384., 945.],
+                special.factorial2([7, 8, 9], exact=False))
+        assert_equal(special.factorial2(7, exact=True), 105)
+
+    def test_factorialk(self):
+        assert_equal(special.factorialk(5, 1, exact=True), 120)
+        assert_equal(special.factorialk(5, 3, exact=True), 10)
+
+
 class TestFresnel(TestCase):
     def test_fresnel(self):
         frs = array(special.fresnel(.5))

@@ -44,7 +44,7 @@ __all__ = ['who', 'source', 'info', 'doccer']
 from . import doccer
 from .common import *
 from numpy import who, source, info as _info
-from scipy.special import comb
+from scipy.special import comb, factorial, factorial2, factorialk
 
 import sys
 
