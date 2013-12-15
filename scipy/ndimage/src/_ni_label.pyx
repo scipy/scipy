@@ -430,4 +430,5 @@ cpdef _label(np.ndarray input,
         PyDataMem_FREE(<void *> mergetable)
         raise
 
+    PyDataMem_FREE(<void *> mergetable)
     return dest_label - 1
