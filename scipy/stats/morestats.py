@@ -840,7 +840,7 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
     """Compute parameters for a Box-Cox normality plot, optionally show it.
 
     A Box-Cox normality plot shows graphically what the best transformation
-    parameter is to use in `boxcox` for obtained a distribution that is close
+    parameter is to use in `boxcox` to obtain a distribution that is close
     to normal.
 
     Parameters
