@@ -98,7 +98,7 @@ Matrix Functions
    sqrtm - Matrix square root
    funm - Evaluating an arbitrary matrix function
    expm_frechet - Frechet derivative of the matrix exponential
-   expm_cond - Condition number of the matrix exponential
+   expm_cond - Condition number of the matrix exponential in the Frobenius norm
    fractional_matrix_power - Fractional matrix power
 
 

@@ -27,7 +27,7 @@ from scipy.linalg.matfuncs import expm2, expm3
 from scipy.linalg import _matfuncs_inv_ssq
 import scipy.linalg._expm_frechet
 
-from scipy.optimize import fmin_l_bfgs_b
+from scipy.optimize import minimize
 
 
 def _get_al_mohy_higham_2012_experiment_1():
@@ -738,7 +738,8 @@ class TestExpmConditionNumber(TestCase):
             f = functools.partial(_help_expm_cond_search,
                     A, A_norm, X, X_norm, eps)
             guess = np.ones(n*n)
-            xopt, yopt, info = fmin_l_bfgs_b(f, guess, approx_grad=True)
+            out = minimize(f, guess, method='L-BFGS-B',
+                    options=dict(approx_grad=True))
             p_best = eps * _normalized_like(np.reshape(xopt, A.shape), A)
             p_best_relerr = _relative_error(expm, A, p_best)
             assert_allclose(p_best_relerr, -yopt * eps)
