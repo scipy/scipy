@@ -29,7 +29,7 @@
  *
  * y = pdtr( k, m ) = igamc( k+1, m ).
  *
- * The arguments must both be positive.
+ * The arguments must both be nonnegative.
  *
  *
  *
@@ -69,7 +69,7 @@
  *
  * y = pdtrc( k, m ) = igam( k+1, m ).
  *
- * The arguments must both be positive.
+ * The arguments must both be nonnegative.
  *
  *
  *
@@ -133,9 +133,12 @@ double m;
 {
     double v;
 
-    if ((k < 0) || (m <= 0.0)) {
+    if ((k < 0) || (m < 0.0)) {
         mtherr("pdtrc", DOMAIN);
         return (NPY_NAN);
+    }
+    if (m == 0.0) {
+        return 0.0;
     }
     v = k + 1;
     return (igam(v, m));
@@ -148,9 +151,12 @@ double m;
 {
     double v;
 
-    if ((k < 0) || (m <= 0.0)) {
+    if ((k < 0) || (m < 0.0)) {
         mtherr("pdtr", DOMAIN);
         return (NPY_NAN);
+    }
+    if (m == 0.0) {
+        return 1.0;
     }
     v = k + 1;
     return (igamc(v, m));
