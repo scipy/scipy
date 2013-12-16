@@ -19,6 +19,7 @@ from scipy import special
 import scipy.stats as stats
 from scipy.stats.distributions import argsreduce
 from scipy.special import xlogy
+from scipy.optimize import brentq
 
 
 # python -OO strips docstrings
@@ -754,6 +755,16 @@ class TestChi2(TestCase):
     def test_precision(self):
         assert_almost_equal(stats.chi2.pdf(1000, 1000), 8.919133934753128e-003, 14)
         assert_almost_equal(stats.chi2.pdf(100, 100), 0.028162503162596778, 14)
+
+
+class TestSemicircular(TestCase):
+    def test_ppf(self):
+        # test interpolated ppf
+        qq = np.linspace(1e-8, 1 - 1e-8, 50)
+        def ppf(q):
+            return brentq(lambda x: stats.semicircular.cdf(x) - q, -1., 1.)
+        assert_allclose(stats.semicircular.ppf(qq), [ppf(q) for q in qq],
+                atol=1e-7, rtol=1e-10)
 
 
 class TestArrayArgument(TestCase):  # test for ticket:992
