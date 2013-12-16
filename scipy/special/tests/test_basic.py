@@ -660,7 +660,11 @@ class TestCephes(TestCase):
             cephes.pdtri(0.5,0.5)
 
     def test_pdtrik(self):
-        cephes.pdtrik(0.5,1)
+        k = cephes.pdtrik(0.5, 1)
+        assert_almost_equal(cephes.gammaincc(k + 1, 1), 0.5)
+        # Edge case: m = 0 or very small.
+        k = cephes.pdtrik([[0], [0.25], [0.95]], [0, 1e-20, 1e-6])
+        assert_array_equal(k, np.zeros((3, 3)))
 
     def test_pro_ang1(self):
         cephes.pro_ang1(1,1,1,0)
