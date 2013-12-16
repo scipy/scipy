@@ -248,7 +248,22 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     if x is None:
         d = dx
     else:
-        d = diff(x, axis=axis)
+        x = asarray(x)
+        if x.ndim == 1:
+            d = diff(x)
+            # reshape to correct shape
+            shape = [1] * y.ndim
+            shape[axis] = -1
+            d = d.reshape(shape)
+        elif len(x.shape) != len(y.shape):
+            raise ValueError("If given, shape of x must be 1-d or the "
+                    "same as y.")
+        else:
+            d = diff(x, axis=axis)
+
+        if d.shape[axis] != y.shape[axis] - 1:
+            raise ValueError("If given, length of x along axis must be the "
+                             "same as y.")
 
     nd = len(y.shape)
     slice1 = tupleset((slice(None),)*nd, axis, slice(1, None))
