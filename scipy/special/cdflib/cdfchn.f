@@ -112,6 +112,16 @@ C     ..
 C     .. External Subroutines ..
       EXTERNAL cumchn,dinvr,dstinv
 C     ..
+      IF (x.GT.inf) THEN
+          x = inf
+      END IF
+      IF (df.GT.inf) THEN
+          df = inf
+      END IF
+      IF (pnonc.GT.tent4) THEN
+          pnonc = tent4
+      END IF
+
       IF (.NOT. ((which.LT.1).OR. (which.GT.4))) GO TO 30
       IF (.NOT. (which.LT.1)) GO TO 10
       bound = 1.0D0
