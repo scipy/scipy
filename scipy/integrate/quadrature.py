@@ -252,7 +252,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
         if x.ndim == 1:
             d = diff(x)
             # reshape to correct shape
-            shape = [1]*y.ndim
+            shape = [1] * y.ndim
             shape[axis] = -1
             d = d.reshape(shape)
         elif len(x.shape) != len(y.shape):
@@ -260,9 +260,11 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
                     "same as y.")
         else:
             d = diff(x, axis=axis)
+
         if d.shape[axis] != y.shape[axis] - 1:
             raise ValueError("If given, length of x along axis must be the "
-                    "same as y.")
+                             "same as y.")
+
     nd = len(y.shape)
     slice1 = tupleset((slice(None),)*nd, axis, slice(1, None))
     slice2 = tupleset((slice(None),)*nd, axis, slice(None, -1))
