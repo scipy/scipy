@@ -54,7 +54,7 @@ def test_rank():
     for expected_rank in range(1, n+1):
         s = np.random.randn(n, expected_rank)
         cov = np.dot(s, s.T)
-        distn = multivariate_normal(mean, cov)
+        distn = multivariate_normal(mean, cov, allow_singular=True)
         assert_equal(distn.cov_info.rank, expected_rank)
 
 
@@ -67,8 +67,10 @@ def test_degenerate_distributions():
             cov_kk = np.dot(s, s.T)
             cov_nn = np.zeros((n, n))
             cov_nn[:k, :k] = cov_kk
-            distn_kk = multivariate_normal(np.zeros(k), cov_kk)
-            distn_nn = multivariate_normal(np.zeros(n), cov_nn)
+            distn_kk = multivariate_normal(np.zeros(k), cov_kk,
+                    allow_singular=True)
+            distn_nn = multivariate_normal(np.zeros(n), cov_nn,
+                    allow_singular=True)
             assert_equal(distn_kk.cov_info.rank, k)
             assert_equal(distn_nn.cov_info.rank, k)
             pdf_kk = distn_kk.pdf(x[:k])
@@ -218,6 +220,16 @@ def test_exception_nonfinite_cov():
 def test_exception_non_psd_cov():
     cov = [[1, 0], [0, -1]]
     assert_raises(ValueError, _PSD, cov)
+
+def test_exception_singular_cov():
+    np.random.seed(1234)
+    x = np.random.randn(5)
+    mean = np.random.randn(5)
+    cov = np.ones((5, 5))
+    e = np.linalg.LinAlgError
+    assert_raises(e, multivariate_normal, mean, cov)
+    assert_raises(e, multivariate_normal.pdf, x, mean, cov)
+    assert_raises(e, multivariate_normal.logpdf, x, mean, cov)
 
 
 def test_R_values():

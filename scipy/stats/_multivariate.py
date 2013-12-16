@@ -132,7 +132,8 @@ class _PSD(object):
     but not necessarily with np.linalg.det() or with np.linalg.matrix_rank().
 
     """
-    def __init__(self, M, cond=None, rcond=None, lower=True, check_finite=True):
+    def __init__(self, M, cond=None, rcond=None, lower=True,
+            check_finite=True, allow_singular=True):
         """
         Compute functions of a symmetric positive semidefinite matrix.
 
@@ -148,11 +149,13 @@ class _PSD(object):
         lower : bool, optional
             Whether the pertinent array data is taken from the lower
             or upper triangle of M. (Default: lower)
-        check_finite : boolean, optional
+        check_finite : bool, optional
             Whether to check that the input matrices contain only finite
             numbers. Disabling may give a performance gain, but may result
             in problems (crashes, non-termination) if the inputs do contain
             infinities or NaNs.
+        allow_singular : bool, optional
+            Whether to allow a singular matrix.  (Default: True)
 
         Notes
         -----
@@ -177,14 +180,16 @@ class _PSD(object):
         eps = cond * np.max(abs(s))
         if np.min(s) < -eps:
             raise ValueError('the input matrix must be positive semidefinite')
+        d = s[s > eps]
+        if len(d) < len(s) and not allow_singular:
+            raise np.linalg.LinAlgError('singular matrix')
         s_pinv = _pinv_1d(s, eps)
         U = np.multiply(u, np.sqrt(s_pinv))
-        d = s[s > eps]
 
         # Initialize the eagerly precomputed attributes.
+        self.rank = len(d)
         self.U = U
         self.log_pdet = np.sum(np.log(d))
-        self.rank = len(d)
 
         # Initialize an attribute to be lazily computed.
         self._pinv = None
@@ -201,6 +206,8 @@ mean : array_like, optional
     Mean of the distribution (default zero)
 cov : array_like, optional
     Covariance matrix of the distribution (default one)
+allow_singular : bool, optional
+    Whether to allow a singular covariance matrix.  (Default: False)
 """
 
 _doc_callparams_note = \
@@ -304,14 +311,15 @@ class multivariate_normal_gen(object):
     def __init__(self):
         self.__doc__ = doccer.docformat(self.__doc__, docdict_params)
 
-    def __call__(self, mean=None, cov=1):
+    def __call__(self, mean=None, cov=1, allow_singular=False):
         """
         Create a frozen multivariate normal distribution.
 
         See `multivariate_normal_frozen` for more information.
 
         """
-        return multivariate_normal_frozen(mean, cov)
+        return multivariate_normal_frozen(mean, cov,
+                allow_singular=allow_singular)
 
     def _logpdf(self, x, mean, prec_U, log_det_cov, rank):
         """
@@ -340,7 +348,7 @@ class multivariate_normal_gen(object):
         maha = np.sum(np.square(np.dot(dev, prec_U)), axis=-1)
         return -0.5 * (rank * _LOG_2PI + log_det_cov + maha)
 
-    def logpdf(self, x, mean, cov):
+    def logpdf(self, x, mean, cov, allow_singular=False):
         """
         Log of the multivariate normal probability density function.
 
@@ -362,11 +370,11 @@ class multivariate_normal_gen(object):
         """
         dim, mean, cov = _process_parameters(None, mean, cov)
         x = _process_quantiles(x, dim)
-        psd = _PSD(cov)
+        psd = _PSD(cov, allow_singular=allow_singular)
         out = self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank)
         return _squeeze_output(out)
 
-    def pdf(self, x, mean, cov):
+    def pdf(self, x, mean, cov, allow_singular=False):
         """
         Multivariate normal probability density function.
 
@@ -388,7 +396,7 @@ class multivariate_normal_gen(object):
         """
         dim, mean, cov = _process_parameters(None, mean, cov)
         x = _process_quantiles(x, dim)
-        psd = _PSD(cov)
+        psd = _PSD(cov, allow_singular=allow_singular)
         out = np.exp(self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank))
         return _squeeze_output(out)
 
@@ -442,7 +450,7 @@ multivariate_normal = multivariate_normal_gen()
 
 
 class multivariate_normal_frozen(object):
-    def __init__(self, mean=None, cov=1):
+    def __init__(self, mean=None, cov=1, allow_singular=False):
         """
         Create a frozen multivariate normal distribution.
 
@@ -452,6 +460,9 @@ class multivariate_normal_frozen(object):
             Mean of the distribution (default zero)
         cov : array_like, optional
             Covariance matrix of the distribution (default one)
+        allow_singular : bool, optional
+            If this flag is True then tolerate a singular
+            covariance matrix (default False).
 
         Examples
         --------
@@ -467,7 +478,7 @@ class multivariate_normal_frozen(object):
 
         """
         self.dim, self.mean, self.cov = _process_parameters(None, mean, cov)
-        self.cov_info = _PSD(self.cov)
+        self.cov_info = _PSD(self.cov, allow_singular=allow_singular)
         self._mnorm = multivariate_normal_gen()
 
     def logpdf(self, x):
