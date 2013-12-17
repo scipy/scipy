@@ -327,7 +327,7 @@ def expm_frechet_kronform(A, method=None, check_finite=True):
     --------
     expm : Compute a matrix exponential.
     expm_frechet : Compute the Frechet derivative of the matrix exponential.
-    expm_cond : Compute the condition number of the matrix exponential
+    expm_cond : Compute the relative condition number of the matrix exponential
                 in the Frobenius norm.
 
     """
@@ -352,7 +352,7 @@ def expm_frechet_kronform(A, method=None, check_finite=True):
 
 def expm_cond(A, check_finite=True):
     """
-    Compute the matrix exponential condition number in the Frobenius norm.
+    Relative condition number of the matrix exponential in the Frobenius norm.
 
     .. versionadded:: 0.14.0
 
@@ -368,7 +368,8 @@ def expm_cond(A, check_finite=True):
     Returns
     -------
     kappa : float
-        The condition number of the matrix exponential, in the Frobenius norm
+        The relative condition number of the matrix exponential
+        in the Frobenius norm
 
     Notes
     -----
