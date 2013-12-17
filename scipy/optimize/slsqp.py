@@ -20,7 +20,7 @@ __all__ = ['approx_jacobian','fmin_slsqp']
 from scipy.optimize._slsqp import slsqp
 from numpy import zeros, array, linalg, append, asfarray, concatenate, finfo, \
                   sqrt, vstack, exp, inf, where, isfinite, atleast_1d
-from .optimize import wrap_function, Result, _check_unknown_options
+from .optimize import wrap_function, OptimizeResult, _check_unknown_options
 
 __docformat__ = "restructuredtext en"
 
@@ -61,6 +61,7 @@ def approx_jacobian(x,func,epsilon,*args):
         dx[i] = epsilon
         jac[i] = (func(*((x0+dx,)+args)) - f0)/epsilon
         dx[i] = 0.0
+
     return jac.transpose()
 
 
@@ -425,9 +426,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print("            Function evaluations:", feval[0])
         print("            Gradient evaluations:", geval[0])
 
-    return Result(x=x, fun=fx, jac=g, nit=int(majiter), nfev=feval[0],
-                  njev=geval[0], status=int(mode),
-                  message=exit_modes[int(mode)], success=(mode == 0))
+    return OptimizeResult(x=x, fun=fx, jac=g, nit=int(majiter), nfev=feval[0],
+                          njev=geval[0], status=int(mode),
+                          message=exit_modes[int(mode)], success=(mode == 0))
+
 
 if __name__ == '__main__':
 

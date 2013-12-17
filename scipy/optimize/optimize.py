@@ -22,8 +22,8 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['fmin', 'fmin_powell', 'fmin_bfgs', 'fmin_ncg', 'fmin_cg',
            'fminbound', 'brent', 'golden', 'bracket', 'rosen', 'rosen_der',
            'rosen_hess', 'rosen_hess_prod', 'brute', 'approx_fprime',
-           'line_search', 'check_grad', 'Result', 'show_options',
-           'OptimizeWarning', 'Result']
+           'line_search', 'check_grad', 'OptimizeResult', 'show_options',
+           'OptimizeWarning']
 
 __docformat__ = "restructuredtext en"
 
@@ -32,8 +32,8 @@ import numpy
 from scipy.lib.six import callable
 from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
                    vectorize, asarray, sqrt, Inf, asfarray, isinf)
-from .linesearch import (line_search_BFGS, line_search_wolfe1,
-                         line_search_wolfe2, line_search_wolfe2 as line_search)
+from .linesearch import (line_search_wolfe1, line_search_wolfe2,
+                         line_search_wolfe2 as line_search)
 
 
 # standard status messages of optimizers
@@ -68,7 +68,7 @@ class MemoizeJac(object):
             return self.jac
 
 
-class Result(dict):
+class OptimizeResult(dict):
     """ Represents the optimization result.
 
     Attributes
@@ -538,9 +538,9 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             print("         Iterations: %d" % iterations)
             print("         Function evaluations: %d" % fcalls[0])
 
-    result = Result(fun=fval, nit=iterations, nfev=fcalls[0],
-                    status=warnflag, success=(warnflag == 0), message=msg,
-                    x=x)
+    result = OptimizeResult(fun=fval, nit=iterations, nfev=fcalls[0],
+                            status=warnflag, success=(warnflag == 0),
+                            message=msg, x=x)
     if retall:
         result['allvecs'] = allvecs
     return result
@@ -749,7 +749,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         1 : Maximum number of iterations exceeded.
         2 : Gradient and/or function calls not changing.
     allvecs  :  list
-        Results at each iteration.  Only returned if retall is True.
+        `OptimizeResult` at each iteration.  Only returned if retall is True.
 
     See also
     --------
@@ -919,9 +919,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             print("         Function evaluations: %d" % func_calls[0])
             print("         Gradient evaluations: %d" % grad_calls[0])
 
-    result = Result(fun=fval, jac=gfk, hess_inv=Hk, nfev=func_calls[0],
-                    njev=grad_calls[0], status=warnflag,
-                    success=(warnflag == 0), message=msg, x=xk)
+    result = OptimizeResult(fun=fval, jac=gfk, hess_inv=Hk, nfev=func_calls[0],
+                            njev=grad_calls[0], status=warnflag,
+                            success=(warnflag == 0), message=msg, x=xk)
     if retall:
         result['allvecs'] = allvecs
     return result
@@ -1201,9 +1201,9 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
             print("         Function evaluations: %d" % func_calls[0])
             print("         Gradient evaluations: %d" % grad_calls[0])
 
-    result = Result(fun=fval, jac=gfk, nfev=func_calls[0],
-                    njev=grad_calls[0], status=warnflag,
-                    success=(warnflag == 0), message=msg, x=xk)
+    result = OptimizeResult(fun=fval, jac=gfk, nfev=func_calls[0],
+                            njev=grad_calls[0], status=warnflag,
+                            success=(warnflag == 0), message=msg, x=xk)
     if retall:
         result['allvecs'] = allvecs
     return result
@@ -1469,9 +1469,9 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             print("         Gradient evaluations: %d" % gcalls[0])
             print("         Hessian evaluations: %d" % hcalls)
 
-    result = Result(fun=fval, jac=gfk, nfev=fcalls[0], njev=gcalls[0],
-                    nhev=hcalls, status=warnflag, success=(warnflag == 0),
-                    message=msg, x=xk)
+    result = OptimizeResult(fun=fval, jac=gfk, nfev=fcalls[0], njev=gcalls[0],
+                            nhev=hcalls, status=warnflag,
+                            success=(warnflag == 0), message=msg, x=xk)
     if retall:
         result['allvecs'] = allvecs
     return result
@@ -1655,11 +1655,11 @@ def _minimize_scalar_bounded(func, bounds, args=(),
     if disp > 0:
         _endprint(x, flag, fval, maxfun, xatol, disp)
 
-    result = Result(fun=fval, status=flag, success=(flag == 0),
-                    message={0: 'Solution found.',
-                             1: 'Maximum number of function calls '
-                                'reached.'}.get(flag, ''),
-                    x=xf, nfev=num)
+    result = OptimizeResult(fun=fval, status=flag, success=(flag == 0),
+                            message={0: 'Solution found.',
+                                     1: 'Maximum number of function calls '
+                                        'reached.'}.get(flag, ''),
+                            x=xf, nfev=num)
 
     return result
 
@@ -1895,7 +1895,7 @@ def _minimize_scalar_brent(func, brack=None, args=(),
     brent.set_bracket(brack)
     brent.optimize()
     x, fval, nit, nfev = brent.get_result(full_output=True)
-    return Result(fun=fval, x=x, nit=nit, nfev=nfev)
+    return OptimizeResult(fun=fval, x=x, nit=nit, nfev=nfev)
 
 
 def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
@@ -2000,7 +2000,7 @@ def _minimize_scalar_golden(func, brack=None, args=(),
         xmin = x2
         fval = f2
 
-    return Result(fun=fval, nfev=funcalls, x=xmin)
+    return OptimizeResult(fun=fval, nfev=funcalls, x=xmin)
 
 
 def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
@@ -2350,9 +2350,9 @@ def _minimize_powell(func, x0, args=(), callback=None,
 
     x = squeeze(x)
 
-    result = Result(fun=fval, direc=direc, nit=iter, nfev=fcalls[0],
-                    status=warnflag, success=(warnflag == 0), message=msg,
-                    x=x)
+    result = OptimizeResult(fun=fval, direc=direc, nit=iter, nfev=fcalls[0],
+                            status=warnflag, success=(warnflag == 0),
+                            message=msg, x=x)
     if retall:
         result['allvecs'] = allvecs
     return result

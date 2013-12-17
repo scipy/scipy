@@ -7,7 +7,7 @@ from numpy import (atleast_1d, dot, take, triu, shape, eye,
                    transpose, zeros, product, greater, array,
                    all, where, isscalar, asarray, inf, abs,
                    finfo, inexact, issubdtype, dtype)
-from .optimize import Result, _check_unknown_options
+from .optimize import OptimizeResult, _check_unknown_options
 
 error = _minpack.error
 
@@ -242,7 +242,7 @@ def _root_hybr(func, x0, args=(), jac=None,
 
     info = retval[1]
     info['fun'] = info.pop('fvec')
-    sol = Result(x=x, success=(status == 1), status=status)
+    sol = OptimizeResult(x=x, success=(status == 1), status=status)
     sol.update(info)
     try:
         sol['message'] = errors[status][0]

@@ -6,7 +6,7 @@ from __future__ import division, print_function, absolute_import
 import numpy
 from numpy import (asarray, tan, exp, ones, squeeze, sign,
         all, log, sqrt, pi, shape, array, minimum, where, random, deprecate)
-from .optimize import Result, _check_unknown_options
+from .optimize import OptimizeResult, _check_unknown_options
 from scipy.lib.six import xrange
 
 __all__ = ['anneal']
@@ -384,7 +384,7 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
     "options dictionary" using the keys prescribed for this method,
     (b) call the `minimize` function with the name of the method (which
     in this case is 'Anneal'), and (c) take account of the fact that
-    the returned value will be a `Result` object (`i.e.`, a dictionary,
+    the returned value will be a `OptimizeResult` object (`i.e.`, a dictionary,
     as defined in `optimize.py`).
 
     All of the allowable options for 'Anneal' when using the `minimize`
@@ -582,17 +582,17 @@ def _minimize_anneal(func, x0, args=(),
             retval = 4
             break
 
-    result = Result(x=best_state.x, fun=best_state.cost,
-                    T=schedule.T, nfev=schedule.feval, nit=iters,
-                    accept=schedule.accepted, status=retval,
-                    success=(retval <= 1),
-                    message={0: 'Points no longer changing',
-                             1: 'Cooled to final temperature',
-                             2: 'Maximum function evaluations',
-                             3: 'Maximum cooling iterations reached',
-                             4: 'Maximum accepted query locations reached',
-                             5: 'Final point not the minimum amongst '
-                                'encountered points'}[retval])
+    result = OptimizeResult(x=best_state.x, fun=best_state.cost,
+                            T=schedule.T, nfev=schedule.feval, nit=iters,
+                            accept=schedule.accepted, status=retval,
+                            success=(retval <= 1),
+                            message={0: 'Points no longer changing',
+                                     1: 'Cooled to final temperature',
+                                     2: 'Maximum function evaluations',
+                                     3: 'Maximum cooling iterations reached',
+                                     4: 'Maximum accepted query locations reached',
+                                     5: 'Final point not the minimum amongst '
+                                        'encountered points'}[retval])
     return result
 
 

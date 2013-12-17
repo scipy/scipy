@@ -15,7 +15,7 @@ General-purpose
    :toctree: generated/
 
    minimize - Unified interface for minimizers of multivariate functions
-   Result - The optimization result returned by some optimization functions
+   OptimizeResult - The optimization result returned by some optimizers
    fmin - Nelder-Mead Simplex algorithm
    fmin_powell - Powell's (modified) level set method
    fmin_cg - Non-linear (Polak-Ribiere) conjugate gradient algorithm

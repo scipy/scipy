@@ -34,16 +34,16 @@ class Storage(object):
 
 
 class BasinHoppingRunner(object):
-    """this class implements the core of the basinhopping algorithm
+    """This class implements the core of the basinhopping algorithm.
 
     x0 : ndarray
-        The starting coordinates
-    minimizer : callable, ``result = minimizer(x)``
-        The local minimizer.  The return value is a scpipy.optimize.Result
-        object
-    step_taking : callable, ``x_new = step_taking(x)``
-        This function displaces the coordinates randomly.  x can be modified
-        in-place.
+        The starting coordinates.
+    minimizer : callable
+        The local minimizer, with signature ``result = minimizer(x)``.
+        The return value is an `optimize.OptimizeResult` object.
+    step_taking : callable
+        This function displaces the coordinates randomly.  Signature should
+        be ``x_new = step_taking(x)``.  Note that `x` may be modified in-place.
     accept_tests : list of callables
         To each test is passed the kwargs `f_new`, `x_new`, `f_old` and
         `x_old`.  These tests will be used to judge whether or not to accept
@@ -52,7 +52,8 @@ class BasinHoppingRunner(object):
         order to accept the step.  This can be used, for example, to forcefully
         escape from a local minimum that ``basinhopping`` is trapped in.
     disp : bool, optional
-        display status messages
+        Display status messages.
+
     """
     def __init__(self, x0, minimizer, step_taking, accept_tests, disp=False):
         self.x = np.copy(x0)
@@ -64,7 +65,7 @@ class BasinHoppingRunner(object):
         self.nstep = 0
 
         # initialize return object
-        self.res = scipy.optimize.Result()
+        self.res = scipy.optimize.OptimizeResult()
         self.res.minimization_failures = 0
 
         # do initial minimization
@@ -366,11 +367,11 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     Returns
     -------
-    res : Result
-        The optimization result represented as a ``Result`` object.  Important
+    res : OptimizeResult
+        The optimization result represented as a ``OptimizeResult`` object.  Important
         attributes are: ``x`` the solution array, ``fun`` the value of the
         function at the solution, and ``message`` which describes the cause of
-        the termination. See `Result` for a description of other attributes.
+        the termination. See `OptimizeResult` for a description of other attributes.
 
     See Also
     --------
