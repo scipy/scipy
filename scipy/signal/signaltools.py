@@ -1615,6 +1615,10 @@ def lfilter_zi(b, a):
     if a.size < 1:
         raise ValueError("There must be at least one nonzero `a` coefficient.")
 
+    typeout = np.result_type(a, b)
+    b = b.astype(np.float64)
+    a = a.astype(np.float64)
+
     if a[0] != 1.0:
         # Normalize the coefficients so a[0] == 1.
         a = a / a[0]
@@ -1645,7 +1649,7 @@ def lfilter_zi(b, a):
     #     csum += b[k] - a[k]*b[0]
     #     zi[k] = asum*zi[0] - csum
 
-    return zi
+    return zi.astype(typeout)
 
 
 def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
