@@ -9,9 +9,9 @@ from numpy.testing import (TestCase, run_module_suite, assert_raises,
 import numpy as np
 from numpy import cos, sin
 
-from scipy.optimize import basinhopping, minimize
-from scipy.optimize._basinhopping import Storage, RandomDisplacement, \
-    Metropolis, AdaptiveStepsize
+from scipy.optimize import basinhopping
+from scipy.optimize._basinhopping import (
+    Storage, RandomDisplacement, Metropolis, AdaptiveStepsize)
 
 
 def func1d(x):
@@ -225,8 +225,8 @@ class TestBasinHopping(TestCase):
         accept_test = MyAcceptTest()
         i = 1
         # there's no point in running it more than a few steps.
-        res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
-                           niter=10, disp=self.disp, accept_test=accept_test)
+        basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
+                     niter=10, disp=self.disp, accept_test=accept_test)
         assert_(accept_test.been_called)
 
     def test_pass_callback(self):
@@ -247,7 +247,6 @@ class TestBasinHopping(TestCase):
         i = 1
         self.kwargs["options"] = dict(maxiter=0)
         self.niter = 10
-        self.disp = True
         res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
                            niter=self.niter, disp=self.disp)
         # the number of failed minimizations should be the number of

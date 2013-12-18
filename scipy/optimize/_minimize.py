@@ -122,12 +122,12 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     Returns
     -------
-    res : Result
-        The optimization result represented as a ``Result`` object.
+    res : OptimizeResult
+        The optimization result represented as a ``OptimizeResult`` object.
         Important attributes are: ``x`` the solution array, ``success`` a
         Boolean flag indicating if the optimizer exited successfully and
         ``message`` which describes the cause of the termination. See
-        `Result` for a description of other attributes.
+        `OptimizeResult` for a description of other attributes.
 
 
     See also
@@ -163,7 +163,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     Goldfarb, and Shanno (BFGS) [5]_ pp. 136. It uses the first derivatives
     only. BFGS has proven good performance even for non-smooth
     optimizations. This method also returns an approximation of the Hessian
-    inverse, stored as `hess_inv` in the Result object.
+    inverse, stored as `hess_inv` in the OptimizeResult object.
 
     Method *Newton-CG* uses a Newton-CG algorithm [5]_ pp. 168 (also known
     as the truncated Newton method). It uses a CG method to the compute the
@@ -457,12 +457,12 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
     Returns
     -------
-    res : Result
-        The optimization result represented as a ``Result`` object.
+    res : OptimizeResult
+        The optimization result represented as a ``OptimizeResult`` object.
         Important attributes are: ``x`` the solution array, ``success`` a
         Boolean flag indicating if the optimizer exited successfully and
         ``message`` which describes the cause of the termination. See
-        `Result` for a description of other attributes.
+        `OptimizeResult` for a description of other attributes.
 
     See also
     --------

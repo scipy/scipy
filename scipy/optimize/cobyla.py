@@ -15,7 +15,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.lib.six import callable
 from scipy.optimize import _cobyla
-from .optimize import Result, _check_unknown_options
+from .optimize import OptimizeResult, _check_unknown_options
 
 
 __all__ = ['fmin_cobyla']
@@ -249,21 +249,21 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
         # Check constraint violation
         info[0] = 4
 
-    return Result(x=xopt,
-                  status=int(info[0]),
-                  success=info[0] == 1,
-                  message={1: 'Optimization terminated successfully.',
-                           2: 'Maximum number of function evaluations has '
-                              'been exceeded.',
-                           3: 'Rounding errors are becoming damaging in '
-                              'COBYLA subroutine.',
-                           4: 'Did not converge to a solution satisfying '
-                              'the constraints. See `maxcv` for magnitude '
-                              'of violation.'
-                           }.get(info[0], 'Unknown exit status.'),
-                  nfev=int(info[1]),
-                  fun=info[2],
-                  maxcv=info[3])
+    return OptimizeResult(x=xopt,
+                          status=int(info[0]),
+                          success=info[0] == 1,
+                          message={1: 'Optimization terminated successfully.',
+                                   2: 'Maximum number of function evaluations has '
+                                      'been exceeded.',
+                                   3: 'Rounding errors are becoming damaging in '
+                                      'COBYLA subroutine.',
+                                   4: 'Did not converge to a solution satisfying '
+                                      'the constraints. See `maxcv` for magnitude '
+                                      'of violation.'
+                                   }.get(info[0], 'Unknown exit status.'),
+                          nfev=int(info[1]),
+                          fun=info[2],
+                          maxcv=info[3])
 
 
 if __name__ == '__main__':
