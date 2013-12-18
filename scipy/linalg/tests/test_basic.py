@@ -31,7 +31,8 @@ from numpy.testing import TestCase, rand, run_module_suite, assert_raises, \
     assert_allclose
 
 from scipy.linalg import solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,\
-        solve_banded, solveh_banded, solve_triangular
+        solve_banded, solveh_banded, solve_triangular, solve_circulant, \
+        circulant, LinAlgError
 
 from scipy.linalg._testutils import assert_no_overwrite
 
@@ -942,6 +943,84 @@ class TestOverwrite(object):
 
     def test_pinvh(self):
         assert_no_overwrite(pinvh, [(3,3)])
+
+
+class TestSolveCirculant(TestCase):
+
+    def test_basic1(self):
+        c = np.array([1, 2, 3, 5])
+        b = np.array([1, -1, 1, 0])
+        x = solve_circulant(c, b)
+        y = solve(circulant(c), b)
+        assert_allclose(x, y)
+
+    def test_basic2(self):
+        # b is a 2-d matrix.
+        c = np.array([1, 2, -3, -5])
+        b = np.arange(12).reshape(4, 3)
+        x = solve_circulant(c, b)
+        y = solve(circulant(c), b)
+        assert_allclose(x, y)
+
+    def test_basic3(self):
+        # b is a 3-d matrix.
+        c = np.array([1, 2, -3, -5])
+        b = np.arange(24).reshape(4, 3, 2)
+        x = solve_circulant(c, b)
+        y = solve(circulant(c), b)
+        assert_allclose(x, y)
+
+    def test_complex(self):
+        # Complex b and c
+        c = np.array([1+2j, -3, 4j, 5])
+        b = np.arange(8).reshape(4, 2) + 0.5j
+        x = solve_circulant(c, b)
+        y = solve(circulant(c), b)
+        assert_allclose(x, y)
+
+    def test_random_b_and_c(self):
+        # Random b and c
+        np.random.seed(54321)
+        c = np.random.randn(50)
+        b = np.random.randn(50)
+        x = solve_circulant(c, b)
+        y = solve(circulant(c), b)
+        assert_allclose(x, y)
+
+    def test_singular(self):
+        # c gives a singular circulant matrix.
+        c = np.array([1, 1, 0, 0])
+        b = np.array([1, 2, 3, 4])
+        x = solve_circulant(c, b, singular='lstsq')
+        y, res, rnk, s = lstsq(circulant(c), b)
+        assert_allclose(x, y)
+        assert_raises(LinAlgError, solve_circulant, x, y)
+
+    def test_axis_args(self):
+        # Test use of caxis, baxis and outaxis.
+
+        # c has shape (2, 1, 4)
+        c = np.array([[[-1, 2.5, 3, 3.5]], [[1, 6, 6, 6.5]]])
+
+        # b has shape (3, 4)
+        b = np.array([[0, 0, 1, 1], [1, 1, 0, 0], [1, -1, 0, 0]])
+
+        x = solve_circulant(c, b, baxis=1)
+        assert_equal(x.shape, (4, 2, 3))
+        expected = np.empty_like(x)
+        expected[:, 0, :] = solve(circulant(c[0]), b.T)
+        expected[:, 1, :] = solve(circulant(c[1]), b.T)
+        assert_allclose(x, expected)
+
+        x = solve_circulant(c, b, baxis=1, outaxis=-1)
+        assert_equal(x.shape, (2, 3, 4))
+        assert_allclose(np.rollaxis(x, -1), expected)
+
+        # np.swapaxes(c, 1, 2) has shape (2, 4, 1); b.T has shape (4, 3).
+        x = solve_circulant(np.swapaxes(c, 1, 2), b.T, caxis=1)
+        assert_equal(x.shape, (4, 2, 3))
+        assert_allclose(x, expected)
+
 
 if __name__ == "__main__":
     run_module_suite()
