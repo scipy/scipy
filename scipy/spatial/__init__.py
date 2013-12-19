@@ -92,7 +92,7 @@ from .qhull import *
 from ._plotutils import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-__all__ += ['distance']
+__all__ += ['distance', 'umath_distance']
 
 from . import distance
 from numpy.testing import Tester
