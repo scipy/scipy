@@ -1615,10 +1615,6 @@ def lfilter_zi(b, a):
     if a.size < 1:
         raise ValueError("There must be at least one nonzero `a` coefficient.")
 
-    typeout = np.result_type(a, b)
-    b = b.astype(np.float64)
-    a = a.astype(np.float64)
-
     if a[0] != 1.0:
         # Normalize the coefficients so a[0] == 1.
         a = a / a[0]
@@ -1649,7 +1645,7 @@ def lfilter_zi(b, a):
     #     csum += b[k] - a[k]*b[0]
     #     zi[k] = asum*zi[0] - csum
 
-    return zi.astype(typeout)
+    return zi
 
 
 def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
@@ -1736,6 +1732,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     b = np.asarray(b)
     a = np.asarray(a)
     x = np.asarray(x)
+    typeout = np.result_type(a, b, x)
 
     ntaps = max(len(a), len(b))
 
@@ -1767,6 +1764,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
 
     # Get the steady state of the filter's step response.
     zi = lfilter_zi(b, a)
+    zi = zi.astype(typeout)
 
     # Reshape zi and create x0 so that zi*x0 broadcasts
     # to the correct value for the 'zi' keyword argument
@@ -1778,6 +1776,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
 
     # Forward filter.
     (y, zf) = lfilter(b, a, ext, axis=axis, zi=zi * x0)
+    zf = zf.astype(typeout)
 
     # Backward filter.
     # Create y0 so zi*y0 broadcasts appropriately.
