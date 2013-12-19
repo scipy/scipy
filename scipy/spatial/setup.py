@@ -38,6 +38,9 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_distance_wrap',
         sources=[join('src', 'distance_wrap.c'), join('src', 'distance.c')],
         include_dirs=[get_numpy_include_dirs()])
+    
+    config.add_extension('_umath_distance',
+                         sources=[join('src', 'umath_distance.c.src')])
 
     return config
 
