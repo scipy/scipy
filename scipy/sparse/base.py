@@ -728,7 +728,7 @@ class spmatrix(object):
         """
         M, N = self.shape
         if (k > 0 and k >= N) or (k < 0 and -k >= M):
-            raise ValueError("k exceedes matrix dimensions")
+            raise ValueError("k exceeds matrix dimensions")
         if k < 0:
             max_index = min(M+k, N, len(values))
             for i,v in enumerate(values[:max_index]):

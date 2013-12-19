@@ -222,9 +222,9 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         if nnz > 0:
             if self.row.max() >= self.shape[0]:
-                raise ValueError('row index exceedes matrix dimensions')
+                raise ValueError('row index exceeds matrix dimensions')
             if self.col.max() >= self.shape[1]:
-                raise ValueError('column index exceedes matrix dimensions')
+                raise ValueError('column index exceeds matrix dimensions')
             if self.row.min() < 0:
                 raise ValueError('negative row index found')
             if self.col.min() < 0:
