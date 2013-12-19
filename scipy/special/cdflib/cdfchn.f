@@ -143,21 +143,21 @@ C     ..
 
    60 CONTINUE
    70 IF (which.EQ.2) GO TO 90
-      IF (.NOT. (x.LT.0.0D0)) GO TO 80
+      IF (x.GE.0.0D0) GO TO 80
       bound = 0.0D0
       status = -4
       RETURN
 
    80 CONTINUE
    90 IF (which.EQ.3) GO TO 110
-      IF (.NOT. (df.LE.0.0D0)) GO TO 100
+      IF (df.GT.0.0D0) GO TO 100
       bound = 0.0D0
       status = -5
       RETURN
 
   100 CONTINUE
   110 IF (which.EQ.4) GO TO 130
-      IF (.NOT. (pnonc.LT.0.0D0)) GO TO 120
+      IF (pnonc.GE.0.0D0) GO TO 120
       bound = 0.0D0
       status = -6
       RETURN
