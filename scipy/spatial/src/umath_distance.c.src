@@ -1961,7 +1961,7 @@ static PyMethodDef module_methods[] = {
 #if defined(NPY_PY3K)
 static struct PyModuleDef moduledef = {
         PyModuleDef_HEAD_INIT,
-        NUMPYPE_MODULE_NAME,
+        MODULE_NAME_STR,
         NULL,
         -1,
         module_methods,
