@@ -1732,6 +1732,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     b = np.asarray(b)
     a = np.asarray(a)
     x = np.asarray(x)
+    typeout = np.result_type(a, b, x)
 
     ntaps = max(len(a), len(b))
 
@@ -1763,6 +1764,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
 
     # Get the steady state of the filter's step response.
     zi = lfilter_zi(b, a)
+    zi = zi.astype(typeout)
 
     # Reshape zi and create x0 so that zi*x0 broadcasts
     # to the correct value for the 'zi' keyword argument
@@ -1774,6 +1776,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
 
     # Forward filter.
     (y, zf) = lfilter(b, a, ext, axis=axis, zi=zi * x0)
+    zf = zf.astype(typeout)
 
     # Backward filter.
     # Create y0 so zi*y0 broadcasts appropriately.
