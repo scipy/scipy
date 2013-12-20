@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 from . import _minpack
 
+import numpy as np
 from numpy import (atleast_1d, dot, take, triu, shape, eye,
                    transpose, zeros, product, greater, array,
                    all, where, isscalar, asarray, inf, abs,
@@ -532,15 +533,22 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False, **kw):
         else:
             p0 = [1.0] * (len(args)-1)
 
+    # Check input arguments
     if isscalar(p0):
         p0 = array([p0])
+
+    ydata = np.asanyarray(ydata)
+    if isinstance(xdata, (list, tuple)):
+        # `xdata` is passed straight to the user-defined `f`, so allow
+        # non-array_like `xdata`.
+        xdata = np.asarray(xdata)
 
     args = (xdata, ydata, f)
     if sigma is None:
         func = _general_function
     else:
         func = _weighted_general_function
-        args += (1.0/asarray(sigma),)
+        args += (1.0 / asarray(sigma),)
 
     # Remove full_output from kw, otherwise we're passing it in twice.
     return_full = kw.pop('full_output', False)
