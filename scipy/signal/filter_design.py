@@ -716,6 +716,17 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     elif output == 'ba':
         return zpk2tf(z, p, k)
 
+def _relative_degree(z, p):
+    """
+    Return relative degree of transfer function from zeros and poles
+    """
+    degree = len(p) - len(z)
+    if degree < 0:
+        raise ValueError("Improper transfer function. "
+                         "Must have at least as many poles as zeros.")
+    else:
+        return degree
+
 
 # TODO: merge these into existing functions or make public versions
 
@@ -749,22 +760,24 @@ def _zpkbilinear(z, p, k, fs):
         System gain of the transformed digital filter.
 
     """
-    degree = len(p) - len(z)
-    if degree < 0:
-        raise ValueError("Improper transfer function. "
-                         "Must have at least as many poles as zeros.")
+    z = atleast_1d(z)
+    p = atleast_1d(p)
 
-    # Compensate for gain change
-    k *= real(prod(2*fs - z) / prod(2*fs - p))
+    degree = _relative_degree(z, p)
 
+    fs2 = 2*fs
+    
     # Bilinear transform the poles and zeros
-    p = (2*fs + p) / (2*fs - p)
-    z = (2*fs + z) / (2*fs - z)
+    p_z = (fs2 + p) / (fs2 - p)
+    z_z = (fs2 + z) / (fs2 - z)
 
     # Any zeros that were at infinity get moved to the Nyquist frequency
-    z = append(z, -ones(degree))
+    z_z = append(z_z, -ones(degree))
 
-    return z, p, k
+    # Compensate for gain change
+    k_z = k * real(prod(fs2 - z) / prod(fs2 - p))
+
+    return z_z, p_z, k_z
 
 
 def _zpklp2lp(z, p, k, wo=1.0):
@@ -800,15 +813,17 @@ def _zpklp2lp(z, p, k, wo=1.0):
     z = atleast_1d(z)
     p = atleast_1d(p)
 
+    degree = _relative_degree(z, p)
+
     # Scale all points radially from origin to shift cutoff frequency
-    z = z * wo
-    p = p * wo
+    z_lp = wo * z
+    p_lp = wo * p
 
     # Each shifted pole decreases gain by wo, each shifted zero increases it.
     # Cancel out the net change to keep overall gain the same
-    k *= wo**(len(p) - len(z))
+    k_lp = k * wo**degree
 
-    return z, p, k
+    return z_lp, p_lp, k_lp
 
 
 def _zpklp2hp(z, p, k, wo=1.0):
@@ -844,18 +859,20 @@ def _zpklp2hp(z, p, k, wo=1.0):
     z = atleast_1d(z)
     p = atleast_1d(p)
 
-    # Cancel out gain change caused by inversion
-    k *= real(prod(-z) / prod(-p))
+    degree = _relative_degree(z, p)
 
     # Invert positions radially about unit circle to convert LPF to HPF
     # Scale all points radially from origin to shift cutoff frequency
-    z = wo / z
-    p = wo / p
+    z_hp = wo / z
+    p_hp = wo / p
 
     # If lowpass had zeros at infinity, inverting moves them to origin.
-    z = append(z, zeros(len(p) - len(z)))
+    z_hp = append(z_hp, zeros(degree))
 
-    return z, p, k
+    # Cancel out gain change caused by inversion
+    k_hp = k * real(prod(-z) / prod(-p))
+
+    return z_hp, p_hp, k_hp
 
 
 def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
@@ -897,27 +914,29 @@ def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
     z = atleast_1d(z)
     p = atleast_1d(p)
 
-    degree = len(p) - len(z) # Relative degree of the transfer function
+    degree = _relative_degree(z, p)
 
     # Scale poles and zeros to desired bandwidth
-    pbw = p * bw/2
-    zbw = z * bw/2
+    p_lp = p * bw/2
+    z_lp = z * bw/2
 
-    # Square root needs to produce complex, not nan
-    pbw = pbw.astype(complex)
-    zbw = zbw.astype(complex)
+    # Square root needs to produce complex result, not NaN
+    p_lp = p_lp.astype(complex)
+    z_lp = z_lp.astype(complex)
 
     # Duplicate poles and zeros and shift from baseband to +wo and -wo
-    p = concatenate((pbw + sqrt(pbw**2 - wo**2), pbw - sqrt(pbw**2 - wo**2)))
-    z = concatenate((zbw + sqrt(zbw**2 - wo**2), zbw - sqrt(zbw**2 - wo**2)))
+    p_bp = concatenate((p_lp + sqrt(p_lp**2 - wo**2), 
+                        p_lp - sqrt(p_lp**2 - wo**2)))
+    z_bp = concatenate((z_lp + sqrt(z_lp**2 - wo**2), 
+                        z_lp - sqrt(z_lp**2 - wo**2)))
 
     # Move half of any zeros that were at infinity to the origin for BPF
-    z = append(z, zeros(degree))
+    z_bp = append(z_bp, zeros(degree))
 
     # Cancel out gain change from frequency scaling
-    k *= bw**degree
+    k_bp = k * bw**degree
 
-    return z, p, k
+    return z_bp, p_bp, k_bp
 
 
 def _zpklp2bs(z, p, k, wo=1.0, bw=1.0):
@@ -959,28 +978,30 @@ def _zpklp2bs(z, p, k, wo=1.0, bw=1.0):
     z = atleast_1d(z)
     p = atleast_1d(p)
 
-    degree = len(p) - len(z) # Relative degree of the transfer function
-
-    # Cancel out gain change caused by inversion
-    k *= real(prod(-z) / prod(-p))
+    degree = _relative_degree(z, p)
 
     # Invert to a highpass filter with desired bandwidth
-    pbw = (bw/2) / p
-    zbw = (bw/2) / z
+    p_hp = (bw/2) / p
+    z_hp = (bw/2) / z
 
-    # Square root needs to produce complex, not nan
-    pbw = pbw.astype(complex)
-    zbw = zbw.astype(complex)
+    # Square root needs to produce complex result, not NaN
+    p_hp = p_hp.astype(complex)
+    z_hp = z_hp.astype(complex)
 
     # Duplicate poles and zeros and shift from baseband to +wo and -wo
-    p = concatenate((pbw + sqrt(pbw**2 - wo**2), pbw - sqrt(pbw**2 - wo**2)))
-    z = concatenate((zbw + sqrt(zbw**2 - wo**2), zbw - sqrt(zbw**2 - wo**2)))
+    p_bs = concatenate((p_hp + sqrt(p_hp**2 - wo**2), 
+                        p_hp - sqrt(p_hp**2 - wo**2)))
+    z_bs = concatenate((z_hp + sqrt(z_hp**2 - wo**2), 
+                        z_hp - sqrt(z_hp**2 - wo**2)))
 
     # Move any zeros that were at infinity to the center of the stopband
-    z = append(z, +1j*wo * ones(degree))
-    z = append(z, -1j*wo * ones(degree))
+    z_bs = append(z_bs, +1j*wo * ones(degree))
+    z_bs = append(z_bs, -1j*wo * ones(degree))
 
-    return z, p, k
+    # Cancel out gain change caused by inversion
+    k_bs = k * real(prod(-z) / prod(-p))
+
+    return z_bs, p_bs, k_bs
 
 
 def butter(N, Wn, btype='low', analog=False, output='ba'):
