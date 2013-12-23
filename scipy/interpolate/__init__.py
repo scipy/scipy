@@ -99,6 +99,8 @@ An alternative set of univariate spline routines:
     :toctree: generated/
 
    BSpline
+   make_interp_spline
+
 
 2-D Splines
 ===========

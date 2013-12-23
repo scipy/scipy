@@ -1,11 +1,22 @@
 from __future__ import division, print_function, absolute_import
 
+import functools
+import operator
+
 import numpy as np
 from scipy.linalg import solve_banded
 from . import _bspl
 from . import fitpack
 
-__all__ = ["BSpline"]
+__all__ = ["BSpline", "make_interp_spline"]
+
+
+# copy-paste from interpolate.py
+def prod(x):
+    """Product of a list of numbers; ~40x faster vs np.prod for Python tuples"""
+    if len(x) == 0:
+        return 1
+    return functools.reduce(operator.mul, x)
 
 
 class BSpline(object):
@@ -260,8 +271,7 @@ class BSpline(object):
         x = np.asarray(x)
         x_shape = x.shape
         x = np.ascontiguousarray(x.ravel(), dtype=np.float_)
-        out = np.empty((len(x), int(np.prod(self.c.shape[1:]))),
-                dtype=self.c.dtype)
+        out = np.empty((len(x), prod(self.c.shape[1:])), dtype=self.c.dtype)
         self._ensure_c_contiguous()
         self._evaluate(x, nu, extrapolate, out)
         return out.reshape(x_shape + self.c.shape[1:])
@@ -394,9 +404,200 @@ class BSpline(object):
 
         # evaluate the diff of antiderivatives
         x = np.asarray([a, b], dtype=np.float_)
-        out = np.empty((2, int(np.prod(c.shape[1:]))),
-                dtype=c.dtype)
+        out = np.empty((2, prod(c.shape[1:])), dtype=c.dtype)
         _bspl.evaluate_spline(t, c.reshape(c.shape[0], -1),
                 k, x, 0, extrapolate, out)
         out = out[1] - out[0]
         return out.reshape(c.shape[1:])
+
+
+#################################
+#  Interpolating spline helpers #
+#################################
+
+def _not_a_knot(x, k):
+    """Given data x, construct the knot vector w/ not-a-knot BC.
+    cf de Boor, XIII(12)."""
+    x = np.asarray(x)
+    if k % 2 != 1:
+        raise ValueError("Odd degree for now only. Got %s." % k)
+
+    m = (k - 1) // 2
+    t = x[m+1:-m-1]
+    t = np.r_[(x[0],)*(k+1), t, (x[-1],)*(k+1)]
+    return t
+
+
+def _augknt(x, k):
+    """Construct a knot vector appropriate for the order-k interpolation."""
+    return np.r_[(x[0],)*k, x, (x[-1],)*k]
+
+
+def _as_float_array(x, check_finite=False):
+    """Convert the input into a C contiguous float array."""
+    x = np.ascontiguousarray(x)
+    if not np.issubdtype(x.dtype, np.inexact):
+        x = x.astype(float)
+    if check_finite and not np.isfinite(x).all():
+        raise ValueError("Array must not contain infs or nans.")
+    return x
+
+
+def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
+                       check_finite=True):
+    """Compute the (coefficients of) interpolating B-spline.
+
+    Parameters
+    ----------
+    x : array_like, shape (n,)
+        Abscissas.
+    y : array_like, shape (n, ...)
+        Ordinates.
+    k : int, optional
+        B-spline degree. Default is cubic, k=3.
+    t : array_like, shape (nt + k + 1,), optional.
+        Knots.
+        The number of knots needs to agree with the number of datapoints and
+        the number of derivatives at the edges. Specifically, ``nt - n`` must
+        equal ``len(deriv_l) + len(deriv_r)``.
+    deriv_l : iterable of pairs (int, float) or None
+        Derivatives known at ``x[0]``: (order, value)
+        Default is None.
+    deriv_r : iterable of pairs (int, float) or None
+        Derivatives known at ``x[-1]``.
+        Default is None.
+    check_finite : bool, optional
+        Whether to check that the input arrays contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default is True.
+
+    Returns
+    -------
+    tck : tuple
+        Here ``c`` is an ndarray, shape(n, ...), representing the coefficients
+        of the B-spline of degree ``k`` with knots ``t``, which interpolates
+        ``x`` and ``y``.
+        ``t`` and ``k`` are returned unchanged.
+
+    Examples
+    --------
+
+    Use cubic interpolation on Chebyshev nodes:
+
+    >>> def cheb_nodes(N):
+    ...     jj = 2.*np.arange(N) + 1
+    ...     x = np.cos(np.pi * jj / 2 / N)[::-1]
+    ...     return x
+    >>>
+    >>> x = cheb_nodes(20)
+    >>> y = np.sqrt(1 - x**2)
+    >>>
+    >>> from scipy.interpolate import BSpline, make_interp_spline
+    >>> tck = make_interp_spline(x, y)
+    >>> b = BSpline(*tck)
+    >>> np.allclose(b(x), y)
+    True
+
+    Note that the default is a cubic spline with a not-a-knot boundary condition
+
+    >>> b.k
+    3
+
+    Here we use a 'natural' spline, with zero 2nd derivatives at edges:
+
+    >>> l, r = [(2, 0)], [(2, 0)]
+    >>> tck_n = make_interp_spline(x, y, deriv_l=l, deriv_r=r)
+    >>> b_n = BSpline(*tck_n)
+    >>> np.allclose(b_n(x), y)
+    True
+    >>> x0, x1 = x[0], x[-1]
+    >>> np.allclose([b_n(x0, 2), b_n(x1, 2)], [0, 0])
+    True
+
+    """
+    # special-case k=0 right away
+    if k == 0:
+        if any(_ is not None for _ in (t, deriv_l, deriv_r)):
+            raise ValueError("Too much info for k=0.")
+        t = np.r_[x, x[-1]]
+        c = y
+        return t, c, k
+
+    # come up with a sensible knot vector, if needed
+    if t is None:
+        if deriv_l is None and deriv_r is None:
+            if k == 2:
+                # OK, it's a bit ad hoc: Greville sites + omit
+                # 2nd and 2nd-to-last points, a la not-a-knot
+                t = (x[1:] + x[:-1]) / 2.
+                t = np.r_[(x[0],)*(k+1),
+                           t[1:-1],
+                           (x[-1],)*(k+1)]
+            else:
+                t = _not_a_knot(x, k)
+        else:
+            t = _augknt(x, k)
+
+    x = _as_float_array(x, check_finite)
+    y = _as_float_array(y, check_finite)
+    t = _as_float_array(t, check_finite)
+    k = int(k)
+
+    if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):
+        raise ValueError("Expect x to be a 1-D sorted array_like.")
+    if x.shape[0] < k+1:
+        raise("Need more x points.")
+    if k < 0:
+        raise ValueError("Expect non-negative k.")
+    if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
+        raise ValueError("Expect t to be a 1-D sorted array_like.")
+    if x.size != y.shape[0]:
+        raise ValueError('x & y are incompatible.')
+    if t.size < x.size + k + 1:
+        raise ValueError('Got %d knots, need at least %d.' % (t.size, x.size + k + 1))
+    if k > 0 and np.any((x < t[k]) | (x > t[-k])):
+        raise ValueError('Out of bounds w/ x = %s.' % x)
+
+    # Here : deriv_l, r = [(nu, value), ...]
+    if deriv_l is not None:
+        deriv_l_ords, deriv_l_vals = zip(*deriv_l)
+    else:
+        deriv_l_ords, deriv_l_vals = [], []
+    deriv_l_ords, deriv_l_vals = map(np.atleast_1d, (deriv_l_ords, deriv_l_vals))
+    nleft = deriv_l_ords.shape[0]
+
+    if deriv_r is not None:
+        deriv_r_ords, deriv_r_vals = zip(*deriv_r)
+    else:
+        deriv_r_ords, deriv_r_vals = [], []
+    deriv_r_ords, deriv_r_vals = map(np.atleast_1d, (deriv_r_ords, deriv_r_vals))
+    nright = deriv_r_ords.shape[0]
+
+    # have `n` conditions for `nt` coefficients; need nt-n derivatives
+    n = x.size
+    nt = t.size - k - 1
+
+    if nt - n != nleft + nright:
+        raise ValueError("number of derivatives at boundaries.")
+
+    # set up the LHS: the collocation matrix + derivatives @boundaries
+    Ab, kl_ku = _bspl._colloc(x, t, k, offset=nleft)
+    if nleft > 0:
+        _bspl._handle_lhs_derivatives(t, k, x[0], Ab, kl_ku, deriv_l_ords)
+    if nright > 0:
+        _bspl._handle_lhs_derivatives(t, k, x[-1], Ab, kl_ku, deriv_r_ords,
+                                offset=nt-nright)
+
+    # RHS
+    extradim = prod(y.shape[1:])
+    rhs = np.empty((nt, extradim), dtype=y.dtype)
+    if nleft > 0:
+        rhs[:nleft] = deriv_l_vals.reshape(-1, extradim)
+    rhs[nleft:nt - nright] = y.reshape(-1, extradim)
+    if nright > 0:
+        rhs[nt - nright:] = deriv_r_vals.reshape(-1, extradim)
+
+    c = solve_banded(kl_ku, Ab, rhs, overwrite_ab=True,
+                     overwrite_b=True, check_finite=check_finite)
+    return t, c.reshape((nt,) + y.shape[1:]), k

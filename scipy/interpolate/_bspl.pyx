@@ -225,3 +225,107 @@ def evaluate_all_bspl(double[::1] t, int k, double xval, int m, int nu=0):
     eval_all_bspl(t, k, xval, m, nu, work)
     return bbb[:-1]
 
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _colloc(double[::1] x, double[::1] t, int k, int offset=0):
+    """Build the B-spline collocation matrix.  
+
+    :math:`B_{j,l} = B_l(x_j)`, so that row ``j`` contains
+    all the B-splines which are non-zero at ``x_j``.
+
+    The matrix is constructed in the banded storage, ready for
+    consumption by ``scipy.linalg.solve_banded``.
+    This routine is not supposed to be called directly, and
+    does no error checking.
+
+    Parameters
+    ----------
+    x : ndarray, shape (n,)
+        sorted 1D array of x values
+    t : ndarray, shape (nt + k + 1,)
+        sorted 1D array of knots
+    k : int
+        spline order
+    offset : int, optional
+        skip this many rows
+
+    Returns
+    -------
+    Ab : ndarray, shape ((ku+kl+1), nt)
+        B-spline collocation matrix in the band storage with
+        ``ku`` upper diagonals and ``kl`` lower diagonals.
+    (kl, ku) : (int, int)
+        the number of lower and upper diagonals
+        
+    """
+    cdef int nt = t.shape[0] - k -1
+    cdef int left, j, a, kl, ku, clmn
+    cdef double xval
+
+    kl = ku = k
+    cdef cnp.ndarray[cnp.float_t, ndim=2] Ab = np.zeros((kl + ku + 1, nt),
+            dtype=np.float_)
+    cdef cnp.ndarray[cnp.float_t, ndim=1] out = np.empty(k+2, dtype=np.float_)
+    
+    # collocation matrix
+    left = k
+    for j in range(x.shape[0]):
+        xval = x[j]
+        # find interval
+        left = k + find_interval(t[k:-k], xval, left, extrapolate=False)
+
+        # fill a row
+        eval_all_bspl(t, k, xval, left, 0, out)
+        # for a full matrix it would be ``A[j + offset, left-k:left+1] = bb``
+        # in the banded storage, need to spread the row over
+        for a in range(k+1):
+            clmn = left - k + a
+            Ab[ku + j + offset - clmn, clmn] = out[a]
+    return Ab, (kl, ku)
+
+
+def _handle_lhs_derivatives(double[::1]t, int k, double xval, ab, 
+                            kl_ku, deriv_ords, int offset=0):
+    """ Fill in the entries of the collocation matrix corresponding to known
+    derivatives at xval.
+    
+    The collocation matrix is in the banded storage, as prepared by
+    _colloc and ready for consumption by scipy.linalg.solve_banded.
+    No error checking.
+    
+    Parameters
+    ----------
+    t : ndarray, shape (nt + k + 1,)
+        knots
+    k : integer
+        B-spline order
+    xval : float
+        The value at which to evaluate the derivatives at.
+    ab : ndarray, shape(kl + ku + 1, nt)
+        B-spline collocation matrix.
+        This argument is modified *in-place*.
+    kl_ku : (integer, integer)
+        Number of lower and upper diagonals of ab.
+    deriv_ords : 1D ndarray
+        Orders of derivatives known at xval
+    offset : integer, optional
+        Skip this many rows of the matrix ab.
+    
+    """
+    cdef int kl, ku, left, nu, a, clmn, row
+
+    kl, ku = kl_ku
+    out = np.empty(k+2, dtype=np.float_)
+
+    # derivatives @ xval
+    left = k + find_interval(t[k:-k], xval, 0,  extrapolate=False)
+    for row in range(deriv_ords.size):
+        nu = deriv_ords[row]
+        eval_all_bspl(t, k, xval, left, nu, out)
+        # if A were a full matrix, it would be just
+        # ``A[row + offset, left-k:left+1] = bb``.
+        for a in range(k+1):
+            clmn = left - k + a
+            ab[ku + offset + row - clmn, clmn] = out[a]
+

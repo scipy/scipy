@@ -3,7 +3,9 @@ from numpy.testing import (run_module_suite, TestCase, assert_equal,
         assert_allclose, assert_raises, assert_)
 from numpy.testing.decorators import skipif, knownfailureif
 
-from scipy.interpolate import (BSpline, splev, splrep, BPoly, PPoly)
+from scipy.interpolate import (BSpline, splev, splrep, BPoly, PPoly,
+        make_interp_spline, _bspl)
+from scipy.interpolate._bsplines import _not_a_knot, _augknt
 import scipy.linalg as sl
 
 
@@ -182,32 +184,12 @@ class TestBSpline(TestCase):
         xx = np.linspace(t[0], t[-1], 50)
         xx = np.r_[xx, t]
 
-        for der in range(1, k):
+        for der in range(1, k+1):
             yd = splev(xx, (t, c, k), der=der)
-            assert_allclose(yd, b(xx, nu=der))
-
-        # derivative order k: splev gives garbage outside of the base interval,
-        # see gh-2188. Here we only test it inside the base interval, and
-        # test for the outside separately. 
-        xx1 = xx[(xx > t[k]) & (xx < t[-k])]
-        assert_allclose(splev(xx1, (t, c, k), der=k), b(xx1, nu=k))
+            assert_allclose(yd, b(xx, nu=der), atol=1e-14)
 
         # higher derivatives all vanish
         assert_allclose(b(xx, nu=k+1), 0)
-
-    def test_derivative_order_k(self):
-        # Due to gh-2188, splev is no help for testing derivatives order k.
-        # Hence test it against an explicit form of B(x | 0, 1, 2, 3)
-        k = 2
-        t = [0, 0, 0, 1, 2, 3, 3, 3]
-        c = [0, 0, 1, 0, 0, 0, 0, 0]
-        b = BSpline(t, c, k)
-        x = np.linspace(-1, 4, 50)
-        assert_allclose(b(x, k), B_0123(x, k), atol=1e-14)
-
-        # this fails
-        # assert_allclose(b(x, nu=k), splev(x, (t, c, k), der=k), atol=1e-14)
-
 
     def test_derivative_jumps(self):
         # example from de Boor, Chap IX, example (24)
@@ -311,29 +293,14 @@ def test_knots_multiplicity():
         assert_allclose(splev(x, (t, c, k), der), b(x, der),
                 atol=atol, rtol=rtol, err_msg = 'der = %s  k = %s' % (der, b.k))
 
-    def check_deriv_k(b, j):
-        # check derivative order k. Only check within the base interval, gh-2188
-        t, c, k = b.t, b.c, b.k
-        pp = PPoly.from_spline((t, c, k))
-        x = np.unique(t[k:-k])
-        x = 0.5 * (x[1:] + x[:-1])
-        assert_allclose(pp(x, k), b(x, k))
-        assert_allclose(b(x, k), splev(x, (t, c, k), der=k))
-
     # test loop itself
     # [the index `j` is for interpreting the traceback in case of a failure]
     for k in [1, 2, 3, 4, 5]:
         b, t, c, k = _make_random_spline(k=k)
         for j, b1 in enumerate(_make_multiples(b)):
             yield check_splev, b1, j
-
-            # XXX: once gh-2188 is fixed, stop special-casing der=k
-            for der in range(1, k):
-                yield check_splev, b1, j, der, 1e-9, 1e-9
-            der = k
-            # yield knownfailureif(True)(check_splev), b1, j, der, 1e-9, 1e-9
-            yield check_deriv_k, b1, j
-
+            for der in range(1, k+1):
+                yield check_splev, b1, j, der, 1e-12, 1e-12
 
 
 ### stolen from @pv, verbatim
@@ -435,16 +402,267 @@ def _make_multiples(b):
     yield BSpline(t1, c, k)
 
     t1 = b.t.copy()
-    t1[:2*k + 2] = t1[0]
-    yield BSpline(t1, c, k)
-
-    t1 = b.t.copy()
     t1[-k-1:] = t1[-1]
     yield BSpline(t1, c, k)
 
-    t1 = b.t.copy()
-    t1[-2*k-2:] = t1[-1]
-    yield BSpline(t1, c, k)
+
+class TestInterp(TestCase):
+    #
+    # Test basic ways of constructing interpolating splines.
+    #
+    xx = np.linspace(0., 2.*np.pi)
+    yy = np.sin(xx)
+
+    def test_order_0(self):
+        tck = make_interp_spline(self.xx, self.yy, k=0)
+        b = BSpline(*tck)
+        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+
+    def test_linear(self):
+        tck = make_interp_spline(self.xx, self.yy, k=1)
+        b = BSpline(*tck)
+        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+
+    def test_not_a_knot(self):
+        for k in [3, 5]:
+            tck = make_interp_spline(self.xx, self.yy, k)
+            b = BSpline(*tck)
+            assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+
+    def test_quadratic_deriv(self):
+        der = [(1, 8.)]  # order, value: f'(x) = 8.
+
+        # derivative @ right-hand edge
+        tck = make_interp_spline(self.xx, self.yy, k=2, deriv_r=der)
+        b = BSpline(*tck)
+        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        assert_allclose(b(self.xx[-1], 1), der[0][1], atol=1e-14, rtol=1e-14)
+
+        # derivative @ left-hand edge
+        tck = make_interp_spline(self.xx, self.yy, k=2, deriv_l=der)
+        b = BSpline(*tck)
+        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        assert_allclose(b(self.xx[0], 1), der[0][1], atol=1e-14, rtol=1e-14)
+
+    def test_cubic_deriv(self):
+        k = 3
+
+        # first derivatives @ left & right edges:
+        der_l, der_r = [(1, 3.)], [(1, 4.)]
+        tck = make_interp_spline(self.xx, self.yy, k,
+                deriv_l=der_l, deriv_r=der_r)
+        b = BSpline(*tck)
+        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        assert_allclose([b(self.xx[0], 1), b(self.xx[-1], 1)],
+                        [der_l[0][1], der_r[0][1]], atol=1e-14, rtol=1e-14)
+
+        # 'natural' cubic spline, zero out 2nd derivatives @ the boundaries
+        der_l, der_r = [(2, 0)], [(2, 0)]
+        tck = make_interp_spline(self.xx, self.yy, k,
+                deriv_l=der_l, deriv_r=der_r)
+        b = BSpline(*tck)
+        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+
+    def test_quintic_derivs(self):
+        k, n = 5, 7
+        x = np.arange(n).astype(np.float_)
+        y = np.sin(x)
+        der_l = [(1, -12.), (2, 1)]
+        der_r = [(1, 8.), (2, 3.)]
+        tck = make_interp_spline(x, y, k=5, deriv_l=der_l, deriv_r=der_r)
+        b = BSpline(*tck)
+        assert_allclose(b(x), y, atol=1e-14, rtol=1e-14)
+        assert_allclose([b(x[0], 1), b(x[0], 2)],
+                        [val for (nu, val) in der_l])
+        assert_allclose([b(x[-1], 1), b(x[-1], 2)],
+                        [val for (nu, val) in der_r])
+
+    @knownfailureif(True, 'unstable')
+    def test_cubic_deriv_unstable(self):
+        # 1st and 2nd derivative @ x[0], no derivative information @ x[-1]
+        # The problem is not that it fails [who would use this anyway],
+        # the problem is that it fails *silently*, and I've no idea
+        # how to detect this sort of instability.
+        k = 3
+        t = _augknt(self.xx, k)
+
+        der_l = [(1, 3.), (2, 4.)]
+        tck = make_interp_spline(self.xx, self.yy, k, t, deriv_l=der_l)
+        b = BSpline(*tck)
+        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+
+    def test_knots_not_data_sites(self):
+        # Knots need not coincide with the data sites.
+        # use a quadratic spline, knots are @ data averages,
+        # two additional constraints are zero 2nd derivs @ edges
+        k, n = 2, 8
+        t = np.r_[(self.xx[0],)*(k+1),
+                  (self.xx[1:] + self.xx[:-1]) / 2.,
+                  (self.xx[-1],)*(k+1)]
+        tck = make_interp_spline(self.xx, self.yy, k, t,
+                deriv_l=[(2, 0)], deriv_r=[(2, 0)])
+        b = BSpline(*tck)
+
+        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        assert_allclose([b(self.xx[0], 2), b(self.xx[-1], 2)], [0., 0.],
+                atol=1e-14)
+
+    def test_complex(self):
+        k = 3
+        xx = self.xx
+        yy = self.yy + 1.j*self.yy
+
+        # first derivatives @ left & right edges:
+        der_l, der_r = [(1, 3.j)], [(1, 4.+2.j)]
+        tck = make_interp_spline(xx, yy, k,
+                deriv_l=der_l, deriv_r=der_r)
+        b = BSpline(*tck)
+        assert_allclose(b(xx), yy, atol=1e-14, rtol=1e-14)
+        assert_allclose([b(xx[0], 1), b(xx[-1], 1)],
+                        [der_l[0][1], der_r[0][1]], atol=1e-14, rtol=1e-14)
+
+    def test_int_xy(self):
+        x = np.arange(10).astype(np.int_)
+        y = np.arange(10).astype(np.int_)
+
+        # cython chokes on "buffer type mismatch"
+        tck = make_interp_spline(x, y, k=1)
+
+    def test_sliced_input(self):
+        # cython code chokes on non C contiguous arrays
+        xx = np.linspace(-1, 1, 100)
+
+        x = xx[::5]
+        y = xx[::5]
+
+        tck = make_interp_spline(x, y, k=1)
+
+    def test_check_finite(self):
+        # check_finite defaults to True; nans and such trigger a ValueError
+        x = np.arange(10).astype(float)
+        y = x**2
+
+        for z in [np.nan, np.inf, -np.inf]:
+            y[-1] = z
+            assert_raises(ValueError, make_interp_spline, x, y)
+
+    def test_multiple_rhs(self):
+        yy = np.c_[np.sin(self.xx), np.cos(self.xx)]
+        der_l = [(1, [1., 2.])]
+        der_r = [(1, [3., 4.])]
+
+        tck = make_interp_spline(self.xx, yy, k=3, deriv_l=der_l, deriv_r=der_r)
+        b = BSpline(*tck)
+        assert_allclose(b(self.xx), yy, atol=1e-14, rtol=1e-14)
+        assert_allclose(b(self.xx[0], 1), der_l[0][1], atol=1e-14, rtol=1e-14)
+        assert_allclose(b(self.xx[-1], 1), der_r[0][1], atol=1e-14, rtol=1e-14)
+
+    def test_shapes(self):
+        np.random.seed(1234)
+        k, n = 3, 22
+        x = np.sort(np.random.random(size=n))
+        y = np.random.random(size=(n, 5, 6, 7))
+
+        t, c, k = make_interp_spline(x, y, k)
+        assert_equal(c.shape, (n, 5, 6, 7))
+
+        # now throw in some derivatives
+        d_l = [(1, np.random.random((5, 6, 7)))]
+        d_r = [(1, np.random.random((5, 6, 7)))]
+        t, c, k = make_interp_spline(x, y, k, deriv_l=d_l, deriv_r=d_r)
+        assert_equal(c.shape, (n + k - 1, 5, 6, 7))
+
+    def test_full_matrix(self):
+        np.random.seed(1234)
+        k, n = 3, 7
+        x = np.sort(np.random.random(size=n))
+        y = np.random.random(size=n)
+        t = _not_a_knot(x, k)
+
+        _, cb, _ = make_interp_spline(x, y, k, t)
+        cf = make_interp_full_matr(x, y, t, k)
+        assert_allclose(cb, cf, atol=1e-14, rtol=1e-14)
+
+
+def make_interp_full_matr(x, y, t, k):
+    """Assemble an spline order k with knots t to interpolate
+    y(x) using full matrices.
+    Not-a-knot BC only.
+
+    This routine is here for testing only (even though it's functional).
+    """
+    assert x.size == y.size
+    assert t.size == x.size + k + 1
+    n = x.size
+
+    A = np.zeros((n, n), dtype=np.float_)
+
+    for j in range(n):
+        xval = x[j]
+        if xval == t[k]:
+            left = k
+        else:
+            left = np.searchsorted(t, xval) - 1
+
+        # fill a row
+        bb = _bspl.evaluate_all_bspl(t, k, xval, left)
+        A[j, left-k:left+1] = bb
+
+    c = sl.solve(A, y)
+    return c
+
+
+### XXX: 'periodic' interp spline using full matrices
+def make_interp_per_full_matr(x, y, t, k):
+    x, y, t = map(np.asarray, (x, y, t))
+
+    n = x.size
+    nt = t.size - k - 1
+
+    # have `n` conditions for `nt` coefficients; need nt-n derivatives
+    assert nt - n == k - 1
+
+    # LHS: the collocation matrix + derivatives @edges
+    A = np.zeros((nt, nt), dtype=np.float_)
+
+    # derivatives @ x[0]:
+    offset = 0
+
+    if x[0] == t[k]:
+        left = k
+    else:
+        left = np.searchsorted(t, x[0]) - 1
+
+    if x[-1] == t[k]:
+        left2 = k
+    else:
+        left2 = np.searchsorted(t, x[-1]) - 1
+
+    for i in range(k-1):
+        bb = _bspl.evaluate_all_bspl(t, k, x[0], left, nu=i+1)
+        A[i, left-k:left+1] = bb
+        bb = _bspl.evaluate_all_bspl(t, k, x[-1], left2, nu=i+1)
+        A[i, left2-k:left2+1] = -bb
+        offset += 1
+
+    # RHS
+    y = np.r_[[0]*(k-1), y]
+
+    # collocation matrix
+    for j in range(n):
+        xval = x[j]
+        # find interval
+        if xval == t[k]:
+            left = k
+        else:
+            left = np.searchsorted(t, xval) - 1
+
+        # fill a row
+        bb = _bspl.evaluate_all_bspl(t, k, xval, left)
+        A[j + offset, left-k:left+1] = bb
+
+    c = sl.solve(A, y)
+    return c
 
 
 if __name__ == "__main__":
