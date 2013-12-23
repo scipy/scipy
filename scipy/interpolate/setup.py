@@ -22,6 +22,9 @@ def configuration(parent_package='',top_path=None):
                          sources=['_ppoly.c'],
                          **lapack_opt)
 
+    config.add_extension('_bspl',
+                         sources=['_bspl.c'])
+
     config.add_extension('_fitpack',
                          sources=['src/_fitpackmodule.c'],
                          libraries=['fitpack'],

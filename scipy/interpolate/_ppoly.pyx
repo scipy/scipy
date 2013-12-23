@@ -4,10 +4,11 @@ local power basis.
 
 """
 
-from .polyint import _Interpolator1D
 import numpy as np
 
 cimport cython
+
+include "_find_interval.pxi"
 
 cimport libc.stdlib
 cimport libc.math

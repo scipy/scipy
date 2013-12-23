@@ -123,6 +123,7 @@ scipy/integrate/_dopmodule.c
 scipy/integrate/lsodamodule.c
 scipy/integrate/vodemodule.c
 scipy/interpolate/_ppoly.c
+scipy/interpolate/_bspl.c
 scipy/interpolate/interpnd.c
 scipy/interpolate/src/dfitpack-f2pywrappers.f
 scipy/interpolate/src/dfitpackmodule.c
