@@ -54,16 +54,19 @@ class NumpyVersion():
     """
     def __init__(self, vstring):
         self.vstring = vstring
-        if not re.match(r'\d[.]\d[.]\d', vstring):
+        ver_main = re.match(r'\d[.]\d+[.]\d+', vstring)
+        if not ver_main:
             raise ValueError("Not a valid numpy version string")
 
-        self.version = vstring[:5]
-        if len(vstring) == 5:
-            self.pre_release = 'z_final'  # compare > (a, b, rc)
+        self.version = ver_main.group()
+        self.major, self.minor, self.bugfix = [int(x) for x in
+            self.version.split('.')]
+        if len(vstring) == ver_main.end():
+            self.pre_release = 'final'
         else:
-            alpha = re.match(r'a\d', vstring[5:])
-            beta = re.match(r'b\d', vstring[5:])
-            rc = re.match(r'rc\d', vstring[5:])
+            alpha = re.match(r'a\d', vstring[ver_main.end():])
+            beta = re.match(r'b\d', vstring[ver_main.end():])
+            rc = re.match(r'rc\d', vstring[ver_main.end():])
             pre_rel = [m for m in [alpha, beta, rc] if m is not None]
             if pre_rel:
                 self.pre_release = pre_rel[0].group()
@@ -72,6 +75,26 @@ class NumpyVersion():
 
         self.is_devversion = bool(re.search(r'.dev-', vstring))
 
+    def _compare_version(self, other):
+        """Compare major.minor.bugfix"""
+        vercmp = cmp(self.major, other.major)
+        if vercmp == 0:
+            vercmp = cmp(self.minor, other.minor)
+            if vercmp == 0:
+                vercmp = cmp(self.bugfix, other.bugfix)
+
+        return vercmp
+
+    def _compare_pre_release(self, other):
+        """Compare alpha/beta/rc/final."""
+        vercmp = cmp(self.pre_release, other.pre_release)
+        if vercmp != 0:
+            if self.pre_release == 'final':
+                vercmp = 1
+            elif other.pre_release == 'final':
+                vercmp = -1
+
+        return vercmp
 
     def __cmp__(self, other):
         if not isinstance(other, (string_types, NumpyVersion)):
@@ -80,21 +103,15 @@ class NumpyVersion():
         if isinstance(other, string_types):
             other = NumpyVersion(other)
 
-        vercmp = cmp(self.version, other.version)
-        if not vercmp == 0:
-            return vercmp
+        vercmp = self._compare_version(other)
+        if vercmp == 0:
+            # Same x.y.z version, check for alpha/beta/rc
+            vercmp = self._compare_pre_release(other)
+            if vercmp == 0:
+                # Same version and same pre-release, check if dev version
+                vercmp = -cmp(self.is_devversion, other.is_devversion)
 
-        # Same x.y.z version, check for alpha/beta/rc
-        vercmp = cmp(self.pre_release, other.pre_release)
-        if not vercmp == 0:
-            return vercmp
+        return vercmp
 
-        # Same version and same pre-release, check if dev version
-        if self.is_devversion and not other.is_devversion:
-            return -1
-        elif self.is_devversion and other.is_devversion:
-            return 0
-        elif not self.is_devversion and other.is_devversion:
-            return 1
-        else:
-            return 0
+    def __repr(self):
+        return "NumpyVersion(%s)" % self.vstring
