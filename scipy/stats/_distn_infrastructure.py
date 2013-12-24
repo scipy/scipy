@@ -4,8 +4,7 @@
 #
 from __future__ import division, print_function, absolute_import
 
-from scipy.lib.six import string_types
-from scipy.lib.six import exec_
+from scipy.lib.six import string_types, exec_
 
 import sys
 import keyword
@@ -13,9 +12,9 @@ import re
 import inspect
 import types
 
-from scipy.special import comb
-from scipy import special
 from scipy.misc import doccer
+
+from scipy.special import comb, xlogy, chndtr, gammaln, hyp0f1
 
 # for root finding for discrete distribution ppf, and max likelihood estimation
 from scipy import optimize
@@ -26,13 +25,12 @@ from scipy import integrate
 # to approximate the pdf of a continuous distribution given its cdf
 from scipy.misc import derivative
 
-from numpy import (all, where, arange, putmask, ravel, take, ones, sum, shape,
+from numpy import (arange, putmask, ravel, take, ones, sum, shape,
                    product, reshape, zeros, floor, logical_and, log, sqrt, exp,
                    ndarray)
 
-from numpy import (atleast_1d, polyval, ceil, place, extract, any, argsort,
-                   argmax, vectorize, r_, asarray, nan, inf, pi, isinf, NINF,
-                   empty)
+from numpy import (place, any, argsort, argmax, vectorize,
+                   asarray, nan, inf, isinf, NINF, empty)
 
 import numpy as np
 import numpy.random as mtrand
@@ -514,11 +512,11 @@ def argsreduce(cond, *args):
     (15,)
 
     """
-    newargs = atleast_1d(*args)
+    newargs = np.atleast_1d(*args)
     if not isinstance(newargs, list):
         newargs = [newargs, ]
     expand_arr = (cond == cond)
-    return [extract(cond, arr1 * expand_arr) for arr1 in newargs]
+    return [np.extract(cond, arr1 * expand_arr) for arr1 in newargs]
 
 
 parse_arg_template = """
@@ -538,15 +536,14 @@ def _parse_args_stats(self, %(shape_arg_str)s %(locscale_in)s, moments='mv'):
 
 def _ncx2_log_pdf(x, df, nc):
     a = asarray(df/2.0)
-    fac = (-nc/2.0 - x/2.0 + (a-1)*np.log(x) - a*np.log(2) -
-           special.gammaln(a))
-    return fac + np.nan_to_num(np.log(special.hyp0f1(a, nc * x/4.0)))
+    fac = -nc/2.0 - x/2.0 + (a-1)*log(x) - a*log(2) - gammaln(a)
+    return fac + np.nan_to_num(log(hyp0f1(a, nc * x/4.0)))
 
 def _ncx2_pdf(x, df, nc):
     return np.exp(_ncx2_log_pdf(x, df, nc))
 
 def _ncx2_cdf(x, df, nc):
-    return special.chndtr(x, df, nc)
+    return chndtr(x, df, nc)
 
 
 class rv_generic(object):
@@ -732,7 +729,7 @@ class rv_generic(object):
         discrete = kwds.pop('discrete', None)
         args, loc, scale, size = self._parse_args_rvs(*args, **kwds)
         cond = logical_and(self._argcheck(*args), (scale >= 0))
-        if not all(cond):
+        if not np.all(cond):
             raise ValueError("Domain error in arguments.")
 
         # self._size is total size of all output values
@@ -2024,7 +2021,7 @@ class rv_continuous(rv_generic):
     def _entropy(self, *args):
         def integ(x):
             val = self._pdf(x, *args)
-            return special.xlogy(val, val)
+            return xlogy(val, val)
 
         entr = -integrate.quad(integ, self.a, self.b)[0]
         if not np.isnan(entr):
@@ -2295,7 +2292,7 @@ def entropy(pk, qk=None, base=None):
     pk = asarray(pk)
     pk = 1.0*pk / sum(pk, axis=0)
     if qk is None:
-        vec = special.xlogy(pk, pk)
+        vec = xlogy(pk, pk)
     else:
         qk = asarray(qk)
         if len(qk) != len(pk):
@@ -2306,7 +2303,7 @@ def entropy(pk, qk=None, base=None):
         mask = qk == 0.0
         qk[mask] = 1.0  # Avoid the divide-by-zero warning
         quotient = pk / qk
-        vec = -special.xlogy(pk, quotient)
+        vec = -xlogy(pk, quotient)
         vec[mask & (pk != 0.0)] = -inf
         vec[mask & (pk == 0.0)] = 0.0
     S = -sum(vec, axis=0)
@@ -2999,14 +2996,14 @@ class rv_discrete(rv_generic):
         else:
             mu = int(self.stats(*args, **{'moments': 'm'}))
             val = self.pmf(mu, *args)
-            ent = -special.xlogy(val, val)
+            ent = -xlogy(val, val)
             k = 1
             term = 1.0
             while (abs(term) > _EPS):
                 val = self.pmf(mu+k, *args)
-                term = -special.xlogy(val, val)
+                term = -xlogy(val, val)
                 val = self.pmf(mu-k, *args)
-                term -= special.xlogy(val, val)
+                term -= xlogy(val, val)
                 k += 1
                 ent += term
             return ent
