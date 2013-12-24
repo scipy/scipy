@@ -4,9 +4,5 @@
 #
 from __future__ import division, print_function, absolute_import
 
-# Import specific functions.
-from ._distn_infrastructure import argsreduce, rv_generic
-
-# Import distributions.
 from ._continuous_distns import *
 from ._discrete_distns import *

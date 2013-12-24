@@ -17,7 +17,7 @@ import numpy as np
 from numpy import typecodes, array
 from scipy import special
 import scipy.stats as stats
-from scipy.stats.distributions import argsreduce
+from scipy.stats._distn_infrastructure import argsreduce
 from scipy.special import xlogy
 
 
