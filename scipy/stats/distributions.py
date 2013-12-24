@@ -4,5 +4,7 @@
 #
 from __future__ import division, print_function, absolute_import
 
+from ._distn_infrastructure import entropy, rv_discrete, rv_continuous
+
 from ._continuous_distns import *
 from ._discrete_distns import *

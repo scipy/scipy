@@ -7,12 +7,25 @@ from __future__ import division, print_function, absolute_import
 from scipy.lib.six import string_types
 from scipy.lib.six import exec_
 
-from scipy.special import comb
-from scipy import special
-
+import sys
 import keyword
 import re
 import inspect
+import types
+
+from scipy.special import comb
+from scipy import special
+from scipy.misc import doccer
+
+# for root finding for discrete distribution ppf, and max likelihood estimation
+from scipy import optimize
+
+# for functions of continuous distributions (e.g. moments, entropy, cdf)
+from scipy import integrate
+
+# to approximate the pdf of a continuous distribution given its cdf
+from scipy.misc import derivative
+
 from numpy import (all, where, arange, putmask, ravel, take, ones, sum, shape,
                    product, reshape, zeros, floor, logical_and, log, sqrt, exp,
                    ndarray)
@@ -24,7 +37,7 @@ from numpy import (atleast_1d, polyval, ceil, place, extract, any, argsort,
 import numpy as np
 import numpy.random as mtrand
 
-import types
+from ._constants import _EPS, _XMAX
 
 try:
     from new import instancemethod
@@ -519,8 +532,9 @@ def _parse_args_stats(self, %(shape_arg_str)s %(locscale_in)s, moments='mv'):
     return (%(shape_arg_str)s), %(locscale_out)s, moments
 """
 
+
 # Both the continuous and discrete distributions depend on ncx2.
-# I think the function name is a clever abbreviation for noncentral chi squared.
+# I think the function name ncx2 is an abbreviation for noncentral chi squared.
 
 def _ncx2_log_pdf(x, df, nc):
     a = asarray(df/2.0)
@@ -1076,3 +1090,2037 @@ class rv_generic(object):
         a = self.ppf(q1, *args, **kwds)
         b = self.ppf(q2, *args, **kwds)
         return a, b
+
+
+##  continuous random variables: implement maybe later
+##
+##  hf  --- Hazard Function (PDF / SF)
+##  chf  --- Cumulative hazard function (-log(SF))
+##  psf --- Probability sparsity function (reciprocal of the pdf) in
+##                units of percent-point-function (as a function of q).
+##                Also, the derivative of the percent-point function.
+
+class rv_continuous(rv_generic):
+    """
+    A generic continuous random variable class meant for subclassing.
+
+    `rv_continuous` is a base class to construct specific distribution classes
+    and instances from for continuous random variables. It cannot be used
+    directly as a distribution.
+
+    Parameters
+    ----------
+    momtype : int, optional
+        The type of generic moment calculation to use: 0 for pdf, 1 (default)
+        for ppf.
+    a : float, optional
+        Lower bound of the support of the distribution, default is minus
+        infinity.
+    b : float, optional
+        Upper bound of the support of the distribution, default is plus
+        infinity.
+    xtol : float, optional
+        The tolerance for fixed point calculation for generic ppf.
+    badvalue : object, optional
+        The value in a result arrays that indicates a value that for which
+        some argument restriction is violated, default is np.nan.
+    name : str, optional
+        The name of the instance. This string is used to construct the default
+        example for distributions.
+    longname : str, optional
+        This string is used as part of the first line of the docstring returned
+        when a subclass has no docstring of its own. Note: `longname` exists
+        for backwards compatibility, do not use for new subclasses.
+    shapes : str, optional
+        The shape of the distribution. For example ``"m, n"`` for a
+        distribution that takes two integers as the two shape arguments for all
+        its methods.
+    extradoc :  str, optional, deprecated
+        This string is used as the last part of the docstring returned when a
+        subclass has no docstring of its own. Note: `extradoc` exists for
+        backwards compatibility, do not use for new subclasses.
+
+    Methods
+    -------
+    rvs(<shape(s)>, loc=0, scale=1, size=1)
+        random variates
+
+    pdf(x, <shape(s)>, loc=0, scale=1)
+        probability density function
+
+    logpdf(x, <shape(s)>, loc=0, scale=1)
+        log of the probability density function
+
+    cdf(x, <shape(s)>, loc=0, scale=1)
+        cumulative density function
+
+    logcdf(x, <shape(s)>, loc=0, scale=1)
+        log of the cumulative density function
+
+    sf(x, <shape(s)>, loc=0, scale=1)
+        survival function (1-cdf --- sometimes more accurate)
+
+    logsf(x, <shape(s)>, loc=0, scale=1)
+        log of the survival function
+
+    ppf(q, <shape(s)>, loc=0, scale=1)
+      percent point function (inverse of cdf --- quantiles)
+
+    isf(q, <shape(s)>, loc=0, scale=1)
+        inverse survival function (inverse of sf)
+
+    moment(n, <shape(s)>, loc=0, scale=1)
+        non-central n-th moment of the distribution.  May not work for array
+        arguments.
+
+    stats(<shape(s)>, loc=0, scale=1, moments='mv')
+        mean('m'), variance('v'), skew('s'), and/or kurtosis('k')
+
+    entropy(<shape(s)>, loc=0, scale=1)
+        (differential) entropy of the RV.
+
+    fit(data, <shape(s)>, loc=0, scale=1)
+        Parameter estimates for generic data
+
+    expect(func=None, args=(), loc=0, scale=1, lb=None, ub=None,
+             conditional=False, **kwds)
+        Expected value of a function with respect to the distribution.
+        Additional kwd arguments passed to integrate.quad
+
+    median(<shape(s)>, loc=0, scale=1)
+        Median of the distribution.
+
+    mean(<shape(s)>, loc=0, scale=1)
+        Mean of the distribution.
+
+    std(<shape(s)>, loc=0, scale=1)
+        Standard deviation of the distribution.
+
+    var(<shape(s)>, loc=0, scale=1)
+        Variance of the distribution.
+
+    interval(alpha, <shape(s)>, loc=0, scale=1)
+        Interval that with `alpha` percent probability contains a random
+        realization of this distribution.
+
+    __call__(<shape(s)>, loc=0, scale=1)
+        Calling a distribution instance creates a frozen RV object with the
+        same methods but holding the given shape, location, and scale fixed.
+        See Notes section.
+
+    **Parameters for Methods**
+
+    x : array_like
+        quantiles
+    q : array_like
+        lower or upper tail probability
+    <shape(s)> : array_like
+        shape parameters
+    loc : array_like, optional
+        location parameter (default=0)
+    scale : array_like, optional
+        scale parameter (default=1)
+    size : int or tuple of ints, optional
+        shape of random variates (default computed from input arguments )
+    moments : string, optional
+        composed of letters ['mvsk'] specifying which moments to compute where
+        'm' = mean, 'v' = variance, 's' = (Fisher's) skew and
+        'k' = (Fisher's) kurtosis. (default='mv')
+    n : int
+        order of moment to calculate in method moments
+
+    Notes
+    -----
+
+    **Methods that can be overwritten by subclasses**
+    ::
+
+      _rvs
+      _pdf
+      _cdf
+      _sf
+      _ppf
+      _isf
+      _stats
+      _munp
+      _entropy
+      _argcheck
+
+    There are additional (internal and private) generic methods that can
+    be useful for cross-checking and for debugging, but might work in all
+    cases when directly called.
+
+    **Frozen Distribution**
+
+    Alternatively, the object may be called (as a function) to fix the shape,
+    location, and scale parameters returning a "frozen" continuous RV object:
+
+    rv = generic(<shape(s)>, loc=0, scale=1)
+        frozen RV object with the same methods but holding the given shape,
+        location, and scale fixed
+
+    **Subclassing**
+
+    New random variables can be defined by subclassing rv_continuous class
+    and re-defining at least the ``_pdf`` or the ``_cdf`` method (normalized
+    to location 0 and scale 1) which will be given clean arguments (in between
+    a and b) and passing the argument check method.
+
+    If positive argument checking is not correct for your RV
+    then you will also need to re-define the ``_argcheck`` method.
+
+    Correct, but potentially slow defaults exist for the remaining
+    methods but for speed and/or accuracy you can over-ride::
+
+      _logpdf, _cdf, _logcdf, _ppf, _rvs, _isf, _sf, _logsf
+
+    Rarely would you override ``_isf``, ``_sf`` or ``_logsf``, but you could.
+
+    Statistics are computed using numerical integration by default.
+    For speed you can redefine this using ``_stats``:
+
+     - take shape parameters and return mu, mu2, g1, g2
+     - If you can't compute one of these, return it as None
+     - Can also be defined with a keyword argument ``moments=<str>``,
+       where <str> is a string composed of 'm', 'v', 's',
+       and/or 'k'.  Only the components appearing in string
+       should be computed and returned in the order 'm', 'v',
+       's', or 'k'  with missing values returned as None.
+
+    Alternatively, you can override ``_munp``, which takes n and shape
+    parameters and returns the nth non-central moment of the distribution.
+
+    A note on ``shapes``: subclasses need not specify them explicitly. In this
+    case, the `shapes` will be automatically deduced from the signatures of the
+    overridden methods.
+    If, for some reason, you prefer to avoid relying on introspection, you can
+    specify ``shapes`` explicitly as an argument to the instance constructor.
+
+    Examples
+    --------
+    To create a new Gaussian distribution, we would do the following::
+
+        class gaussian_gen(rv_continuous):
+            "Gaussian distribution"
+            def _pdf(self, x):
+                ...
+            ...
+
+    """
+
+    def __init__(self, momtype=1, a=None, b=None, xtol=1e-14,
+                 badvalue=None, name=None, longname=None,
+                 shapes=None, extradoc=None):
+
+        super(rv_continuous, self).__init__()
+
+        if badvalue is None:
+            badvalue = nan
+        if name is None:
+            name = 'Distribution'
+        self.badvalue = badvalue
+        self.name = name
+        self.a = a
+        self.b = b
+        if a is None:
+            self.a = -inf
+        if b is None:
+            self.b = inf
+        self.xtol = xtol
+        self._size = 1
+        self.m = 0.0
+        self.moment_type = momtype
+
+        self.expandarr = 1
+
+        self.shapes = shapes
+        self._construct_argparser(meths_to_inspect=[self._pdf, self._cdf],
+                                  locscale_in='loc=0, scale=1',
+                                  locscale_out='loc, scale')
+
+        # nin correction
+        self._ppfvec = vectorize(self._ppf_single, otypes='d')
+        self._ppfvec.nin = self.numargs + 1
+        self.vecentropy = vectorize(self._entropy, otypes='d')
+        self.vecentropy.nin = self.numargs + 1
+        self._cdfvec = vectorize(self._cdf_single, otypes='d')
+        self._cdfvec.nin = self.numargs + 1
+
+        # backwards compatibility
+        self.vecfunc = self._ppfvec
+        self.veccdf = self._cdfvec
+
+        self.extradoc = extradoc
+        if momtype == 0:
+            self.generic_moment = vectorize(self._mom0_sc, otypes='d')
+        else:
+            self.generic_moment = vectorize(self._mom1_sc, otypes='d')
+        # Because of the *args argument of _mom0_sc, vectorize cannot count the
+        # number of arguments correctly.
+        self.generic_moment.nin = self.numargs + 1
+
+        if longname is None:
+            if name[0] in ['aeiouAEIOU']:
+                hstr = "An "
+            else:
+                hstr = "A "
+            longname = hstr + name
+
+        if sys.flags.optimize < 2:
+            # Skip adding docstrings if interpreter is run with -OO
+            if self.__doc__ is None:
+                self._construct_default_doc(longname=longname,
+                                            extradoc=extradoc)
+            else:
+                self._construct_doc()
+
+    def _construct_default_doc(self, longname=None, extradoc=None):
+        """Construct instance docstring from the default template."""
+        if longname is None:
+            longname = 'A'
+        if extradoc is None:
+            extradoc = ''
+        if extradoc.startswith('\n\n'):
+            extradoc = extradoc[2:]
+        self.__doc__ = ''.join(['%s continuous random variable.' % longname,
+                                '\n\n%(before_notes)s\n', docheaders['notes'],
+                                extradoc, '\n%(example)s'])
+        self._construct_doc()
+
+    def _construct_doc(self):
+        """Construct the instance docstring with string substitutions."""
+        tempdict = docdict.copy()
+        tempdict['name'] = self.name or 'distname'
+        tempdict['shapes'] = self.shapes or ''
+
+        if self.shapes is None:
+            # remove shapes from call parameters if there are none
+            for item in ['callparams', 'default', 'before_notes']:
+                tempdict[item] = tempdict[item].replace(
+                    "\n%(shapes)s : array_like\n    shape parameters", "")
+        for i in range(2):
+            if self.shapes is None:
+                # necessary because we use %(shapes)s in two forms (w w/o ", ")
+                self.__doc__ = self.__doc__.replace("%(shapes)s, ", "")
+            self.__doc__ = doccer.docformat(self.__doc__, tempdict)
+
+    def _ppf_to_solve(self, x, q, *args):
+        return self.cdf(*(x, )+args)-q
+
+    def _ppf_single(self, q, *args):
+        left = right = None
+        if self.a > -np.inf:
+            left = self.a
+        if self.b < np.inf:
+            right = self.b
+
+        factor = 10.
+        if not left:  # i.e. self.a = -inf
+            left = -1.*factor
+            while self._ppf_to_solve(left, q, *args) > 0.:
+                right = left
+                left *= factor
+            # left is now such that cdf(left) < q
+        if not right:  # i.e. self.b = inf
+            right = factor
+            while self._ppf_to_solve(right, q, *args) < 0.:
+                left = right
+                right *= factor
+            # right is now such that cdf(right) > q
+
+        return optimize.brentq(self._ppf_to_solve,
+                               left, right, args=(q,)+args, xtol=self.xtol)
+
+    # moment from definition
+    def _mom_integ0(self, x, m, *args):
+        return x**m * self.pdf(x, *args)
+
+    def _mom0_sc(self, m, *args):
+        return integrate.quad(self._mom_integ0, self.a, self.b,
+                              args=(m,)+args)[0]
+
+    # moment calculated using ppf
+    def _mom_integ1(self, q, m, *args):
+        return (self.ppf(q, *args))**m
+
+    def _mom1_sc(self, m, *args):
+        return integrate.quad(self._mom_integ1, 0, 1, args=(m,)+args)[0]
+
+    def _pdf(self, x, *args):
+        return derivative(self._cdf, x, dx=1e-5, args=args, order=5)
+
+    ## Could also define any of these
+    def _logpdf(self, x, *args):
+        return log(self._pdf(x, *args))
+
+    def _cdf_single(self, x, *args):
+        return integrate.quad(self._pdf, self.a, x, args=args)[0]
+
+    def _cdf(self, x, *args):
+        return self._cdfvec(x, *args)
+
+    ## generic _argcheck, _logcdf, _sf, _logsf, _ppf, _isf, _rvs are defined
+    ## in rv_generic
+
+    def pdf(self, x, *args, **kwds):
+        """
+        Probability density function at x of the given RV.
+
+        Parameters
+        ----------
+        x : array_like
+            quantiles
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array_like, optional
+            location parameter (default=0)
+        scale : array_like, optional
+            scale parameter (default=1)
+
+        Returns
+        -------
+        pdf : ndarray
+            Probability density function evaluated at x
+
+        """
+        args, loc, scale = self._parse_args(*args, **kwds)
+        x, loc, scale = map(asarray, (x, loc, scale))
+        args = tuple(map(asarray, args))
+        x = asarray((x-loc)*1.0/scale)
+        cond0 = self._argcheck(*args) & (scale > 0)
+        cond1 = (scale > 0) & (x >= self.a) & (x <= self.b)
+        cond = cond0 & cond1
+        output = zeros(shape(cond), 'd')
+        putmask(output, (1-cond0)+np.isnan(x), self.badvalue)
+        if any(cond):
+            goodargs = argsreduce(cond, *((x,)+args+(scale,)))
+            scale, goodargs = goodargs[-1], goodargs[:-1]
+            place(output, cond, self._pdf(*goodargs) / scale)
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def logpdf(self, x, *args, **kwds):
+        """
+        Log of the probability density function at x of the given RV.
+
+        This uses a more numerically accurate calculation if available.
+
+        Parameters
+        ----------
+        x : array_like
+            quantiles
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array_like, optional
+            location parameter (default=0)
+        scale : array_like, optional
+            scale parameter (default=1)
+
+        Returns
+        -------
+        logpdf : array_like
+            Log of the probability density function evaluated at x
+
+        """
+        args, loc, scale = self._parse_args(*args, **kwds)
+        x, loc, scale = map(asarray, (x, loc, scale))
+        args = tuple(map(asarray, args))
+        x = asarray((x-loc)*1.0/scale)
+        cond0 = self._argcheck(*args) & (scale > 0)
+        cond1 = (scale > 0) & (x >= self.a) & (x <= self.b)
+        cond = cond0 & cond1
+        output = empty(shape(cond), 'd')
+        output.fill(NINF)
+        putmask(output, (1-cond0)+np.isnan(x), self.badvalue)
+        if any(cond):
+            goodargs = argsreduce(cond, *((x,)+args+(scale,)))
+            scale, goodargs = goodargs[-1], goodargs[:-1]
+            place(output, cond, self._logpdf(*goodargs) - log(scale))
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def cdf(self, x, *args, **kwds):
+        """
+        Cumulative distribution function of the given RV.
+
+        Parameters
+        ----------
+        x : array_like
+            quantiles
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array_like, optional
+            location parameter (default=0)
+        scale : array_like, optional
+            scale parameter (default=1)
+
+        Returns
+        -------
+        cdf : ndarray
+            Cumulative distribution function evaluated at `x`
+
+        """
+        args, loc, scale = self._parse_args(*args, **kwds)
+        x, loc, scale = map(asarray, (x, loc, scale))
+        args = tuple(map(asarray, args))
+        x = (x-loc)*1.0/scale
+        cond0 = self._argcheck(*args) & (scale > 0)
+        cond1 = (scale > 0) & (x > self.a) & (x < self.b)
+        cond2 = (x >= self.b) & cond0
+        cond = cond0 & cond1
+        output = zeros(shape(cond), 'd')
+        place(output, (1-cond0)+np.isnan(x), self.badvalue)
+        place(output, cond2, 1.0)
+        if any(cond):  # call only if at least 1 entry
+            goodargs = argsreduce(cond, *((x,)+args))
+            place(output, cond, self._cdf(*goodargs))
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def logcdf(self, x, *args, **kwds):
+        """
+        Log of the cumulative distribution function at x of the given RV.
+
+        Parameters
+        ----------
+        x : array_like
+            quantiles
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array_like, optional
+            location parameter (default=0)
+        scale : array_like, optional
+            scale parameter (default=1)
+
+        Returns
+        -------
+        logcdf : array_like
+            Log of the cumulative distribution function evaluated at x
+
+        """
+        args, loc, scale = self._parse_args(*args, **kwds)
+        x, loc, scale = map(asarray, (x, loc, scale))
+        args = tuple(map(asarray, args))
+        x = (x-loc)*1.0/scale
+        cond0 = self._argcheck(*args) & (scale > 0)
+        cond1 = (scale > 0) & (x > self.a) & (x < self.b)
+        cond2 = (x >= self.b) & cond0
+        cond = cond0 & cond1
+        output = empty(shape(cond), 'd')
+        output.fill(NINF)
+        place(output, (1-cond0)*(cond1 == cond1)+np.isnan(x), self.badvalue)
+        place(output, cond2, 0.0)
+        if any(cond):  # call only if at least 1 entry
+            goodargs = argsreduce(cond, *((x,)+args))
+            place(output, cond, self._logcdf(*goodargs))
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def sf(self, x, *args, **kwds):
+        """
+        Survival function (1-cdf) at x of the given RV.
+
+        Parameters
+        ----------
+        x : array_like
+            quantiles
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array_like, optional
+            location parameter (default=0)
+        scale : array_like, optional
+            scale parameter (default=1)
+
+        Returns
+        -------
+        sf : array_like
+            Survival function evaluated at x
+
+        """
+        args, loc, scale = self._parse_args(*args, **kwds)
+        x, loc, scale = map(asarray, (x, loc, scale))
+        args = tuple(map(asarray, args))
+        x = (x-loc)*1.0/scale
+        cond0 = self._argcheck(*args) & (scale > 0)
+        cond1 = (scale > 0) & (x > self.a) & (x < self.b)
+        cond2 = cond0 & (x <= self.a)
+        cond = cond0 & cond1
+        output = zeros(shape(cond), 'd')
+        place(output, (1-cond0)+np.isnan(x), self.badvalue)
+        place(output, cond2, 1.0)
+        if any(cond):
+            goodargs = argsreduce(cond, *((x,)+args))
+            place(output, cond, self._sf(*goodargs))
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def logsf(self, x, *args, **kwds):
+        """
+        Log of the survival function of the given RV.
+
+        Returns the log of the "survival function," defined as (1 - `cdf`),
+        evaluated at `x`.
+
+        Parameters
+        ----------
+        x : array_like
+            quantiles
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array_like, optional
+            location parameter (default=0)
+        scale : array_like, optional
+            scale parameter (default=1)
+
+        Returns
+        -------
+        logsf : ndarray
+            Log of the survival function evaluated at `x`.
+
+        """
+        args, loc, scale = self._parse_args(*args, **kwds)
+        x, loc, scale = map(asarray, (x, loc, scale))
+        args = tuple(map(asarray, args))
+        x = (x-loc)*1.0/scale
+        cond0 = self._argcheck(*args) & (scale > 0)
+        cond1 = (scale > 0) & (x > self.a) & (x < self.b)
+        cond2 = cond0 & (x <= self.a)
+        cond = cond0 & cond1
+        output = empty(shape(cond), 'd')
+        output.fill(NINF)
+        place(output, (1-cond0)+np.isnan(x), self.badvalue)
+        place(output, cond2, 0.0)
+        if any(cond):
+            goodargs = argsreduce(cond, *((x,)+args))
+            place(output, cond, self._logsf(*goodargs))
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def ppf(self, q, *args, **kwds):
+        """
+        Percent point function (inverse of cdf) at q of the given RV.
+
+        Parameters
+        ----------
+        q : array_like
+            lower tail probability
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array_like, optional
+            location parameter (default=0)
+        scale : array_like, optional
+            scale parameter (default=1)
+
+        Returns
+        -------
+        x : array_like
+            quantile corresponding to the lower tail probability q.
+
+        """
+        args, loc, scale = self._parse_args(*args, **kwds)
+        q, loc, scale = map(asarray, (q, loc, scale))
+        args = tuple(map(asarray, args))
+        cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
+        cond1 = (0 < q) & (q < 1)
+        cond2 = cond0 & (q == 0)
+        cond3 = cond0 & (q == 1)
+        cond = cond0 & cond1
+        output = valarray(shape(cond), value=self.badvalue)
+
+        lower_bound = self.a * scale + loc
+        upper_bound = self.b * scale + loc
+        place(output, cond2, argsreduce(cond2, lower_bound)[0])
+        place(output, cond3, argsreduce(cond3, upper_bound)[0])
+
+        if any(cond):  # call only if at least 1 entry
+            goodargs = argsreduce(cond, *((q,)+args+(scale, loc)))
+            scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
+            place(output, cond, self._ppf(*goodargs) * scale + loc)
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def isf(self, q, *args, **kwds):
+        """
+        Inverse survival function at q of the given RV.
+
+        Parameters
+        ----------
+        q : array_like
+            upper tail probability
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array_like, optional
+            location parameter (default=0)
+        scale : array_like, optional
+            scale parameter (default=1)
+
+        Returns
+        -------
+        x : ndarray or scalar
+            Quantile corresponding to the upper tail probability q.
+
+        """
+        args, loc, scale = self._parse_args(*args, **kwds)
+        q, loc, scale = map(asarray, (q, loc, scale))
+        args = tuple(map(asarray, args))
+        cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
+        cond1 = (0 < q) & (q < 1)
+        cond2 = cond0 & (q == 1)
+        cond3 = cond0 & (q == 0)
+        cond = cond0 & cond1
+        output = valarray(shape(cond), value=self.badvalue)
+
+        lower_bound = self.a * scale + loc
+        upper_bound = self.b * scale + loc
+        place(output, cond2, argsreduce(cond2, lower_bound)[0])
+        place(output, cond3, argsreduce(cond3, upper_bound)[0])
+
+        if any(cond):
+            goodargs = argsreduce(cond, *((q,)+args+(scale, loc)))
+            scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
+            place(output, cond, self._isf(*goodargs) * scale + loc)
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def _nnlf(self, x, *args):
+        return -sum(self._logpdf(x, *args), axis=0)
+
+    def nnlf(self, theta, x):
+        '''Return negative loglikelihood function
+
+        Notes
+        -----
+        This is ``-sum(log pdf(x, theta), axis=0)`` where theta are the
+        parameters (including loc and scale).
+        '''
+        try:
+            loc = theta[-2]
+            scale = theta[-1]
+            args = tuple(theta[:-2])
+        except IndexError:
+            raise ValueError("Not enough input arguments.")
+        if not self._argcheck(*args) or scale <= 0:
+            return inf
+        x = asarray((x-loc) / scale)
+        cond0 = (x <= self.a) | (self.b <= x)
+        if (any(cond0)):
+            return inf
+        else:
+            N = len(x)
+            return self._nnlf(x, *args) + N * log(scale)
+
+    def _penalized_nnlf(self, theta, x):
+        ''' Return negative loglikelihood function,
+        i.e., - sum (log pdf(x, theta), axis=0)
+           where theta are the parameters (including loc and scale)
+        '''
+        try:
+            loc = theta[-2]
+            scale = theta[-1]
+            args = tuple(theta[:-2])
+        except IndexError:
+            raise ValueError("Not enough input arguments.")
+        if not self._argcheck(*args) or scale <= 0:
+            return inf
+        x = asarray((x-loc) / scale)
+
+        loginf = log(_XMAX)
+
+        if np.isneginf(self.a).all() and np.isinf(self.b).all():
+            Nbad = 0
+        else:
+            cond0 = (x <= self.a) | (self.b <= x)
+            Nbad = sum(cond0)
+            if Nbad > 0:
+                x = argsreduce(~cond0, x)[0]
+
+        N = len(x)
+        return self._nnlf(x, *args) + N*log(scale) + Nbad * 100.0 * loginf
+
+    # return starting point for fit (shape arguments + loc + scale)
+    def _fitstart(self, data, args=None):
+        if args is None:
+            args = (1.0,)*self.numargs
+        return args + self.fit_loc_scale(data, *args)
+
+    # Return the (possibly reduced) function to optimize in order to find MLE
+    #  estimates for the .fit method
+    def _reduce_func(self, args, kwds):
+        args = list(args)
+        Nargs = len(args)
+        fixedn = []
+        index = list(range(Nargs))
+        names = ['f%d' % n for n in range(Nargs - 2)] + ['floc', 'fscale']
+        x0 = []
+        for n, key in zip(index, names):
+            if key in kwds:
+                fixedn.append(n)
+                args[n] = kwds[key]
+            else:
+                x0.append(args[n])
+
+        if len(fixedn) == 0:
+            func = self._penalized_nnlf
+            restore = None
+        else:
+            if len(fixedn) == len(index):
+                raise ValueError("All parameters fixed. There is nothing to optimize.")
+
+            def restore(args, theta):
+                # Replace with theta for all numbers not in fixedn
+                # This allows the non-fixed values to vary, but
+                #  we still call self.nnlf with all parameters.
+                i = 0
+                for n in range(Nargs):
+                    if n not in fixedn:
+                        args[n] = theta[i]
+                        i += 1
+                return args
+
+            def func(theta, x):
+                newtheta = restore(args[:], theta)
+                return self._penalized_nnlf(newtheta, x)
+
+        return x0, func, restore, args
+
+    def fit(self, data, *args, **kwds):
+        """
+        Return MLEs for shape, location, and scale parameters from data.
+
+        MLE stands for Maximum Likelihood Estimate.  Starting estimates for
+        the fit are given by input arguments; for any arguments not provided
+        with starting estimates, ``self._fitstart(data)`` is called to generate
+        such.
+
+        One can hold some parameters fixed to specific values by passing in
+        keyword arguments ``f0``, ``f1``, ..., ``fn`` (for shape parameters)
+        and ``floc`` and ``fscale`` (for location and scale parameters,
+        respectively).
+
+        Parameters
+        ----------
+        data : array_like
+            Data to use in calculating the MLEs.
+        args : floats, optional
+            Starting value(s) for any shape-characterizing arguments (those not
+            provided will be determined by a call to ``_fitstart(data)``).
+            No default value.
+        kwds : floats, optional
+            Starting values for the location and scale parameters; no default.
+            Special keyword arguments are recognized as holding certain
+            parameters fixed:
+
+            f0...fn : hold respective shape parameters fixed.
+
+            floc : hold location parameter fixed to specified value.
+
+            fscale : hold scale parameter fixed to specified value.
+
+            optimizer : The optimizer to use.  The optimizer must take func,
+                        and starting position as the first two arguments,
+                        plus args (for extra arguments to pass to the
+                        function to be optimized) and disp=0 to suppress
+                        output as keyword arguments.
+
+        Returns
+        -------
+        shape, loc, scale : tuple of floats
+            MLEs for any shape statistics, followed by those for location and
+            scale.
+
+        Notes
+        -----
+        This fit is computed by maximizing a log-likelihood function, with
+        penalty applied for samples outside of range of the distribution. The
+        returned answer is not guaranteed to be the globally optimal MLE, it
+        may only be locally optimal, or the optimization may fail altogether.
+        """
+        Narg = len(args)
+        if Narg > self.numargs:
+            raise TypeError("Too many input arguments.")
+
+        start = [None]*2
+        if (Narg < self.numargs) or not ('loc' in kwds and
+                                         'scale' in kwds):
+            # get distribution specific starting locations
+            start = self._fitstart(data)
+            args += start[Narg:-2]
+        loc = kwds.get('loc', start[-2])
+        scale = kwds.get('scale', start[-1])
+        args += (loc, scale)
+        x0, func, restore, args = self._reduce_func(args, kwds)
+
+        optimizer = kwds.get('optimizer', optimize.fmin)
+        # convert string to function in scipy.optimize
+        if not callable(optimizer) and isinstance(optimizer, string_types):
+            if not optimizer.startswith('fmin_'):
+                optimizer = "fmin_"+optimizer
+            if optimizer == 'fmin_':
+                optimizer = 'fmin'
+            try:
+                optimizer = getattr(optimize, optimizer)
+            except AttributeError:
+                raise ValueError("%s is not a valid optimizer" % optimizer)
+        vals = optimizer(func, x0, args=(ravel(data),), disp=0)
+        if restore is not None:
+            vals = restore(args, vals)
+        vals = tuple(vals)
+        return vals
+
+    def fit_loc_scale(self, data, *args):
+        """
+        Estimate loc and scale parameters from data using 1st and 2nd moments.
+
+        Parameters
+        ----------
+        data : array_like
+            Data to fit.
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+
+        Returns
+        -------
+        Lhat : float
+            Estimated location parameter for the data.
+        Shat : float
+            Estimated scale parameter for the data.
+
+        """
+        mu, mu2 = self.stats(*args, **{'moments': 'mv'})
+        tmp = asarray(data)
+        muhat = tmp.mean()
+        mu2hat = tmp.var()
+        Shat = sqrt(mu2hat / mu2)
+        Lhat = muhat - Shat*mu
+        if not np.isfinite(Lhat):
+            Lhat = 0
+        if not (np.isfinite(Shat) and (0 < Shat)):
+            Shat = 1
+        return Lhat, Shat
+
+    @np.deprecate
+    def est_loc_scale(self, data, *args):
+        """This function is deprecated, use self.fit_loc_scale(data) instead.
+        """
+        return self.fit_loc_scale(data, *args)
+
+    def _entropy(self, *args):
+        def integ(x):
+            val = self._pdf(x, *args)
+            return special.xlogy(val, val)
+
+        entr = -integrate.quad(integ, self.a, self.b)[0]
+        if not np.isnan(entr):
+            return entr
+        else:  # try with different limits if integration problems
+            low, upp = self.ppf([1e-10, 1. - 1e-10], *args)
+            if np.isinf(self.b):
+                upper = upp
+            else:
+                upper = self.b
+            if np.isinf(self.a):
+                lower = low
+            else:
+                lower = self.a
+            return -integrate.quad(integ, lower, upper)[0]
+
+    def entropy(self, *args, **kwds):
+        """
+        Differential entropy of the RV.
+
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+        loc : array_like, optional
+            Location parameter (default=0).
+        scale : array_like, optional
+            Scale parameter (default=1).
+
+        """
+        args, loc, scale = self._parse_args(*args, **kwds)
+        args = tuple(map(asarray, args))
+        cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
+        output = zeros(shape(cond0), 'd')
+        place(output, (1-cond0), self.badvalue)
+        goodargs = argsreduce(cond0, *args)
+        # np.vectorize doesn't work when numargs == 0 in numpy 1.5.1
+        if self.numargs == 0:
+            place(output, cond0, self._entropy() + log(scale))
+        else:
+            place(output, cond0, self.vecentropy(*goodargs) + log(scale))
+
+        return output
+
+    def expect(self, func=None, args=(), loc=0, scale=1, lb=None, ub=None,
+               conditional=False, **kwds):
+        """Calculate expected value of a function with respect to the
+        distribution.
+
+        The expected value of a function ``f(x)`` with respect to a
+        distribution ``dist`` is defined as::
+
+                    ubound
+            E[x] = Integral(f(x) * dist.pdf(x))
+                    lbound
+
+        Parameters
+        ----------
+        func : callable, optional
+            Function for which integral is calculated. Takes only one argument.
+            The default is the identity mapping f(x) = x.
+        args : tuple, optional
+            Argument (parameters) of the distribution.
+        lb, ub : scalar, optional
+            Lower and upper bound for integration. default is set to the
+            support of the distribution.
+        conditional : bool, optional
+            If True, the integral is corrected by the conditional probability
+            of the integration interval.  The return value is the expectation
+            of the function, conditional on being in the given interval.
+            Default is False.
+
+        Additional keyword arguments are passed to the integration routine.
+
+        Returns
+        -------
+        expect : float
+            The calculated expected value.
+
+        Notes
+        -----
+        The integration behavior of this function is inherited from
+        `integrate.quad`.
+
+        """
+        lockwds = {'loc': loc,
+                   'scale': scale}
+        self._argcheck(*args)
+        if func is None:
+            def fun(x, *args):
+                return x * self.pdf(x, *args, **lockwds)
+        else:
+            def fun(x, *args):
+                return func(x) * self.pdf(x, *args, **lockwds)
+        if lb is None:
+            lb = loc + self.a * scale
+        if ub is None:
+            ub = loc + self.b * scale
+        if conditional:
+            invfac = (self.sf(lb, *args, **lockwds)
+                      - self.sf(ub, *args, **lockwds))
+        else:
+            invfac = 1.0
+        kwds['args'] = args
+        return integrate.quad(fun, lb, ub, **kwds)[0] / invfac
+
+
+## Handlers for generic case where xk and pk are given
+## The _drv prefix probably means discrete random variable.
+
+def _drv_pmf(self, xk, *args):
+    try:
+        return self.P[xk]
+    except KeyError:
+        return 0.0
+
+
+def _drv_cdf(self, xk, *args):
+    indx = argmax((self.xk > xk), axis=-1)-1
+    return self.F[self.xk[indx]]
+
+
+def _drv_ppf(self, q, *args):
+    indx = argmax((self.qvals >= q), axis=-1)
+    return self.Finv[self.qvals[indx]]
+
+
+def _drv_nonzero(self, k, *args):
+    return 1
+
+
+def _drv_moment(self, n, *args):
+    n = asarray(n)
+    return sum(self.xk**n[newaxis,...] * self.pk, axis=0)
+
+
+def _drv_moment_gen(self, t, *args):
+    t = asarray(t)
+    return sum(exp(self.xk * t[newaxis,...]) * self.pk, axis=0)
+
+
+def _drv2_moment(self, n, *args):
+    """Non-central moment of discrete distribution."""
+    # many changes, originally not even a return
+    tot = 0.0
+    diff = 1e100
+    # pos = self.a
+    pos = max(0.0, 1.0*self.a)
+    count = 0
+    # handle cases with infinite support
+    ulimit = max(1000, (min(self.b, 1000) + max(self.a, -1000))/2.0)
+    llimit = min(-1000, (min(self.b, 1000) + max(self.a, -1000))/2.0)
+
+    while (pos <= self.b) and ((pos <= ulimit) or
+                               (diff > self.moment_tol)):
+        diff = np.power(pos, n) * self.pmf(pos, *args)
+        # use pmf because _pmf does not check support in randint and there
+        # might be problems ? with correct self.a, self.b at this stage
+        tot += diff
+        pos += self.inc
+        count += 1
+
+    if self.a < 0:  # handle case when self.a = -inf
+        diff = 1e100
+        pos = -self.inc
+        while (pos >= self.a) and ((pos >= llimit) or
+                                   (diff > self.moment_tol)):
+            diff = np.power(pos, n) * self.pmf(pos, *args)
+            # using pmf instead of _pmf, see above
+            tot += diff
+            pos -= self.inc
+            count += 1
+    return tot
+
+
+def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
+    b = self.b
+    a = self.a
+    if isinf(b):            # Be sure ending point is > q
+        b = int(max(100*q, 10))
+        while 1:
+            if b >= self.b:
+                qb = 1.0
+                break
+            qb = self._cdf(b, *args)
+            if (qb < q):
+                b += 10
+            else:
+                break
+    else:
+        qb = 1.0
+    if isinf(a):    # be sure starting point < q
+        a = int(min(-100*q, -10))
+        while 1:
+            if a <= self.a:
+                qb = 0.0
+                break
+            qa = self._cdf(a, *args)
+            if (qa > q):
+                a -= 10
+            else:
+                break
+    else:
+        qa = self._cdf(a, *args)
+
+    while 1:
+        if (qa == q):
+            return a
+        if (qb == q):
+            return b
+        if b <= a+1:
+    # testcase: return wrong number at lower index
+    # python -c "from scipy.stats import zipf;print zipf.ppf(0.01, 2)" wrong
+    # python -c "from scipy.stats import zipf;print zipf.ppf([0.01, 0.61, 0.77, 0.83], 2)"
+    # python -c "from scipy.stats import logser;print logser.ppf([0.1, 0.66, 0.86, 0.93], 0.6)"
+            if qa > q:
+                return a
+            else:
+                return b
+        c = int((a+b)/2.0)
+        qc = self._cdf(c, *args)
+        if (qc < q):
+            if a != c:
+                a = c
+            else:
+                raise RuntimeError('updating stopped, endless loop')
+            qa = qc
+        elif (qc > q):
+            if b != c:
+                b = c
+            else:
+                raise RuntimeError('updating stopped, endless loop')
+            qb = qc
+        else:
+            return c
+
+
+def entropy(pk, qk=None, base=None):
+    """Calculate the entropy of a distribution for given probability values.
+
+    If only probabilities `pk` are given, the entropy is calculated as
+    ``S = -sum(pk * log(pk), axis=0)``.
+
+    If `qk` is not None, then compute a relative entropy (also known as
+    Kullback-Leibler divergence or Kullback-Leibler distance)
+    ``S = sum(pk * log(pk / qk), axis=0)``.
+
+    This routine will normalize `pk` and `qk` if they don't sum to 1.
+
+    Parameters
+    ----------
+    pk : sequence
+        Defines the (discrete) distribution. ``pk[i]`` is the (possibly
+        unnormalized) probability of event ``i``.
+    qk : sequence, optional
+        Sequence against which the relative entropy is computed. Should be in
+        the same format as `pk`.
+    base : float, optional
+        The logarithmic base to use, defaults to ``e`` (natural logarithm).
+
+    Returns
+    -------
+    S : float
+        The calculated entropy.
+
+    """
+    pk = asarray(pk)
+    pk = 1.0*pk / sum(pk, axis=0)
+    if qk is None:
+        vec = special.xlogy(pk, pk)
+    else:
+        qk = asarray(qk)
+        if len(qk) != len(pk):
+            raise ValueError("qk and pk must have same length.")
+        qk = 1.0*qk / sum(qk, axis=0)
+        # If qk is zero anywhere, then unless pk is zero at those places
+        #   too, the relative entropy is infinite.
+        mask = qk == 0.0
+        qk[mask] = 1.0  # Avoid the divide-by-zero warning
+        quotient = pk / qk
+        vec = -special.xlogy(pk, quotient)
+        vec[mask & (pk != 0.0)] = -inf
+        vec[mask & (pk == 0.0)] = 0.0
+    S = -sum(vec, axis=0)
+    if base is not None:
+        S /= log(base)
+    return S
+
+
+def reverse_dict(dict):
+    newdict = {}
+    sorted_keys = list(dict.keys())
+    sorted_keys.sort()
+    for key in sorted_keys[::-1]:
+        newdict[dict[key]] = key
+    return newdict
+
+
+def make_dict(keys, values):
+    d = {}
+    for key, value in zip(keys, values):
+        d[key] = value
+    return d
+
+
+# Must over-ride one of _pmf or _cdf or pass in
+#  x_k, p(x_k) lists in initialization
+
+class rv_discrete(rv_generic):
+    """
+    A generic discrete random variable class meant for subclassing.
+
+    `rv_discrete` is a base class to construct specific distribution classes
+    and instances from for discrete random variables. rv_discrete can be used
+    to construct an arbitrary distribution with defined by a list of support
+    points and the corresponding probabilities.
+
+    Parameters
+    ----------
+    a : float, optional
+        Lower bound of the support of the distribution, default: 0
+    b : float, optional
+        Upper bound of the support of the distribution, default: plus infinity
+    moment_tol : float, optional
+        The tolerance for the generic calculation of moments
+    values : tuple of two array_like
+        (xk, pk) where xk are points (integers) with positive probability pk
+        with sum(pk) = 1
+    inc : integer
+        increment for the support of the distribution, default: 1
+        other values have not been tested
+    badvalue : object, optional
+        The value in (masked) arrays that indicates a value that should be
+        ignored.
+    name : str, optional
+        The name of the instance. This string is used to construct the default
+        example for distributions.
+    longname : str, optional
+        This string is used as part of the first line of the docstring returned
+        when a subclass has no docstring of its own. Note: `longname` exists
+        for backwards compatibility, do not use for new subclasses.
+    shapes : str, optional
+        The shape of the distribution. For example ``"m, n"`` for a
+        distribution that takes two integers as the first two arguments for all
+        its methods.
+    extradoc :  str, optional
+        This string is used as the last part of the docstring returned when a
+        subclass has no docstring of its own. Note: `extradoc` exists for
+        backwards compatibility, do not use for new subclasses.
+
+    Methods
+    -------
+    generic.rvs(<shape(s)>, loc=0, size=1)
+        random variates
+
+    generic.pmf(x, <shape(s)>, loc=0)
+        probability mass function
+
+    logpmf(x, <shape(s)>, loc=0)
+        log of the probability density function
+
+    generic.cdf(x, <shape(s)>, loc=0)
+        cumulative density function
+
+    generic.logcdf(x, <shape(s)>, loc=0)
+        log of the cumulative density function
+
+    generic.sf(x, <shape(s)>, loc=0)
+        survival function (1-cdf --- sometimes more accurate)
+
+    generic.logsf(x, <shape(s)>, loc=0, scale=1)
+        log of the survival function
+
+    generic.ppf(q, <shape(s)>, loc=0)
+        percent point function (inverse of cdf --- percentiles)
+
+    generic.isf(q, <shape(s)>, loc=0)
+        inverse survival function (inverse of sf)
+
+    generic.moment(n, <shape(s)>, loc=0)
+        non-central n-th moment of the distribution.  May not work for array
+        arguments.
+
+    generic.stats(<shape(s)>, loc=0, moments='mv')
+        mean('m', axis=0), variance('v'), skew('s'), and/or kurtosis('k')
+
+    generic.entropy(<shape(s)>, loc=0)
+        entropy of the RV
+
+    generic.expect(func=None, args=(), loc=0, lb=None, ub=None,
+            conditional=False)
+        Expected value of a function with respect to the distribution.
+        Additional kwd arguments passed to integrate.quad
+
+    generic.median(<shape(s)>, loc=0)
+        Median of the distribution.
+
+    generic.mean(<shape(s)>, loc=0)
+        Mean of the distribution.
+
+    generic.std(<shape(s)>, loc=0)
+        Standard deviation of the distribution.
+
+    generic.var(<shape(s)>, loc=0)
+        Variance of the distribution.
+
+    generic.interval(alpha, <shape(s)>, loc=0)
+        Interval that with `alpha` percent probability contains a random
+        realization of this distribution.
+
+    generic(<shape(s)>, loc=0)
+        calling a distribution instance returns a frozen distribution
+
+    Notes
+    -----
+
+    You can construct an arbitrary discrete rv where ``P{X=xk} = pk``
+    by passing to the rv_discrete initialization method (through the
+    values=keyword) a tuple of sequences (xk, pk) which describes only those
+    values of X (xk) that occur with nonzero probability (pk).
+
+    To create a new discrete distribution, we would do the following::
+
+        class poisson_gen(rv_discrete):
+            #"Poisson distribution"
+            def _pmf(self, k, mu):
+                ...
+
+    and create an instance::
+
+        poisson = poisson_gen(name="poisson",
+                              longname='A Poisson')
+
+    The docstring can be created from a template.
+
+    Alternatively, the object may be called (as a function) to fix the shape
+    and location parameters returning a "frozen" discrete RV object::
+
+        myrv = generic(<shape(s)>, loc=0)
+            - frozen RV object with the same methods but holding the given
+              shape and location fixed.
+
+    A note on ``shapes``: subclasses need not specify them explicitly. In this
+    case, the `shapes` will be automatically deduced from the signatures of the
+    overridden methods.
+    If, for some reason, you prefer to avoid relying on introspection, you can
+    specify ``shapes`` explicitly as an argument to the instance constructor.
+
+
+    Examples
+    --------
+
+    Custom made discrete distribution:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import stats
+    >>> xk = np.arange(7)
+    >>> pk = (0.1, 0.2, 0.3, 0.1, 0.1, 0.1, 0.1)
+    >>> custm = stats.rv_discrete(name='custm', values=(xk, pk))
+    >>> h = plt.plot(xk, custm.pmf(xk))
+
+    Random number generation:
+
+    >>> R = custm.rvs(size=100)
+
+    Display frozen pmf:
+
+    >>> numargs = generic.numargs
+    >>> [ <shape(s)> ] = ['Replace with resonable value', ]*numargs
+    >>> rv = generic(<shape(s)>)
+    >>> x = np.arange(0, np.min(rv.dist.b, 3)+1)
+    >>> h = plt.plot(x, rv.pmf(x))
+
+    Here, ``rv.dist.b`` is the right endpoint of the support of ``rv.dist``.
+
+    Check accuracy of cdf and ppf:
+
+    >>> prb = generic.cdf(x, <shape(s)>)
+    >>> h = plt.semilogy(np.abs(x-generic.ppf(prb, <shape(s)>))+1e-20)
+
+    """
+
+    def __init__(self, a=0, b=inf, name=None, badvalue=None,
+                 moment_tol=1e-8, values=None, inc=1, longname=None,
+                 shapes=None, extradoc=None):
+
+        super(rv_discrete, self).__init__()
+
+        if badvalue is None:
+            badvalue = nan
+        if name is None:
+            name = 'Distribution'
+        self.badvalue = badvalue
+        self.a = a
+        self.b = b
+        self.name = name
+        self.moment_tol = moment_tol
+        self.inc = inc
+        self._cdfvec = vectorize(self._cdf_single, otypes='d')
+        self.return_integers = 1
+        self.vecentropy = vectorize(self._entropy)
+        self.shapes = shapes
+        self.extradoc = extradoc
+
+        if values is not None:
+            self.xk, self.pk = values
+            self.return_integers = 0
+            indx = argsort(ravel(self.xk))
+            self.xk = take(ravel(self.xk), indx, 0)
+            self.pk = take(ravel(self.pk), indx, 0)
+            self.a = self.xk[0]
+            self.b = self.xk[-1]
+            self.P = make_dict(self.xk, self.pk)
+            self.qvals = np.cumsum(self.pk, axis=0)
+            self.F = make_dict(self.xk, self.qvals)
+            self.Finv = reverse_dict(self.F)
+            self._ppf = instancemethod(vectorize(_drv_ppf, otypes='d'),
+                                       self, rv_discrete)
+            self._pmf = instancemethod(vectorize(_drv_pmf, otypes='d'),
+                                       self, rv_discrete)
+            self._cdf = instancemethod(vectorize(_drv_cdf, otypes='d'),
+                                       self, rv_discrete)
+            self._nonzero = instancemethod(_drv_nonzero, self, rv_discrete)
+            self.generic_moment = instancemethod(_drv_moment,
+                                                 self, rv_discrete)
+            self.moment_gen = instancemethod(_drv_moment_gen,
+                                             self, rv_discrete)
+            self._construct_argparser(meths_to_inspect=[_drv_pmf],
+                                      locscale_in='loc=0',
+                                      # scale=1 for discrete RVs
+                                      locscale_out='loc, 1')
+        else:
+            self._construct_argparser(meths_to_inspect=[self._pmf, self._cdf],
+                                      locscale_in='loc=0',
+                                      # scale=1 for discrete RVs
+                                      locscale_out='loc, 1')
+
+            # nin correction needs to be after we know numargs
+            # correct nin for generic moment vectorization
+            _vec_generic_moment = vectorize(_drv2_moment, otypes='d')
+            _vec_generic_moment.nin = self.numargs + 2
+            self.generic_moment = instancemethod(_vec_generic_moment,
+                                                 self, rv_discrete)
+
+            # backwards compatibility
+            self.vec_generic_moment = _vec_generic_moment
+
+            # correct nin for ppf vectorization
+            _vppf = vectorize(_drv2_ppfsingle, otypes='d')
+            _vppf.nin = self.numargs + 2  # +1 is for self
+            self._ppfvec = instancemethod(_vppf,
+                                          self, rv_discrete)
+
+        # now that self.numargs is defined, we can adjust nin
+        self._cdfvec.nin = self.numargs + 1
+
+        # generate docstring for subclass instances
+        if longname is None:
+            if name[0] in ['aeiouAEIOU']:
+                hstr = "An "
+            else:
+                hstr = "A "
+            longname = hstr + name
+
+        if sys.flags.optimize < 2:
+            # Skip adding docstrings if interpreter is run with -OO
+            if self.__doc__ is None:
+                self._construct_default_doc(longname=longname,
+                                            extradoc=extradoc)
+            else:
+                self._construct_doc()
+
+            #discrete RV do not have the scale parameter, remove it
+            self.__doc__ = self.__doc__.replace(
+                '\n    scale : array_like, '
+                'optional\n        scale parameter (default=1)', '')
+
+    def _construct_default_doc(self, longname=None, extradoc=None):
+        """Construct instance docstring from the rv_discrete template."""
+        if extradoc is None:
+            extradoc = ''
+        if extradoc.startswith('\n\n'):
+            extradoc = extradoc[2:]
+        self.__doc__ = ''.join(['%s discrete random variable.' % longname,
+                                '\n\n%(before_notes)s\n', docheaders['notes'],
+                                extradoc, '\n%(example)s'])
+        self._construct_doc()
+
+    def _construct_doc(self):
+        """Construct the instance docstring with string substitutions."""
+        tempdict = docdict_discrete.copy()
+        tempdict['name'] = self.name or 'distname'
+        tempdict['shapes'] = self.shapes or ''
+
+        if self.shapes is None:
+            # remove shapes from call parameters if there are none
+            for item in ['callparams', 'default', 'before_notes']:
+                tempdict[item] = tempdict[item].replace(
+                    "\n%(shapes)s : array_like\n    shape parameters", "")
+        for i in range(2):
+            if self.shapes is None:
+                # necessary because we use %(shapes)s in two forms (w w/o ", ")
+                self.__doc__ = self.__doc__.replace("%(shapes)s, ", "")
+            self.__doc__ = doccer.docformat(self.__doc__, tempdict)
+
+    def _nonzero(self, k, *args):
+        return floor(k) == k
+
+    def _pmf(self, k, *args):
+        return self._cdf(k, *args) - self._cdf(k-1, *args)
+
+    def _logpmf(self, k, *args):
+        return log(self._pmf(k, *args))
+
+    def _cdf_single(self, k, *args):
+        m = arange(int(self.a), k+1)
+        return sum(self._pmf(m, *args), axis=0)
+
+    def _cdf(self, x, *args):
+        k = floor(x)
+        return self._cdfvec(k, *args)
+
+    # generic _logcdf, _sf, _logsf, _ppf, _isf, _rvs defined in rv_generic
+
+    def rvs(self, *args, **kwargs):
+        """
+        Random variates of given type.
+
+        Parameters
+        ----------
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+        loc : array_like, optional
+            Location parameter (default=0).
+        size : int or tuple of ints, optional
+            Defining number of random variates (default=1).  Note that `size`
+            has to be given as keyword, not as positional argument.
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random variates of given `size`.
+
+        """
+        kwargs['discrete'] = True
+        return super(rv_discrete, self).rvs(*args, **kwargs)
+
+    def pmf(self, k, *args, **kwds):
+        """
+        Probability mass function at k of the given RV.
+
+        Parameters
+        ----------
+        k : array_like
+            quantiles
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information)
+        loc : array_like, optional
+            Location parameter (default=0).
+
+        Returns
+        -------
+        pmf : array_like
+            Probability mass function evaluated at k
+
+        """
+        args, loc, _ = self._parse_args(*args, **kwds)
+        k, loc = map(asarray, (k, loc))
+        args = tuple(map(asarray, args))
+        k = asarray((k-loc))
+        cond0 = self._argcheck(*args)
+        cond1 = (k >= self.a) & (k <= self.b) & self._nonzero(k, *args)
+        cond = cond0 & cond1
+        output = zeros(shape(cond), 'd')
+        place(output, (1-cond0) + np.isnan(k), self.badvalue)
+        if any(cond):
+            goodargs = argsreduce(cond, *((k,)+args))
+            place(output, cond, self._pmf(*goodargs))
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def logpmf(self, k, *args, **kwds):
+        """
+        Log of the probability mass function at k of the given RV.
+
+        Parameters
+        ----------
+        k : array_like
+            Quantiles.
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+        loc : array_like, optional
+            Location parameter. Default is 0.
+
+        Returns
+        -------
+        logpmf : array_like
+            Log of the probability mass function evaluated at k.
+
+        """
+        args, loc, _ = self._parse_args(*args, **kwds)
+        k, loc = map(asarray, (k, loc))
+        args = tuple(map(asarray, args))
+        k = asarray((k-loc))
+        cond0 = self._argcheck(*args)
+        cond1 = (k >= self.a) & (k <= self.b) & self._nonzero(k, *args)
+        cond = cond0 & cond1
+        output = empty(shape(cond), 'd')
+        output.fill(NINF)
+        place(output, (1-cond0) + np.isnan(k), self.badvalue)
+        if any(cond):
+            goodargs = argsreduce(cond, *((k,)+args))
+            place(output, cond, self._logpmf(*goodargs))
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def cdf(self, k, *args, **kwds):
+        """
+        Cumulative distribution function of the given RV.
+
+        Parameters
+        ----------
+        k : array_like, int
+            Quantiles.
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+        loc : array_like, optional
+            Location parameter (default=0).
+
+        Returns
+        -------
+        cdf : ndarray
+            Cumulative distribution function evaluated at `k`.
+
+        """
+        args, loc, _ = self._parse_args(*args, **kwds)
+        k, loc = map(asarray, (k, loc))
+        args = tuple(map(asarray, args))
+        k = asarray((k-loc))
+        cond0 = self._argcheck(*args)
+        cond1 = (k >= self.a) & (k < self.b)
+        cond2 = (k >= self.b)
+        cond = cond0 & cond1
+        output = zeros(shape(cond), 'd')
+        place(output, (1-cond0) + np.isnan(k), self.badvalue)
+        place(output, cond2*(cond0 == cond0), 1.0)
+
+        if any(cond):
+            goodargs = argsreduce(cond, *((k,)+args))
+            place(output, cond, self._cdf(*goodargs))
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def logcdf(self, k, *args, **kwds):
+        """
+        Log of the cumulative distribution function at k of the given RV
+
+        Parameters
+        ----------
+        k : array_like, int
+            Quantiles.
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+        loc : array_like, optional
+            Location parameter (default=0).
+
+        Returns
+        -------
+        logcdf : array_like
+            Log of the cumulative distribution function evaluated at k.
+
+        """
+        args, loc, _ = self._parse_args(*args, **kwds)
+        k, loc = map(asarray, (k, loc))
+        args = tuple(map(asarray, args))
+        k = asarray((k-loc))
+        cond0 = self._argcheck(*args)
+        cond1 = (k >= self.a) & (k < self.b)
+        cond2 = (k >= self.b)
+        cond = cond0 & cond1
+        output = empty(shape(cond), 'd')
+        output.fill(NINF)
+        place(output, (1-cond0) + np.isnan(k), self.badvalue)
+        place(output, cond2*(cond0 == cond0), 0.0)
+
+        if any(cond):
+            goodargs = argsreduce(cond, *((k,)+args))
+            place(output, cond, self._logcdf(*goodargs))
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def sf(self, k, *args, **kwds):
+        """
+        Survival function (1-cdf) at k of the given RV.
+
+        Parameters
+        ----------
+        k : array_like
+            Quantiles.
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+        loc : array_like, optional
+            Location parameter (default=0).
+
+        Returns
+        -------
+        sf : array_like
+            Survival function evaluated at k.
+
+        """
+        args, loc, _ = self._parse_args(*args, **kwds)
+        k, loc = map(asarray, (k, loc))
+        args = tuple(map(asarray, args))
+        k = asarray(k-loc)
+        cond0 = self._argcheck(*args)
+        cond1 = (k >= self.a) & (k <= self.b)
+        cond2 = (k < self.a) & cond0
+        cond = cond0 & cond1
+        output = zeros(shape(cond), 'd')
+        place(output, (1-cond0) + np.isnan(k), self.badvalue)
+        place(output, cond2, 1.0)
+        if any(cond):
+            goodargs = argsreduce(cond, *((k,)+args))
+            place(output, cond, self._sf(*goodargs))
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def logsf(self, k, *args, **kwds):
+        """
+        Log of the survival function of the given RV.
+
+        Returns the log of the "survival function," defined as ``1 - cdf``,
+        evaluated at `k`.
+
+        Parameters
+        ----------
+        k : array_like
+            Quantiles.
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+        loc : array_like, optional
+            Location parameter (default=0).
+
+        Returns
+        -------
+        logsf : ndarray
+            Log of the survival function evaluated at `k`.
+
+        """
+        args, loc, _ = self._parse_args(*args, **kwds)
+        k, loc = map(asarray, (k, loc))
+        args = tuple(map(asarray, args))
+        k = asarray(k-loc)
+        cond0 = self._argcheck(*args)
+        cond1 = (k >= self.a) & (k <= self.b)
+        cond2 = (k < self.a) & cond0
+        cond = cond0 & cond1
+        output = empty(shape(cond), 'd')
+        output.fill(NINF)
+        place(output, (1-cond0) + np.isnan(k), self.badvalue)
+        place(output, cond2, 0.0)
+        if any(cond):
+            goodargs = argsreduce(cond, *((k,)+args))
+            place(output, cond, self._logsf(*goodargs))
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def ppf(self, q, *args, **kwds):
+        """
+        Percent point function (inverse of cdf) at q of the given RV
+
+        Parameters
+        ----------
+        q : array_like
+            Lower tail probability.
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+        loc : array_like, optional
+            Location parameter (default=0).
+        scale : array_like, optional
+            Scale parameter (default=1).
+
+        Returns
+        -------
+        k : array_like
+            Quantile corresponding to the lower tail probability, q.
+
+        """
+        args, loc, _ = self._parse_args(*args, **kwds)
+        q, loc = map(asarray, (q, loc))
+        args = tuple(map(asarray, args))
+        cond0 = self._argcheck(*args) & (loc == loc)
+        cond1 = (q > 0) & (q < 1)
+        cond2 = (q == 1) & cond0
+        cond = cond0 & cond1
+        output = valarray(shape(cond), value=self.badvalue, typecode='d')
+        # output type 'd' to handle nin and inf
+        place(output, (q == 0)*(cond == cond), self.a-1)
+        place(output, cond2, self.b)
+        if any(cond):
+            goodargs = argsreduce(cond, *((q,)+args+(loc,)))
+            loc, goodargs = goodargs[-1], goodargs[:-1]
+            place(output, cond, self._ppf(*goodargs) + loc)
+
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def isf(self, q, *args, **kwds):
+        """
+        Inverse survival function (1-sf) at q of the given RV.
+
+        Parameters
+        ----------
+        q : array_like
+            Upper tail probability.
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+        loc : array_like, optional
+            Location parameter (default=0).
+
+        Returns
+        -------
+        k : ndarray or scalar
+            Quantile corresponding to the upper tail probability, q.
+
+        """
+        args, loc, _ = self._parse_args(*args, **kwds)
+        q, loc = map(asarray, (q, loc))
+        args = tuple(map(asarray, args))
+        cond0 = self._argcheck(*args) & (loc == loc)
+        cond1 = (q > 0) & (q < 1)
+        cond2 = (q == 1) & cond0
+        cond = cond0 & cond1
+
+        # same problem as with ppf; copied from ppf and changed
+        output = valarray(shape(cond), value=self.badvalue, typecode='d')
+        # output type 'd' to handle nin and inf
+        place(output, (q == 0)*(cond == cond), self.b)
+        place(output, cond2, self.a-1)
+
+        # call place only if at least 1 valid argument
+        if any(cond):
+            goodargs = argsreduce(cond, *((q,)+args+(loc,)))
+            loc, goodargs = goodargs[-1], goodargs[:-1]
+            # PB same as ticket 766
+            place(output, cond, self._isf(*goodargs) + loc)
+
+        if output.ndim == 0:
+            return output[()]
+        return output
+
+    def _entropy(self, *args):
+        if hasattr(self, 'pk'):
+            return entropy(self.pk)
+        else:
+            mu = int(self.stats(*args, **{'moments': 'm'}))
+            val = self.pmf(mu, *args)
+            ent = -special.xlogy(val, val)
+            k = 1
+            term = 1.0
+            while (abs(term) > _EPS):
+                val = self.pmf(mu+k, *args)
+                term = -special.xlogy(val, val)
+                val = self.pmf(mu-k, *args)
+                term -= special.xlogy(val, val)
+                k += 1
+                ent += term
+            return ent
+
+    def expect(self, func=None, args=(), loc=0, lb=None, ub=None,
+               conditional=False):
+        """
+        Calculate expected value of a function with respect to the distribution
+        for discrete distribution
+
+        Parameters
+        ----------
+        fn : function (default: identity mapping)
+            Function for which sum is calculated. Takes only one argument.
+        args : tuple
+            argument (parameters) of the distribution
+        lb, ub : numbers, optional
+            lower and upper bound for integration, default is set to the
+            support of the distribution, lb and ub are inclusive (ul<=k<=ub)
+        conditional : bool, optional
+            Default is False.
+            If true then the expectation is corrected by the conditional
+            probability of the integration interval. The return value is the
+            expectation of the function, conditional on being in the given
+            interval (k such that ul<=k<=ub).
+
+        Returns
+        -------
+        expect : float
+            Expected value.
+
+        Notes
+        -----
+        * function is not vectorized
+        * accuracy: uses self.moment_tol as stopping criterium
+          for heavy tailed distribution e.g. zipf(4), accuracy for
+          mean, variance in example is only 1e-5,
+          increasing precision (moment_tol) makes zipf very slow
+        * suppnmin=100 internal parameter for minimum number of points to
+          evaluate could be added as keyword parameter, to evaluate functions
+          with non-monotonic shapes, points include integers in (-suppnmin,
+          suppnmin)
+        * uses maxcount=1000 limits the number of points that are evaluated
+          to break loop for infinite sums
+          (a maximum of suppnmin+1000 positive plus suppnmin+1000 negative
+          integers are evaluated)
+
+        """
+
+        # moment_tol = 1e-12 # increase compared to self.moment_tol,
+        # too slow for only small gain in precision for zipf
+
+        # avoid endless loop with unbound integral, eg. var of zipf(2)
+        maxcount = 1000
+        suppnmin = 100  # minimum number of points to evaluate (+ and -)
+
+        if func is None:
+            def fun(x):
+                # loc and args from outer scope
+                return (x+loc)*self._pmf(x, *args)
+        else:
+            def fun(x):
+                # loc and args from outer scope
+                return func(x+loc)*self._pmf(x, *args)
+        # used pmf because _pmf does not check support in randint and there
+        # might be problems(?) with correct self.a, self.b at this stage maybe
+        # not anymore, seems to work now with _pmf
+
+        self._argcheck(*args)  # (re)generate scalar self.a and self.b
+        if lb is None:
+            lb = (self.a)
+        else:
+            lb = lb - loc   # convert bound for standardized distribution
+        if ub is None:
+            ub = (self.b)
+        else:
+            ub = ub - loc   # convert bound for standardized distribution
+        if conditional:
+            if np.isposinf(ub)[()]:
+                # work around bug: stats.poisson.sf(stats.poisson.b, 2) is nan
+                invfac = 1 - self.cdf(lb-1, *args)
+            else:
+                invfac = 1 - self.cdf(lb-1, *args) - self.sf(ub, *args)
+        else:
+            invfac = 1.0
+
+        tot = 0.0
+        low, upp = self._ppf(0.001, *args), self._ppf(0.999, *args)
+        low = max(min(-suppnmin, low), lb)
+        upp = min(max(suppnmin, upp), ub)
+        supp = np.arange(low, upp+1, self.inc)  # check limits
+        # print 'low, upp', low, upp
+        tot = np.sum(fun(supp))
+        diff = 1e100
+        pos = upp + self.inc
+        count = 0
+
+        # handle cases with infinite support
+
+        while (pos <= ub) and (diff > self.moment_tol) and count <= maxcount:
+            diff = fun(pos)
+            tot += diff
+            pos += self.inc
+            count += 1
+
+        if self.a < 0:  # handle case when self.a = -inf
+            diff = 1e100
+            pos = low - self.inc
+            while ((pos >= lb) and (diff > self.moment_tol) and
+                   count <= maxcount):
+                diff = fun(pos)
+                tot += diff
+                pos -= self.inc
+                count += 1
+        if count > maxcount:
+            warnings.warn('expect(): sum did not converge', RuntimeWarning)
+        return tot/invfac

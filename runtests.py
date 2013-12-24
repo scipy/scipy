@@ -170,8 +170,8 @@ def main(argv):
         try:
             __import__(modname)
             test = sys.modules[modname].test
-        except (ImportError, KeyError, AttributeError):
-            print("Cannot run tests for %s" % modname)
+        except (ImportError, KeyError, AttributeError) as e:
+            print("Cannot run tests for %s (%s)" % (modname, e))
             sys.exit(2)
     elif args.tests:
         def fix_test_path(x):
