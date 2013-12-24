@@ -18,7 +18,6 @@ Run tests if scipy is installed:
 Run tests if sparse is not installed:
   python tests/test_base.py
 """
-from distutils.version import LooseVersion
 
 import warnings
 
@@ -42,6 +41,8 @@ from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
 from scipy.sparse.sputils import supported_dtypes, isscalarlike
 from scipy.sparse.linalg import splu, expm, inv
 
+from scipy.lib._version import NumpyVersion
+
 import nose
 
 warnings.simplefilter('ignore', SparseEfficiencyWarning)
@@ -55,7 +56,7 @@ def _can_cast_samekind(dtype1, dtype2):
     and a strict subset of 'same_kind'.  So for 1.5.x we just skip the cases
     where 'safe' is False and 'same_kind' True.
     """
-    if np.__version__[:3] == '1.5':
+    if NumpyVersion(np.__version__) < '1.6.0':
         return np.can_cast(dtype1, dtype2)
     else:
         return np.can_cast(dtype1, dtype2, casting='same_kind')
@@ -1338,7 +1339,7 @@ class _TestCommon:
 
     def test_unary_ufunc_overrides(self):
         def check(name):
-            if LooseVersion(np.version.version) < LooseVersion('1.9'):
+            if NumpyVersion(np.__version__) < '1.9.0a1':
                 if name == "sign":
                     raise nose.SkipTest("sign conflicts with comparison op "
                                         "support on Numpy < 1.9")
@@ -1353,7 +1354,7 @@ class _TestCommon:
             X2 = ufunc(X)
             assert_array_equal(X2.toarray(), X0)
 
-            if not (LooseVersion(np.version.version) < LooseVersion('1.9')):
+            if not (NumpyVersion(np.__version__) < '1.9.0a1'):
                 # the out argument doesn't work on Numpy < 1.9
                 out = np.zeros_like(X0)
                 X3 = ufunc(X, out=out)
@@ -1389,7 +1390,7 @@ class _TestCommon:
         a_items = dict(dense=a, scalar=c, cplx_scalar=d, int_scalar=e, sparse=asp)
         b_items = dict(dense=b, scalar=c, cplx_scalar=d, int_scalar=e, sparse=bsp)
 
-        @dec.skipif(LooseVersion(np.version.version) < LooseVersion('1.9'),
+        @dec.skipif(NumpyVersion(np.__version__) < '1.9.0a1',
                     "feature requires Numpy 1.9")
         def check(i, j, dtype):
             ax = a_items[i]
@@ -1487,7 +1488,7 @@ class _TestCommon:
 
 
 class _TestInplaceArithmetic:
-    @dec.skipif(LooseVersion(np.version.version) < LooseVersion('1.9'),
+    @dec.skipif(NumpyVersion(np.__version__) < '1.9.0a1',
                 "Not implemented with Numpy < 1.9")
     def test_inplace_dense_method(self):
         # Check that ndarray inplace ops work
@@ -1528,7 +1529,7 @@ class _TestInplaceArithmetic:
         y -= b
         assert_array_equal(x, y)
 
-        if not (LooseVersion(np.version.version) < LooseVersion('1.9')):
+        if not (NumpyVersion(np.__version__) < '1.9.0a1'):
             # These operations don't work properly without __numpy_ufunc__,
             # due to missing or incompatible __r*__ implementations
 

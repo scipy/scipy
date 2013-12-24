@@ -5,10 +5,12 @@ import warnings
 
 import numpy as np
 import numpy.testing as npt
-from distutils.version import LooseVersion
+
+from scipy.lib._version import NumpyVersion
 from scipy import stats
 
-NUMPY_BELOW_1_7 = LooseVersion(np.version.version) < LooseVersion('1.7')
+
+NUMPY_BELOW_1_7 = NumpyVersion(np.__version__) < '1.7.0'
 
 
 def check_normalization(distfn, args, distname):

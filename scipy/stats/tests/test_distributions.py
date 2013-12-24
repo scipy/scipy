@@ -15,6 +15,7 @@ from nose import SkipTest
 import numpy
 import numpy as np
 from numpy import typecodes, array
+from scipy.lib._version import NumpyVersion
 from scipy import special
 import scipy.stats as stats
 from scipy.stats.distributions import argsreduce
@@ -553,7 +554,8 @@ class TestDLaplace(TestCase):
 
 
 class TestInvGamma(TestCase):
-    @dec.skipif(np.__version__ < '1.7', "assert_* funcs broken with inf/nan")
+    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
+                "assert_* funcs broken with inf/nan")
     def test_invgamma_inf_gh_1866(self):
         # invgamma's moments are only finite for a>n
         # specific numbers checked w/ boost 1.54
@@ -808,7 +810,8 @@ class TestEntropy(TestCase):
         assert_array_almost_equal(stats.entropy(pk, qk),
                 [0.1933259, 0.18609809])
 
-    @dec.skipif(np.__version__ < '1.7', "assert_* funcs broken with inf/nan")
+    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
+                "assert_* funcs broken with inf/nan")
     def test_entropy_2d_zero(self):
         pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
         qk = [[0.0, 0.1], [0.3, 0.6], [0.5, 0.3]]
