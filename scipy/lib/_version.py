@@ -70,7 +70,7 @@ class NumpyVersion():
             else:
                 self.pre_release = None
 
-        self.is_devversion = bool(re.match(r'.dev-', vstring))
+        self.is_devversion = bool(re.search(r'.dev-', vstring))
 
 
     def __cmp__(self, other):
