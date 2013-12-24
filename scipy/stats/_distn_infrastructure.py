@@ -2312,22 +2312,6 @@ def entropy(pk, qk=None, base=None):
     return S
 
 
-def reverse_dict(dict):
-    newdict = {}
-    sorted_keys = list(dict.keys())
-    sorted_keys.sort()
-    for key in sorted_keys[::-1]:
-        newdict[dict[key]] = key
-    return newdict
-
-
-def make_dict(keys, values):
-    d = {}
-    for key, value in zip(keys, values):
-        d[key] = value
-    return d
-
-
 # Must over-ride one of _pmf or _cdf or pass in
 #  x_k, p(x_k) lists in initialization
 
@@ -2535,10 +2519,11 @@ class rv_discrete(rv_generic):
             self.pk = take(ravel(self.pk), indx, 0)
             self.a = self.xk[0]
             self.b = self.xk[-1]
-            self.P = make_dict(self.xk, self.pk)
+            self.P = dict(zip(self.xk, self.pk))
             self.qvals = np.cumsum(self.pk, axis=0)
-            self.F = make_dict(self.xk, self.qvals)
-            self.Finv = reverse_dict(self.F)
+            self.F = dict(zip(self.xk, self.qvals))
+            decreasing_keys = sorted(self.F.keys(), reverse=True)
+            self.Finv = dict((self.F[k], k) for k in decreasing_keys)
             self._ppf = instancemethod(vectorize(_drv_ppf, otypes='d'),
                                        self, rv_discrete)
             self._pmf = instancemethod(vectorize(_drv_pmf, otypes='d'),
