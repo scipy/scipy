@@ -20,6 +20,7 @@ from . import statlib
 from . import stats
 from .stats import find_repeats
 from . import distributions
+from ._distn_infrastructure import rv_generic
 
 
 __all__ = ['mvsdist',
@@ -270,13 +271,14 @@ def _parse_dist_kw(dist, enforce_subclass=True):
         Several functions take `dist` as a keyword, hence this utility
         function.
     enforce_subclass : bool, optional
-        If True (default), `dist` needs to be a `stats.rv_generic` instance.
+        If True (default), `dist` needs to be a
+        `_distn_infrastructure.rv_generic` instance.
         It can sometimes be useful to set this keyword to False, if a function
         wants to accept objects that just look somewhat like such an instance
         (for example, they have a ``ppf`` method).
 
     """
-    if isinstance(dist, distributions.rv_generic):
+    if isinstance(dist, rv_generic):
         pass
     elif isinstance(dist, string_types):
         try:

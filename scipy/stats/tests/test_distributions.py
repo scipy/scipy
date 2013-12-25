@@ -17,7 +17,7 @@ import numpy as np
 from numpy import typecodes, array
 from scipy import special
 import scipy.stats as stats
-from scipy.stats.distributions import argsreduce
+from scipy.stats._distn_infrastructure import argsreduce
 from scipy.special import xlogy
 
 
@@ -1340,7 +1340,7 @@ def test_540_567():
 def test_regression_ticket_1316():
     # The following was raising an exception, because _construct_default_doc()
     # did not handle the default keyword extradoc=None.  See ticket #1316.
-    g = stats.distributions.gamma_gen(name='gamma')
+    g = stats._continuous_distns.gamma_gen(name='gamma')
 
 
 def test_regression_ticket_1326():
