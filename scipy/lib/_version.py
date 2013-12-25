@@ -71,32 +71,47 @@ class NumpyVersion():
             if pre_rel:
                 self.pre_release = pre_rel[0].group()
             else:
-                self.pre_release = None
+                self.pre_release = ''
 
         self.is_devversion = bool(re.search(r'.dev-', vstring))
 
     def _compare_version(self, other):
         """Compare major.minor.bugfix"""
-        vercmp = cmp(self.major, other.major)
-        if vercmp == 0:
-            vercmp = cmp(self.minor, other.minor)
-            if vercmp == 0:
-                vercmp = cmp(self.bugfix, other.bugfix)
+        if self.major == other.major:
+            if self.minor == other.minor:
+                if self.bugfix == other.bugfix:
+                    vercmp = 0
+                elif self.bugfix > other.bugfix:
+                    vercmp = 1
+                else:
+                    vercmp = -1
+            elif self.minor > other.minor:
+                vercmp = 1
+            else:
+                vercmp = -1
+        elif self.major > other.major:
+            vercmp = 1
+        else:
+            vercmp = -1
 
         return vercmp
 
     def _compare_pre_release(self, other):
         """Compare alpha/beta/rc/final."""
-        vercmp = cmp(self.pre_release, other.pre_release)
-        if vercmp != 0:
-            if self.pre_release == 'final':
-                vercmp = 1
-            elif other.pre_release == 'final':
-                vercmp = -1
+        if self.pre_release == other.pre_release:
+            vercmp = 0
+        elif self.pre_release == 'final':
+            vercmp = 1
+        elif other.pre_release == 'final':
+            vercmp = -1
+        elif self.pre_release > other.pre_release:
+            vercmp = 1
+        else:
+            vercmp = -1
 
         return vercmp
 
-    def __cmp__(self, other):
+    def _compare(self, other):
         if not isinstance(other, (string_types, NumpyVersion)):
             raise ValueError("Invalid object to compare with NumpyVersion.")
 
@@ -109,9 +124,32 @@ class NumpyVersion():
             vercmp = self._compare_pre_release(other)
             if vercmp == 0:
                 # Same version and same pre-release, check if dev version
-                vercmp = -cmp(self.is_devversion, other.is_devversion)
+                if self.is_devversion is other.is_devversion:
+                    vercmp = 0
+                elif self.is_devversion:
+                    vercmp = -1
+                else:
+                    vercmp = 1
 
         return vercmp
+
+    def __lt__(self, other):
+        return self._compare(other) < 0
+
+    def __le__(self, other):
+        return self._compare(other) <= 0
+
+    def __eq__(self, other):
+        return self._compare(other) == 0
+
+    def __ne__(self, other):
+        return self._compare(other) != 0
+
+    def __gt__(self, other):
+        return self._compare(other) > 0
+
+    def __ge__(self, other):
+        return self._compare(other) >= 0
 
     def __repr(self):
         return "NumpyVersion(%s)" % self.vstring
