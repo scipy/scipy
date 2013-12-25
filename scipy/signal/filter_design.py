@@ -766,10 +766,10 @@ def _zpkbilinear(z, p, k, fs):
     degree = _relative_degree(z, p)
 
     fs2 = 2*fs
-    
+
     # Bilinear transform the poles and zeros
-    p_z = (fs2 + p) / (fs2 - p)
     z_z = (fs2 + z) / (fs2 - z)
+    p_z = (fs2 + p) / (fs2 - p)
 
     # Any zeros that were at infinity get moved to the Nyquist frequency
     z_z = append(z_z, -ones(degree))
@@ -917,18 +917,18 @@ def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
     degree = _relative_degree(z, p)
 
     # Scale poles and zeros to desired bandwidth
-    p_lp = p * bw/2
     z_lp = z * bw/2
+    p_lp = p * bw/2
 
     # Square root needs to produce complex result, not NaN
-    p_lp = p_lp.astype(complex)
     z_lp = z_lp.astype(complex)
+    p_lp = p_lp.astype(complex)
 
     # Duplicate poles and zeros and shift from baseband to +wo and -wo
-    p_bp = concatenate((p_lp + sqrt(p_lp**2 - wo**2), 
-                        p_lp - sqrt(p_lp**2 - wo**2)))
-    z_bp = concatenate((z_lp + sqrt(z_lp**2 - wo**2), 
+    z_bp = concatenate((z_lp + sqrt(z_lp**2 - wo**2),
                         z_lp - sqrt(z_lp**2 - wo**2)))
+    p_bp = concatenate((p_lp + sqrt(p_lp**2 - wo**2),
+                        p_lp - sqrt(p_lp**2 - wo**2)))
 
     # Move half of any zeros that were at infinity to the origin for BPF
     z_bp = append(z_bp, zeros(degree))
@@ -981,18 +981,18 @@ def _zpklp2bs(z, p, k, wo=1.0, bw=1.0):
     degree = _relative_degree(z, p)
 
     # Invert to a highpass filter with desired bandwidth
-    p_hp = (bw/2) / p
     z_hp = (bw/2) / z
+    p_hp = (bw/2) / p
 
     # Square root needs to produce complex result, not NaN
-    p_hp = p_hp.astype(complex)
     z_hp = z_hp.astype(complex)
+    p_hp = p_hp.astype(complex)
 
     # Duplicate poles and zeros and shift from baseband to +wo and -wo
-    p_bs = concatenate((p_hp + sqrt(p_hp**2 - wo**2), 
-                        p_hp - sqrt(p_hp**2 - wo**2)))
-    z_bs = concatenate((z_hp + sqrt(z_hp**2 - wo**2), 
+    z_bs = concatenate((z_hp + sqrt(z_hp**2 - wo**2),
                         z_hp - sqrt(z_hp**2 - wo**2)))
+    p_bs = concatenate((p_hp + sqrt(p_hp**2 - wo**2),
+                        p_hp - sqrt(p_hp**2 - wo**2)))
 
     # Move any zeros that were at infinity to the center of the stopband
     z_bs = append(z_bs, +1j*wo * ones(degree))
