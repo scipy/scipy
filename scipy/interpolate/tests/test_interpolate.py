@@ -1,15 +1,15 @@
 from __future__ import division, print_function, absolute_import
 
-from distutils.version import LooseVersion
-
-from numpy.testing import assert_, assert_equal, assert_almost_equal, \
-        assert_array_almost_equal, assert_raises, assert_array_equal, \
-        dec, TestCase, run_module_suite, assert_allclose
-from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
-import numpy as np
 import warnings
 
+from numpy.testing import (assert_, assert_equal, assert_almost_equal,
+        assert_array_almost_equal, assert_raises, assert_array_equal,
+        dec, TestCase, run_module_suite, assert_allclose)
+from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
+import numpy as np
+
 from scipy.lib.six import xrange
+from scipy.lib._version import NumpyVersion
 
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          ppform, splrep, splev, splantider, splint, sproot)
@@ -477,7 +477,7 @@ class TestPPolyCommon(TestCase):
             assert_equal(np.shape(p(0.5)), ())
             assert_equal(np.shape(p(np.array(0.5))), ())
 
-            if LooseVersion(np.version.version) >= LooseVersion('1.7'):
+            if NumpyVersion(np.__version__) >= '1.7.0':
                 # can't use dtype=object (with any numpy; what fails is
                 # constructing the object array here for old numpy)
                 assert_raises(ValueError, p, np.array([[0.1, 0.2], [0.4]]))
