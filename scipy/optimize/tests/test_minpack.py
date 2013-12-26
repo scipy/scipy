@@ -375,6 +375,15 @@ class TestCurveFit(TestCase):
         assert_(pcov.shape == (2, 2))
         assert_array_equal(pcov, np.inf)
 
+    def test_array_like(self):
+        # Test sequence input.  Regression test for gh-3037.
+        def f_linear(x, a, b):
+            return a*x + b
+
+        x = [1, 2, 3, 4]
+        y = [2, 4, 6, 8]
+        assert_allclose(curve_fit(f_linear, x, y)[0], [2, 0], atol=1e-10)
+
 
 class TestFixedPoint(TestCase):
 
