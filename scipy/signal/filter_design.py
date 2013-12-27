@@ -637,6 +637,26 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     --------
     buttord, cheb1ord, cheb2ord, ellipord
 
+    Examples
+    --------
+    Generate a 17th-order Chebyshev II bandpass filter and plot the frequency
+    response:
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> b, a = signal.iirfilter(17, [50, 200], rs=60, btype='band',
+                                analog=True, ftype='cheby2')
+    >>> w, h = signal.freqs(b, a, 1000)
+    >>> plt.plot(w, 20 * np.log10(abs(h)))
+    >>> plt.xscale('log')
+    >>> plt.title('Chebyshev Type II bandpass frequency response')
+    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.axis((10, 1000, -100, 10))
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.show()
+
     """
     ftype, btype, output = [x.lower() for x in (ftype, btype, output)]
     Wn = asarray(Wn)
@@ -809,6 +829,12 @@ def _zpklp2lp(z, p, k, wo=1.0):
     k : float
         System gain of the transformed low-pass filter.
 
+    Notes
+    -----
+    This is derived from the s-plane substitution
+
+    .. math:: s \rightarrow \frac{s}{\omega_0}
+
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -855,6 +881,12 @@ def _zpklp2hp(z, p, k, wo=1.0):
     k : float
         System gain of the transformed high-pass filter.
 
+    Notes
+    -----
+    This is derived from the s-plane substitution
+
+    .. math:: s \rightarrow \frac{\omega_0}{s}
+
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -883,9 +915,6 @@ def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
     bandwidth `bw` from an analog low-pass filter prototype with unity
     cutoff frequency, using zeros, poles, and gain ('zpk') representation.
 
-    This is the "wideband" transformation, producing a passband with
-    geometric (log frequency) symmetry about `wo`.
-
     Parameters
     ----------
     z : ndarray
@@ -909,6 +938,15 @@ def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
         Poles of the transformed band-pass filter transfer function.
     k : float
         System gain of the transformed band-pass filter.
+
+    Notes
+    -----
+    This is derived from the s-plane substitution
+
+    .. math:: s \rightarrow \frac{s^2 + {\omega_0}^2}{s \cdot \mathrm{BW}}
+
+    This is the "wideband" transformation, producing a passband with
+    geometric (log frequency) symmetry about `wo`.
 
     """
     z = atleast_1d(z)
@@ -947,9 +985,6 @@ def _zpklp2bs(z, p, k, wo=1.0, bw=1.0):
     stopband width `bw` from an analog low-pass filter prototype with unity
     cutoff frequency, using zeros, poles, and gain ('zpk') representation.
 
-    This is the "wideband" transformation, producing a stopband with
-    geometric (log frequency) symmetry about `wo`.
-
     Parameters
     ----------
     z : ndarray
@@ -973,6 +1008,15 @@ def _zpklp2bs(z, p, k, wo=1.0, bw=1.0):
         Poles of the transformed band-stop filter transfer function.
     k : float
         System gain of the transformed band-stop filter.
+
+    Notes
+    -----
+    This is derived from the s-plane substitution
+
+    .. math:: s \rightarrow \frac{s \cdot \mathrm{BW}}{s^2 + {\omega_0}^2}
+
+    This is the "wideband" transformation, producing a stopband with
+    geometric (log frequency) symmetry about `wo`.
 
     """
     z = atleast_1d(z)
