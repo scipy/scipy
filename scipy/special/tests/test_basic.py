@@ -185,6 +185,11 @@ class TestCephes(TestCase):
         assert_allclose(p, [1.21805009e-09, 2.81979982e-09, 6.25652736e-09,
                             1.33520017e-08, 2.74909967e-08],
                         rtol=1e-6, atol=0)
+        assert_almost_equal(cephes.chndtr(np.inf, np.inf, 0), 2.0)
+        assert_almost_equal(cephes.chndtr(2, 1, np.inf), 0.0)
+        assert_(np.isnan(cephes.chndtr(np.nan, 1, 2)))
+        assert_(np.isnan(cephes.chndtr(5, np.nan, 2)))
+        assert_(np.isnan(cephes.chndtr(5, 1, np.nan)))
 
     def test_chndtridf(self):
         assert_equal(cephes.chndtridf(0,0,1),5.0)
