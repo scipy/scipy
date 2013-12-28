@@ -8,7 +8,7 @@ import numpy as np
 from scipy.lib.six import xrange
 from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \
         where, mgrid, cos, sin, exp, place, seterr, issubdtype, extract, \
-        less, vectorize, inexact, nan, zeros, sometrue, atleast_1d
+        less, vectorize, inexact, nan, zeros, sometrue, atleast_1d, sinc
 from ._ufuncs import ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
         hankel1, hankel2, yv, kv, gammaln, ndtri, errprint, poch, binom
 from . import _ufuncs
@@ -39,19 +39,6 @@ __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
 class SpecialFunctionWarning(Warning):
     pass
 warnings.simplefilter("always", category=SpecialFunctionWarning)
-
-
-def sinc(x):
-    """Returns sin(pi*x)/(pi*x) at all points of array x.
-    """
-    x = asarray(x)
-    w = pi * x
-    # w might contain 0, and so temporarily turn off warnings
-    # while calculating sin(w)/w.
-    old_settings = seterr(all='ignore')
-    s = sin(w) / w
-    seterr(**old_settings)
-    return where(x == 0, 1.0, s)
 
 
 def diric(x,n):
