@@ -1155,18 +1155,9 @@ class TestTrigonometric(TestCase):
         assert_almost_equal(special.cotdg(765), 1.0, 14)
 
     def test_sinc(self):
-        c = arange(-2,2,.1)
-        y = special.sinc(c)
-        yre = sin(pi*c)/(pi*c)
-        yre[20] = 1.0
-        assert_array_almost_equal(y, yre, 4)
-
-        # Regression test for ticket 1751.
-        assert_array_almost_equal(special.sinc([0]), 1)
-
-    def test_0(self):
-        x = 0.0
-        assert_equal(special.sinc(x),1.0)
+        # the sinc implementation and more extensive sinc tests are in numpy
+        assert_array_equal(special.sinc([0]), 1)
+        assert_equal(special.sinc(0.0), 1.0)
 
     def test_sindg(self):
         sn = special.sindg(90)
