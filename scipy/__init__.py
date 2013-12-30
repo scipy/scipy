@@ -74,15 +74,13 @@ from numpy import __version__ as __numpy_version__
 
 # Import numpy symbols to scipy name space
 import numpy as _num
-from numpy import oldnumeric
 from numpy import *
 from numpy.random import rand, randn
 from numpy.fft import fft, ifft
 from numpy.lib.scimath import *
 
 
-__all__ += ['oldnumeric']+_num.__all__
-
+__all__ += _num.__all__
 __all__ += ['randn', 'rand', 'fft', 'ifft']
 
 del _num
