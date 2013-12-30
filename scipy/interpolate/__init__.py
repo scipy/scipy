@@ -29,6 +29,7 @@ Univariate interpolation
    piecewise_polynomial_interpolate
    pchip_interpolate
    PPoly
+   BPoly
 
 
 Multivariate interpolation
