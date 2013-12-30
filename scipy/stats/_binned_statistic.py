@@ -1,5 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 from scipy.lib.six import callable
 
@@ -93,7 +95,7 @@ def binned_statistic(x, values, statistic='mean',
 
     if N != 1:
         bins = [np.asarray(bins, float)]
-    
+
     if range is not None:
         if len(range) == 2:
             range = [range]
@@ -370,12 +372,15 @@ def binned_statistic_dd(sample, values, statistic='mean',
         for i in np.unique(xy):
             result[i] = np.median(values[xy == i])
     elif callable(statistic):
-        old = np.seterr(invalid='ignore')
-        try:
-            null = statistic([])
-        except:
-            null = np.nan
-        np.seterr(**old)
+        with warnings.catch_warnings():
+            # Numpy generates a warnings for mean/std/... with empty list
+            warnings.filterwarnings('ignore', category=RuntimeWarning)
+            old = np.seterr(invalid='ignore')
+            try:
+                null = statistic([])
+            except:
+                null = np.nan
+            np.seterr(**old)
         result.fill(null)
         for i in np.unique(xy):
             result[i] = statistic(values[xy == i])
