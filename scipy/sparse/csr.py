@@ -7,8 +7,6 @@ __docformat__ = "restructuredtext en"
 __all__ = ['csr_matrix', 'isspmatrix_csr']
 
 
-from warnings import warn
-
 import numpy as np
 from scipy.lib.six import xrange
 
