@@ -80,13 +80,6 @@ from numpy.random import rand, randn
 from numpy.fft import fft, ifft
 from numpy.lib.scimath import *
 
-# Emit a warning if numpy is too old
-majver, minver = [float(i) for i in _num.version.version.split('.')[:2]]
-if majver < 1 or (majver == 1 and minver < 5):
-    import warnings
-    warnings.warn("Numpy 1.5.0 or above is recommended for this version of "
-                  "scipy (detected version %s)" % _num.version.version,
-                  UserWarning)
 
 __all__ += ['oldnumeric']+_num.__all__
 
@@ -118,7 +111,16 @@ else:
         being in scipy source directory; please exit the scipy source
         tree first, and relaunch your python intepreter."""
         raise ImportError(msg)
+
     from scipy.version import version as __version__
+    from scipy.lib._version import NumpyVersion as _NumpyVersion
+    if _NumpyVersion(__numpy_version__) < '1.5.1':
+        import warnings
+        warnings.warn("Numpy 1.5.1 or above is recommended for this version of "
+                      "scipy (detected version %s)" % __numpy_version__,
+                      UserWarning)
+
+    del _NumpyVersion
 
     from numpy.testing import Tester
     test = Tester().test
