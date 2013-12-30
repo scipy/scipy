@@ -688,7 +688,10 @@ class dlaplace_gen(rv_discrete):
         k = floor(x)
         ind = (k >= 0)
         const = exp(a)+1
-        return np.where(ind, 1.0-exp(-a*k)/const, exp(a*(k+1))/const)
+        olderr = np.seterr(all='ignore')
+        vals = np.where(ind, 1.0-exp(-a*k)/const, exp(a*(k+1))/const)
+        np.seterr(**olderr)
+        return vals
 
     def _ppf(self, q, a):
         const = 1.0/(1+exp(-a))
