@@ -663,7 +663,11 @@ class rv_generic(object):
 
     #  Central moments
     def _munp(self, n, *args):
-        return self.generic_moment(n, *args)
+        # Silence floating point warnings from integration.
+        olderr = np.seterr(all='ignore')
+        vals = self.generic_moment(n, *args)
+        np.seterr(**olderr)
+        return vals
 
     ## These are the methods you must define (standard form functions)
     ## NB: generic _pdf, _logpdf, _cdf are different for
@@ -2132,7 +2136,11 @@ class rv_continuous(rv_generic):
         else:
             invfac = 1.0
         kwds['args'] = args
-        return integrate.quad(fun, lb, ub, **kwds)[0] / invfac
+        # Silence floating point warnings from integration.
+        olderr = np.seterr(all='ignore')
+        vals = integrate.quad(fun, lb, ub, **kwds)[0] / invfac
+        np.seterr(**olderr)
+        return vals
 
 
 ## Handlers for generic case where xk and pk are given
@@ -3085,7 +3093,6 @@ class rv_discrete(rv_generic):
         low = max(min(-suppnmin, low), lb)
         upp = min(max(suppnmin, upp), ub)
         supp = np.arange(low, upp+1, self.inc)  # check limits
-        # print 'low, upp', low, upp
         tot = np.sum(fun(supp))
         diff = 1e100
         pos = upp + self.inc
