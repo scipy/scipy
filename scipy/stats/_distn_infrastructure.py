@@ -2023,10 +2023,15 @@ class rv_continuous(rv_generic):
             val = self._pdf(x, *args)
             return xlogy(val, val)
 
+        # upper limit is often inf, so suppress warnings when integrating
+        olderr = np.seterr(over='ignore')
         entr = -integrate.quad(integ, self.a, self.b)[0]
+        np.seterr(**olderr)
+
         if not np.isnan(entr):
             return entr
-        else:  # try with different limits if integration problems
+        else:
+            # try with different limits if integration problems
             low, upp = self.ppf([1e-10, 1. - 1e-10], *args)
             if np.isinf(self.b):
                 upper = upp
