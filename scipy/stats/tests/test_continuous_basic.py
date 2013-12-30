@@ -326,12 +326,6 @@ def check_sample_var(sv,n, popvar):
             (chi2,pval,popvar,sv))
 
 
-def check_sample_skew_kurt(distfn, arg, ss, sk, msg):
-    skew,kurt = distfn.stats(moments='sk',*arg)
-    check_sample_meanvar(sk, kurt, msg + 'sample kurtosis test')
-    check_sample_meanvar(ss, skew, msg + 'sample skew test')
-
-
 def check_cdf_ppf(distfn,arg,msg):
     values = [0.001, 0.5, 0.999]
     npt.assert_almost_equal(distfn.cdf(distfn.ppf(values, *arg), *arg),
