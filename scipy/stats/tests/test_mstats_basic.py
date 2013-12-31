@@ -1,5 +1,5 @@
 """
-Tests for the stats.mstats module (support for maskd arrays)
+Tests for the stats.mstats module (support for masked arrays)
 """
 from __future__ import division, print_function, absolute_import
 
@@ -16,6 +16,8 @@ from numpy.testing import TestCase, run_module_suite
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
     assert_allclose, assert_raises)
+
+from nose.tools import nottest
 
 
 class TestMquantiles(TestCase):
@@ -44,7 +46,7 @@ class TestGMean(TestCase):
         a = (1,2,3,4)
         actual = mstats.gmean(a)
         desired = np.power(1*2*3*4,1./4.)
-        assert_almost_equal(actual, desired,decimal=14)
+        assert_almost_equal(actual,desired,decimal=14)
 
         desired1 = mstats.gmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
@@ -113,17 +115,23 @@ class TestRanking(TestCase):
 
     def test_ranking(self):
         x = ma.array([0,1,1,1,2,3,4,5,5,6,])
-        assert_almost_equal(mstats.rankdata(x),[1,3,3,3,5,6,7,8.5,8.5,10])
+        assert_almost_equal(mstats.rankdata(x),
+                           [1,3,3,3,5,6,7,8.5,8.5,10])
         x[[3,4]] = masked
-        assert_almost_equal(mstats.rankdata(x),[1,2.5,2.5,0,0,4,5,6.5,6.5,8])
+        assert_almost_equal(mstats.rankdata(x),
+                           [1,2.5,2.5,0,0,4,5,6.5,6.5,8])
         assert_almost_equal(mstats.rankdata(x,use_missing=True),
                             [1,2.5,2.5,4.5,4.5,4,5,6.5,6.5,8])
         x = ma.array([0,1,5,1,2,4,3,5,1,6,])
-        assert_almost_equal(mstats.rankdata(x),[1,3,8.5,3,5,7,6,8.5,3,10])
+        assert_almost_equal(mstats.rankdata(x),
+                           [1,3,8.5,3,5,7,6,8.5,3,10])
         x = ma.array([[0,1,1,1,2], [3,4,5,5,6,]])
-        assert_almost_equal(mstats.rankdata(x),[[1,3,3,3,5],[6,7,8.5,8.5,10]])
-        assert_almost_equal(mstats.rankdata(x,axis=1),[[1,3,3,3,5],[1,2,3.5,3.5,5]])
-        assert_almost_equal(mstats.rankdata(x,axis=0),[[1,1,1,1,1],[2,2,2,2,2,]])
+        assert_almost_equal(mstats.rankdata(x),[[1,3,3,3,5],
+                            [6,7,8.5,8.5,10]])
+        assert_almost_equal(mstats.rankdata(x,axis=1),
+                           [[1,3,3,3,5],[1,2,3.5,3.5,5]])
+        assert_almost_equal(mstats.rankdata(x,axis=0),
+                           [[1,1,1,1,1],[2,2,2,2,2,]])
 
 
 class TestCorr(TestCase):
@@ -431,7 +439,7 @@ class TestVariability(TestCase):
 
     def test_sem(self):
         # This is not in R, so used: sqrt(var(testcase)*3/4) / sqrt(3)
-        y = mstats.sem(self.testcase)
+        y = mstats.sem(self.testcase,ddof=1)
         assert_almost_equal(y,0.6454972244)
 
     def test_zmap(self):
@@ -503,8 +511,9 @@ def test_regress_simple():
     y += np.sin(np.linspace(0, 20, 100))
 
     slope, intercept, r_value, p_value, sterr = mstats.linregress(x, y)
-    assert_almost_equal(slope, 0.19644990055858422)
-    assert_almost_equal(intercept, 10.211269918932341)
+    if slope is not None:
+        assert_almost_equal(slope, 0.19644990055858422)
+        assert_almost_equal(intercept, 10.211269918932341)
 
 
 def test_plotting_positions():
@@ -517,8 +526,10 @@ class TestNormalitytests():
 
     def test_vs_nonmasked(self):
         x = np.array((-2,-1,0,1,2,3)*4)**2
-        assert_array_almost_equal(mstats.normaltest(x), stats.normaltest(x))
-        assert_array_almost_equal(mstats.skewtest(x), stats.skewtest(x))
+        assert_array_almost_equal(mstats.normaltest(x),
+                                  stats.normaltest(x))
+        assert_array_almost_equal(mstats.skewtest(x),
+                                  stats.skewtest(x))
         assert_array_almost_equal(mstats.kurtosistest(x),
                                   stats.kurtosistest(x))
 
@@ -649,6 +660,332 @@ class TestTtest_1samp():
         res1 = mstats.ttest_1samp([], 1)
         assert_(np.all(np.isnan(res1)))
 
+
+class TestCompareWithStats(TestCase):
+    """
+    Class to compare mstats results with stats results
+    It is in general assumed that scipy.stats is at a more mature stage than stats.mstats. If a routine in mstats
+    results in similar results like in scipy.stats, this is considered also as a proper validation of scipy.mstats routine
+
+    Different sample sizes are used for testing, as some problems between stats and mstats are dependent on sample size
+
+    Author: Alexander Loew
+
+    NOTE that some tests fail. This might be caused by
+    a) actual differences or bugs between stats and mstats
+    b) numerical inaccuracies
+    c) different definitions of routine interfaces
+
+    These failures need to be checked. Current workaround is to have disabled these tests,
+    but issuing reports on scipy-dev
+
+    """
+
+    def get_n(self):
+        """returns list of sample sizes to be used for comparison"""
+        return [1000,100,10,5]
+
+    def generate_xy_sample(self,n):
+        """
+        generate some sample data
+        This routine generates numpy arrays and corresponding masked arrays with the same data, but additional
+        masked values
+        """
+
+        assert(isinstance(n,int))
+        assert(n > 3)
+
+        x = np.random.randn(n)
+        y = x + np.random.randn(n)
+        xm = np.ones(len(x)+5)*np.nan
+        ym = np.ones(len(y)+5)*np.nan
+        xm[0:len(x)] = x
+        ym[0:len(y)] = y
+        xm = np.ma.array(xm,mask=np.isnan(xm))
+        ym = np.ma.array(ym,mask=np.isnan(ym))
+
+        return x,y,xm,ym
+
+    def test_linregress(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            slope,intercept,r_value,p_value,std_err = stats.linregress(x,y)
+            slopem,interceptm,r_valuem,p_valuem,std_errm = stats.mstats.linregress(xm,ym)
+
+            if slopem is not None:
+                assert_equal(slope,slopem)
+                assert_equal(intercept,interceptm)
+                assert_equal(r_value,r_valuem)
+                assert_equal(p_value,p_valuem)
+                assert_equal(std_err,std_errm)
+
+    def test_pearsonr(self):
+        """ test for pearsonr """
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            r,p = stats.pearsonr(x,y)
+            rm,pm = stats.mstats.pearsonr(xm,ym)
+
+            assert_almost_equal(r,rm,14)
+            assert_almost_equal(p,pm,14)
+
+    def test_spearmanr(self):
+        """ test spearmanr """
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            r,p = stats.spearmanr(x,y)
+            rm,pm = stats.mstats.spearmanr(xm,ym)
+            assert_almost_equal(r,rm,14)
+            assert_almost_equal(p,pm,14)
+
+    def test_gmean(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            r = stats.gmean(abs(x))
+            rm = stats.mstats.gmean(abs(xm))
+            assert_equal(r,rm)
+
+            r = stats.gmean(abs(y))
+            rm = stats.mstats.gmean(abs(ym))
+            assert_equal(r,rm)
+
+    def test_hmean(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+
+            r = stats.hmean(abs(x))
+            rm = stats.mstats.hmean(abs(xm))
+            assert_almost_equal(r,rm,10)
+
+            r = stats.hmean(abs(y))
+            rm = stats.mstats.hmean(abs(ym))
+            assert_almost_equal(r,rm,10)
+
+    def test_skew(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+
+            r = stats.skew(x)
+            rm = stats.mstats.skew(xm)
+            assert_almost_equal(r,rm,10)
+
+            r = stats.skew(y)
+            rm = stats.mstats.skew(ym)
+            assert_almost_equal(r,rm,10)
+
+    def test_moment(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+
+            r = stats.moment(x)
+            rm = stats.mstats.moment(xm)
+            assert_almost_equal(r,rm,10)
+
+            r = stats.moment(y)
+            rm = stats.mstats.moment(ym)
+            assert_almost_equal(r,rm,10)
+
+    def test_signaltonoise(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+
+            r = stats.signaltonoise(x)
+            rm = stats.mstats.signaltonoise(xm)
+            assert_almost_equal(r,rm,10)
+
+            r = stats.signaltonoise(y)
+            rm = stats.mstats.signaltonoise(ym)
+            assert_almost_equal(r,rm,10)
+
+    def test_betai(self):
+        """ test incomplete beta function """
+        for i in range(10):
+            a = np.random.rand()*5.
+            b = np.random.rand()*200.
+            assert_equal(stats.betai(a,b,0.),0.)
+            assert_equal(stats.betai(a,b,1.),1.)
+            assert_equal(stats.mstats.betai(a,b,0.),0.)
+            assert_equal(stats.mstats.betai(a,b,1.),1.)
+        for i in range(10):
+            a = np.random.rand()*5.
+            b = np.random.rand()*200.
+            x = np.random.rand()
+            assert_equal(stats.betai(a,b,x),stats.mstats.betai(a,b,x))
+
+    def test_zscore(self):
+        """ test zscore """
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+
+            #reference solution
+            zx = (x-x.mean()) / x.std()
+            zy = (y-y.mean()) / y.std()
+
+            #validate stats
+            assert(np.any(abs(stats.zscore(x)-zx) < 1.E-10))
+            assert(np.any(abs(stats.zscore(y)-zy) < 1.E-10))
+
+            #compare stats and mstats
+            assert(np.any(abs(stats.zscore(x)
+                        - stats.mstats.zscore(xm[0:len(x)])) < 1.E-10))
+            assert(np.any(abs(stats.zscore(y)
+                        - stats.mstats.zscore(ym[0:len(y)])) < 1.E-10))
+
+    def test_kurtosis(self):
+        """ test kurtosis """
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+
+            r = stats.kurtosis(x)
+            rm = stats.mstats.kurtosis(xm)
+            assert_almost_equal(r,rm,10)
+
+            r = stats.kurtosis(y)
+            rm = stats.mstats.kurtosis(ym)
+            assert_almost_equal(r,rm,10)
+
+    def test_sem(self):
+        #example from stats.sem doc
+        a = np.arange(20).reshape(5,4)
+        am = np.ma.array(a)
+        r = stats.sem(a,ddof=1)
+        rm = stats.mstats.sem(am,ddof=1.)
+
+        assert(np.all(abs(r - 2.82842712) < 1.E-5))
+        assert(np.all(abs(rm - 2.82842712) < 1.E-5))
+
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            assert_equal(stats.mstats.sem(xm,axis=None,ddof=0),
+                         stats.sem(x, axis=None, ddof=0))
+            assert_equal(stats.mstats.sem(ym,axis=None,ddof=0),
+                         stats.sem(y, axis=None, ddof=0))
+            assert_equal(stats.mstats.sem(xm,axis=None,ddof=1),
+                         stats.sem(x, axis=None, ddof=1))
+            assert_equal(stats.mstats.sem(ym,axis=None,ddof=1),
+                         stats.sem(y, axis=None, ddof=1))
+
+    def test_describe(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            r = stats.describe(x,ddof=1)
+            rm = stats.mstats.describe(xm,ddof=1)
+            assert_equal(r[0],rm[0])
+            assert_equal(r[1][0],rm[1][0])
+            assert_equal(r[1][1],rm[1][1])
+            assert_equal(r[2],rm[2])
+            assert_equal(r[3],rm[3])
+            assert_equal(r[4],rm[4])
+            assert_equal(r[5],rm[5])
+
+    def test_rankdata(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            r = stats.rankdata(x)
+            rm = stats.mstats.rankdata(x)
+            assert(np.all((r-rm) == 0.))
+
+    def test_tmean(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            assert_equal(stats.tmean(x),stats.mstats.tmean(xm))
+            assert_equal(stats.tmean(y),stats.mstats.tmean(ym))
+
+    def test_tmax(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            assert_almost_equal(stats.tmax(x,2.),
+                                stats.mstats.tmax(xm,2.),10)
+            assert_almost_equal(stats.tmax(y,2.),
+                                stats.mstats.tmax(ym,2.),10)
+
+    def test_tmin(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            assert_equal(stats.tmin(x),stats.mstats.tmin(xm))
+            assert_equal(stats.tmin(y),stats.mstats.tmin(ym))
+
+            assert_almost_equal(stats.tmin(x,lowerlimit=-1.),
+                                stats.mstats.tmin(xm,lowerlimit=-1.),10)
+            assert_almost_equal(stats.tmin(y,lowerlimit=-1.),
+                                stats.mstats.tmin(ym,lowerlimit=-1.),10)
+
+    def test_zmap(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            z = stats.zmap(x,y)
+            zm = stats.mstats.zmap(xm,ym)
+            assert(np.all(abs(z-zm[0:len(z)]) < 1.E-10))
+
+    def test_variation(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            assert_equal(stats.variation(x),stats.mstats.variation(xm))
+            assert_equal(stats.variation(y),stats.mstats.variation(ym))
+
+    def test_tvar(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            assert_equal(stats.tvar(x),stats.mstats.tvar(xm))
+            assert_equal(stats.tvar(y),stats.mstats.tvar(ym))
+
+    def test_trimboth(self):
+        a = np.arange(20)
+        b = stats.trimboth(a,0.1)
+        bm = stats.mstats.trimboth(a,0.1)
+
+        assert(np.all(b == bm.data[~bm.mask]))
+
+    def test_tsem(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            assert_equal(stats.tsem(x),stats.mstats.tsem(xm))
+            assert_equal(stats.tsem(y),stats.mstats.tsem(ym))
+            assert_equal(stats.tsem(x,limits=(-2.,2.)),
+                         stats.mstats.tsem(xm,limits=(-2.,2.)))
+
+    def test_skewtest(self):
+        for n in self.get_n():
+            if n > 8:
+                x,y,xm,ym = self.generate_xy_sample(n)
+                r = stats.skewtest(x)
+                rm = stats.mstats.skewtest(xm)
+                assert_equal(r[0],rm[0])
+                assert_equal(r[1],rm[1])
+
+    def test_normaltest(self):
+        for n in self.get_n():
+            if n > 8:
+                x,y,xm,ym = self.generate_xy_sample(n)
+                r = stats.normaltest(x)
+                rm = stats.mstats.normaltest(xm)
+                assert_almost_equal(r[0],rm[0],10)
+                assert_almost_equal(r[1],rm[1],10)
+
+    def test_find_repeats(self):
+        x = np.asarray([1,1,2,2,3,3,3,4,4,4,4]).astype('float')
+        tmp = np.asarray([1,1,2,2,3,3,3,4,4,4,4,5,5,5,5]).astype('float')
+        xm = np.ma.array(tmp,mask=tmp == 5.)
+
+        r = stats.find_repeats(x)
+        rm = stats.mstats.find_repeats(xm)
+
+        assert_equal(r,rm)
+
+    def test_kendalltau(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            r = stats.kendalltau(x,y)
+            rm = stats.mstats.kendalltau(xm,ym)
+            assert_almost_equal(r[0],rm[0],10)
+            assert_almost_equal(r[1],rm[1],7)
+
+    def test_obrientransform(self):
+        for n in self.get_n():
+            x,y,xm,ym = self.generate_xy_sample(n)
+            r = stats.obrientransform(x)
+            rm = stats.mstats.obrientransform(xm)
+            assert_almost_equal(r.T,rm[0:len(x)])
 
 if __name__ == "__main__":
     run_module_suite()

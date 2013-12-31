@@ -648,6 +648,11 @@ if stats.pointbiserialr.__doc__:
 
 
 def linregress(*args):
+    """
+    linear regression calculation
+
+    the function of stats is used for that purpose
+    """
     if len(args) == 1:  # more than 1D array?
         args = ma.array(args[0], copy=True)
         if len(args) == 2:
@@ -663,27 +668,13 @@ def linregress(*args):
     if m is not nomask:
         x = ma.array(x,mask=m)
         y = ma.array(y,mask=m)
-    n = len(x)
-    (xmean, ymean) = (x.mean(), y.mean())
-    (xm, ym) = (x-xmean, y-ymean)
-    (Sxx, Syy) = (ma.add.reduce(xm*xm), ma.add.reduce(ym*ym))
-    Sxy = ma.add.reduce(xm*ym)
-    r_den = ma.sqrt(Sxx*Syy)
-    if r_den == 0.0:
-        r = 0.0
-    else:
-        r = Sxy / r_den
-        if (r > 1.0):
-            r = 1.0  # from numerical error
-    # z = 0.5*log((1.0+r+TINY)/(1.0-r+TINY))
-    df = n-2
-    t = r * ma.sqrt(df/(1.0-r*r))
-    prob = betai(0.5*df,0.5,df/(df+t*t))
-    slope = Sxy / Sxx
-    intercept = ymean - slope*xmean
-    sterrest = ma.sqrt(1.-r*r) * y.std()
-    return slope, intercept, r, prob, sterrest
 
+    #use same routine as stats for regression, return None, if invalid number of samples
+    if (~m).sum() > 1:
+        slope, intercept, r, prob, sterrest = stats.linregress(x.data[~m],y.data[~m])
+        return slope, intercept, r, prob, sterrest
+    else:
+        return None, None, None, None, None
 if stats.linregress.__doc__:
     linregress.__doc__ = stats.linregress.__doc__ + genmissingvaldoc
 
@@ -1033,6 +1024,8 @@ def trima(a, limits=None, inclusive=(True,True)):
     if limits is None:
         return a
     (lower_lim, upper_lim) = limits
+    if (lower_lim is None) and (upper_lim is None):
+        return a
     (lower_in, upper_in) = inclusive
     condition = False
     if lower_lim is not None:
@@ -1386,13 +1379,23 @@ tmean.__doc__ = stats.tmean.__doc__
 
 
 def tvar(a, limits=None, inclusive=(True,True)):
-    return trima(a, limits=limits, inclusive=inclusive).var()
+    a = a.astype(float).ravel()
+
+    if limits is None:
+        n = (~a.mask).sum()  # todo: better way to do that?
+        r = trima(a, limits=limits, inclusive=inclusive).var()*(n/(n-1.))
+    else:
+        raise ValueError('mstats.tvar() with limits not implemented yet so far')
+    return r
 tvar.__doc__ = stats.tvar.__doc__
 
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     a, axis = _chk_asarray(a, axis)
+    print(a)
+    print(a.mask)
     am = trima(a, (lowerlimit, None), (inclusive, False))
+    #print('Da sammer')
     return ma.minimum.reduce(am, axis)
 tmin.__doc__ = stats.tmin.__doc__
 
@@ -1408,10 +1411,10 @@ def tsem(a, limits=None, inclusive=(True,True)):
     a = ma.asarray(a).ravel()
     if limits is None:
         n = float(a.count())
-        return a.std()/ma.sqrt(n)
+        return a.std(ddof=1)/ma.sqrt(n)
     am = trima(a.ravel(), limits, inclusive)
-    sd = np.sqrt(am.var())
-    return sd / am.count()
+    sd = np.sqrt(am.var(ddof=1))
+    return sd / np.sqrt(am.count())
 tsem.__doc__ = stats.tsem.__doc__
 
 
@@ -1566,7 +1569,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 kurtosis.__doc__ = stats.kurtosis.__doc__
 
 
-def describe(a, axis=0):
+def describe(a, axis=0,ddof=0):
     """
     Computes several descriptive statistics of the passed array.
 
@@ -1575,6 +1578,10 @@ def describe(a, axis=0):
     a : array
 
     axis : int or None
+
+    ddof : int
+        degree of freedom (default 0); note that default ddof is different
+        from the same routine in stats.describe
 
     Returns
     -------
@@ -1611,7 +1618,7 @@ def describe(a, axis=0):
     n = a.count(axis)
     mm = (ma.minimum.reduce(a), ma.maximum.reduce(a))
     m = a.mean(axis)
-    v = a.var(axis)
+    v = a.var(axis,ddof=ddof)
     sk = skew(a, axis)
     kurt = kurtosis(a, axis)
     return n, mm, m, v, sk, kurt
@@ -1653,24 +1660,18 @@ median along the given axis. masked values are discarded.
 
 
 def skewtest(a, axis=0):
-    a, axis = _chk_asarray(a, axis)
-    if axis is None:
-        a = a.ravel()
-        axis = 0
-    b2 = skew(a,axis)
-    n = a.count(axis)
-    if np.min(n) < 8:
-        raise ValueError(
-            "skewtest is not valid with less than 8 samples; %i samples"
-            " were given." % np.min(n))
-    y = b2 * ma.sqrt(((n+1)*(n+3)) / (6.0*(n-2)))
-    beta2 = (3.0*(n*n+27*n-70)*(n+1)*(n+3)) / ((n-2.0)*(n+5)*(n+7)*(n+9))
-    W2 = -1 + ma.sqrt(2*(beta2-1))
-    delta = 1/ma.sqrt(0.5*ma.log(W2))
-    alpha = ma.sqrt(2.0/(W2-1))
-    y = ma.where(y == 0, 1, y)
-    Z = delta*ma.log(y/alpha + ma.sqrt((y/alpha)**2+1))
-    return Z, (1.0 - stats.zprob(Z))*2
+    """
+    Skewness test. This function is a wrapper to
+    the corresponding function in scipy.stats
+    """
+    if hasattr(a,'mask'):
+        if np.isscalar(a.mask):
+            x = a.data
+        else:
+            x = a.data[~a.mask]
+    else:
+        x = a
+    return stats.skewtest(x,axis=axis)
 skewtest.__doc__ = stats.skewtest.__doc__
 
 
@@ -1969,12 +1970,58 @@ def signaltonoise(data, axis=0):
     return m/sd
 
 
-def sem(a, axis=0):
+def sem(a, axis=0, ddof=0):
+    """
+    Calculates the standard error of the mean (or standard error of
+    measurement) of the values in the input array.
+
+    Parameters
+    ----------
+    a : array_like
+        An array containing the values for which the standard error is
+        returned.
+    axis : int or None, optional.
+        If axis is None, ravel `a` first. If axis is an integer, this will be
+        the axis over which to operate. Defaults to 0.
+    ddof : int, optional
+        Delta degrees-of-freedom. How many degrees of freedom to adjust
+        for bias in limited samples relative to the population estimate
+        of variance. Defaults to 0.
+
+    Returns
+    -------
+    s : ndarray or float
+        The standard error of the mean in the sample(s), along the input axis.
+
+    Notes
+    -----
+    The default value for `ddof` is different to the default (0) used by other
+    ddof containing routines, such as np.std nd stats.nanstd.
+
+    The default for `ddof` is also different from the same function in stats.py
+    This is because an older version of this functions always used ddof=0. To
+    be backward compatible, ddof=0 is continued to be the default.
+
+    Examples
+    --------
+    Find standard error along the first axis:
+
+    >>> from scipy import stats
+    >>> a = np.arange(20).reshape(5,4)
+    >>> stats.sem(a)
+    array([ 2.8284,  2.8284,  2.8284,  2.8284])
+
+    Find standard error across the whole array, using n degrees of freedom:
+
+    >>> stats.sem(a, axis=None, ddof=0)
+    1.2893796958227628
+
+    """
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis=axis)
-    s = a.std(axis=axis,ddof=0) / ma.sqrt(n-1)
+    s = a.std(axis=axis,ddof=ddof) / ma.sqrt(n)  # todo: does it need to be n-ddof in the denominator ???
     return s
-sem.__doc__ = stats.sem.__doc__
+#sem.__doc__ = stats.sem.__doc__
 
 zmap = stats.zmap
 zscore = stats.zscore
