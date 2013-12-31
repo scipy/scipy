@@ -471,7 +471,7 @@ def valarray(shape, value=nan, typecode=None):
     return out
 
 
-def _lazywhere(cond, arrays, f, fillvalue):
+def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     """
     np.where(cond, x, fillvalue) always evaluates x even where cond is False.
     This one only evaluates f(arr1[cond], arr2[cond], ...).
@@ -482,11 +482,27 @@ def _lazywhere(cond, arrays, f, fillvalue):
     >>> _lazywhere(a > 2, (a, b), f, np.nan)
     array([ nan,  nan,  21.,  32.])
 
-    Notice it assumes that all `arrays` are of the same shape.
+    Notice it assumes that all `arrays` are of the same shape, or can be
+    broadcasted together.
+
     """
+    if fillvalue is None:
+        if f2 is None:
+            raise ValueError("One of (fillvalue, f2) must be given.")
+        else:
+            fillvalue = np.nan
+    else:
+        if f2 is not None:
+            raise ValueError("Only one of (fillvalue, f2) can be given.")
+
+    arrays = np.broadcast_arrays(*arrays)
     temp = tuple(np.extract(cond, arr) for arr in arrays)
     out = valarray(shape(arrays[0]), value=fillvalue)
     np.place(out, cond, f(*temp))
+    if f2 is not None:
+        temp = tuple(np.extract(~cond, arr) for arr in arrays)
+        np.place(out, ~cond, f2(*temp))
+
     return out
 
 
@@ -663,7 +679,11 @@ class rv_generic(object):
 
     #  Central moments
     def _munp(self, n, *args):
-        return self.generic_moment(n, *args)
+        # Silence floating point warnings from integration.
+        olderr = np.seterr(all='ignore')
+        vals = self.generic_moment(n, *args)
+        np.seterr(**olderr)
+        return vals
 
     ## These are the methods you must define (standard form functions)
     ## NB: generic _pdf, _logpdf, _cdf are different for
@@ -2023,10 +2043,15 @@ class rv_continuous(rv_generic):
             val = self._pdf(x, *args)
             return xlogy(val, val)
 
+        # upper limit is often inf, so suppress warnings when integrating
+        olderr = np.seterr(over='ignore')
         entr = -integrate.quad(integ, self.a, self.b)[0]
+        np.seterr(**olderr)
+
         if not np.isnan(entr):
             return entr
-        else:  # try with different limits if integration problems
+        else:
+            # try with different limits if integration problems
             low, upp = self.ppf([1e-10, 1. - 1e-10], *args)
             if np.isinf(self.b):
                 upper = upp
@@ -2127,7 +2152,11 @@ class rv_continuous(rv_generic):
         else:
             invfac = 1.0
         kwds['args'] = args
-        return integrate.quad(fun, lb, ub, **kwds)[0] / invfac
+        # Silence floating point warnings from integration.
+        olderr = np.seterr(all='ignore')
+        vals = integrate.quad(fun, lb, ub, **kwds)[0] / invfac
+        np.seterr(**olderr)
+        return vals
 
 
 ## Handlers for generic case where xk and pk are given
@@ -3080,7 +3109,6 @@ class rv_discrete(rv_generic):
         low = max(min(-suppnmin, low), lb)
         upp = min(max(suppnmin, upp), ub)
         supp = np.arange(low, upp+1, self.inc)  # check limits
-        # print 'low, upp', low, upp
         tot = np.sum(fun(supp))
         diff = 1e100
         pos = upp + self.inc

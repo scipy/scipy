@@ -1,8 +1,11 @@
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 import numpy.testing as npt
 
+from scipy import integrate
 from scipy import stats
 from common_tests import (check_normalization, check_moment, check_mean_expect,
         check_var_expect, check_skew_expect, check_kurt_expect,
@@ -177,120 +180,128 @@ def _silence_fp_errors(func):
 
 def test_cont_basic():
     # this test skips slow distributions
-    for distname, arg in distcont[:]:
-        if distname in distslow:
-            continue
-        distfn = getattr(stats, distname)
-        np.random.seed(765456)
-        sn = 500
-        rvs = distfn.rvs(size=sn, *arg)
-        sm = rvs.mean()
-        sv = rvs.var()
-        m, v = distfn.stats(*arg)
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=integrate.IntegrationWarning)
+        for distname, arg in distcont[:]:
+            if distname in distslow:
+                continue
+            distfn = getattr(stats, distname)
+            np.random.seed(765456)
+            sn = 500
+            rvs = distfn.rvs(size=sn, *arg)
+            sm = rvs.mean()
+            sv = rvs.var()
+            m, v = distfn.stats(*arg)
 
-        yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
-              'sample mean test'
-        yield check_cdf_ppf, distfn, arg, distname
-        yield check_sf_isf, distfn, arg, distname
-        yield check_pdf, distfn, arg, distname
-        yield check_pdf_logpdf, distfn, arg, distname
-        yield check_cdf_logcdf, distfn, arg, distname
-        yield check_sf_logsf, distfn, arg, distname
-        if distname in distmissing:
-            alpha = 0.01
-            yield check_distribution_rvs, distname, arg, alpha, rvs
+            yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, \
+                   distname + 'sample mean test'
+            yield check_cdf_ppf, distfn, arg, distname
+            yield check_sf_isf, distfn, arg, distname
+            yield check_pdf, distfn, arg, distname
+            yield check_pdf_logpdf, distfn, arg, distname
+            yield check_cdf_logcdf, distfn, arg, distname
+            yield check_sf_logsf, distfn, arg, distname
+            if distname in distmissing:
+                alpha = 0.01
+                yield check_distribution_rvs, distname, arg, alpha, rvs
 
-        locscale_defaults = (0, 1)
-        meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
-                 distfn.logsf]
-        # make sure arguments are within support
-        spec_x = {'frechet_l': -0.5, 'weibull_max': -0.5, 'levy_l': -0.5,
-                  'pareto': 1.5, 'tukeylambda': 0.3}
-        x = spec_x.get(distname, 0.5)
-        yield check_named_args, distfn, x, arg, locscale_defaults, meths
+            locscale_defaults = (0, 1)
+            meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
+                     distfn.logsf]
+            # make sure arguments are within support
+            spec_x = {'frechet_l': -0.5, 'weibull_max': -0.5, 'levy_l': -0.5,
+                      'pareto': 1.5, 'tukeylambda': 0.3}
+            x = spec_x.get(distname, 0.5)
+            yield check_named_args, distfn, x, arg, locscale_defaults, meths
 
-        # Entropy
-        skp = npt.dec.skipif
-        yield check_entropy, distfn, arg, distname
+            # Entropy
+            skp = npt.dec.skipif
+            yield check_entropy, distfn, arg, distname
 
-        if distfn.numargs == 0:
-            yield skp(NUMPY_BELOW_1_7)(check_vecentropy), distfn, arg
-        if distfn.__class__._entropy != stats.rv_continuous._entropy:
-            yield check_private_entropy, distfn, arg, stats.rv_continuous
+            if distfn.numargs == 0:
+                yield skp(NUMPY_BELOW_1_7)(check_vecentropy), distfn, arg
+            if distfn.__class__._entropy != stats.rv_continuous._entropy:
+                yield check_private_entropy, distfn, arg, stats.rv_continuous
 
-        yield check_edge_support, distfn, arg
+            yield check_edge_support, distfn, arg
 
-        knf = npt.dec.knownfailureif
-        yield knf(distname == 'truncnorm')(check_ppf_private), distfn, arg,\
-                distname
+            knf = npt.dec.knownfailureif
+            yield knf(distname == 'truncnorm')(check_ppf_private), distfn, \
+                      arg, distname
 
 @npt.dec.slow
 def test_cont_basic_slow():
     # same as above for slow distributions
-    for distname, arg in distcont[:]:
-        if distname not in distslow:
-            continue
-        distfn = getattr(stats, distname)
-        np.random.seed(765456)
-        sn = 500
-        rvs = distfn.rvs(size=sn,*arg)
-        sm = rvs.mean()
-        sv = rvs.var()
-        m, v = distfn.stats(*arg)
-        yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, distname + \
-              'sample mean test'
-        yield check_cdf_ppf, distfn, arg, distname
-        yield check_sf_isf, distfn, arg, distname
-        yield check_pdf, distfn, arg, distname
-        yield check_pdf_logpdf, distfn, arg, distname
-        yield check_cdf_logcdf, distfn, arg, distname
-        yield check_sf_logsf, distfn, arg, distname
-        # yield check_oth, distfn, arg # is still missing
-        if distname in distmissing:
-            alpha = 0.01
-            yield check_distribution_rvs, distname, arg, alpha, rvs
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=integrate.IntegrationWarning)
+        for distname, arg in distcont[:]:
+            if distname not in distslow:
+                continue
+            distfn = getattr(stats, distname)
+            np.random.seed(765456)
+            sn = 500
+            rvs = distfn.rvs(size=sn,*arg)
+            sm = rvs.mean()
+            sv = rvs.var()
+            m, v = distfn.stats(*arg)
+            yield check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn, \
+                  distname + 'sample mean test'
+            yield check_cdf_ppf, distfn, arg, distname
+            yield check_sf_isf, distfn, arg, distname
+            yield check_pdf, distfn, arg, distname
+            yield check_pdf_logpdf, distfn, arg, distname
+            yield check_cdf_logcdf, distfn, arg, distname
+            yield check_sf_logsf, distfn, arg, distname
+            # yield check_oth, distfn, arg # is still missing
+            if distname in distmissing:
+                alpha = 0.01
+                yield check_distribution_rvs, distname, arg, alpha, rvs
 
-        locscale_defaults = (0, 1)
-        meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
-                 distfn.logsf]
-        # make sure arguments are within support
-        x = 0.5
-        if distname == 'invweibull':
-            arg = (1,)
-        elif distname == 'ksone':
-            arg = (3,)
-        yield check_named_args, distfn, x, arg, locscale_defaults, meths
+            locscale_defaults = (0, 1)
+            meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
+                     distfn.logsf]
+            # make sure arguments are within support
+            x = 0.5
+            if distname == 'invweibull':
+                arg = (1,)
+            elif distname == 'ksone':
+                arg = (3,)
+            yield check_named_args, distfn, x, arg, locscale_defaults, meths
 
-        # Entropy
-        skp = npt.dec.skipif
-        ks_cond = distname in ['ksone', 'kstwobign']
-        yield skp(ks_cond)(check_entropy), distfn, arg, distname
+            # Entropy
+            skp = npt.dec.skipif
+            ks_cond = distname in ['ksone', 'kstwobign']
+            yield skp(ks_cond)(check_entropy), distfn, arg, distname
 
-        if distfn.numargs == 0:
-            yield skp(NUMPY_BELOW_1_7)(check_vecentropy), distfn, arg
-        if distfn.__class__._entropy != stats.rv_continuous._entropy:
-            yield check_private_entropy, distfn, arg, stats.rv_continuous
+            if distfn.numargs == 0:
+                yield skp(NUMPY_BELOW_1_7)(check_vecentropy), distfn, arg
+            if distfn.__class__._entropy != stats.rv_continuous._entropy:
+                yield check_private_entropy, distfn, arg, stats.rv_continuous
 
-        yield check_edge_support, distfn, arg
+            yield check_edge_support, distfn, arg
 
 
 @npt.dec.slow
 def test_moments():
-    knf = npt.dec.knownfailureif
-    fail_normalization = set(['vonmises', 'ksone'])
-    fail_higher = set(['vonmises', 'ksone', 'ncf'])
-    for distname, arg in distcont[:]:
-        distfn = getattr(stats, distname)
-        m, v, s, k = distfn.stats(*arg, moments='mvsk')
-        cond1, cond2 = distname in fail_normalization, distname in fail_higher
-        msg = distname + ' fails moments'
-        yield knf(cond1, msg)(check_normalization), distfn, arg, distname
-        yield knf(cond2, msg)(check_mean_expect), distfn, arg, m, distname
-        yield knf(cond2, msg)(check_var_expect), distfn, arg, m, v, distname
-        yield knf(cond2, msg)(check_skew_expect), distfn, arg, m, v, s, distname
-        yield knf(cond2, msg)(check_kurt_expect), distfn, arg, m, v, k, distname
-        yield check_loc_scale, distfn, arg, m, v, distname
-        yield check_moment, distfn, arg, m, v, distname
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=integrate.IntegrationWarning)
+        knf = npt.dec.knownfailureif
+        fail_normalization = set(['vonmises', 'ksone'])
+        fail_higher = set(['vonmises', 'ksone', 'ncf'])
+        for distname, arg in distcont[:]:
+            distfn = getattr(stats, distname)
+            m, v, s, k = distfn.stats(*arg, moments='mvsk')
+            cond1, cond2 = distname in fail_normalization, distname in fail_higher
+            msg = distname + ' fails moments'
+            yield knf(cond1, msg)(check_normalization), distfn, arg, distname
+            yield knf(cond2, msg)(check_mean_expect), distfn, arg, m, distname
+            yield knf(cond2, msg)(check_var_expect), distfn, arg, m, v, distname
+            yield knf(cond2, msg)(check_skew_expect), distfn, arg, m, v, s, \
+                  distname
+            yield knf(cond2, msg)(check_kurt_expect), distfn, arg, m, v, k, \
+                  distname
+            yield check_loc_scale, distfn, arg, m, v, distname
+            yield check_moment, distfn, arg, m, v, distname
 
 
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
@@ -324,12 +335,6 @@ def check_sample_var(sv,n, popvar):
     pval = stats.chisqprob(chi2,df)*2
     npt.assert_(pval > 0.01, 'var fail, t, pval = %f, %f, v, sv=%f, %f' %
             (chi2,pval,popvar,sv))
-
-
-def check_sample_skew_kurt(distfn, arg, ss, sk, msg):
-    skew,kurt = distfn.stats(moments='sk',*arg)
-    check_sample_meanvar(sk, kurt, msg + 'sample kurtosis test')
-    check_sample_meanvar(ss, skew, msg + 'sample skew test')
 
 
 def check_cdf_ppf(distfn,arg,msg):

@@ -1026,9 +1026,15 @@ class exponpow_gen(rv_continuous):
     -----
     The probability density function for `exponpow` is::
 
-        exponpow.pdf(x, b) = b * x**(b-1) * exp(1+x**b - exp(x**b))
+        exponpow.pdf(x, b) = b * x**(b-1) * exp(1 + x**b - exp(x**b))
 
-    for ``x >= 0``, ``b > 0``.
+    for ``x >= 0``, ``b > 0``.  Note that this is a different distribution
+    from the exponential power distribution that is also known under the names
+    "generalized normal" or "generalized Gaussian".
+
+    References
+    ----------
+    http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Exponentialpower.pdf
 
     %(example)s
 
