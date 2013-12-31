@@ -566,6 +566,14 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
         Zeros, poles, and system gain of the IIR filter transfer
         function.  Only returned if ``output='zpk'``.
 
+    See Also
+    --------
+    butter, cheby1, cheby2, ellip, bessel : Filter design using order and
+                                            critical points
+    buttord, cheb1ord, cheb2ord, ellipord : Find order and critical points
+                                            from passband and stopband spec
+    iirfilter : General filter design using order and critical frequencies
+
     """
     try:
         ordfunc = filter_dict[ftype][1]
@@ -634,7 +642,11 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     See Also
     --------
-    buttord, cheb1ord, cheb2ord, ellipord
+    butter, cheby1, cheby2, ellip, bessel : Filter design using order and
+                                            critical points
+    buttord, cheb1ord, cheb2ord, ellipord : Find order and critical points
+                                            from passband and stopband spec
+    iirdesign : General filter design using passband and stopband spec
 
     """
     ftype, btype, output = [x.lower() for x in (ftype, btype, output)]
@@ -1220,6 +1232,14 @@ def buttord(wp, ws, gpass, gstop, analog=False):
         The Butterworth natural frequency (i.e. the "3dB frequency").  Should
         be used with `butter` to give filter results.
 
+    See Also
+    --------
+    butter : Filter design using order and critical points
+    cheb1ord, cheb2ord, ellipord : Find order and critical points
+                                   from passband and stopband spec
+    iirfilter : General filter design using order and critical frequencies
+    iirdesign : General filter design using passband and stopband spec
+
     """
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
@@ -1342,6 +1362,14 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False):
         The Chebyshev natural frequency (the "3dB frequency") for use with
         `cheby1` to give filter results.
 
+    See Also
+    --------
+    cheby1 : Filter design using order and critical points
+    buttord, cheb2ord, ellipord : Find order and critical points
+                                  from passband and stopband spec
+    iirfilter : General filter design using order and critical frequencies
+    iirdesign : General filter design using passband and stopband spec
+
     """
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
@@ -1433,6 +1461,14 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False):
     wn : ndarray or float
         The Chebyshev natural frequency (the "3dB frequency") for use with
         `cheby2` to give filter results.
+
+    See Also
+    --------
+    cheby2 : Filter design using order and critical points
+    buttord, cheb1ord, ellipord : Find order and critical points
+                                  from passband and stopband spec
+    iirfilter : General filter design using order and critical frequencies
+    iirdesign : General filter design using passband and stopband spec
 
     """
     wp = atleast_1d(wp)
@@ -1547,6 +1583,14 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
     wn : ndarray or float
         The Chebyshev natural frequency (the "3dB frequency") for use with
         `ellip` to give filter results.
+
+    See Also
+    --------
+    ellip : Filter design using order and critical points
+    buttord, cheb1ord, cheb2ord, : Find order and critical points
+                                   from passband and stopband spec
+    iirfilter : General filter design using order and critical frequencies
+    iirdesign : General filter design using passband and stopband spec
 
     """
     wp = atleast_1d(wp)
