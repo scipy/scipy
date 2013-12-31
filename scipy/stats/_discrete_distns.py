@@ -444,7 +444,7 @@ class poisson_gen(rv_discrete):
 
     def _ppf(self, q, mu):
         vals = ceil(special.pdtrik(q, mu))
-        vals1 = vals-1
+        vals1 = vals - 1
         temp = special.pdtr(vals1, mu)
         return np.where((temp >= q), vals1, vals)
 
@@ -674,7 +674,7 @@ class dlaplace_gen(rv_discrete):
 
         dlaplace.pmf(k) = tanh(a/2) * exp(-a*abs(k))
 
-    for ``a >0``.
+    for ``a > 0``.
 
     `dlaplace` takes ``a`` as shape parameter.
 
@@ -682,25 +682,20 @@ class dlaplace_gen(rv_discrete):
 
     """
     def _pmf(self, k, a):
-        return tanh(a/2.0)*exp(-a*abs(k))
+        return tanh(a/2.0) * exp(-a * abs(k))
 
     def _cdf(self, x, a):
         k = floor(x)
-        ind = (k >= 0)
-        const = exp(a)+1
-        olderr = np.seterr(all='ignore')
-        vals = np.where(ind, 1.0-exp(-a*k)/const, exp(a*(k+1))/const)
-        np.seterr(**olderr)
-        return vals
+        f = lambda k, a: 1.0 - exp(-a * k) / (exp(a) + 1)
+        f2 = lambda k, a: exp(a * (k+1)) / (exp(a) + 1)
+        return _lazywhere(k >= 0, (k, a), f=f, f2=f2)
 
     def _ppf(self, q, a):
-        const = 1.0/(1+exp(-a))
-        cons2 = 1+exp(a)
-        ind = q < const
-        vals = ceil(np.where(ind, log(q*cons2)/a-1, -log((1-q)*cons2)/a))
-        vals1 = (vals-1)
-        temp = self._cdf(vals1, a)
-        return np.where(temp >= q, vals1, vals)
+        const = 1 + exp(a)
+        vals = ceil(np.where(q < 1.0 / (1 + exp(-a)), log(q*const) / a - 1,
+                                                      -log((1-q) * const) / a))
+        vals1 = vals - 1
+        return np.where(self._cdf(vals1, a) >= q, vals1, vals)
 
     def _stats(self, a):
         ea = exp(a)
