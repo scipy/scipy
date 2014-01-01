@@ -2,21 +2,23 @@ from __future__ import absolute_import, print_function
 
 import os
 import time
+import parser
+import warnings
 
 from numpy import (float32, float64, complex64, complex128,
-                   zeros, random, array, sum, abs, allclose)
+                   zeros, random, array)
 
-from numpy.testing import (TestCase, dec, assert_equal, assert_,
+from numpy.testing import (TestCase, dec, assert_equal,
                            assert_allclose, run_module_suite)
 
-from scipy.weave import blitz_tools, blitz
+from scipy.weave import blitz_tools, blitz, BlitzWarning
 from scipy.weave.ast_tools import harvest_variables
-from weave_test_utils import empty_temp_dir, cleanup_temp_dir, remove_whitespace
+from weave_test_utils import (empty_temp_dir, cleanup_temp_dir,
+                              remove_whitespace, debug_print)
 
 
 class TestAstToBlitzExpr(TestCase):
     def generic_check(self,expr,desired):
-        import parser
         ast = parser.suite(expr)
         ast_list = ast.tolist()
         actual = blitz_tools.ast_to_blitz_expr(ast_list)
@@ -25,7 +27,7 @@ class TestAstToBlitzExpr(TestCase):
         assert_equal(actual,desired,expr)
 
     def test_simple_expr(self):
-        # convert simple expr to blitz: a[:1:2] = b[:1+i+2:]
+        # convert simple expr to blitz
         expr = "a[:1:2] = b[:1+i+2:]"
         desired = "a(blitz::Range(_beg,1-1,2))="\
                   "b(blitz::Range(_beg,1+i+2-1));"
@@ -67,35 +69,23 @@ class TestBlitz(TestCase):
         old_env = os.environ.get('PYTHONCOMPILED','')
         os.environ['PYTHONCOMPILED'] = mod_location
         blitz_tools.blitz(expr,arg_dict,{},verbose=0)  # ,
-                          # extra_compile_args = ['-O3','-malign-double','-funroll-loops'])
         os.environ['PYTHONCOMPILED'] = old_env
         t2 = time.time()
         compiled = t2 - t1
         actual = arg_dict['result']
-        # this really should give more info...
-        try:
-            # this isn't very stringent.  Need to tighten this up and
-            # learn where failures are occurring.
-            assert_(allclose(abs(actual.ravel()),abs(desired.ravel()),1e-4,1e-6))
-        except:
-            diff = actual-desired
-            print(diff[:4,:4])
-            print(diff[:4,-4:])
-            print(diff[-4:,:4])
-            print(diff[-4:,-4:])
-            print(sum(abs(diff.ravel()),axis=0))
-            raise AssertionError
-        return standard,compiled
+        # TODO: this isn't very stringent.  Need to tighten this up and
+        # learn where failures are occuring.
+        assert_allclose(abs(actual.ravel()), abs(desired.ravel()),
+                        rtol=1e-4, atol=1e-6)
+        return standard, compiled
 
     def generic_2d(self,expr,typ):
         # The complex testing is pretty lame...
         mod_location = empty_temp_dir()
-        import parser
         ast = parser.suite(expr)
         arg_list = harvest_variables(ast.tolist())
-        # print arg_list
         all_sizes = [(10,10), (50,50), (100,100), (500,500), (1000,1000)]
-        print('\nExpression:', expr)
+        debug_print('\nExpression:', expr)
         for size in all_sizes:
             arg_dict = {}
             for arg in arg_list:
@@ -105,23 +95,23 @@ class TestBlitz(TestCase):
                     arg_dict[arg].imag = arg_dict[arg].real
                 except:
                     pass
-            print('Run:', size,typ)
+            debug_print('Run:', size,typ)
             standard,compiled = self.generic_check(expr,arg_dict,type,size,
                                                   mod_location)
             try:
                 speed_up = standard/compiled
             except:
                 speed_up = -1.
-            print("1st run(numpy.numerix,compiled,speed up):  %3.4f, %3.4f, "
-                  "%3.4f" % (standard,compiled,speed_up))
+            debug_print("1st run(numpy,compiled,speed up):  %3.4f, %3.4f, "
+                        "%3.4f" % (standard,compiled,speed_up))
             standard,compiled = self.generic_check(expr,arg_dict,type,size,
                                                   mod_location)
             try:
                 speed_up = standard/compiled
             except:
                 speed_up = -1.
-            print("2nd run(numpy.numerix,compiled,speed up):  %3.4f, %3.4f, "
-                  "%3.4f" % (standard,compiled,speed_up))
+            debug_print("2nd run(numpy,compiled,speed up):  %3.4f, %3.4f, "
+                        "%3.4f" % (standard,compiled,speed_up))
         cleanup_temp_dir(mod_location)
 
     @dec.slow
@@ -132,9 +122,11 @@ class TestBlitz(TestCase):
 
     @dec.slow
     def test_5point_avg_2d_double(self):
-        expr = "result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]" \
-                                  "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
-        self.generic_2d(expr,float64)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=BlitzWarning)
+            expr = "result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]" \
+                                      "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
+            self.generic_2d(expr,float64)
 
     @dec.slow
     def _check_5point_avg_2d_complex_float(self):

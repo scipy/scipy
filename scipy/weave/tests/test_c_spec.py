@@ -17,6 +17,8 @@ from scipy.weave import inline_tools,ext_tools,c_spec
 from scipy.weave.build_tools import msvc_exists, gcc_exists
 from scipy.weave.catalog import unique_file
 
+from weave_test_utils import debug_print
+
 
 def unique_mod(d,file_name):
     f = os.path.basename(unique_file(d,file_name))
@@ -491,13 +493,13 @@ class ListConverter(TestCase):
         t1 = time.time()
         sum1 = with_cxx(a)
         t2 = time.time()
-        print('speed test for list access')
-        print('compiler:', self.compiler)
-        print('scxx:', t2 - t1)
+        debug_print('speed test for list access')
+        debug_print('compiler:', self.compiler)
+        debug_print('scxx:', t2 - t1)
         t1 = time.time()
         sum2 = no_checking(a)
         t2 = time.time()
-        print('C, no checking:', t2 - t1)
+        debug_print('C, no checking:', t2 - t1)
         sum3 = 0
         t1 = time.time()
         for i in a:
@@ -506,7 +508,7 @@ class ListConverter(TestCase):
             else:
                 sum3 -= i
         t2 = time.time()
-        print('python:', t2 - t1)
+        debug_print('python:', t2 - t1)
         assert_(sum1 == sum2 and sum1 == sum3)
 
 

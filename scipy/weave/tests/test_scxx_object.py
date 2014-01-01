@@ -10,6 +10,8 @@ from numpy.testing import (TestCase, dec, assert_equal, assert_, assert_raises,
 
 from scipy.weave import inline_tools
 
+from weave_test_utils import debug_print
+
 
 class TestObjectConstruct(TestCase):
     #------------------------------------------------------------------------
@@ -95,7 +97,7 @@ class TestObjectPrint(TestCase):
                val.print(file_imposter);
                """
         res = inline_tools.inline(code,['file_imposter'])
-        print(file_imposter.getvalue())
+        debug_print(file_imposter.getvalue())
         assert_equal(file_imposter.getvalue(),"'how now brown cow'")
 
 ##    @dec.slow
@@ -223,8 +225,8 @@ class TestObjectHasattr(TestCase):
             except:
                 after2 = sys.getrefcount(a)
 
-            print("after and after2 should be equal in the following")
-            print('before, after, after2:', before, after, after2)
+            debug_print("after and after2 should be equal in the following")
+            debug_print('before, after, after2:', before, after, after2)
 
     @dec.slow
     def test_func(self):
@@ -777,7 +779,7 @@ class TestObjectHash(TestCase):
 
         a = Foo()
         res = inline_tools.inline('return_val = a.hash(); ',['a'])
-        print('hash:', res)
+        debug_print('hash:', res)
         assert_equal(res,123)
 
 
