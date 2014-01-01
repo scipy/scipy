@@ -31,19 +31,16 @@ def temp_catalog_files(prefix=''):
 
 def clear_temp_catalog():
     """Remove any catalog from the temp dir."""
-    global backup_dir
     backup_dir = tempfile.mktemp()
     os.mkdir(backup_dir)
     for file in temp_catalog_files():
         move_file(file,backup_dir)
-        # d,f = os.path.split(file)
-        # backup = os.path.join(backup_dir,f)
-        # os.rename(file,backup)
+
+    return backup_dir
 
 
-def restore_temp_catalog():
+def restore_temp_catalog(backup_dir):
     """Remove any catalog from the temp dir"""
-    global backup_dir
     cat_dir = catalog.default_dir()
     for file in os.listdir(backup_dir):
         file = os.path.join(backup_dir,file)
@@ -51,10 +48,9 @@ def restore_temp_catalog():
         dst_file = os.path.join(cat_dir, f)
         if os.path.exists(dst_file):
             os.remove(dst_file)
-        # os.rename(file,dst_file)
         move_file(file,dst_file)
+
     os.rmdir(backup_dir)
-    backup_dir = None
 
 
 def empty_temp_dir():
@@ -82,7 +78,7 @@ def cleanup_temp_dir(d):
                 os.remove(i)
         except OSError:
             pass  # failed to remove file for whatever reason
-                 # (maybe it is a DLL Python is currently using)
+                  # (maybe it is a DLL Python is currently using)
     try:
         os.rmdir(d)
     except OSError:

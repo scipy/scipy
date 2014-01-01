@@ -6,11 +6,6 @@ import tempfile
 import string
 import time
 
-# Note: test_dir is global to this file.
-#       It is made by setup_location()
-global test_dir
-test_dir = ''
-
 from numpy.testing import TestCase, dec, assert_, run_module_suite
 
 from scipy.weave import inline_tools,ext_tools,c_spec

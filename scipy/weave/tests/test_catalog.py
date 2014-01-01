@@ -382,22 +382,22 @@ class TestCatalog(TestCase):
 
     def test_get_existing_files1(self):
         # Shouldn't get any files when temp doesn't exist and no path set.
-        clear_temp_catalog()
+        backup_dir = clear_temp_catalog()
         q = catalog.catalog()
         files = q.get_existing_files()
-        restore_temp_catalog()
+        restore_temp_catalog(backup_dir)
         assert_(len(files) == 0)
 
     def test_get_existing_files2(self):
         # Shouldn't get a single file from the temp dir.
-        clear_temp_catalog()
+        backup_dir = clear_temp_catalog()
         q = catalog.catalog()
         # create a dummy file
         q.add_function('code', os.getpid)
         del q
         q = catalog.catalog()
         files = q.get_existing_files()
-        restore_temp_catalog()
+        restore_temp_catalog(backup_dir)
         assert_(len(files) == 1)
 
     def test_access_writable_file(self):
@@ -460,7 +460,7 @@ class TestCatalog(TestCase):
 
     def test_add_function_persistent1(self):
         # Test persisting a function in the default catalog
-        clear_temp_catalog()
+        backup_dir = clear_temp_catalog()
         q = catalog.catalog()
         # just use some already available functions
         funcs = [string.upper, string.lower, string.find,string.replace]
@@ -468,12 +468,12 @@ class TestCatalog(TestCase):
             q.add_function_persistent('code',i)
         pfuncs = q.get_cataloged_functions('code')
         # any way to clean modules???
-        restore_temp_catalog()
+        restore_temp_catalog(backup_dir)
         for i in funcs:
             assert_(i in pfuncs)
 
     def test_add_function_ordered(self):
-        clear_temp_catalog()
+        backup_dir = clear_temp_catalog()
         q = catalog.catalog()
 
         q.add_function('f',string.upper)
@@ -508,7 +508,7 @@ class TestCatalog(TestCase):
         funcs1 = t.get_functions('f')
         funcs2 = t.get_functions('ff')
         funcs3 = t.get_functions('fff')
-        restore_temp_catalog()
+        restore_temp_catalog(backup_dir)
         # make sure everything is read back in the correct order
         # a little cheating... I'm ignoring any functions that might have
         # been read in from a prior catalog file (such as the defualt one).
