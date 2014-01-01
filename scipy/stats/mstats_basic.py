@@ -1969,10 +1969,10 @@ def signaltonoise(data, axis=0):
     return m/sd
 
 
-def sem(a, axis=0):
+def sem(a, axis=0, ddof=1):
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis=axis)
-    s = a.std(axis=axis,ddof=0) / ma.sqrt(n-1)
+    s = a.std(axis=axis,ddof=ddof) / ma.sqrt(n)
     return s
 sem.__doc__ = stats.sem.__doc__
 
