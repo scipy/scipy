@@ -4,11 +4,6 @@ import os
 import sys
 import tempfile
 
-# Note: test_dir is global to this file.
-#       It is made by setup_test_location()
-global test_dir
-test_dir = ''
-
 import numpy
 from numpy.testing import TestCase, dec, assert_, run_module_suite
 
