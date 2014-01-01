@@ -68,6 +68,7 @@ def cleanup_temp_dir(d):
     """Remove a directory created by empty_temp_dir().
 
     This should probably catch some errors.
+
     """
     files = map(lambda x,d=d: os.path.join(d,x),os.listdir(d))
     for i in files:
@@ -83,6 +84,39 @@ def cleanup_temp_dir(d):
         os.rmdir(d)
     except OSError:
         pass
+
+
+class TempdirBlitz():
+    """A context manager to create a tempdir and make blitz() use it.
+
+    Also cleans up the tempdir on exit.  Usage::
+
+        with TempdirBlitz():
+            weave.blitz(expr)
+
+    When using blitz without this contextmanager, it tends to litter .so and
+    .cpp files all over the dir from which tests are run.
+
+    """
+    def __init__(self):
+        self._entered = False
+
+    def __enter__(self):
+        self._entered = True
+        self.module_location = empty_temp_dir()
+        self._old_env = os.environ.get('PYTHONCOMPILED', None)
+        os.environ['PYTHONCOMPILED'] = self.module_location
+
+    def __exit__(self, *exc_info):
+        if not self._entered:
+            raise RuntimeError("Cannot exit %r without entering first" % self)
+
+        if self._old_env is None:
+            os.environ.pop('PYTHONCOMPILED')
+        else:
+            os.environ['PYTHONCOMPILED'] = self._old_env
+
+        cleanup_temp_dir(self.module_location)
 
 
 # from distutils -- old versions had bug, so copying here to make sure
