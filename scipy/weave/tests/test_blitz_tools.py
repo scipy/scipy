@@ -3,10 +3,11 @@ from __future__ import absolute_import, print_function
 import os
 import time
 
-from numpy import float32, float64, complex64, complex128, \
-     zeros, random, array, sum, abs, allclose
+from numpy import (float32, float64, complex64, complex128,
+                   zeros, random, array, sum, abs, allclose)
 
-from numpy.testing import TestCase, dec, assert_equal, assert_, assert_allclose
+from numpy.testing import (TestCase, dec, assert_equal, assert_,
+                           assert_allclose, run_module_suite)
 
 from scipy.weave import blitz_tools, blitz
 from scipy.weave.ast_tools import harvest_variables
@@ -14,7 +15,6 @@ from weave_test_utils import empty_temp_dir, cleanup_temp_dir, remove_whitespace
 
 
 class TestAstToBlitzExpr(TestCase):
-
     def generic_check(self,expr,desired):
         import parser
         ast = parser.suite(expr)
@@ -25,23 +25,16 @@ class TestAstToBlitzExpr(TestCase):
         assert_equal(actual,desired,expr)
 
     def test_simple_expr(self):
-        """convert simple expr to blitz
-
-           a[:1:2] = b[:1+i+2:]
-        """
+        # convert simple expr to blitz: a[:1:2] = b[:1+i+2:]
         expr = "a[:1:2] = b[:1+i+2:]"
         desired = "a(blitz::Range(_beg,1-1,2))="\
                   "b(blitz::Range(_beg,1+i+2-1));"
         self.generic_check(expr,desired)
 
     def test_fdtd_expr(self):
-        """ convert fdtd equation to blitz.
-             ex[:,1:,1:] =   ca_x[:,1:,1:] * ex[:,1:,1:]
-                           + cb_y_x[:,1:,1:] * (hz[:,1:,1:] - hz[:,:-1,:])
-                           - cb_z_x[:,1:,1:] * (hy[:,1:,1:] - hy[:,1:,:-1]);
-             Note:  This really should have "\" at the end of each line
-                    to indicate continuation.
-        """
+        # Convert fdtd equation to blitz.
+        # Note:  This really should have "\" at the end of each line to
+        # indicate continuation.
         expr = "ex[:,1:,1:] =   ca_x[:,1:,1:] * ex[:,1:,1:]" \
                              "+ cb_y_x[:,1:,1:] * (hz[:,1:,1:] - hz[:,:-1,:])"\
                              "- cb_z_x[:,1:,1:] * (hy[:,1:,1:] - hy[:,1:,:-1])"
@@ -58,10 +51,10 @@ class TestAstToBlitzExpr(TestCase):
 
 
 class TestBlitz(TestCase):
-    """* These are long running tests...
+    """These are long running tests...
 
-         I'd like to benchmark these things somehow.
-    *"""
+    Would be useful to benchmark these things somehow.
+    """
     def generic_check(self,expr,arg_dict,type,size,mod_location):
         clean_result = array(arg_dict['result'],copy=1)
         t1 = time.time()
@@ -95,8 +88,7 @@ class TestBlitz(TestCase):
         return standard,compiled
 
     def generic_2d(self,expr,typ):
-        """ The complex testing is pretty lame...
-        """
+        # The complex testing is pretty lame...
         mod_location = empty_temp_dir()
         import parser
         ast = parser.suite(expr)
@@ -105,7 +97,6 @@ class TestBlitz(TestCase):
         all_sizes = [(10,10), (50,50), (100,100), (500,500), (1000,1000)]
         print('\nExpression:', expr)
         for size in all_sizes:
-            result = zeros(size,typ)
             arg_dict = {}
             for arg in arg_list:
                 arg_dict[arg] = random.normal(0,1,size).astype(typ)
@@ -133,43 +124,33 @@ class TestBlitz(TestCase):
                   "%3.4f" % (standard,compiled,speed_up))
         cleanup_temp_dir(mod_location)
 
-    # def test_simple_2d(self):
-    #    """ result = a + b"""
-    #    expr = "result = a + b"
-    #    self.generic_2d(expr)
-
     @dec.slow
     def test_5point_avg_2d_float(self):
-        """ result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]
-                               + b[1:-1,2:] + b[1:-1,:-2]) / 5.
-        """
         expr = "result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]" \
                                   "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
         self.generic_2d(expr,float32)
 
     @dec.slow
     def test_5point_avg_2d_double(self):
-        """ result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]
-                               + b[1:-1,2:] + b[1:-1,:-2]) / 5.
-        """
         expr = "result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]" \
                                   "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
         self.generic_2d(expr,float64)
 
     @dec.slow
     def _check_5point_avg_2d_complex_float(self):
-        """ Note: THIS TEST is KNOWN TO FAIL ON GCC 3.x.  It will not adversely affect 99.99 percent of weave
+        """ Note: THIS TEST is KNOWN TO FAIL ON GCC 3.x.
+            It will not adversely affect 99.99 percent of weave
 
-            result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]
-                               + b[1:-1,2:] + b[1:-1,:-2]) / 5.
+        result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]
+                             + b[1:-1,2:] + b[1:-1,:-2]) / 5.
 
-            Note: THIS TEST is KNOWN TO FAIL ON GCC 3.x.  The reason is that
-            5. is a double and b is a complex32.  blitz doesn't know
-            how to handle complex32/double.  See:
-            http://www.oonumerics.org/MailArchives/blitz-support/msg00541.php
-            Unfortunately, the fix isn't trivial.  Instead of fixing it, I
-            prefer to wait until we replace blitz++ with Pat Miller's code
-            that doesn't rely on blitz..
+        Note: THIS TEST is KNOWN TO FAIL ON GCC 3.x.  The reason is that
+        5. is a double and b is a complex32.  blitz doesn't know
+        how to handle complex32/double.  See:
+        http://www.oonumerics.org/MailArchives/blitz-support/msg00541.php
+        Unfortunately, the fix isn't trivial.  Instead of fixing it, I
+        prefer to wait until we replace blitz++ with Pat Miller's code
+        that doesn't rely on blitz..
         """
         expr = "result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]" \
                                   "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
@@ -177,9 +158,6 @@ class TestBlitz(TestCase):
 
     @dec.slow
     def test_5point_avg_2d_complex_double(self):
-        """ result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]
-                               + b[1:-1,2:] + b[1:-1,:-2]) / 5.
-        """
         expr = "result[1:-1,1:-1] = (b[1:-1,1:-1] + b[2:,1:-1] + b[:-2,1:-1]" \
                                   "+ b[1:-1,2:] + b[1:-1,:-2]) / 5."
         self.generic_2d(expr,complex128)
@@ -187,7 +165,7 @@ class TestBlitz(TestCase):
 
 @dec.slow
 def test_blitz_bug():
-    """Assignment to arr[i:] used to fail inside blitz expressions."""
+    # Assignment to arr[i:] used to fail inside blitz expressions.
     N = 4
     expr_buggy = 'arr_blitz_buggy[{0}:] = arr[{0}:]'
     expr_not_buggy = 'arr_blitz_not_buggy[{0}:{1}] = arr[{0}:]'
@@ -202,6 +180,6 @@ def test_blitz_bug():
         assert_allclose(arr_blitz_buggy, arr_np)
         assert_allclose(arr_blitz_not_buggy, arr_np)
 
+
 if __name__ == "__main__":
-    import nose
-    nose.run(argv=['', __file__])
+    run_module_suite()
