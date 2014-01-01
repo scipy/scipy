@@ -4,7 +4,8 @@ from __future__ import absolute_import, print_function
 
 import sys
 
-from numpy.testing import TestCase, dec, assert_, assert_raises
+from numpy.testing import (TestCase, dec, assert_, assert_raises,
+                           run_module_suite)
 
 from scipy.weave import inline_tools
 
@@ -322,5 +323,4 @@ class TestDictOthers(TestCase):
 
 
 if __name__ == "__main__":
-    import nose
-    nose.run(argv=['', __file__])
+    run_module_suite()

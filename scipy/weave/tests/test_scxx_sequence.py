@@ -5,19 +5,10 @@ from __future__ import absolute_import, print_function
 import time
 import sys
 
-from numpy.testing import TestCase, dec, assert_, assert_raises
+from numpy.testing import (TestCase, dec, assert_, assert_raises,
+                           run_module_suite)
 
 from scipy.weave import inline_tools
-
-
-# Test:
-#     append            DONE
-#     insert            DONE
-#     in                DONE
-#     count             DONE
-#     setItem           DONE
-#     operator[] (get)
-#     operator[] (set)  DONE
 
 
 class _TestSequenceBase(TestCase):
@@ -38,9 +29,8 @@ class _TestSequenceBase(TestCase):
 
     @dec.slow
     def test_in(self):
-        """ Test the "in" method for lists.  We'll assume
-            it works for sequences if it works here.
-        """
+        # Test the "in" method for lists.  We'll assume it works for
+        # sequences if it works here.
         a = self.seq_type([1,2,'alpha',3.1416])
 
         item = 1
@@ -91,9 +81,8 @@ class _TestSequenceBase(TestCase):
 
     @dec.slow
     def test_count(self):
-        """ Test the "count" method for lists.  We'll assume
-            it works for sequences if it works hre.
-        """
+        # Test the "count" method for lists.  We'll assume it works for
+        # sequences if it works here.
         a = self.seq_type([1,2,'alpha',3.1416])
 
         item = 1
@@ -154,7 +143,6 @@ class _TestSequenceBase(TestCase):
         t2 = time.time()
         print('weave:', t2 - t1)
 
-# Fails
     @dec.slow
     def test_access_set_speed(self):
         N = 1000000
@@ -446,5 +434,4 @@ class TestList(_TestSequenceBase):
 
 
 if __name__ == "__main__":
-    import nose
-    nose.run(argv=['', __file__])
+    run_module_suite()
