@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function
 
 import os
+import tempfile
 
 
 def remove_whitespace(in_str):
@@ -29,8 +30,7 @@ import tempfile
 
 
 def clear_temp_catalog():
-    """ Remove any catalog from the temp dir
-    """
+    """Remove any catalog from the temp dir."""
     global backup_dir
     backup_dir = tempfile.mktemp()
     os.mkdir(backup_dir)
@@ -42,8 +42,7 @@ def clear_temp_catalog():
 
 
 def restore_temp_catalog():
-    """ Remove any catalog from the temp dir
-    """
+    """Remove any catalog from the temp dir"""
     global backup_dir
     cat_dir = catalog.default_dir()
     for file in os.listdir(backup_dir):
@@ -59,9 +58,7 @@ def restore_temp_catalog():
 
 
 def empty_temp_dir():
-    """ Create a sub directory in the temp directory for use in tests
-    """
-    import tempfile
+    """Create a sub directory in the temp directory for use in tests"""
     d = catalog.default_dir()
     for i in range(10000):
         new_d = os.path.join(d,tempfile.gettempprefix()[1:-1]+repr(i))
@@ -72,8 +69,9 @@ def empty_temp_dir():
 
 
 def cleanup_temp_dir(d):
-    """ Remove a directory created by empty_temp_dir
-        should probably catch errors
+    """Remove a directory created by empty_temp_dir().
+
+    This should probably catch some errors.
     """
     files = map(lambda x,d=d: os.path.join(d,x),os.listdir(d))
     for i in files:
@@ -100,7 +98,6 @@ import distutils.file_util
 def move_file(src, dst,
                verbose=0,
                dry_run=0):
-
     """Move a file 'src' to 'dst'.  If 'dst' is a directory, the file will
     be moved into it with the same name; otherwise, 'src' is just renamed
     to 'dst'.  Return the new full name of the file.
