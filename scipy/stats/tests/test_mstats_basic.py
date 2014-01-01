@@ -432,7 +432,10 @@ class TestVariability(TestCase):
     def test_sem(self):
         # This is not in R, so used: sqrt(var(testcase)*3/4) / sqrt(3)
         y = mstats.sem(self.testcase)
-        assert_almost_equal(y,0.6454972244)
+        assert_almost_equal(y, 0.6454972244)
+        n = self.testcase.count()
+        assert_allclose(mstats.sem(self.testcase, ddof=0) * np.sqrt(n/(n-2)),
+                        mstats.sem(self.testcase, ddof=2))
 
     def test_zmap(self):
         # This is not in R, so tested by using:
