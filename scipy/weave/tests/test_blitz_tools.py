@@ -1,6 +1,5 @@
 from __future__ import absolute_import, print_function
 
-import os
 import time
 import parser
 import warnings
@@ -13,8 +12,7 @@ from numpy.testing import (TestCase, dec, assert_equal,
 
 from scipy.weave import blitz_tools, blitz, BlitzWarning
 from scipy.weave.ast_tools import harvest_variables
-from weave_test_utils import (empty_temp_dir, cleanup_temp_dir,
-                              remove_whitespace, debug_print)
+from weave_test_utils import remove_whitespace, debug_print, TempdirBlitz
 
 
 class TestAstToBlitzExpr(TestCase):
@@ -57,7 +55,7 @@ class TestBlitz(TestCase):
 
     Would be useful to benchmark these things somehow.
     """
-    def generic_check(self,expr,arg_dict,type,size,mod_location):
+    def generic_check(self, expr, arg_dict, type, size):
         clean_result = array(arg_dict['result'],copy=1)
         t1 = time.time()
         exec(expr, globals(),arg_dict)
@@ -66,14 +64,7 @@ class TestBlitz(TestCase):
         desired = arg_dict['result']
         arg_dict['result'] = clean_result
         t1 = time.time()
-        old_env = os.environ.get('PYTHONCOMPILED', None)
-        os.environ['PYTHONCOMPILED'] = mod_location
-        blitz_tools.blitz(expr,arg_dict,{},verbose=0)  # ,
-        if old_env is None:
-            os.environ.pop('PYTHONCOMPILED')
-        else:
-            os.environ['PYTHONCOMPILED'] = old_env
-
+        blitz_tools.blitz(expr,arg_dict,{},verbose=0)
         t2 = time.time()
         compiled = t2 - t1
         actual = arg_dict['result']
@@ -85,38 +76,35 @@ class TestBlitz(TestCase):
 
     def generic_2d(self,expr,typ):
         # The complex testing is pretty lame...
-        mod_location = empty_temp_dir()
         ast = parser.suite(expr)
         arg_list = harvest_variables(ast.tolist())
         all_sizes = [(10,10), (50,50), (100,100), (500,500), (1000,1000)]
         debug_print('\nExpression:', expr)
-        for size in all_sizes:
-            arg_dict = {}
-            for arg in arg_list:
-                arg_dict[arg] = random.normal(0,1,size).astype(typ)
-                # set imag part of complex values to non-zero value
+        with TempdirBlitz():
+            for size in all_sizes:
+                arg_dict = {}
+                for arg in arg_list:
+                    arg_dict[arg] = random.normal(0,1,size).astype(typ)
+                    # set imag part of complex values to non-zero value
+                    try:
+                        arg_dict[arg].imag = arg_dict[arg].real
+                    except:
+                        pass
+                debug_print('Run:', size,typ)
+                standard,compiled = self.generic_check(expr,arg_dict,type,size)
                 try:
-                    arg_dict[arg].imag = arg_dict[arg].real
+                    speed_up = standard/compiled
                 except:
-                    pass
-            debug_print('Run:', size,typ)
-            standard,compiled = self.generic_check(expr,arg_dict,type,size,
-                                                  mod_location)
-            try:
-                speed_up = standard/compiled
-            except:
-                speed_up = -1.
-            debug_print("1st run(numpy,compiled,speed up):  %3.4f, %3.4f, "
-                        "%3.4f" % (standard,compiled,speed_up))
-            standard,compiled = self.generic_check(expr,arg_dict,type,size,
-                                                  mod_location)
-            try:
-                speed_up = standard/compiled
-            except:
-                speed_up = -1.
-            debug_print("2nd run(numpy,compiled,speed up):  %3.4f, %3.4f, "
-                        "%3.4f" % (standard,compiled,speed_up))
-        cleanup_temp_dir(mod_location)
+                    speed_up = -1.
+                debug_print("1st run(numpy,compiled,speed up):  %3.4f, %3.4f, "
+                            "%3.4f" % (standard,compiled,speed_up))
+                standard,compiled = self.generic_check(expr,arg_dict,type,size)
+                try:
+                    speed_up = standard/compiled
+                except:
+                    speed_up = -1.
+                debug_print("2nd run(numpy,compiled,speed up):  %3.4f, %3.4f, "
+                            "%3.4f" % (standard,compiled,speed_up))
 
     @dec.slow
     def test_5point_avg_2d_float(self):
@@ -162,31 +150,22 @@ class TestBlitz(TestCase):
 @dec.slow
 def test_blitz_bug():
     # Assignment to arr[i:] used to fail inside blitz expressions.
-    mod_location = empty_temp_dir()
-    N = 4
-    expr_buggy = 'arr_blitz_buggy[{0}:] = arr[{0}:]'
-    expr_not_buggy = 'arr_blitz_not_buggy[{0}:{1}] = arr[{0}:]'
-    random.seed(7)
-    arr = random.randn(N)
-    sh = arr.shape[0]
-    for lim in [0, 1, 2]:
-        arr_blitz_buggy, arr_blitz_not_buggy, arr_np = zeros(N), zeros(N), zeros(N)
-        # Note: need this PYTHONCOMPILED stuff to not have blitz() litter the
-        # .so and .cpp files all over the dir from which the tests are run!
-        old_env = os.environ.get('PYTHONCOMPILED', None)
-        os.environ['PYTHONCOMPILED'] = mod_location
-        blitz(expr_buggy.format(lim))
-        blitz(expr_not_buggy.format(lim, 'sh'))
-        if old_env is None:
-            os.environ.pop('PYTHONCOMPILED')
-        else:
-            os.environ['PYTHONCOMPILED'] = old_env
-
-        arr_np[lim:] = arr[lim:]
-        assert_allclose(arr_blitz_buggy, arr_np)
-        assert_allclose(arr_blitz_not_buggy, arr_np)
-
-    cleanup_temp_dir(mod_location)
+    with TempdirBlitz():
+        N = 4
+        expr_buggy = 'arr_blitz_buggy[{0}:] = arr[{0}:]'
+        expr_not_buggy = 'arr_blitz_not_buggy[{0}:{1}] = arr[{0}:]'
+        random.seed(7)
+        arr = random.randn(N)
+        sh = arr.shape[0]
+        for lim in [0, 1, 2]:
+            arr_blitz_buggy = zeros(N)
+            arr_blitz_not_buggy = zeros(N)
+            arr_np = zeros(N)
+            blitz(expr_buggy.format(lim))
+            blitz(expr_not_buggy.format(lim, 'sh'))
+            arr_np[lim:] = arr[lim:]
+            assert_allclose(arr_blitz_buggy, arr_np)
+            assert_allclose(arr_blitz_not_buggy, arr_np)
 
 
 if __name__ == "__main__":
