@@ -66,10 +66,14 @@ class TestBlitz(TestCase):
         desired = arg_dict['result']
         arg_dict['result'] = clean_result
         t1 = time.time()
-        old_env = os.environ.get('PYTHONCOMPILED','')
+        old_env = os.environ.get('PYTHONCOMPILED', None)
         os.environ['PYTHONCOMPILED'] = mod_location
         blitz_tools.blitz(expr,arg_dict,{},verbose=0)  # ,
-        os.environ['PYTHONCOMPILED'] = old_env
+        if old_env is None:
+            os.environ.pop('PYTHONCOMPILED')
+        else:
+            os.environ['PYTHONCOMPILED'] = old_env
+
         t2 = time.time()
         compiled = t2 - t1
         actual = arg_dict['result']
@@ -158,6 +162,7 @@ class TestBlitz(TestCase):
 @dec.slow
 def test_blitz_bug():
     # Assignment to arr[i:] used to fail inside blitz expressions.
+    mod_location = empty_temp_dir()
     N = 4
     expr_buggy = 'arr_blitz_buggy[{0}:] = arr[{0}:]'
     expr_not_buggy = 'arr_blitz_not_buggy[{0}:{1}] = arr[{0}:]'
@@ -166,11 +171,22 @@ def test_blitz_bug():
     sh = arr.shape[0]
     for lim in [0, 1, 2]:
         arr_blitz_buggy, arr_blitz_not_buggy, arr_np = zeros(N), zeros(N), zeros(N)
+        # Note: need this PYTHONCOMPILED stuff to not have blitz() litter the
+        # .so and .cpp files all over the dir from which the tests are run!
+        old_env = os.environ.get('PYTHONCOMPILED', None)
+        os.environ['PYTHONCOMPILED'] = mod_location
         blitz(expr_buggy.format(lim))
         blitz(expr_not_buggy.format(lim, 'sh'))
+        if old_env is None:
+            os.environ.pop('PYTHONCOMPILED')
+        else:
+            os.environ['PYTHONCOMPILED'] = old_env
+
         arr_np[lim:] = arr[lim:]
         assert_allclose(arr_blitz_buggy, arr_np)
         assert_allclose(arr_blitz_not_buggy, arr_np)
+
+    cleanup_temp_dir(mod_location)
 
 
 if __name__ == "__main__":
