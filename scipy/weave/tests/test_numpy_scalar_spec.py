@@ -24,12 +24,6 @@ def unique_mod(d,file_name):
     return m
 
 
-def remove_whitespace(in_str):
-    out = in_str.replace(" ","")
-    out = out.replace("\t","")
-    out = out.replace("\n","")
-    return out
-
 #----------------------------------------------------------------------------
 # Scalar conversion test classes
 #   int, float, complex
