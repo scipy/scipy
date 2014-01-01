@@ -2,6 +2,12 @@ from __future__ import absolute_import, print_function
 
 import os
 import tempfile
+import glob
+
+from distutils.errors import DistutilsFileError
+import distutils.file_util
+
+from scipy.weave import catalog
 
 
 def remove_whitespace(in_str):
@@ -10,14 +16,10 @@ def remove_whitespace(in_str):
     out = out.replace("\n","")
     return out
 
+
 ###################################################
 # mainly used by catalog tests
 ###################################################
-
-from scipy.weave import catalog
-
-import glob
-
 
 def temp_catalog_files(prefix=''):
     # might need to add some more platform specific catalog file
@@ -25,8 +27,6 @@ def temp_catalog_files(prefix=''):
     d = catalog.default_dir()
     f = catalog.os_dependent_catalog_name()
     return glob.glob(os.path.join(d,prefix+f+'*'))
-
-import tempfile
 
 
 def clear_temp_catalog():
@@ -91,10 +91,6 @@ def cleanup_temp_dir(d):
 
 # from distutils -- old versions had bug, so copying here to make sure
 # a working version is available.
-from distutils.errors import DistutilsFileError
-import distutils.file_util
-
-
 def move_file(src, dst,
                verbose=0,
                dry_run=0):
@@ -152,3 +148,11 @@ def move_file(src, dst,
                             "delete '%s' failed: %s" % (src, dst, src, msg))
 
     return dst
+
+
+def debug_print(*arg):
+    # Set to true to enable printing debug / benchmark info when running
+    # these tests
+    WEAVE_DEBUG = False
+    if WEAVE_DEBUG:
+        print(*arg)
