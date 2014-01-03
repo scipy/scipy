@@ -192,27 +192,9 @@ This builds Scipy first, so the first time it may take some time.  If
 you specify ``-n``, the tests are run against the version of Scipy (if
 any) found on current PYTHONPATH.
 
-You may want to set up an in-place build so that changes made to
-``.py`` files have effect without rebuild. First, run::
-
-    $ python setup.py build_ext -i
-
-Then you need to point your PYTHONPATH environment variable to this directory.
-Some IDEs (Spyder for example) have utilities to manage PYTHONPATH.  On Linux
-and OSX, you can run the command::
-
-    $ export PYTHONPATH=$PWD
-
-and on Windows
-
-    $ set PYTHONPATH=/path/to/scipy
-
-Now editing a Python source file in SciPy allows you to immediately
-test and use your changes (in ``.py`` files), by simply restarting the
-interpreter.
-
-Another good approach is to install Scipy normally in an isolated test
-environment using `virtualenv`_, and work from there (see FAQ below).
+Using ``runtests.py`` is the recommended approach to running tests.
+There are also a number of alternatives to it, for example in-place
+build or installing to a virtualenv. See the FAQ below for details.
 
 
 SciPy structure
@@ -345,6 +327,28 @@ After that, you can install a development version of Scipy, for example via::
     $ python setup.py install
 
 The installation goes to the virtual environment.
+
+
+*How do I set up an in-place build for development*
+
+For development, you can set up an in-place build so that changes made to
+``.py`` files have effect without rebuild. First, run::
+
+    $ python setup.py build_ext -i
+
+Then you need to point your PYTHONPATH environment variable to this directory.
+Some IDEs (Spyder for example) have utilities to manage PYTHONPATH.  On Linux
+and OSX, you can run the command::
+
+    $ export PYTHONPATH=$PWD
+
+and on Windows
+
+    $ set PYTHONPATH=/path/to/scipy
+
+Now editing a Python source file in SciPy allows you to immediately
+test and use your changes (in ``.py`` files), by simply restarting the
+interpreter.
 
 
 *Can I use a programming language other than Python to speed up my code?*
