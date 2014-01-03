@@ -28,7 +28,7 @@ __all__ = ['mvsdist',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
            'fligner', 'mood', 'wilcoxon',
-           'pdf_fromgamma', 'circmean', 'circvar', 'circstd',
+           'pdf_fromgamma', 'circmean', 'circvar', 'circstd', 'anderson_ksamp'
            ]
 
 
@@ -1129,6 +1129,137 @@ def anderson(x,dist='norm'):
     S = sum((2*i-1.0)/N*(log(z)+log(1-z[::-1])),axis=0)
     A2 = -N-S
     return A2, critical, sig
+
+
+def anderson_ksamp(*args):
+    """The Anderson-Darling test for k-samples.
+
+    The k-sample Anderson-Darling test is a modification of the
+    one-sample Anderson-Darling test. It tests the null hypothesis
+    that k-samples are drawn from the same population without having
+    to specify the distribution function of that population. The
+    critical values depend on the number of samples.
+
+    Parameters
+    ----------
+    sample1, sample2, ... : array_like
+        k arrays of sample data
+
+    Returns
+    -------
+    Tk : float
+        Normalized k-sample Anderson-Darling test statistic, not adjusted for
+        ties
+    tm : array
+        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%
+    p : float
+        An approximate significance level at which the null hypothesis for the
+        provided samples can be rejected
+
+    Raises
+    ------
+    ValueError
+        If less than 2 samples are provided, a sample is empty, or no
+        distinct observations are in the samples.
+
+    See Also
+    --------
+    ks_2samp : 2 sample Kolmogorov-Smirnov test
+    anderson : 1 sample Anderson-Darling test
+
+    Notes
+    -----
+    [1]_ Define two versions of the k-sample Anderson-Darling test:
+    one for continous distributions and one for discrete
+    distributions, in which ties between samples may occur. This
+    routine computes the former. According to [1]_, the two test
+    statistics differ only slightly if a few collisions due to
+    round-off errors occur in the test not adjusted for ties between
+    samples.
+
+    .. versionadded:: 0.14.0
+
+    References
+    ----------
+    .. [1] Scholz, F. W & Stephens, M. A. (1987), K-Sample Anderson-Darling
+           Tests, Journal of the American Statistical Association, Vol. 82,
+           pp. 918-924.
+
+    Examples:
+    ---------
+    >>> from scipy import stats
+    >>> np.random.seed(314159)
+
+    The null hypothesis that the two random samples come from the same
+    distribution can be rejected at the 5% level because the returned
+    test value is greater than the critical value for 5% (1.961) but
+    not at the 2.5% level. The interpolation gives an approximate
+    significance level of 3.1%:
+
+    >>> stats.anderson_ksamp(np.random.normal(size=50), \
+            np.random.normal(loc=0.5, size=30))
+    (2.4632469079409978, array([ 0.325,  1.226,  1.961,  2.718,  3.752]),
+      0.03130207656720708)
+
+    The null hypothesis cannot be rejected for three samples from an
+    identical distribution. The approximate p-value (87%) has to be
+    computed by extrapolation and may not be very accurate:
+
+    >>> stats.anderson_ksamp(np.random.normal(size=50), \
+            np.random.normal(size=30), np.random.normal(size=20))
+    (-0.72478622084152444,
+      array([ 0.44925884,  1.3052767,  1.9434184,  2.57696569,  3.41634856]),
+      0.8732440333177699)
+
+    """
+
+    k = len(args)
+    if (k < 2):
+        raise ValueError("anderson_ksamp needs at least two samples")
+    samples = list(map(np.asarray, args))
+    Z = np.hstack(samples)
+    N = Z.size
+    Zstar = np.unique(Z)
+    L = Zstar.size
+    if not L > 1:
+        raise ValueError("anderson_ksamp needs more than one distinct "
+                         "observation")
+    n = np.array([sample.size for sample in samples])
+    if any(n == 0):
+        raise ValueError("anderson_ksamp encountered sample without "
+                         "observations")
+    A2kN = 0.
+    lj = np.array([(Z == zj).sum() for zj in Zstar[:-1]])
+    Bj = lj.cumsum()
+    for i in arange(0, k):
+        fij = np.array([(samples[i] == zj).sum() for zj in Zstar[:-1]])
+        Mij = fij.cumsum()
+        inner = lj / float(N) * (N * Mij - Bj * n[i])**2 / (Bj * (N - Bj))
+        A2kN += inner.sum() / n[i]
+
+    h = (1. / arange(1, N)).sum()
+    H = (1. / n).sum()
+    g = 0
+    for l in arange(1, N-1):
+        inner = np.array([1. / ((N - l) * m) for m in arange(l+1, N)])
+        g += inner.sum()
+    a = (4*g - 6) * (k - 1) + (10 - 6*g)*H
+    b = (2*g - 4)*k**2 + 8*h*k + (2*g - 14*h - 4)*H - 8*h + 4*g - 6
+    c = (6*h + 2*g - 2)*k**2 + (4*h - 4*g + 6)*k + (2*h - 6)*H + 4*h
+    d = (2*h + 6)*k**2 - 4*h*k
+    sigmasq = (a*N**3 + b*N**2 + c*N + d) / ((N - 1.) * (N - 2.) * (N - 3.))
+    m = k - 1
+    Tk = (A2kN - m) / math.sqrt(sigmasq)
+
+    b0 = np.array([0.675, 1.281, 1.645, 1.96, 2.326])
+    b1 = np.array([-0.245, 0.25, 0.678, 1.149, 1.822])
+    b2 = np.array([-0.105, -0.305, -0.362, -0.391, -0.396])
+    tm = b0 + b1 / math.sqrt(m) + b2 / m
+    pf = np.polyfit(tm, log(np.array([0.25, 0.1, 0.05, 0.025, 0.01])), 2)
+    if Tk < tm.min() or Tk > tm.max():
+        warnings.warn("approximate p-value will be computed by extrapolation")
+    p = math.exp(np.polyval(pf, Tk))
+    return Tk, tm, p
 
 
 def ansari(x,y):
