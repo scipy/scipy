@@ -100,6 +100,7 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
   char *sum=NULL, *value=NULL;
   int new_m, new_n, ind0_memory=0;
   int boundary, outsize, convolve, type_num, type_size;
+  int fillvalue_is_zero = 1;
   OneMultAddFunction *mult_and_add;
 
   boundary = flag & BOUNDARY_MASK;  /* flag can be fill, reflecting, circular */
@@ -113,6 +114,10 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
 
   if (type_num < 0 || type_num > MAXTYPES) return -4;  /* Invalid type */
   type_size = elsizes[type_num];
+
+  for (j=0; j<type_size; j++) {
+    if (fillvalue[j]) fillvalue_is_zero = 0;
+  }
 
   if (outsize == FULL) {Os[0] = Ns[0]+Nwin[0]-1; Os[1] = Ns[1]+Nwin[1]-1;}
   else if (outsize == SAME) {Os[0] = Ns[0]; Os[1] = Ns[1];}
@@ -284,7 +289,9 @@ case 18: /* outsize=FULL | boundary=PAD | convolve=FLIPPED */
             }
             bounds_pad_flag = 0;
           }
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          if (!(value==fillvalue && fillvalue_is_zero)) {
+            mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          }
         }
       }
     }
@@ -327,7 +334,9 @@ case 2: /* outsize=FULL | boundary=PAD | convolve=NOT_FLIPPED */
             }
             bounds_pad_flag = 0;
           }
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          if (!(value==fillvalue && fillvalue_is_zero)) {
+            mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          }
         }
       }
     }
@@ -494,7 +503,9 @@ case 17: /* outsize=SAME | boundary=PAD | convolve=FLIPPED */
             }
             bounds_pad_flag = 0;
           }
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          if (!(value==fillvalue && fillvalue_is_zero)) {
+            mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          }
         }
       }
     }
@@ -537,7 +548,9 @@ case 1: /* outsize=SAME | boundary=PAD | convolve=NOT_FLIPPED */
             }
             bounds_pad_flag = 0;
           }
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          if (!(value==fillvalue && fillvalue_is_zero)) {
+            mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          }
         }
       }
     }
@@ -704,7 +717,9 @@ case 16: /* outsize=VALID | boundary=PAD | convolve=FLIPPED */
             }
             bounds_pad_flag = 0;
           }
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          if (!(value==fillvalue && fillvalue_is_zero)) {
+            mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          }
         }
       }
     }
@@ -747,7 +762,9 @@ case 0: /* outsize=VALID | boundary=PAD | convolve=NOT_FLIPPED */
             }
             bounds_pad_flag = 0;
           }
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          if (!(value==fillvalue && fillvalue_is_zero)) {
+            mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          }
         }
       }
     }

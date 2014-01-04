@@ -90,7 +90,6 @@ def case_codegen(outsize, boundary, convolve):
     if boundary == PAD:
         addline('if (bounds_pad_flag) {')
         addline('value = fillvalue;')
-        #addline('memcpy(value, fillvalue, type_size);')
         addline('} else {')
     rhs = 'new_n - k' if convolve else 'new_n + k'
     addline('ind1 = %s;' % rhs)
@@ -116,18 +115,23 @@ def case_codegen(outsize, boundary, convolve):
     if boundary == PAD:
         addline('if (bounds_pad_flag) {')
         addline('value = fillvalue;')
-        #addline('memcpy(value, fillvalue, type_size);')
         addline('} else {')
-    #addline('memcpy(value, in + ind0_memory + ind1*instr[1], type_size);')
     addline('value = in + ind0_memory + ind1*instr[1];')
     if boundary == PAD:
         addline('}')
         addline('bounds_pad_flag = 0;')
         addline('}')
+
+    # multiply and accumulate unless we are looking at a padding of zero
+    if boundary == PAD:
+        addline('if (!(value==fillvalue && fillvalue_is_zero)) {')
     addline('mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);')
+    if boundary == PAD:
+        addline('}')
+
+    # close the loops over the 2d kernel within the 2d image
     addline('}')
     addline('}')
-    #addline('memcpy(out + m*outstr[0] + n*outstr[1], sum, type_size);')
     addline('}')
     addline('}')
     
