@@ -90,6 +90,8 @@ def main(argv):
                         help="Paths to prepend to PYTHONPATH")
     parser.add_argument("--tests", "-t", action='append',
                         help="Specify tests to run")
+    parser.add_argument("--benchmarks", action='append',
+                        help="Specify benchmarks to run")
     parser.add_argument("--python", action="store_true",
                         help="Start a Python shell with PYTHONPATH set")
     parser.add_argument("--ipython", "-i", action="store_true",
@@ -189,6 +191,22 @@ def main(argv):
             kw['extra_argv'] = extra_argv
             from numpy.testing import Tester
             return Tester(tests[0]).test(*a, **kw)
+    elif args.benchmarks:
+        def fix_bench_path(x):
+            # fix up test path
+            p = x.split(':')
+            p[0] = os.path.relpath(os.path.abspath(p[0]),
+                                   test_dir)
+            return ':'.join(p)
+
+        benchmarks = [fix_bench_path(x) for x in args.benchmarks]
+
+        def bench(*a, **kw):
+            extra_argv = kw.pop('extra_argv', ())
+            extra_argv = extra_argv + benchmarks[1:]
+            kw['extra_argv'] = extra_argv
+            from numpy.testing import Tester
+            return Tester(benchmarks[0]).bench(*a, **kw)
     else:
         __import__(PROJECT_MODULE)
         test = sys.modules[PROJECT_MODULE].test
@@ -203,18 +221,25 @@ def main(argv):
     except OSError:
         pass
 
+    success = False
     cwd = os.getcwd()
     try:
         os.chdir(test_dir)
-        result = test(args.mode,
-                      verbose=args.verbose,
-                      extra_argv=extra_argv,
-                      doctests=args.doctests,
-                      coverage=args.coverage)
+        if args.benchmarks:
+            success = bench(args.mode,
+                          verbose=args.verbose,
+                          extra_argv=extra_argv)
+        else:
+            result = test(args.mode,
+                          verbose=args.verbose,
+                          extra_argv=extra_argv,
+                          doctests=args.doctests,
+                          coverage=args.coverage)
+            success = result.wasSuccessful()
     finally:
         os.chdir(cwd)
 
-    if result.wasSuccessful():
+    if success:
         sys.exit(0)
     else:
         sys.exit(1)
