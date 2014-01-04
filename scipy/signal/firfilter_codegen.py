@@ -42,6 +42,7 @@ def case_codegen(outsize, boundary, convolve):
 
     # loop over image columns
     addline('for (n=0; n < Os[1]; n++) {')
+    addline('sum = out + m*outstr[0] + n*outstr[1];')
     addline('memset(sum, 0, type_size);')
     if outsize == FULL:
         rhs = 'n' if convolve else 'n - Nwin[1] + 1'
@@ -88,7 +89,8 @@ def case_codegen(outsize, boundary, convolve):
     addline('for (k=0; k < Nwin[1]; k++) {')
     if boundary == PAD:
         addline('if (bounds_pad_flag) {')
-        addline('memcpy(value, fillvalue, type_size);')
+        addline('value = fillvalue;')
+        #addline('memcpy(value, fillvalue, type_size);')
         addline('} else {')
     rhs = 'new_n - k' if convolve else 'new_n + k'
     addline('ind1 = %s;' % rhs)
@@ -113,17 +115,19 @@ def case_codegen(outsize, boundary, convolve):
     addline('}')
     if boundary == PAD:
         addline('if (bounds_pad_flag) {')
-        addline('memcpy(value, fillvalue, type_size);')
+        addline('value = fillvalue;')
+        #addline('memcpy(value, fillvalue, type_size);')
         addline('} else {')
-    addline('memcpy(value, in + ind0_memory + ind1*instr[1], type_size);')
+    #addline('memcpy(value, in + ind0_memory + ind1*instr[1], type_size);')
+    addline('value = in + ind0_memory + ind1*instr[1];')
     if boundary == PAD:
         addline('}')
         addline('bounds_pad_flag = 0;')
         addline('}')
-    addline('mult_and_add(sum, hvals+j*hstr[0] + k*hstr[1], value);')
+    addline('mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);')
     addline('}')
-    addline('memcpy(out + m*outstr[0] + n*outstr[1], sum, type_size);')
     addline('}')
+    #addline('memcpy(out + m*outstr[0] + n*outstr[1], sum, type_size);')
     addline('}')
     addline('}')
     
