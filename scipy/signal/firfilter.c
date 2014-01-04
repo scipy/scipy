@@ -98,10 +98,25 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
   int m, n, j, k, ind0, ind1;
   int Os[2];
   char *sum=NULL, *value=NULL;
-  int new_m, new_n, ind0_memory=0;
+  int new_m, new_n;
+  char *ind0_memory=NULL, *h0_memory=NULL;
   int boundary, outsize, convolve, type_num, type_size;
   int fillvalue_is_zero = 1;
+  int Os0, Os1, Ns0, Ns1, Nwin0, Nwin1;
+  int instr0, instr1, outstr0, outstr1, hstr0, hstr1;
   OneMultAddFunction *mult_and_add;
+
+  instr0 = instr[0];
+  instr1 = instr[1];
+  outstr0 = outstr[0];
+  outstr1 = outstr[1];
+  hstr0 = hstr[0];
+  hstr1 = hstr[1];
+
+  Nwin0 = Nwin[0];
+  Nwin1 = Nwin[1];
+  Ns0 = Ns[0];
+  Ns1 = Ns[1];
 
   boundary = flag & BOUNDARY_MASK;  /* flag can be fill, reflecting, circular */
   outsize = flag & OUTSIZE_MASK;
@@ -123,6 +138,9 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
   else if (outsize == SAME) {Os[0] = Ns[0]; Os[1] = Ns[1];}
   else if (outsize == VALID) {Os[0] = Ns[0]-Nwin[0]+1; Os[1] = Ns[1]-Nwin[1]+1;}
   else return -1;  /* Invalid output flag */  
+
+  Os0 = Os[0];
+  Os1 = Os[1];
   
   if ((boundary != PAD) && (boundary != REFLECT) && (boundary != CIRCULAR)) 
     return -2;   /* Invalid boundary flag */
@@ -131,29 +149,30 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
 
 case 26: /* outsize=FULL | boundary=CIRCULAR | convolve=FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
+  for (m=0; m < Os0; m++) {
     new_m = m;
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
       new_n = n;
-      for (j=0; j < Nwin[0]; j++) {
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m - j;
         if (ind0 < 0) {
-          ind0 = Ns[0] + ind0;
-        } else if (ind0 >= Ns[0]) {
-          ind0 = ind0 - Ns[0];
+          ind0 = Ns0 + ind0;
+        } else if (ind0 >= Ns0) {
+          ind0 = ind0 - Ns0;
         }
-        ind0_memory = ind0 * instr[0];
-        for (k=0; k < Nwin[1]; k++) {
+        h0_memory = hvals + j * hstr0;
+        ind0_memory = in + ind0 * instr0;
+        for (k=0; k < Nwin1; k++) {
           ind1 = new_n - k;
           if (ind1 < 0) {
-            ind1 = Ns[1] + ind1;
-          } else if (ind1 >= Ns[1]) {
-            ind1 = ind1 - Ns[1];
+            ind1 = Ns1 + ind1;
+          } else if (ind1 >= Ns1) {
+            ind1 = ind1 - Ns1;
           }
-          value = in + ind0_memory + ind1*instr[1];
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          value = ind0_memory + ind1*instr1;
+          mult_and_add(sum, h0_memory + k*hstr1, value);
         }
       }
     }
@@ -162,29 +181,30 @@ case 26: /* outsize=FULL | boundary=CIRCULAR | convolve=FLIPPED */
 }
 case 10: /* outsize=FULL | boundary=CIRCULAR | convolve=NOT_FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
-    new_m = m - Nwin[0] + 1;
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+  for (m=0; m < Os0; m++) {
+    new_m = m - Nwin0 + 1;
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
-      new_n = n - Nwin[1] + 1;
-      for (j=0; j < Nwin[0]; j++) {
+      new_n = n - Nwin1 + 1;
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m + j;
         if (ind0 < 0) {
-          ind0 = Ns[0] + ind0;
-        } else if (ind0 >= Ns[0]) {
-          ind0 = ind0 - Ns[0];
+          ind0 = Ns0 + ind0;
+        } else if (ind0 >= Ns0) {
+          ind0 = ind0 - Ns0;
         }
-        ind0_memory = ind0 * instr[0];
-        for (k=0; k < Nwin[1]; k++) {
+        h0_memory = hvals + j * hstr0;
+        ind0_memory = in + ind0 * instr0;
+        for (k=0; k < Nwin1; k++) {
           ind1 = new_n + k;
           if (ind1 < 0) {
-            ind1 = Ns[1] + ind1;
-          } else if (ind1 >= Ns[1]) {
-            ind1 = ind1 - Ns[1];
+            ind1 = Ns1 + ind1;
+          } else if (ind1 >= Ns1) {
+            ind1 = ind1 - Ns1;
           }
-          value = in + ind0_memory + ind1*instr[1];
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          value = ind0_memory + ind1*instr1;
+          mult_and_add(sum, h0_memory + k*hstr1, value);
         }
       }
     }
@@ -193,29 +213,30 @@ case 10: /* outsize=FULL | boundary=CIRCULAR | convolve=NOT_FLIPPED */
 }
 case 22: /* outsize=FULL | boundary=REFLECT | convolve=FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
+  for (m=0; m < Os0; m++) {
     new_m = m;
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
       new_n = n;
-      for (j=0; j < Nwin[0]; j++) {
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m - j;
         if (ind0 < 0) {
           ind0 = -1 - ind0;
-        } else if (ind0 >= Ns[0]) {
-          ind0 = Ns[0] + Ns[0] - 1 - ind0;
+        } else if (ind0 >= Ns0) {
+          ind0 = Ns0 + Ns0 - 1 - ind0;
         }
-        ind0_memory = ind0 * instr[0];
-        for (k=0; k < Nwin[1]; k++) {
+        h0_memory = hvals + j * hstr0;
+        ind0_memory = in + ind0 * instr0;
+        for (k=0; k < Nwin1; k++) {
           ind1 = new_n - k;
           if (ind1 < 0) {
             ind1 = -1 - ind1;
-          } else if (ind1 >= Ns[1]) {
-            ind1 = Ns[1] + Ns[1] - 1 - ind1;
+          } else if (ind1 >= Ns1) {
+            ind1 = Ns1 + Ns1 - 1 - ind1;
           }
-          value = in + ind0_memory + ind1*instr[1];
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          value = ind0_memory + ind1*instr1;
+          mult_and_add(sum, h0_memory + k*hstr1, value);
         }
       }
     }
@@ -224,29 +245,30 @@ case 22: /* outsize=FULL | boundary=REFLECT | convolve=FLIPPED */
 }
 case 6: /* outsize=FULL | boundary=REFLECT | convolve=NOT_FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
-    new_m = m - Nwin[0] + 1;
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+  for (m=0; m < Os0; m++) {
+    new_m = m - Nwin0 + 1;
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
-      new_n = n - Nwin[1] + 1;
-      for (j=0; j < Nwin[0]; j++) {
+      new_n = n - Nwin1 + 1;
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m + j;
         if (ind0 < 0) {
           ind0 = -1 - ind0;
-        } else if (ind0 >= Ns[0]) {
-          ind0 = Ns[0] + Ns[0] - 1 - ind0;
+        } else if (ind0 >= Ns0) {
+          ind0 = Ns0 + Ns0 - 1 - ind0;
         }
-        ind0_memory = ind0 * instr[0];
-        for (k=0; k < Nwin[1]; k++) {
+        h0_memory = hvals + j * hstr0;
+        ind0_memory = in + ind0 * instr0;
+        for (k=0; k < Nwin1; k++) {
           ind1 = new_n + k;
           if (ind1 < 0) {
             ind1 = -1 - ind1;
-          } else if (ind1 >= Ns[1]) {
-            ind1 = Ns[1] + Ns[1] - 1 - ind1;
+          } else if (ind1 >= Ns1) {
+            ind1 = Ns1 + Ns1 - 1 - ind1;
           }
-          value = in + ind0_memory + ind1*instr[1];
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          value = ind0_memory + ind1*instr1;
+          mult_and_add(sum, h0_memory + k*hstr1, value);
         }
       }
     }
@@ -255,42 +277,43 @@ case 6: /* outsize=FULL | boundary=REFLECT | convolve=NOT_FLIPPED */
 }
 case 18: /* outsize=FULL | boundary=PAD | convolve=FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
+  for (m=0; m < Os0; m++) {
     new_m = m;
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
       new_n = n;
-      for (j=0; j < Nwin[0]; j++) {
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m - j;
         bounds_pad_flag = 0;
         if (ind0 < 0) {
           bounds_pad_flag = 1;
-        } else if (ind0 >= Ns[0]) {
+        } else if (ind0 >= Ns0) {
           bounds_pad_flag = 1;
         }
+        h0_memory = hvals + j * hstr0;
         if (!bounds_pad_flag) {
-          ind0_memory = ind0 * instr[0];
+          ind0_memory = in + ind0 * instr0;
         }
-        for (k=0; k < Nwin[1]; k++) {
+        for (k=0; k < Nwin1; k++) {
           if (bounds_pad_flag) {
             value = fillvalue;
           } else {
             ind1 = new_n - k;
             if (ind1 < 0) {
               bounds_pad_flag = 1;
-            } else if (ind1 >= Ns[1]) {
+            } else if (ind1 >= Ns1) {
               bounds_pad_flag = 1;
             }
             if (bounds_pad_flag) {
               value = fillvalue;
             } else {
-              value = in + ind0_memory + ind1*instr[1];
+              value = ind0_memory + ind1*instr1;
             }
             bounds_pad_flag = 0;
           }
-          if (!(value==fillvalue && fillvalue_is_zero)) {
-            mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          if (!(fillvalue_is_zero && value==fillvalue)) {
+            mult_and_add(sum, h0_memory + k*hstr1, value);
           }
         }
       }
@@ -300,42 +323,43 @@ case 18: /* outsize=FULL | boundary=PAD | convolve=FLIPPED */
 }
 case 2: /* outsize=FULL | boundary=PAD | convolve=NOT_FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
-    new_m = m - Nwin[0] + 1;
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+  for (m=0; m < Os0; m++) {
+    new_m = m - Nwin0 + 1;
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
-      new_n = n - Nwin[1] + 1;
-      for (j=0; j < Nwin[0]; j++) {
+      new_n = n - Nwin1 + 1;
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m + j;
         bounds_pad_flag = 0;
         if (ind0 < 0) {
           bounds_pad_flag = 1;
-        } else if (ind0 >= Ns[0]) {
+        } else if (ind0 >= Ns0) {
           bounds_pad_flag = 1;
         }
+        h0_memory = hvals + j * hstr0;
         if (!bounds_pad_flag) {
-          ind0_memory = ind0 * instr[0];
+          ind0_memory = in + ind0 * instr0;
         }
-        for (k=0; k < Nwin[1]; k++) {
+        for (k=0; k < Nwin1; k++) {
           if (bounds_pad_flag) {
             value = fillvalue;
           } else {
             ind1 = new_n + k;
             if (ind1 < 0) {
               bounds_pad_flag = 1;
-            } else if (ind1 >= Ns[1]) {
+            } else if (ind1 >= Ns1) {
               bounds_pad_flag = 1;
             }
             if (bounds_pad_flag) {
               value = fillvalue;
             } else {
-              value = in + ind0_memory + ind1*instr[1];
+              value = ind0_memory + ind1*instr1;
             }
             bounds_pad_flag = 0;
           }
-          if (!(value==fillvalue && fillvalue_is_zero)) {
-            mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          if (!(fillvalue_is_zero && value==fillvalue)) {
+            mult_and_add(sum, h0_memory + k*hstr1, value);
           }
         }
       }
@@ -345,29 +369,30 @@ case 2: /* outsize=FULL | boundary=PAD | convolve=NOT_FLIPPED */
 }
 case 25: /* outsize=SAME | boundary=CIRCULAR | convolve=FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
-    new_m = m + ((Nwin[0]-1) >> 1);
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+  for (m=0; m < Os0; m++) {
+    new_m = m + ((Nwin0-1) >> 1);
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
-      new_n = n + ((Nwin[1]-1) >> 1);
-      for (j=0; j < Nwin[0]; j++) {
+      new_n = n + ((Nwin1-1) >> 1);
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m - j;
         if (ind0 < 0) {
-          ind0 = Ns[0] + ind0;
-        } else if (ind0 >= Ns[0]) {
-          ind0 = ind0 - Ns[0];
+          ind0 = Ns0 + ind0;
+        } else if (ind0 >= Ns0) {
+          ind0 = ind0 - Ns0;
         }
-        ind0_memory = ind0 * instr[0];
-        for (k=0; k < Nwin[1]; k++) {
+        h0_memory = hvals + j * hstr0;
+        ind0_memory = in + ind0 * instr0;
+        for (k=0; k < Nwin1; k++) {
           ind1 = new_n - k;
           if (ind1 < 0) {
-            ind1 = Ns[1] + ind1;
-          } else if (ind1 >= Ns[1]) {
-            ind1 = ind1 - Ns[1];
+            ind1 = Ns1 + ind1;
+          } else if (ind1 >= Ns1) {
+            ind1 = ind1 - Ns1;
           }
-          value = in + ind0_memory + ind1*instr[1];
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          value = ind0_memory + ind1*instr1;
+          mult_and_add(sum, h0_memory + k*hstr1, value);
         }
       }
     }
@@ -376,29 +401,30 @@ case 25: /* outsize=SAME | boundary=CIRCULAR | convolve=FLIPPED */
 }
 case 9: /* outsize=SAME | boundary=CIRCULAR | convolve=NOT_FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
-    new_m = m - ((Nwin[0]-1) >> 1);
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+  for (m=0; m < Os0; m++) {
+    new_m = m - ((Nwin0-1) >> 1);
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
-      new_n = n - ((Nwin[1]-1) >> 1);
-      for (j=0; j < Nwin[0]; j++) {
+      new_n = n - ((Nwin1-1) >> 1);
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m + j;
         if (ind0 < 0) {
-          ind0 = Ns[0] + ind0;
-        } else if (ind0 >= Ns[0]) {
-          ind0 = ind0 - Ns[0];
+          ind0 = Ns0 + ind0;
+        } else if (ind0 >= Ns0) {
+          ind0 = ind0 - Ns0;
         }
-        ind0_memory = ind0 * instr[0];
-        for (k=0; k < Nwin[1]; k++) {
+        h0_memory = hvals + j * hstr0;
+        ind0_memory = in + ind0 * instr0;
+        for (k=0; k < Nwin1; k++) {
           ind1 = new_n + k;
           if (ind1 < 0) {
-            ind1 = Ns[1] + ind1;
-          } else if (ind1 >= Ns[1]) {
-            ind1 = ind1 - Ns[1];
+            ind1 = Ns1 + ind1;
+          } else if (ind1 >= Ns1) {
+            ind1 = ind1 - Ns1;
           }
-          value = in + ind0_memory + ind1*instr[1];
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          value = ind0_memory + ind1*instr1;
+          mult_and_add(sum, h0_memory + k*hstr1, value);
         }
       }
     }
@@ -407,29 +433,30 @@ case 9: /* outsize=SAME | boundary=CIRCULAR | convolve=NOT_FLIPPED */
 }
 case 21: /* outsize=SAME | boundary=REFLECT | convolve=FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
-    new_m = m + ((Nwin[0]-1) >> 1);
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+  for (m=0; m < Os0; m++) {
+    new_m = m + ((Nwin0-1) >> 1);
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
-      new_n = n + ((Nwin[1]-1) >> 1);
-      for (j=0; j < Nwin[0]; j++) {
+      new_n = n + ((Nwin1-1) >> 1);
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m - j;
         if (ind0 < 0) {
           ind0 = -1 - ind0;
-        } else if (ind0 >= Ns[0]) {
-          ind0 = Ns[0] + Ns[0] - 1 - ind0;
+        } else if (ind0 >= Ns0) {
+          ind0 = Ns0 + Ns0 - 1 - ind0;
         }
-        ind0_memory = ind0 * instr[0];
-        for (k=0; k < Nwin[1]; k++) {
+        h0_memory = hvals + j * hstr0;
+        ind0_memory = in + ind0 * instr0;
+        for (k=0; k < Nwin1; k++) {
           ind1 = new_n - k;
           if (ind1 < 0) {
             ind1 = -1 - ind1;
-          } else if (ind1 >= Ns[1]) {
-            ind1 = Ns[1] + Ns[1] - 1 - ind1;
+          } else if (ind1 >= Ns1) {
+            ind1 = Ns1 + Ns1 - 1 - ind1;
           }
-          value = in + ind0_memory + ind1*instr[1];
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          value = ind0_memory + ind1*instr1;
+          mult_and_add(sum, h0_memory + k*hstr1, value);
         }
       }
     }
@@ -438,29 +465,30 @@ case 21: /* outsize=SAME | boundary=REFLECT | convolve=FLIPPED */
 }
 case 5: /* outsize=SAME | boundary=REFLECT | convolve=NOT_FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
-    new_m = m - ((Nwin[0]-1) >> 1);
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+  for (m=0; m < Os0; m++) {
+    new_m = m - ((Nwin0-1) >> 1);
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
-      new_n = n - ((Nwin[1]-1) >> 1);
-      for (j=0; j < Nwin[0]; j++) {
+      new_n = n - ((Nwin1-1) >> 1);
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m + j;
         if (ind0 < 0) {
           ind0 = -1 - ind0;
-        } else if (ind0 >= Ns[0]) {
-          ind0 = Ns[0] + Ns[0] - 1 - ind0;
+        } else if (ind0 >= Ns0) {
+          ind0 = Ns0 + Ns0 - 1 - ind0;
         }
-        ind0_memory = ind0 * instr[0];
-        for (k=0; k < Nwin[1]; k++) {
+        h0_memory = hvals + j * hstr0;
+        ind0_memory = in + ind0 * instr0;
+        for (k=0; k < Nwin1; k++) {
           ind1 = new_n + k;
           if (ind1 < 0) {
             ind1 = -1 - ind1;
-          } else if (ind1 >= Ns[1]) {
-            ind1 = Ns[1] + Ns[1] - 1 - ind1;
+          } else if (ind1 >= Ns1) {
+            ind1 = Ns1 + Ns1 - 1 - ind1;
           }
-          value = in + ind0_memory + ind1*instr[1];
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          value = ind0_memory + ind1*instr1;
+          mult_and_add(sum, h0_memory + k*hstr1, value);
         }
       }
     }
@@ -469,42 +497,43 @@ case 5: /* outsize=SAME | boundary=REFLECT | convolve=NOT_FLIPPED */
 }
 case 17: /* outsize=SAME | boundary=PAD | convolve=FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
-    new_m = m + ((Nwin[0]-1) >> 1);
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+  for (m=0; m < Os0; m++) {
+    new_m = m + ((Nwin0-1) >> 1);
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
-      new_n = n + ((Nwin[1]-1) >> 1);
-      for (j=0; j < Nwin[0]; j++) {
+      new_n = n + ((Nwin1-1) >> 1);
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m - j;
         bounds_pad_flag = 0;
         if (ind0 < 0) {
           bounds_pad_flag = 1;
-        } else if (ind0 >= Ns[0]) {
+        } else if (ind0 >= Ns0) {
           bounds_pad_flag = 1;
         }
+        h0_memory = hvals + j * hstr0;
         if (!bounds_pad_flag) {
-          ind0_memory = ind0 * instr[0];
+          ind0_memory = in + ind0 * instr0;
         }
-        for (k=0; k < Nwin[1]; k++) {
+        for (k=0; k < Nwin1; k++) {
           if (bounds_pad_flag) {
             value = fillvalue;
           } else {
             ind1 = new_n - k;
             if (ind1 < 0) {
               bounds_pad_flag = 1;
-            } else if (ind1 >= Ns[1]) {
+            } else if (ind1 >= Ns1) {
               bounds_pad_flag = 1;
             }
             if (bounds_pad_flag) {
               value = fillvalue;
             } else {
-              value = in + ind0_memory + ind1*instr[1];
+              value = ind0_memory + ind1*instr1;
             }
             bounds_pad_flag = 0;
           }
-          if (!(value==fillvalue && fillvalue_is_zero)) {
-            mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          if (!(fillvalue_is_zero && value==fillvalue)) {
+            mult_and_add(sum, h0_memory + k*hstr1, value);
           }
         }
       }
@@ -514,42 +543,43 @@ case 17: /* outsize=SAME | boundary=PAD | convolve=FLIPPED */
 }
 case 1: /* outsize=SAME | boundary=PAD | convolve=NOT_FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
-    new_m = m - ((Nwin[0]-1) >> 1);
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+  for (m=0; m < Os0; m++) {
+    new_m = m - ((Nwin0-1) >> 1);
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
-      new_n = n - ((Nwin[1]-1) >> 1);
-      for (j=0; j < Nwin[0]; j++) {
+      new_n = n - ((Nwin1-1) >> 1);
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m + j;
         bounds_pad_flag = 0;
         if (ind0 < 0) {
           bounds_pad_flag = 1;
-        } else if (ind0 >= Ns[0]) {
+        } else if (ind0 >= Ns0) {
           bounds_pad_flag = 1;
         }
+        h0_memory = hvals + j * hstr0;
         if (!bounds_pad_flag) {
-          ind0_memory = ind0 * instr[0];
+          ind0_memory = in + ind0 * instr0;
         }
-        for (k=0; k < Nwin[1]; k++) {
+        for (k=0; k < Nwin1; k++) {
           if (bounds_pad_flag) {
             value = fillvalue;
           } else {
             ind1 = new_n + k;
             if (ind1 < 0) {
               bounds_pad_flag = 1;
-            } else if (ind1 >= Ns[1]) {
+            } else if (ind1 >= Ns1) {
               bounds_pad_flag = 1;
             }
             if (bounds_pad_flag) {
               value = fillvalue;
             } else {
-              value = in + ind0_memory + ind1*instr[1];
+              value = ind0_memory + ind1*instr1;
             }
             bounds_pad_flag = 0;
           }
-          if (!(value==fillvalue && fillvalue_is_zero)) {
-            mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          if (!(fillvalue_is_zero && value==fillvalue)) {
+            mult_and_add(sum, h0_memory + k*hstr1, value);
           }
         }
       }
@@ -559,29 +589,30 @@ case 1: /* outsize=SAME | boundary=PAD | convolve=NOT_FLIPPED */
 }
 case 24: /* outsize=VALID | boundary=CIRCULAR | convolve=FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
-    new_m = m + Nwin[0] - 1;
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+  for (m=0; m < Os0; m++) {
+    new_m = m + Nwin0 - 1;
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
-      new_n = n + Nwin[1] - 1;
-      for (j=0; j < Nwin[0]; j++) {
+      new_n = n + Nwin1 - 1;
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m - j;
         if (ind0 < 0) {
-          ind0 = Ns[0] + ind0;
-        } else if (ind0 >= Ns[0]) {
-          ind0 = ind0 - Ns[0];
+          ind0 = Ns0 + ind0;
+        } else if (ind0 >= Ns0) {
+          ind0 = ind0 - Ns0;
         }
-        ind0_memory = ind0 * instr[0];
-        for (k=0; k < Nwin[1]; k++) {
+        h0_memory = hvals + j * hstr0;
+        ind0_memory = in + ind0 * instr0;
+        for (k=0; k < Nwin1; k++) {
           ind1 = new_n - k;
           if (ind1 < 0) {
-            ind1 = Ns[1] + ind1;
-          } else if (ind1 >= Ns[1]) {
-            ind1 = ind1 - Ns[1];
+            ind1 = Ns1 + ind1;
+          } else if (ind1 >= Ns1) {
+            ind1 = ind1 - Ns1;
           }
-          value = in + ind0_memory + ind1*instr[1];
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          value = ind0_memory + ind1*instr1;
+          mult_and_add(sum, h0_memory + k*hstr1, value);
         }
       }
     }
@@ -590,29 +621,30 @@ case 24: /* outsize=VALID | boundary=CIRCULAR | convolve=FLIPPED */
 }
 case 8: /* outsize=VALID | boundary=CIRCULAR | convolve=NOT_FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
+  for (m=0; m < Os0; m++) {
     new_m = m;
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
       new_n = n;
-      for (j=0; j < Nwin[0]; j++) {
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m + j;
         if (ind0 < 0) {
-          ind0 = Ns[0] + ind0;
-        } else if (ind0 >= Ns[0]) {
-          ind0 = ind0 - Ns[0];
+          ind0 = Ns0 + ind0;
+        } else if (ind0 >= Ns0) {
+          ind0 = ind0 - Ns0;
         }
-        ind0_memory = ind0 * instr[0];
-        for (k=0; k < Nwin[1]; k++) {
+        h0_memory = hvals + j * hstr0;
+        ind0_memory = in + ind0 * instr0;
+        for (k=0; k < Nwin1; k++) {
           ind1 = new_n + k;
           if (ind1 < 0) {
-            ind1 = Ns[1] + ind1;
-          } else if (ind1 >= Ns[1]) {
-            ind1 = ind1 - Ns[1];
+            ind1 = Ns1 + ind1;
+          } else if (ind1 >= Ns1) {
+            ind1 = ind1 - Ns1;
           }
-          value = in + ind0_memory + ind1*instr[1];
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          value = ind0_memory + ind1*instr1;
+          mult_and_add(sum, h0_memory + k*hstr1, value);
         }
       }
     }
@@ -621,29 +653,30 @@ case 8: /* outsize=VALID | boundary=CIRCULAR | convolve=NOT_FLIPPED */
 }
 case 20: /* outsize=VALID | boundary=REFLECT | convolve=FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
-    new_m = m + Nwin[0] - 1;
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+  for (m=0; m < Os0; m++) {
+    new_m = m + Nwin0 - 1;
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
-      new_n = n + Nwin[1] - 1;
-      for (j=0; j < Nwin[0]; j++) {
+      new_n = n + Nwin1 - 1;
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m - j;
         if (ind0 < 0) {
           ind0 = -1 - ind0;
-        } else if (ind0 >= Ns[0]) {
-          ind0 = Ns[0] + Ns[0] - 1 - ind0;
+        } else if (ind0 >= Ns0) {
+          ind0 = Ns0 + Ns0 - 1 - ind0;
         }
-        ind0_memory = ind0 * instr[0];
-        for (k=0; k < Nwin[1]; k++) {
+        h0_memory = hvals + j * hstr0;
+        ind0_memory = in + ind0 * instr0;
+        for (k=0; k < Nwin1; k++) {
           ind1 = new_n - k;
           if (ind1 < 0) {
             ind1 = -1 - ind1;
-          } else if (ind1 >= Ns[1]) {
-            ind1 = Ns[1] + Ns[1] - 1 - ind1;
+          } else if (ind1 >= Ns1) {
+            ind1 = Ns1 + Ns1 - 1 - ind1;
           }
-          value = in + ind0_memory + ind1*instr[1];
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          value = ind0_memory + ind1*instr1;
+          mult_and_add(sum, h0_memory + k*hstr1, value);
         }
       }
     }
@@ -652,29 +685,30 @@ case 20: /* outsize=VALID | boundary=REFLECT | convolve=FLIPPED */
 }
 case 4: /* outsize=VALID | boundary=REFLECT | convolve=NOT_FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
+  for (m=0; m < Os0; m++) {
     new_m = m;
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
       new_n = n;
-      for (j=0; j < Nwin[0]; j++) {
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m + j;
         if (ind0 < 0) {
           ind0 = -1 - ind0;
-        } else if (ind0 >= Ns[0]) {
-          ind0 = Ns[0] + Ns[0] - 1 - ind0;
+        } else if (ind0 >= Ns0) {
+          ind0 = Ns0 + Ns0 - 1 - ind0;
         }
-        ind0_memory = ind0 * instr[0];
-        for (k=0; k < Nwin[1]; k++) {
+        h0_memory = hvals + j * hstr0;
+        ind0_memory = in + ind0 * instr0;
+        for (k=0; k < Nwin1; k++) {
           ind1 = new_n + k;
           if (ind1 < 0) {
             ind1 = -1 - ind1;
-          } else if (ind1 >= Ns[1]) {
-            ind1 = Ns[1] + Ns[1] - 1 - ind1;
+          } else if (ind1 >= Ns1) {
+            ind1 = Ns1 + Ns1 - 1 - ind1;
           }
-          value = in + ind0_memory + ind1*instr[1];
-          mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          value = ind0_memory + ind1*instr1;
+          mult_and_add(sum, h0_memory + k*hstr1, value);
         }
       }
     }
@@ -683,42 +717,43 @@ case 4: /* outsize=VALID | boundary=REFLECT | convolve=NOT_FLIPPED */
 }
 case 16: /* outsize=VALID | boundary=PAD | convolve=FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
-    new_m = m + Nwin[0] - 1;
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+  for (m=0; m < Os0; m++) {
+    new_m = m + Nwin0 - 1;
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
-      new_n = n + Nwin[1] - 1;
-      for (j=0; j < Nwin[0]; j++) {
+      new_n = n + Nwin1 - 1;
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m - j;
         bounds_pad_flag = 0;
         if (ind0 < 0) {
           bounds_pad_flag = 1;
-        } else if (ind0 >= Ns[0]) {
+        } else if (ind0 >= Ns0) {
           bounds_pad_flag = 1;
         }
+        h0_memory = hvals + j * hstr0;
         if (!bounds_pad_flag) {
-          ind0_memory = ind0 * instr[0];
+          ind0_memory = in + ind0 * instr0;
         }
-        for (k=0; k < Nwin[1]; k++) {
+        for (k=0; k < Nwin1; k++) {
           if (bounds_pad_flag) {
             value = fillvalue;
           } else {
             ind1 = new_n - k;
             if (ind1 < 0) {
               bounds_pad_flag = 1;
-            } else if (ind1 >= Ns[1]) {
+            } else if (ind1 >= Ns1) {
               bounds_pad_flag = 1;
             }
             if (bounds_pad_flag) {
               value = fillvalue;
             } else {
-              value = in + ind0_memory + ind1*instr[1];
+              value = ind0_memory + ind1*instr1;
             }
             bounds_pad_flag = 0;
           }
-          if (!(value==fillvalue && fillvalue_is_zero)) {
-            mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          if (!(fillvalue_is_zero && value==fillvalue)) {
+            mult_and_add(sum, h0_memory + k*hstr1, value);
           }
         }
       }
@@ -728,42 +763,43 @@ case 16: /* outsize=VALID | boundary=PAD | convolve=FLIPPED */
 }
 case 0: /* outsize=VALID | boundary=PAD | convolve=NOT_FLIPPED */
 {
-  for (m=0; m < Os[0]; m++) {
+  for (m=0; m < Os0; m++) {
     new_m = m;
-    for (n=0; n < Os[1]; n++) {
-      sum = out + m*outstr[0] + n*outstr[1];
+    for (n=0; n < Os1; n++) {
+      sum = out + m*outstr0 + n*outstr1;
       memset(sum, 0, type_size);
       new_n = n;
-      for (j=0; j < Nwin[0]; j++) {
+      for (j=0; j < Nwin0; j++) {
         ind0 = new_m + j;
         bounds_pad_flag = 0;
         if (ind0 < 0) {
           bounds_pad_flag = 1;
-        } else if (ind0 >= Ns[0]) {
+        } else if (ind0 >= Ns0) {
           bounds_pad_flag = 1;
         }
+        h0_memory = hvals + j * hstr0;
         if (!bounds_pad_flag) {
-          ind0_memory = ind0 * instr[0];
+          ind0_memory = in + ind0 * instr0;
         }
-        for (k=0; k < Nwin[1]; k++) {
+        for (k=0; k < Nwin1; k++) {
           if (bounds_pad_flag) {
             value = fillvalue;
           } else {
             ind1 = new_n + k;
             if (ind1 < 0) {
               bounds_pad_flag = 1;
-            } else if (ind1 >= Ns[1]) {
+            } else if (ind1 >= Ns1) {
               bounds_pad_flag = 1;
             }
             if (bounds_pad_flag) {
               value = fillvalue;
             } else {
-              value = in + ind0_memory + ind1*instr[1];
+              value = ind0_memory + ind1*instr1;
             }
             bounds_pad_flag = 0;
           }
-          if (!(value==fillvalue && fillvalue_is_zero)) {
-            mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);
+          if (!(fillvalue_is_zero && value==fillvalue)) {
+            mult_and_add(sum, h0_memory + k*hstr1, value);
           }
         }
       }

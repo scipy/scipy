@@ -29,33 +29,33 @@ def case_codegen(outsize, boundary, convolve):
         lines.append(line)
 
     # loop over image rows
-    addline('for (m=0; m < Os[0]; m++) {')
+    addline('for (m=0; m < Os0; m++) {')
     if outsize == FULL:
-        rhs = 'm' if convolve else 'm - Nwin[0] + 1'
+        rhs = 'm' if convolve else 'm - Nwin0 + 1'
     elif outsize == SAME:
-        rhs = 'm + ((Nwin[0]-1) >> 1)' if convolve else 'm - ((Nwin[0]-1) >> 1)'
+        rhs = 'm + ((Nwin0-1) >> 1)' if convolve else 'm - ((Nwin0-1) >> 1)'
     elif outsize == VALID:
-        rhs = 'm + Nwin[0] - 1' if convolve else 'm'
+        rhs = 'm + Nwin0 - 1' if convolve else 'm'
     else:
         raise ValueError
     addline('new_m = %s;' % rhs)
 
     # loop over image columns
-    addline('for (n=0; n < Os[1]; n++) {')
-    addline('sum = out + m*outstr[0] + n*outstr[1];')
+    addline('for (n=0; n < Os1; n++) {')
+    addline('sum = out + m*outstr0 + n*outstr1;')
     addline('memset(sum, 0, type_size);')
     if outsize == FULL:
-        rhs = 'n' if convolve else 'n - Nwin[1] + 1'
+        rhs = 'n' if convolve else 'n - Nwin1 + 1'
     elif outsize == SAME:
-        rhs = 'n + ((Nwin[1]-1) >> 1)' if convolve else 'n - ((Nwin[1]-1) >> 1)'
+        rhs = 'n + ((Nwin1-1) >> 1)' if convolve else 'n - ((Nwin1-1) >> 1)'
     elif outsize == VALID:
-        rhs = 'n + Nwin[1] - 1' if convolve else 'n'
+        rhs = 'n + Nwin1 - 1' if convolve else 'n'
     else:
         raise ValueError
     addline('new_n = %s;' % rhs)
 
     # sum over kernel
-    addline('for (j=0; j < Nwin[0]; j++) {')
+    addline('for (j=0; j < Nwin0; j++) {')
     rhs = 'new_m - j' if convolve else 'new_m + j'
     addline('ind0 = %s;' % rhs)
     if boundary == PAD:
@@ -64,29 +64,30 @@ def case_codegen(outsize, boundary, convolve):
     if boundary == REFLECT:
         addline('ind0 = -1 - ind0;')
     elif boundary == CIRCULAR:
-        addline('ind0 = Ns[0] + ind0;')
+        addline('ind0 = Ns0 + ind0;')
     elif boundary == PAD:
         addline('bounds_pad_flag = 1;')
     else:
         raise ValueError
-    addline('} else if (ind0 >= Ns[0]) {')
+    addline('} else if (ind0 >= Ns0) {')
     if boundary == REFLECT:
-        addline('ind0 = Ns[0] + Ns[0] - 1 - ind0;')
+        addline('ind0 = Ns0 + Ns0 - 1 - ind0;')
     elif boundary == CIRCULAR:
-        addline('ind0 = ind0 - Ns[0];')
+        addline('ind0 = ind0 - Ns0;')
     elif boundary == PAD:
         addline('bounds_pad_flag = 1;')
     else:
         raise ValueError
     addline('}')
+    addline('h0_memory = hvals + j * hstr0;')
     if boundary == PAD:
         addline('if (!bounds_pad_flag) {')
-    addline('ind0_memory = ind0 * instr[0];')
+    addline('ind0_memory = in + ind0 * instr0;')
     if boundary == PAD:
         addline('}')
 
     # kernel columns
-    addline('for (k=0; k < Nwin[1]; k++) {')
+    addline('for (k=0; k < Nwin1; k++) {')
     if boundary == PAD:
         addline('if (bounds_pad_flag) {')
         addline('value = fillvalue;')
@@ -97,16 +98,16 @@ def case_codegen(outsize, boundary, convolve):
     if boundary == REFLECT:
         addline('ind1 = -1 - ind1;')
     elif boundary == CIRCULAR:
-        addline('ind1 = Ns[1] + ind1;')
+        addline('ind1 = Ns1 + ind1;')
     elif boundary == PAD:
         addline('bounds_pad_flag = 1;')
     else:
         raise ValueError
-    addline('} else if (ind1 >= Ns[1]) {')
+    addline('} else if (ind1 >= Ns1) {')
     if boundary == REFLECT:
-        addline('ind1 = Ns[1] + Ns[1] - 1 - ind1;')
+        addline('ind1 = Ns1 + Ns1 - 1 - ind1;')
     elif boundary == CIRCULAR:
-        addline('ind1 = ind1 - Ns[1];')
+        addline('ind1 = ind1 - Ns1;')
     elif boundary == PAD:
         addline('bounds_pad_flag = 1;')
     else:
@@ -116,7 +117,7 @@ def case_codegen(outsize, boundary, convolve):
         addline('if (bounds_pad_flag) {')
         addline('value = fillvalue;')
         addline('} else {')
-    addline('value = in + ind0_memory + ind1*instr[1];')
+    addline('value = ind0_memory + ind1*instr1;')
     if boundary == PAD:
         addline('}')
         addline('bounds_pad_flag = 0;')
@@ -124,8 +125,8 @@ def case_codegen(outsize, boundary, convolve):
 
     # multiply and accumulate unless we are looking at a padding of zero
     if boundary == PAD:
-        addline('if (!(value==fillvalue && fillvalue_is_zero)) {')
-    addline('mult_and_add(sum, hvals + j*hstr[0] + k*hstr[1], value);')
+        addline('if (!(fillvalue_is_zero && value==fillvalue)) {')
+    addline('mult_and_add(sum, h0_memory + k*hstr1, value);')
     if boundary == PAD:
         addline('}')
 
