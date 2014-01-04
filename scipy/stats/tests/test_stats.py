@@ -1054,6 +1054,11 @@ class TestScoreatpercentile(TestCase):
         assert_raises(ValueError, stats.scoreatpercentile, [1], 101)
         assert_raises(ValueError, stats.scoreatpercentile, [1], -1)
 
+    def test_empty(self):
+        assert_equal(stats.scoreatpercentile([], 50), np.nan)
+        assert_equal(stats.scoreatpercentile(np.array([[], []]), 50), np.nan)
+        assert_equal(stats.scoreatpercentile([], [50, 99]), [np.nan, np.nan])
+
 
 class TestItemfreq(object):
     a = [5, 7, 1, 2, 1, 5, 7] * 10

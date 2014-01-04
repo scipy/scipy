@@ -1367,7 +1367,7 @@ def itemfreq(a):
 
 
 def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
-        axis=None):
+                      axis=None):
     """
     Calculate the score at a given percentile of the input sequence.
 
@@ -1419,6 +1419,12 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
     """
     # adapted from NumPy's percentile function
     a = np.asarray(a)
+    if a.size == 0:
+        # empty array, return nan(s) with shape matching `per`
+        if np.isscalar(per):
+            return np.nan
+        else:
+            return np.ones(np.asarray(per).shape, dtype=np.float64) * np.nan
 
     if limit:
         a = a[(limit[0] <= a) & (a <= limit[1])]
@@ -1473,7 +1479,7 @@ def _compute_qth_percentile(sorted, per, interpolation_method, axis):
         weights.shape = wshape
         sumval = weights.sum()
 
-    # Use np.add.reduce to coerce data type
+    # Use np.add.reduce (== np.sum but a little faster) to coerce data type
     return np.add.reduce(sorted[indexer] * weights, axis=axis) / sumval
 
 
