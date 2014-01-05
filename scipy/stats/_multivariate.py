@@ -245,11 +245,11 @@ class multivariate_normal_gen(object):
 
     Methods
     -------
-    pdf(x, mean=None, cov=1)
+    pdf(x, mean=None, cov=1, allow_singular=False)
         Probability density function.
-    logpdf(x, mean=None, cov=1)
+    logpdf(x, mean=None, cov=1, allow_singular=False)
         Log of the probability density function.
-    rvs(mean=None, cov=1, size=1)
+    rvs(mean=None, cov=1, allow_singular=False, size=1)
         Draw random samples from a multivariate normal distribution.
     entropy()
         Compute the differential entropy of the multivariate normal.
@@ -264,8 +264,8 @@ class multivariate_normal_gen(object):
     and covariance parameters, returning a "frozen" multivariate normal
     random variable:
 
-    rv = multivariate_normal(mean=None, scale=1)
-        - Frozen  object with the same methods but holding the given
+    rv = multivariate_normal(mean=None, cov=1, allow_singular=False)
+        - Frozen object with the same methods but holding the given
           mean and covariance fixed.
 
     Notes
