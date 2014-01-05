@@ -461,17 +461,17 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False, **kw):
         The model function, f(x, ...).  It must take the independent
         variable as the first argument and the parameters to fit as
         separate remaining arguments.
-    xdata : An N-length sequence or an (k,N)-shaped array
+    xdata : An M-length sequence or an (k,M)-shaped array
         for functions with k predictors.
         The independent variable where the data is measured.
-    ydata : N-length sequence
+    ydata : M-length sequence
         The dependent data --- nominally f(xdata, ...)
-    p0 : None, scalar, or M-length sequence
+    p0 : None, scalar, or N-length sequence
         Initial guess for the parameters.  If None, then the initial
         values will all be 1 (if the number of parameters for the function
         can be determined using introspection, otherwise a ValueError
         is raised).
-    sigma : None or N-length sequence, optional
+    sigma : None or M-length sequence, optional
         If not None, these values are used as weights in the
         least-squares problem.
     absolute_sigma : bool, optional
