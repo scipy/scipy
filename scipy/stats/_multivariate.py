@@ -123,7 +123,7 @@ class _PSD(object):
 
     This class addresses two issues.  Firstly it allows the pseudoinverse,
     the logarithm of the pseudo-determinant, and the rank of the matrix
-    to be computed using one eigh instead of three.
+    to be computed using one call to eigh instead of three.
     Secondly it allows these functions to be computed in a way
     that gives mutually compatible results.
     All of the functions are computed with a common understanding as to
