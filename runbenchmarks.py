@@ -9,7 +9,7 @@ Examples::
 
     $ python runbenchmarks.py
     $ python runbenchmarks.py -s {SAMPLE_SUBMODULE}
-    $ python runbenchmarks.py -t {SAMPLE_BENCHMARK}
+    $ python runbenchmarks.py -b {SAMPLE_BENCHMARK}
 
 """
 
