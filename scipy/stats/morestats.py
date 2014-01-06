@@ -1131,7 +1131,84 @@ def anderson(x,dist='norm'):
     return A2, critical, sig
 
 
-def anderson_ksamp(*args):
+def _anderson_ksamp_both(samples, Z, Zstar, k, n, N):
+    """
+    Compute A2akN equation 7 of Scholz & Stephens.
+
+    Parameters
+    ----------
+    samples : array_like
+        array of sample arrays
+    Z : array_like
+        sorted array of all observations
+    Zstar : array_like
+        sorted array of unique observations
+    k : int
+        number of samples
+    n : array_like
+        number of observations in each sample
+    N : int
+        total number of observations
+
+    Returns
+    -------
+    A2aKN : float
+        The A2aKN statistics of Scholz & Stephens
+    """
+
+    A2akN = 0.
+    lj = Z.searchsorted(Zstar, 'right') - Z.searchsorted(Zstar, 'left')
+    Bj = Z.searchsorted(Zstar) + lj / 2.
+    for i in arange(0, k):
+        s = np.sort(samples[i])
+        Mij = s.searchsorted(Zstar, side='right').astype(np.float)
+        fij = s.searchsorted(Zstar, 'right') - s.searchsorted(Zstar, 'left')
+        Mij -= fij / 2.
+        inner = lj / float(N) * (N * Mij - Bj * n[i])**2 / \
+            (Bj * (N - Bj) - N * lj / 4.)
+        A2akN += inner.sum() / n[i]
+    A2akN *= (N - 1.) / N
+    return A2akN
+
+
+def _anderson_ksamp_discrete(samples, Z, Zstar, k, n, N):
+    """
+    Compute A2akN equation 6 of Scholz & Stephens.
+
+    Parameters
+    ----------
+    samples : array_like
+        array of sample arrays
+    Z : array_like
+        sorted array of all observations
+    Zstar : array_like
+        sorted array of unique observations
+    k : int
+        number of samples
+    n : array_like
+        number of observations in each sample
+    N : int
+        total number of observations
+
+    Returns
+    -------
+    A2KN : float
+        The A2KN statistics of Scholz & Stephens
+    """
+
+    A2kN = 0.
+    lj = Z.searchsorted(Zstar[:-1], 'right') - Z.searchsorted(Zstar[:-1],
+                                                              'left')
+    Bj = lj.cumsum()
+    for i in arange(0, k):
+        s = np.sort(samples[i])
+        Mij = s.searchsorted(Zstar[:-1], side='right')
+        inner = lj / float(N) * (N * Mij - Bj * n[i])**2 / (Bj * (N - Bj))
+        A2kN += inner.sum() / n[i]
+    return A2kN
+
+
+def anderson_ksamp(samples, discrete=False):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -1142,8 +1219,12 @@ def anderson_ksamp(*args):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
-        k arrays of sample data
+    samples : array_like
+        array of sample data in arrays
+
+    discrete : bool, optional
+        type of Anderson-Darling test which is computed. Default is a test
+        applicable to discrete and continous distributions.
 
     Returns
     -------
@@ -1169,13 +1250,15 @@ def anderson_ksamp(*args):
 
     Notes
     -----
-    [1]_ Define two versions of the k-sample Anderson-Darling test:
-    one for continous distributions and one for discrete
-    distributions, in which ties between samples may occur. This
-    routine computes the former. According to [1]_, the two test
-    statistics differ only slightly if a few collisions due to
-    round-off errors occur in the test not adjusted for ties between
-    samples.
+    [1]_ Define three versions of the k-sample Anderson-Darling test:
+    one for continous distributions and two for discrete
+    distributions, in which ties between samples may occur. The latter
+    variant of the test is also applicable to continuous data. By
+    default, this routine computes the test for continuous and
+    discrete data. If discrete is set to True, the test for discrete
+    data is computed. According to [1]_, the two test statistics
+    differ only slightly if a few collisions due to round-off errors
+    occur in the test not adjusted for ties between samples.
 
     .. versionadded:: 0.14.0
 
@@ -1213,12 +1296,13 @@ def anderson_ksamp(*args):
 
     """
 
-    k = len(args)
+    k = len(samples)
     if (k < 2):
         raise ValueError("anderson_ksamp needs at least two samples")
-    samples = list(map(np.asarray, args))
+    samples = list(map(np.asarray, samples))
     Z = np.hstack(samples)
     N = Z.size
+    Z.sort()
     Zstar = np.unique(Z)
     L = Zstar.size
     if not L > 1:
@@ -1228,14 +1312,10 @@ def anderson_ksamp(*args):
     if any(n == 0):
         raise ValueError("anderson_ksamp encountered sample without "
                          "observations")
-    A2kN = 0.
-    lj = np.array([(Z == zj).sum() for zj in Zstar[:-1]])
-    Bj = lj.cumsum()
-    for i in arange(0, k):
-        fij = np.array([(samples[i] == zj).sum() for zj in Zstar[:-1]])
-        Mij = fij.cumsum()
-        inner = lj / float(N) * (N * Mij - Bj * n[i])**2 / (Bj * (N - Bj))
-        A2kN += inner.sum() / n[i]
+    if discrete:
+        A2kN = _anderson_ksamp_discrete(samples, Z, Zstar, k, n, N)
+    else:
+        A2kN = _anderson_ksamp_both(samples, Z, Zstar, k, n, N)
 
     h = (1. / arange(1, N)).sum()
     H = (1. / n).sum()
