@@ -11,7 +11,7 @@ matrix:
         - COVERAGE=--coverage
     - python: 2.6
       env:
-        - TESTMODE=fast
+        - TESTMODE=full
         - OPTIMIZE=-OO
 before_install:
   - uname -a
@@ -32,7 +32,7 @@ before_install:
 script:
   - python $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE
 env:
-  - TESTMODE=fast
+  - TESTMODE=full
 notifications:
   # Perhaps we should have status emails sent to the mailing list, but
   # let's wait to see what people think before turning that on.
