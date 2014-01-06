@@ -25,7 +25,7 @@ before_install:
   - pip install --upgrade pip setuptools  # Upgrade pip and setuptools to get ones with `wheel` support
   - pip --version
   - pip install --find-links http://wheels.astropy.org/ --find-links http://wheels2.astropy.org/ --use-wheel nose numpy Cython argparse
-  - pip install --allow-insecure=mpmath --allow-unverified=mpmath --allow-external=mpmath mpmath
+  - pip install --allow-unverified=mpmath --allow-external=mpmath mpmath
   - if [ "${TESTMODE}" == "full" ]; then pip install coverage coveralls; fi
   - python -V
   - popd
