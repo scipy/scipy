@@ -20,6 +20,7 @@ before_install:
   - ulimit -a
   - sudo apt-get update -qq
   - sudo apt-get install -qq libatlas-dev libatlas-base-dev liblapack-dev gfortran
+  - gcc --version
   - mkdir builds
   - pushd builds
   - pip install --upgrade pip setuptools  # Upgrade pip and setuptools to get ones with `wheel` support
