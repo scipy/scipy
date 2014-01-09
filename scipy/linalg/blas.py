@@ -253,7 +253,7 @@ def get_blas_funcs(names, arrays=(), dtype=None):
     Parameters
     ----------
     names : str or sequence of str
-        Name(s) of BLAS functions withouth type prefix.
+        Name(s) of BLAS functions without type prefix.
 
     arrays : sequency of ndarrays, optional
         Arrays can be given to determine optiomal prefix of BLAS
