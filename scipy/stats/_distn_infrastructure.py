@@ -2716,7 +2716,7 @@ class rv_discrete(rv_generic):
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
         if any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
-            place(output, cond, self._pmf(*goodargs))
+            place(output, cond, np.clip(self._pmf(*goodargs),0,1))
         if output.ndim == 0:
             return output[()]
         return output
@@ -2792,7 +2792,7 @@ class rv_discrete(rv_generic):
 
         if any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
-            place(output, cond, self._cdf(*goodargs))
+            place(output, cond, np.clip(self._cdf(*goodargs),0,1))
         if output.ndim == 0:
             return output[()]
         return output
@@ -2870,7 +2870,7 @@ class rv_discrete(rv_generic):
         place(output, cond2, 1.0)
         if any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
-            place(output, cond, self._sf(*goodargs))
+            place(output, cond, np.clip(self._sf(*goodargs),0,1))
         if output.ndim == 0:
             return output[()]
         return output
