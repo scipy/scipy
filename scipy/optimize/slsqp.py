@@ -1,6 +1,6 @@
 """
 This module implements the Sequential Least SQuares Programming optimization
-algorithm (SLSQP), orginally developed by Dieter Kraft.
+algorithm (SLSQP), originally developed by Dieter Kraft.
 See http://www.netlib.org/toms/733
 
 Functions

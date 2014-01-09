@@ -17,7 +17,7 @@ class _BenchOptimizers(object):
     function_name : string
     fun : callable
     der : callable
-        function that returns the derivitive (jacobian, gradient) of fun
+        function that returns the derivative (jacobian, gradient) of fun
     hess : callable
         function that returns the hessian of fun
     minimizer_kwargs : kwargs

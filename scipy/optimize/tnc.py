@@ -102,7 +102,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
            gradient (a list of floats).
 
         2. Return the function value but supply gradient function
-           seperately as `fprime`.
+           separately as `fprime`.
 
         3. Return the function value and set ``approx_grad=True``.
 
@@ -130,7 +130,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         factors are up-low for interval bounded variables and
         1+|x| for the others.  Defaults to None.
     offset : array_like
-        Value to substract from each variable.  If None, the
+        Value to subtract from each variable.  If None, the
         offsets are (up+low)/2 for interval bounded variables
         and x for the others.
     messages :
@@ -282,7 +282,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
             factors are up-low for interval bounded variables and
             1+|x] fo the others.  Defaults to None
         offset : float
-            Value to substract from each variable.  If None, the
+            Value to subtract from each variable.  If None, the
             offsets are (up+low)/2 for interval bounded variables
             and x for the others.
         disp : bool

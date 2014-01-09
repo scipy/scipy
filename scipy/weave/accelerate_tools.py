@@ -132,7 +132,7 @@ class Vector(Type_Descriptor):
     module_init_code = 'import_array();\n'
     inbounder = "(PyArrayObject*)"
     outbounder = "(PyObject*)"
-    owned = 0  # Convertion is by casting!
+    owned = 0  # Conversion is by casting!
 
     prerequisites = Type_Descriptor.prerequisites + \
                     ['#include "numpy/arrayobject.h"']

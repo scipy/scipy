@@ -179,7 +179,7 @@ def configuration(parent_package='',top_path=None):
 
 def setup_package():
 
-    # Rewrite the version file everytime
+    # Rewrite the version file every time
     write_version_py()
 
     if HAVE_SPHINX:

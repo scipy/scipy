@@ -126,7 +126,7 @@ def inherit_docstring_from(cls):
 
 
 def indentcount_lines(lines):
-    ''' Minumum indent for all lines in line list
+    ''' Minimum indent for all lines in line list
 
     >>> lines = [' one', '  two', '   three']
     >>> indentcount_lines(lines)

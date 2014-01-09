@@ -251,7 +251,7 @@ class dummy_array(object):
                     end += dim_len
                 # the following is list like behavior,
                 # which isn't adhered to by arrays.
-                # FIX THIS ANOMOLY IN NUMERIC!
+                # FIX THIS ANOMALY IN NUMERIC!
                 if beg < 0:
                     beg = 0
                 if beg > dim_len:

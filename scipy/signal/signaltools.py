@@ -678,7 +678,7 @@ def lfiltic(b, a, y, x=None):
     Construct initial conditions for lfilter.
 
     Given a linear filter (b, a) and initial conditions on the output `y`
-    and the input `x`, return the inital conditions on the state vector zi
+    and the input `x`, return the initial conditions on the state vector zi
     which is used by `lfilter` to generate the output given the input.
 
     Parameters
