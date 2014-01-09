@@ -247,7 +247,7 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
         Name(s) of LAPACK functions without type prefix.
 
     arrays : sequence of ndarrays, optional
-        Arrays can be given to determine optional prefix of LAPACK
+        Arrays can be given to determine optimal prefix of LAPACK
         routines. If not given, double-precision routines will be
         used, otherwise the most generic type in arrays will be used.
 
