@@ -664,12 +664,12 @@ def linregress(*args):
     else:
         x = ma.array(args[0]).flatten()
         y = ma.array(args[1]).flatten()
-    m = ma.mask_or(ma.getmask(x), ma.getmask(y))
+    m = ma.mask_or(ma.getmask(x), ma.getmask(y), shrink=False)
     if m is not nomask:
-        x = ma.array(x,mask=m)
-        y = ma.array(y,mask=m)
+        x = ma.array(x, mask=m)
+        y = ma.array(y, mask=m)
 
-    #use same routine as stats for regression, return None, if invalid number of samples
+    # use same routine as stats for regression, return None, if invalid number of samples
     if (~m).sum() > 1:
         slope, intercept, r, prob, sterrest = stats.linregress(x.data[~m],y.data[~m])
         return slope, intercept, r, prob, sterrest
