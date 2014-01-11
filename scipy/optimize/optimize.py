@@ -712,7 +712,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     args : tuple, optional
         Extra arguments passed to f and fprime.
     gtol : float, optional
-        Gradient norm must be less than gtol before succesful termination.
+        Gradient norm must be less than gtol before successful termination.
     norm : float, optional
         Order of norm (Inf is max, -Inf is min)
     epsilon : int or ndarray, optional
@@ -1291,7 +1291,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     2. scipy.optimize.fmin_ncg is only for unconstrained minimization
         while scipy.optimize.fmin_tnc is for unconstrained minimization
         or box constrained minimization. (Box constraints give
-        lower and upper bounds for each variable seperately.)
+        lower and upper bounds for each variable separately.)
 
     References
     ----------
@@ -2703,7 +2703,7 @@ def show_options(solver=None, method=None):
             factors are up-low for interval bounded variables and
             1+|x] fo the others.  Defaults to None
         offset : float
-            Value to substract from each variable.  If None, the
+            Value to subtract from each variable.  If None, the
             offsets are (up+low)/2 for interval bounded variables
             and x for the others.
         maxCGit : int

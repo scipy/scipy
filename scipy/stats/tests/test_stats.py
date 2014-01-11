@@ -22,7 +22,7 @@ import numpy as np
 import scipy.stats as stats
 
 
-""" Numbers in docstrings begining with 'W' refer to the section numbers
+""" Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
     considered to be essential functionality.  True testing and
     evaluation of a statistics package requires use of the

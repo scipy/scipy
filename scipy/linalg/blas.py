@@ -162,8 +162,8 @@ def find_best_blas_type(arrays=(), dtype=None):
 
     Parameters
     ----------
-    arrays : sequency of ndarrays, optional
-        Arrays can be given to determine optiomal prefix of BLAS
+    arrays : sequence of ndarrays, optional
+        Arrays can be given to determine optimal prefix of BLAS
         routines. If not given, double-precision routines will be
         used, otherwise the most generic type in arrays will be used.
     dtype : str or dtype, optional
@@ -255,8 +255,8 @@ def get_blas_funcs(names, arrays=(), dtype=None):
     names : str or sequence of str
         Name(s) of BLAS functions without type prefix.
 
-    arrays : sequency of ndarrays, optional
-        Arrays can be given to determine optiomal prefix of BLAS
+    arrays : sequence of ndarrays, optional
+        Arrays can be given to determine optimal prefix of BLAS
         routines. If not given, double-precision routines will be
         used, otherwise the most generic type in arrays will be used.
 

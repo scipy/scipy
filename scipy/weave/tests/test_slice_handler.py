@@ -143,7 +143,7 @@ class TestTransformSlices(TestCase):
         ast_list = parser.suite(suite_string).tolist()
         slice_handler.transform_slices(ast_list)
         actual = ast_to_string(ast_list)
-        # Remove white space from expressions so that equivelant
+        # Remove white space from expressions so that equivalent
         # but differently formatted string will compare equally
         actual = replace_whitespace(actual)
         desired = replace_whitespace(desired)

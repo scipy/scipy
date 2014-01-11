@@ -249,7 +249,7 @@ docdict = {
     'before_notes': _doc_default_before_notes
 }
 
-# Reuse common content between continous and discrete docs, change some
+# Reuse common content between continuous and discrete docs, change some
 # minor bits.
 docdict_discrete = docdict.copy()
 

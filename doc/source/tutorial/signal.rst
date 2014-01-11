@@ -434,7 +434,7 @@ m<K,`
 
     z_{m}\left[n\right]=\sum_{p=0}^{K-m-1}\left(b_{m+p+1}x\left[n-p\right]-a_{m+p+1}y\left[n-p\right]\right).
 
-Using this formula we can find the intial condition vector
+Using this formula we can find the initial condition vector
 :math:`z_{0}\left[-1\right]` to :math:`z_{K-1}\left[-1\right]` given initial
 conditions on :math:`y` (and :math:`x` ). The command :func:`lfiltic` performs
 this function.
@@ -573,7 +573,7 @@ argument and several more filter design functions for specific filter types;
 e.g. :func:`ellip`.
 
 The example below designs an elliptic low-pass filter with defined passband
-and stopband ripple, repsectively. Note the much lower filter order (order 4)
+and stopband ripple, respectively. Note the much lower filter order (order 4)
 compared with the FIR filters from the examples above in order to reach the same 
 stop-band attenuation of :math:`\approx 60` dB.
 

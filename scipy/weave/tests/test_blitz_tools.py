@@ -82,7 +82,7 @@ class TestBlitz(TestCase):
         # this really should give more info...
         try:
             # this isn't very stringent.  Need to tighten this up and
-            # learn where failures are occuring.
+            # learn where failures are occurring.
             assert_(allclose(abs(actual.ravel()),abs(desired.ravel()),1e-4,1e-6))
         except:
             diff = actual-desired

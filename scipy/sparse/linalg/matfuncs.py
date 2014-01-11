@@ -364,7 +364,7 @@ class _ExpmPadeHelper(object):
         use_exact_onenorm : bool, optional
             If True then only the exact one-norm of matrix powers and products
             will be used. Otherwise, the one-norm of powers and products
-            may intially be estimated.
+            may initially be estimated.
         """
         self.A = A
         self._A2 = None

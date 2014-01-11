@@ -91,7 +91,7 @@ class _TestCommon:
     checked_dtypes = supported_dtypes
 
     def __init__(self):
-        # Cannonical data.
+        # Canonical data.
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
         self.datsp = self.spmatrix(self.dat)
 
