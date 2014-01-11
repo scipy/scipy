@@ -657,6 +657,23 @@ class rv_generic(object):
             # allows more general subclassing with *args
             self.numargs = len(shapes)
 
+    def _construct_doc(self, docdict):
+        """Construct the instance docstring with string substitutions."""
+        tempdict = docdict.copy()
+        tempdict['name'] = self.name or 'distname'
+        tempdict['shapes'] = self.shapes or ''
+
+        if self.shapes is None:
+            # remove shapes from call parameters if there are none
+            for item in ['callparams', 'default', 'before_notes']:
+                tempdict[item] = tempdict[item].replace(
+                    "\n%(shapes)s : array_like\n    shape parameters", "")
+        for i in range(2):
+            if self.shapes is None:
+                # necessary because we use %(shapes)s in two forms (w w/o ", ")
+                self.__doc__ = self.__doc__.replace("%(shapes)s, ", "")
+            self.__doc__ = doccer.docformat(self.__doc__, tempdict)
+
     def freeze(self, *args, **kwds):
         """Freeze the distribution for the given arguments.
 
@@ -1391,7 +1408,7 @@ class rv_continuous(rv_generic):
                 self._construct_default_doc(longname=longname,
                                             extradoc=extradoc)
             else:
-                self._construct_doc()
+                self._construct_doc(docdict)
 
     def _construct_default_doc(self, longname=None, extradoc=None):
         """Construct instance docstring from the default template."""
@@ -1404,24 +1421,7 @@ class rv_continuous(rv_generic):
         self.__doc__ = ''.join(['%s continuous random variable.' % longname,
                                 '\n\n%(before_notes)s\n', docheaders['notes'],
                                 extradoc, '\n%(example)s'])
-        self._construct_doc()
-
-    def _construct_doc(self):
-        """Construct the instance docstring with string substitutions."""
-        tempdict = docdict.copy()
-        tempdict['name'] = self.name or 'distname'
-        tempdict['shapes'] = self.shapes or ''
-
-        if self.shapes is None:
-            # remove shapes from call parameters if there are none
-            for item in ['callparams', 'default', 'before_notes']:
-                tempdict[item] = tempdict[item].replace(
-                    "\n%(shapes)s : array_like\n    shape parameters", "")
-        for i in range(2):
-            if self.shapes is None:
-                # necessary because we use %(shapes)s in two forms (w w/o ", ")
-                self.__doc__ = self.__doc__.replace("%(shapes)s, ", "")
-            self.__doc__ = doccer.docformat(self.__doc__, tempdict)
+        self._construct_doc(docdict)
 
     def _ppf_to_solve(self, x, q, *args):
         return self.cdf(*(x, )+args)-q
@@ -2611,7 +2611,7 @@ class rv_discrete(rv_generic):
                 self._construct_default_doc(longname=longname,
                                             extradoc=extradoc)
             else:
-                self._construct_doc()
+                self._construct_doc(docdict_discrete)
 
             #discrete RV do not have the scale parameter, remove it
             self.__doc__ = self.__doc__.replace(
@@ -2627,24 +2627,7 @@ class rv_discrete(rv_generic):
         self.__doc__ = ''.join(['%s discrete random variable.' % longname,
                                 '\n\n%(before_notes)s\n', docheaders['notes'],
                                 extradoc, '\n%(example)s'])
-        self._construct_doc()
-
-    def _construct_doc(self):
-        """Construct the instance docstring with string substitutions."""
-        tempdict = docdict_discrete.copy()
-        tempdict['name'] = self.name or 'distname'
-        tempdict['shapes'] = self.shapes or ''
-
-        if self.shapes is None:
-            # remove shapes from call parameters if there are none
-            for item in ['callparams', 'default', 'before_notes']:
-                tempdict[item] = tempdict[item].replace(
-                    "\n%(shapes)s : array_like\n    shape parameters", "")
-        for i in range(2):
-            if self.shapes is None:
-                # necessary because we use %(shapes)s in two forms (w w/o ", ")
-                self.__doc__ = self.__doc__.replace("%(shapes)s, ", "")
-            self.__doc__ = doccer.docformat(self.__doc__, tempdict)
+        self._construct_doc(docdict_discrete)
 
     def _nonzero(self, k, *args):
         return floor(k) == k
