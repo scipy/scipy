@@ -95,6 +95,8 @@ def test_cont_basic():
         for distname, arg in distcont[:]:
             if distname in distslow:
                 continue
+            if distname is 'levy_stable':
+                continue
             distfn = getattr(stats, distname)
             np.random.seed(765456)
             sn = 500
@@ -146,6 +148,8 @@ def test_cont_basic_slow():
         warnings.filterwarnings('ignore', category=integrate.IntegrationWarning)
         for distname, arg in distcont[:]:
             if distname not in distslow:
+                continue
+            if distname is 'levy_stable':
                 continue
             distfn = getattr(stats, distname)
             np.random.seed(765456)
@@ -199,6 +203,8 @@ def test_moments():
         fail_normalization = set(['vonmises', 'ksone'])
         fail_higher = set(['vonmises', 'ksone', 'ncf'])
         for distname, arg in distcont[:]:
+            if distname is 'levy_stable':
+                continue
             distfn = getattr(stats, distname)
             m, v, s, k = distfn.stats(*arg, moments='mvsk')
             cond1, cond2 = distname in fail_normalization, distname in fail_higher
