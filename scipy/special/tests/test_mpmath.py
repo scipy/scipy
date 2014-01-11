@@ -920,9 +920,10 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_ci(self):
         def ci(x):
             return sc.sici(x)[1]
+        # oscillating function: limit range
         assert_mpmath_equal(ci,
                             mpmath.ci,
-                            [Arg()])
+                            [Arg(-1e8, 1e8)])
 
     def test_digamma(self):
         assert_mpmath_equal(sc.digamma,
