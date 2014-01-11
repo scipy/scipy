@@ -187,6 +187,7 @@ do one of::
     $ python runtests.py -v -t scipy/special/tests/test_basic.py:test_xlogy
     $ python runtests.py --ipython
     $ python runtests.py --python somescript.py
+    $ python runtests.py --bench
 
 This builds Scipy first, so the first time it may take some time.  If
 you specify ``-n``, the tests are run against the version of Scipy (if
