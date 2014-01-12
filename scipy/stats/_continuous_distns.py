@@ -2367,7 +2367,7 @@ class johnsonsb_gen(rv_continuous):
 
     def _ppf(self, q, a, b):
         return 1.0 / (1 + exp(-1.0 / b * (_norm_ppf(q) - a)))
-johnsonsb = johnsonsb_gen(a=0.0, b=1.0, name='johnsonb')
+johnsonsb = johnsonsb_gen(a=0.0, b=1.0, name='johnsonsb')
 
 
 class johnsonsu_gen(rv_continuous):
@@ -3951,7 +3951,7 @@ class wald_gen(invgauss_gen):
     -----
     The probability density function for `wald` is::
 
-        wald.pdf(x, a) = 1/sqrt(2*pi*x**3) * exp(-(x-1)**2/(2*x))
+        wald.pdf(x) = 1/sqrt(2*pi*x**3) * exp(-(x-1)**2/(2*x))
 
     for ``x > 0``.
 
