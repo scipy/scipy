@@ -155,10 +155,11 @@ class ode(object):
         - rtol : float or sequence
           relative tolerance for solution
         - lband : None or int
-        - rband : None or int
-          Jacobian band width, jac[i,j] != 0 for i-lband <= j <= i+rband.
+        - uband : None or int
+          Jacobian band width, jac[i,j] != 0 for i-lband <= j <= i+uband.
           Setting these requires your jac routine to return the jacobian
-          in packed format, jac_packed[i-j+lband, j] = jac[i,j].
+          in packed format, jac_packed[i-j+uband, j] = jac[i,j]. The
+          dimension of the matrix must be (lband+uband+1, len(y)).
         - method: 'adams' or 'bdf'
           Which solver to use, Adams (non-stiff) or BDF (stiff)
         - with_jacobian : bool
@@ -226,10 +227,10 @@ class ode(object):
         - rtol : float or sequence
           relative tolerance for solution
         - lband : None or int
-        - rband : None or int
-          Jacobian band width, jac[i,j] != 0 for i-lband <= j <= i+rband.
+        - uband : None or int
+          Jacobian band width, jac[i,j] != 0 for i-lband <= j <= i+uband.
           Setting these requires your jac routine to return the jacobian
-          in packed format, jac_packed[i-j+lband, j] = jac[i,j].
+          in packed format, jac_packed[i-j+uband, j] = jac[i,j].
         - with_jacobian : bool
           Whether to use the jacobian
         - nsteps : int
