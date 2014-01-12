@@ -626,7 +626,7 @@ class _PPolyBase(object):
         nu : int, optional
             Order of derivative to evaluate. Must be non-negative.
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs.
 
         Returns
@@ -674,7 +674,7 @@ class PPoly(_PPolyBase):
         Polynomial breakpoints. These must be sorted in
         increasing order.
     extrapolate : bool, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs. Default: True.
 
     Attributes
@@ -813,7 +813,7 @@ class PPoly(_PPolyBase):
         b : float
             Upper integration bound
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs.
 
         Returns
@@ -917,7 +917,7 @@ class PPoly(_PPolyBase):
         tck
             A spline, as returned by `splrep`
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs. Default: True.
 
         """
@@ -941,7 +941,7 @@ class PPoly(_PPolyBase):
         bp : BPoly
             A Bernstein basis polynomial, as created by BPoly
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs. Default: True.
 
         """
@@ -986,7 +986,7 @@ class BPoly(_PPolyBase):
         Polynomial breakpoints. These must be sorted in
         increasing order.
     extrapolate : bool, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs. Default: True.
 
     Attributes
@@ -1109,7 +1109,7 @@ class BPoly(_PPolyBase):
         pp : PPoly
             A piecewise polynomial in the power basis
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs. Default: True.
 
         """
@@ -1147,7 +1147,7 @@ class BPoly(_PPolyBase):
         axis : int, optional
             Interpolation axis, default is 0.
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs. Default: True.        
 
         Notes
@@ -1404,7 +1404,7 @@ class NdPPoly(object):
         Polynomial breakpoints for each dimension. These must be
         sorted in increasing order.
     extrapolate : bool, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs. Default: True.
 
     Attributes
@@ -1495,7 +1495,7 @@ class NdPPoly(object):
         nu : tuple, optional
             Orders of derivatives to evaluate. Each must be non-negative.
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs.
 
         Returns
@@ -1710,7 +1710,7 @@ class NdPPoly(object):
         axis : int
             Dimension over which to compute the 1D integrals
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs.
 
         Returns
@@ -1761,7 +1761,7 @@ class NdPPoly(object):
             Sequence of lower and upper bounds for each dimension,
             ``[(a[0], b[0]), ..., (a[ndim-1], b[ndim-1])]``
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs.
 
         Returns
