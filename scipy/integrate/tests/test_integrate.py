@@ -42,14 +42,23 @@ class TestOde(TestCase):
         # ode has callback arguments in different order than odeint
         f = lambda t, z: problem.f(z, t)
         jac = None
+
+        integrator_params = {}
         if hasattr(problem, 'jac'):
             jac = lambda t, z: problem.jac(z, t)
+            integrator_params['with_jacobian'] = True
+
+        if problem.lband != None:
+            integrator_params['uband'] = problem.uband
+            integrator_params['lband'] = problem.lband
 
         ig = ode(f, jac)
         ig.set_integrator(integrator,
                           atol=problem.atol/10,
                           rtol=problem.rtol/10,
-                          method=method)
+                          method=method,
+                          **integrator_params)
+
         ig.set_initial_value(problem.z0, t=0.0)
         z = ig.integrate(problem.stop_t)
 
@@ -352,6 +361,9 @@ class ODE:
     stop_t = 1
     z0 = []
 
+    lband = None
+    uband = None
+
     atol = 1e-6
     rtol = 1e-5
 
@@ -411,7 +423,67 @@ class Pi(ODE):
         u = -2j * np.arctan(10)
         return allclose(u, zs[-1,:], atol=self.atol, rtol=self.rtol)
 
-PROBLEMS = [SimpleOscillator, ComplexExp, Pi]
+
+lmbd = [0.17, 0.23, 0.29] # fictious decay constants
+
+class CoupledDecay(ODE):
+    r"""
+    3 coupled decays suited for banded treatment
+    (banded mode makes is neccessary when N>>3)
+    """
+
+    stiff = True
+    stop_t = 0.5
+    z0 = [5.0, 7.0, 13.0]
+    ml = 1
+    mu = 1
+
+    def f(self, z, t):
+        return np.array([-lmbd[0]*z[0], -lmbd[1]*z[1]+lmbd[0]*z[0], -lmbd[2]*z[2]+lmbd[1]*z[1]])
+
+    def jac(self, z, t):
+        j = np.zeros((1*self.ml+self.mu+1, 3), order='F')
+        def set_j(ri, ci, val):
+            j[self.mu+ri-ci, ci] = val
+        set_j(0, 0, -lmbd[0])
+        set_j(1, 0,  lmbd[0])
+        set_j(1, 1, -lmbd[1])
+        set_j(2, 1,  lmbd[1])
+        set_j(2, 2, -lmbd[2])
+        return j
+
+    def verify(self, zs, t):
+        # if isinstance(t, float) or isinstance(t, int):
+        #     t = np.array([t])
+        # nt = t.size
+        u = np.vstack(( # Formulae derived by hand
+            self.z0[0]*np.exp(-lmbd[0]*t),
+            self.z0[1]*np.exp(-lmbd[1] * t) + \
+                self.z0[0] * lmbd[0] / \
+                (lmbd[1] - lmbd[0]) * \
+                (np.exp(-lmbd[0]*t) - \
+                np.exp( - lmbd[1] * t)),
+            self.z0[2] * np.exp(-lmbd[2] * t) + \
+                self.z0[1] * lmbd[1] / \
+                (lmbd[2] - lmbd[1]) * \
+                (np.exp(-lmbd[1]*t) - \
+                 np.exp(-lmbd[2]*t)) + \
+                lmbd[1] * lmbd[0] * \
+                self.z0[0] / (lmbd[1] - \
+                              lmbd[0]) * \
+                (1 / (lmbd[2] - \
+                      lmbd[0]) * \
+                 (np.exp( - lmbd[0] * t) - \
+                  np.exp( - lmbd[2] * t)) - \
+                 1 / (lmbd[2] - \
+                      lmbd[1]) * \
+                 (np.exp( - lmbd[1] * t) - \
+                  np.exp( - lmbd[2] * t)))
+        )).transpose()
+        return allclose(u, zs, atol=self.atol, rtol=self.rtol)
+
+
+PROBLEMS = [SimpleOscillator, ComplexExp, Pi, CoupledDecay]
 
 #------------------------------------------------------------------------------
 
