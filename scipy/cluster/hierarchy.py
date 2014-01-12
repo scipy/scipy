@@ -1687,24 +1687,24 @@ def _get_tick_rotation(p):
 def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
                      no_labels, color_list, leaf_font_size=None,
                      leaf_rotation=None, contraction_marks=None,
-                     axis=None):
+                     ax=None):
     # Import matplotlib here so that it's not imported unless dendrograms
     # are plotted. Raise an informative error if importing fails.
     try:
         # if an axis is provided, don't use pylab at all
-        if axis is None:
+        if ax is None:
             import matplotlib.pylab
         import matplotlib.patches
         import matplotlib.collections
     except ImportError:
         raise ImportError("You must install the matplotlib library to plot the dendrogram. Use no_plot=True to calculate the dendrogram without plotting.")
 
-    if axis is None:
-        axis = matplotlib.pylab.gca()
+    if ax is None:
+        ax = matplotlib.pylab.gca()
         # if we're using pylab, we want to trigger a draw at the end
-        axis_gca = True
+        trigger_redraw = True
     else:
-        axis_gca = False
+        trigger_redraw = False
         
     # Independent variable plot width
     ivw = len(ivl) * 10
@@ -1712,19 +1712,19 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
     dvw = mh + mh * 0.05
     ivticks = np.arange(5, len(ivl) * 10 + 5, 10)
     if orientation == 'top':
-        axis.set_ylim([0, dvw])
-        axis.set_xlim([0, ivw])
+        ax.set_ylim([0, dvw])
+        ax.set_xlim([0, ivw])
         xlines = icoords
         ylines = dcoords
         if no_labels:
-            axis.set_xticks([])
-            axis.set_xticklabels([])
+            ax.set_xticks([])
+            ax.set_xticklabels([])
         else:
-            axis.set_xticks(ivticks)
-            axis.set_xticklabels(ivl)
-        axis.xaxis.set_ticks_position('bottom')
+            ax.set_xticks(ivticks)
+            ax.set_xticklabels(ivl)
+        ax.xaxis.set_ticks_position('bottom')
 
-        lbls = axis.get_xticklabels()
+        lbls = ax.get_xticklabels()
         if leaf_rotation:
             map(lambda lbl: lbl.set_rotation(leaf_rotation), lbls)
         else:
@@ -1737,21 +1737,21 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             map(lambda lbl: lbl.set_rotation(leaf_fs), lbls)
 
         # Make the tick marks invisible because they cover up the links
-        for line in axis.get_xticklines():
+        for line in ax.get_xticklines():
             line.set_visible(False)
     elif orientation == 'bottom':
-        axis.set_ylim([dvw, 0])
-        axis.set_xlim([0, ivw])
+        ax.set_ylim([dvw, 0])
+        ax.set_xlim([0, ivw])
         xlines = icoords
         ylines = dcoords
         if no_labels:
-            axis.set_xticks([])
-            axis.set_xticklabels([])
+            ax.set_xticks([])
+            ax.set_xticklabels([])
         else:
-            axis.set_xticks(ivticks)
-            axis.set_xticklabels(ivl)
+            ax.set_xticks(ivticks)
+            ax.set_xticklabels(ivl)
 
-        lbls = axis.get_xticklabels()
+        lbls = ax.get_xticklabels()
         if leaf_rotation:
             map(lambda lbl: lbl.set_rotation(leaf_rotation), lbls)
         else:
@@ -1764,54 +1764,54 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             leaf_fs = float(_get_tick_text_size(p))
             map(lambda lbl: lbl.set_rotation(leaf_fs), lbls)
 
-        axis.xaxis.set_ticks_position('top')
+        ax.xaxis.set_ticks_position('top')
         # Make the tick marks invisible because they cover up the links
-        for line in axis.get_xticklines():
+        for line in ax.get_xticklines():
             line.set_visible(False)
     elif orientation == 'left':
-        axis.set_xlim([0, dvw])
-        axis.set_ylim([0, ivw])
+        ax.set_xlim([0, dvw])
+        ax.set_ylim([0, ivw])
         xlines = dcoords
         ylines = icoords
         if no_labels:
-            axis.set_yticks([])
-            axis.set_yticklabels([])
+            ax.set_yticks([])
+            ax.set_yticklabels([])
         else:
-            axis.set_yticks(ivticks)
-            axis.set_yticklabels(ivl)
+            ax.set_yticks(ivticks)
+            ax.set_yticklabels(ivl)
 
-        lbls = axis.get_yticklabels()
+        lbls = ax.get_yticklabels()
         if leaf_rotation:
             map(lambda lbl: lbl.set_rotation(leaf_rotation), lbls)
         if leaf_font_size:
             map(lambda lbl: lbl.set_size(leaf_font_size), lbls)
 
-        axis.yaxis.set_ticks_position('left')
+        ax.yaxis.set_ticks_position('left')
         # Make the tick marks invisible because they cover up the
         # links
-        for line in axis.get_yticklines():
+        for line in ax.get_yticklines():
             line.set_visible(False)
     elif orientation == 'right':
-        axis.set_xlim([dvw, 0])
-        axis.set_ylim([0, ivw])
+        ax.set_xlim([dvw, 0])
+        ax.set_ylim([0, ivw])
         xlines = dcoords
         ylines = icoords
         if no_labels:
-            axis.set_yticks([])
-            axis.set_yticklabels([])
+            ax.set_yticks([])
+            ax.set_yticklabels([])
         else:
-            axis.set_yticks(ivticks)
-            axis.set_yticklabels(ivl)
+            ax.set_yticks(ivticks)
+            ax.set_yticklabels(ivl)
 
-        lbls = axis.get_yticklabels()
+        lbls = ax.get_yticklabels()
         if leaf_rotation:
             map(lambda lbl: lbl.set_rotation(leaf_rotation), lbls)
         if leaf_font_size:
             map(lambda lbl: lbl.set_size(leaf_font_size), lbls)
 
-        axis.yaxis.set_ticks_position('right')
+        ax.yaxis.set_ticks_position('right')
         # Make the tick marks invisible because they cover up the links
-        for line in axis.get_yticklines():
+        for line in ax.get_yticklines():
             line.set_visible(False)
 
     # Let's use collections instead. This way there is a separate legend
@@ -1836,18 +1836,18 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
 
     for color in colors_used:
         if color != 'b':
-            axis.add_collection(colors_to_collections[color])
+            ax.add_collection(colors_to_collections[color])
     # If there is a blue grouping (i.e., links above the color threshold),
     # it should go last.
     if 'b' in colors_to_collections:
-        axis.add_collection(colors_to_collections['b'])
+        ax.add_collection(colors_to_collections['b'])
 
     if contraction_marks is not None:
         if orientation in ('left', 'right'):
             for (x, y) in contraction_marks:
                 e = matplotlib.patches.Ellipse((y, x),
                                                width=dvw / 100, height=1.0)
-                axis.add_artist(e)
+                ax.add_artist(e)
                 e.set_clip_box(axis.bbox)
                 e.set_alpha(0.5)
                 e.set_facecolor('k')
@@ -1855,12 +1855,12 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             for (x, y) in contraction_marks:
                 e = matplotlib.patches.Ellipse((x, y),
                                              width=1.0, height=dvw / 100)
-                axis.add_artist(e)
+                ax.add_artist(e)
                 e.set_clip_box(axis.bbox)
                 e.set_alpha(0.5)
                 e.set_facecolor('k')
 
-    if axis_gca:
+    if trigger_redraw:
         matplotlib.pylab.draw_if_interactive()
 
 _link_line_colors = ['g', 'r', 'c', 'm', 'y', 'k']
@@ -1897,7 +1897,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                no_plot=False, no_labels=False, color_list=None,
                leaf_font_size=None, leaf_rotation=None, leaf_label_func=None,
                no_leaves=False, show_contracted=False,
-               link_color_func=None, axis=None):
+               link_color_func=None, ax=None):
     """
     Plots the hierarchical clustering as a dendrogram.
 
@@ -2170,7 +2170,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                          no_labels, color_list, leaf_font_size=leaf_font_size,
                          leaf_rotation=leaf_rotation,
                          contraction_marks=contraction_marks,
-                         axis=axis)
+                         ax=ax)
 
     return R
 
