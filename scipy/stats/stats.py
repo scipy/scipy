@@ -1409,6 +1409,14 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
     --------
     percentileofscore, numpy.percentile
 
+    Notes
+    -----
+    This function will become obsolete in the future.
+    For Numpy 1.9 and higher, `numpy.percentile` provides all the functionality
+    that `scoreatpercentile` provides.  And it's significantly faster.
+    Therefore it's recommended to use `numpy.percentile` for users that have
+    numpy >= 1.9.
+
     Examples
     --------
     >>> from scipy import stats
