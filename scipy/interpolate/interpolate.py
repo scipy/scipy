@@ -1649,7 +1649,7 @@ class NdPPoly(object):
         Polynomial breakpoints for each dimension. These must be
         sorted in increasing order.
     extrapolate : bool, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs. Default: True.
 
     Attributes
@@ -1740,7 +1740,7 @@ class NdPPoly(object):
         nu : tuple, optional
             Orders of derivatives to evaluate. Each must be non-negative.
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs.
 
         Returns
@@ -1955,7 +1955,7 @@ class NdPPoly(object):
         axis : int
             Dimension over which to compute the 1D integrals
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs.
 
         Returns
@@ -2006,7 +2006,7 @@ class NdPPoly(object):
             Sequence of lower and upper bounds for each dimension,
             ``[(a[0], b[0]), ..., (a[ndim-1], b[ndim-1])]``
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs.
 
         Returns

@@ -133,7 +133,7 @@ def evaluate_nd(double_or_complex[:,:,::1] c,
         Orders of derivative to evaluate.  The derivative is evaluated
         piecewise and may have discontinuities.
     extrapolate : int, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs.
     out : ndarray, shape (r, n)
         Value of each polynomial at each of the input points.
