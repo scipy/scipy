@@ -738,8 +738,13 @@ class TestExpmConditionNumber(TestCase):
             f = functools.partial(_help_expm_cond_search,
                     A, A_norm, X, X_norm, eps)
             guess = np.ones(n*n)
-            out = minimize(f, guess, method='L-BFGS-B',
-                    options=dict(approx_grad=True))
+            # NOTE: this shouldn't work, because minimize should want
+            #       f to return (f(x), f'(x)) instead of f(x)
+            #       because approx_grad=True is not specified,
+            #       but for some reason it works...
+            out = minimize(f, guess, method='L-BFGS-B')
+            xopt = out.x
+            yopt = f(xopt)
             p_best = eps * _normalized_like(np.reshape(xopt, A.shape), A)
             p_best_relerr = _relative_error(expm, A, p_best)
             assert_allclose(p_best_relerr, -yopt * eps)
