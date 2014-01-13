@@ -2065,6 +2065,11 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
         colors the direct links below each untruncated non-singleton node
         ``k`` using ``colors[k]``.
+    ax : matplotlib Axes instance, optional
+        If None and no_plot is not True, the dendrogram will be plotted
+        on the current axes. Otherwise if no_plot is not True the
+        dendrogram will be plotted on the given Axes. This can be useful
+        if the dendrogram is part of a more complex figure.
 
     Returns
     -------
