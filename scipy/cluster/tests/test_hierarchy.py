@@ -37,7 +37,7 @@ from __future__ import division, print_function, absolute_import
 import os.path
 
 import numpy as np
-from numpy.testing import TestCase, run_module_suite
+from numpy.testing import TestCase, run_module_suite, dec
 
 from scipy.lib.six import xrange
 from scipy.lib.six import u
@@ -48,6 +48,16 @@ from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage,
         correspond, is_monotonic, maxdists, maxinconsts, maxRstat, \
         is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram
 from scipy.spatial.distance import squareform, pdist
+
+
+# Matplotlib is not a scipy dependency but is optionally used in dendrogram, so
+# check if it's available
+try:
+    import matplotlib.pyplot as plt
+    have_matplotlib = True
+except:
+    have_matplotlib = False
+
 
 _tdist = np.array([[0, 662, 877, 255, 412, 996],
                    [662, 0, 295, 468, 268, 400],
@@ -1374,6 +1384,22 @@ class TestDendrogram(TestCase):
         R = dendrogram(Z, no_plot=True)
         leaves = R["leaves"]
         self.assertEqual(leaves, [2, 5, 1, 0, 3, 4])
+        
+    @dec.skipif(not have_matplotlib)
+    def test_dendrogram_plot(self):
+        "Tests dendrogram plotting."
+        Z = linkage(_ytdist, 'single')
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+
+        # test that dendrogram accepts ax keyword
+        R1 = dendrogram(Z, ax=ax)
+        plt.close()
+
+        # test plotting to gca (will import pylab)
+        R2 = dendrogram(Z)
+        plt.close()
 
 
 def calculate_maximum_distances(Z):
