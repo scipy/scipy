@@ -548,10 +548,9 @@ def bmat(blocks, format=None, dtype=None):
             A = A.astype(dtype)
         return A
 
-    idx_dtype = get_index_dtype(nnz=max(M, N))
     block_mask = np.zeros(blocks.shape, dtype=np.bool)
-    brow_lengths = np.zeros(M, dtype=idx_dtype)
-    bcol_lengths = np.zeros(N, dtype=idx_dtype)
+    brow_lengths = np.zeros(M, dtype=np.int64)
+    bcol_lengths = np.zeros(N, dtype=np.int64)
 
     # convert everything to COO format
     for i in range(M):
@@ -586,8 +585,10 @@ def bmat(blocks, format=None, dtype=None):
     row_offsets = np.concatenate(([0], np.cumsum(brow_lengths)))
     col_offsets = np.concatenate(([0], np.cumsum(bcol_lengths)))
 
+    shape = (np.sum(brow_lengths), np.sum(bcol_lengths))
+
     data = np.empty(nnz, dtype=dtype)
-    idx_dtype = get_index_dtype(nnz=nnz)
+    idx_dtype = get_index_dtype(nnz=max(nnz, shape[0], shape[1]))
     row  = np.empty(nnz, dtype=idx_dtype)
     col  = np.empty(nnz, dtype=idx_dtype)
 
@@ -605,7 +606,6 @@ def bmat(blocks, format=None, dtype=None):
 
                 nnz += A.nnz
 
-    shape = (np.sum(brow_lengths), np.sum(bcol_lengths))
     return coo_matrix((data, (row, col)), shape=shape).asformat(format)
 
 
