@@ -519,8 +519,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         major_axis = self._swap((M,N))[0]
         other = self.__class__(other) # convert to this format
 
-        idx_dtype = get_index_dtype((self.indices, self.indptr,
-                                     other.indices, other.indptr))
+        idx_dtype = get_index_dtype((self.indptr, self.indices,
+                                     other.indptr, other.indices),
+                                    nnz=M*N)
         indptr = np.empty(major_axis + 1, dtype=idx_dtype)
 
         fn = getattr(sparsetools, self.format + '_matmat_pass1')

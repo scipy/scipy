@@ -339,8 +339,6 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         M, K1 = self.shape
         K2, N = other.shape
 
-        indptr = np.empty_like(self.indptr)
-
         R,n = self.blocksize
 
         # convert to this format
@@ -356,10 +354,17 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         else:
             other = other.tobsr(blocksize=(n,C))
 
+        idx_dtype = get_index_dtype((self.indptr, self.indices,
+                                     other.indptr, other.indices),
+                                    nnz=M*N)
+        indptr = np.empty(self.indptr.shape, dtype=idx_dtype)
+
         csr_matmat_pass1(M//R, N//C,
-                self.indptr, self.indices,
-                other.indptr, other.indices,
-                indptr)
+                         self.indptr.astype(idx_dtype),
+                         self.indices.astype(idx_dtype),
+                         other.indptr.astype(idx_dtype),
+                         other.indices.astype(idx_dtype),
+                         indptr)
 
         bnnz = indptr[-1]
 
