@@ -119,6 +119,8 @@ Inferential Stats
    ttest_rel
    chisquare
    power_divergence
+   jensen_shannon_divergence
+   jsd_matrix
    ks_2samp
    mannwhitneyu
    ranksums
@@ -193,6 +195,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
+           'jsd_matrix', 'jensen_shannon_divergence',
            'chisqprob', 'betai',
            'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
            'ss', 'square_of_sums', 'fastsort', 'rankdata',
@@ -5025,6 +5028,70 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         raise ValueError(
             "Invalid method '%s'. Options are 'fisher' or 'stouffer'", method)
 
+def jensen_shannon_divergence(a, b):
+    """Compute Jensen-Shannon Divergence
+
+    Parameters
+    ----------
+    a : array-like
+        possibly unnormalized distribution
+    b : array-like
+        possibly unnormalized distribution. Must be of same size as ``a``.
+
+    Returns
+    -------
+    j : float
+
+    See Also
+    --------
+    jsd_matrix : function
+        Computes all pair-wise distances for a set of measurements
+    """
+    a = np.asanyarray(a, dtype=float)
+    b = np.asanyarray(b, dtype=float)
+    a = a/a.sum()
+    b = b/b.sum()
+    m = (a + b)
+    m /= 2.
+    m = np.where(m,m,1.)
+    return 0.5*np.sum(special.xlogy(a,a/m)+special.xlogy(b,b/m))
+
+def jsd_matrix(data):
+    """Compressed Jensen-Shannon Divergence Matrix
+
+    Parameters
+    ----------
+    data : array-like
+    
+    Returns
+    -------
+    dist_matrix : ndarray
+        Compressed distance matrix. This is in the same format as the output of
+        ``scipy.spatial.distance.pdist``.
+
+    See Also
+    --------
+    jensen_shannon_divergence : function
+        Computes JSD for a pair of measurements.
+    """
+    n = len(data)
+    data = np.array(data)
+    data /= data.sum(1)[:,None]
+    output = np.empty( int(n*(n-1)/2), np.double)
+    p = 0
+    for i,a in enumerate(data):
+        bs = data[(i+1):]
+        m = bs + a
+        m /= 2.
+        m = np.where(m,m,1.)
+        out = special.xlogy(a, a/m).sum(1)
+        out += special.xlogy(bs, bs/m).sum(1)
+        output[p:(p+len(bs))] = out
+        p += len(bs)
+    assert p == output.size
+    output *= (output > 0)
+    output *= 0.5
+    return output
 #####################################
 #      PROBABILITY CALCULATIONS     #
 #####################################

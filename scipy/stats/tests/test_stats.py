@@ -3998,5 +3998,28 @@ class TestCombinePvalues(TestCase):
                                      weights=np.array((1, 4, 9)))
         assert_approx_equal(p, 0.1464, significant=4)
 
+def test_jensen_shannon_divergence():
+    for _ in xrange(8):
+        a = np.random.random(16)
+        b = np.random.random(16)
+        c = (a+b)
+
+        assert stats.jensen_shannon_divergence(a,a) < 1e-4
+        assert stats.jensen_shannon_divergence(a,b) > 0.
+        assert stats.jensen_shannon_divergence(a,b) > stats.jensen_shannon_divergence(a,c)
+        assert np.allclose(stats.jensen_shannon_divergence(a,b),stats.jensen_shannon_divergence(a,b*6))
+
+
+def test_jsd_matrix():
+    from scipy.spatial.distance import squareform
+    x = np.random.random((50,16))
+    D = squareform(stats.jsd_matrix(x))
+    assert np.allclose(D,D.T)
+    assert D.trace() == 0
+    assert np.all(D >= 0)
+    for i in xrange(len(x)):
+        for j in xrange(i+1,len(x)):
+            assert np.allclose(D[i,j], stats.jensen_shannon_divergence(x[i], x[j]))
+
 if __name__ == "__main__":
     run_module_suite()
