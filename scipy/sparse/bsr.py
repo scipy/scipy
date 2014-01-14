@@ -139,7 +139,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                     blocksize = tuple(blocksize)
                 self.data = np.zeros((0,) + blocksize, getdtype(dtype, default=float))
 
-                idx_dtype = get_index_dtype(nnz=M*N)
+                idx_dtype = get_index_dtype(nnz=max(M, N))
                 self.indices = np.zeros(0, dtype=idx_dtype)
 
                 R,C = blocksize

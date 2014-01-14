@@ -35,7 +35,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 # create empty matrix
                 self.shape = arg1   # spmatrix checks for errors here
                 M, N = self.shape
-                idx_dtype = get_index_dtype(nnz=M*N)
+                idx_dtype = get_index_dtype(nnz=max(M, N))
                 self.data = np.zeros(0, getdtype(dtype, default=float))
                 self.indices = np.zeros(0, idx_dtype)
                 self.indptr = np.zeros(self._swap((M,N))[0] + 1, dtype=idx_dtype)
