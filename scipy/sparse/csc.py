@@ -164,8 +164,8 @@ class csc_matrix(_cs_matrix, IndexMixin):
         # Get row and col indices, from _cs_matrix.tocoo
         major_dim, minor_dim = self._swap(self.shape)
         minor_indices = self.indices
-        major_indices = np.empty(len(minor_indices), dtype=np.intc)
-        sparsetools.expandptr(major_dim,self.indptr, major_indices)
+        major_indices = np.empty(len(minor_indices), dtype=self.indptr.dtype)
+        sparsetools.expandptr(major_dim, self.indptr, major_indices)
         row, col = self._swap((major_indices, minor_indices))
 
         # Sort them to be in C-style order
