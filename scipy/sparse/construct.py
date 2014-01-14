@@ -689,8 +689,10 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
 
     mn = m * n
 
-    # XXX: sparse uses intc instead of intp...
-    tp = np.intp
+    tp = np.intc
+    if mn > np.iinfo(tp).max:
+        tp = np.int64
+
     if mn > np.iinfo(tp).max:
         msg = """\
 Trying to generate a random sparse matrix such as the product of dimensions is
