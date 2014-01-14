@@ -3999,7 +3999,7 @@ class TestCombinePvalues(TestCase):
         assert_approx_equal(p, 0.1464, significant=4)
 
 def test_jensen_shannon_divergence():
-    for _ in xrange(8):
+    for _ in range(8):
         a = np.random.random(16)
         b = np.random.random(16)
         c = (a+b)
@@ -4017,8 +4017,8 @@ def test_jsd_matrix():
     assert np.allclose(D,D.T)
     assert D.trace() == 0
     assert np.all(D >= 0)
-    for i in xrange(len(x)):
-        for j in xrange(i+1,len(x)):
+    for i in range(len(x)):
+        for j in range(i+1,len(x)):
             assert np.allclose(D[i,j], stats.jensen_shannon_divergence(x[i], x[j]))
 
 if __name__ == "__main__":
