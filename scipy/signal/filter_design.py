@@ -7,7 +7,7 @@ import warnings
 import numpy
 from numpy import atleast_1d, poly, polyval, roots, real, asarray, allclose, \
     resize, pi, absolute, logspace, r_, sqrt, tan, log10, arctan, arcsinh, \
-    cos, exp, cosh, arccosh, ceil, conjugate, zeros, sinh
+    sin, exp, cosh, arccosh, ceil, conjugate, zeros, sinh
 from numpy import mintypecode
 from scipy import special, optimize
 from scipy.misc import comb
@@ -1610,8 +1610,9 @@ def buttap(N):
 
     """
     z = numpy.array([])
-    n = numpy.arange(1, N + 1)
-    p = numpy.exp(1j * (2 * n - 1) / (2.0 * N) * pi) * 1j
+    m = numpy.arange(-N+1, N, 2)
+    # Middle value is 0 to ensure an exactly real pole
+    p = -numpy.exp(1j * pi * m / (2 * N))
     k = 1
     return z, p, k
 
@@ -1625,15 +1626,20 @@ def cheb1ap(N, rp):
 
     """
     z = numpy.array([])
+
+    # Ripple factor (epsilon)
     eps = numpy.sqrt(10 ** (0.1 * rp) - 1.0)
-    n = numpy.arange(1, N + 1)
-    mu = 1.0 / N * numpy.log((1.0 + numpy.sqrt(1 + eps * eps)) / eps)
-    theta = pi / 2.0 * (2 * n - 1.0) / N
-    p = (-numpy.sinh(mu) * numpy.sin(theta) +
-         1j * numpy.cosh(mu) * numpy.cos(theta))
+    mu = 1.0 / N * arcsinh(1 / eps)
+
+    # Arrange poles in an ellipse on the left half of the S-plane
+    m = numpy.arange(-N+1, N, 2)
+    theta = pi * m / (2*N)
+    p = -sinh(mu + 1j*theta)
+
     k = numpy.prod(-p, axis=0).real
     if N % 2 == 0:
         k = k / sqrt((1 + eps * eps))
+
     return z, p, k
 
 
@@ -1645,19 +1651,24 @@ def cheb2ap(N, rs):
     defined as the point at which the gain first reaches -`rs`.
 
     """
+    # Ripple factor (epsilon)
     de = 1.0 / sqrt(10 ** (0.1 * rs) - 1)
     mu = arcsinh(1.0 / de) / N
 
     if N % 2:
-        n = numpy.concatenate((numpy.arange(1, N - 1, 2),
-                               numpy.arange(N + 2, 2 * N, 2)))
+        m = numpy.concatenate((numpy.arange(-N+1, 0, 2),
+                               numpy.arange(   2, N, 2)))
     else:
-        n = numpy.arange(1, 2 * N, 2)
+        m = numpy.arange(-N+1, N, 2)
 
-    z = conjugate(1j / cos(n * pi / (2.0 * N)))
-    p = exp(1j * (pi * numpy.arange(1, 2 * N, 2) / (2.0 * N) + pi / 2.0))
+    z = -conjugate(1j / sin(m * pi / (2.0 * N)))
+
+    # Poles around the unit circle like Butterworth
+    p = -exp(1j * pi * numpy.arange(-N+1, N, 2) / (2 * N))
+    # Warp into Chebyshev II
     p = sinh(mu) * p.real + 1j * cosh(mu) * p.imag
     p = 1.0 / p
+
     k = (numpy.prod(-p, axis=0) / numpy.prod(-z, axis=0)).real
     return z, p, k
 
