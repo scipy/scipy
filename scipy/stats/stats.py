@@ -5046,6 +5046,8 @@ def jensen_shannon_divergence(a, b):
     --------
     jsd_matrix : function
         Computes all pair-wise distances for a set of measurements
+    entropy : function
+        Computes entropy and K-L divergence
     """
     a = np.asanyarray(a, dtype=float)
     b = np.asanyarray(b, dtype=float)
