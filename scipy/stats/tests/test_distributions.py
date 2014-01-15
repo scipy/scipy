@@ -319,6 +319,13 @@ class TestHypergeom(TestCase):
         good = n
         hgpmf = stats.hypergeom.pmf(2, tot, good, N)
         assert_almost_equal(hgpmf, 0.0010114963068932233, 11)
+        # tests that _sf returns 1 and not above
+        M = 13397950
+        n = 13397950-4363
+        N = 12390
+        val = stats.hypergeom.sf(12390 - 30, M, n, N)
+        assert_equal(val, 1.0)
+
 
     def test_precision2(self):
         # Test hypergeom precision for large numbers.  See #1218.
