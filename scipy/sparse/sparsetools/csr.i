@@ -32,6 +32,8 @@ INSTANTIATE_ALL(csr_sum_duplicates)
 INSTANTIATE_ALL(get_csr_submatrix)
 INSTANTIATE_ALL(csr_sample_values)
 
+INSTANTIATE_INDEX(test_throw_error)
+
 INSTANTIATE_BOOL_OUT(csr_ne_csr)
 INSTANTIATE_BOOL_OUT(csr_lt_csr)
 INSTANTIATE_BOOL_OUT(csr_gt_csr)

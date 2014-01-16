@@ -1297,6 +1297,7 @@ void csr_sample_values(const I n_row,
 /*
  * A test function checking the error handling
  */
+template <class T>
 int test_throw_error() {
     throw std::bad_alloc();
     return 1;
