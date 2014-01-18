@@ -421,7 +421,15 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         M,N = self.shape
         R,C = self.blocksize
 
-        row = (R * np.arange(M//R)).repeat(np.diff(self.indptr))
+        indptr_diff = np.diff(self.indptr)
+        if indptr_diff.dtype.itemsize > np.dtype(np.intp).itemsize:
+            # Check for potential overflow
+            indptr_diff_limited = indptr_diff.astype(np.intp)
+            if np.any(indptr_diff_limited != indptr_diff):
+                raise ValueError("Matrix too big to convert")
+            indptr_diff = indptr_diff_limited
+
+        row = (R * np.arange(M//R)).repeat(indptr_diff)
         row = row.repeat(R*C).reshape(-1,R,C)
         row += np.tile(np.arange(R).reshape(-1,1), (1,C))
         row = row.reshape(-1)
