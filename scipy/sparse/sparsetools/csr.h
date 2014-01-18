@@ -535,16 +535,29 @@ void csr_matmat_pass1(const I n_row,
 
     I nnz = 0;
     for(I i = 0; i < n_row; i++){
+        npy_intp row_nnz = 0;
+
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             I j = Aj[jj];
             for(I kk = Bp[j]; kk < Bp[j+1]; kk++){
                 I k = Bj[kk];
                 if(mask[k] != i){
                     mask[k] = i;                        
-                    nnz++;
+                    row_nnz++;
                 }
             }
-        }         
+        }
+
+        npy_intp next_nnz = nnz + row_nnz;
+
+        if (row_nnz > NPY_MAX_INTP - nnz || next_nnz != (I)next_nnz) {
+            /*
+             * Index overflowed. Note that row_nnz <= n_col and cannot overflow
+             */
+            throw std::overflow_error("nnz of the result is too large");
+        }
+
+        nnz = next_nnz;
         Cp[i+1] = nnz;
     }
 }
