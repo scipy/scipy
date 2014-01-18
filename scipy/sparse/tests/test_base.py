@@ -50,7 +50,7 @@ import nose
 warnings.simplefilter('ignore', SparseEfficiencyWarning)
 warnings.simplefilter('ignore', ComplexWarning)
 
-def with_64bit_nnz_limit(nnz_limit=None, random=False):
+def with_64bit_nnz_limit(nnz_limit=None, random=False, fixed_dtype=None):
     """
     Monkeypatch the nnz threshold at which scipy.sparse switches to
     64-bit index arrays, or make it (pseudo-)random.
@@ -59,7 +59,10 @@ def with_64bit_nnz_limit(nnz_limit=None, random=False):
     if nnz_limit is None:
         nnz_limit = 10
 
-    if random:
+    if fixed_dtype is not None:
+        def new_get_index_dtype(arrays=(), nnz=None):
+            return fixed_dtype
+    elif random:
         counter = np.random.RandomState(seed=1234)
         def new_get_index_dtype(arrays=(), nnz=None):
             return (np.int32, np.int64)[counter.randint(2)]
@@ -3587,11 +3590,11 @@ class Test64Bit(object):
         for mat_cls in self.MAT_CLASSES:
             yield check, mat_cls
 
-    def test_resiliency_limit(self):
+    def _check_resiliency(self, **kw):
         # Resiliency test, to check that sparse matrices deal reasonably
         # with varying index data types.
 
-        @with_64bit_nnz_limit(nnz_limit=10)
+        @with_64bit_nnz_limit(**kw)
         def check(cls, method_name):
             instance = cls()
             if hasattr(instance, 'setup'):
@@ -3608,27 +3611,21 @@ class Test64Bit(object):
                     msg = self.SKIP_TESTS.get(method_name)
                     yield dec.skipif(msg, msg)(check), cls, method_name
 
-    @dec.skipif(True, "doesn't work")
+    def test_resiliency_limit_10(self):
+        for t in self._check_resiliency(nnz_limit=10):
+            yield t
+
     def test_resiliency_random(self):
-        # Resiliency test, to check that sparse matrices deal reasonably
-        # with varying index data types.
+        for t in self._check_resiliency(random=True):
+            yield t
 
-        @with_64bit_nnz_limit(random=True)
-        def check(cls, method_name):
-            instance = cls()
-            if hasattr(instance, 'setUp'):
-                instance.setUp()
-            try:
-                getattr(instance, method_name)()
-            finally:
-                if hasattr(instance, 'teardown'):
-                    instance.teardown()
+    def test_resiliency_all_32(self):
+        for t in self._check_resiliency(fixed_dtype=np.int32):
+            yield t
 
-        for cls in self.TEST_CLASSES:
-            for method_name in dir(cls):
-                if method_name.startswith('test_'):
-                    msg = self.SKIP_TESTS.get(method_name)
-                    yield dec.skipif(msg, msg)(check), cls, method_name
+    def test_resiliency_all_64(self):
+        for t in self._check_resiliency(fixed_dtype=np.int64):
+            yield t
 
 
 if __name__ == "__main__":
