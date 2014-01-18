@@ -456,13 +456,13 @@ void csr_toell(const I n_row,
 	                 I Bj[],
 	                 T Bx[])
 {
-    const I ell_nnz = row_length * n_row;
+    const npy_intp ell_nnz = (npy_intp)row_length * n_row;
     std::fill(Bj, Bj + ell_nnz, 0);
     std::fill(Bx, Bx + ell_nnz, 0);
 
     for(I i = 0; i < n_row; i++){
-        I * Bj_row = Bj + row_length * i;
-        T * Bx_row = Bx + row_length * i;
+        I * Bj_row = Bj + (npy_intp)row_length * i;
+        T * Bx_row = Bx + (npy_intp)row_length * i;
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             *Bj_row = Aj[jj];            
             *Bx_row = Ax[jj];            
@@ -1097,11 +1097,11 @@ void csr_matvecs(const I n_row,
 	                   T Yx[])
 {
     for(I i = 0; i < n_row; i++){
-        T * y = Yx + n_vecs * i;
+        T * y = Yx + (npy_intp)n_vecs * i;
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             const I j = Aj[jj];
             const T a = Ax[jj];
-            const T * x = Xx + n_vecs * j;
+            const T * x = Xx + (npy_intp)n_vecs * j;
             axpy(n_vecs, a, x, y);
         }
     }
