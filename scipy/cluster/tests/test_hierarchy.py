@@ -42,11 +42,12 @@ from numpy.testing import TestCase, run_module_suite, dec
 from scipy.lib.six import xrange
 from scipy.lib.six import u
 
-from scipy.cluster.hierarchy import linkage, from_mlab_linkage, to_mlab_linkage,\
-        num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster, \
-        is_isomorphic, single, complete, weighted, centroid, leaders, \
-        correspond, is_monotonic, maxdists, maxinconsts, maxRstat, \
-        is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram
+from scipy.cluster.hierarchy import (
+    linkage, from_mlab_linkage, to_mlab_linkage,
+    num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster,
+    is_isomorphic, single, complete, weighted, centroid, leaders,
+    correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
+    is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram)
 from scipy.spatial.distance import squareform, pdist
 
 
@@ -122,13 +123,13 @@ load_testing_files()
 
 class TestLinkage(TestCase):
     def test_linkage_empty_distance_matrix(self):
-        "Tests linkage(Y) where Y is a 0x4 linkage matrix. Exception expected."
+        # Tests linkage(Y) where Y is a 0x4 linkage matrix. Exception expected.
         y = np.zeros((0,))
         self.assertRaises(ValueError, linkage, y)
 
     ################### linkage
     def test_linkage_single_tdist(self):
-        "Tests linkage(Y, 'single') on the tdist data set."
+        # Tests linkage(Y, 'single') on the tdist data set.
         Z = linkage(_ytdist, 'single')
         Zmlab = eo['linkage-single-tdist']
         eps = 1e-10
@@ -136,7 +137,7 @@ class TestLinkage(TestCase):
         self.assertTrue(within_tol(Z, expectedZ, eps))
 
     def test_linkage_complete_tdist(self):
-        "Tests linkage(Y, 'complete') on the tdist data set."
+        # Tests linkage(Y, 'complete') on the tdist data set.
         Z = linkage(_ytdist, 'complete')
         Zmlab = eo['linkage-complete-tdist']
         eps = 1e-10
@@ -144,7 +145,7 @@ class TestLinkage(TestCase):
         self.assertTrue(within_tol(Z, expectedZ, eps))
 
     def test_linkage_average_tdist(self):
-        "Tests linkage(Y, 'average') on the tdist data set."
+        # Tests linkage(Y, 'average') on the tdist data set.
         Z = linkage(_ytdist, 'average')
         Zmlab = eo['linkage-average-tdist']
         eps = 1e-05
@@ -152,7 +153,7 @@ class TestLinkage(TestCase):
         self.assertTrue(within_tol(Z, expectedZ, eps))
 
     def test_linkage_weighted_tdist(self):
-        "Tests linkage(Y, 'weighted') on the tdist data set."
+        # Tests linkage(Y, 'weighted') on the tdist data set.
         Z = linkage(_ytdist, 'weighted')
         Zmlab = eo['linkage-weighted-tdist']
         eps = 1e-10
@@ -160,7 +161,7 @@ class TestLinkage(TestCase):
         self.assertTrue(within_tol(Z, expectedZ, eps))
 
     def test_linkage_with_unicode_method_name(self):
-        "Tests linkage(Y, u'single') on the tdist data set."
+        # Tests linkage(Y, u'single') on the tdist data set.
         Z = linkage(_ytdist, u('single'))
         Zmlab = eo['linkage-single-tdist']
         eps = 1e-10
@@ -169,7 +170,7 @@ class TestLinkage(TestCase):
 
     ################### linkage on Q
     def test_linkage_single_q(self):
-        "Tests linkage(Y, 'single') on the Q data set."
+        # Tests linkage(Y, 'single') on the Q data set.
         X = eo['Q-X']
         Z = single(X)
         Zmlab = eo['linkage-Q-single']
@@ -178,7 +179,7 @@ class TestLinkage(TestCase):
         self.assertTrue(within_tol(Z, expectedZ, eps))
 
     def test_linkage_complete_q(self):
-        "Tests linkage(Y, 'complete') on the Q data set."
+        # Tests linkage(Y, 'complete') on the Q data set.
         X = eo['Q-X']
         Z = complete(X)
         Zmlab = eo['linkage-Q-complete']
@@ -187,7 +188,7 @@ class TestLinkage(TestCase):
         self.assertTrue(within_tol(Z, expectedZ, eps))
 
     def test_linkage_centroid_q(self):
-        "Tests linkage(Y, 'centroid') on the Q data set."
+        # Tests linkage(Y, 'centroid') on the Q data set.
         X = eo['Q-X']
         Z = centroid(X)
         Zmlab = eo['linkage-Q-centroid']
@@ -196,7 +197,7 @@ class TestLinkage(TestCase):
         self.assertTrue(within_tol(Z, expectedZ, eps))
 
     def test_linkage_weighted_q(self):
-        "Tests linkage(Y, 'weighted') on the Q data set."
+        # Tests linkage(Y, 'weighted') on the Q data set.
         X = eo['Q-X']
         Z = weighted(X)
         Zmlab = eo['linkage-Q-weighted']
@@ -207,7 +208,7 @@ class TestLinkage(TestCase):
 
 class TestInconsistent(TestCase):
     def test_single_inconsistent_tdist_1(self):
-        "Tests inconsistency matrix calculation (depth=1) on a single linkage."
+        # Tests inconsistency matrix calculation (depth=1) on a single linkage.
         Y = squareform(_tdist)
         Z = linkage(Y, 'single')
         R = inconsistent(Z, 1)
@@ -216,7 +217,7 @@ class TestInconsistent(TestCase):
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_tdist_2(self):
-        "Tests inconsistency matrix calculation (depth=2) on a single linkage."
+        # Tests inconsistency matrix calculation (depth=2) on a single linkage.
         Y = squareform(_tdist)
         Z = linkage(Y, 'single')
         R = inconsistent(Z, 2)
@@ -225,7 +226,7 @@ class TestInconsistent(TestCase):
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_tdist_3(self):
-        "Tests inconsistency matrix calculation (depth=3) on a single linkage."
+        # Tests inconsistency matrix calculation (depth=3) on a single linkage.
         Y = squareform(_tdist)
         Z = linkage(Y, 'single')
         R = inconsistent(Z, 3)
@@ -234,7 +235,7 @@ class TestInconsistent(TestCase):
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_tdist_4(self):
-        "Tests inconsistency matrix calculation (depth=4) on a single linkage."
+        # Tests inconsistency matrix calculation (depth=4) on a single linkage.
         Y = squareform(_tdist)
         Z = linkage(Y, 'single')
         R = inconsistent(Z, 4)
@@ -244,7 +245,7 @@ class TestInconsistent(TestCase):
 
     # with complete linkage...
     def test_complete_inconsistent_tdist_1(self):
-        "Tests inconsistency matrix calculation (depth=1) on a complete linkage."
+        # Tests inconsistency matrix calculation (depth=1) on a complete linkage.
         Y = squareform(_tdist)
         Z = linkage(Y, 'complete')
         R = inconsistent(Z, 1)
@@ -253,7 +254,7 @@ class TestInconsistent(TestCase):
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_complete_inconsistent_tdist_2(self):
-        "Tests inconsistency matrix calculation (depth=2) on a complete linkage."
+        # Tests inconsistency matrix calculation (depth=2) on a complete linkage.
         Y = squareform(_tdist)
         Z = linkage(Y, 'complete')
         R = inconsistent(Z, 2)
@@ -262,7 +263,7 @@ class TestInconsistent(TestCase):
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_complete_inconsistent_tdist_3(self):
-        "Tests inconsistency matrix calculation (depth=3) on a complete linkage."
+        # Tests inconsistency matrix calculation (depth=3) on a complete linkage.
         Y = squareform(_tdist)
         Z = linkage(Y, 'complete')
         R = inconsistent(Z, 3)
@@ -271,7 +272,7 @@ class TestInconsistent(TestCase):
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_complete_inconsistent_tdist_4(self):
-        "Tests inconsistency matrix calculation (depth=4) on a complete linkage."
+        # Tests inconsistency matrix calculation (depth=4) on a complete linkage.
         Y = squareform(_tdist)
         Z = linkage(Y, 'complete')
         R = inconsistent(Z, 4)
@@ -281,7 +282,7 @@ class TestInconsistent(TestCase):
 
     # with single linkage and Q data set
     def test_single_inconsistent_Q_1(self):
-        "Tests inconsistency matrix calculation (depth=1, dataset=Q) with single linkage."
+        # Tests inconsistency matrix calculation (depth=1, dataset=Q) with single linkage.
         X = eo['Q-X']
         Z = linkage(X, 'single', 'euclidean')
         R = inconsistent(Z, 1)
@@ -290,7 +291,7 @@ class TestInconsistent(TestCase):
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_Q_2(self):
-        "Tests inconsistency matrix calculation (depth=2, dataset=Q) with single linkage."
+        # Tests inconsistency matrix calculation (depth=2, dataset=Q) with single linkage.
         X = eo['Q-X']
         Z = linkage(X, 'single', 'euclidean')
         R = inconsistent(Z, 2)
@@ -299,7 +300,7 @@ class TestInconsistent(TestCase):
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_Q_3(self):
-        "Tests inconsistency matrix calculation (depth=3, dataset=Q) with single linkage."
+        # Tests inconsistency matrix calculation (depth=3, dataset=Q) with single linkage.
         X = eo['Q-X']
         Z = linkage(X, 'single', 'euclidean')
         R = inconsistent(Z, 3)
@@ -308,7 +309,7 @@ class TestInconsistent(TestCase):
         self.assertTrue(within_tol(R, Rright, eps))
 
     def test_single_inconsistent_Q_4(self):
-        "Tests inconsistency matrix calculation (depth=4, dataset=Q) with single linkage."
+        # Tests inconsistency matrix calculation (depth=4, dataset=Q) with single linkage.
         X = eo['Q-X']
         Z = linkage(X, 'single', 'euclidean')
         R = inconsistent(Z, 4)
@@ -319,7 +320,7 @@ class TestInconsistent(TestCase):
 
 class TestCopheneticDistance(TestCase):
     def test_linkage_cophenet_tdist_Z(self):
-        "Tests cophenet(Z) on tdist data set."
+        # Tests cophenet(Z) on tdist data set.
         expectedM = np.array([268, 295, 255, 255, 295, 295, 268, 268, 295, 295,
                               295, 138, 219, 295, 295])
         Z = linkage(_ytdist, 'single')
@@ -328,7 +329,7 @@ class TestCopheneticDistance(TestCase):
         self.assertTrue(within_tol(M, expectedM, eps))
 
     def test_linkage_cophenet_tdist_Z_Y(self):
-        "Tests cophenet(Z, Y) on tdist data set."
+        # Tests cophenet(Z, Y) on tdist data set.
         Z = linkage(_ytdist, 'single')
         (c, M) = cophenet(Z, _ytdist)
         expectedM = np.array([268, 295, 255, 255, 295, 295, 268, 268, 295, 295,
@@ -341,20 +342,20 @@ class TestCopheneticDistance(TestCase):
 
 class TestFromMLabLinkage(TestCase):
     def test_from_mlab_linkage_empty(self):
-        "Tests from_mlab_linkage on empty linkage array."
+        # Tests from_mlab_linkage on empty linkage array.
         X = np.asarray([])
         R = from_mlab_linkage([])
         self.assertTrue((R == X).all())
 
     def test_from_mlab_linkage_single_row(self):
-        "Tests from_mlab_linkage on linkage array with single row."
+        # Tests from_mlab_linkage on linkage array with single row.
         expectedZP = np.asarray([[0., 1., 3., 2.]])
         Z = [[1,2,3]]
         ZP = from_mlab_linkage(Z)
         return self.assertTrue((ZP == expectedZP).all())
 
     def test_from_mlab_linkage_multiple_rows(self):
-        "Tests from_mlab_linkage on linkage array with multiple rows."
+        # Tests from_mlab_linkage on linkage array with multiple rows.
         Z = np.asarray([[3, 6, 138], [4, 5, 219],
                         [1, 8, 255], [2, 9, 268], [7, 10, 295]])
         expectedZS = np.array([[2., 5., 138., 2.],
@@ -369,20 +370,20 @@ class TestFromMLabLinkage(TestCase):
 
 class TestToMLabLinkage(TestCase):
     def test_to_mlab_linkage_empty(self):
-        "Tests to_mlab_linkage on empty linkage array."
+        # Tests to_mlab_linkage on empty linkage array.
         X = np.asarray([])
         R = to_mlab_linkage([])
         self.assertTrue((R == X).all())
 
     def test_to_mlab_linkage_single_row(self):
-        "Tests to_mlab_linkage on linkage array with single row."
+        # Tests to_mlab_linkage on linkage array with single row.
         Z = np.asarray([[0., 1., 3., 2.]])
         expectedZP = np.asarray([[1,2,3]])
         ZP = to_mlab_linkage(Z)
         return self.assertTrue((ZP == expectedZP).all())
 
     def test_from_mlab_linkage_multiple_rows(self):
-        "Tests to_mlab_linkage on linkage array with multiple rows."
+        # Tests to_mlab_linkage on linkage array with multiple rows.
         expectedZM = np.asarray([[3, 6, 138], [4, 5, 219],
                         [1, 8, 255], [2, 9, 268], [7, 10, 295]])
         Z = np.array([[2., 5., 138., 2.],
@@ -397,28 +398,28 @@ class TestToMLabLinkage(TestCase):
 
 class TestFcluster(TestCase):
     def test_fclusterdata_maxclusts_2(self):
-        "Tests fclusterdata(X, criterion='maxclust', t=2) on a random 3-cluster data set."
+        # Tests fclusterdata(X, criterion='maxclust', t=2) on a random 3-cluster data set.
         expectedT = np.int_(eo['fclusterdata-maxclusts-2'])
         X = eo['Q-X']
         T = fclusterdata(X, criterion='maxclust', t=2)
         self.assertTrue(is_isomorphic(T, expectedT))
 
     def test_fclusterdata_maxclusts_3(self):
-        "Tests fclusterdata(X, criterion='maxclust', t=3) on a random 3-cluster data set."
+        # Tests fclusterdata(X, criterion='maxclust', t=3) on a random 3-cluster data set.
         expectedT = np.int_(eo['fclusterdata-maxclusts-3'])
         X = eo['Q-X']
         T = fclusterdata(X, criterion='maxclust', t=3)
         self.assertTrue(is_isomorphic(T, expectedT))
 
     def test_fclusterdata_maxclusts_4(self):
-        "Tests fclusterdata(X, criterion='maxclust', t=4) on a random 3-cluster data set."
+        # Tests fclusterdata(X, criterion='maxclust', t=4) on a random 3-cluster data set.
         expectedT = np.int_(eo['fclusterdata-maxclusts-4'])
         X = eo['Q-X']
         T = fclusterdata(X, criterion='maxclust', t=4)
         self.assertTrue(is_isomorphic(T, expectedT))
 
     def test_fcluster_maxclusts_2(self):
-        "Tests fcluster(Z, criterion='maxclust', t=2) on a random 3-cluster data set."
+        # Tests fcluster(Z, criterion='maxclust', t=2) on a random 3-cluster data set.
         expectedT = np.int_(eo['fclusterdata-maxclusts-2'])
         X = eo['Q-X']
         Y = pdist(X)
@@ -427,7 +428,7 @@ class TestFcluster(TestCase):
         self.assertTrue(is_isomorphic(T, expectedT))
 
     def test_fcluster_maxclusts_3(self):
-        "Tests fcluster(Z, criterion='maxclust', t=3) on a random 3-cluster data set."
+        # Tests fcluster(Z, criterion='maxclust', t=3) on a random 3-cluster data set.
         expectedT = np.int_(eo['fclusterdata-maxclusts-3'])
         X = eo['Q-X']
         Y = pdist(X)
@@ -436,7 +437,7 @@ class TestFcluster(TestCase):
         self.assertTrue(is_isomorphic(T, expectedT))
 
     def test_fcluster_maxclusts_4(self):
-        "Tests fcluster(Z, criterion='maxclust', t=4) on a random 3-cluster data set."
+        # Tests fcluster(Z, criterion='maxclust', t=4) on a random 3-cluster data set.
         expectedT = np.int_(eo['fclusterdata-maxclusts-4'])
         X = eo['Q-X']
         Y = pdist(X)
@@ -447,7 +448,7 @@ class TestFcluster(TestCase):
 
 class TestLeaders(TestCase):
     def test_leaders_single(self):
-        "Tests leaders using a flat clustering generated by single linkage."
+        # Tests leaders using a flat clustering generated by single linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(Y)
@@ -459,73 +460,82 @@ class TestLeaders(TestCase):
 
 class TestIsIsomorphic(TestCase):
     def test_is_isomorphic_1(self):
-        "Tests is_isomorphic on test case #1 (one flat cluster, different labellings)"
+        # Tests is_isomorphic on test case #1 (one flat cluster, different labellings)
         a = [1, 1, 1]
         b = [2, 2, 2]
         self.assertTrue(is_isomorphic(a, b) == True)
         self.assertTrue(is_isomorphic(b, a) == True)
 
     def test_is_isomorphic_2(self):
-        "Tests is_isomorphic on test case #2 (two flat clusters, different labelings)"
+        # Tests is_isomorphic on test case #2 (two flat clusters, different labelings)
         a = [1, 7, 1]
         b = [2, 3, 2]
         self.assertTrue(is_isomorphic(a, b) == True)
         self.assertTrue(is_isomorphic(b, a) == True)
 
     def test_is_isomorphic_3(self):
-        "Tests is_isomorphic on test case #3 (no flat clusters)"
+        # Tests is_isomorphic on test case #3 (no flat clusters)
         a = []
         b = []
         self.assertTrue(is_isomorphic(a, b) == True)
 
     def test_is_isomorphic_4A(self):
-        "Tests is_isomorphic on test case #4A (3 flat clusters, different labelings, isomorphic)"
+        # Tests is_isomorphic on test case #4A (3 flat clusters, different labelings, isomorphic)
         a = [1, 2, 3]
         b = [1, 3, 2]
         self.assertTrue(is_isomorphic(a, b) == True)
         self.assertTrue(is_isomorphic(b, a) == True)
 
     def test_is_isomorphic_4B(self):
-        "Tests is_isomorphic on test case #4B (3 flat clusters, different labelings, nonisomorphic)"
+        # Tests is_isomorphic on test case #4B (3 flat clusters, different labelings, nonisomorphic)
         a = [1, 2, 3, 3]
         b = [1, 3, 2, 3]
         self.assertTrue(is_isomorphic(a, b) == False)
         self.assertTrue(is_isomorphic(b, a) == False)
 
     def test_is_isomorphic_4C(self):
-        "Tests is_isomorphic on test case #4C (3 flat clusters, different labelings, isomorphic)"
+        # Tests is_isomorphic on test case #4C (3 flat clusters, different labelings, isomorphic)
         a = [7, 2, 3]
         b = [6, 3, 2]
         self.assertTrue(is_isomorphic(a, b) == True)
         self.assertTrue(is_isomorphic(b, a) == True)
 
     def test_is_isomorphic_5A(self):
-        "Tests is_isomorphic on test case #5A (1000 observations, 2 random clusters, random permutation of the labeling). Run 3 times."
+        # Tests is_isomorphic on test case #5A (1000 observations, 2 random clusters,
+        # random permutation of the labeling). Run 3 times.
         for k in xrange(0, 3):
             self.help_is_isomorphic_randperm(1000, 2)
 
     def test_is_isomorphic_5B(self):
-        "Tests is_isomorphic on test case #5B (1000 observations, 3 random clusters, random permutation of the labeling). Run 3 times."
+        # Tests is_isomorphic on test case #5B (1000 observations, 3 random
+        # clusters, random permutation of the labeling). Run 3 times.
         for k in xrange(0, 3):
             self.help_is_isomorphic_randperm(1000, 3)
 
     def test_is_isomorphic_5C(self):
-        "Tests is_isomorphic on test case #5C (1000 observations, 5 random clusters, random permutation of the labeling). Run 3 times."
+        # Tests is_isomorphic on test case #5C (1000 observations, 5 random
+        # clusters, random permutation of the labeling). Run 3 times.
         for k in xrange(0, 3):
             self.help_is_isomorphic_randperm(1000, 5)
 
     def test_is_isomorphic_6A(self):
-        "Tests is_isomorphic on test case #5A (1000 observations, 2 random clusters, random permutation of the labeling, slightly nonisomorphic.) Run 3 times."
+        # Tests is_isomorphic on test case #5A (1000 observations, 2 random
+        # clusters, random permutation of the labeling, slightly
+        # nonisomorphic.) Run 3 times.
         for k in xrange(0, 3):
             self.help_is_isomorphic_randperm(1000, 2, True, 5)
 
     def test_is_isomorphic_6B(self):
-        "Tests is_isomorphic on test case #5B (1000 observations, 3 random clusters, random permutation of the labeling, slightly nonisomorphic.) Run 3 times."
+        # Tests is_isomorphic on test case #5B (1000 observations, 3 random
+        # clusters, random permutation of the labeling, slightly
+        # nonisomorphic.) Run 3 times.
         for k in xrange(0, 3):
             self.help_is_isomorphic_randperm(1000, 3, True, 5)
 
     def test_is_isomorphic_6C(self):
-        "Tests is_isomorphic on test case #5C (1000 observations, 5 random clusters, random permutation of the labeling, slightly non-isomorphic.) Run 3 times."
+        # Tests is_isomorphic on test case #5C (1000 observations, 5 random
+        # clusters, random permutation of the labeling, slightly
+        # non-isomorphic.) Run 3 times.
         for k in xrange(0, 3):
             self.help_is_isomorphic_randperm(1000, 5, True, 5)
 
@@ -546,52 +556,54 @@ class TestIsIsomorphic(TestCase):
 
 class TestIsValidLinkage(TestCase):
     def test_is_valid_linkage_int_type(self):
-        "Tests is_valid_linkage(Z) with integer type."
+        # Tests is_valid_linkage(Z) with integer type.
         Z = np.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=np.int)
         self.assertTrue(is_valid_linkage(Z) == False)
         self.assertRaises(TypeError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_5_columns(self):
-        "Tests is_valid_linkage(Z) with 5 columns."
+        # Tests is_valid_linkage(Z) with 5 columns.
         Z = np.asarray([[0, 1, 3.0, 2, 5],
                         [3, 2, 4.0, 3, 3]], dtype=np.double)
         self.assertTrue(is_valid_linkage(Z) == False)
         self.assertRaises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_3_columns(self):
-        "Tests is_valid_linkage(Z) with 3 columns."
+        # Tests is_valid_linkage(Z) with 3 columns.
         Z = np.asarray([[0, 1, 3.0],
                         [3, 2, 4.0]], dtype=np.double)
         self.assertTrue(is_valid_linkage(Z) == False)
         self.assertRaises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_empty(self):
-        "Tests is_valid_linkage(Z) with empty linkage."
+        # Tests is_valid_linkage(Z) with empty linkage.
         Z = np.zeros((0, 4), dtype=np.double)
         self.assertTrue(is_valid_linkage(Z) == False)
         self.assertRaises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_1x4(self):
-        "Tests is_valid_linkage(Z) on linkage over 2 observations."
+        # Tests is_valid_linkage(Z) on linkage over 2 observations.
         Z = np.asarray([[0, 1, 3.0, 2]], dtype=np.double)
         self.assertTrue(is_valid_linkage(Z) == True)
 
     def test_is_valid_linkage_2x4(self):
-        "Tests is_valid_linkage(Z) on linkage over 3 observations."
+        # Tests is_valid_linkage(Z) on linkage over 3 observations.
         Z = np.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=np.double)
         self.assertTrue(is_valid_linkage(Z) == True)
 
     def test_is_valid_linkage_4_and_up(self):
-        "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3)."
+        # Tests is_valid_linkage(Z) on linkage on observation sets between
+        # sizes 4 and 15 (step size 3).
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
             self.assertTrue(is_valid_linkage(Z) == True)
 
     def test_is_valid_linkage_4_and_up_neg_index_left(self):
-        "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative indices (left)."
+        # Tests is_valid_linkage(Z) on linkage on observation sets between
+        # sizes 4 and 15 (step size 3) with negative indices (left).
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
@@ -600,7 +612,8 @@ class TestIsValidLinkage(TestCase):
             self.assertRaises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_4_and_up_neg_index_right(self):
-        "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative indices (right)."
+        # Tests is_valid_linkage(Z) on linkage on observation sets between
+        # sizes 4 and 15 (step size 3) with negative indices (right).
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
@@ -609,7 +622,8 @@ class TestIsValidLinkage(TestCase):
             self.assertRaises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_4_and_up_neg_dist(self):
-        "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative distances."
+        # Tests is_valid_linkage(Z) on linkage on observation sets between
+        # sizes 4 and 15 (step size 3) with negative distances.
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
@@ -618,7 +632,8 @@ class TestIsValidLinkage(TestCase):
             self.assertRaises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_4_and_up_neg_counts(self):
-        "Tests is_valid_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3) with negative counts."
+        # Tests is_valid_linkage(Z) on linkage on observation sets between
+        # sizes 4 and 15 (step size 3) with negative counts.
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
@@ -629,45 +644,46 @@ class TestIsValidLinkage(TestCase):
 
 class TestIsValidInconsistent(TestCase):
     def test_is_valid_im_int_type(self):
-        "Tests is_valid_im(R) with integer type."
+        # Tests is_valid_im(R) with integer type.
         R = np.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=np.int)
         self.assertTrue(is_valid_im(R) == False)
         self.assertRaises(TypeError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_5_columns(self):
-        "Tests is_valid_im(R) with 5 columns."
+        # Tests is_valid_im(R) with 5 columns.
         R = np.asarray([[0, 1, 3.0, 2, 5],
                         [3, 2, 4.0, 3, 3]], dtype=np.double)
         self.assertTrue(is_valid_im(R) == False)
         self.assertRaises(ValueError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_3_columns(self):
-        "Tests is_valid_im(R) with 3 columns."
+        # Tests is_valid_im(R) with 3 columns.
         R = np.asarray([[0, 1, 3.0],
                         [3, 2, 4.0]], dtype=np.double)
         self.assertTrue(is_valid_im(R) == False)
         self.assertRaises(ValueError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_empty(self):
-        "Tests is_valid_im(R) with empty inconsistency matrix."
+        # Tests is_valid_im(R) with empty inconsistency matrix.
         R = np.zeros((0, 4), dtype=np.double)
         self.assertTrue(is_valid_im(R) == False)
         self.assertRaises(ValueError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_1x4(self):
-        "Tests is_valid_im(R) on im over 2 observations."
+        # Tests is_valid_im(R) on im over 2 observations.
         R = np.asarray([[0, 1, 3.0, 2]], dtype=np.double)
         self.assertTrue(is_valid_im(R) == True)
 
     def test_is_valid_im_2x4(self):
-        "Tests is_valid_im(R) on im over 3 observations."
+        # Tests is_valid_im(R) on im over 3 observations.
         R = np.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=np.double)
         self.assertTrue(is_valid_im(R) == True)
 
     def test_is_valid_im_4_and_up(self):
-        "Tests is_valid_im(R) on im on observation sets between sizes 4 and 15 (step size 3)."
+        # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
+        # (step size 3).
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
@@ -675,7 +691,8 @@ class TestIsValidInconsistent(TestCase):
             self.assertTrue(is_valid_im(R) == True)
 
     def test_is_valid_im_4_and_up_neg_index_left(self):
-        "Tests is_valid_im(R) on im on observation sets between sizes 4 and 15 (step size 3) with negative link height means."
+        # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
+        # (step size 3) with negative link height means.
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
@@ -685,7 +702,8 @@ class TestIsValidInconsistent(TestCase):
             self.assertRaises(ValueError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_4_and_up_neg_index_right(self):
-        "Tests is_valid_im(R) on im on observation sets between sizes 4 and 15 (step size 3) with negative link height standard deviations."
+        # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
+        # (step size 3) with negative link height standard deviations.
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
@@ -695,7 +713,8 @@ class TestIsValidInconsistent(TestCase):
             self.assertRaises(ValueError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_4_and_up_neg_dist(self):
-        "Tests is_valid_im(R) on im on observation sets between sizes 4 and 15 (step size 3) with negative link counts."
+        # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
+        # (step size 3) with negative link counts.
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
@@ -707,23 +726,24 @@ class TestIsValidInconsistent(TestCase):
 
 class TestNumObsLinkage(TestCase):
     def test_num_obs_linkage_empty(self):
-        "Tests num_obs_linkage(Z) with empty linkage."
+        # Tests num_obs_linkage(Z) with empty linkage.
         Z = np.zeros((0, 4), dtype=np.double)
         self.assertRaises(ValueError, num_obs_linkage, Z)
 
     def test_num_obs_linkage_1x4(self):
-        "Tests num_obs_linkage(Z) on linkage over 2 observations."
+        # Tests num_obs_linkage(Z) on linkage over 2 observations.
         Z = np.asarray([[0, 1, 3.0, 2]], dtype=np.double)
         self.assertTrue(num_obs_linkage(Z) == 2)
 
     def test_num_obs_linkage_2x4(self):
-        "Tests num_obs_linkage(Z) on linkage over 3 observations."
+        # Tests num_obs_linkage(Z) on linkage over 3 observations.
         Z = np.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=np.double)
         self.assertTrue(num_obs_linkage(Z) == 3)
 
     def test_num_obs_linkage_4_and_up(self):
-        "Tests num_obs_linkage(Z) on linkage on observation sets between sizes 4 and 15 (step size 3)."
+        # Tests num_obs_linkage(Z) on linkage on observation sets between sizes
+        # 4 and 15 (step size 3).
         for i in xrange(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
@@ -732,20 +752,20 @@ class TestNumObsLinkage(TestCase):
 
 class TestLeavesList(TestCase):
     def test_leaves_list_1x4(self):
-        "Tests leaves_list(Z) on a 1x4 linkage."
+        # Tests leaves_list(Z) on a 1x4 linkage.
         Z = np.asarray([[0, 1, 3.0, 2]], dtype=np.double)
         node = to_tree(Z)
         self.assertTrue((leaves_list(Z) == [0, 1]).all())
 
     def test_leaves_list_2x4(self):
-        "Tests leaves_list(Z) on a 2x4 linkage."
+        # Tests leaves_list(Z) on a 2x4 linkage.
         Z = np.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=np.double)
         node = to_tree(Z)
         self.assertTrue((leaves_list(Z) == [0, 1, 2]).all())
 
     def test_leaves_list_iris_single(self):
-        "Tests leaves_list(Z) on the Iris data set using single linkage."
+        # Tests leaves_list(Z) on the Iris data set using single linkage.
         X = eo['iris']
         Y = pdist(X)
         Z = linkage(X, 'single')
@@ -753,7 +773,7 @@ class TestLeavesList(TestCase):
         self.assertTrue((node.pre_order() == leaves_list(Z)).all())
 
     def test_leaves_list_iris_complete(self):
-        "Tests leaves_list(Z) on the Iris data set using complete linkage."
+        # Tests leaves_list(Z) on the Iris data set using complete linkage.
         X = eo['iris']
         Y = pdist(X)
         Z = linkage(X, 'complete')
@@ -761,7 +781,7 @@ class TestLeavesList(TestCase):
         self.assertTrue((node.pre_order() == leaves_list(Z)).all())
 
     def test_leaves_list_iris_centroid(self):
-        "Tests leaves_list(Z) on the Iris data set using centroid linkage."
+        # Tests leaves_list(Z) on the Iris data set using centroid linkage.
         X = eo['iris']
         Y = pdist(X)
         Z = linkage(X, 'centroid')
@@ -769,7 +789,7 @@ class TestLeavesList(TestCase):
         self.assertTrue((node.pre_order() == leaves_list(Z)).all())
 
     def test_leaves_list_iris_median(self):
-        "Tests leaves_list(Z) on the Iris data set using median linkage."
+        # Tests leaves_list(Z) on the Iris data set using median linkage.
         X = eo['iris']
         Y = pdist(X)
         Z = linkage(X, 'median')
@@ -777,7 +797,7 @@ class TestLeavesList(TestCase):
         self.assertTrue((node.pre_order() == leaves_list(Z)).all())
 
     def test_leaves_list_iris_ward(self):
-        "Tests leaves_list(Z) on the Iris data set using ward linkage."
+        # Tests leaves_list(Z) on the Iris data set using ward linkage.
         X = eo['iris']
         Y = pdist(X)
         Z = linkage(X, 'ward')
@@ -785,7 +805,7 @@ class TestLeavesList(TestCase):
         self.assertTrue((node.pre_order() == leaves_list(Z)).all())
 
     def test_leaves_list_iris_average(self):
-        "Tests leaves_list(Z) on the Iris data set using average linkage."
+        # Tests leaves_list(Z) on the Iris data set using average linkage.
         X = eo['iris']
         Y = pdist(X)
         Z = linkage(X, 'average')
@@ -795,13 +815,14 @@ class TestLeavesList(TestCase):
 
 class TestCorrespond(TestCase):
     def test_correspond_empty(self):
-        "Tests correspond(Z, y) with empty linkage and condensed distance matrix."
+        # Tests correspond(Z, y) with empty linkage and condensed distance matrix.
         y = np.zeros((0,))
         Z = np.zeros((0,4))
         self.assertRaises(ValueError, correspond, Z, y)
 
     def test_correspond_2_and_up(self):
-        "Tests correspond(Z, y) on linkage and CDMs over observation sets of different sizes."
+        # Tests correspond(Z, y) on linkage and CDMs over observation sets of
+        # different sizes.
         for i in xrange(2, 4):
             y = np.random.rand(i*(i-1)//2)
             Z = linkage(y)
@@ -812,8 +833,10 @@ class TestCorrespond(TestCase):
             self.assertTrue(correspond(Z, y))
 
     def test_correspond_4_and_up(self):
-        "Tests correspond(Z, y) on linkage and CDMs over observation sets of different sizes. Correspondance should be false."
-        for (i, j) in list(zip(list(range(2, 4)), list(range(3, 5)))) + list(zip(list(range(3, 5)), list(range(2, 4)))):
+        # Tests correspond(Z, y) on linkage and CDMs over observation sets of
+        # different sizes. Correspondance should be false.
+        for (i, j) in (list(zip(list(range(2, 4)), list(range(3, 5)))) +
+                       list(zip(list(range(3, 5)), list(range(2, 4))))):
             y = np.random.rand(i*(i-1)//2)
             y2 = np.random.rand(j*(j-1)//2)
             Z = linkage(y)
@@ -822,8 +845,10 @@ class TestCorrespond(TestCase):
             self.assertTrue(correspond(Z2, y) == False)
 
     def test_correspond_4_and_up_2(self):
-        "Tests correspond(Z, y) on linkage and CDMs over observation sets of different sizes. Correspondance should be false."
-        for (i, j) in list(zip(list(range(2, 7)), list(range(16, 21)))) + list(zip(list(range(2, 7)), list(range(16, 21)))):
+        # Tests correspond(Z, y) on linkage and CDMs over observation sets of
+        # different sizes. Correspondance should be false.
+        for (i, j) in (list(zip(list(range(2, 7)), list(range(16, 21)))) +
+                       list(zip(list(range(2, 7)), list(range(16, 21))))):
             y = np.random.rand(i*(i-1)//2)
             y2 = np.random.rand(j*(j-1)//2)
             Z = linkage(y)
@@ -832,7 +857,7 @@ class TestCorrespond(TestCase):
             self.assertTrue(correspond(Z2, y) == False)
 
     def test_num_obs_linkage_multi_matrix(self):
-        "Tests num_obs_linkage with observation matrices of multiple sizes."
+        # Tests num_obs_linkage with observation matrices of multiple sizes.
         for n in xrange(2, 10):
             X = np.random.rand(n, 4)
             Y = pdist(X)
@@ -842,68 +867,71 @@ class TestCorrespond(TestCase):
 
 class TestIsMonotonic(TestCase):
     def test_is_monotonic_empty(self):
-        "Tests is_monotonic(Z) on an empty linkage."
+        # Tests is_monotonic(Z) on an empty linkage.
         Z = np.zeros((0, 4))
         self.assertRaises(ValueError, is_monotonic, Z)
 
     def test_is_monotonic_1x4(self):
-        "Tests is_monotonic(Z) on 1x4 linkage. Expecting True."
+        # Tests is_monotonic(Z) on 1x4 linkage. Expecting True.
         Z = np.asarray([[0, 1, 0.3, 2]], dtype=np.double)
         self.assertTrue(is_monotonic(Z) == True)
 
     def test_is_monotonic_2x4_T(self):
-        "Tests is_monotonic(Z) on 2x4 linkage. Expecting True."
+        # Tests is_monotonic(Z) on 2x4 linkage. Expecting True.
         Z = np.asarray([[0, 1, 0.3, 2],
                         [2, 3, 0.4, 3]], dtype=np.double)
         self.assertTrue(is_monotonic(Z) == True)
 
     def test_is_monotonic_2x4_F(self):
-        "Tests is_monotonic(Z) on 2x4 linkage. Expecting False."
+        # Tests is_monotonic(Z) on 2x4 linkage. Expecting False.
         Z = np.asarray([[0, 1, 0.4, 2],
                         [2, 3, 0.3, 3]], dtype=np.double)
         self.assertTrue(is_monotonic(Z) == False)
 
     def test_is_monotonic_3x4_T(self):
-        "Tests is_monotonic(Z) on 3x4 linkage. Expecting True."
+        # Tests is_monotonic(Z) on 3x4 linkage. Expecting True.
         Z = np.asarray([[0, 1, 0.3, 2],
                         [2, 3, 0.4, 2],
                         [4, 5, 0.6, 4]], dtype=np.double)
         self.assertTrue(is_monotonic(Z) == True)
 
     def test_is_monotonic_3x4_F1(self):
-        "Tests is_monotonic(Z) on 3x4 linkage (case 1). Expecting False."
+        # Tests is_monotonic(Z) on 3x4 linkage (case 1). Expecting False.
         Z = np.asarray([[0, 1, 0.3, 2],
                         [2, 3, 0.2, 2],
                         [4, 5, 0.6, 4]], dtype=np.double)
         self.assertTrue(is_monotonic(Z) == False)
 
     def test_is_monotonic_3x4_F2(self):
-        "Tests is_monotonic(Z) on 3x4 linkage (case 2). Expecting False."
+        # Tests is_monotonic(Z) on 3x4 linkage (case 2). Expecting False.
         Z = np.asarray([[0, 1, 0.8, 2],
                         [2, 3, 0.4, 2],
                         [4, 5, 0.6, 4]], dtype=np.double)
         self.assertTrue(is_monotonic(Z) == False)
 
     def test_is_monotonic_3x4_F3(self):
-        "Tests is_monotonic(Z) on 3x4 linkage (case 3). Expecting False"
+        # Tests is_monotonic(Z) on 3x4 linkage (case 3). Expecting False
         Z = np.asarray([[0, 1, 0.3, 2],
                         [2, 3, 0.4, 2],
                         [4, 5, 0.2, 4]], dtype=np.double)
         self.assertTrue(is_monotonic(Z) == False)
 
     def test_is_monotonic_tdist_linkage1(self):
-        "Tests is_monotonic(Z) on clustering generated by single linkage on tdist data set. Expecting True."
+        # Tests is_monotonic(Z) on clustering generated by single linkage on
+        # tdist data set. Expecting True.
         Z = linkage(_ytdist, 'single')
         self.assertTrue(is_monotonic(Z) == True)
 
     def test_is_monotonic_tdist_linkage2(self):
-        "Tests is_monotonic(Z) on clustering generated by single linkage on tdist data set. Perturbing. Expecting False."
+        # Tests is_monotonic(Z) on clustering generated by single linkage on
+        # tdist data set. Perturbing. Expecting False.
         Z = linkage(_ytdist, 'single')
         Z[2,2] = 0.0
         self.assertTrue(is_monotonic(Z) == False)
 
     def test_is_monotonic_iris_linkage(self):
-        "Tests is_monotonic(Z) on clustering generated by single linkage on Iris data set. Expecting True."
+        # Tests is_monotonic(Z) on clustering generated by single linkage on
+        # Iris data set. Expecting True.
         X = eo['iris']
         Y = pdist(X)
         Z = linkage(X, 'single')
@@ -912,12 +940,12 @@ class TestIsMonotonic(TestCase):
 
 class TestMaxDists(TestCase):
     def test_maxdists_empty_linkage(self):
-        "Tests maxdists(Z) on empty linkage. Expecting exception."
+        # Tests maxdists(Z) on empty linkage. Expecting exception.
         Z = np.zeros((0, 4), dtype=np.double)
         self.assertRaises(ValueError, maxdists, Z)
 
     def test_maxdists_one_cluster_linkage(self):
-        "Tests maxdists(Z) on linkage with one cluster."
+        # Tests maxdists(Z) on linkage with one cluster.
         Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
         MD = maxdists(Z)
         eps = 1e-15
@@ -925,7 +953,7 @@ class TestMaxDists(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxdists_Q_linkage_single(self):
-        "Tests maxdists(Z) on the Q data set using single linkage."
+        # Tests maxdists(Z) on the Q data set using single linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'single')
@@ -935,7 +963,7 @@ class TestMaxDists(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxdists_Q_linkage_complete(self):
-        "Tests maxdists(Z) on the Q data set using complete linkage."
+        # Tests maxdists(Z) on the Q data set using complete linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'complete')
@@ -945,7 +973,7 @@ class TestMaxDists(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxdists_Q_linkage_ward(self):
-        "Tests maxdists(Z) on the Q data set using Ward linkage."
+        # Tests maxdists(Z) on the Q data set using Ward linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'ward')
@@ -955,7 +983,7 @@ class TestMaxDists(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxdists_Q_linkage_centroid(self):
-        "Tests maxdists(Z) on the Q data set using centroid linkage."
+        # Tests maxdists(Z) on the Q data set using centroid linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'centroid')
@@ -965,7 +993,7 @@ class TestMaxDists(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxdists_Q_linkage_median(self):
-        "Tests maxdists(Z) on the Q data set using median linkage."
+        # Tests maxdists(Z) on the Q data set using median linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'median')
@@ -977,19 +1005,20 @@ class TestMaxDists(TestCase):
 
 class TestMaxInconsts(TestCase):
     def test_maxinconsts_empty_linkage(self):
-        "Tests maxinconsts(Z, R) on empty linkage. Expecting exception."
+        # Tests maxinconsts(Z, R) on empty linkage. Expecting exception.
         Z = np.zeros((0, 4), dtype=np.double)
         R = np.zeros((0, 4), dtype=np.double)
         self.assertRaises(ValueError, maxinconsts, Z, R)
 
     def test_maxinconsts_difrow_linkage(self):
-        "Tests maxinconsts(Z, R) on linkage and inconsistency matrices with different numbers of clusters. Expecting exception."
+        # Tests maxinconsts(Z, R) on linkage and inconsistency matrices with
+        # different numbers of clusters. Expecting exception.
         Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
         R = np.random.rand(2, 4)
         self.assertRaises(ValueError, maxinconsts, Z, R)
 
     def test_maxinconsts_one_cluster_linkage(self):
-        "Tests maxinconsts(Z, R) on linkage with one cluster."
+        # Tests maxinconsts(Z, R) on linkage with one cluster.
         Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
         R = np.asarray([[0, 0, 0, 0.3]], dtype=np.double)
         MD = maxinconsts(Z, R)
@@ -998,7 +1027,7 @@ class TestMaxInconsts(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxinconsts_Q_linkage_single(self):
-        "Tests maxinconsts(Z, R) on the Q data set using single linkage."
+        # Tests maxinconsts(Z, R) on the Q data set using single linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'single')
@@ -1009,7 +1038,7 @@ class TestMaxInconsts(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxinconsts_Q_linkage_complete(self):
-        "Tests maxinconsts(Z, R) on the Q data set using complete linkage."
+        # Tests maxinconsts(Z, R) on the Q data set using complete linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'complete')
@@ -1020,7 +1049,7 @@ class TestMaxInconsts(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxinconsts_Q_linkage_ward(self):
-        "Tests maxinconsts(Z, R) on the Q data set using Ward linkage."
+        # Tests maxinconsts(Z, R) on the Q data set using Ward linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'ward')
@@ -1031,7 +1060,7 @@ class TestMaxInconsts(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxinconsts_Q_linkage_centroid(self):
-        "Tests maxinconsts(Z, R) on the Q data set using centroid linkage."
+        # Tests maxinconsts(Z, R) on the Q data set using centroid linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'centroid')
@@ -1042,7 +1071,7 @@ class TestMaxInconsts(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxinconsts_Q_linkage_median(self):
-        "Tests maxinconsts(Z, R) on the Q data set using median linkage."
+        # Tests maxinconsts(Z, R) on the Q data set using median linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'median')
@@ -1055,37 +1084,38 @@ class TestMaxInconsts(TestCase):
 
 class TestMaxRStat(TestCase):
     def test_maxRstat_float_index(self):
-        "Tests maxRstat(Z, R, 3.3). Expecting exception."
+        # Tests maxRstat(Z, R, 3.3). Expecting exception.
         Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
         R = np.asarray([[0, 0, 0, 0.3]], dtype=np.double)
         self.assertRaises(TypeError, maxRstat, Z, R, 3.3)
 
     def test_maxRstat_neg_index(self):
-        "Tests maxRstat(Z, R, -1). Expecting exception."
+        # Tests maxRstat(Z, R, -1). Expecting exception.
         Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
         R = np.asarray([[0, 0, 0, 0.3]], dtype=np.double)
         self.assertRaises(ValueError, maxRstat, Z, R, -1)
 
     def test_maxRstat_oob_pos_index(self):
-        "Tests maxRstat(Z, R, 4). Expecting exception."
+        # Tests maxRstat(Z, R, 4). Expecting exception.
         Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
         R = np.asarray([[0, 0, 0, 0.3]], dtype=np.double)
         self.assertRaises(ValueError, maxRstat, Z, R, 4)
 
     def test_maxRstat_0_empty_linkage(self):
-        "Tests maxRstat(Z, R, 0) on empty linkage. Expecting exception."
+        # Tests maxRstat(Z, R, 0) on empty linkage. Expecting exception.
         Z = np.zeros((0, 4), dtype=np.double)
         R = np.zeros((0, 4), dtype=np.double)
         self.assertRaises(ValueError, maxRstat, Z, R, 0)
 
     def test_maxRstat_0_difrow_linkage(self):
-        "Tests maxRstat(Z, R, 0) on linkage and inconsistency matrices with different numbers of clusters. Expecting exception."
+        # Tests maxRstat(Z, R, 0) on linkage and inconsistency matrices with
+        # different numbers of clusters. Expecting exception.
         Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
         R = np.random.rand(2, 4)
         self.assertRaises(ValueError, maxRstat, Z, R, 0)
 
     def test_maxRstat_0_one_cluster_linkage(self):
-        "Tests maxRstat(Z, R, 0) on linkage with one cluster."
+        # Tests maxRstat(Z, R, 0) on linkage with one cluster.
         Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
         R = np.asarray([[0, 0, 0, 0.3]], dtype=np.double)
         MD = maxRstat(Z, R, 0)
@@ -1094,7 +1124,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_0_Q_linkage_single(self):
-        "Tests maxRstat(Z, R, 0) on the Q data set using single linkage."
+        # Tests maxRstat(Z, R, 0) on the Q data set using single linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'single')
@@ -1105,7 +1135,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_0_Q_linkage_complete(self):
-        "Tests maxRstat(Z, R, 0) on the Q data set using complete linkage."
+        # Tests maxRstat(Z, R, 0) on the Q data set using complete linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'complete')
@@ -1116,7 +1146,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_0_Q_linkage_ward(self):
-        "Tests maxRstat(Z, R, 0) on the Q data set using Ward linkage."
+        # Tests maxRstat(Z, R, 0) on the Q data set using Ward linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'ward')
@@ -1127,7 +1157,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_0_Q_linkage_centroid(self):
-        "Tests maxRstat(Z, R, 0) on the Q data set using centroid linkage."
+        # Tests maxRstat(Z, R, 0) on the Q data set using centroid linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'centroid')
@@ -1138,7 +1168,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_0_Q_linkage_median(self):
-        "Tests maxRstat(Z, R, 0) on the Q data set using median linkage."
+        # Tests maxRstat(Z, R, 0) on the Q data set using median linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'median')
@@ -1149,19 +1179,20 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_1_empty_linkage(self):
-        "Tests maxRstat(Z, R, 1) on empty linkage. Expecting exception."
+        # Tests maxRstat(Z, R, 1) on empty linkage. Expecting exception.
         Z = np.zeros((0, 4), dtype=np.double)
         R = np.zeros((0, 4), dtype=np.double)
         self.assertRaises(ValueError, maxRstat, Z, R, 0)
 
     def test_maxRstat_1_difrow_linkage(self):
-        "Tests maxRstat(Z, R, 1) on linkage and inconsistency matrices with different numbers of clusters. Expecting exception."
+        # Tests maxRstat(Z, R, 1) on linkage and inconsistency matrices with
+        # different numbers of clusters. Expecting exception.
         Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
         R = np.random.rand(2, 4)
         self.assertRaises(ValueError, maxRstat, Z, R, 0)
 
     def test_maxRstat_1_one_cluster_linkage(self):
-        "Tests maxRstat(Z, R, 1) on linkage with one cluster."
+        # Tests maxRstat(Z, R, 1) on linkage with one cluster.
         Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
         R = np.asarray([[0, 0, 0, 0.3]], dtype=np.double)
         MD = maxRstat(Z, R, 1)
@@ -1170,7 +1201,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_1_Q_linkage_single(self):
-        "Tests maxRstat(Z, R, 1) on the Q data set using single linkage."
+        # Tests maxRstat(Z, R, 1) on the Q data set using single linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'single')
@@ -1181,7 +1212,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_1_Q_linkage_complete(self):
-        "Tests maxRstat(Z, R, 1) on the Q data set using complete linkage."
+        # Tests maxRstat(Z, R, 1) on the Q data set using complete linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'complete')
@@ -1192,7 +1223,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_1_Q_linkage_ward(self):
-        "Tests maxRstat(Z, R, 1) on the Q data set using Ward linkage."
+        # Tests maxRstat(Z, R, 1) on the Q data set using Ward linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'ward')
@@ -1203,7 +1234,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_1_Q_linkage_centroid(self):
-        "Tests maxRstat(Z, R, 1) on the Q data set using centroid linkage."
+        # Tests maxRstat(Z, R, 1) on the Q data set using centroid linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'centroid')
@@ -1214,7 +1245,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_1_Q_linkage_median(self):
-        "Tests maxRstat(Z, R, 1) on the Q data set using median linkage."
+        # Tests maxRstat(Z, R, 1) on the Q data set using median linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'median')
@@ -1225,19 +1256,20 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_2_empty_linkage(self):
-        "Tests maxRstat(Z, R, 2) on empty linkage. Expecting exception."
+        # Tests maxRstat(Z, R, 2) on empty linkage. Expecting exception.
         Z = np.zeros((0, 4), dtype=np.double)
         R = np.zeros((0, 4), dtype=np.double)
         self.assertRaises(ValueError, maxRstat, Z, R, 2)
 
     def test_maxRstat_2_difrow_linkage(self):
-        "Tests maxRstat(Z, R, 2) on linkage and inconsistency matrices with different numbers of clusters. Expecting exception."
+        # Tests maxRstat(Z, R, 2) on linkage and inconsistency matrices with
+        # different numbers of clusters. Expecting exception.
         Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
         R = np.random.rand(2, 4)
         self.assertRaises(ValueError, maxRstat, Z, R, 2)
 
     def test_maxRstat_2_one_cluster_linkage(self):
-        "Tests maxRstat(Z, R, 2) on linkage with one cluster."
+        # Tests maxRstat(Z, R, 2) on linkage with one cluster.
         Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
         R = np.asarray([[0, 0, 0, 0.3]], dtype=np.double)
         MD = maxRstat(Z, R, 2)
@@ -1246,7 +1278,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_2_Q_linkage_single(self):
-        "Tests maxRstat(Z, R, 2) on the Q data set using single linkage."
+        # Tests maxRstat(Z, R, 2) on the Q data set using single linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'single')
@@ -1257,7 +1289,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_2_Q_linkage_complete(self):
-        "Tests maxRstat(Z, R, 2) on the Q data set using complete linkage."
+        # Tests maxRstat(Z, R, 2) on the Q data set using complete linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'complete')
@@ -1268,7 +1300,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_2_Q_linkage_ward(self):
-        "Tests maxRstat(Z, R, 2) on the Q data set using Ward linkage."
+        # Tests maxRstat(Z, R, 2) on the Q data set using Ward linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'ward')
@@ -1279,7 +1311,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_2_Q_linkage_centroid(self):
-        "Tests maxRstat(Z, R, 2) on the Q data set using centroid linkage."
+        # Tests maxRstat(Z, R, 2) on the Q data set using centroid linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'centroid')
@@ -1290,7 +1322,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_2_Q_linkage_median(self):
-        "Tests maxRstat(Z, R, 2) on the Q data set using median linkage."
+        # Tests maxRstat(Z, R, 2) on the Q data set using median linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'median')
@@ -1301,19 +1333,20 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_3_empty_linkage(self):
-        "Tests maxRstat(Z, R, 3) on empty linkage. Expecting exception."
+        # Tests maxRstat(Z, R, 3) on empty linkage. Expecting exception.
         Z = np.zeros((0, 4), dtype=np.double)
         R = np.zeros((0, 4), dtype=np.double)
         self.assertRaises(ValueError, maxRstat, Z, R, 3)
 
     def test_maxRstat_3_difrow_linkage(self):
-        "Tests maxRstat(Z, R, 3) on linkage and inconsistency matrices with different numbers of clusters. Expecting exception."
+        # Tests maxRstat(Z, R, 3) on linkage and inconsistency matrices with
+        # different numbers of clusters. Expecting exception.
         Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
         R = np.random.rand(2, 4)
         self.assertRaises(ValueError, maxRstat, Z, R, 3)
 
     def test_maxRstat_3_one_cluster_linkage(self):
-        "Tests maxRstat(Z, R, 3) on linkage with one cluster."
+        # Tests maxRstat(Z, R, 3) on linkage with one cluster.
         Z = np.asarray([[0, 1, 0.3, 4]], dtype=np.double)
         R = np.asarray([[0, 0, 0, 0.3]], dtype=np.double)
         MD = maxRstat(Z, R, 3)
@@ -1322,7 +1355,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_3_Q_linkage_single(self):
-        "Tests maxRstat(Z, R, 3) on the Q data set using single linkage."
+        # Tests maxRstat(Z, R, 3) on the Q data set using single linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'single')
@@ -1333,7 +1366,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_3_Q_linkage_complete(self):
-        "Tests maxRstat(Z, R, 3) on the Q data set using complete linkage."
+        # Tests maxRstat(Z, R, 3) on the Q data set using complete linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'complete')
@@ -1344,7 +1377,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_3_Q_linkage_ward(self):
-        "Tests maxRstat(Z, R, 3) on the Q data set using Ward linkage."
+        # Tests maxRstat(Z, R, 3) on the Q data set using Ward linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'ward')
@@ -1355,7 +1388,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_3_Q_linkage_centroid(self):
-        "Tests maxRstat(Z, R, 3) on the Q data set using centroid linkage."
+        # Tests maxRstat(Z, R, 3) on the Q data set using centroid linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'centroid')
@@ -1366,7 +1399,7 @@ class TestMaxRStat(TestCase):
         self.assertTrue(within_tol(MD, expectedMD, eps))
 
     def test_maxRstat_3_Q_linkage_median(self):
-        "Tests maxRstat(Z, R, 3) on the Q data set using median linkage."
+        # Tests maxRstat(Z, R, 3) on the Q data set using median linkage.
         X = eo['Q-X']
         Y = pdist(X)
         Z = linkage(X, 'median')
@@ -1379,15 +1412,15 @@ class TestMaxRStat(TestCase):
 
 class TestDendrogram(TestCase):
     def test_dendrogram_single_linkage_tdist(self):
-        "Tests dendrogram calculation on single linkage of the tdist data set."
+        # Tests dendrogram calculation on single linkage of the tdist data set.
         Z = linkage(_ytdist, 'single')
         R = dendrogram(Z, no_plot=True)
         leaves = R["leaves"]
         self.assertEqual(leaves, [2, 5, 1, 0, 3, 4])
-        
+
     @dec.skipif(not have_matplotlib)
     def test_dendrogram_plot(self):
-        "Tests dendrogram plotting."
+        # Tests dendrogram plotting.
         Z = linkage(_ytdist, 'single')
 
         fig = plt.figure()
@@ -1403,7 +1436,7 @@ class TestDendrogram(TestCase):
 
 
 def calculate_maximum_distances(Z):
-    "Used for testing correctness of maxdists. Very slow."
+    # Used for testing correctness of maxdists.
     n = Z.shape[0] + 1
     B = np.zeros((n-1,))
     q = np.zeros((3,))
@@ -1421,7 +1454,7 @@ def calculate_maximum_distances(Z):
 
 
 def calculate_maximum_inconsistencies(Z, R, k=3):
-    "Used for testing correctness of maxinconsts. Very slow."
+    # Used for testing correctness of maxinconsts.
     n = Z.shape[0] + 1
     B = np.zeros((n-1,))
     q = np.zeros((3,))
