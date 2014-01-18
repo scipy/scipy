@@ -27,6 +27,7 @@ not for numerically exact results.
 
 DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 
+
 ## Last four of these fail all around. Need to be checked
 distcont_extra = [
     ['betaprime', (100, 86)],

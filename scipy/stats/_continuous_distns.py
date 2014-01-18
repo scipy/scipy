@@ -11,7 +11,7 @@ from scipy.misc.doccer import inherit_docstring_from
 from scipy import special
 from scipy import optimize
 from scipy import integrate
-from scipy.special import (gammaln as gamln, gamma as gam)
+from scipy.special import (gammaln as gamln, gamma as gam, boxcox, boxcox1p)
 
 from numpy import (where, arange, putmask, ravel, sum, shape,
                    log, sqrt, exp, arctanh, tan, sin, arcsin, arctan,
@@ -1400,42 +1400,60 @@ class genpareto_gen(rv_continuous):
 
         genpareto.pdf(x, c) = (1 + c * x)**(-1 - 1/c)
 
-    for ``c != 0``, and for ``x >= 0`` for all c,
-    and ``x < 1/abs(c)`` for ``c < 0``.
+    for ``c >= 0`` ``x >= 0``, and 
+    for ``c < 0`` ``0 <= x <= -1/c``
+
+    For ``c == 0``, `genpareto` reduces to the exponential 
+    distribution, `expon`::
+
+        genpareto.pdf(x, c=0) = exp(-x)
 
     %(example)s
 
     """
     def _argcheck(self, c):
         c = asarray(c)
-        self.b = where(c < 0, 1.0/abs(c), inf)
-        return where(c == 0, 0, 1)
+        self.b = _lazywhere(c < 0, (c,),
+                lambda c: -1. / c, np.inf)
+        return True
 
     def _pdf(self, x, c):
-        Px = pow(1+c*x, asarray(-1.0-1.0/c))
-        return Px
+        return np.exp(self._logpdf(x, c))
 
     def _logpdf(self, x, c):
-        return (-1.0-1.0/c) * np.log1p(c*x)
+        return -(c + 1.) * self._log1pcx(x, c)
 
     def _cdf(self, x, c):
-        return 1.0 - pow(1+c*x, asarray(-1.0/c))
+        return -np.expm1(self._logsf(x, c))
+
+    def _sf(self, x, c):
+       return np.exp(self._logsf(x, c))
+
+    def _logsf(self, x, c):
+        return -self._log1pcx(x, c)
 
     def _ppf(self, q, c):
-        vals = 1.0/c * (pow(1-q, -c)-1)
-        return vals
+        return -boxcox1p(-q, -c)
+
+    def _isf(self, q, c):
+        return -boxcox(q, -c)
 
     def _munp(self, n, c):
-        k = arange(0, n+1)
-        val = (-1.0/c)**n * sum(comb(n, k)*(-1)**k / (1.0-c*k), axis=0)
-        return where(c*n < 1, val, inf)
+        if c != 0:
+            k = arange(0, n+1)
+            val = (-1.0/c)**n * sum(comb(n, k)*(-1)**k / (1.0-c*k), axis=0)
+            return where(c*n < 1, val, inf)
+        else:
+            return gam(n+1)
 
     def _entropy(self, c):
-        if (c > 0):
-            return 1+c
-        else:
-            self.b = -1.0 / c
-            return rv_continuous._entropy(self, c)
+        return 1. + c
+
+    def _log1pcx(self, x, c):
+        # log(1+c*x)/c incl c\to 0 limit
+        return _lazywhere((x==x) & (c != 0), (x, c),
+            lambda x, c: np.log1p(c*x) / c,
+            x)
 genpareto = genpareto_gen(a=0.0, name='genpareto')
 
 
