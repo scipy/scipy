@@ -1089,7 +1089,7 @@ class TestItemfreq(object):
         bb = np.array(list(zip(b, b)), dt)
         v = stats.itemfreq(aa)
         # Arrays don't compare equal because v[:,0] is object array
-        assert_equal(v[2, 0], bb[2])
+        assert_equal(tuple(v[2, 0]), tuple(bb[2]))
 
 
 class TestMode(TestCase):
