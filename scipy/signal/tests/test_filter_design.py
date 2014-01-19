@@ -10,7 +10,7 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
 from scipy.signal import (tf2zpk, zpk2tf, BadCoefficients, freqz, normalize,
                           buttord, cheby1, cheby2, ellip, cheb1ord, cheb2ord,
                           ellipord, butter, bessel, buttap, besselap,
-                          cheb1ap, cheb2ap, ellipap)
+                          cheb1ap, cheb2ap, ellipap, iirfilter)
 
 
 class TestTf2zpk(TestCase):
@@ -519,6 +519,22 @@ class TestEllip(TestCase):
                                       0.3469, 0.3310], decimal=4)
         assert_array_almost_equal(a, [1.0000, 0.6973, 1.1441, 0.5878, 0.7323,
                                       0.1131, -0.0060], decimal=4)
+
+
+class TestIIRFilter(TestCase):
+
+    def test_symmetry(self):
+        # All built-in IIR filters are real, so should have perfectly
+        # symmetrical poles and zeros. Then ba representation (using
+        # numpy.poly) will be purely real instead of having negligible
+        # imaginary parts.
+        for N in np.arange(1, 26):
+            for ftype in ('butter', 'bessel', 'cheby1', 'cheby2', 'ellip'):
+                z, p, k = iirfilter(N, 1.1, 1, 20, 'low', analog=True, 
+                                    ftype=ftype, output='zpk')
+                assert_array_equal(sorted(z), sorted(z.conj()))
+                assert_array_equal(sorted(p), sorted(p.conj()))
+                assert_equal(k, np.real(k))
 
 
 if __name__ == "__main__":
