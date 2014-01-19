@@ -1483,6 +1483,11 @@ class TestIIRFilter(TestCase):
                 assert_array_equal(sorted(p), sorted(p.conj()))
                 assert_equal(k, np.real(k))
 
+                b, a = iirfilter(N, 1.1, 1, 20, 'low', analog=True,
+                                    ftype=ftype, output='ba')
+                assert_(issubclass(b.dtype.type, np.floating))
+                assert_(issubclass(a.dtype.type, np.floating))
+
     def test_int_inputs(self):
         # Using integer frequency arguments and large N should not produce
         # np.ints that wraparound to negative numbers
