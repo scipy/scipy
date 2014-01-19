@@ -83,12 +83,12 @@ def freqs(b, a, worN=None, plot=None):
     """
     Compute frequency response of analog filter.
 
-    Given the numerator `b` and denominator `a` of a filter, compute its
-    frequency response::
+    Given the M-order numerator `b` and N-order denominator `a` of an analog
+    filter, compute its frequency response::
 
-             b[0]*(jw)**(nb-1) + b[1]*(jw)**(nb-2) + ... + b[nb-1]
-     H(w) = -------------------------------------------------------
-             a[0]*(jw)**(na-1) + a[1]*(jw)**(na-2) + ... + a[na-1]
+             b[0]*(jw)**M + b[1]*(jw)**(M-1) + ... + b[M]
+     H(w) = ----------------------------------------------
+             a[0]*(jw)**N + a[1]*(jw)**(N-1) + ... + a[N]
 
     Parameters
     ----------
@@ -159,14 +159,14 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     """
     Compute the frequency response of a digital filter.
 
-    Given the numerator `b` and denominator `a` of a digital filter,
-    compute its frequency response::
+    Given the M-order numerator `b` and N-order denominator `a` of a digital
+    filter, compute its frequency response::
 
-               jw               -jw            -jmw
-        jw  B(e)    b[0] + b[1]e + .... + b[m]e
-     H(e) = ---- = ------------------------------------
-               jw               -jw            -jnw
-            A(e)    a[0] + a[1]e + .... + a[n]e
+                 jw               -jw               -jwM
+        jw    B(e  )  b[0] + b[1]e    + .... + b[M]e
+     H(e  ) = ---- = -----------------------------------
+                 jw               -jw               -jwN
+              A(e  )  a[0] + a[1]e    + .... + a[N]e
 
     Parameters
     ----------
