@@ -840,6 +840,7 @@ def _zpklp2lp(z, p, k, wo=1.0):
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
+    wo = float(wo) # Avoid np.int wraparound
 
     degree = _relative_degree(z, p)
 
@@ -895,6 +896,7 @@ def _zpklp2hp(z, p, k, wo=1.0):
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
+    wo = float(wo)
 
     degree = _relative_degree(z, p)
 
@@ -956,6 +958,8 @@ def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
+    wo = float(wo)
+    bw = float(bw)
 
     degree = _relative_degree(z, p)
 
@@ -1026,6 +1030,8 @@ def _zpklp2bs(z, p, k, wo=1.0, bw=1.0):
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
+    wo = float(wo)
+    bw = float(bw)
 
     degree = _relative_degree(z, p)
 
