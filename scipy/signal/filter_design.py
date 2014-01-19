@@ -312,6 +312,29 @@ def zpk2tf(z, p, k):
     else:
         b = k * poly(z)
     a = atleast_1d(poly(p))
+
+    # Use real output if possible.  Copied from numpy.poly, since
+    # we can't depend on a specific version of numpy.
+    if issubclass(b.dtype.type, numpy.complexfloating):
+        # if complex roots are all complex conjugates, the roots are real.
+        roots = numpy.asarray(z, complex)
+        pos_roots = numpy.compress(roots.imag > 0, roots)
+        neg_roots = numpy.conjugate(numpy.compress(roots.imag < 0, roots))
+        if len(pos_roots) == len(neg_roots):
+            if numpy.all(numpy.sort_complex(neg_roots) ==
+                         numpy.sort_complex(pos_roots)):
+                b = b.real.copy()
+
+    if issubclass(a.dtype.type, numpy.complexfloating):
+        # if complex roots are all complex conjugates, the roots are real.
+        roots = numpy.asarray(p, complex)
+        pos_roots = numpy.compress(roots.imag > 0, roots)
+        neg_roots = numpy.conjugate(numpy.compress(roots.imag < 0, roots))
+        if len(pos_roots) == len(neg_roots):
+            if numpy.all(numpy.sort_complex(neg_roots) ==
+                         numpy.sort_complex(pos_roots)):
+                a = a.real.copy()
+
     return b, a
 
 
