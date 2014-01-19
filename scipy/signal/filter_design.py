@@ -7,7 +7,7 @@ import warnings
 import numpy
 from numpy import (atleast_1d, poly, polyval, roots, real, asarray, allclose,
                    resize, pi, absolute, logspace, r_, sqrt, tan, log10,
-                   arctan, arcsinh, cos, exp, cosh, arccosh, ceil, conjugate,
+                   arctan, arcsinh, sin, exp, cosh, arccosh, ceil, conjugate,
                    zeros, sinh, append, concatenate, prod, ones)
 from numpy import mintypecode
 from scipy import special, optimize
@@ -2010,19 +2010,25 @@ def cheb2ap(N, rs):
     elif N == 0:
         # Avoid divide-by-zero warning
         return numpy.array([]), numpy.array([]), 1
+
+    # Ripple factor (epsilon)
     de = 1.0 / sqrt(10 ** (0.1 * rs) - 1)
     mu = arcsinh(1.0 / de) / N
 
     if N % 2:
-        n = numpy.concatenate((numpy.arange(1, N - 1, 2),
-                               numpy.arange(N + 2, 2 * N, 2)))
+        m = numpy.concatenate((numpy.arange(-N+1, 0, 2),
+                               numpy.arange(   2, N, 2)))
     else:
-        n = numpy.arange(1, 2 * N, 2)
+        m = numpy.arange(-N+1, N, 2)
 
-    z = conjugate(1j / cos(n * pi / (2.0 * N)))
-    p = exp(1j * (pi * numpy.arange(1, 2 * N, 2) / (2.0 * N) + pi / 2.0))
+    z = -conjugate(1j / sin(m * pi / (2.0 * N)))
+
+    # Poles around the unit circle like Butterworth
+    p = -exp(1j * pi * numpy.arange(-N+1, N, 2) / (2 * N))
+    # Warp into Chebyshev II
     p = sinh(mu) * p.real + 1j * cosh(mu) * p.imag
     p = 1.0 / p
+
     k = (numpy.prod(-p, axis=0) / numpy.prod(-z, axis=0)).real
     return z, p, k
 
