@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_raises, assert_equal,
-                           assert_, run_module_suite)
+                           assert_, run_module_suite, assert_allclose, dec)
 
 from scipy.signal import (tf2zpk, zpk2tf, BadCoefficients, freqz, normalize,
                           buttord, cheby1, cheby2, ellip, cheb1ord, cheb2ord,
@@ -140,134 +140,150 @@ class TestNormalize(TestCase):
         assert_array_almost_equal(a_matlab, a_output, decimal=13)
 
 
-class TestBesselap(TestCase):
+class TestPrototypeType(TestCase):
 
     def test_output_type(self):
-        # Should consistently output arrays, not lists
+        # Prototypes should consistently output arrays, not lists
         # https://github.com/scipy/scipy/pull/441
-        for N in range(7):
-            z, p, k = besselap(N)
-            assert_(isinstance(z, np.ndarray))
-            assert_(isinstance(p, np.ndarray))
-
-
-class TestButtap(TestCase):
-
-    def test_output_type(self):
-        # Should consistently output arrays, not lists
-        # https://github.com/scipy/scipy/pull/441
-        for N in range(7):
-            z, p, k = buttap(N)
-            assert_(isinstance(z, np.ndarray))
-            assert_(isinstance(p, np.ndarray))
-
-
-class TestCheb1ap(TestCase):
-
-    def test_output_type(self):
-        # Should consistently output arrays, not lists
-        # https://github.com/scipy/scipy/pull/441
-        for N in range(7):
-            z, p, k = cheb1ap(N, 1)
-            assert_(isinstance(z, np.ndarray))
-            assert_(isinstance(p, np.ndarray))
-
-
-class TestCheb2ap(TestCase):
-
-    def test_output_type(self):
-        # Should consistently output arrays, not lists
-        # https://github.com/scipy/scipy/pull/441
-        for N in range(7):
-            z, p, k = cheb2ap(N, 20)
-            assert_(isinstance(z, np.ndarray))
-            assert_(isinstance(p, np.ndarray))
-
-
-class TestEllipap(TestCase):
-
-    def test_output_type(self):
-        # Should consistently output arrays, not lists
-        # https://github.com/scipy/scipy/pull/441
-        for N in range(7):
-            z, p, k = ellipap(N, 1, 20)
-            assert_(isinstance(z, np.ndarray))
-            assert_(isinstance(p, np.ndarray))
+        for func in (buttap,
+                     besselap,
+                     lambda N: cheb1ap(N, 1),
+                     lambda N: cheb2ap(N, 20),
+                     lambda N: ellipap(N, 1, 20)):
+            for N in range(7):
+                z, p, k = func(N)
+                assert_(isinstance(z, np.ndarray))
+                assert_(isinstance(p, np.ndarray))
 
 
 class TestButtord(TestCase):
 
-    def test_basic(self):
-        # From http://dsp.etfbl.net/filtri/aproksimacija
-        assert_array_almost_equal(buttord(1, 550/450, 1, 26, analog=True),
-                                  [19, 1.0441379169150726])
+    def test_lowpass(self):
+        n, Wn = buttord(0.2, 0.3, 3, 60)
+        assert_equal(n, 16)
+        assert_allclose(Wn, 2.034240543183123e-01, rtol=1e-15)
+
+    def test_highpass(self):
+        n, Wn = buttord(0.3, 0.2, 3, 70)
+        assert_equal(n, 18)
+        assert_allclose(Wn, 2.994397774822765e-01, rtol=1e-15)
+
+    def test_bandpass(self):
+        n, Wn = buttord([0.2, 0.5], [0.1, 0.6], 3, 80)
+        assert_equal(n, 18)
+        assert_allclose(Wn, [1.988019498910527e-01, 5.020435331649425e-01],
+                        rtol=1e-15)
+
+    def test_bandstop(self):
+        n, Wn = buttord([0.1, 0.6], [0.2, 0.5], 3, 90)
+        assert_equal(n, 20)
+        assert_allclose(Wn, [1.481914223819211e-01, 5.986892392286634e-01],
+                        rtol=1e-4)
+
+    def test_analog(self):
+        n, Wn = buttord(200, 600, 3, 60, True)
+        assert_equal(n, 7)
+        assert_allclose(Wn, 2.236556391943067e+02, rtol=1e-15)
+
+        n, Wn = buttord(1, 550/450, 1, 26, analog=True)
+        assert_equal(n, 19)
+        assert_allclose(Wn, 1.0441379169150726, rtol=1e-15)
 
         assert_equal(buttord(1, 1.2, 1, 80, analog=True)[0], 55)
-
-        # From http://www.mathworks.com/help/signal/ref/buttord.html
-        n, Wn = buttord(40/500, 150/500, 3, 60)
-        assert_equal(n, 5)
-        assert_array_almost_equal(Wn, 0.0810, decimal=4)
-
-        n, Wn = buttord([60/500, 200/500], [50/500, 250/500], 3, 40)
-        assert_equal(n, 16)
-        assert_array_almost_equal(Wn, [0.1198, 0.4005], decimal=4)
 
 
 class TestCheb1ord(TestCase):
 
-    def test_basic(self):
-        # From http://dsp.etfbl.net/filtri/aproksimacija
+    def test_lowpass(self):
+        n, Wn = cheb1ord(0.2, 0.3, 3, 60)
+        assert_equal(n, 8)
+        assert_allclose(Wn, 0.2, rtol=1e-15)
+
+    def test_highpass(self):
+        n, Wn = cheb1ord(0.3, 0.2, 3, 70)
+        assert_equal(n, 9)
+        assert_allclose(Wn, 0.3, rtol=1e-15)
+
+    def test_bandpass(self):
+        n, Wn = cheb1ord([0.2, 0.5], [0.1, 0.6], 3, 80)
+        assert_equal(n, 9)
+        assert_allclose(Wn, [0.2, 0.5], rtol=1e-15)
+
+    def test_bandstop(self):
+        n, Wn = cheb1ord([0.1, 0.6], [0.2, 0.5], 3, 90)
+        assert_equal(n, 10)
+        assert_array_almost_equal(Wn, [0.1, 0.6], decimal=1)
+        # TODO: Why do these produce different frequencies from Matlab?
+        # https://github.com/scipy/scipy/issues/3219
+        # If changed to match Matlab, use _allclose or _equal instead.
+
+    def test_analog(self):
         assert_equal(cheb1ord(1, 1.2, 1, 80, analog=True)[0], 17)
 
-        # From http://www.mathworks.com/help/signal/ref/cheb1ord.html
-        n, Wp = cheb1ord(40/500, 150/500, 3, 60)
+        n, Wn = cheb1ord(700, 100, 3, 70, analog=True)
         assert_equal(n, 4)
-        assert_array_almost_equal(Wp, 0.0800, decimal=4)
-
-        n, Wp = cheb1ord([60/500, 200/500], [50/500, 250/500], 3, 40)
-        assert_equal(n, 7)
-        assert_array_almost_equal(Wp, [0.1200, 0.4000], decimal=4)
+        assert_allclose(Wn, 700, rtol=1e-15)
 
 
 class TestCheb2ord(TestCase):
 
-    def test_basic(self):
-        # From http://www.mathworks.com/help/signal/ref/cheb2ord.html
-        n, Ws = cheb2ord(40/500, 150/500, 3, 60)
-        assert_equal(n, 4)
-        # TODO: This fails.  Matlab docs wrong?
-        # assert_array_almost_equal(Ws, 0.3000, decimal=4)
+    def test_lowpass(self):
+        n, Wn = cheb2ord(0.2, 0.3, 3, 60)
+        assert_equal(n, 8)
+        assert_array_almost_equal(Wn, 0.3, decimal=1)
 
-        n, Ws = cheb2ord([60/500, 200/500], [50/500, 250/500], 3, 40)
-        assert_equal(n, 7)
-        # TODO: This fails.  Matlab docs wrong?
-        # assert_array_almost_equal(Ws, [0.1000, 0.5000], decimal=4)
+    def test_highpass(self):
+        n, Wn = cheb2ord(0.3, 0.2, 3, 70)
+        assert_equal(n, 9)
+        assert_array_almost_equal(Wn, 0.2, decimal=1)
 
-        # http://cens.ioc.ee/local/man/matlab/toolbox/signal/cheb2ord.html
-        n, Wn = cheb2ord(100/500, 150/500, 3, 15)
-        assert_equal(n, 3)
-        assert_array_almost_equal(Wn, 0.2609, decimal=4)
+    def test_bandpass(self):
+        n, Wn = cheb2ord([0.2, 0.5], [0.1, 0.6], 3, 80)
+        assert_equal(n, 9)
+        assert_array_almost_equal(Wn, [0.1, 0.6], decimal=1)
 
-        n, Wn = cheb2ord([100/500, 200/500], [50/500, 250/500], 3, 30)
-        assert_equal(n, 4)
-        assert_array_almost_equal(Wn, [0.1633, 0.4665], decimal=4)
+    def test_bandstop(self):
+        n, Wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 90)
+        assert_equal(n, 10)
+        assert_array_almost_equal(Wn, [0.2, 0.5], decimal=1)
+
+    def test_analog(self):
+        n, Wn = cheb2ord([20, 50], [10, 60], 3, 80, True)
+        assert_equal(n, 11)
+        assert_allclose(Wn, [1.673740595370124e+01,  5.974641487254268e+01],
+                        rtol=1e-15)
 
 
 class TestEllipord(TestCase):
 
-    def test_basic(self):
-        # From http://dsp.etfbl.net/filtri/aproksimacija
-        assert_equal(ellipord(1, 1.2, 1, 80, analog=True)[0], 9)
-
-        # From http://www.mathworks.com/help/signal/ref/ellipord.html
-        n, Wp = ellipord(40/500, 150/500, 3, 60)
-        assert_equal(n, 4)
-        assert_array_almost_equal(Wp, 0.0800, decimal=4)
-
-        n, Wp = ellipord([60/500, 200/500], [50/500, 250/500], 3, 40)
+    def test_lowpass(self):
+        n, Wn = ellipord(0.2, 0.3, 3, 60)
         assert_equal(n, 5)
-        assert_array_almost_equal(Wp, [0.1200, 0.4000], decimal=4)
+        assert_allclose(Wn, 0.2, rtol=1e-15)
+
+    def test_highpass(self):
+        n, Wn = ellipord(0.3, 0.2, 3, 70)
+        assert_equal(n, 6)
+        assert_allclose(Wn, 0.3, rtol=1e-15)
+
+    def test_bandpass(self):
+        n, Wn = ellipord([0.2, 0.5], [0.1, 0.6], 3, 80)
+        assert_equal(n, 6)
+        assert_allclose(Wn, [0.2, 0.5], rtol=1e-15)
+
+    def test_bandstop(self):
+        n, Wn = ellipord([0.1, 0.6], [0.2, 0.5], 3, 90)
+        assert_equal(n, 7)
+        assert_array_almost_equal(Wn, [0.1, 0.6], decimal=1)
+
+    @dec.knownfailureif(True, "This does not match Matlab. See "
+                              "https://github.com/scipy/scipy/issues/3219")
+    def test_analog(self):
+        n, Wn = ellipord([1000, 6000], [2000, 5000], 3, 90, True)
+        assert_equal(n, 9)
+        assert_allclose(Wn, [1000, 6000], rtol=1e-15)
+
+        assert_equal(ellipord(1, 1.2, 1, 80, analog=True)[0], 9)
 
 
 class TestBessel(TestCase):
@@ -280,8 +296,80 @@ class TestBessel(TestCase):
 
         # 1-order filter is same for all types
         b, a = bessel(1, 1, analog=True)
-        assert_array_almost_equal(b, [1])
-        assert_array_almost_equal(a, [1, 1])
+        assert_array_equal(b, [1])
+        assert_array_equal(a, [1, 1])
+
+        z, p, k = bessel(1, 0.3, analog=True, output='zpk')
+        assert_array_equal(z, [])
+        assert_allclose(p, [-0.3], rtol=1e-14)
+        assert_allclose(k, 0.3, rtol=1e-14)
+
+    def test_high_order(self):
+        # high even order
+        z, p, k = bessel(24, 100, analog=True, output='zpk')
+        z2 = []
+        p2 = [
+             -9.055312334014323e+01 + 4.844005815403969e+00j,
+             -9.055312334014323e+01 - 4.844005815403969e+00j,
+             -8.983105162681878e+01 + 1.454056170018573e+01j,
+             -8.983105162681878e+01 - 1.454056170018573e+01j,
+             -8.837357994162065e+01 + 2.426335240122282e+01j,
+             -8.837357994162065e+01 - 2.426335240122282e+01j,
+             -8.615278316179575e+01 + 3.403202098404543e+01j,
+             -8.615278316179575e+01 - 3.403202098404543e+01j,
+             -8.312326467067703e+01 + 4.386985940217900e+01j,
+             -8.312326467067703e+01 - 4.386985940217900e+01j,
+             -7.921695461084202e+01 + 5.380628489700191e+01j,
+             -7.921695461084202e+01 - 5.380628489700191e+01j,
+             -7.433392285433246e+01 + 6.388084216250878e+01j,
+             -7.433392285433246e+01 - 6.388084216250878e+01j,
+             -6.832565803501586e+01 + 7.415032695116071e+01j,
+             -6.832565803501586e+01 - 7.415032695116071e+01j,
+             -6.096221567378025e+01 + 8.470292433074425e+01j,
+             -6.096221567378025e+01 - 8.470292433074425e+01j,
+             -5.185914574820616e+01 + 9.569048385258847e+01j,
+             -5.185914574820616e+01 - 9.569048385258847e+01j,
+             -4.027853855197555e+01 + 1.074195196518679e+02j,
+             -4.027853855197555e+01 - 1.074195196518679e+02j,
+             -2.433481337524861e+01 + 1.207298683731973e+02j,
+             -2.433481337524861e+01 - 1.207298683731973e+02j,
+             ]
+        k2 = 9.999999999999989e+47
+        assert_array_equal(z, z2)
+        assert_allclose(sorted(p, key=np.imag), sorted(p2, key=np.imag))
+        assert_allclose(k, k2, rtol=1e-14)
+
+        # high odd order
+        z, p, k = bessel(23, 1000, analog=True, output='zpk')
+        z2 = []
+        p2 = [
+             -2.497697202208956e+02 + 1.202813187870698e+03j,
+             -2.497697202208956e+02 - 1.202813187870698e+03j,
+             -4.126986617510172e+02 + 1.065328794475509e+03j,
+             -4.126986617510172e+02 - 1.065328794475509e+03j,
+             -5.304922463809596e+02 + 9.439760364018479e+02j,
+             -5.304922463809596e+02 - 9.439760364018479e+02j,
+             -9.027564978975828e+02 + 1.010534334242318e+02j,
+             -9.027564978975828e+02 - 1.010534334242318e+02j,
+             -8.909283244406079e+02 + 2.023024699647598e+02j,
+             -8.909283244406079e+02 - 2.023024699647598e+02j,
+             -8.709469394347836e+02 + 3.039581994804637e+02j,
+             -8.709469394347836e+02 - 3.039581994804637e+02j,
+             -8.423805948131370e+02 + 4.062657947488952e+02j,
+             -8.423805948131370e+02 - 4.062657947488952e+02j,
+             -8.045561642249877e+02 + 5.095305912401127e+02j,
+             -8.045561642249877e+02 - 5.095305912401127e+02j,
+             -7.564660146766259e+02 + 6.141594859516342e+02j,
+             -7.564660146766259e+02 - 6.141594859516342e+02j,
+             -6.965966033906477e+02 + 7.207341374730186e+02j,
+             -6.965966033906477e+02 - 7.207341374730186e+02j,
+             -6.225903228776276e+02 + 8.301558302815096e+02j,
+             -6.225903228776276e+02 - 8.301558302815096e+02j,
+             -9.066732476324988e+02                         ]
+        k2 = 9.999999999999983e+68
+        assert_array_equal(z, z2)
+        assert_allclose(sorted(p, key=np.imag), sorted(p2, key=np.imag))
+        assert_allclose(k, k2, rtol=1e-14)
 
 
 class TestButter(TestCase):
@@ -297,8 +385,13 @@ class TestButter(TestCase):
         assert_array_almost_equal(b, [1])
         assert_array_almost_equal(a, [1, 1])
 
+        z, p, k = butter(1, 0.3, output='zpk')
+        assert_array_equal(z, [-1])
+        assert_allclose(p, [3.249196962329063e-01], rtol=1e-14)
+        assert_allclose(k,  3.375401518835469e-01, rtol=1e-14)
+
     def test_basic(self):
-        # Requires https://github.com/scipy/scipy/pull/3085 to pass
+        # analog s-plane
         for N in range(25):
             wn = 0.01
             z, p, k = butter(N, wn, 'low', analog=True, output='zpk')
@@ -309,13 +402,13 @@ class TestButter(TestCase):
             assert_(all(np.real(p) <= 0)) # No poles in right half of S-plane
             assert_array_almost_equal(wn**N, k)
 
+        # digital z-plane
         for N in range(25):
             wn = 0.01
             z, p, k = butter(N, wn, 'high', analog=False, output='zpk')
             assert_array_equal(np.ones(N), z) # All zeros exactly at DC
             assert_(all(np.abs(p) <= 1)) # No poles outside unit circle
 
-        # From http://dsp.etfbl.net/filtri/aproksimacija
         b1, a1 = butter(2, 1, analog=True)
         assert_array_almost_equal(b1, [1])
         assert_array_almost_equal(a1, [1, np.sqrt(2), 1])
@@ -339,12 +432,185 @@ class TestButter(TestCase):
                         1.0759, 0.6986, 0.3791, 0.1681, 0.0588, 0.0153,
                         0.0026, 0.0002]), decimal=0)
 
-        # From https://sites.google.com/site/nahums84/research/digital-filters---matlab
         b, a = butter(5, 0.4)
-        assert_array_almost_equal(b, [0.0219, 0.1097, 0.2194,
-                                      0.2194, 0.1097, 0.0219], decimal=4)
-        assert_array_almost_equal(a, [1.0000, -0.9853, 0.9738,
-                                     -0.3864, 0.1112, -0.0113], decimal=4)
+        assert_array_almost_equal(b, [0.0219,  0.1097,  0.2194,
+                                      0.2194,  0.1097,  0.0219], decimal=4)
+        assert_array_almost_equal(a, [1.0000, -0.9853,  0.9738,
+                                     -0.3864,  0.1112, -0.0113], decimal=4)
+
+    def test_highpass(self):
+        # highpass, high even order
+        z, p, k = butter(28, 0.43, 'high', output='zpk')
+        z2 = np.ones(28)
+        p2 = [
+            2.068257195514592e-01 + 9.238294351481734e-01j,
+            2.068257195514592e-01 - 9.238294351481734e-01j,
+            1.874933103892023e-01 + 8.269455076775277e-01j,
+            1.874933103892023e-01 - 8.269455076775277e-01j,
+            1.717435567330153e-01 + 7.383078571194629e-01j,
+            1.717435567330153e-01 - 7.383078571194629e-01j,
+            1.588266870755982e-01 + 6.564623730651094e-01j,
+            1.588266870755982e-01 - 6.564623730651094e-01j,
+            1.481881532502603e-01 + 5.802343458081779e-01j,
+            1.481881532502603e-01 - 5.802343458081779e-01j,
+            1.394122576319697e-01 + 5.086609000582009e-01j,
+            1.394122576319697e-01 - 5.086609000582009e-01j,
+            1.321840881809715e-01 + 4.409411734716436e-01j,
+            1.321840881809715e-01 - 4.409411734716436e-01j,
+            1.262633413354405e-01 + 3.763990035551881e-01j,
+            1.262633413354405e-01 - 3.763990035551881e-01j,
+            1.214660449478046e-01 + 3.144545234797277e-01j,
+            1.214660449478046e-01 - 3.144545234797277e-01j,
+            1.104868766650320e-01 + 2.771505404367791e-02j,
+            1.104868766650320e-01 - 2.771505404367791e-02j,
+            1.111768629525075e-01 + 8.331369153155753e-02j,
+            1.111768629525075e-01 - 8.331369153155753e-02j,
+            1.125740630842972e-01 + 1.394219509611784e-01j,
+            1.125740630842972e-01 - 1.394219509611784e-01j,
+            1.147138487992747e-01 + 1.963932363793666e-01j,
+            1.147138487992747e-01 - 1.963932363793666e-01j,
+            1.176516491045901e-01 + 2.546021573417188e-01j,
+            1.176516491045901e-01 - 2.546021573417188e-01j,
+            ]
+        k2 = 1.446671081817286e-06
+        assert_array_equal(z, z2)
+        assert_allclose(sorted(p, key=np.imag),
+                        sorted(p2, key=np.imag), rtol=1e-7)
+        assert_allclose(k, k2, rtol=1e-10)
+
+        # highpass, high odd order
+        z, p, k = butter(27, 0.56, 'high', output='zpk')
+        z2 = np.ones(27)
+        p2 = [
+            -1.772572785680147e-01 + 9.276431102995948e-01j,
+            -1.772572785680147e-01 - 9.276431102995948e-01j,
+            -1.600766565322114e-01 + 8.264026279893268e-01j,
+            -1.600766565322114e-01 - 8.264026279893268e-01j,
+            -1.461948419016121e-01 + 7.341841939120078e-01j,
+            -1.461948419016121e-01 - 7.341841939120078e-01j,
+            -1.348975284762046e-01 + 6.493235066053785e-01j,
+            -1.348975284762046e-01 - 6.493235066053785e-01j,
+            -1.256628210712206e-01 + 5.704921366889227e-01j,
+            -1.256628210712206e-01 - 5.704921366889227e-01j,
+            -1.181038235962314e-01 + 4.966120551231630e-01j,
+            -1.181038235962314e-01 - 4.966120551231630e-01j,
+            -1.119304913239356e-01 + 4.267938916403775e-01j,
+            -1.119304913239356e-01 - 4.267938916403775e-01j,
+            -1.069237739782691e-01 + 3.602914879527338e-01j,
+            -1.069237739782691e-01 - 3.602914879527338e-01j,
+            -1.029178030691416e-01 + 2.964677964142126e-01j,
+            -1.029178030691416e-01 - 2.964677964142126e-01j,
+            -9.978747500816100e-02 + 2.347687643085738e-01j,
+            -9.978747500816100e-02 - 2.347687643085738e-01j,
+            -9.743974496324025e-02 + 1.747028739092479e-01j,
+            -9.743974496324025e-02 - 1.747028739092479e-01j,
+            -9.580754551625957e-02 + 1.158246860771989e-01j,
+            -9.580754551625957e-02 - 1.158246860771989e-01j,
+            -9.484562207782568e-02 + 5.772118357151691e-02j,
+            -9.484562207782568e-02 - 5.772118357151691e-02j,
+            -9.452783117928215e-02
+            ]
+        k2 = 9.585686688851069e-09
+        assert_array_equal(z, z2)
+        assert_allclose(sorted(p, key=np.imag),
+                        sorted(p2, key=np.imag), rtol=1e-8)
+        assert_allclose(k, k2)
+
+    def test_bandpass(self):
+        z, p, k = butter(8, [0.25, 0.33], 'band', output='zpk')
+        z2 = [1,  1,  1,  1,  1,  1,  1,  1,
+             -1, -1, -1, -1, -1, -1, -1, -1]
+        p2 = [
+            4.979909925436156e-01 + 8.367609424799387e-01j,
+            4.979909925436156e-01 - 8.367609424799387e-01j,
+            4.913338722555539e-01 + 7.866774509868817e-01j,
+            4.913338722555539e-01 - 7.866774509868817e-01j,
+            5.035229361778706e-01 + 7.401147376726750e-01j,
+            5.035229361778706e-01 - 7.401147376726750e-01j,
+            5.307617160406101e-01 + 7.029184459442954e-01j,
+            5.307617160406101e-01 - 7.029184459442954e-01j,
+            5.680556159453138e-01 + 6.788228792952775e-01j,
+            5.680556159453138e-01 - 6.788228792952775e-01j,
+            6.100962560818854e-01 + 6.693849403338664e-01j,
+            6.100962560818854e-01 - 6.693849403338664e-01j,
+            6.904694312740631e-01 + 6.930501690145245e-01j,
+            6.904694312740631e-01 - 6.930501690145245e-01j,
+            6.521767004237027e-01 + 6.744414640183752e-01j,
+            6.521767004237027e-01 - 6.744414640183752e-01j,
+            ]
+        k2 = 3.398854055800844e-08
+        assert_array_equal(z, z2)
+        assert_allclose(sorted(p, key=np.imag),
+                        sorted(p2, key=np.imag), rtol=1e-13)
+        assert_allclose(k, k2, rtol=1e-15)
+
+        # bandpass analog
+        z, p, k = butter(4, [90.5, 110.5], 'bp', analog=True, output='zpk')
+        z2 = np.zeros(4)
+        p2 = [
+            -4.179137760733086e+00 + 1.095935899082837e+02j,
+            -4.179137760733086e+00 - 1.095935899082837e+02j,
+            -9.593598668443835e+00 + 1.034745398029734e+02j,
+            -9.593598668443835e+00 - 1.034745398029734e+02j,
+            -8.883991981781929e+00 + 9.582087115567160e+01j,
+            -8.883991981781929e+00 - 9.582087115567160e+01j,
+            -3.474530886568715e+00 + 9.111599925805801e+01j,
+            -3.474530886568715e+00 - 9.111599925805801e+01j,
+            ]
+        k2 = 1.600000000000001e+05
+        assert_array_equal(z, z2)
+        assert_allclose(sorted(p, key=np.imag), sorted(p2, key=np.imag))
+        assert_allclose(k, k2, rtol=1e-15)
+
+    def test_bandstop(self):
+        z, p, k = butter(7, [0.45, 0.56], 'stop', output='zpk')
+        z2 = [
+            -1.594474531383421e-02 + 9.998728744679880e-01j,
+            -1.594474531383421e-02 - 9.998728744679880e-01j,
+            -1.594474531383421e-02 + 9.998728744679880e-01j,
+            -1.594474531383421e-02 - 9.998728744679880e-01j,
+            -1.594474531383421e-02 + 9.998728744679880e-01j,
+            -1.594474531383421e-02 - 9.998728744679880e-01j,
+            -1.594474531383421e-02 + 9.998728744679880e-01j,
+            -1.594474531383421e-02 - 9.998728744679880e-01j,
+            -1.594474531383421e-02 + 9.998728744679880e-01j,
+            -1.594474531383421e-02 - 9.998728744679880e-01j,
+            -1.594474531383421e-02 + 9.998728744679880e-01j,
+            -1.594474531383421e-02 - 9.998728744679880e-01j,
+            -1.594474531383421e-02 + 9.998728744679880e-01j,
+            -1.594474531383421e-02 - 9.998728744679880e-01j,
+            ]
+        p2 = [
+            -1.766850742887729e-01 + 9.466951258673900e-01j,
+            -1.766850742887729e-01 - 9.466951258673900e-01j,
+             1.467897662432886e-01 + 9.515917126462422e-01j,
+             1.467897662432886e-01 - 9.515917126462422e-01j,
+            -1.370083529426906e-01 + 8.880376681273993e-01j,
+            -1.370083529426906e-01 - 8.880376681273993e-01j,
+             1.086774544701390e-01 + 8.915240810704319e-01j,
+             1.086774544701390e-01 - 8.915240810704319e-01j,
+            -7.982704457700891e-02 + 8.506056315273435e-01j,
+            -7.982704457700891e-02 - 8.506056315273435e-01j,
+             5.238812787110331e-02 + 8.524011102699969e-01j,
+             5.238812787110331e-02 - 8.524011102699969e-01j,
+            -1.357545000491310e-02 + 8.382287744986582e-01j,
+            -1.357545000491310e-02 - 8.382287744986582e-01j,
+            ]
+        k2 = 4.577122512960063e-01
+        assert_allclose(sorted(z, key=np.imag), sorted(z2, key=np.imag))
+        assert_allclose(sorted(p, key=np.imag), sorted(p2, key=np.imag))
+        assert_allclose(k, k2, rtol=1e-14)
+
+    def test_ba_output(self):
+        b, a = butter(4, [100, 300], 'bandpass', analog=True)
+        b2 = [1.6e+09, 0, 0, 0, 0]
+        a2 = [1.000000000000000e+00, 5.226251859505511e+02,
+              2.565685424949238e+05, 6.794127417357160e+07,
+              1.519411254969542e+10, 2.038238225207147e+12,
+              2.309116882454312e+14, 1.411088002066486e+16,
+              8.099999999999991e+17]
+        assert_allclose(b, b2, rtol=1e-14)
+        assert_allclose(a, a2, rtol=1e-14)
 
 
 class TestCheby1(TestCase):
@@ -361,8 +627,12 @@ class TestCheby1(TestCase):
         assert_array_almost_equal(b, [1])
         assert_array_almost_equal(a, [1, 1])
 
+        z, p, k = cheby1(1, 0.1, 0.3, output='zpk')
+        assert_array_equal(z, [-1])
+        assert_allclose(p, [-5.390126972799615e-01], rtol=1e-14)
+        assert_allclose(k,   7.695063486399808e-01, rtol=1e-14)
+
     def test_basic(self):
-        # Requires https://github.com/scipy/scipy/pull/3085 to pass
         for N in range(25):
             wn = 0.01
             z, p, k = cheby1(N, 1, wn, 'low', analog=True, output='zpk')
@@ -376,46 +646,43 @@ class TestCheby1(TestCase):
             assert_array_equal(np.ones(N), z) # All zeros exactly at DC
             assert_(all(np.abs(p) <= 1)) # No poles outside unit circle
 
-        # From TestNormalize
+        # Same test as TestNormalize
         b, a = cheby1(8, 0.5, 0.048)
-        assert_array_almost_equal(b, np.array([
+        assert_array_almost_equal(b, [
                              2.150733144728282e-11, 1.720586515782626e-10,
                              6.022052805239190e-10, 1.204410561047838e-09,
                              1.505513201309798e-09, 1.204410561047838e-09,
                              6.022052805239190e-10, 1.720586515782626e-10,
-                             2.150733144728282e-11]), decimal=14)
-        assert_array_almost_equal(a, np.array([
+                             2.150733144728282e-11], decimal=14)
+        assert_array_almost_equal(a, [
                              1.000000000000000e+00, -7.782402035027959e+00,
                              2.654354569747454e+01, -5.182182531666387e+01,
                              6.334127355102684e+01, -4.963358186631157e+01,
                              2.434862182949389e+01, -6.836925348604676e+00,
-                             8.412934944449140e-01]), decimal=14)
+                             8.412934944449140e-01], decimal=14)
 
-        # From https://sites.google.com/site/vandankeuth/lab7-matlab
         b, a = cheby1(4, 1, [0.4, 0.7], btype='band')
         assert_array_almost_equal(b, [0.0084, 0, -0.0335, 0, 0.0502, 0,
-                                      -0.0335, 0, 0.0084], decimal=4)
+                                     -0.0335, 0, 0.0084], decimal=4)
         assert_array_almost_equal(a, [1.0, 1.1191, 2.862, 2.2986, 3.4137,
                                       1.8653, 1.8982, 0.5676, 0.4103],
                                       decimal=4)
 
-        # From http://dsp.etfbl.net/filtri/aproksimacija
         b2, a2 = cheby1(5, 3, 1, analog=True)
         assert_array_almost_equal(b2, [0.0626], decimal=4)
         assert_array_almost_equal(a2, [1, 0.5745, 1.4150, 0.5489, 0.4080,
                                        0.0626], decimal=4)
 
-        # From http://searchcode.com/codesearch/raw/27092032
         b, a = cheby1(8, 0.5, 0.1)
         assert_array_almost_equal(b, 1.0e-006 * np.array([
-             0.00703924326028, 0.05631394608227, 0.19709881128793,
-             0.39419762257586, 0.49274702821983, 0.39419762257586,
-             0.19709881128793, 0.05631394608227, 0.00703924326028]),
-             decimal=13)
+            0.00703924326028, 0.05631394608227, 0.19709881128793,
+            0.39419762257586, 0.49274702821983, 0.39419762257586,
+            0.19709881128793, 0.05631394608227, 0.00703924326028]),
+            decimal=13)
         assert_array_almost_equal(a, [
-             1.00000000000000, -7.44912258934158,  24.46749067762108,
-           -46.27560200466141, 55.11160187999928, -42.31640010161038,
-            20.45543300484147, -5.69110270561444,   0.69770374759022],
+              1.00000000000000, -7.44912258934158,  24.46749067762108,
+            -46.27560200466141, 55.11160187999928, -42.31640010161038,
+             20.45543300484147, -5.69110270561444,   0.69770374759022],
             decimal=13)
 
         b, a = cheby1(8, 0.5, 0.25)
@@ -425,10 +692,188 @@ class TestCheby1(TestCase):
             0.25067311889837, 0.07162089111382, 0.00895261138923]),
             decimal=13)
         assert_array_almost_equal(a, [
-            1.00000000000000, -5.97529229188545, 16.58122329202101,
+              1.00000000000000, -5.97529229188545,  16.58122329202101,
             -27.71423273542923, 30.39509758355313, -22.34729670426879,
-            10.74509800434910, -3.08924633697497, 0.40707685889802],
+             10.74509800434910, -3.08924633697497,   0.40707685889802],
             decimal=13)
+
+    def test_highpass(self):
+        # high even order
+        z, p, k = cheby1(24, 0.7, 0.2, 'high', output='zpk')
+        z2 = np.ones(24)
+        p2 = [
+            -6.136558509657073e-01 + 2.700091504942893e-01j,
+            -6.136558509657073e-01 - 2.700091504942893e-01j,
+            -3.303348340927516e-01 + 6.659400861114254e-01j,
+            -3.303348340927516e-01 - 6.659400861114254e-01j,
+             8.779713780557169e-03 + 8.223108447483040e-01j,
+             8.779713780557169e-03 - 8.223108447483040e-01j,
+             2.742361123006911e-01 + 8.356666951611864e-01j,
+             2.742361123006911e-01 - 8.356666951611864e-01j,
+             4.562984557158206e-01 + 7.954276912303594e-01j,
+             4.562984557158206e-01 - 7.954276912303594e-01j,
+             5.777335494123628e-01 + 7.435821817961783e-01j,
+             5.777335494123628e-01 - 7.435821817961783e-01j,
+             6.593260977749194e-01 + 6.955390907990932e-01j,
+             6.593260977749194e-01 - 6.955390907990932e-01j,
+             7.149590948466562e-01 + 6.559437858502012e-01j,
+             7.149590948466562e-01 - 6.559437858502012e-01j,
+             7.532432388188739e-01 + 6.256158042292060e-01j,
+             7.532432388188739e-01 - 6.256158042292060e-01j,
+             7.794365244268271e-01 + 6.042099234813333e-01j,
+             7.794365244268271e-01 - 6.042099234813333e-01j,
+             7.967253874772997e-01 + 5.911966597313203e-01j,
+             7.967253874772997e-01 - 5.911966597313203e-01j,
+             8.069756417293870e-01 + 5.862214589217275e-01j,
+             8.069756417293870e-01 - 5.862214589217275e-01j,
+            ]
+        k2 = 6.190427617192018e-04
+        assert_array_equal(z, z2)
+        assert_allclose(sorted(p, key=np.imag),
+                        sorted(p2, key=np.imag), rtol=1e-10)
+        assert_allclose(k, k2, rtol=1e-10)
+
+        # high odd order
+        z, p, k = cheby1(23, 0.8, 0.3, 'high', output='zpk')
+        z2 = np.ones(23)
+        p2 = [
+             -7.676400532011010e-01,
+             -6.754621070166477e-01 + 3.970502605619561e-01j,
+             -6.754621070166477e-01 - 3.970502605619561e-01j,
+             -4.528880018446727e-01 + 6.844061483786332e-01j,
+             -4.528880018446727e-01 - 6.844061483786332e-01j,
+             -1.986009130216447e-01 + 8.382285942941594e-01j,
+             -1.986009130216447e-01 - 8.382285942941594e-01j,
+              2.504673931532608e-02 + 8.958137635794080e-01j,
+              2.504673931532608e-02 - 8.958137635794080e-01j,
+              2.001089429976469e-01 + 9.010678290791480e-01j,
+              2.001089429976469e-01 - 9.010678290791480e-01j,
+              3.302410157191755e-01 + 8.835444665962544e-01j,
+              3.302410157191755e-01 - 8.835444665962544e-01j,
+              4.246662537333661e-01 + 8.594054226449009e-01j,
+              4.246662537333661e-01 - 8.594054226449009e-01j,
+              4.919620928120296e-01 + 8.366772762965786e-01j,
+              4.919620928120296e-01 - 8.366772762965786e-01j,
+              5.385746917494749e-01 + 8.191616180796720e-01j,
+              5.385746917494749e-01 - 8.191616180796720e-01j,
+              5.855636993537203e-01 + 8.060680937701062e-01j,
+              5.855636993537203e-01 - 8.060680937701062e-01j,
+              5.688812849391721e-01 + 8.086497795114683e-01j,
+              5.688812849391721e-01 - 8.086497795114683e-01j]
+        k2 = 1.941697029206324e-05
+        assert_array_equal(z, z2)
+        assert_allclose(sorted(p, key=np.imag),
+                        sorted(p2, key=np.imag), rtol=1e-10)
+        assert_allclose(k, k2, rtol=1e-10)
+
+        z, p, k = cheby1(10, 1, 1000, 'high', analog=True, output='zpk')
+        z2 = np.zeros(10)
+        p2 = [
+            -3.144743169501551e+03 + 3.511680029092744e+03j,
+            -3.144743169501551e+03 - 3.511680029092744e+03j,
+            -5.633065604514602e+02 + 2.023615191183945e+03j,
+            -5.633065604514602e+02 - 2.023615191183945e+03j,
+            -1.946412183352025e+02 + 1.372309454274755e+03j,
+            -1.946412183352025e+02 - 1.372309454274755e+03j,
+            -7.987162953085479e+01 + 1.105207708045358e+03j,
+            -7.987162953085479e+01 - 1.105207708045358e+03j,
+            -2.250315039031946e+01 + 1.001723931471477e+03j,
+            -2.250315039031946e+01 - 1.001723931471477e+03j,
+            ]
+        k2 = 8.912509381337453e-01
+        assert_array_equal(z, z2)
+        assert_allclose(sorted(p, key=np.imag),
+                        sorted(p2, key=np.imag), rtol=1e-13)
+        assert_allclose(k, k2, rtol=1e-15)
+
+    def test_bandpass(self):
+        z, p, k = cheby1(8, 1, [0.3, 0.4], 'bp', output='zpk')
+        z2 = [1,  1,  1,  1,  1,  1,  1,  1,
+             -1, -1, -1, -1, -1, -1, -1, -1]
+        p2 = [
+            3.077784854851463e-01 + 9.453307017592942e-01j,
+            3.077784854851463e-01 - 9.453307017592942e-01j,
+            3.280567400654425e-01 + 9.272377218689016e-01j,
+            3.280567400654425e-01 - 9.272377218689016e-01j,
+            3.677912763284301e-01 + 9.038008865279966e-01j,
+            3.677912763284301e-01 - 9.038008865279966e-01j,
+            4.194425632520948e-01 + 8.769407159656157e-01j,
+            4.194425632520948e-01 - 8.769407159656157e-01j,
+            4.740921994669189e-01 + 8.496508528630974e-01j,
+            4.740921994669189e-01 - 8.496508528630974e-01j,
+            5.234866481897429e-01 + 8.259608422808477e-01j,
+            5.234866481897429e-01 - 8.259608422808477e-01j,
+            5.844717632289875e-01 + 8.052901363500210e-01j,
+            5.844717632289875e-01 - 8.052901363500210e-01j,
+            5.615189063336070e-01 + 8.100667803850766e-01j,
+            5.615189063336070e-01 - 8.100667803850766e-01j,
+            ]
+        k2 = 5.007028718074307e-09
+        assert_array_equal(z, z2)
+        assert_allclose(sorted(p, key=np.imag),
+                        sorted(p2, key=np.imag), rtol=1e-13)
+        assert_allclose(k, k2, rtol=1e-13)
+
+    def test_bandstop(self):
+        z, p, k = cheby1(7, 1, [0.5, 0.6], 'stop', output='zpk')
+        z2 = [
+             -1.583844403245361e-01 + 9.873775210440450e-01j,
+             -1.583844403245361e-01 - 9.873775210440450e-01j,
+             -1.583844403245361e-01 + 9.873775210440450e-01j,
+             -1.583844403245361e-01 - 9.873775210440450e-01j,
+             -1.583844403245361e-01 + 9.873775210440450e-01j,
+             -1.583844403245361e-01 - 9.873775210440450e-01j,
+             -1.583844403245361e-01 + 9.873775210440450e-01j,
+             -1.583844403245361e-01 - 9.873775210440450e-01j,
+             -1.583844403245361e-01 + 9.873775210440450e-01j,
+             -1.583844403245361e-01 - 9.873775210440450e-01j,
+             -1.583844403245361e-01 + 9.873775210440450e-01j,
+             -1.583844403245361e-01 - 9.873775210440450e-01j,
+             -1.583844403245361e-01 + 9.873775210440450e-01j,
+             -1.583844403245361e-01 - 9.873775210440450e-01j,
+              ]
+        p2 = [
+             -8.942974551472813e-02 + 3.482480481185926e-01j,
+             -8.942974551472813e-02 - 3.482480481185926e-01j,
+              1.293775154041798e-01 + 8.753499858081858e-01j,
+              1.293775154041798e-01 - 8.753499858081858e-01j,
+              3.399741945062013e-02 + 9.690316022705607e-01j,
+              3.399741945062013e-02 - 9.690316022705607e-01j,
+              4.167225522796539e-04 + 9.927338161087488e-01j,
+              4.167225522796539e-04 - 9.927338161087488e-01j,
+             -3.912966549550960e-01 + 8.046122859255742e-01j,
+             -3.912966549550960e-01 - 8.046122859255742e-01j,
+             -3.307805547127368e-01 + 9.133455018206508e-01j,
+             -3.307805547127368e-01 - 9.133455018206508e-01j,
+             -3.072658345097743e-01 + 9.443589759799366e-01j,
+             -3.072658345097743e-01 - 9.443589759799366e-01j,
+              ]
+        k2 = 3.619438310405028e-01
+        assert_allclose(sorted(z, key=np.imag),
+                        sorted(z2, key=np.imag), rtol=1e-13)
+        assert_allclose(sorted(p, key=np.imag),
+                        sorted(p2, key=np.imag), rtol=1e-13)
+        assert_allclose(k, k2, rtol=1e-15)
+
+    def test_ba_output(self):
+        # with transfer function conversion,  without digital conversion
+        b, a = cheby1(5, 0.9, [210, 310], 'stop', analog=True)
+        b2 = [1.000000000000006e+00,                         0,
+              3.255000000000020e+05,                         0,
+              4.238010000000026e+10,                         0,
+              2.758944510000017e+15,                         0,
+              8.980364380050052e+19,                         0,
+              1.169243442282517e+24
+              ]
+        a2 = [1.000000000000000e+00,     4.630555945694342e+02,
+              4.039266454794788e+05,     1.338060988610237e+08,
+              5.844333551294591e+10,     1.357346371637638e+13,
+              3.804661141892782e+15,     5.670715850340080e+17,
+              1.114411200988328e+20,     8.316815934908471e+21,
+              1.169243442282517e+24
+              ]
+        assert_allclose(b, b2, rtol=1e-14)
+        assert_allclose(a, a2, rtol=1e-14)
 
 
 class TestCheby2(TestCase):
@@ -445,8 +890,12 @@ class TestCheby2(TestCase):
         assert_array_almost_equal(b, [1])
         assert_array_almost_equal(a, [1, 1])
 
+        z, p, k = cheby2(1, 50, 0.3, output='zpk')
+        assert_array_equal(z, [-1])
+        assert_allclose(p, [9.967826460175649e-01], rtol=1e-14)
+        assert_allclose(k,  1.608676991217512e-03, rtol=1e-14)
+
     def test_basic(self):
-        # Requires https://github.com/scipy/scipy/pull/3085 to pass
         for N in range(25):
             wn = 0.01
             z, p, k = cheby2(N, 40, wn, 'low', analog=True, output='zpk')
@@ -458,7 +907,6 @@ class TestCheby2(TestCase):
             z, p, k = cheby2(N, 40, wn, 'high', analog=False, output='zpk')
             assert_(all(np.abs(p) <= 1)) # No poles outside unit circle
 
-        # From http://www.dsprelated.com/showmessage/20207/1.php
         B, A = cheby2(18, 100, 0.5)
         assert_array_almost_equal(B, [
             0.00167583914216, 0.01249479541868, 0.05282702120282,
@@ -477,6 +925,243 @@ class TestCheby2(TestCase):
             0.00179848550988, 0.00033713574499, 0.00004258794833,
             0.00000281030149], decimal=13)
 
+    def test_highpass(self):
+        # high even order
+        z, p, k = cheby2(26, 60, 0.3, 'high', output='zpk')
+        z2 = [
+              9.981088955489852e-01 + 6.147058341984388e-02j,
+              9.981088955489852e-01 - 6.147058341984388e-02j,
+              9.832702870387426e-01 + 1.821525257215483e-01j,
+              9.832702870387426e-01 - 1.821525257215483e-01j,
+              9.550760158089112e-01 + 2.963609353922882e-01j,
+              9.550760158089112e-01 - 2.963609353922882e-01j,
+              9.162054748821922e-01 + 4.007087817803773e-01j,
+              9.162054748821922e-01 - 4.007087817803773e-01j,
+              8.700619897368064e-01 + 4.929423232136168e-01j,
+              8.700619897368064e-01 - 4.929423232136168e-01j,
+              5.889791753434985e-01 + 8.081482110427953e-01j,
+              5.889791753434985e-01 - 8.081482110427953e-01j,
+              5.984900456570295e-01 + 8.011302423760501e-01j,
+              5.984900456570295e-01 - 8.011302423760501e-01j,
+              6.172880888914629e-01 + 7.867371958365343e-01j,
+              6.172880888914629e-01 - 7.867371958365343e-01j,
+              6.448899971038180e-01 + 7.642754030030161e-01j,
+              6.448899971038180e-01 - 7.642754030030161e-01j,
+              6.804845629637927e-01 + 7.327624168637228e-01j,
+              6.804845629637927e-01 - 7.327624168637228e-01j,
+              8.202619107108660e-01 + 5.719881098737678e-01j,
+              8.202619107108660e-01 - 5.719881098737678e-01j,
+              7.228410452536148e-01 + 6.910143437705678e-01j,
+              7.228410452536148e-01 - 6.910143437705678e-01j,
+              7.702121399578629e-01 + 6.377877856007792e-01j,
+              7.702121399578629e-01 - 6.377877856007792e-01j,
+              ]
+        p2 = [
+              7.365546198286450e-01 + 4.842085129329526e-02j,
+              7.365546198286450e-01 - 4.842085129329526e-02j,
+              7.292038510962885e-01 + 1.442201672097581e-01j,
+              7.292038510962885e-01 - 1.442201672097581e-01j,
+              7.151293788040354e-01 + 2.369925800458584e-01j,
+              7.151293788040354e-01 - 2.369925800458584e-01j,
+              6.955051820787286e-01 + 3.250341363856910e-01j,
+              6.955051820787286e-01 - 3.250341363856910e-01j,
+              6.719122956045220e-01 + 4.070475750638047e-01j,
+              6.719122956045220e-01 - 4.070475750638047e-01j,
+              6.461722130611300e-01 + 4.821965916689270e-01j,
+              6.461722130611300e-01 - 4.821965916689270e-01j,
+              5.528045062872224e-01 + 8.162920513838372e-01j,
+              5.528045062872224e-01 - 8.162920513838372e-01j,
+              5.464847782492791e-01 + 7.869899955967304e-01j,
+              5.464847782492791e-01 - 7.869899955967304e-01j,
+              5.488033111260949e-01 + 7.520442354055579e-01j,
+              5.488033111260949e-01 - 7.520442354055579e-01j,
+              6.201874719022955e-01 + 5.500894392527353e-01j,
+              6.201874719022955e-01 - 5.500894392527353e-01j,
+              5.586478152536709e-01 + 7.112676877332921e-01j,
+              5.586478152536709e-01 - 7.112676877332921e-01j,
+              5.958145844148228e-01 + 6.107074340842115e-01j,
+              5.958145844148228e-01 - 6.107074340842115e-01j,
+              5.747812938519067e-01 + 6.643001536914696e-01j,
+              5.747812938519067e-01 - 6.643001536914696e-01j,
+              ]
+        k2 = 9.932997786497189e-02
+        assert_allclose(sorted(z, key=np.angle),
+                        sorted(z2, key=np.angle), rtol=1e-13)
+        assert_allclose(sorted(p, key=np.angle),
+                        sorted(p2, key=np.angle), rtol=1e-12)
+        assert_allclose(k, k2, rtol=1e-11)
+
+        # high odd order
+        z, p, k = cheby2(25, 80, 0.5, 'high', output='zpk')
+        z2 = [
+              9.690690376586687e-01 + 2.467897896011971e-01j,
+              9.690690376586687e-01 - 2.467897896011971e-01j,
+              9.999999999999492e-01,
+              8.835111277191199e-01 + 4.684101698261429e-01j,
+              8.835111277191199e-01 - 4.684101698261429e-01j,
+              7.613142857900539e-01 + 6.483830335935022e-01j,
+              7.613142857900539e-01 - 6.483830335935022e-01j,
+              6.232625173626231e-01 + 7.820126817709752e-01j,
+              6.232625173626231e-01 - 7.820126817709752e-01j,
+              4.864456563413621e-01 + 8.737108351316745e-01j,
+              4.864456563413621e-01 - 8.737108351316745e-01j,
+              3.618368136816749e-01 + 9.322414495530347e-01j,
+              3.618368136816749e-01 - 9.322414495530347e-01j,
+              2.549486883466794e-01 + 9.669545833752675e-01j,
+              2.549486883466794e-01 - 9.669545833752675e-01j,
+              1.676175432109457e-01 + 9.858520980390212e-01j,
+              1.676175432109457e-01 - 9.858520980390212e-01j,
+              1.975218468277521e-03 + 9.999980492540941e-01j,
+              1.975218468277521e-03 - 9.999980492540941e-01j,
+              1.786959496651858e-02 + 9.998403260399917e-01j,
+              1.786959496651858e-02 - 9.998403260399917e-01j,
+              9.967933660557139e-02 + 9.950196127985684e-01j,
+              9.967933660557139e-02 - 9.950196127985684e-01j,
+              5.013970951219547e-02 + 9.987422137518890e-01j,
+              5.013970951219547e-02 - 9.987422137518890e-01j,
+              ]
+        p2 = [
+              4.218866331906864e-01,
+              4.120110200127552e-01 + 1.361290593621978e-01j,
+              4.120110200127552e-01 - 1.361290593621978e-01j,
+              3.835890113632530e-01 + 2.664910809911026e-01j,
+              3.835890113632530e-01 - 2.664910809911026e-01j,
+              3.399195570456499e-01 + 3.863983538639875e-01j,
+              3.399195570456499e-01 - 3.863983538639875e-01j,
+              2.855977834508353e-01 + 4.929444399540688e-01j,
+              2.855977834508353e-01 - 4.929444399540688e-01j,
+              2.255765441339322e-01 + 5.851631870205766e-01j,
+              2.255765441339322e-01 - 5.851631870205766e-01j,
+              1.644087535815792e-01 + 6.637356937277153e-01j,
+              1.644087535815792e-01 - 6.637356937277153e-01j,
+             -7.293633845273095e-02 + 9.739218252516307e-01j,
+             -7.293633845273095e-02 - 9.739218252516307e-01j,
+              1.058259206358626e-01 + 7.304739464862978e-01j,
+              1.058259206358626e-01 - 7.304739464862978e-01j,
+             -5.703971947785402e-02 + 9.291057542169088e-01j,
+             -5.703971947785402e-02 - 9.291057542169088e-01j,
+              5.263875132656864e-02 + 7.877974334424453e-01j,
+              5.263875132656864e-02 - 7.877974334424453e-01j,
+             -3.007943405982616e-02 + 8.846331716180016e-01j,
+             -3.007943405982616e-02 - 8.846331716180016e-01j,
+              6.857277464483946e-03 + 8.383275456264492e-01j,
+              6.857277464483946e-03 - 8.383275456264492e-01j,
+              ]
+        k2 = 6.507068761705037e-03
+        assert_allclose(sorted(z, key=np.angle),
+                        sorted(z2, key=np.angle), rtol=1e-13)
+        assert_allclose(sorted(p, key=np.angle),
+                        sorted(p2, key=np.angle), rtol=1e-12)
+        assert_allclose(k, k2, rtol=1e-11)
+
+    def test_bandpass(self):
+        z, p, k = cheby2(9, 40, [0.07, 0.2], 'pass', output='zpk')
+        z2 = [
+             -9.999999999999999e-01,
+              3.676588029658514e-01 + 9.299607543341383e-01j,
+              3.676588029658514e-01 - 9.299607543341383e-01j,
+              7.009689684982283e-01 + 7.131917730894889e-01j,
+              7.009689684982283e-01 - 7.131917730894889e-01j,
+              7.815697973765858e-01 + 6.238178033919218e-01j,
+              7.815697973765858e-01 - 6.238178033919218e-01j,
+              8.063793628819866e-01 + 5.913986160941200e-01j,
+              8.063793628819866e-01 - 5.913986160941200e-01j,
+              1.000000000000001e+00,
+              9.944493019920448e-01 + 1.052168511576739e-01j,
+              9.944493019920448e-01 - 1.052168511576739e-01j,
+              9.854674703367308e-01 + 1.698642543566085e-01j,
+              9.854674703367308e-01 - 1.698642543566085e-01j,
+              9.762751735919308e-01 + 2.165335665157851e-01j,
+              9.762751735919308e-01 - 2.165335665157851e-01j,
+              9.792277171575134e-01 + 2.027636011479496e-01j,
+              9.792277171575134e-01 - 2.027636011479496e-01j,
+              ]
+        p2 = [
+              8.143803410489621e-01 + 5.411056063397541e-01j,
+              8.143803410489621e-01 - 5.411056063397541e-01j,
+              7.650769827887418e-01 + 5.195412242095543e-01j,
+              7.650769827887418e-01 - 5.195412242095543e-01j,
+              6.096241204063443e-01 + 3.568440484659796e-01j,
+              6.096241204063443e-01 - 3.568440484659796e-01j,
+              6.918192770246239e-01 + 4.770463577106911e-01j,
+              6.918192770246239e-01 - 4.770463577106911e-01j,
+              6.986241085779207e-01 + 1.146512226180060e-01j,
+              6.986241085779207e-01 - 1.146512226180060e-01j,
+              8.654645923909734e-01 + 1.604208797063147e-01j,
+              8.654645923909734e-01 - 1.604208797063147e-01j,
+              9.164831670444591e-01 + 1.969181049384918e-01j,
+              9.164831670444591e-01 - 1.969181049384918e-01j,
+              9.630425777594550e-01 + 2.317513360702271e-01j,
+              9.630425777594550e-01 - 2.317513360702271e-01j,
+              9.438104703725529e-01 + 2.193509900269860e-01j,
+              9.438104703725529e-01 - 2.193509900269860e-01j,
+              ]
+        k2 = 9.345352824659604e-03
+        assert_allclose(sorted(z, key=np.angle),
+                        sorted(z2, key=np.angle), rtol=1e-13)
+        assert_allclose(sorted(p, key=np.angle),
+                        sorted(p2, key=np.angle), rtol=1e-13)
+        assert_allclose(k, k2, rtol=1e-11)
+
+    def test_bandstop(self):
+        z, p, k = cheby2(6, 55, [0.1, 0.9], 'stop', output='zpk')
+        z2 = [
+              6.230544895101009e-01 + 7.821784343111114e-01j,
+              6.230544895101009e-01 - 7.821784343111114e-01j,
+              9.086608545660115e-01 + 4.175349702471991e-01j,
+              9.086608545660115e-01 - 4.175349702471991e-01j,
+              9.478129721465802e-01 + 3.188268649763867e-01j,
+              9.478129721465802e-01 - 3.188268649763867e-01j,
+             -6.230544895100982e-01 + 7.821784343111109e-01j,
+             -6.230544895100982e-01 - 7.821784343111109e-01j,
+             -9.086608545660116e-01 + 4.175349702472088e-01j,
+             -9.086608545660116e-01 - 4.175349702472088e-01j,
+             -9.478129721465784e-01 + 3.188268649763897e-01j,
+             -9.478129721465784e-01 - 3.188268649763897e-01j,
+              ]
+        p2 = [
+             -9.464094036167638e-01 + 1.720048695084344e-01j,
+             -9.464094036167638e-01 - 1.720048695084344e-01j,
+             -8.715844103386737e-01 + 1.370665039509297e-01j,
+             -8.715844103386737e-01 - 1.370665039509297e-01j,
+             -8.078751204586425e-01 + 5.729329866682983e-02j,
+             -8.078751204586425e-01 - 5.729329866682983e-02j,
+              9.464094036167665e-01 + 1.720048695084332e-01j,
+              9.464094036167665e-01 - 1.720048695084332e-01j,
+              8.078751204586447e-01 + 5.729329866683007e-02j,
+              8.078751204586447e-01 - 5.729329866683007e-02j,
+              8.715844103386721e-01 + 1.370665039509331e-01j,
+              8.715844103386721e-01 - 1.370665039509331e-01j,
+              ]
+        k2 = 2.917823332763358e-03
+        assert_allclose(sorted(z, key=np.angle),
+                        sorted(z2, key=np.angle), rtol=1e-13)
+        assert_allclose(sorted(p, key=np.angle),
+                        sorted(p2, key=np.angle), rtol=1e-13)
+        assert_allclose(k, k2, rtol=1e-11)
+
+    def test_ba_output(self):
+        # with transfer function conversion, without digital conversion
+        b, a = cheby2(5, 20, [2010, 2100], 'stop', True)
+        b2 = [
+                1.000000000000000e+00, 0, # Matlab: 6.683253076978249e-12,
+                2.111512500000000e+07, 0, # Matlab: 1.134325604589552e-04,
+                1.782966433781250e+14, 0, # Matlab: 7.216787944356781e+02,
+                7.525901316990656e+20, 0, # Matlab: 2.039829265789886e+09,
+                1.587960565565748e+27, 0, # Matlab: 2.161236218626134e+15,
+                1.339913493808585e+33
+                ]
+        a2 = [
+                1.000000000000000e+00, 1.849550755473371e+02,
+                2.113222918998538e+07, 3.125114149732283e+09,
+                1.785133457155609e+14, 1.979158697776348e+16,
+                7.535048322653831e+20, 5.567966191263037e+22,
+                1.589246884221346e+27, 5.871210648525566e+28,
+                1.339913493808590e+33
+                ]
+        assert_allclose(b, b2, rtol=1e-14)
+        assert_allclose(a, a2, rtol=1e-14)
+
 
 class TestEllip(TestCase):
 
@@ -493,8 +1178,12 @@ class TestEllip(TestCase):
         assert_array_almost_equal(b, [1])
         assert_array_almost_equal(a, [1, 1])
 
+        z, p, k = ellip(1, 1, 55, 0.3, output='zpk')
+        assert_allclose(z, [-9.999999999999998e-01], rtol=1e-14)
+        assert_allclose(p, [-6.660721153525525e-04], rtol=1e-10)
+        assert_allclose(k,   5.003330360576763e-01, rtol=1e-14)
+
     def test_basic(self):
-        # Requires https://github.com/scipy/scipy/pull/3085 to pass
         for N in range(25):
             wn = 0.01
             z, p, k = ellip(N, 1, 40, wn, 'low', analog=True, output='zpk')
@@ -506,19 +1195,277 @@ class TestEllip(TestCase):
             z, p, k = ellip(N, 1, 40, wn, 'high', analog=False, output='zpk')
             assert_(all(np.abs(p) <= 1)) # No poles outside unit circle
 
-        # From http://dsp.etfbl.net/filtri/aproksimacija
         b3, a3 = ellip(5, 3, 26, 1, analog=True)
         assert_array_almost_equal(b3, [0.1420, 0, 0.3764, 0,
                                        0.2409], decimal=4)
         assert_array_almost_equal(a3, [1, 0.5686, 1.8061, 0.8017, 0.8012,
                                        0.2409], decimal=4)
 
-        # From https://sites.google.com/site/michaeltsessa/lab-7
         b, a = ellip(3, 1, 60, [0.4, 0.7], 'stop')
         assert_array_almost_equal(b, [0.3310, 0.3469, 1.1042, 0.7044, 1.1042,
                                       0.3469, 0.3310], decimal=4)
         assert_array_almost_equal(a, [1.0000, 0.6973, 1.1441, 0.5878, 0.7323,
                                       0.1131, -0.0060], decimal=4)
+
+    def test_highpass(self):
+        # high even order
+        z, p, k = ellip(24, 1, 80, 0.3, 'high', output='zpk')
+        z2 = [
+              9.761875332501075e-01 + 2.169283290099910e-01j,
+              9.761875332501075e-01 - 2.169283290099910e-01j,
+              8.413503353963494e-01 + 5.404901600661900e-01j,
+              8.413503353963494e-01 - 5.404901600661900e-01j,
+              7.160082576305009e-01 + 6.980918098681732e-01j,
+              7.160082576305009e-01 - 6.980918098681732e-01j,
+              6.456533638965329e-01 + 7.636306264739803e-01j,
+              6.456533638965329e-01 - 7.636306264739803e-01j,
+              6.127321820971366e-01 + 7.902906256703928e-01j,
+              6.127321820971366e-01 - 7.902906256703928e-01j,
+              5.983607817490196e-01 + 8.012267936512676e-01j,
+              5.983607817490196e-01 - 8.012267936512676e-01j,
+              5.922577552594799e-01 + 8.057485658286990e-01j,
+              5.922577552594799e-01 - 8.057485658286990e-01j,
+              5.896952092563588e-01 + 8.076258788449631e-01j,
+              5.896952092563588e-01 - 8.076258788449631e-01j,
+              5.886248765538837e-01 + 8.084063054565607e-01j,
+              5.886248765538837e-01 - 8.084063054565607e-01j,
+              5.881802711123132e-01 + 8.087298490066037e-01j,
+              5.881802711123132e-01 - 8.087298490066037e-01j,
+              5.879995719101164e-01 + 8.088612386766461e-01j,
+              5.879995719101164e-01 - 8.088612386766461e-01j,
+              5.879354086709576e-01 + 8.089078780868164e-01j,
+              5.879354086709576e-01 - 8.089078780868164e-01j,
+              ]
+        p2 = [
+             -3.184805259081650e-01 + 4.206951906775851e-01j,
+             -3.184805259081650e-01 - 4.206951906775851e-01j,
+              1.417279173459985e-01 + 7.903955262836452e-01j,
+              1.417279173459985e-01 - 7.903955262836452e-01j,
+              4.042881216964651e-01 + 8.309042239116594e-01j,
+              4.042881216964651e-01 - 8.309042239116594e-01j,
+              5.128964442789670e-01 + 8.229563236799665e-01j,
+              5.128964442789670e-01 - 8.229563236799665e-01j,
+              5.569614712822724e-01 + 8.155957702908510e-01j,
+              5.569614712822724e-01 - 8.155957702908510e-01j,
+              5.750478870161392e-01 + 8.118633973883931e-01j,
+              5.750478870161392e-01 - 8.118633973883931e-01j,
+              5.825314018170804e-01 + 8.101960910679270e-01j,
+              5.825314018170804e-01 - 8.101960910679270e-01j,
+              5.856397379751872e-01 + 8.094825218722543e-01j,
+              5.856397379751872e-01 - 8.094825218722543e-01j,
+              5.869326035251949e-01 + 8.091827531557583e-01j,
+              5.869326035251949e-01 - 8.091827531557583e-01j,
+              5.874697218855733e-01 + 8.090593298213502e-01j,
+              5.874697218855733e-01 - 8.090593298213502e-01j,
+              5.876904783532237e-01 + 8.090127161018823e-01j,
+              5.876904783532237e-01 - 8.090127161018823e-01j,
+              5.877753105317594e-01 + 8.090050577978136e-01j,
+              5.877753105317594e-01 - 8.090050577978136e-01j,
+              ]
+        k2 = 4.918081266957108e-02
+        assert_allclose(sorted(z, key=np.angle),
+                        sorted(z2, key=np.angle), rtol=1e-4)
+        assert_allclose(sorted(p, key=np.angle),
+                        sorted(p2, key=np.angle), rtol=1e-4)
+        assert_allclose(k, k2, rtol=1e-3)
+
+        # high odd order
+        z, p, k = ellip(23, 1, 70, 0.5, 'high', output='zpk')
+        z2 = [
+              9.999999999998661e-01                         ,
+              6.603717261750994e-01 + 7.509388678638675e-01j,
+              6.603717261750994e-01 - 7.509388678638675e-01j,
+              2.788635267510325e-01 + 9.603307416968041e-01j,
+              2.788635267510325e-01 - 9.603307416968041e-01j,
+              1.070215532544218e-01 + 9.942567008268131e-01j,
+              1.070215532544218e-01 - 9.942567008268131e-01j,
+              4.049427369978163e-02 + 9.991797705105507e-01j,
+              4.049427369978163e-02 - 9.991797705105507e-01j,
+              1.531059368627931e-02 + 9.998827859909265e-01j,
+              1.531059368627931e-02 - 9.998827859909265e-01j,
+              5.808061438534933e-03 + 9.999831330689181e-01j,
+              5.808061438534933e-03 - 9.999831330689181e-01j,
+              2.224277847754599e-03 + 9.999975262909676e-01j,
+              2.224277847754599e-03 - 9.999975262909676e-01j,
+              8.731857107534554e-04 + 9.999996187732845e-01j,
+              8.731857107534554e-04 - 9.999996187732845e-01j,
+              3.649057346914968e-04 + 9.999999334218996e-01j,
+              3.649057346914968e-04 - 9.999999334218996e-01j,
+              1.765538109802615e-04 + 9.999999844143768e-01j,
+              1.765538109802615e-04 - 9.999999844143768e-01j,
+              1.143655290967426e-04 + 9.999999934602630e-01j,
+              1.143655290967426e-04 - 9.999999934602630e-01j,
+              ]
+        p2 = [
+             -6.322017026545028e-01                         ,
+             -4.648423756662754e-01 + 5.852407464440732e-01j,
+             -4.648423756662754e-01 - 5.852407464440732e-01j,
+             -2.249233374627773e-01 + 8.577853017985717e-01j,
+             -2.249233374627773e-01 - 8.577853017985717e-01j,
+             -9.234137570557621e-02 + 9.506548198678851e-01j,
+             -9.234137570557621e-02 - 9.506548198678851e-01j,
+             -3.585663561241373e-02 + 9.821494736043981e-01j,
+             -3.585663561241373e-02 - 9.821494736043981e-01j,
+             -1.363917242312723e-02 + 9.933844128330656e-01j,
+             -1.363917242312723e-02 - 9.933844128330656e-01j,
+             -5.131505238923029e-03 + 9.975221173308673e-01j,
+             -5.131505238923029e-03 - 9.975221173308673e-01j,
+             -1.904937999259502e-03 + 9.990680819857982e-01j,
+             -1.904937999259502e-03 - 9.990680819857982e-01j,
+             -6.859439885466834e-04 + 9.996492201426826e-01j,
+             -6.859439885466834e-04 - 9.996492201426826e-01j,
+             -2.269936267937089e-04 + 9.998686250679161e-01j,
+             -2.269936267937089e-04 - 9.998686250679161e-01j,
+             -5.687071588789117e-05 + 9.999527573294513e-01j,
+             -5.687071588789117e-05 - 9.999527573294513e-01j,
+             -6.948417068525226e-07 + 9.999882737700173e-01j,
+             -6.948417068525226e-07 - 9.999882737700173e-01j,
+              ]
+        k2 = 1.220910020289434e-02
+        assert_allclose(sorted(z, key=np.angle),
+                        sorted(z2, key=np.angle), rtol=1e-4)
+        assert_allclose(sorted(p, key=np.angle),
+                        sorted(p2, key=np.angle), rtol=1e-4)
+        assert_allclose(k, k2, rtol=1e-3)
+
+    def test_bandpass(self):
+        z, p, k = ellip(7, 1, 40, [0.07, 0.2], 'pass', output='zpk')
+        z2 = [
+             -9.999999999999991e-01                         ,
+              6.856610961780020e-01 + 7.279209168501619e-01j,
+              6.856610961780020e-01 - 7.279209168501619e-01j,
+              7.850346167691289e-01 + 6.194518952058737e-01j,
+              7.850346167691289e-01 - 6.194518952058737e-01j,
+              7.999038743173071e-01 + 6.001281461922627e-01j,
+              7.999038743173071e-01 - 6.001281461922627e-01j,
+              9.999999999999999e-01                         ,
+              9.862938983554124e-01 + 1.649980183725925e-01j,
+              9.862938983554124e-01 - 1.649980183725925e-01j,
+              9.788558330548762e-01 + 2.045513580850601e-01j,
+              9.788558330548762e-01 - 2.045513580850601e-01j,
+              9.771155231720003e-01 + 2.127093189691258e-01j,
+              9.771155231720003e-01 - 2.127093189691258e-01j,
+              ]
+        p2 = [
+              8.063992755498643e-01 + 5.858071374778874e-01j,
+              8.063992755498643e-01 - 5.858071374778874e-01j,
+              8.050395347071724e-01 + 5.639097428109795e-01j,
+              8.050395347071724e-01 - 5.639097428109795e-01j,
+              8.113124936559144e-01 + 4.855241143973142e-01j,
+              8.113124936559144e-01 - 4.855241143973142e-01j,
+              8.665595314082394e-01 + 3.334049560919331e-01j,
+              8.665595314082394e-01 - 3.334049560919331e-01j,
+              9.412369011968871e-01 + 2.457616651325908e-01j,
+              9.412369011968871e-01 - 2.457616651325908e-01j,
+              9.679465190411238e-01 + 2.228772501848216e-01j,
+              9.679465190411238e-01 - 2.228772501848216e-01j,
+              9.747235066273385e-01 + 2.178937926146544e-01j,
+              9.747235066273385e-01 - 2.178937926146544e-01j,
+              ]
+        k2 = 8.354782670263239e-03
+        assert_allclose(sorted(z, key=np.angle),
+                        sorted(z2, key=np.angle), rtol=1e-4)
+        assert_allclose(sorted(p, key=np.angle),
+                        sorted(p2, key=np.angle), rtol=1e-4)
+        assert_allclose(k, k2, rtol=1e-3)
+
+        z, p, k = ellip(5, 1, 75, [90.5, 110.5], 'pass', True, 'zpk')
+        z2 = [
+             -5.583607317695175e-14 + 1.433755965989225e+02j,
+             -5.583607317695175e-14 - 1.433755965989225e+02j,
+              5.740106416459296e-14 + 1.261678754570291e+02j,
+              5.740106416459296e-14 - 1.261678754570291e+02j,
+             -2.199676239638652e-14 + 6.974861996895196e+01j,
+             -2.199676239638652e-14 - 6.974861996895196e+01j,
+             -3.372595657044283e-14 + 7.926145989044531e+01j,
+             -3.372595657044283e-14 - 7.926145989044531e+01j,
+                                  0
+              ]
+        p2 = [
+             -8.814960004852743e-01 + 1.104124501436066e+02j,
+             -8.814960004852743e-01 - 1.104124501436066e+02j,
+             -2.477372459140184e+00 + 1.065638954516534e+02j,
+             -2.477372459140184e+00 - 1.065638954516534e+02j,
+             -3.072156842945799e+00 + 9.995404870405324e+01j,
+             -3.072156842945799e+00 - 9.995404870405324e+01j,
+             -2.180456023925693e+00 + 9.379206865455268e+01j,
+             -2.180456023925693e+00 - 9.379206865455268e+01j,
+             -7.230484977485752e-01 + 9.056598800801140e+01j,
+             -7.230484977485752e-01 - 9.056598800801140e+01j,
+              ]
+        k2 = 3.774571622827070e-02
+        assert_allclose(sorted(z, key=np.imag),
+                        sorted(z2, key=np.imag), rtol=1e-4)
+        assert_allclose(sorted(p, key=np.imag),
+                        sorted(p2, key=np.imag), rtol=1e-6)
+        assert_allclose(k, k2, rtol=1e-3)
+
+    def test_bandstop(self):
+        z, p, k = ellip(8, 1, 65, [0.2, 0.4], 'stop', output='zpk')
+        z2 = [
+              3.528578094286510e-01 + 9.356769561794296e-01j,
+              3.528578094286510e-01 - 9.356769561794296e-01j,
+              3.769716042264783e-01 + 9.262248159096587e-01j,
+              3.769716042264783e-01 - 9.262248159096587e-01j,
+              4.406101783111199e-01 + 8.976985411420985e-01j,
+              4.406101783111199e-01 - 8.976985411420985e-01j,
+              5.539386470258847e-01 + 8.325574907062760e-01j,
+              5.539386470258847e-01 - 8.325574907062760e-01j,
+              6.748464963023645e-01 + 7.379581332490555e-01j,
+              6.748464963023645e-01 - 7.379581332490555e-01j,
+              7.489887970285254e-01 + 6.625826604475596e-01j,
+              7.489887970285254e-01 - 6.625826604475596e-01j,
+              7.913118471618432e-01 + 6.114127579150699e-01j,
+              7.913118471618432e-01 - 6.114127579150699e-01j,
+              7.806804740916381e-01 + 6.249303940216475e-01j,
+              7.806804740916381e-01 - 6.249303940216475e-01j,
+              ]
+        p2 = [
+             -1.025299146693730e-01 + 5.662682444754943e-01j,
+             -1.025299146693730e-01 - 5.662682444754943e-01j,
+              1.698463595163031e-01 + 8.926678667070186e-01j,
+              1.698463595163031e-01 - 8.926678667070186e-01j,
+              2.750532687820631e-01 + 9.351020170094005e-01j,
+              2.750532687820631e-01 - 9.351020170094005e-01j,
+              3.070095178909486e-01 + 9.457373499553291e-01j,
+              3.070095178909486e-01 - 9.457373499553291e-01j,
+              7.695332312152288e-01 + 2.792567212705257e-01j,
+              7.695332312152288e-01 - 2.792567212705257e-01j,
+              8.083818999225620e-01 + 4.990723496863960e-01j,
+              8.083818999225620e-01 - 4.990723496863960e-01j,
+              8.066158014414928e-01 + 5.649811440393374e-01j,
+              8.066158014414928e-01 - 5.649811440393374e-01j,
+              8.062787978834571e-01 + 5.855780880424964e-01j,
+              8.062787978834571e-01 - 5.855780880424964e-01j,
+              ]
+        k2 = 2.068622545291259e-01
+        assert_allclose(sorted(z, key=np.angle),
+                        sorted(z2, key=np.angle), rtol=1e-6)
+        assert_allclose(sorted(p, key=np.angle),
+                        sorted(p2, key=np.angle), rtol=1e-5)
+        assert_allclose(k, k2, rtol=1e-5)
+
+    def test_ba_output(self):
+        # with transfer function conversion,  without digital conversion
+        b, a = ellip(5, 1, 40, [201, 240], 'stop', True)
+        b2 = [
+             1.000000000000000e+00, 0, # Matlab: 1.743506051190569e-13,
+             2.426561778314366e+05, 0, # Matlab: 3.459426536825722e-08,
+             2.348218683400168e+10, 0, # Matlab: 2.559179747299313e-03,
+             1.132780692872241e+15, 0, # Matlab: 8.363229375535731e+01,
+             2.724038554089566e+19, 0, # Matlab: 1.018700994113120e+06,
+             2.612380874940186e+23
+             ]
+        a2 = [
+             1.000000000000000e+00, 1.337266601804649e+02,
+             2.486725353510667e+05, 2.628059713728125e+07,
+             2.436169536928770e+10, 1.913554568577315e+12,
+             1.175208184614438e+15, 6.115751452473410e+16,
+             2.791577695211466e+19, 7.241811142725384e+20,
+             2.612380874940182e+23
+             ]
+        assert_allclose(b, b2, rtol=1e-6)
+        assert_allclose(a, a2, rtol=1e-4)
 
 
 class TestIIRFilter(TestCase):
@@ -530,7 +1477,7 @@ class TestIIRFilter(TestCase):
         # imaginary parts.
         for N in np.arange(1, 26):
             for ftype in ('butter', 'bessel', 'cheby1', 'cheby2', 'ellip'):
-                z, p, k = iirfilter(N, 1.1, 1, 20, 'low', analog=True, 
+                z, p, k = iirfilter(N, 1.1, 1, 20, 'low', analog=True,
                                     ftype=ftype, output='zpk')
                 assert_array_equal(sorted(z), sorted(z.conj()))
                 assert_array_equal(sorted(p), sorted(p.conj()))
