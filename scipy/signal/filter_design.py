@@ -1980,15 +1980,20 @@ def cheb1ap(N, rp):
         # Even order filters have DC gain of -rp dB
         return numpy.array([]), numpy.array([]), 10**(-rp/20)
     z = numpy.array([])
+
+    # Ripple factor (epsilon)
     eps = numpy.sqrt(10 ** (0.1 * rp) - 1.0)
-    n = numpy.arange(1, N + 1)
-    mu = 1.0 / N * numpy.log((1.0 + numpy.sqrt(1 + eps * eps)) / eps)
-    theta = pi / 2.0 * (2 * n - 1.0) / N
-    p = (-numpy.sinh(mu) * numpy.sin(theta) +
-         1j * numpy.cosh(mu) * numpy.cos(theta))
+    mu = 1.0 / N * arcsinh(1 / eps)
+
+    # Arrange poles in an ellipse on the left half of the S-plane
+    m = numpy.arange(-N+1, N, 2)
+    theta = pi * m / (2*N)
+    p = -sinh(mu + 1j*theta)
+
     k = numpy.prod(-p, axis=0).real
     if N % 2 == 0:
         k = k / sqrt((1 + eps * eps))
+
     return z, p, k
 
 
