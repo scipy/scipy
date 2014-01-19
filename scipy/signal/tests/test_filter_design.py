@@ -1483,6 +1483,13 @@ class TestIIRFilter(TestCase):
                 assert_array_equal(sorted(p), sorted(p.conj()))
                 assert_equal(k, np.real(k))
 
+    def test_int_inputs(self):
+        # Using integer frequency arguments and large N should not produce
+        # np.ints that wraparound to negative numbers
+        k = iirfilter(24, 100, btype='low', analog=True, ftype='bessel',
+                      output='zpk')[2]
+        k2 = 9.999999999999989e+47
+        assert_allclose(k, k2)
 
 if __name__ == "__main__":
     run_module_suite()
