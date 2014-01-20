@@ -592,11 +592,11 @@ class TestBoxcoxNormmax(TestCase):
 
     def test_pearsonr(self):
         maxlog = stats.boxcox_normmax(self.x)
-        assert_allclose(maxlog, 1.804465325046)
+        assert_allclose(maxlog, 1.804465, rtol=1e-6)
 
     def test_mle(self):
         maxlog = stats.boxcox_normmax(self.x, method='mle')
-        assert_allclose(maxlog, 1.758101454114)
+        assert_allclose(maxlog, 1.758101, rtol=1e-6)
 
         # Check that boxcox() uses 'mle'
         _, maxlog_boxcox = stats.boxcox(self.x)
@@ -604,7 +604,7 @@ class TestBoxcoxNormmax(TestCase):
 
     def test_all(self):
         maxlog_all = stats.boxcox_normmax(self.x, method='all')
-        assert_allclose(maxlog_all, [1.804465325046, 1.758101454114])
+        assert_allclose(maxlog_all, [1.804465, 1.758101], rtol=1e-6)
 
 
 class TestBoxcoxNormplot(TestCase):
