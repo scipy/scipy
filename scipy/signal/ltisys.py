@@ -41,7 +41,8 @@ def tf2ss(num, den):
     Returns
     -------
     A, B, C, D : ndarray
-        State space representation of the system.
+        State space representation of the system, in controller canonical
+        form.
 
     """
     # Controller canonical state-space representation.
@@ -233,7 +234,8 @@ def zpk2ss(z, p, k):
     Returns
     -------
     A, B, C, D : ndarray
-        State-space matrices.
+        State space representation of the system, in controller canonical
+        form.
 
     """
     return tf2ss(*zpk2tf(z, p, k))
