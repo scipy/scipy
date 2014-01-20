@@ -228,6 +228,7 @@ Raw Statistical Functions
    logit      --
    expit      --
    boxcox     -- Compute the Box-Cox transformation.
+   boxcox1p   -- Compute the Box-Cox transformation.
 
 Gamma and Related Functions
 ---------------------------

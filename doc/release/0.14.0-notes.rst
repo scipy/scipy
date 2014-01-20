@@ -54,7 +54,8 @@ a measure of phase synchrony, of a set of events.
 Box-Cox transformation
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The ufunc `scipy.special.boxcox` computes the Box-Cox transformation.
+The functions `scipy.special.boxcox` and `scipy.special.boxcox1p` compute
+the Box-Cox transformation.
 
 Deprecated features
 ===================
