@@ -41,8 +41,7 @@ C                Search range: [1e-100, 1E10]
 C                    DOUBLE PRECISION DF
 C
 C     PNONC <--> Noncentrality parameter of the noncentral t-distributio
-C                Input range: [-infinity , +infinity).
-C                Search range: [-1e4, 1E4]
+C                Input range: [-1e4, 1E4].
 C
 C     STATUS <-- 0 if calculation completed correctly
 C               -I if input parameter number I is out of range
@@ -102,19 +101,22 @@ C     ..
       IF (df.GT.1.0D10) THEN
           df = 1.0D10
       ENDIF
-      IF (pnonc.GT.tent4) THEN
-          pnonc = tent4
-      ELSE IF (pnonc.LT.-tent4) THEN
-          pnonc = -tent4
-      ENDIF
 
       IF (t.ne.t) THEN
           status = -4
           RETURN
       ENDIF
-      IF (pnonc.ne.pnonc) THEN
-          status = -6
-          RETURN
+
+      IF (which.NE.4) THEN
+          IF (.NOT. (pnonc.GE.-tent4)) THEN
+              status = -6
+              bound = -tent4
+              RETURN
+          ELSE IF (.NOT. (pnonc.LE.tent4)) THEN
+              status = -6
+              bound = tent4
+              RETURN
+          ENDIF
       ENDIF
 
       IF (.NOT. ((which.LT.1).OR. (which.GT.4))) GO TO 30

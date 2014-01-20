@@ -3083,17 +3083,9 @@ class nct_gen(rv_continuous):
         return Px
 
     def _cdf(self, x, df, nc):
-        if (asarray(nc) > 1e4).any():
-            warnings.warn(
-                    'The noncentrality parameter is too large, '
-                    'which may result in incorrect output.', RuntimeWarning)
         return special.nctdtr(df, nc, x)
 
     def _ppf(self, q, df, nc):
-        if (asarray(nc) > 1e4).any():
-            warnings.warn(
-                    'The noncentrality parameter is too large, '
-                    'which may result in incorrect output.', RuntimeWarning)
         return special.nctdtrit(df, nc, q)
 
     def _stats(self, df, nc, moments='mv'):

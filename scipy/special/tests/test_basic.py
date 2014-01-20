@@ -591,7 +591,7 @@ class TestCephes(TestCase):
         assert_equal(cephes.nctdtr(1,0,0),0.5)
 
         assert_approx_equal(cephes.nctdtr(np.inf, 1., 1.), 0.5, 5)
-        assert_approx_equal(cephes.nctdtr(2., np.inf, 10.), 0.0)
+        assert_(np.isnan(cephes.nctdtr(2., np.inf, 10.)))
         assert_approx_equal(cephes.nctdtr(2., 1., np.inf), 1.)
 
         assert_(np.isnan(cephes.nctdtr(np.nan, 1., 1.)))
