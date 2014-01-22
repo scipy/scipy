@@ -1571,3 +1571,38 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(mpmath.zeta),
                             [Arg(a=1, b=1e10, inclusive_a=False),
                              Arg(a=0, inclusive_a=False)])
+
+    def test_boxcox(self):
+
+        def mp_boxcox(x, lmbda):
+            x = mpmath.mp.mpf(x)
+            lmbda = mpmath.mp.mpf(lmbda)
+            if lmbda == 0:
+                return mpmath.mp.log(x)
+            else:
+                return mpmath.mp.powm1(x, lmbda) / lmbda
+
+        assert_mpmath_equal(sc.boxcox,
+                            _exception_to_nan(mp_boxcox),
+                            [Arg(a=0, inclusive_a=False), Arg()],
+                            n=200,
+                            dps=60,
+                            rtol=1e-13)
+
+    def test_boxcox1p(self):
+
+        def mp_boxcox1p(x, lmbda):
+            x = mpmath.mp.mpf(x)
+            lmbda = mpmath.mp.mpf(lmbda)
+            one = mpmath.mp.mpf(1)
+            if lmbda == 0:
+                return mpmath.mp.log(one + x)
+            else:
+                return mpmath.mp.powm1(one + x, lmbda) / lmbda
+
+        assert_mpmath_equal(sc.boxcox1p,
+                            _exception_to_nan(mp_boxcox1p),
+                            [Arg(a=-1, inclusive_a=False), Arg()],
+                            n=200,
+                            dps=60,
+                            rtol=1e-13)

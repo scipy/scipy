@@ -1122,6 +1122,9 @@ cdef _proto_binom_t *_proto_binom_t_var = &_func_binom
 from _boxcox cimport boxcox as _func_boxcox
 ctypedef double _proto_boxcox_t(double, double) nogil
 cdef _proto_boxcox_t *_proto_boxcox_t_var = &_func_boxcox
+from _boxcox cimport boxcox1p as _func_boxcox1p
+ctypedef double _proto_boxcox1p_t(double, double) nogil
+cdef _proto_boxcox1p_t *_proto_boxcox1p_t_var = &_func_boxcox1p
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_btdtr "btdtr"(double, double, double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -2284,8 +2287,8 @@ cdef char *ufunc_boxcox_doc = (
     "    y = (x**lmbda - 1) / lmbda  if lmbda != 0\n"
     "        log(x)                  if lmbda == 0\n"
     "\n"
-    "Returns `nan` if ``x < 0`` unless `lmbda` is a nonzero integer.\n"
-    "Returns `-inf` if ``x == 0`` and ``lmbda <= 0``.\n"
+    "Returns `nan` if ``x < 0``.\n"
+    "Returns `-inf` if ``x == 0`` and ``lmbda < 0``.\n"
     "\n"
     ".. versionadded:: 0.14.0\n"
     "\n"
@@ -2294,7 +2297,7 @@ cdef char *ufunc_boxcox_doc = (
     "x : array_like\n"
     "    Data to be transformed.\n"
     "lmbda : array_like\n"
-    "    Power parameter of the Box-Cox transform. \n"
+    "    Power parameter of the Box-Cox transform.\n"
     "\n"
     "Returns\n"
     "-------\n"
@@ -2322,6 +2325,59 @@ ufunc_boxcox_ptr[2*1+1] = <void*>(<char*>"boxcox")
 ufunc_boxcox_data[0] = &ufunc_boxcox_ptr[2*0]
 ufunc_boxcox_data[1] = &ufunc_boxcox_ptr[2*1]
 boxcox = np.PyUFunc_FromFuncAndData(ufunc_boxcox_loops, ufunc_boxcox_data, ufunc_boxcox_types, 2, 2, 1, 0, "boxcox", ufunc_boxcox_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_boxcox1p_loops[2]
+cdef void *ufunc_boxcox1p_ptr[4]
+cdef void *ufunc_boxcox1p_data[2]
+cdef char ufunc_boxcox1p_types[6]
+cdef char *ufunc_boxcox1p_doc = (
+    "boxcox1p(x, lmbda)\n"
+    "\n"
+    "Compute the Box-Cox transformation of 1 + `x`.\n"
+    "\n"
+    "The Box-Cox transformation computed by `boxcox1p` is::\n"
+    "\n"
+    "    y = ((1+x)**lmbda - 1) / lmbda  if lmbda != 0\n"
+    "        log(1+x)                    if lmbda == 0\n"
+    "\n"
+    "Returns `nan` if ``x < -1``.\n"
+    "Returns `-inf` if ``x == -1`` and ``lmbda < 0``.\n"
+    "\n"
+    ".. versionadded:: 0.14.0\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Data to be transformed.\n"
+    "lmbda : array_like\n"
+    "    Power parameter of the Box-Cox transform.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "y : array\n"
+    "    Transformed data.\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    ">> boxcox1p(1e-4, [0, 0.5, 1])\n"
+    "array([  9.99950003e-05,   9.99975001e-05,   1.00000000e-04])\n"
+    ">>> boxcox1p([0.01, 0.1], 0.25)\n"
+    "array([ 0.00996272,  0.09645476])")
+ufunc_boxcox1p_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_boxcox1p_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_boxcox1p_types[0] = <char>NPY_FLOAT
+ufunc_boxcox1p_types[1] = <char>NPY_FLOAT
+ufunc_boxcox1p_types[2] = <char>NPY_FLOAT
+ufunc_boxcox1p_types[3] = <char>NPY_DOUBLE
+ufunc_boxcox1p_types[4] = <char>NPY_DOUBLE
+ufunc_boxcox1p_types[5] = <char>NPY_DOUBLE
+ufunc_boxcox1p_ptr[2*0] = <void*>_func_boxcox1p
+ufunc_boxcox1p_ptr[2*0+1] = <void*>(<char*>"boxcox1p")
+ufunc_boxcox1p_ptr[2*1] = <void*>_func_boxcox1p
+ufunc_boxcox1p_ptr[2*1+1] = <void*>(<char*>"boxcox1p")
+ufunc_boxcox1p_data[0] = &ufunc_boxcox1p_ptr[2*0]
+ufunc_boxcox1p_data[1] = &ufunc_boxcox1p_ptr[2*1]
+boxcox1p = np.PyUFunc_FromFuncAndData(ufunc_boxcox1p_loops, ufunc_boxcox1p_data, ufunc_boxcox1p_types, 2, 2, 1, 0, "boxcox1p", ufunc_boxcox1p_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_btdtr_loops[2]
 cdef void *ufunc_btdtr_ptr[4]

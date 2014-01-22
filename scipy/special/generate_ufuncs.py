@@ -291,6 +291,7 @@ xlogy -- xlogy[double]: dd->d, xlogy[double_complex]: DD->D -- _xlogy.pxd
 xlog1py -- xlog1py: dd->d                                  -- _xlogy.pxd
 poch -- poch: dd->d                                        -- c_misc/misc.h
 boxcox -- boxcox: dd->d                                    -- _boxcox.pxd
+boxcox1p -- boxcox1p: dd->d                                -- _boxcox.pxd
 """
 
 #---------------------------------------------------------------------------------

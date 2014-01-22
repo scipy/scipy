@@ -1646,8 +1646,8 @@ add_newdoc("scipy.special", "boxcox",
         y = (x**lmbda - 1) / lmbda  if lmbda != 0
             log(x)                  if lmbda == 0
 
-    Returns `nan` if ``x < 0`` unless `lmbda` is a nonzero integer.
-    Returns `-inf` if ``x == 0`` and ``lmbda <= 0``.
+    Returns `nan` if ``x < 0``.
+    Returns `-inf` if ``x == 0`` and ``lmbda < 0``.
 
     .. versionadded:: 0.14.0
 
@@ -1656,7 +1656,7 @@ add_newdoc("scipy.special", "boxcox",
     x : array_like
         Data to be transformed.
     lmbda : array_like
-        Power parameter of the Box-Cox transform. 
+        Power parameter of the Box-Cox transform.
 
     Returns
     -------
@@ -1669,4 +1669,40 @@ add_newdoc("scipy.special", "boxcox",
     array([   0.        ,   12.4       ,  126.09110641])
     >>> boxcox(2, [0, 1, 2])
     array([ 0.69314718,  1.        ,  1.5       ])
+    """)
+
+add_newdoc("scipy.special", "boxcox1p",
+    """
+    boxcox1p(x, lmbda)
+
+    Compute the Box-Cox transformation of 1 + `x`.
+
+    The Box-Cox transformation computed by `boxcox1p` is::
+
+        y = ((1+x)**lmbda - 1) / lmbda  if lmbda != 0
+            log(1+x)                    if lmbda == 0
+
+    Returns `nan` if ``x < -1``.
+    Returns `-inf` if ``x == -1`` and ``lmbda < 0``.
+
+    .. versionadded:: 0.14.0
+
+    Parameters
+    ----------
+    x : array_like
+        Data to be transformed.
+    lmbda : array_like
+        Power parameter of the Box-Cox transform.
+
+    Returns
+    -------
+    y : array
+        Transformed data.
+
+    Examples
+    --------
+    >> boxcox1p(1e-4, [0, 0.5, 1])
+    array([  9.99950003e-05,   9.99975001e-05,   1.00000000e-04])
+    >>> boxcox1p([0.01, 0.1], 0.25)
+    array([ 0.00996272,  0.09645476])
     """)
