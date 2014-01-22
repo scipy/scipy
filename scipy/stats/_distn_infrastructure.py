@@ -1359,10 +1359,6 @@ class rv_continuous(rv_generic):
         self._cdfvec = vectorize(self._cdf_single, otypes='d')
         self._cdfvec.nin = self.numargs + 1
 
-        # backwards compatibility
-        self.vecfunc = self._ppfvec
-        self.veccdf = self._cdfvec
-
         self.extradoc = extradoc
         if momtype == 0:
             self.generic_moment = vectorize(self._mom0_sc, otypes='d')
@@ -2576,9 +2572,6 @@ class rv_discrete(rv_generic):
             _vec_generic_moment.nin = self.numargs + 2
             self.generic_moment = instancemethod(_vec_generic_moment,
                                                  self, rv_discrete)
-
-            # backwards compatibility
-            self.vec_generic_moment = _vec_generic_moment
 
             # correct nin for ppf vectorization
             _vppf = vectorize(_drv2_ppfsingle, otypes='d')
