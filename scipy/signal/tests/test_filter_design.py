@@ -1496,5 +1496,19 @@ class TestIIRFilter(TestCase):
         k2 = 9.999999999999989e+47
         assert_allclose(k, k2)
 
+    def test_invalid_wn_size(self):
+        # low and high have 1 Wn, band and stop have 2 Wn
+        assert_raises(ValueError, iirfilter, 1, [0.1, 0.9], btype='low')
+        assert_raises(ValueError, iirfilter, 1, [0.2, 0.5], btype='high')
+        assert_raises(ValueError, iirfilter, 1, 0.2, btype='bp')
+        assert_raises(ValueError, iirfilter, 1, 400, btype='bs', analog=True)
+
+    def test_invalid_wn_range(self):
+        # For digital filters, 0 <= Wn <= 1
+        assert_raises(ValueError, iirfilter, 1, 2, btype='low')
+        assert_raises(ValueError, iirfilter, 1, -1, btype='high')
+        assert_raises(ValueError, iirfilter, 1, [1, 2], btype='band')
+        assert_raises(ValueError, iirfilter, 1, [10, 20], btype='stop')
+
 if __name__ == "__main__":
     run_module_suite()
