@@ -736,10 +736,14 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         warped = Wn
 
     # transform to lowpass, bandpass, highpass, or bandstop
-    if btype == 'lowpass':
-        z, p, k = _zpklp2lp(z, p, k, wo=warped)
-    elif btype == 'highpass':
-        z, p, k = _zpklp2hp(z, p, k, wo=warped)
+    if btype in ('lowpass', 'highpass'):
+        if numpy.size(Wn) != 1:
+            raise ValueError('Must specify a single critical frequency Wn')
+
+        if btype == 'lowpass':
+            z, p, k = _zpklp2lp(z, p, k, wo=warped)
+        elif btype == 'highpass':
+            z, p, k = _zpklp2hp(z, p, k, wo=warped)
     elif btype in ('bandpass', 'bandstop'):
         try:
             bw = warped[1] - warped[0]
