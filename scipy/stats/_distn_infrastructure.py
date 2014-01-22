@@ -1345,11 +1345,7 @@ class rv_continuous(rv_generic):
             self.b = inf
         self.xtol = xtol
         self._size = 1
-        self.m = 0.0
         self.moment_type = momtype
-
-        self.expandarr = 1
-
         self.shapes = shapes
         self._construct_argparser(meths_to_inspect=[self._pdf, self._cdf],
                                   locscale_in='loc=0, scale=1',
