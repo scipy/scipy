@@ -1355,7 +1355,6 @@ class rv_continuous(rv_generic):
         self._ppfvec = vectorize(self._ppf_single, otypes='d')
         self._ppfvec.nin = self.numargs + 1
         self.vecentropy = vectorize(self._entropy, otypes='d')
-        self.vecentropy.nin = self.numargs + 1
         self._cdfvec = vectorize(self._cdf_single, otypes='d')
         self._cdfvec.nin = self.numargs + 1
 
