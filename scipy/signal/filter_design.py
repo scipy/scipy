@@ -1407,7 +1407,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False):
     >>> N, Wn = signal.cheb1ord(0.2, 0.3, 3, 40)
     >>> b, a = signal.cheby1(N, 3, Wn, 'low')
     >>> w, h = signal.freqz(b, a)
-    >>> plt.plot(w/pi, 20*log10(abs(h)))
+    >>> plt.plot(w/pi, 20 * np.log10(abs(h)))
     >>> plt.xscale('log')
     >>> plt.title('Chebyshev I lowpass filter fit to constraints')
     >>> plt.xlabel('Normalized frequency')
@@ -1531,7 +1531,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False):
     >>> N, Wn = signal.cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
     >>> b, a = signal.cheby2(N, 60, Wn, 'stop')
     >>> w, h = signal.freqz(b, a)
-    >>> plt.plot(w/pi, 20*log10(abs(h)))
+    >>> plt.plot(w/pi, 20 * np.log10(abs(h)))
     >>> plt.xscale('log')
     >>> plt.title('Chebyshev II bandstop filter fit to constraints')
     >>> plt.xlabel('Normalized frequency')
@@ -1660,7 +1660,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
     See Also
     --------
     ellip : Filter design using order and critical points
-    buttord, cheb1ord, cheb2ord, : Find order and critical points
+    buttord, cheb1ord, cheb2ord : Find order and critical points
                                    from passband and stopband spec
     iirfilter : General filter design using order and critical frequencies
     iirdesign : General filter design using passband and stopband spec
@@ -1677,7 +1677,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
     >>> N, Wn = signal.ellipord(30, 10, 3, 60, True)
     >>> b, a = signal.ellip(N, 3, 60, Wn, 'high', True)
     >>> w, h = signal.freqs(b, a, np.logspace(0, 3, 500))
-    >>> plt.plot(w, 20 * log10(abs(h)))
+    >>> plt.plot(w, 20 * np.log10(abs(h)))
     >>> plt.xscale('log')
     >>> plt.title('Elliptical highpass filter fit to constraints')
     >>> plt.xlabel('Frequency [radians / second]')
