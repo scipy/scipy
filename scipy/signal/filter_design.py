@@ -1240,6 +1240,31 @@ def buttord(wp, ws, gpass, gstop, analog=False):
     iirfilter : General filter design using order and critical frequencies
     iirdesign : General filter design using passband and stopband spec
 
+    Examples
+    --------
+    Design an analog bandpass filter with passband within 3 dB from 20 to
+    50 rad/s, while rejecting at least -40 dB below 14 and above 60 rad/s.
+    Plot its frequency response, showing the passband and stopband
+    constraints in gray.
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> N, Wn = signal.buttord([20, 50], [14, 60], 3, 40, True)
+    >>> b, a = signal.butter(N, Wn, 'band', True)
+    >>> w, h = signal.freqs(b, a, np.logspace(1, 2, 500))
+    >>> plt.plot(w, 20 * np.log10(abs(h)))
+    >>> plt.xscale('log')
+    >>> plt.title('Butterworth bandpass filter fit to constraints')
+    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.fill([1,  14,  14,   1], [-40, -40, 99, 99], '0.9', lw=0) # stop
+    >>> plt.fill([20, 20,  50,  50], [-99, -3, -3, -99], '0.9', lw=0) # pass
+    >>> plt.fill([60, 60, 1e9, 1e9], [99, -40, -40, 99], '0.9', lw=0) # stop
+    >>> plt.axis([10, 100, -60, 3])
+    >>> plt.show()
+
     """
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
@@ -1370,6 +1395,29 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False):
     iirfilter : General filter design using order and critical frequencies
     iirdesign : General filter design using passband and stopband spec
 
+    Examples
+    --------
+    Design a digital lowpass filter such that the passband is within 3 dB up
+    to 0.2*(fs/2), while rejecting at least -40 dB above 0.3*(fs/2).  Plot its
+    frequency response, showing the passband and stopband constraints in gray.
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> N, Wn = signal.cheb1ord(0.2, 0.3, 3, 40)
+    >>> b, a = signal.cheby1(N, 3, Wn, 'low')
+    >>> w, h = signal.freqz(b, a)
+    >>> plt.plot(w/pi, 20*log10(abs(h)))
+    >>> plt.xscale('log')
+    >>> plt.title('Chebyshev I lowpass filter fit to constraints')
+    >>> plt.xlabel('Normalized frequency')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.fill([.01, 0.2, 0.2, .01], [-3, -3, -99, -99], '0.9', lw=0) # stop
+    >>> plt.fill([0.3, 0.3,   2,   2], [ 9, -40, -40,  9], '0.9', lw=0) # pass
+    >>> plt.axis([0.08, 1, -60, 3])
+    >>> plt.show()
+
     """
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
@@ -1469,6 +1517,31 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False):
                                   from passband and stopband spec
     iirfilter : General filter design using order and critical frequencies
     iirdesign : General filter design using passband and stopband spec
+
+    Examples
+    --------
+    Design a digital bandstop filter which rejects -60 dB from 0.2*(fs/2) to
+    0.5*(fs/2), while staying within 3 dB below 0.1*(fs/2) or above
+    0.6*(fs/2).  Plot its frequency response, showing the passband and
+    stopband constraints in gray.
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> N, Wn = signal.cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+    >>> b, a = signal.cheby2(N, 60, Wn, 'stop')
+    >>> w, h = signal.freqz(b, a)
+    >>> plt.plot(w/pi, 20*log10(abs(h)))
+    >>> plt.xscale('log')
+    >>> plt.title('Chebyshev II bandstop filter fit to constraints')
+    >>> plt.xlabel('Normalized frequency')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.fill([.01, .1, .1, .01], [-3,  -3, -99, -99], '0.9', lw=0) # stop
+    >>> plt.fill([.2,  .2, .5,  .5], [ 9, -60, -60,   9], '0.9', lw=0) # pass
+    >>> plt.fill([.6,  .6,  2,   2], [-99, -3,  -3, -99], '0.9', lw=0) # stop
+    >>> plt.axis([0.06, 1, -80, 3])
+    >>> plt.show()
 
     """
     wp = atleast_1d(wp)
@@ -1591,6 +1664,29 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
                                    from passband and stopband spec
     iirfilter : General filter design using order and critical frequencies
     iirdesign : General filter design using passband and stopband spec
+
+    Examples
+    --------
+    Design an analog highpass filter such that the passband is within 3 dB
+    above 30 rad/s, while rejecting -60 dB at 10 rad/s.  Plot its
+    frequency response, showing the passband and stopband constraints in gray.
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> N, Wn = signal.ellipord(30, 10, 3, 60, True)
+    >>> b, a = signal.ellip(N, 3, 60, Wn, 'high', True)
+    >>> w, h = signal.freqs(b, a, np.logspace(0, 3, 500))
+    >>> plt.plot(w, 20 * log10(abs(h)))
+    >>> plt.xscale('log')
+    >>> plt.title('Elliptical highpass filter fit to constraints')
+    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.fill([.1, 10,  10,  .1], [1e4, 1e4, -60, -60], '0.9', lw=0) # stop
+    >>> plt.fill([30, 30, 1e9, 1e9], [-99,  -3,  -3, -99], '0.9', lw=0) # pass
+    >>> plt.axis([1, 300, -80, 3])
+    >>> plt.show()
 
     """
     wp = atleast_1d(wp)
