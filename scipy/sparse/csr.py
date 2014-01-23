@@ -254,18 +254,18 @@ class csr_matrix(_cs_matrix, IndexMixin):
                 P = extractor(row, self.shape[0])     # [[1,2],j] or [[1,2],1:2]
                 return (P*self)[:,col]
 
-        # If all else fails, try elementwise
-        row, col = self._index_to_arrays(row, col)
+        if not (issequence(col) and issequence(row)):
+            # Sample elementwise
+            row, col = self._index_to_arrays(row, col)
 
+        row = asindices(row)
+        col = asindices(col)
         if row.shape != col.shape:
             raise IndexError('number of row and column indices differ')
         assert row.ndim <= 2
-        shape = row.shape
-        num_samples = np.prod(shape)
 
-        row = asindices(np.ravel(row))
-        col = asindices(np.ravel(col))
-        if len(row) == 0 or len(col) == 0:
+        num_samples = np.size(row)
+        if num_samples == 0:
             return csr_matrix((0,0))
         check_bounds(row, self.shape[0])
         check_bounds(col, self.shape[1])
@@ -273,10 +273,11 @@ class csr_matrix(_cs_matrix, IndexMixin):
         val = np.empty(num_samples, dtype=self.dtype)
         csr_sample_values(self.shape[0], self.shape[1],
                           self.indptr, self.indices, self.data,
-                          num_samples, row, col, val)
-        if len(shape) == 1:
+                          num_samples, row.ravel(), col.ravel(), val)
+        if row.ndim == 1:
+            # row and col are 1d
             return np.asmatrix(val)
-        return self.__class__(val.reshape(shape))
+        return self.__class__(val.reshape(row.shape))
 
     def _get_single_element(self,row,col):
         """Returns the single element self[row, col]
