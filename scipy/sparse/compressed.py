@@ -4,8 +4,6 @@ from __future__ import division, print_function, absolute_import
 __all__ = []
 
 from warnings import warn
-from itertools import groupby
-from operator import itemgetter
 
 import numpy as np
 from scipy.lib.six import xrange
@@ -625,17 +623,16 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # Collate old and new in chunks by major index
         indices_parts = []
         data_parts = []
+        ui, ui_indptr = np.unique(i, return_index=True)
         # TODO: this won't work for duplicate i, j
         prev = 0
-        for ii, entries in groupby(zip(i, j, x), itemgetter(0)):
-            if ii > prev:
-                start = self.indptr[prev]
-                stop = self.indptr[ii + 1]
-                indices_parts.append(self.indices[start:stop])
-                data_parts.append(self.data[start:stop])
-            _, inds, data = zip(*entries)
-            indices_parts.append(inds)
-            data_parts.append(data)
+        for ii, js, je in zip(ui, ui_indptr, np.append(ui_indptr, len(j))):
+            start = self.indptr[prev]
+            stop = self.indptr[ii + 1]
+            indices_parts.append(self.indices[start:stop])
+            data_parts.append(self.data[start:stop])
+            indices_parts.append(j[js:je])
+            data_parts.append(x[js:je])
             prev = ii
 
         start = self.indptr[ii + 1]
@@ -645,7 +642,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self.indices = np.concatenate(indices_parts)
         self.data = np.concatenate(data_parts)
         nnzs = np.ediff1d(self.indptr, to_begin=0).astype(self.indptr.dtype)
-        nnzs[1:] += np.bincount(i, minlength=M)
+        nnzs[1:][ui] += np.diff(ui_indptr)
         self.indptr = np.cumsum(nnzs, out=nnzs)
 
         if do_sort:
