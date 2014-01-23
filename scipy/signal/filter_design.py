@@ -1690,13 +1690,13 @@ def buttord(wp, ws, gpass, gstop, analog=False):
     GPASS = 10 ** (0.1 * abs(gpass))
     ord = int(ceil(log10((GSTOP - 1.0) / (GPASS - 1.0)) / (2 * log10(nat))))
 
-    # Find the Butterworth natural frequency W0 (or the "3dB" frequency")
-    # to give exactly gstop at nat. W0 will be between 1 and nat
+    # Find the Butterworth natural frequency WN (or the "3dB" frequency")
+    # to give exactly gpass at passb.
     try:
-        W0 = nat / ((10 ** (0.1 * abs(gstop)) - 1) ** (1.0 / (2.0 * ord)))
+        W0 = (GPASS - 1.0) ** (-1.0 / (2.0 * ord))
     except ZeroDivisionError:
-        W0 = nat
-        print("Warning, order is zero...check input parameter gstop.")
+        W0 = 1.0
+        print("Warning, order is zero...check input parameters.")
 
     # now convert this frequency back from lowpass prototype
     # to the original analog filter
