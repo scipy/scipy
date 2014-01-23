@@ -1369,7 +1369,7 @@ void csr_sample_offsets(const I n_row,
             {
                 if (Aj[jj] == j) {
                 	offset = jj;
-                	for (; jj < row_end; jj++) {
+                	for (jj++; jj < row_end; jj++) {
                 		if (Aj[jj] == j) {
                 			offset = -2;
                 			break;

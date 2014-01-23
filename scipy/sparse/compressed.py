@@ -581,42 +581,75 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if x.shape != i.shape:
             raise ValueError("shape mismatch in assignment")
 
-        size_t = self.indices.dtype
-        i = i.astype(size_t)
-        j = j.astype(size_t)
+        if np.size(x) == 0:
+            return
         i, j = self._swap((i.ravel(), j.ravel()))
-        x = x.ravel()
+        self._set_many(i, j, x.ravel())
+
+    def _set_many(self, i, j, x):
+        """Sets value at each (i, j) to x
+
+        Here (i,j) index major and minor respectively.
+        """
+        i = i.astype(self.indices.dtype)
+        j = j.astype(self.indices.dtype)
+        M, N = self._swap(self.shape)
+        def check_bounds(indices, bound):
+            idx = indices.max()
+            if idx >= bound:
+                raise IndexError('index (%d) out of range (>= %d)' %
+                                 (idx, bound))
+            idx = indices.min()
+            if idx < -bound:
+                raise IndexError('index (%d) out of range (< -%d)' %
+                                 (idx, bound))
+
+        check_bounds(i, M)
+        check_bounds(j, N)
         n_samples = len(x)
         offsets = np.empty(n_samples, dtype=np.intc)
-        M, N = self._swap(self.shape)
-        # TODO: check bounds
         sparsetools.csr_sample_offsets(M, N, self.indptr, self.indices,
                                        n_samples, i, j, offsets)
 
         if -2 in offsets:
+            print(self.indices, self.indptr)
+            print(i, j, offsets)
+            offset = np.where(offsets == -2)[0][0]
             raise ValueError('nonzero entry (%d,%d) occurs more than once'
-                             % (row,col))
+                             % self._swap((i[offset], j[offset])))
         if -1 not in offsets:
             # only affects existing non-zero cells
             self.data[offsets] = x
             return
 
-        warn("Changing the sparsity structure of a %s_matrix is expensive. "
-             "lil_matrix is more efficient." % self.format,
-             SparseEfficiencyWarning)
-        mask = offsets > -1
-        self.data[offsets[mask]] = x[mask]
-        # consider only the insertions
-        mask = ~mask
-        i = i[mask]
-        i[i < 0] += M
-        j = j[mask]
-        j[j < 0] += N
+        else:
+            warn("Changing the sparsity structure of a %s_matrix is expensive. "
+                 "lil_matrix is more efficient." % self.format,
+                 SparseEfficiencyWarning)
+            # replace where possible
+            mask = offsets > -1
+            self.data[offsets[mask]] = x[mask]
+            # only insertions remain
+            mask = ~mask
+            i = i[mask]
+            i[i < 0] += M
+            j = j[mask]
+            j[j < 0] += N
+            self._insert_many(i, j, x[mask])
 
-        order = np.lexsort((i, j))
+    def _insert_many(self, i, j, x):
+        """Inserts new nonzero at each (i, j) with value x
+
+        Here (i,j) index major and minor respectively.
+        i, j and x must be non-empty, 1d arrays.
+        Inserts each major group (e.g. all entries per row) at a time.
+        Maintains has_sorted_indices property.
+        Modifies i, j, x in place.
+        """
+        order = np.argsort(i, kind='mergesort')  # stable for duplicates
         np.take(i, order, out=i)
         np.take(j, order, out=j)
-        x = x[mask].take(order)
+        np.take(x, order, out=x)
 
         do_sort = self.has_sorted_indices
 
@@ -624,25 +657,38 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         indices_parts = []
         data_parts = []
         ui, ui_indptr = np.unique(i, return_index=True)
-        # TODO: this won't work for duplicate i, j
+        ui_indptr = np.append(ui_indptr, len(j))
+        new_nnzs = np.diff(ui_indptr)
         prev = 0
-        for ii, js, je in zip(ui, ui_indptr, np.append(ui_indptr, len(j))):
+        for c, (ii, js, je) in enumerate(zip(ui, ui_indptr, ui_indptr[1:])):
+            # old entries
             start = self.indptr[prev]
-            stop = self.indptr[ii + 1]
+            stop = self.indptr[ii]
             indices_parts.append(self.indices[start:stop])
             data_parts.append(self.data[start:stop])
-            indices_parts.append(j[js:je])
-            data_parts.append(x[js:je])
+
+            # handle duplicate j: keep last setting
+            uj, uj_indptr = np.unique(j[js:je][::-1], return_index=True)
+            if len(uj) == je - js:
+                indices_parts.append(j[js:je])
+                data_parts.append(x[js:je])
+            else:
+                indices_parts.append(j[js:je][::-1][uj_indptr])
+                data_parts.append(x[js:je][::-1][uj_indptr])
+                new_nnzs[c] = len(uj)
+
             prev = ii
 
-        start = self.indptr[ii + 1]
+        # remaining old entries
+        start = self.indptr[ii]
         indices_parts.append(self.indices[start:])
         data_parts.append(self.data[start:])
 
+        # update attributes
         self.indices = np.concatenate(indices_parts)
         self.data = np.concatenate(data_parts)
         nnzs = np.ediff1d(self.indptr, to_begin=0).astype(self.indptr.dtype)
-        nnzs[1:][ui] += np.diff(ui_indptr)
+        nnzs[1:][ui] += new_nnzs
         self.indptr = np.cumsum(nnzs, out=nnzs)
 
         if do_sort:
