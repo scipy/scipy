@@ -1209,7 +1209,7 @@ I csr_count_diagonals(const I n_row,
  *   T  Bx[N]         - sample values
  *
  * Note:
- *   Output array Yx must be preallocated
+ *   Output array Bx must be preallocated
  *
  *   Complexity: varies 
  *
@@ -1293,6 +1293,94 @@ void csr_sample_values(const I n_row,
     }
 }
 
+/*
+ * Determine the data offset at specific locations
+ * 
+ * Input Arguments:
+ *   I  n_row         - number of rows in A
+ *   I  n_col         - number of columns in A
+ *   I  Ap[n_row+1]   - row pointer
+ *   I  Aj[nnz(A)]    - column indices
+ *   I  n_samples     - number of samples
+ *   I  Bi[N]         - sample rows
+ *   I  Bj[N]         - sample columns
+ *
+ * Output Arguments:
+ *   I  Bp[N]         - offsets into Aj; -1 if non-existent, -2 if many
+ *
+ * Note:
+ *   Output array Bp must be preallocated
+ *
+ *   Complexity: varies. See csr_sample_values
+ *
+ */
+template <class I>
+void csr_sample_offsets(const I n_row,
+                        const I n_col,
+                        const I Ap[],
+                        const I Aj[],
+                        const I n_samples,
+                        const I Bi[],
+                        const I Bj[],
+                              I Bp[])
+{
+    const I nnz = Ap[n_row];
+
+    const I threshold = nnz / 10; // constant is arbitrary
+
+    if (n_samples > threshold && csr_has_canonical_format(n_row, Ap, Aj))
+    {
+        for(I n = 0; n < n_samples; n++)
+        {
+            const I i = Bi[n] < 0 ? Bi[n] + n_row : Bi[n]; // sample row
+            const I j = Bj[n] < 0 ? Bj[n] + n_col : Bj[n]; // sample column
+
+            const I row_start = Ap[i];
+            const I row_end   = Ap[i+1];
+
+            if (row_start < row_end)
+            {
+                const I offset = std::lower_bound(Aj + row_start, Aj + row_end, j) - Aj;
+
+                if (offset < row_end && Aj[offset] == j)
+                    Bp[n] = offset;
+                else
+                    Bp[n] = -1;
+            }
+            else
+            {
+                Bp[n] = -1;
+            }
+        }
+    }
+    else
+    {
+        for(I n = 0; n < n_samples; n++)
+        {
+            const I i = Bi[n] < 0 ? Bi[n] + n_row : Bi[n]; // sample row
+            const I j = Bj[n] < 0 ? Bj[n] + n_col : Bj[n]; // sample column
+
+            const I row_start = Ap[i];
+            const I row_end   = Ap[i+1];
+
+            I offset = -1;
+
+            for(I jj = row_start; jj < row_end; jj++)
+            {
+                if (Aj[jj] == j) {
+                	offset = jj;
+                	for (; jj < row_end; jj++) {
+                		if (Aj[jj] == j) {
+                			offset = -2;
+                			break;
+                		}
+					}
+                }
+            }
+            Bp[n] = offset;
+        }
+    }
+}
 
 /*
  * A test function checking the error handling
