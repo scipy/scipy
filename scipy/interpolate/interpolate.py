@@ -975,7 +975,7 @@ class BPoly(_PPolyBase):
 
     where ``k`` is the degree of the polynomial, and::
 
-        b(a, k; x) = comb(k, a) * t**k * (1-t)**(k-a)
+        b(a, k; x) = comb(k, a) * t**k * (1 - t)**(k - a)
 
     with ``t = (x - x[i]) / (x[i+1] - x[i])``.
 
@@ -1016,10 +1016,13 @@ class BPoly(_PPolyBase):
     -----
     Properties of Bernstein polynomials are well documented in the literature.
     Here's a non-exhaustive list:
-    [1]_ http://en.wikipedia.org/wiki/Bernstein_polynomial
-    [2]_ Kenneth I. Joy, Bernstein polynomials,
+
+    .. [1] http://en.wikipedia.org/wiki/Bernstein_polynomial
+
+    .. [2] Kenneth I. Joy, Bernstein polynomials,
       http://www.idav.ucdavis.edu/education/CAGDNotes/Bernstein-Polynomials.pdf
-    [3]_ E. H. Doha, A. H. Bhrawy, and M. A. Saker, Boundary Value Problems,
+
+    .. [3] E. H. Doha, A. H. Bhrawy, and M. A. Saker, Boundary Value Problems,
          vol 2011, article ID 829546, doi:10.1155/2011/829543
 
     Examples
@@ -1031,8 +1034,10 @@ class BPoly(_PPolyBase):
 
     This creates a 2nd order polynomial
 
-      ..math:: B(x) = 1 b_{0, 2}(x) + 2 b_{1, 2}(x) + 3 b_{2, 2}(x),\
-                     = 1 * (1-x)^2 + 2 * 2 x (1 - x) + 3 * x^2
+    .. math::
+ 
+        B(x) = 1 \\times b_{0, 2}(x) + 2 \\times b_{1, 2}(x) + 3 \\times b_{2, 2}(x) \\\\
+             = 1 \\times (1-x)^2 + 2 \\times 2 x (1 - x) + 3 \\times x^2
 
     """
 
@@ -1143,7 +1148,7 @@ class BPoly(_PPolyBase):
         xi : array_like
             sorted 1D array of x-coordinates
         yi : array_like or list of array-likes
-            `yi[i][j]` is the `j`-th derivative known at `xi[i]`
+            ``yi[i][j]`` is the ``j``-th derivative known at ``xi[i]``
         orders : None or int or array_like of ints. Default: None.
             Specifies the degree of local polynomials. If not None, some
             derivatives are ignored. 
@@ -1155,14 +1160,14 @@ class BPoly(_PPolyBase):
 
         Notes
         -----
-        If `k` derivatives are specified at a breakpoint `x`, the
-        constructed polynomial is exactly `k` times continuously 
-        differentiable at `x`, unless the `order` is provided explicitly.
+        If ``k`` derivatives are specified at a breakpoint ``x``, the
+        constructed polynomial is exactly ``k`` times continuously 
+        differentiable at ``x``, unless the ``order`` is provided explicitly.
         In the latter case, the smoothness of the polynomial at
-        the breakpoint is controlled by the `order`.
+        the breakpoint is controlled by the ``order``.
         
         Deduces the number of derivatives to match at each end
-        from `order` and the number of derivatives available. If
+        from ``order`` and the number of derivatives available. If
         possible it uses the same number of derivatives from
         each end; if the number is odd it tries to take the
         extra one from y2. In any case if not enough derivatives
@@ -1189,9 +1194,11 @@ class BPoly(_PPolyBase):
         Notice that no restriction is imposed on the derivatives at
         `x = 1` and `x = 2`.
 
-        Indeed, the explicit form of the polynomial is
-        f(x) = | x * (1 - x),  0 <= x < 1
-               | 2 * (x - 1),  1 <= x <= 2
+        Indeed, the explicit form of the polynomial is::
+
+            f(x) = | x * (1 - x),  0 <= x < 1
+                   | 2 * (x - 1),  1 <= x <= 2
+
         So that f'(1-0) = -1 and f'(1+0) = 2
 
         """
@@ -1281,20 +1288,20 @@ class BPoly(_PPolyBase):
         This uses several facts from life of Bernstein basis functions.
         First of all,
 
-            ..math:: b'_{a, n} = n (b_{a-1, n-1} - b_{a, n-1})
+            .. math:: b'_{a, n} = n (b_{a-1, n-1} - b_{a, n-1})
 
         If B(x) is a linear combination of the form
 
-            ..math:: B(x) = \sum_{a=0}^{n} c_a b_{a, n},
+            .. math:: B(x) = \sum_{a=0}^{n} c_a b_{a, n},
 
         then :math: B'(x) = n \sum_{a=0}^{n-1} (c_{a+1} - c_{a}) b_{a, n-1}.
         Iterating the latter one, one finds for the q-th derivative
 
-            ..math:: B^{q}(x) = n!/(n-q)! \sum_{a=0}^{n-q} Q_a b_{a, n-q},
+            .. math:: B^{q}(x) = n!/(n-q)! \sum_{a=0}^{n-q} Q_a b_{a, n-q},
 
         with
 
-          ..math:: Q_a = \sum_{j=0}^{q} (-)^{j+q} comb(q, j) c_{j+a}
+          .. math:: Q_a = \sum_{j=0}^{q} (-)^{j+q} comb(q, j) c_{j+a}
 
         This way, only `a=0` contributes to :math: `B^{q}(x = xa)`, and 
         `c_q` are found one by one by iterating `q = 0, ..., na`.
@@ -1357,7 +1364,7 @@ class BPoly(_PPolyBase):
         identically represented as a linear combination of polynomials of
         a higher degree `k+d`:
 
-            ..math:: b_{a, k} = comb(k, a) \sum_{j=0}^{d} b_{a+j, k+d} \
+            .. math:: b_{a, k} = comb(k, a) \sum_{j=0}^{d} b_{a+j, k+d} \
                                 comb(d, j) / comb(k+d, a+j)
 
         """
