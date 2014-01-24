@@ -15,7 +15,7 @@ from scipy.special import (gammaln as gamln, gamma as gam, boxcox, boxcox1p)
 
 from numpy import (where, arange, putmask, ravel, sum, shape,
                    log, sqrt, exp, arctanh, tan, sin, arcsin, arctan,
-                   tanh, cos, cosh, sinh, log1p, expm1)
+                   tanh, cos, cosh, sinh, expm1)
 
 from numpy import polyval, place, extract, any, asarray, nan, inf, pi
 
@@ -944,7 +944,7 @@ class expon_gen(rv_continuous):
         return -expm1(-x)
 
     def _ppf(self, q):
-        return -log1p(-q)
+        return -special.log1p(-q)
 
     def _sf(self, x):
         return exp(-x)
@@ -995,7 +995,7 @@ class exponweib_gen(rv_continuous):
         return exm1c**a
 
     def _ppf(self, q, a, c):
-        return (-log1p(-q**(1.0/a)))**asarray(1.0/c)
+        return (-special.log1p(-q**(1.0/a)))**asarray(1.0/c)
 exponweib = exponweib_gen(a=0.0, name='exponweib')
 
 
@@ -1037,10 +1037,10 @@ class exponpow_gen(rv_continuous):
         return exp(-expm1(x**b))
 
     def _isf(self, x, b):
-        return (log1p(-log(x)))**(1./b)
+        return (special.log1p(-log(x)))**(1./b)
 
     def _ppf(self, q, b):
-        return pow(log1p(-log1p(-q)), 1.0/b)
+        return pow(special.log1p(-special.log1p(-q)), 1.0/b)
 exponpow = exponpow_gen(a=0.0, name='exponpow')
 
 
@@ -1292,7 +1292,7 @@ class frechet_r_gen(rv_continuous):
         return -expm1(-pow(x, c))
 
     def _ppf(self, q, c):
-        return pow(-log1p(-q), 1.0/c)
+        return pow(-special.log1p(-q), 1.0/c)
 
     def _munp(self, n, c):
         return special.gamma(1.0+n*1.0/c)
@@ -1367,7 +1367,7 @@ class genlogistic_gen(rv_continuous):
         return exp(self._logpdf(x, c))
 
     def _logpdf(self, x, c):
-        return log(c) - x - (c+1.0)*log1p(exp(-x))
+        return log(c) - x - (c+1.0)*special.log1p(exp(-x))
 
     def _cdf(self, x, c):
         Cx = (1+exp(-x))**(-c)
@@ -1452,7 +1452,7 @@ class genpareto_gen(rv_continuous):
     def _log1pcx(self, x, c):
         # log(1+c*x)/c incl c\to 0 limit
         return _lazywhere((x==x) & (c != 0), (x, c),
-            lambda x, c: np.log1p(c*x) / c,
+            lambda x, c: special.log1p(c*x) / c,
             x)
 genpareto = genpareto_gen(a=0.0, name='genpareto')
 
@@ -1523,7 +1523,7 @@ class genextreme_gen(rv_continuous):
 
     def _pdf(self, x, c):
         cx = c*x
-        logex2 = where((c == 0)*(x == x), 0.0, log1p(-cx))
+        logex2 = where((c == 0)*(x == x), 0.0, special.log1p(-cx))
         logpex2 = where((c == 0)*(x == x), -x, logex2/c)
         pex2 = exp(logpex2)
         # Handle special cases
@@ -1532,7 +1532,7 @@ class genextreme_gen(rv_continuous):
         return exp(logpdf)
 
     def _cdf(self, x, c):
-        loglogcdf = where((c == 0)*(x == x), -x, log1p(-c*x)/c)
+        loglogcdf = where((c == 0)*(x == x), -x, special.log1p(-c*x)/c)
         return exp(-exp(loglogcdf))
 
     def _ppf(self, q, c):
@@ -2034,7 +2034,7 @@ class halfcauchy_gen(rv_continuous):
         return 2.0/pi/(1.0+x*x)
 
     def _logpdf(self, x):
-        return np.log(2.0/pi) - np.log1p(x*x)
+        return np.log(2.0/pi) - special.log1p(x*x)
 
     def _cdf(self, x):
         return 2.0/pi*arctan(x)

@@ -494,9 +494,11 @@ class TestGenpareto(TestCase):
         # make sure x=inf is handled gracefully 
         rv = stats.genpareto(c=0.1)
         assert_allclose([rv.pdf(np.inf), rv.cdf(np.inf)], [0., 1.])
+        assert_(np.isneginf(rv.logpdf(np.inf)))
 
         rv = stats.genpareto(c=0.)
         assert_allclose([rv.pdf(np.inf), rv.cdf(np.inf)], [0., 1.])
+        assert_(np.isneginf(rv.logpdf(np.inf)))
 
     def test_c_continuity(self):
         # pdf is continuous at c=0
