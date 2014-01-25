@@ -2375,7 +2375,7 @@ def f_oneway(*args):
     msb = ssbn / float(dfbn)
     msw = sswn / float(dfwn)
     f = msb / msw
-    prob = fprob(dfbn, dfwn, f)
+    prob = special.fdtrc(dfbn, dfwn, f)
     return f, prob
 
 
@@ -3873,7 +3873,7 @@ def ks_2samp(data1, data2):
     # Note: d absolute not signed distance
     en = np.sqrt(n1*n2/float(n1+n2))
     try:
-        prob = ksprob((en+0.12+0.11/en)*d)
+        prob = special.kolmogorov((en + 0.12 + 0.11 / en) * d)
     except:
         prob = 1.0
     return d, prob
@@ -4109,7 +4109,9 @@ def friedmanchisquare(*args):
 ####  PROBABILITY CALCULATIONS  ####
 #####################################
 
-zprob = special.ndtr
+zprob = np.deprecate(message='zprob is deprecated in scipy 0.14, '
+        'use norm.cdf or special.ndtr instead\n',
+        old_name='zprob')(special.ndtr)
 
 
 def chisqprob(chisq, df):
@@ -4133,8 +4135,13 @@ def chisqprob(chisq, df):
     """
     return special.chdtrc(df,chisq)
 
-ksprob = special.kolmogorov
-fprob = special.fdtrc
+ksprob = np.deprecate(message='ksprob is deprecated in scipy 0.14, '
+        'use stats.kstwobign.cdf or special.kolmogorov instead\n',
+        old_name='ksprob')(special.kolmogorov)
+
+fprob = np.deprecate(message='fprob is deprecated in scipy 0.14, '
+        'use stats.f.sf or special.fdtrc instead\n',
+        old_name='fprob')(special.fdtrc)
 
 
 def betai(a, b, x):

@@ -1670,7 +1670,7 @@ def skewtest(a, axis=0):
     alpha = ma.sqrt(2.0/(W2-1))
     y = ma.where(y == 0, 1, y)
     Z = delta*ma.log(y/alpha + ma.sqrt((y/alpha)**2+1))
-    return Z, (1.0 - stats.zprob(Z))*2
+    return Z, 2 * distributions.norm.sf(np.abs(Z))
 skewtest.__doc__ = stats.skewtest.__doc__
 
 
@@ -2006,7 +2006,7 @@ Returns: f-value, probability
     msb = ssbg/float(dfbg)
     msw = sswg/float(dfwg)
     f = msb/msw
-    prob = stats.fprob(dfbg,dfwg,f)
+    prob = special.fdtrc(dfbg, dfwg, f)
     return f, prob
 
 
