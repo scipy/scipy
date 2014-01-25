@@ -497,8 +497,9 @@ class dok_matrix(spmatrix, dict):
         if self.nnz == 0:
             return coo_matrix(self.shape, dtype=self.dtype)
         else:
+            idx_dtype = get_index_dtype(maxval=max(self.shape[0], self.shape[1]))
             data    = np.asarray(_list(self.values()), dtype=self.dtype)
-            indices = np.asarray(_list(self.keys()), dtype=get_index_dtype(nnz=len(self))).T
+            indices = np.asarray(_list(self.keys()), dtype=idx_dtype).T
             return coo_matrix((data,indices), shape=self.shape, dtype=self.dtype)
 
     def todok(self,copy=False):

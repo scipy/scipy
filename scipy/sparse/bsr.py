@@ -139,13 +139,12 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                     blocksize = tuple(blocksize)
                 self.data = np.zeros((0,) + blocksize, getdtype(dtype, default=float))
 
-                idx_dtype = get_index_dtype(nnz=max(M, N))
-                self.indices = np.zeros(0, dtype=idx_dtype)
-
                 R,C = blocksize
                 if (M % R) != 0 or (N % C) != 0:
                     raise ValueError('shape must be multiple of blocksize')
 
+                idx_dtype = get_index_dtype(maxval=N//C)
+                self.indices = np.zeros(0, dtype=idx_dtype)
                 self.indptr = np.zeros(M//R + 1, dtype=idx_dtype)
 
             elif len(arg1) == 2:
@@ -356,7 +355,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         idx_dtype = get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices),
-                                    nnz=M*N)
+                                    maxval=(M//R)*(N//C))
         indptr = np.empty(self.indptr.shape, dtype=idx_dtype)
 
         csr_matmat_pass1(M//R, N//C,
@@ -370,7 +369,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         idx_dtype = get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices),
-                                    nnz=bnnz)
+                                    maxval=bnnz)
         indptr = indptr.astype(idx_dtype)
         indices = np.empty(bnnz, dtype=idx_dtype)
         data = np.empty(R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
@@ -543,7 +542,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         max_bnnz = len(self.data) + len(other.data)
         idx_dtype = get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices),
-                                    nnz=max_bnnz)
+                                    maxval=max_bnnz)
         indptr = np.empty(self.indptr.shape, dtype=idx_dtype)
         indices = np.empty(max_bnnz, dtype=idx_dtype)
 

@@ -134,7 +134,8 @@ class csr_matrix(_cs_matrix, IndexMixin):
             return self
 
     def tocsc(self):
-        idx_dtype = get_index_dtype(nnz=max(self.nnz, self.shape[1] + 1))
+        idx_dtype = get_index_dtype((self.indptr, self.indices),
+                                    maxval=max(self.nnz, self.shape[0]))
         indptr = np.empty(self.shape[1] + 1, dtype=idx_dtype)
         indices = np.empty(self.nnz, dtype=idx_dtype)
         data = np.empty(self.nnz, dtype=upcast(self.dtype))
@@ -172,7 +173,8 @@ class csr_matrix(_cs_matrix, IndexMixin):
 
             blks = csr_count_blocks(M,N,R,C,self.indptr,self.indices)
 
-            idx_dtype = get_index_dtype(nnz=max(M//R + 1, blks))
+            idx_dtype = get_index_dtype((self.indptr, self.indices),
+                                        maxval=max(N//C, blks))
             indptr = np.empty(M//R+1, dtype=idx_dtype)
             indices = np.empty(blks, dtype=idx_dtype)
             data = np.zeros((blks,R,C), dtype=self.dtype)

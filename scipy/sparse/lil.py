@@ -388,17 +388,15 @@ class lil_matrix(spmatrix, IndexMixin):
         """
 
         lst = [len(x) for x in self.rows]
-        idx_dtype = get_index_dtype(nnz=sum(lst))
+        idx_dtype = get_index_dtype(maxval=max(self.shape[1], sum(lst)))
         indptr = np.asarray(lst, dtype=idx_dtype)
-        indptr = np.concatenate((np.array([0], dtype=indptr.dtype), np.cumsum(indptr)))
-
-        nnz = indptr[-1]
-        indptr = indptr.astype(get_index_dtype(nnz=nnz))
+        indptr = np.concatenate((np.array([0], dtype=idx_dtype),
+                                 np.cumsum(indptr, dtype=idx_dtype)))
 
         indices = []
         for x in self.rows:
             indices.extend(x)
-        indices = np.asarray(indices, dtype=indptr.dtype)
+        indices = np.asarray(indices, dtype=idx_dtype)
 
         data = []
         for x in self.data:

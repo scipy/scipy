@@ -50,32 +50,31 @@ import nose
 warnings.simplefilter('ignore', SparseEfficiencyWarning)
 warnings.simplefilter('ignore', ComplexWarning)
 
-def with_64bit_nnz_limit(nnz_limit=None, random=False, fixed_dtype=None):
+def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None):
     """
-    Monkeypatch the nnz threshold at which scipy.sparse switches to
+    Monkeypatch the maxval threshold at which scipy.sparse switches to
     64-bit index arrays, or make it (pseudo-)random.
 
     """
-    if nnz_limit is None:
-        nnz_limit = 10
+    if maxval_limit is None:
+        maxval_limit = 10
 
     if fixed_dtype is not None:
-        def new_get_index_dtype(arrays=(), nnz=None):
+        def new_get_index_dtype(arrays=(), maxval=None):
             return fixed_dtype
     elif random:
         counter = np.random.RandomState(seed=1234)
-        def new_get_index_dtype(arrays=(), nnz=None):
+        def new_get_index_dtype(arrays=(), maxval=None):
             return (np.int32, np.int64)[counter.randint(2)]
     else:
-        def new_get_index_dtype(arrays=(), nnz=None):
+        def new_get_index_dtype(arrays=(), maxval=None):
             dtype = np.int32
-            if nnz is not None:
-                if nnz >= nnz_limit:
+            if maxval is not None:
+                if maxval > maxval_limit:
                     dtype = np.int64
             for arr in arrays:
                 arr = np.asarray(arr)
-                if arr.dtype > np.int32 or (np.issubdtype(arr.dtype, np.integer)
-                                            and np.any(arr >= nnz_limit)):
+                if arr.dtype.itemsize > 4:
                     dtype = np.int64
             return dtype
 
@@ -3555,26 +3554,23 @@ class Test64Bit(object):
         else:
             raise ValueError("matrix %r has no integer indices" % (m,))
 
-    def test_decorator_nnz_limit(self):
-        # Test that the with_64bit_nnz_limit decorator works
+    def test_decorator_maxval_limit(self):
+        # Test that the with_64bit_maxval_limit decorator works
 
-        @with_64bit_nnz_limit(nnz_limit=10)
+        @with_64bit_maxval_limit(maxval_limit=10)
         def check(mat_cls):
-            if mat_cls is csr_matrix or mat_cls is bsr_matrix:
-                m = mat_cls(np.random.rand(8, 1))
-            else:
-                m = mat_cls(np.random.rand(9, 1))
-            assert_(self._compare_index_dtype(m, np.int32))
             m = mat_cls(np.random.rand(10, 1))
+            assert_(self._compare_index_dtype(m, np.int32))
+            m = mat_cls(np.random.rand(11, 1))
             assert_(self._compare_index_dtype(m, np.int64))
 
         for mat_cls in self.MAT_CLASSES:
             yield check, mat_cls
 
-    def test_decorator_nnz_random(self):
-        # Test that the with_64bit_nnz_limit decorator works (2)
+    def test_decorator_maxval_random(self):
+        # Test that the with_64bit_maxval_limit decorator works (2)
 
-        @with_64bit_nnz_limit(random=True)
+        @with_64bit_maxval_limit(random=True)
         def check(mat_cls):
             seen_32 = False
             seen_64 = False
@@ -3594,7 +3590,7 @@ class Test64Bit(object):
         # Resiliency test, to check that sparse matrices deal reasonably
         # with varying index data types.
 
-        @with_64bit_nnz_limit(**kw)
+        @with_64bit_maxval_limit(**kw)
         def check(cls, method_name):
             instance = cls()
             if hasattr(instance, 'setup'):
@@ -3612,7 +3608,7 @@ class Test64Bit(object):
                     yield dec.skipif(msg, msg)(check), cls, method_name
 
     def test_resiliency_limit_10(self):
-        for t in self._check_resiliency(nnz_limit=10):
+        for t in self._check_resiliency(maxval_limit=10):
             yield t
 
     def test_resiliency_random(self):

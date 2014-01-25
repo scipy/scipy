@@ -120,7 +120,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             if isshape(arg1):
                 M, N = arg1
                 self.shape = (M,N)
-                idx_dtype = get_index_dtype(nnz=M*N)
+                idx_dtype = get_index_dtype(maxval=max(M, N))
                 self.row = np.array([], dtype=idx_dtype)
                 self.col = np.array([], dtype=idx_dtype)
                 self.data = np.array([], getdtype(dtype, default=float))
@@ -136,9 +136,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 except TypeError:
                     raise TypeError('invalid input format')
 
-                idx_dtype = get_index_dtype([ij[0], ij[1]])
-                self.row = np.array(ij[0], copy=copy, dtype=idx_dtype)
-                self.col = np.array(ij[1], copy=copy, dtype=idx_dtype)
+                self.row = np.array(ij[0], copy=copy)
+                self.col = np.array(ij[1], copy=copy)
                 self.data = np.array(obj, copy=copy)
 
                 if shape is None:
@@ -152,16 +151,21 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                     M, N = shape
                     self.shape = (M, N)
 
+                idx_dtype = get_index_dtype(maxval=max(self.shape))
+                self.row = self.row.astype(idx_dtype)
+                self.col = self.col.astype(idx_dtype)
+
         elif arg1 is None:
             # Initialize an empty matrix.
             if not isinstance(shape, tuple) or not isintlike(shape[0]):
                 raise TypeError('dimensions not understood')
             warn('coo_matrix(None, shape=(M,N)) is deprecated, '
                     'use coo_matrix( (M,N) ) instead', DeprecationWarning)
+            idx_dtype = get_index_dtype(maxval=max(M, N))
             self.shape = shape
             self.data = np.array([], getdtype(dtype, default=float))
-            self.row = np.array([], dtype=np.intc)
-            self.col = np.array([], dtype=np.intc)
+            self.row = np.array([], dtype=idx_dtype)
+            self.col = np.array([], dtype=idx_dtype)
         else:
             if isspmatrix(arg1):
                 if isspmatrix_coo(arg1) and copy:
@@ -239,7 +243,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             warn("col index array has non-integer dtype (%s) "
                     % self.col.dtype.name)
 
-        idx_dtype = get_index_dtype(nnz=self.nnz)
+        idx_dtype = get_index_dtype(maxval=max(self.shape))
         self.row = np.asarray(self.row, dtype=idx_dtype)
         self.col = np.asarray(self.col, dtype=idx_dtype)
         self.data = to_native(self.data)
@@ -294,7 +298,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             return csc_matrix(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
-            idx_dtype = get_index_dtype(nnz=self.nnz)
+            idx_dtype = get_index_dtype((self.col, self.row),
+                                        maxval=max(self.nnz, M))
             indptr = np.empty(N + 1, dtype=idx_dtype)
             indices = np.empty(self.nnz, dtype=idx_dtype)
             data = np.empty(self.nnz, dtype=upcast(self.dtype))
@@ -335,7 +340,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             return csr_matrix(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
-            idx_dtype = get_index_dtype(nnz=self.nnz)
+            idx_dtype = get_index_dtype((self.row, self.col),
+                                        maxval=max(self.nnz, N))
             indptr = np.empty(M + 1, dtype=idx_dtype)
             indices = np.empty(self.nnz, dtype=idx_dtype)
             data = np.empty(self.nnz, dtype=upcast(self.dtype))

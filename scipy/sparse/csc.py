@@ -127,7 +127,8 @@ class csc_matrix(_cs_matrix, IndexMixin):
 
     def tocsr(self):
         M,N = self.shape
-        idx_dtype = get_index_dtype(nnz=max(M + 1, self.nnz))
+        idx_dtype = get_index_dtype((self.indptr, self.indices),
+                                    maxval=max(self.nnz, N))
         indptr = np.empty(M + 1, dtype=idx_dtype)
         indices = np.empty(self.nnz, dtype=idx_dtype)
         data = np.empty(self.nnz, dtype=upcast(self.dtype))

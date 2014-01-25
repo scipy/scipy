@@ -254,14 +254,14 @@ def eye(m, n=None, k=0, dtype=float, format=None):
     if m == n and k == 0:
         # fast branch for special formats
         if format in ['csr', 'csc']:
-            idx_dtype = get_index_dtype(nnz=n+1)
+            idx_dtype = get_index_dtype(maxval=n)
             indptr = np.arange(n+1, dtype=idx_dtype)
             indices = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
             cls = {'csr': csr_matrix, 'csc': csc_matrix}[format]
             return cls((data,indices,indptr),(n,n))
         elif format == 'coo':
-            idx_dtype = get_index_dtype(nnz=n)
+            idx_dtype = get_index_dtype(maxval=n)
             row  = np.arange(n, dtype=idx_dtype)
             col  = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
@@ -588,7 +588,7 @@ def bmat(blocks, format=None, dtype=None):
     shape = (np.sum(brow_lengths), np.sum(bcol_lengths))
 
     data = np.empty(nnz, dtype=dtype)
-    idx_dtype = get_index_dtype(nnz=max(nnz, shape[0], shape[1]))
+    idx_dtype = get_index_dtype(maxval=max(shape))
     row  = np.empty(nnz, dtype=idx_dtype)
     col  = np.empty(nnz, dtype=idx_dtype)
 
