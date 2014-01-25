@@ -15,7 +15,7 @@ from scipy.special import (gammaln as gamln, gamma as gam, boxcox, boxcox1p)
 
 from numpy import (where, arange, putmask, ravel, sum, shape,
                    log, sqrt, exp, arctanh, tan, sin, arcsin, arctan,
-                   tanh, cos, cosh, sinh, expm1)
+                   tanh, cos, cosh, sinh)
 
 from numpy import polyval, place, extract, any, asarray, nan, inf, pi
 
@@ -941,7 +941,7 @@ class expon_gen(rv_continuous):
         return -x
 
     def _cdf(self, x):
-        return -expm1(-x)
+        return -special.expm1(-x)
 
     def _ppf(self, q):
         return -special.log1p(-q)
@@ -991,7 +991,7 @@ class exponweib_gen(rv_continuous):
         return logp
 
     def _cdf(self, x, a, c):
-        exm1c = -expm1(-x**c)
+        exm1c = -special.expm1(-x**c)
         return exm1c**a
 
     def _ppf(self, q, a, c):
@@ -1031,10 +1031,10 @@ class exponpow_gen(rv_continuous):
         return 1 + log(b) + (b-1.0)*log(x) + xb - exp(xb)
 
     def _cdf(self, x, b):
-        return -expm1(-expm1(x**b))
+        return -special.expm1(-special.expm1(x**b))
 
     def _sf(self, x, b):
-        return exp(-expm1(x**b))
+        return exp(-special.expm1(x**b))
 
     def _isf(self, x, b):
         return (special.log1p(-log(x)))**(1./b)
@@ -1289,7 +1289,7 @@ class frechet_r_gen(rv_continuous):
         return log(c) + (c-1)*log(x) - pow(x, c)
 
     def _cdf(self, x, c):
-        return -expm1(-pow(x, c))
+        return -special.expm1(-pow(x, c))
 
     def _ppf(self, q, c):
         return pow(-special.log1p(-q), 1.0/c)
@@ -1424,7 +1424,7 @@ class genpareto_gen(rv_continuous):
         return -(c + 1.) * self._log1pcx(x, c)
 
     def _cdf(self, x, c):
-        return -np.expm1(self._logsf(x, c))
+        return -special.expm1(self._logsf(x, c))
 
     def _sf(self, x, c):
        return np.exp(self._logsf(x, c))
@@ -1483,13 +1483,15 @@ class genexpon_gen(rv_continuous):
 
     """
     def _pdf(self, x, a, b, c):
-        return (a+b*(-expm1(-c*x)))*exp((-a-b)*x+b*(-expm1(-c*x))/c)
+        return (a + b*(-special.expm1(-c*x)))*exp((-a-b)*x + \
+            b*(-special.expm1(-c*x))/c)
 
     def _cdf(self, x, a, b, c):
-        return -expm1((-a-b)*x + b*(-expm1(-c*x))/c)
+        return -special.expm1((-a-b)*x + b*(-special.expm1(-c*x))/c)
 
     def _logpdf(self, x, a, b, c):
-        return np.log(a+b*(-expm1(-c*x))) + (-a-b)*x+b*(-expm1(-c*x))/c
+        return np.log(a+b*(-special.expm1(-c*x))) + \
+                (-a-b)*x+b*(-special.expm1(-c*x))/c
 genexpon = genexpon_gen(a=0.0, name='genexpon')
 
 
@@ -1537,7 +1539,7 @@ class genextreme_gen(rv_continuous):
 
     def _ppf(self, q, c):
         x = -log(-log(q))
-        return where((c == 0)*(x == x), x, -expm1(-c*x)/c)
+        return where((c == 0)*(x == x), x, -special.expm1(-c*x)/c)
 
     def _stats(self, c):
         g = lambda n: gam(n*c+1)
@@ -1547,9 +1549,9 @@ class genextreme_gen(rv_continuous):
         g4 = g(4)
         g2mg12 = where(abs(c) < 1e-7, (c*pi)**2.0/6.0, g2-g1**2.0)
         gam2k = where(abs(c) < 1e-7, pi**2.0/6.0,
-                      expm1(gamln(2.0*c+1.0)-2*gamln(c+1.0))/c**2.0)
+                      special.expm1(gamln(2.0*c+1.0)-2*gamln(c+1.0))/c**2.0)
         eps = 1e-14
-        gamk = where(abs(c) < eps, -_EULER, expm1(gamln(c+1))/c)
+        gamk = where(abs(c) < eps, -_EULER, special.expm1(gamln(c+1))/c)
 
         m = where(c < -1.0, nan, -gamk)
         v = where(c < -0.5, nan, g1**2.0*gam2k)
@@ -3757,9 +3759,9 @@ class truncexpon_gen(rv_continuous):
         # wrong answer with formula, same as in continuous.pdf
         # return gam(n+1)-special.gammainc(1+n, b)
         if n == 1:
-            return (1-(b+1)*exp(-b))/(-expm1(-b))
+            return (1-(b+1)*exp(-b))/(-special.expm1(-b))
         elif n == 2:
-            return 2*(1-0.5*(b*b+2*b+2)*exp(-b))/(-expm1(-b))
+            return 2*(1-0.5*(b*b+2*b+2)*exp(-b))/(-special.expm1(-b))
         else:
             # return generic for higher moments
             # return rv_continuous._mom1_sc(self, n, b)
