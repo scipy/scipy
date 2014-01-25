@@ -612,8 +612,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                        n_samples, i, j, offsets)
 
         if -2 in offsets:
-            print(self.indices, self.indptr)
-            print(i, j, offsets)
             offset = np.where(offsets == -2)[0][0]
             raise ValueError('nonzero entry (%d,%d) occurs more than once'
                              % self._swap((i[offset], j[offset])))
@@ -647,9 +645,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         Modifies i, j, x in place.
         """
         order = np.argsort(i, kind='mergesort')  # stable for duplicates
-        np.take(i, order, out=i)
-        np.take(j, order, out=j)
-        np.take(x, order, out=x)
+        i = i.take(order, mode='clip')
+        j = j.take(order, mode='clip')
+        x = x.take(order, mode='clip')
 
         do_sort = self.has_sorted_indices
 
