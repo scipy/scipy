@@ -939,9 +939,10 @@ class PchipInterpolator(PiecewisePolynomial):
         include duplicate values (otherwise f is overspecified)
     y : ndarray
         A 1-D array of real values.  `y`'s length along the interpolation
-        axis must be equal to the length of `x`.
+        axis must be equal to the length of `x`. If N-D array, use axis 
+        parameter to select correct axis.
     axis : int, optional
-        Axis in the yi array corresponding to the x-coordinate values.
+        Axis in the y array corresponding to the x-coordinate values.
 
     Notes
     -----
@@ -1019,7 +1020,10 @@ class PchipInterpolator(PiecewisePolynomial):
 
 def pchip_interpolate(xi, yi, x, der=0, axis=0):
     """
-    Convenience function for pchip interpolation.
+    Convenience function for pchip interpolation. 
+    xi and yi are arrays of values used to approximate some function f,
+    with ``yi = f(xi)``.  The interpolant uses monotonic cubic splines
+    to find the value of new points x and the derivatives there.
 
     See `PchipInterpolator` for details.
 
@@ -1027,8 +1031,10 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
     ----------
     xi : array_like
         A sorted list of x-coordinates, of length N.
-    yi : list of lists
-        yi[i] is the list of derivatives known at xi[i]. Of length N.
+    yi :  array_like
+        A 1-D array of real values.  `yi`'s length along the interpolation
+        axis must be equal to the length of `xi`. If N-D array, use axis 
+        parameter to select correct axis.
     x : scalar or array_like
         Of length M.
     der : integer or list
