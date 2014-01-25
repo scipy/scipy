@@ -364,7 +364,7 @@ class accelerate(object):
         return fast
 
     def identifier(self,signature):
-        # Build a SHA-256 checksum
+        # Build a (truncated, see gh-3216) SHA-256 checksum
         f = self.function
         co = f.func_code
         identifier = str(signature) + \
@@ -372,7 +372,7 @@ class accelerate(object):
                      str(co.co_consts) + \
                      str(co.co_varnames) + \
                      co.co_code
-        return 'F' + sha256(identifier).hexdigest()
+        return 'F' + sha256(identifier).hexdigest()[:32]
 
     def accelerate(self,signature,identifier):
         P = Python2CXX(self.function,signature,name=identifier)
