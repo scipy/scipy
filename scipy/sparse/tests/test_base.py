@@ -2220,6 +2220,10 @@ class _TestFancyIndexing:
         desired_cols = np.ravel(mat.sum(0)) > 0
         assert_equal(mat[:, desired_cols].A, [[1, 0], [0, 1], [1, 0]])
 
+    def test_fancy_indexing_seq_assign(self):
+        mat = self.spmatrix(array([[1, 0], [0, 1]]))
+        assert_raises(ValueError, mat.__setitem__, (0, 0), np.array([1,2]))
+
 
 class _TestFancyIndexingAssign:
     def test_bad_index_assign(self):

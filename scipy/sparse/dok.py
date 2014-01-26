@@ -139,7 +139,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         i, j = self._unpack_index(index)
 
         if isintlike(i) and isintlike(j):
-            # Fast path
+            # Scalar index case
             i = int(i)
             j = int(j)
             if i < 0:
@@ -184,28 +184,17 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         return newdok
 
     def __setitem__(self, index, x):
+        if isinstance(index, tuple) and len(index) == 2:
+            # Integer index fast path
+            i, j = index
+            if (isintlike(i) and isintlike(j) and 
+                0 <= i < self.shape[0] and 0 <= j < self.shape[1]):
+                v = np.asarray(x, dtype=self.dtype)
+                if v.ndim == 0 and v != 0:
+                    dict.__setitem__(self, (int(i), int(j)), v[()])
+                    return
+
         i, j = self._unpack_index(index)
-
-        if isintlike(i) and isintlike(j):
-            # Fast path
-            i = int(i)
-            j = int(j)
-            x = self.dtype.type(x)
-            if i < 0:
-                i += self.shape[0]
-            if i < 0 or i >= self.shape[0]:
-                raise IndexError('index out of bounds')
-            if j < 0:
-                j += self.shape[1]
-            if j < 0 or j >= self.shape[1]:
-                raise IndexError('index out of bounds')
-            if x != 0:
-                dict.__setitem__(self, (i, j), x)
-            else:
-                if (i, j) in self:
-                    del self[(i, j)]
-            return
-
         i, j = self._index_to_arrays(i, j)
 
         if isspmatrix(x):
