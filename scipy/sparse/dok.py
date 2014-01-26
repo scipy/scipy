@@ -6,6 +6,8 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['dok_matrix', 'isspmatrix_dok']
 
+import functools
+import operator
 
 import numpy as np
 
@@ -129,100 +131,90 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             raise IndexError('index out of bounds')
         return dict.get(self, key, default)
 
-    def __getitem__(self, key):
+    def __getitem__(self, index):
         """If key=(i,j) is a pair of integers, return the corresponding
         element.  If either i or j is a slice or sequence, return a new sparse
         matrix with just these elements.
         """
-        try:
-            i, j = key
-        except (ValueError, TypeError):
-            raise TypeError('index must be a pair of integers or slices')
+        i, j = self._unpack_index(index)
 
-        # Bounds checking
-        if isintlike(i):
+        if isintlike(i) and isintlike(j):
+            i = int(i)
+            j = int(j)
+            # Fast path
             if i < 0:
                 i += self.shape[0]
             if i < 0 or i >= self.shape[0]:
                 raise IndexError('index out of bounds')
-
-        if isintlike(j):
             if j < 0:
                 j += self.shape[1]
             if j < 0 or j >= self.shape[1]:
                 raise IndexError('index out of bounds')
-
-        # First deal with the case where both i and j are integers
-        if isintlike(i) and isintlike(j):
             return dict.get(self, (i,j), 0.)
+
+        i, j = self._index_to_arrays(i, j)
+
+        if i.size == 0:
+            return dok_matrix((0, 0), dtype=self.dtype)
+
+        min_i = i.min()
+        if min_i < -self.shape[0] or i.max() >= self.shape[0]:
+            raise IndexError('index (%d) out of range -%d to %d)' %
+                             (i.min(), self.shape[0], self.shape[0]-1))
+        if min_i < 0:
+            i = i.copy()
+            i[i < 0] += self.shape[0]
+
+        min_j = j.min()
+        if min_j < -self.shape[0] or j.max() >= self.shape[1]:
+            raise IndexError('index (%d) out of range -%d to %d)' %
+                             (j.min(), self.shape[1], self.shape[1]-1))
+        if min_j < 0:
+            j = j.copy()
+            j[j < 0] += self.shape[1]
+
+        i, j = np.broadcast_arrays(i, j)
+
+        newdok = dok_matrix(i.shape, dtype=self.dtype)
+
+        if len(self) * _prod(i.shape) > _prod(self.shape):
+            # Most of the elements will probably be nonzeros
+            self._getitem_assume_dense(newdok, i, j)
         else:
-            # Either i or j is a slice, sequence, or invalid.  If i is a slice
-            # or sequence, unfold it first and call __getitem__ recursively.
+            # Most of the elements will probably be zeros
+            self._getitem_assume_sparse(newdok, i, j)
 
-            if isinstance(i, slice):
-                seq = xrange(*i.indices(self.shape[0]))
-            elif _is_sequence(i):
-                seq = i
-            else:
-                # Make sure i is an integer. (But allow it to be a subclass of int).
-                if not isintlike(i):
-                    raise TypeError('index must be a pair of integers or slices')
-                seq = None
-            if seq is not None:
-                # i is a seq
-                if isintlike(j):
-                    # Create a new matrix of the correct dimensions
-                    first = seq[0]
-                    last = seq[-1]
-                    if first < 0 or first >= self.shape[0] or last < 0 \
-                                 or last >= self.shape[0]:
-                        raise IndexError('index out of bounds')
-                    newshape = (last-first+1, 1)
-                    new = dok_matrix(newshape, dtype=self.dtype)
-                    # ** This uses linear time in the size m of dimension 0:
-                    # new[0:seq[-1]-seq[0]+1, 0] = \
-                    #         [self.get((element, j), 0) for element in seq]
-                    # ** Instead just add the non-zero elements.  This uses
-                    # ** linear time in the number of non-zeros:
-                    for (ii, jj) in self.keys():
-                        if jj == j and ii >= first and ii <= last:
-                            dict.__setitem__(new, (ii-first, 0),
-                                             dict.__getitem__(self, (ii,jj)))
-                else:
-                    ###################################
-                    # We should reshape the new matrix here!
-                    ###################################
-                    raise NotImplementedError("fancy indexing supported over"
-                            " one axis only")
-                return new
+        return newdok
 
-            # Below here, j is a sequence, but i is an integer
-            if isinstance(j, slice):
-                seq = xrange(*j.indices(self.shape[1]))
-            elif _is_sequence(j):
-                seq = j
-            else:
-                # j is not an integer
-                raise TypeError("index must be a pair of integers or slices")
+    def _getitem_assume_dense(self, newdok, i, j):
+        """
+        Insert items at indices i, j to DOK matrix newdok,
+        assuming most of those items will be nonzero
+        """
+        for a in xrange(i.shape[0]):
+            for b in xrange(i.shape[1]):
+                dict.__setitem__(newdok, (a, b),
+                                 dict.get(self, (i[a,b], j[a,b]), 0.))
 
-            # Create a new matrix of the correct dimensions
-            first = seq[0]
-            last = seq[-1]
-            if first < 0 or first >= self.shape[1] or last < 0 \
-                         or last >= self.shape[1]:
-                raise IndexError("index out of bounds")
-            newshape = (1, last-first+1)
-            new = dok_matrix(newshape, dtype=self.dtype)
-            # ** This uses linear time in the size n of dimension 1:
-            # new[0, 0:seq[-1]-seq[0]+1] = \
-            #         [self.get((i, element), 0) for element in seq]
-            # ** Instead loop over the non-zero elements.  This is slower
-            # ** if there are many non-zeros
-            for (ii, jj) in self.keys():
-                if ii == i and jj >= first and jj <= last:
-                    dict.__setitem__(new, (0, jj-first),
-                                     dict.__getitem__(self, (ii,jj)))
-            return new
+    def _getitem_assume_sparse(self, newdok, i, j):
+        """
+        Insert items at indices i, j t DOK matrix newdok,
+        assuming most of those items will be zero
+        """
+        i = i.flatten()
+        j = j.flatten()
+        i.sort()
+        j.sort()
+
+        for (ii, jj) in self.keys():
+            a = i.searchsorted(ii)
+            if a >= i.size or i[a] != ii:
+                continue
+            b = j.searchsorted(jj)
+            if b >= j.size or j[b] != jj:
+                continue
+            dict.__setitem__(newdok, (a, b),
+                             dict.__getitem__(self, (ii, jj)))
 
     def __setitem__(self, index, x):
         i, j = self._unpack_index(index)
@@ -488,3 +480,10 @@ def _list(x):
 
 def isspmatrix_dok(x):
     return isinstance(x, dok_matrix)
+
+
+def _prod(x):
+    """Product of a list of numbers; ~40x faster vs np.prod for Python tuples"""
+    if len(x) == 0:
+        return 1
+    return functools.reduce(operator.mul, x)
