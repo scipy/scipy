@@ -4,13 +4,14 @@ import warnings
 
 import numpy as np
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_equal, assert_raises, assert_equal,
-                           assert_, run_module_suite, assert_allclose, dec)
+                           assert_array_equal, assert_array_less,
+                           assert_raises, assert_equal, assert_,
+                           run_module_suite, assert_allclose)
 
 from scipy.signal import (tf2zpk, zpk2tf, BadCoefficients, freqz, normalize,
                           buttord, cheby1, cheby2, ellip, cheb1ord, cheb2ord,
                           ellipord, butter, bessel, buttap, besselap,
-                          cheb1ap, cheb2ap, ellipap, iirfilter)
+                          cheb1ap, cheb2ap, ellipap, iirfilter, freqs)
 
 
 class TestTf2zpk(TestCase):
@@ -156,33 +157,91 @@ class TestPrototypeType(TestCase):
                 assert_(isinstance(p, np.ndarray))
 
 
+def dB(x):
+    # Return magnitude in decibels
+    return 20 * np.log10(abs(x))
+
+
 class TestButtord(TestCase):
 
     def test_lowpass(self):
-        n, Wn = buttord(0.2, 0.3, 3, 60)
-        assert_equal(n, 16)
+        wp = 0.2
+        ws = 0.3
+        rp = 3
+        rs = 60
+        N, Wn = buttord(wp, ws, rp, rs, False)
+        b, a = butter(N, Wn, 'lowpass', False)
+        w, h = freqz(b, a)
+        w /= np.pi
+        assert_array_less(-rp - 0.1, dB(h[w <= wp]))
+        assert_array_less(dB(h[ws <= w]), -rs + 0.1)
+
+        assert_equal(N, 16)
         assert_allclose(Wn, 2.034240543183123e-01, rtol=1e-15)
 
     def test_highpass(self):
-        n, Wn = buttord(0.3, 0.2, 3, 70)
-        assert_equal(n, 18)
+        wp = 0.3
+        ws = 0.2
+        rp = 3
+        rs = 70
+        N, Wn = buttord(wp, ws, rp, rs, False)
+        b, a = butter(N, Wn, 'highpass', False)
+        w, h = freqz(b, a)
+        w /= np.pi
+        assert_array_less(-rp - 0.1, dB(h[wp <= w]))
+        assert_array_less(dB(h[w <= ws]), -rs + 0.1)
+
+        assert_equal(N, 18)
         assert_allclose(Wn, 2.994397774822765e-01, rtol=1e-15)
 
     def test_bandpass(self):
-        n, Wn = buttord([0.2, 0.5], [0.1, 0.6], 3, 80)
-        assert_equal(n, 18)
+        wp = [0.2, 0.5]
+        ws = [0.1, 0.6]
+        rp = 3
+        rs = 80
+        N, Wn = buttord(wp, ws, rp, rs, False)
+        b, a = butter(N, Wn, 'bandpass', False)
+        w, h = freqz(b, a)
+        w /= np.pi
+        assert_array_less(-rp - 0.1,
+                          dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
+        assert_array_less(dB(h[np.logical_or( w <= ws[0], ws[1] <= w)]),
+                          -rs + 0.1)
+
+        assert_equal(N, 18)
         assert_allclose(Wn, [1.988019498910527e-01, 5.020435331649425e-01],
                         rtol=1e-15)
 
     def test_bandstop(self):
-        n, Wn = buttord([0.1, 0.6], [0.2, 0.5], 3, 90)
-        assert_equal(n, 20)
+        wp = [0.1, 0.6]
+        ws = [0.2, 0.5]
+        rp = 3
+        rs = 90
+        N, Wn = buttord(wp, ws, rp, rs, False)
+        b, a = butter(N, Wn, 'bandstop', False)
+        w, h = freqz(b, a)
+        w /= np.pi
+        assert_array_less(-rp - 0.1,
+                          dB(h[np.logical_or( w <= wp[0], wp[1] <= w)]))
+        assert_array_less(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]),
+                          -rs + 0.1)
+
+        assert_equal(N, 20)
         assert_allclose(Wn, [1.481914223819211e-01, 5.986892392286634e-01],
                         rtol=1e-4)
 
     def test_analog(self):
-        n, Wn = buttord(200, 600, 3, 60, True)
-        assert_equal(n, 7)
+        wp = 200
+        ws = 600
+        rp = 3
+        rs = 60
+        N, Wn = buttord(wp, ws, rp, rs, True)
+        b, a = butter(N, Wn, 'lowpass', True)
+        w, h = freqs(b, a)
+        assert_array_less(-rp - 0.1, dB(h[w <= wp]))
+        assert_array_less(dB(h[ws <= w]), -rs + 0.1)
+
+        assert_equal(N, 7)
         assert_allclose(Wn, 2.236556391943067e+02, rtol=1e-15)
 
         n, Wn = buttord(1, 550/450, 1, 26, analog=True)
@@ -195,61 +254,168 @@ class TestButtord(TestCase):
 class TestCheb1ord(TestCase):
 
     def test_lowpass(self):
-        n, Wn = cheb1ord(0.2, 0.3, 3, 60)
-        assert_equal(n, 8)
+        wp = 0.2
+        ws = 0.3
+        rp = 3
+        rs = 60
+        N, Wn = cheb1ord(wp, ws, rp, rs, False)
+        b, a = cheby1(N, rp, Wn, 'low', False)
+        w, h = freqz(b, a)
+        w /= np.pi
+        assert_array_less(-rp - 0.1, dB(h[w <= wp]))
+        assert_array_less(dB(h[ws <= w]), -rs + 0.1)
+
+        assert_equal(N, 8)
         assert_allclose(Wn, 0.2, rtol=1e-15)
 
     def test_highpass(self):
-        n, Wn = cheb1ord(0.3, 0.2, 3, 70)
-        assert_equal(n, 9)
+        wp = 0.3
+        ws = 0.2
+        rp = 3
+        rs = 70
+        N, Wn = cheb1ord(wp, ws, rp, rs, False)
+        b, a = cheby1(N, rp, Wn, 'high', False)
+        w, h = freqz(b, a)
+        w /= np.pi
+        assert_array_less(-rp - 0.1, dB(h[wp <= w]))
+        assert_array_less(dB(h[w <= ws]), -rs + 0.1)
+
+        assert_equal(N, 9)
         assert_allclose(Wn, 0.3, rtol=1e-15)
 
     def test_bandpass(self):
-        n, Wn = cheb1ord([0.2, 0.5], [0.1, 0.6], 3, 80)
-        assert_equal(n, 9)
+        wp = [0.2, 0.5]
+        ws = [0.1, 0.6]
+        rp = 3
+        rs = 80
+        N, Wn = cheb1ord(wp, ws, rp, rs, False)
+        b, a = cheby1(N, rp, Wn, 'band', False)
+        w, h = freqz(b, a)
+        w /= np.pi
+        assert_array_less(-rp - 0.1,
+                          dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
+        assert_array_less(dB(h[np.logical_or( w <= ws[0], ws[1] <= w)]),
+                          -rs + 0.1)
+
+        assert_equal(N, 9)
         assert_allclose(Wn, [0.2, 0.5], rtol=1e-15)
 
     def test_bandstop(self):
-        n, Wn = cheb1ord([0.1, 0.6], [0.2, 0.5], 3, 90)
-        assert_equal(n, 10)
-        assert_array_almost_equal(Wn, [0.1, 0.6], decimal=1)
-        # TODO: Why do these produce different frequencies from Matlab?
-        # https://github.com/scipy/scipy/issues/3219
-        # If changed to match Matlab, use _allclose or _equal instead.
+        wp = [0.1, 0.6]
+        ws = [0.2, 0.5]
+        rp = 3
+        rs = 90
+        N, Wn = cheb1ord(wp, ws, rp, rs, False)
+        b, a = cheby1(N, rp, Wn, 'stop', False)
+        w, h = freqz(b, a)
+        w /= np.pi
+        assert_array_less(-rp - 0.1,
+                          dB(h[np.logical_or( w <= wp[0], wp[1] <= w)]))
+        assert_array_less(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]),
+                          -rs + 0.1)
+
+        assert_equal(N, 10)
+        assert_allclose(Wn, [0.14758232569947785, 0.6], rtol=1e-5)
 
     def test_analog(self):
-        assert_equal(cheb1ord(1, 1.2, 1, 80, analog=True)[0], 17)
+        wp = 700
+        ws = 100
+        rp = 3
+        rs = 70
+        N, Wn = cheb1ord(wp, ws, rp, rs, True)
+        b, a = cheby1(N, rp, Wn, 'high', True)
+        w, h = freqs(b, a)
+        assert_array_less(-rp - 0.1, dB(h[wp <= w]))
+        assert_array_less(dB(h[w <= ws]), -rs + 0.1)
 
-        n, Wn = cheb1ord(700, 100, 3, 70, analog=True)
-        assert_equal(n, 4)
+        assert_equal(N, 4)
         assert_allclose(Wn, 700, rtol=1e-15)
+
+        assert_equal(cheb1ord(1, 1.2, 1, 80, analog=True)[0], 17)
 
 
 class TestCheb2ord(TestCase):
 
     def test_lowpass(self):
-        n, Wn = cheb2ord(0.2, 0.3, 3, 60)
-        assert_equal(n, 8)
-        assert_array_almost_equal(Wn, 0.3, decimal=1)
+        wp = 0.2
+        ws = 0.3
+        rp = 3
+        rs = 60
+        N, Wn = cheb2ord(wp, ws, rp, rs, False)
+        b, a = cheby2(N, rs, Wn, 'lp', False)
+        w, h = freqz(b, a)
+        w /= np.pi
+        assert_array_less(-rp - 0.1, dB(h[w <= wp]))
+        assert_array_less(dB(h[ws <= w]), -rs + 0.1)
+
+        assert_equal(N, 8)
+        assert_allclose(Wn, 0.28647639976553163, rtol=1e-15)
 
     def test_highpass(self):
-        n, Wn = cheb2ord(0.3, 0.2, 3, 70)
-        assert_equal(n, 9)
-        assert_array_almost_equal(Wn, 0.2, decimal=1)
+        wp = 0.3
+        ws = 0.2
+        rp = 3
+        rs = 70
+        N, Wn = cheb2ord(wp, ws, rp, rs, False)
+        b, a = cheby2(N, rs, Wn, 'hp', False)
+        w, h = freqz(b, a)
+        w /= np.pi
+        assert_array_less(-rp - 0.1, dB(h[wp <= w]))
+        assert_array_less(dB(h[w <= ws]), -rs + 0.1)
+
+        assert_equal(N, 9)
+        assert_allclose(Wn, 0.20697492182903282, rtol=1e-15)
 
     def test_bandpass(self):
-        n, Wn = cheb2ord([0.2, 0.5], [0.1, 0.6], 3, 80)
-        assert_equal(n, 9)
-        assert_array_almost_equal(Wn, [0.1, 0.6], decimal=1)
+        wp = [0.2, 0.5]
+        ws = [0.1, 0.6]
+        rp = 3
+        rs = 80
+        N, Wn = cheb2ord(wp, ws, rp, rs, False)
+        b, a = cheby2(N, rs, Wn, 'bp', False)
+        w, h = freqz(b, a)
+        w /= np.pi
+        assert_array_less(-rp - 0.1,
+                          dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
+        assert_array_less(dB(h[np.logical_or( w <= ws[0], ws[1] <= w)]),
+                          -rs + 0.1)
+
+        assert_equal(N, 9)
+        assert_allclose(Wn, [0.14876937565923479, 0.59748447842351482],
+                        rtol=1e-15)
 
     def test_bandstop(self):
-        n, Wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 90)
-        assert_equal(n, 10)
-        assert_array_almost_equal(Wn, [0.2, 0.5], decimal=1)
+        wp = [0.1, 0.6]
+        ws = [0.2, 0.5]
+        rp = 3
+        rs = 90
+        N, Wn = cheb2ord(wp, ws, rp, rs, False)
+        b, a = cheby2(N, rs, Wn, 'bs', False)
+        w, h = freqz(b, a)
+        w /= np.pi
+        assert_array_less(-rp - 0.1,
+                          dB(h[np.logical_or( w <= wp[0], wp[1] <= w)]))
+        assert_array_less(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]),
+                          -rs + 0.1)
+
+        assert_equal(N, 10)
+        assert_allclose(Wn, [0.19926249974781743, 0.50125246585567362],
+                        rtol=1e-15)
 
     def test_analog(self):
-        n, Wn = cheb2ord([20, 50], [10, 60], 3, 80, True)
-        assert_equal(n, 11)
+        wp = [20, 50]
+        ws = [10, 60]
+        rp = 3
+        rs = 80
+        N, Wn = cheb2ord(wp, ws, rp, rs, True)
+        b, a = cheby2(N, rs, Wn, 'bp', True)
+        w, h = freqs(b, a)
+        assert_array_less(-rp - 0.1,
+                          dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
+        assert_array_less(dB(h[np.logical_or( w <= ws[0], ws[1] <= w)]),
+                          -rs + 0.1)
+
+        assert_equal(N, 11)
         assert_allclose(Wn, [1.673740595370124e+01,  5.974641487254268e+01],
                         rtol=1e-15)
 
@@ -257,31 +423,84 @@ class TestCheb2ord(TestCase):
 class TestEllipord(TestCase):
 
     def test_lowpass(self):
-        n, Wn = ellipord(0.2, 0.3, 3, 60)
-        assert_equal(n, 5)
+        wp = 0.2
+        ws = 0.3
+        rp = 3
+        rs = 60
+        N, Wn = ellipord(wp, ws, rp, rs, False)
+        b, a = ellip(N, rp, rs, Wn, 'lp', False)
+        w, h = freqz(b, a)
+        w /= np.pi
+        assert_array_less(-rp - 0.1, dB(h[w <= wp]))
+        assert_array_less(dB(h[ws <= w]), -rs + 0.1)
+
+        assert_equal(N, 5)
         assert_allclose(Wn, 0.2, rtol=1e-15)
 
     def test_highpass(self):
-        n, Wn = ellipord(0.3, 0.2, 3, 70)
-        assert_equal(n, 6)
+        wp = 0.3
+        ws = 0.2
+        rp = 3
+        rs = 70
+        N, Wn = ellipord(wp, ws, rp, rs, False)
+        b, a = ellip(N, rp, rs, Wn, 'hp', False)
+        w, h = freqz(b, a)
+        w /= np.pi
+        assert_array_less(-rp - 0.1, dB(h[wp <= w]))
+        assert_array_less(dB(h[w <= ws]), -rs + 0.1)
+
+        assert_equal(N, 6)
         assert_allclose(Wn, 0.3, rtol=1e-15)
 
     def test_bandpass(self):
-        n, Wn = ellipord([0.2, 0.5], [0.1, 0.6], 3, 80)
-        assert_equal(n, 6)
+        wp = [0.2, 0.5]
+        ws = [0.1, 0.6]
+        rp = 3
+        rs = 80
+        N, Wn = ellipord(wp, ws, rp, rs, False)
+        b, a = ellip(N, rp, rs, Wn, 'bp', False)
+        w, h = freqz(b, a)
+        w /= np.pi
+        assert_array_less(-rp - 0.1,
+                          dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
+        assert_array_less(dB(h[np.logical_or( w <= ws[0], ws[1] <= w)]),
+                          -rs + 0.1)
+
+        assert_equal(N, 6)
         assert_allclose(Wn, [0.2, 0.5], rtol=1e-15)
 
     def test_bandstop(self):
-        n, Wn = ellipord([0.1, 0.6], [0.2, 0.5], 3, 90)
-        assert_equal(n, 7)
-        assert_array_almost_equal(Wn, [0.1, 0.6], decimal=1)
+        wp = [0.1, 0.6]
+        ws = [0.2, 0.5]
+        rp = 3
+        rs = 90
+        N, Wn = ellipord(wp, ws, rp, rs, False)
+        b, a = ellip(N, rp, rs, Wn, 'bs', False)
+        w, h = freqz(b, a)
+        w /= np.pi
+        assert_array_less(-rp - 0.1,
+                          dB(h[np.logical_or( w <= wp[0], wp[1] <= w)]))
+        assert_array_less(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]),
+                          -rs + 0.1)
 
-    @dec.knownfailureif(True, "This does not match Matlab. See "
-                              "https://github.com/scipy/scipy/issues/3219")
+        assert_equal(N, 7)
+        assert_allclose(Wn, [0.14758232794342988, 0.6], rtol=1e-5)
+
     def test_analog(self):
-        n, Wn = ellipord([1000, 6000], [2000, 5000], 3, 90, True)
-        assert_equal(n, 9)
-        assert_allclose(Wn, [1000, 6000], rtol=1e-15)
+        wp = [1000, 6000]
+        ws = [2000, 5000]
+        rp = 3
+        rs = 90
+        N, Wn = ellipord(wp, ws, rp, rs, True)
+        b, a = ellip(N, rp, rs, Wn, 'bs', True)
+        w, h = freqs(b, a)
+        assert_array_less(-rp - 0.1,
+                          dB(h[np.logical_or( w <= wp[0], wp[1] <= w)]))
+        assert_array_less(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]),
+                          -rs + 0.1)
+
+        assert_equal(N, 8)
+        assert_allclose(Wn, [1666.6666, 6000])
 
         assert_equal(ellipord(1, 1.2, 1, 80, analog=True)[0], 9)
 
