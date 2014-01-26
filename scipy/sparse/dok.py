@@ -227,8 +227,6 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     def __setitem__(self, index, x):
         i, j = self._unpack_index(index)
         i, j = self._index_to_arrays(i, j)
-        i = i.ravel()
-        j = j.ravel()
 
         if isspmatrix(x):
             x = x.toarray()
@@ -259,11 +257,12 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             j = j.copy()
             j[j < 0] += self.shape[1]
 
-        dict.update(self, izip(izip(i, j), x))
+        i, j = np.broadcast_arrays(i, j)
+        dict.update(self, izip(izip(i.flat, j.flat), x.flat))
 
         if 0 in x:
             zeroes = x == 0
-            for key in izip(i[zeroes], j[zeroes]):
+            for key in izip(i[zeroes].flat, j[zeroes].flat):
                 if dict.__getitem__(self, key) == 0:
                     # may have been superseded by later update
                     del self[key]
