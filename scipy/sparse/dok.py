@@ -173,8 +173,6 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             j = j.copy()
             j[j < 0] += self.shape[1]
 
-        i, j = np.broadcast_arrays(i, j)
-
         newdok = dok_matrix(i.shape, dtype=self.dtype)
 
         for a in xrange(i.shape[0]):
@@ -239,7 +237,6 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             j = j.copy()
             j[j < 0] += self.shape[1]
 
-        i, j = np.broadcast_arrays(i, j)
         dict.update(self, izip(izip(i.flat, j.flat), x.flat))
 
         if 0 in x:
