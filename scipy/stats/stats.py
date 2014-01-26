@@ -2375,7 +2375,7 @@ def f_oneway(*args):
     msb = ssbn / float(dfbn)
     msw = sswn / float(dfwn)
     f = msb / msw
-    prob = special.fdtrc(dfbn, dfwn, f)
+    prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
     return f, prob
 
 
@@ -3873,7 +3873,7 @@ def ks_2samp(data1, data2):
     # Note: d absolute not signed distance
     en = np.sqrt(n1*n2/float(n1+n2))
     try:
-        prob = special.kolmogorov((en + 0.12 + 0.11 / en) * d)
+        prob = distributions.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
     except:
         prob = 1.0
     return d, prob
@@ -4136,7 +4136,7 @@ def chisqprob(chisq, df):
     return special.chdtrc(df,chisq)
 
 ksprob = np.deprecate(message='ksprob is deprecated in scipy 0.14, '
-        'use stats.kstwobign.cdf or special.kolmogorov instead\n',
+        'use stats.kstwobign.sf or special.kolmogorov instead\n',
         old_name='ksprob')(special.kolmogorov)
 
 fprob = np.deprecate(message='fprob is deprecated in scipy 0.14, '

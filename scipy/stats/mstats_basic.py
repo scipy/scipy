@@ -2006,7 +2006,7 @@ Returns: f-value, probability
     msb = ssbg/float(dfbg)
     msw = sswg/float(dfwg)
     f = msb/msw
-    prob = special.fdtrc(dfbg, dfwg, f)
+    prob = special.fdtrc(dfbg, dfwg, f)  # equivalent to stats.f.sf
     return f, prob
 
 
