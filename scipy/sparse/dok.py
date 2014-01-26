@@ -177,44 +177,13 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
         newdok = dok_matrix(i.shape, dtype=self.dtype)
 
-        if len(self) * _prod(i.shape) > _prod(self.shape):
-            # Most of the elements will probably be nonzeros
-            self._getitem_assume_dense(newdok, i, j)
-        else:
-            # Most of the elements will probably be zeros
-            self._getitem_assume_sparse(newdok, i, j)
-
-        return newdok
-
-    def _getitem_assume_dense(self, newdok, i, j):
-        """
-        Insert items at indices i, j to DOK matrix newdok,
-        assuming most of those items will be nonzero
-        """
         for a in xrange(i.shape[0]):
             for b in xrange(i.shape[1]):
-                dict.__setitem__(newdok, (a, b),
-                                 dict.get(self, (i[a,b], j[a,b]), 0.))
+                v = dict.get(self, (i[a,b], j[a,b]), 0.)
+                if v != 0:
+                    dict.__setitem__(newdok, (a, b), v)
 
-    def _getitem_assume_sparse(self, newdok, i, j):
-        """
-        Insert items at indices i, j t DOK matrix newdok,
-        assuming most of those items will be zero
-        """
-        i = i.flatten()
-        j = j.flatten()
-        i.sort()
-        j.sort()
-
-        for (ii, jj) in self.keys():
-            a = i.searchsorted(ii)
-            if a >= i.size or i[a] != ii:
-                continue
-            b = j.searchsorted(jj)
-            if b >= j.size or j[b] != jj:
-                continue
-            dict.__setitem__(newdok, (a, b),
-                             dict.__getitem__(self, (ii, jj)))
+        return newdok
 
     def __setitem__(self, index, x):
         i, j = self._unpack_index(index)
