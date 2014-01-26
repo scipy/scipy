@@ -14,7 +14,7 @@ from scipy.lib.six import iteritems
 
 from .base import spmatrix, isspmatrix
 from .sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
-                      upcast, upcast_scalar, get_index_dtype)
+                      upcast, upcast_scalar, IndexMixin, get_index_dtype)
 
 try:
     from operator import isSequenceType as _is_sequence
@@ -24,7 +24,7 @@ except ImportError:
                 or hasattr(x, 'next'))
 
 
-class dok_matrix(spmatrix, dict):
+class dok_matrix(spmatrix, IndexMixin, dict):
     """
     Dictionary Of Keys based sparse matrix.
 
@@ -224,107 +224,49 @@ class dok_matrix(spmatrix, dict):
                                      dict.__getitem__(self, (ii,jj)))
             return new
 
-    def __setitem__(self, key, value):
-        try:
-            i, j = key
-        except (ValueError, TypeError):
-            raise TypeError("index must be a pair of integers or slices")
+    def __setitem__(self, index, x):
+        i, j = self._unpack_index(index)
+        i, j = self._index_to_arrays(i, j)
+        i = i.ravel()
+        j = j.ravel()
 
-        # First deal with the case where both i and j are integers
-        if isintlike(i) and isintlike(j):
-            if i < 0:
-                i += self.shape[0]
-            if j < 0:
-                j += self.shape[1]
+        if isspmatrix(x):
+            x = x.toarray()
 
-            if i < 0 or i >= self.shape[0] or j < 0 or j >= self.shape[1]:
-                raise IndexError("index out of bounds")
+        # Make x and i into the same shape
+        x = np.asarray(x, dtype=self.dtype)
+        x, _ = np.broadcast_arrays(x, i)
 
-            if np.isscalar(value):
-                if value == 0:
-                    if (i,j) in self:
-                        del self[(i,j)]
-                else:
-                    dict.__setitem__(self, (i,j), self.dtype.type(value))
-            else:
-                raise ValueError('setting an array element with a sequence')
+        if x.shape != i.shape:
+            raise ValueError("shape mismatch in assignment")
 
-        else:
-            # Either i or j is a slice, sequence, or invalid.  If i is a slice
-            # or sequence, unfold it first and call __setitem__ recursively.
-            if isinstance(i, slice):
-                seq = xrange(*i.indices(self.shape[0]))
-            elif _is_sequence(i):
-                seq = i
-            else:
-                # Make sure i is an integer. (But allow it to be a subclass of int).
-                if not isintlike(i):
-                    raise TypeError("index must be a pair of integers or slices")
-                seq = None
-            if seq is not None:
-                # First see if 'value' is another dok_matrix of the appropriate
-                # dimensions
-                if isinstance(value, dok_matrix):
-                    if value.shape[1] == 1:
-                        for element in seq:
-                            self[element, j] = value[element, 0]
-                    else:
-                        raise NotImplementedError("setting a 2-d slice of"
-                                " a dok_matrix is not yet supported")
-                elif np.isscalar(value):
-                    for element in seq:
-                        self[element, j] = value
-                else:
-                    # See if value is a sequence
-                    try:
-                        if len(seq) != len(value):
-                            raise ValueError("index and value ranges must"
-                                              " have the same length")
-                    except TypeError:
-                        # Not a sequence
-                        raise TypeError("unsupported type for"
-                                         " dok_matrix.__setitem__")
+        if np.size(x) == 0:
+            return
 
-                    # Value is a sequence
-                    for element, val in izip(seq, value):
-                        self[element, j] = val   # don't use dict.__setitem__
-                            # here, since we still want to be able to delete
-                            # 0-valued keys, do type checking on 'val' (e.g. if
-                            # it's a rank-1 dense array), etc.
-            else:
-                # Process j
-                if isinstance(j, slice):
-                    seq = xrange(*j.indices(self.shape[1]))
-                elif _is_sequence(j):
-                    seq = j
-                else:
-                    # j is not an integer
-                    raise TypeError("index must be a pair of integers or slices")
+        min_i = i.min()
+        if min_i < -self.shape[0] or i.max() >= self.shape[0]:
+            raise IndexError('index (%d) out of range -%d to %d)' %
+                             (i.min(), self.shape[0], self.shape[0]-1))
+        if min_i < 0:
+            i = i.copy()
+            i[i < 0] += self.shape[0]
 
-                # First see if 'value' is another dok_matrix of the appropriate
-                # dimensions
-                if isinstance(value, dok_matrix):
-                    if value.shape[0] == 1:
-                        for element in seq:
-                            self[i, element] = value[0, element]
-                    else:
-                        raise NotImplementedError("setting a 2-d slice of"
-                                " a dok_matrix is not yet supported")
-                elif np.isscalar(value):
-                    for element in seq:
-                        self[i, element] = value
-                else:
-                    # See if value is a sequence
-                    try:
-                        if len(seq) != len(value):
-                            raise ValueError("index and value ranges must have"
-                                              " the same length")
-                    except TypeError:
-                        # Not a sequence
-                        raise TypeError("unsupported type for dok_matrix.__setitem__")
-                    else:
-                        for element, val in izip(seq, value):
-                            self[i, element] = val
+        min_j = j.min()
+        if min_j < -self.shape[0] or j.max() >= self.shape[1]:
+            raise IndexError('index (%d) out of range -%d to %d)' %
+                             (j.min(), self.shape[1], self.shape[1]-1))
+        if min_j < 0:
+            j = j.copy()
+            j[j < 0] += self.shape[1]
+
+        dict.update(self, izip(izip(i, j), x))
+
+        if 0 in x:
+            zeroes = x == 0
+            for key in izip(i[zeroes], j[zeroes]):
+                if dict.__getitem__(self, key) == 0:
+                    # may have been superseded by later update
+                    del self[key]
 
     def __add__(self, other):
         # First check if argument is a scalar
