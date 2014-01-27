@@ -4005,11 +4005,22 @@ def test_jensen_shannon_divergence():
         c = a+b
 
         assert_(stats.jensen_shannon_divergence(a, a) < 1e-4)
-        assert_(stats.jensen_shannon_divergence(a, b) > 1.)
+        assert_(stats.jensen_shannon_divergence(a, b) > 0.)
         assert_(stats.jensen_shannon_divergence(a, b) >
                         stats.jensen_shannon_divergence(a, c))
         assert_array_almost_equal(stats.jensen_shannon_divergence(a, b),
                         stats.jensen_shannon_divergence(a, b*6))
+
+
+    a = np.array([1, 0, 0, 0])
+    b = np.array([0, 1, 0, 0])
+    assert_almost_equal(stats.jensen_shannon_divergence(a, b), np.log(2))
+
+    a = np.array([1, 0, 0, 0], float)
+    b = np.array([1, 1, 1, 1], float)
+    m = a/a.sum() + b/b.sum()
+    expected = ( stats.entropy(a, m) + stats.entropy(b, m) )/ 2
+    assert_almost_equal(stats.jensen_shannon_divergence(a, b), expected)
 
     a = np.random.random((4,16))
     b = np.random.random((4,16))
