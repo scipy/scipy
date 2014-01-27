@@ -648,11 +648,14 @@ def setup_location():
     sys.path.insert(0,test_dir)
     return test_dir
 
+
 test_dir = None
+
 
 def setUpModule():
     global test_dir
     test_dir = setup_location()
+
 
 def tearDownModule():
     import shutil

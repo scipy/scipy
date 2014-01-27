@@ -755,7 +755,7 @@ class TestBoxcoxNormplot(TestCase):
         # `lb` has to be larger than `la`
         assert_raises(ValueError, stats.boxcox_normplot, self.x, 1, 0)
         # `x` can not contain negative values
-        assert_raises(ValueError, stats.boxcox_normplot, [-1, 1] , 0, 1)
+        assert_raises(ValueError, stats.boxcox_normplot, [-1, 1], 0, 1)
 
     def test_empty(self):
         assert_(stats.boxcox_normplot([], 0, 1).size == 0)

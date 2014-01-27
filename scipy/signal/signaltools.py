@@ -173,7 +173,7 @@ def _next_regular(target):
     if not (target & (target-1)):
         return target
 
-    match = float('inf') # Anything found will be smaller
+    match = float('inf')  # Anything found will be smaller
     p5 = 1
     while p5 < target:
         p35 = p5

@@ -141,6 +141,7 @@ def test_cont_basic():
             yield knf(distname == 'truncnorm')(check_ppf_private), distfn, \
                       arg, distname
 
+
 @npt.dec.slow
 def test_cont_basic_slow():
     # same as above for slow distributions
@@ -332,6 +333,7 @@ def check_distribution_rvs(dist, args, alpha, rvs):
 
 def check_vecentropy(distfn, args):
     npt.assert_equal(distfn.vecentropy(*args), distfn._entropy(*args))
+
 
 @npt.dec.skipif(NUMPY_BELOW_1_7)
 def check_loc_scale(distfn, arg, m, v, msg):

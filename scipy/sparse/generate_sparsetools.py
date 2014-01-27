@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-import os, subprocess
+import os
+import subprocess
+
 
 def main():
     os.chdir('sparsetools')

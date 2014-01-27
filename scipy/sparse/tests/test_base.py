@@ -51,6 +51,7 @@ import nose
 warnings.simplefilter('ignore', SparseEfficiencyWarning)
 warnings.simplefilter('ignore', ComplexWarning)
 
+
 def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
                             downcast_maxval=None):
     """
@@ -66,6 +67,7 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
             return fixed_dtype
     elif random:
         counter = np.random.RandomState(seed=1234)
+
         def new_get_index_dtype(arrays=(), maxval=None):
             return (np.int32, np.int64)[counter.randint(2)]
     else:
@@ -109,6 +111,7 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
                     setattr(mod, name, oldfunc)
 
     return deco
+
 
 def _can_cast_samekind(dtype1, dtype2):
     """Compatibility function for numpy 1.5.1; `casting` kw is numpy >=1.6.x
@@ -661,7 +664,6 @@ class _TestCommon:
                         # check overwriting etc
                         for k2 in np.random.randint(-m+1, n-1, size=12):
                             check_setdiag(a, b, k2)
-
 
         # simpler test case
         m = self.spmatrix(np.eye(3))
@@ -1681,7 +1683,6 @@ class _TestCommon:
                     if i == 'sparse' or j == 'sparse':
                         yield check, i, j, dtype
 
-
     @dec.skipif(NumpyVersion(np.__version__) < '1.9.0.dev-0',
                 "feature requires Numpy 1.9")
     def test_ufunc_object_array(self):
@@ -1715,6 +1716,7 @@ class _TestCommon:
         d = np.subtract(np.array(b, dtype=object), c)
         assert_(isinstance(d, sparse.spmatrix))
         assert_allclose(d.A, (b - c).A)
+
 
 class _TestInplaceArithmetic:
     def test_inplace_dense(self):
@@ -1908,6 +1910,7 @@ class _TestSlicing:
         assert_equal(self.spmatrix((1,10), dtype=np.int32)[0,1:5].dtype, np.int32)
         assert_equal(self.spmatrix((1,10), dtype=np.float32)[0,1:5].dtype, np.float32)
         assert_equal(self.spmatrix((1,10), dtype=np.float64)[0,1:5].dtype, np.float64)
+
     def test_get_horiz_slice(self):
         B = asmatrix(arange(50.).reshape(5,10))
         A = self.spmatrix(B)
@@ -2487,7 +2490,6 @@ class _TestFancyIndexingAssign:
         B[:,2] = 0
         B[3,6] = 0
         A = self.spmatrix(B)
-
 
         K = np.array([False, False, False, False, False])
         A[K] = 42

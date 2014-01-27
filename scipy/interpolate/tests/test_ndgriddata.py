@@ -101,7 +101,7 @@ class TestGriddata(object):
                             err_msg=method, atol=1e-10)
 
     def test_square_rescale_manual(self):
-        points  = np.array([(0,0), (0,100), (10,100), (10,0), (1, 5)], dtype=np.double)
+        points = np.array([(0,0), (0,100), (10,100), (10,0), (1, 5)], dtype=np.double)
         points_rescaled = np.array([(0,0), (0,1), (1,1), (1,0), (0.1, 0.05)], dtype=np.double)
         values = np.array([1., 2., -3., 5., 9.], dtype=np.double)
 

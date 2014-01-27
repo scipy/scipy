@@ -98,7 +98,6 @@ class _BenchOptimizers(object):
             t1 = time.time()
             self.add_result(res, t1-t0, method)
 
-
         gradient_methods = ['L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP']
         if self.der is not None:
             for method in gradient_methods:
@@ -117,6 +116,7 @@ class _BenchOptimizers(object):
                                               **kwargs)
                 t1 = time.time()
                 self.add_result(res, t1-t0, method)
+
 
 class BenchSmoothUnbounded(TestCase):
     """Benchmark the optimizers with smooth, unbounded, functions"""

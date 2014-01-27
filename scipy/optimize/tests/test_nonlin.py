@@ -42,6 +42,7 @@ F2.xin = [1,2,3,4,5,6]
 F2.KNOWN_BAD = {'linearmixing': nonlin.linearmixing,
                 'excitingmixing': nonlin.excitingmixing}
 
+
 def F2_lucky(x):
     return x
 F2_lucky.xin = [0,0,0,0,0,0]

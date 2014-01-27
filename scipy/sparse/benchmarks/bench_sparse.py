@@ -290,7 +290,6 @@ class BenchmarkSparse(TestCase):
                     output += '| %5.1fms ' % (1000*t)
             print(output)
 
-
     def _getset_bench(self, kernel, formats):
         print('==========================================================')
         print('      N | s.patt. |' + ''.join(' %7s |' % fmt for fmt in formats))
@@ -363,7 +362,7 @@ class BenchmarkSparse(TestCase):
             A[i, j]
         print()
         print('           Sparse Matrix fancy __getitem__')
-        self._getset_bench(kernel,  ['csr', 'csc', 'lil'])
+        self._getset_bench(kernel, ['csr', 'csc', 'lil'])
 
 # class TestLarge(TestCase):
 #    def bench_large(self):

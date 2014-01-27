@@ -140,6 +140,7 @@ class IterativeParams(object):
 
 params = None
 
+
 def setup_module():
     global params
     params = IterativeParams()
