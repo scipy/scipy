@@ -5034,7 +5034,8 @@ def jensen_shannon_divergence(a, b):
     Parameters
     ----------
     a : array-like
-        possibly unnormalized distribution
+        possibly unnormalized distribution. This function is only defined for
+        1-dimensional arrays
     b : array-like
         possibly unnormalized distribution. Must be of same size as ``a``.
 
@@ -5063,6 +5064,9 @@ def jensen_shannon_divergence(a, b):
 
 def jsd_matrix(data):
     """Compressed Jensen-Shannon Divergence Matrix
+
+    This function computes the Jensen-Shannon Divergence for each pair of
+    element in the input.
 
     Parameters
     ----------
