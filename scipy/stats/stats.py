@@ -5051,6 +5051,8 @@ def jensen_shannon_divergence(a, b):
     """
     a = np.asanyarray(a, dtype=float)
     b = np.asanyarray(b, dtype=float)
+    if a.ndim != 1 or b.ndim != 1:
+        raise ValueError('jensen_shannon_divergence only accepts 1-dimensional arguments')
     a = a/a.sum()
     b = b/b.sum()
     m = (a + b)
