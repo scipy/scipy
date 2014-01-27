@@ -5034,10 +5034,9 @@ def jensen_shannon_divergence(a, b):
     Parameters
     ----------
     a : array-like
-        possibly unnormalized distribution. This function is only defined for
-        1-dimensional arrays
+        possibly unnormalized distribution.
     b : array-like
-        possibly unnormalized distribution. Must be of same size as ``a``.
+        possibly unnormalized distribution. Must be of same shape as ``a``.
 
     Returns
     -------
@@ -5052,14 +5051,12 @@ def jensen_shannon_divergence(a, b):
     """
     a = np.asanyarray(a, dtype=float)
     b = np.asanyarray(b, dtype=float)
-    if a.ndim != 1 or b.ndim != 1:
-        raise ValueError('jensen_shannon_divergence only accepts 1-dimensional arguments')
-    a = a/a.sum()
-    b = b/b.sum()
+    a = a/a.sum(axis=0)
+    b = b/b.sum(axis=0)
     m = (a + b)
     m /= 2.
-    m = np.where(m,m,1.)
-    return 0.5*np.sum(special.xlogy(a,a/m)+special.xlogy(b,b/m))
+    m = np.where(m, m, 1.)
+    return 0.5*np.sum(special.xlogy(a,a/m)+special.xlogy(b,b/m), axis=0)
 
 
 def jsd_matrix(data):

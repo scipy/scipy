@@ -4009,8 +4009,11 @@ def test_jensen_shannon_divergence():
         assert_(stats.jensen_shannon_divergence(a,b) > stats.jensen_shannon_divergence(a,c))
         assert_array_almost_equal(stats.jensen_shannon_divergence(a,b),stats.jensen_shannon_divergence(a,b*6))
 
-    assert_raises(ValueError, stats.jensen_shannon_divergence, np.random.random((4,2)), np.random.random((4,2)))
-
+    a = np.random.random((4,16))
+    b = np.random.random((4,16))
+    direct = stats.jensen_shannon_divergence(a,b)
+    indirect = np.array([stats.jensen_shannon_divergence(aa, bb) for aa,bb in zip(a.T,b.T)])
+    assert_array_almost_equal(direct, indirect)
 
 def test_jsd_matrix():
     from scipy.spatial.distance import squareform
