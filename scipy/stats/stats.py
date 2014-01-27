@@ -5058,13 +5058,14 @@ def jensen_shannon_divergence(a, b):
     m = np.where(m,m,1.)
     return 0.5*np.sum(special.xlogy(a,a/m)+special.xlogy(b,b/m))
 
+
 def jsd_matrix(data):
     """Compressed Jensen-Shannon Divergence Matrix
 
     Parameters
     ----------
     data : array-like
-    
+
     Returns
     -------
     dist_matrix : ndarray
@@ -5079,13 +5080,13 @@ def jsd_matrix(data):
     n = len(data)
     data = np.array(data)
     data /= data.sum(1)[:,None]
-    output = np.empty( int(n*(n-1)/2), np.double)
+    output = np.empty(int(n*(n-1)/2), np.double)
     p = 0
     for i,a in enumerate(data):
         bs = data[(i+1):]
         m = bs + a
         m /= 2.
-        m = np.where(m,m,1.)
+        m = np.where(m, m, 1.)
         out = special.xlogy(a, a/m).sum(1)
         out += special.xlogy(bs, bs/m).sum(1)
         output[p:(p+len(bs))] = out
