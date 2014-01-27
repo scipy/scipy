@@ -83,8 +83,26 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         self.check_format(full_check=False)
 
-    def getnnz(self):
-        return int(self.indptr[-1])
+    def getnnz(self, axis=None):
+        """Get the count of explicitly-stored values (nonzeros)
+
+        Parameters
+        ----------
+        axis : None, 0, or 1
+            Select between the number of values across the whole matrix, in
+            each column, or in each row.
+        """
+        if axis is None:
+            return int(self.indptr[-1])
+        else:
+            axis, _ = self._swap((axis, 1 - axis))
+            _, N = self._swap(self.shape)
+            if axis == 0:
+                return np.bincount(self.indices, minlength=N)
+            elif axis == 1:
+                return np.diff(self.indptr)
+            raise ValueError('Unknown axis: %r' % axis)
+
     nnz = property(fget=getnnz)
 
     def _set_self(self, other, copy=False):

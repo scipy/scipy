@@ -192,15 +192,33 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         self._check()
 
-    def getnnz(self):
-        nnz = len(self.data)
-        if nnz != len(self.row) or nnz != len(self.col):
-            raise ValueError('row, column, and data array must all be the same length')
+    def getnnz(self, axis=None):
+        """Get the count of explicitly-stored values (nonzeros)
 
-        if np.rank(self.data) != 1 or np.rank(self.row) != 1 or np.rank(self.col) != 1:
-            raise ValueError('row, column, and data arrays must have rank 1')
+        Parameters
+        ----------
+        axis : None, 0, or 1
+            Select between the number of values across the whole matrix, in
+            each column, or in each row.
+        """
+        if axis is None:
+            nnz = len(self.data)
+            if nnz != len(self.row) or nnz != len(self.col):
+                raise ValueError('row, column, and data array must all be the '
+                                 'same length')
 
-        return int(nnz)
+            if np.rank(self.data) != 1 or np.rank(self.row) != 1 or \
+               np.rank(self.col) != 1:
+                raise ValueError('row, column, and data arrays must have '
+                                 'rank 1')
+
+            return int(nnz)
+        elif axis == 0:
+            return np.bincount(self.col, minlength=self.shape[1])
+        elif axis == 1:
+            return np.bincount(self.row, minlength=self.shape[0])
+        else:
+            raise ValueError('Unknown axis: %r' % axis)
     nnz = property(fget=getnnz)
 
     def _check(self):

@@ -177,8 +177,26 @@ class lil_matrix(spmatrix, IndexMixin):
     # Whenever the dimensions change, empty lists should be created for each
     # row
 
-    def getnnz(self):
-        return sum([len(rowvals) for rowvals in self.data])
+    def getnnz(self, axis=None):
+        """Get the count of explicitly-stored values (nonzeros)
+
+        Parameters
+        ----------
+        axis : None, 0, or 1
+            Select between the number of values across the whole matrix, in
+            each column, or in each row.
+        """
+        if axis is None:
+            return sum([len(rowvals) for rowvals in self.data])
+        elif axis == 0:
+            out = np.zeros(self.shape[1])
+            for row in self.rows:
+                out[row] += 1
+            return out
+        elif axis == 1:
+            return np.array([len(rowvals) for rowvals in self.data])
+        else:
+            raise ValueError('Unknown axis: %r' % axis)
     nnz = property(fget=getnnz)
 
     def __str__(self):

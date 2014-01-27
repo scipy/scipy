@@ -2508,6 +2508,22 @@ class _TestMinMax(object):
         yield check
 
 
+class _TestGetNnzAxis(object):
+    def test_getnnz_axis(self):
+        dat = np.matrix([[0, 2],
+                        [3, 5],
+                        [-6, 9]])
+        bool_dat = dat.astype(bool).A
+        datsp = self.spmatrix(dat)
+
+        assert_array_equal(bool_dat.sum(axis=None), datsp.getnnz(axis=None))
+        assert_array_equal(bool_dat.sum(), datsp.getnnz())
+        assert_array_equal(bool_dat.sum(axis=0), datsp.getnnz(axis=0))
+        assert_array_equal(bool_dat.sum(axis=1), datsp.getnnz(axis=1))
+        assert_raises(ValueError, datsp.getnnz, axis=2)
+        assert_raises(ValueError, datsp.getnnz, axis=-1)
+
+
 #------------------------------------------------------------------------------
 # Tailored base class for generic tests
 #------------------------------------------------------------------------------
@@ -2543,7 +2559,7 @@ def _possibly_unimplemented(cls, require=True):
 def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
                       fancy_indexing=True, fancy_assign=True,
                       fancy_multidim_indexing=True, fancy_multidim_assign=True,
-                      minmax=True):
+                      minmax=True, nnz_axis=True):
     """
     Construct a base class, optionally converting some of the tests in
     the suite to check that the feature is not implemented.
@@ -2562,7 +2578,8 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
                                      fancy_indexing and fancy_multidim_indexing),
              _possibly_unimplemented(_TestFancyMultidimAssign,
                                      fancy_multidim_assign and fancy_assign),
-             _possibly_unimplemented(_TestMinMax, minmax))
+             _possibly_unimplemented(_TestMinMax, minmax),
+             _possibly_unimplemented(_TestGetNnzAxis, nnz_axis))
 
     # check that test names do not clash
     names = {}
@@ -2824,7 +2841,8 @@ class TestDOK(sparse_test_class(slicing=False,
                                 slicing_assign=False,
                                 fancy_indexing=False,
                                 fancy_assign=False,
-                                minmax=False)):
+                                minmax=False,
+                                nnz_axis=False)):
     spmatrix = dok_matrix
     checked_dtypes = [np.int_, np.float_, np.complex_]
 
@@ -3156,7 +3174,7 @@ class TestCOO(sparse_test_class(getset=False,
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False,
-                                minmax=False)):
+                                minmax=False, nnz_axis=False)):
     spmatrix = dia_matrix
     checked_dtypes = [np.int_, np.float_, np.complex_]
 
@@ -3176,7 +3194,8 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
 
 class TestBSR(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
-                                fancy_indexing=False, fancy_assign=False)):
+                                fancy_indexing=False, fancy_assign=False,
+                                nnz_axis=False)):
     spmatrix = bsr_matrix
     checked_dtypes = [np.int_, np.float_, np.complex_]
 
