@@ -5056,7 +5056,7 @@ def jensen_shannon_divergence(a, b):
     m = (a + b)
     m /= 2.
     m = np.where(m, m, 1.)
-    return 0.5*np.sum(special.xlogy(a,a/m)+special.xlogy(b,b/m), axis=0)
+    return 0.5*np.sum(special.xlogy(a, a/m) + special.xlogy(b, b/m), axis=0)
 
 
 def jsd_matrix(data):
@@ -5098,6 +5098,7 @@ def jsd_matrix(data):
     output *= (output > 0)
     output *= 0.5
     return output
+
 #####################################
 #      PROBABILITY CALCULATIONS     #
 #####################################

@@ -4002,24 +4002,28 @@ def test_jensen_shannon_divergence():
     for _ in range(8):
         a = np.random.random(16)
         b = np.random.random(16)
-        c = (a+b)
+        c = a+b
 
-        assert_(stats.jensen_shannon_divergence(a,a) < 1e-4)
-        assert_(stats.jensen_shannon_divergence(a,b) > 0.)
-        assert_(stats.jensen_shannon_divergence(a,b) > stats.jensen_shannon_divergence(a,c))
-        assert_array_almost_equal(stats.jensen_shannon_divergence(a,b),stats.jensen_shannon_divergence(a,b*6))
+        assert_(stats.jensen_shannon_divergence(a, a) < 1e-4)
+        assert_(stats.jensen_shannon_divergence(a, b) > 1.)
+        assert_(stats.jensen_shannon_divergence(a, b) >
+                        stats.jensen_shannon_divergence(a, c))
+        assert_array_almost_equal(stats.jensen_shannon_divergence(a, b),
+                        stats.jensen_shannon_divergence(a, b*6))
 
     a = np.random.random((4,16))
     b = np.random.random((4,16))
     direct = stats.jensen_shannon_divergence(a,b)
-    indirect = np.array([stats.jensen_shannon_divergence(aa, bb) for aa,bb in zip(a.T,b.T)])
+    indirect = np.array([stats.jensen_shannon_divergence(aa, bb)
+                                for aa,bb in zip(a.T,b.T)])
     assert_array_almost_equal(direct, indirect)
+
 
 def test_jsd_matrix():
     from scipy.spatial.distance import squareform
     x = np.random.random((50,16))
     D = squareform(stats.jsd_matrix(x))
-    assert_array_almost_equal(D,D.T)
+    assert_array_almost_equal(D, D.T)
     assert_equal(D.trace(), 0)
     assert_(np.all(D >= 0))
     for i in range(len(x)):
