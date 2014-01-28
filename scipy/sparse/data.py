@@ -104,7 +104,6 @@ class _minmax_mixin(object):
     """
 
     def _min_or_max_axis(self, axis, min_or_max):
-        min_or_max = getattr(np, min_or_max)
         mat = self.tocsc() if axis == 0 else self.tocsr()
         mat.sum_duplicates()
         N = mat.shape[axis]
@@ -126,6 +125,25 @@ class _minmax_mixin(object):
             out_mat = out_mat.tocsr().T
         return self.__class__(out_mat)
 
+    def _min_or_max(self, axis, min_or_max):
+        if 0 in self.shape:
+            raise ValueError("zero-size array to reduction operation")
+
+        if axis is None:
+            zero = self.dtype.type(0)
+            if self.nnz == 0:
+                return zero
+            m = min_or_max(self.data)
+            if self.nnz != np.product(self.shape):
+                m = min_or_max([zero, m])
+            return m
+
+        elif (axis == 0) or (axis == 1):
+            return self._min_or_max_axis(axis, min_or_max)
+
+        else:
+            raise ValueError("invalid axis, use 0 for rows, or 1 for columns")
+
     def max(self, axis=None):
         """Maximum of the elements of this matrix.
 
@@ -136,20 +154,7 @@ class _minmax_mixin(object):
         amax : self.dtype
             Maximum element.
         """
-        if axis is None:
-            zero = self.dtype.type(0)
-            if self.nnz == 0:
-                return zero
-            mx = np.max(self.data)
-            if self.nnz != np.product(self.shape):
-                mx = max(zero, mx)
-            return mx
-
-        elif (axis == 0) or (axis == 1):
-            return self._min_or_max_axis(axis, 'max')
-
-        else:
-            raise ValueError("invalid axis, use 0 for rows, or 1 for columns")
+        return self._min_or_max(axis, np.max)
 
     def min(self, axis=None):
         """Minimum of the elements of this matrix.
@@ -161,17 +166,4 @@ class _minmax_mixin(object):
         amin : self.dtype
             Minimum element.
         """
-        if axis is None:
-            zero = self.dtype.type(0)
-            if self.nnz == 0:
-                return zero
-            mn = np.min(self.data)
-            if self.nnz != np.product(self.shape):
-                mn = min(zero, mn)
-            return mn
-
-        elif (axis == 0) or (axis == 1):
-            return self._min_or_max_axis(axis, 'min')
-
-        else:
-            raise ValueError("invalid axis, use 0 for rows, or 1 for columns")
+        return self._min_or_max(axis, np.min)
