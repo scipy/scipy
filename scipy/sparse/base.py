@@ -669,10 +669,10 @@ class spmatrix(object):
             res_dtype = self.dtype
 
         # Calculate the sum.
-        if axis == 0:
+        if axis in (0, -2):
             # sum over columns
             return np.asmatrix(np.ones((1, m), dtype=res_dtype)) * self
-        elif axis == 1:
+        elif axis in (1, -1):
             # sum over rows
             return self * np.asmatrix(np.ones((n, 1), dtype=res_dtype))
         elif axis is None:
@@ -698,11 +698,11 @@ class spmatrix(object):
             res_dtype = self.dtype
 
         # Calculate the mean.
-        if axis == 0:
+        if axis in (0, -2):
             mean = self.astype(res_dtype).sum(0)
             mean *= 1.0 / self.shape[0]
             return mean
-        elif axis == 1:
+        elif axis == (1, -1):
             mean = self.astype(res_dtype).sum(1)
             mean *= 1.0 / self.shape[1]
             return mean

@@ -159,8 +159,8 @@ class _minmax_mixin(object):
                 mx = max(zero, mx)
             return mx
 
-        elif (axis == 0) or (axis == 1):
-            return self._min_or_max_axis(axis, 'max')
+        elif -2 <= axis < 2:
+            return self._min_or_max_axis(axis % 2, 'max')
 
         else:
             raise ValueError("invalid axis, use 0 for rows, or 1 for columns")
@@ -184,8 +184,8 @@ class _minmax_mixin(object):
                 mn = min(zero, mn)
             return mn
 
-        elif (axis == 0) or (axis == 1):
-            return self._min_or_max_axis(axis, 'min')
+        elif -2 <= axis < 2:
+            return self._min_or_max_axis(axis % 2, 'min')
 
         else:
             raise ValueError("invalid axis, use 0 for rows, or 1 for columns")
