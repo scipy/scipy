@@ -12,6 +12,8 @@ __all__ = []
 
 import numpy as np
 
+from scipy.lib.six import zip as izip
+
 from .base import spmatrix
 from .sputils import isscalarlike
 from .lil import lil_matrix
@@ -102,43 +104,27 @@ class _minmax_mixin(object):
     """
 
     def _min_or_max_axis(self, axis, min_or_max):
-        if axis == 0:
-            mat = self.tocsr()
-            if not mat.has_sorted_indices:
-                mat.sort_indices()
+        min_or_max = getattr(np, min_or_max)
+        mat = self.tocsc() if axis == 0 else self.tocsr()
+        mat.sum_duplicates()
+        N = mat.shape[axis]
 
-            out_mat = lil_matrix((1, self.shape[1]))
-            zero = self.dtype.type(0)
-            for i in range(self.shape[1]):
-                ith_col_data_indices = np.argwhere(mat.indices == i)
-                ith_col_data = mat.data[ith_col_data_indices]
+        zero = self.dtype.type(0)
+        out_mat = lil_matrix((1, len(mat.indptr) - 1), dtype=self.dtype)
+        row = out_mat.rows[0]
+        data = out_mat.data[0]
 
-                # Add a zero if needed
-                if len(ith_col_data) < self.shape[0]:
-                    ith_col_data = np.append(zero, ith_col_data)
-
-                get_min_or_max = getattr(ith_col_data, min_or_max)
-                out_mat[0, i] = get_min_or_max()
-            return self.__class__(out_mat)
-
-        elif axis == 1:
-            mat = self.tocsc()
-            if not mat.has_sorted_indices:
-                mat.sort_indices()
-
-            out_mat = lil_matrix((self.shape[0], 1))
-            zero = self.dtype.type(0)
-            for i in range(self.shape[0]):
-                ith_row_data_indices = np.argwhere(mat.indices == i)
-                ith_row_data = mat.data[ith_row_data_indices]
-
-                # Add a zero if needed
-                if len(ith_row_data) < self.shape[1]:
-                    ith_row_data = np.append(zero, ith_row_data)
-
-                get_min_or_max = getattr(ith_row_data, min_or_max)
-                out_mat[i, 0] = get_min_or_max()
-            return self.__class__(out_mat)
+        for i, (start, stop) in enumerate(izip(mat.indptr, mat.indptr[1:])):
+            if start == stop:
+                continue
+            val = min_or_max(mat.data[start:stop])
+            if stop - start < N:
+                val = min_or_max([0, val])
+            data.append(val)
+            row.append(i)
+        if axis == 1:
+            out_mat = out_mat.tocsr().T
+        return self.__class__(out_mat)
 
     def max(self, axis=None):
         """Maximum of the elements of this matrix.
