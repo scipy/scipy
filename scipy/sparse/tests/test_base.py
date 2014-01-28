@@ -2506,6 +2506,8 @@ class _TestMinMax(object):
         # completely empty rows/cols:
         D[1, :] = 0
         D[:, 1] = 0
+        # empty at end for reduceat
+        D[:, 9] = 0
         # partial rows/cols:
         D[3, 3] = 0
         X = self.spmatrix(D)
@@ -2521,15 +2523,15 @@ class _TestMinMax(object):
         X = self.spmatrix(D)
         assert_raises(ValueError, X.min, axis=0)
         assert_raises(ValueError, X.max, axis=0)
-        assert_array_equal([], X.min(axis=1).A)
-        assert_array_equal([], X.max(axis=1).A)
+        assert_array_equal(np.zeros((0, 1)), X.min(axis=1).A)
+        assert_array_equal(np.zeros((0, 1)), X.max(axis=1).A)
 
         D = np.zeros((10, 0))
         X = self.spmatrix(D)
         assert_raises(ValueError, X.min, axis=1)
         assert_raises(ValueError, X.max, axis=1)
-        assert_array_equal([], X.min(axis=0).A)
-        assert_array_equal([], X.max(axis=0).A)
+        assert_array_equal(np.zeros((1, 0)), X.min(axis=0).A)
+        assert_array_equal(np.zeros((1, 0)), X.max(axis=0).A)
 
 
 #------------------------------------------------------------------------------

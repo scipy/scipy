@@ -111,22 +111,20 @@ class _minmax_mixin(object):
         mat = self.tocsc() if axis == 0 else self.tocsr()
         mat.sum_duplicates()
 
+        indptr = mat.indptr
         zero = self.dtype.type(0)
-        out_mat = lil_matrix((1, len(mat.indptr) - 1), dtype=self.dtype)
-        row = out_mat.rows[0]
-        data = out_mat.data[0]
+        out = np.zeros(len(indptr) - 1, dtype=self.dtype)
+        # can't use indices > data length with reduceat`
+        trunc = np.searchsorted(indptr, indptr[-1])
+        min_or_max.reduceat(mat.data, indptr[:trunc], out=out[:trunc])
+        nnz = np.diff(indptr)
+        min_or_max(out, zero, where=nnz < N, out=out)
+        out[nnz == 0] = zero
 
-        for i, (start, stop) in enumerate(izip(mat.indptr, mat.indptr[1:])):
-            if start == stop:
-                continue
-            val = min_or_max(mat.data[start:stop])
-            if stop - start < N:
-                val = min_or_max([0, val])
-            data.append(val)
-            row.append(i)
+        out = lil_matrix(out, dtype=self.dtype)
         if axis == 1:
-            out_mat = out_mat.tocsr().T
-        return self.__class__(out_mat)
+            out = out.tocsr().T
+        return self.__class__(out)
 
     def _min_or_max(self, axis, min_or_max):
         if axis is None:
@@ -136,9 +134,9 @@ class _minmax_mixin(object):
             zero = self.dtype.type(0)
             if self.nnz == 0:
                 return zero
-            m = min_or_max(self.data)
+            m = min_or_max.reduce(self.data)
             if self.nnz != np.product(self.shape):
-                m = min_or_max([zero, m])
+                m = min_or_max(zero, m)
             return m
 
         elif (axis == 0) or (axis == 1):
@@ -157,7 +155,7 @@ class _minmax_mixin(object):
         amax : self.dtype
             Maximum element.
         """
-        return self._min_or_max(axis, np.max)
+        return self._min_or_max(axis, np.maximum)
 
     def min(self, axis=None):
         """Minimum of the elements of this matrix.
@@ -169,4 +167,4 @@ class _minmax_mixin(object):
         amin : self.dtype
             Minimum element.
         """
-        return self._min_or_max(axis, np.min)
+        return self._min_or_max(axis, np.minimum)
