@@ -523,6 +523,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         fn(self.shape[0], self.shape[1], self.indptr, self.indices, self.data, y)
         return y
 
+    #####################
+    # Reduce operations #
+    #####################
+
     def sum(self, axis=None):
         """Sum the matrix over the given axis.  If the axis is None, sum
         over both rows and columns, returning a scalar.
@@ -531,9 +535,37 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # so we only do the case axis=None here
         if axis is None:
             return self.data.sum()
+        elif axis in self._swap(((1, -1), (0, 2)))[0]:
+            # faster than multiplication for large minor axis
+            dtype = self.dtype
+            if np.issubdtype(dtype, np.bool_):
+                dtype = np.int_
+            ret = np.zeros(len(self.indptr) - 1, dtype=dtype)
+            major_index, value = self._minor_reduce(np.add)
+            ret[major_index] = value
+            ret = np.asmatrix(ret)
+            if axis % 2 == 1:
+                ret = ret.T
+            return ret
         else:
-            return spmatrix.sum(self,axis)
-            raise ValueError("axis out of bounds")
+            return spmatrix.sum(self, axis)
+
+    def _minor_reduce(self, ufunc):
+        """Reduce nonzeros with a ufunc over the minor axis when non-empty
+
+        Warning: this does not call sum_duplicates()
+
+        Returns
+        -------
+        major_index : array of ints
+            Major indices where nonzero
+
+        value : array of self.dtype
+            Reduce result for nonzeros in each major_index
+        """
+        major_index = np.flatnonzero(np.diff(self.indptr))
+        value = ufunc.reduceat(self.data, self.indptr[major_index])
+        return major_index, value
 
     #######################
     # Getting and Setting #

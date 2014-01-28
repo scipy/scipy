@@ -111,22 +111,14 @@ class _minmax_mixin(object):
         mat = self.tocsc() if axis == 0 else self.tocsr()
         mat.sum_duplicates()
 
-        indptr = mat.indptr
-        zero = self.dtype.type(0)
-        out = np.zeros(len(indptr) - 1, dtype=self.dtype)
-        # can't use indices > data length with reduceat`
-        trunc = np.searchsorted(indptr, indptr[-1])
-        min_or_max.reduceat(mat.data, indptr[:trunc], out=out[:trunc])
-        nnz = np.diff(indptr)
-        # compare to 0 in non-full rows
-        mask = nnz < N
-        out[mask] = min_or_max(out[mask], zero)
-        # reduceat will have filled empty rows with another data entry
-        out[nnz == 0] = zero
+        major_index, value = mat._minor_reduce(min_or_max)
+        min_or_max(value, 0, out=value)
 
-        out = lil_matrix(out, dtype=self.dtype)
+        out = np.zeros(len(mat.indptr) - 1, dtype=self.dtype)
+        out[major_index] = value
+        out = np.asmatrix(out)
         if axis == 1:
-            out = out.tocsr().T
+            out = out.T
         return self.__class__(out)
 
     def _min_or_max(self, axis, min_or_max):
