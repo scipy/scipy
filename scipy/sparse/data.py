@@ -118,7 +118,9 @@ class _minmax_mixin(object):
         trunc = np.searchsorted(indptr, indptr[-1])
         min_or_max.reduceat(mat.data, indptr[:trunc], out=out[:trunc])
         nnz = np.diff(indptr)
+        # compare to 0 in non-full rows
         min_or_max(out, zero, where=nnz < N, out=out)
+        # reduceat will have filled empty rows with another data entry
         out[nnz == 0] = zero
 
         out = lil_matrix(out, dtype=self.dtype)
