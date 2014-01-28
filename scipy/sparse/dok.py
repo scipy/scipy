@@ -166,9 +166,9 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             newshape = (len(i_seq), len(j_seq))
             newsize = _prod(newshape)
 
-            if len(self) < newsize and newsize != 0:
+            if len(self) < 2*newsize and newsize != 0:
                 # Switch to the fast path only when advantageous
-                # (count the iterations in the loops)
+                # (count the iterations in the loops, adjust for complexity)
                 #
                 # We also don't handle newsize == 0 here (if
                 # i/j_intlike, it can mean index i or j was out of
@@ -207,12 +207,16 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         return newdok
 
     def _getitem_ranges(self, i_indices, j_indices, shape):
-        i_start, i_stop, i_stride = i_indices
-        j_start, j_stop, j_stride = j_indices
+        # performance golf: we don't want Numpy scalars here, they are slow
+        i_start, i_stop, i_stride = map(int, i_indices)
+        j_start, j_stop, j_stride = map(int, j_indices)
 
         newdok = dok_matrix(shape, dtype=self.dtype)
 
         for (ii, jj) in self.keys():
+            # ditto for numpy scalars
+            ii = int(ii)
+            jj = int(jj)
             a, ra = divmod(ii - i_start, i_stride)
             if a < 0 or a >= shape[0] or ra != 0:
                 continue
