@@ -6,7 +6,7 @@ __all__ = []
 from warnings import warn
 
 import numpy as np
-from scipy.lib.six import xrange
+from scipy.lib.six import xrange, zip as izip
 
 from .base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from .data import _data_matrix, _minmax_mixin
@@ -608,13 +608,15 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         check_bounds(j, N)
         n_samples = len(x)
         offsets = np.empty(n_samples, dtype=np.intc)
-        sparsetools.csr_sample_offsets(M, N, self.indptr, self.indices,
-                                       n_samples, i, j, offsets)
+        ret = sparsetools.csr_sample_offsets(M, N, self.indptr, self.indices,
+                                             n_samples, i, j, offsets)
+        if ret == 1:
+            # rinse and repeat
+            self.sum_duplicates()
+            sparsetools.csr_sample_offsets(M, N, self.indptr,
+                                           self.indices, n_samples, i, j,
+                                           offsets)
 
-        if -2 in offsets:
-            offset = np.where(offsets == -2)[0][0]
-            raise ValueError('nonzero entry (%d,%d) occurs more than once'
-                             % self._swap((i[offset], j[offset])))
         if -1 not in offsets:
             # only affects existing non-zero cells
             self.data[offsets] = x
@@ -658,7 +660,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         ui_indptr = np.append(ui_indptr, len(j))
         new_nnzs = np.diff(ui_indptr)
         prev = 0
-        for c, (ii, js, je) in enumerate(zip(ui, ui_indptr, ui_indptr[1:])):
+        for c, (ii, js, je) in enumerate(izip(ui, ui_indptr, ui_indptr[1:])):
             # old entries
             start = self.indptr[prev]
             stop = self.indptr[ii]

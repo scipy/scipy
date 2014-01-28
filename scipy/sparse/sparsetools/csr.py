@@ -90,7 +90,7 @@ def csr_has_sorted_indices(*args):
 def csr_sample_offsets(*args):
   """
     csr_sample_offsets(int n_row, int n_col, int Ap, int Aj, int n_samples, 
-        int Bi, int Bj, int Bp)
+        int Bi, int Bj, int Bp) -> int
     """
   return _csr.csr_sample_offsets(*args)
 

@@ -1295,7 +1295,7 @@ void csr_sample_values(const I n_row,
 
 /*
  * Determine the data offset at specific locations
- * 
+ *
  * Input Arguments:
  *   I  n_row         - number of rows in A
  *   I  n_col         - number of columns in A
@@ -1306,7 +1306,11 @@ void csr_sample_values(const I n_row,
  *   I  Bj[N]         - sample columns
  *
  * Output Arguments:
- *   I  Bp[N]         - offsets into Aj; -1 if non-existent, -2 if many
+ *   I  Bp[N]         - offsets into Aj; -1 if non-existent
+ *
+ * Return value:
+ *   1 if any sought entries are duplicated, in which case the
+ *   function has exited early; 0 otherwise.
  *
  * Note:
  *   Output array Bp must be preallocated
@@ -1315,7 +1319,7 @@ void csr_sample_values(const I n_row,
  *
  */
 template <class I>
-void csr_sample_offsets(const I n_row,
+int csr_sample_offsets(const I n_row,
                         const I n_col,
                         const I Ap[],
                         const I Aj[],
@@ -1325,7 +1329,6 @@ void csr_sample_offsets(const I n_row,
                               I Bp[])
 {
     const I nnz = Ap[n_row];
-
     const I threshold = nnz / 10; // constant is arbitrary
 
     if (n_samples > threshold && csr_has_canonical_format(n_row, Ap, Aj))
@@ -1372,7 +1375,7 @@ void csr_sample_offsets(const I n_row,
                 	for (jj++; jj < row_end; jj++) {
                 		if (Aj[jj] == j) {
                 			offset = -2;
-                			break;
+                			return 1;
                 		}
 					}
                 }
@@ -1380,6 +1383,7 @@ void csr_sample_offsets(const I n_row,
             Bp[n] = offset;
         }
     }
+    return 0;
 }
 
 /*

@@ -3969,6 +3969,7 @@ SWIGINTERN PyObject *_wrap_csr_sample_offsets(PyObject *SWIGUNUSEDPARM(self), Py
   PyObject * obj5 = 0 ;
   PyObject * obj6 = 0 ;
   PyObject * obj7 = 0 ;
+  int result;
   
   if (!PyArg_ParseTuple(args,(char *)"OOOOOOOO:csr_sample_offsets",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7)) SWIG_fail;
   ecode1 = SWIG_AsVal_int(obj0, &val1);
@@ -4033,14 +4034,14 @@ SWIGINTERN PyObject *_wrap_csr_sample_offsets(PyObject *SWIGUNUSEDPARM(self), Py
   }
   {
     try {
-      csr_sample_offsets< int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(int const (*))arg6,(int const (*))arg7,arg8);
+      result = (int)csr_sample_offsets< int >(arg1,arg2,(int const (*))arg3,(int const (*))arg4,arg5,(int const (*))arg6,(int const (*))arg7,arg8);
     } catch (const std::bad_alloc& e) {
       SWIG_exception(SWIG_MemoryError, e.what());
     } catch (const std::exception& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = SWIG_Py_Void();
+  resultobj = SWIG_From_int(static_cast< int >(result));
   {
     if (is_new_object3 && array3) {
       Py_DECREF(array3); 
@@ -74685,7 +74686,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"csr_has_sorted_indices", _wrap_csr_has_sorted_indices, METH_VARARGS, (char *)"csr_has_sorted_indices(int n_row, int Ap, int Aj) -> bool"},
 	 { (char *)"csr_sample_offsets", _wrap_csr_sample_offsets, METH_VARARGS, (char *)"\n"
 		"csr_sample_offsets(int n_row, int n_col, int Ap, int Aj, int n_samples, \n"
-		"    int Bi, int Bj, int Bp)\n"
+		"    int Bi, int Bj, int Bp) -> int\n"
 		""},
 	 { (char *)"csr_diagonal", _wrap_csr_diagonal, METH_VARARGS, (char *)"\n"
 		"csr_diagonal(int n_row, int n_col, int Ap, int Aj, npy_bool_wrapper Ax, \n"
