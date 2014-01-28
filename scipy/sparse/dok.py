@@ -138,7 +138,10 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         """
         i, j = self._unpack_index(index)
 
-        if isintlike(i) and isintlike(j):
+        i_intlike = isintlike(i)
+        j_intlike = isintlike(j)
+
+        if i_intlike and j_intlike:
             # Scalar index case
             i = int(i)
             j = int(j)
@@ -151,6 +154,26 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             if j < 0 or j >= self.shape[1]:
                 raise IndexError('index out of bounds')
             return dict.get(self, (i,j), 0.)
+        elif ((i_intlike or isinstance(i, slice)) and
+              (j_intlike or isinstance(j, slice))):
+            # Fast path for slicing very sparse matrices
+            i_slice = slice(i, i+1) if i_intlike else i
+            j_slice = slice(j, j+1) if j_intlike else j
+            i_indices = i_slice.indices(self.shape[0])
+            j_indices = j_slice.indices(self.shape[1])
+            i_seq = xrange(*i_indices)
+            j_seq = xrange(*j_indices)
+            newshape = (len(i_seq), len(j_seq))
+            newsize = _prod(newshape)
+
+            if len(self) < newsize and newsize != 0:
+                # Switch to the fast path only when advantageous
+                # (count the iterations in the loops)
+                #
+                # We also don't handle newsize == 0 here (if
+                # i/j_intlike, it can mean index i or j was out of
+                # bounds)
+                return self._getitem_ranges(i_indices, j_indices, newshape)
 
         i, j = self._index_to_arrays(i, j)
 
@@ -180,6 +203,24 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                 v = dict.get(self, (i[a,b], j[a,b]), 0.)
                 if v != 0:
                     dict.__setitem__(newdok, (a, b), v)
+
+        return newdok
+
+    def _getitem_ranges(self, i_indices, j_indices, shape):
+        i_start, i_stop, i_stride = i_indices
+        j_start, j_stop, j_stride = j_indices
+
+        newdok = dok_matrix(shape, dtype=self.dtype)
+
+        for (ii, jj) in self.keys():
+            a, ra = divmod(ii - i_start, i_stride)
+            if a < 0 or a >= shape[0] or ra != 0:
+                continue
+            b, rb = divmod(jj - j_start, j_stride)
+            if b < 0 or b >= shape[1] or rb != 0:
+                continue
+            dict.__setitem__(newdok, (a, b),
+                             dict.__getitem__(self, (ii, jj)))
 
         return newdok
 
