@@ -104,9 +104,12 @@ class _minmax_mixin(object):
     """
 
     def _min_or_max_axis(self, axis, min_or_max):
+        N = self.shape[axis]
+        if N == 0:
+            raise ValueError("zero-size array to reduction operation")
+
         mat = self.tocsc() if axis == 0 else self.tocsr()
         mat.sum_duplicates()
-        N = mat.shape[axis]
 
         zero = self.dtype.type(0)
         out_mat = lil_matrix((1, len(mat.indptr) - 1), dtype=self.dtype)
@@ -126,10 +129,10 @@ class _minmax_mixin(object):
         return self.__class__(out_mat)
 
     def _min_or_max(self, axis, min_or_max):
-        if 0 in self.shape:
-            raise ValueError("zero-size array to reduction operation")
-
         if axis is None:
+            if 0 in self.shape:
+                raise ValueError("zero-size array to reduction operation")
+
             zero = self.dtype.type(0)
             if self.nnz == 0:
                 return zero

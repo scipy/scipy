@@ -2517,12 +2517,19 @@ class _TestMinMax(object):
         assert_array_equal(X.min(axis=1).A, D.min(axis=1).A)
 
         # zero-size matrices
-        for D in [np.zeros((0, 0)), np.zeros((0, 10)), np.zeros((10, 0))]:
-            X = self.spmatrix(D)
-            assert_raises(ValueError, X.min, axis=0)
-            assert_raises(ValueError, X.max, axis=0)
-            assert_raises(ValueError, X.min, axis=1)
-            assert_raises(ValueError, X.max, axis=1)
+        D = np.zeros((0, 10))
+        X = self.spmatrix(D)
+        assert_raises(ValueError, X.min, axis=0)
+        assert_raises(ValueError, X.max, axis=0)
+        assert_array_equal([], X.min(axis=1).A)
+        assert_array_equal([], X.max(axis=1).A)
+
+        D = np.zeros((10, 0))
+        X = self.spmatrix(D)
+        assert_raises(ValueError, X.min, axis=1)
+        assert_raises(ValueError, X.max, axis=1)
+        assert_array_equal([], X.min(axis=0).A)
+        assert_array_equal([], X.max(axis=0).A)
 
 
 #------------------------------------------------------------------------------
