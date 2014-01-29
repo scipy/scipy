@@ -1220,8 +1220,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
         if mstr in set(['euclidean', 'euclid', 'eu', 'e']):
             _distance_wrap.pdist_euclidean_wrap(_convert_to_double(X), dm)
         elif mstr in set(['sqeuclidean', 'sqe', 'sqeuclid']):
-            _distance_wrap.pdist_euclidean_wrap(_convert_to_double(X), dm)
-            dm = dm ** 2.0
+            _distance_wrap.pdist_sqeuclidean_wrap(_convert_to_double(X), dm)
         elif mstr in set(['cityblock', 'cblock', 'cb', 'c']):
             _distance_wrap.pdist_city_block_wrap(X, dm)
         elif mstr in set(['hamming', 'hamm', 'ha', 'h']):
@@ -2010,9 +2009,8 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             _distance_wrap.cdist_euclidean_wrap(_convert_to_double(XA),
                                                 _convert_to_double(XB), dm)
         elif mstr in set(['sqeuclidean', 'sqe', 'sqeuclid']):
-            _distance_wrap.cdist_euclidean_wrap(_convert_to_double(XA),
+            _distance_wrap.cdist_sqeuclidean_wrap(_convert_to_double(XA),
                                                 _convert_to_double(XB), dm)
-            dm **= 2.0
         elif mstr in set(['cityblock', 'cblock', 'cb', 'c']):
             _distance_wrap.cdist_city_block_wrap(_convert_to_double(XA),
                                                  _convert_to_double(XB), dm)

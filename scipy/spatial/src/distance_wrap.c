@@ -63,6 +63,31 @@ extern PyObject *cdist_euclidean_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
+
+extern PyObject *cdist_sqeuclidean_wrap(PyObject *self, PyObject *args) {
+  PyArrayObject *XA_, *XB_, *dm_;
+  int mA, mB, n;
+  double *dm;
+  const double *XA, *XB;
+  if (!PyArg_ParseTuple(args, "O!O!O!",
+			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+			&PyArray_Type, &dm_)) {
+    return 0;
+  }
+  else {
+    XA = (const double*)XA_->data;
+    XB = (const double*)XB_->data;
+    dm = (double*)dm_->data;
+    mA = XA_->dimensions[0];
+    mB = XB_->dimensions[0];
+    n = XA_->dimensions[1];
+
+    cdist_sqeuclidean(XA, XB, dm, mA, mB, n);
+  }
+  return Py_BuildValue("d", 0.0);
+}
+
+
 extern PyObject *cdist_canberra_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
@@ -585,6 +610,29 @@ extern PyObject *pdist_euclidean_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
+
+extern PyObject *pdist_sqeuclidean_wrap(PyObject *self, PyObject *args) {
+  PyArrayObject *X_, *dm_;
+  int m, n;
+  double *dm;
+  const double *X;
+  if (!PyArg_ParseTuple(args, "O!O!",
+			&PyArray_Type, &X_,
+			&PyArray_Type, &dm_)) {
+    return 0;
+  }
+  else {
+    X = (const double*)X_->data;
+    dm = (double*)dm_->data;
+    m = X_->dimensions[0];
+    n = X_->dimensions[1];
+
+    pdist_sqeuclidean(X, dm, m, n);
+  }
+  return Py_BuildValue("d", 0.0);
+}
+
+
 extern PyObject *pdist_canberra_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
@@ -1088,6 +1136,7 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"cdist_cosine_wrap", cdist_cosine_wrap, METH_VARARGS},
   {"cdist_dice_bool_wrap", cdist_dice_bool_wrap, METH_VARARGS},
   {"cdist_euclidean_wrap", cdist_euclidean_wrap, METH_VARARGS},
+  {"cdist_sqeuclidean_wrap", cdist_sqeuclidean_wrap, METH_VARARGS},
   {"cdist_hamming_wrap", cdist_hamming_wrap, METH_VARARGS},
   {"cdist_hamming_bool_wrap", cdist_hamming_bool_wrap, METH_VARARGS},
   {"cdist_jaccard_wrap", cdist_jaccard_wrap, METH_VARARGS},
@@ -1110,6 +1159,7 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"pdist_cosine_wrap", pdist_cosine_wrap, METH_VARARGS},
   {"pdist_dice_bool_wrap", pdist_dice_bool_wrap, METH_VARARGS},
   {"pdist_euclidean_wrap", pdist_euclidean_wrap, METH_VARARGS},
+  {"pdist_sqeuclidean_wrap", pdist_sqeuclidean_wrap, METH_VARARGS},
   {"pdist_hamming_wrap", pdist_hamming_wrap, METH_VARARGS},
   {"pdist_hamming_bool_wrap", pdist_hamming_bool_wrap, METH_VARARGS},
   {"pdist_jaccard_wrap", pdist_jaccard_wrap, METH_VARARGS},
