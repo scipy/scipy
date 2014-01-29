@@ -213,12 +213,15 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                                  'rank 1')
 
             return int(nnz)
-        elif axis == 0:
+
+        if axis < 0:
+            axis += 2
+        if axis == 0:
             return np.bincount(self.col, minlength=self.shape[1])
         elif axis == 1:
             return np.bincount(self.row, minlength=self.shape[0])
         else:
-            raise ValueError('Unknown axis: %r' % axis)
+            raise ValueError('axis out of bounds')
     nnz = property(fget=getnnz)
 
     def _check(self):

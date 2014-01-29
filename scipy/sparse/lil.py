@@ -188,7 +188,9 @@ class lil_matrix(spmatrix, IndexMixin):
         """
         if axis is None:
             return sum([len(rowvals) for rowvals in self.data])
-        elif axis == 0:
+        if axis < 0:
+            axis += 2
+        if axis == 0:
             out = np.zeros(self.shape[1])
             for row in self.rows:
                 out[row] += 1
@@ -196,7 +198,7 @@ class lil_matrix(spmatrix, IndexMixin):
         elif axis == 1:
             return np.array([len(rowvals) for rowvals in self.data])
         else:
-            raise ValueError('Unknown axis: %r' % axis)
+            raise ValueError('axis out of bounds')
     nnz = property(fget=getnnz)
 
     def __str__(self):

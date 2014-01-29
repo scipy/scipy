@@ -2534,8 +2534,9 @@ class _TestGetNnzAxis(object):
         assert_array_equal(bool_dat.sum(), datsp.getnnz())
         assert_array_equal(bool_dat.sum(axis=0), datsp.getnnz(axis=0))
         assert_array_equal(bool_dat.sum(axis=1), datsp.getnnz(axis=1))
+        assert_array_equal(bool_dat.sum(axis=-2), datsp.getnnz(axis=-2))
+        assert_array_equal(bool_dat.sum(axis=-1), datsp.getnnz(axis=-1))
         assert_raises(ValueError, datsp.getnnz, axis=2)
-        assert_raises(ValueError, datsp.getnnz, axis=-1)
 
 
 #------------------------------------------------------------------------------
