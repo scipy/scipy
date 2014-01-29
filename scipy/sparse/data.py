@@ -107,19 +107,26 @@ class _minmax_mixin(object):
         N = self.shape[axis]
         if N == 0:
             raise ValueError("zero-size array to reduction operation")
+        M = self.shape[1 - axis]
 
         mat = self.tocsc() if axis == 0 else self.tocsr()
         mat.sum_duplicates()
 
         major_index, value = mat._minor_reduce(min_or_max)
-        min_or_max(value, 0, out=value)
+        not_full = np.diff(mat.indptr)[major_index] < N
+        value[not_full] = min_or_max(value[not_full], 0)
 
-        out = np.zeros(len(mat.indptr) - 1, dtype=self.dtype)
-        out[major_index] = value
-        out = np.asmatrix(out)
-        if axis == 1:
-            out = out.T
-        return self.__class__(out)
+        mask = value != 0
+        major_index = np.compress(mask, major_index)
+        value = np.compress(mask, value)
+
+        from . import coo_matrix
+        if axis == 0:
+            return coo_matrix((value, (np.zeros(len(value)), major_index)),
+                              dtype=self.dtype, shape=(1, M))
+        else:
+            return coo_matrix((value, (major_index, np.zeros(len(value)))),
+                              dtype=self.dtype, shape=(M, 1))
 
     def _min_or_max(self, axis, min_or_max):
         if axis is None:
