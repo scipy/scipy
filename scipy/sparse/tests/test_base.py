@@ -22,7 +22,7 @@ Run tests if sparse is not installed:
 import warnings
 
 import numpy as np
-from scipy.lib.six import xrange
+from scipy.lib.six import xrange, zip as izip
 from numpy import arange, zeros, array, dot, matrix, asmatrix, asarray, \
                   vstack, ndarray, transpose, diag, kron, inf, conjugate, \
                   int8, ComplexWarning
@@ -3337,6 +3337,73 @@ class TestBSR(sparse_test_class(getset=False,
     @dec.knownfailureif(True, "BSR not implemented")
     def test_iterator(self):
         pass
+
+
+def _same_sum_duplicate(data, *inds, **kwargs):
+    """Duplicates entries to produce the same matrix"""
+    indptr = kwargs.pop('indptr', None)
+    if np.issubdtype(data.dtype, np.bool_):
+        if indptr is None:
+            return (data,) + inds
+        else:
+            return (data,) + inds + (indptr,)
+
+    data = data.repeat(2, axis=0)
+    data[::2] *= 2
+    data[1::2] *= -1
+
+    inds = tuple(indices.repeat(2) for indices in inds)
+
+    if indptr is None:
+        return (data,) + inds
+    else:
+        return (data,) + inds + 2 * indptr
+
+
+class _NonCanonicalCompressedMixin(object):
+    def spmatrix(self, D, **kwargs):
+        construct = super(_NonCanonicalCompressedMixin, self).spmatrix
+        M = construct(D, **kwargs)
+        data, indices, indptr = _same_sum_duplicate(M.data, M.indices,
+                                                    indptr=M.indptr)
+
+        # unsorted
+        for start, stop in izip(indptr, indptr[1:]):
+            indices[start:stop] = indices[start:stop][::-1]
+            data[start:stop] = data[start:stop][::-1]
+
+        if 'shape' not in kwargs:
+            kwargs['shape'] = M.shape
+
+        NC = construct((data, indices, indptr), **kwargs)
+        assert_array_almost_equal(M.A, NC.A)
+        return NC
+
+
+class TestCSRNonCanonical(_NonCanonicalCompressedMixin, TestCSR):
+    pass
+
+
+class TestCSCNonCanonical(_NonCanonicalCompressedMixin, TestCSR):
+    pass
+
+
+class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestCSR):
+    pass
+
+
+class TestCOONonCanonical(TestCOO):
+    def spmatrix(self, D, **kwargs):
+        construct = coo_matrix
+        M = construct(D, **kwargs)
+        data, row, col = _same_sum_duplicate(M.data, M.row, M.col)
+
+        if 'shape' not in kwargs:
+            kwargs['shape'] = M.shape
+
+        NC = construct((data, (row, col)), **kwargs)
+        assert_array_almost_equal(M.A, NC.A)
+        return NC
 
 
 if __name__ == "__main__":
