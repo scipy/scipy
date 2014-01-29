@@ -102,6 +102,8 @@ class _minmax_mixin(object):
     """
 
     def _min_or_max_axis(self, axis, min_or_max):
+        if axis < 0:
+            axis += 2
         if axis == 0:
             mat = self.tocsr()
             if not mat.has_sorted_indices:
@@ -160,7 +162,7 @@ class _minmax_mixin(object):
             return mx
 
         elif -2 <= axis < 2:
-            return self._min_or_max_axis(axis % 2, 'max')
+            return self._min_or_max_axis(axis, 'max')
 
         else:
             raise ValueError("invalid axis, use 0 for rows, or 1 for columns")
@@ -185,7 +187,7 @@ class _minmax_mixin(object):
             return mn
 
         elif -2 <= axis < 2:
-            return self._min_or_max_axis(axis % 2, 'min')
+            return self._min_or_max_axis(axis, 'min')
 
         else:
             raise ValueError("invalid axis, use 0 for rows, or 1 for columns")
