@@ -2503,13 +2503,14 @@ class _TestMinMax(object):
 
     def test_minmax_axis(self):
         D = np.matrix(np.arange(50).reshape(5,10))
-        # completely empty rows/cols:
+        # completely empty rows, leaving some completely full:
         D[1, :] = 0
-        D[:, 1] = 0
-        # empty at end for reduceat
+        # empty at end for reduceat:
         D[:, 9] = 0
         # partial rows/cols:
         D[3, 3] = 0
+        # entries on either side of 0:
+        D[2, 2] = -1
         X = self.spmatrix(D)
 
         assert_array_equal(X.max(axis=0).A, D.max(axis=0).A)
