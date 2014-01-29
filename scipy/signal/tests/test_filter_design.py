@@ -11,7 +11,8 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
 from scipy.signal import (tf2zpk, zpk2tf, BadCoefficients, freqz, normalize,
                           buttord, cheby1, cheby2, ellip, cheb1ord, cheb2ord,
                           ellipord, butter, bessel, buttap, besselap,
-                          cheb1ap, cheb2ap, ellipap, iirfilter, freqs)
+                          cheb1ap, cheb2ap, ellipap, iirfilter, freqs,
+                          lp2lp, lp2hp, lp2bp, lp2bs, bilinear)
 
 
 class TestTf2zpk(TestCase):
@@ -139,6 +140,65 @@ class TestNormalize(TestCase):
         # breaks on another platform, it is probably fine to relax this lower.
         assert_array_almost_equal(b_matlab, b_output, decimal=13)
         assert_array_almost_equal(a_matlab, a_output, decimal=13)
+
+
+class TestLp2lp(TestCase):
+
+    def test_basic(self):
+        b = [1]
+        a = [1, np.sqrt(2), 1]
+        b_lp, a_lp = lp2lp(b, a, 0.38574256627112119)
+        assert_array_almost_equal(b_lp, [0.1488], decimal=4)
+        assert_array_almost_equal(a_lp, [1, 0.5455, 0.1488], decimal=4)
+
+
+class TestLp2hp(TestCase):
+
+    def test_basic(self):
+        b = [0.25059432325190018]
+        a = [1, 0.59724041654134863, 0.92834805757524175, 0.25059432325190018]
+        b_hp, a_hp = lp2hp(b, a, 2*np.pi*5000)
+        assert_allclose(b_hp, [1, 0, 0, 0])
+        assert_allclose(a_hp, [1, 1.1638e5, 2.3522e9, 1.2373e14], rtol=1e-4)
+
+class TestLp2bp(TestCase):
+
+    def test_basic(self):
+        b = [1]
+        a = [1, 2, 2, 1]
+        b_bp, a_bp = lp2bp(b, a, 2*np.pi*4000, 2*np.pi*2000)
+        assert_allclose(b_bp, [1.9844e12, 0, 0, 0], rtol=1e-6)
+        assert_allclose(a_bp, [1, 2.5133e4, 2.2108e9, 3.3735e13,
+                               1.3965e18, 1.0028e22, 2.5202e26], rtol=1e-4)
+
+
+class TestLp2bs(TestCase):
+
+    def test_basic(self):
+        b = [1]
+        a = [1, 1]
+        b_bs, a_bs = lp2bs(b, a, 0.41722257286366754, 0.18460575326152251)
+        assert_array_almost_equal(b_bs, [1, 0, 0.17407], decimal=5)
+        assert_array_almost_equal(a_bs, [1, 0.18461, 0.17407], decimal=5)
+
+
+class TestBilinear(TestCase):
+
+    def test_basic(self):
+        b = [0.14879732743343033]
+        a = [1, 0.54552236880522209, 0.14879732743343033]
+        b_z, a_z = bilinear(b, a, 0.5)
+        assert_array_almost_equal(b_z, [0.087821, 0.17564, 0.087821],
+                                  decimal=5)
+        assert_array_almost_equal(a_z, [1, -1.0048, 0.35606], decimal=4)
+
+        b = [1, 0, 0.17407467530697837]
+        a = [1, 0.18460575326152251, 0.17407467530697837]
+        b_z, a_z = bilinear(b, a, 0.5)
+        assert_array_almost_equal(b_z, [0.86413, -1.2158, 0.86413],
+                                  decimal=4)
+        assert_array_almost_equal(a_z, [1, -1.2158, 0.72826],
+                                  decimal=4)
 
 
 class TestPrototypeType(TestCase):
