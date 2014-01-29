@@ -136,7 +136,7 @@ class _minmax_mixin(object):
             zero = self.dtype.type(0)
             if self.nnz == 0:
                 return zero
-            m = min_or_max.reduce(self.data)
+            m = min_or_max.reduce(self.data.ravel())
             if self.nnz != np.product(self.shape):
                 m = min_or_max(zero, m)
             return m

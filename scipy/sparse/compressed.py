@@ -535,8 +535,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # so we only do the case axis=None here
         if axis is None:
             return self.data.sum()
-        elif axis in self._swap(((1, -1), (0, 2)))[0]:
-            # faster than multiplication for large minor axis
+        elif (not hasattr(self, 'blocksize') and
+              axis in self._swap(((1, -1), (0, 2)))[0]):
+            # faster than multiplication for large minor axis in CSC/CSR
             dtype = self.dtype
             if np.issubdtype(dtype, np.bool_):
                 dtype = np.int_
