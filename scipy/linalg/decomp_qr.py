@@ -8,8 +8,7 @@ from .blas import get_blas_funcs
 from .lapack import get_lapack_funcs
 from .misc import _datacopied
 
-# XXX: what is qr_old, should it be kept?
-__all__ = ['qr', 'qr_multiply', 'rq', 'qr_old']
+__all__ = ['qr', 'qr_multiply', 'rq']
 
 
 def safecall(f, name, *args, **kwargs):
@@ -295,68 +294,6 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
         cQ = cQ.ravel()
 
     return (cQ,) + raw[1:]
-
-
-@numpy.deprecate
-def qr_old(a, overwrite_a=False, lwork=None, check_finite=True):
-    """Compute QR decomposition of a matrix.
-
-    Calculate the decomposition :lm:`A = Q R` where Q is unitary/orthogonal
-    and R upper triangular.
-
-    Parameters
-    ----------
-    a : array, shape (M, N)
-        Matrix to be decomposed
-    overwrite_a : boolean
-        Whether data in a is overwritten (may improve performance)
-    lwork : integer
-        Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
-        is computed.
-    check_finite : boolean, optional
-        Whether to check that the input matrix contains only finite numbers.
-        Disabling may give a performance gain, but may result in problems
-        (crashes, non-termination) if the inputs do contain infinities or NaNs.
-
-    Returns
-    -------
-    Q : float or complex array, shape (M, M)
-    R : float or complex array, shape (M, N)
-        Size K = min(M, N)
-
-    Raises LinAlgError if decomposition fails
-
-    """
-    if check_finite:
-        a1 = numpy.asarray_chkfinite(a)
-    else:
-        a1 = numpy.asarray(a)
-    if len(a1.shape) != 2:
-        raise ValueError('expected matrix')
-    M,N = a1.shape
-    overwrite_a = overwrite_a or (_datacopied(a1, a))
-    geqrf, = get_lapack_funcs(('geqrf',), (a1,))
-    if lwork is None or lwork == -1:
-        # get optimal work array
-        qr, tau, work, info = geqrf(a1, lwork=-1, overwrite_a=1)
-        lwork = work[0]
-    qr, tau, work, info = geqrf(a1, lwork=lwork, overwrite_a=overwrite_a)
-    if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal geqrf'
-                                                                    % -info)
-    gemm, = get_blas_funcs(('gemm',), (qr,))
-    t = qr.dtype.char
-    R = numpy.triu(qr)
-    Q = numpy.identity(M, dtype=t)
-    ident = numpy.identity(M, dtype=t)
-    zeros = numpy.zeros
-    for i in range(min(M, N)):
-        v = zeros((M,), t)
-        v[i] = 1
-        v[i+1:M] = qr[i+1:M, i]
-        H = gemm(-tau[i], v, v, 1+0j, ident, trans_b=2)
-        Q = gemm(1, Q, H)
-    return Q, R
 
 
 def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
