@@ -427,7 +427,8 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         NBLK = self.nnz//(R*C)
 
         if self.nnz == 0:
-            return bsr_matrix((N,M), blocksize=(C,R))
+            return bsr_matrix((N,M), blocksize=(C,R),
+                              dtype=self.dtype)
 
         indptr = np.empty(N//C + 1, dtype=self.indptr.dtype)
         indices = np.empty(NBLK, dtype=self.indices.dtype)
