@@ -95,13 +95,15 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if axis is None:
             return int(self.indptr[-1])
         else:
+            if axis < 0:
+                axis += 2
             axis, _ = self._swap((axis, 1 - axis))
             _, N = self._swap(self.shape)
             if axis == 0:
                 return np.bincount(self.indices, minlength=N)
             elif axis == 1:
                 return np.diff(self.indptr)
-            raise ValueError('Unknown axis: %r' % axis)
+            raise ValueError('axis out of bounds')
 
     nnz = property(fget=getnnz)
 

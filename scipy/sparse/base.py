@@ -668,16 +668,18 @@ class spmatrix(object):
         else:
             res_dtype = self.dtype
 
-        # Calculate the sum.
+        if axis is None:
+            # sum over rows and columns
+            return (self * np.asmatrix(np.ones((n, 1), dtype=res_dtype))).sum()
+
+        if axis < 0:
+            axis += 2
         if axis == 0:
             # sum over columns
             return np.asmatrix(np.ones((1, m), dtype=res_dtype)) * self
         elif axis == 1:
             # sum over rows
             return self * np.asmatrix(np.ones((n, 1), dtype=res_dtype))
-        elif axis is None:
-            # sum over rows and columns
-            return (self * np.asmatrix(np.ones((n, 1), dtype=res_dtype))).sum()
         else:
             raise ValueError("axis out of bounds")
 
@@ -697,7 +699,11 @@ class spmatrix(object):
         else:
             res_dtype = self.dtype
 
-        # Calculate the mean.
+        if axis is None:
+            return self.sum(None) * 1.0 / (self.shape[0]*self.shape[1])
+
+        if axis < 0:
+            axis += 2
         if axis == 0:
             mean = self.astype(res_dtype).sum(0)
             mean *= 1.0 / self.shape[0]
@@ -706,8 +712,6 @@ class spmatrix(object):
             mean = self.astype(res_dtype).sum(1)
             mean *= 1.0 / self.shape[1]
             return mean
-        elif axis is None:
-            return self.sum(None) * 1.0 / (self.shape[0]*self.shape[1])
         else:
             raise ValueError("axis out of bounds")
 

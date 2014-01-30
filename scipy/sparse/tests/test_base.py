@@ -587,6 +587,10 @@ class _TestCommon:
             assert_equal(dat.sum(axis=0).dtype, datsp.sum(axis=0).dtype)
             assert_array_almost_equal(dat.sum(axis=1), datsp.sum(axis=1))
             assert_equal(dat.sum(axis=1).dtype, datsp.sum(axis=1).dtype)
+            assert_array_almost_equal(dat.sum(axis=-2), datsp.sum(axis=-2))
+            assert_equal(dat.sum(axis=-2).dtype, datsp.sum(axis=-2).dtype)
+            assert_array_almost_equal(dat.sum(axis=-1), datsp.sum(axis=-1))
+            assert_equal(dat.sum(axis=-1).dtype, datsp.sum(axis=-1).dtype)
 
         for dtype in self.checked_dtypes:
             yield check, dtype
@@ -607,6 +611,10 @@ class _TestCommon:
             assert_equal(dat.mean(axis=0).dtype, datsp.mean(axis=0).dtype)
             assert_array_almost_equal(dat.mean(axis=1), datsp.mean(axis=1))
             assert_equal(dat.mean(axis=1).dtype, datsp.mean(axis=1).dtype)
+            assert_array_almost_equal(dat.mean(axis=-2), datsp.mean(axis=-2))
+            assert_equal(dat.mean(axis=-2).dtype, datsp.mean(axis=-2).dtype)
+            assert_array_almost_equal(dat.mean(axis=-1), datsp.mean(axis=-1))
+            assert_equal(dat.mean(axis=-1).dtype, datsp.mean(axis=-1).dtype)
 
         for dtype in self.checked_dtypes:
             yield check, dtype
@@ -2505,6 +2513,12 @@ class _TestMinMax(object):
             assert_array_equal(X.min(axis=0).A, D.min(axis=0).A)
             assert_array_equal(X.min(axis=1).A, D.min(axis=1).A)
 
+            assert_array_equal(X.max(axis=-2).A, D.max(axis=-2).A)
+            assert_array_equal(X.max(axis=-1).A, D.max(axis=-1).A)
+
+            assert_array_equal(X.min(axis=-2).A, D.min(axis=-2).A)
+            assert_array_equal(X.min(axis=-1).A, D.min(axis=-1).A)
+
         yield check
 
 
@@ -2520,8 +2534,9 @@ class _TestGetNnzAxis(object):
         assert_array_equal(bool_dat.sum(), datsp.getnnz())
         assert_array_equal(bool_dat.sum(axis=0), datsp.getnnz(axis=0))
         assert_array_equal(bool_dat.sum(axis=1), datsp.getnnz(axis=1))
+        assert_array_equal(bool_dat.sum(axis=-2), datsp.getnnz(axis=-2))
+        assert_array_equal(bool_dat.sum(axis=-1), datsp.getnnz(axis=-1))
         assert_raises(ValueError, datsp.getnnz, axis=2)
-        assert_raises(ValueError, datsp.getnnz, axis=-1)
 
 
 #------------------------------------------------------------------------------
