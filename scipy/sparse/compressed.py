@@ -565,7 +565,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             Reduce result for nonzeros in each major_index
         """
         major_index = np.flatnonzero(np.diff(self.indptr))
-        value = ufunc.reduceat(self.data, self.indptr[major_index])
+        if self.data.size == 0 and major_index.size == 0:
+            # Numpy < 1.8.0 don't handle empty arrays in reduceat
+            value = np.zeros_like(self.data)
+        else:
+            value = ufunc.reduceat(self.data, self.indptr[major_index])
         return major_index, value
 
     #######################
