@@ -2495,17 +2495,44 @@ class _TestMinMax(object):
         assert_equal(X.min(), 0)
         assert_equal(X.max(), 19)
 
-    def test_minmax_axis(self):
-        def check():
-            D = np.matrix(np.arange(50).reshape(5,10))
+        # zero-size matrices
+        for D in [np.zeros((0, 0)), np.zeros((0, 10)), np.zeros((10, 0))]:
             X = self.spmatrix(D)
-            assert_array_equal(X.max(axis=0).A, D.max(axis=0).A)
-            assert_array_equal(X.max(axis=1).A, D.max(axis=1).A)
+            assert_raises(ValueError, X.min)
+            assert_raises(ValueError, X.max)
 
-            assert_array_equal(X.min(axis=0).A, D.min(axis=0).A)
-            assert_array_equal(X.min(axis=1).A, D.min(axis=1).A)
+    def test_minmax_axis(self):
+        D = np.matrix(np.arange(50).reshape(5,10))
+        # completely empty rows, leaving some completely full:
+        D[1, :] = 0
+        # empty at end for reduceat:
+        D[:, 9] = 0
+        # partial rows/cols:
+        D[3, 3] = 0
+        # entries on either side of 0:
+        D[2, 2] = -1
+        X = self.spmatrix(D)
 
-        yield check
+        assert_array_equal(X.max(axis=0).A, D.max(axis=0).A)
+        assert_array_equal(X.max(axis=1).A, D.max(axis=1).A)
+
+        assert_array_equal(X.min(axis=0).A, D.min(axis=0).A)
+        assert_array_equal(X.min(axis=1).A, D.min(axis=1).A)
+
+        # zero-size matrices
+        D = np.zeros((0, 10))
+        X = self.spmatrix(D)
+        assert_raises(ValueError, X.min, axis=0)
+        assert_raises(ValueError, X.max, axis=0)
+        assert_array_equal(np.zeros((0, 1)), X.min(axis=1).A)
+        assert_array_equal(np.zeros((0, 1)), X.max(axis=1).A)
+
+        D = np.zeros((10, 0))
+        X = self.spmatrix(D)
+        assert_raises(ValueError, X.min, axis=1)
+        assert_raises(ValueError, X.max, axis=1)
+        assert_array_equal(np.zeros((1, 0)), X.min(axis=0).A)
+        assert_array_equal(np.zeros((1, 0)), X.max(axis=0).A)
 
 
 class _TestGetNnzAxis(object):
