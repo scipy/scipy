@@ -1178,19 +1178,25 @@ class _TestCommon:
                     assert_equal(fn(blocksize=(X,Y)).todense(), A)
 
     def test_transpose(self):
-        def check(dtype):
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
+        dat_1 = self.dat
+        dat_2 = np.array([[]])
+        matrices = [dat_1, dat_2]
+        
+        def check(dtype, j):
+            dat = np.matrix(matrices[j], dtype=dtype)
+            datsp = self.spmatrix(dat)
 
             a = datsp.transpose()
             b = dat.transpose()
             assert_array_equal(a.todense(), b)
             assert_array_equal(a.transpose().todense(), dat)
+            assert_equal(a.dtype, b.dtype)
 
             assert_array_equal(self.spmatrix((3,4)).T.todense(), zeros((4,3)))
 
         for dtype in self.checked_dtypes:
-            yield check, dtype
+            for j in range(len(matrices)):
+                yield check, dtype, j
 
     def test_add_dense(self):
         def check(dtype):
