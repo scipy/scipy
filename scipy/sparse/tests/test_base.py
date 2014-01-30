@@ -3339,6 +3339,10 @@ class TestBSR(sparse_test_class(getset=False,
         pass
 
 
+#------------------------------------------------------------------------------
+# Tests for non-canonical representations (with duplicates, unsorted indices)
+#------------------------------------------------------------------------------
+
 def _same_sum_duplicate(data, *inds, **kwargs):
     """Duplicates entries to produce the same matrix"""
     indptr = kwargs.pop('indptr', None)
@@ -3357,7 +3361,7 @@ def _same_sum_duplicate(data, *inds, **kwargs):
     if indptr is None:
         return (data,) + inds
     else:
-        return (data,) + inds + 2 * indptr
+        return (data,) + inds + (indptr * 2,)
 
 
 class _NonCanonicalCompressedMixin(object):
@@ -3384,11 +3388,11 @@ class TestCSRNonCanonical(_NonCanonicalCompressedMixin, TestCSR):
     pass
 
 
-class TestCSCNonCanonical(_NonCanonicalCompressedMixin, TestCSR):
+class TestCSCNonCanonical(_NonCanonicalCompressedMixin, TestCSC):
     pass
 
 
-class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestCSR):
+class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
     pass
 
 
