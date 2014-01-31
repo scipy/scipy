@@ -1282,7 +1282,7 @@ class weibull_min_gen(rv_continuous):
 
     See Also
     --------
-    genextreme, frechet_l
+    genextreme, weibull_max
 
     Notes
     -----
