@@ -3346,7 +3346,8 @@ class TestBSR(sparse_test_class(getset=False,
 def _same_sum_duplicate(data, *inds, **kwargs):
     """Duplicates entries to produce the same matrix"""
     indptr = kwargs.pop('indptr', None)
-    if np.issubdtype(data.dtype, np.bool_):
+    if np.issubdtype(data.dtype, np.bool_) or \
+       np.issubdtype(data.dtype, np.unsignedinteger):
         if indptr is None:
             return (data,) + inds
         else:
@@ -3380,20 +3381,12 @@ class _NonCanonicalMixin(object):
     def test_abs(self):
         pass
 
-    @dec.knownfailureif(True, 'add/subtract broken with non-canonical matrix')
-    def test_add_sub(self):
-        pass
-
     @dec.knownfailureif(True, 'bool(matrix) broken with non-canonical matrix')
     def test_bool(self):
         pass
 
     @dec.knownfailureif(True, 'min/max broken with non-canonical matrix')
     def test_minmax(self):
-        pass
-
-    @dec.knownfailureif(True, 'mu broken with non-canonical matrix')
-    def test_mu(self):
         pass
 
     @dec.knownfailureif(True, 'format conversion broken with non-canonical matrix')
