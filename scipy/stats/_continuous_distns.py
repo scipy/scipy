@@ -1275,25 +1275,20 @@ class foldnorm_gen(rv_continuous):
 foldnorm = foldnorm_gen(a=0.0, name='foldnorm')
 
 
-## Extreme Value Type II or Frechet
-## (defined in Regress+ documentation as Extreme LB) as
-##   a limiting value distribution.
-##
-class frechet_r_gen(rv_continuous):
-    """A Frechet right (or Weibull minimum) continuous random variable.
+class weibull_min_gen(rv_continuous):
+    """A Weibull continuous random variable.
 
     %(before_notes)s
 
     See Also
     --------
-    weibull_min : The same distribution as `frechet_r`.
-    frechet_l, weibull_max
+    genextreme, frechet_l
 
     Notes
     -----
-    The probability density function for `frechet_r` is::
+    The probability density function for `weibull_min` is::
 
-        frechet_r.pdf(x, c) = c * x**(c-1) * exp(-x**c)
+        weibull_min.pdf(x, c) = c * x**(c-1) * exp(-x**c)
 
     for ``x > 0``, ``c > 0``.
 
@@ -1317,8 +1312,7 @@ class frechet_r_gen(rv_continuous):
 
     def _entropy(self, c):
         return -_EULER / c - log(c) + _EULER + 1
-frechet_r = frechet_r_gen(a=0.0, name='frechet_r')
-weibull_min = frechet_r_gen(a=0.0, name='weibull_min')
+weibull_min = weibull_min_gen(a=0.0, name='weibull_min')
 
 
 class frechet_l_gen(rv_continuous):
