@@ -84,6 +84,9 @@ scipy.stats
 The deprecated functions ``glm``, ``oneway`` and ``cmedian`` have been removed
 from ``scipy.stats``.
 
+``stats.scoreatpercentile`` now returns an array instead of a list of
+percentiles.
+
 
 Other changes
 =============
