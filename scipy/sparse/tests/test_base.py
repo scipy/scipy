@@ -3364,50 +3364,148 @@ def _same_sum_duplicate(data, *inds, **kwargs):
         return (data,) + inds + (indptr * 2,)
 
 
-class _NonCanonicalCompressedMixin(object):
+class _NonCanonicalMixin(object):
     def spmatrix(self, D, **kwargs):
-        construct = super(_NonCanonicalCompressedMixin, self).spmatrix
+        """Replace D with a non-canonical equivalent"""
+        construct = super(_NonCanonicalMixin, self).spmatrix
         M = construct(D, **kwargs)
+        arg1 = self._arg1_for_noncanonical(M)
+        if 'shape' not in kwargs:
+            kwargs['shape'] = M.shape
+        NC = construct(arg1, **kwargs)
+        assert_array_almost_equal(M.A, NC.A)
+        return NC
+
+    @dec.knownfailureif(True, 'abs broken with non-canonical matrix')
+    def test_abs(self):
+        pass
+
+    @dec.knownfailureif(True, 'add/subtract broken with non-canonical matrix')
+    def test_add_sub(self):
+        pass
+
+    @dec.knownfailureif(True, 'bool(matrix) broken with non-canonical matrix')
+    def test_bool(self):
+        pass
+
+    @dec.knownfailureif(True, 'min/max broken with non-canonical matrix')
+    def test_minmax(self):
+        pass
+
+    @dec.knownfailureif(True, 'mu broken with non-canonical matrix')
+    def test_mu(self):
+        pass
+
+    @dec.knownfailureif(True, 'format conversion broken with non-canonical matrix')
+    def test_sparse_format_conversions(self):
+        pass
+
+    @dec.knownfailureif(True, 'unary ufunc overrides broken with non-canonical matrix')
+    def test_unary_ufunc_overrides(self):
+        pass
+
+    @dec.knownfailureif(True, 'getnnz-axis broken with non-canonical matrix')
+    def test_getnnz_axis(self):
+        pass
+
+
+class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
+    def _arg1_for_noncanonical(self, M):
+        """Return non-canonical constructor arg1 equivalent to M"""
         data, indices, indptr = _same_sum_duplicate(M.data, M.indices,
                                                     indptr=M.indptr)
-
         # unsorted
         for start, stop in izip(indptr, indptr[1:]):
             indices[start:stop] = indices[start:stop][::-1]
             data[start:stop] = data[start:stop][::-1]
-
-        if 'shape' not in kwargs:
-            kwargs['shape'] = M.shape
-
-        NC = construct((data, indices, indptr), **kwargs)
-        assert_array_almost_equal(M.A, NC.A)
-        return NC
+        return data, indices, indptr
 
 
-class TestCSRNonCanonical(_NonCanonicalCompressedMixin, TestCSR):
+class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
+    @dec.knownfailureif(True, 'copy with non-canonical matrix not implemented due to __getitem__')
+    def test_copy(self):
+        pass
+
+    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
+    def test_ellipsis_slicing(self):
+        pass
+
+    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
+    def test_fancy_indexing(self):
+        pass
+
+    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
+    def test_fancy_indexing_boolean(self):
+        pass
+
+    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
+    def test_fancy_indexing_broadcast(self):
+        pass
+
+    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
+    def test_fancy_indexing_ndarray(self):
+        pass
+
+    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix broken for sparse boolean index')
+    def test_fancy_indexing_sparse_boolean(self):
+        pass
+
+    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
+    def test_getelement(self):
+        pass
+
+    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
+    def test_slicing_2(self):
+        pass
+
+    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
+    def test_slicing_3(self):
+        pass
+
+    @dec.knownfailureif(True, '__setitem__ with non-canonical matrix not implemented')
+    def test_fancy_assign_ndarray(self):
+        pass
+
+    @dec.knownfailureif(True, '__setitem__ with non-canonical matrix not implemented')
+    def test_fancy_assign_list(self):
+        pass
+
+    @dec.knownfailureif(True, 'broadcasting element-wise multiply broken with non-canonical matrix')
+    def test_elementwise_multiply_broadcast(self):
+        pass
+
+    @dec.knownfailureif(True, 'inverse broken with non-canonical matrix')
+    def test_inv(self):
+        pass
+
+    @dec.knownfailureif(True, 'solve broken with non-canonical matrix')
+    def test_solve(self):
+        pass
+
+
+class TestCSRNonCanonical(_NonCanonicalCSMixin, TestCSR):
     pass
 
 
-class TestCSCNonCanonical(_NonCanonicalCompressedMixin, TestCSC):
+class TestCSCNonCanonical(_NonCanonicalCSMixin, TestCSC):
     pass
 
 
 class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
-    pass
+    @dec.knownfailureif(True, 'unary ufunc overrides broken with non-canonical BSR')
+    def test_diagonal(self):
+        pass
+
+    @dec.knownfailureif(True, 'unary ufunc overrides broken with non-canonical BSR')
+    def test_expm(self):
+        pass
 
 
-class TestCOONonCanonical(TestCOO):
-    def spmatrix(self, D, **kwargs):
-        construct = coo_matrix
-        M = construct(D, **kwargs)
+class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
+    def _arg1_for_noncanonical(self, M):
+        """Return non-canonical constructor arg1 equivalent to M"""
         data, row, col = _same_sum_duplicate(M.data, M.row, M.col)
-
-        if 'shape' not in kwargs:
-            kwargs['shape'] = M.shape
-
-        NC = construct((data, (row, col)), **kwargs)
-        assert_array_almost_equal(M.A, NC.A)
-        return NC
+        return data, (row, col)
 
 
 if __name__ == "__main__":
