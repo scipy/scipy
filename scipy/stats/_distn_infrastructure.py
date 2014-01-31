@@ -1345,11 +1345,7 @@ class rv_continuous(rv_generic):
             self.b = inf
         self.xtol = xtol
         self._size = 1
-        self.m = 0.0
         self.moment_type = momtype
-
-        self.expandarr = 1
-
         self.shapes = shapes
         self._construct_argparser(meths_to_inspect=[self._pdf, self._cdf],
                                   locscale_in='loc=0, scale=1',
@@ -1359,13 +1355,8 @@ class rv_continuous(rv_generic):
         self._ppfvec = vectorize(self._ppf_single, otypes='d')
         self._ppfvec.nin = self.numargs + 1
         self.vecentropy = vectorize(self._entropy, otypes='d')
-        self.vecentropy.nin = self.numargs + 1
         self._cdfvec = vectorize(self._cdf_single, otypes='d')
         self._cdfvec.nin = self.numargs + 1
-
-        # backwards compatibility
-        self.vecfunc = self._ppfvec
-        self.veccdf = self._cdfvec
 
         self.extradoc = extradoc
         if momtype == 0:
@@ -2580,9 +2571,6 @@ class rv_discrete(rv_generic):
             _vec_generic_moment.nin = self.numargs + 2
             self.generic_moment = instancemethod(_vec_generic_moment,
                                                  self, rv_discrete)
-
-            # backwards compatibility
-            self.vec_generic_moment = _vec_generic_moment
 
             # correct nin for ppf vectorization
             _vppf = vectorize(_drv2_ppfsingle, otypes='d')
