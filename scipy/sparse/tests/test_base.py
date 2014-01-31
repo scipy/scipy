@@ -2472,7 +2472,7 @@ class _TestArithmetic:
                 D1 = A * B.T
                 S1 = Asp * Bsp.T
 
-                assert_array_equal(S1.todense(),D1)
+                assert_allclose(S1.todense(),D1)
                 assert_equal(S1.dtype,D1.dtype)
 
 
@@ -3374,7 +3374,7 @@ class _NonCanonicalMixin(object):
         if 'shape' not in kwargs:
             kwargs['shape'] = M.shape
         NC = construct(arg1, **kwargs)
-        assert_array_almost_equal(M.A, NC.A)
+        assert_allclose(M.A, NC.A)
         return NC
 
     @dec.knownfailureif(True, 'abs broken with non-canonical matrix')
