@@ -1367,7 +1367,7 @@ def itemfreq(a):
 
 
 def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
-        axis=None):
+                      axis=None):
     """
     Calculate the score at a given percentile of the input sequence.
 
@@ -1402,12 +1402,20 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
 
     Returns
     -------
-    score : float (or sequence of floats)
-        Score at percentile.
+    score : float or ndarray
+        Score at percentile(s).
 
     See Also
     --------
-    percentileofscore
+    percentileofscore, numpy.percentile
+
+    Notes
+    -----
+    This function will become obsolete in the future.
+    For Numpy 1.9 and higher, `numpy.percentile` provides all the functionality
+    that `scoreatpercentile` provides.  And it's significantly faster.
+    Therefore it's recommended to use `numpy.percentile` for users that have
+    numpy >= 1.9.
 
     Examples
     --------
@@ -1417,16 +1425,18 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
     49.5
 
     """
-    # adapted from NumPy's percentile function
+    # adapted from NumPy's percentile function.  When we require numpy >= 1.8,
+    # the implementation of this function can be replaced by np.percentile.
     a = np.asarray(a)
+    if a.size == 0:
+        # empty array, return nan(s) with shape matching `per`
+        if np.isscalar(per):
+            return np.nan
+        else:
+            return np.ones(np.asarray(per).shape, dtype=np.float64) * np.nan
 
     if limit:
         a = a[(limit[0] <= a) & (a <= limit[1])]
-
-    if per == 0:
-        return a.min(axis=axis)
-    elif per == 100:
-        return a.max(axis=axis)
 
     sorted = np.sort(a, axis=axis)
     if axis is None:
@@ -1438,8 +1448,9 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
 # handle sequence of per's without calling sort multiple times
 def _compute_qth_percentile(sorted, per, interpolation_method, axis):
     if not np.isscalar(per):
-        return [_compute_qth_percentile(sorted, i, interpolation_method, axis)
-             for i in per]
+        score = [_compute_qth_percentile(sorted, i, interpolation_method, axis)
+                 for i in per]
+        return np.array(score)
 
     if (per < 0) or (per > 100):
         raise ValueError("percentile must be in the range [0, 100]")
@@ -1473,7 +1484,7 @@ def _compute_qth_percentile(sorted, per, interpolation_method, axis):
         weights.shape = wshape
         sumval = weights.sum()
 
-    # Use np.add.reduce to coerce data type
+    # Use np.add.reduce (== np.sum but a little faster) to coerce data type
     return np.add.reduce(sorted[indexer] * weights, axis=axis) / sumval
 
 
@@ -2375,7 +2386,7 @@ def f_oneway(*args):
     msb = ssbn / float(dfbn)
     msw = sswn / float(dfwn)
     f = msb / msw
-    prob = fprob(dfbn, dfwn, f)
+    prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
     return f, prob
 
 
@@ -3873,7 +3884,7 @@ def ks_2samp(data1, data2):
     # Note: d absolute not signed distance
     en = np.sqrt(n1*n2/float(n1+n2))
     try:
-        prob = ksprob((en+0.12+0.11/en)*d)
+        prob = distributions.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
     except:
         prob = 1.0
     return d, prob
@@ -4109,7 +4120,9 @@ def friedmanchisquare(*args):
 ####  PROBABILITY CALCULATIONS  ####
 #####################################
 
-zprob = special.ndtr
+zprob = np.deprecate(message='zprob is deprecated in scipy 0.14, '
+        'use norm.cdf or special.ndtr instead\n',
+        old_name='zprob')(special.ndtr)
 
 
 def chisqprob(chisq, df):
@@ -4133,8 +4146,13 @@ def chisqprob(chisq, df):
     """
     return special.chdtrc(df,chisq)
 
-ksprob = special.kolmogorov
-fprob = special.fdtrc
+ksprob = np.deprecate(message='ksprob is deprecated in scipy 0.14, '
+        'use stats.kstwobign.sf or special.kolmogorov instead\n',
+        old_name='ksprob')(special.kolmogorov)
+
+fprob = np.deprecate(message='fprob is deprecated in scipy 0.14, '
+        'use stats.f.sf or special.fdtrc instead\n',
+        old_name='fprob')(special.fdtrc)
 
 
 def betai(a, b, x):

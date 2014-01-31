@@ -11,10 +11,11 @@ from __future__ import division, print_function, absolute_import
 import warnings
 from collections import namedtuple
 
-from numpy.testing import TestCase, assert_, assert_equal, \
-    assert_almost_equal, assert_array_almost_equal, assert_array_equal, \
-    assert_approx_equal, assert_raises, run_module_suite, \
-    assert_allclose, dec
+from numpy.testing import (TestCase, assert_, assert_equal,
+                           assert_almost_equal, assert_array_almost_equal,
+                           assert_array_equal, assert_approx_equal,
+                           assert_raises, run_module_suite, assert_allclose,
+                           dec)
 import numpy.ma.testutils as mat
 from numpy import array, arange, float32, float64, power
 import numpy as np
@@ -1032,9 +1033,23 @@ class TestScoreatpercentile(TestCase):
         assert_equal(scoreatperc(np.array([1, 10, 100]), 50, limit=(1, 10),
                                  interpolation_method='higher'), 10)
 
-    def test_sequence(self):
+    def test_sequence_per(self):
         x = arange(8) * 0.5
-        assert_equal(stats.scoreatpercentile(x, [0, 100, 50]), [0, 3.5, 1.75])
+        expected = np.array([0, 3.5, 1.75])
+        res = stats.scoreatpercentile(x, [0, 100, 50])
+        assert_allclose(res, expected)
+        assert_(isinstance(res, np.ndarray))
+        # Test with ndarray.  Regression test for gh-2861
+        assert_allclose(stats.scoreatpercentile(x, np.array([0, 100, 50])),
+                        expected)
+        # Also test combination of 2-D array, axis not None and array-like per
+        res2 = stats.scoreatpercentile(np.arange(12).reshape((3,4)),
+                                       np.array([0, 1, 100, 100]), axis=1)
+        expected2 = array([[0, 4, 8],
+                           [0.03, 4.03, 8.03],
+                           [3, 7, 11],
+                           [3, 7, 11]])
+        assert_allclose(res2, expected2)
 
     def test_axis(self):
         scoreatperc = stats.scoreatpercentile
@@ -1053,6 +1068,11 @@ class TestScoreatpercentile(TestCase):
             interpolation_method='foobar')
         assert_raises(ValueError, stats.scoreatpercentile, [1], 101)
         assert_raises(ValueError, stats.scoreatpercentile, [1], -1)
+
+    def test_empty(self):
+        assert_equal(stats.scoreatpercentile([], 50), np.nan)
+        assert_equal(stats.scoreatpercentile(np.array([[], []]), 50), np.nan)
+        assert_equal(stats.scoreatpercentile([], [50, 99]), [np.nan, np.nan])
 
 
 class TestItemfreq(object):
@@ -1089,7 +1109,7 @@ class TestItemfreq(object):
         bb = np.array(list(zip(b, b)), dt)
         v = stats.itemfreq(aa)
         # Arrays don't compare equal because v[:,0] is object array
-        assert_equal(v[2, 0], bb[2])
+        assert_equal(tuple(v[2, 0]), tuple(bb[2]))
 
 
 class TestMode(TestCase):

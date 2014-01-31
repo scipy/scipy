@@ -572,10 +572,18 @@ class _TestCommon:
         assert_array_equal(self.datsp.getcol(-1).todense(), self.dat[:,-1])
 
     def test_sum(self):
-        def check(dtype):
-            dat = np.matrix([[0, 1, 2],
-                            [3, -4, 5],
-                            [-6, 7, 9]], dtype=dtype)
+        np.random.seed(1234)
+        dat_1 = np.matrix([[0, 1, 2],
+                           [3, -4, 5],
+                           [-6, 7, 9]])
+        dat_2 = np.random.rand(40, 40)
+        dat_3 = np.array([[]])
+        dat_4 = np.zeros((40, 40))
+        dat_5 = sparse.rand(40, 40, density=1e-2).A
+        matrices = [dat_1, dat_2, dat_3, dat_4, dat_5]
+
+        def check(dtype, j):
+            dat = np.matrix(matrices[j], dtype=dtype)
             datsp = self.spmatrix(dat, dtype=dtype)
 
             # Does the matrix's .sum(axis=...) method work?
@@ -587,9 +595,14 @@ class _TestCommon:
             assert_equal(dat.sum(axis=0).dtype, datsp.sum(axis=0).dtype)
             assert_array_almost_equal(dat.sum(axis=1), datsp.sum(axis=1))
             assert_equal(dat.sum(axis=1).dtype, datsp.sum(axis=1).dtype)
+            assert_array_almost_equal(dat.sum(axis=-2), datsp.sum(axis=-2))
+            assert_equal(dat.sum(axis=-2).dtype, datsp.sum(axis=-2).dtype)
+            assert_array_almost_equal(dat.sum(axis=-1), datsp.sum(axis=-1))
+            assert_equal(dat.sum(axis=-1).dtype, datsp.sum(axis=-1).dtype)
 
         for dtype in self.checked_dtypes:
-            yield check, dtype
+            for j in range(len(matrices)):
+                yield check, dtype, j
 
     def test_mean(self):
         def check(dtype):
@@ -607,6 +620,10 @@ class _TestCommon:
             assert_equal(dat.mean(axis=0).dtype, datsp.mean(axis=0).dtype)
             assert_array_almost_equal(dat.mean(axis=1), datsp.mean(axis=1))
             assert_equal(dat.mean(axis=1).dtype, datsp.mean(axis=1).dtype)
+            assert_array_almost_equal(dat.mean(axis=-2), datsp.mean(axis=-2))
+            assert_equal(dat.mean(axis=-2).dtype, datsp.mean(axis=-2).dtype)
+            assert_array_almost_equal(dat.mean(axis=-1), datsp.mean(axis=-1))
+            assert_equal(dat.mean(axis=-1).dtype, datsp.mean(axis=-1).dtype)
 
         for dtype in self.checked_dtypes:
             yield check, dtype
@@ -1169,19 +1186,25 @@ class _TestCommon:
                     assert_equal(fn(blocksize=(X,Y)).todense(), A)
 
     def test_transpose(self):
-        def check(dtype):
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
+        dat_1 = self.dat
+        dat_2 = np.array([[]])
+        matrices = [dat_1, dat_2]
+        
+        def check(dtype, j):
+            dat = np.matrix(matrices[j], dtype=dtype)
+            datsp = self.spmatrix(dat)
 
             a = datsp.transpose()
             b = dat.transpose()
             assert_array_equal(a.todense(), b)
             assert_array_equal(a.transpose().todense(), dat)
+            assert_equal(a.dtype, b.dtype)
 
             assert_array_equal(self.spmatrix((3,4)).T.todense(), zeros((4,3)))
 
         for dtype in self.checked_dtypes:
-            yield check, dtype
+            for j in range(len(matrices)):
+                yield check, dtype, j
 
     def test_add_dense(self):
         def check(dtype):
@@ -2455,7 +2478,7 @@ class _TestArithmetic:
 
 class _TestMinMax(object):
     def test_minmax(self):
-        for dtype in [np.float32, np.float64, np.int32, np.int64]:
+        for dtype in [np.float32, np.float64, np.int32, np.int64, np.complex128]:
             D = np.arange(20, dtype=dtype).reshape(5,4)
 
             X = self.spmatrix(D)
@@ -2495,17 +2518,60 @@ class _TestMinMax(object):
         assert_equal(X.min(), 0)
         assert_equal(X.max(), 19)
 
-    def test_minmax_axis(self):
-        def check():
-            D = np.matrix(np.arange(50).reshape(5,10))
+        # zero-size matrices
+        for D in [np.zeros((0, 0)), np.zeros((0, 10)), np.zeros((10, 0))]:
             X = self.spmatrix(D)
-            assert_array_equal(X.max(axis=0).A, D.max(axis=0).A)
-            assert_array_equal(X.max(axis=1).A, D.max(axis=1).A)
+            assert_raises(ValueError, X.min)
+            assert_raises(ValueError, X.max)
 
-            assert_array_equal(X.min(axis=0).A, D.min(axis=0).A)
-            assert_array_equal(X.min(axis=1).A, D.min(axis=1).A)
+    def test_minmax_axis(self):
+        D = np.matrix(np.arange(50).reshape(5,10))
+        # completely empty rows, leaving some completely full:
+        D[1, :] = 0
+        # empty at end for reduceat:
+        D[:, 9] = 0
+        # partial rows/cols:
+        D[3, 3] = 0
+        # entries on either side of 0:
+        D[2, 2] = -1
+        X = self.spmatrix(D)
 
-        yield check
+        for axis in [-2, -1, 0, 1]:
+            assert_array_equal(X.max(axis=axis).A, D.max(axis=axis).A)
+            assert_array_equal(X.min(axis=axis).A, D.min(axis=axis).A)
+
+        # full matrix
+        D = np.matrix(np.arange(1, 51).reshape(10, 5))
+        X = self.spmatrix(D)
+        for axis in [-2, -1, 0, 1]:
+            assert_array_equal(X.max(axis=axis).A, D.max(axis=axis).A)
+            assert_array_equal(X.min(axis=axis).A, D.min(axis=axis).A)
+
+        # empty matrix
+        D = np.matrix(np.zeros((10, 5)))
+        X = self.spmatrix(D)
+        for axis in [-2, -1, 0, 1]:
+            assert_array_equal(X.max(axis=axis).A, D.max(axis=axis).A)
+            assert_array_equal(X.min(axis=axis).A, D.min(axis=axis).A)
+
+        # zero-size matrices
+        D = np.zeros((0, 10))
+        X = self.spmatrix(D)
+        for axis in [0, -2]:
+            assert_raises(ValueError, X.min, axis=axis)
+            assert_raises(ValueError, X.max, axis=axis)
+        for axis in [1, -1]:
+            assert_array_equal(np.zeros((0, 1)), X.min(axis=axis).A)
+            assert_array_equal(np.zeros((0, 1)), X.max(axis=axis).A)
+
+        D = np.zeros((10, 0))
+        X = self.spmatrix(D)
+        for axis in [1, -1]:
+            assert_raises(ValueError, X.min, axis=axis)
+            assert_raises(ValueError, X.max, axis=axis)
+        for axis in [0, -2]:
+            assert_array_equal(np.zeros((1, 0)), X.min(axis=axis).A)
+            assert_array_equal(np.zeros((1, 0)), X.max(axis=axis).A)
 
 
 class _TestGetNnzAxis(object):
@@ -2520,8 +2586,9 @@ class _TestGetNnzAxis(object):
         assert_array_equal(bool_dat.sum(), datsp.getnnz())
         assert_array_equal(bool_dat.sum(axis=0), datsp.getnnz(axis=0))
         assert_array_equal(bool_dat.sum(axis=1), datsp.getnnz(axis=1))
+        assert_array_equal(bool_dat.sum(axis=-2), datsp.getnnz(axis=-2))
+        assert_array_equal(bool_dat.sum(axis=-1), datsp.getnnz(axis=-1))
         assert_raises(ValueError, datsp.getnnz, axis=2)
-        assert_raises(ValueError, datsp.getnnz, axis=-1)
 
 
 #------------------------------------------------------------------------------

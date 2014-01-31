@@ -66,6 +66,15 @@ Deprecated features
 The global minimization function `scipy.optimize.anneal` is deprecated.
 All users should use the `scipy.optimize.basinhopping` function instead.
 
+``scipy.stats``
+---------------
+
+``randwcdf`` and ``randwppf`` functions are deprecated. All users should use
+distribution-specific ``rvs`` methods instead.
+
+Probability calculation aliases ``zprob``, ``fprob`` and ``ksprob`` are
+deprecated. Use instead the ``sf`` methods of the corresponding distributions
+or the ``special`` functions directly.
 
 Backwards incompatible changes
 ==============================
@@ -83,6 +92,9 @@ scipy.stats
 
 The deprecated functions ``glm``, ``oneway`` and ``cmedian`` have been removed
 from ``scipy.stats``.
+
+``stats.scoreatpercentile`` now returns an array instead of a list of
+percentiles.
 
 
 Other changes
