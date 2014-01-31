@@ -1290,7 +1290,7 @@ class weibull_min_gen(rv_continuous):
 
         weibull_min.pdf(x, c) = c * x**(c-1) * exp(-x**c)
 
-    for ``x > 0``, ``c > 0``.
+    for ``x >= 0``, ``c > 0``.
 
     %(example)s
 
@@ -1315,23 +1315,22 @@ class weibull_min_gen(rv_continuous):
 weibull_min = weibull_min_gen(a=0.0, name='weibull_min')
 
 
-class frechet_l_gen(rv_continuous):
-    """A Frechet left (or Weibull maximum) continuous random variable.
+class weibull_max_gen(rv_continuous):
+    """A  Weibull maximum continuous random variable.
 
     %(before_notes)s
 
     See Also
     --------
-    weibull_max : The same distribution as `frechet_l`.
-    frechet_r, weibull_min
+    weibull_min, genextreme
 
     Notes
     -----
-    The probability density function for `frechet_l` is::
+    The probability density function for `weibull_max` is::
 
-        frechet_l.pdf(x, c) = c * (-x)**(c-1) * exp(-(-x)**c)
+        weibull_max.pdf(x, c) = c * (-x)**(c-1) * exp(-(-x)**c)
 
-    for ``x < 0``, ``c > 0``.
+    for ``x <= 0``, ``c > 0``.
 
     %(example)s
 
@@ -1355,8 +1354,7 @@ class frechet_l_gen(rv_continuous):
 
     def _entropy(self, c):
         return -_EULER / c - log(c) + _EULER + 1
-frechet_l = frechet_l_gen(b=0.0, name='frechet_l')
-weibull_max = frechet_l_gen(b=0.0, name='weibull_max')
+weibull_max = weibull_max_gen(b=0.0, name='weibull_max')
 
 
 class genlogistic_gen(rv_continuous):
