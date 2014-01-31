@@ -1356,6 +1356,45 @@ class weibull_max_gen(rv_continuous):
         return -_EULER / c - log(c) + _EULER + 1
 weibull_max = weibull_max_gen(b=0.0, name='weibull_max')
 
+class frechet_r_gen(rv_continuous):
+    """A Frechet continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    genextreme, frechet_l
+
+    Notes
+    -----
+    The probability density function for `frechet_r` is::
+
+        frechet_r.pdf(x, c) = c * x**(-c-1) * exp(-x**-c)
+
+    for ``x >= 0``, ``c > 0``.
+
+    %(example)s
+
+    """
+    def _pdf(self, x, c):
+        return c*pow(x, -c-1)*exp(-pow(x, -c))
+
+    def _logpdf(self, x, c):
+        return log(c) + (-c-1)*log(x) - pow(x, -c)
+
+    def _cdf(self, x, c):
+        return exp(-pow(x, -c))
+
+    def _ppf(self, q, c):
+        return pow(-log(q), -1./c)
+
+    ## def _munp(self, n, c):
+    ##     return special.gamma(1.0+n*1.0/c)
+
+    ## def _entropy(self, c):
+    ##     return -_EULER / c - log(c) + _EULER + 1
+frechet_r = frechet_r_gen(a=0.0, name='frechet_r')
+
 
 class genlogistic_gen(rv_continuous):
     """A generalized logistic continuous random variable.
