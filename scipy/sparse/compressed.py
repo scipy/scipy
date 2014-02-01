@@ -6,7 +6,7 @@ __all__ = []
 from warnings import warn
 
 import numpy as np
-from scipy.lib.six import xrange
+from scipy.lib.six import xrange, zip as izip
 
 from .base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from .data import _data_matrix, _minmax_mixin
@@ -638,9 +638,121 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if x.shape != i.shape:
             raise ValueError("shape mismatch in assignment")
 
-        # Set values
-        for ii, jj, xx in zip(i.ravel(), j.ravel(), x.ravel()):
-            self._set_one(ii, jj, xx)
+        if np.size(x) == 0:
+            return
+        i, j = self._swap((i.ravel(), j.ravel()))
+        self._set_many(i, j, x.ravel())
+
+    def _set_many(self, i, j, x):
+        """Sets value at each (i, j) to x
+
+        Here (i,j) index major and minor respectively.
+        """
+        i = i.astype(self.indices.dtype)
+        j = j.astype(self.indices.dtype)
+        M, N = self._swap(self.shape)
+        def check_bounds(indices, bound):
+            idx = indices.max()
+            if idx >= bound:
+                raise IndexError('index (%d) out of range (>= %d)' %
+                                 (idx, bound))
+            idx = indices.min()
+            if idx < -bound:
+                raise IndexError('index (%d) out of range (< -%d)' %
+                                 (idx, bound))
+
+        check_bounds(i, M)
+        check_bounds(j, N)
+        n_samples = len(x)
+        offsets = np.empty(n_samples, dtype=np.intc)
+        ret = sparsetools.csr_sample_offsets(M, N, self.indptr, self.indices,
+                                             n_samples, i, j, offsets)
+        if ret == 1:
+            # rinse and repeat
+            self.sum_duplicates()
+            sparsetools.csr_sample_offsets(M, N, self.indptr,
+                                           self.indices, n_samples, i, j,
+                                           offsets)
+
+        if -1 not in offsets:
+            # only affects existing non-zero cells
+            self.data[offsets] = x
+            return
+
+        else:
+            warn("Changing the sparsity structure of a %s_matrix is expensive. "
+                 "lil_matrix is more efficient." % self.format,
+                 SparseEfficiencyWarning)
+            # replace where possible
+            mask = offsets > -1
+            self.data[offsets[mask]] = x[mask]
+            # only insertions remain
+            mask = ~mask
+            i = i[mask]
+            i[i < 0] += M
+            j = j[mask]
+            j[j < 0] += N
+            self._insert_many(i, j, x[mask])
+
+    def _insert_many(self, i, j, x):
+        """Inserts new nonzero at each (i, j) with value x
+
+        Here (i,j) index major and minor respectively.
+        i, j and x must be non-empty, 1d arrays.
+        Inserts each major group (e.g. all entries per row) at a time.
+        Maintains has_sorted_indices property.
+        Modifies i, j, x in place.
+        """
+        order = np.argsort(i, kind='mergesort')  # stable for duplicates
+        i = i.take(order, mode='clip')
+        j = j.take(order, mode='clip')
+        x = x.take(order, mode='clip')
+
+        do_sort = self.has_sorted_indices
+
+        # Collate old and new in chunks by major index
+        indices_parts = []
+        data_parts = []
+        ui, ui_indptr = np.unique(i, return_index=True)
+        ui_indptr = np.append(ui_indptr, len(j))
+        new_nnzs = np.diff(ui_indptr)
+        prev = 0
+        for c, (ii, js, je) in enumerate(izip(ui, ui_indptr, ui_indptr[1:])):
+            # old entries
+            start = self.indptr[prev]
+            stop = self.indptr[ii]
+            indices_parts.append(self.indices[start:stop])
+            data_parts.append(self.data[start:stop])
+
+            # handle duplicate j: keep last setting
+            uj, uj_indptr = np.unique(j[js:je][::-1], return_index=True)
+            if len(uj) == je - js:
+                indices_parts.append(j[js:je])
+                data_parts.append(x[js:je])
+            else:
+                indices_parts.append(j[js:je][::-1][uj_indptr])
+                data_parts.append(x[js:je][::-1][uj_indptr])
+                new_nnzs[c] = len(uj)
+
+            prev = ii
+
+        # remaining old entries
+        start = self.indptr[ii]
+        indices_parts.append(self.indices[start:])
+        data_parts.append(self.data[start:])
+
+        # update attributes
+        self.indices = np.concatenate(indices_parts)
+        self.data = np.concatenate(data_parts)
+        nnzs = np.ediff1d(self.indptr, to_begin=0).astype(self.indptr.dtype)
+        nnzs[1:][ui] += new_nnzs
+        self.indptr = np.cumsum(nnzs, out=nnzs)
+
+        if do_sort:
+            # TODO: only sort where necessary
+            self.sort_indices()
+
+        self.check_format(full_check=False)
 
     def _get_single_element(self,row,col):
         M, N = self.shape
@@ -741,60 +853,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         shape = self._swap((i1 - i0, j1 - j0))
 
         return self.__class__((data, indices, indptr), shape=shape)
-
-    def _set_one(self, row, col, val):
-        """Set one value at a time."""
-        M, N = self.shape
-        if (row < 0):
-            row += M
-        if (col < 0):
-            col += N
-        if not (0 <= row < M) or not (0 <= col < N):
-            raise IndexError("Index out of bounds.")
-
-        major_index, minor_index = self._swap((row,col))
-
-        start = self.indptr[major_index]
-        end = self.indptr[major_index + 1]
-        indxs = np.where(minor_index == self.indices[start:end])[0]
-
-        num_matches = len(indxs)
-
-        if not np.isscalar(val):
-            raise ValueError("Setting an array element with a sequence.")
-
-        val = self.dtype.type(val)
-
-        if num_matches == 0:
-            # entry not already present
-            warn("Changing the sparsity structure of a %s_matrix is expensive. "
-                 "lil_matrix is more efficient." % self.format,
-                 SparseEfficiencyWarning)
-
-            if self.has_sorted_indices:
-                # preserve sorted order
-                newindx = start + self.indices[start:end].searchsorted(minor_index)
-            else:
-                newindx = start
-
-            val = np.array([val], dtype=self.data.dtype)
-            minor_index = np.array([minor_index], dtype=self.indices.dtype)
-            self.data = np.concatenate((self.data[:newindx], val,
-                                        self.data[newindx:]))
-            self.indices = np.concatenate((self.indices[:newindx],
-                                           minor_index,
-                                               self.indices[newindx:]))
-            self.indptr = self.indptr.copy()
-            self.indptr[major_index+1:] += 1
-        elif num_matches == 1:
-            # entry appears exactly once
-            self.data[start:end][indxs[0]] = val
-        else:
-            # entry appears more than once
-            raise ValueError('nonzero entry (%d,%d) occurs more than once'
-                             % (row,col))
-
-        self.check_format(full_check=True)
 
     ######################
     # Conversion methods #
