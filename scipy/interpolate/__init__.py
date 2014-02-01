@@ -163,6 +163,8 @@ from .rbf import Rbf
 
 from .polyint import *
 
+from ._monotone import *
+
 from .ndgriddata import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
