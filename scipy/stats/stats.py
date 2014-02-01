@@ -5089,7 +5089,7 @@ def jsd_matrix(data):
         bs = data[(i+1):]
         m = bs + a
         m /= 2.
-        m = np.where(m, m, 1.)
+        m += (m == 0)
         out = special.xlogy(a, a/m).sum(1)
         out += special.xlogy(bs, bs/m).sum(1)
         output[p:(p+len(bs))] = out
