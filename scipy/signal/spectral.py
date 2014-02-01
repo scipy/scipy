@@ -33,10 +33,11 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
         directly as the window. Defaults to None; equivalent to 'boxcar'.
     nfft : int, optional
         Length of the FFT used. If None the length of `x` will be used.
-    detrend : str or function, optional
+    detrend : str or function or False, optional
         Specifies how to detrend `x` prior to computing the spectrum. If
         `detrend` is a string, it is passed as the ``type`` argument to
         `detrend`. If it is a function, it should return a detrended array.
+        If `detrend` is False, no detrending is done.
         Defaults to 'constant'.
     return_onesided : bool, optional
         If True, return a one-sided spectrum for real data. If False return
@@ -169,10 +170,11 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     nfft : int, optional
         Length of the FFT used, if a zero padded FFT is desired.  If None,
         the FFT length is `nperseg`. Defaults to None.
-    detrend : str or function, optional
+    detrend : str or function or False, optional
         Specifies how to detrend each segment. If `detrend` is a string,
         it is passed as the ``type`` argument to `detrend`. If it is a
         function, it takes a segment and returns a detrended segment.
+        If `detrend` is False, no detrending is done.
         Defaults to 'constant'.
     return_onesided : bool, optional
         If True, return a one-sided spectrum for real data. If False return
@@ -308,7 +310,9 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     elif nfft < nperseg:
         raise ValueError('nfft must be greater than or equal to nperseg.')
 
-    if not hasattr(detrend, '__call__'):
+    if detrend is False:
+        detrend_func = lambda seg: seg
+    elif not hasattr(detrend, '__call__'):
         detrend_func = lambda seg: signaltools.detrend(seg, type=detrend)
     elif axis != -1:
         # Wrap this function so that it receives a shape that it could
