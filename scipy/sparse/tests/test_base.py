@@ -3423,22 +3423,6 @@ class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
     def test_ellipsis_slicing(self):
         pass
 
-    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
-    def test_fancy_indexing(self):
-        pass
-
-    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
-    def test_fancy_indexing_boolean(self):
-        pass
-
-    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
-    def test_fancy_indexing_broadcast(self):
-        pass
-
-    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
-    def test_fancy_indexing_ndarray(self):
-        pass
-
     @dec.knownfailureif(True, '__getitem__ with non-canonical matrix broken for sparse boolean index')
     def test_fancy_indexing_sparse_boolean(self):
         pass
@@ -3453,14 +3437,6 @@ class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
 
     @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
     def test_slicing_3(self):
-        pass
-
-    @dec.knownfailureif(True, '__setitem__ with non-canonical matrix not implemented')
-    def test_fancy_assign_ndarray(self):
-        pass
-
-    @dec.knownfailureif(True, '__setitem__ with non-canonical matrix not implemented')
-    def test_fancy_assign_list(self):
         pass
 
     @dec.knownfailureif(True, 'broadcasting element-wise multiply broken with non-canonical matrix')
