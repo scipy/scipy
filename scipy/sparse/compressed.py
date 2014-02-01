@@ -664,8 +664,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         Here (i,j) index major and minor respectively.
         """
-        i = i.astype(self.indices.dtype)
-        j = j.astype(self.indices.dtype)
         M, N = self._swap(self.shape)
         def check_bounds(indices, bound):
             idx = indices.max()
@@ -679,8 +677,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         check_bounds(i, M)
         check_bounds(j, N)
+
+        i = i.astype(self.indices.dtype)
+        j = j.astype(self.indices.dtype)
+
         n_samples = len(x)
-        offsets = np.empty(n_samples, dtype=np.intc)
+        offsets = np.empty(n_samples, dtype=self.indices.dtype)
         ret = sparsetools.csr_sample_offsets(M, N, self.indptr, self.indices,
                                              n_samples, i, j, offsets)
         if ret == 1:
@@ -726,6 +728,16 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         do_sort = self.has_sorted_indices
 
+        # Update index data type
+        idx_dtype = get_index_dtype((self.indices, self.indptr),
+                                    maxval=(self.indptr[-1] + x.size))
+        if idx_dtype != self.indptr.dtype:
+            self.indptr = self.indptr.astype(idx_dtype)
+            self.indices = self.indices.astype(idx_dtype)
+        if idx_dtype != i.dtype or idx_dtype != j.dtype:
+            i = i.astype(idx_dtype)
+            j = j.astype(idx_dtype)
+
         # Collate old and new in chunks by major index
         indices_parts = []
         data_parts = []
@@ -760,7 +772,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # update attributes
         self.indices = np.concatenate(indices_parts)
         self.data = np.concatenate(data_parts)
-        nnzs = np.ediff1d(self.indptr, to_begin=0).astype(self.indptr.dtype)
+        nnzs = np.ediff1d(self.indptr, to_begin=0).astype(idx_dtype)
         nnzs[1:][ui] += new_nnzs
         self.indptr = np.cumsum(nnzs, out=nnzs)
 
