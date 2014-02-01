@@ -197,6 +197,9 @@ Using ``runtests.py`` is the recommended approach to running tests.
 There are also a number of alternatives to it, for example in-place
 build or installing to a virtualenv. See the FAQ below for details.
 
+Some of the tests in Scipy are very slow and need to be separately
+enabled. See the FAQ below for details.
+
 
 SciPy structure
 ===============
@@ -389,6 +392,22 @@ The execution will now stop at the corresponding C function and you
 can step through it as usual. Instead of plain ``gdb`` you can of
 course use your favourite alternative debugger; run it on the
 ``python`` binary with arguments ``runtests.py -g --python mytest.py``.
+
+
+*How do I enable additional tests in Scipy?*
+
+Some of the tests in Scipy's test suite are very slow and not enabled
+by default. You can run the full suite via::
+
+    $ python runtests.py -g -m full
+
+This invokes the test suite ``import scipy; scipy.test("full")``,
+enabling also slow tests.
+
+There is an additional level of very slow tests (several minutes),
+which are disabled also in this case. They can be enabled by setting
+the environment variable ``SCIPY_XSLOW=1`` before running the test
+suite.
 
 
 .. _scikit-learn: http://scikit-learn.org

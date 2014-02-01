@@ -45,7 +45,7 @@ void dia_matvec(const I n_row,
 
         const I N = j_end - j_start;  //number of elements to process
 
-        const T * diag = diags + i*L + j_start;
+        const T * diag = diags + (npy_intp)i*L + j_start;
         const T * x = Xx + j_start;
               T * y = Yx + i_start;
 

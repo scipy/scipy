@@ -78,7 +78,7 @@ void csc_matvecs(const I n_row,
     for(I j = 0; j < n_col; j++){
         for(I ii = Ap[j]; ii < Ap[j+1]; ii++){
             const I i = Ai[ii];
-            axpy(n_vecs, Ax[ii], Xx + n_vecs * j, Yx + n_vecs * i);
+            axpy(n_vecs, Ax[ii], Xx + (npy_intp)n_vecs * j, Yx + (npy_intp)n_vecs * i);
         }
     }
 }

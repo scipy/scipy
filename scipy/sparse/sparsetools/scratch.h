@@ -138,7 +138,7 @@ void csr_todense(const I  n_row,
                  const T  Ax[],
                        T  Mx[])
 {
-    I row_base = 0;
+    npy_intp row_base = 0;
     for(I i = 0; i < n_row; i++){
         I row_start = Ap[i];
         I row_end   = Ap[i+1];

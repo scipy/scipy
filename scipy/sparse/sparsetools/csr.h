@@ -456,13 +456,13 @@ void csr_toell(const I n_row,
 	                 I Bj[],
 	                 T Bx[])
 {
-    const I ell_nnz = row_length * n_row;
+    const npy_intp ell_nnz = (npy_intp)row_length * n_row;
     std::fill(Bj, Bj + ell_nnz, 0);
     std::fill(Bx, Bx + ell_nnz, 0);
 
     for(I i = 0; i < n_row; i++){
-        I * Bj_row = Bj + row_length * i;
-        T * Bx_row = Bx + row_length * i;
+        I * Bj_row = Bj + (npy_intp)row_length * i;
+        T * Bx_row = Bx + (npy_intp)row_length * i;
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             *Bj_row = Aj[jj];            
             *Bx_row = Ax[jj];            
@@ -535,16 +535,29 @@ void csr_matmat_pass1(const I n_row,
 
     I nnz = 0;
     for(I i = 0; i < n_row; i++){
+        npy_intp row_nnz = 0;
+
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             I j = Aj[jj];
             for(I kk = Bp[j]; kk < Bp[j+1]; kk++){
                 I k = Bj[kk];
                 if(mask[k] != i){
                     mask[k] = i;                        
-                    nnz++;
+                    row_nnz++;
                 }
             }
-        }         
+        }
+
+        npy_intp next_nnz = nnz + row_nnz;
+
+        if (row_nnz > NPY_MAX_INTP - nnz || next_nnz != (I)next_nnz) {
+            /*
+             * Index overflowed. Note that row_nnz <= n_col and cannot overflow
+             */
+            throw std::overflow_error("nnz of the result is too large");
+        }
+
+        nnz = next_nnz;
         Cp[i+1] = nnz;
     }
 }
@@ -1097,11 +1110,11 @@ void csr_matvecs(const I n_row,
 	                   T Yx[])
 {
     for(I i = 0; i < n_row; i++){
-        T * y = Yx + n_vecs * i;
+        T * y = Yx + (npy_intp)n_vecs * i;
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             const I j = Aj[jj];
             const T a = Ax[jj];
-            const T * x = Xx + n_vecs * j;
+            const T * x = Xx + (npy_intp)n_vecs * j;
             axpy(n_vecs, a, x, y);
         }
     }
