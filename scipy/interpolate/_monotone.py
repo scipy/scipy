@@ -1,18 +1,18 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from scipy.misc import factorial
 
-from . import polyint
+from . import BPoly
 
 __all__ = ["PchipInterpolator", "pchip_interpolate", "pchip"]
 
-class PchipInterpolator(polyint.PiecewisePolynomial):
+class PchipInterpolator(object):
     """PCHIP 1-d monotonic cubic interpolation
 
     x and y are arrays of values used to approximate some function f,
     with ``y = f(x)``.  The interpolant uses monotonic cubic splines
-    to find the value of new points.
+    to find the value of new points. (PCHIP stands for Piecewise Cubic
+    Hermite Interpolating Polynomial).
 
     Parameters
     ----------
@@ -25,32 +25,90 @@ class PchipInterpolator(polyint.PiecewisePolynomial):
         parameter to select correct axis.
     axis : int, optional
         Axis in the y array corresponding to the x-coordinate values.
+    extrapolate : bool, optional
+        Whether to extrapolate to ouf-of-bounds points based on first
+        and last intervals, or to return NaNs.
+
+    Methods
+    -------
+    __call__
+    derivative
 
     Notes
     -----
-    Assumes x is sorted in monotonic order (e.g. ``x[1] > x[0]``).
+    The first derivatives are guaranteed to be continuous, but the second
+    derivatives may jump at x_k. 
+
+    Preserves monotonicity in the interpolation data and does not overshoot
+    if the data is not smooth.
+
+    Determines the derivatives at the points x_k, d_k, by using PCHIP algorithm:
+      
+    Let m_k be the slope of the kth segment (between k and k+1)
+    If m_k=0 or m_{k-1}=0 or sgn(m_k) != sgn(m_{k-1}) then d_k == 0
+    else use weighted harmonic mean:
+
+       w_1 = 2h_k + h_{k-1}, w_2 = h_k + 2h_{k-1}
+       1/d_k = 1/(w_1 + w_2)*(w_1 / m_k + w_2 / m_{k-1})
+
+    where h_k is the spacing between x_k and x_{k+1}.
 
     """
-    def __init__(self, x, y, axis=0):
+    def __init__(self, x, y, axis=0, extrapolate=None):
         x = np.asarray(x)
         y = np.asarray(y)
 
         axis = axis % y.ndim
-
+        
         xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
         yp = np.rollaxis(y, axis)
 
-        data = np.empty((yp.shape[0], 2) + yp.shape[1:], y.dtype)
-        data[:,0] = yp
-        data[:,1] = PchipInterpolator._find_derivatives(xp, yp)
+        dk = self._find_derivatives(xp, yp)
+        data = np.hstack((yp[:, None, ...], dk[:, None, ...]))
 
-        s = list(range(2, y.ndim + 1))
-        s.insert(axis, 1)
-        s.insert(axis, 0)
-        data = data.transpose(s)
+        self.p = BPoly.from_derivatives(x, data, orders=None, direction=None,
+                extrapolate=extrapolate)
+        self.axis = axis
 
-        PiecewisePolynomial.__init__(self, x, data, orders=3, direction=None,
-                                     axis=axis)
+    def __call__(self, x, nu=0, extrapolate=None):
+        """
+        Evaluate the PCHIP interpolant or its derivative.
+
+        Parameters
+        ----------
+        x : array-like
+            Points to evaluate the interpolant at.
+        nu : int, optional
+            Order of derivative to evaluate. Must be non-negative.
+        extrapolate : bool, optional
+            Whether to extrapolate to ouf-of-bounds points based on first
+            and last intervals, or to return NaNs.
+
+        Returns
+        -------
+        y : array-like
+            Interpolated values. Shape is determined by replacing
+            the interpolation axis in the original array with the shape of x.
+
+        """
+        out = self.p(x, nu, extrapolate)
+        return self._reshaper(x, out)
+
+    def derivative(self, x, der=1):
+        # FIXME: API. Do we want a polyint-type API, where p.derivative(x)
+        # evaluates f'(x) for a given value of x,
+        # or do want p.derivative() to return a callable object, like
+        # PPoly does?
+        dp = self.p.derivative(der)
+        out = dp(x, extrapolate=self.p.extrapolate)
+        return self._reshaper(x, out)
+
+    def _reshaper(self, x, out):
+        x = np.asarray(x)
+        l = x.ndim
+        transp = (tuple(range(l, l+self.axis)) + tuple(range(l)) +
+                tuple(range(l+self.axis, out.ndim)))
+        return out.transpose(transp)
 
     @staticmethod
     def _edge_case(m0, d1, out):
@@ -58,6 +116,45 @@ class PchipInterpolator(polyint.PiecewisePolynomial):
         d1 = np.atleast_1d(d1)
         mask = (d1 != 0) & (m0 != 0)
         out[mask] = 1.0/(1.0/m0[mask]+1.0/d1[mask])
+
+    @staticmethod
+    def _find_derivatives(x, y):
+        # Determine the derivatives at the points y_k, d_k, by using
+        #  PCHIP algorithm is:
+        # We choose the derivatives at the point x_k by
+        # Let m_k be the slope of the kth segment (between k and k+1)
+        # If m_k=0 or m_{k-1}=0 or sgn(m_k) != sgn(m_{k-1}) then d_k == 0
+        # else use weighted harmonic mean:
+        #   w_1 = 2h_k + h_{k-1}, w_2 = h_k + 2h_{k-1}
+        #   1/d_k = 1/(w_1 + w_2)*(w_1 / m_k + w_2 / m_{k-1})
+        #   where h_k is the spacing between x_k and x_{k+1}
+        y_shape = y.shape
+        if y.ndim == 1:
+            # So that _edge_case doesn't end up assigning to scalars
+            x = x[:,None]
+            y = y[:,None]
+
+        hk = x[1:] - x[:-1]
+        mk = (y[1:] - y[:-1]) / hk
+        smk = np.sign(mk)
+        condition = ((smk[1:] != smk[:-1]) | (mk[1:] == 0) | (mk[:-1] == 0))
+
+        w1 = 2*hk[1:] + hk[:-1]
+        w2 = hk[1:] + 2*hk[:-1]
+        # values where division by zero occurs will be excluded
+        # by 'condition' afterwards
+        with np.errstate(divide='ignore'):
+            whmean = 1.0/(w1+w2)*(w1/mk[1:] + w2/mk[:-1])
+        dk = np.zeros_like(y)
+        dk[1:-1][condition] = 0.0
+        dk[1:-1][~condition] = 1.0/whmean[~condition]
+
+        # For end-points choose d_0 so that 1/d_0 = 1/m_0 + 1/d_1 unless
+        #  one of d_1 or m_0 is 0, then choose d_0 = 0
+        PchipInterpolator._edge_case(mk[0],dk[1], dk[0])
+        PchipInterpolator._edge_case(mk[-1],dk[-2], dk[-1])
+
+        return dk.reshape(y_shape)
 
     @staticmethod
     def _find_derivatives(x, y):
