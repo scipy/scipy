@@ -1157,12 +1157,14 @@ def _anderson_ksamp_both(samples, Z, Zstar, k, n, N):
     """
 
     A2akN = 0.
-    lj = Z.searchsorted(Zstar, 'right') - Z.searchsorted(Zstar, 'left')
+    Z_ssorted_left = Z.searchsorted(Zstar, 'left')
+    lj = Z.searchsorted(Zstar, 'right') - Z_ssorted_left
     Bj = Z.searchsorted(Zstar) + lj / 2.
     for i in arange(0, k):
         s = np.sort(samples[i])
-        Mij = s.searchsorted(Zstar, side='right').astype(np.float)
-        fij = s.searchsorted(Zstar, 'right') - s.searchsorted(Zstar, 'left')
+        s_ssorted_right = s.searchsorted(Zstar, side='right')
+        Mij = s_ssorted_right.astype(np.float)
+        fij = s_ssorted_right - s.searchsorted(Zstar, 'left')
         Mij -= fij / 2.
         inner = lj / float(N) * (N * Mij - Bj * n[i])**2 / \
             (Bj * (N - Bj) - N * lj / 4.)
@@ -1278,7 +1280,7 @@ def anderson_ksamp(samples, discrete=False):
     not at the 2.5% level. The interpolation gives an approximate
     significance level of 3.1%:
 
-    >>> stats.anderson_ksamp(np.random.normal(size=50), \
+    >>> stats.anderson_ksamp(np.random.normal(size=50), ...
             np.random.normal(loc=0.5, size=30))
     (2.4632469079409978, array([ 0.325,  1.226,  1.961,  2.718,  3.752]),
       0.03130207656720708)
@@ -1287,7 +1289,7 @@ def anderson_ksamp(samples, discrete=False):
     identical distribution. The approximate p-value (87%) has to be
     computed by extrapolation and may not be very accurate:
 
-    >>> stats.anderson_ksamp(np.random.normal(size=50), \
+    >>> stats.anderson_ksamp(np.random.normal(size=50), ...
             np.random.normal(size=30), np.random.normal(size=20))
     (-0.72478622084152444,
       array([ 0.44925884,  1.3052767,  1.9434184,  2.57696569,  3.41634856]),
