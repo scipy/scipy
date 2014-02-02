@@ -5,6 +5,7 @@ from scipy.misc import factorial
 
 from scipy.lib.six import xrange
 
+
 __all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator",
            "barycentric_interpolate", "PiecewisePolynomial",
            "piecewise_polynomial_interpolate", "approximate_taylor_polynomial"]

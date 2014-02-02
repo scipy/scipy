@@ -66,8 +66,8 @@ class PchipInterpolator(object):
         dk = self._find_derivatives(xp, yp)
         data = np.hstack((yp[:, None, ...], dk[:, None, ...]))
 
-        self.p = BPoly.from_derivatives(x, data, orders=None, direction=None,
-                extrapolate=extrapolate)
+        self.bpoly = BPoly.from_derivatives(x, data, orders=None,
+                direction=None, extrapolate=extrapolate)
         self.axis = axis
 
     def __call__(self, x, nu=0, extrapolate=None):
@@ -91,7 +91,7 @@ class PchipInterpolator(object):
             the interpolation axis in the original array with the shape of x.
 
         """
-        out = self.p(x, nu, extrapolate)
+        out = self.bpoly(x, nu, extrapolate)
         return self._reshaper(x, out)
 
     def derivative(self, x, der=1):
@@ -99,8 +99,8 @@ class PchipInterpolator(object):
         # evaluates f'(x) for a given value of x,
         # or do want p.derivative() to return a callable object, like
         # PPoly does?
-        dp = self.p.derivative(der)
-        out = dp(x, extrapolate=self.p.extrapolate)
+        dp = self.bpoly.derivative(der)
+        out = dp(x, extrapolate=self.bpoly.extrapolate)
         return self._reshaper(x, out)
 
     def _reshaper(self, x, out):
@@ -128,46 +128,6 @@ class PchipInterpolator(object):
         #   w_1 = 2h_k + h_{k-1}, w_2 = h_k + 2h_{k-1}
         #   1/d_k = 1/(w_1 + w_2)*(w_1 / m_k + w_2 / m_{k-1})
         #   where h_k is the spacing between x_k and x_{k+1}
-        y_shape = y.shape
-        if y.ndim == 1:
-            # So that _edge_case doesn't end up assigning to scalars
-            x = x[:,None]
-            y = y[:,None]
-
-        hk = x[1:] - x[:-1]
-        mk = (y[1:] - y[:-1]) / hk
-        smk = np.sign(mk)
-        condition = ((smk[1:] != smk[:-1]) | (mk[1:] == 0) | (mk[:-1] == 0))
-
-        w1 = 2*hk[1:] + hk[:-1]
-        w2 = hk[1:] + 2*hk[:-1]
-        # values where division by zero occurs will be excluded
-        # by 'condition' afterwards
-        with np.errstate(divide='ignore'):
-            whmean = 1.0/(w1+w2)*(w1/mk[1:] + w2/mk[:-1])
-        dk = np.zeros_like(y)
-        dk[1:-1][condition] = 0.0
-        dk[1:-1][~condition] = 1.0/whmean[~condition]
-
-        # For end-points choose d_0 so that 1/d_0 = 1/m_0 + 1/d_1 unless
-        #  one of d_1 or m_0 is 0, then choose d_0 = 0
-        PchipInterpolator._edge_case(mk[0],dk[1], dk[0])
-        PchipInterpolator._edge_case(mk[-1],dk[-2], dk[-1])
-
-        return dk.reshape(y_shape)
-
-    @staticmethod
-    def _find_derivatives(x, y):
-        # Determine the derivatives at the points y_k, d_k, by using
-        #  PCHIP algorithm is:
-        # We choose the derivatives at the point x_k by
-        # Let m_k be the slope of the kth segment (between k and k+1)
-        # If m_k=0 or m_{k-1}=0 or sgn(m_k) != sgn(m_{k-1}) then d_k == 0
-        # else use weighted harmonic mean:
-        #   w_1 = 2h_k + h_{k-1}, w_2 = h_k + 2h_{k-1}
-        #   1/d_k = 1/(w_1 + w_2)*(w_1 / m_k + w_2 / m_{k-1})
-        #   where h_k is the spacing between x_k and x_{k+1}
-
         y_shape = y.shape
         if y.ndim == 1:
             # So that _edge_case doesn't end up assigning to scalars
