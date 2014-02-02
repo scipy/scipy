@@ -1221,7 +1221,6 @@ def anderson_ksamp(samples, discrete=False):
     ----------
     samples : array_like
         array of sample data in arrays
-
     discrete : bool, optional
         type of Anderson-Darling test which is computed. Default is a test
         applicable to discrete and continous distributions.
@@ -1299,6 +1298,7 @@ def anderson_ksamp(samples, discrete=False):
     k = len(samples)
     if (k < 2):
         raise ValueError("anderson_ksamp needs at least two samples")
+
     samples = list(map(np.asarray, samples))
     Z = np.hstack(samples)
     N = Z.size
@@ -1308,10 +1308,12 @@ def anderson_ksamp(samples, discrete=False):
     if not L > 1:
         raise ValueError("anderson_ksamp needs more than one distinct "
                          "observation")
+
     n = np.array([sample.size for sample in samples])
     if any(n == 0):
         raise ValueError("anderson_ksamp encountered sample without "
                          "observations")
+
     if discrete:
         A2kN = _anderson_ksamp_discrete(samples, Z, Zstar, k, n, N)
     else:
@@ -1338,6 +1340,7 @@ def anderson_ksamp(samples, discrete=False):
     pf = np.polyfit(tm, log(np.array([0.25, 0.1, 0.05, 0.025, 0.01])), 2)
     if Tk < tm.min() or Tk > tm.max():
         warnings.warn("approximate p-value will be computed by extrapolation")
+
     p = math.exp(np.polyval(pf, Tk))
     return Tk, tm, p
 
