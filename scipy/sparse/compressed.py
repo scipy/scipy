@@ -4,6 +4,7 @@ from __future__ import division, print_function, absolute_import
 __all__ = []
 
 from warnings import warn
+import operator
 
 import numpy as np
 from scipy.lib.six import xrange, zip as izip
@@ -248,83 +249,27 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         else:
             return True
 
-    def __lt__(self, other):
+    def _inequality(self, other, op, op_name, bad_scalar_msg):
         # Scalar other.
         if isscalarlike(other):
-            if 0 < other:
-                warn("Comparing a sparse matrix with a scalar greater than "
-                     "zero using < is inefficient, try using > instead.", SparseEfficiencyWarning)
-                other_arr = np.empty(self.shape)
-                other_arr.fill(other)
-                other_arr = self.__class__(other_arr)
-                return self._binopt(other_arr, '_lt_')
-            else:
-                other_arr = self.copy()
-                other_arr.data[:] = other
-                return self._binopt(other_arr, '_lt_')
-        # Dense other.
-        elif isdense(other):
-            return self.todense() < other
-        # Sparse other.
-        elif isspmatrix(other):
-            #TODO sparse broadcasting
-            if self.shape != other.shape:
-                raise ValueError("inconsistent shapes")
-            elif self.format != other.format:
-                other = other.asformat(self.format)
-            return self._binopt(other, '_lt_')
-        else:
-            raise ValueError("Operands could not be compared.")
-
-    def __gt__(self, other):
-        # Scalar other.
-        if isscalarlike(other):
-            if 0 > other:
-                warn("Comparing a sparse matrix with a scalar less than zero "
-                     "using > is inefficient, try using < instead.", SparseEfficiencyWarning)
-                other_arr = np.empty(self.shape)
-                other_arr.fill(other)
-                other_arr = self.__class__(other_arr)
-                return self._binopt(other_arr, '_gt_')
-            else:
-                other_arr = self.copy()
-                other_arr.data[:] = other
-                return self._binopt(other_arr, '_gt_')
-        # Dense other.
-        elif isdense(other):
-            return self.todense() > other
-        # Sparse other.
-        elif isspmatrix(other):
-            #TODO sparse broadcasting
-            if self.shape != other.shape:
-                raise ValueError("inconsistent shapes")
-            elif self.format != other.format:
-                other = other.asformat(self.format)
-            return self._binopt(other, '_gt_')
-        else:
-            raise ValueError("Operands could not be compared.")
-
-    def __le__(self,other):
-        # Scalar other.
-        if isscalarlike(other):
-            if 0 == other:
+            if 0 == other and op_name in ('_le_', '_ge_'):
                 raise NotImplementedError(" >= and <= don't work with 0.")
-            elif 0 <= other:
-                warn("Comparing a sparse matrix with a scalar less than zero "
-                     "using <= is inefficient, try using < instead.", SparseEfficiencyWarning)
+            elif op(0, other):
+                warn(bad_scalar_msg, SparseEfficiencyWarning)
                 other_arr = np.empty(self.shape)
                 other_arr.fill(other)
                 other_arr = self.__class__(other_arr)
-                return self._binopt(other_arr, '_le_')
+                return self._binopt(other_arr, op_name)
             else:
                 # Casting as other's type avoids corner case like
                 # ``spmatrix(True) < -2'' from being True.
+                # TODO: avoid two copies
                 other_arr = self.astype(type(other)).copy()
                 other_arr.data[:] = other
-                return self._binopt(other_arr, '_le_')
+                return self._binopt(other_arr, op_name)
         # Dense other.
         elif isdense(other):
-            return self.todense() <= other
+            return op(self.todense(), other)
         # Sparse other.
         elif isspmatrix(other):
             #TODO sparse broadcasting
@@ -332,47 +277,39 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise ValueError("inconsistent shapes")
             elif self.format != other.format:
                 other = other.asformat(self.format)
+            if op_name not in ('_ge_', '_le_'):
+                return self._binopt(other, op_name)
+
             warn("Comparing sparse matrices using >= and <= is inefficient, "
                  "using <, >, or !=, instead.", SparseEfficiencyWarning)
             all_true = self.__class__(np.ones(self.shape))
-            res = self._binopt(other, '_gt_')
+            res = self._binopt(other, '_gt_' if op_name == '_le_' else '_lt_')
             return all_true - res
         else:
             raise ValueError("Operands could not be compared.")
 
+    def __lt__(self, other):
+        return self._inequality(other, operator.lt, '_lt_',
+                                "Comparing a sparse matrix with a scalar "
+                                "greater than zero using < is inefficient, "
+                                "try using >= instead.")
+
+    def __gt__(self, other):
+        return self._inequality(other, operator.gt, '_gt_',
+                                "Comparing a sparse matrix with a scalar "
+                                "less than zero using > is inefficient, "
+                                "try using <= instead.")
+
+    def __le__(self, other):
+        return self._inequality(other, operator.le, '_le_',
+                                "Comparing a sparse matrix with a scalar "
+                                "greater than zero using <= is inefficient, "
+                                "try using > instead.")
     def __ge__(self,other):
-        # Scalar other.
-        if isscalarlike(other):
-            if 0 == other:
-                raise NotImplementedError(" >= and <= don't work with 0.")
-            elif 0 >= other:
-                warn("Comparing a sparse matrix with a scalar greater than zero"
-                     " using >= is inefficient, try using < instead.", SparseEfficiencyWarning)
-                other_arr = np.empty(self.shape)
-                other_arr.fill(other)
-                other_arr = self.__class__(other_arr)
-                return self._binopt(other_arr, '_ge_')
-            else:
-                other_arr = self.astype(type(other)).copy()
-                other_arr.data[:] = other
-                return self._binopt(other_arr, '_ge_')
-        # Dense other.
-        elif isdense(other):
-            return self.todense() >= other
-        # Sparse other.
-        elif isspmatrix(other):
-            #TODO sparse broadcasting
-            if self.shape != other.shape:
-                raise ValueError("inconsistent shapes")
-            elif self.format != other.format:
-                other = other.asformat(self.format)
-            warn("Comparing sparse matrices using >= and <= is inefficient, "
-                 "try using <, >, or !=, instead.", SparseEfficiencyWarning)
-            all_true = self.__class__(np.ones(self.shape))
-            res = self._binopt(other, '_lt_')
-            return all_true - res
-        else:
-            raise ValueError("Operands could not be compared.")
+        return self._inequality(other, operator.ge, '_ge_',
+                                "Comparing a sparse matrix with a scalar "
+                                "less than zero using >= is inefficient, "
+                                "try using < instead.")
 
     #################################
     # Arithmatic operator overrides #
