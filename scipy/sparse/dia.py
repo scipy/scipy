@@ -191,8 +191,9 @@ class dia_matrix(_data_matrix):
         if k in self.offsets:
             self.data[self.offsets == k, :] = values
         else:
-            self.offsets = np.append(self.offsets, (k,))
-            self.data = np.vstack((self.data, np.empty((1,N))))
+            self.offsets = np.append(self.offsets, self.offsets.dtype.type(k))
+            self.data = np.vstack((self.data,
+                                   np.empty((1, N), dtype=self.data.dtype)))
             self.data[-1, :] = values
 
     setdiag.__doc__ = _data_matrix.setdiag.__doc__

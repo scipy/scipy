@@ -3323,6 +3323,18 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
     def test_iterator(self):
         pass
 
+    @with_64bit_maxval_limit(3)
+    def test_setdiag_dtype(self):
+        m = dia_matrix(np.eye(3))
+        assert_equal(m.offsets.dtype, np.int32)
+        m.setdiag((3,), k=2)
+        assert_equal(m.offsets.dtype, np.int32)
+
+        m = dia_matrix(np.eye(4))
+        assert_equal(m.offsets.dtype, np.int64)
+        m.setdiag((3,), k=3)
+        assert_equal(m.offsets.dtype, np.int64)
+
 
 class TestBSR(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
