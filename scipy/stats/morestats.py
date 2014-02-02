@@ -1250,7 +1250,7 @@ def anderson_ksamp(samples, discrete=False):
 
     Notes
     -----
-    [1]_ Define three versions of the k-sample Anderson-Darling test:
+    [1]_ Defines three versions of the k-sample Anderson-Darling test:
     one for continous distributions and two for discrete
     distributions, in which ties between samples may occur. The latter
     variant of the test is also applicable to continuous data. By
