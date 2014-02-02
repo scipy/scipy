@@ -597,14 +597,73 @@ class _TestCommon:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
 
     def test_setdiag(self):
+        def dense_setdiag(a, v, k):
+            v = np.asarray(v)
+            if k >= 0:
+                n = min(a.shape[0], a.shape[1] - k)
+                if v.ndim != 0:
+                    n = min(n, len(v))
+                    v = v[:n]
+                i = np.arange(0, n)
+                j = np.arange(k, k + n)
+                a[i,j] = v
+            elif k < 0:
+                dense_setdiag(a.T, v, -k)
+                return
+
+        def check_setdiag(a, b, k):
+            # Check setting diagonal using a scalar, a vector of
+            # correct length, and too short or too long vectors
+            for r in [-1, len(np.diag(a, k)), 2, 30]:
+                if r < 0:
+                    v = int(np.random.randint(1, 20, size=1))
+                else:
+                    v = np.random.randint(1, 20, size=r)
+
+                dense_setdiag(a, v, k)
+                b.setdiag(v, k)
+
+                # check that dense_setdiag worked
+                d = np.diag(a, k)
+                if np.asarray(v).ndim == 0:
+                    assert_array_equal(d, v, err_msg=msg + " %d" % (r,))
+                else:
+                    n = min(len(d), len(v))
+                    assert_array_equal(d[:n], v[:n], err_msg=msg + " %d" % (r,))
+                # check that sparse setdiag worked
+                assert_array_equal(b.A, a, err_msg=msg + " %d" % (r,))
+
+        # comprehensive test
+        np.random.seed(1234)
+        for dtype in [np.int8, np.float64]:
+            for m in [0, 1, 3, 10]:
+                for n in [0, 1, 3, 10]:
+                    for k in range(-m+1, n-1):
+                        msg = repr((dtype, m, n, k))
+                        a = np.zeros((m, n), dtype=dtype)
+                        b = self.spmatrix((m, n), dtype=dtype)
+
+                        check_setdiag(a, b, k)
+
+                        # check overwriting etc
+                        for k2 in np.random.randint(-m+1, n-1, size=12):
+                            check_setdiag(a, b, k2)
+
+
+        # simpler test case
         m = self.spmatrix(np.eye(3))
         values = [3, 2, 1]
-        # it is out of limits
         assert_raises(ValueError, m.setdiag, values, k=4)
         m.setdiag(values)
         assert_array_equal(m.diagonal(), values)
-
-        # test setting offdiagonals (k!=0)
+        m.setdiag(values, k=1)
+        assert_array_equal(m.A, np.array([[3, 3, 0],
+                                          [0, 2, 2],
+                                          [0, 0, 1]]))
+        m.setdiag(values, k=-2)
+        assert_array_equal(m.A, np.array([[3, 3, 0],
+                                          [0, 2, 2],
+                                          [3, 0, 1]]))
         m.setdiag((9,), k=2)
         assert_array_equal(m.A[0,2], 9)
         m.setdiag((9,), k=-2)
