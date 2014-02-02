@@ -1259,9 +1259,9 @@ def anderson_ksamp(samples, midrank=True):
     midrank empirical distribution function. This test is applicable
     to continuous and discrete data. If midrank is set to False, the
     right side empirical distribution is used for a test for discrete
-    data. According to [1]_, the two test statistics differ only
-    slightly if a few collisions due to round-off errors occur in the
-    test not adjusted for ties between samples.
+    data. According to [1]_, the two discrete test statistics differ
+    only slightly if a few collisions due to round-off errors occur in
+    the test not adjusted for ties between samples.
 
     .. versionadded:: 0.14.0
 
