@@ -117,7 +117,7 @@ class _TestCommon:
             assert_(self.spmatrix([1]))
             assert_(not self.spmatrix([0]))
         for dtype in self.checked_dtypes:
-            fails = self.__class__ == TestDOK
+            fails = isinstance(self, TestDOK)
             msg = "Cannot create a rank <= 2 DOK matrix."
             yield dec.skipif(fails, msg)(check), dtype
 
@@ -158,8 +158,7 @@ class _TestCommon:
             assert_array_equal(dat == 1, (datsp == 1).todense())
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-        fails = not (self.__class__ == TestBSR or self.__class__ == TestCSC or
-                     self.__class__ == TestCSR)
+        fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
         for dtype in self.checked_dtypes:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=np.ComplexWarning)
@@ -194,8 +193,7 @@ class _TestCommon:
             assert_array_equal(1 != dat, (1 != datsp).todense())
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-        fails = not (self.__class__ == TestBSR or self.__class__ == TestCSC or
-                     self.__class__ == TestCSR)
+        fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
         for dtype in self.checked_dtypes:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=np.ComplexWarning)
@@ -259,8 +257,7 @@ class _TestCommon:
             assert_array_equal(dat < datsp2, datsp < dat2)
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-        fails = not (self.__class__ == TestBSR or self.__class__ == TestCSC or
-                     self.__class__ == TestCSR)
+        fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
         for dtype in self.checked_dtypes:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=np.ComplexWarning)
@@ -330,8 +327,7 @@ class _TestCommon:
             assert_array_equal(dat > datsp2, datsp > dat2)
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-        fails = not (self.__class__ == TestBSR or self.__class__ == TestCSC or
-                     self.__class__ == TestCSR)
+        fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
         for dtype in self.checked_dtypes:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=np.ComplexWarning)
@@ -399,8 +395,7 @@ class _TestCommon:
             assert_array_equal(dat <= datsp2, datsp <= dat2)
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-        fails = not (self.__class__ == TestBSR or self.__class__ == TestCSC or
-                     self.__class__ == TestCSR)
+        fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
         for dtype in self.checked_dtypes:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=np.ComplexWarning)
@@ -469,8 +464,7 @@ class _TestCommon:
             assert_array_equal(dat >= datsp2, datsp >= dat2)
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-        fails = not (self.__class__ == TestBSR or self.__class__ == TestCSC or
-                     self.__class__ == TestCSR)
+        fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
         for dtype in self.checked_dtypes:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=np.ComplexWarning)
@@ -841,8 +835,7 @@ class _TestCommon:
 
         for dtype in self.checked_dtypes:
             fails = ((dtype == np.typeDict['int']) and
-                    (self.__class__ == TestLIL or
-                     self.__class__ == TestDOK))
+                     isinstance(self, (TestLIL, TestDOK)))
             msg = "LIL and DOK type's __rmul__ method has problems with int data."
             yield dec.knownfailureif(fails, msg)(check), dtype
 
