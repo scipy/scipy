@@ -3462,6 +3462,30 @@ class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
     def test_expm(self):
         pass
 
+    @dec.knownfailureif(True, 'inequalities require sum_duplicates, not implemented for BSR')
+    def test_eq(self):
+        pass
+
+    @dec.knownfailureif(True, 'inequalities require sum_duplicates, not implemented for BSR')
+    def test_ne(self):
+        pass
+
+    @dec.knownfailureif(True, 'inequalities require sum_duplicates, not implemented for BSR')
+    def test_gt(self):
+        pass
+
+    @dec.knownfailureif(True, 'inequalities require sum_duplicates, not implemented for BSR')
+    def test_lt(self):
+        pass
+
+    @dec.knownfailureif(True, 'inequalities require sum_duplicates, not implemented for BSR')
+    def test_ge(self):
+        pass
+
+    @dec.knownfailureif(True, 'inequalities require sum_duplicates, not implemented for BSR')
+    def test_le(self):
+        pass
+
 
 class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
     def _arg1_for_noncanonical(self, M):

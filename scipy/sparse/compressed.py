@@ -190,11 +190,27 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     # Boolean comparisons #
     #######################
 
+    def _copy_with_const(self, const):
+        """Copy data, with all nonzeros replaced with constant for binopt
+
+        Adopts the dtype of const to avoid removing sign or magnitude before
+        comparison.
+
+        Warning: does not make a copy of indices and indptr
+        """
+        try:
+            self.sum_duplicates()
+        except NotImplementedError:
+            pass
+        const = np.asarray(const)
+        data = self.data.astype(const.dtype)
+        data[:] = const
+        return self.__class__((data, self.indices, self.indptr), shape=self.shape)
+
     def __eq__(self, other):
         # Scalar other.
         if isscalarlike(other):
-            other_arr = self.copy()
-            other_arr.data[:] = other
+            other_arr = self._copy_with_const(other)
             res = self._binopt(other_arr,'_ne_')
             if other == 0:
                 warn("Comparing a sparse matrix with 0 using == is inefficient"
@@ -232,8 +248,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 res = (self == other)
                 return all_true - res
             else:
-                other_arr = self.copy()
-                other_arr.data[:] = other
+                other_arr = self._copy_with_const(other)
                 return self._binopt(other_arr,'_ne_')
         # Dense other.
         elif isdense(other):
@@ -261,11 +276,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 other_arr = self.__class__(other_arr)
                 return self._binopt(other_arr, op_name)
             else:
-                # Casting as other's type avoids corner case like
-                # ``spmatrix(True) < -2'' from being True.
-                # TODO: avoid two copies
-                other_arr = self.astype(type(other)).copy()
-                other_arr.data[:] = other
+                other_arr = self._copy_with_const(other)
                 return self._binopt(other_arr, op_name)
         # Dense other.
         elif isdense(other):
