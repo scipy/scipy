@@ -94,7 +94,7 @@ class TestAndersonKSamp(TestCase):
         t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
         t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
         Tk, tm, p = assert_warns(UserWarning, stats.anderson_ksamp, (t1, t2,
-                                 t3, t4), discrete=True)
+                                 t3, t4), midrank=False)
         assert_almost_equal(Tk, 4.449, 3)
         assert_array_almost_equal([0.4985, 1.3237, 1.9158, 2.4930, 3.2459],
                                   tm, 4)
@@ -110,7 +110,7 @@ class TestAndersonKSamp(TestCase):
         t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
         t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
         Tk, tm, p = assert_warns(UserWarning, stats.anderson_ksamp, (t1, t2,
-                                 t3, t4), discrete=False)
+                                 t3, t4), midrank=True)
         assert_almost_equal(Tk, 4.480, 3)
         assert_array_almost_equal([0.4985, 1.3237, 1.9158, 2.4930, 3.2459],
                                   tm, 4)
@@ -141,7 +141,7 @@ class TestAndersonKSamp(TestCase):
                61, 34]
         Tk, tm, p = assert_warns(UserWarning, stats.anderson_ksamp,
                                  (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10,
-                                  t11, t12, t13, t14), discrete=True)
+                                  t11, t12, t13, t14), midrank=False)
         assert_almost_equal(Tk, 3.288, 3)
         assert_array_almost_equal([0.5990, 1.3269, 1.8052, 2.2486, 2.8009],
                                   tm, 4)
@@ -171,7 +171,7 @@ class TestAndersonKSamp(TestCase):
                61, 34]
         Tk, tm, p = assert_warns(UserWarning, stats.anderson_ksamp,
                                  (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10,
-                                  t11, t12, t13, t14), discrete=False)
+                                  t11, t12, t13, t14), midrank=True)
         assert_almost_equal(Tk, 3.294, 3)
         assert_array_almost_equal([0.5990, 1.3269, 1.8052, 2.2486, 2.8009],
                                   tm, 4)
