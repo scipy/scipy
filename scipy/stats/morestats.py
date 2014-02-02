@@ -1302,12 +1302,10 @@ def anderson_ksamp(samples, discrete=False):
         raise ValueError("anderson_ksamp needs at least two samples")
 
     samples = list(map(np.asarray, samples))
-    Z = np.hstack(samples)
+    Z = np.sort(np.hstack(samples))
     N = Z.size
-    Z.sort()
     Zstar = np.unique(Z)
-    L = Zstar.size
-    if not L > 1:
+    if Zstar.size < 2:
         raise ValueError("anderson_ksamp needs more than one distinct "
                          "observation")
 
