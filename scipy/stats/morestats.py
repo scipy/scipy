@@ -1264,9 +1264,9 @@ def anderson_ksamp(samples, discrete=False):
 
     References
     ----------
-    .. [1] Scholz, F. W & Stephens, M. A. (1987), K-Sample Anderson-Darling
-           Tests, Journal of the American Statistical Association, Vol. 82,
-           pp. 918-924.
+    .. [1] Scholz, F. W and Stephens, M. A. (1987), K-Sample
+           Anderson-Darling Tests, Journal of the American Statistical
+           Association, Vol. 82, pp. 918-924.
 
     Examples:
     ---------
