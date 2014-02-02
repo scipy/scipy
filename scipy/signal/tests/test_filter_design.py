@@ -263,10 +263,10 @@ class TestButtord(TestCase):
         b, a = butter(N, Wn, 'bandpass', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp,
+        assert_array_less(-rp - 0.1,
                           dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
         assert_array_less(dB(h[np.logical_or( w <= ws[0], ws[1] <= w)]),
-                          -rs)
+                          -rs + 0.1)
 
         assert_equal(N, 18)
         assert_allclose(Wn, [1.9998742411409134e-01, 5.0002139595676276e-01],
@@ -288,7 +288,7 @@ class TestButtord(TestCase):
 
         assert_equal(N, 20)
         assert_allclose(Wn, [1.4759432329294042e-01, 5.9997365985276407e-01],
-                        rtol=1e-15)
+                        rtol=1e-4)
 
     def test_analog(self):
         wp = 200
