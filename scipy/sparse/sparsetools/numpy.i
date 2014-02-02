@@ -551,6 +551,8 @@ INSTANTIATE_TYPEMAPS(npy_cdouble_wrapper,     NPY_CDOUBLE    )
 INSTANTIATE_TYPEMAPS(npy_clongdouble_wrapper, NPY_CLONGDOUBLE)
 INSTANTIATE_TYPEMAPS(PyObject,                NPY_OBJECT     )
 
+INSTANTIATE_TYPEMAPS(npy_int32,               NPY_INT32      )
+INSTANTIATE_TYPEMAPS(npy_int64,               NPY_INT64      )
 
 
 #undef TYPEMAP_IN1

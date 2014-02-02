@@ -13,7 +13,7 @@ import numpy as np
 from .data import _data_matrix, _minmax_mixin
 from .compressed import _cs_matrix
 from .base import isspmatrix, _formats
-from .sputils import isshape, getdtype, to_native, upcast
+from .sputils import isshape, getdtype, to_native, upcast, get_index_dtype
 from . import sparsetools
 from .sparsetools import bsr_matvec, bsr_matvecs, csr_matmat_pass1, \
                         bsr_matmat_pass2, bsr_transpose, bsr_sort_indices
@@ -138,13 +138,14 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                         raise ValueError('invalid blocksize=%s' % blocksize)
                     blocksize = tuple(blocksize)
                 self.data = np.zeros((0,) + blocksize, getdtype(dtype, default=float))
-                self.indices = np.zeros(0, dtype=np.intc)
 
                 R,C = blocksize
                 if (M % R) != 0 or (N % C) != 0:
                     raise ValueError('shape must be multiple of blocksize')
 
-                self.indptr = np.zeros(M//R + 1, dtype=np.intc)
+                idx_dtype = get_index_dtype(maxval=N//C)
+                self.indices = np.zeros(0, dtype=idx_dtype)
+                self.indptr = np.zeros(M//R + 1, dtype=idx_dtype)
 
             elif len(arg1) == 2:
                 # (data,(row,col)) format
@@ -216,9 +217,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             warn("indices array has non-integer dtype (%s)"
                     % self.indices.dtype.name)
 
-        # only support 32-bit ints for now
-        self.indptr = np.asarray(self.indptr, np.intc)
-        self.indices = np.asarray(self.indices, np.intc)
+        idx_dtype = get_index_dtype((self.indices, self.indptr))
+        self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
+        self.indices = np.asarray(self.indices, dtype=idx_dtype)
         self.data = to_native(self.data)
 
         # check array shapes
@@ -337,8 +338,6 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         M, K1 = self.shape
         K2, N = other.shape
 
-        indptr = np.empty_like(self.indptr)
-
         R,n = self.blocksize
 
         # convert to this format
@@ -354,19 +353,37 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         else:
             other = other.tobsr(blocksize=(n,C))
 
+        idx_dtype = get_index_dtype((self.indptr, self.indices,
+                                     other.indptr, other.indices),
+                                    maxval=(M//R)*(N//C))
+        indptr = np.empty(self.indptr.shape, dtype=idx_dtype)
+
         csr_matmat_pass1(M//R, N//C,
-                self.indptr, self.indices,
-                other.indptr, other.indices,
-                indptr)
+                         self.indptr.astype(idx_dtype),
+                         self.indices.astype(idx_dtype),
+                         other.indptr.astype(idx_dtype),
+                         other.indices.astype(idx_dtype),
+                         indptr)
 
         bnnz = indptr[-1]
-        indices = np.empty(bnnz, dtype=np.intc)
+
+        idx_dtype = get_index_dtype((self.indptr, self.indices,
+                                     other.indptr, other.indices),
+                                    maxval=bnnz)
+        indptr = indptr.astype(idx_dtype)
+        indices = np.empty(bnnz, dtype=idx_dtype)
         data = np.empty(R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
 
         bsr_matmat_pass2(M//R, N//C, R, C, n,
-                self.indptr, self.indices, np.ravel(self.data),
-                other.indptr, other.indices, np.ravel(other.data),
-                indptr, indices, data)
+                         self.indptr.astype(idx_dtype),
+                         self.indices.astype(idx_dtype),
+                         np.ravel(self.data),
+                         other.indptr.astype(idx_dtype),
+                         other.indices.astype(idx_dtype),
+                         np.ravel(other.data),
+                         indptr,
+                         indices,
+                         data)
 
         data = data.reshape(-1,R,C)
 
@@ -403,7 +420,15 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         M,N = self.shape
         R,C = self.blocksize
 
-        row = (R * np.arange(M//R)).repeat(np.diff(self.indptr))
+        indptr_diff = np.diff(self.indptr)
+        if indptr_diff.dtype.itemsize > np.dtype(np.intp).itemsize:
+            # Check for potential overflow
+            indptr_diff_limited = indptr_diff.astype(np.intp)
+            if np.any(indptr_diff_limited != indptr_diff):
+                raise ValueError("Matrix too big to convert")
+            indptr_diff = indptr_diff_limited
+
+        row = (R * np.arange(M//R)).repeat(indptr_diff)
         row = row.repeat(R*C).reshape(-1,R,C)
         row += np.tile(np.arange(R).reshape(-1,1), (1,C))
         row = row.reshape(-1)
@@ -515,8 +540,11 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         R,C = self.blocksize
 
         max_bnnz = len(self.data) + len(other.data)
-        indptr = np.empty_like(self.indptr)
-        indices = np.empty(max_bnnz, dtype=np.intc)
+        idx_dtype = get_index_dtype((self.indptr, self.indices,
+                                     other.indptr, other.indices),
+                                    maxval=max_bnnz)
+        indptr = np.empty(self.indptr.shape, dtype=idx_dtype)
+        indices = np.empty(max_bnnz, dtype=idx_dtype)
 
         bool_ops = ['_ne_', '_lt_', '_gt_', '_le_', '_ge_']
         if op in bool_ops:
@@ -525,9 +553,15 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             data = np.empty(R*C*max_bnnz, dtype=upcast(self.dtype,other.dtype))
 
         fn(self.shape[0]//R, self.shape[1]//C, R, C,
-                self.indptr, self.indices, np.ravel(self.data),
-                other.indptr, other.indices, np.ravel(other.data),
-                indptr, indices, data)
+           self.indptr.astype(idx_dtype),
+           self.indices.astype(idx_dtype),
+           np.ravel(self.data),
+           other.indptr.astype(idx_dtype),
+           other.indices.astype(idx_dtype),
+           np.ravel(other.data),
+           indptr,
+           indices,
+           data)
 
         actual_bnnz = indptr[-1]
         indices = indices[:actual_bnnz]
