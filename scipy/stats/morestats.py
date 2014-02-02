@@ -1131,9 +1131,9 @@ def anderson(x,dist='norm'):
     return A2, critical, sig
 
 
-def _anderson_ksamp_both(samples, Z, Zstar, k, n, N):
+def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
     """
-    Compute A2akN equation 7 of Scholz & Stephens.
+    Compute A2akN equation 7 of Scholz and Stephens.
 
     Parameters
     ----------
@@ -1173,7 +1173,7 @@ def _anderson_ksamp_both(samples, Z, Zstar, k, n, N):
     return A2akN
 
 
-def _anderson_ksamp_discrete(samples, Z, Zstar, k, n, N):
+def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
     """
     Compute A2akN equation 6 of Scholz & Stephens.
 
@@ -1210,7 +1210,7 @@ def _anderson_ksamp_discrete(samples, Z, Zstar, k, n, N):
     return A2kN
 
 
-def anderson_ksamp(samples, discrete=False):
+def anderson_ksamp(samples, midrank=True):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -1223,9 +1223,10 @@ def anderson_ksamp(samples, discrete=False):
     ----------
     samples : array_like
         Array of sample data in arrays.
-    discrete : bool, optional
-        Type of Anderson-Darling test which is computed. Default is a test
-        applicable to discrete and continous distributions.
+    midrank : bool, optional
+        Type of Anderson-Darling test which is computed. Default is
+        the midrank test applicable to continuous and discrete
+        populations.
 
     Returns
     -------
@@ -1252,14 +1253,15 @@ def anderson_ksamp(samples, discrete=False):
     Notes
     -----
     [1]_ Defines three versions of the k-sample Anderson-Darling test:
-    one for continous distributions and two for discrete
-    distributions, in which ties between samples may occur. The latter
-    variant of the test is also applicable to continuous data. By
-    default, this routine computes the test for continuous and
-    discrete data. If discrete is set to True, the test for discrete
-    data is computed. According to [1]_, the two test statistics
-    differ only slightly if a few collisions due to round-off errors
-    occur in the test not adjusted for ties between samples.
+    one for continuous distributions and two for discrete
+    distributions, in which ties between samples may occur. The
+    default of this routine is to compute the version based on the
+    midrank empirical distribution function. This test is applicable
+    to continuous and discrete data. If midrank is set to False, the
+    right side empirical distribution is used for a test for discrete
+    data. According to [1]_, the two test statistics differ only
+    slightly if a few collisions due to round-off errors occur in the
+    test not adjusted for ties between samples.
 
     .. versionadded:: 0.14.0
 
@@ -1314,10 +1316,10 @@ def anderson_ksamp(samples, discrete=False):
         raise ValueError("anderson_ksamp encountered sample without "
                          "observations")
 
-    if discrete:
-        A2kN = _anderson_ksamp_discrete(samples, Z, Zstar, k, n, N)
+    if midrank:
+        A2kN = _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N)
     else:
-        A2kN = _anderson_ksamp_both(samples, Z, Zstar, k, n, N)
+        A2kN = _anderson_ksamp_right(samples, Z, Zstar, k, n, N)
 
     h = (1. / arange(1, N)).sum()
     H = (1. / n).sum()
