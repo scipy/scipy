@@ -1153,7 +1153,7 @@ def _anderson_ksamp_both(samples, Z, Zstar, k, n, N):
     Returns
     -------
     A2aKN : float
-        The A2aKN statistics of Scholz & Stephens
+        The A2aKN statistics of Scholz and Stephens 1987
     """
 
     A2akN = 0.
