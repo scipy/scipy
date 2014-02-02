@@ -4,12 +4,12 @@ from decimal import Decimal
 
 from numpy.testing import (TestCase, run_module_suite, assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    assert_raises, assert_allclose, assert_)
+    assert_raises, assert_allclose, assert_, dec)
 
 import scipy.signal as signal
 from scipy.signal import (correlate, convolve, convolve2d, fftconvolve,
      hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, tf2zpk,
-     invres, vectorstrength)
+     invres, vectorstrength, signaltools)
 
 
 from numpy import array, arange
@@ -231,6 +231,51 @@ class TestFFTConvolve(TestCase):
         c = fftconvolve(a, b, 'full')
         d = np.convolve(a, b, 'full')
         assert_(np.allclose(c, d, rtol=1e-10))
+
+    @dec.slow
+    def test_many_sizes(self):
+        np.random.seed(1234)
+
+        def ns():
+            for j in range(1, 100):
+                yield j 
+            for j in range(1000, 1500):
+                yield j
+            for k in range(50):
+                yield np.random.randint(1001, 10000)
+
+        for n in ns():
+            msg = 'n=%d' % (n,)
+            a = np.random.rand(n) + 1j*np.random.rand(n)
+            b = np.random.rand(n) + 1j*np.random.rand(n)
+            c = fftconvolve(a, b, 'full')
+            d = np.convolve(a, b, 'full')
+            assert_allclose(c, d, atol=1e-10, err_msg=msg)
+
+    def test_next_regular(self):
+        np.random.seed(1234)
+
+        def ns():
+            for j in range(1, 1000):
+                yield j
+            yield 2**5 * 3**5 * 4**5 + 1
+
+        for n in ns():
+            m = signaltools._next_regular(n)
+            msg = "n=%d, m=%d" % (n, m)
+
+            assert_(m >= n, msg)
+
+            # check regularity
+            k = m
+            for d in [2, 3, 5]:
+                while True:
+                    a, b = divmod(k, d)
+                    if b == 0:
+                        k = a
+                    else:
+                        break
+            assert_equal(k, 1, err_msg=msg)
 
 
 class TestMedFilt(TestCase):
