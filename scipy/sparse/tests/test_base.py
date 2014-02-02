@@ -601,6 +601,20 @@ class _TestCommon:
         for m in mats:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
 
+    def test_setdiag(self):
+        m = self.spmatrix(np.eye(3))
+        values = [3, 2, 1]
+        # it is out of limits
+        assert_raises(ValueError, m.setdiag, values, k=4)
+        m.setdiag(values)
+        assert_array_equal(m.diagonal(), values)
+
+        # test setting offdiagonals (k!=0)
+        m.setdiag((9,), k=2)
+        assert_array_equal(m.A[0,2], 9)
+        m.setdiag((9,), k=-2)
+        assert_array_equal(m.A[2,0], 9)
+
     def test_nonzero(self):
         A = array([[1, 0, 1],[0, 1, 1],[0, 0, 1]])
         Asp = self.spmatrix(A)
@@ -3285,6 +3299,10 @@ class TestCOO(sparse_test_class(getset=False,
         dia = coo_matrix(zeros).todia()
         assert_array_equal(dia.A, zeros)
 
+    @dec.knownfailureif(True, "known deficiency in COO")
+    def test_setdiag(self):
+        pass
+
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False,
@@ -3304,6 +3322,18 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
     # DIA does not have a __getitem__ to support iteration
     def test_iterator(self):
         pass
+
+    @with_64bit_maxval_limit(3)
+    def test_setdiag_dtype(self):
+        m = dia_matrix(np.eye(3))
+        assert_equal(m.offsets.dtype, np.int32)
+        m.setdiag((3,), k=2)
+        assert_equal(m.offsets.dtype, np.int32)
+
+        m = dia_matrix(np.eye(4))
+        assert_equal(m.offsets.dtype, np.int64)
+        m.setdiag((3,), k=3)
+        assert_equal(m.offsets.dtype, np.int64)
 
 
 class TestBSR(sparse_test_class(getset=False,
@@ -3383,6 +3413,10 @@ class TestBSR(sparse_test_class(getset=False,
 
     @dec.knownfailureif(True, "BSR not implemented")
     def test_iterator(self):
+        pass
+
+    @dec.knownfailureif(True, "known deficiency in BSR")
+    def test_setdiag(self):
         pass
 
 
