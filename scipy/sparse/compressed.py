@@ -911,11 +911,41 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         self.prune()  # nnz may have changed
 
+    def __get_is_canonical(self):
+        """Determine whether the matrix has sorted indices and no duplicates
+
+        Also checks that the size of indices is indptr[-1]
+
+        Returns
+            - True: if the above apply
+            - False: otherwise
+
+        """
+
+        # first check to see if result was cached
+        if not getattr(self, '__has_sorted_indices', True):
+            # not sorted => not canonical
+            self.__has_canonical_format = False
+        elif not hasattr(self,'__has_canonical_format'):
+            fn = sparsetools.csr_has_canonical_format
+            self.__has_canonical_format = \
+                    fn(len(self.indptr) - 1, self.indptr, self.indices)
+            if self.__has_canonical_format:
+                self.has_sorted_indices = True
+        return self.__has_canonical_format
+
+    def __set_is_canonical(self, val):
+        self.__is_canonical = bool(val)
+
+    is_canonical = property(fget=__get_is_canonical, fset=__set_is_canonical)
+
     def sum_duplicates(self):
         """Eliminate duplicate matrix entries by adding them together
 
         The is an *in place* operation
         """
+        if self.is_canonical:
+            return
         self.sort_indices()
 
         fn = sparsetools.csr_sum_duplicates
@@ -923,6 +953,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         fn(M, N, self.indptr, self.indices, self.data)
 
         self.prune()  # nnz may have changed
+        self.is_canonical = True
 
     def __get_sorted(self):
         """Determine whether the matrix has sorted indices
