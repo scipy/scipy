@@ -1138,22 +1138,22 @@ def _anderson_ksamp_both(samples, Z, Zstar, k, n, N):
     Parameters
     ----------
     samples : array_like
-        array of sample arrays
+        Array of sample arrays.
     Z : array_like
-        sorted array of all observations
+        Sorted array of all observations.
     Zstar : array_like
-        sorted array of unique observations
+        Sorted array of unique observations.
     k : int
-        number of samples
+        Number of samples.
     n : array_like
-        number of observations in each sample
+        Number of observations in each sample.
     N : int
-        total number of observations
+        Total number of observations.
 
     Returns
     -------
     A2aKN : float
-        The A2aKN statistics of Scholz and Stephens 1987
+        The A2aKN statistics of Scholz and Stephens 1987.
     """
 
     A2akN = 0.
@@ -1180,22 +1180,22 @@ def _anderson_ksamp_discrete(samples, Z, Zstar, k, n, N):
     Parameters
     ----------
     samples : array_like
-        array of sample arrays
+        Array of sample arrays.
     Z : array_like
-        sorted array of all observations
+        Sorted array of all observations.
     Zstar : array_like
-        sorted array of unique observations
+        Sorted array of unique observations.
     k : int
-        number of samples
+        Number of samples.
     n : array_like
-        number of observations in each sample
+        Number of observations in each sample.
     N : int
-        total number of observations
+        Total number of observations.
 
     Returns
     -------
     A2KN : float
-        The A2KN statistics of Scholz & Stephens
+        The A2KN statistics of Scholz and Stephens 1987.
     """
 
     A2kN = 0.
@@ -1222,21 +1222,21 @@ def anderson_ksamp(samples, discrete=False):
     Parameters
     ----------
     samples : array_like
-        array of sample data in arrays
+        Array of sample data in arrays.
     discrete : bool, optional
-        type of Anderson-Darling test which is computed. Default is a test
+        Type of Anderson-Darling test which is computed. Default is a test
         applicable to discrete and continous distributions.
 
     Returns
     -------
     Tk : float
         Normalized k-sample Anderson-Darling test statistic, not adjusted for
-        ties
+        ties.
     tm : array
-        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%
+        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%.
     p : float
         An approximate significance level at which the null hypothesis for the
-        provided samples can be rejected
+        provided samples can be rejected.
 
     Raises
     ------
