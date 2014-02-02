@@ -1335,6 +1335,8 @@ def anderson_ksamp(samples, discrete=False):
     m = k - 1
     Tk = (A2kN - m) / math.sqrt(sigmasq)
 
+    # The b_i values are the interpolation coefficients from Table 2
+    # of Scholz and Stephens 1987
     b0 = np.array([0.675, 1.281, 1.645, 1.96, 2.326])
     b1 = np.array([-0.245, 0.25, 0.678, 1.149, 1.822])
     b2 = np.array([-0.105, -0.305, -0.362, -0.391, -0.396])
