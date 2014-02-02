@@ -288,7 +288,7 @@ class TestButtord(TestCase):
 
         assert_equal(N, 20)
         assert_allclose(Wn, [1.4759432329294042e-01, 5.9997365985276407e-01],
-                        rtol=1e-4)
+                        rtol=1e-6)
 
     def test_analog(self):
         wp = 200
