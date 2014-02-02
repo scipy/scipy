@@ -1138,31 +1138,33 @@ def _anderson_ksamp_both(samples, Z, Zstar, k, n, N):
     Parameters
     ----------
     samples : array_like
-        array of sample arrays
+        Array of sample arrays.
     Z : array_like
-        sorted array of all observations
+        Sorted array of all observations.
     Zstar : array_like
-        sorted array of unique observations
+        Sorted array of unique observations.
     k : int
-        number of samples
+        Number of samples.
     n : array_like
-        number of observations in each sample
+        Number of observations in each sample.
     N : int
-        total number of observations
+        Total number of observations.
 
     Returns
     -------
     A2aKN : float
-        The A2aKN statistics of Scholz & Stephens
+        The A2aKN statistics of Scholz and Stephens 1987.
     """
 
     A2akN = 0.
-    lj = Z.searchsorted(Zstar, 'right') - Z.searchsorted(Zstar, 'left')
+    Z_ssorted_left = Z.searchsorted(Zstar, 'left')
+    lj = Z.searchsorted(Zstar, 'right') - Z_ssorted_left
     Bj = Z.searchsorted(Zstar) + lj / 2.
     for i in arange(0, k):
         s = np.sort(samples[i])
-        Mij = s.searchsorted(Zstar, side='right').astype(np.float)
-        fij = s.searchsorted(Zstar, 'right') - s.searchsorted(Zstar, 'left')
+        s_ssorted_right = s.searchsorted(Zstar, side='right')
+        Mij = s_ssorted_right.astype(np.float)
+        fij = s_ssorted_right - s.searchsorted(Zstar, 'left')
         Mij -= fij / 2.
         inner = lj / float(N) * (N * Mij - Bj * n[i])**2 / \
             (Bj * (N - Bj) - N * lj / 4.)
@@ -1178,22 +1180,22 @@ def _anderson_ksamp_discrete(samples, Z, Zstar, k, n, N):
     Parameters
     ----------
     samples : array_like
-        array of sample arrays
+        Array of sample arrays.
     Z : array_like
-        sorted array of all observations
+        Sorted array of all observations.
     Zstar : array_like
-        sorted array of unique observations
+        Sorted array of unique observations.
     k : int
-        number of samples
+        Number of samples.
     n : array_like
-        number of observations in each sample
+        Number of observations in each sample.
     N : int
-        total number of observations
+        Total number of observations.
 
     Returns
     -------
     A2KN : float
-        The A2KN statistics of Scholz & Stephens
+        The A2KN statistics of Scholz and Stephens 1987.
     """
 
     A2kN = 0.
@@ -1220,22 +1222,21 @@ def anderson_ksamp(samples, discrete=False):
     Parameters
     ----------
     samples : array_like
-        array of sample data in arrays
-
+        Array of sample data in arrays.
     discrete : bool, optional
-        type of Anderson-Darling test which is computed. Default is a test
+        Type of Anderson-Darling test which is computed. Default is a test
         applicable to discrete and continous distributions.
 
     Returns
     -------
     Tk : float
         Normalized k-sample Anderson-Darling test statistic, not adjusted for
-        ties
+        ties.
     tm : array
-        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%
+        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%.
     p : float
         An approximate significance level at which the null hypothesis for the
-        provided samples can be rejected
+        provided samples can be rejected.
 
     Raises
     ------
@@ -1250,7 +1251,7 @@ def anderson_ksamp(samples, discrete=False):
 
     Notes
     -----
-    [1]_ Define three versions of the k-sample Anderson-Darling test:
+    [1]_ Defines three versions of the k-sample Anderson-Darling test:
     one for continous distributions and two for discrete
     distributions, in which ties between samples may occur. The latter
     variant of the test is also applicable to continuous data. By
@@ -1264,9 +1265,9 @@ def anderson_ksamp(samples, discrete=False):
 
     References
     ----------
-    .. [1] Scholz, F. W & Stephens, M. A. (1987), K-Sample Anderson-Darling
-           Tests, Journal of the American Statistical Association, Vol. 82,
-           pp. 918-924.
+    .. [1] Scholz, F. W and Stephens, M. A. (1987), K-Sample
+           Anderson-Darling Tests, Journal of the American Statistical
+           Association, Vol. 82, pp. 918-924.
 
     Examples:
     ---------
@@ -1279,7 +1280,7 @@ def anderson_ksamp(samples, discrete=False):
     not at the 2.5% level. The interpolation gives an approximate
     significance level of 3.1%:
 
-    >>> stats.anderson_ksamp(np.random.normal(size=50), \
+    >>> stats.anderson_ksamp(np.random.normal(size=50), ...
             np.random.normal(loc=0.5, size=30))
     (2.4632469079409978, array([ 0.325,  1.226,  1.961,  2.718,  3.752]),
       0.03130207656720708)
@@ -1288,7 +1289,7 @@ def anderson_ksamp(samples, discrete=False):
     identical distribution. The approximate p-value (87%) has to be
     computed by extrapolation and may not be very accurate:
 
-    >>> stats.anderson_ksamp(np.random.normal(size=50), \
+    >>> stats.anderson_ksamp(np.random.normal(size=50), ...
             np.random.normal(size=30), np.random.normal(size=20))
     (-0.72478622084152444,
       array([ 0.44925884,  1.3052767,  1.9434184,  2.57696569,  3.41634856]),
@@ -1299,19 +1300,20 @@ def anderson_ksamp(samples, discrete=False):
     k = len(samples)
     if (k < 2):
         raise ValueError("anderson_ksamp needs at least two samples")
+
     samples = list(map(np.asarray, samples))
-    Z = np.hstack(samples)
+    Z = np.sort(np.hstack(samples))
     N = Z.size
-    Z.sort()
     Zstar = np.unique(Z)
-    L = Zstar.size
-    if not L > 1:
+    if Zstar.size < 2:
         raise ValueError("anderson_ksamp needs more than one distinct "
                          "observation")
+
     n = np.array([sample.size for sample in samples])
     if any(n == 0):
         raise ValueError("anderson_ksamp encountered sample without "
                          "observations")
+
     if discrete:
         A2kN = _anderson_ksamp_discrete(samples, Z, Zstar, k, n, N)
     else:
@@ -1331,6 +1333,8 @@ def anderson_ksamp(samples, discrete=False):
     m = k - 1
     Tk = (A2kN - m) / math.sqrt(sigmasq)
 
+    # The b_i values are the interpolation coefficients from Table 2
+    # of Scholz and Stephens 1987
     b0 = np.array([0.675, 1.281, 1.645, 1.96, 2.326])
     b1 = np.array([-0.245, 0.25, 0.678, 1.149, 1.822])
     b2 = np.array([-0.105, -0.305, -0.362, -0.391, -0.396])
@@ -1338,6 +1342,7 @@ def anderson_ksamp(samples, discrete=False):
     pf = np.polyfit(tm, log(np.array([0.25, 0.1, 0.05, 0.025, 0.01])), 2)
     if Tk < tm.min() or Tk > tm.max():
         warnings.warn("approximate p-value will be computed by extrapolation")
+
     p = math.exp(np.polyval(pf, Tk))
     return Tk, tm, p
 
