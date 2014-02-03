@@ -1137,7 +1137,7 @@ def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
 
     Parameters
     ----------
-    samples : array_like
+    samples : sequence of 1-D array_like
         Array of sample arrays.
     Z : array_like
         Sorted array of all observations.
@@ -1158,8 +1158,11 @@ def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
 
     A2akN = 0.
     Z_ssorted_left = Z.searchsorted(Zstar, 'left')
-    lj = Z.searchsorted(Zstar, 'right') - Z_ssorted_left
-    Bj = Z.searchsorted(Zstar) + lj / 2.
+    if N == Zstar.size:
+        lj = 1.
+    else:
+        lj = Z.searchsorted(Zstar, 'right') - Z_ssorted_left
+    Bj = Z_ssorted_left + lj / 2.
     for i in arange(0, k):
         s = np.sort(samples[i])
         s_ssorted_right = s.searchsorted(Zstar, side='right')
@@ -1179,7 +1182,7 @@ def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
 
     Parameters
     ----------
-    samples : array_like
+    samples : sequence of 1-D array_like
         Array of sample arrays.
     Z : array_like
         Sorted array of all observations.
@@ -1221,7 +1224,7 @@ def anderson_ksamp(samples, midrank=True):
 
     Parameters
     ----------
-    samples : array_like
+    samples : sequence of 1-D array_like
         Array of sample data in arrays.
     midrank : bool, optional
         Type of Anderson-Darling test which is computed. Default is
@@ -1230,10 +1233,9 @@ def anderson_ksamp(samples, midrank=True):
 
     Returns
     -------
-    Tk : float
-        Normalized k-sample Anderson-Darling test statistic, not adjusted for
-        ties.
-    tm : array
+    A2 : float
+        Normalized k-sample Anderson-Darling test statistic.
+    critical : array
         The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%.
     p : float
         An approximate significance level at which the null hypothesis for the
@@ -1333,20 +1335,20 @@ def anderson_ksamp(samples, midrank=True):
     d = (2*h + 6)*k**2 - 4*h*k
     sigmasq = (a*N**3 + b*N**2 + c*N + d) / ((N - 1.) * (N - 2.) * (N - 3.))
     m = k - 1
-    Tk = (A2kN - m) / math.sqrt(sigmasq)
+    A2 = (A2kN - m) / math.sqrt(sigmasq)
 
     # The b_i values are the interpolation coefficients from Table 2
     # of Scholz and Stephens 1987
     b0 = np.array([0.675, 1.281, 1.645, 1.96, 2.326])
     b1 = np.array([-0.245, 0.25, 0.678, 1.149, 1.822])
     b2 = np.array([-0.105, -0.305, -0.362, -0.391, -0.396])
-    tm = b0 + b1 / math.sqrt(m) + b2 / m
-    pf = np.polyfit(tm, log(np.array([0.25, 0.1, 0.05, 0.025, 0.01])), 2)
-    if Tk < tm.min() or Tk > tm.max():
+    critical = b0 + b1 / math.sqrt(m) + b2 / m
+    pf = np.polyfit(critical, log(np.array([0.25, 0.1, 0.05, 0.025, 0.01])), 2)
+    if A2 < critical.min() or A2 > critical.max():
         warnings.warn("approximate p-value will be computed by extrapolation")
 
-    p = math.exp(np.polyval(pf, Tk))
-    return Tk, tm, p
+    p = math.exp(np.polyval(pf, A2))
+    return A2, critical, p
 
 
 def ansari(x,y):
