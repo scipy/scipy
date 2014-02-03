@@ -1137,7 +1137,7 @@ def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
 
     Parameters
     ----------
-    samples : array_like
+    samples : sequence of 1-D array_like
         Array of sample arrays.
     Z : array_like
         Sorted array of all observations.
@@ -1158,7 +1158,10 @@ def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
 
     A2akN = 0.
     Z_ssorted_left = Z.searchsorted(Zstar, 'left')
-    lj = Z.searchsorted(Zstar, 'right') - Z_ssorted_left
+    if N == Zstar.size:
+        lj = 1.
+    else:
+        lj = Z.searchsorted(Zstar, 'right') - Z_ssorted_left
     Bj = Z.searchsorted(Zstar) + lj / 2.
     for i in arange(0, k):
         s = np.sort(samples[i])
@@ -1179,7 +1182,7 @@ def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
 
     Parameters
     ----------
-    samples : array_like
+    samples : sequence of 1-D array_like
         Array of sample arrays.
     Z : array_like
         Sorted array of all observations.
@@ -1221,7 +1224,7 @@ def anderson_ksamp(samples, midrank=True):
 
     Parameters
     ----------
-    samples : array_like
+    samples : sequence of 1-D array_like
         Array of sample data in arrays.
     midrank : bool, optional
         Type of Anderson-Darling test which is computed. Default is
