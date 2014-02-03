@@ -592,10 +592,10 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
 
     See Also
     --------
-    butter, cheby1, cheby2, ellip, bessel : Filter design using order and
-                                            critical points
-    buttord, cheb1ord, cheb2ord, ellipord : Find order and critical points
-                                            from passband and stopband spec
+    butter : Filter design using order and critical points
+    cheby1, cheby2, ellip, bessel
+    buttord : Find order and critical points from passband and stopband spec
+    cheb1ord, cheb2ord, ellipord
     iirfilter : General filter design using order and critical frequencies
 
     """
@@ -666,10 +666,10 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     See Also
     --------
-    butter, cheby1, cheby2, ellip, bessel : Filter design using order and
-                                            critical points
-    buttord, cheb1ord, cheb2ord, ellipord : Find order and critical points
-                                            from passband and stopband spec
+    butter : Filter design using order and critical points
+    cheby1, cheby2, ellip, bessel
+    buttord : Find order and critical points from passband and stopband spec
+    cheb1ord, cheb2ord, ellipord
     iirdesign : General filter design using passband and stopband spec
 
     Examples
@@ -1617,8 +1617,8 @@ def buttord(wp, ws, gpass, gstop, analog=False):
     See Also
     --------
     butter : Filter design using order and critical points
-    cheb1ord, cheb2ord, ellipord : Find order and critical points
-                                   from passband and stopband spec
+    cheb1ord : Find order and critical points from passband and stopband spec
+    cheb2ord, ellipord
     iirfilter : General filter design using order and critical frequencies
     iirdesign : General filter design using passband and stopband spec
 
@@ -1690,13 +1690,13 @@ def buttord(wp, ws, gpass, gstop, analog=False):
     GPASS = 10 ** (0.1 * abs(gpass))
     ord = int(ceil(log10((GSTOP - 1.0) / (GPASS - 1.0)) / (2 * log10(nat))))
 
-    # Find the Butterworth natural frequency W0 (or the "3dB" frequency")
-    # to give exactly gstop at nat. W0 will be between 1 and nat
+    # Find the Butterworth natural frequency WN (or the "3dB" frequency")
+    # to give exactly gpass at passb.
     try:
-        W0 = nat / ((10 ** (0.1 * abs(gstop)) - 1) ** (1.0 / (2.0 * ord)))
+        W0 = (GPASS - 1.0) ** (-1.0 / (2.0 * ord))
     except ZeroDivisionError:
-        W0 = nat
-        print("Warning, order is zero...check input parameter gstop.")
+        W0 = 1.0
+        print("Warning, order is zero...check input parameters.")
 
     # now convert this frequency back from lowpass prototype
     # to the original analog filter
@@ -1772,8 +1772,8 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False):
     See Also
     --------
     cheby1 : Filter design using order and critical points
-    buttord, cheb2ord, ellipord : Find order and critical points
-                                  from passband and stopband spec
+    buttord : Find order and critical points from passband and stopband spec
+    cheb2ord, ellipord
     iirfilter : General filter design using order and critical frequencies
     iirdesign : General filter design using passband and stopband spec
 
@@ -1789,7 +1789,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False):
     >>> N, Wn = signal.cheb1ord(0.2, 0.3, 3, 40)
     >>> b, a = signal.cheby1(N, 3, Wn, 'low')
     >>> w, h = signal.freqz(b, a)
-    >>> plt.plot(w/pi, 20 * np.log10(abs(h)))
+    >>> plt.plot(w / np.pi, 20 * np.log10(abs(h)))
     >>> plt.xscale('log')
     >>> plt.title('Chebyshev I lowpass filter fit to constraints')
     >>> plt.xlabel('Normalized frequency')
@@ -1895,8 +1895,8 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False):
     See Also
     --------
     cheby2 : Filter design using order and critical points
-    buttord, cheb1ord, ellipord : Find order and critical points
-                                  from passband and stopband spec
+    buttord : Find order and critical points from passband and stopband spec
+    cheb1ord, ellipord
     iirfilter : General filter design using order and critical frequencies
     iirdesign : General filter design using passband and stopband spec
 
@@ -1913,7 +1913,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False):
     >>> N, Wn = signal.cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
     >>> b, a = signal.cheby2(N, 60, Wn, 'stop')
     >>> w, h = signal.freqz(b, a)
-    >>> plt.plot(w/pi, 20 * np.log10(abs(h)))
+    >>> plt.plot(w / np.pi, 20 * np.log10(abs(h)))
     >>> plt.xscale('log')
     >>> plt.title('Chebyshev II bandstop filter fit to constraints')
     >>> plt.xlabel('Normalized frequency')
@@ -2042,8 +2042,8 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
     See Also
     --------
     ellip : Filter design using order and critical points
-    buttord, cheb1ord, cheb2ord : Find order and critical points
-                                   from passband and stopband spec
+    buttord : Find order and critical points from passband and stopband spec
+    cheb1ord, cheb2ord
     iirfilter : General filter design using order and critical frequencies
     iirdesign : General filter design using passband and stopband spec
 

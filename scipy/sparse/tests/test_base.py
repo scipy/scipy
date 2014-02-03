@@ -22,7 +22,7 @@ Run tests if sparse is not installed:
 import warnings
 
 import numpy as np
-from scipy.lib.six import xrange
+from scipy.lib.six import xrange, zip as izip
 from numpy import arange, zeros, array, dot, matrix, asmatrix, asarray, \
                   vstack, ndarray, transpose, diag, kron, inf, conjugate, \
                   int8, ComplexWarning
@@ -42,12 +42,59 @@ from scipy.sparse.sputils import supported_dtypes, isscalarlike
 from scipy.sparse.linalg import splu, expm, inv
 
 from scipy.lib._version import NumpyVersion
+from scipy.lib.decorator import decorator
 
 import nose
+
 
 warnings.simplefilter('ignore', SparseEfficiencyWarning)
 warnings.simplefilter('ignore', ComplexWarning)
 
+def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None):
+    """
+    Monkeypatch the maxval threshold at which scipy.sparse switches to
+    64-bit index arrays, or make it (pseudo-)random.
+
+    """
+    if maxval_limit is None:
+        maxval_limit = 10
+
+    if fixed_dtype is not None:
+        def new_get_index_dtype(arrays=(), maxval=None):
+            return fixed_dtype
+    elif random:
+        counter = np.random.RandomState(seed=1234)
+        def new_get_index_dtype(arrays=(), maxval=None):
+            return (np.int32, np.int64)[counter.randint(2)]
+    else:
+        def new_get_index_dtype(arrays=(), maxval=None):
+            dtype = np.int32
+            if maxval is not None:
+                if maxval > maxval_limit:
+                    dtype = np.int64
+            for arr in arrays:
+                arr = np.asarray(arr)
+                if arr.dtype.itemsize > 4:
+                    dtype = np.int64
+            return dtype
+
+    @decorator
+    def deco(func, *a, **kw):
+        backup = []
+        modules = [scipy.sparse.bsr, scipy.sparse.coo, scipy.sparse.csc,
+                   scipy.sparse.csr, scipy.sparse.dia, scipy.sparse.dok,
+                   scipy.sparse.lil, scipy.sparse.sputils,
+                   scipy.sparse.compressed, scipy.sparse.construct]
+        try:
+            for mod in modules:
+                backup.append((mod, getattr(mod, 'get_index_dtype', None)))
+                setattr(mod, 'get_index_dtype', new_get_index_dtype)
+            return func(*a, **kw)
+        finally:
+            for mod, oldfunc in backup:
+                setattr(mod, 'get_index_dtype', oldfunc)
+
+    return deco
 
 def _can_cast_samekind(dtype1, dtype2):
     """Compatibility function for numpy 1.5.1; `casting` kw is numpy >=1.6.x
@@ -553,6 +600,20 @@ class _TestCommon:
 
         for m in mats:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
+
+    def test_setdiag(self):
+        m = self.spmatrix(np.eye(3))
+        values = [3, 2, 1]
+        # it is out of limits
+        assert_raises(ValueError, m.setdiag, values, k=4)
+        m.setdiag(values)
+        assert_array_equal(m.diagonal(), values)
+
+        # test setting offdiagonals (k!=0)
+        m.setdiag((9,), k=2)
+        assert_array_equal(m.A[0,2], 9)
+        m.setdiag((9,), k=-2)
+        assert_array_equal(m.A[2,0], 9)
 
     def test_nonzero(self):
         A = array([[1, 0, 1],[0, 1, 1],[0, 0, 1]])
@@ -2472,7 +2533,7 @@ class _TestArithmetic:
                 D1 = A * B.T
                 S1 = Asp * Bsp.T
 
-                assert_array_equal(S1.todense(),D1)
+                assert_allclose(S1.todense(),D1)
                 assert_equal(S1.dtype,D1.dtype)
 
 
@@ -3238,6 +3299,10 @@ class TestCOO(sparse_test_class(getset=False,
         dia = coo_matrix(zeros).todia()
         assert_array_equal(dia.A, zeros)
 
+    @dec.knownfailureif(True, "known deficiency in COO")
+    def test_setdiag(self):
+        pass
+
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False,
@@ -3257,6 +3322,18 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
     # DIA does not have a __getitem__ to support iteration
     def test_iterator(self):
         pass
+
+    @with_64bit_maxval_limit(3)
+    def test_setdiag_dtype(self):
+        m = dia_matrix(np.eye(3))
+        assert_equal(m.offsets.dtype, np.int32)
+        m.setdiag((3,), k=2)
+        assert_equal(m.offsets.dtype, np.int32)
+
+        m = dia_matrix(np.eye(4))
+        assert_equal(m.offsets.dtype, np.int64)
+        m.setdiag((3,), k=3)
+        assert_equal(m.offsets.dtype, np.int64)
 
 
 class TestBSR(sparse_test_class(getset=False,
@@ -3337,6 +3414,248 @@ class TestBSR(sparse_test_class(getset=False,
     @dec.knownfailureif(True, "BSR not implemented")
     def test_iterator(self):
         pass
+
+    @dec.knownfailureif(True, "known deficiency in BSR")
+    def test_setdiag(self):
+        pass
+
+
+#------------------------------------------------------------------------------
+# Tests for non-canonical representations (with duplicates, unsorted indices)
+#------------------------------------------------------------------------------
+
+def _same_sum_duplicate(data, *inds, **kwargs):
+    """Duplicates entries to produce the same matrix"""
+    indptr = kwargs.pop('indptr', None)
+    if np.issubdtype(data.dtype, np.bool_) or \
+       np.issubdtype(data.dtype, np.unsignedinteger):
+        if indptr is None:
+            return (data,) + inds
+        else:
+            return (data,) + inds + (indptr,)
+
+    data = data.repeat(2, axis=0)
+    data[::2] *= 2
+    data[1::2] *= -1
+
+    inds = tuple(indices.repeat(2) for indices in inds)
+
+    if indptr is None:
+        return (data,) + inds
+    else:
+        return (data,) + inds + (indptr * 2,)
+
+
+class _NonCanonicalMixin(object):
+    def spmatrix(self, D, **kwargs):
+        """Replace D with a non-canonical equivalent"""
+        construct = super(_NonCanonicalMixin, self).spmatrix
+        M = construct(D, **kwargs)
+        arg1 = self._arg1_for_noncanonical(M)
+        if 'shape' not in kwargs:
+            kwargs['shape'] = M.shape
+        NC = construct(arg1, **kwargs)
+        assert_allclose(M.A, NC.A)
+        return NC
+
+    @dec.knownfailureif(True, 'abs broken with non-canonical matrix')
+    def test_abs(self):
+        pass
+
+    @dec.knownfailureif(True, 'bool(matrix) broken with non-canonical matrix')
+    def test_bool(self):
+        pass
+
+    @dec.knownfailureif(True, 'min/max broken with non-canonical matrix')
+    def test_minmax(self):
+        pass
+
+    @dec.knownfailureif(True, 'format conversion broken with non-canonical matrix')
+    def test_sparse_format_conversions(self):
+        pass
+
+    @dec.knownfailureif(True, 'unary ufunc overrides broken with non-canonical matrix')
+    def test_unary_ufunc_overrides(self):
+        pass
+
+    @dec.knownfailureif(True, 'getnnz-axis broken with non-canonical matrix')
+    def test_getnnz_axis(self):
+        pass
+
+
+class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
+    def _arg1_for_noncanonical(self, M):
+        """Return non-canonical constructor arg1 equivalent to M"""
+        data, indices, indptr = _same_sum_duplicate(M.data, M.indices,
+                                                    indptr=M.indptr)
+        # unsorted
+        for start, stop in izip(indptr, indptr[1:]):
+            indices[start:stop] = indices[start:stop][::-1]
+            data[start:stop] = data[start:stop][::-1]
+        return data, indices, indptr
+
+
+class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
+    @dec.knownfailureif(True, 'copy with non-canonical matrix not implemented due to __getitem__')
+    def test_copy(self):
+        pass
+
+    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
+    def test_ellipsis_slicing(self):
+        pass
+
+    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix broken for sparse boolean index')
+    def test_fancy_indexing_sparse_boolean(self):
+        pass
+
+    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
+    def test_getelement(self):
+        pass
+
+    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
+    def test_slicing_2(self):
+        pass
+
+    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
+    def test_slicing_3(self):
+        pass
+
+    @dec.knownfailureif(True, 'broadcasting element-wise multiply broken with non-canonical matrix')
+    def test_elementwise_multiply_broadcast(self):
+        pass
+
+    @dec.knownfailureif(True, 'inverse broken with non-canonical matrix')
+    def test_inv(self):
+        pass
+
+    @dec.knownfailureif(True, 'solve broken with non-canonical matrix')
+    def test_solve(self):
+        pass
+
+
+class TestCSRNonCanonical(_NonCanonicalCSMixin, TestCSR):
+    pass
+
+
+class TestCSCNonCanonical(_NonCanonicalCSMixin, TestCSC):
+    pass
+
+
+class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
+    @dec.knownfailureif(True, 'unary ufunc overrides broken with non-canonical BSR')
+    def test_diagonal(self):
+        pass
+
+    @dec.knownfailureif(True, 'unary ufunc overrides broken with non-canonical BSR')
+    def test_expm(self):
+        pass
+
+
+class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
+    def _arg1_for_noncanonical(self, M):
+        """Return non-canonical constructor arg1 equivalent to M"""
+        data, row, col = _same_sum_duplicate(M.data, M.row, M.col)
+        return data, (row, col)
+
+
+class Test64Bit(object):
+
+    TEST_CLASSES = [TestBSR, TestCOO, TestCSC, TestCSR, TestDIA,
+                    # lil/dok->other conversion operations have get_index_dtype
+                    TestDOK, TestLIL
+                    ]
+
+    MAT_CLASSES = [bsr_matrix, coo_matrix, csc_matrix, csr_matrix, dia_matrix]
+
+    # The following features are missing, so skip the tests:
+    SKIP_TESTS = {
+        'test_expm': 'expm for 64-bit indices not available',
+        'test_solve': 'linsolve for 64-bit indices not available'
+    }
+
+    def _create_some_matrix(self, mat_cls, m, n):
+        return mat_cls(np.random.rand(m, n))
+
+    def _compare_index_dtype(self, m, dtype):
+        dtype = np.dtype(dtype)
+        if isinstance(m, csc_matrix) or isinstance(m, csr_matrix) \
+               or isinstance(m, bsr_matrix):
+            return (m.indices.dtype == dtype) and (m.indptr.dtype == dtype)
+        elif isinstance(m, coo_matrix):
+            return (m.row.dtype == dtype) and (m.col.dtype == dtype)
+        elif isinstance(m, dia_matrix):
+            return (m.offsets.dtype == dtype)
+        else:
+            raise ValueError("matrix %r has no integer indices" % (m,))
+
+    def test_decorator_maxval_limit(self):
+        # Test that the with_64bit_maxval_limit decorator works
+
+        @with_64bit_maxval_limit(maxval_limit=10)
+        def check(mat_cls):
+            m = mat_cls(np.random.rand(10, 1))
+            assert_(self._compare_index_dtype(m, np.int32))
+            m = mat_cls(np.random.rand(11, 1))
+            assert_(self._compare_index_dtype(m, np.int64))
+
+        for mat_cls in self.MAT_CLASSES:
+            yield check, mat_cls
+
+    def test_decorator_maxval_random(self):
+        # Test that the with_64bit_maxval_limit decorator works (2)
+
+        @with_64bit_maxval_limit(random=True)
+        def check(mat_cls):
+            seen_32 = False
+            seen_64 = False
+            for k in range(100):
+                m = self._create_some_matrix(mat_cls, 9, 9)
+                seen_32 = seen_32 or self._compare_index_dtype(m, np.int32)
+                seen_64 = seen_64 or self._compare_index_dtype(m, np.int64)
+                if seen_32 and seen_64:
+                    break
+            else:
+                raise AssertionError("both 32 and 64 bit indices not seen")
+
+        for mat_cls in self.MAT_CLASSES:
+            yield check, mat_cls
+
+    def _check_resiliency(self, **kw):
+        # Resiliency test, to check that sparse matrices deal reasonably
+        # with varying index data types.
+
+        @with_64bit_maxval_limit(**kw)
+        def check(cls, method_name):
+            instance = cls()
+            if hasattr(instance, 'setup'):
+                instance.setup()
+            try:
+                getattr(instance, method_name)()
+            finally:
+                if hasattr(instance, 'teardown'):
+                    instance.teardown()
+
+        for cls in self.TEST_CLASSES:
+            for method_name in dir(cls):
+                if method_name.startswith('test_'):
+                    msg = self.SKIP_TESTS.get(method_name)
+                    yield dec.skipif(msg, msg)(check), cls, method_name
+
+    def test_resiliency_limit_10(self):
+        for t in self._check_resiliency(maxval_limit=10):
+            yield t
+
+    def test_resiliency_random(self):
+        for t in self._check_resiliency(random=True):
+            yield t
+
+    def test_resiliency_all_32(self):
+        for t in self._check_resiliency(fixed_dtype=np.int32):
+            yield t
+
+    def test_resiliency_all_64(self):
+        for t in self._check_resiliency(fixed_dtype=np.int64):
+            yield t
 
 
 if __name__ == "__main__":

@@ -395,7 +395,13 @@ class rv_frozen(object):
     def __init__(self, dist, *args, **kwds):
         self.args = args
         self.kwds = kwds
-        self.dist = dist
+
+        # create a new instance
+        self.dist = dist.__class__(**dist._ctor_param)    
+
+        # a, b may be set in _argcheck, depending on *args, **kwds. Ouch.
+        shapes, _, _ = self.dist._parse_args(*args, **kwds) 
+        self.dist._argcheck(*shapes)
 
     def pdf(self, x):   # raises AttributeError in frozen discrete distribution
         return self.dist.pdf(x, *self.args, **self.kwds)
@@ -1330,6 +1336,11 @@ class rv_continuous(rv_generic):
                  shapes=None, extradoc=None):
 
         super(rv_continuous, self).__init__()
+
+        # save the ctor parameters, cf generic freeze
+        self._ctor_param = dict(momtype=momtype, a=a, b=b, xtol=xtol,
+                badvalue=badvalue, name=name, longname=longname,
+                shapes=shapes, extradoc=extradoc)
 
         if badvalue is None:
             badvalue = nan
@@ -2514,6 +2525,11 @@ class rv_discrete(rv_generic):
                  shapes=None, extradoc=None):
 
         super(rv_discrete, self).__init__()
+
+        # cf generic freeze
+        self._ctor_param = dict(a=a, b=b, name=name, badvalue=badvalue,
+                 moment_tol=moment_tol, values=values, inc=inc,
+                 longname=longname, shapes=shapes, extradoc=extradoc)
 
         if badvalue is None:
             badvalue = nan

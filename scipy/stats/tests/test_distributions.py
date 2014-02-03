@@ -1131,6 +1131,24 @@ class TestFrozen(TestCase):
         # the focus of this test.
         assert_equal(m1, m2)
 
+    def test_ab(self):
+        # test that the support of a frozen distribution 
+        # (i) remains frozen even if it changes for the original one
+        # (ii) is actually correct if the shape parameters are such that
+        #      the values of [a, b] are not the default [0, inf]
+        # take a genpareto as an example where the support
+        # depends on the value of the shape parameter:
+        # for c > 0: a, b = 0, inf
+        # for c < 0: a, b = 0, -1/c
+        rv = stats.genpareto(c=-0.1)
+        a, b = rv.dist.a, rv.dist.b
+        assert_equal([a, b], [0., 10.])
+
+        stats.genpareto.pdf(0, c=0.1)  # this changes genpareto.b
+        assert_equal([rv.dist.a, rv.dist.b], [a, b])
+
+        rv1 = stats.genpareto(c=0.1)
+        assert_(rv1.dist is not rv.dist)
 
 class TestExpect(TestCase):
     # Test for expect method.

@@ -59,7 +59,7 @@ void gemv(const I m, const I n, const T * A, const T * x, T * y){
     for(I i = 0; i < m; i++){
         T dot = y[i];
         for(I j = 0; j < n; j++){
-            dot += A[n * i + j] * x[j];
+            dot += A[(npy_intp)n * i + j] * x[j];
         }
         y[i] = dot;
     }
@@ -70,11 +70,11 @@ template <class I, class T>
 void gemm(const I m, const I n, const I k, const T * A, const T * B, T * C){
     for(I i = 0; i < m; i++){
         for(I j = 0; j < n; j++){
-            T dot = C[n * i + j];
+            T dot = C[(npy_intp)n * i + j];
             for(I _d = 0; _d < k; _d++){
-                dot += A[k * i + _d] * B[n * _d + j];
+                dot += A[(npy_intp)k * i + _d] * B[(npy_intp)n * _d + j];
             }
-            C[n * i + j] = dot;
+            C[(npy_intp)n * i + j] = dot;
         }
     }
 }
