@@ -190,26 +190,24 @@ Examples
 --------
 >>> from scipy.stats import %(name)s
 >>> import matplotlib.pyplot as plt
+>>> fig, ax = plt.subplots(1, 1)
 
 Calculate a few first moments:
+
 %(set_vals_stmt)s
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
 
 Display the probability density function (``pdf``):
 
->>> x = np.linspace(np.maximum(0, %(name)s.a),
-...                 np.minimum(3, %(name)s.b), 30)
->>> plt.plot(x, %(name)s.pdf(x, %(shapes)s),
-...          'r-', lw=5, alpha=0.4, label='pdf')
-
-(Here, ``%(name)s.a`` and ``%(name)s.b`` are the left-hand and right-hand
-endpoints of the support of ``%(name)s``, respectively.)
+>>> x = np.linspace(%(name)s.ppf(0.01, %(shapes)s),
+...               %(name)s.ppf(0.99, %(shapes)s), 100)
+>>> ax.plot(x, %(name)s.pdf(x, %(shapes)s),
+...          'r-', lw=5, alpha=0.6, label='%(name)s pdf')
 
 Alternatively, freeze the distribution and display the frozen pdf:
 
 >>> rv = %(name)s(%(shapes)s)
->>> plt.plot(x, rv.pdf(x), 'k--', lw=2, label='frozen')
->>> plt.show()
+>>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
 
 Check accuracy of ``cdf`` and ``ppf``:
 
@@ -219,7 +217,13 @@ True
 
 Generate random numbers:
 
->>> r = %(name)s.rvs(%(shapes)s, size=100)
+>>> r = %(name)s.rvs(%(shapes)s, size=1000)
+
+And compare the histogram:
+
+>>> ax.hist(r, normed=True, histtype='stepfilled', alpha=0.2)
+>>> ax.legend(loc='best', frameon=False)
+>>> plt.show()
 """
 
 _doc_default = ''.join([_doc_default_longsummary,
@@ -297,6 +301,7 @@ Examples
 --------
 >>> from scipy.stats import %(name)s
 >>> import matplotlib.pyplot as plt
+>>> fig, ax = plt.subplots(1, 1)
 
 Calculate a few first moments:
 
@@ -305,19 +310,17 @@ Calculate a few first moments:
 
 Display the probability mass function (``pmf``):
 
->>> x = np.arange(np.maximum(0, %(name)s.a),
-...               np.minimum(8, %(name)s.b))
->>> plt.vlines(x, 0, %(name)s.pmf(x, %(shapes)s), colors='b',
-...            linestyles='-', lw=5, alpha=0.4, label='pmf')
-
-(Here, ``%(name)s.a`` and ``%(name)s.b`` are the left-hand and right-hand
-endpoints of the support of ``%(name)s``, respectively.)
+>>> x = np.arange(%(name)s.ppf(0.01, %(shapes)s),
+...               %(name)s.ppf(0.99, %(shapes)s))
+>>> ax.plot(x, %(name)s.pmf(x, %(shapes)s), 'bo', ms=8, label='%(name)s pmf')
+>>> ax.vlines(x, 0, %(name)s.pmf(x, %(shapes)s), colors='b', lw=5, alpha=0.5)
 
 Alternatively, freeze the distribution and display the frozen ``pmf``:
 
 >>> rv = %(name)s(%(shapes)s)
->>> plt.vlines(x, 0, rv.pmf(x), colors='k', linestyles='--',
-...            lw=2, label='frozen pmf')
+>>> ax.vlines(x, 0, rv.pmf(x), colors='k', linestyles='-', lw=1, 
+...         label='frozen pmf')
+>>> ax.legend(loc='best', frameon=False)
 >>> plt.show()
 
 Check accuracy of ``cdf`` and ``ppf``:
@@ -328,7 +331,7 @@ True
 
 Generate random numbers:
 
->>> r = %(name)s.rvs(%(shapes)s, size=100)
+>>> r = %(name)s.rvs(%(shapes)s, size=1000)
 """
 docdict_discrete['example'] = _doc_default_discrete_example
 
