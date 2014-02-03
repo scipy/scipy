@@ -151,7 +151,7 @@ _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
 
 # Note that the two lines for %(shapes) are searched for and replaced in
 # rv_continuous and rv_discrete - update there if the exact string changes
-_doc_default_callparams = """\
+_doc_default_callparams = """
 Parameters
 ----------
 x : array_like
@@ -189,6 +189,7 @@ _doc_default_example = """\
 Examples
 --------
 >>> from scipy.stats import %(name)s
+>>> import matplotlib.pyplot as plt
 
 Calculate a few first moments:
 %(set_vals_stmt)s
@@ -197,9 +198,9 @@ Calculate a few first moments:
 Display the probability density function (``pdf``):
 
 >>> x = np.linspace(np.maximum(0, %(name)s.a),
-...                 np.minimum(3, %(name)s.b), 30) 
+...                 np.minimum(3, %(name)s.b), 30)
 >>> plt.plot(x, %(name)s.pdf(x, %(shapes)s),
-...         'r-', lw=5, alpha=0.4, label='pdf')
+...          'r-', lw=5, alpha=0.4, label='pdf')
 
 (Here, ``%(name)s.a`` and ``%(name)s.b`` are the left-hand and right-hand
 endpoints of the support of ``%(name)s``, respectively.)
@@ -213,7 +214,8 @@ Alternatively, freeze the distribution and display the frozen pdf:
 Check accuracy of ``cdf`` and ``ppf``:
 
 >>> vals = %(name)s.ppf([0.001, 0.5, 0.999], %(shapes)s)
->>> assert_allclose([0.001, 0.5, 0.999], %(name)s.cdf(vals, %(shapes)s))
+>>> np.allclose([0.001, 0.5, 0.999], %(name)s.cdf(vals, %(shapes)s))
+True
 
 Generate random numbers:
 
@@ -294,6 +296,7 @@ _doc_default_discrete_example = """\
 Examples
 --------
 >>> from scipy.stats import %(name)s
+>>> import matplotlib.pyplot as plt
 
 Calculate a few first moments:
 
@@ -303,9 +306,9 @@ Calculate a few first moments:
 Display the probability mass function (``pmf``):
 
 >>> x = np.arange(np.maximum(0, %(name)s.a),
-...               np.minimum(8, %(name)s.b)) 
->>> plt.vlines(x, %(name)s.pmf(x, %(shapes)s),
-...         colors='b', linestyles='-', lw=5, alpha=0.4, label='pmf')
+...               np.minimum(8, %(name)s.b))
+>>> plt.vlines(x, 0, %(name)s.pmf(x, %(shapes)s), colors='b',
+...            linestyles='-', lw=5, alpha=0.4, label='pmf')
 
 (Here, ``%(name)s.a`` and ``%(name)s.b`` are the left-hand and right-hand
 endpoints of the support of ``%(name)s``, respectively.)
@@ -313,14 +316,15 @@ endpoints of the support of ``%(name)s``, respectively.)
 Alternatively, freeze the distribution and display the frozen ``pmf``:
 
 >>> rv = %(name)s(%(shapes)s)
->>> plt.vlines(x, rv.pmf(x), 
-...         colors='k', linestyles='--', lw=2, label='frozen pmf')
+>>> plt.vlines(x, 0, rv.pmf(x), colors='k', linestyles='--',
+...            lw=2, label='frozen pmf')
 >>> plt.show()
 
 Check accuracy of ``cdf`` and ``ppf``:
 
 >>> prob = %(name)s.cdf(x, %(shapes)s)
->>> assert_allclose(x, %(name)s.ppf(prob, %(shapes)s))
+>>> np.allclose(x, %(name)s.ppf(prob, %(shapes)s))
+True
 
 Generate random numbers:
 
@@ -420,10 +424,10 @@ class rv_frozen(object):
         self.kwds = kwds
 
         # create a new instance
-        self.dist = dist.__class__(**dist._ctor_param)    
+        self.dist = dist.__class__(**dist._ctor_param)
 
         # a, b may be set in _argcheck, depending on *args, **kwds. Ouch.
-        shapes, _, _ = self.dist._parse_args(*args, **kwds) 
+        shapes, _, _ = self.dist._parse_args(*args, **kwds)
         self.dist._argcheck(*shapes)
 
     def pdf(self, x):   # raises AttributeError in frozen discrete distribution

@@ -268,6 +268,7 @@ class hypergeom_gen(rv_discrete):
     Examples
     --------
     >>> from scipy.stats import hypergeom
+    >>> import matplotlib.pyplot as plt
 
     Suppose we have a collection of 20 animals, of which 7 are dogs.  Then if
     we want to know the probability of finding a given number of dogs if we
