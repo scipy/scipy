@@ -233,11 +233,11 @@ class TestButtord(TestCase):
         b, a = butter(N, Wn, 'lowpass', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp - 0.1, dB(h[w <= wp]))
-        assert_array_less(dB(h[ws <= w]), -rs + 0.1)
+        assert_array_less(-rp, dB(h[w <= wp]))
+        assert_array_less(dB(h[ws <= w]), -rs)
 
         assert_equal(N, 16)
-        assert_allclose(Wn, 2.034240543183123e-01, rtol=1e-15)
+        assert_allclose(Wn, 2.0002776782743284e-01, rtol=1e-15)
 
     def test_highpass(self):
         wp = 0.3
@@ -248,11 +248,11 @@ class TestButtord(TestCase):
         b, a = butter(N, Wn, 'highpass', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp - 0.1, dB(h[wp <= w]))
-        assert_array_less(dB(h[w <= ws]), -rs + 0.1)
+        assert_array_less(-rp, dB(h[wp <= w]))
+        assert_array_less(dB(h[w <= ws]), -rs)
 
         assert_equal(N, 18)
-        assert_allclose(Wn, 2.994397774822765e-01, rtol=1e-15)
+        assert_allclose(Wn, 2.9996603079132672e-01, rtol=1e-15)
 
     def test_bandpass(self):
         wp = [0.2, 0.5]
@@ -269,7 +269,7 @@ class TestButtord(TestCase):
                           -rs + 0.1)
 
         assert_equal(N, 18)
-        assert_allclose(Wn, [1.988019498910527e-01, 5.020435331649425e-01],
+        assert_allclose(Wn, [1.9998742411409134e-01, 5.0002139595676276e-01],
                         rtol=1e-15)
 
     def test_bandstop(self):
@@ -281,14 +281,14 @@ class TestButtord(TestCase):
         b, a = butter(N, Wn, 'bandstop', False)
         w, h = freqz(b, a)
         w /= np.pi
-        assert_array_less(-rp - 0.1,
+        assert_array_less(-rp,
                           dB(h[np.logical_or( w <= wp[0], wp[1] <= w)]))
         assert_array_less(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]),
-                          -rs + 0.1)
+                          -rs)
 
         assert_equal(N, 20)
-        assert_allclose(Wn, [1.481914223819211e-01, 5.986892392286634e-01],
-                        rtol=1e-4)
+        assert_allclose(Wn, [1.4759432329294042e-01, 5.9997365985276407e-01],
+                        rtol=1e-6)
 
     def test_analog(self):
         wp = 200
@@ -298,15 +298,15 @@ class TestButtord(TestCase):
         N, Wn = buttord(wp, ws, rp, rs, True)
         b, a = butter(N, Wn, 'lowpass', True)
         w, h = freqs(b, a)
-        assert_array_less(-rp - 0.1, dB(h[w <= wp]))
-        assert_array_less(dB(h[ws <= w]), -rs + 0.1)
+        assert_array_less(-rp, dB(h[w <= wp]))
+        assert_array_less(dB(h[ws <= w]), -rs)
 
         assert_equal(N, 7)
-        assert_allclose(Wn, 2.236556391943067e+02, rtol=1e-15)
+        assert_allclose(Wn, 2.0006785355671877e+02, rtol=1e-15)
 
         n, Wn = buttord(1, 550/450, 1, 26, analog=True)
         assert_equal(n, 19)
-        assert_allclose(Wn, 1.0441379169150726, rtol=1e-15)
+        assert_allclose(Wn, 1.0361980524629517, rtol=1e-15)
 
         assert_equal(buttord(1, 1.2, 1, 80, analog=True)[0], 55)
 
