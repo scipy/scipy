@@ -38,7 +38,7 @@ __all__ = [
     'beta', 'betaprime', 'bradford', 'burr', 'fisk', 'cauchy',
     'chi', 'chi2', 'cosine', 'dgamma', 'dweibull', 'erlang',
     'expon', 'exponweib', 'exponpow', 'fatiguelife', 'foldcauchy',
-    'f', 'foldnorm', 'frechet_r', 'weibull_min', 'frechet_l',
+    'f', 'foldnorm', 'frechet', 'frechet_l', 'frechet_r', 'weibull_min',
     'weibull_max', 'genlogistic', 'genpareto', 'genexpon', 'genextreme',
     'gamma', 'gengamma', 'genhalflogistic', 'gompertz', 'gumbel_r',
     'gumbel_l', 'halfcauchy', 'halflogistic', 'halfnorm', 'hypsecant',
@@ -1290,7 +1290,7 @@ class weibull_min_gen(rv_continuous):
 
         weibull_min.pdf(x, c) = c * x**(c-1) * exp(-x**c)
 
-    for ``x >= 0``, ``c > 0``.
+    for ``x > 0``, ``c > 0``.
 
     %(example)s
 
@@ -1356,22 +1356,22 @@ class weibull_max_gen(rv_continuous):
         return -_EULER / c - log(c) + _EULER + 1
 weibull_max = weibull_max_gen(b=0.0, name='weibull_max')
 
-class frechet_r_gen(rv_continuous):
+class frechet_gen(rv_continuous):
     """A Frechet continuous random variable.
 
     %(before_notes)s
 
     See Also
     --------
-    genextreme, frechet_l
+    genextreme
 
     Notes
     -----
-    The probability density function for `frechet_r` is::
+    The probability density function for `frechet` is::
 
-        frechet_r.pdf(x, c) = c * x**(-c-1) * exp(-x**-c)
+        frechet.pdf(x, c) = c * x**(-c-1) * exp(-x**-c)
 
-    for ``x >= 0``, ``c > 0``.
+    for ``x > 0``, ``c > 0``.
 
     %(example)s
 
@@ -1393,9 +1393,20 @@ class frechet_r_gen(rv_continuous):
 
     ## def _entropy(self, c):
     ##     return -_EULER / c - log(c) + _EULER + 1
-frechet_r = frechet_r_gen(a=0.0, name='frechet_r')
+frechet = frechet_gen(a=0.0, name='frechet')
 
+frechet_r = weibull_min_gen(a=0.0, name='frechet_r')
+frechet_r=np.deprecate(frechet_r,old_name='frechet_r',new_name='weibull_min',
+                       message="""
+The distribution frechet_r is a synonym for weibull_min; this historical usage is deprecated
+because of possible confusion with the (quite different) Frechet distribution.""")
 
+frechet_l = weibull_max_gen(a=0.0, name='frechet_l')
+frechet_l=np.deprecate(frechet_l,old_name='frechet_l',new_name='weibull_max',
+                       message="""
+The distribution frechet_l is a synonym for weibull_max; this historical usage is deprecated
+because of possible confusion with the (quite different) Frechet distribution.""")
+                               
 class genlogistic_gen(rv_continuous):
     """A generalized logistic continuous random variable.
 
