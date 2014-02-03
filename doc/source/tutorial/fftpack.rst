@@ -231,12 +231,11 @@ The example below demonstrates a 2-dimensional IFFT and plots the resulting
     >>> plt.show()
 
 
-.. FFT convolution
-.. _______________
+FFT convolution
+_______________
 
-.. scipy.fftpack.convolve performs a convolution of two one-dimensional
-.. arrays in frequency domain.
-
+`scipy.fftpack.convolve` performs a convolution of two one-dimensional
+arrays in frequency domain.
 
 
 Discrete Cosine Transforms
@@ -462,28 +461,19 @@ and normalizations.
 [  8.  16.   8.  -8.  12.]
 
 
-
-
-
-.. Differential and pseudo-differential operators
-.. ----------------------------------------------
-..
-.. :func:`diff`
-
-
 Cache Destruction
 -----------------
 
 To accelerate repeat transforms on arrays of the same shape and dtype,
 scipy.fftpack keeps a cache of the prime factorization of length of the array
 and pre-computed trigonometric functions.  These caches can be destroyed by
-calling the appropriate function in scipy.fftpack._fftpack.  dst(type=1) and
-idst(type=1) share a cache (*dst1_cache).  As do dst(type=2), dst(type=3),
-idst(type=3), and idst(type=3) (*dst2_cache).
+calling the appropriate function in `scipy.fftpack._fftpack`.  
+dst(type=1) and idst(type=1) share a cache (``*dst1_cache``).  As do dst(type=2),
+dst(type=3), idst(type=3), and idst(type=3) (``*dst2_cache``).
 
 
 References
-~~~~~~~~~~
+----------
 
 .. [CT] Cooley, James W., and John W. Tukey, 1965, "An algorithm for the
         machine calculation of complex Fourier series," *Math. Comput.*

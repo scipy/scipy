@@ -1017,7 +1017,7 @@ def anderson(x,dist='norm'):
     Anderson-Darling test for data coming from a particular distribution
 
     The Anderson-Darling test is a modification of the Kolmogorov-
-    Smirnov test kstest_ for the null hypothesis that a sample is
+    Smirnov test `kstest` for the null hypothesis that a sample is
     drawn from a population that follows a particular distribution.
     For the Anderson-Darling test, the critical values depend on
     which distribution is being tested against.  This function works
