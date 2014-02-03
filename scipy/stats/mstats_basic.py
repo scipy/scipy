@@ -57,11 +57,12 @@ from . import futil
 
 
 genmissingvaldoc = """
-Notes
------
+
+    Notes
+    -----
     Missing values are considered pair-wise: if a value is missing in x,
     the corresponding value in y is masked.
-"""
+    """
 #------------------------------------------------------------------------------
 
 
@@ -144,13 +145,13 @@ def find_repeats(arr):
     """Find repeats in arr and return a tuple (repeats, repeat_count).
     Masked values are discarded.
 
-Parameters
-----------
+    Parameters
+    ----------
     arr : sequence
         Input array. The array is flattened if it is not 1D.
 
-Returns
--------
+    Returns
+    -------
     repeats : ndarray
         Array of repeated values.
     counts : ndarray
@@ -222,17 +223,17 @@ def rankdata(data, axis=None, use_missing=False):
 
     Parameters
     ----------
-        data : sequence
-            Input data. The data is transformed to a masked array
-        axis : {None,int}, optional
-            Axis along which to perform the ranking.
-            If None, the array is first flattened. An exception is raised if
-            the axis is specified for arrays with a dimension larger than 2
-        use_missing : {boolean}, optional
-            Whether the masked values have a rank of 0 (False) or equal to the
-            average rank of the unmasked values (True).
+    data : sequence
+        Input data. The data is transformed to a masked array
+    axis : {None,int}, optional
+        Axis along which to perform the ranking.
+        If None, the array is first flattened. An exception is raised if
+        the axis is specified for arrays with a dimension larger than 2
+    use_missing : {boolean}, optional
+        Whether the masked values have a rank of 0 (False) or equal to the
+        average rank of the unmasked values (True).
+
     """
-    #
     def _rank1d(data, use_missing=False):
         n = data.count()
         rk = np.empty(data.size, dtype=float)
@@ -1621,15 +1622,15 @@ def describe(a, axis=0):
 
 def stde_median(data, axis=None):
     """Returns the McKean-Schrader estimate of the standard error of the sample
-median along the given axis. masked values are discarded.
+    median along the given axis. masked values are discarded.
 
     Parameters
     ----------
-        data : ndarray
-            Data to trim.
-        axis : {None,int}, optional
-            Axis along which to perform the trimming.
-            If None, the input array is first flattened.
+    data : ndarray
+        Data to trim.
+    axis : {None,int}, optional
+        Axis along which to perform the trimming.
+        If None, the input array is first flattened.
 
     """
     def _stdemed_1D(data):
@@ -1928,13 +1929,13 @@ meppf = plotting_positions
 
 def obrientransform(*args):
     """
-Computes a transform on input data (any number of columns).  Used to
-test for homogeneity of variance prior to running one-way stats.  Each
-array in *args is one level of a factor.  If an F_oneway() run on the
-transformed data and found significant, variances are unequal.   From
-Maxwell and Delaney, p.112.
+    Computes a transform on input data (any number of columns).  Used to
+    test for homogeneity of variance prior to running one-way stats.  Each
+    array in *args is one level of a factor.  If an F_oneway() run on the
+    transformed data and found significant, variances are unequal.   From
+    Maxwell and Delaney, p.112.
 
-Returns: transformed data for use in an ANOVA
+    Returns: transformed data for use in an ANOVA
     """
     data = argstoarray(*args).T
     v = data.var(axis=0,ddof=1)
@@ -1957,12 +1958,12 @@ def signaltonoise(data, axis=0):
 
     Parameters
     ----------
-        data : sequence
-            Input data
-        axis : {0, int}, optional
-            Axis along which to compute. If None, the computation is performed
-            on a flat version of the array.
-"""
+    data : sequence
+        Input data
+    axis : {0, int}, optional
+        Axis along which to compute. If None, the computation is performed
+        on a flat version of the array.
+    """
     data = ma.array(data, copy=False)
     m = data.mean(axis)
     sd = data.std(axis, ddof=0)
@@ -1987,13 +1988,14 @@ zscore = stats.zscore
 
 def f_oneway(*args):
     """
-Performs a 1-way ANOVA, returning an F-value and probability given
-any number of groups.  From Heiman, pp.394-7.
+    Performs a 1-way ANOVA, returning an F-value and probability given
+    any number of groups.  From Heiman, pp.394-7.
 
-Usage:   f_oneway (*args)    where *args is 2 or more arrays, one per
-                                  treatment group
-Returns: f-value, probability
-"""
+    Usage: ``f_oneway(*args)``, where ``*args`` is 2 or more arrays,
+                                one per treatment group.
+    Returns: f-value, probability
+
+    """
     # Construct a single array of arguments: each row is a group
     data = argstoarray(*args)
     ngroups = len(data)
@@ -2011,7 +2013,7 @@ Returns: f-value, probability
 
 
 def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
-    """Calculation of Wilks lambda F-statistic for multivarite data, per
+    """Calculation of Wilks lambda F-statistic for multivariate data, per
     Maxwell & Delaney p.657.
     """
     ER = ma.array(ER, copy=False, ndmin=2)
@@ -2060,9 +2062,7 @@ def friedmanchisquare(*args):
     repeats = np.array([find_repeats(_) for _ in ranked.T], dtype=object)
     ties = repeats[repeats.nonzero()].reshape(-1,2)[:,-1].astype(int)
     tie_correction = 1 - (ties**3-ties).sum()/float(n*(k**3-k))
-    #
+
     ssbg = np.sum((ranked.sum(-1) - n*(k+1)/2.)**2)
     chisq = ssbg * 12./(n*k*(k+1)) * 1./tie_correction
     return chisq, stats.chisqprob(chisq,k-1)
-
-#-############################################################################-#
