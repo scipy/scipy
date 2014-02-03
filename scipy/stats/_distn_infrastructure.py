@@ -2228,12 +2228,12 @@ def _drv_nonzero(self, k, *args):
 
 def _drv_moment(self, n, *args):
     n = asarray(n)
-    return sum(self.xk**n[newaxis,...] * self.pk, axis=0)
+    return sum(self.xk**n[np.newaxis,...] * self.pk, axis=0)
 
 
 def _drv_moment_gen(self, t, *args):
     t = asarray(t)
-    return sum(exp(self.xk * t[newaxis,...]) * self.pk, axis=0)
+    return sum(exp(self.xk * t[np.newaxis,...]) * self.pk, axis=0)
 
 
 def _drv2_moment(self, n, *args):
