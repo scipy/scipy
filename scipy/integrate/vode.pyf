@@ -19,7 +19,7 @@ python module dvode__user__routines
          double precision dimension(n),intent(c,in) :: y
          integer intent(hide) :: ml,mu
          integer intent(hide):: nrowpd
-         double precision intent(out) :: jac(nrowpd, n)
+         double precision intent(out) :: jac(ipar, n)
          double precision intent(hide) :: rpar
          integer intent(hide) :: ipar
        end subroutine jac
@@ -42,7 +42,7 @@ python module zvode__user__routines
          double complex dimension(n),intent(c,in) :: y
          integer intent(hide) :: ml,mu
          integer intent(hide):: nrowpd
-         double complex intent(out) :: jac(nrowpd, n)
+         double complex intent(out) :: jac(ipar, n)
          double precision intent(hide) :: rpar
          integer intent(hide) :: ipar
        end subroutine jac
@@ -76,7 +76,7 @@ python module vode
          integer intent(hide),check(len(iwork)>=liw),depend(iwork) :: liw=len(iwork)
          integer intent(in) :: mf
          double precision intent(hide) :: rpar = 0.0
-         integer intent(hide) :: ipar = 0
+         integer intent(hide) :: ipar = (((mf == 14) || (mf == 24)) ? (iwork[0] + iwork[1] + 1) : neq)
        end subroutine dvode
     end interface
 
@@ -108,7 +108,7 @@ python module vode
          integer intent(hide),check(len(iwork)>=liw),depend(iwork) :: liw=len(iwork)
          integer intent(in) :: mf
          double precision intent(hide) :: rpar = 0.0
-         integer intent(hide) :: ipar = 0
+         integer intent(hide) :: ipar = (((mf == 14) || (mf == 24)) ? (iwork[0] + iwork[1] + 1) : neq)
        end subroutine zvode
     end interface
 end python module vode
