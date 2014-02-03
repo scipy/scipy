@@ -194,7 +194,7 @@ Calculate a few first moments:
 %(set_vals_stmt)s
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
 
-Display the ``pdf``:
+Display the probability density function (``pdf``):
 
 >>> x = np.linspace(np.maximum(0, %(name)s.a),
 ...                 np.minimum(3, %(name)s.b), 30) 
@@ -212,22 +212,12 @@ Alternatively, freeze the distribution and display the frozen pdf:
 
 Check accuracy of ``cdf`` and ``ppf``:
 
->>> prob = %(name)s.cdf(x, %(shapes)s)
->>> assert_allclose(x, %(name)s.ppf(prob, %(shapes)s))
+>>> vals = %(name)s.ppf([0.001, 0.5, 0.999], %(shapes)s)
+>>> assert_allclose([0.001, 0.5, 0.999], %(name)s.cdf(vals, %(shapes)s))
 
 Generate random numbers:
 
 >>> r = %(name)s.rvs(%(shapes)s, size=100)
-"""
-
-# mangle the name so that it does not get del-ed
-_rv_generic__doc_named_arg_ex_templ = """\
-Note that all methods accept shape parameters as either positional or
-keyword arguments:
-
->>> assert_equal(%(name)s.sf(x, %(vals)s),
-...              %(name)s.sf(x, %(shapes_eq_vals)s))
-
 """
 
 _doc_default = ''.join([_doc_default_longsummary,
@@ -310,10 +300,10 @@ Calculate a few first moments:
 %(set_vals_stmt)s
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
 
-Display the ``pmf``:
+Display the probability mass function (``pmf``):
 
 >>> x = np.arange(np.maximum(0, %(name)s.a),
-...                 np.minimum(8, %(name)s.b)) 
+...               np.minimum(8, %(name)s.b)) 
 >>> plt.vlines(x, %(name)s.pmf(x, %(shapes)s),
 ...         colors='b', linestyles='-', lw=5, alpha=0.4, label='pmf')
 
@@ -702,11 +692,7 @@ class rv_generic(object):
         tempdict['vals'] = vals
 
         if self.shapes:
-            pairs = [a + '=' + str(b) for (a, b) 
-                    in zip(self.shapes.split(','), shapes_vals)]
-            tempdict['shapes_eq_vals'] = ','.join(pairs)
             tempdict['set_vals_stmt'] = '>>> %s = %s' % (self.shapes, vals)
-          #  self.__doc__ += __doc_named_arg_ex_templ  # FIXME: this confuses doccer's indentation
         else:
             tempdict['set_vals_stmt'] = ''
 
@@ -1458,7 +1444,8 @@ class rv_continuous(rv_generic):
                 self._construct_default_doc(longname=longname,
                                             extradoc=extradoc)
             else:
-                self._construct_doc(docdict, dict(distcont)[self.name])
+                dct = dict(distcont)
+                self._construct_doc(docdict, dct.get(self.name))
 
     def _construct_default_doc(self, longname=None, extradoc=None):
         """Construct instance docstring from the default template."""
@@ -2662,7 +2649,7 @@ class rv_discrete(rv_generic):
                                             extradoc=extradoc)
             else:
                 dct = dict(distdiscrete)
-                self._construct_doc(docdict_discrete, dct[self.name])
+                self._construct_doc(docdict_discrete, dct.get(self.name))
 
             #discrete RV do not have the scale parameter, remove it
             self.__doc__ = self.__doc__.replace(
