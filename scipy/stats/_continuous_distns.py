@@ -1290,7 +1290,7 @@ class weibull_min_gen(rv_continuous):
 
         weibull_min.pdf(x, c) = c * x**(c-1) * exp(-x**c)
 
-    for ``x > 0``, ``c > 0``.
+    for ``x >= 0``, ``c > 0``.
 
     %(example)s
 
