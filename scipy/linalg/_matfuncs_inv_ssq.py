@@ -372,6 +372,8 @@ def _inverse_squaring_helper(T0, theta):
     # this search will not terminate if any diagonal entry of T is zero.
     s0 = 0
     tmp_diag = np.diag(T)
+    if _count_nonzero(tmp_diag) != n:
+        raise Exception('internal inconsistency')
     while np.max(np.absolute(tmp_diag - 1)) > theta[7]:
         tmp_diag = np.sqrt(tmp_diag)
         s0 += 1
@@ -842,6 +844,7 @@ def _logm_triu(T):
 
 
 def _logm_fudge_singular_triangular_matrix(T):
+    # This should be called only when a diagonal of T is exactly zero.
     exact_singularity_msg = 'The logm input matrix is exactly singular.'
     warnings.warn(exact_singularity_msg, LogmRankWarning)
     n = T.shape[0]
@@ -897,7 +900,12 @@ def logm(A):
     A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
-    n, n = A.shape
+    n = A.shape[0]
+
+    # If the input matrix dtype is integer then copy to a float dtype matrix.
+    if issubclass(A.dtype.type, np.integer):
+        A = np.asarray(A, dtype=float)
+
     keep_it_real = np.isrealobj(A)
     try:
         if np.array_equal(A, np.triu(A)):

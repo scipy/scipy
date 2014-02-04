@@ -209,7 +209,8 @@ class TestLogM(TestCase):
 
     def test_logm_exactly_singular(self):
         A = np.array([[0, 0], [1j, 1j]])
-        for M in A, A.T:
+        B = np.asarray([[1, 1], [0, 0]])
+        for M in A, A.T, B, B.T:
             expected_warning = _matfuncs_inv_ssq.LogmRankWarning
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter('always')
