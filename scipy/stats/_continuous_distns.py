@@ -1376,6 +1376,12 @@ class frechet_gen(rv_continuous):
 
     for ``x > 0``, ``c > 0``.
 
+    The Frechet distribution is a sort of inverse to the Weibull
+    (`weibull_min`) distribution, in the sense that if $X~Frechet$,
+    then $1/X~Weibull$ (though the location and scale parameters will
+    differ).  Accordingly, the Frechet distribution is also sometimes
+    called the "generalized inverse Weibull."
+
     %(example)s
 
     """
@@ -1396,6 +1402,7 @@ class frechet_gen(rv_continuous):
 
     def _entropy(self, c):
         return 1 + _EULER*(1 + 1./c) - log(c)
+
 frechet = frechet_gen(a=0.0, name='frechet')
 
 frechet_r = weibull_min_gen(a=0.0, name='frechet_r')
