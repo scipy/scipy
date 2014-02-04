@@ -17,6 +17,9 @@ from numpy import (where, arange, putmask, ravel, sum, shape,
                    log, sqrt, exp, arctanh, tan, sin, arcsin, arctan,
                    tanh, cos, cosh, sinh, log1p, expm1)
 
+# Scipy.special versions of these to be preferred to numpy equivalents, per github #3242?
+from scipy.special import (expm1 as ss_expm1, log1p as ss_log1p) 
+
 from numpy import polyval, place, extract, any, asarray, nan, inf, pi
 
 import numpy as np
@@ -1328,10 +1331,10 @@ class weibull_min_gen(rv_continuous):
         return log(c) + (c-1)*log(x) - np.power(x, c)
 
     def _cdf(self, x, c):
-        return -expm1(-np.power(x, c))
+        return -ss_expm1(-np.power(x, c))
 
     def _ppf(self, q, c):
-        return np.power(-log1p(-q), 1.0/c)
+        return np.power(-ss_log1p(-q), 1.0/c)
 
     def _isf(self, q, c):
         return np.power(-log(q), 1./c)
