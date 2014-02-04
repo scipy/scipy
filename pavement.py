@@ -296,6 +296,10 @@ def tarball_name(type='gztar'):
     root = 'scipy-%s' % FULLVERSION
     if type == 'gztar':
         return root + '.tar.gz'
+    elif type == 'xztar':
+        return root + '.tar.xz'
+    elif type == 'tar':
+        return root + '.tar'
     elif type == 'zip':
         return root + '.zip'
     raise ValueError("Unknown type %s" % type)
@@ -305,12 +309,14 @@ def sdist():
     # To be sure to bypass paver when building sdist... paver + scipy.distutils
     # do not play well together.
     sh('python setup.py sdist --formats=gztar,zip')
+    sh('python setup.py sdist --formats=tar')
+    sh('xz %s'%os.path.join('dist', tarball_name("tar")))
 
     # Copy the superpack into installers dir
     if not os.path.exists(options.installers.installersdir):
         os.makedirs(options.installers.installersdir)
 
-    for t in ['gztar', 'zip']:
+    for t in ['xztar', 'gztar', 'zip']:
         source = os.path.join('dist', tarball_name(t))
         target = os.path.join(options.installers.installersdir, tarball_name(t))
         shutil.copy(source, target)
