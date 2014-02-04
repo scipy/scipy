@@ -106,9 +106,8 @@ class TestInterp1D(object):
         self.fill_value = -100.0
 
     def test_validation(self):
-        """ Make sure that appropriate exceptions are raised when invalid values
-        are given to the constructor.
-        """
+        # Make sure that appropriate exceptions are raised when invalid values
+        # are given to the constructor.
 
         # These should all work.
         interp1d(self.x10, self.y10, kind='linear')
@@ -141,124 +140,75 @@ class TestInterp1D(object):
         assert_raises(ValueError, interp1d, self.x1, self.y1)
 
     def test_init(self):
-        """ Check that the attributes are initialized appropriately by the
-        constructor.
-        """
-
+        # Check that the attributes are initialized appropriately by the
+        # constructor.
         assert_(interp1d(self.x10, self.y10).copy)
         assert_(not interp1d(self.x10, self.y10, copy=False).copy)
         assert_(interp1d(self.x10, self.y10).bounds_error)
         assert_(not interp1d(self.x10, self.y10, bounds_error=False).bounds_error)
         assert_(np.isnan(interp1d(self.x10, self.y10).fill_value))
-        assert_equal(
-            interp1d(self.x10, self.y10, fill_value=3.0).fill_value,
-            3.0,
-        )
-        assert_equal(
-            interp1d(self.x10, self.y10).axis,
-            0,
-        )
-        assert_equal(
-            interp1d(self.x10, self.y210).axis,
-            1,
-        )
-        assert_equal(
-            interp1d(self.x10, self.y102, axis=0).axis,
-            0,
-        )
-        assert_array_equal(
-            interp1d(self.x10, self.y10).x,
-            self.x10,
-        )
-        assert_array_equal(
-            interp1d(self.x10, self.y10).y,
-            self.y10,
-        )
-        assert_array_equal(
-            interp1d(self.x10, self.y210).y,
-            self.y210,
-        )
+        assert_equal(interp1d(self.x10, self.y10, fill_value=3.0).fill_value,
+                     3.0)
+        assert_equal(interp1d(self.x10, self.y10).axis, 0)
+        assert_equal(interp1d(self.x10, self.y210).axis, 1)
+        assert_equal( interp1d(self.x10, self.y102, axis=0).axis, 0)
+        assert_array_equal(interp1d(self.x10, self.y10).x, self.x10)
+        assert_array_equal(interp1d(self.x10, self.y10).y, self.y10)
+        assert_array_equal(interp1d(self.x10, self.y210).y, self.y210)
 
-
-    def test_sorting(self):
-        """ Check for unsorted arrays
-        """
-
+    def test_assume_sorted(self):
+        # Check for unsorted arrays
         interp10 = interp1d(self.x10, self.y10)
         interp10_unsorted = interp1d(self.x10[::-1], self.y10[::-1])
 
-        assert_array_almost_equal(
-            interp10_unsorted(self.x10),
-            self.y10,
-        )
-        assert_array_almost_equal(
-            interp10_unsorted(1.2),
-            np.array([1.2]),
-        )
-        assert_array_almost_equal(
-            interp10_unsorted([2.4, 5.6, 6.0]),
-            interp10([2.4, 5.6, 6.0]),
-        )
+        assert_array_almost_equal(interp10_unsorted(self.x10), self.y10)
+        assert_array_almost_equal(interp10_unsorted(1.2), np.array([1.2]))
+        assert_array_almost_equal(interp10_unsorted([2.4, 5.6, 6.0]),
+                                  interp10([2.4, 5.6, 6.0]))
 
+        # Check assume_sorted keyword (defaults to False)
+        interp10_assume_kw = interp1d(self.x10[::-1], self.y10[::-1],
+                                      assume_sorted=False)
+        assert_array_almost_equal(interp10_assume_kw(self.x10), self.y10)
+
+        interp10_assume_kw2 = interp1d(self.x10[::-1], self.y10[::-1],
+                                       assume_sorted=True)
+        # Should raise an error for unsorted input if assume_sorted=True
+        assert_raises(ValueError, interp10_assume_kw2, self.x10)
+
+        # Check that if y is a 2-D array, things are still consistent
+        interp10_y_2d = interp1d(self.x10, self.y210)
+        interp10_y_2d_unsorted = interp1d(self.x10[::-1], self.y210[:, ::-1])
+        assert_array_almost_equal(interp10_y_2d(self.x10),
+                                  interp10_y_2d_unsorted(self.x10))
 
     def test_linear(self):
-        """ Check the actual implementation of linear interpolation.
-        """
-
+        # Check the actual implementation of linear interpolation.
         interp10 = interp1d(self.x10, self.y10)
-        assert_array_almost_equal(
-            interp10(self.x10),
-            self.y10,
-        )
-        assert_array_almost_equal(
-            interp10(1.2),
-            np.array([1.2]),
-        )
-        assert_array_almost_equal(
-            interp10([2.4, 5.6, 6.0]),
-            np.array([2.4, 5.6, 6.0]),
-        )
+        assert_array_almost_equal(interp10(self.x10), self.y10)
+        assert_array_almost_equal(interp10(1.2), np.array([1.2]))
+        assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
+                                  np.array([2.4, 5.6, 6.0]))
 
     def test_cubic(self):
-        """ Check the actual implementation of spline interpolation.
-        """
-
+        # Check the actual implementation of spline interpolation.
         interp10 = interp1d(self.x10, self.y10, kind='cubic')
-        assert_array_almost_equal(
-            interp10(self.x10),
-            self.y10,
-        )
-        assert_array_almost_equal(
-            interp10(1.2),
-            np.array([1.2]),
-        )
-        assert_array_almost_equal(
-            interp10([2.4, 5.6, 6.0]),
-            np.array([2.4, 5.6, 6.0]),
-        )
+        assert_array_almost_equal(interp10(self.x10), self.y10)
+        assert_array_almost_equal(interp10(1.2), np.array([1.2]))
+        assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
+                                  np.array([2.4, 5.6, 6.0]),)
 
     def test_nearest(self):
-        """Check the actual implementation of nearest-neighbour interpolation.
-        """
-
+        # Check the actual implementation of nearest-neighbour interpolation.
         interp10 = interp1d(self.x10, self.y10, kind='nearest')
-        assert_array_almost_equal(
-            interp10(self.x10),
-            self.y10,
-        )
-        assert_array_almost_equal(
-            interp10(1.2),
-            np.array(1.),
-        )
-        assert_array_almost_equal(
-            interp10([2.4, 5.6, 6.0]),
-            np.array([2., 6., 6.]),
-        )
+        assert_array_almost_equal(interp10(self.x10), self.y10)
+        assert_array_almost_equal(interp10(1.2), np.array(1.))
+        assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
+                                  np.array([2., 6., 6.]),)
 
     @dec.knownfailureif(True, "zero-order splines fail for the last point")
     def test_zero(self):
-        """Check the actual implementation of zero-order spline interpolation.
-        """
+        # Check the actual implementation of zero-order spline interpolation.
         interp10 = interp1d(self.x10, self.y10, kind='zero')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(1.))
@@ -266,27 +216,17 @@ class TestInterp1D(object):
                                   np.array([2., 6., 6.]))
 
     def _bounds_check(self, kind='linear'):
-        """ Test that our handling of out-of-bounds input is correct.
-        """
-
+        # Test that our handling of out-of-bounds input is correct.
         extrap10 = interp1d(self.x10, self.y10, fill_value=self.fill_value,
-            bounds_error=False, kind=kind)
-        assert_array_equal(
-            extrap10(11.2),
-            np.array(self.fill_value),
-        )
-        assert_array_equal(
-            extrap10(-3.4),
-            np.array(self.fill_value),
-        )
-        assert_array_equal(
-            extrap10([[[11.2], [-3.4], [12.6], [19.3]]]),
-            np.array(self.fill_value),
-        )
-        assert_array_equal(
-            extrap10._check_bounds(np.array([-1.0, 0.0, 5.0, 9.0, 11.0])),
-            np.array([True, False, False, False, True]),
-        )
+                            bounds_error=False, kind=kind)
+
+        assert_array_equal(extrap10(11.2), np.array(self.fill_value))
+        assert_array_equal(extrap10(-3.4), np.array(self.fill_value))
+        assert_array_equal(extrap10([[[11.2], [-3.4], [12.6], [19.3]]]),
+                           np.array(self.fill_value),)
+        assert_array_equal(extrap10._check_bounds(
+                               np.array([-1.0, 0.0, 5.0, 9.0, 11.0])),
+                           np.array([True, False, False, False, True]))
 
         raises_bounds_error = interp1d(self.x10, self.y10, bounds_error=True,
                                        kind=kind)
@@ -309,15 +249,12 @@ class TestInterp1D(object):
             self._bounds_check_int_nan_fill(kind)
 
     def _nd_check_interp(self, kind='linear'):
-        """Check the behavior when the inputs and outputs are multidimensional.
-        """
+        # Check the behavior when the inputs and outputs are multidimensional.
 
         # Multidimensional input.
         interp10 = interp1d(self.x10, self.y10, kind=kind)
-        assert_array_almost_equal(
-            interp10(np.array([[3., 5.], [2., 7.]])),
-            np.array([[3., 5.], [2., 7.]]),
-        )
+        assert_array_almost_equal(interp10(np.array([[3., 5.], [2., 7.]])),
+                                  np.array([[3., 5.], [2., 7.]]))
 
         # Scalar input -> 0-dim scalar array output
         assert_(isinstance(interp10(1.2), np.ndarray))
@@ -325,39 +262,23 @@ class TestInterp1D(object):
 
         # Multidimensional outputs.
         interp210 = interp1d(self.x10, self.y210, kind=kind)
-        assert_array_almost_equal(
-            interp210(1.),
-            np.array([1., 11.]),
-        )
-        assert_array_almost_equal(
-            interp210(np.array([1., 2.])),
-            np.array([[1., 2.],
-                      [11., 12.]]),
-        )
+        assert_array_almost_equal(interp210(1.), np.array([1., 11.]))
+        assert_array_almost_equal(interp210(np.array([1., 2.])),
+                                  np.array([[1., 2.], [11., 12.]]))
 
         interp102 = interp1d(self.x10, self.y102, axis=0, kind=kind)
-        assert_array_almost_equal(
-            interp102(1.),
-            np.array([2.0, 3.0]),
-        )
-        assert_array_almost_equal(
-            interp102(np.array([1., 3.])),
-            np.array([[2., 3.],
-                      [6., 7.]]),
-        )
+        assert_array_almost_equal(interp102(1.), np.array([2.0, 3.0]))
+        assert_array_almost_equal(interp102(np.array([1., 3.])),
+                                  np.array([[2., 3.], [6., 7.]]))
 
         # Both at the same time!
         x_new = np.array([[3., 5.], [2., 7.]])
-        assert_array_almost_equal(
-            interp210(x_new),
-            np.array([[[3., 5.], [2., 7.]],
-                      [[13., 15.], [12., 17.]]]),
-        )
-        assert_array_almost_equal(
-            interp102(x_new),
-            np.array([[[6., 7.], [10., 11.]],
-                      [[4., 5.], [14., 15.]]]),
-        )
+        assert_array_almost_equal(interp210(x_new),
+                                  np.array([[[3., 5.], [2., 7.]],
+                                            [[13., 15.], [12., 17.]]]))
+        assert_array_almost_equal(interp102(x_new),
+                                  np.array([[[6., 7.], [10., 11.]],
+                                            [[4., 5.], [14., 15.]]]))
 
     def _nd_check_shape(self, kind='linear'):
         # Check large ndim output shape

@@ -366,7 +366,7 @@ class interp1d(_Interpolator1D):
         if not assume_sorted:
             ind = np.argsort(x)
             x = x[ind]
-            np.take(y,ind,axis=axis,out=y)
+            np.take(y, ind, axis=axis, out=y)
 
         if x.ndim != 1:
             raise ValueError("the x array must have exactly one dimension.")
@@ -588,7 +588,7 @@ class _PPolyBase(object):
         """
         c = np.asarray(c)
         x = np.asarray(x)
-        
+
         if c.ndim < 2:
             raise ValueError("invalid dimensions for c")
         if x.ndim != 1:
@@ -1045,7 +1045,7 @@ class BPoly(_PPolyBase):
     This creates a 2nd order polynomial
 
     .. math::
- 
+
         B(x) = 1 \\times b_{0, 2}(x) + 2 \\times b_{1, 2}(x) + 3 \\times b_{2, 2}(x) \\\\
              = 1 \\times (1-x)^2 + 2 \\times 2 x (1 - x) + 3 \\times x^2
 
@@ -1086,9 +1086,9 @@ class BPoly(_PPolyBase):
         if nu == 0:
             c2 = self.c.copy()
         else:
-            # For a polynomial 
+            # For a polynomial
             #    B(x) = \sum_{a=0}^{k} c_a b_{a, k}(x),
-            # we use the fact that 
+            # we use the fact that
             #   b'_{a, k} = k ( b_{a-1, k-1} - b_{a, k-1} ),
             # which leads to
             #   B'(x) = \sum_{a=0}^{k-1} (c_{a+1} - c_a) b_{a, k-1}
@@ -1161,21 +1161,21 @@ class BPoly(_PPolyBase):
             ``yi[i][j]`` is the ``j``-th derivative known at ``xi[i]``
         orders : None or int or array_like of ints. Default: None.
             Specifies the degree of local polynomials. If not None, some
-            derivatives are ignored. 
+            derivatives are ignored.
         axis : int, optional
             Interpolation axis, default is 0.
         extrapolate : bool, optional
             Whether to extrapolate to ouf-of-bounds points based on first
-            and last intervals, or to return NaNs. Default: True.        
+            and last intervals, or to return NaNs. Default: True.
 
         Notes
         -----
         If ``k`` derivatives are specified at a breakpoint ``x``, the
-        constructed polynomial is exactly ``k`` times continuously 
+        constructed polynomial is exactly ``k`` times continuously
         differentiable at ``x``, unless the ``order`` is provided explicitly.
         In the latter case, the smoothness of the polynomial at
         the breakpoint is controlled by the ``order``.
-        
+
         Deduces the number of derivatives to match at each end
         from ``order`` and the number of derivatives available. If
         possible it uses the same number of derivatives from
@@ -1183,7 +1183,7 @@ class BPoly(_PPolyBase):
         extra one from y2. In any case if not enough derivatives
         are available at one end or another it draws enough to
         make up the total from the other end.
-        
+
         If the order is too high and not enough derivatives are available,
         an exception is raised.
 
@@ -1216,7 +1216,7 @@ class BPoly(_PPolyBase):
             raise NotImplementedError
         if direction is not None:
             raise NotImplementedError
-            
+
         xi = np.asarray(xi)
         if len(xi) != len(yi):
             raise ValueError("xi and yi need to have the same length")
@@ -1234,7 +1234,7 @@ class BPoly(_PPolyBase):
             if isinstance(orders, integer_types):
                 orders = [orders] * m
             k = max(k, max(orders))
-            
+
             if any(o <= 0 for o in orders):
                 raise ValueError("Orders must be positive.")
 
@@ -1266,7 +1266,7 @@ class BPoly(_PPolyBase):
 
     @staticmethod
     def _construct_from_derivatives(xa, xb, ya, yb):
-        """Compute the coefficients of a polynomial in the Bernstein basis 
+        """Compute the coefficients of a polynomial in the Bernstein basis
         given the values and derivatives at the edges.
 
         Return the coefficients of a polynomial in the Bernstein basis
@@ -1313,10 +1313,10 @@ class BPoly(_PPolyBase):
 
           .. math:: Q_a = \sum_{j=0}^{q} (-)^{j+q} comb(q, j) c_{j+a}
 
-        This way, only `a=0` contributes to :math: `B^{q}(x = xa)`, and 
+        This way, only `a=0` contributes to :math: `B^{q}(x = xa)`, and
         `c_q` are found one by one by iterating `q = 0, ..., na`.
 
-        At `x = xb` it's the same with `a = n - q`. 
+        At `x = xb` it's the same with `a = n - q`.
 
         """
         ya, yb = np.asarray(ya), np.asarray(yb)
@@ -1354,7 +1354,7 @@ class BPoly(_PPolyBase):
     def _raise_degree(c, d):
         """Raise a degree of a polynomial in the Bernstein basis.
 
-        Given the coefficients of a polynomial degree `k`, return (the 
+        Given the coefficients of a polynomial degree `k`, return (the
         coefficients of) the equivalent polynomial of degree `k+d`.
 
         Parameters
