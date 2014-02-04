@@ -30,7 +30,7 @@
  **                        GUFUNC OUTER LOOP MACROS                         **
  *****************************************************************************
  */
- 
+
 #define INIT_OUTER_LOOP_1(dimensions, steps) \
     npy_intp _loop_len = *dimensions++; \
     npy_intp _n; \
@@ -131,11 +131,11 @@
  **                             SOME CONSTANTS                              **
  *****************************************************************************
  */
- 
+
  static npy_double d_nan;
  static npy_double d_inf;
  static npy_double d_ninf;
- 
+
  static void init_constants(void)
  {
     /* It seems that NPY_INFINITY and NPY_NAN macros can't be used as
@@ -144,19 +144,20 @@
     d_inf = NPY_INFINITY;
     d_ninf = -NPY_INFINITY;
 }
-    
+
 /*
  *****************************************************************************
  **                          DISTANCE FUNCTIONS                            **
  *****************************************************************************
  */
- 
-/* The definitions of some distance functions are a little unclear. The
+
+/*
+ * The definitions of some distance functions are a little unclear. The
  * following references are cited in the comments in the code below:
  *
  * [Deza 2013]
- * Deza, M. M., & Deza, E. (2013). Encyclopedia of Distances. Springer. 
- * 
+ * Deza, M. M., & Deza, E. (2013). Encyclopedia of Distances. Springer.
+ *
  * [Zhang 2003]
  * Zhang, B., & Srihari, S. N. (2003, January). Binary vector dissimilarity
  * measures for handwriting identification. In Electronic Imaging 2003
@@ -280,65 +281,17 @@ DOUBLE_chebyshev_distance(const char *u, const char *v, npy_intp dim,
 }
 
 static npy_double
-DOUBLE_weighted_chebyshev_distance(const char *u, const char *v,
-                                   const char *w, npy_intp dim,
-                                   npy_intp u_str, npy_intp v_str,
-                                   npy_intp w_str) {
-    npy_intp j;
-    npy_double dist = 0;
-    for (j = 0; j < dim; j++,
-                         u += u_str,
-                         v += v_str,
-                         w += w_str) {
-        npy_double delta = *(npy_double *)w * fabs(*(npy_double *)u -
-                                                   *(npy_double *)v);
-        if (delta > dist) {
-            dist = delta;
-        }
-    }
-    return dist;
-}
-
-
-static npy_double
 DOUBLE_minimum_chebyshev_distance(const char *u, const char *v, npy_intp dim,
                                   npy_intp u_str, npy_intp v_str) {
     npy_intp j;
     npy_double dist = fabs(*(npy_double *)u - *(npy_double *)v);
-    
+
     for (u += u_str,
          v += v_str,
          j = 1; j < dim; j++,
                          u += u_str,
                          v += v_str) {
         npy_double delta = fabs(*(npy_double *)u - *(npy_double *)v);
-        if (delta < dist) {
-            dist = delta;
-        }
-        if (dist == 0) {
-            break;
-        }
-    }
-    return dist;
-}
-
-static npy_double
-DOUBLE_weighted_minimum_chebyshev_distance(const char *u, const char *v,
-                                           const char *w, npy_intp dim,
-                                           npy_intp u_str, npy_intp v_str,
-                                           npy_intp w_str) {
-    npy_intp j;
-    npy_double dist = *(npy_double *)w * fabs(*(npy_double *)u -
-                                              *(npy_double *)v);
-    for (u += u_str,
-         v += v_str,
-         w += w_str,
-         j = 1; j < dim; j++,
-                         u += u_str,
-                         v += v_str,
-                         w += w_str) {
-        npy_double delta = *(npy_double *)w * fabs(*(npy_double *)u -
-                                                   *(npy_double *)v);
         if (delta < dist) {
             dist = delta;
         }
@@ -381,11 +334,11 @@ DOUBLE_weighted_city_block_distance(const char *u, const char *v,
 }
 
 /* The correlation distance
- * 
+ *
  * Haven't found any reference specifying what to return whenever the
  * denominator comes out to zero. The code follows what Mathematica 9
  * does in CorrelationDistance, which returns zero distance for all such
- * cases. 
+ * cases.
  */
 
 static npy_double
@@ -437,14 +390,13 @@ DOUBLE_cached_correlation_distance(const char *u, const char *v,
                          v += v_str) {
         npy_double u_val = *(npy_double *)u - u_mean_val,
                    v_val = *(npy_double *)v - v_mean_val;
-       uv += (*(npy_double *)u - u_mean_val) *
-             (*(npy_double *)v - v_mean_val);
+       uv += u_val * v_val;
     }
     return 1 - uv / denom;
 }
 
 /* The cosine distance
- * 
+ *
  * Haven't found any reference specifying what to return whenever the
  * denominator comes out to zero. The code follows what Mathematica 9
  * does in CosineDistance, which returns zero distance for all such
@@ -495,7 +447,7 @@ DOUBLE_cached_cosine_distance(const char *u, const char *v,
  * #SQ = sq,#
  * #do_sqrt = 0,1#
  */
- 
+
 static npy_double
 DOUBLE_@SQ@euclidean_distance(const char *u, const char *v, npy_intp dim,
                               npy_intp u_str, npy_intp v_str) {
@@ -524,9 +476,8 @@ DOUBLE_weighted_@SQ@euclidean_distance(const char *u, const char *v,
                          u += u_str,
                          v += v_str,
                          w += w_str) {
-        npy_double delta =  *(npy_double *)w * (*(npy_double *)u -
-                                                *(npy_double *)v);
-        dist += delta * delta;
+        npy_double delta = (*(npy_double *)u - *(npy_double *)v);
+        dist += *(npy_double *)w * delta * delta;
     }
     #if @do_sqrt@
         dist = sqrt(dist);
@@ -542,7 +493,7 @@ DOUBLE_weighted_@SQ@euclidean_distance(const char *u, const char *v,
  * #isbool = 1,0,0#
  */
 
- 
+
 /* The Hamming distance.
  *
  * The formula used in scipy.spatial.distance is normalized by the length
@@ -556,7 +507,7 @@ DOUBLE_weighted_@SQ@euclidean_distance(const char *u, const char *v,
  * The definition of scipy.spatial.distance.sokalmichener is, by the way,
  * equivalent to scipy.spatial.distance.rogerstanimoto, which is wrong.
  */
- 
+
 static npy_double
 @TYPE@_hamming_distance(const char *u, const char *v, npy_intp dim,
                         npy_intp u_str, npy_intp v_str) {
@@ -570,7 +521,7 @@ static npy_double
             dist += *(@type@ *)u != *(@type@ *)v;
         #endif
     }
-    
+
     return dist / (npy_double) dim;
 }
 
@@ -679,7 +630,7 @@ static npy_double
  * it into scipy.spatial.distance. Keeping it for backwards compatibility,
  * although it is probably wrong.
  */
- 
+
 static npy_double
 @TYPE@_kulsinski_distance(const char *u, const char *v, npy_intp dim,
                           npy_intp u_str, npy_intp v_str) {
@@ -794,7 +745,7 @@ static npy_double
     return denom == 0 ? 0 : ntf_plus_nft / (npy_double) denom;
 }
 
-/* 
+/*
  * The Yule Q distance.
  *
  * Matches the definition in [Choi 2010], one minus the definition in
@@ -839,7 +790,7 @@ static npy_double
     return  denom == 0? 0 : 2 * ntfxnft / (npy_double) denom;
 }
 
-/**end repeat**/ 
+/**end repeat**/
 
 /* The great-circle distance on the surface of a sphere
  *
@@ -898,32 +849,81 @@ DOUBLE_great_circle_distance_degrees(const char *u, const char *v,
                                  *(npy_double *)v * deg2rad,
                                  *(npy_double *)(v + v_str) * deg2rad);
 }
- 
+
+/* The Mahalanobis distance */
+
+static npy_double
+DOUBLE_mahalanobis_distance(const char *u, const char *v, const char *V,
+                            npy_double *buffer, npy_intp dim,
+                            npy_intp u_str, npy_intp v_str,
+                            npy_intp V_row_str, npy_intp V_col_str)
+{
+    npy_intp j, k,
+             V_diag_str = V_row_str + V_col_str;
+    npy_double *buf_ptr = buffer,
+               dist = 0;
+    const char *row_ptr, *col_ptr;
+    /*
+     * The Mahalanobis distance of two n-dimensional vectors, when computed
+     * as a straightforward vector-matrix-vector multiplication, requires
+     * n * (n + 1) multiplications and (n + 1) * (n - 1) additions, and
+     * intermediate storage of size n.
+     * When calculated as below, only n * (n  +3) / 2 multiplications and
+     * n * (n - 1) additions, and no intermediate storage.
+     * The buffer of size n is used
+     */
+
+    for(j = 0; j < dim; j++, u += u_str, v += v_str) {
+        *buf_ptr++ = *(npy_double *)u - *(npy_double *)v;
+    }
+
+    for (j = 0; j < dim; V += V_diag_str) {
+        npy_double mult = *buffer++,
+                   part_sum = mult * *(npy_double *)V;
+
+        for (row_ptr = V + V_row_str,
+             col_ptr = V + V_col_str,
+             buf_ptr = buffer,
+             k = ++j; k < dim; k++,
+                             row_ptr += V_row_str,
+                             col_ptr += V_col_str,
+                             buf_ptr++) {
+            part_sum += *buf_ptr * (*(npy_double *)row_ptr +
+                                    *(npy_double *)col_ptr);
+        }
+        dist += part_sum * mult;
+    }
+    return sqrt(dist);
+}
+
+
+
+
 /*
  *****************************************************************************
  **                         AUXILIARY GUFUNC LOOPS                          **
  *****************************************************************************
- */ 
+ */
 
 /* Computes (and returns) Euclidean norm over the last dimension of the
  * input.
  */
- 
+
 static void
 norm_kernel(char **args, npy_intp *dimensions,
             npy_intp *steps, void *data)
 {
     INIT_OUTER_LOOP_2(dimensions, steps)
-    
+
     npy_intp vec_dim = *dimensions;
     npy_intp u_str = *steps;
-    
+
     BEGIN_OUTER_LOOP_2(args)
         const char *u = args[0];
         char *norm = args[1];
         npy_intp j;
         npy_double u_norm = 0;
-        
+
         for(j = 0; j < vec_dim; j++,
                                 u += u_str) {
             npy_double u_val = *(npy_double *)u;
@@ -932,30 +932,30 @@ norm_kernel(char **args, npy_intp *dimensions,
         *(npy_double *)norm = sqrt(u_norm);
     END_OUTER_LOOP
 } /* End of norm_kernel function */
- 
+
 /* Computes (and returns) both the mean and the square root of the sum of
  * squared differences from the mean (ssqdm) over the last dimension
  * of the input.
  */
- 
+
 static void
 mean_ssqdm_kernel(char **args, npy_intp *dimensions,
                   npy_intp *steps, void *data)
 {
     INIT_OUTER_LOOP_3(dimensions, steps)
-    
+
     npy_intp vec_dim = *dimensions;
     npy_intp u_str = *steps++;
-    
+
     BEGIN_OUTER_LOOP_3(args)
         const char *u;
         char *mean = args[1], *ssqdm = args[2];
         npy_intp j;
         npy_double u_mean = 0, u_ssqdm = 0;
-        
+
         for (u = args[0],
              j = 0; j < vec_dim; j++,
-                                 u  += u_str) {
+                                 u += u_str) {
             u_mean += *(npy_double *)u;
         }
         u_mean /= vec_dim;
@@ -981,18 +981,18 @@ center_ssqdm_kernel(char **args, npy_intp *dimensions,
                     npy_intp *steps, void *data)
 {
     INIT_OUTER_LOOP_3(dimensions, steps)
-    
+
     npy_intp vec_dim = *dimensions;
     npy_intp u_i_str = *steps++,
              u_o_str = *steps++;
-    
+
     BEGIN_OUTER_LOOP_3(args)
         const char *u_in;
         char *u_out,
              *ssqdm = args[2];
         npy_intp j;
         npy_double u_mean = 0, u_ssqdm = 0;
-        
+
         for (u_in = args[0],
              j = 0; j < vec_dim; j++,
                                  u_in += u_i_str) {
@@ -1019,27 +1019,27 @@ center_ssqdm_kernel(char **args, npy_intp *dimensions,
  */
 
 /* Generic GUFUNC kernel for distances of two arguments */
- 
+
 static void
 distance_uv_kernel(char **args, npy_intp *dimensions,
                    npy_intp *steps, void *data)
 {
     INIT_OUTER_LOOP_3(dimensions, steps)
-    
+
     npy_intp vec_dim = *dimensions;
     npy_intp u_str = *steps++,
              v_str = *steps;
-             
+
     typedef npy_double (*distance_func)(const char*, const char*, npy_intp,
                                         npy_intp, npy_intp);
-    
+
     distance_func func = (distance_func) data;
-    
+
     BEGIN_OUTER_LOOP_3(args)
         const char *u_vec = args[0],
                    *v_vec = args[1];
         char *dist = args[2];
-        
+
         *(npy_double *)dist = func(u_vec, v_vec, vec_dim, u_str, v_str);
     END_OUTER_LOOP
 } /* End of distance_uv_kernel function */
@@ -1051,23 +1051,23 @@ pairwise_distance_uv_kernel(char **args, npy_intp *dimensions,
                             npy_intp *steps, void *data)
 {
     INIT_OUTER_LOOP_2(dimensions, steps)
-    
-    npy_intp u_len = *dimensions++, 
+
+    npy_intp u_len = *dimensions++,
              vec_dim = *dimensions++;
     npy_intp u_len_str = *steps++,
              u_str = *steps++,
              pdist_str = *steps;
-             
+
     typedef npy_double (*distance_func)(const char*, const char*, npy_intp,
                                         npy_intp, npy_intp);
-    
+
     distance_func func = (distance_func)data;
-   
+
     BEGIN_OUTER_LOOP_2(args)
         const char *u, *v;
         char *pdist;
         npy_intp j, k;
-        
+
         for (u = args[0],
              pdist = args[1],
              j = 0; j < u_len; j++,
@@ -1091,24 +1091,24 @@ cached_distance_uv_kernel(char **args, npy_intp *dimensions,
                           npy_intp *steps, void *data)
 {
     INIT_OUTER_LOOP_5(dimensions, steps)
-    
+
     npy_intp vec_dim = *dimensions;
     npy_intp u_str = *steps++,
              v_str = *steps;
-             
+
     typedef npy_double (*distance_func)(const char*, const char*,
                                         const char*, const char*,
                                         npy_intp, npy_intp, npy_intp);
-    
+
     distance_func func = (distance_func) data;
-    
+
     BEGIN_OUTER_LOOP_5(args)
         const char *u_vec = args[0],
                    *v_vec = args[1],
                    *u_cache = args[2],
                    *v_cache = args[3];
         char *dist = args[4];
-        
+
         *(npy_double *)dist = func(u_vec, v_vec, u_cache, v_cache,
                                    vec_dim, u_str, v_str);
     END_OUTER_LOOP
@@ -1123,20 +1123,20 @@ cached_pairwise_distance_uv_kernel(char **args, npy_intp *dimensions,
                                    npy_intp *steps, void *data)
 {
     INIT_OUTER_LOOP_3(dimensions, steps)
-    
-    npy_intp u_len = *dimensions++, 
+
+    npy_intp u_len = *dimensions++,
              vec_dim = *dimensions++;
     npy_intp u_len_str = *steps++,
              u_str = *steps++,
              u_cache_str = *steps++,
              pdist_str = *steps;
-             
+
     typedef npy_double (*distance_func)(const char*, const char*,
                                         const char*, const char*,
                                         npy_intp, npy_intp, npy_intp);
-    
+
     distance_func func = (distance_func)data;
-   
+
     BEGIN_OUTER_LOOP_3(args)
         const char *u, *u_cache,
                    *v, *v_cache;
@@ -1170,18 +1170,18 @@ cached2_distance_uv_kernel(char **args, npy_intp *dimensions,
                           npy_intp *steps, void *data)
 {
     INIT_OUTER_LOOP_7(dimensions, steps)
-    
+
     npy_intp vec_dim = *dimensions;
     npy_intp u_str = *steps++,
              v_str = *steps;
-             
+
     typedef npy_double (*distance_func)(const char*, const char*,
                                         const char*, const char*,
                                         const char*, const char*,
                                         npy_intp, npy_intp, npy_intp);
-    
+
     distance_func func = (distance_func) data;
-    
+
     BEGIN_OUTER_LOOP_7(args)
         const char *u_vec = args[0],
                    *v_vec = args[1],
@@ -1190,7 +1190,7 @@ cached2_distance_uv_kernel(char **args, npy_intp *dimensions,
                    *u_cache2 = args[4],
                    *v_cache2 = args[5];
         char *dist = args[6];
-        
+
         *(npy_double *)dist = func(u_vec, v_vec, u_cache1, v_cache1,
                                    u_cache2, v_cache2, vec_dim, u_str, v_str);
     END_OUTER_LOOP
@@ -1205,22 +1205,22 @@ cached2_pairwise_distance_uv_kernel(char **args, npy_intp *dimensions,
                                    npy_intp *steps, void *data)
 {
     INIT_OUTER_LOOP_4(dimensions, steps)
-    
-    npy_intp u_len = *dimensions++, 
+
+    npy_intp u_len = *dimensions++,
              vec_dim = *dimensions++;
     npy_intp u_len_str = *steps++,
              u_str = *steps++,
              u_cache1_str = *steps++,
              u_cache2_str = *steps++,
              pdist_str = *steps;
-             
+
     typedef npy_double (*distance_func)(const char*, const char*,
                                         const char*, const char*,
                                         const char*, const char*,
                                         npy_intp, npy_intp, npy_intp);
-    
+
     distance_func func = (distance_func)data;
-   
+
     BEGIN_OUTER_LOOP_4(args)
         const char *u, *u_cache1, *u_cache2,
                    *v, *v_cache1, *v_cache2;
@@ -1249,6 +1249,73 @@ cached2_pairwise_distance_uv_kernel(char **args, npy_intp *dimensions,
         }
     END_OUTER_LOOP
 } /* End of cached2_pairwise_distance_uv_kernel function */
+
+/* GUFUNC kernel for Mahalanobis distance */
+
+static void
+mahalanobis_kernel(char **args, npy_intp *dimensions,
+                   npy_intp *steps, void *data)
+{
+    INIT_OUTER_LOOP_5(dimensions, steps)
+
+    npy_intp dims = *dimensions;
+    npy_intp u_str = *steps++,
+             v_str = *steps++,
+             V_row_str = *steps++,
+             V_col_str = *steps;
+
+    BEGIN_OUTER_LOOP_5(args)
+        const char *u = args[0],
+                   *v = args[1],
+                   *V = args[2];
+        npy_double *buffer = (npy_double *)args[3];
+        char *dist = args[4];
+
+        *(npy_double *)dist = DOUBLE_mahalanobis_distance(u, v, V, buffer,
+                                                          dims, u_str, v_str,
+                                                          V_row_str,
+                                                          V_col_str);
+    END_OUTER_LOOP
+} /* End of mahalanobis_kernel function */
+
+/* GUFUNC kernel for pairwise Mahalanobis distance */
+
+static void
+pairwise_mahalanobis_kernel(char **args, npy_intp *dimensions,
+                            npy_intp *steps, void *data)
+{
+    INIT_OUTER_LOOP_4(dimensions, steps) /* u, V, buffer, dist */
+
+    npy_intp u_len = *dimensions++,
+             dims = *dimensions++;
+    npy_intp u_len_str = *steps++,
+             u_str = *steps++,
+             V_row_str = *steps++,
+             V_col_str = *steps++,
+             pdist_str = *steps;
+
+    BEGIN_OUTER_LOOP_4(args)
+        const char *u = args[0],
+                   *v,
+                   *V = args[1];
+        npy_double *buffer = (npy_double *)args[2];
+        char *pdist = args[3];
+        npy_intp j, k;
+
+        for (j = 0; j < u_len; u += u_len_str) {
+            for (v = u + u_len_str,
+                 k = ++j; k < u_len; k++,
+                                     v += u_len_str,
+                                     pdist += pdist_str) {
+                *(npy_double *)pdist =
+                    DOUBLE_mahalanobis_distance(u, v, V, buffer,
+                                                dims, u_str, u_str,
+                                                V_row_str, V_col_str);
+            }
+        }
+    END_OUTER_LOOP
+} /* End of pairwise_mahalanobis_kernel function */
+
 
 /*
  *****************************************************************************
@@ -1408,6 +1475,14 @@ PyUFuncGenericFunction cached2_pairwise_distance_uv_kernel_funcs[] = {
     &cached2_pairwise_distance_uv_kernel,
 };
 
+PyUFuncGenericFunction mahalanobis_kernel_funcs[] = {
+    &mahalanobis_kernel,
+};
+
+PyUFuncGenericFunction pairwise_mahalanobis_kernel_funcs[] = {
+    &pairwise_mahalanobis_kernel,
+};
+
 static char all_DOUBLE_types[] = {
     NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE,
     NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE,
@@ -1497,7 +1572,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_braycurtis",
         "(n,d)->(p)",
-        "Bray-Curtis distance on all pairs of vectors over the "
+        "Bray-Curtis distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         1, 1, 1,
@@ -1519,7 +1594,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_canberra",
         "(n,d)->(p)",
-        "Canberra distance on all pairs of vectors over the "
+        "Canberra distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         1, 1, 1,
@@ -1541,7 +1616,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_chebyshev",
         "(n,d)->(p)",
-        "Chebyshev distance on all pairs of vectors over the "
+        "Chebyshev distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         1, 1, 1,
@@ -1563,7 +1638,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_min_chebyshev",
         "(n,d)->(p)",
-        "Minimum Chebyshev distance on all pairs of vectors over the "
+        "Minimum Chebyshev distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         1, 1, 1,
@@ -1585,7 +1660,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_cityblock",
         "(n,d)->(p)",
-        "City Block (Manhattan) distance on all pairs of vectors over the "
+        "City Block (Manhattan) distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         1, 1, 1,
@@ -1607,7 +1682,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_correlation",
         "(n,d)->(p)",
-        "Correlation distance on all pairs of vectors over the "
+        "Correlation distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         1, 1, 1,
@@ -1629,7 +1704,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_cached_pairwise_correlation",
         "(n,d),(n),(n)->(p)",
-        "Cached correlation distance on all pairs of vectors over the "
+        "Cached correlation distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d),(n),(n)->(p)\n",
         1, 3, 1,
@@ -1651,7 +1726,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_cosine",
         "(n,d)->(p)",
-        "Cosine distance on all pairs of vectors over the "
+        "Cosine distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         1, 1, 1,
@@ -1673,7 +1748,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_cached_pairwise_cosine",
         "(n,d),(n)->(p)",
-        "Cosine distance on all pairs of vectors over the "
+        "Cosine distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d),(n)->(p)\n",
         1, 2, 1,
@@ -1695,7 +1770,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_euclidean",
         "(n,d)->(p)",
-        "Euclidean distance on all pairs of vectors over the "
+        "Euclidean distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         1, 1, 1,
@@ -1717,7 +1792,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_sqeuclidean",
         "(n,d)->(p)",
-        "Squared Euclidean distance on all pairs of vectors over the "
+        "Squared Euclidean distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         1, 1, 1,
@@ -1739,7 +1814,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_dice",
         "(n,d)->(p)",
-        "Dice distance on all pairs of vectors over the "
+        "Dice distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         3, 1, 1,
@@ -1761,7 +1836,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_hamming",
         "(n,d)->(p)",
-        "Hamming distance on all pairs of vectors over the "
+        "Hamming distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         3, 1, 1,
@@ -1783,7 +1858,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_jaccard",
         "(n,d)->(p)",
-        "Jaccard distance on all pairs of vectors over the "
+        "Jaccard distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         3, 1, 1,
@@ -1805,7 +1880,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_kulsinski",
         "(n,d)->(p)",
-        "Kulsinski distance on all pairs of vectors over the "
+        "Kulsinski distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         3, 1, 1,
@@ -1827,7 +1902,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_rogerstanimoto",
         "(n,d)->(p)",
-        "Rogers-Tanimoto distance on all pairs of vectors over the "
+        "Rogers-Tanimoto distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         3, 1, 1,
@@ -1849,7 +1924,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_russellrao",
         "(n,d)->(p)",
-        "Russell-Rao distance on all pairs of vectors over the "
+        "Russell-Rao distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         3, 1, 1,
@@ -1871,7 +1946,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_sokalsneath",
         "(n,d)->(p)",
-        "Sokal-Sneath distance on all pairs of vectors over the "
+        "Sokal-Sneath distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         3, 1, 1,
@@ -1893,7 +1968,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_yule",
         "(n,d)->(p)",
-        "Yule distance on all pairs of vectors over the "
+        "Yule distance of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         3, 1, 1,
@@ -1915,7 +1990,7 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
     {
         "_pairwise_greatcircle",
         "(n,d)->(p)",
-        "Great-circle distance on a sphere on all pairs of vectors over the "
+        "Great-circle distance on a sphere of all pairs of vectors over the "
         "last two dimensions, broadcast on the rest.\n"
         "    (n,d)->(p)\n",
         1, 1, 1,
@@ -1923,6 +1998,29 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
         all_DOUBLE_types,
         greatcircle_degrees_data
     },
+    {
+        "_mahalanobis",
+        "(d),(d),(d,d),(d)->()",
+        "Mahalanobis distance on the last dimension, "
+        "broadcast on the rest.\n"
+        "    (d),(d),(d,d),(d)->()\n",
+        1, 4, 1,
+        mahalanobis_kernel_funcs,
+        all_DOUBLE_types,
+        null_data
+    },
+    {
+        "_pairwise_mahalanobis",
+        "(n,d),(d,d),(d)->(p)",
+        "Mahalanobis distance on all pairs of vectors over the "
+        "last two dimensions, broadcast on the rest.\n"
+        "    (n,d),(d,d),(d)->(p)\n",
+        1, 3, 1,
+        pairwise_mahalanobis_kernel_funcs,
+        all_DOUBLE_types,
+        null_data
+    },
+
 }; /* End of gufunc_descriptors declaration */
 
 static void
@@ -1953,7 +2051,7 @@ addUfuncs(PyObject *dictionary) {
  **                          MODULE INITIALIZATION                          **
  *****************************************************************************
  */
- 
+
 static PyMethodDef module_methods[] = {
     {NULL, NULL, 0, NULL},        /* Sentinel */
 };

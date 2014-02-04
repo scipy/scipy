@@ -116,12 +116,14 @@ def _generic_uv_distance(u, v=None, out=None, cdist=False, dtype=None,
             raise TypeError('return arrays must be of ArrayType')
         elif out.ndim < 1 or out.shape[-1] != p_len:
             raise ValueError('wrong return array shape for pairwise distance')
+        func = pdist_gufunc
         args = (u,)
-        kwargs = {'out' : out}
         if cached and not lowmem:
             args = _cache_array(u, cache_gufunc)
-            return cached_pdist_gufunc(*args, **kwargs)
-        return pdist_gufunc(*args, **kwargs)
+            func = cached_pdist_gufunc
+        # numpy 1.5 only supports out as a positional (not keyword) argument
+        args = args + (out,)
+        return func(*args)
     else:
         dt = None if isinstance(v, np.ndarray) else dtype
         v = np.asarray(v, dtype=dt)
@@ -131,17 +133,20 @@ def _generic_uv_distance(u, v=None, out=None, cdist=False, dtype=None,
             u = u[..., np.newaxis, :]
             v = v[..., np.newaxis, :, :]
             scalar_output = False
+        func = dist_gufunc
         args = (u, v)
         kwargs = {} if out is None else {'out' : out}
         if cached and not lowmem and _broadcast_has_zero_strides(*args):
             args = (_cache_array(j, cache_gufunc) for j in (u, v))
             args = tuple(_imerge(*args))
-            ret = cached_dist_gufunc(*args, **kwargs)
-        else:
-            ret = dist_gufunc(*args, **kwargs)
-    if scalar_output:
-        ret = float(ret.squeeze())
-    return ret
+            func = cached_dist_gufunc
+        # numpy 1.5 only supports out as a positional (not keyword) argument
+        if out is not None:
+            args = args + (out,)
+        ret = func(*args)
+        if scalar_output:
+            ret = float(ret.squeeze())
+        return ret
         
 def braycurtis(u, v=None, out=None, cdist=False):
     return _generic_uv_distance(u, v, out, cdist,
