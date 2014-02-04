@@ -1328,6 +1328,9 @@ class weibull_min_gen(rv_continuous):
     def _ppf(self, q, c):
         return np.power(-log1p(-q), 1.0/c)
 
+    def _isf(self, q, c):
+        return np.power(-log(q), 1./c)
+
     def _munp(self, n, c):
         return special.gamma(1.0+n*1.0/c)
 
@@ -1380,7 +1383,7 @@ class weibull_max_gen(rv_continuous):
 
     .. [3] http://en.wikipedia.org/wiki/Generalized_extreme_value_distribution#Link_to_Fr.C3.A9chet.2C_Weibull_and_Gumbel_families
 
-    .. [4] http://en.wikipedia.org/wiki/Fisher%E2%80%93Tippett%E2%80%93Gnedenko_theorem
+    .. [4] http://en.wikipedia.org/wiki/Fisher-Tippett-Gnedenko_theorem
 
 
     %(example)s
@@ -1458,7 +1461,7 @@ class frechet_gen(rv_continuous):
 
     .. [3] http://en.wikipedia.org/wiki/Generalized_extreme_value_distribution#Link_to_Fr.C3.A9chet.2C_Weibull_and_Gumbel_families
 
-    .. [4] http://en.wikipedia.org/wiki/Fisher%E2%80%93Tippett%E2%80%93Gnedenko_theorem
+    .. [4] http://en.wikipedia.org/wiki/Fisher-Tippett-Gnedenko_theorem
 
     %(example)s
 
