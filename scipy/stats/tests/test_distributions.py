@@ -758,14 +758,13 @@ class TestChi2(TestCase):
 
 
 class TestGenExtreme(TestCase):
-    """
-    Test both the generalized extreme value distribution (genextreme) and related
-    special cases.  These vary according to the value of the so-called "extreme value
-    index" (EVI) parameter c: weibull_max (c<0), gumbel_r (c=0), and frechet (c>0).
-    """
+    
+    # Test both the generalized extreme value distribution (genextreme) and related
+    # special cases.  These vary according to the value of the so-called "extreme value
+    # index" (EVI) parameter c: weibull_max (c<0), gumbel_r (c=0), and frechet (c>0).
 
     def test_genextreme_support(self):
-        """The support of this distribution depends on c, mu, sigma."""
+        # The support of this distribution depends on c, mu, sigma.
 
         (mu,sigma)=(1,2) # Arbitrary non-default scale & location
 
@@ -802,23 +801,22 @@ class TestGenExtreme(TestCase):
         assert_(np.isinf(a))
 
     def test_genextreme_known_exact(self):
-        """
-        Compare results with some known exact formulas.
+        ## Compare results with some known exact formulas.
 
-        Some exact values of the generalized extreme value cdf with (mu, sigma)=(0, 1)
+        ## Some exact values of the generalized extreme value cdf with (mu, sigma)=(0, 1)
 
-        == == =============
-         c  x cdf
-        == == =============
-        -1 -1 exp(-2)
-        -1  0 exp(-1)
-         0 -1 exp(-exp(1))
-         0  0 exp(-1)
-         0  1 exp(-exp(-1))
-         1  0 exp(-1)
-         1  1 exp(-(1/2))
-        == == =============
-        """
+        ## == == =============
+        ##  c  x cdf
+        ## == == =============
+        ## -1 -1 exp(-2)
+        ## -1  0 exp(-1)
+        ##  0 -1 exp(-exp(1))
+        ##  0  0 exp(-1)
+        ##  0  1 exp(-exp(-1))
+        ##  1  0 exp(-1)
+        ##  1  1 exp(-(1/2))
+        ## == == =============
+
         # c = -1
         G=stats.genextreme(-1).cdf
         assert_allclose([G(-1), G(0)], np.exp([-2, -1]))
@@ -832,9 +830,7 @@ class TestGenExtreme(TestCase):
         assert_allclose([G(0), G(1)], np.exp([-1, -1./2]))
 
     def test_genextreme_equivalents(self):
-        """
-        Test equivalency between GEV and Frechet and Weibull distributions.
-        """
+        # Test equivalency between GEV and Frechet and Weibull distributions.
 
         (mu,sigma)=(1,2) # Arbitrary non-default scale & location
 
@@ -851,9 +847,7 @@ class TestGenExtreme(TestCase):
         assert_allclose([G(0), G(1)], [F(0), F(1)])
 
     def test_weibull_inverse_of_frechet(self):
-        """
-        The Weibull_min distribution and the Frechet distribution are inverses; check implied identity.
-        """
+        # The Weibull_min distribution and the Frechet distribution are inverses; check implied identity.
 
         (q,c)=(0.25,1.5) # Arbitrary
         
