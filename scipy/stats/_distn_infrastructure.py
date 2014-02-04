@@ -13,6 +13,7 @@ import inspect
 import types
 
 from scipy.misc import doccer
+from ._distr_params import distcont, distdiscrete
 
 from scipy.special import comb, xlogy, chndtr, gammaln, hyp0f1
 
@@ -150,7 +151,7 @@ _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
 
 # Note that the two lines for %(shapes) are searched for and replaced in
 # rv_continuous and rv_discrete - update there if the exact string changes
-_doc_default_callparams = """\
+_doc_default_callparams = """
 Parameters
 ----------
 x : array_like
@@ -188,25 +189,41 @@ _doc_default_example = """\
 Examples
 --------
 >>> from scipy.stats import %(name)s
->>> numargs = %(name)s.numargs
->>> [ %(shapes)s ] = [0.9,] * numargs
+>>> import matplotlib.pyplot as plt
+>>> fig, ax = plt.subplots(1, 1)
+
+Calculate a few first moments:
+
+%(set_vals_stmt)s
+>>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
+
+Display the probability density function (``pdf``):
+
+>>> x = np.linspace(%(name)s.ppf(0.01, %(shapes)s),
+...               %(name)s.ppf(0.99, %(shapes)s), 100)
+>>> ax.plot(x, %(name)s.pdf(x, %(shapes)s),
+...          'r-', lw=5, alpha=0.6, label='%(name)s pdf')
+
+Alternatively, freeze the distribution and display the frozen pdf:
+
 >>> rv = %(name)s(%(shapes)s)
+>>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
 
-Display frozen pdf
+Check accuracy of ``cdf`` and ``ppf``:
 
->>> x = np.linspace(0, np.minimum(rv.dist.b, 3))
->>> h = plt.plot(x, rv.pdf(x))
+>>> vals = %(name)s.ppf([0.001, 0.5, 0.999], %(shapes)s)
+>>> np.allclose([0.001, 0.5, 0.999], %(name)s.cdf(vals, %(shapes)s))
+True
 
-Here, ``rv.dist.b`` is the right endpoint of the support of ``rv.dist``.
+Generate random numbers:
 
-Check accuracy of cdf and ppf
+>>> r = %(name)s.rvs(%(shapes)s, size=1000)
 
->>> prb = %(name)s.cdf(x, %(shapes)s)
->>> h = plt.semilogy(np.abs(x - %(name)s.ppf(prb, %(shapes)s)) + 1e-20)
+And compare the histogram:
 
-Random number generation
-
->>> R = %(name)s.rvs(%(shapes)s, size=100)
+>>> ax.hist(r, normed=True, histtype='stepfilled', alpha=0.2)
+>>> ax.legend(loc='best', frameon=False)
+>>> plt.show()
 """
 
 _doc_default = ''.join([_doc_default_longsummary,
@@ -283,25 +300,38 @@ _doc_default_discrete_example = """\
 Examples
 --------
 >>> from scipy.stats import %(name)s
->>> [ %(shapes)s ] = [<Replace with reasonable values>]
+>>> import matplotlib.pyplot as plt
+>>> fig, ax = plt.subplots(1, 1)
+
+Calculate a few first moments:
+
+%(set_vals_stmt)s
+>>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
+
+Display the probability mass function (``pmf``):
+
+>>> x = np.arange(%(name)s.ppf(0.01, %(shapes)s),
+...               %(name)s.ppf(0.99, %(shapes)s))
+>>> ax.plot(x, %(name)s.pmf(x, %(shapes)s), 'bo', ms=8, label='%(name)s pmf')
+>>> ax.vlines(x, 0, %(name)s.pmf(x, %(shapes)s), colors='b', lw=5, alpha=0.5)
+
+Alternatively, freeze the distribution and display the frozen ``pmf``:
+
 >>> rv = %(name)s(%(shapes)s)
+>>> ax.vlines(x, 0, rv.pmf(x), colors='k', linestyles='-', lw=1, 
+...         label='frozen pmf')
+>>> ax.legend(loc='best', frameon=False)
+>>> plt.show()
 
-Display frozen pmf
+Check accuracy of ``cdf`` and ``ppf``:
 
->>> x = np.arange(0, np.minimum(rv.dist.b, 3))
->>> h = plt.vlines(x, 0, rv.pmf(x), lw=2)
+>>> prob = %(name)s.cdf(x, %(shapes)s)
+>>> np.allclose(x, %(name)s.ppf(prob, %(shapes)s))
+True
 
-Here, ``rv.dist.b`` is the right endpoint of the support of ``rv.dist``.
+Generate random numbers:
 
-Check accuracy of cdf and ppf
-
->>> prb = %(name)s.cdf(x, %(shapes)s)
->>> h = plt.semilogy(np.abs(x - %(name)s.ppf(prb, %(shapes)s)) + 1e-20)
-
-Random number generation
-
->>> R = %(name)s.rvs(%(shapes)s, size=100)
-
+>>> r = %(name)s.rvs(%(shapes)s, size=1000)
 """
 docdict_discrete['example'] = _doc_default_discrete_example
 
@@ -397,10 +427,10 @@ class rv_frozen(object):
         self.kwds = kwds
 
         # create a new instance
-        self.dist = dist.__class__(**dist._ctor_param)    
+        self.dist = dist.__class__(**dist._ctor_param)
 
         # a, b may be set in _argcheck, depending on *args, **kwds. Ouch.
-        shapes, _, _ = self.dist._parse_args(*args, **kwds) 
+        shapes, _, _ = self.dist._parse_args(*args, **kwds)
         self.dist._argcheck(*shapes)
 
     def pdf(self, x):   # raises AttributeError in frozen discrete distribution
@@ -656,6 +686,36 @@ class rv_generic(object):
         if not hasattr(self, 'numargs'):
             # allows more general subclassing with *args
             self.numargs = len(shapes)
+
+    def _construct_doc(self, docdict, shapes_vals=None):
+        """Construct the instance docstring with string substitutions."""
+        tempdict = docdict.copy()
+        tempdict['name'] = self.name or 'distname'
+        tempdict['shapes'] = self.shapes or ''
+
+        if shapes_vals is None:
+            shapes_vals = ()
+        vals = ', '.join(str(_) for _ in shapes_vals)
+        tempdict['vals'] = vals
+
+        if self.shapes:
+            tempdict['set_vals_stmt'] = '>>> %s = %s' % (self.shapes, vals)
+        else:
+            tempdict['set_vals_stmt'] = ''
+
+        if self.shapes is None:
+            # remove shapes from call parameters if there are none
+            for item in ['callparams', 'default', 'before_notes']:
+                tempdict[item] = tempdict[item].replace(
+                    "\n%(shapes)s : array_like\n    shape parameters", "")
+        for i in range(2):
+            if self.shapes is None:
+                # necessary because we use %(shapes)s in two forms (w w/o ", ")
+                self.__doc__ = self.__doc__.replace("%(shapes)s, ", "")
+            self.__doc__ = doccer.docformat(self.__doc__, tempdict)
+
+        # correct for empty shapes
+        self.__doc__ = self.__doc__.replace('(, ', '(').replace(', )', ')')
 
     def freeze(self, *args, **kwds):
         """Freeze the distribution for the given arguments.
@@ -1391,7 +1451,8 @@ class rv_continuous(rv_generic):
                 self._construct_default_doc(longname=longname,
                                             extradoc=extradoc)
             else:
-                self._construct_doc()
+                dct = dict(distcont)
+                self._construct_doc(docdict, dct.get(self.name))
 
     def _construct_default_doc(self, longname=None, extradoc=None):
         """Construct instance docstring from the default template."""
@@ -1404,24 +1465,7 @@ class rv_continuous(rv_generic):
         self.__doc__ = ''.join(['%s continuous random variable.' % longname,
                                 '\n\n%(before_notes)s\n', docheaders['notes'],
                                 extradoc, '\n%(example)s'])
-        self._construct_doc()
-
-    def _construct_doc(self):
-        """Construct the instance docstring with string substitutions."""
-        tempdict = docdict.copy()
-        tempdict['name'] = self.name or 'distname'
-        tempdict['shapes'] = self.shapes or ''
-
-        if self.shapes is None:
-            # remove shapes from call parameters if there are none
-            for item in ['callparams', 'default', 'before_notes']:
-                tempdict[item] = tempdict[item].replace(
-                    "\n%(shapes)s : array_like\n    shape parameters", "")
-        for i in range(2):
-            if self.shapes is None:
-                # necessary because we use %(shapes)s in two forms (w w/o ", ")
-                self.__doc__ = self.__doc__.replace("%(shapes)s, ", "")
-            self.__doc__ = doccer.docformat(self.__doc__, tempdict)
+        self._construct_doc(docdict)
 
     def _ppf_to_solve(self, x, q, *args):
         return self.cdf(*(x, )+args)-q
@@ -2187,12 +2231,12 @@ def _drv_nonzero(self, k, *args):
 
 def _drv_moment(self, n, *args):
     n = asarray(n)
-    return sum(self.xk**n[newaxis,...] * self.pk, axis=0)
+    return sum(self.xk**n[np.newaxis,...] * self.pk, axis=0)
 
 
 def _drv_moment_gen(self, t, *args):
     t = asarray(t)
-    return sum(exp(self.xk * t[newaxis,...]) * self.pk, axis=0)
+    return sum(exp(self.xk * t[np.newaxis,...]) * self.pk, axis=0)
 
 
 def _drv2_moment(self, n, *args):
@@ -2611,7 +2655,8 @@ class rv_discrete(rv_generic):
                 self._construct_default_doc(longname=longname,
                                             extradoc=extradoc)
             else:
-                self._construct_doc()
+                dct = dict(distdiscrete)
+                self._construct_doc(docdict_discrete, dct.get(self.name))
 
             #discrete RV do not have the scale parameter, remove it
             self.__doc__ = self.__doc__.replace(
@@ -2627,24 +2672,7 @@ class rv_discrete(rv_generic):
         self.__doc__ = ''.join(['%s discrete random variable.' % longname,
                                 '\n\n%(before_notes)s\n', docheaders['notes'],
                                 extradoc, '\n%(example)s'])
-        self._construct_doc()
-
-    def _construct_doc(self):
-        """Construct the instance docstring with string substitutions."""
-        tempdict = docdict_discrete.copy()
-        tempdict['name'] = self.name or 'distname'
-        tempdict['shapes'] = self.shapes or ''
-
-        if self.shapes is None:
-            # remove shapes from call parameters if there are none
-            for item in ['callparams', 'default', 'before_notes']:
-                tempdict[item] = tempdict[item].replace(
-                    "\n%(shapes)s : array_like\n    shape parameters", "")
-        for i in range(2):
-            if self.shapes is None:
-                # necessary because we use %(shapes)s in two forms (w w/o ", ")
-                self.__doc__ = self.__doc__.replace("%(shapes)s, ", "")
-            self.__doc__ = doccer.docformat(self.__doc__, tempdict)
+        self._construct_doc(docdict_discrete)
 
     def _nonzero(self, k, *args):
         return floor(k) == k
