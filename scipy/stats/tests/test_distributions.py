@@ -764,10 +764,10 @@ class TestGenExtreme(TestCase):
     index" (EVI) parameter c: weibull_max (c<0), gumbel_r (c=0), and frechet (c>0).
     """
 
-    def test_genextreme_support(mu=1, sigma=2):
+    def test_genextreme_support(self):
         """The support of this distribution depends on c, mu, sigma."""
 
-        # Points to evaluate:
+        (mu,sigma)=(1,2) # Arbitrary non-default scale & location
 
         # Gumbel case; unbounded support
         c=0
@@ -779,7 +779,7 @@ class TestGenExtreme(TestCase):
         assert_(np.isinf(a))
         assert_(np.isinf(b))
         X=[-10, -1, -.1, 0, .1, 1, 10]
-        assert_allclose([gum.cdf(x) for x in X], [gev.cdf(x) for x in X])
+        assert_allclose(gum.cdf(X), gev.cdf(X))
 
         # Frechet case
         c=1
@@ -801,7 +801,7 @@ class TestGenExtreme(TestCase):
         assert_allclose(b, mu-sigma/c)
         assert_(np.isinf(a))
 
-    def test_genextreme_known_exact():
+    def test_genextreme_known_exact(self):
         """
         Compare results with some known exact formulas.
 
@@ -831,10 +831,13 @@ class TestGenExtreme(TestCase):
         G=stats.genextreme(1).cdf
         assert_allclose([G(0), G(1)], np.exp([-1, -1./2]))
 
-    def test_genextreme_equivalents(mu=1, sigma=2):
+    def test_genextreme_equivalents(self):
         """
         Test equivalency between GEV and Frechet and Weibull distributions.
         """
+
+        (mu,sigma)=(1,2) # Arbitrary non-default scale & location
+
         c=-1 # EVI parameter
         G=stats.genextreme(c, loc=mu, scale=sigma).cdf
         W=stats.weibull_max(-1./c, loc=(mu-sigma/c), scale=sigma/abs(c)).cdf
@@ -847,10 +850,13 @@ class TestGenExtreme(TestCase):
 
         assert_allclose([G(0), G(1)], [F(0), F(1)])
 
-    def test_weibull_inverse_of_frechet(q=0.5,c=1.5):
+    def test_weibull_inverse_of_frechet(self):
         """
         The Weibull_min distribution and the Frechet distribution are inverses; check implied identity.
         """
+
+        (q,c)=(0.25,1.5) # Arbitrary
+        
         W=stats.weibull_min(c).cdf
         Finv=stats.frechet(c).ppf
 

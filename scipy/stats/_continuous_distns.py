@@ -1302,6 +1302,9 @@ class weibull_min_gen(rv_continuous):
     current, and poses a name conflict with the (related) Frechet
     distribution as implemented in scipy.stats (`frechet`).
 
+    The distribution `weibull_min` is mean to be functionally
+    equivalent to Mathematica's WeibullDistribution [4]_.
+
 
     References
     ----------
@@ -1312,6 +1315,8 @@ class weibull_min_gen(rv_continuous):
            http://mathworld.wolfram.com/WeibullDistribution.html
 
     .. [3] http://en.wikipedia.org/wiki/Weibull_distribution
+
+    .. [4] http://reference.wolfram.com/mathematica/ref/WeibullDistribution.html
 
     %(example)s
 
@@ -1451,6 +1456,8 @@ class frechet_gen(rv_continuous):
     (`genextreme`), corresponding to the case in which the shape
     parameter (or "extreme value index") is positive [2]_.
 
+    The distribution `frechet` is mean to be functionally
+    equivalent to Mathematica's FrechetDistribution [5]_.
 
     References
     ----------
@@ -1462,6 +1469,8 @@ class frechet_gen(rv_continuous):
     .. [3] http://en.wikipedia.org/wiki/Generalized_extreme_value_distribution#Link_to_Fr.C3.A9chet.2C_Weibull_and_Gumbel_families
 
     .. [4] http://en.wikipedia.org/wiki/Fisher-Tippett-Gnedenko_theorem
+
+    .. [5] http://reference.wolfram.com/mathematica/ref/FrechetDistribution.html
 
     %(example)s
 
@@ -2076,6 +2085,13 @@ class gumbel_r_gen(rv_continuous):
     The Gumbel distribution is sometimes referred to as a type I Fisher-Tippett
     distribution.  It is also related to the extreme value distribution,
     log-Weibull and Gompertz distributions.
+
+    The distribution `gumbel_r` is mean to be functionally equivalent
+    to Mathematica's GumbelDistribution [1]_.
+
+    References
+    ----------
+    .. [1] http://reference.wolfram.com/mathematica/ref/GumbelDistribution.html
 
     %(example)s
 
