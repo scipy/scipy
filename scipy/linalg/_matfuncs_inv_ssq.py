@@ -21,6 +21,11 @@ import scipy.special
 __all__ = ['logm', 'fractional_matrix_power']
 
 
+class LogmRankWarning(UserWarning):
+    """Issued when the input matrix is exactly singular"""
+    pass
+
+
 class LogmError(np.linalg.LinAlgError):
     pass
 
@@ -836,6 +841,16 @@ def _logm_triu(T):
     return U
 
 
+def _logm_fudge_singular_triangular_matrix(T):
+    exact_singularity_msg = 'The logm input matrix is exactly singular.'
+    warnings.warn(exact_singularity_msg, LogmRankWarning)
+    n = T.shape[0]
+    tri_eps = 1e-20
+    for i in range(n):
+        if not T[i, i]:
+            T[i, i] = tri_eps
+
+
 def logm(A):
     """
     Compute matrix logarithm.
@@ -871,6 +886,14 @@ def logm(A):
            32 (3). pp. 1056-1078. ISSN 0895-4798
 
     """
+    # In this function we look at triangular matrices that are similar
+    # to the input matrix.  If any diagonal entry of such a triangular matrix
+    # is exactly zero then the original matrix is singular.
+    # The matrix logarithm does not exist for such matrices,
+    # but in such cases we will pretend that the diagonal entries that are zero
+    # are actually slightly positive by an ad-hoc amount, in the interest
+    # of returning something more useful than NaN.  This will cause a warning.
+
     A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
@@ -878,10 +901,10 @@ def logm(A):
     keep_it_real = np.isrealobj(A)
     try:
         if np.array_equal(A, np.triu(A)):
-            A_diag = np.diag(A)
-            if _count_nonzero(A_diag) != n:
-                raise LogmError('cannot find logm of a singular matrix')
-            if np.min(A_diag) < 0:
+            if _count_nonzero(np.diag(A)) != n:
+                A = A.copy()
+                _logm_fudge_singular_triangular_matrix(A)
+            if np.min(np.diag(A)) < 0:
                 A = A.astype(complex)
             return _logm_triu(A)
         else:
@@ -892,7 +915,7 @@ def logm(A):
             else:
                 T, Z = schur(A, output='complex')
             if _count_nonzero(np.diag(T)) != n:
-                raise LogmError('cannot find logm of a singular matrix')
+                _logm_fudge_singular_triangular_matrix(T)
             U = _logm_triu(T)
             U, Z = all_mat(U, Z)
             X = (Z * U * Z.H)
@@ -901,3 +924,4 @@ def logm(A):
         X = np.empty_like(A)
         X.fill(np.nan)
         return X
+

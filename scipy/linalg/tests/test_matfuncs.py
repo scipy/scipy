@@ -15,9 +15,10 @@ import functools
 import numpy as np
 from numpy import array, identity, dot, sqrt, double
 from numpy.testing import (TestCase, run_module_suite,
-        assert_array_equal, assert_array_less,
+        assert_array_equal, assert_array_less, assert_equal,
         assert_array_almost_equal, assert_array_almost_equal_nulp,
-        assert_allclose, assert_, assert_raises, decorators)
+        assert_allclose, assert_, assert_raises, decorators,
+        assert_raises)
 
 import scipy.linalg
 from scipy.linalg import norm
@@ -205,6 +206,18 @@ class TestLogM(TestCase):
             A = np.array(matrix_as_list, dtype=float)
             A_logm, info = logm(A, disp=False)
             assert_(A_logm.dtype.char in complex_dtype_chars)
+
+    def test_logm_exactly_singular(self):
+        A = np.array([[0, 0], [1j, 1j]])
+        for M in A, A.T:
+            expected_warning = _matfuncs_inv_ssq.LogmRankWarning
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter('always')
+                L, info = logm(M, disp=False)
+                assert_equal(len(w), 1)
+                assert_(issubclass(w[-1].category, expected_warning))
+                E = expm(L)
+                assert_allclose(E, M, atol=1e-14)
 
 
 class TestSqrtM(TestCase):
