@@ -1,0 +1,20 @@
+==========================
+SciPy 0.13.3 Release Notes
+==========================
+
+SciPy 0.13.3 is a bug-fix release with no new features compared to 0.13.2.
+Both the weave and the ndimage.label bugs were severe regressions in 0.13.0,
+hence this release.
+
+
+Issues fixed
+------------
+
+- 3148: fix a memory leak in ``ndimage.label``. 
+- 3216: fix weave issue with too long file names for MSVC.
+
+
+Other changes
+-------------
+
+- Update Sphinx theme used for html docs so ``>>>`` in examples can be toggled.
