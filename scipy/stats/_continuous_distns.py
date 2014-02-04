@@ -1296,16 +1296,16 @@ class weibull_min_gen(rv_continuous):
 
     """
     def _pdf(self, x, c):
-        return c*pow(x, c-1)*exp(-pow(x, c))
+        return exp(self._logpdf(x,c))
 
     def _logpdf(self, x, c):
-        return log(c) + (c-1)*log(x) - pow(x, c)
+        return log(c) + (c-1)*log(x) - np.power(x, c)
 
     def _cdf(self, x, c):
-        return -expm1(-pow(x, c))
+        return -expm1(-np.power(x, c))
 
     def _ppf(self, q, c):
-        return pow(-log1p(-q), 1.0/c)
+        return np.power(-log1p(-q), 1.0/c)
 
     def _munp(self, n, c):
         return special.gamma(1.0+n*1.0/c)
@@ -1336,13 +1336,16 @@ class weibull_max_gen(rv_continuous):
 
     """
     def _pdf(self, x, c):
-        return c*pow(-x, c-1)*exp(-pow(-x, c))
+        return exp(self._logpdf(x,c))
+
+    def _logpdf(self, x, c):
+        return log(c)+(c-1)*log(-x) - np.power(-x, c))
 
     def _cdf(self, x, c):
-        return exp(-pow(-x, c))
+        return exp(-np.power(-x, c))
 
     def _ppf(self, q, c):
-        return -pow(-log(q), 1.0/c)
+        return -np.power(-log(q), 1.0/c)
 
     def _munp(self, n, c):
         val = special.gamma(1.0+n*1.0/c)
@@ -1377,22 +1380,22 @@ class frechet_gen(rv_continuous):
 
     """
     def _pdf(self, x, c):
-        return c*pow(x, -c-1)*exp(-pow(x, -c))
+        return exp(self._logpdf(x,c))
 
     def _logpdf(self, x, c):
-        return log(c) + (-c-1)*log(x) - pow(x, -c)
+        return log(c) + (-c-1)*log(x) - np.power(x, -c)
 
     def _cdf(self, x, c):
-        return exp(-pow(x, -c))
+        return exp(-np.power(x, -c))
 
     def _ppf(self, q, c):
-        return pow(-log(q), -1./c)
+        return np.power(-log(q), -1./c)
 
-    ## def _munp(self, n, c):
-    ##     return special.gamma(1.0+n*1.0/c)
+    def _munp(self, n, c):
+        return special.gamma(1.0 - n*1./c)
 
-    ## def _entropy(self, c):
-    ##     return -_EULER / c - log(c) + _EULER + 1
+    def _entropy(self, c):
+        return 1 + _EULER*(1 + 1./c) - log(c)
 frechet = frechet_gen(a=0.0, name='frechet')
 
 frechet_r = weibull_min_gen(a=0.0, name='frechet_r')
@@ -1406,7 +1409,7 @@ frechet_l=np.deprecate(frechet_l,old_name='frechet_l',new_name='weibull_max',
                        message="""
 The distribution frechet_l is a synonym for weibull_max; this historical usage is deprecated
 because of possible confusion with the (quite different) Frechet distribution.""")
-                               
+
 class genlogistic_gen(rv_continuous):
     """A generalized logistic continuous random variable.
 
