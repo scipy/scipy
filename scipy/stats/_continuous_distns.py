@@ -1282,7 +1282,7 @@ class weibull_min_gen(rv_continuous):
 
     See Also
     --------
-    genextreme, weibull_max
+    genextreme, frechet
 
     Notes
     -----
@@ -1291,6 +1291,27 @@ class weibull_min_gen(rv_continuous):
         weibull_min.pdf(x, c) = c * x**(c-1) * exp(-x**c)
 
     for ``x >= 0``, ``c > 0``.
+
+    Under certain conditions [1], the Weibull distribution is the limiting
+    distribution of the minima of a collection of random variables; hence the
+    name `weibull_min` used here.
+
+    More usually called simply the "Weibull" distribution [1]_, [2]_,
+    [3]_.  Though [1]_ reports that historically this was also
+    referred to as the Frechet distribution, this usage is no longer
+    current, and poses a name conflict with the (related) Frechet
+    distribution as implemented in scipy.stats (`frechet`).
+
+
+    References
+    ----------
+    .. [1] Johnson, N.; Kotz, S.; and Balakrishnan, N. Continuous Univariate Distributions,
+           Vol. 2, 2nd ed. New York: Wiley, 1995.
+
+    .. [2] Weisstein, Eric W. "Weibull Distribution." From MathWorld--A Wolfram Web Resource.
+           http://mathworld.wolfram.com/WeibullDistribution.html
+
+    .. [3] http://en.wikipedia.org/wiki/Weibull_distribution
 
     %(example)s
 
@@ -1332,6 +1353,36 @@ class weibull_max_gen(rv_continuous):
 
     for ``x <= 0``, ``c > 0``.
 
+    Under certain conditions ([1]_, [2]_), the `weibull_max`
+    distribution is the limiting distribution of the maxima of a
+    collection of random variables; hence the name used here.
+
+    This distribution may also be referred to as the "reversed Weibull"
+    distribution [3]_, and plays a special role in the study of the
+    distribution of extreme values, where by the
+    Fisher-Tippett-Gnedenko theorem [4]_ it is one of three possible
+    limiting distributions for the maxima of a collection of random
+    variables.  In this context it is also sometimes known as the Type
+    III extreme value distribution.
+
+    The family of (reversed) Weibull distributions is a special case of the
+    larger family of Generalized Extreme Value distribution
+    (`genextreme`), corresponding to the case in which the shape
+    parameter (or "extreme value index") is negative [3]_.
+
+    References
+    ----------
+    .. [1] Johnson, N.; Kotz, S.; and Balakrishnan, N. Continuous Univariate Distributions,
+           Vol. 2, 2nd ed. New York: Wiley, 1995.
+
+    .. [2] Weisstein, Eric W. "Weibull Distribution." From MathWorld--A Wolfram Web Resource.
+           http://mathworld.wolfram.com/WeibullDistribution.html
+
+    .. [3] http://en.wikipedia.org/wiki/Generalized_extreme_value_distribution#Link_to_Fr.C3.A9chet.2C_Weibull_and_Gumbel_families
+
+    .. [4] http://en.wikipedia.org/wiki/Fisher%E2%80%93Tippett%E2%80%93Gnedenko_theorem
+
+
     %(example)s
 
     """
@@ -1366,7 +1417,7 @@ class frechet_gen(rv_continuous):
 
     See Also
     --------
-    genextreme
+    genextreme, weibull_min, invweibull
 
     Notes
     -----
@@ -1380,7 +1431,34 @@ class frechet_gen(rv_continuous):
     (`weibull_min`) distribution, in the sense that if $X~Frechet$,
     then $1/X~Weibull$ (though the location and scale parameters will
     differ).  Accordingly, the Frechet distribution is also sometimes
-    called the "generalized inverse Weibull."
+    called the "generalized inverse Weibull" [1]_.
+
+    The Frechet distribution may also be known as the Frechet-Pareto
+    distribution [2]_, and plays a special role in the study of the
+    distribution of extreme values, where by the
+    Fisher-Tippett-Gnedenko theorem [3]_ it is one of three possible
+    limiting distributions for the maxima of a collection of random
+    variables.  In this context it is also sometimes known as the Type
+    II extreme value distribution.  Historically the term "Frechet
+    distribution" may also have been used to refer to the Weibull
+    distribution, but this usage is no longer current.
+
+    The family of Frechet distributions is a special case of the
+    larger family of Generalized Extreme Value distribution
+    (`genextreme`), corresponding to the case in which the shape
+    parameter (or "extreme value index") is positive [2]_.
+
+
+    References
+    ----------
+    .. [1] F.R.S. de Gusmao, E.M.M Ortega and G.M. Cordeiro, "The generalized inverse
+           Weibull distribution", Stat. Papers, vol. 52, pp. 591-619, 2011.
+
+    .. [2] Beirlant, Jan et al, _Statistics of extremes: theory and applications_, Wiley, 2006.
+
+    .. [3] http://en.wikipedia.org/wiki/Generalized_extreme_value_distribution#Link_to_Fr.C3.A9chet.2C_Weibull_and_Gumbel_families
+
+    .. [4] http://en.wikipedia.org/wiki/Fisher%E2%80%93Tippett%E2%80%93Gnedenko_theorem
 
     %(example)s
 
