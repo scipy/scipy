@@ -179,6 +179,28 @@ class TestInterp1D(object):
             self.y210,
         )
 
+
+    def test_sorting(self):
+        """ Check for unsorted arrays
+        """
+
+        interp10 = interp1d(self.x10, self.y10)
+        interp10_unsorted = interp1d(self.x10[::-1], self.y10[::-1])		
+
+        assert_array_almost_equal(
+            interp10_unsorted(self.x10),
+            self.y10,
+        )
+        assert_array_almost_equal(
+            interp10_unsorted(1.2),
+            np.array([1.2]),
+        )
+        assert_array_almost_equal(
+            interp10_unsorted([2.4, 5.6, 6.0]),
+            interp10([2.4, 5.6, 6.0]),
+        )
+
+
     def test_linear(self):
         """ Check the actual implementation of linear interpolation.
         """
