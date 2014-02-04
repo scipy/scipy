@@ -41,6 +41,11 @@ import tempfile
 import warnings
 
 try:
+    # importing dbhash is necessary because this regularly fails on Python 2.x
+    # installs (due to known bsddb issues).  While importing shelve doesn't
+    # fail, it won't work correctly if dbhash import fails.  So in that case we
+    # want to use _dumb_shelve
+    import dbhash
     import shelve
     dumb = 0
 except ImportError:
