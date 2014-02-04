@@ -1339,7 +1339,7 @@ class weibull_max_gen(rv_continuous):
         return exp(self._logpdf(x,c))
 
     def _logpdf(self, x, c):
-        return log(c)+(c-1)*log(-x) - np.power(-x, c))
+        return log(c)+(c-1)*log(-x) - np.power(-x, c)
 
     def _cdf(self, x, c):
         return exp(-np.power(-x, c))
