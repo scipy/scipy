@@ -64,8 +64,8 @@ def test_all_distributions():
             alpha = 0.001
 
         if dist == 'frechet':
-            args = tuple(2*rand(1))+(0,)+tuple(2*rand(2))
-        elif dist == 'triang':
+            args = (rand(nargs),)
+        if dist == 'triang':
             args = tuple(rand(nargs))
         elif dist == 'reciprocal':
             vals = rand(nargs)
@@ -758,51 +758,51 @@ class TestChi2(TestCase):
 
 
 class TestGenExtreme(TestCase):
-    
     # Test both the generalized extreme value distribution (genextreme) and related
     # special cases.  These vary according to the value of the so-called "extreme value
     # index" (EVI) parameter c: weibull_max (c<0), gumbel_r (c=0), and frechet (c>0).
 
     def test_genextreme_support(self):
         # The support of this distribution depends on c, mu, sigma.
-
-        (mu,sigma)=(1,2) # Arbitrary non-default scale & location
+        mu, sigma = 1, 2  # Arbitrary non-default scale & location
 
         # Gumbel case; unbounded support
-        c=0
+        c = 0
         gev=stats.genextreme(c, loc=mu, scale=sigma)
-        assert_(np.isinf(gev.interval(1)))
+        assert_(np.isinf(gev.interval(1)).all())
 
-        gum=stats.gumbel_r(loc=mu, scale=sigma)
-        (a,b)=gum.interval(1)
+        gum = stats.gumbel_r(loc=mu, scale=sigma)
+        a, b = gum.interval(1)
         assert_(np.isinf(a))
         assert_(np.isinf(b))
         X=[-10, -1, -.1, 0, .1, 1, 10]
         assert_allclose(gum.cdf(X), gev.cdf(X))
 
         # Frechet case
-        c=1
-        gev=stats.genextreme(c, loc=mu, scale=sigma)
-        assert_allclose(gev.interval(1), (mu-sigma/c, inf))
+        c = 1
+        gev = stats.genextreme(c, loc=mu, scale=sigma)
+        assert_allclose(gev.interval(1)[0], mu - sigma/c, atol=1e-14)
+        assert_(np.isinf(gev.interval(1)[1]))
 
-        F=stats.frechet(1./abs(c), loc=(sigma/abs(c)+mu), scale=sigma/abs(c))
-        (a,b)=F.interval(1)
-        assert_allclose(a, mu-sigma/c)
+        F = stats.frechet(1./c, loc=sigma/c + mu, scale = sigma/c)
+        a, b = F.interval(1)
+        assert_allclose(a, mu - sigma/c, atol=1e-14)
         assert_(np.isinf(b))
 
         # Weibull case
-        c=-1
-        gev=genextreme(c, loc=mu, scale=sigma)
-        assert_allclose(gev.interval(1), (-inf, mu-sigma/c))
+        c = -1
+        gev = genextreme(c, loc=mu, scale=sigma)
+        assert_(np.isneginf(gev.interval(1)[0]))
+        assert_allclose(gev.interval(1)[1], mu - sigma/c, atol=1e-14)
 
-        W=stats.weibull_max(1./abs(c), loc=(sigma/abs(c)+mu), scale=sigma/abs(c))
-        (a,b)=W.interval(1)
-        assert_allclose(b, mu-sigma/c)
+        ac = abs(c)
+        W = stats.weibull_max(1./ac, loc=sigma/c + mu, scale=sigma/ac)
+        a, b = W.interval(1)
+        assert_allclose(b, mu - sigma/c, atol=1e-14)
         assert_(np.isinf(a))
 
     def test_genextreme_known_exact(self):
         ## Compare results with some known exact formulas.
-
         ## Some exact values of the generalized extreme value cdf with (mu, sigma)=(0, 1)
 
         ## == == =============
@@ -823,7 +823,8 @@ class TestGenExtreme(TestCase):
 
         # c = 0
         G=stats.genextreme(0).cdf
-        assert_allclose([G(-1), G(0), G(1)], np.exp([-np.exp(1), -1, -np.exp(-1)]))
+        assert_allclose([G(-1), G(0), G(1)],
+                np.exp([-np.exp(1), -1, -np.exp(-1)]))
 
         # c = 1
         G=stats.genextreme(1).cdf
@@ -831,30 +832,27 @@ class TestGenExtreme(TestCase):
 
     def test_genextreme_equivalents(self):
         # Test equivalency between GEV and Frechet and Weibull distributions.
-
         (mu,sigma)=(1,2) # Arbitrary non-default scale & location
 
         c=-1 # EVI parameter
         G=stats.genextreme(c, loc=mu, scale=sigma).cdf
         W=stats.weibull_max(-1./c, loc=(mu-sigma/c), scale=sigma/abs(c)).cdf
-
         assert_allclose([G(0), G(-1)], [W(0), W(-1)])
 
         c=1 # EVI parameter
         G=stats.genextreme(c, loc=mu, scale=sigma).cdf
         F=stats.frechet(1./abs(c), loc=mu-sigma/c, scale=sigma/abs(c)).cdf
-
         assert_allclose([G(0), G(1)], [F(0), F(1)])
 
     def test_weibull_inverse_of_frechet(self):
-        # The Weibull_min distribution and the Frechet distribution are inverses; check implied identity.
-
-        (q,c)=(0.25,1.5) # Arbitrary
+        # The Weibull_min distribution and the Frechet distribution are 
+        # inverses; check implied identity.
+        q, c = 0.25,1.5  # Arbitrary
         
-        W=stats.weibull_min(c).cdf
-        Finv=stats.frechet(c).ppf
+        W = stats.weibull_min(c).cdf
+        Finv = stats.frechet(c).ppf
 
-        assert_allclose(W(1./Finv(q)),q)
+        assert_allclose(W(1./Finv(q)), q, atol=1e-14)
 
 
 class TestArrayArgument(TestCase):  # test for ticket:992
@@ -954,12 +952,8 @@ class TestFitMethod(object):
             # Only check the length of the return
             # FIXME: should check the actual results to see if we are 'close'
             #   to what was created --- but what is 'close' enough
-            if dist == 'frechet':
-                assert_(len(vals) == len(args))
-                assert_(len(vals2) == len(args))
-            else:
-                assert_(len(vals) == 2+len(args))
-                assert_(len(vals2) == 2+len(args))
+            assert_(len(vals) == 2+len(args))
+            assert_(len(vals2) == 2+len(args))
 
         for func, dist, args, alpha in test_all_distributions():
             yield check, func, dist, args, alpha
