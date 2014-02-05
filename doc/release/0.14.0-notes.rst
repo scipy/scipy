@@ -6,7 +6,7 @@ SciPy 0.14.0 Release Notes
 
 .. contents::
 
-SciPy 0.14.0 is the culmination of X months of hard work. It contains
+SciPy 0.14.0 is the culmination of 8 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and
 better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
@@ -15,11 +15,21 @@ of bug-fixes and optimizations.  Moreover, our development attention
 will now shift to bug-fix releases on the 0.14.x branch, and on adding
 new features on the master branch.
 
-This release requires Python 2.6, 2.7 or 3.2-3.3 and NumPy 1.5.1 or greater.
+This release requires Python 2.6, 2.7 or 3.2-3.4 and NumPy 1.5.1 or greater.
 
 
 New features
 ============
+
+``scipy.interpolate`` improvements
+----------------------------------
+
+`scipy.interpolate.interp1d` now accepts non-monotonic inputs and sorts them.
+If performance is critical, sorting can be turned off by using the new
+``assume_sorted`` keyword.
+
+TODO: describe `scipy.interpolate.BPoly` and `scipy.interpolate.PPoly` work.
+
 
 ``scipy.linalg`` improvements
 -----------------------------
@@ -30,6 +40,13 @@ Discrete Fourier transform matrix
 The new function `scipy.linalg.dft` computes the matrix of the
 discrete Fourier transform.
 
+``scipy.optimize`` improvements
+-------------------------------
+
+A set of benchmarks for optimize, which can be run with ``optimize.bench()``,
+has been added.
+
+
 ``scipy.stats`` improvements
 ----------------------------
 
@@ -39,14 +56,33 @@ Multivariate random variables
 A new class `scipy.stats.multivariate_normal` with functionality for 
 multivariate normal random variables has been added.
 
+``scipy.stats`` distributions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A lot of work on the distribution framework has been done.  Moment calculations
+(skew and kurtosis mainly) are fixed and verified, all examples are now
+runnable, and many small accuracy and performance improvements for individual
+distributions were merged.
+
+
 ``scipy.signal`` improvements
 -----------------------------
+
+IIR filter design improvements
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``scipy.signal.iirfilter`` and related functions to design Butterworth,
+Chebyshev, elliptical and Bessel IIR filters now all use pole-zero ("zpk")
+format internally instead of using transformations to numerator/denominator
+format.  The accuracy of the produced filters, especially high-order ones, is
+improved significantly as a result.
 
 Vector Strength
 ^^^^^^^^^^^^^^^
 
 The new function `scipy.signal.vectorstrength` computes the vector strength,
 a measure of phase synchrony, of a set of events.
+
 
 ``scipy.special`` improvements
 ------------------------------
@@ -56,6 +92,19 @@ Box-Cox transformation
 
 The functions `scipy.special.boxcox` and `scipy.special.boxcox1p` compute
 the Box-Cox transformation.
+
+
+``scipy.sparse`` improvements
+-----------------------------
+
+TODO: finish describing changes / new features in sparse matrix formats.
+
+- sparse matrices can now be indexed with 64-bit integers, and are therefore no
+  longer limited to ``2^31`` nonzero elements.
+- ``__numpy_ufunc__`` in combination with numpy 1.9
+- performance optimizations
+- ?
+
 
 Deprecated features
 ===================
@@ -103,4 +152,80 @@ Other changes
 
 Authors
 =======
+* Marc Abramowitz +
+* andbo +
+* Vincent Arel-Bundock +
+* Max Bolingbroke
+* François Boulogne
+* Matthew Brett
+* Lars Buitinck
+* Evgeni Burovski
+* CJ Carey +
+* Thomas A Caswell +
+* Pawel Chojnacki +
+* Phillip Cloud +
+* Stefano Costa +
+* David Cournapeau
+* Dapid +
+* Matthieu Dartiailh +
+* Christoph Deil +
+* endolith
+* Francisco de la Peña +
+* Ben FrantzDale +
+* Jim Garrison +
+* André Gaul
+* Christoph Gohlke
+* Ralf Gommers
+* Robert David Grant
+* Alex Griffing
+* Blake Griffith
+* Yaroslav Halchenko
+* Andreas Hilboll
+* Kat Huang
+* Gert-Ludwig Ingold
+* jamestwebber +
+* Dorota Jarecka +
+* Todd Jennings +
+* Thouis (Ray) Jones
+* Juan Luis Cano Rodríguez
+* ktritz +
+* Jacques Kvam +
+* Eric Larson +
+* Justin Lavoie +
+* Denis Laxalde
+* lemonlaug +
+* Tim Leslie
+* Alain Leufroy +
+* George Lewis +
+* Max Linke +
+* Brandon Liu +
+* Benny Malengier +
+* Matthias Kümmerer +
+* Cimarron Mittelsteadt +
+* Eric Moore
+* Andrew Nelson +
+* Joel Nothman +
+* Clemens Novak
+* Emanuele Olivetti +
+* Stefan Otte +
+* Josef Perktold
+* Patrick Snape +
+* peb +
+* pjwerneck
+* polyatail +
+* poolio
+* Jérôme Roy +
+* Carl Sandrock +
+* Shauna +
+* Fabrice Silva
+* Daniel B. Smith
+* Jacob Stevenson
+* Julian Taylor
+* Tomas Tomecek
+* Richard Tsai
+* Joris Vankerschaver +
+* Pauli Virtanen
+* Warren Weckesser
 
+A total of 74 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
