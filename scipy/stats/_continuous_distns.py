@@ -1499,14 +1499,14 @@ class frechet_gen(rv_continuous):
 frechet = frechet_gen(a=0.0, name='frechet')
 
 frechet_r = weibull_min_gen(a=0.0, name='frechet_r')
-frechet_r=np.deprecate(frechet_r,old_name='frechet_r',new_name='weibull_min',
-                       message="""
+frechet_r = np.deprecate(frechet_r, old_name='frechet_r', new_name='weibull_min',
+                         message="""
 The distribution frechet_r is a synonym for weibull_min; this historical usage is deprecated
 because of possible confusion with the (quite different) Frechet distribution.""")
 
-frechet_l = weibull_max_gen(a=0.0, name='frechet_l')
-frechet_l=np.deprecate(frechet_l,old_name='frechet_l',new_name='weibull_max',
-                       message="""
+frechet_l = weibull_max_gen(b=0.0, name='frechet_l')
+frechet_l = np.deprecate(frechet_l, old_name='frechet_l', new_name='weibull_max',
+                         message="""
 The distribution frechet_l is a synonym for weibull_max; this historical usage is deprecated
 because of possible confusion with the (quite different) Frechet distribution.""")
 
