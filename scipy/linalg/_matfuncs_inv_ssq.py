@@ -22,7 +22,14 @@ __all__ = ['logm', 'fractional_matrix_power']
 
 
 class LogmRankWarning(UserWarning):
-    """Issued when the input matrix is exactly singular"""
+    pass
+
+
+class LogmExactlySingularWarning(LogmRankWarning):
+    pass
+
+
+class LogmNearlySingularWarning(LogmRankWarning):
     pass
 
 
@@ -843,15 +850,24 @@ def _logm_triu(T):
     return U
 
 
-def _logm_fudge_singular_triangular_matrix(T):
-    # This should be called only when a diagonal of T is exactly zero.
-    exact_singularity_msg = 'The logm input matrix is exactly singular.'
-    warnings.warn(exact_singularity_msg, LogmRankWarning)
-    n = T.shape[0]
+def _logm_force_nonsingular_triangular_matrix(T, inplace=False):
+    # The input matrix should be upper triangular.
+    # The eps is ad hoc and is not meant to be machine precision.
     tri_eps = 1e-20
-    for i in range(n):
-        if not T[i, i]:
-            T[i, i] = tri_eps
+    abs_diag = np.absolute(np.diag(T))
+    if np.any(abs_diag == 0):
+        exact_singularity_msg = 'The logm input matrix is exactly singular.'
+        warnings.warn(exact_singularity_msg, LogmExactlySingularWarning)
+        if not inplace:
+            T = T.copy()
+        n = T.shape[0]
+        for i in range(n):
+            if not T[i, i]:
+                T[i, i] = tri_eps
+    elif np.any(abs_diag < tri_eps):
+        near_singularity_msg = 'The logm input matrix may be nearly singular.'
+        warnings.warn(near_singularity_msg, LogmNearlySingularWarning)
+    return T
 
 
 def logm(A):
@@ -909,9 +925,7 @@ def logm(A):
     keep_it_real = np.isrealobj(A)
     try:
         if np.array_equal(A, np.triu(A)):
-            if _count_nonzero(np.diag(A)) != n:
-                A = A.copy()
-                _logm_fudge_singular_triangular_matrix(A)
+            A = _logm_force_nonsingular_triangular_matrix(A)
             if np.min(np.diag(A)) < 0:
                 A = A.astype(complex)
             return _logm_triu(A)
@@ -922,8 +936,7 @@ def logm(A):
                     T, Z = rsf2csf(T,Z)
             else:
                 T, Z = schur(A, output='complex')
-            if _count_nonzero(np.diag(T)) != n:
-                _logm_fudge_singular_triangular_matrix(T)
+            T = _logm_force_nonsingular_triangular_matrix(T, inplace=True)
             U = _logm_triu(T)
             U, Z = all_mat(U, Z)
             X = (Z * U * Z.H)

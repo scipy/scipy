@@ -211,7 +211,7 @@ class TestLogM(TestCase):
         A = np.array([[0, 0], [1j, 1j]])
         B = np.asarray([[1, 1], [0, 0]])
         for M in A, A.T, B, B.T:
-            expected_warning = _matfuncs_inv_ssq.LogmRankWarning
+            expected_warning = _matfuncs_inv_ssq.LogmExactlySingularWarning
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter('always')
                 L, info = logm(M, disp=False)
@@ -219,6 +219,17 @@ class TestLogM(TestCase):
                 assert_(issubclass(w[-1].category, expected_warning))
                 E = expm(L)
                 assert_allclose(E, M, atol=1e-14)
+
+    def test_logm_nearly_singular(self):
+        M = np.array([[1e-100]])
+        expected_warning = _matfuncs_inv_ssq.LogmNearlySingularWarning
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            L, info = logm(M, disp=False)
+            assert_equal(len(w), 1)
+            assert_(issubclass(w[-1].category, expected_warning))
+            E = expm(L)
+            assert_allclose(E, M, atol=1e-14)
 
 
 class TestSqrtM(TestCase):
