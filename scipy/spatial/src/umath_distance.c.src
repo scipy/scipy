@@ -487,25 +487,62 @@ DOUBLE_weighted_@SQ@euclidean_distance(const char *u, const char *v,
 
 /**end repeat**/
 
+/* Minkowski distance */
+
 /**begin repeat
- * #TYPE = BOOL,INTP,DOUBLE#
- * #type = npy_bool,npy_intp,npy_double#
- * #isbool = 1,0,0#
+ * #p      = p, #
+ * #do_pow = 0, 1#
  */
 
+static npy_double
+DOUBLE_@p@minkowski_distance(const char *u, const char*v, const npy_double p,
+                             npy_intp dim, npy_intp u_str, npy_intp v_str)
+{
+    npy_intp j;
+    npy_double dist = 0;
 
-/* The Hamming distance.
- *
- * The formula used in scipy.spatial.distance is normalized by the length
- * of the vector. Kept it unchanged for backwards compatibility.
- *
- * For boolean data, the Hamming distance as defined here is equivalent to
- * one minus the definitions in [Deza 2013] and [Choi 2010] of the
- * Rand, or Sokal-Michener simple matching similarity. No need to implement
- * any of those separately.
- *
- * The definition of scipy.spatial.distance.sokalmichener is, by the way,
- * equivalent to scipy.spatial.distance.rogerstanimoto, which is wrong.
+    for (j = 0; j < dim; j++,
+                         u += u_str,
+                         v += v_str) {
+        dist += pow(fabs(*(npy_double *)u - *(npy_double *)v), p);
+    }
+    #if @do_pow@
+        return pow(dist, 1 / p);
+    #else
+        return dist;
+    #endif
+}
+
+static npy_double
+DOUBLE_weighted_@p@minkowski_distance(const char *u, const char*v,
+                                      const char *w, const npy_double p,
+                                      npy_intp dim, npy_intp u_str,
+                                      npy_intp v_str, npy_intp w_str)
+{
+    npy_intp j;
+    npy_double dist = 0;
+
+    for (j = 0; j < dim; j++,
+                         u += u_str,
+                         v += v_str,
+                         w += w_str) {
+        npy_double delta = pow(fabs(*(npy_double *)u - *(npy_double *)v), p);
+        dist += *(npy_double *)w * delta;
+    }
+    #if @do_pow@
+        return pow(dist, 1 / p);
+    #else
+        return dist;
+    #endif
+}
+
+/**end repeat**/
+
+/* The Hamming distance. */
+
+/**begin repeat
+ * #TYPE = BOOL, INTP, DOUBLE#
+ * #type = npy_bool, npy_intp, npy_double#
  */
 
 static npy_double
@@ -515,20 +552,15 @@ static npy_double
     for (j = 0; j < dim; j++,
                          u += u_str,
                          v += v_str) {
-        #if @isbool@
-            dist += *(npy_bool *)u ^ *(npy_bool *)v;
-        #else
-            dist += *(@type@ *)u != *(@type@ *)v;
-        #endif
+        if (*(@type@ *)u != *(@type@ *)v) {
+            dist++;
+        }
     }
-
-    return dist / (npy_double) dim;
+    return (npy_double)dist;
 }
 
-/**end repeat**/
-
 static npy_double
-DOUBLE_weighted_hamming_distance(const char *u, const char *v,
+@TYPE@_weighted_hamming_distance(const char *u, const char *v,
                                  const char *w, npy_intp dim,
                                  npy_intp u_str, npy_intp v_str,
                                  npy_intp w_str) {
@@ -538,17 +570,19 @@ DOUBLE_weighted_hamming_distance(const char *u, const char *v,
                          u += u_str,
                          v += v_str,
                          w += w_str) {
-        if (*(npy_double *)u != *(npy_double *)v) {
+        if (*(@type@ *)u != *(@type@ *)v) {
             dist += *(npy_double *)w;
         }
     }
-    return dist / dim;
+    return dist;
 }
 
+/**end repeat**/
+
 /**begin repeat
- * #TYPE = BOOL,INTP,DOUBLE#
- * #type = npy_bool,npy_intp,npy_double#
- * #cast2bool = 0,1,1#
+ * #TYPE      = BOOL, INTP, DOUBLE#
+ * #type      = npy_bool, npy_intp, npy_double#
+ * #cast2bool = 0, 1, 1#
  */
 
 /* The Dice or Czekanowsky distance.
@@ -651,6 +685,30 @@ static npy_double
     }
     ntf_plus_nft += dim;
     return (ntf_plus_nft - ntt) / (npy_double) ntf_plus_nft;
+}
+
+/* The matching distance.
+ *
+ * For boolean data, the matching distance as defined here is equivalent to
+ * one minus the definitions in [Deza 2013] and [Choi 2010] of the
+ * Rand, or Sokal-Michener simple matching similarity.
+ *
+ * The definition of scipy.spatial.distance.sokalmichener is, by the way,
+ * equivalent to scipy.spatial.distance.rogerstanimoto, which is wrong.
+ */
+
+static npy_double
+@TYPE@_matching_distance(const char *u, const char *v, npy_intp dim,
+                        npy_intp u_str, npy_intp v_str) {
+    npy_intp j, dist = 0;
+    for (j = 0; j < dim; j++,
+                         u += u_str,
+                         v += v_str) {
+        if (*(@type@ *)u != *(@type@ *)v) {
+            dist++;
+        }
+    }
+    return dist / (npy_double) dim;
 }
 
 /* The Rogers-Tanimoto distance.
@@ -792,6 +850,52 @@ static npy_double
 
 /**end repeat**/
 
+/* The Mahalanobis distance */
+
+static npy_double
+DOUBLE_mahalanobis_distance(const char *u, const char *v, const char *V,
+                            npy_double *buffer, npy_intp dim,
+                            npy_intp u_str, npy_intp v_str,
+                            npy_intp V_row_str, npy_intp V_col_str)
+{
+    npy_intp j, k,
+             V_diag_str = V_row_str + V_col_str;
+    npy_double *buf_ptr = buffer,
+               dist = 0;
+    const char *row_ptr, *col_ptr;
+    /*
+     * The Mahalanobis distance of two n-dimensional vectors, when computed
+     * as a straightforward vector-matrix-vector multiplication, requires
+     * n * (n + 1) multiplications and (n + 1) * (n - 1) additions, and
+     * intermediate storage of size 2*n.
+     * When calculated as below, taking advantage of it being a quadratic
+     * form, only n * (n + 3) / 2 multiplications and n * (n - 1) additions,
+     * and intermediate storage of size n.
+     */
+
+    for(j = 0; j < dim; j++, u += u_str, v += v_str) {
+        *buf_ptr++ = *(npy_double *)u - *(npy_double *)v;
+    }
+
+    for (j = 0; j < dim; V += V_diag_str) {
+        npy_double mult = *buffer++,
+                   part_sum = mult * *(npy_double *)V;
+
+        for (row_ptr = V + V_row_str,
+             col_ptr = V + V_col_str,
+             buf_ptr = buffer,
+             k = ++j; k < dim; k++,
+                             row_ptr += V_row_str,
+                             col_ptr += V_col_str,
+                             buf_ptr++) {
+            part_sum += *buf_ptr * (*(npy_double *)row_ptr +
+                                    *(npy_double *)col_ptr);
+        }
+        dist += part_sum * mult;
+    }
+    return sqrt(dist);
+}
+
 /* The great-circle distance on the surface of a sphere
  *
  * The code below uses the spherical law of cosines in most settings, but
@@ -850,52 +954,144 @@ DOUBLE_great_circle_distance_degrees(const char *u, const char *v,
                                  *(npy_double *)(v + v_str) * deg2rad);
 }
 
-/* The Mahalanobis distance */
+/* The Soergel distance
+ *
+ * Definition taken from [Deza 2013], is equivalent to one minus the
+ * Ruzicka similarity.
+ */
 
 static npy_double
-DOUBLE_mahalanobis_distance(const char *u, const char *v, const char *V,
-                            npy_double *buffer, npy_intp dim,
-                            npy_intp u_str, npy_intp v_str,
-                            npy_intp V_row_str, npy_intp V_col_str)
+DOUBLE_soergel_distance(const char *u, const char *v, npy_intp dim,
+                        npy_intp u_str, npy_intp v_str)
 {
-    npy_intp j, k,
-             V_diag_str = V_row_str + V_col_str;
-    npy_double *buf_ptr = buffer,
-               dist = 0;
-    const char *row_ptr, *col_ptr;
-    /*
-     * The Mahalanobis distance of two n-dimensional vectors, when computed
-     * as a straightforward vector-matrix-vector multiplication, requires
-     * n * (n + 1) multiplications and (n + 1) * (n - 1) additions, and
-     * intermediate storage of size n.
-     * When calculated as below, only n * (n  +3) / 2 multiplications and
-     * n * (n - 1) additions, and no intermediate storage.
-     * The buffer of size n is used
-     */
-
-    for(j = 0; j < dim; j++, u += u_str, v += v_str) {
-        *buf_ptr++ = *(npy_double *)u - *(npy_double *)v;
-    }
-
-    for (j = 0; j < dim; V += V_diag_str) {
-        npy_double mult = *buffer++,
-                   part_sum = mult * *(npy_double *)V;
-
-        for (row_ptr = V + V_row_str,
-             col_ptr = V + V_col_str,
-             buf_ptr = buffer,
-             k = ++j; k < dim; k++,
-                             row_ptr += V_row_str,
-                             col_ptr += V_col_str,
-                             buf_ptr++) {
-            part_sum += *buf_ptr * (*(npy_double *)row_ptr +
-                                    *(npy_double *)col_ptr);
+    npy_double min, max,
+               num = 0,
+               denom = 0;
+    npy_intp j;
+    
+    for(j = 0; j < dim; j++,
+                        u += u_str,
+                        v += v_str) {
+        npy_double u_val = *(npy_double *)u,
+                   v_val = *(npy_double *)v;
+        if (u_val < v_val) {
+            min = u_val;
+            max = v_val;
+        } else {
+            min = v_val;
+            max = u_val;
         }
-        dist += part_sum * mult;
+        num += min;
+        denom += max;
     }
-    return sqrt(dist);
+    /*
+     * If all values are non-negative, the denominator can only be zero
+     * if both vectors are all zeros, hence the 0 return for that case.
+     */
+    return denom ? 1 - num / denom : 0;
 }
 
+/* The Wave-Hedges distance
+ *
+ * Definition taken from [Deza 2013]. Skipping items with zero denominator
+ * as in Canberra distance, although not found anywhere in the literature.
+ */
+
+static npy_double
+DOUBLE_wave_hedges_distance(const char *u, const char *v, npy_intp dim,
+                            npy_intp u_str, npy_intp v_str)
+{
+    npy_double min, max,
+               dist = 0;
+    npy_intp j;
+    
+    for(j = 0; j < dim; j++,
+                        u += u_str,
+                        v += v_str) {
+        npy_double u_val = *(npy_double *)u,
+                   v_val = *(npy_double *)v;
+        if (u_val < v_val) {
+            min = u_val;
+            max = v_val;
+        } else {
+            min = v_val;
+            max = u_val;
+        }
+        if (max) {
+            dist += (max - min) / max;
+        }
+    }
+    return dist;
+}
+
+/* The intersection distance
+ *
+ * Definition taken from [Deza 2013]. Skipping items with zero denominator
+ * as in Canberra distance, although not found anywhere in the literature.
+ */
+
+static npy_double
+DOUBLE_intersection_distance(const char *u, const char *v, npy_intp dim,
+                             npy_intp u_str, npy_intp v_str)
+{
+    npy_double denom,
+               num = 0,
+               u_sum = 0,
+               v_sum = 0;
+    npy_intp j;
+    
+    for(j = 0; j < dim; j++,
+                        u += u_str,
+                        v += v_str) {
+        npy_double u_val = *(npy_double *)u,
+                   v_val = *(npy_double *)v;
+        num += u_val < v_val ? u_val : v_val;
+        u_sum += u_val;
+        v_sum += v_val;
+    }
+    denom = u_sum < v_sum ? u_sum : v_sum;
+    /*
+     * If all values are non-negative, the denominator can only be zero
+     * if both vectors are all zeros, hence the 0 return for that case.
+     */
+    return denom ? 1 - num / denom : 0;
+}
+
+/* The Kulczynski 1 distance
+ *
+ * Definition taken from [Deza 2013].
+ */
+
+static npy_double
+DOUBLE_kulczynski1_distance(const char *u, const char *v, npy_intp dim,
+                            npy_intp u_str, npy_intp v_str)
+{
+    npy_double denom = 0,
+               num = 0,
+               min, max;
+    npy_intp j;
+    
+    for(j = 0; j < dim; j++,
+                        u += u_str,
+                        v += v_str) {
+        npy_double u_val = *(npy_double *)u,
+                   v_val = *(npy_double *)v;
+        if (u_val < v_val) {
+            min = u_val;
+            max = v_val;
+        } else {
+            min = v_val;
+            max = u_val;
+        }
+        num += max - min;
+        denom += min;
+    }
+    /*
+     * Return inf if the denominator is zero, but not the numerator. Both
+     * can only be zero if both vectors are all zeros, hence the zero return.
+     */
+    return denom ? num / denom : (num ? d_inf : 0);
+}
 
 
 
@@ -915,21 +1111,21 @@ norm_kernel(char **args, npy_intp *dimensions,
 {
     INIT_OUTER_LOOP_2(dimensions, steps)
 
-    npy_intp vec_dim = *dimensions;
+    npy_intp dim = *dimensions;
     npy_intp u_str = *steps;
 
     BEGIN_OUTER_LOOP_2(args)
         const char *u = args[0];
-        char *norm = args[1];
+        npy_double *norm = (npy_double *)args[1],
+                   u_norm = 0;
         npy_intp j;
-        npy_double u_norm = 0;
 
-        for(j = 0; j < vec_dim; j++,
-                                u += u_str) {
+        for(j = 0; j < dim; j++,
+                            u += u_str) {
             npy_double u_val = *(npy_double *)u;
             u_norm += u_val * u_val;
         }
-        *(npy_double *)norm = sqrt(u_norm);
+        *norm = sqrt(u_norm);
     END_OUTER_LOOP
 } /* End of norm_kernel function */
 
@@ -949,9 +1145,11 @@ mean_ssqdm_kernel(char **args, npy_intp *dimensions,
 
     BEGIN_OUTER_LOOP_3(args)
         const char *u;
-        char *mean = args[1], *ssqdm = args[2];
+        npy_double *mean = (npy_double *)args[1],
+                   *ssqdm = (npy_double *)args[2],
+                   u_mean = 0,
+                   u_ssqdm = 0;
         npy_intp j;
-        npy_double u_mean = 0, u_ssqdm = 0;
 
         for (u = args[0],
              j = 0; j < vec_dim; j++,
@@ -965,8 +1163,8 @@ mean_ssqdm_kernel(char **args, npy_intp *dimensions,
             npy_double u_val = *(npy_double *)u - u_mean;
             u_ssqdm += u_val * u_val;
         }
-        *(npy_double *)mean = u_mean;
-        *(npy_double *)ssqdm = sqrt(u_ssqdm);
+        *mean = u_mean;
+        *ssqdm = sqrt(u_ssqdm);
     END_OUTER_LOOP
 } /* End of mean_ssqdm_kernel function */
 
@@ -988,10 +1186,11 @@ center_ssqdm_kernel(char **args, npy_intp *dimensions,
 
     BEGIN_OUTER_LOOP_3(args)
         const char *u_in;
-        char *u_out,
-             *ssqdm = args[2];
+        char *u_out;
         npy_intp j;
-        npy_double u_mean = 0, u_ssqdm = 0;
+        npy_double *ssqdm = (npy_double *)args[2],
+                   u_mean = 0,
+                   u_ssqdm = 0;
 
         for (u_in = args[0],
              j = 0; j < vec_dim; j++,
@@ -1008,7 +1207,7 @@ center_ssqdm_kernel(char **args, npy_intp *dimensions,
             u_ssqdm += u_val * u_val;
             *(npy_double *)u_out = u_val;
         }
-        *(npy_double *)ssqdm = sqrt(u_ssqdm);
+        *ssqdm = sqrt(u_ssqdm);
     END_OUTER_LOOP
 } /* End of center_ssqdm_kernel function */
 
@@ -1026,7 +1225,7 @@ distance_uv_kernel(char **args, npy_intp *dimensions,
 {
     INIT_OUTER_LOOP_3(dimensions, steps)
 
-    npy_intp vec_dim = *dimensions;
+    npy_intp dim = *dimensions;
     npy_intp u_str = *steps++,
              v_str = *steps;
 
@@ -1036,11 +1235,11 @@ distance_uv_kernel(char **args, npy_intp *dimensions,
     distance_func func = (distance_func) data;
 
     BEGIN_OUTER_LOOP_3(args)
-        const char *u_vec = args[0],
-                   *v_vec = args[1];
-        char *dist = args[2];
+        const char *u = args[0],
+                   *v = args[1];
+        npy_double *dist = (npy_double *)args[2];
 
-        *(npy_double *)dist = func(u_vec, v_vec, vec_dim, u_str, v_str);
+        *dist = func(u, v, dim, u_str, v_str);
     END_OUTER_LOOP
 } /* End of distance_uv_kernel function */
 
@@ -1053,7 +1252,7 @@ pairwise_distance_uv_kernel(char **args, npy_intp *dimensions,
     INIT_OUTER_LOOP_2(dimensions, steps)
 
     npy_intp u_len = *dimensions++,
-             vec_dim = *dimensions++;
+             dim = *dimensions++;
     npy_intp u_len_str = *steps++,
              u_str = *steps++,
              pdist_str = *steps;
@@ -1064,19 +1263,17 @@ pairwise_distance_uv_kernel(char **args, npy_intp *dimensions,
     distance_func func = (distance_func)data;
 
     BEGIN_OUTER_LOOP_2(args)
-        const char *u, *v;
-        char *pdist;
+        const char *u = args[0],
+                   *v;
+        char *pdist = args[1];
         npy_intp j, k;
 
-        for (u = args[0],
-             pdist = args[1],
-             j = 0; j < u_len; j++,
-                               u += u_len_str) {
+        for (j = 0; j < u_len; u += u_len_str) {
             for (v = u + u_len_str,
-                 k = j + 1; k < u_len; k++,
-                                       v += u_len_str,
-                                       pdist += pdist_str) {
-                *(npy_double *)pdist = func(u, v, vec_dim, u_str, u_str);
+                 k = ++j; k < u_len; k++,
+                                     v += u_len_str,
+                                     pdist += pdist_str) {
+                *(npy_double *)pdist = func(u, v, dim, u_str, u_str);
             }
         }
     END_OUTER_LOOP
@@ -1092,7 +1289,7 @@ cached_distance_uv_kernel(char **args, npy_intp *dimensions,
 {
     INIT_OUTER_LOOP_5(dimensions, steps)
 
-    npy_intp vec_dim = *dimensions;
+    npy_intp dim = *dimensions;
     npy_intp u_str = *steps++,
              v_str = *steps;
 
@@ -1100,17 +1297,16 @@ cached_distance_uv_kernel(char **args, npy_intp *dimensions,
                                         const char*, const char*,
                                         npy_intp, npy_intp, npy_intp);
 
-    distance_func func = (distance_func) data;
+    distance_func func = (distance_func)data;
 
     BEGIN_OUTER_LOOP_5(args)
-        const char *u_vec = args[0],
-                   *v_vec = args[1],
+        const char *u = args[0],
+                   *v = args[1],
                    *u_cache = args[2],
                    *v_cache = args[3];
-        char *dist = args[4];
+        npy_double *dist = (npy_double *)args[4];
 
-        *(npy_double *)dist = func(u_vec, v_vec, u_cache, v_cache,
-                                   vec_dim, u_str, v_str);
+        *dist = func(u, v, u_cache, v_cache, dim, u_str, v_str);
     END_OUTER_LOOP
 } /* End of cached_distance_uv_kernel function */
 
@@ -1125,7 +1321,7 @@ cached_pairwise_distance_uv_kernel(char **args, npy_intp *dimensions,
     INIT_OUTER_LOOP_3(dimensions, steps)
 
     npy_intp u_len = *dimensions++,
-             vec_dim = *dimensions++;
+             dim = *dimensions++;
     npy_intp u_len_str = *steps++,
              u_str = *steps++,
              u_cache_str = *steps++,
@@ -1138,24 +1334,21 @@ cached_pairwise_distance_uv_kernel(char **args, npy_intp *dimensions,
     distance_func func = (distance_func)data;
 
     BEGIN_OUTER_LOOP_3(args)
-        const char *u, *u_cache,
+        const char *u = args[0],
+                   *u_cache = args[1],
                    *v, *v_cache;
-        char *pdist;
+        char *pdist = args[2];
         npy_intp j, k;
-        for (u = args[0],
-             u_cache = args[1],
-             pdist = args[2],
-             j = 0; j < u_len; j++,
-                               u += u_len_str,
+        for (j = 0; j < u_len; u += u_len_str,
                                u_cache += u_cache_str) {
             for (v = u + u_len_str,
                  v_cache = u_cache + u_cache_str,
-                 k = j + 1; k < u_len; k++,
-                                       v += u_len_str,
-                                       v_cache += u_cache_str,
-                                       pdist += pdist_str) {
+                 k = ++j; k < u_len; k++,
+                                     v += u_len_str,
+                                     v_cache += u_cache_str,
+                                     pdist += pdist_str) {
                 *(npy_double *)pdist = func(u, v, u_cache, v_cache,
-                                            vec_dim, u_str, u_str);
+                                            dim, u_str, u_str);
             }
         }
     END_OUTER_LOOP
@@ -1171,7 +1364,7 @@ cached2_distance_uv_kernel(char **args, npy_intp *dimensions,
 {
     INIT_OUTER_LOOP_7(dimensions, steps)
 
-    npy_intp vec_dim = *dimensions;
+    npy_intp dim = *dimensions;
     npy_intp u_str = *steps++,
              v_str = *steps;
 
@@ -1180,19 +1373,19 @@ cached2_distance_uv_kernel(char **args, npy_intp *dimensions,
                                         const char*, const char*,
                                         npy_intp, npy_intp, npy_intp);
 
-    distance_func func = (distance_func) data;
+    distance_func func = (distance_func)data;
 
     BEGIN_OUTER_LOOP_7(args)
-        const char *u_vec = args[0],
-                   *v_vec = args[1],
+        const char *u = args[0],
+                   *v = args[1],
                    *u_cache1 = args[2],
                    *v_cache1 = args[3],
                    *u_cache2 = args[4],
                    *v_cache2 = args[5];
-        char *dist = args[6];
+        npy_double *dist = (npy_double *)args[6];
 
-        *(npy_double *)dist = func(u_vec, v_vec, u_cache1, v_cache1,
-                                   u_cache2, v_cache2, vec_dim, u_str, v_str);
+        *dist = func(u, v, u_cache1, v_cache1, u_cache2, v_cache2,
+                     dim, u_str, v_str);
     END_OUTER_LOOP
 } /* End of cached2_distance_uv_kernel function */
 
@@ -1207,7 +1400,7 @@ cached2_pairwise_distance_uv_kernel(char **args, npy_intp *dimensions,
     INIT_OUTER_LOOP_4(dimensions, steps)
 
     npy_intp u_len = *dimensions++,
-             vec_dim = *dimensions++;
+             dim = *dimensions++;
     npy_intp u_len_str = *steps++,
              u_str = *steps++,
              u_cache1_str = *steps++,
@@ -1222,33 +1415,815 @@ cached2_pairwise_distance_uv_kernel(char **args, npy_intp *dimensions,
     distance_func func = (distance_func)data;
 
     BEGIN_OUTER_LOOP_4(args)
-        const char *u, *u_cache1, *u_cache2,
+        const char *u = args[0],
+                   *u_cache1 = args[1],
+                   *u_cache2 = args[2],
                    *v, *v_cache1, *v_cache2;
-        char *pdist;
+        char *pdist = args[3];
         npy_intp j, k;
-        for (u = args[0],
-             u_cache1 = args[1],
-             u_cache2 = args[2],
-             pdist = args[3],
-             j = 0; j < u_len; j++,
-                               u += u_len_str,
-                               u_cache1 += u_cache1_str,
-                               u_cache2 += u_cache2_str) {
+        for (j = 0; j < u_len;u += u_len_str,
+                              u_cache1 += u_cache1_str,
+                              u_cache2 += u_cache2_str) {
             for (v = u + u_len_str,
                  v_cache1 = u_cache1 + u_cache1_str,
                  v_cache2 = u_cache2 + u_cache2_str,
-                 k = j + 1; k < u_len; k++,
-                                       v += u_len_str,
-                                       v_cache1 += u_cache1_str,
-                                       v_cache2 += u_cache2_str,
-                                       pdist += pdist_str) {
+                 k = ++j; k < u_len; k++,
+                                     v += u_len_str,
+                                     v_cache1 += u_cache1_str,
+                                     v_cache2 += u_cache2_str,
+                                     pdist += pdist_str) {
                 *(npy_double *)pdist = func(u, v, u_cache1, v_cache1,
                                             u_cache2, v_cache2,
-                                            vec_dim, u_str, u_str);
+                                            dim, u_str, u_str);
             }
         }
     END_OUTER_LOOP
 } /* End of cached2_pairwise_distance_uv_kernel function */
+
+/* Generic GUFUNC kernel for distances of three arguments */
+
+static void
+distance_uvw_kernel(char **args, npy_intp *dimensions,
+                    npy_intp *steps, void *data)
+{
+    INIT_OUTER_LOOP_4(dimensions, steps)
+
+    npy_intp dim = *dimensions;
+    npy_intp u_str = *steps++,
+             v_str = *steps++,
+             w_str = *steps++;
+
+    typedef npy_double (*distance_func)(const char*, const char*,
+                                        const char*, npy_intp,
+                                        npy_intp, npy_intp, npy_intp);
+
+    distance_func func = (distance_func)data;
+
+    BEGIN_OUTER_LOOP_4(args)
+        const char *u = args[0],
+                   *v = args[1],
+                   *w = args[2];
+        npy_double *dist = (npy_double *)args[3];
+
+        *dist = func(u, v, w, dim, u_str, v_str, w_str);
+    END_OUTER_LOOP
+} /* End of distance_uvw_kernel function */
+
+/* Generic GUFUNC kernel for pairwise distances of three arguments */
+
+static void
+pairwise_distance_uvw_kernel(char **args, npy_intp *dimensions,
+                            npy_intp *steps, void *data)
+{
+    INIT_OUTER_LOOP_3(dimensions, steps)
+
+    npy_intp u_len = *dimensions++,
+             dim = *dimensions++;
+    npy_intp u_len_str = *steps++,
+             u_str = *steps++,
+             w_str = *steps++,
+             pdist_str = *steps;
+
+    typedef npy_double (*distance_func)(const char*, const char*,
+                                        const char*, npy_intp,
+                                        npy_intp, npy_intp, npy_intp);
+
+    distance_func func = (distance_func)data;
+
+    BEGIN_OUTER_LOOP_3(args)
+        const char *u = args[0],
+                   *v,
+                   *w = args[1];
+        char *pdist = args[2];
+        npy_intp j, k;
+
+        for (j = 0; j < u_len; u += u_len_str) {
+            for (v = u + u_len_str,
+                 k = ++j; k < u_len; k++,
+                                     v += u_len_str,
+                                     pdist += pdist_str) {
+                *(npy_double *)pdist = func(u, v, w, dim, u_str, u_str, w_str);
+            }
+        }
+    END_OUTER_LOOP
+} /* End of pairwise_distance_uvw_kernel function */
+
+
+/*
+ *****************************************************************************
+ **                     DISTANCE SPECIFIC GUFUNC LOOPS                      **
+ *****************************************************************************
+ */
+
+/* GUFUNC kernel for Minkowski distance */
+
+static void
+minkowski_kernel(char **args, npy_intp *dimensions,
+                    npy_intp *steps, void *data)
+{
+    if (dimensions[0] == 1 || steps[2] == 0) { /* all calls share the same p */
+        npy_double p = *(npy_double *)args[2];
+        void *new_data = NULL;
+        /* see if there is a faster alternative available */
+        if (p == 2) {
+            new_data = (void *) &DOUBLE_euclidean_distance;
+        } else if (p == 1) {
+            new_data = (void *) &DOUBLE_city_block_distance;
+        } else if (p ==  d_inf) {
+            new_data = (void *) &DOUBLE_chebyshev_distance;
+        } else if (p == 0) {
+            new_data = (void *) &DOUBLE_hamming_distance;
+        } else if (p == d_ninf) {
+            new_data = (void *) &DOUBLE_minimum_chebyshev_distance;
+        }
+
+        if (new_data) {
+            char *new_args[] = {args[0], args[1], args[3]};
+            npy_intp new_steps[] = {steps[0], steps[1], steps[3],
+                                    steps[4], steps[5]};
+            distance_uv_kernel(new_args, dimensions, new_steps, new_data);
+            return;
+        }
+        /* no other function found, call the minkowski function */
+        INIT_OUTER_LOOP_4(dimensions, steps)
+        npy_intp dim = *dimensions;
+        npy_intp u_str = *steps++,
+                 v_str = *steps;
+
+        BEGIN_OUTER_LOOP_4(args)
+            const char *u = args[0],
+                       *v = args[1];
+            npy_double *dist = (npy_double *)args[3];
+
+            *dist = DOUBLE_minkowski_distance(u, v, p, dim, u_str, v_str);
+        END_OUTER_LOOP
+    } else { /* check which function to call in each iteration */
+        INIT_OUTER_LOOP_4(dimensions, steps)
+        npy_intp dim = *dimensions;
+        npy_intp u_str = *steps++,
+                 v_str = *steps;
+
+        BEGIN_OUTER_LOOP_4(args)
+            const char *u = args[0],
+                       *v = args[1];
+            const npy_double p = *(npy_double *)args[2];
+            npy_double *dist = (npy_double *)args[3];
+            if (p == 2) {
+                *dist = DOUBLE_euclidean_distance(u, v, dim, u_str, v_str);
+            } else if (p ==1) {
+                *dist = DOUBLE_city_block_distance(u, v, dim, u_str, v_str);
+            } else if (p == d_inf) {
+                *dist = DOUBLE_chebyshev_distance(u, v, dim, u_str, v_str);
+            } else if (p == 0) {
+                *dist = DOUBLE_hamming_distance(u, v, dim, u_str, v_str);
+            } else if (p == d_ninf) {
+                *dist = DOUBLE_minimum_chebyshev_distance(u, v, dim,
+                                                          u_str, v_str);
+            }
+            else {
+                *dist = DOUBLE_minkowski_distance(u, v, p, dim, u_str, v_str);
+            }
+        END_OUTER_LOOP
+    }
+} /* End of minkowski_kernel function */
+
+/* GUFUNC kernel for pairwise Minkowski distance */
+
+static void
+pairwise_minkowski_kernel(char **args, npy_intp *dimensions,
+                          npy_intp *steps, void *data)
+{
+    if (dimensions[0] == 1 || steps[1] == 0) { /* all calls share same p */
+        npy_double p = *(npy_double *)args[1];
+        void *new_data = NULL;
+        /* see if there is a faster alternative available */
+        if (p == 2) {
+            new_data = (void *) &DOUBLE_euclidean_distance;
+        } else if (p == 1) {
+            new_data = (void *) &DOUBLE_city_block_distance;
+        } else if (p ==  d_inf) {
+            new_data = (void *) &DOUBLE_chebyshev_distance;
+        } else if (p == 0) {
+            new_data = (void *) &DOUBLE_hamming_distance;
+        } else if (p == d_ninf) {
+            new_data = (void *) &DOUBLE_minimum_chebyshev_distance;
+        }
+        if (new_data) {
+            char *new_args[] = {args[0], args[2]};
+            npy_intp new_steps[] = {steps[0], steps[2], steps[3],
+                                    steps[4], steps[5]};
+            pairwise_distance_uv_kernel(new_args, dimensions, new_steps,
+                                        new_data);
+            return;
+        }
+        /* no other function found, call the minkowski function */
+        INIT_OUTER_LOOP_3(dimensions, steps)
+
+        npy_intp u_len = *dimensions++,
+                 dim = *dimensions++;
+        npy_intp u_len_str = *steps++,
+                 u_str = *steps++,
+                 pdist_str = *steps;
+
+        BEGIN_OUTER_LOOP_3(args)
+            const char *u = args[0],
+                       *v;
+            char *pdist = args[2];
+            npy_intp j, k;
+
+            for (j = 0; j < u_len; u += u_len_str) {
+                for (v = u + u_len_str,
+                     k = ++j; k < u_len; k++,
+                                         v += u_len_str,
+                                         pdist += pdist_str) {
+                    *(npy_double *)pdist =
+                    DOUBLE_minkowski_distance(u, v, p, dim, u_str, u_str);
+                }
+            }
+        END_OUTER_LOOP
+    } else { /* check which function to call in each iteration */
+        INIT_OUTER_LOOP_3(dimensions, steps)
+        npy_intp u_len = *dimensions++,
+                 dim = *dimensions++;
+        npy_intp u_len_str = *steps++,
+                 u_str = *steps++,
+                 pdist_str = *steps;
+
+        typedef npy_double (*distance_func)(const char*, const char*,
+                                            npy_intp, npy_intp, npy_intp);
+
+        BEGIN_OUTER_LOOP_3(args)
+            const char *u = args[0],
+                       *v;
+            const npy_double p = *(npy_double *)args[1];
+            char *pdist = args[2];
+            npy_intp j, k;
+
+            distance_func func = NULL;
+            if (p == 2) {
+                func = &DOUBLE_euclidean_distance;
+            } else if (p == 1) {
+                func =  &DOUBLE_city_block_distance;
+            } else if (p ==  d_inf) {
+                func =  &DOUBLE_chebyshev_distance;
+            } else if (p == 0) {
+                func =  &DOUBLE_hamming_distance;
+            } else if (p == d_ninf) {
+                func = &DOUBLE_minimum_chebyshev_distance;
+            }
+
+            if (func) {
+                for (j = 0; j < u_len; u += u_len_str) {
+                    for (v = u + u_len_str,
+                         k = ++j; k < u_len; k++,
+                                             v += u_len_str,
+                                             pdist += pdist_str) {
+                        *(npy_double *)pdist = func(u, v, dim, u_str, u_str);
+                    }
+                }
+            } else {
+                for (j = 0; j < u_len; u += u_len_str) {
+                    for (v = u + u_len_str,
+                         k = ++j; k < u_len; k++,
+                                             v += u_len_str,
+                                             pdist += pdist_str) {
+                        *(npy_double *)pdist =
+                        DOUBLE_minkowski_distance(u, v, p, dim, u_str, u_str);
+                    }
+                }
+            }
+        END_OUTER_LOOP
+    }
+} /* End of pairwise_minkowski_kernel function */
+
+/* GUFUNC kernel for weighted Minkowski distance */
+
+static void
+weighted_minkowski_kernel(char **args, npy_intp *dimensions,
+                    npy_intp *steps, void *data)
+{
+    if (dimensions[0] == 1 || steps[3] == 0) { /* all calls share same p */
+        npy_double p = *(npy_double *)args[3];
+        void *new_data = NULL;
+        /* see if there is a faster alternative available */
+        if (p == 2) {
+            new_data = (void *) &DOUBLE_weighted_euclidean_distance;
+        } else if (p == 1) {
+            new_data = (void *) &DOUBLE_weighted_city_block_distance;
+        } else if (p == 0) {
+            new_data = (void *) &DOUBLE_weighted_hamming_distance;
+        }
+
+        if (new_data) {
+            char *new_args[] = {args[0], args[1], args[2], args[4]};
+            npy_intp new_steps[] = {steps[0], steps[1], steps[2], steps[4],
+                                    steps[5], steps[6], steps[7]};
+            distance_uvw_kernel(new_args, dimensions, new_steps, new_data);
+            return;
+        }
+        /* no other function found, call the minkowski function */
+        INIT_OUTER_LOOP_5(dimensions, steps)
+        npy_intp dim = *dimensions;
+        npy_intp u_str = *steps++,
+                 v_str = *steps++,
+                 w_str = *steps;
+
+        BEGIN_OUTER_LOOP_5(args)
+            const char *u = args[0],
+                       *v = args[1],
+                       *w = args[2];
+            npy_double *dist = (npy_double *)args[4];
+
+            *dist = DOUBLE_weighted_minkowski_distance(u, v, w, p, dim,
+                                                       u_str, v_str ,w_str);
+        END_OUTER_LOOP
+    } else { /* check which function to call in each iteration */
+        INIT_OUTER_LOOP_5(dimensions, steps)
+        npy_intp dim = *dimensions;
+        npy_intp u_str = *steps++,
+                 v_str = *steps++,
+                 w_str = *steps;
+
+        BEGIN_OUTER_LOOP_5(args)
+            const char *u = args[0],
+                       *v = args[1],
+                       *w = args[2];
+            const npy_double p = *(npy_double *)args[3];
+            npy_double *dist = (npy_double *)args[4];
+            if (p == 2) {
+                *dist = DOUBLE_weighted_euclidean_distance(u, v, w, dim,
+                                                           u_str, v_str,
+                                                           w_str);
+            } else if (p ==1) {
+                *dist = DOUBLE_weighted_city_block_distance(u, v, w, dim,
+                                                            u_str, v_str,
+                                                            w_str);
+            } else if (p == 0) {
+                *dist = DOUBLE_weighted_hamming_distance(u, v, w, dim,
+                                                         u_str, v_str, w_str);
+            } else {
+                *dist = DOUBLE_weighted_minkowski_distance(u, v, w, p, dim,
+                                                           u_str, v_str,
+                                                           w_str);
+            }
+        END_OUTER_LOOP
+    }
+} /* End of weighted_minkowski_kernel function */
+
+/* GUFUNC kernel for pairwise weighted Minkowski distance */
+
+static void
+pairwise_weighted_minkowski_kernel(char **args, npy_intp *dimensions,
+                          npy_intp *steps, void *data)
+{
+    if (dimensions[0] == 1 || steps[2] == 0) { /* all calls share same p */
+        npy_double p = *(npy_double *)args[2];
+        void *new_data = NULL;
+        /* see if there is a faster alternative available */
+        if (p == 2) {
+            new_data = (void *) &DOUBLE_weighted_euclidean_distance;
+        } else if (p == 1) {
+            new_data = (void *) &DOUBLE_weighted_city_block_distance;
+        } else if (p == 0) {
+            new_data = (void *) &DOUBLE_weighted_hamming_distance;
+        }
+        if (new_data) {
+            char *new_args[] = {args[0], args[1], args[3]};
+            npy_intp new_steps[] = {steps[0], steps[1], steps[3],
+                                    steps[4], steps[5], steps[6], steps[7]};
+            pairwise_distance_uvw_kernel(new_args, dimensions, new_steps,
+                                         new_data);
+            return;
+        }
+        /* no other function found, call the minkowski function */
+        INIT_OUTER_LOOP_4(dimensions, steps)
+
+        npy_intp u_len = *dimensions++,
+                 dim = *dimensions++;
+        npy_intp u_len_str = *steps++,
+                 u_str = *steps++,
+                 w_str = *steps++,
+                 pdist_str = *steps;
+
+        BEGIN_OUTER_LOOP_4(args)
+            const char *u = args[0],
+                       *v,
+                       *w = args[1];
+            char *pdist = args[3];
+            npy_intp j, k;
+
+            for (j = 0; j < u_len; u += u_len_str) {
+                for (v = u + u_len_str,
+                     k = ++j; k < u_len; k++,
+                                         v += u_len_str,
+                                         pdist += pdist_str) {
+                    *(npy_double *)pdist =
+                    DOUBLE_weighted_minkowski_distance(u, v, w, p, dim,
+                                                       u_str, u_str, w_str);
+                }
+            }
+        END_OUTER_LOOP
+    } else { /* check which function to call in each iteration */
+        INIT_OUTER_LOOP_4(dimensions, steps)
+        npy_intp u_len = *dimensions++,
+                 dim = *dimensions++;
+        npy_intp u_len_str = *steps++,
+                 u_str = *steps++,
+                 w_str = *steps++,
+                 pdist_str = *steps;
+
+        typedef npy_double (*distance_func)(const char*, const char*,
+                                            const char*, npy_intp, npy_intp,
+                                            npy_intp, npy_intp);
+
+        BEGIN_OUTER_LOOP_4(args)
+            const char *u = args[0],
+                       *v,
+                       *w = args[1];
+            const npy_double p = *(npy_double *)args[2];
+            char *pdist = args[3];
+            npy_intp j, k;
+
+            distance_func func = NULL;
+            if (p == 2) {
+                func = &DOUBLE_weighted_euclidean_distance;
+            } else if (p == 1) {
+                func =  &DOUBLE_weighted_city_block_distance;
+            } else if (p == 0) {
+                func =  &DOUBLE_weighted_hamming_distance;
+            }
+            if (func) {
+                for (j = 0; j < u_len; u += u_len_str) {
+                    for (v = u + u_len_str,
+                         k = ++j; k < u_len; k++,
+                                             v += u_len_str,
+                                             pdist += pdist_str) {
+                        *(npy_double *)pdist = func(u, v, w, dim,
+                                                    u_str, u_str, w_str);
+                    }
+                }
+            } else {
+                for (j = 0; j < u_len; u += u_len_str) {
+                    for (v = u + u_len_str,
+                         k = ++j; k < u_len; k++,
+                                             v += u_len_str,
+                                             pdist += pdist_str) {
+                        *(npy_double *)pdist =
+                        DOUBLE_weighted_minkowski_distance(u, v, w, p,
+                                                           dim, u_str,
+                                                           u_str, w_str);
+                    }
+                }
+            }
+        END_OUTER_LOOP
+    }
+} /* End of pairwise_weighted_minkowski_kernel function */
+
+/* GUFUNC kernel for p-th power Minkowski distance */
+
+static void
+pminkowski_kernel(char **args, npy_intp *dimensions,
+                    npy_intp *steps, void *data)
+{
+    if (dimensions[0] == 1 || steps[2] == 0) { /* all calls share the same p */
+        npy_double p = *(npy_double *)args[2];
+        void *new_data = NULL;
+        /* see if there is a faster alternative available */
+        if (p == 2) {
+            new_data = (void *) &DOUBLE_sqeuclidean_distance;
+        } else if (p == 1) {
+            new_data = (void *) &DOUBLE_city_block_distance;
+        } else if (p == 0) {
+            new_data = (void *) &DOUBLE_hamming_distance;
+        }
+
+        if (new_data) {
+            char *new_args[] = {args[0], args[1], args[3]};
+            npy_intp new_steps[] = {steps[0], steps[1], steps[3],
+                                    steps[4], steps[5]};
+            distance_uv_kernel(new_args, dimensions, new_steps, new_data);
+            return;
+        }
+        /* no other function found, call the minkowski function */
+        INIT_OUTER_LOOP_4(dimensions, steps)
+        npy_intp dim = *dimensions;
+        npy_intp u_str = *steps++,
+                 v_str = *steps;
+
+        BEGIN_OUTER_LOOP_4(args)
+            const char *u = args[0],
+                       *v = args[1];
+            npy_double *dist = (npy_double *)args[3];
+
+            *dist = DOUBLE_pminkowski_distance(u, v, p, dim, u_str, v_str);
+        END_OUTER_LOOP
+    } else { /* check which function to call in each iteration */
+        INIT_OUTER_LOOP_4(dimensions, steps)
+        npy_intp dim = *dimensions;
+        npy_intp u_str = *steps++,
+                 v_str = *steps;
+
+        BEGIN_OUTER_LOOP_4(args)
+            const char *u = args[0],
+                       *v = args[1];
+            const npy_double p = *(npy_double *)args[2];
+            npy_double *dist = (npy_double *)args[3];
+            if (p == 2) {
+                *dist = DOUBLE_sqeuclidean_distance(u, v, dim, u_str, v_str);
+            } else if (p ==1) {
+                *dist = DOUBLE_city_block_distance(u, v, dim, u_str, v_str);
+            } else if (p == 0) {
+                *dist = DOUBLE_hamming_distance(u, v, dim, u_str, v_str);
+            }
+            else {
+                *dist = DOUBLE_pminkowski_distance(u, v, p, dim, u_str, v_str);
+            }
+        END_OUTER_LOOP
+    }
+} /* End of pminkowski_kernel function */
+
+/* GUFUNC kernel for pairwise p-th power Minkowski distance */
+
+static void
+pairwise_pminkowski_kernel(char **args, npy_intp *dimensions,
+                          npy_intp *steps, void *data)
+{
+    if (dimensions[0] == 1 || steps[1] == 0) { /* all calls share same p */
+        npy_double p = *(npy_double *)args[1];
+        void *new_data = NULL;
+        /* see if there is a faster alternative available */
+        if (p == 2) {
+            new_data = (void *) &DOUBLE_sqeuclidean_distance;
+        } else if (p == 1) {
+            new_data = (void *) &DOUBLE_city_block_distance;
+        } else if (p == 0) {
+            new_data = (void *) &DOUBLE_hamming_distance;
+        }
+        if (new_data) {
+            char *new_args[] = {args[0], args[2]};
+            npy_intp new_steps[] = {steps[0], steps[2], steps[3],
+                                    steps[4], steps[5]};
+            pairwise_distance_uv_kernel(new_args, dimensions, new_steps,
+                                        new_data);
+            return;
+        }
+        /* no other function found, call the minkowski function */
+        INIT_OUTER_LOOP_3(dimensions, steps)
+
+        npy_intp u_len = *dimensions++,
+                 dim = *dimensions++;
+        npy_intp u_len_str = *steps++,
+                 u_str = *steps++,
+                 pdist_str = *steps;
+
+        BEGIN_OUTER_LOOP_3(args)
+            const char *u = args[0],
+                       *v;
+            char *pdist = args[2];
+            npy_intp j, k;
+
+            for (j = 0; j < u_len; u += u_len_str) {
+                for (v = u + u_len_str,
+                     k = ++j; k < u_len; k++,
+                                         v += u_len_str,
+                                         pdist += pdist_str) {
+                    *(npy_double *)pdist =
+                    DOUBLE_pminkowski_distance(u, v, p, dim, u_str, u_str);
+                }
+            }
+        END_OUTER_LOOP
+    } else { /* check which function to call in each iteration */
+        INIT_OUTER_LOOP_3(dimensions, steps)
+        npy_intp u_len = *dimensions++,
+                 dim = *dimensions++;
+        npy_intp u_len_str = *steps++,
+                 u_str = *steps++,
+                 pdist_str = *steps;
+
+        typedef npy_double (*distance_func)(const char*, const char*,
+                                            npy_intp, npy_intp, npy_intp);
+
+        BEGIN_OUTER_LOOP_3(args)
+            const char *u = args[0],
+                       *v;
+            const npy_double p = *(npy_double *)args[1];
+            char *pdist = args[2];
+            npy_intp j, k;
+
+            distance_func func = NULL;
+            if (p == 2) {
+                func = &DOUBLE_sqeuclidean_distance;
+            } else if (p == 1) {
+                func =  &DOUBLE_city_block_distance;
+            } else if (p == 0) {
+                func =  &DOUBLE_hamming_distance;
+            }
+            if (func) {
+                for (j = 0; j < u_len; u += u_len_str) {
+                    for (v = u + u_len_str,
+                         k = ++j; k < u_len; k++,
+                                             v += u_len_str,
+                                             pdist += pdist_str) {
+                        *(npy_double *)pdist = func(u, v, dim, u_str, u_str);
+                    }
+                }
+            } else {
+                for (j = 0; j < u_len; u += u_len_str) {
+                    for (v = u + u_len_str,
+                         k = ++j; k < u_len; k++,
+                                             v += u_len_str,
+                                             pdist += pdist_str) {
+                        *(npy_double *)pdist =
+                        DOUBLE_pminkowski_distance(u, v, p, dim, u_str, u_str);
+                    }
+                }
+            }
+        END_OUTER_LOOP
+    }
+} /* End of pairwise_pminkowski_kernel function */
+
+/* GUFUNC kernel for p-th power weighted Minkowski distance */
+
+static void
+weighted_pminkowski_kernel(char **args, npy_intp *dimensions,
+                    npy_intp *steps, void *data)
+{
+    if (dimensions[0] == 1 || steps[3] == 0) { /* all calls share same p */
+        npy_double p = *(npy_double *)args[3];
+        void *new_data = NULL;
+        /* see if there is a faster alternative available */
+        if (p == 2) {
+            new_data = (void *) &DOUBLE_weighted_sqeuclidean_distance;
+        } else if (p == 1) {
+            new_data = (void *) &DOUBLE_weighted_city_block_distance;
+        } else if (p == 0) {
+            new_data = (void *) &DOUBLE_weighted_hamming_distance;
+        }
+
+        if (new_data) {
+            char *new_args[] = {args[0], args[1], args[2], args[4]};
+            npy_intp new_steps[] = {steps[0], steps[1], steps[2], steps[4],
+                                    steps[5], steps[6], steps[7]};
+            distance_uvw_kernel(new_args, dimensions, new_steps, new_data);
+            return;
+        }
+        /* no other function found, call the minkowski function */
+        INIT_OUTER_LOOP_5(dimensions, steps)
+        npy_intp dim = *dimensions;
+        npy_intp u_str = *steps++,
+                 v_str = *steps++,
+                 w_str = *steps;
+
+        BEGIN_OUTER_LOOP_5(args)
+            const char *u = args[0],
+                       *v = args[1],
+                       *w = args[2];
+            npy_double *dist = (npy_double *)args[4];
+
+            *dist = DOUBLE_weighted_pminkowski_distance(u, v, w, p, dim,
+                                                        u_str, v_str ,w_str);
+        END_OUTER_LOOP
+    } else { /* check which function to call in each iteration */
+        INIT_OUTER_LOOP_5(dimensions, steps)
+        npy_intp dim = *dimensions;
+        npy_intp u_str = *steps++,
+                 v_str = *steps++,
+                 w_str = *steps;
+
+        BEGIN_OUTER_LOOP_5(args)
+            const char *u = args[0],
+                       *v = args[1],
+                       *w = args[2];
+            const npy_double p = *(npy_double *)args[3];
+            npy_double *dist = (npy_double *)args[4];
+            if (p == 2) {
+                *dist = DOUBLE_weighted_sqeuclidean_distance(u, v, w, dim,
+                                                             u_str, v_str,
+                                                             w_str);
+            } else if (p ==1) {
+                *dist = DOUBLE_weighted_city_block_distance(u, v, w, dim,
+                                                            u_str, v_str,
+                                                            w_str);
+            } else if (p == 0) {
+                *dist = DOUBLE_weighted_hamming_distance(u, v, w, dim,
+                                                         u_str, v_str, w_str);
+            } else {
+                *dist = DOUBLE_weighted_pminkowski_distance(u, v, w, p, dim,
+                                                            u_str, v_str,
+                                                            w_str);
+            }
+        END_OUTER_LOOP
+    }
+} /* End of weighted_pminkowski_kernel function */
+
+/* GUFUNC kernel for pairwise p-th power weighted Minkowski distance */
+
+static void
+pairwise_weighted_pminkowski_kernel(char **args, npy_intp *dimensions,
+                          npy_intp *steps, void *data)
+{
+    if (dimensions[0] == 1 || steps[2] == 0) { /* all calls share same p */
+        npy_double p = *(npy_double *)args[2];
+        void *new_data = NULL;
+        /* see if there is a faster alternative available */
+        if (p == 2) {
+            new_data = (void *) &DOUBLE_weighted_sqeuclidean_distance;
+        } else if (p == 1) {
+            new_data = (void *) &DOUBLE_weighted_city_block_distance;
+        } else if (p == 0) {
+            new_data = (void *) &DOUBLE_weighted_hamming_distance;
+        }
+        if (new_data) {
+            char *new_args[] = {args[0], args[1], args[3]};
+            npy_intp new_steps[] = {steps[0], steps[1], steps[3],
+                                    steps[4], steps[5], steps[6], steps[7]};
+            pairwise_distance_uvw_kernel(new_args, dimensions, new_steps,
+                                         new_data);
+            return;
+        }
+        /* no other function found, call the minkowski function */
+        INIT_OUTER_LOOP_4(dimensions, steps)
+
+        npy_intp u_len = *dimensions++,
+                 dim = *dimensions++;
+        npy_intp u_len_str = *steps++,
+                 u_str = *steps++,
+                 w_str = *steps++,
+                 pdist_str = *steps;
+
+        BEGIN_OUTER_LOOP_4(args)
+            const char *u = args[0],
+                       *v,
+                       *w = args[1];
+            char *pdist = args[3];
+            npy_intp j, k;
+
+            for (j = 0; j < u_len; u += u_len_str) {
+                for (v = u + u_len_str,
+                     k = ++j; k < u_len; k++,
+                                         v += u_len_str,
+                                         pdist += pdist_str) {
+                    *(npy_double *)pdist =
+                    DOUBLE_weighted_pminkowski_distance(u, v, w, p, dim,
+                                                        u_str, u_str, w_str);
+                }
+            }
+        END_OUTER_LOOP
+    } else { /* check which function to call in each iteration */
+        INIT_OUTER_LOOP_4(dimensions, steps)
+        npy_intp u_len = *dimensions++,
+                 dim = *dimensions++;
+        npy_intp u_len_str = *steps++,
+                 u_str = *steps++,
+                 w_str = *steps++,
+                 pdist_str = *steps;
+
+        typedef npy_double (*distance_func)(const char*, const char*,
+                                            const char*, npy_intp, npy_intp,
+                                            npy_intp, npy_intp);
+
+        BEGIN_OUTER_LOOP_4(args)
+            const char *u = args[0],
+                       *v,
+                       *w = args[1];
+            const npy_double p = *(npy_double *)args[2];
+            char *pdist = args[3];
+            npy_intp j, k;
+
+            distance_func func = NULL;
+            if (p == 2) {
+                func = &DOUBLE_weighted_sqeuclidean_distance;
+            } else if (p == 1) {
+                func =  &DOUBLE_weighted_city_block_distance;
+            } else if (p == 0) {
+                func =  &DOUBLE_weighted_hamming_distance;
+            }
+            if (func) {
+                for (j = 0; j < u_len; u += u_len_str) {
+                    for (v = u + u_len_str,
+                         k = ++j; k < u_len; k++,
+                                             v += u_len_str,
+                                             pdist += pdist_str) {
+                        *(npy_double *)pdist = func(u, v, w, dim,
+                                                    u_str, u_str, w_str);
+                    }
+                }
+            } else {
+                for (j = 0; j < u_len; u += u_len_str) {
+                    for (v = u + u_len_str,
+                         k = ++j; k < u_len; k++,
+                                             v += u_len_str,
+                                             pdist += pdist_str) {
+                        *(npy_double *)pdist =
+                        DOUBLE_weighted_pminkowski_distance(u, v, w, p,
+                                                           dim, u_str,
+                                                           u_str, w_str);
+                    }
+                }
+            }
+        END_OUTER_LOOP
+    }
+} /* End of pairwise_weighted_pminkowski_kernel function */
 
 /* GUFUNC kernel for Mahalanobis distance */
 
@@ -1268,10 +2243,10 @@ mahalanobis_kernel(char **args, npy_intp *dimensions,
         const char *u = args[0],
                    *v = args[1],
                    *V = args[2];
-        npy_double *buffer = (npy_double *)args[3];
-        char *dist = args[4];
+        npy_double *buffer = (npy_double *)args[3],
+                   *dist = (npy_double *)args[4];
 
-        *(npy_double *)dist = DOUBLE_mahalanobis_distance(u, v, V, buffer,
+        *dist = DOUBLE_mahalanobis_distance(u, v, V, buffer,
                                                           dims, u_str, v_str,
                                                           V_row_str,
                                                           V_col_str);
@@ -1349,6 +2324,10 @@ static void *city_block_data[] = {
     (void *) &DOUBLE_city_block_distance,
 };
 
+static void *weighted_city_block_data[] = {
+    (void *) &DOUBLE_weighted_city_block_distance,
+};
+
 static void *correlation_data[] = {
     (void *) &DOUBLE_correlation_distance,
 };
@@ -1369,8 +2348,16 @@ static void *euclidean_data[] = {
     (void *) &DOUBLE_euclidean_distance,
 };
 
+static void *weighted_euclidean_data[] = {
+    (void *) &DOUBLE_weighted_euclidean_distance,
+};
+
 static void *sqeuclidean_data[] = {
     (void *) &DOUBLE_sqeuclidean_distance,
+};
+
+static void *weighted_sqeuclidean_data[] = {
+    (void *) &DOUBLE_weighted_sqeuclidean_distance,
 };
 
 static void *greatcircle_degrees_data[] = {
@@ -1383,6 +2370,12 @@ static void *hamming_data[] = {
     (void *) &BOOL_hamming_distance,
     (void *) &INTP_hamming_distance,
     (void *) &DOUBLE_hamming_distance,
+};
+
+static void *weighted_hamming_data[] = {
+    (void *) &BOOL_weighted_hamming_distance,
+    (void *) &INTP_weighted_hamming_distance,
+    (void *) &DOUBLE_weighted_hamming_distance,
 };
 
 static void *dice_data[] = {
@@ -1426,6 +2419,9 @@ static void *yule_data[] = {
     (void *) &INTP_yule_distance,
     (void *) &DOUBLE_yule_distance,
 };
+
+
+/* GUFUNC kernels */
 
 PyUFuncGenericFunction norm_kernel_funcs[] = {
     &norm_kernel,
@@ -1475,6 +2471,18 @@ PyUFuncGenericFunction cached2_pairwise_distance_uv_kernel_funcs[] = {
     &cached2_pairwise_distance_uv_kernel,
 };
 
+PyUFuncGenericFunction distance_uvw_kernel_funcs[] = {
+    &distance_uvw_kernel,
+    &distance_uvw_kernel,
+    &distance_uvw_kernel,
+};
+
+PyUFuncGenericFunction pairwise_distance_uvw_kernel_funcs[] = {
+    &pairwise_distance_uvw_kernel,
+    &pairwise_distance_uvw_kernel,
+    &pairwise_distance_uvw_kernel,
+};
+
 PyUFuncGenericFunction mahalanobis_kernel_funcs[] = {
     &mahalanobis_kernel,
 };
@@ -1482,6 +2490,39 @@ PyUFuncGenericFunction mahalanobis_kernel_funcs[] = {
 PyUFuncGenericFunction pairwise_mahalanobis_kernel_funcs[] = {
     &pairwise_mahalanobis_kernel,
 };
+
+PyUFuncGenericFunction minkowski_kernel_funcs[] = {
+    &minkowski_kernel,
+};
+
+PyUFuncGenericFunction pairwise_minkowski_kernel_funcs[] = {
+    &pairwise_minkowski_kernel,
+};
+
+PyUFuncGenericFunction weighted_minkowski_kernel_funcs[] = {
+    &weighted_minkowski_kernel,
+};
+
+PyUFuncGenericFunction pairwise_weighted_minkowski_kernel_funcs[] = {
+    &pairwise_weighted_minkowski_kernel,
+};
+
+PyUFuncGenericFunction pminkowski_kernel_funcs[] = {
+    &pminkowski_kernel,
+};
+
+PyUFuncGenericFunction pairwise_pminkowski_kernel_funcs[] = {
+    &pairwise_pminkowski_kernel,
+};
+
+PyUFuncGenericFunction weighted_pminkowski_kernel_funcs[] = {
+    &weighted_pminkowski_kernel,
+};
+
+PyUFuncGenericFunction pairwise_weighted_pminkowski_kernel_funcs[] = {
+    &pairwise_weighted_pminkowski_kernel,
+};
+/* Input and output types */
 
 static char all_DOUBLE_types[] = {
     NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE,
@@ -1669,6 +2710,28 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
         city_block_data
     },
     {
+        "_wcityblock",
+        "(d),(d),(d)->()",
+        "Weighted City Block (Manhattan) distance on the last dimension, "
+        "broadcast on the rest.\n"
+        "    (d),(d),(d)->()\n",
+        1, 3, 1,
+        distance_uvw_kernel_funcs,
+        all_DOUBLE_types,
+        weighted_city_block_data
+    },
+    {
+        "_pairwise_wcityblock",
+        "(n,d),(d)->(p)",
+        "Weighted City Block (Manhattan) distance of all pairs of vectors "
+        "over the last two dimensions, broadcast on the rest.\n"
+        "    (n,d)->(p)\n",
+        1, 2, 1,
+        pairwise_distance_uvw_kernel_funcs,
+        all_DOUBLE_types,
+        weighted_city_block_data
+    },
+    {
         "_correlation",
         "(d),(d)->()",
         "Correlation distance on the last dimension, "
@@ -1779,6 +2842,28 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
         euclidean_data
     },
     {
+        "_weuclidean",
+        "(d),(d),(d)->()",
+        "Weighted Euclidean distance on the last dimension, "
+        "broadcast on the rest.\n"
+        "    (d),(d),(d)->()\n",
+        1, 3, 1,
+        distance_uvw_kernel_funcs,
+        all_DOUBLE_types,
+        weighted_euclidean_data
+    },
+    {
+        "_pairwise_weuclidean",
+        "(n,d),(d)->(p)",
+        "Weighted Euclidean distance of all pairs of vectors over the "
+        "last two dimensions, broadcast on the rest.\n"
+        "    (n,d),(d)->(p)\n",
+        1, 2, 1,
+        pairwise_distance_uvw_kernel_funcs,
+        all_DOUBLE_types,
+        weighted_euclidean_data
+    },
+    {
         "_sqeuclidean",
         "(d),(d)->()",
         "Squared Euclidean distance on the last dimension, "
@@ -1799,6 +2884,28 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
         pairwise_distance_uv_kernel_funcs,
         all_DOUBLE_types,
         sqeuclidean_data
+    },
+    {
+        "_wsqeuclidean",
+        "(d),(d),(d)->()",
+        "Weighted squared Euclidean distance on the last dimension, "
+        "broadcast on the rest.\n"
+        "    (d),(d),(d)->()\n",
+        1, 3, 1,
+        distance_uvw_kernel_funcs,
+        all_DOUBLE_types,
+        weighted_sqeuclidean_data
+    },
+    {
+        "_pairwise_wsqeuclidean",
+        "(n,d),(d)->(p)",
+        "Weighted squared Euclidean distance of all pairs of vectors over the "
+        "last two dimensions, broadcast on the rest.\n"
+        "    (n,d),(d)->(p)\n",
+        1, 2, 1,
+        pairwise_distance_uvw_kernel_funcs,
+        all_DOUBLE_types,
+        weighted_sqeuclidean_data
     },
     {
         "_dice",
@@ -1844,6 +2951,29 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
         TYPE_DOUBLE_types,
         hamming_data
     },
+    {
+        "_whamming",
+        "(d),(d),(d)->()",
+        "Weighted Hamming distance on the last dimension, "
+        "broadcast on the rest.\n"
+        "    (d),(d),(d)->()\n",
+        3, 3, 1,
+        distance_uvw_kernel_funcs,
+        TYPE_TYPE_DOUBLE_DOUBLE_types,
+        weighted_hamming_data
+    },
+    {
+        "_pairwise_whamming",
+        "(n,d),(d)->(p)",
+        "Weighted Hamming distance of all pairs of vectors over the "
+        "last two dimensions, broadcast on the rest.\n"
+        "    (n,d),(d)->(p)\n",
+        3, 2, 1,
+        pairwise_distance_uvw_kernel_funcs,
+        TYPE_DOUBLE_DOUBLE_types,
+        weighted_hamming_data
+    },
+
     {
         "_jaccard",
         "(d),(d)->()",
@@ -2020,7 +3150,94 @@ GUFUNC_DESCRIPTOR_t gufunc_descriptors[] = {
         all_DOUBLE_types,
         null_data
     },
-
+    {
+        "_minkowski",
+        "(d),(d),()->()",
+        "Minkowski distance on the last dimension, "
+        "broadcast on the rest.\n"
+        "    (d),(d),()->()\n",
+        1, 3, 1,
+        minkowski_kernel_funcs,
+        all_DOUBLE_types,
+        null_data
+    },
+    {
+        "_pairwise_minkowski",
+        "(n,d),()->(p)",
+        "Minkowski distance on all pairs of vectors over the "
+        "last two dimensions, broadcast on the rest.\n"
+        "    (n,d),()->(p)\n",
+        1, 2, 1,
+        pairwise_minkowski_kernel_funcs,
+        all_DOUBLE_types,
+        null_data
+    },
+    {
+        "_wminkowski",
+        "(d),(d),(d),()->()",
+        "Weighted Minkowski distance on the last dimension, "
+        "broadcast on the rest.\n"
+        "    (d),(d),(d),()->()\n",
+        1, 4, 1,
+        weighted_minkowski_kernel_funcs,
+        all_DOUBLE_types,
+        null_data
+    },
+    {
+        "_pairwise_wminkowski",
+        "(n,d),(d),()->(p)",
+        "Weighted Minkowski distance on all pairs of vectors over the "
+        "last two dimensions, broadcast on the rest.\n"
+        "    (n,d),(d),()->(p)\n",
+        1, 3, 1,
+        pairwise_weighted_minkowski_kernel_funcs,
+        all_DOUBLE_types,
+        null_data
+    },
+    {
+        "_pminkowski",
+        "(d),(d),()->()",
+        "p-th power Minkowski distance on the last dimension, "
+        "broadcast on the rest.\n"
+        "    (d),(d),()->()\n",
+        1, 3, 1,
+        pminkowski_kernel_funcs,
+        all_DOUBLE_types,
+        null_data
+    },
+    {
+        "_pairwise_pminkowski",
+        "(n,d),()->(p)",
+        "p-th power Minkowski distance on all pairs of vectors over the "
+        "last two dimensions, broadcast on the rest.\n"
+        "    (n,d),()->(p)\n",
+        1, 2, 1,
+        pairwise_pminkowski_kernel_funcs,
+        all_DOUBLE_types,
+        null_data
+    },
+    {
+        "_wpminkowski",
+        "(d),(d),(d),()->()",
+        "Weighted p-th power Minkowski distance on the last dimension, "
+        "broadcast on the rest.\n"
+        "    (d),(d),(d),()->()\n",
+        1, 4, 1,
+        weighted_pminkowski_kernel_funcs,
+        all_DOUBLE_types,
+        null_data
+    },
+    {
+        "_pairwise_wpminkowski",
+        "(n,d),(d),()->(p)",
+        "Weighted p-th power Minkowski distance on all pairs of vectors "
+        "over the last two dimensions, broadcast on the rest.\n"
+        "    (n,d),(d),()->(p)\n",
+        1, 3, 1,
+        pairwise_weighted_pminkowski_kernel_funcs,
+        all_DOUBLE_types,
+        null_data
+    },
 }; /* End of gufunc_descriptors declaration */
 
 static void
