@@ -1595,7 +1595,7 @@ class rv_continuous(rv_generic):
         place(output, cond2, 1.0)
         if any(cond):  # call only if at least 1 entry
             goodargs = argsreduce(cond, *((x,)+args))
-            place(output, cond, np.clip(self._cdf(*goodargs), 0, 1))
+            place(output, cond, self._cdf(*goodargs))
         if output.ndim == 0:
             return output[()]
         return output
@@ -1676,7 +1676,7 @@ class rv_continuous(rv_generic):
         place(output, cond2, 1.0)
         if any(cond):
             goodargs = argsreduce(cond, *((x,)+args))
-            place(output, cond, np.clip(self._sf(*goodargs), 0, 1))
+            place(output, cond, self._sf(*goodargs))
         if output.ndim == 0:
             return output[()]
         return output
