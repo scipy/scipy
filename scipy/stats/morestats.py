@@ -1227,9 +1227,10 @@ def anderson_ksamp(samples, midrank=True):
     samples : sequence of 1-D array_like
         Array of sample data in arrays.
     midrank : bool, optional
-        Type of Anderson-Darling test which is computed. Default is
-        the midrank test applicable to continuous and discrete
-        populations.
+        Type of Anderson-Darling test which is computed. Default
+        (True) is the midrank test applicable to continuous and
+        discrete populations. If False, the right side empirical
+        distribution is used.
 
     Returns
     -------
