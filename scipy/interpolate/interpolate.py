@@ -1148,8 +1148,7 @@ class BPoly(_PPolyBase):
         return cls.construct_fast(c, pp.x, extrapolate)
 
     @classmethod
-    def from_derivatives(cls, xi, yi, orders=None, direction=None,
-                         axis=0, extrapolate=None):
+    def from_derivatives(cls, xi, yi, orders=None, extrapolate=None):
         """Construct a piecewise polynomial in the Bernstein basis,
         compatible with the specified values and derivatives at breakpoints.
 
@@ -1162,8 +1161,6 @@ class BPoly(_PPolyBase):
         orders : None or int or array_like of ints. Default: None.
             Specifies the degree of local polynomials. If not None, some
             derivatives are ignored.
-        axis : int, optional
-            Interpolation axis, default is 0.
         extrapolate : bool, optional
             Whether to extrapolate to ouf-of-bounds points based on first
             and last intervals, or to return NaNs. Default: True.
@@ -1212,11 +1209,6 @@ class BPoly(_PPolyBase):
         So that f'(1-0) = -1 and f'(1+0) = 2
 
         """
-        if axis != 0:
-            raise NotImplementedError
-        if direction is not None:
-            raise NotImplementedError
-
         xi = np.asarray(xi)
         if len(xi) != len(yi):
             raise ValueError("xi and yi need to have the same length")
@@ -1227,7 +1219,11 @@ class BPoly(_PPolyBase):
         m = len(xi) - 1
 
         # global poly order is k-1, local orders are <=k and can vary
-        k = max(len(yi[i]) + len(yi[i+1]) for i in range(m))
+        try:
+            k = max(len(yi[i]) + len(yi[i+1]) for i in range(m))
+        except TypeError:
+            raise ValueError("Using a 1D array for y? Please .reshape(-1, 1).")
+
         if orders is None:
             orders = [None] * m
         else:
@@ -1256,7 +1252,7 @@ class BPoly(_PPolyBase):
                     raise ValueError("`order` input incompatible with"
                             " length y1 or y2.")
 
-            b = BPoly._construct_from_derivatives(xi[i], xi[i+1],  y1[:n1], y2[:n2])
+            b = BPoly._construct_from_derivatives(xi[i], xi[i+1], y1[:n1], y2[:n2])
             if len(b) < k:
                 b = BPoly._raise_degree(b, k - len(b))
             c.append(b)
