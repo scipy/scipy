@@ -1190,12 +1190,12 @@ class BPoly(_PPolyBase):
         Examples
         --------
 
-        >>> BPoly.from_derivatives([[1, 2], [3, 4]], [0, 1])
+        >>> BPoly.from_derivatives([0, 1], [[1, 2], [3, 4]])
 
         Creates a polynomial `f(x)` of degree 3, defined on `[0, 1]`
         such that `f(0) = 1, df/dx(0) = 2, f(1) = 3, df/dx(1) = 4`
 
-        >>> BPoly.from_derivatives([[0, 1], [0], [2], [0, 1, 2])
+        >>> BPoly.from_derivatives([0, 1, 2], [[0, 1], [0], [2]])
 
         Creates a piecewise polynomial `f(x)`, such that
         `f(0) = f(1) = 0`, `f(2) = 2`, and `df/dx(0) = 1`.
@@ -1271,10 +1271,10 @@ class BPoly(_PPolyBase):
 
         Return the coefficients of a polynomial in the Bernstein basis
         defined on `[xa, xb]` and having the values and derivatives at the
-        endpoints `xa` and `xb` as specified by `ya` and `yb`, respectively.
+        endpoints ``xa`` and ``xb`` as specified by ``ya`` and ``yb``.
         The polynomial constructed is of the minimal possible degree, i.e.,
-        if the lengths of `ya` and `yb` are `na` and `nb`, the degree of the
-        polynomial is `na + nb - 1`.
+        if the lengths of ``ya`` and ``yb`` are ``na`` and ``nb``, the degree
+        of the polynomial is ``na + nb - 1``.
 
         Parameters
         ----------
@@ -1283,10 +1283,10 @@ class BPoly(_PPolyBase):
         xb : float
             Right-hand end point of the interval
         ya : array_like
-            Derivatives at `xa`. `ya[0]` is the value of the function, and
-            `ya[i]` for `i > 0` is the value of the `i`-th derivative.
+            Derivatives at ``xa``. ``ya[0]`` is the value of the function, and
+            ``ya[i]`` for ``i > 0`` is the value of the ``i``-th derivative.
         yb : array_like
-            Derivatives at `xb`.
+            Derivatives at ``xb``.
 
         Returns
         -------

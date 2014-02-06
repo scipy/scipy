@@ -729,11 +729,11 @@ cdef double_or_complex evaluate_bpoly1(double_or_complex s, double_or_complex[:,
     """
     Evaluate polynomial in the Berstein basis in a single interval.
 
-    A Berstein polynomial is defined as ..math::
+    A Berstein polynomial is defined as
 
-        b_{j, k} = comb(k, j) x^{j} (1-x)^{k-j}
+        .. math:: b_{j, k} = comb(k, j) x^{j} (1-x)^{k-j}
 
-    with ``0 <= x <= 1``
+    with ``0 <= x <= 1``.
 
     Parameters
     ----------
