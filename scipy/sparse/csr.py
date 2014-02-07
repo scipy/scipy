@@ -204,7 +204,10 @@ class csr_matrix(_cs_matrix, IndexMixin):
             else:
                 return x
 
-        def check_bounds(indices,N):
+        def check_bounds(indices, N):
+            if indices.size == 0:
+                return (0, 0)
+
             max_indx = indices.max()
             if max_indx >= N:
                 raise IndexError('index (%d) out of range' % max_indx)
@@ -278,7 +281,7 @@ class csr_matrix(_cs_matrix, IndexMixin):
 
         num_samples = np.size(row)
         if num_samples == 0:
-            return csr_matrix((0,0))
+            return csr_matrix(np.atleast_2d(row).shape, dtype=self.dtype)
         check_bounds(row, self.shape[0])
         check_bounds(col, self.shape[1])
 

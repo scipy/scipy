@@ -2224,6 +2224,22 @@ class _TestFancyIndexing:
         mat = self.spmatrix(array([[1, 0], [0, 1]]))
         assert_raises(ValueError, mat.__setitem__, (0, 0), np.array([1,2]))
 
+    def test_fancy_indexing_empty(self):
+        B = asmatrix(arange(50).reshape(5,10))
+        B[1,:] = 0
+        B[:,2] = 0
+        B[3,6] = 0
+        A = self.spmatrix(B)
+
+        K = np.array([False, False, False, False, False])
+        assert_equal(todense(A[K]), B[K])
+        K = np.array([], dtype=int)
+        assert_equal(todense(A[K]), B[K])
+        assert_equal(todense(A[K,K]), B[K,K])
+        J = np.array([0, 1, 2, 3, 4], dtype=int)[:,None]
+        assert_equal(todense(A[K,J]), B[K,J])
+        assert_equal(todense(A[J,K]), B[J,K])
+
 
 class _TestFancyIndexingAssign:
     def test_bad_index_assign(self):
@@ -2291,6 +2307,30 @@ class _TestFancyIndexingAssign:
             B = asmatrix(np.zeros((4, 3)))
             B[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
             assert_array_equal(A.todense(), B)
+
+    def test_fancy_assign_empty(self):
+        B = asmatrix(arange(50).reshape(5,10))
+        B[1,:] = 0
+        B[:,2] = 0
+        B[3,6] = 0
+        A = self.spmatrix(B)
+
+
+        K = np.array([False, False, False, False, False])
+        A[K] = 42
+        assert_equal(todense(A), B)
+
+        K = np.array([], dtype=int)
+        A[K] = 42
+        assert_equal(todense(A), B)
+        A[K,K] = 42
+        assert_equal(todense(A), B)
+
+        J = np.array([0, 1, 2, 3, 4], dtype=int)[:,None]
+        A[K,J] = 42
+        assert_equal(todense(A), B)
+        A[J,K] = 42
+        assert_equal(todense(A), B)
 
 
 class _TestFancyMultidim:
