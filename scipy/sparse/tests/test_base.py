@@ -3466,28 +3466,8 @@ class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
 
 
 class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
-    @dec.knownfailureif(True, 'copy with non-canonical matrix not implemented due to __getitem__')
-    def test_copy(self):
-        pass
-
-    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
-    def test_ellipsis_slicing(self):
-        pass
-
-    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix broken for sparse boolean index')
+    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix broken for sparse boolean index due to __gt__')
     def test_fancy_indexing_sparse_boolean(self):
-        pass
-
-    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
-    def test_getelement(self):
-        pass
-
-    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
-    def test_slicing_2(self):
-        pass
-
-    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix not implemented')
-    def test_slicing_3(self):
         pass
 
     @dec.knownfailureif(True, 'broadcasting element-wise multiply broken with non-canonical matrix')

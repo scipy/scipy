@@ -793,19 +793,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         major_index, minor_index = self._swap((row,col))
 
+        # TODO make use of sorted indices (if present)
+
         start = self.indptr[major_index]
         end = self.indptr[major_index+1]
-        indxs = np.where(minor_index == self.indices[start:end])[0]
-
-        num_matches = len(indxs)
-
-        if num_matches == 0:
-            # entry does not appear in the matrix
-            return self.dtype.type(0)
-        elif num_matches == 1:
-            return self.data[start:end][indxs[0]]
-        else:
-            raise ValueError('nonzero entry (%d,%d) occurs more than once' % (row,col))
+        # can use np.add(..., where) from numpy 1.7
+        return np.compress(minor_index == self.indices[start:end],
+                           self.data[start:end]).sum(dtype=self.dtype)
 
     def _get_slice(self, i, start, stop, stride, shape):
         """Returns a copy of the elements

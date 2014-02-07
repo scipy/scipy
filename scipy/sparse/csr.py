@@ -291,33 +291,6 @@ class csr_matrix(_cs_matrix, IndexMixin):
             return np.asmatrix(val)
         return self.__class__(val.reshape(row.shape))
 
-    def _get_single_element(self,row,col):
-        """Returns the single element self[row, col]
-        """
-        M, N = self.shape
-        if (row < 0):
-            row += M
-        if (col < 0):
-            col += N
-        if not (0 <= row < M) or not (0 <= col < N):
-            raise IndexError("index out of bounds")
-
-        # TODO make use of sorted indices (if present)
-
-        start = self.indptr[row]
-        end = self.indptr[row+1]
-        indxs = np.where(col == self.indices[start:end])[0]
-
-        num_matches = len(indxs)
-
-        if num_matches == 0:
-            # entry does not appear in the matrix
-            return self.dtype.type(0)
-        elif num_matches == 1:
-            return self.data[start:end][indxs[0]]
-        else:
-            raise ValueError('nonzero entry (%d,%d) occurs more than once' % (row,col))
-
     def getrow(self, i):
         """Returns a copy of row i of the matrix, as a (1 x n)
         CSR matrix (row vector).
