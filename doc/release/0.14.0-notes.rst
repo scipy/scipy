@@ -39,6 +39,13 @@ Multivariate random variables
 A new class `scipy.stats.multivariate_normal` with functionality for 
 multivariate normal random variables has been added.
 
+k-sample Anderson-Darling test
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The new function `scipy.stats.anderson_ksamp` computes the k-sample
+Anderson-Darling test for the null hypothesis that k samples come from
+the same parent population.
+
 ``scipy.signal`` improvements
 -----------------------------
 
