@@ -178,7 +178,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         i, j = self._index_to_arrays(i, j)
 
         if i.size == 0:
-            return dok_matrix((0, 0), dtype=self.dtype)
+            return dok_matrix(i.shape, dtype=self.dtype)
 
         min_i = i.min()
         if min_i < -self.shape[0] or i.max() >= self.shape[0]:
