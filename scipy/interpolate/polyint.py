@@ -1069,84 +1069,25 @@ class PchipInterpolator(PiecewisePolynomial):
         d : ndarray
             root of the cubic polynomial interpolated at the y-points. 
         """
-        #convert Krogh to normal a x**3 + b x**2 + c x + d
-        c0 = cubic.c[0]
-        c1 = cubic.c[1]
-        c2 = cubic.c[2]
-        c3 = cubic.c[3]
+        from scipy.interpolate._ppoly import real_roots
         x0 = cubic.xi[0]
-        x1 = cubic.xi[1]
         x2 = cubic.xi[2]
-        x3 = cubic.xi[3]
         if (cubic.yi[0][0] >= cubic.yi[2][0]):
             raise ValueError("Not a strictly increasing monotone function")
-        a = c3
-        b = (c2 - c3*x0 - c3*x1 - c3*x2)
-        c = (c1 - c2*x0 - c2*x1 + c3*x0*x1 + c3*x0*x2 + c3*x1*x2)
-        d = c0 - c1*x0 + c2*x0*x1 - c3*x0*x1*x2
-        # root of cubic f(x) - y = 0
-        d = d - y
-        # would np.roots([a,b,c,d]) be faster?
-        if a:
-#            This function gives a nice real root, however, only one and it 
-#            could be the wrong one, see 
-#            http://www.math.vanderbilt.edu/~schectex/courses/cubic/
-#            p = -b / (3*a)
-#            # we need calculus with imaginary
-#            q = p**3 + (b*c-3*a*d)/(6*a**2) + 0J
-#            r = c / (3*a)
-#            result = np.power(q+np.sqrt(q**2+(r-p**2)**3), 1/3.) + \
-#                    np.power(q-np.sqrt(q**2+(r-p**2)**3), 1/3.) + p
-#           so instead we use formula from http://en.wikipedia.org/wiki/Cubic_function
-            discr0 = b*b - 3*a*c
-            discr1 = 2*b*b*b-9*a*b*c+27*a*a*d
-            C = np.power((discr1 + np.sqrt(discr1*discr1 + 0J-4*np.power(discr0,3)))/2,1/3.)
-            u = 1
-            res1 = -1/(3*a)*(b+u*C+discr0/(C)*u*u)
-            u = (-1+np.sqrt(3)*1J)/2
-            res2 = -1/(3*a)*(b+u*C+discr0/(C)*u*u)
-            u = (-1-np.sqrt(3)*1J)/2
-            res3 = -1/(3*a)*(b+u*C+discr0/(C)*u*u)
-            result = np.empty(res1.shape, float)
-            for ind in np.arange(len(result)):
-                for res in [res1, res2, res3]:
-                    ires = np.imag(res[ind])
-                    #we know there is a real solution, discard small imaginary
-                    if np.allclose(ires, 0., atol=1e-10):
-                        rres = np.real(res[ind])
-                        if x1<= rres <= x3:
-                            result[ind] = rres
-                            break
-                        else:
-                            if np.allclose(x1-rres, 0., atol=1e-10):
-                                result[ind] = x1
-                                break
-                            elif np.allclose(x3-rres, 0., atol=1e-10):
-                                result[ind] = x3
-                                break
-                else:
-                    raise ValueError("No root")
-            return result
-        elif b:
-            #kwadratic
-            res1 = -c + np.sqrt(c**2-4*b*d*1J)/2/b
-            res2 = -c - np.sqrt(c**2-4*b*d*1J)/2/b
-            if np.any(np.imag(res1)):
-                raise ValueError('No root')
-            result = np.empty(res1.shape, float)
-            for ind in np.arange(len(result)):
-                if x0 <= res1[ind] <= x3:
-                    result[ind] = np.real(res1)
-                elif  x0 <= res2[ind] <= x3:
-                    result[ind] = np.real(res2)
-                else:
-                    raise ValueError('No root')
-            return result
-        elif c:
-            #linear
-            return -d/c
-        else:
-            raise ValueError('No unique root')
+        #convert Krogh c structure to c structure of PPoly
+        ourc = np.empty((4,1), cubic.c.dtype)
+        ourc[0, 0] = cubic.c[3,0]
+        ourc[1, 0] = cubic.c[2,0]
+        ourc[2, 0] = cubic.c[1,0]
+        ourc[1,0] += cubic.c[3]*(x0-x2)
+        ourc = ourc.reshape(4,1,1)
+        y = np.asarray(y)
+        result = np.empty(y.shape, float)
+        for ind, yval in enumerate(y):
+            ourc[3, 0, 0] = cubic.c[0,0] - yval
+            roots = real_roots(ourc, np.array([x0,x2], float), 0, 0)
+            result[ind] = roots[0]
+        return result
 
 
 def pchip_interpolate(xi, yi, x, der=0, axis=0):

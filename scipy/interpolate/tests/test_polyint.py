@@ -385,7 +385,7 @@ class CheckInvertPchip(TestCase):
         
     def test_inv_cub(self):
         test = np.array([1., 2.1, 8.3])
-        assert_almost_equal(self.pch_cub.root(np.power(test, 3)), test, 1)
+        assert_almost_equal(self.pch_cub.root(np.power(test, 3)), test, 2)
    
     def test_inv_vGn(self):
         testx = np.array([-19., -54., -200., -500.])
