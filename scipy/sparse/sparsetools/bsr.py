@@ -1213,6 +1213,256 @@ def bsr_minus_bsr(*args):
     """
   return _bsr.bsr_minus_bsr(*args)
 
+def bsr_maximum_bsr(*args):
+  """
+    bsr_maximum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, npy_bool_wrapper const [] Ax, 
+        npy_int32 const [] Bp, npy_int32 const [] Bj, npy_bool_wrapper const [] Bx, 
+        npy_int32 [] Cp, npy_int32 [] Cj, npy_bool_wrapper [] Cx)
+    bsr_maximum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, signed char const [] Ax, npy_int32 const [] Bp, 
+        npy_int32 const [] Bj, signed char const [] Bx, npy_int32 [] Cp, 
+        npy_int32 [] Cj, signed char [] Cx)
+    bsr_maximum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, unsigned char const [] Ax, 
+        npy_int32 const [] Bp, npy_int32 const [] Bj, unsigned char const [] Bx, npy_int32 [] Cp, 
+        npy_int32 [] Cj, unsigned char [] Cx)
+    bsr_maximum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, short const [] Ax, npy_int32 const [] Bp, 
+        npy_int32 const [] Bj, short const [] Bx, npy_int32 [] Cp, 
+        npy_int32 [] Cj, short [] Cx)
+    bsr_maximum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, unsigned short const [] Ax, 
+        npy_int32 const [] Bp, npy_int32 const [] Bj, unsigned short const [] Bx, 
+        npy_int32 [] Cp, npy_int32 [] Cj, unsigned short [] Cx)
+    bsr_maximum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, int const [] Ax, npy_int32 const [] Bp, 
+        npy_int32 const [] Bj, int const [] Bx, npy_int32 [] Cp, npy_int32 [] Cj, 
+        int [] Cx)
+    bsr_maximum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, unsigned int const [] Ax, 
+        npy_int32 const [] Bp, npy_int32 const [] Bj, unsigned int const [] Bx, npy_int32 [] Cp, 
+        npy_int32 [] Cj, unsigned int [] Cx)
+    bsr_maximum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, long long const [] Ax, npy_int32 const [] Bp, 
+        npy_int32 const [] Bj, long long const [] Bx, npy_int32 [] Cp, 
+        npy_int32 [] Cj, long long [] Cx)
+    bsr_maximum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, unsigned long long const [] Ax, 
+        npy_int32 const [] Bp, npy_int32 const [] Bj, unsigned long long const [] Bx, 
+        npy_int32 [] Cp, npy_int32 [] Cj, unsigned long long [] Cx)
+    bsr_maximum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, float const [] Ax, npy_int32 const [] Bp, 
+        npy_int32 const [] Bj, float const [] Bx, npy_int32 [] Cp, 
+        npy_int32 [] Cj, float [] Cx)
+    bsr_maximum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, double const [] Ax, npy_int32 const [] Bp, 
+        npy_int32 const [] Bj, double const [] Bx, npy_int32 [] Cp, 
+        npy_int32 [] Cj, double [] Cx)
+    bsr_maximum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, long double const [] Ax, npy_int32 const [] Bp, 
+        npy_int32 const [] Bj, long double const [] Bx, npy_int32 [] Cp, 
+        npy_int32 [] Cj, long double [] Cx)
+    bsr_maximum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, npy_cfloat_wrapper const [] Ax, 
+        npy_int32 const [] Bp, npy_int32 const [] Bj, npy_cfloat_wrapper const [] Bx, 
+        npy_int32 [] Cp, npy_int32 [] Cj, npy_cfloat_wrapper [] Cx)
+    bsr_maximum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, npy_cdouble_wrapper const [] Ax, 
+        npy_int32 const [] Bp, npy_int32 const [] Bj, npy_cdouble_wrapper const [] Bx, 
+        npy_int32 [] Cp, npy_int32 [] Cj, npy_cdouble_wrapper [] Cx)
+    bsr_maximum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, npy_clongdouble_wrapper const [] Ax, 
+        npy_int32 const [] Bp, npy_int32 const [] Bj, npy_clongdouble_wrapper const [] Bx, 
+        npy_int32 [] Cp, npy_int32 [] Cj, npy_clongdouble_wrapper [] Cx)
+    bsr_maximum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, npy_bool_wrapper const [] Ax, 
+        npy_int64 const [] Bp, npy_int64 const [] Bj, npy_bool_wrapper const [] Bx, 
+        npy_int64 [] Cp, npy_int64 [] Cj, npy_bool_wrapper [] Cx)
+    bsr_maximum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, signed char const [] Ax, npy_int64 const [] Bp, 
+        npy_int64 const [] Bj, signed char const [] Bx, npy_int64 [] Cp, 
+        npy_int64 [] Cj, signed char [] Cx)
+    bsr_maximum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, unsigned char const [] Ax, 
+        npy_int64 const [] Bp, npy_int64 const [] Bj, unsigned char const [] Bx, npy_int64 [] Cp, 
+        npy_int64 [] Cj, unsigned char [] Cx)
+    bsr_maximum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, short const [] Ax, npy_int64 const [] Bp, 
+        npy_int64 const [] Bj, short const [] Bx, npy_int64 [] Cp, 
+        npy_int64 [] Cj, short [] Cx)
+    bsr_maximum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, unsigned short const [] Ax, 
+        npy_int64 const [] Bp, npy_int64 const [] Bj, unsigned short const [] Bx, 
+        npy_int64 [] Cp, npy_int64 [] Cj, unsigned short [] Cx)
+    bsr_maximum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, int const [] Ax, npy_int64 const [] Bp, 
+        npy_int64 const [] Bj, int const [] Bx, npy_int64 [] Cp, npy_int64 [] Cj, 
+        int [] Cx)
+    bsr_maximum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, unsigned int const [] Ax, 
+        npy_int64 const [] Bp, npy_int64 const [] Bj, unsigned int const [] Bx, npy_int64 [] Cp, 
+        npy_int64 [] Cj, unsigned int [] Cx)
+    bsr_maximum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, long long const [] Ax, npy_int64 const [] Bp, 
+        npy_int64 const [] Bj, long long const [] Bx, npy_int64 [] Cp, 
+        npy_int64 [] Cj, long long [] Cx)
+    bsr_maximum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, unsigned long long const [] Ax, 
+        npy_int64 const [] Bp, npy_int64 const [] Bj, unsigned long long const [] Bx, 
+        npy_int64 [] Cp, npy_int64 [] Cj, unsigned long long [] Cx)
+    bsr_maximum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, float const [] Ax, npy_int64 const [] Bp, 
+        npy_int64 const [] Bj, float const [] Bx, npy_int64 [] Cp, 
+        npy_int64 [] Cj, float [] Cx)
+    bsr_maximum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, double const [] Ax, npy_int64 const [] Bp, 
+        npy_int64 const [] Bj, double const [] Bx, npy_int64 [] Cp, 
+        npy_int64 [] Cj, double [] Cx)
+    bsr_maximum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, long double const [] Ax, npy_int64 const [] Bp, 
+        npy_int64 const [] Bj, long double const [] Bx, npy_int64 [] Cp, 
+        npy_int64 [] Cj, long double [] Cx)
+    bsr_maximum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, npy_cfloat_wrapper const [] Ax, 
+        npy_int64 const [] Bp, npy_int64 const [] Bj, npy_cfloat_wrapper const [] Bx, 
+        npy_int64 [] Cp, npy_int64 [] Cj, npy_cfloat_wrapper [] Cx)
+    bsr_maximum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, npy_cdouble_wrapper const [] Ax, 
+        npy_int64 const [] Bp, npy_int64 const [] Bj, npy_cdouble_wrapper const [] Bx, 
+        npy_int64 [] Cp, npy_int64 [] Cj, npy_cdouble_wrapper [] Cx)
+    bsr_maximum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, npy_clongdouble_wrapper const [] Ax, 
+        npy_int64 const [] Bp, npy_int64 const [] Bj, npy_clongdouble_wrapper const [] Bx, 
+        npy_int64 [] Cp, npy_int64 [] Cj, npy_clongdouble_wrapper [] Cx)
+    """
+  return _bsr.bsr_maximum_bsr(*args)
+
+def bsr_minimum_bsr(*args):
+  """
+    bsr_minimum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, npy_bool_wrapper const [] Ax, 
+        npy_int32 const [] Bp, npy_int32 const [] Bj, npy_bool_wrapper const [] Bx, 
+        npy_int32 [] Cp, npy_int32 [] Cj, npy_bool_wrapper [] Cx)
+    bsr_minimum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, signed char const [] Ax, npy_int32 const [] Bp, 
+        npy_int32 const [] Bj, signed char const [] Bx, npy_int32 [] Cp, 
+        npy_int32 [] Cj, signed char [] Cx)
+    bsr_minimum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, unsigned char const [] Ax, 
+        npy_int32 const [] Bp, npy_int32 const [] Bj, unsigned char const [] Bx, npy_int32 [] Cp, 
+        npy_int32 [] Cj, unsigned char [] Cx)
+    bsr_minimum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, short const [] Ax, npy_int32 const [] Bp, 
+        npy_int32 const [] Bj, short const [] Bx, npy_int32 [] Cp, 
+        npy_int32 [] Cj, short [] Cx)
+    bsr_minimum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, unsigned short const [] Ax, 
+        npy_int32 const [] Bp, npy_int32 const [] Bj, unsigned short const [] Bx, 
+        npy_int32 [] Cp, npy_int32 [] Cj, unsigned short [] Cx)
+    bsr_minimum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, int const [] Ax, npy_int32 const [] Bp, 
+        npy_int32 const [] Bj, int const [] Bx, npy_int32 [] Cp, npy_int32 [] Cj, 
+        int [] Cx)
+    bsr_minimum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, unsigned int const [] Ax, 
+        npy_int32 const [] Bp, npy_int32 const [] Bj, unsigned int const [] Bx, npy_int32 [] Cp, 
+        npy_int32 [] Cj, unsigned int [] Cx)
+    bsr_minimum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, long long const [] Ax, npy_int32 const [] Bp, 
+        npy_int32 const [] Bj, long long const [] Bx, npy_int32 [] Cp, 
+        npy_int32 [] Cj, long long [] Cx)
+    bsr_minimum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, unsigned long long const [] Ax, 
+        npy_int32 const [] Bp, npy_int32 const [] Bj, unsigned long long const [] Bx, 
+        npy_int32 [] Cp, npy_int32 [] Cj, unsigned long long [] Cx)
+    bsr_minimum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, float const [] Ax, npy_int32 const [] Bp, 
+        npy_int32 const [] Bj, float const [] Bx, npy_int32 [] Cp, 
+        npy_int32 [] Cj, float [] Cx)
+    bsr_minimum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, double const [] Ax, npy_int32 const [] Bp, 
+        npy_int32 const [] Bj, double const [] Bx, npy_int32 [] Cp, 
+        npy_int32 [] Cj, double [] Cx)
+    bsr_minimum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, long double const [] Ax, npy_int32 const [] Bp, 
+        npy_int32 const [] Bj, long double const [] Bx, npy_int32 [] Cp, 
+        npy_int32 [] Cj, long double [] Cx)
+    bsr_minimum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, npy_cfloat_wrapper const [] Ax, 
+        npy_int32 const [] Bp, npy_int32 const [] Bj, npy_cfloat_wrapper const [] Bx, 
+        npy_int32 [] Cp, npy_int32 [] Cj, npy_cfloat_wrapper [] Cx)
+    bsr_minimum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, npy_cdouble_wrapper const [] Ax, 
+        npy_int32 const [] Bp, npy_int32 const [] Bj, npy_cdouble_wrapper const [] Bx, 
+        npy_int32 [] Cp, npy_int32 [] Cj, npy_cdouble_wrapper [] Cx)
+    bsr_minimum_bsr(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const R, npy_int32 const C, 
+        npy_int32 const [] Ap, npy_int32 const [] Aj, npy_clongdouble_wrapper const [] Ax, 
+        npy_int32 const [] Bp, npy_int32 const [] Bj, npy_clongdouble_wrapper const [] Bx, 
+        npy_int32 [] Cp, npy_int32 [] Cj, npy_clongdouble_wrapper [] Cx)
+    bsr_minimum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, npy_bool_wrapper const [] Ax, 
+        npy_int64 const [] Bp, npy_int64 const [] Bj, npy_bool_wrapper const [] Bx, 
+        npy_int64 [] Cp, npy_int64 [] Cj, npy_bool_wrapper [] Cx)
+    bsr_minimum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, signed char const [] Ax, npy_int64 const [] Bp, 
+        npy_int64 const [] Bj, signed char const [] Bx, npy_int64 [] Cp, 
+        npy_int64 [] Cj, signed char [] Cx)
+    bsr_minimum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, unsigned char const [] Ax, 
+        npy_int64 const [] Bp, npy_int64 const [] Bj, unsigned char const [] Bx, npy_int64 [] Cp, 
+        npy_int64 [] Cj, unsigned char [] Cx)
+    bsr_minimum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, short const [] Ax, npy_int64 const [] Bp, 
+        npy_int64 const [] Bj, short const [] Bx, npy_int64 [] Cp, 
+        npy_int64 [] Cj, short [] Cx)
+    bsr_minimum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, unsigned short const [] Ax, 
+        npy_int64 const [] Bp, npy_int64 const [] Bj, unsigned short const [] Bx, 
+        npy_int64 [] Cp, npy_int64 [] Cj, unsigned short [] Cx)
+    bsr_minimum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, int const [] Ax, npy_int64 const [] Bp, 
+        npy_int64 const [] Bj, int const [] Bx, npy_int64 [] Cp, npy_int64 [] Cj, 
+        int [] Cx)
+    bsr_minimum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, unsigned int const [] Ax, 
+        npy_int64 const [] Bp, npy_int64 const [] Bj, unsigned int const [] Bx, npy_int64 [] Cp, 
+        npy_int64 [] Cj, unsigned int [] Cx)
+    bsr_minimum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, long long const [] Ax, npy_int64 const [] Bp, 
+        npy_int64 const [] Bj, long long const [] Bx, npy_int64 [] Cp, 
+        npy_int64 [] Cj, long long [] Cx)
+    bsr_minimum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, unsigned long long const [] Ax, 
+        npy_int64 const [] Bp, npy_int64 const [] Bj, unsigned long long const [] Bx, 
+        npy_int64 [] Cp, npy_int64 [] Cj, unsigned long long [] Cx)
+    bsr_minimum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, float const [] Ax, npy_int64 const [] Bp, 
+        npy_int64 const [] Bj, float const [] Bx, npy_int64 [] Cp, 
+        npy_int64 [] Cj, float [] Cx)
+    bsr_minimum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, double const [] Ax, npy_int64 const [] Bp, 
+        npy_int64 const [] Bj, double const [] Bx, npy_int64 [] Cp, 
+        npy_int64 [] Cj, double [] Cx)
+    bsr_minimum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, long double const [] Ax, npy_int64 const [] Bp, 
+        npy_int64 const [] Bj, long double const [] Bx, npy_int64 [] Cp, 
+        npy_int64 [] Cj, long double [] Cx)
+    bsr_minimum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, npy_cfloat_wrapper const [] Ax, 
+        npy_int64 const [] Bp, npy_int64 const [] Bj, npy_cfloat_wrapper const [] Bx, 
+        npy_int64 [] Cp, npy_int64 [] Cj, npy_cfloat_wrapper [] Cx)
+    bsr_minimum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, npy_cdouble_wrapper const [] Ax, 
+        npy_int64 const [] Bp, npy_int64 const [] Bj, npy_cdouble_wrapper const [] Bx, 
+        npy_int64 [] Cp, npy_int64 [] Cj, npy_cdouble_wrapper [] Cx)
+    bsr_minimum_bsr(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const R, npy_int64 const C, 
+        npy_int64 const [] Ap, npy_int64 const [] Aj, npy_clongdouble_wrapper const [] Ax, 
+        npy_int64 const [] Bp, npy_int64 const [] Bj, npy_clongdouble_wrapper const [] Bx, 
+        npy_int64 [] Cp, npy_int64 [] Cj, npy_clongdouble_wrapper [] Cx)
+    """
+  return _bsr.bsr_minimum_bsr(*args)
+
 def bsr_sort_indices(*args):
   """
     bsr_sort_indices(npy_int32 const n_brow, npy_int32 const n_bcol, npy_int32 const R, npy_int32 const C, 

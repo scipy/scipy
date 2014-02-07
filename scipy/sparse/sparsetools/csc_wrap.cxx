@@ -62831,6 +62831,15522 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  npy_bool_wrapper *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  npy_bool_wrapper *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  npy_bool_wrapper *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_BOOL, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (npy_bool_wrapper*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_BOOL, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (npy_bool_wrapper*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_BOOL);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (npy_bool_wrapper*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int32,npy_bool_wrapper >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(npy_bool_wrapper const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(npy_bool_wrapper const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  signed char *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  signed char *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  signed char *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_BYTE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (signed char*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_BYTE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (signed char*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_BYTE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (signed char*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int32,signed char >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(signed char const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_3(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  unsigned char *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  unsigned char *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  unsigned char *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_UBYTE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (unsigned char*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_UBYTE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (unsigned char*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_UBYTE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (unsigned char*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int32,unsigned char >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(unsigned char const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_4(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  short *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  short *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  short *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_SHORT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (short*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_SHORT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (short*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_SHORT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (short*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int32,short >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(short const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  unsigned short *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  unsigned short *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  unsigned short *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_USHORT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (unsigned short*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_USHORT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (unsigned short*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_USHORT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (unsigned short*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int32,unsigned short >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(unsigned short const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  int *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  int *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  int *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_INT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (int*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_INT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (int*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int32,int >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(int const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_7(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  unsigned int *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  unsigned int *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  unsigned int *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_UINT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (unsigned int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_UINT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (unsigned int*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_UINT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (unsigned int*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int32,unsigned int >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(unsigned int const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_8(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  long long *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  long long *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  long long *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_LONGLONG, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (long long*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_LONGLONG, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (long long*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_LONGLONG);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (long long*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int32,long long >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(long long const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_9(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  unsigned long long *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  unsigned long long *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  unsigned long long *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_ULONGLONG, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (unsigned long long*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_ULONGLONG, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (unsigned long long*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_ULONGLONG);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (unsigned long long*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int32,unsigned long long >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(unsigned long long const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_10(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  float *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  float *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  float *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_FLOAT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (float*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_FLOAT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (float*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_FLOAT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (float*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int32,float >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(float const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_11(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  double *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  double *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  double *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_DOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (double*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_DOUBLE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (double*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_DOUBLE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (double*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int32,double >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(double const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_12(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  long double *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  long double *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  long double *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_LONGDOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (long double*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_LONGDOUBLE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (long double*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_LONGDOUBLE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (long double*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int32,long double >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(long double const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_13(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  npy_cfloat_wrapper *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  npy_cfloat_wrapper *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  npy_cfloat_wrapper *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_CFLOAT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (npy_cfloat_wrapper*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_CFLOAT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (npy_cfloat_wrapper*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_CFLOAT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (npy_cfloat_wrapper*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int32,npy_cfloat_wrapper >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_14(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  npy_cdouble_wrapper *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  npy_cdouble_wrapper *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  npy_cdouble_wrapper *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_CDOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (npy_cdouble_wrapper*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_CDOUBLE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (npy_cdouble_wrapper*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_CDOUBLE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (npy_cdouble_wrapper*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int32,npy_cdouble_wrapper >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_15(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  npy_clongdouble_wrapper *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  npy_clongdouble_wrapper *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  npy_clongdouble_wrapper *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_CLONGDOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (npy_clongdouble_wrapper*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_CLONGDOUBLE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (npy_clongdouble_wrapper*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_CLONGDOUBLE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (npy_clongdouble_wrapper*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int32,npy_clongdouble_wrapper >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_16(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  npy_bool_wrapper *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  npy_bool_wrapper *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  npy_bool_wrapper *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_BOOL, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (npy_bool_wrapper*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_BOOL, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (npy_bool_wrapper*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_BOOL);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (npy_bool_wrapper*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int64,npy_bool_wrapper >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(npy_bool_wrapper const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(npy_bool_wrapper const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_17(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  signed char *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  signed char *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  signed char *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_BYTE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (signed char*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_BYTE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (signed char*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_BYTE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (signed char*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int64,signed char >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(signed char const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_18(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  unsigned char *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  unsigned char *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  unsigned char *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_UBYTE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (unsigned char*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_UBYTE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (unsigned char*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_UBYTE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (unsigned char*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int64,unsigned char >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(unsigned char const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_19(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  short *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  short *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  short *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_SHORT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (short*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_SHORT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (short*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_SHORT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (short*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int64,short >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(short const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_20(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  unsigned short *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  unsigned short *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  unsigned short *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_USHORT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (unsigned short*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_USHORT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (unsigned short*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_USHORT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (unsigned short*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int64,unsigned short >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(unsigned short const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_21(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  int *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  int *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  int *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_INT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (int*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_INT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (int*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int64,int >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(int const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_22(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  unsigned int *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  unsigned int *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  unsigned int *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_UINT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (unsigned int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_UINT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (unsigned int*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_UINT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (unsigned int*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int64,unsigned int >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(unsigned int const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_23(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  long long *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  long long *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  long long *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_LONGLONG, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (long long*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_LONGLONG, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (long long*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_LONGLONG);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (long long*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int64,long long >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(long long const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_24(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  unsigned long long *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  unsigned long long *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  unsigned long long *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_ULONGLONG, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (unsigned long long*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_ULONGLONG, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (unsigned long long*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_ULONGLONG);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (unsigned long long*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int64,unsigned long long >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(unsigned long long const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_25(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  float *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  float *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  float *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_FLOAT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (float*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_FLOAT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (float*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_FLOAT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (float*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int64,float >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(float const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_26(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  double *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  double *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  double *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_DOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (double*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_DOUBLE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (double*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_DOUBLE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (double*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int64,double >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(double const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_27(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  long double *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  long double *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  long double *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_LONGDOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (long double*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_LONGDOUBLE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (long double*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_LONGDOUBLE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (long double*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int64,long double >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(long double const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_28(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  npy_cfloat_wrapper *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  npy_cfloat_wrapper *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  npy_cfloat_wrapper *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_CFLOAT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (npy_cfloat_wrapper*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_CFLOAT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (npy_cfloat_wrapper*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_CFLOAT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (npy_cfloat_wrapper*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int64,npy_cfloat_wrapper >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_29(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  npy_cdouble_wrapper *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  npy_cdouble_wrapper *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  npy_cdouble_wrapper *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_CDOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (npy_cdouble_wrapper*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_CDOUBLE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (npy_cdouble_wrapper*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_CDOUBLE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (npy_cdouble_wrapper*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int64,npy_cdouble_wrapper >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc__SWIG_30(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  npy_clongdouble_wrapper *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  npy_clongdouble_wrapper *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  npy_clongdouble_wrapper *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_maximum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_CLONGDOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (npy_clongdouble_wrapper*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_CLONGDOUBLE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (npy_clongdouble_wrapper*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_CLONGDOUBLE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (npy_clongdouble_wrapper*) array_data(temp11);
+  }
+  {
+    try {
+      csc_maximum_csc< npy_int64,npy_clongdouble_wrapper >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_maximum_csc(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[12];
+  int ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = args ? (int)PyObject_Length(args) : 0;
+  for (ii = 0; (ii < 11) && (ii < argc); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_BOOL)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_BOOL)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_BOOL)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_1(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_BYTE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_BYTE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_BYTE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_2(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_UBYTE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_UBYTE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_UBYTE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_3(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_SHORT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_SHORT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_SHORT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_4(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_USHORT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_USHORT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_USHORT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_5(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_INT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_INT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_6(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_UINT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_UINT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_UINT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_7(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_LONGLONG)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_LONGLONG)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_LONGLONG)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_8(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_ULONGLONG)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_ULONGLONG)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_ULONGLONG)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_9(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_FLOAT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_FLOAT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_FLOAT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_10(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_DOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_DOUBLE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_DOUBLE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_11(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_LONGDOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_LONGDOUBLE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_LONGDOUBLE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_12(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_CFLOAT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_CFLOAT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_CFLOAT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_13(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_CDOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_CDOUBLE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_CDOUBLE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_14(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_CLONGDOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_CLONGDOUBLE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_CLONGDOUBLE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_15(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_BOOL)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_BOOL)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_BOOL)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_16(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_BYTE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_BYTE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_BYTE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_17(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_UBYTE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_UBYTE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_UBYTE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_18(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_SHORT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_SHORT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_SHORT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_19(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_USHORT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_USHORT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_USHORT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_20(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_INT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_INT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_21(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_UINT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_UINT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_UINT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_22(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_LONGLONG)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_LONGLONG)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_LONGLONG)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_23(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_ULONGLONG)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_ULONGLONG)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_ULONGLONG)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_24(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_FLOAT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_FLOAT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_FLOAT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_25(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_DOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_DOUBLE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_DOUBLE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_26(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_LONGDOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_LONGDOUBLE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_LONGDOUBLE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_27(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_CFLOAT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_CFLOAT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_CFLOAT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_28(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_CDOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_CDOUBLE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_CDOUBLE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_29(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_CLONGDOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_CLONGDOUBLE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_CLONGDOUBLE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_maximum_csc__SWIG_30(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'csc_maximum_csc'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csc_maximum_csc< npy_int32,npy_bool_wrapper >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],npy_bool_wrapper const [],npy_int32 const [],npy_int32 const [],npy_bool_wrapper const [],npy_int32 [],npy_int32 [],npy_bool_wrapper [])\n"
+    "    csc_maximum_csc< npy_int32,signed char >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],signed char const [],npy_int32 const [],npy_int32 const [],signed char const [],npy_int32 [],npy_int32 [],signed char [])\n"
+    "    csc_maximum_csc< npy_int32,unsigned char >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],unsigned char const [],npy_int32 const [],npy_int32 const [],unsigned char const [],npy_int32 [],npy_int32 [],unsigned char [])\n"
+    "    csc_maximum_csc< npy_int32,short >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],short const [],npy_int32 const [],npy_int32 const [],short const [],npy_int32 [],npy_int32 [],short [])\n"
+    "    csc_maximum_csc< npy_int32,unsigned short >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],unsigned short const [],npy_int32 const [],npy_int32 const [],unsigned short const [],npy_int32 [],npy_int32 [],unsigned short [])\n"
+    "    csc_maximum_csc< npy_int32,int >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],int const [],npy_int32 const [],npy_int32 const [],int const [],npy_int32 [],npy_int32 [],int [])\n"
+    "    csc_maximum_csc< npy_int32,unsigned int >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],unsigned int const [],npy_int32 const [],npy_int32 const [],unsigned int const [],npy_int32 [],npy_int32 [],unsigned int [])\n"
+    "    csc_maximum_csc< npy_int32,long long >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],long long const [],npy_int32 const [],npy_int32 const [],long long const [],npy_int32 [],npy_int32 [],long long [])\n"
+    "    csc_maximum_csc< npy_int32,unsigned long long >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],unsigned long long const [],npy_int32 const [],npy_int32 const [],unsigned long long const [],npy_int32 [],npy_int32 [],unsigned long long [])\n"
+    "    csc_maximum_csc< npy_int32,float >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],float const [],npy_int32 const [],npy_int32 const [],float const [],npy_int32 [],npy_int32 [],float [])\n"
+    "    csc_maximum_csc< npy_int32,double >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],double const [],npy_int32 const [],npy_int32 const [],double const [],npy_int32 [],npy_int32 [],double [])\n"
+    "    csc_maximum_csc< npy_int32,long double >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],long double const [],npy_int32 const [],npy_int32 const [],long double const [],npy_int32 [],npy_int32 [],long double [])\n"
+    "    csc_maximum_csc< npy_int32,npy_cfloat_wrapper >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],npy_cfloat_wrapper const [],npy_int32 const [],npy_int32 const [],npy_cfloat_wrapper const [],npy_int32 [],npy_int32 [],npy_cfloat_wrapper [])\n"
+    "    csc_maximum_csc< npy_int32,npy_cdouble_wrapper >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],npy_cdouble_wrapper const [],npy_int32 const [],npy_int32 const [],npy_cdouble_wrapper const [],npy_int32 [],npy_int32 [],npy_cdouble_wrapper [])\n"
+    "    csc_maximum_csc< npy_int32,npy_clongdouble_wrapper >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],npy_clongdouble_wrapper const [],npy_int32 const [],npy_int32 const [],npy_clongdouble_wrapper const [],npy_int32 [],npy_int32 [],npy_clongdouble_wrapper [])\n"
+    "    csc_maximum_csc< npy_int64,npy_bool_wrapper >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],npy_bool_wrapper const [],npy_int64 const [],npy_int64 const [],npy_bool_wrapper const [],npy_int64 [],npy_int64 [],npy_bool_wrapper [])\n"
+    "    csc_maximum_csc< npy_int64,signed char >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],signed char const [],npy_int64 const [],npy_int64 const [],signed char const [],npy_int64 [],npy_int64 [],signed char [])\n"
+    "    csc_maximum_csc< npy_int64,unsigned char >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],unsigned char const [],npy_int64 const [],npy_int64 const [],unsigned char const [],npy_int64 [],npy_int64 [],unsigned char [])\n"
+    "    csc_maximum_csc< npy_int64,short >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],short const [],npy_int64 const [],npy_int64 const [],short const [],npy_int64 [],npy_int64 [],short [])\n"
+    "    csc_maximum_csc< npy_int64,unsigned short >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],unsigned short const [],npy_int64 const [],npy_int64 const [],unsigned short const [],npy_int64 [],npy_int64 [],unsigned short [])\n"
+    "    csc_maximum_csc< npy_int64,int >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],int const [],npy_int64 const [],npy_int64 const [],int const [],npy_int64 [],npy_int64 [],int [])\n"
+    "    csc_maximum_csc< npy_int64,unsigned int >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],unsigned int const [],npy_int64 const [],npy_int64 const [],unsigned int const [],npy_int64 [],npy_int64 [],unsigned int [])\n"
+    "    csc_maximum_csc< npy_int64,long long >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],long long const [],npy_int64 const [],npy_int64 const [],long long const [],npy_int64 [],npy_int64 [],long long [])\n"
+    "    csc_maximum_csc< npy_int64,unsigned long long >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],unsigned long long const [],npy_int64 const [],npy_int64 const [],unsigned long long const [],npy_int64 [],npy_int64 [],unsigned long long [])\n"
+    "    csc_maximum_csc< npy_int64,float >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],float const [],npy_int64 const [],npy_int64 const [],float const [],npy_int64 [],npy_int64 [],float [])\n"
+    "    csc_maximum_csc< npy_int64,double >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],double const [],npy_int64 const [],npy_int64 const [],double const [],npy_int64 [],npy_int64 [],double [])\n"
+    "    csc_maximum_csc< npy_int64,long double >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],long double const [],npy_int64 const [],npy_int64 const [],long double const [],npy_int64 [],npy_int64 [],long double [])\n"
+    "    csc_maximum_csc< npy_int64,npy_cfloat_wrapper >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],npy_cfloat_wrapper const [],npy_int64 const [],npy_int64 const [],npy_cfloat_wrapper const [],npy_int64 [],npy_int64 [],npy_cfloat_wrapper [])\n"
+    "    csc_maximum_csc< npy_int64,npy_cdouble_wrapper >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],npy_cdouble_wrapper const [],npy_int64 const [],npy_int64 const [],npy_cdouble_wrapper const [],npy_int64 [],npy_int64 [],npy_cdouble_wrapper [])\n"
+    "    csc_maximum_csc< npy_int64,npy_clongdouble_wrapper >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],npy_clongdouble_wrapper const [],npy_int64 const [],npy_int64 const [],npy_clongdouble_wrapper const [],npy_int64 [],npy_int64 [],npy_clongdouble_wrapper [])\n");
+  return 0;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  npy_bool_wrapper *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  npy_bool_wrapper *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  npy_bool_wrapper *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_BOOL, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (npy_bool_wrapper*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_BOOL, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (npy_bool_wrapper*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_BOOL);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (npy_bool_wrapper*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int32,npy_bool_wrapper >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(npy_bool_wrapper const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(npy_bool_wrapper const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  signed char *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  signed char *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  signed char *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_BYTE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (signed char*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_BYTE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (signed char*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_BYTE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (signed char*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int32,signed char >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(signed char const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_3(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  unsigned char *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  unsigned char *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  unsigned char *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_UBYTE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (unsigned char*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_UBYTE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (unsigned char*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_UBYTE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (unsigned char*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int32,unsigned char >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(unsigned char const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_4(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  short *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  short *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  short *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_SHORT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (short*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_SHORT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (short*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_SHORT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (short*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int32,short >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(short const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  unsigned short *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  unsigned short *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  unsigned short *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_USHORT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (unsigned short*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_USHORT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (unsigned short*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_USHORT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (unsigned short*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int32,unsigned short >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(unsigned short const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_6(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  int *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  int *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  int *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_INT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (int*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_INT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (int*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int32,int >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(int const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_7(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  unsigned int *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  unsigned int *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  unsigned int *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_UINT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (unsigned int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_UINT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (unsigned int*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_UINT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (unsigned int*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int32,unsigned int >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(unsigned int const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_8(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  long long *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  long long *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  long long *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_LONGLONG, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (long long*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_LONGLONG, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (long long*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_LONGLONG);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (long long*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int32,long long >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(long long const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_9(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  unsigned long long *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  unsigned long long *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  unsigned long long *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_ULONGLONG, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (unsigned long long*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_ULONGLONG, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (unsigned long long*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_ULONGLONG);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (unsigned long long*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int32,unsigned long long >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(unsigned long long const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_10(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  float *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  float *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  float *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_FLOAT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (float*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_FLOAT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (float*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_FLOAT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (float*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int32,float >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(float const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_11(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  double *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  double *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  double *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_DOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (double*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_DOUBLE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (double*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_DOUBLE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (double*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int32,double >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(double const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_12(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  long double *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  long double *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  long double *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_LONGDOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (long double*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_LONGDOUBLE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (long double*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_LONGDOUBLE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (long double*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int32,long double >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(long double const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_13(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  npy_cfloat_wrapper *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  npy_cfloat_wrapper *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  npy_cfloat_wrapper *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_CFLOAT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (npy_cfloat_wrapper*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_CFLOAT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (npy_cfloat_wrapper*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_CFLOAT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (npy_cfloat_wrapper*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int32,npy_cfloat_wrapper >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_14(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  npy_cdouble_wrapper *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  npy_cdouble_wrapper *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  npy_cdouble_wrapper *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_CDOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (npy_cdouble_wrapper*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_CDOUBLE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (npy_cdouble_wrapper*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_CDOUBLE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (npy_cdouble_wrapper*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int32,npy_cdouble_wrapper >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_15(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int32 arg1 ;
+  npy_int32 arg2 ;
+  npy_int32 *arg3 ;
+  npy_int32 *arg4 ;
+  npy_clongdouble_wrapper *arg5 ;
+  npy_int32 *arg6 ;
+  npy_int32 *arg7 ;
+  npy_clongdouble_wrapper *arg8 ;
+  npy_int32 *arg9 ;
+  npy_int32 *arg10 ;
+  npy_clongdouble_wrapper *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT32, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int32*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT32, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int32*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_CLONGDOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (npy_clongdouble_wrapper*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT32, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int32*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT32, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int32*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_CLONGDOUBLE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (npy_clongdouble_wrapper*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT32);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int32*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT32);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int32*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_CLONGDOUBLE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (npy_clongdouble_wrapper*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int32,npy_clongdouble_wrapper >(arg1,arg2,(npy_int32 const (*))arg3,(npy_int32 const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(npy_int32 const (*))arg6,(npy_int32 const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_16(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  npy_bool_wrapper *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  npy_bool_wrapper *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  npy_bool_wrapper *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_BOOL, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (npy_bool_wrapper*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_BOOL, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (npy_bool_wrapper*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_BOOL);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (npy_bool_wrapper*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int64,npy_bool_wrapper >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(npy_bool_wrapper const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(npy_bool_wrapper const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_17(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  signed char *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  signed char *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  signed char *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_BYTE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (signed char*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_BYTE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (signed char*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_BYTE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (signed char*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int64,signed char >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(signed char const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(signed char const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_18(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  unsigned char *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  unsigned char *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  unsigned char *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_UBYTE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (unsigned char*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_UBYTE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (unsigned char*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_UBYTE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (unsigned char*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int64,unsigned char >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(unsigned char const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(unsigned char const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_19(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  short *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  short *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  short *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_SHORT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (short*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_SHORT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (short*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_SHORT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (short*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int64,short >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(short const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(short const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_20(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  unsigned short *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  unsigned short *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  unsigned short *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_USHORT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (unsigned short*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_USHORT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (unsigned short*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_USHORT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (unsigned short*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int64,unsigned short >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(unsigned short const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(unsigned short const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_21(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  int *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  int *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  int *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_INT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_INT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (int*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_INT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (int*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int64,int >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(int const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(int const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_22(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  unsigned int *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  unsigned int *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  unsigned int *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_UINT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (unsigned int*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_UINT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (unsigned int*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_UINT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (unsigned int*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int64,unsigned int >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(unsigned int const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(unsigned int const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_23(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  long long *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  long long *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  long long *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_LONGLONG, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (long long*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_LONGLONG, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (long long*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_LONGLONG);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (long long*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int64,long long >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(long long const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(long long const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_24(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  unsigned long long *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  unsigned long long *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  unsigned long long *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_ULONGLONG, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (unsigned long long*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_ULONGLONG, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (unsigned long long*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_ULONGLONG);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (unsigned long long*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int64,unsigned long long >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(unsigned long long const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(unsigned long long const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_25(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  float *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  float *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  float *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_FLOAT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (float*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_FLOAT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (float*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_FLOAT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (float*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int64,float >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(float const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(float const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_26(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  double *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  double *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  double *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_DOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (double*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_DOUBLE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (double*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_DOUBLE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (double*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int64,double >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(double const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(double const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_27(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  long double *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  long double *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  long double *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_LONGDOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (long double*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_LONGDOUBLE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (long double*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_LONGDOUBLE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (long double*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int64,long double >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(long double const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(long double const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_28(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  npy_cfloat_wrapper *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  npy_cfloat_wrapper *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  npy_cfloat_wrapper *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_CFLOAT, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (npy_cfloat_wrapper*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_CFLOAT, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (npy_cfloat_wrapper*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_CFLOAT);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (npy_cfloat_wrapper*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int64,npy_cfloat_wrapper >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(npy_cfloat_wrapper const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(npy_cfloat_wrapper const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_29(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  npy_cdouble_wrapper *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  npy_cdouble_wrapper *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  npy_cdouble_wrapper *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_CDOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (npy_cdouble_wrapper*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_CDOUBLE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (npy_cdouble_wrapper*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_CDOUBLE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (npy_cdouble_wrapper*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int64,npy_cdouble_wrapper >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(npy_cdouble_wrapper const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(npy_cdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc__SWIG_30(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  npy_int64 arg1 ;
+  npy_int64 arg2 ;
+  npy_int64 *arg3 ;
+  npy_int64 *arg4 ;
+  npy_clongdouble_wrapper *arg5 ;
+  npy_int64 *arg6 ;
+  npy_int64 *arg7 ;
+  npy_clongdouble_wrapper *arg8 ;
+  npy_int64 *arg9 ;
+  npy_int64 *arg10 ;
+  npy_clongdouble_wrapper *arg11 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 ;
+  PyArrayObject *array4 = NULL ;
+  int is_new_object4 ;
+  PyArrayObject *array5 = NULL ;
+  int is_new_object5 ;
+  PyArrayObject *array6 = NULL ;
+  int is_new_object6 ;
+  PyArrayObject *array7 = NULL ;
+  int is_new_object7 ;
+  PyArrayObject *array8 = NULL ;
+  int is_new_object8 ;
+  PyArrayObject *temp9 = NULL ;
+  PyArrayObject *temp10 = NULL ;
+  PyArrayObject *temp11 = NULL ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  PyObject * obj9 = 0 ;
+  PyObject * obj10 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOO:csc_minimum_csc",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10)) SWIG_fail;
+  {
+    arg1 = PyNumber_AsSsize_t(obj0, NULL);
+  }
+  {
+    arg2 = PyNumber_AsSsize_t(obj1, NULL);
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(obj2, NPY_INT64, &is_new_object3);
+    if (!array3 || !require_dimensions(array3,1) || !require_size(array3,size,1)
+      || !require_contiguous(array3)   || !require_native(array3)) SWIG_fail;
+    
+    arg3 = (npy_int64*) array3->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array4 = obj_to_array_contiguous_allow_conversion(obj3, NPY_INT64, &is_new_object4);
+    if (!array4 || !require_dimensions(array4,1) || !require_size(array4,size,1)
+      || !require_contiguous(array4)   || !require_native(array4)) SWIG_fail;
+    
+    arg4 = (npy_int64*) array4->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array5 = obj_to_array_contiguous_allow_conversion(obj4, NPY_CLONGDOUBLE, &is_new_object5);
+    if (!array5 || !require_dimensions(array5,1) || !require_size(array5,size,1)
+      || !require_contiguous(array5)   || !require_native(array5)) SWIG_fail;
+    
+    arg5 = (npy_clongdouble_wrapper*) array5->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array6 = obj_to_array_contiguous_allow_conversion(obj5, NPY_INT64, &is_new_object6);
+    if (!array6 || !require_dimensions(array6,1) || !require_size(array6,size,1)
+      || !require_contiguous(array6)   || !require_native(array6)) SWIG_fail;
+    
+    arg6 = (npy_int64*) array6->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array7 = obj_to_array_contiguous_allow_conversion(obj6, NPY_INT64, &is_new_object7);
+    if (!array7 || !require_dimensions(array7,1) || !require_size(array7,size,1)
+      || !require_contiguous(array7)   || !require_native(array7)) SWIG_fail;
+    
+    arg7 = (npy_int64*) array7->data;
+  }
+  {
+    npy_intp size[1] = {
+      -1
+    };
+    array8 = obj_to_array_contiguous_allow_conversion(obj7, NPY_CLONGDOUBLE, &is_new_object8);
+    if (!array8 || !require_dimensions(array8,1) || !require_size(array8,size,1)
+      || !require_contiguous(array8)   || !require_native(array8)) SWIG_fail;
+    
+    arg8 = (npy_clongdouble_wrapper*) array8->data;
+  }
+  {
+    temp9 = obj_to_array_no_conversion(obj8,NPY_INT64);
+    if (!temp9  || !require_contiguous(temp9) || !require_native(temp9)) SWIG_fail;
+    arg9 = (npy_int64*) array_data(temp9);
+  }
+  {
+    temp10 = obj_to_array_no_conversion(obj9,NPY_INT64);
+    if (!temp10  || !require_contiguous(temp10) || !require_native(temp10)) SWIG_fail;
+    arg10 = (npy_int64*) array_data(temp10);
+  }
+  {
+    temp11 = obj_to_array_no_conversion(obj10,NPY_CLONGDOUBLE);
+    if (!temp11  || !require_contiguous(temp11) || !require_native(temp11)) SWIG_fail;
+    arg11 = (npy_clongdouble_wrapper*) array_data(temp11);
+  }
+  {
+    try {
+      csc_minimum_csc< npy_int64,npy_clongdouble_wrapper >(arg1,arg2,(npy_int64 const (*))arg3,(npy_int64 const (*))arg4,(npy_clongdouble_wrapper const (*))arg5,(npy_int64 const (*))arg6,(npy_int64 const (*))arg7,(npy_clongdouble_wrapper const (*))arg8,arg9,arg10,arg11);
+    } catch (const std::bad_alloc& e) {
+      SWIG_exception(SWIG_MemoryError, e.what());
+    } catch (const std::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3) {
+      Py_DECREF(array3); 
+    }
+  }
+  {
+    if (is_new_object4 && array4) {
+      Py_DECREF(array4); 
+    }
+  }
+  {
+    if (is_new_object5 && array5) {
+      Py_DECREF(array5); 
+    }
+  }
+  {
+    if (is_new_object6 && array6) {
+      Py_DECREF(array6); 
+    }
+  }
+  {
+    if (is_new_object7 && array7) {
+      Py_DECREF(array7); 
+    }
+  }
+  {
+    if (is_new_object8 && array8) {
+      Py_DECREF(array8); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_csc_minimum_csc(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[12];
+  int ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = args ? (int)PyObject_Length(args) : 0;
+  for (ii = 0; (ii < 11) && (ii < argc); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_BOOL)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_BOOL)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_BOOL)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_1(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_BYTE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_BYTE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_BYTE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_2(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_UBYTE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_UBYTE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_UBYTE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_3(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_SHORT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_SHORT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_SHORT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_4(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_USHORT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_USHORT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_USHORT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_5(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_INT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_INT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_6(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_UINT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_UINT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_UINT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_7(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_LONGLONG)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_LONGLONG)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_LONGLONG)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_8(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_ULONGLONG)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_ULONGLONG)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_ULONGLONG)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_9(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_FLOAT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_FLOAT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_FLOAT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_10(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_DOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_DOUBLE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_DOUBLE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_11(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_LONGDOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_LONGDOUBLE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_LONGDOUBLE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_12(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_CFLOAT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_CFLOAT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_CFLOAT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_13(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_CDOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_CDOUBLE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_CDOUBLE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_14(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT32)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT32)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_CLONGDOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT32)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT32)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_CLONGDOUBLE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT32)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT32)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_CLONGDOUBLE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_15(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_BOOL)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_BOOL)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_BOOL)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_16(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_BYTE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_BYTE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_BYTE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_17(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_UBYTE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_UBYTE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_UBYTE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_18(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_SHORT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_SHORT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_SHORT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_19(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_USHORT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_USHORT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_USHORT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_20(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_INT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_INT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_INT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_21(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_UINT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_UINT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_UINT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_22(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_LONGLONG)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_LONGLONG)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_LONGLONG)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_23(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_ULONGLONG)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_ULONGLONG)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_ULONGLONG)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_24(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_FLOAT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_FLOAT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_FLOAT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_25(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_DOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_DOUBLE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_DOUBLE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_26(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_LONGDOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_LONGDOUBLE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_LONGDOUBLE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_27(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_CFLOAT)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_CFLOAT)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_CFLOAT)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_28(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_CDOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_CDOUBLE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_CDOUBLE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_29(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 11) {
+    int _v;
+    {
+      _v = PyNumber_Check(argv[0]) ? 1 : 0;
+    }
+    if (_v) {
+      {
+        _v = PyNumber_Check(argv[1]) ? 1 : 0;
+      }
+      if (_v) {
+        {
+          _v = (is_array(argv[2]) && PyArray_CanCastSafely(PyArray_TYPE(argv[2]),NPY_INT64)) ? 1 : 0;
+        }
+        if (_v) {
+          {
+            _v = (is_array(argv[3]) && PyArray_CanCastSafely(PyArray_TYPE(argv[3]),NPY_INT64)) ? 1 : 0;
+          }
+          if (_v) {
+            {
+              _v = (is_array(argv[4]) && PyArray_CanCastSafely(PyArray_TYPE(argv[4]),NPY_CLONGDOUBLE)) ? 1 : 0;
+            }
+            if (_v) {
+              {
+                _v = (is_array(argv[5]) && PyArray_CanCastSafely(PyArray_TYPE(argv[5]),NPY_INT64)) ? 1 : 0;
+              }
+              if (_v) {
+                {
+                  _v = (is_array(argv[6]) && PyArray_CanCastSafely(PyArray_TYPE(argv[6]),NPY_INT64)) ? 1 : 0;
+                }
+                if (_v) {
+                  {
+                    _v = (is_array(argv[7]) && PyArray_CanCastSafely(PyArray_TYPE(argv[7]),NPY_CLONGDOUBLE)) ? 1 : 0;
+                  }
+                  if (_v) {
+                    {
+                      _v = (is_array(argv[8]) && PyArray_CanCastSafely(PyArray_TYPE(argv[8]),NPY_INT64)) ? 1 : 0;
+                    }
+                    if (_v) {
+                      {
+                        _v = (is_array(argv[9]) && PyArray_CanCastSafely(PyArray_TYPE(argv[9]),NPY_INT64)) ? 1 : 0;
+                      }
+                      if (_v) {
+                        {
+                          _v = (is_array(argv[10]) && PyArray_CanCastSafely(PyArray_TYPE(argv[10]),NPY_CLONGDOUBLE)) ? 1 : 0;
+                        }
+                        if (_v) {
+                          return _wrap_csc_minimum_csc__SWIG_30(self, args);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'csc_minimum_csc'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    csc_minimum_csc< npy_int32,npy_bool_wrapper >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],npy_bool_wrapper const [],npy_int32 const [],npy_int32 const [],npy_bool_wrapper const [],npy_int32 [],npy_int32 [],npy_bool_wrapper [])\n"
+    "    csc_minimum_csc< npy_int32,signed char >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],signed char const [],npy_int32 const [],npy_int32 const [],signed char const [],npy_int32 [],npy_int32 [],signed char [])\n"
+    "    csc_minimum_csc< npy_int32,unsigned char >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],unsigned char const [],npy_int32 const [],npy_int32 const [],unsigned char const [],npy_int32 [],npy_int32 [],unsigned char [])\n"
+    "    csc_minimum_csc< npy_int32,short >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],short const [],npy_int32 const [],npy_int32 const [],short const [],npy_int32 [],npy_int32 [],short [])\n"
+    "    csc_minimum_csc< npy_int32,unsigned short >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],unsigned short const [],npy_int32 const [],npy_int32 const [],unsigned short const [],npy_int32 [],npy_int32 [],unsigned short [])\n"
+    "    csc_minimum_csc< npy_int32,int >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],int const [],npy_int32 const [],npy_int32 const [],int const [],npy_int32 [],npy_int32 [],int [])\n"
+    "    csc_minimum_csc< npy_int32,unsigned int >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],unsigned int const [],npy_int32 const [],npy_int32 const [],unsigned int const [],npy_int32 [],npy_int32 [],unsigned int [])\n"
+    "    csc_minimum_csc< npy_int32,long long >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],long long const [],npy_int32 const [],npy_int32 const [],long long const [],npy_int32 [],npy_int32 [],long long [])\n"
+    "    csc_minimum_csc< npy_int32,unsigned long long >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],unsigned long long const [],npy_int32 const [],npy_int32 const [],unsigned long long const [],npy_int32 [],npy_int32 [],unsigned long long [])\n"
+    "    csc_minimum_csc< npy_int32,float >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],float const [],npy_int32 const [],npy_int32 const [],float const [],npy_int32 [],npy_int32 [],float [])\n"
+    "    csc_minimum_csc< npy_int32,double >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],double const [],npy_int32 const [],npy_int32 const [],double const [],npy_int32 [],npy_int32 [],double [])\n"
+    "    csc_minimum_csc< npy_int32,long double >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],long double const [],npy_int32 const [],npy_int32 const [],long double const [],npy_int32 [],npy_int32 [],long double [])\n"
+    "    csc_minimum_csc< npy_int32,npy_cfloat_wrapper >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],npy_cfloat_wrapper const [],npy_int32 const [],npy_int32 const [],npy_cfloat_wrapper const [],npy_int32 [],npy_int32 [],npy_cfloat_wrapper [])\n"
+    "    csc_minimum_csc< npy_int32,npy_cdouble_wrapper >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],npy_cdouble_wrapper const [],npy_int32 const [],npy_int32 const [],npy_cdouble_wrapper const [],npy_int32 [],npy_int32 [],npy_cdouble_wrapper [])\n"
+    "    csc_minimum_csc< npy_int32,npy_clongdouble_wrapper >(npy_int32 const,npy_int32 const,npy_int32 const [],npy_int32 const [],npy_clongdouble_wrapper const [],npy_int32 const [],npy_int32 const [],npy_clongdouble_wrapper const [],npy_int32 [],npy_int32 [],npy_clongdouble_wrapper [])\n"
+    "    csc_minimum_csc< npy_int64,npy_bool_wrapper >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],npy_bool_wrapper const [],npy_int64 const [],npy_int64 const [],npy_bool_wrapper const [],npy_int64 [],npy_int64 [],npy_bool_wrapper [])\n"
+    "    csc_minimum_csc< npy_int64,signed char >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],signed char const [],npy_int64 const [],npy_int64 const [],signed char const [],npy_int64 [],npy_int64 [],signed char [])\n"
+    "    csc_minimum_csc< npy_int64,unsigned char >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],unsigned char const [],npy_int64 const [],npy_int64 const [],unsigned char const [],npy_int64 [],npy_int64 [],unsigned char [])\n"
+    "    csc_minimum_csc< npy_int64,short >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],short const [],npy_int64 const [],npy_int64 const [],short const [],npy_int64 [],npy_int64 [],short [])\n"
+    "    csc_minimum_csc< npy_int64,unsigned short >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],unsigned short const [],npy_int64 const [],npy_int64 const [],unsigned short const [],npy_int64 [],npy_int64 [],unsigned short [])\n"
+    "    csc_minimum_csc< npy_int64,int >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],int const [],npy_int64 const [],npy_int64 const [],int const [],npy_int64 [],npy_int64 [],int [])\n"
+    "    csc_minimum_csc< npy_int64,unsigned int >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],unsigned int const [],npy_int64 const [],npy_int64 const [],unsigned int const [],npy_int64 [],npy_int64 [],unsigned int [])\n"
+    "    csc_minimum_csc< npy_int64,long long >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],long long const [],npy_int64 const [],npy_int64 const [],long long const [],npy_int64 [],npy_int64 [],long long [])\n"
+    "    csc_minimum_csc< npy_int64,unsigned long long >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],unsigned long long const [],npy_int64 const [],npy_int64 const [],unsigned long long const [],npy_int64 [],npy_int64 [],unsigned long long [])\n"
+    "    csc_minimum_csc< npy_int64,float >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],float const [],npy_int64 const [],npy_int64 const [],float const [],npy_int64 [],npy_int64 [],float [])\n"
+    "    csc_minimum_csc< npy_int64,double >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],double const [],npy_int64 const [],npy_int64 const [],double const [],npy_int64 [],npy_int64 [],double [])\n"
+    "    csc_minimum_csc< npy_int64,long double >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],long double const [],npy_int64 const [],npy_int64 const [],long double const [],npy_int64 [],npy_int64 [],long double [])\n"
+    "    csc_minimum_csc< npy_int64,npy_cfloat_wrapper >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],npy_cfloat_wrapper const [],npy_int64 const [],npy_int64 const [],npy_cfloat_wrapper const [],npy_int64 [],npy_int64 [],npy_cfloat_wrapper [])\n"
+    "    csc_minimum_csc< npy_int64,npy_cdouble_wrapper >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],npy_cdouble_wrapper const [],npy_int64 const [],npy_int64 const [],npy_cdouble_wrapper const [],npy_int64 [],npy_int64 [],npy_cdouble_wrapper [])\n"
+    "    csc_minimum_csc< npy_int64,npy_clongdouble_wrapper >(npy_int64 const,npy_int64 const,npy_int64 const [],npy_int64 const [],npy_clongdouble_wrapper const [],npy_int64 const [],npy_int64 const [],npy_clongdouble_wrapper const [],npy_int64 [],npy_int64 [],npy_clongdouble_wrapper [])\n");
+  return 0;
+}
+
+
 SWIGINTERN PyObject *_wrap_csc_ne_csc__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   npy_int32 arg1 ;
@@ -102425,6 +117941,210 @@ static PyMethodDef SwigMethods[] = {
 		"    npy_cdouble_wrapper const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, \n"
 		"    npy_cdouble_wrapper [] Cx)\n"
 		"csc_minus_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    npy_clongdouble_wrapper const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    npy_clongdouble_wrapper const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, \n"
+		"    npy_clongdouble_wrapper [] Cx)\n"
+		""},
+	 { (char *)"csc_maximum_csc", _wrap_csc_maximum_csc, METH_VARARGS, (char *)"\n"
+		"csc_maximum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    npy_bool_wrapper const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    npy_bool_wrapper const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, \n"
+		"    npy_bool_wrapper [] Cx)\n"
+		"csc_maximum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    signed char const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    signed char const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, signed char [] Cx)\n"
+		"csc_maximum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    unsigned char const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    unsigned char const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, unsigned char [] Cx)\n"
+		"csc_maximum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    short const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    short const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, short [] Cx)\n"
+		"csc_maximum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    unsigned short const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    unsigned short const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, unsigned short [] Cx)\n"
+		"csc_maximum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    int const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, int const [] Bx, \n"
+		"    npy_int32 [] Cp, npy_int32 [] Ci, int [] Cx)\n"
+		"csc_maximum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    unsigned int const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    unsigned int const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, unsigned int [] Cx)\n"
+		"csc_maximum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    long long const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    long long const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, long long [] Cx)\n"
+		"csc_maximum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    unsigned long long const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    unsigned long long const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, \n"
+		"    unsigned long long [] Cx)\n"
+		"csc_maximum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    float const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    float const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, float [] Cx)\n"
+		"csc_maximum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    double const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    double const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, double [] Cx)\n"
+		"csc_maximum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    long double const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    long double const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, long double [] Cx)\n"
+		"csc_maximum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    npy_cfloat_wrapper const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    npy_cfloat_wrapper const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, \n"
+		"    npy_cfloat_wrapper [] Cx)\n"
+		"csc_maximum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    npy_cdouble_wrapper const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    npy_cdouble_wrapper const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, \n"
+		"    npy_cdouble_wrapper [] Cx)\n"
+		"csc_maximum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    npy_clongdouble_wrapper const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    npy_clongdouble_wrapper const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, \n"
+		"    npy_clongdouble_wrapper [] Cx)\n"
+		"csc_maximum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    npy_bool_wrapper const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    npy_bool_wrapper const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, \n"
+		"    npy_bool_wrapper [] Cx)\n"
+		"csc_maximum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    signed char const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    signed char const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, signed char [] Cx)\n"
+		"csc_maximum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    unsigned char const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    unsigned char const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, unsigned char [] Cx)\n"
+		"csc_maximum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    short const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    short const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, short [] Cx)\n"
+		"csc_maximum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    unsigned short const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    unsigned short const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, unsigned short [] Cx)\n"
+		"csc_maximum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    int const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, int const [] Bx, \n"
+		"    npy_int64 [] Cp, npy_int64 [] Ci, int [] Cx)\n"
+		"csc_maximum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    unsigned int const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    unsigned int const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, unsigned int [] Cx)\n"
+		"csc_maximum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    long long const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    long long const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, long long [] Cx)\n"
+		"csc_maximum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    unsigned long long const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    unsigned long long const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, \n"
+		"    unsigned long long [] Cx)\n"
+		"csc_maximum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    float const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    float const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, float [] Cx)\n"
+		"csc_maximum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    double const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    double const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, double [] Cx)\n"
+		"csc_maximum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    long double const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    long double const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, long double [] Cx)\n"
+		"csc_maximum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    npy_cfloat_wrapper const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    npy_cfloat_wrapper const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, \n"
+		"    npy_cfloat_wrapper [] Cx)\n"
+		"csc_maximum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    npy_cdouble_wrapper const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    npy_cdouble_wrapper const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, \n"
+		"    npy_cdouble_wrapper [] Cx)\n"
+		"csc_maximum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    npy_clongdouble_wrapper const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    npy_clongdouble_wrapper const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, \n"
+		"    npy_clongdouble_wrapper [] Cx)\n"
+		""},
+	 { (char *)"csc_minimum_csc", _wrap_csc_minimum_csc, METH_VARARGS, (char *)"\n"
+		"csc_minimum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    npy_bool_wrapper const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    npy_bool_wrapper const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, \n"
+		"    npy_bool_wrapper [] Cx)\n"
+		"csc_minimum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    signed char const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    signed char const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, signed char [] Cx)\n"
+		"csc_minimum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    unsigned char const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    unsigned char const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, unsigned char [] Cx)\n"
+		"csc_minimum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    short const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    short const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, short [] Cx)\n"
+		"csc_minimum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    unsigned short const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    unsigned short const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, unsigned short [] Cx)\n"
+		"csc_minimum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    int const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, int const [] Bx, \n"
+		"    npy_int32 [] Cp, npy_int32 [] Ci, int [] Cx)\n"
+		"csc_minimum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    unsigned int const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    unsigned int const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, unsigned int [] Cx)\n"
+		"csc_minimum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    long long const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    long long const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, long long [] Cx)\n"
+		"csc_minimum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    unsigned long long const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    unsigned long long const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, \n"
+		"    unsigned long long [] Cx)\n"
+		"csc_minimum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    float const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    float const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, float [] Cx)\n"
+		"csc_minimum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    double const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    double const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, double [] Cx)\n"
+		"csc_minimum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    long double const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    long double const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, long double [] Cx)\n"
+		"csc_minimum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    npy_cfloat_wrapper const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    npy_cfloat_wrapper const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, \n"
+		"    npy_cfloat_wrapper [] Cx)\n"
+		"csc_minimum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    npy_cdouble_wrapper const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    npy_cdouble_wrapper const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, \n"
+		"    npy_cdouble_wrapper [] Cx)\n"
+		"csc_minimum_csc(npy_int32 const n_row, npy_int32 const n_col, npy_int32 const [] Ap, npy_int32 const [] Ai, \n"
+		"    npy_clongdouble_wrapper const [] Ax, npy_int32 const [] Bp, npy_int32 const [] Bi, \n"
+		"    npy_clongdouble_wrapper const [] Bx, npy_int32 [] Cp, npy_int32 [] Ci, \n"
+		"    npy_clongdouble_wrapper [] Cx)\n"
+		"csc_minimum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    npy_bool_wrapper const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    npy_bool_wrapper const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, \n"
+		"    npy_bool_wrapper [] Cx)\n"
+		"csc_minimum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    signed char const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    signed char const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, signed char [] Cx)\n"
+		"csc_minimum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    unsigned char const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    unsigned char const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, unsigned char [] Cx)\n"
+		"csc_minimum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    short const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    short const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, short [] Cx)\n"
+		"csc_minimum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    unsigned short const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    unsigned short const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, unsigned short [] Cx)\n"
+		"csc_minimum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    int const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, int const [] Bx, \n"
+		"    npy_int64 [] Cp, npy_int64 [] Ci, int [] Cx)\n"
+		"csc_minimum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    unsigned int const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    unsigned int const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, unsigned int [] Cx)\n"
+		"csc_minimum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    long long const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    long long const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, long long [] Cx)\n"
+		"csc_minimum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    unsigned long long const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    unsigned long long const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, \n"
+		"    unsigned long long [] Cx)\n"
+		"csc_minimum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    float const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    float const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, float [] Cx)\n"
+		"csc_minimum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    double const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    double const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, double [] Cx)\n"
+		"csc_minimum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    long double const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    long double const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, long double [] Cx)\n"
+		"csc_minimum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    npy_cfloat_wrapper const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    npy_cfloat_wrapper const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, \n"
+		"    npy_cfloat_wrapper [] Cx)\n"
+		"csc_minimum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
+		"    npy_cdouble_wrapper const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
+		"    npy_cdouble_wrapper const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, \n"
+		"    npy_cdouble_wrapper [] Cx)\n"
+		"csc_minimum_csc(npy_int64 const n_row, npy_int64 const n_col, npy_int64 const [] Ap, npy_int64 const [] Ai, \n"
 		"    npy_clongdouble_wrapper const [] Ax, npy_int64 const [] Bp, npy_int64 const [] Bi, \n"
 		"    npy_clongdouble_wrapper const [] Bx, npy_int64 [] Cp, npy_int64 [] Ci, \n"
 		"    npy_clongdouble_wrapper [] Cx)\n"
