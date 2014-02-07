@@ -1423,7 +1423,7 @@ class _TestCommon:
 
     def test_unary_ufunc_overrides(self):
         def check(name):
-            if NumpyVersion(np.__version__) < '1.9.0a1':
+            if NumpyVersion(np.__version__) < '1.9.0.dev-0':
                 if name == "sign":
                     raise nose.SkipTest("sign conflicts with comparison op "
                                         "support on Numpy < 1.9")
@@ -1438,7 +1438,7 @@ class _TestCommon:
             X2 = ufunc(X)
             assert_array_equal(X2.toarray(), X0)
 
-            if not (NumpyVersion(np.__version__) < '1.9.0a1'):
+            if not (NumpyVersion(np.__version__) < '1.9.0.dev-0'):
                 # the out argument doesn't work on Numpy < 1.9
                 out = np.zeros_like(X0)
                 X3 = ufunc(X, out=out)
@@ -1474,7 +1474,7 @@ class _TestCommon:
         a_items = dict(dense=a, scalar=c, cplx_scalar=d, int_scalar=e, sparse=asp)
         b_items = dict(dense=b, scalar=c, cplx_scalar=d, int_scalar=e, sparse=bsp)
 
-        @dec.skipif(NumpyVersion(np.__version__) < '1.9.0a1',
+        @dec.skipif(NumpyVersion(np.__version__) < '1.9.0.dev-0',
                     "feature requires Numpy 1.9")
         def check(i, j, dtype):
             ax = a_items[i]
@@ -1572,7 +1572,7 @@ class _TestCommon:
 
 
 class _TestInplaceArithmetic:
-    @dec.skipif(NumpyVersion(np.__version__) < '1.9.0a1',
+    @dec.skipif(NumpyVersion(np.__version__) < '1.9.0.dev-0',
                 "Not implemented with Numpy < 1.9")
     def test_inplace_dense_method(self):
         # Check that ndarray inplace ops work
@@ -1613,7 +1613,7 @@ class _TestInplaceArithmetic:
         y -= b
         assert_array_equal(x, y)
 
-        if not (NumpyVersion(np.__version__) < '1.9.0a1'):
+        if not (NumpyVersion(np.__version__) < '1.9.0.dev-0'):
             # These operations don't work properly without __numpy_ufunc__,
             # due to missing or incompatible __r*__ implementations
 
