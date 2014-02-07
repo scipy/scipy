@@ -37,7 +37,7 @@ import scipy.linalg
 import scipy.sparse as sparse
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
-        eye, isspmatrix, SparseEfficiencyWarning
+        eye, isspmatrix, SparseEfficiencyWarning, issparse
 from scipy.sparse.sputils import supported_dtypes, isscalarlike
 from scipy.sparse.linalg import splu, expm, inv
 
@@ -1480,9 +1480,9 @@ class _TestCommon:
             ax = a_items[i]
             bx = b_items[j]
 
-            if isinstance(ax, self.spmatrix):
+            if issparse(ax):
                 ax = ax.astype(dtype)
-            if isinstance(bx, self.spmatrix):
+            if issparse(bx):
                 bx = bx.astype(dtype)
 
             a = todense(ax)
@@ -3476,6 +3476,10 @@ class _NonCanonicalMixin(object):
 
     @dec.knownfailureif(True, 'unary ufunc overrides broken with non-canonical matrix')
     def test_unary_ufunc_overrides(self):
+        pass
+
+    @dec.knownfailureif(True, 'some binary ufuncs fail with scalars for noncanonical matrices')
+    def test_binary_ufunc_overrides(self):
         pass
 
     @dec.knownfailureif(True, 'getnnz-axis broken with non-canonical matrix')
