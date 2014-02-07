@@ -2136,7 +2136,7 @@ class _TestFancyIndexing:
         assert_equal(A[:,s].todense(), B[:,2:4])
 
     def test_fancy_indexing_randomized(self):
-        random.seed(1234)  # make runs repeatable
+        np.random.seed(1234)  # make runs repeatable
 
         NUM_SAMPLES = 50
         M = 6
@@ -2162,7 +2162,7 @@ class _TestFancyIndexing:
         assert_raises(IndexError, S.__getitem__, (I,J_bad))
 
     def test_fancy_indexing_boolean(self):
-        random.seed(1234)  # make runs repeatable
+        np.random.seed(1234)  # make runs repeatable
 
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix(B)
@@ -2193,7 +2193,7 @@ class _TestFancyIndexing:
         assert_raises((IndexError, ValueError), A.__getitem__, (X, 1))
 
     def test_fancy_indexing_sparse_boolean(self):
-        random.seed(1234)  # make runs repeatable
+        np.random.seed(1234)  # make runs repeatable
 
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix(B)
@@ -2219,6 +2219,10 @@ class _TestFancyIndexing:
         mat = self.spmatrix(array([[1, 0, 0], [0,1,0], [1,0,0]]))
         desired_cols = np.ravel(mat.sum(0)) > 0
         assert_equal(mat[:, desired_cols].A, [[1, 0], [0, 1], [1, 0]])
+
+    def test_fancy_indexing_seq_assign(self):
+        mat = self.spmatrix(array([[1, 0], [0, 1]]))
+        assert_raises(ValueError, mat.__setitem__, (0, 0), np.array([1,2]))
 
 
 class _TestFancyIndexingAssign:
@@ -2931,12 +2935,7 @@ class TestCSC(sparse_test_class()):
         assert_equal(SIJ, D[I,J])
 
 
-class TestDOK(sparse_test_class(slicing=False,
-                                slicing_assign=False,
-                                fancy_indexing=False,
-                                fancy_assign=False,
-                                minmax=False,
-                                nnz_axis=False)):
+class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
     spmatrix = dok_matrix
     checked_dtypes = [np.int_, np.float_, np.complex_]
 
