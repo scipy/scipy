@@ -20,6 +20,8 @@ INSTANTIATE_ALL(csc_elmul_csc)
 INSTANTIATE_ALL(csc_eldiv_csc)
 INSTANTIATE_ALL(csc_plus_csc)
 INSTANTIATE_ALL(csc_minus_csc)
+INSTANTIATE_ALL(csc_maximum_csc)
+INSTANTIATE_ALL(csc_minimum_csc)
 
 INSTANTIATE_BOOL_OUT(csc_ne_csc)
 INSTANTIATE_BOOL_OUT(csc_lt_csc)

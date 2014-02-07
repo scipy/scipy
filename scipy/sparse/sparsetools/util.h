@@ -33,4 +33,18 @@ OVERRIDE_safe_divides(npy_clongdouble_wrapper)
 
 #undef OVERRIDE_safe_divides
 
+template <class T>
+struct maximum {
+    T operator() (const T& x, const T& y) const {
+        return std::max(x, y);
+    }
+};
+
+template <class T>
+struct minimum {
+    T operator() (const T& x, const T& y) const {
+        return std::min(x, y);
+    }
+};
+
 #endif
