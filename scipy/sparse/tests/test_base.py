@@ -20,6 +20,7 @@ Run tests if sparse is not installed:
 """
 
 import warnings
+import operator
 
 import numpy as np
 from scipy.lib.six import xrange, zip as izip
@@ -1572,32 +1573,7 @@ class _TestCommon:
 
 
 class _TestInplaceArithmetic:
-    @dec.skipif(NumpyVersion(np.__version__) < '1.9.0.dev-0',
-                "Not implemented with Numpy < 1.9")
-    def test_inplace_dense_method(self):
-        # Check that ndarray inplace ops work
-        a = np.ones((3, 4))
-        b = self.spmatrix(a)
-
-        def check(op):
-            x = a.copy()
-            y = a.copy()
-
-            x = getattr(x, op)(a)
-            y = getattr(y, op)(b)
-
-            assert_array_equal(x, y, err_msg=op)
-
-        for op in ['__iadd__', '__isub__',
-                   '__imul__', '__idiv__',
-                   '__ifloordiv__', '__itruediv__']:
-            c = dec.knownfailureif(
-                op == '__ifloordiv__',
-                "sparse floordiv not implemented")(check)
-            yield c, op
-
-    def test_inplace_dense_syntax(self):
-        # Same as test_inplace_dense_method, but with the syntax
+    def test_inplace_dense(self):
         a = np.ones((3, 4))
         b = self.spmatrix(a)
 
@@ -1613,29 +1589,19 @@ class _TestInplaceArithmetic:
         y -= b
         assert_array_equal(x, y)
 
-        if not (NumpyVersion(np.__version__) < '1.9.0.dev-0'):
-            # These operations don't work properly without __numpy_ufunc__,
-            # due to missing or incompatible __r*__ implementations
+        # This is matrix product, from __rmul__
+        assert_raises(ValueError, operator.imul, x, b)
+        x = a.copy()
+        y = a.copy()
+        x = x.dot(a.T)
+        y *= b.T
+        assert_array_equal(x, y)
 
-            # This is elementwise product
-            x = a.copy()
-            y = a.copy()
-            x *= a
-            y *= b
-            assert_array_equal(x, y)
+        # Matrix (non-elementwise) division is not defined
+        assert_raises(TypeError, operator.idiv, x, b)
 
-            x = a.copy()
-            y = a.copy()
-            x /= a
-            y /= b
-            assert_array_equal(x, y)
-
-            # XXX: floor division is not implemented
-            #x = a.copy()
-            #y = a.copy()
-            #x //= a
-            #y //= b
-            #assert_array_equal(x, y)
+        # Matrix (non-elementwise) floor division is not defined
+        assert_raises(TypeError, operator.ifloordiv, x, b)
 
     def test_imul_scalar(self):
         def check(dtype):
