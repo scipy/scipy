@@ -2136,7 +2136,7 @@ class _TestFancyIndexing:
         assert_equal(A[:,s].todense(), B[:,2:4])
 
     def test_fancy_indexing_randomized(self):
-        random.seed(1234)  # make runs repeatable
+        np.random.seed(1234)  # make runs repeatable
 
         NUM_SAMPLES = 50
         M = 6
@@ -2162,7 +2162,7 @@ class _TestFancyIndexing:
         assert_raises(IndexError, S.__getitem__, (I,J_bad))
 
     def test_fancy_indexing_boolean(self):
-        random.seed(1234)  # make runs repeatable
+        np.random.seed(1234)  # make runs repeatable
 
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix(B)
@@ -2193,7 +2193,7 @@ class _TestFancyIndexing:
         assert_raises((IndexError, ValueError), A.__getitem__, (X, 1))
 
     def test_fancy_indexing_sparse_boolean(self):
-        random.seed(1234)  # make runs repeatable
+        np.random.seed(1234)  # make runs repeatable
 
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spmatrix(B)
