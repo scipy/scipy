@@ -202,9 +202,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self.sum_duplicates()
         except NotImplementedError:
             pass
-        const = np.asarray(const)
-        data = self.data.astype(const.dtype)
-        data[:] = const
+        data = np.empty(self.data.shape, dtype=np.asarray(const).dtype)
+        data.fill(const)
         return self.__class__((data, self.indices, self.indptr), shape=self.shape)
 
     def __eq__(self, other):
@@ -271,7 +270,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise NotImplementedError(" >= and <= don't work with 0.")
             elif op(0, other):
                 warn(bad_scalar_msg, SparseEfficiencyWarning)
-                other_arr = np.empty(self.shape)
+                other_arr = np.empty(self.shape, dtype=np.asarray(other).dtype)
                 other_arr.fill(other)
                 other_arr = self.__class__(other_arr)
                 return self._binopt(other_arr, op_name)
