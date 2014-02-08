@@ -419,6 +419,11 @@ class csr_matrix(_cs_matrix, IndexMixin):
 
         return self.__class__((data,indices,indptr), shape=shape)
 
+    def power(self, n):
+        """
+        n is scalar
+        """
+        return csr_matrix((self.data ** n, self.indices, self.indptr), shape=self.shape)
 
 def isspmatrix_csr(x):
     return isinstance(x, csr_matrix)
