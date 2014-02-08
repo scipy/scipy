@@ -24,21 +24,28 @@ New features
 ``scipy.interpolate`` improvements
 ----------------------------------
 
+Faster implementations of piecewise polynomials in power and Bernstein
+polynomial bases have been added as `scipy.interpolate.PPoly` and
+`scipy.interpolate.BPoly`. New users should use these in favor of
+`scipy.interpolate.PiecewisePolynomial`.
+
 `scipy.interpolate.interp1d` now accepts non-monotonic inputs and sorts them.
 If performance is critical, sorting can be turned off by using the new
 ``assume_sorted`` keyword.
 
-TODO: describe `scipy.interpolate.BPoly` and `scipy.interpolate.PPoly` work.
+Functionality for evaluation of bivariate spline derivatives in
+``scipy.interpolate`` has been added.
 
 
 ``scipy.linalg`` improvements
 -----------------------------
 
-Discrete Fourier transform matrix
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 The new function `scipy.linalg.dft` computes the matrix of the
 discrete Fourier transform.
+
+A condition number estimation function for matrix exponential,
+`scipy.linalg.expm_cond`, has been added.
+
 
 ``scipy.optimize`` improvements
 -------------------------------
@@ -46,39 +53,30 @@ discrete Fourier transform.
 A set of benchmarks for optimize, which can be run with ``optimize.bench()``,
 has been added.
 
+`scipy.optimize.curve_fit` now has more controllable error estimation via the
+``absolute_sigma`` keyword.
+
 
 ``scipy.stats`` improvements
 ----------------------------
 
-Multivariate random variables
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 A new class `scipy.stats.multivariate_normal` with functionality for 
 multivariate normal random variables has been added.
 
-``scipy.stats`` distributions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-A lot of work on the distribution framework has been done.  Moment calculations
-(skew and kurtosis mainly) are fixed and verified, all examples are now
-runnable, and many small accuracy and performance improvements for individual
-distributions were merged.
+A lot of work on the ``scipy.stats`` distribution framework has been done.
+Moment calculations (skew and kurtosis mainly) are fixed and verified, all
+examples are now runnable, and many small accuracy and performance improvements
+for individual distributions were merged.
 
 
 ``scipy.signal`` improvements
 -----------------------------
-
-IIR filter design improvements
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``scipy.signal.iirfilter`` and related functions to design Butterworth,
 Chebyshev, elliptical and Bessel IIR filters now all use pole-zero ("zpk")
 format internally instead of using transformations to numerator/denominator
 format.  The accuracy of the produced filters, especially high-order ones, is
 improved significantly as a result.
-
-Vector Strength
-^^^^^^^^^^^^^^^
 
 The new function `scipy.signal.vectorstrength` computes the vector strength,
 a measure of phase synchrony, of a set of events.
@@ -87,23 +85,24 @@ a measure of phase synchrony, of a set of events.
 ``scipy.special`` improvements
 ------------------------------
 
-Box-Cox transformation
-^^^^^^^^^^^^^^^^^^^^^^
-
-The functions `scipy.special.boxcox` and `scipy.special.boxcox1p` compute
-the Box-Cox transformation.
+The functions `scipy.special.boxcox` and `scipy.special.boxcox1p`, which
+compute the Box-Cox transformation, have been added.
 
 
 ``scipy.sparse`` improvements
 -----------------------------
 
-TODO: finish describing changes / new features in sparse matrix formats.
-
-- sparse matrices can now be indexed with 64-bit integers, and are therefore no
-  longer limited to ``2^31`` nonzero elements.
-- ``__numpy_ufunc__`` in combination with numpy 1.9
-- performance optimizations
-- ?
+- Significant performance improvement in CSR, CSC, and DOK indexing speed. 
+- When using Numpy >= 1.9 (to be released in MM 2014), sparse matrices function
+  correctly when given to arguments of ``np.dot``, ``np.multiply`` and other
+  ufuncs.  With earlier Numpy and Scipy versions, the results of such
+  operations are undefined and usually unexpected. 
+- Sparse matrices are no longer limited to ``2^31`` nonzero elements.  They
+  automatically switch to using 64-bit index data type for matrices containing
+  more elements.  User code written assuming the sparse matrices use int32 as
+  the index data type will continue to work, except for such large matrices.
+  Code dealing with larger matrices needs to accept either int32 or int64
+  indices. 
 
 
 Deprecated features
@@ -135,6 +134,12 @@ scipy.special.lpmn
 ``clpmn`` with uniform complex analytic behavior has been added, and
 it should be used instead.
 
+scipy.sparse.linalg
+-------------------
+
+Eigenvectors in the case of generalized eigenvalue problem are normalized to
+unit vectors in 2-norm, rather than following the LAPACK normalization
+convention.
 
 scipy.stats
 -----------
@@ -144,10 +149,6 @@ from ``scipy.stats``.
 
 ``stats.scoreatpercentile`` now returns an array instead of a list of
 percentiles.
-
-
-Other changes
-=============
 
 
 Authors
