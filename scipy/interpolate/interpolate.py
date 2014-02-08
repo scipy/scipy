@@ -9,7 +9,6 @@ from numpy import shape, sometrue, array, transpose, searchsorted, \
                   ones, logical_or, atleast_1d, atleast_2d, ravel, \
                   dot, poly1d, asarray, intp
 import numpy as np
-from numpy.lib.stride_tricks import as_strided
 import scipy.special as spec
 from scipy.misc import comb
 import math
@@ -1443,9 +1442,7 @@ class Akima(PPoly):
         # determine slopes between breakpoints
         m = np.empty((x.size + 3, ) + y.shape[1:])
         dx = np.diff(x)
-        for i in range(y.ndim - 1):
-            dx = as_strided(dx, strides=(0, ) + dx.strides,
-                            shape=dx.shape + (y.shape[i + 1], ))
+        dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
         m[2:-2] = np.diff(y, axis=0) / dx
 
         # add two additional points on the left ...
