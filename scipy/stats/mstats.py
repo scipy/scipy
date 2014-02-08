@@ -24,8 +24,6 @@ is a relatively new package, some API changes are still possible.
    f_value_wilks_lambda
    find_repeats
    friedmanchisquare
-   gmean
-   hmean
    kendalltau
    kendalltau_seasonal
    kruskalwallis
@@ -80,3 +78,4 @@ from __future__ import division, print_function, absolute_import
 
 from .mstats_basic import *
 from .mstats_extras import *
+from scipy.stats import gmean, hmean

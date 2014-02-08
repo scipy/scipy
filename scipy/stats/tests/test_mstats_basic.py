@@ -58,9 +58,14 @@ class TestGMean(TestCase):
         desired1 = mstats.gmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
 
+        actual_dt = mstats.gmean(a, dtype=np.float128)
+        desired_dt = np.power(1 * 2 * 3, 1. / 3.).astype(np.float128)
+        assert_almost_equal(actual_dt, desired_dt, decimal=14)
+        assert actual_dt.dtype == desired_dt.dtype
+
     def test_2D(self):
-        a = ma.array(((1,2,3,4),(1,2,3,4),(1,2,3,4)),
-                     mask=((0,0,0,0),(1,0,0,1),(0,1,1,0)))
+        a = ma.array(((1, 2, 3, 4), (1, 2, 3, 4), (1, 2, 3, 4)),
+                     mask=((0, 0, 0, 0), (1, 0, 0, 1), (0, 1, 1, 0)))
         actual = mstats.gmean(a)
         desired = np.array((1,2,3,4))
         assert_array_almost_equal(actual, desired, decimal=14)
@@ -90,6 +95,12 @@ class TestHMean(TestCase):
         assert_almost_equal(actual, desired,decimal=14)
         desired1 = mstats.hmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
+
+        actual_dt = mstats.hmean(a, dtype=np.float128)
+        desired_dt = np.asarray(3. / (1. / 1 + 1. / 2 + 1. / 3),
+                                dtype=np.float128)
+        assert_almost_equal(actual_dt, desired_dt, decimal=14)
+        assert actual_dt.dtype == desired_dt.dtype
 
     def test_2D(self):
         a = ma.array(((1,2,3,4),(1,2,3,4),(1,2,3,4)),
