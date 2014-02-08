@@ -267,9 +267,7 @@ class TestGetCatalog(TestCase):
 
     def get_test_dir(self,erase=0):
         # make sure tempdir catalog doesn't exist
-        pardir = tempfile.mktemp(suffix='cat_test')
-        if not os.path.exists(pardir):
-            os.mkdir(pardir)
+        pardir = tempfile.mkdtemp(suffix='cat_test')
         cat_glob = os.path.join(pardir,catalog.os_dependent_catalog_name()+'.*')
         cat_files = glob.glob(cat_glob)
         if erase:

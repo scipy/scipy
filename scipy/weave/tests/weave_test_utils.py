@@ -31,8 +31,7 @@ def temp_catalog_files(prefix=''):
 
 def clear_temp_catalog():
     """Remove any catalog from the temp dir."""
-    backup_dir = tempfile.mktemp()
-    os.mkdir(backup_dir)
+    backup_dir = tempfile.mkdtemp()
     for file in temp_catalog_files():
         move_file(file,backup_dir)
 

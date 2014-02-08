@@ -108,9 +108,7 @@ for _n in dir():
 
 
 def setup_test_location():
-    test_dir = tempfile.mktemp()
-    if not os.path.exists(test_dir):
-        os.mkdir(test_dir)
+    test_dir = tempfile.mkdtemp()
     sys.path.insert(0,test_dir)
     return test_dir
 

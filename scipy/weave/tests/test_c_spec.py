@@ -231,7 +231,7 @@ class FileConverter(TestCase):
 
     @dec.slow
     def test_py_to_file(self):
-        file_name = tempfile.mktemp()
+        file_name = os.path.join(test_dir, "testfile")
         file = open(file_name,'w')
         code = """
                fprintf(file,"hello bob");
@@ -243,7 +243,7 @@ class FileConverter(TestCase):
 
     @dec.slow
     def test_file_to_py(self):
-        file_name = tempfile.mktemp()
+        file_name = os.path.join(test_dir, "testfile")
         # not sure I like Py::String as default -- might move to std::sting
         # or just plain char*
         code = """
@@ -644,21 +644,20 @@ for _n in dir():
 
 
 def setup_location():
-    test_dir = tempfile.mktemp()
-    if not os.path.exists(test_dir):
-        os.mkdir(test_dir)
+    test_dir = tempfile.mkdtemp()
     sys.path.insert(0,test_dir)
     return test_dir
 
-test_dir = setup_location()
+test_dir = None
 
+def setUpModule():
+    global test_dir
+    test_dir = setup_location()
 
-def teardown_location():
-    test_dir = os.path.join(tempfile.gettempdir(),'test_files')
-    if sys.path[0] == test_dir:
-        sys.path = sys.path[1:]
-    return test_dir
-
+def tearDownModule():
+    import shutil
+    if test_dir is not None:
+        shutil.rmtree(test_dir)
 
 if __name__ == "__main__":
     run_module_suite()
