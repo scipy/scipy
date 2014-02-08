@@ -320,6 +320,10 @@ class TestHypergeom(TestCase):
         hgpmf = stats.hypergeom.pmf(2, tot, good, N)
         assert_almost_equal(hgpmf, 0.0010114963068932233, 11)
 
+    def test_cdf_above_one(self):
+        # for some values of parameters, hypergeom cdf was >1, see gh-2238
+        assert_(0 <= stats.hypergeom.cdf(30, 13397950, 4363, 12390) <= 1.0)
+     
     def test_precision2(self):
         # Test hypergeom precision for large numbers.  See #1218.
         # Results compared with those from R.
@@ -1149,6 +1153,7 @@ class TestFrozen(TestCase):
 
         rv1 = stats.genpareto(c=0.1)
         assert_(rv1.dist is not rv.dist)
+
 
 class TestExpect(TestCase):
     # Test for expect method.
