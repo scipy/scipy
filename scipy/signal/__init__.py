@@ -33,7 +33,7 @@ B-splines
    cspline2d      -- Coefficients for 2-D cubic (3rd order) B-spline.
    qspline2d      -- Coefficients for 2-D quadratic (2nd order) B-spline.
    cspline1d_eval -- Evaluate a cubic spline at the given points.
-   cspline1d_eval -- Evaluate a quadratic spline at the given points.
+   qspline1d_eval -- Evaluate a quadratic spline at the given points.
    spline_filter  -- Smoothing spline (cubic) filtering of a rank-2 array.
 
 Filtering
