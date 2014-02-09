@@ -310,6 +310,8 @@ def sdist():
     # do not play well together.
     sh('python setup.py sdist --formats=gztar,zip')
     sh('python setup.py sdist --formats=tar')
+    if os.path.exists(os.path.join('dist', tarball_name("xztar"))):
+        os.unlink(os.path.join('dist', tarball_name("xztar")))
     sh('xz %s'%os.path.join('dist', tarball_name("tar")))
 
     # Copy the superpack into installers dir
