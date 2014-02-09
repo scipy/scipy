@@ -156,6 +156,15 @@ from ``scipy.stats``.
 percentiles.
 
 
+scipy.sparse.linalg
+-------------------
+
+The deprecated UMFPACK wrapper in ``scipy.sparse.linalg`` has been removed due
+to license and install issues.  If available, ``scikits.umfpack`` is still used
+transparently in the ``spsolve`` and ``factorized`` functions.  Otherwise,
+SuperLU is used instead in these functions.
+
+
 Other changes
 =============
 
