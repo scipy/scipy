@@ -145,6 +145,7 @@ Additional tools
    `scipy.signal.gauss_spline`,
    `scipy.signal.qspline1d`,
    `scipy.signal.cspline1d`,
+   `scipy.signal.qspline1d_eval`,
    `scipy.signal.cspline1d_eval`,
    `scipy.signal.qspline2d`,
    `scipy.signal.cspline2d`.
