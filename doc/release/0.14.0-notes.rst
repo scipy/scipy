@@ -141,6 +141,11 @@ Eigenvectors in the case of generalized eigenvalue problem are normalized to
 unit vectors in 2-norm, rather than following the LAPACK normalization
 convention.
 
+The deprecated UMFPACK wrapper in ``scipy.sparse.linalg`` has been removed due
+to license and install issues.  If available, ``scikits.umfpack`` is still used
+transparently in the ``spsolve`` and ``factorized`` functions.  Otherwise,
+SuperLU is used instead in these functions.
+
 scipy.stats
 -----------
 
@@ -149,6 +154,10 @@ from ``scipy.stats``.
 
 ``stats.scoreatpercentile`` now returns an array instead of a list of
 percentiles.
+
+
+Other changes
+=============
 
 
 Authors

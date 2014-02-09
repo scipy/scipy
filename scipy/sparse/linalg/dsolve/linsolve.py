@@ -3,8 +3,8 @@ from __future__ import division, print_function, absolute_import
 from warnings import warn
 
 from numpy import asarray, empty, ravel, nonzero
-from scipy.sparse import isspmatrix_csc, isspmatrix_csr, isspmatrix, \
-        SparseEfficiencyWarning, csc_matrix
+from scipy.sparse import (isspmatrix_csc, isspmatrix_csr, isspmatrix,
+                          SparseEfficiencyWarning, csc_matrix)
 
 from . import _superlu
 
@@ -12,12 +12,9 @@ noScikit = False
 try:
     import scikits.umfpack as umfpack
 except ImportError:
-    from . import umfpack
     noScikit = True
 
-isUmfpack = hasattr(umfpack, 'UMFPACK_OK')
-
-useUmfpack = True
+useUmfpack = not noScikit
 
 
 __all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized']
@@ -42,8 +39,7 @@ def use_solver(**kwargs):
     if 'useUmfpack' in kwargs:
         globals()['useUmfpack'] = kwargs['useUmfpack']
 
-    if isUmfpack:
-        umfpack.configure(**kwargs)
+    #TODO: pass other options to scikit
 
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
@@ -115,10 +111,10 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             b_vec = b
         b_vec = asarray(b_vec, dtype=A.dtype).ravel()
 
-        if isUmfpack and use_umfpack:
+        if use_umfpack:
             if noScikit:
-                warn('scipy.sparse.linalg.dsolve.umfpack will be removed,'
-                        ' install scikits.umfpack instead', DeprecationWarning)
+                raise RuntimeError('Scikits.umfpack not installed.')
+
             if A.dtype.char not in 'dD':
                 raise ValueError("convert matrix data to double, please, using"
                       " .astype(), or set linsolve.useUmfpack = False")
@@ -334,10 +330,9 @@ def factorized(A):
     array([ 1., -2., -2.])
 
     """
-    if isUmfpack and useUmfpack:
+    if useUmfpack:
         if noScikit:
-            warn('scipy.sparse.linalg.dsolve.umfpack will be removed,'
-                    ' install scikits.umfpack instead', DeprecationWarning)
+            raise RuntimeError('Scikits.umfpack not installed.')
 
         if not isspmatrix_csc(A):
             A = csc_matrix(A)
