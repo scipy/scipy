@@ -6,7 +6,7 @@ SciPy 0.14.0 Release Notes
 
 .. contents::
 
-SciPy 0.14.0 is the culmination of X months of hard work. It contains
+SciPy 0.14.0 is the culmination of 8 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and
 better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
@@ -15,47 +15,95 @@ of bug-fixes and optimizations.  Moreover, our development attention
 will now shift to bug-fix releases on the 0.14.x branch, and on adding
 new features on the master branch.
 
-This release requires Python 2.6, 2.7 or 3.2-3.3 and NumPy 1.5.1 or greater.
+This release requires Python 2.6, 2.7 or 3.2-3.4 and NumPy 1.5.1 or greater.
 
 
 New features
 ============
 
+``scipy.interpolate`` improvements
+----------------------------------
+
+Faster implementations of piecewise polynomials in power and Bernstein
+polynomial bases have been added as `scipy.interpolate.PPoly` and
+`scipy.interpolate.BPoly`. New users should use these in favor of
+`scipy.interpolate.PiecewisePolynomial`.
+
+`scipy.interpolate.interp1d` now accepts non-monotonic inputs and sorts them.
+If performance is critical, sorting can be turned off by using the new
+``assume_sorted`` keyword.
+
+Functionality for evaluation of bivariate spline derivatives in
+``scipy.interpolate`` has been added.
+
+
 ``scipy.linalg`` improvements
 -----------------------------
-
-Discrete Fourier transform matrix
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The new function `scipy.linalg.dft` computes the matrix of the
 discrete Fourier transform.
 
+A condition number estimation function for matrix exponential,
+`scipy.linalg.expm_cond`, has been added.
+
+
+``scipy.optimize`` improvements
+-------------------------------
+
+A set of benchmarks for optimize, which can be run with ``optimize.bench()``,
+has been added.
+
+`scipy.optimize.curve_fit` now has more controllable error estimation via the
+``absolute_sigma`` keyword.
+
+
 ``scipy.stats`` improvements
 ----------------------------
-
-Multivariate random variables
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A new class `scipy.stats.multivariate_normal` with functionality for 
 multivariate normal random variables has been added.
 
+A lot of work on the ``scipy.stats`` distribution framework has been done.
+Moment calculations (skew and kurtosis mainly) are fixed and verified, all
+examples are now runnable, and many small accuracy and performance improvements
+for individual distributions were merged.
+
+
 ``scipy.signal`` improvements
 -----------------------------
 
-Vector Strength
-^^^^^^^^^^^^^^^
+``scipy.signal.iirfilter`` and related functions to design Butterworth,
+Chebyshev, elliptical and Bessel IIR filters now all use pole-zero ("zpk")
+format internally instead of using transformations to numerator/denominator
+format.  The accuracy of the produced filters, especially high-order ones, is
+improved significantly as a result.
 
 The new function `scipy.signal.vectorstrength` computes the vector strength,
 a measure of phase synchrony, of a set of events.
 
+
 ``scipy.special`` improvements
 ------------------------------
 
-Box-Cox transformation
-^^^^^^^^^^^^^^^^^^^^^^
+The functions `scipy.special.boxcox` and `scipy.special.boxcox1p`, which
+compute the Box-Cox transformation, have been added.
 
-The functions `scipy.special.boxcox` and `scipy.special.boxcox1p` compute
-the Box-Cox transformation.
+
+``scipy.sparse`` improvements
+-----------------------------
+
+- Significant performance improvement in CSR, CSC, and DOK indexing speed. 
+- When using Numpy >= 1.9 (to be released in MM 2014), sparse matrices function
+  correctly when given to arguments of ``np.dot``, ``np.multiply`` and other
+  ufuncs.  With earlier Numpy and Scipy versions, the results of such
+  operations are undefined and usually unexpected. 
+- Sparse matrices are no longer limited to ``2^31`` nonzero elements.  They
+  automatically switch to using 64-bit index data type for matrices containing
+  more elements.  User code written assuming the sparse matrices use int32 as
+  the index data type will continue to work, except for such large matrices.
+  Code dealing with larger matrices needs to accept either int32 or int64
+  indices. 
+
 
 Deprecated features
 ===================
@@ -86,6 +134,12 @@ scipy.special.lpmn
 ``clpmn`` with uniform complex analytic behavior has been added, and
 it should be used instead.
 
+scipy.sparse.linalg
+-------------------
+
+Eigenvectors in the case of generalized eigenvalue problem are normalized to
+unit vectors in 2-norm, rather than following the LAPACK normalization
+convention.
 
 scipy.stats
 -----------
@@ -97,10 +151,82 @@ from ``scipy.stats``.
 percentiles.
 
 
-Other changes
-=============
-
-
 Authors
 =======
+* Marc Abramowitz +
+* andbo +
+* Vincent Arel-Bundock +
+* Max Bolingbroke
+* François Boulogne
+* Matthew Brett
+* Lars Buitinck
+* Evgeni Burovski
+* CJ Carey +
+* Thomas A Caswell +
+* Pawel Chojnacki +
+* Phillip Cloud +
+* Stefano Costa +
+* David Cournapeau
+* Dapid +
+* Matthieu Dartiailh +
+* Christoph Deil +
+* endolith
+* Francisco de la Peña +
+* Ben FrantzDale +
+* Jim Garrison +
+* André Gaul
+* Christoph Gohlke
+* Ralf Gommers
+* Robert David Grant
+* Alex Griffing
+* Blake Griffith
+* Yaroslav Halchenko
+* Andreas Hilboll
+* Kat Huang
+* Gert-Ludwig Ingold
+* jamestwebber +
+* Dorota Jarecka +
+* Todd Jennings +
+* Thouis (Ray) Jones
+* Juan Luis Cano Rodríguez
+* ktritz +
+* Jacques Kvam +
+* Eric Larson +
+* Justin Lavoie +
+* Denis Laxalde
+* lemonlaug +
+* Tim Leslie
+* Alain Leufroy +
+* George Lewis +
+* Max Linke +
+* Brandon Liu +
+* Benny Malengier +
+* Matthias Kümmerer +
+* Cimarron Mittelsteadt +
+* Eric Moore
+* Andrew Nelson +
+* Joel Nothman +
+* Clemens Novak
+* Emanuele Olivetti +
+* Stefan Otte +
+* Josef Perktold
+* Patrick Snape +
+* peb +
+* pjwerneck
+* polyatail +
+* poolio
+* Jérôme Roy +
+* Carl Sandrock +
+* Shauna +
+* Fabrice Silva
+* Daniel B. Smith
+* Jacob Stevenson
+* Julian Taylor
+* Tomas Tomecek
+* Richard Tsai
+* Joris Vankerschaver +
+* Pauli Virtanen
+* Warren Weckesser
 
+A total of 74 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
