@@ -312,13 +312,21 @@ def sdist():
     sh('python setup.py sdist --formats=tar')
     if os.path.exists(os.path.join('dist', tarball_name("xztar"))):
         os.unlink(os.path.join('dist', tarball_name("xztar")))
-    sh('xz %s'%os.path.join('dist', tarball_name("tar")))
+    sh('xz %s'%os.path.join('dist', tarball_name("tar")), ignore_error=True)
 
     # Copy the superpack into installers dir
     if not os.path.exists(options.installers.installersdir):
         os.makedirs(options.installers.installersdir)
 
-    for t in ['xztar', 'gztar', 'zip']:
+    if not os.path.exists(os.path.join('dist', tarball_name("xztar"))):
+        warnings.warn("Could not create tar.xz! Do you have xz installed?")
+    else:
+        t = 'xztar'
+        source = os.path.join('dist', tarball_name(t))
+        target = os.path.join(options.installers.installersdir, tarball_name(t))
+        shutil.copy(source, target)
+
+    for t in ['gztar', 'zip']:
         source = os.path.join('dist', tarball_name(t))
         target = os.path.join(options.installers.installersdir, tarball_name(t))
         shutil.copy(source, target)
