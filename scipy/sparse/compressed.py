@@ -898,7 +898,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """
 
         # first check to see if result was cached
-        if not hasattr(self,'__has_sorted_indices'):
+        if not hasattr(self,'_cs_matrix__has_sorted_indices'):
             fn = sparsetools.csr_has_sorted_indices
             self.__has_sorted_indices = \
                     fn(len(self.indptr) - 1, self.indptr, self.indices)
