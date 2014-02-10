@@ -10,8 +10,8 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = []
 
-import numpy as np
 
+import numpy as np
 from scipy.lib.six import zip as izip
 
 from .base import spmatrix
@@ -74,24 +74,25 @@ class _data_matrix(spmatrix):
         
         Parameters
         ----------
-        n : n is either a scalar or a sparse matrix with the same shape
+        n : n is a scalar
         
         dtype : If dtype is not specified, the current dtype will be preserved.
         """
-        data = self.data
-        if dtype is not None:
-            data = data.astype(dtype)
-        
+                
         if isscalarlike(n):
-            return self._with_data(data ** n)
+            if hasattr(self, "tocsr"):                
+                m = self.tocsr()  
+                m.sum_duplicates()
+                data = m.data
+                if dtype is not None:
+                    data = data.astype(dtype)
+                
+                return m._with_data(data ** n)
+            else:
+                raise TypeError("matrix cannot be convert to csr")            
         else:
-            if not isinstance(n, spmatrix):
-                raise TypeError("input is not sparse")
-            
-            if n.shape != self.shape:
-                raise "shape is different"
-            
-            return self._with_data(data ** n.data)
+            raise NotImplementedError("input is not scalar")
+        
     ###########################
     # Multiplication handlers #
     ###########################

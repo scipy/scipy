@@ -26,7 +26,7 @@ import numpy as np
 from scipy.lib.six import xrange, zip as izip
 from numpy import arange, zeros, array, dot, matrix, asmatrix, asarray, \
                   vstack, ndarray, transpose, diag, kron, inf, conjugate, \
-                  int8, ComplexWarning
+                  int8, ComplexWarning, power
 
 import random
 from numpy.testing import assert_raises, assert_equal, assert_array_equal, \
@@ -569,6 +569,29 @@ class _TestCommon:
     def test_abs(self):
         A = matrix([[-1, 0, 17],[0, -5, 0],[1, -4, 0],[0,0,0]],'d')
         assert_equal(abs(A),abs(self.spmatrix(A)).todense())
+        
+    def test_elementwise_power(self):
+        i = array([[-4, -3, -2],[-1, 0, 1],[2, 3, 4]])
+        expected_matrix = matrix(power(i, 2))
+        A = matrix(i)
+        A = csr_matrix(A)
+        assert_equal(A.power(2).todense(), expected_matrix)
+        
+        #it's elementwise power function, input has to be a scalar
+        assert_raises(NotImplementedError, A.power, A)
+        
+        A = csc_matrix(A)
+        assert_equal(A.power(2).todense(), expected_matrix)
+        
+        A = bsr_matrix(A)
+        assert_equal(A.power(2).todense(), expected_matrix)
+        
+        A = coo_matrix(A)
+        assert_equal(A.power(2).todense(), expected_matrix)
+        
+        A = dia_matrix(A)
+        assert_equal(A.power(2).todense(), expected_matrix)
+        
 
     def test_neg(self):
         A = matrix([[-1, 0, 17],[0, -5, 0],[1, -4, 0],[0,0,0]],'d')
@@ -600,7 +623,7 @@ class _TestCommon:
         mats.append(kron(mats[3],[[1,2,3,4]]))
 
         for m in mats:
-            assert_equal(self.spmatrix(m).diagonal(),diag(m))
+            assert_equal(self.spmatrix(m).diagonal(),diag(m))        
 
     def test_setdiag(self):
         m = self.spmatrix(np.eye(3))
