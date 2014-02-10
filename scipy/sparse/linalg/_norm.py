@@ -173,10 +173,10 @@ matrix[[6]
         if row_axis % nd == col_axis % nd:
             raise ValueError('Duplicate axes given.')
         if ord == 2:
-            raise BaseException("Not implemented")
+            raise NotImplementedError
             #return _multi_svd_norm(x, row_axis, col_axis, amax)
         elif ord == -2:
-            raise BaseException("Not implemented")
+            raise NotImplementedError
             #return _multi_svd_norm(x, row_axis, col_axis, amin)
         elif ord == 1:
             return abs(x).sum(axis=row_axis).max(axis=col_axis)[0,0]
