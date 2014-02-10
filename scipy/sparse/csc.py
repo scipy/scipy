@@ -197,11 +197,5 @@ class csc_matrix(_cs_matrix, IndexMixin):
         """
         return (x[1],x[0])
 
-    def power(self, n):
-        """
-        n is scalar
-        """
-        return csc_matrix((self.data ** n, self.indices, self.indptr), shape=self.shape)
-
 def isspmatrix_csc(x):
     return isinstance(x, csc_matrix)

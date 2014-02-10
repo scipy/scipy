@@ -65,6 +65,30 @@ class _data_matrix(spmatrix):
     def copy(self):
         return self._with_data(self.data.copy(), copy=True)
 
+    def power(self, n, dtype=None):
+        """
+        This function performs element-wise power.
+        
+        Parameters
+        ----------
+        n : n is either a scalar or a sparse matrix with the same shape
+        
+        dtype : If dtype is not specified, the current dtype will be preserved.
+        """
+        data = self.data
+        if dtype is not None:
+            data = data.astype(dtype)
+        
+        if isscalarlike(n):
+            return self._with_data(data ** n)
+        else:
+            if not isinstance(n, spmatrix):
+                raise TypeError("input is not sparse")
+            
+            if n.shape != self.shape:
+                raise "shape is different"
+            
+            return self._with_data(data ** n.data)
     ###########################
     # Multiplication handlers #
     ###########################
