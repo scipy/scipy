@@ -1416,12 +1416,12 @@ def tsem(a, limits=None, inclusive=(True,True)):
 tsem.__doc__ = stats.tsem.__doc__
 
 
-def winsorize(a, limits=None, inclusive=(True,True), inplace=False, axis=None):
-    """
-    Returns a Winsorized version of the input array.
+def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
+              axis=None):
+    """Returns a Winsorized version of the input array.
 
     The (limits[0])th lowest values are set to the (limits[0])th percentile,
-    and the (limits[1])th highest values are set to the (limits[1])th
+    and the (limits[1])th highest values are set to the (1 - limits[1])th
     percentile.
     Masked values are skipped.
 
@@ -1447,29 +1447,34 @@ def winsorize(a, limits=None, inclusive=(True,True), inplace=False, axis=None):
         Axis along which to trim. If None, the whole array is trimmed, but its
         shape is maintained.
 
+    Notes
+    -----
+    This function is applied to reduce the effect of possibly spurious outliers
+    by limiting the extreme values.
+
     """
     def _winsorize1D(a, low_limit, up_limit, low_include, up_include):
         n = a.count()
         idx = a.argsort()
         if low_limit:
             if low_include:
-                lowidx = int(low_limit*n)
+                lowidx = int(low_limit * n)
             else:
-                lowidx = np.round(low_limit*n)
+                lowidx = np.round(low_limit * n)
             a[idx[:lowidx]] = a[idx[lowidx]]
         if up_limit is not None:
             if up_include:
-                upidx = n - int(n*up_limit)
+                upidx = n - int(n * up_limit)
             else:
-                upidx = n - np.round(n*up_limit)
-            a[idx[upidx:]] = a[idx[upidx-1]]
+                upidx = n - np.round(n * up_limit)
+            a[idx[upidx:]] = a[idx[upidx - 1]]
         return a
     # We gonna modify a: better make a copy
     a = ma.array(a, copy=np.logical_not(inplace))
     #
     if limits is None:
         return a
-    if (not isinstance(limits,tuple)) and isinstance(limits,float):
+    if (not isinstance(limits, tuple)) and isinstance(limits, float):
         limits = (limits, limits)
     # Check the limits
     (lolim, uplim) = limits
@@ -1485,9 +1490,10 @@ def winsorize(a, limits=None, inclusive=(True,True), inplace=False, axis=None):
     #
     if axis is None:
         shp = a.shape
-        return _winsorize1D(a.ravel(),lolim,uplim,loinc,upinc).reshape(shp)
+        return _winsorize1D(a.ravel(), lolim, uplim, loinc, upinc).reshape(shp)
     else:
-        return ma.apply_along_axis(_winsorize1D, axis,a,lolim,uplim,loinc,upinc)
+        return ma.apply_along_axis(_winsorize1D, axis, a, lolim, uplim, loinc,
+                                   upinc)
 
 
 #####--------------------------------------------------------------------------
