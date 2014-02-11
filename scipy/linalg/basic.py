@@ -14,7 +14,7 @@ import numpy as np
 from .flinalg import get_flinalg_funcs
 from .lapack import get_lapack_funcs
 from .misc import LinAlgError, _datacopied
-from .decomp_svd import svd
+from .decomp_svd import svd, svdvals
 from .decomp import eigh
 from scipy.linalg import calc_lwork
 
@@ -863,7 +863,7 @@ def matrix_rank(M, tol=None, check_finite=True):
         raise TypeError('array should have 2 or fewer dimensions')
     if M.ndim < 2:
         return int(not np.all(M==0))
-    S = svd(M, compute_uv=False, check_finite=False)
+    S = svdvals(check_finite=False)
     if tol is None:
         tol = S.max() * max(M.shape) * np.finfo(S.dtype).eps
     return np.sum(S > tol)
