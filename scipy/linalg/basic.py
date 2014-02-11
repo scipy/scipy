@@ -7,15 +7,16 @@
 from __future__ import division, print_function, absolute_import
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
-            'inv', 'det', 'lstsq', 'pinv', 'pinv2', 'pinvh']
+            'inv', 'det', 'lstsq', 'pinv', 'pinv2', 'pinvh', 'matrix_rank']
 
 import numpy as np
 
 from .flinalg import get_flinalg_funcs
 from .lapack import get_lapack_funcs
 from .misc import LinAlgError, _datacopied
+from .decomp_svd import svd
+from .decomp import eigh
 from scipy.linalg import calc_lwork
-from . import decomp, decomp_svd
 
 
 # Linear equations
@@ -662,7 +663,7 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         a = np.asarray_chkfinite(a)
     else:
         a = np.asarray(a)
-    u, s, vh = decomp_svd.svd(a, full_matrices=False)
+    u, s, vh = svd(a, full_matrices=False)
 
     if rcond is not None:
         cond = rcond
@@ -740,7 +741,7 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
         a = np.asarray_chkfinite(a)
     else:
         a = np.asarray(a)
-    s, u = decomp.eigh(a, lower=lower)
+    s, u = eigh(a, lower=lower)
 
     if rcond is not None:
         cond = rcond
@@ -760,3 +761,94 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
         return B, len(psigma_diag)
     else:
         return B
+
+
+def matrix_rank(M, tol=None, check_finite=True):
+    """
+    Return matrix rank of array using SVD method
+
+    Rank of the array is the number of SVD singular values of the array that are
+    greater than `tol`.
+
+    Parameters
+    ----------
+    M : {(M,), (M, N)} array_like
+        array of <=2 dimensions
+    tol : {None, float}, optional
+       threshold below which SVD values are considered zero. If `tol` is
+       None, and ``S`` is an array with singular values for `M`, and
+       ``eps`` is the epsilon value for datatype of ``S``, then `tol` is
+       set to ``S.max() * max(M.shape) * eps``.
+
+    Notes
+    -----
+    The default threshold to detect rank deficiency is a test on the magnitude
+    of the singular values of `M`.  By default, we identify singular values less
+    than ``S.max() * max(M.shape) * eps`` as indicating rank deficiency (with
+    the symbols defined above). This is the algorithm MATLAB uses [1].  It also
+    appears in *Numerical recipes* in the discussion of SVD solutions for linear
+    least squares [2].
+
+    This default threshold is designed to detect rank deficiency accounting for
+    the numerical errors of the SVD computation.  Imagine that there is a column
+    in `M` that is an exact (in floating point) linear combination of other
+    columns in `M`. Computing the SVD on `M` will not produce a singular value
+    exactly equal to 0 in general: any difference of the smallest SVD value from
+    0 will be caused by numerical imprecision in the calculation of the SVD.
+    Our threshold for small SVD values takes this numerical imprecision into
+    account, and the default threshold will detect such numerical rank
+    deficiency.  The threshold may declare a matrix `M` rank deficient even if
+    the linear combination of some columns of `M` is not exactly equal to
+    another column of `M` but only numerically very close to another column of
+    `M`.
+
+    We chose our default threshold because it is in wide use.  Other thresholds
+    are possible.  For example, elsewhere in the 2007 edition of *Numerical
+    recipes* there is an alternative threshold of ``S.max() *
+    np.finfo(M.dtype).eps / 2. * np.sqrt(m + n + 1.)``. The authors describe
+    this threshold as being based on "expected roundoff error" (p 71).
+
+    The thresholds above deal with floating point roundoff error in the
+    calculation of the SVD.  However, you may have more information about the
+    sources of error in `M` that would make you consider other tolerance values
+    to detect *effective* rank deficiency.  The most useful measure of the
+    tolerance depends on the operations you intend to use on your matrix.  For
+    example, if your data come from uncertain measurements with uncertainties
+    greater than floating point epsilon, choosing a tolerance near that
+    uncertainty may be preferable.  The tolerance may be absolute if the
+    uncertainties are absolute rather than relative.
+
+    References
+    ----------
+    .. [1] MATLAB reference documention, "Rank"
+           http://www.mathworks.com/help/techdoc/ref/rank.html
+    .. [2] W. H. Press, S. A. Teukolsky, W. T. Vetterling and B. P. Flannery,
+           "Numerical Recipes (3rd edition)", Cambridge University Press, 2007,
+           page 795.
+
+    Examples
+    --------
+    >>> from numpy.linalg import matrix_rank
+    >>> matrix_rank(np.eye(4)) # Full rank matrix
+    4
+    >>> I=np.eye(4); I[-1,-1] = 0. # rank deficient matrix
+    >>> matrix_rank(I)
+    3
+    >>> matrix_rank(np.ones((4,))) # 1 dimension - rank 1 unless all 0
+    1
+    >>> matrix_rank(np.zeros((4,)))
+    0
+    """
+    if check_finite:
+        M = np.asarray_chkfinite(M)
+    else:
+        M = np.asarray(M)
+    if M.ndim > 2:
+        raise TypeError('array should have 2 or fewer dimensions')
+    if M.ndim < 2:
+        return int(not np.all(M==0))
+    S = svd(M, compute_uv=False)
+    if tol is None:
+        tol = S.max() * max(M.shape) * np.finfo(S.dtype).eps
+    return sum(S > tol)
+

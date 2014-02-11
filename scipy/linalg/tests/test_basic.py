@@ -31,7 +31,7 @@ from numpy.testing import TestCase, rand, run_module_suite, assert_raises, \
     assert_allclose
 
 from scipy.linalg import solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,\
-        solve_banded, solveh_banded, solve_triangular
+        solve_banded, solveh_banded, solve_triangular, matrix_rank
 
 from scipy.linalg._testutils import assert_no_overwrite
 
@@ -719,6 +719,26 @@ class TestNorm(object):
         assert_equal(norm([1,2,3], 0), 3)
 
 
+class TestMatrixRank(object):
+    def test_matrix_rank(self):
+        # Full rank matrix
+        yield assert_equal, 4, matrix_rank(np.eye(4))
+        # rank deficient matrix
+        I=np.eye(4); I[-1, -1] = 0.
+        yield assert_equal, matrix_rank(I), 3
+        # All zeros - zero rank
+        yield assert_equal, matrix_rank(np.zeros((4, 4))), 0
+        # 1 dimension - rank 1 unless all 0
+        yield assert_equal, matrix_rank([1, 0, 0, 0]), 1
+        yield assert_equal, matrix_rank(np.zeros((4,))), 0
+        # accepts array-like
+        yield assert_equal, matrix_rank([1]), 1
+        # greater than 2 dimensions raises error
+        yield assert_raises, TypeError, matrix_rank, np.zeros((2, 2, 2))
+        # works on scalar
+        yield assert_equal, matrix_rank(1), 1
+
+
 class TestOverwrite(object):
     def test_solve(self):
         assert_no_overwrite(solve, [(3,3), (3,)])
@@ -750,6 +770,10 @@ class TestOverwrite(object):
 
     def test_pinvh(self):
         assert_no_overwrite(pinvh, [(3,3)])
+
+    def test_matrix_rank(self):
+        assert_no_overwrite(matrix_rank, [(3,3)])
+
 
 if __name__ == "__main__":
     run_module_suite()
