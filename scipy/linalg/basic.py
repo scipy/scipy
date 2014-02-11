@@ -605,7 +605,7 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     if rcond is not None:
         cond = rcond
 
-    x, resids, rank, s = lstsq(a, b, cond=cond)
+    x, resids, rank, s = lstsq(a, b, cond=cond, check_finite=False)
 
     if return_rank:
         return x, rank
@@ -663,7 +663,7 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         a = np.asarray_chkfinite(a)
     else:
         a = np.asarray(a)
-    u, s, vh = svd(a, full_matrices=False)
+    u, s, vh = svd(a, full_matrices=False, check_finite=False)
 
     if rcond is not None:
         cond = rcond
@@ -741,7 +741,7 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
         a = np.asarray_chkfinite(a)
     else:
         a = np.asarray(a)
-    s, u = eigh(a, lower=lower)
+    s, u = eigh(a, lower=lower, check_finite=False)
 
     if rcond is not None:
         cond = rcond
@@ -847,7 +847,7 @@ def matrix_rank(M, tol=None, check_finite=True):
         raise TypeError('array should have 2 or fewer dimensions')
     if M.ndim < 2:
         return int(not np.all(M==0))
-    S = svd(M, compute_uv=False)
+    S = svd(M, compute_uv=False, check_finite=False)
     if tol is None:
         tol = S.max() * max(M.shape) * np.finfo(S.dtype).eps
     return sum(S > tol)
