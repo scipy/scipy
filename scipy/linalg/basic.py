@@ -863,7 +863,7 @@ def matrix_rank(M, tol=None, check_finite=True):
         raise TypeError('array should have 2 or fewer dimensions')
     if M.ndim < 2:
         return int(not np.all(M==0))
-    S = svdvals(M, check_finite=False)
+    S = svdvals(check_finite=False)
     if tol is None:
         tol = S.max() * max(M.shape) * np.finfo(S.dtype).eps
     return np.sum(S > tol)
