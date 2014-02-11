@@ -93,7 +93,7 @@ def binned_statistic(x, values, statistic='mean',
 
     if N != 1:
         bins = [np.asarray(bins, float)]
-    
+
     if range is not None:
         if len(range) == 2:
             range = [range]

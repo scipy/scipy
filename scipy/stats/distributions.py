@@ -252,7 +252,7 @@ _doc_default_before_notes = ''.join([_doc_default_longsummary,
                                      _doc_default_callparams,
                                      _doc_default_frozen_note])
 
-docdict = {'rvs':_doc_rvs,
+docdict = {'rvs': _doc_rvs,
            'pdf':_doc_pdf,
            'logpdf':_doc_logpdf,
            'cdf':_doc_cdf,
