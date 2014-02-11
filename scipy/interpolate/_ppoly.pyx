@@ -6,6 +6,7 @@ local power basis.
 
 from .polyint import _Interpolator1D
 import numpy as np
+cimport numpy as cnp
 
 cimport cython
 
@@ -25,7 +26,6 @@ cdef extern:
                 int *lda, double *wr, double *wi, double *vl, int *ldvl,
                 double *vr, int *ldvr, double *work, int *lwork,
                 int *info)
-
 
 #------------------------------------------------------------------------------
 # Piecewise power basis polynomials
@@ -725,7 +725,9 @@ def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef double_or_complex evaluate_bpoly1(double_or_complex s, double_or_complex[:,:,::1] c, int ci, int cj) nogil:
+cdef double_or_complex evaluate_bpoly1(double_or_complex s,
+                                       double_or_complex[:,:,::1] c,
+                                       int ci, int cj) nogil:
     """
     Evaluate polynomial in the Berstein basis in a single interval.
 
@@ -770,6 +772,65 @@ cdef double_or_complex evaluate_bpoly1(double_or_complex s, double_or_complex[:,
 
     return res
 
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.cdivision(True)
+cdef double_or_complex evaluate_bpoly1_deriv(double_or_complex s,
+                                             double_or_complex[:,:,::1] c,
+                                             int ci, int cj,
+                                             int nu,
+                                             double_or_complex[:,:,::1] wrk) nogil:
+    """
+    Evaluate the derivative of a polynomial in the Berstein basis 
+    in a single interval.
+
+    A Berstein polynomial is defined as
+
+        .. math:: b_{j, k} = comb(k, j) x^{j} (1-x)^{k-j}
+
+    with ``0 <= x <= 1``.
+
+    The algorithm is detailed in BPoly._construct_from_derivatives.
+
+    Parameters
+    ----------
+    s : double
+        Polynomial x-value
+    c : double[:,:,:]
+        Polynomial coefficients. c[:,ci,cj] will be used
+    ci, cj : int
+        Which of the coefs to use
+    nu : int
+        Order of the derivative to evaluate. Assumed strictly positive
+        (no checks are made).
+    wrk : double[:,:,::1]
+        A work array, shape (c.shape[0]-nu, 1, 1).
+
+    """
+    cdef int k, j, a
+    cdef double_or_complex res, term
+    cdef double comb, poch
+
+    k = c.shape[0] - 1  # polynomial order
+
+    if nu == 0:
+        res = evaluate_bpoly1(s, c, ci, cj)
+    else:
+        poch = 1.
+        for a in range(nu):
+            poch *= k - a
+
+        term = 0.
+        for a in range(k - nu + 1):
+            term, comb = 0., 1.
+            for j in range(nu+1):
+                term += c[j+a, ci, cj] * (-1)**(j+nu) * comb
+                comb *= 1. * (nu-j) / (j+1)
+            wrk[a, 0, 0] = term * poch
+        res = evaluate_bpoly1(s, wrk, 0, 0)
+    return res
+
 #
 # Evaluation; only differs from _ppoly by evaluate_poly1 -> evaluate_bpoly1
 #
@@ -779,9 +840,10 @@ cdef double_or_complex evaluate_bpoly1(double_or_complex s, double_or_complex[:,
 def evaluate_bernstein(double_or_complex[:,:,::1] c,
              double[::1] x,
              double[::1] xp,
-             int dx,
+             int nu,
              int extrapolate,
-             double_or_complex[:,::1] out):
+             double_or_complex[:,::1] out,
+             cnp.dtype dt):
     """
     Evaluate a piecewise polynomial in the Bernstein basis.
 
@@ -795,7 +857,7 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
         Breakpoints of polynomials
     xp : ndarray, shape (r,)
         Points to evaluate the piecewise polynomial at.
-    dx : int
+    nu : int
         Order of derivative to evaluate.  The derivative is evaluated
         piecewise and may have discontinuities.
     extrapolate : int, optional
@@ -810,11 +872,12 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
     cdef int ip, jp
     cdef int interval
     cdef double xval
-    cdef double_or_complex s
+    cdef double_or_complex s, ds, ds_nu
+    cdef double_or_complex[:,:,::1] wrk
 
     # check derivative order
-    if dx != 0:
-        raise NotImplementedError("Cannot do derivatives in the B-basis yet.")
+    if nu < 0:
+        raise NotImplementedError("Cannot do antiderivatives in the B-basis yet.")
 
     # shape checks
     if out.shape[0] != xp.shape[0]:
@@ -823,6 +886,9 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
         raise ValueError("out and c have incompatible shapes")
     if c.shape[1] != x.shape[0] - 1:
         raise ValueError("x and c have incompatible shapes")
+
+    if nu > 0:
+        wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=dt)
 
     # evaluate
     interval = 0
@@ -841,7 +907,12 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
             interval = i
 
         # Evaluate the local polynomial(s)
+        ds = x[interval+1] - x[interval]
+        ds_nu = ds**nu
         for jp in range(c.shape[2]):
-            s = (xval - x[interval]) / (x[interval+1] - x[interval]) 
-            out[ip, jp] = evaluate_bpoly1(s, c, interval, jp)
-
+            s = (xval - x[interval]) / ds
+            if nu == 0:
+                out[ip, jp] = evaluate_bpoly1(s, c, interval, jp)
+            else:
+                out[ip, jp] = evaluate_bpoly1_deriv(s, c, interval, jp,
+                        nu, wrk) / ds_nu

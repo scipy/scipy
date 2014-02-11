@@ -1054,7 +1054,7 @@ class BPoly(_PPolyBase):
     def _evaluate(self, x, nu, extrapolate, out):
         _ppoly.evaluate_bernstein(
             self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
-            self.x, x, nu, bool(extrapolate), out)
+            self.x, x, nu, bool(extrapolate), out, self.c.dtype)
 
     def derivative(self, nu=1):
         """
