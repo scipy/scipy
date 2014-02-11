@@ -866,5 +866,5 @@ def matrix_rank(M, tol=None, check_finite=True):
     S = svd(M, compute_uv=False, check_finite=False)
     if tol is None:
         tol = S.max() * max(M.shape) * np.finfo(S.dtype).eps
-    return sum(S > tol)
+    return np.sum(S > tol)
 
