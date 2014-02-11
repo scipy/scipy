@@ -770,6 +770,8 @@ def matrix_rank(M, tol=None, check_finite=True):
     Rank of the array is the number of SVD singular values of the array that are
     greater than `tol`.
 
+    .. versionadded:: 0.14.0
+
     Parameters
     ----------
     M : {(M,), (M, N)} array_like
@@ -779,6 +781,20 @@ def matrix_rank(M, tol=None, check_finite=True):
        None, and ``S`` is an array with singular values for `M`, and
        ``eps`` is the epsilon value for datatype of ``S``, then `tol` is
        set to ``S.max() * max(M.shape) * eps``.
+    check_finite : boolean, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+
+    Returns
+    -------
+    rank : int
+        The effective rank of the matrix.
+
+    Raises
+    ------
+    LinAlgError
+        If SVD computation does not converge.
 
     Notes
     -----
@@ -828,7 +844,7 @@ def matrix_rank(M, tol=None, check_finite=True):
 
     Examples
     --------
-    >>> from numpy.linalg import matrix_rank
+    >>> from scipy.linalg import matrix_rank
     >>> matrix_rank(np.eye(4)) # Full rank matrix
     4
     >>> I=np.eye(4); I[-1,-1] = 0. # rank deficient matrix
