@@ -588,27 +588,11 @@ class _TestCommon:
         assert_equal(abs(A),abs(self.spmatrix(A)).todense())
         
     def test_elementwise_power(self):
-        i = array([[-4, -3, -2],[-1, 0, 1],[2, 3, 4]])
-        expected_matrix = matrix(power(i, 2))
-        A = matrix(i)
-        A = csr_matrix(A)
-        assert_equal(A.power(2).todense(), expected_matrix)
-        
-        #it's elementwise power function, input has to be a scalar
-        assert_raises(NotImplementedError, A.power, A)
-        
-        A = csc_matrix(A)
-        assert_equal(A.power(2).todense(), expected_matrix)
-        
-        A = bsr_matrix(A)
-        assert_equal(A.power(2).todense(), expected_matrix)
-        
-        A = coo_matrix(A)
-        assert_equal(A.power(2).todense(), expected_matrix)
-        
-        A = dia_matrix(A)
-        assert_equal(A.power(2).todense(), expected_matrix)
-        
+        A = matrix([[-4, -3, -2],[-1, 0, 1],[2, 3, 4]], 'd')        
+        assert_equal(np.power(A, 2), self.spmatrix(A).power(2).todense())
+                
+        #it's element-wise power function, input has to be a scalar
+        assert_raises(NotImplementedError, self.spmatrix(A).power, A)       
 
     def test_neg(self):
         A = matrix([[-1, 0, 17],[0, -5, 0],[1, -4, 0],[0,0,0]],'d')
