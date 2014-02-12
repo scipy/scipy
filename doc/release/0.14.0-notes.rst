@@ -124,6 +124,12 @@ Probability calculation aliases ``zprob``, ``fprob`` and ``ksprob`` are
 deprecated. Use instead the ``sf`` methods of the corresponding distributions
 or the ``special`` functions directly.
 
+``scipy.interpolate``
+---------------------
+
+``PiecewisePolynomial`` class is deprecated.
+
+
 Backwards incompatible changes
 ==============================
 

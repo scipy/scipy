@@ -1,5 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 from scipy.misc import factorial
 
@@ -703,6 +705,10 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
 
     def __init__(self, xi, yi, orders=None, direction=None, axis=0):
         _Interpolator1DWithDerivatives.__init__(self, axis=axis)
+
+        warnings.warn('PiecewisePolynomial is deprecated in scipy 0.14. '
+                      'Use BPoly.from_derivatives instead.',
+                category=DeprecationWarning)
 
         if axis != 0:
             try:
