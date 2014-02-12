@@ -115,6 +115,12 @@ class PchipInterpolator(object):
         t.bpoly = self.bpoly.derivative(der)
         return t
 
+    def roots(self):
+        """
+        Return the roots of the interpolated function.
+        """
+        return (PPoly.from_bernstein_basis(self.bpoly)).roots()
+
     def _reshaper(self, x, out):
         x = np.asarray(x)
         l = x.ndim
