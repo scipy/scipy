@@ -258,7 +258,7 @@ class lil_matrix(spmatrix, IndexMixin):
 
         i, j = self._index_to_arrays(i, j)
         if i.size == 0:
-            return lil_matrix((0,0), dtype=self.dtype)
+            return lil_matrix(i.shape, dtype=self.dtype)
 
         return self.__class__([[self._get1(iii, jjj) for iii, jjj in
                                 zip(ii, jj)] for ii, jj in
