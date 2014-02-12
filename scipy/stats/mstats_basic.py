@@ -669,7 +669,8 @@ def linregress(*args):
         x = ma.array(x, mask=m)
         y = ma.array(y, mask=m)
 
-    # use same routine as stats for regression, return None, if invalid number of samples
+    # use same routine as stats for regression, return None,
+    # if invalid number of samples
     if (~m).sum() > 1:
         slope, intercept, r, prob, sterrest = stats.linregress(x.data[~m],y.data[~m])
         return slope, intercept, r, prob, sterrest
@@ -1664,14 +1665,31 @@ def skewtest(a, axis=0):
     Skewness test. This function is a wrapper to
     the corresponding function in scipy.stats
     """
-    if hasattr(a,'mask'):
+
+    if axis is not None:
+        if axis != 0:
+            raise ValueError('axis!=0 not supported for this mstats function yet')  # TODO
+
+    if hasattr(a, 'mask'):
         if np.isscalar(a.mask):
-            x = a.data
+            return stats.skewtest(a.data, axis=axis)
         else:
-            x = a.data[~a.mask]
+            # TODO better way to implement ?
+            if a.ndim == 1:
+                return stats.skewtest(a.data[~a.mask], axis=axis)
+            elif a.ndim == 2:
+                ny, nx = a.shape
+                r = []
+                for j in xrange(nx):
+                    x = a[:,j]
+                    x = x.data[~x.mask]
+                    r.append(stats.skewtest(x))
+                return tuple(np.asarray(r).T)
+            else:
+                raise ValueError('This dimension is not yet implemented')
     else:
-        x = a
-    return stats.skewtest(x,axis=axis)
+        return stats.skewtest(a, axis=axis)
+    raise ValueError('Something went wrong.')
 skewtest.__doc__ = stats.skewtest.__doc__
 
 

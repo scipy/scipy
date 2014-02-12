@@ -685,14 +685,12 @@ class TestCompareWithStats(TestCase):
         """returns list of sample sizes to be used for comparison"""
         return [1000,100,10,5]
 
-    def generate_xy_sample(self,n):
-        """
-        generate some sample data
-        This routine generates numpy arrays and corresponding masked arrays with the same data, but additional
-        masked values
-        """
+    def generate_xy_sample(self, n):
+        # generate some sample data
+        # This routine generates numpy arrays and corresponding masked arrays with the same data, but additional
+        # masked values
 
-        assert(isinstance(n,int))
+        assert(isinstance(n, int))
         assert(n > 3)
 
         x = np.random.randn(n)
@@ -701,6 +699,22 @@ class TestCompareWithStats(TestCase):
         ym = np.ones(len(y)+5)*np.nan
         xm[0:len(x)] = x
         ym[0:len(y)] = y
+        xm = np.ma.array(xm,mask=np.isnan(xm))
+        ym = np.ma.array(ym,mask=np.isnan(ym))
+
+        return x,y,xm,ym
+
+    def generate_xy_sample2D(self, n, nx):
+        # generate sample data for 2D
+        x = np.ones((n, nx))*np.nan
+        y = np.ones((n, nx))*np.nan
+        xm = np.ones((n+5, nx))*np.nan
+        ym = np.ones((n+5, nx))*np.nan
+
+        for i in xrange(nx):
+            x[:,i],y[:,i],dx,dy = self.generate_xy_sample(n)
+        xm[0:n,:] = x[0:n]
+        ym[0:n,:] = y[0:n]
         xm = np.ma.array(xm,mask=np.isnan(xm))
         ym = np.ma.array(ym,mask=np.isnan(ym))
 
@@ -945,13 +959,33 @@ class TestCompareWithStats(TestCase):
                          stats.mstats.tsem(xm,limits=(-2.,2.)))
 
     def test_skewtest(self):
+        # this test is for 1D data
         for n in self.get_n():
             if n > 8:
                 x,y,xm,ym = self.generate_xy_sample(n)
                 r = stats.skewtest(x)
                 rm = stats.mstats.skewtest(xm)
-                assert_equal(r[0],rm[0])
-                assert_equal(r[1],rm[1])
+                assert_equal(r[0], rm[0])
+                assert_equal(r[1], rm[1])
+
+    def test_skewtest_2D_notmasked(self):
+        # a normal ndarray is passed to the masked function
+        x = np.random.random((20,2))*20.
+        r = stats.skewtest(x)
+        rm = stats.mstats.skewtest(x)
+        assert_equal(r[0][0],rm[0][0])
+        assert_equal(r[0][1],rm[0][1])
+
+    def test_skewtest_2D_WithMask(self):
+        nx = 2
+        for n in self.get_n():
+            if n > 8:
+                x,y,xm,ym = self.generate_xy_sample2D(n, nx)
+                r = stats.skewtest(x)
+                rm = stats.mstats.skewtest(xm)
+
+                assert_equal(r[0][0],rm[0][0])
+                assert_equal(r[0][1],rm[0][1])
 
     def test_normaltest(self):
         for n in self.get_n():
