@@ -651,7 +651,8 @@ def linregress(*args):
         x = ma.array(x, mask=m)
         y = ma.array(y, mask=m)
 
-    # use same routine as stats for regression, return None, if invalid number of samples
+    # use same routine as stats for regression, return None,
+    # if invalid number of samples
     if (~m).sum() > 1:
         slope, intercept, r, prob, sterrest = stats.linregress(x.data[~m],y.data[~m])
         return slope, intercept, r, prob, sterrest
@@ -1363,10 +1364,7 @@ tvar.__doc__ = stats.tvar.__doc__
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     a, axis = _chk_asarray(a, axis)
-    print(a)
-    print(a.mask)
     am = trima(a, (lowerlimit, None), (inclusive, False))
-    #print('Da sammer')
     return ma.minimum.reduce(am, axis)
 tmin.__doc__ = stats.tmin.__doc__
 
