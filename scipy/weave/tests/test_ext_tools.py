@@ -128,7 +128,6 @@ class TestAssignVariableTypes(TestCase):
         c = 5
         arg_list = ['a','b','c']
         actual = ext_tools.assign_variable_types(arg_list,locals())
-        # desired = {'a':(float32,1),'b':(float32,1),'i':(Int32,0)}
 
         ad = array_converter()
         ad.name, ad.var_type, ad.dims = 'a', float32, 1

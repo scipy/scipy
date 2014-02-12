@@ -69,7 +69,7 @@ class TestBlitz(TestCase):
         compiled = t2 - t1
         actual = arg_dict['result']
         # TODO: this isn't very stringent.  Need to tighten this up and
-        # learn where failures are occuring.
+        # learn where failures are occurring.
         assert_allclose(abs(actual.ravel()), abs(desired.ravel()),
                         rtol=1e-4, atol=1e-6)
         return standard, compiled
