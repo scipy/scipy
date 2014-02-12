@@ -10,7 +10,6 @@ import numpy as np
 
 from scipy.linalg._matfuncs_sqrtm import SqrtmError, _sqrtm_triu
 from scipy.linalg.decomp_schur import schur, rsf2csf
-from scipy.linalg.special_matrices import all_mat
 from scipy.linalg.matfuncs import funm
 from scipy.linalg import svdvals, solve_triangular
 from scipy.sparse.linalg.interface import LinearOperator
@@ -675,9 +674,8 @@ def _remainder_matrix_power(A, t):
     # and de-triangularize it if necessary.
     U = _remainder_matrix_power_triu(T, t)
     if Z is not None:
-        U, Z = all_mat(U, Z)
-        X = (Z * U * Z.H)
-        return X.A
+        ZH = np.conjugate(Z).T
+        return Z.dot(U).dot(ZH)
     else:
         return U
 
@@ -938,9 +936,8 @@ def logm(A):
                 T, Z = schur(A, output='complex')
             T = _logm_force_nonsingular_triangular_matrix(T, inplace=True)
             U = _logm_triu(T)
-            U, Z = all_mat(U, Z)
-            X = (Z * U * Z.H)
-            return X.A
+            ZH = np.conjugate(Z).T
+            return Z.dot(U).dot(ZH)
     except (SqrtmError, LogmError) as e:
         X = np.empty_like(A)
         X.fill(np.nan)

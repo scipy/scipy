@@ -14,7 +14,6 @@ import numpy as np
 # Local imports
 from .misc import norm
 from .lapack import ztrsyl, dtrsyl
-from .special_matrices import all_mat
 from .decomp_schur import schur, rsf2csf
 
 
@@ -158,11 +157,11 @@ def sqrtm(A, disp=True, blocksize=64):
     failflag = False
     try:
         R = _sqrtm_triu(T, blocksize=blocksize)
-        R, Z = all_mat(R,Z)
-        X = (Z * R * Z.H)
+        ZH = np.conjugate(Z).T
+        X = Z.dot(R).dot(ZH)
     except SqrtmError as e:
         failflag = True
-        X = np.matrix(np.empty_like(A))
+        X = np.empty_like(A)
         X.fill(np.nan)
 
     if disp:
@@ -171,12 +170,12 @@ def sqrtm(A, disp=True, blocksize=64):
             print("Matrix is singular and may not have a square root.")
         elif failflag:
             print("Failed to find a square root.")
-        return X.A
+        return X
     else:
         try:
-            arg2 = norm(X*X - A,'fro')**2 / norm(A,'fro')
+            arg2 = norm(X.dot(X) - A,'fro')**2 / norm(A,'fro')
         except ValueError:
             # NaNs in matrix
             arg2 = np.inf
 
-        return X.A, arg2
+        return X, arg2
