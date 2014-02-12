@@ -898,14 +898,14 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """
 
         # first check to see if result was cached
-        if not hasattr(self,'__has_sorted_indices'):
+        if not hasattr(self,'_has_sorted_indices'):
             fn = sparsetools.csr_has_sorted_indices
-            self.__has_sorted_indices = \
+            self._has_sorted_indices = \
                     fn(len(self.indptr) - 1, self.indptr, self.indices)
-        return self.__has_sorted_indices
+        return self._has_sorted_indices
 
     def __set_sorted(self, val):
-        self.__has_sorted_indices = bool(val)
+        self._has_sorted_indices = bool(val)
 
     has_sorted_indices = property(fget=__get_sorted, fset=__set_sorted)
 

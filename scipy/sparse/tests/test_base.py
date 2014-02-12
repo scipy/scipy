@@ -2820,6 +2820,33 @@ class TestCSR(sparse_test_class()):
             SIJ = SIJ.todense()
         assert_equal(SIJ, D[I,J])
 
+    def test_has_sorted_indices(self):
+        "Ensure has_sorted_indices memoizes sorted state for sort_indices"
+        sorted_inds = np.array([0, 1])
+        unsorted_inds = np.array([1, 0])
+        data = np.array([1, 1])
+        indptr = np.array([0, 2])
+        M = csr_matrix((data, sorted_inds, indptr)).copy()
+        assert_equal(True, M.has_sorted_indices)
+
+        M = csr_matrix((data, unsorted_inds, indptr)).copy()
+        assert_equal(False, M.has_sorted_indices)
+
+        # set by sorting
+        M.sort_indices()
+        assert_equal(True, M.has_sorted_indices)
+        assert_array_equal(M.indices, sorted_inds)
+
+        M = csr_matrix((data, unsorted_inds, indptr)).copy()
+        # set manually (although underlyingly unsorted)
+        M.has_sorted_indices = True
+        assert_equal(True, M.has_sorted_indices)
+        assert_array_equal(M.indices, unsorted_inds)
+
+        # ensure sort bypassed when has_sorted_indices == True
+        M.sort_indices()
+        assert_array_equal(M.indices, unsorted_inds)
+
 
 class TestCSC(sparse_test_class()):
     spmatrix = csc_matrix
