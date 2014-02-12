@@ -1,11 +1,11 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_almost_equal, assert_array_equal, \
-        TestCase, run_module_suite, assert_allclose, assert_equal
-from scipy.interpolate import KroghInterpolator, krogh_interpolate, \
-        BarycentricInterpolator, barycentric_interpolate, \
-        PiecewisePolynomial, piecewise_polynomial_interpolate, \
-        approximate_taylor_polynomial, pchip
+from numpy.testing import (assert_almost_equal, assert_array_equal,
+        TestCase, run_module_suite, assert_allclose, assert_equal)
+from scipy.interpolate import (KroghInterpolator, krogh_interpolate,
+        BarycentricInterpolator, barycentric_interpolate,
+        PiecewisePolynomial, piecewise_polynomial_interpolate,
+        approximate_taylor_polynomial, pchip, PchipInterpolator)
 from scipy.lib.six import xrange
 import scipy
 import numpy as np
@@ -20,8 +20,7 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0):
     s.insert(axis % (len(y_shape)+1), 0)
     y = np.random.rand(*((3,) + y_shape)).transpose(s)
 
-    # Cython code chokes on y.shape = (0, 3) etc
-    # What exactly does an array([], shape=(0, 3), dtype=float64) mean?
+    # Cython code chokes on y.shape = (0, 3) etc, skip them
     if y.size == 0:
         return
 
@@ -59,14 +58,10 @@ def test_derivs_shapes():
     def krogh_derivs(x, y, axis=0):
         return KroghInterpolator(x, y, axis).derivatives
 
-    def pchip_derivs(x, y, axis=0):
-        return pchip(x, y, axis).derivatives
     for s1 in SHAPES:
         for s2 in SHAPES:
             for axis in range(-len(s2), len(s2)):
                 yield check_shape, krogh_derivs, s1, s2, (3,), axis
-# FIXME: do we want to have pchip.derivatives()?
-#               yield check_shape, pchip_derivs, s1, s2, (4,), axis
 
 
 def test_deriv_shapes():
@@ -74,8 +69,19 @@ def test_deriv_shapes():
         return KroghInterpolator(x, y, axis).derivative
 
     def pchip_deriv(x, y, axis=0):
-        return pchip(x, y, axis).derivative
-    for ip in [krogh_deriv, pchip_deriv]:
+        return pchip(x, y, axis).derivative()
+
+    def pchip_deriv2(x, y, axis=0):
+        return pchip(x, y, axis).derivative(2)
+
+    def pchip_deriv_inplace(x, y, axis=0):
+        class P(PchipInterpolator):
+            def __call__(self, x):
+                return PchipInterpolator.__call__(self, x, nu=1)
+            pass
+        return P(x, y, axis)
+
+    for ip in [krogh_deriv, pchip_deriv, pchip_deriv2]:
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):

@@ -67,7 +67,7 @@ class PchipInterpolator(object):
         data = np.hstack((yp[:, None, ...], dk[:, None, ...]))
 
         self.bpoly = BPoly.from_derivatives(x, data, orders=None,
-                direction=None, extrapolate=extrapolate)
+                extrapolate=extrapolate)
         self.axis = axis
 
     def __call__(self, x, nu=0, extrapolate=None):
@@ -94,14 +94,26 @@ class PchipInterpolator(object):
         out = self.bpoly(x, nu, extrapolate)
         return self._reshaper(x, out)
 
-    def derivative(self, x, der=1):
-        # FIXME: API. Do we want a polyint-type API, where p.derivative(x)
-        # evaluates f'(x) for a given value of x,
-        # or do want p.derivative() to return a callable object, like
-        # PPoly does?
-        dp = self.bpoly.derivative(der)
-        out = dp(x, extrapolate=self.bpoly.extrapolate)
-        return self._reshaper(x, out)
+    def derivative(self, der=1):
+        """
+        Construct a piecewise polynomial representing the derivative.
+
+        Parameters
+        ----------
+        der : int, optional
+            Order of derivative to evaluate. (Default: 1)
+            If negative, the antiderivative is returned.
+
+        Returns
+        ------- 
+        Piecewise polynomial of order k2 = k - der representing the derivative
+        of this polynomial.
+
+        """
+        t = object.__new__(self.__class__)
+        t.axis = self.axis
+        t.bpoly = self.bpoly.derivative(der)
+        return t
 
     def _reshaper(self, x, out):
         x = np.asarray(x)
@@ -198,9 +210,9 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
     if der == 0:
         return P(x)
     elif _isscalar(der):
-        return P.derivative(x,der=der)
+        return P(x, der=der)
     else:
-        return P.derivatives(x,der=np.amax(der)+1)[der]
+        return [P(x, nu) for nu in der]
 
 # Backwards compatibility
 pchip = PchipInterpolator
