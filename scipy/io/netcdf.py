@@ -471,6 +471,11 @@ class netcdf_file(object):
                 sample = values[0]
             except TypeError:
                 sample = values
+            except IndexError:
+                if isinstance(values, basestring):
+                    sample = values
+                else:
+                    raise
             for class_, nc_type in types:
                 if isinstance(sample, class_):
                     break
