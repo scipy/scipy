@@ -18,19 +18,18 @@ def norm(x, ord=None, axis=None):
     Norm of a sparse matrix
 
     This function is able to return one of seven different matrix norms,
-    or one of an infinite number of vector norms (described below), depending
-    on the value of the ``ord`` parameter.
+    depending on the value of the ``ord`` parameter.
     
     Parameters
     ----------
-    x : array_like
-    Input array. If `axis` is None, `x` must be 1-D or 2-D.
+    x : a sparse matrix
+        Input sparse matrix. If `axis` is None, `x` must be 1-D or 2-D sparse matrix.
     ord : {non-zero int, inf, -inf, 'fro'}, optional
-    Order of the norm (see table under ``Notes``). inf means numpy's
-    `inf` object.
+        Order of the norm (see table under ``Notes``). inf means numpy's
+        `inf` object.
     axis : {int, None}, optional
-    If `axis` is an integer, it specifies the axis of `x` along which to
-    compute the vector norms. 
+        If `axis` is an integer, it specifies the axis of `x` along which to
+        compute the vector norms. 
     
     Returns
     -------
@@ -38,9 +37,11 @@ def norm(x, ord=None, axis=None):
     
     Notes
     -----
-    Some of the ord is not implemented because some associated functions like, _multi_svd_norm, is not yet available for sparse matrix. 
+    Some of the ord are not implemented because some associated functions like, 
+    _multi_svd_norm, are not yet available for sparse matrix. 
     
-    This docstring is modified based on numpy.linalg.norm. https://github.com/numpy/numpy/blob/master/numpy/linalg/linalg.py 
+    This docstring is modified based on numpy.linalg.norm. 
+    https://github.com/numpy/numpy/blob/master/numpy/linalg/linalg.py 
     
     The following norms can be calculated:
     
@@ -61,12 +62,12 @@ def norm(x, ord=None, axis=None):
     
     The Frobenius norm is given by [1]_:
     
-    :math:`||A||_F = [\\sum_{i,j} abs(a_{i,j})^2]^{1/2}`
+        :math:`||A||_F = [\\sum_{i,j} abs(a_{i,j})^2]^{1/2}`
     
     References
     ----------
     .. [1] G. H. Golub and C. F. Van Loan, *Matrix Computations*,
-    Baltimore, MD, Johns Hopkins University Press, 1985, pg. 15
+        Baltimore, MD, Johns Hopkins University Press, 1985, pg. 15
     
     Examples
     --------
@@ -79,8 +80,9 @@ def norm(x, ord=None, axis=None):
     >>> b = a.reshape((3, 3))
     >>> b
     array([[-4, -3, -2],
-    [-1, 0, 1],
-    [ 2, 3, 4]])
+           [-1, 0, 1],
+           [ 2, 3, 4]])
+           
     >>> b = csr_matrix(b)
     >>> norm(b)
     7.745966692414834
@@ -98,7 +100,7 @@ def norm(x, ord=None, axis=None):
     Using the `axis` argument to compute vector norms:
     
     >>> c = np.array([[ 1, 2, 3],
-    ... [-1, 1, 4]])
+    ...               [-1, 1, 4]])
     >>> c = csr_matrix(c)
     >>> norm(c, axis=0)
     matrix[[ 1.41421356, 2.23606798, 5. ]]
@@ -106,7 +108,7 @@ def norm(x, ord=None, axis=None):
     matrix[[ 3.74165739, 4.24264069]]
     >>> norm(c, ord=1, axis=1)
     matrix[[6]
-    [6]]
+           [6]]
 
 """
     if not issparse(x):
