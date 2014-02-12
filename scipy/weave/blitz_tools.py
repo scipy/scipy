@@ -110,18 +110,3 @@ def ast_to_blitz_expr(ast_seq):
     #expr = expr.replace('_end', 'blitz::toEnd' )
 
     return expr + ';\n'
-
-
-def test_function():
-    expr = "ex[:,1:,1:] = k +  ca_x[:,1:,1:] * ex[:,1:,1:]" \
-                         "+ cb_y_x[:,1:,1:] * (hz[:,1:,1:] - hz[:,:-1,1:])"\
-                         "- cb_z_x[:,1:,1:] * (hy[:,1:,1:] - hy[:,1:,:-1])"
-    ast = parser.suite(expr)
-    k = 1.
-    ex = numpy.ones((1,1,1),dtype=numpy.float32)
-    ca_x = numpy.ones((1,1,1),dtype=numpy.float32)
-    cb_y_x = numpy.ones((1,1,1),dtype=numpy.float32)
-    cb_z_x = numpy.ones((1,1,1),dtype=numpy.float32)
-    hz = numpy.ones((1,1,1),dtype=numpy.float32)
-    hy = numpy.ones((1,1,1),dtype=numpy.float32)
-    blitz(expr)
