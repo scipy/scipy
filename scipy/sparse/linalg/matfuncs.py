@@ -557,7 +557,7 @@ def expm(A):
 
     Parameters
     ----------
-    A : (M,M) array or sparse matrix
+    A : (M,M) array_like or sparse matrix
         2D Array or Matrix (sparse or dense) to be exponentiated
 
     Returns
@@ -577,6 +577,12 @@ def expm(A):
            31 (3). pp. 970-989. ISSN 1095-7162
 
     """
+    # Avoid indiscriminate asarray() to allow sparse or other strange arrays.
+    if isinstance(A, (list, tuple)):
+        A = np.asarray(A)
+    if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
+        raise ValueError('expected a square matrix')
+
     # Detect upper triangularity.
     structure = UPPER_TRIANGULAR if _is_upper_triangular(A) else None
 
