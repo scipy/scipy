@@ -1298,6 +1298,43 @@ class _TestCommon:
         for dtype in self.checked_dtypes:
             yield check, dtype
 
+    def test_maximum_minimum(self):
+        A_dense = np.array([[1, 0, 3], [0, 4, 5], [0, 0, 0]])
+        B_dense = np.array([[1, 1, 2], [0, 3, 6], [1, -1, 0]])
+
+        A_dense_cpx = np.array([[1, 0, 3], [0, 4+2j, 5], [0, 1j, -1j]])
+
+        def check(dtype, dtype2, btype):
+            if np.issubdtype(dtype, np.complexfloating):
+                A = self.spmatrix(A_dense_cpx.astype(dtype))
+            else:
+                A = self.spmatrix(A_dense.astype(dtype))
+            if btype == 'scalar':
+                B = dtype2.type(1)
+            elif btype == 'scalar2':
+                B = dtype2.type(-1)
+            elif btype == 'dense':
+                B = B_dense.astype(dtype2)
+            elif btype == 'sparse':
+                B = self.spmatrix(B_dense.astype(dtype2))
+            else:
+                raise ValueError()
+
+            max_s = A.maximum(B)
+            max_d = np.maximum(todense(A), todense(B))
+            assert_array_equal(todense(max_s), max_d)
+            assert_equal(max_s.dtype, max_d.dtype)
+
+            min_s = A.minimum(B)
+            min_d = np.minimum(todense(A), todense(B))
+            assert_array_equal(todense(min_s), min_d)
+            assert_equal(min_s.dtype, min_d.dtype)
+
+        for dtype in self.checked_dtypes:
+            for dtype2 in [np.int8, np.float_, np.complex_]:
+                for btype in ['scalar', 'scalar2', 'dense', 'sparse']:
+                    yield check, np.dtype(dtype), np.dtype(dtype2), btype
+
     def test_copy(self):
         # Check whether the copy=True and copy=False keywords work
         A = self.datsp
@@ -1527,6 +1564,12 @@ class _TestCommon:
                     pass
             else:
                 check_one(np.add)
+
+            # maximum
+            check_one(np.maximum)
+
+            # minimum
+            check_one(np.minimum)
 
             # -- non-associative
 
@@ -3581,6 +3624,10 @@ class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
 
     @dec.knownfailureif(True, 'inequalities require sum_duplicates, not implemented for BSR')
     def test_le(self):
+        pass
+
+    @dec.knownfailureif(True, 'maximum and minimum fail for non-canonical BSR')
+    def test_maximum_minimum(self):
         pass
 
 

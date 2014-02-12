@@ -224,6 +224,12 @@ class spmatrix(object):
         """
         return self.tocsr().multiply(other)
 
+    def maximum(self, other):
+        return self.tocsr().maximum(other)
+
+    def minimum(self, other):
+        return self.tocsr().minimum(other)
+
     def dot(self, other):
         """Ordinary dot product
 
@@ -791,6 +797,10 @@ class spmatrix(object):
         elif func is np.true_divide:
             rdivide = (pos == 1)
             result = self._divide(*without_self, true_divide=True, rdivide=rdivide)
+        elif func is np.maximum:
+            result = self.maximum(*without_self)
+        elif func is np.minimum:
+            result = self.minimum(*without_self)
         elif func in (np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh,
                       np.arcsinh, np.arctanh, np.rint, np.sign, np.expm1, np.log1p,
                       np.deg2rad, np.rad2deg, np.floor, np.ceil, np.trunc, np.sqrt):

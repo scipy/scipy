@@ -218,5 +218,23 @@ void csc_minus_csc(const I n_row, const I n_col,
 }
 
 
+template <class I, class T>
+void csc_maximum_csc(const I n_row, const I n_col, 
+                  const I Ap[], const I Ai[], const T Ax[],
+                  const I Bp[], const I Bi[], const T Bx[],
+                        I Cp[],       I Ci[],       T Cx[])
+{
+    csr_maximum_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+}
+
+template <class I, class T>
+void csc_minimum_csc(const I n_row, const I n_col, 
+                   const I Ap[], const I Ai[], const T Ax[],
+                   const I Bp[], const I Bi[], const T Bx[],
+                         I Cp[],       I Ci[],       T Cx[])
+{
+    csr_minimum_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+}
+
 
 #endif
