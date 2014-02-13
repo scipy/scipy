@@ -39,6 +39,10 @@ Functionality for evaluation of bivariate spline derivatives in
 The new class `scipy.interpolate.Akima1DInterpolator` implements the piecewise
 cubic polynomial interpolation scheme devised by H. Akima.
 
+Functionality for fast interpolation on regular, unevenly spaced grids
+in arbitrary dimensions has been added as
+`scipy.interpolate.RegularGridInterpolator` .
+
 ``scipy.linalg`` improvements
 -----------------------------
 

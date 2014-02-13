@@ -3,7 +3,9 @@
 from __future__ import division, print_function, absolute_import
 
 __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
-           'ppform', 'lagrange', 'PPoly', 'BPoly']
+           'ppform', 'lagrange', 'PPoly', 'BPoly', 'RegularGridInterpolator']
+
+import itertools
 
 from numpy import shape, sometrue, array, transpose, searchsorted, \
                   ones, logical_or, atleast_1d, atleast_2d, ravel, \
@@ -1385,6 +1387,154 @@ class BPoly(_PPolyBase):
             for j in range(d+1):
                 out[a+j] += f * comb(d, j) / comb(k+d, a+j)
         return out
+
+
+class RegularGridInterpolator(object):
+    """
+    Interpolation on a regular grid in arbitrary dimensions
+
+    The data must be defined on a regular grid; the grid spacing however may be
+    uneven.  Linear and nearest-neighbour interpolation are supported. After
+    setting up the interpolator object, the interpolation kind (*linear* or
+    *nearest*) may be chosen at each evaluation.
+
+    Parameters
+    ----------
+    points : tuple of ndarray of float, with shapes (m1, ), ..., (mn, )
+        The points defining the regular grid in n dimensions.
+
+    values : anything of dtype float that can be indexed like an ndarray of shape (m1, ..., mn)
+        The data on the regular grid in n dimensions.
+
+    kind : str
+        The kind of interpolation to perform. Supported are "linear" and
+        "nearest". This parameter will become the default for the object's
+        ``__call__`` method.
+
+    Methods
+    -------
+    __call__
+
+    Notes
+    -----
+    .. versionadded:: 0.14
+
+    Contrary to LinearNDInterpolator and NearestNDInterpolator, this class
+    avoids expensive triangulation of the input data by taking advantage of the
+    regular grid structure.
+
+    See also
+    --------
+    NearestNDInterpolator : Nearest neighbour interpolation on unstructured
+                            data in N dimensions
+
+    LinearNDInterpolator : Piecewise linear interpolant on unstructured data
+                           in N dimensions
+
+    References
+    ----------
+    - Python package *regulargrid* by Johannes Buchner, see https://pypi.python.org/pypi/regulargrid/
+    - Trilinear interpolation. (2013, January 17). In Wikipedia, The Free Encyclopedia.
+      Retrieved 27 Feb 2013 01:28.
+      http://en.wikipedia.org/w/index.php?title=Trilinear_interpolation&oldid=533448871
+    - Weiser, Alan, and Sergio E. Zarantonello. "A note on piecewise linear
+      and multilinear table interpolation in many dimensions." MATH. COMPUT.
+      50.181 (1988): 189-196.
+      http://www.ams.org/journals/mcom/1988-50-181/S0025-5718-1988-0917826-0/S0025-5718-1988-0917826-0.pdf
+
+    """
+    # this class is based on code originally programmed by Johannes Buchner,
+    # see https://github.com/JohannesBuchner/regulargrid
+
+    def __init__(self, points, values, kind="linear"):
+        if kind not in ["linear", "nearest"]:
+            raise ValueError("Kind '{}' is not defined".format(kind))
+        self.kind = kind
+        if not len(points) == values.ndim:
+            raise ValueError("There are {} point arrays, but values has {} "
+                             "dimensions".format(len(points), values.ndim))
+        for i, p in enumerate(points):
+            if not np.all(np.diff(p) > 0.):
+                raise ValueError("The points in dimension {} must be strictly "
+                                 "ascending".format(i))
+            if not np.asarray(p).ndim == 1:
+                raise ValueError("The points in dimension {} must be "
+                                 "1-dimensional".format(i))
+            if not values.shape[i] == len(p):
+                raise ValueError("There are {} points and {} values in "
+                                 "dimension {}".format(len(p), values.shape[i],
+                                                       i))
+        self.grid = tuple([np.asarray(p) for p in points])
+        self.values = values
+
+    def __call__(self, xi, kind=None):
+        """
+        interpolation at coordinates
+
+        Parameters
+        ----------
+        xi : ndarray of shape (ndim, ) or (nsamplepoints, ndim)
+            The coordinates to sample the gridded data at
+
+        kind : str
+            The kind of interpolation to perform. Supported are "linear" and
+            "nearest".
+
+        """
+        kind = self.kind if kind is None else kind
+        if kind not in ["linear", "nearest"]:
+            raise ValueError("Kind '{}' is not defined".format(kind))
+        xi = np.atleast_2d(xi)
+        if not xi.shape[1] == len(self.grid):
+            raise ValueError("The requested sample points xi have dimension "
+                             "{}, but this RegularGridInterpolator has "
+                             "dimension {}".format(xi.shape[1], len(self.grid)))
+        for i, p in enumerate(xi.T):
+            if not np.logical_and(np.all(self.grid[i][0] <= p),
+                                  np.all(p <= self.grid[i][-1])):
+                raise ValueError("One of the requested xi is out of bounds in "
+                                 "dimension {}".format(i))
+
+        indices, norm_distances = self._find_indices(xi.T)
+        if kind == "linear":
+            return self._evaluate_linear(indices, norm_distances)
+        elif kind == "nearest":
+            return self._evaluate_nearest(indices, norm_distances)
+
+    def _evaluate_linear(self, indices, norm_distances):
+        # find relevant values
+        # each i and i+1 represents a edge
+        edges = itertools.product(*[[i, i + 1] for i in indices])
+        values = 0.
+        for edge_indices in edges:
+            weight = 1.
+            for ei, i, yi in zip(edge_indices, indices, norm_distances):
+                weight *= np.where(ei == i, 1 - yi, yi)
+            values += self.values[edge_indices] * weight
+        return values
+
+    def _evaluate_nearest(self, indices, norm_distances):
+        # find relevant values
+        # each i and i+1 represents a edge
+        idx_res = []
+        for i, yi in zip(indices, norm_distances):
+            idx_res.append(np.where(yi <= .5, i, i + 1))
+        return self.values[idx_res]
+
+    def _find_indices(self, xi):
+        # find relevant edges between which xi are situated
+        indices = []
+        # compute distance to lower edge in unity units
+        norm_distances = []
+        for x, grid in zip(xi, self.grid):
+            i = np.searchsorted(grid, x) - 1
+            # when i == -1, we're located at the upper bound
+            i = np.where(i == -1, 0, i)
+            indices.append(i)
+            norm_distances.append((x - grid[i]) /
+                                  (grid[i + 1] - grid[i]))
+
+        return indices, norm_distances
 
 
 # backward compatibility wrapper
