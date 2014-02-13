@@ -1054,7 +1054,7 @@ class BPoly(_PPolyBase):
     def _evaluate(self, x, nu, extrapolate, out):
         _ppoly.evaluate_bernstein(
             self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
-            self.x, x, nu, bool(extrapolate), out)
+            self.x, x, nu, bool(extrapolate), out, self.c.dtype)
 
     def derivative(self, nu=1):
         """
@@ -1148,8 +1148,7 @@ class BPoly(_PPolyBase):
         return cls.construct_fast(c, pp.x, extrapolate)
 
     @classmethod
-    def from_derivatives(cls, xi, yi, orders=None, direction=None,
-                         axis=0, extrapolate=None):
+    def from_derivatives(cls, xi, yi, orders=None, extrapolate=None):
         """Construct a piecewise polynomial in the Bernstein basis,
         compatible with the specified values and derivatives at breakpoints.
 
@@ -1162,8 +1161,6 @@ class BPoly(_PPolyBase):
         orders : None or int or array_like of ints. Default: None.
             Specifies the degree of local polynomials. If not None, some
             derivatives are ignored.
-        axis : int, optional
-            Interpolation axis, default is 0.
         extrapolate : bool, optional
             Whether to extrapolate to ouf-of-bounds points based on first
             and last intervals, or to return NaNs. Default: True.
@@ -1190,12 +1187,12 @@ class BPoly(_PPolyBase):
         Examples
         --------
 
-        >>> BPoly.from_derivatives([[1, 2], [3, 4]], [0, 1])
+        >>> BPoly.from_derivatives([0, 1], [[1, 2], [3, 4]])
 
         Creates a polynomial `f(x)` of degree 3, defined on `[0, 1]`
         such that `f(0) = 1, df/dx(0) = 2, f(1) = 3, df/dx(1) = 4`
 
-        >>> BPoly.from_derivatives([[0, 1], [0], [2], [0, 1, 2])
+        >>> BPoly.from_derivatives([0, 1, 2], [[0, 1], [0], [2]])
 
         Creates a piecewise polynomial `f(x)`, such that
         `f(0) = f(1) = 0`, `f(2) = 2`, and `df/dx(0) = 1`.
@@ -1212,11 +1209,6 @@ class BPoly(_PPolyBase):
         So that f'(1-0) = -1 and f'(1+0) = 2
 
         """
-        if axis != 0:
-            raise NotImplementedError
-        if direction is not None:
-            raise NotImplementedError
-
         xi = np.asarray(xi)
         if len(xi) != len(yi):
             raise ValueError("xi and yi need to have the same length")
@@ -1227,7 +1219,11 @@ class BPoly(_PPolyBase):
         m = len(xi) - 1
 
         # global poly order is k-1, local orders are <=k and can vary
-        k = max(len(yi[i]) + len(yi[i+1]) for i in range(m))
+        try:
+            k = max(len(yi[i]) + len(yi[i+1]) for i in range(m))
+        except TypeError:
+            raise ValueError("Using a 1D array for y? Please .reshape(-1, 1).")
+
         if orders is None:
             orders = [None] * m
         else:
@@ -1256,7 +1252,7 @@ class BPoly(_PPolyBase):
                     raise ValueError("`order` input incompatible with"
                             " length y1 or y2.")
 
-            b = BPoly._construct_from_derivatives(xi[i], xi[i+1],  y1[:n1], y2[:n2])
+            b = BPoly._construct_from_derivatives(xi[i], xi[i+1], y1[:n1], y2[:n2])
             if len(b) < k:
                 b = BPoly._raise_degree(b, k - len(b))
             c.append(b)
@@ -1271,10 +1267,10 @@ class BPoly(_PPolyBase):
 
         Return the coefficients of a polynomial in the Bernstein basis
         defined on `[xa, xb]` and having the values and derivatives at the
-        endpoints `xa` and `xb` as specified by `ya` and `yb`, respectively.
+        endpoints ``xa`` and ``xb`` as specified by ``ya`` and ``yb``.
         The polynomial constructed is of the minimal possible degree, i.e.,
-        if the lengths of `ya` and `yb` are `na` and `nb`, the degree of the
-        polynomial is `na + nb - 1`.
+        if the lengths of ``ya`` and ``yb`` are ``na`` and ``nb``, the degree
+        of the polynomial is ``na + nb - 1``.
 
         Parameters
         ----------
@@ -1283,10 +1279,10 @@ class BPoly(_PPolyBase):
         xb : float
             Right-hand end point of the interval
         ya : array_like
-            Derivatives at `xa`. `ya[0]` is the value of the function, and
-            `ya[i]` for `i > 0` is the value of the `i`-th derivative.
+            Derivatives at ``xa``. ``ya[0]`` is the value of the function, and
+            ``ya[i]`` for ``i > 0`` is the value of the ``i``-th derivative.
         yb : array_like
-            Derivatives at `xb`.
+            Derivatives at ``xb``.
 
         Returns
         -------

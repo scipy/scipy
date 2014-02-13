@@ -425,6 +425,18 @@ class TestPPolyCommon(TestCase):
                 # constructing the object array here for old numpy)
                 assert_raises(ValueError, p, np.array([[0.1, 0.2], [0.4]]))
 
+    def test_complex_coef(self):
+        np.random.seed(12345)
+        x = np.sort(np.random.random(13))
+        c = np.random.random((8, 12)) * (1. + 0.3j)
+        c_re, c_im = c.real, c.imag
+        xp = np.random.random(5)
+        for cls in (PPoly, BPoly):
+            p, p_re, p_im = cls(c, x), cls(c_re, x), cls(c_im, x)
+            for nu in [0, 1, 2]:
+                assert_allclose(p(xp, nu).real, p_re(xp, nu))
+                assert_allclose(p(xp, nu).imag, p_im(xp, nu))
+
 
 class TestPolySubclassing(TestCase):
     class P(PPoly):
@@ -867,6 +879,12 @@ class TestBPolyCalculus(TestCase):
         assert_allclose(bp_der(0.4), -6*(0.6))
         assert_allclose(bp_der(1.7), 0.7)
 
+        # derivatives in-place
+        assert_allclose([bp(0.4, nu=1), bp(0.4, nu=2), bp(0.4, nu=3)],
+                        [-6*(1-0.4), 6., 0.])
+        assert_allclose([bp(1.7, nu=1), bp(1.7, nu=2), bp(1.7, nu=3)],
+                        [0.7, 1., 0])
+
     def test_derivative_ppoly(self):
         # make sure it's consistent w/ power basis
         np.random.seed(1234)
@@ -882,6 +900,17 @@ class TestBPolyCalculus(TestCase):
             xp = np.linspace(x[0], x[-1], 21)
             assert_allclose(bp(xp), pp(xp))
 
+    def test_deriv_inplace(self):
+        np.random.seed(1234)
+        m, k = 5, 8   # number of intervals, order
+        x = np.sort(np.random.random(m))
+        c = np.random.random((k, m-1))
+        bp = BPoly(c, x)
+
+        xp = np.linspace(x[0], x[-1], 21)
+        for i in range(k):
+            assert_allclose(bp(xp, i), bp.derivative(i)(xp))
+            
 
 class TestPolyConversions(TestCase):
     def test_bp_from_pp(self):
