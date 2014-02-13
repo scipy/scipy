@@ -66,7 +66,7 @@ class PchipInterpolator(object):
         dk = self._find_derivatives(xp, yp)
         data = np.hstack((yp[:, None, ...], dk[:, None, ...]))
 
-        self.bpoly = BPoly.from_derivatives(x, data, orders=None,
+        self._bpoly = BPoly.from_derivatives(x, data, orders=None,
                 extrapolate=extrapolate)
         self.axis = axis
 
@@ -91,7 +91,7 @@ class PchipInterpolator(object):
             the interpolation axis in the original array with the shape of x.
 
         """
-        out = self.bpoly(x, nu, extrapolate)
+        out = self._bpoly(x, nu, extrapolate)
         return self._reshaper(x, out)
 
     def derivative(self, der=1):
@@ -112,14 +112,14 @@ class PchipInterpolator(object):
         """
         t = object.__new__(self.__class__)
         t.axis = self.axis
-        t.bpoly = self.bpoly.derivative(der)
+        t._bpoly = self._bpoly.derivative(der)
         return t
 
     def roots(self):
         """
         Return the roots of the interpolated function.
         """
-        return (PPoly.from_bernstein_basis(self.bpoly)).roots()
+        return (PPoly.from_bernstein_basis(self._bpoly)).roots()
 
     def _reshaper(self, x, out):
         x = np.asarray(x)
