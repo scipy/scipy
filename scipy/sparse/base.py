@@ -251,6 +251,9 @@ class spmatrix(object):
         """
         return self * other
 
+    def power(self, n, dtype=None):            
+        return self.tocsr().power(n, dtype=dtype)
+
     def __eq__(self, other):
         return self.tocsr().__eq__(other)
 
