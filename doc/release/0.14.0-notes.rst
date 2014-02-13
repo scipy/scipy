@@ -36,6 +36,10 @@ If performance is critical, sorting can be turned off by using the new
 Functionality for evaluation of bivariate spline derivatives in
 ``scipy.interpolate`` has been added.
 
+Functionality for fast interpolation on regular, unevenly spaced grids
+in arbitrary dimensions has been added as
+`scipy.interpolate.RegularGridInterpolator` .
+
 
 ``scipy.linalg`` improvements
 -----------------------------
