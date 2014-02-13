@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import (assert_almost_equal, assert_array_equal,
-        TestCase, run_module_suite, assert_allclose, assert_equal)
+        TestCase, run_module_suite, assert_allclose, assert_equal, assert_)
 from scipy.interpolate import (KroghInterpolator, krogh_interpolate,
         BarycentricInterpolator, barycentric_interpolate,
         PiecewisePolynomial, piecewise_polynomial_interpolate,
@@ -375,6 +375,35 @@ class CheckPiecewise(TestCase):
         assert_almost_equal(P.derivative(self.test_xs,2),piecewise_polynomial_interpolate(self.xi,self.yi,self.test_xs,der=2))
         assert_almost_equal(P.derivatives(self.test_xs,2),piecewise_polynomial_interpolate(self.xi,self.yi,self.test_xs,der=[0,1]))
 
+
+class TestPCHIP(TestCase):
+    def _make_random(self, npts=20):
+        np.random.seed(1234)
+        xi = np.sort(np.random.random(npts))
+        yi = np.random.random(npts)
+        return pchip(xi, yi), xi, yi
+
+    def test_overshoot(self):
+        # PCHIP should not overshoot
+        p, xi, yi = self._make_random()
+        for i in range(len(xi)-1):
+            x1, x2 = xi[i], xi[i+1]
+            y1, y2 = yi[i], yi[i+1]
+            if y1 > y2:
+                y1, y2 = y2, y1
+            xp = np.linspace(x1, x2, 10)
+            yp = p(xp)
+            assert_(((y1 <= yp) & (yp <= y2)).all())
+
+    def test_monotone(self):
+        # PCHIP should preserve monotonicty
+        p, xi, yi = self._make_random()
+        for i in range(len(xi)-1):
+            x1, x2 = xi[i], xi[i+1]
+            y1, y2 = yi[i], yi[i+1]
+            xp = np.linspace(x1, x2, 10)
+            yp = p(xp)
+            assert_(((y2-y1) * (yp[1:] - yp[:1]) > 0).all())
 
 if __name__ == '__main__':
     run_module_suite()
