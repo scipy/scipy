@@ -1411,6 +1411,16 @@ class RegularGridInterpolator(object):
         "nearest". This parameter will become the default for the object's
         ``__call__`` method.
 
+    bounds_error : bool, optional
+        If True, when interpolated values are requested outside of the
+        domain of the input data, a ValueError is raised.
+        If False, then `fill_value` is used.
+
+    fill_value : number, optional
+        If provided, the value to use for points outside of the
+        interpolation domain. If None, values outside
+        the domain are extrapolated.
+
     Methods
     -------
     __call__
@@ -1433,23 +1443,29 @@ class RegularGridInterpolator(object):
 
     References
     ----------
-    - Python package *regulargrid* by Johannes Buchner, see https://pypi.python.org/pypi/regulargrid/
-    - Trilinear interpolation. (2013, January 17). In Wikipedia, The Free Encyclopedia.
-      Retrieved 27 Feb 2013 01:28.
-      http://en.wikipedia.org/w/index.php?title=Trilinear_interpolation&oldid=533448871
-    - Weiser, Alan, and Sergio E. Zarantonello. "A note on piecewise linear
-      and multilinear table interpolation in many dimensions." MATH. COMPUT.
-      50.181 (1988): 189-196.
-      http://www.ams.org/journals/mcom/1988-50-181/S0025-5718-1988-0917826-0/S0025-5718-1988-0917826-0.pdf
+    .. [1] Python package *regulargrid* by Johannes Buchner, see
+           https://pypi.python.org/pypi/regulargrid/
+    .. [2] Trilinear interpolation. (2013, January 17). In Wikipedia, The Free
+           Encyclopedia. Retrieved 27 Feb 2013 01:28.
+           http://en.wikipedia.org/w/index.php?title=Trilinear_interpolation&oldid=533448871
+    .. [3] Weiser, Alan, and Sergio E. Zarantonello. "A note on piecewise linear
+           and multilinear table interpolation in many dimensions." MATH.
+           COMPUT. 50.181 (1988): 189-196.
+           http://www.ams.org/journals/mcom/1988-50-181/S0025-5718-1988-0917826-0/S0025-5718-1988-0917826-0.pdf
 
     """
     # this class is based on code originally programmed by Johannes Buchner,
     # see https://github.com/JohannesBuchner/regulargrid
 
-    def __init__(self, points, values, kind="linear"):
+    def __init__(self, points, values, kind="linear", bounds_error=True,
+                 fill_value=np.nan):
         if kind not in ["linear", "nearest"]:
             raise ValueError("Kind '{}' is not defined".format(kind))
         self.kind = kind
+        self.bounds_error = bounds_error
+        if fill_value is not None and not isinstance(fill_value, float):
+            raise ValueError("fill_value must be either 'None' or a float")
+        self.fill_value = fill_value
         if not len(points) == values.ndim:
             raise ValueError("There are {} point arrays, but values has {} "
                              "dimensions".format(len(points), values.ndim))
@@ -1489,19 +1505,23 @@ class RegularGridInterpolator(object):
             raise ValueError("The requested sample points xi have dimension "
                              "{}, but this RegularGridInterpolator has "
                              "dimension {}".format(xi.shape[1], len(self.grid)))
-        for i, p in enumerate(xi.T):
-            if not np.logical_and(np.all(self.grid[i][0] <= p),
-                                  np.all(p <= self.grid[i][-1])):
-                raise ValueError("One of the requested xi is out of bounds in "
-                                 "dimension {}".format(i))
+        if self.bounds_error:
+            for i, p in enumerate(xi.T):
+                if not np.logical_and(np.all(self.grid[i][0] <= p),
+                                      np.all(p <= self.grid[i][-1])):
+                    raise ValueError("One of the requested xi is out of bounds "
+                                     "in dimension {}".format(i))
 
-        indices, norm_distances = self._find_indices(xi.T)
+        indices, norm_distances, out_of_bounds = self._find_indices(xi.T)
         if kind == "linear":
-            return self._evaluate_linear(indices, norm_distances)
+            result = self._evaluate_linear(indices, norm_distances, out_of_bounds)
         elif kind == "nearest":
-            return self._evaluate_nearest(indices, norm_distances)
+            result = self._evaluate_nearest(indices, norm_distances, out_of_bounds)
+        if not self.bounds_error and self.fill_value is not None:
+            result[out_of_bounds] = self.fill_value
+        return result
 
-    def _evaluate_linear(self, indices, norm_distances):
+    def _evaluate_linear(self, indices, norm_distances, out_of_bounds):
         # find relevant values
         # each i and i+1 represents a edge
         edges = itertools.product(*[[i, i + 1] for i in indices])
@@ -1513,9 +1533,7 @@ class RegularGridInterpolator(object):
             values += self.values[edge_indices] * weight
         return values
 
-    def _evaluate_nearest(self, indices, norm_distances):
-        # find relevant values
-        # each i and i+1 represents a edge
+    def _evaluate_nearest(self, indices, norm_distances, out_of_bounds):
         idx_res = []
         for i, yi in zip(indices, norm_distances):
             idx_res.append(np.where(yi <= .5, i, i + 1))
@@ -1526,15 +1544,20 @@ class RegularGridInterpolator(object):
         indices = []
         # compute distance to lower edge in unity units
         norm_distances = []
+        # check for out of bounds xi
+        out_of_bounds = np.zeros((xi.shape[1]), dtype=bool)
+        # iterate through dimensions
         for x, grid in zip(xi, self.grid):
             i = np.searchsorted(grid, x) - 1
-            # when i == -1, we're located at the upper bound
-            i = np.where(i == -1, 0, i)
+            i[i < 0] = 0
+            i[i > grid.size - 2] = grid.size - 2
             indices.append(i)
             norm_distances.append((x - grid[i]) /
                                   (grid[i + 1] - grid[i]))
-
-        return indices, norm_distances
+            if not self.bounds_error:
+                out_of_bounds += x < grid[0]
+                out_of_bounds += x > grid[-1]
+        return indices, norm_distances, out_of_bounds
 
 
 # backward compatibility wrapper
