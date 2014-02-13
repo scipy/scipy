@@ -301,7 +301,8 @@ class Metropolis(object):
 
 def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
                  minimizer_kwargs=None, take_step=None, accept_test=None,
-                 callback=None, interval=50, disp=False, niter_success=None):
+                 minimizer=None, callback=None, interval=50, disp=False,
+                 niter_success=None):
     """
     Find the global minimum of a function using the basin-hopping algorithm
 
@@ -349,6 +350,13 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         override any other tests in order to accept the step.  This can be
         used, for example, to forcefully escape from a local minimum that
         ``basinhopping`` is trapped in.
+    minimizer : callable ``minimizer(func, x, **minimizer_kwargs)``, optional
+        Find a local minimum after a step has been taken and accepted.
+        The function shall return an OptimizeResult object (see also
+        the ``minimize`` routine, which is the default).  Normally, if you
+        want to choose a particular scipy minimizer, you would use the "method"
+        field of ``minimizer_kwargs``.  The ``minimizer`` parameter is meant
+        just to allow a user-provided minimizer.
     callback : callable, ``callback(x, f, accept)``, optional
         A callback function which will be called for all minimum found.  ``x``
         and ``f`` are the coordinates and function value of the trial minima,
@@ -565,10 +573,11 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     x0 = np.array(x0)
 
     # set up minimizer
+    if minimizer is None:
+        minimizer = scipy.optimize.minimize
     if minimizer_kwargs is None:
         minimizer_kwargs = dict()
-    wrapped_minimizer = MinimizerWrapper(scipy.optimize.minimize, func,
-                                         **minimizer_kwargs)
+    wrapped_minimizer = MinimizerWrapper(minimizer, func, **minimizer_kwargs)
 
     # set up step taking algorithm
     if take_step is not None:
