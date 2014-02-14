@@ -789,7 +789,7 @@ class Ufunc(object):
         toplevel += "cdef char ufunc_%s_types[%d]\n" % (self.name, len(types))
         toplevel += 'cdef char *ufunc_%s_doc = (\n    "%s")\n' % (
             self.name,
-            self.doc.replace('"', '\\"').replace('\n', '\\n\"\n    "')
+            self.doc.replace("\\", "\\\\").replace('"', '\\"').replace('\n', '\\n\"\n    "')
             )
 
         for j, function in enumerate(loops):
