@@ -70,7 +70,7 @@ class PchipInterpolator(object):
                 extrapolate=extrapolate)
         self.axis = axis
 
-    def __call__(self, x, nu=0, extrapolate=None):
+    def __call__(self, x, der=0, extrapolate=None):
         """
         Evaluate the PCHIP interpolant or its derivative.
 
@@ -78,7 +78,7 @@ class PchipInterpolator(object):
         ----------
         x : array-like
             Points to evaluate the interpolant at.
-        nu : int, optional
+        der : int, optional
             Order of derivative to evaluate. Must be non-negative.
         extrapolate : bool, optional
             Whether to extrapolate to ouf-of-bounds points based on first
@@ -91,7 +91,7 @@ class PchipInterpolator(object):
             the interpolation axis in the original array with the shape of x.
 
         """
-        out = self._bpoly(x, nu, extrapolate)
+        out = self._bpoly(x, der, extrapolate)
         return self._reshaper(x, out)
 
     def derivative(self, der=1):

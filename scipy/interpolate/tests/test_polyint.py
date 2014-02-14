@@ -77,11 +77,11 @@ def test_deriv_shapes():
     def pchip_deriv_inplace(x, y, axis=0):
         class P(PchipInterpolator):
             def __call__(self, x):
-                return PchipInterpolator.__call__(self, x, nu=1)
+                return PchipInterpolator.__call__(self, x, 1)
             pass
         return P(x, y, axis)
 
-    for ip in [krogh_deriv, pchip_deriv, pchip_deriv2]:
+    for ip in [krogh_deriv, pchip_deriv, pchip_deriv2, pchip_deriv_inplace]:
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
