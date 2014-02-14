@@ -36,6 +36,11 @@ If performance is critical, sorting can be turned off by using the new
 Functionality for evaluation of bivariate spline derivatives in
 ``scipy.interpolate`` has been added.
 
+A new wrapper function `scipy.interpolate.interpn` for interpolation on regular
+grids has been added. `interpn` supports linear and nearest-neighbor
+interpolation in arbitrary dimensions and spline interpolation in two
+dimensions.
+
 Functionality for fast interpolation on regular, unevenly spaced grids
 in arbitrary dimensions has been added as
 `scipy.interpolate.RegularGridInterpolator` .

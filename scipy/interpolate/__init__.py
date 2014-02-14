@@ -52,6 +52,7 @@ For data on a grid:
 .. autosummary::
    :toctree: generated/
 
+   interpn
    RegularGridInterpolator
    RectBivariateSpline
 

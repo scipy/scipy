@@ -3,7 +3,8 @@
 from __future__ import division, print_function, absolute_import
 
 __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
-           'ppform', 'lagrange', 'PPoly', 'BPoly', 'RegularGridInterpolator']
+           'ppform', 'lagrange', 'PPoly', 'BPoly', 'RegularGridInterpolator',
+           'interpn']
 
 import itertools
 
@@ -25,6 +26,7 @@ from . import dfitpack
 from . import _fitpack
 from .polyint import _Interpolator1D
 from . import _ppoly
+from .fitpack2 import RectBivariateSpline
 
 def reduce_sometrue(a):
     all = a
@@ -1562,6 +1564,89 @@ class RegularGridInterpolator(object):
                 out_of_bounds += x < grid[0]
                 out_of_bounds += x > grid[-1]
         return indices, norm_distances, out_of_bounds
+
+
+def interpn(points, values, xi, method="linear"):
+    """
+    Multidimensional interpolation on regular grids.
+
+    Parameters
+    ----------
+    points : tuple of ndarray of float, with shapes (m1, ), ..., (mn, )
+        The points defining the regular grid in n dimensions.
+
+    values : anything of dtype float that can be indexed like an ndarray of shape (m1, ..., mn)
+        The data on the regular grid in n dimensions.
+
+    kind : str
+        The kind of interpolation to perform. Supported are "linear" and
+        "nearest", and "splinef2d". "splinef2d" is only supported for
+        2-dimensional data.
+
+    Notes
+    -----
+    .. versionadded:: 0.14
+
+    See also
+    --------
+    NearestNDInterpolator : Nearest neighbour interpolation on unstructured
+                            data in N dimensions
+
+    LinearNDInterpolator : Piecewise linear interpolant on unstructured data
+                           in N dimensions
+
+    RegularGridInterpolator : Linear and nearest-neighbor Interpolation on a
+                              regular grid in arbitrary dimensions
+
+    RectBivariateSpline : Bivariate spline approximation over a rectangular mesh
+
+    """
+    # sanity check 'method' kwarg
+    if method not in ["linear", "nearest", "splinef2d"]:
+        raise ValueError("interpn only understands the methods 'linear', "
+                         "'nearest', and 'splinef2d'. You provided "
+                         "{}".format(method))
+    ndim = values.ndim
+    if ndim > 2 and method == "splinef2d":
+        raise ValueError("The method spline2fd can only be used for "
+                         "2-dimensional input data")
+    # sanity check consistency of input dimensions
+    if not len(points) == ndim:
+        raise ValueError("There are {} point arrays, but values has {} "
+                         "dimensions".format(len(points), ndim))
+    # sanity check input grid
+    for i, p in enumerate(points):
+        if not np.all(np.diff(p) > 0.):
+            raise ValueError("The points in dimension {} must be strictly "
+                             "ascending".format(i))
+        if not np.asarray(p).ndim == 1:
+            raise ValueError("The points in dimension {} must be "
+                             "1-dimensional".format(i))
+        if not values.shape[i] == len(p):
+            raise ValueError("There are {} points and {} values in "
+                             "dimension {}".format(len(p), values.shape[i], i))
+    grid = tuple([np.asarray(p) for p in points])
+    # sanity check requested xi
+    xi = np.atleast_2d(xi)
+    if not xi.shape[1] == len(grid):
+        raise ValueError("The requested sample points xi have dimension "
+                         "{}, but this RegularGridInterpolator has "
+                         "dimension {}".format(xi.shape[1], len(grid)))
+    for i, p in enumerate(xi.T):
+        if not np.logical_and(np.all(grid[i][0] <= p),
+                              np.all(p <= grid[i][-1])):
+            raise ValueError("One of the requested xi is out of bounds "
+                             "in dimension {}".format(i))
+    # perform interpolation
+    if method == "linear":
+        interp = RegularGridInterpolator(points, values, kind="linear")
+        return interp(xi)
+    elif method == "nearest":
+        interp = RegularGridInterpolator(points, values, kind="nearest")
+        return interp(xi)
+    elif method == "splinef2d":
+        interp = RectBivariateSpline(points[0], points[1], values)
+        return interp.ev(xi[:, 0], xi[:, 1])
 
 
 # backward compatibility wrapper
