@@ -2930,6 +2930,34 @@ class TestCSR(sparse_test_class()):
         M.sort_indices()
         assert_array_equal(M.indices, unsorted_inds)
 
+    def test_has_canonical_format(self):
+        "Ensure has_canonical_format memoizes state for sum_duplicates"
+
+        M = csr_matrix((np.array([2]), np.array([0]), np.array([0, 1])))
+        assert_equal(True, M.has_canonical_format)
+
+        indices = np.array([0, 0])  # contains duplicate
+        data = np.array([1, 1])
+        indptr = np.array([0, 2])
+
+        M = csr_matrix((data, indices, indptr)).copy()
+        assert_equal(False, M.has_canonical_format)
+
+        # set by deduplicating
+        M.sum_duplicates()
+        assert_equal(True, M.has_canonical_format)
+        assert_equal(1, len(M.indices))
+
+        M = csr_matrix((data, indices, indptr)).copy()
+        # set manually (although underlyingly duplicated)
+        M.has_canonical_format = True
+        assert_equal(True, M.has_canonical_format)
+        assert_equal(2, len(M.indices))  # unaffected content
+
+        # ensure deduplication bypassed when has_canonical_format == True
+        M.sum_duplicates()
+        assert_equal(2, len(M.indices))  # unaffected content
+
 
 class TestCSC(sparse_test_class()):
     spmatrix = csc_matrix

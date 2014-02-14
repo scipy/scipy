@@ -13,6 +13,7 @@ INSTANTIATE_INDEX(expandptr)
 INSTANTIATE_INDEX(csr_matmat_pass1)
 INSTANTIATE_INDEX(csr_count_blocks)
 INSTANTIATE_INDEX(csr_has_sorted_indices)
+INSTANTIATE_INDEX(csr_has_canonical_format)
 INSTANTIATE_INDEX(csr_sample_offsets)
 
 INSTANTIATE_ALL(csr_diagonal)
