@@ -161,6 +161,17 @@ from ``scipy.stats``.
 ``stats.scoreatpercentile`` now returns an array instead of a list of
 percentiles.
 
+scipy.interpolate
+-----------------
+
+The API for computing derivatives of a monotone piecewise interpolation has
+changed: if `p` is a ``PchipInterpolator`` object, `p.derivative(der)`
+returns a callable object representing the derivative of `p`. For in-place
+derivatives use the second argument of the `__call__` method: 
+`p(0.1, der=2)` evaluates the second derivative of `p` at `x=0.1`.
+
+The method `p.derivatives` has been removed.
+
 
 Other changes
 =============
