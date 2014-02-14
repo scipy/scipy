@@ -1393,10 +1393,7 @@ tvar.__doc__ = stats.tvar.__doc__
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     a, axis = _chk_asarray(a, axis)
-    print(a)
-    print(a.mask)
     am = trima(a, (lowerlimit, None), (inclusive, False))
-    #print('Da sammer')
     return ma.minimum.reduce(am, axis)
 tmin.__doc__ = stats.tmin.__doc__
 
@@ -1661,35 +1658,24 @@ median along the given axis. masked values are discarded.
 
 
 def skewtest(a, axis=0):
-    """
-    Skewness test. This function is a wrapper to
-    the corresponding function in scipy.stats
-    """
-
-    if axis is not None:
-        if axis != 0:
-            raise ValueError('axis!=0 not supported for this mstats function yet')  # TODO
-
-    if hasattr(a, 'mask'):
-        if np.isscalar(a.mask):
-            return stats.skewtest(a.data, axis=axis)
-        else:
-            # TODO better way to implement ?
-            if a.ndim == 1:
-                return stats.skewtest(a.data[~a.mask], axis=axis)
-            elif a.ndim == 2:
-                ny, nx = a.shape
-                r = []
-                for j in xrange(nx):
-                    x = a[:,j]
-                    x = x.data[~x.mask]
-                    r.append(stats.skewtest(x))
-                return tuple(np.asarray(r).T)
-            else:
-                raise ValueError('This dimension is not yet implemented')
-    else:
-        return stats.skewtest(a, axis=axis)
-    raise ValueError('Something went wrong.')
+    a, axis = _chk_asarray(a, axis)
+    if axis is None:
+        a = a.ravel()
+        axis = 0
+    b2 = skew(a,axis)
+    n = a.count(axis)
+    if np.min(n) < 8:
+        raise ValueError(
+            "skewtest is not valid with less than 8 samples; %i samples"
+            " were given." % np.min(n))
+    y = b2 * ma.sqrt(((n+1)*(n+3)) / (6.0*(n-2)))
+    beta2 = (3.0*(n*n+27*n-70)*(n+1)*(n+3)) / ((n-2.0)*(n+5)*(n+7)*(n+9))
+    W2 = -1 + ma.sqrt(2*(beta2-1))
+    delta = 1/ma.sqrt(0.5*ma.log(W2))
+    alpha = ma.sqrt(2.0/(W2-1))
+    y = ma.where(y == 0, 1, y)
+    Z = delta*ma.log(y/alpha + ma.sqrt((y/alpha)**2+1))
+    return Z, (1.0 - stats.zprob(Z))*2
 skewtest.__doc__ = stats.skewtest.__doc__
 
 
