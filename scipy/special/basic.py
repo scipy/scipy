@@ -449,10 +449,16 @@ sph_harm = vectorize(_sph_harmonic,'D')
 
 
 def erfinv(y):
+    """
+    Inverse function for erf
+    """
     return ndtri((y+1)/2.0)/sqrt(2)
 
 
 def erfcinv(y):
+    """
+    Inverse function for erfc
+    """
     return ndtri((2-y)/2.0)/sqrt(2)
 
 
@@ -736,7 +742,7 @@ def clpmn(m,n,z,type=3):
     Notes
     -----
     By default, i.e. for ``type=3``, phase conventions are chosen according
-    to [1] such that the function is analytic. The cut lies on the interval
+    to [1]_ such that the function is analytic. The cut lies on the interval
     (-1, 1). Approaching the cut from above or below in general yields a phase
     factor with respect to Ferrer's function of the first kind
     (cf. `lpmn`).
