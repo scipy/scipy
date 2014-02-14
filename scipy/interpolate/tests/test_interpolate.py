@@ -14,7 +14,8 @@ from scipy.lib._version import NumpyVersion
 
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          ppform, splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
-         RegularGridInterpolator, LinearNDInterpolator, NearestNDInterpolator)
+         RegularGridInterpolator, LinearNDInterpolator, NearestNDInterpolator,
+         RectBivariateSpline, interpn)
 
 from scipy.interpolate import _ppoly
 
@@ -1417,6 +1418,49 @@ class TestRegularGridInterpolator(TestCase):
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
         assert_array_almost_equal(interp(sample), interp_qhull(sample))
+
+class TestInterpN(TestCase):
+    def test_spline_2d(self):
+        x = np.arange(1, 6)
+        x = np.array([.5, 2., 3., 4., 5.5])
+        y = np.arange(1, 6)
+        y = np.array([.5, 2., 3., 4., 5.5])
+        z = np.array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
+                      [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
+        lut = RectBivariateSpline(x, y, z)
+
+        xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
+                       [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
+        assert_array_almost_equal(interpn((x, y), z, xi, method="splinef2d"),
+                                  lut.ev(xi[:, 0], xi[:, 1]))
+
+    def test_linear_4d(self):
+        # create a 4d grid of 3 points in each dimension
+        points = [(0., .5, 1.)] * 2 + [(0., 5., 10.)] * 2
+        values = np.asarray([0., .5, 1.])
+        values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
+        values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
+        values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
+        values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
+        values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
+        interp_rg = RegularGridInterpolator(points, values)
+        sample = np.asarray([0.1, 0.1, 10., 9.])
+        wanted = interpn(points, values, sample, method="linear")
+        assert_array_almost_equal(interp_rg(sample), wanted)
+
+    def test_nearest_4d(self):
+        # create a 4d grid of 3 points in each dimension
+        points = [(0., .5, 1.)] * 2 + [(0., 5., 10.)] * 2
+        values = np.asarray([0., .5, 1.])
+        values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
+        values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
+        values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
+        values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
+        values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
+        interp_rg = RegularGridInterpolator(points, values, kind="nearest")
+        sample = np.asarray([0.1, 0.1, 10., 9.])
+        wanted = interpn(points, values, sample, method="nearest")
+        assert_array_almost_equal(interp_rg(sample), wanted)
 
 if __name__ == "__main__":
     run_module_suite()
