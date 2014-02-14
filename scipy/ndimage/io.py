@@ -5,13 +5,13 @@ __all__ = ['imread']
 from numpy import array
 
 
-def imread(imfile, flatten=False, mode=None):
+def imread(fname, flatten=False, mode=None):
     """
     Read an image from a file as an array.
 
     Parameters
     ----------
-    imfile : str
+    fname : str
         Image file name, e.g. ``test.jpg``, or a file object.
     flatten : bool, optional
         If true, convert the output to grey-scale. Default is False.
@@ -40,7 +40,7 @@ def imread(imfile, flatten=False, mode=None):
                           " http://pypi.python.org/pypi/PIL/ for installation"
                           " instructions.")
 
-    im = Image.open(imfile)
+    im = Image.open(fname)
     if mode:
         im = im.convert(mode)
     if flatten:

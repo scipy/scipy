@@ -100,13 +100,13 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     return cast[uint8](bytedata) + cast[uint8](low)
 
 
-def imread(imfile, flatten=0):
+def imread(name, flatten=0):
     """
     Read an image from a file as an array.
 
     Parameters
     ----------
-    imfile : str or file object
+    name : str or file object
         The file name or file object to be read.
     flatten : bool, optional
         If True, flattens the color layers into a single gray-scale layer.
@@ -123,17 +123,17 @@ def imread(imfile, flatten=0):
 
     """
 
-    im = Image.open(imfile)
+    im = Image.open(name)
     return fromimage(im,flatten=flatten)
 
 
-def imsave(imfile, arr, format=None):
+def imsave(name, arr, format=None):
     """
     Save an array as an image.
 
     Parameters
     ----------
-    imfile : str or file object
+    name : str or file object
         Output file name or file object.
     arr : ndarray, MxN or MxNx3 or MxNx4
         Array containing image values.  If the shape is ``MxN``, the array
@@ -165,9 +165,9 @@ def imsave(imfile, arr, format=None):
     """
     im = toimage(arr)
     if format is None:
-        im.save(imfile)
+        im.save(name)
     else:
-        im.save(imfile, format)
+        im.save(name, format)
     return
 
 
