@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import itertools
 import warnings
 
 from numpy.testing import (assert_, assert_equal, assert_almost_equal,
@@ -13,7 +14,8 @@ from scipy.lib._version import NumpyVersion
 
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          ppform, splrep, splev, splantider, splint, sproot,
-         RegularGridInterpolator)
+         RegularGridInterpolator, LinearNDInterpolator,
+         NearestNDInterpolator)
 
 from scipy.interpolate import _ppoly
 
@@ -1280,6 +1282,44 @@ class TestRegularGridInterpolator(TestCase):
                              [0.5, 0.5, .5, .5]])
         wanted = np.asarray([1001.1, 846.2, 555.5])
         assert_array_almost_equal(interp(sample), wanted)
+
+    def test_nearest_compare_qhull(self):
+        # create a 4d grid of 3 points in each dimension
+        points = [(0., .5, 1.)] * 4
+        values = np.asarray([0., .5, 1.])
+        values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
+        values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
+        values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
+        values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
+        values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
+        interp = RegularGridInterpolator(points, values, kind="nearest")
+        points_qhull = itertools.product(*points)
+        points_qhull = [p for p in points_qhull]
+        points_qhull = np.asarray(points_qhull)
+        values_qhull = values.reshape(-1)
+        interp_qhull = NearestNDInterpolator(points_qhull, values_qhull)
+        sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
+                             [0.5, 0.5, .5, .5]])
+        assert_array_almost_equal(interp(sample), interp_qhull(sample))
+
+    def test_linear_compare_qhull(self):
+        # create a 4d grid of 3 points in each dimension
+        points = [(0., .5, 1.)] * 4
+        values = np.asarray([0., .5, 1.])
+        values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
+        values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
+        values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
+        values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
+        values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
+        interp = RegularGridInterpolator(points, values)
+        points_qhull = itertools.product(*points)
+        points_qhull = [p for p in points_qhull]
+        points_qhull = np.asarray(points_qhull)
+        values_qhull = values.reshape(-1)
+        interp_qhull = LinearNDInterpolator(points_qhull, values_qhull)
+        sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
+                             [0.5, 0.5, .5, .5]])
+        assert_array_almost_equal(interp(sample), interp_qhull(sample))
 
 if __name__ == "__main__":
     run_module_suite()
