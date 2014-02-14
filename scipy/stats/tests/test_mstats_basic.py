@@ -966,7 +966,10 @@ class TestCompareWithStats(TestCase):
                 r = stats.skewtest(x)
                 rm = stats.mstats.skewtest(xm)
                 assert_equal(r[0], rm[0])
-                # assert_equal(r[1], rm[1])  # TODO this test is not performed as it is a known issue that mstats returns a slightly different p-value
+                # TODO this test is not performed as it is a known issue that mstats returns a slightly different p-value
+                # what is a bit strange is that other tests like test_maskedarray_input
+                # don't fail!
+                #~ assert_almost_equal(r[1], rm[1])
 
     def test_skewtest_2D_notmasked(self):
         # a normal ndarray is passed to the masked function

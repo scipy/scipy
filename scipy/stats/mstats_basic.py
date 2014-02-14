@@ -1675,7 +1675,8 @@ def skewtest(a, axis=0):
     alpha = ma.sqrt(2.0/(W2-1))
     y = ma.where(y == 0, 1, y)
     Z = delta*ma.log(y/alpha + ma.sqrt((y/alpha)**2+1))
-    return Z, (1.0 - stats.zprob(Z))*2
+    #~ return Z, (1.0 - stats.distributions.norm.sf(Z))*2.
+    return Z, (1.0 - stats.zprob(Z))*2.
 skewtest.__doc__ = stats.skewtest.__doc__
 
 
