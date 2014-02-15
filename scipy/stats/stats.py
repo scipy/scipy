@@ -386,11 +386,11 @@ def _nanmedian(arr1d):  # This only works on 1d arrays
     m : float
         The median.
     """
-    cond = 1-np.isnan(arr1d)
-    x = np.sort(np.compress(cond,arr1d,axis=-1))
+    cond = ~np.isnan(arr1d)
+    x = np.compress(cond, arr1d, axis=-1)
     if x.size == 0:
         return np.nan
-    return np.median(x)
+    return np.median(x, overwrite_input=True)
 
 
 def nanmedian(x, axis=0):
@@ -443,7 +443,6 @@ def nanmedian(x, axis=0):
     x, axis = _chk_asarray(x, axis)
     if x.ndim == 0:
         return float(x.item())
-    x = x.copy()
     x = np.apply_along_axis(_nanmedian, axis, x)
     if x.ndim == 0:
         x = float(x.item())
