@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 
 import time
 import warnings
+import itertools
 
 import numpy
 import numpy as np
@@ -291,59 +292,49 @@ class BenchmarkSparse(TestCase):
             print(output)
 
 
-    def _getset_bench(self, kernel, formats):
-        print('==========================================================')
-        print('      N | s.patt. |' + ''.join(' %7s |' % fmt for fmt in formats))
-        print('----------------------------------------------------------')
+    def _getset_bench(self, kernel, getargs, formats, Ns, spats=(False, True),
+                      Ms=(1000,), densities=(1e-5,), msg=''):
+        print()
+        print('    MxM sparse matrix %s' % (msg,))
+        print('='*80)
+        print('|'.join(' %7s ' % x for x in (['N', 's.patt.', 'dens.', 'M'] + formats)))
+        print('-'*80)
 
-        A = rand(1000, 1000, density=1e-5)
-
-        for N in [1, 10, 100, 1000, 10000]:
-            for spat in [False, True]:
+        for M, density in itertools.product(Ms, densities):
+            A = rand(M, M, density=density)
+            for N, spat in itertools.product(Ns, spats):
                 # indices to assign to
-                i, j = [], []
-                while len(i) < N:
-                    n = N - len(i)
-                    ip = np.random.randint(0, A.shape[0], size=n)
-                    jp = np.random.randint(0, A.shape[1], size=n)
-                    i = np.r_[i, ip]
-                    j = np.r_[j, jp]
-                v = np.random.rand(n)
-
-                if N == 1:
-                    i = int(i)
-                    j = int(j)
-                    v = float(v)
-
+                kernel_args = getargs(A, N)
                 times = []
 
                 for fmt in formats:
-                    if fmt == 'dok' and N > 500:
-                        times.append(None)
-                        continue
-
                     base = A.asformat(fmt)
                     
                     m = base.copy()
                     if spat:
-                        kernel(m, i, j, v)
+                        kernel(m, *kernel_args)
 
                     with warnings.catch_warnings():
                         warnings.simplefilter('ignore', SparseEfficiencyWarning)
 
                         iter = 0
                         total_time = 0
+                        clock_start = time.clock()
                         while total_time < 0.2 and iter < 5000:
                             if not spat:
                                 m = base.copy()
                             a = time.clock()
-                            kernel(m, i, j, v)
-                            total_time += time.clock() - a
+                            kernel(m, *kernel_args)
+                            t = time.clock()
+                            total_time += t - a
                             iter += 1
+                            if t - clock_start > 1:
+                                break
 
                     times.append(total_time/float(iter))
 
-                output = " %6d | %7s " % (N, "same" if spat else "change")
+                output = " %7d | %7s | %7g | %7d " % (N, "same" if spat else "change",
+                                                      density, M)
                 for t in times:
                     if t is None:
                         output += '|    n/a    '
@@ -351,19 +342,113 @@ class BenchmarkSparse(TestCase):
                         output += '| %5.2fms ' % (1e3*t)
                 print(output)
 
-    def bench_setitem(self):
-        def kernel(A, i, j, v):
-            A[i, j] = v
-        print()
-        print('           Sparse Matrix fancy __setitem__')
-        self._getset_bench(kernel, ['csr', 'csc', 'lil', 'dok'])
+    def _getset_set_kernel(self, A, i, j, v):
+        A[i, j] = v
 
-    def bench_getitem(self):
-        def kernel(A, i, j, v=None):
-            A[i, j]
-        print()
-        print('           Sparse Matrix fancy __getitem__')
-        self._getset_bench(kernel,  ['csr', 'csc', 'lil'])
+    def _getset_get_kernel(self, A, i, j, v=None):
+        A[i, j]
+
+    def _getset_args_random(self, A, N):
+        i, j = [], []
+        while len(i) < N:
+            n = N - len(i)
+            ip = np.random.randint(0, A.shape[0], size=n)
+            jp = np.random.randint(0, A.shape[1], size=n)
+            i = np.r_[i, ip]
+            j = np.r_[j, jp]
+        v = np.random.rand(n)
+        if N == 1:
+            i = int(i)
+            j = int(j)
+            v = float(v)
+        return i, j, v
+
+    def bench_setitem_random(self):
+        self._getset_bench(self._getset_set_kernel, self._getset_args_random,
+                           ['csr', 'csc', 'lil', 'dok'],
+                           [1, 10, 100, 1000, 10000],
+                           msg='__setitem__[i, j]; len(i) = len(j) = N; random indices')
+
+    def bench_getitem_random(self):
+        self._getset_bench(self._getset_get_kernel, self._getset_args_random,
+                           ['csr', 'csc', 'lil', 'dok'],
+                           [1, 10, 100, 1000, 10000],
+                           spats=[False],
+                           msg='__getitem__[i, j]; len(i) = len(j) = N; random indices')
+
+    def _getset_args_fullrows(self, A, N):
+        N //= A.shape[0]
+        i, j = [], slice(None)
+        while len(i) < N:
+            n = N - len(i)
+            ip = np.random.randint(0, A.shape[0], size=n)
+            i = np.r_[i, ip]
+        v = np.random.rand(n, A.shape[1])
+        if N == 1:
+            i = int(i)
+        return i, j, v
+
+    def bench_setitem_fullrow(self):
+        self._getset_bench(self._getset_set_kernel, self._getset_args_fullrows,
+                           ['csr', 'csc', 'lil', 'dok'],
+                           [1000, 10000, 100000],
+                           densities=(1e-5, 1e-2, 0.5),
+                           msg="__setitem__[idx,:]; len(idx)*M == N",
+                           )
+
+    def bench_getitem_fullrow(self):
+        self._getset_bench(self._getset_get_kernel, self._getset_args_fullrows,
+                           ['csr', 'csc', 'lil', 'dok'],
+                           [1000, 10000, 100000],
+                           densities=(1e-5, 1e-2, 0.5),
+                           spats=[False],
+                           msg="__getitem__[idx,:]; len(idx)*M == N")
+
+    def _getset_args_fullcols(self, A, N):
+        i, j, v = self._getset_args_fullrows(A, N)
+        return j, i, v.T
+
+    def bench_setitem_fullcol(self):
+        self._getset_bench(self._getset_set_kernel, self._getset_args_fullcols,
+                           ['csr', 'csc', 'lil', 'dok'],
+                           [1000, 10000, 100000],
+                           densities=(1e-5, 1e-2, 0.5),
+                           msg="__setitem__[:,idx]; len(idx)*M == N",
+                           )
+
+    def bench_getitem_fullcol(self):
+        self._getset_bench(self._getset_get_kernel, self._getset_args_fullcols,
+                           ['csr', 'csc', 'lil', 'dok'],
+                           [1000, 10000, 100000],
+                           densities=(1e-5, 1e-2, 0.5),
+                           spats=[False],
+                           msg="__getitem__[:,idx]; len(idx)*M == N")
+
+    def _getset_args_slices(self, A, N):
+        k = max(1, int(np.sqrt(N)))
+        i = slice((A.shape[0]-k)//2, (A.shape[0]+k)//2)
+        j = slice((A.shape[0]-k)//2, (A.shape[0]+k)//2)
+        a = xrange(*i.indices(A.shape[0]))
+        b = xrange(*j.indices(A.shape[0]))
+        v = np.random.rand(len(a), len(b))
+        return i, j, v
+
+    def bench_setitem_slices(self):
+        self._getset_bench(self._getset_set_kernel, self._getset_args_slices,
+                           ['csr', 'csc', 'lil', 'dok'],
+                           [1, 10, 100, 1000, 10000, 100000],
+                           densities=(1e-5, 1e-2, 0.5),
+                           msg="__setitem__[a:b,c:d]; (b-a)*(d-c) = N",
+                           )
+
+    def bench_getitem_slices(self):
+        self._getset_bench(self._getset_get_kernel, self._getset_args_slices,
+                           ['csr', 'csc', 'lil', 'dok'],
+                           [1, 10, 100, 1000, 10000, 100000],
+                           densities=(1e-5, 1e-2, 0.5),
+                           spats=[False],
+                           msg="__getitem__[a:b,c:d]; (b-a)*(d-c) = N")
+
 
 # class TestLarge(TestCase):
 #    def bench_large(self):
