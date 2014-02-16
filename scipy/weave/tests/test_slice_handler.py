@@ -1,10 +1,13 @@
 from __future__ import absolute_import, print_function
 
-from numpy.testing import TestCase, assert_equal
+import parser
+
+from numpy.testing import TestCase, assert_equal, run_module_suite
 
 from scipy.weave import slice_handler
 from scipy.weave.slice_handler import indexed_array_pattern
 from scipy.weave.ast_tools import ast_to_string, find_first_pattern
+from weave_test_utils import remove_whitespace
 
 
 class TestBuildSliceAtom(TestCase):
@@ -24,139 +27,129 @@ class TestBuildSliceAtom(TestCase):
 class TestSlice(TestCase):
 
     def generic_check(self,suite_string,desired):
-        import parser
         ast_tuple = parser.suite(suite_string).totuple()
         found, data = find_first_pattern(ast_tuple,indexed_array_pattern)
-        subscript = data['subscript_list'][1]  # [0] is symbol, [1] is the supscript
+        subscript = data['subscript_list'][1]  # [0] is symbol, [1] is the subscript
         actual = slice_handler.slice_ast_to_dict(subscript)
         assert_equal(actual,desired,suite_string)
 
     def test_empty_2_slice(self):
-        """match slice from a[:]"""
+        # match slice from a[:]
         test = "a[:]"
         desired = {'begin':'_beg', 'end':'_end', 'step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
 
     def test_begin_2_slice(self):
-        """match slice from a[1:]"""
+        # match slice from a[1:]
         test = "a[1:]"
         desired = {'begin':'1', 'end':'_end', 'step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
 
     def test_end_2_slice(self):
-        """match slice from a[:2]"""
+        # match slice from a[:2]
         test = "a[:2]"
         desired = {'begin':'_beg', 'end':'2', 'step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
 
     def test_begin_end_2_slice(self):
-        """match slice from a[1:2]"""
+        # match slice from a[1:2]
         test = "a[1:2]"
         desired = {'begin':'1', 'end':'2', 'step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
 
     def test_empty_3_slice(self):
-        """match slice from a[::]"""
+        # match slice from a[::]
         test = "a[::]"
         desired = {'begin':'_beg', 'end':'_end', 'step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
 
     def test_begin_3_slice(self):
-        """match slice from a[1::]"""
+        # match slice from a[1::]
         test = "a[1::]"
         desired = {'begin':'1', 'end':'_end', 'step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
 
     def test_end_3_slice(self):
-        """match slice from a[:2:]"""
+        # match slice from a[:2:]
         test = "a[:2:]"
         desired = {'begin':'_beg', 'end':'2', 'step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
 
     def test_stp3_slice(self):
-        """match slice from a[::3]"""
+        # match slice from a[::3]
         test = "a[::3]"
         desired = {'begin':'_beg', 'end':'_end', 'step':'3',
                    'single_index':'_index'}
         self.generic_check(test,desired)
 
     def test_begin_end_3_slice(self):
-        """match slice from a[1:2:]"""
+        # match slice from a[1:2:]
         test = "a[1:2:]"
         desired = {'begin':'1', 'end':'2','step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
 
     def test_begin_step_3_slice(self):
-        """match slice from a[1::3]"""
+        # match slice from a[1::3]
         test = "a[1::3]"
         desired = {'begin':'1', 'end':'_end','step':'3',
                    'single_index':'_index'}
         self.generic_check(test,desired)
 
     def test_end_step_3_slice(self):
-        """match slice from a[:2:3]"""
+        # match slice from a[:2:3]
         test = "a[:2:3]"
         desired = {'begin':'_beg', 'end':'2', 'step':'3',
                    'single_index':'_index'}
         self.generic_check(test,desired)
 
     def test_begin_end_stp3_slice(self):
-        """match slice from a[1:2:3]"""
+        # match slice from a[1:2:3]
         test = "a[1:2:3]"
         desired = {'begin':'1', 'end':'2', 'step':'3','single_index':'_index'}
         self.generic_check(test,desired)
 
     def test_expr_3_slice(self):
-        """match slice from a[:1+i+2:]"""
+        # match slice from a[:1+i+2:]
         test = "a[:1+i+2:]"
         desired = {'begin':'_beg', 'end':"1+i+2",'step':'_stp',
                    'single_index':'_index'}
         self.generic_check(test,desired)
 
     def test_single_index(self):
-        """match slice from a[0]"""
+        # match slice from a[0]
         test = "a[0]"
         desired = {'begin':'_beg', 'end':"_end",'step':'_stp',
                    'single_index':'0'}
         self.generic_check(test,desired)
 
 
-def replace_whitespace(in_str):
-    out = in_str.replace(" ","")
-    out = out.replace("\t","")
-    out = out.replace("\n","")
-    return out
-
-
 class TestTransformSlices(TestCase):
 
     def generic_check(self,suite_string,desired):
-        import parser
         ast_list = parser.suite(suite_string).tolist()
         slice_handler.transform_slices(ast_list)
         actual = ast_to_string(ast_list)
         # Remove white space from expressions so that equivalent
         # but differently formatted string will compare equally
-        actual = replace_whitespace(actual)
-        desired = replace_whitespace(desired)
+        actual = remove_whitespace(actual)
+        desired = remove_whitespace(desired)
         assert_equal(actual,desired,suite_string)
 
     def test_simple_expr1(self):
-        """transform a[:] to slice notation"""
+        # transform a[:] to slice notation
         test = "a[:]"
         desired = 'a[slice(_beg,_end)]'
         self.generic_check(test,desired)
 
     def test_simple_expr2(self):
-        """transform a[:,:] = b[:,1:1+2:3] *(c[1-2+i:,:] - c[:,:])"""
         test = "a[:,:] = b[:,1:1+2:3] *(c[1-2+i:,:] - c[:,:])"
         desired = " a[slice(_beg,_end),slice(_beg,_end)] = "\
                                     " b[slice(_beg,_end), slice(1,1+2-1,3)] *"\
@@ -166,5 +159,4 @@ class TestTransformSlices(TestCase):
 
 
 if __name__ == "__main__":
-    import nose
-    nose.run(argv=['', __file__])
+    run_module_suite()

@@ -1,5 +1,3 @@
-""" converters.py
-"""
 from __future__ import absolute_import, print_function
 
 from . import common_info
@@ -65,8 +63,7 @@ standard_info += [x.generate_build_info() for x in default]
 #----------------------------------------------------------------------------
 # Blitz conversion classes
 #
-# same as default, but will convert numerix arrays to blitz C++ classes
-# !! only available if numerix is installed !!
+# same as default, but will convert numpy arrays to blitz C++ classes
 #----------------------------------------------------------------------------
 try:
     from . import blitz_spec

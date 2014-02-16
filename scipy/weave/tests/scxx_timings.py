@@ -1,7 +1,9 @@
 from __future__ import absolute_import, print_function
 
-import weave
 import time
+
+from scipy import weave
+
 
 force = 0
 N = 1000000
@@ -134,6 +136,6 @@ def time_list_copy(N):
     t2 = time.time()
     print('python: ', t2 - t1)
 
+
 if __name__ == "__main__":
-    #time_list_append(N)
     time_list_copy(N)
