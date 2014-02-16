@@ -783,7 +783,7 @@ c     Generate the search direction d:=z-x.
  666  continue
       call lnsrlb(n,l,u,nbd,x,f,fold,gd,gdold,g,d,r,t,z,stp,dnorm,
      +            dtd,xstep,stpmx,iter,ifun,iback,nfgv,info,task,
-     +            boxed,cnstnd,csave,isave(22),dsave(17))
+     +            boxed,cnstnd,csave,isave(22),dsave(17), iprint)
       if (info .ne. 0 .or. iback .ge. 20) then
 c          restore the previous iterate.
          call dcopy(n,t,1,x,1)
@@ -2450,12 +2450,12 @@ c====================== The end of hpsolb ==============================
       subroutine lnsrlb(n, l, u, nbd, x, f, fold, gd, gdold, g, d, r, t,
      +                  z, stp, dnorm, dtd, xstep, stpmx, iter, ifun,
      +                  iback, nfgv, info, task, boxed, cnstnd, csave,
-     +                  isave, dsave)
+     +                  isave, dsave, iprint)
 
       character*60     task, csave
       logical          boxed, cnstnd
       integer          n, iter, ifun, iback, nfgv, info,
-     +                 nbd(n), isave(2)
+     +                 nbd(n), isave(2), iprint
       double precision f, fold, gd, gdold, stp, dnorm, dtd, xstep,
      +                 stpmx, x(n), l(n), u(n), g(n), d(n), r(n), t(n),
      +                 z(n), dsave(13)
@@ -2547,7 +2547,9 @@ c     Determine the maximum step length.
          if (gd .ge. zero) then
 c                               the directional derivative >=0.
 c                               Line search is impossible.
-            write(6,*)' ascent direction in projection gd = ', gd
+            if (iprint .ge. 0) then
+                write(6,*)' ascent direction in projection gd = ', gd
+            endif
             info = -4
             return
          endif
