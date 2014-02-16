@@ -9,7 +9,7 @@ import sys
 import tempfile
 import warnings
 
-from numpy.testing import TestCase, assert_
+from numpy.testing import TestCase, assert_, run_module_suite
 
 from scipy.weave import build_tools
 
@@ -26,28 +26,28 @@ def is_writable(val):
 class TestConfigureBuildDir(TestCase):
 
     def test_default(self):
-        " default behavior is to return current directory "
+        # default behavior is to return current directory
         d = build_tools.configure_build_dir()
         if is_writable('.'):
             assert_(d == os.path.abspath('.'))
         assert_(is_writable(d))
 
     def test_curdir(self):
-        " make sure it handles relative values. "
+        # make sure it handles relative values.
         d = build_tools.configure_build_dir('.')
         if is_writable('.'):
             assert_(d == os.path.abspath('.'))
         assert_(is_writable(d))
 
     def test_pardir(self):
-        " make sure it handles relative values "
+        # make sure it handles relative values
         d = build_tools.configure_build_dir('..')
         if is_writable('..'):
             assert_(d == os.path.abspath('..'))
         assert_(is_writable(d))
 
     def test_bad_path(self):
-        " bad path should return same as default (and warn) "
+        # bad path should return same as default (and warn)
         d = build_tools.configure_build_dir('_bad_path_')
         d2 = build_tools.configure_build_dir()
         assert_(d == d2)
@@ -57,8 +57,8 @@ class TestConfigureBuildDir(TestCase):
 class TestConfigureTempDir(TestConfigureBuildDir):
 
     def test_default(self):
-        " default behavior returns tempdir"
-        # this'll fail if the temp directory isn't writable.
+        # default behavior returns tempdir
+        # Note: this'll fail if the temp directory isn't writable.
         d = build_tools.configure_temp_dir()
         assert_(d == tempfile.gettempdir())
         assert_(is_writable(d))
@@ -83,5 +83,4 @@ class TestConfigureSysArgv(TestCase):
 
 
 if __name__ == "__main__":
-    import nose
-    nose.run(argv=['', __file__])
+    run_module_suite()
