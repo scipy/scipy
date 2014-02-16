@@ -7,14 +7,15 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['lil_matrix','isspmatrix_lil']
 
-from bisect import bisect_left
+from itertools import izip
+from bisect import bisect_left, bisect_right
 
 import numpy as np
 from scipy.lib.six import xrange
 
 from .base import spmatrix, isspmatrix
 from .sputils import getdtype, isshape, issequence, isscalarlike, ismatrix, \
-    IndexMixin, upcast_scalar, get_index_dtype
+    IndexMixin, upcast_scalar, get_index_dtype, isintlike
 
 from warnings import warn
 from .base import SparseEfficiencyWarning
@@ -220,10 +221,29 @@ class lil_matrix(spmatrix, IndexMixin):
     def getrow(self, i):
         """Returns a copy of the 'i'th row.
         """
+        if i < 0:
+            i += self.shape[0]
+        if i < 0 or i >= self.shape[0]:
+            raise IndexError('row index out of bounds')
+
         new = lil_matrix((1, self.shape[1]), dtype=self.dtype)
         new.rows[0] = self.rows[i][:]
         new.data[0] = self.data[i][:]
         return new
+
+    def _check_row_bounds(self, i):
+        if i < 0:
+            i += self.shape[0]
+        if i < 0 or i >= self.shape[0]:
+            raise IndexError('row index out of bounds')
+        return i
+
+    def _check_col_bounds(self, j):
+        if j < 0:
+            j += self.shape[1]
+        if j < 0 or j >= self.shape[1]:
+            raise IndexError('column index out of bounds')
+        return j
 
     def __getitem__(self, index):
         """Return the element(s) index=(i, j), where j may be a slice.
@@ -248,11 +268,36 @@ class lil_matrix(spmatrix, IndexMixin):
         i, j = self._unpack_index(index)
 
         # Proper check for other scalar index types
-        if isscalarlike(i) and isscalarlike(j):
+        i_intlike = isintlike(i)
+        j_intlike = isintlike(j)
+
+        if i_intlike and j_intlike:
             v = _csparsetools.lil_get1(self.shape[0], self.shape[1],
                                        self.rows, self.data,
                                        i, j)
             return self.dtype.type(v)
+        elif j_intlike or isinstance(j, slice):
+            # column slicing fast path
+            if j_intlike:
+                j = self._check_col_bounds(j)
+                j = slice(j, j+1)
+
+            if i_intlike:
+                i = self._check_row_bounds(i)
+                i = xrange(i, i+1)
+                i_shape = None
+            elif isinstance(i, slice):
+                i = xrange(*i.indices(self.shape[0]))
+                i_shape = None
+            else:
+                i = np.atleast_1d(i)
+                i_shape = i.shape
+
+            if i_shape is None or len(i_shape) == 1:
+                return self._get_row_ranges(i, j)
+        elif isinstance(i, slice):
+            # yes, this is quite a bit faster
+            return self.tocsr()[i,j].tolil()
 
         i, j = self._index_to_arrays(i, j)
         if i.size == 0:
@@ -266,6 +311,69 @@ class lil_matrix(spmatrix, IndexMixin):
                                     new.rows, new.data,
                                     i, j)
         return new
+
+    def _get_row_ranges(self, rows, col_slice):
+        """
+        Fast path for indexing in the case where column index is slice.
+
+        This gains performance improvement over brute force by more
+        efficient skipping of zeros, by accessing the elements
+        column-wise in order.
+
+        Parameters
+        ----------
+        rows : sequence or xrange
+            Rows indexed. If xrange, must be within valid bounds.
+        col_slice : slice
+            Columns indexed
+
+        """
+        j_start, j_stop, j_stride = col_slice.indices(self.shape[1])
+        col_range = xrange(j_start, j_stop, j_stride)
+
+        if not isinstance(rows, xrange):
+            rows = [self._check_row_bounds(k) for k in rows]
+
+        if j_stride == 1 and len(col_range) == self.shape[1]:
+            # full row slice
+            new = lil_matrix((len(rows), self.shape[1]), dtype=self.dtype)
+            for nk, k in enumerate(rows):
+                new.rows[nk] = self.rows[k][:]
+                new.data[nk] = self.data[k][:]
+            return new
+        else:
+            # partial row slice
+            nj = len(col_range)
+            new = lil_matrix((len(rows), nj), dtype=self.dtype)
+            for nk, k in enumerate(rows):
+                cur_row = self.rows[k]
+
+                if j_stride > 0:
+                    a = bisect_left(cur_row, j_start)
+                    b = bisect_left(cur_row, j_stop)
+
+                    if j_stride == 1:
+                        new.rows[nk].extend(j - j_start for j in cur_row[a:b])
+                        new.data[nk].extend(self.data[k][a:b])
+                    else:
+                        for j, v in izip(cur_row[a:b], self.data[k][a:b]):
+                            p, r = divmod(j - j_start, j_stride)
+                            if r != 0:
+                                continue
+                            new.rows[nk].append(p)
+                            new.data[nk].append(v)
+                else:
+                    a = bisect_right(cur_row, j_stop)
+                    b = bisect_right(cur_row, j_start)
+
+                    for j, v in izip(cur_row[a:b], self.data[k][a:b]):
+                        p, r = divmod(j - j_start, j_stride)
+                        if r != 0:
+                            continue
+                        new.rows[nk].insert(0, p)
+                        new.data[nk].insert(0, v)
+                            
+            return new
 
     def __setitem__(self, index, x):
         # Scalar fast path first
