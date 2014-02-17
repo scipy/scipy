@@ -18,6 +18,7 @@ from .sputils import getdtype, isshape, issequence, isscalarlike, ismatrix, \
 
 from warnings import warn
 from .base import SparseEfficiencyWarning
+from . import _csparsetools
 
 
 class lil_matrix(spmatrix, IndexMixin):
@@ -225,25 +226,10 @@ class lil_matrix(spmatrix, IndexMixin):
         return new
 
     def _get1(self, i, j):
-
-        if i < 0:
-            i += self.shape[0]
-        if i < 0 or i >= self.shape[0]:
-            raise IndexError('row index out of bounds')
-
-        if j < 0:
-            j += self.shape[1]
-        if j < 0 or j >= self.shape[1]:
-            raise IndexError('column index out of bounds')
-
-        row = self.rows[i]
-        data = self.data[i]
-
-        pos = bisect_left(row, j)
-        if pos != len(data) and row[pos] == j:
-            return self.dtype.type(data[pos])
-        else:
-            return self.dtype.type(0)
+        v = _csparsetools.lil_get1(self.shape[0], self.shape[1],
+                                   self.rows, self.data,
+                                   i, j)
+        return self.dtype.type(v)
 
     def __getitem__(self, index):
         """Return the element(s) index=(i, j), where j may be a slice.
@@ -260,9 +246,24 @@ class lil_matrix(spmatrix, IndexMixin):
         if i.size == 0:
             return lil_matrix(i.shape, dtype=self.dtype)
 
-        return self.__class__([[self._get1(iii, jjj) for iii, jjj in
-                                zip(ii, jj)] for ii, jj in
-                               zip(i.tolist(), j.tolist())], dtype=self.dtype)
+        new = lil_matrix(i.shape, dtype=self.dtype)
+
+        i = i.astype(np.intp)
+        j = j.astype(np.intp)
+
+        import time
+        t= time.time()
+        _csparsetools.lil_fancy_get(self.shape[0], self.shape[1],
+                                    self.rows, self.data,
+                                    new.rows, new.data,
+                                    i, j)
+        print(time.time()-t)
+
+        return new
+
+        #return self.__class__([[self._get1(iii, jjj) for iii, jjj in
+        #                        zip(ii, jj)] for ii, jj in
+        #                       zip(i.tolist(), j.tolist())], dtype=self.dtype)
 
     def _insertat2(self, row, data, j, x):
         """ helper for __setitem__: insert a value in the given row/data at

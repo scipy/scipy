@@ -15,6 +15,9 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('sparsetools')
     config.add_subpackage('csgraph')
 
+    config.add_extension('_csparsetools',
+                         sources=['_csparsetools.c'])
+
     return config
 
 if __name__ == '__main__':
