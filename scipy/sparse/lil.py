@@ -248,55 +248,16 @@ class lil_matrix(spmatrix, IndexMixin):
 
         new = lil_matrix(i.shape, dtype=self.dtype)
 
-        i = i.astype(np.intp)
-        j = j.astype(np.intp)
+        if i.dtype != np.intp:
+            i = i.astype(np.intp)
+        if j.dtype != np.intp:
+            j = j.astype(np.intp)
 
-        import time
-        t= time.time()
         _csparsetools.lil_fancy_get(self.shape[0], self.shape[1],
                                     self.rows, self.data,
                                     new.rows, new.data,
                                     i, j)
-        print(time.time()-t)
-
         return new
-
-        #return self.__class__([[self._get1(iii, jjj) for iii, jjj in
-        #                        zip(ii, jj)] for ii, jj in
-        #                       zip(i.tolist(), j.tolist())], dtype=self.dtype)
-
-    def _insertat2(self, row, data, j, x):
-        """ helper for __setitem__: insert a value in the given row/data at
-        column j. """
-
-        if j < 0:  # handle negative column indices
-            j += self.shape[1]
-
-        if j < 0 or j >= self.shape[1]:
-            raise IndexError('column index out of bounds')
-
-        if not np.isscalar(x):
-            raise ValueError('setting an array element with a sequence')
-
-        try:
-            x = self.dtype.type(x)
-        except (ValueError, TypeError):
-            raise TypeError('Unable to convert value (%s) to dtype [%s]' % (x,self.dtype.name))
-
-        pos = bisect_left(row, j)
-        if x != 0:
-            if pos == len(row):
-                row.append(j)
-                data.append(x)
-            elif row[pos] != j:
-                row.insert(pos, j)
-                data.insert(pos, x)
-            else:
-                data[pos] = x
-        else:
-            if pos < len(row) and row[pos] == j:
-                del row[pos]
-                del data[pos]
 
     def __setitem__(self, index, x):
         i, j = self._unpack_index(index)
@@ -323,9 +284,16 @@ class lil_matrix(spmatrix, IndexMixin):
             raise ValueError("shape mismatch in assignment")
 
         # Set values
-        for ii, jj, xx in zip(i.tolist(), j.tolist(), x.tolist()):
-            for iii, jjj, xxx in zip(ii, jj, xx):
-                self._insertat2(self.rows[iii], self.data[iii], jjj, xxx)
+        if i.dtype != np.intp:
+            i = i.astype(np.intp)
+        if j.dtype != np.intp:
+            j = j.astype(np.intp)
+        if x.dtype != self.dtype:
+            x = x.astype(self.dtype)
+
+        _csparsetools.lil_fancy_set(self.shape[0], self.shape[1],
+                                    self.rows, self.data,
+                                    i, j, x)
 
     def _mul_scalar(self, other):
         if other == 0:
@@ -345,8 +313,8 @@ class lil_matrix(spmatrix, IndexMixin):
         if isscalarlike(other):
             new = self.copy()
             # Divide every element by this scalar
-            new.data = [[val/other for val in rowvals] for
-                        rowvals in new.data]
+            new.data[:] = [[val/other for val in rowvals] for
+                           rowvals in new.data]
             return new
         else:
             return self.tocsr() / other
