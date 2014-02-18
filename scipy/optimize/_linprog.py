@@ -129,7 +129,6 @@ def linprog_terse_callback(xk, **kwargs):
     print(xk)
 
 
-
 def _pivot_col(T,tol=1.0E-12,bland=False):
     """
     Given a linear programming simplex tableau, determine the column
@@ -157,7 +156,7 @@ def _pivot_col(T,tol=1.0E-12,bland=False):
         The index of the column of the pivot element.  If status is False, col
         will be returned as nan.
     """
-    ma = np.ma.masked_where( T[-1,:-1] >= -tol,  T[-1,:-1], copy=False)
+    ma = np.ma.masked_where(T[-1,:-1] >= -tol,T[-1,:-1],copy=False)
     if ma.count() == 0:
         return False, np.nan
     if bland:
@@ -196,13 +195,12 @@ def _pivot_row(T,pivcol,phase,tol=1.0E-12):
         k = 2
     else:
         k = 1
-    ma = np.ma.masked_where( T[:-k,pivcol] <= tol,  T[:-k,pivcol], copy=False)
+    ma = np.ma.masked_where(T[:-k,pivcol] <= tol,T[:-k,pivcol],copy=False)
     if ma.count() == 0:
         return False, np.nan
-    mb = np.ma.masked_where( T[:-k,pivcol] <= tol,  T[:-k,-1], copy=False)
+    mb = np.ma.masked_where(T[:-k,pivcol] <= tol,T[:-k,-1],copy=False)
     q = mb / ma
     return True, np.ma.where(q == q.min())[0][0]
-
 
 
 def _solve_simplex(T,n,basis,maxiter=1000,phase=2,callback=None,
