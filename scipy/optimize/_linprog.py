@@ -129,8 +129,76 @@ def linprog_terse_callback(xk, **kwargs):
     print(xk)
 
 
-def _solve_simplex(T,n,basis,maxiter=1000,phase=2,callback=None,tol=1.0E-12,
-                   nit0=0,bland=False):
+
+def _pivot_col(T,tol,bland=False):
+    """
+    Given a linear programming simplex tableau, determine the column
+    of the variable to enter the basis.
+
+    Parameters
+    ----------
+    T : 2D ndarray
+        The simplex tableau.
+    bland : bool
+        If True, use Bland's rule for selection of the column (select the
+        first column with a negative coefficient in the objective row, regardless
+        of magnitude).
+
+    Returns
+    -------
+    status: bool
+        True if a suitable pivot column was found, otherwise False.  A return
+        of False indicates that the linear programming simplex algorithm is complete.
+    col: int
+        The index of the column of the pivot element.  If status is False, col
+        will be returned as nan.
+    """
+    ma = np.ma.masked_where( T[-1,:-1] >= -tol,  T[-1,:-1], copy=False)
+    if ma.count() == 0:
+        return False, np.nan
+    if bland:
+        return True, np.where(ma.mask == False)[0][0]
+    return True, np.ma.where(ma == ma.min())[0][0]
+
+
+def _pivot_row(T,pivcol,phase):
+    """
+    Given a linear programming simplex tableau, determine the row for the
+    pivot operation.
+
+    Parameters
+    ----------
+    T : 2D ndarray
+        The simplex tableau.
+    pivcol : int
+        The index of the pivot column.
+    phase : int
+        The phase of the simplex algorithm (1 or 2).
+
+    Returns
+    -------
+    status: bool
+        True if a suitable pivot row was found, otherwise False.  A return
+        of False indicates that the linear programming problem is unbounded.
+    row: int
+        The index of the row of the pivot element.  If status is False, row
+        will be returned as nan.
+    """
+    if phase == 1:
+        k = 2
+    else:
+        k = 1
+    ma = np.ma.masked_where( T[:-k,pivcol] <= 0,  T[:-k,pivcol], copy=False)
+    if ma.count() == 0:
+        return False, np.nan
+    mb = np.ma.masked_where( T[:-k,pivcol] <= 0,  T[:-k,-1], copy=False)
+    q = mb / ma
+    return True, np.ma.where(q == q.min())[0][0]
+
+
+
+def _solve_simplex(T,n,basis,maxiter=1000,phase=2,callback=None,
+                   tol=1.0E-12,nit0=0,bland=False):
     """
     Solve a linear programming problem in "standard maximization form" using
     the Simplex Method.
@@ -235,46 +303,20 @@ def _solve_simplex(T,n,basis,maxiter=1000,phase=2,callback=None,tol=1.0E-12,
     else:
         raise ValueError("Argument 'phase' to _solve_simplex must be 1 or 2")
 
-    # Suppress division by zero warnings
-    saved_errors = np.seterr(all="ignore")
-
     while not complete:
-        # Find the most negative value in bottom row of T.
-        # Per Bland's rule, choose the leftmost column with that value as
-        # the pivot column.
-        if bland:
-            # Choose the leftmost column with a negative coefficient as the pivot
-            # column
-            neg_cols = np.argwhere(T[-1,:-1] < -tol).ravel()
-            if len(neg_cols) == 0:
-                pivcol = None
-            else:
-                pivcol = neg_cols[0]
-        else:
-            min_coeff = np.min(T[-1,:-1])
-            if min_coeff < -tol:
-                pivcol = np.argwhere(T[-1,:-1] == min_coeff).ravel()[0]
-            else:
-                pivcol = None
-
-        if pivcol is None:
+        # Find the pivot column
+        pivcol_found, pivcol = _pivot_col(T,tol,bland)
+        if not pivcol_found:
             pivcol = np.nan
             pivrow = np.nan
             status = 0
             complete = True
         else:
-            q = T[:m,-1] / T[:m,pivcol]  # Quotients for the minimum quotient rule
-            pos_q = np.argwhere(q > tol).ravel()  # Indices of the positive q
-
-            if len(pos_q) == 0:
-                # No valid pivot, problem unbounded
+            # Find the pivot row
+            pivrow_found, pivrow = _pivot_row(T,pivcol,phase)
+            if not pivrow_found:
                 status = 3
                 complete = True
-                pivrow = None
-            else:
-                # Per Bland's rule, choose the topmost row with the minimum
-                # q as the pivot row.
-                pivrow = np.argwhere(q == np.min(q[pos_q])).ravel()[0]
 
         if not callback is None:
             solution[:] = 0
@@ -286,28 +328,21 @@ def _solve_simplex(T,n,basis,maxiter=1000,phase=2,callback=None,tol=1.0E-12,
                                       "basis":basis,
                                       "complete": complete and phase == 2})
 
-        if nit >= maxiter and not complete:
-            # Iteration limit exceeded
-            status = 1
-            complete = True
-
         if not complete:
             if nit >= maxiter:
+                # Iteration limit exceeded
                 status = 1
                 complete = True
             else:
                 # variable represented by pivcol enters
                 # variable in basis[pivrow] leaves
                 basis[pivrow] = pivcol
-                pivval = T[pivrow,pivcol]
+                pivval = T[pivrow][pivcol]
                 T[pivrow,:] = T[pivrow,:] / pivval
                 for irow in range(T.shape[0]):
                     if irow != pivrow:
                         T[irow,:] = T[irow,:] - T[pivrow,:]*T[irow,pivcol]
                 nit += 1
-
-    # Return the division by zero warning flag to its original state
-    np.seterr(**saved_errors)
 
     return nit, status
 
@@ -851,7 +886,7 @@ def linprog(c,A_eq=None,b_eq=None,A_ub=None,b_ub=None,
     >>> b = [6,4]
     >>> x0_bounds = (None,None)
     >>> x1_bounds = (-3,None)
-    >>> res = linprog(c,A,b,bounds=(x0_bounds,x1_bounds),options={"disp":True})
+    >>> res = linprog(c,A_ub=A,b_ub=b,bounds=(x0_bounds,x1_bounds),options={"disp":True})
     >>> print(res)
     Optimization terminated successfully.
          Current function value: -11.428571
