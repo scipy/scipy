@@ -2580,7 +2580,7 @@ def fisher_exact(table, alternative='two-sided'):
         pmode = hypergeom.pmf(mode, n1 + n2, n1, n)
 
         epsilon = 1 - 1e-4
-        if float(np.abs(pexact - pmode)) / np.abs(np.max(pexact, pmode)) <= 1 - epsilon:
+        if np.abs(pexact - pmode) / np.maximum(pexact, pmode) <= 1 - epsilon:
             return oddsratio, 1.
 
         elif c[0,0] < mode:
