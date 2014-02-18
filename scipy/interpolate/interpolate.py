@@ -178,6 +178,11 @@ class interp2d(object):
 
         rectangular_grid = (z.size == len(x) * len(y))
         if rectangular_grid:
+            if z.ndim == 2:
+                if z.shape != (len(y), len(x)):
+                    raise ValueError("When on a regular grid with x.size = m "
+                                     "and y.size = n, if z.ndim == 2, then z "
+                                     "must have shape (n, m)")
             if not np.all(x[1:] >= x[:-1]):
                 j = np.argsort(x)
                 x = x[j]
