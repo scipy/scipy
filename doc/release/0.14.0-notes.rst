@@ -36,8 +36,8 @@ If performance is critical, sorting can be turned off by using the new
 Functionality for evaluation of bivariate spline derivatives in
 ``scipy.interpolate`` has been added.
 
-The new class `scipy.interpolate.Akima` implements the piecewise cubic
-polynomial interpolation scheme devised by H. Akima.
+The new class `scipy.interpolate.AkimaInterpolator` implements the piecewise
+cubic polynomial interpolation scheme devised by H. Akima.
 
 ``scipy.linalg`` improvements
 -----------------------------
