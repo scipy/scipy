@@ -625,6 +625,11 @@ def splint(a,b,tck,full_output=0):
         An array containing the integrals of the normalized B-splines
         defined on the set of knots.
 
+    Notes
+    -----
+    splint silently assumes that the spline function is zero outside the data
+    interval (a, b). 
+
     See Also
     --------
     splprep, splrep, sproot, spalde, splev
