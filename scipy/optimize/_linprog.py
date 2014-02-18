@@ -130,7 +130,7 @@ def linprog_terse_callback(xk, **kwargs):
 
 
 
-def _pivot_col(T,tol,bland=False):
+def _pivot_col(T,tol=1.0E-12,bland=False):
     """
     Given a linear programming simplex tableau, determine the column
     of the variable to enter the basis.
@@ -139,6 +139,10 @@ def _pivot_col(T,tol,bland=False):
     ----------
     T : 2D ndarray
         The simplex tableau.
+    tol : float
+        Elements in the objective row larger than -tol will not be considered
+        for pivoting.  Nominally this value is zero, but numerical issues
+        cause a tolerance about zero to be necessary.
     bland : bool
         If True, use Bland's rule for selection of the column (select the
         first column with a negative coefficient in the objective row, regardless
@@ -161,7 +165,7 @@ def _pivot_col(T,tol,bland=False):
     return True, np.ma.where(ma == ma.min())[0][0]
 
 
-def _pivot_row(T,pivcol,phase):
+def _pivot_row(T,pivcol,phase,tol=1.0E-12):
     """
     Given a linear programming simplex tableau, determine the row for the
     pivot operation.
@@ -174,6 +178,10 @@ def _pivot_row(T,pivcol,phase):
         The index of the pivot column.
     phase : int
         The phase of the simplex algorithm (1 or 2).
+    tol : float
+        Elements in the pivot column smaller than tol will not be considered
+        for pivoting.  Nominally this value is zero, but numerical issues
+        cause a tolerance about zero to be necessary.
 
     Returns
     -------
@@ -188,10 +196,10 @@ def _pivot_row(T,pivcol,phase):
         k = 2
     else:
         k = 1
-    ma = np.ma.masked_where( T[:-k,pivcol] <= 0,  T[:-k,pivcol], copy=False)
+    ma = np.ma.masked_where( T[:-k,pivcol] <= tol,  T[:-k,pivcol], copy=False)
     if ma.count() == 0:
         return False, np.nan
-    mb = np.ma.masked_where( T[:-k,pivcol] <= 0,  T[:-k,-1], copy=False)
+    mb = np.ma.masked_where( T[:-k,pivcol] <= tol,  T[:-k,-1], copy=False)
     q = mb / ma
     return True, np.ma.where(q == q.min())[0][0]
 
@@ -313,7 +321,7 @@ def _solve_simplex(T,n,basis,maxiter=1000,phase=2,callback=None,
             complete = True
         else:
             # Find the pivot row
-            pivrow_found, pivrow = _pivot_row(T,pivcol,phase)
+            pivrow_found, pivrow = _pivot_row(T,pivcol,phase,tol)
             if not pivrow_found:
                 status = 3
                 complete = True
