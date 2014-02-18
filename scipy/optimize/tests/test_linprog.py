@@ -7,7 +7,7 @@ from numpy.testing import assert_, assert_array_almost_equal, TestCase, \
                           assert_allclose, run_module_suite, assert_almost_equal
 import numpy as np
 
-from scipy.optimize import linprog
+from scipy.optimize import linprog, linprog_verbose_callback
 
 
 class TestLinprog(TestCase):
@@ -37,12 +37,12 @@ class TestLinprog(TestCase):
                                           "constraints failed with incorrect "
                                           "result.")
 
-        assert_almost_equal(res.fun,-18,err_msg="Test of linprog upper bound"
+        assert_almost_equal(-res.fun,18,err_msg="Test of linprog upper bound"
                             " constraints failed. "
                             "Expected f=18, got {:f}.".format(res.fun))
 
     def test_linprog_mixed_constraints(self):
-        """ Minimize linear function subject non-negative variables. """
+        """ Minimize linear function subject to non-negative variables. """
         #  http://www.statslab.cam.ac.uk/~ff271/teaching/opt/notes/notes8.pdf
         c = [6,3]
         A_ub = [[0, 3],
@@ -135,7 +135,7 @@ class TestLinprog(TestCase):
                 "Test of linprog with nontrivial problem failed.  "
                 "Expected status = 0, got {:d}.".format(res.status))
 
-        assert_almost_equal(res.fun,7083/1391,
+        assert_almost_equal(res.fun,7083/1391,9,
                 "Test of linprog with nontrivial problem converged but yielded "
                 "unexpected result (fun)")
 
