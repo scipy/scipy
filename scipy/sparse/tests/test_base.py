@@ -1608,6 +1608,40 @@ class _TestCommon:
                         yield check, i, j, dtype
 
 
+    @dec.skipif(NumpyVersion(np.__version__) < '1.9.0.dev-0',
+                "feature requires Numpy 1.9")
+    def test_ufunc_object_array(self):
+        # This tests compatibility with previous Numpy object array
+        # ufunc behavior. See gh-3345.
+        a = self.spmatrix([[1, 2]])
+        b = self.spmatrix([[3], [4]])
+        c = self.spmatrix([[5], [6]])
+
+        # Should distribute the operation across the object array
+        d = np.multiply(a, np.array([[b], [c]]))
+        assert_(d.dtype == np.object_)
+        assert_(d.shape == (2, 1))
+        assert_allclose(d[0,0].A, (a*b).A)
+        assert_allclose(d[1,0].A, (a*c).A)
+
+        # Lists also get cast to object arrays
+        d = np.multiply(a, [[b], [c]])
+        assert_(d.dtype == np.object_)
+        assert_(d.shape == (2, 1))
+        assert_allclose(d[0,0].A, (a*b).A)
+        assert_allclose(d[1,0].A, (a*c).A)
+
+        # This returned NotImplemented in Numpy < 1.9; do it properly now
+        d = np.multiply(np.array([[b], [c]]), a)
+        assert_(d.dtype == np.object_)
+        assert_(d.shape == (2, 1))
+        assert_allclose(d[0,0].A, (b*a).A)
+        assert_allclose(d[1,0].A, (c*a).A)
+
+        d = np.subtract(np.array(b, dtype=object), c)
+        assert_(isinstance(d, sparse.spmatrix))
+        assert_allclose(d.A, (b - c).A)
+
 class _TestInplaceArithmetic:
     def test_inplace_dense(self):
         a = np.ones((3, 4))

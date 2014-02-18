@@ -766,6 +766,13 @@ class spmatrix(object):
         functions.
         """
 
+        if any(not isinstance(x, spmatrix) and np.asarray(x).dtype == object
+               for x in inputs):
+            # preserve previous behavior with object arrays
+            with_self = list(inputs)
+            with_self[pos] = np.asarray(self, dtype=object)
+            return getattr(func, method)(*with_self, **kwargs)
+
         out = kwargs.pop('out', None)
         if method != '__call__' or kwargs:
             return NotImplemented
