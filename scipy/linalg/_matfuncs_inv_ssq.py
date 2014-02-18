@@ -10,7 +10,6 @@ import numpy as np
 
 from scipy.linalg._matfuncs_sqrtm import SqrtmError, _sqrtm_triu
 from scipy.linalg.decomp_schur import schur, rsf2csf
-from scipy.linalg.special_matrices import all_mat
 from scipy.linalg.matfuncs import funm
 from scipy.linalg import svdvals, solve_triangular
 from scipy.sparse.linalg.interface import LinearOperator
@@ -19,6 +18,18 @@ import scipy.special
 
 
 __all__ = ['logm', 'fractional_matrix_power']
+
+
+class LogmRankWarning(UserWarning):
+    pass
+
+
+class LogmExactlySingularWarning(LogmRankWarning):
+    pass
+
+
+class LogmNearlySingularWarning(LogmRankWarning):
+    pass
 
 
 class LogmError(np.linalg.LinAlgError):
@@ -367,6 +378,8 @@ def _inverse_squaring_helper(T0, theta):
     # this search will not terminate if any diagonal entry of T is zero.
     s0 = 0
     tmp_diag = np.diag(T)
+    if _count_nonzero(tmp_diag) != n:
+        raise Exception('internal inconsistency')
     while np.max(np.absolute(tmp_diag - 1)) > theta[7]:
         tmp_diag = np.sqrt(tmp_diag)
         s0 += 1
@@ -661,9 +674,8 @@ def _remainder_matrix_power(A, t):
     # and de-triangularize it if necessary.
     U = _remainder_matrix_power_triu(T, t)
     if Z is not None:
-        U, Z = all_mat(U, Z)
-        X = (Z * U * Z.H)
-        return X.A
+        ZH = np.conjugate(Z).T
+        return Z.dot(U).dot(ZH)
     else:
         return U
 
@@ -836,6 +848,26 @@ def _logm_triu(T):
     return U
 
 
+def _logm_force_nonsingular_triangular_matrix(T, inplace=False):
+    # The input matrix should be upper triangular.
+    # The eps is ad hoc and is not meant to be machine precision.
+    tri_eps = 1e-20
+    abs_diag = np.absolute(np.diag(T))
+    if np.any(abs_diag == 0):
+        exact_singularity_msg = 'The logm input matrix is exactly singular.'
+        warnings.warn(exact_singularity_msg, LogmExactlySingularWarning)
+        if not inplace:
+            T = T.copy()
+        n = T.shape[0]
+        for i in range(n):
+            if not T[i, i]:
+                T[i, i] = tri_eps
+    elif np.any(abs_diag < tri_eps):
+        near_singularity_msg = 'The logm input matrix may be nearly singular.'
+        warnings.warn(near_singularity_msg, LogmNearlySingularWarning)
+    return T
+
+
 def logm(A):
     """
     Compute matrix logarithm.
@@ -871,17 +903,28 @@ def logm(A):
            32 (3). pp. 1056-1078. ISSN 0895-4798
 
     """
+    # In this function we look at triangular matrices that are similar
+    # to the input matrix.  If any diagonal entry of such a triangular matrix
+    # is exactly zero then the original matrix is singular.
+    # The matrix logarithm does not exist for such matrices,
+    # but in such cases we will pretend that the diagonal entries that are zero
+    # are actually slightly positive by an ad-hoc amount, in the interest
+    # of returning something more useful than NaN.  This will cause a warning.
+
     A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
-    n, n = A.shape
+    n = A.shape[0]
+
+    # If the input matrix dtype is integer then copy to a float dtype matrix.
+    if issubclass(A.dtype.type, np.integer):
+        A = np.asarray(A, dtype=float)
+
     keep_it_real = np.isrealobj(A)
     try:
         if np.array_equal(A, np.triu(A)):
-            A_diag = np.diag(A)
-            if _count_nonzero(A_diag) != n:
-                raise LogmError('cannot find logm of a singular matrix')
-            if np.min(A_diag) < 0:
+            A = _logm_force_nonsingular_triangular_matrix(A)
+            if np.min(np.diag(A)) < 0:
                 A = A.astype(complex)
             return _logm_triu(A)
         else:
@@ -891,13 +934,12 @@ def logm(A):
                     T, Z = rsf2csf(T,Z)
             else:
                 T, Z = schur(A, output='complex')
-            if _count_nonzero(np.diag(T)) != n:
-                raise LogmError('cannot find logm of a singular matrix')
+            T = _logm_force_nonsingular_triangular_matrix(T, inplace=True)
             U = _logm_triu(T)
-            U, Z = all_mat(U, Z)
-            X = (Z * U * Z.H)
-            return X.A
+            ZH = np.conjugate(Z).T
+            return Z.dot(U).dot(ZH)
     except (SqrtmError, LogmError) as e:
         X = np.empty_like(A)
         X.fill(np.nan)
         return X
+

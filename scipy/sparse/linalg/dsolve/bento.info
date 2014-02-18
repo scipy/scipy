@@ -1,9 +1,6 @@
 HookFile: bscript
 
-Recurse: umfpack
-
 Library:
-    Packages: umfpack
     CompiledLibrary: superlu_src
         Sources:
             SuperLU/SRC/*.c

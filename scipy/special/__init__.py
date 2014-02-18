@@ -227,6 +227,8 @@ Raw Statistical Functions
    tklmbda    -- Tukey-Lambda CDF
    logit      --
    expit      --
+   boxcox     -- Compute the Box-Cox transformation.
+   boxcox1p   -- Compute the Box-Cox transformation.
 
 Gamma and Related Functions
 ---------------------------
@@ -483,6 +485,15 @@ These are not universal functions:
    kerp_zeros   -- [+]Zeros of derivative of Kelvin function ker x
    keip_zeros   -- [+]Zeros of derivative of Kelvin function kei x
 
+Combinatorics
+-------------
+
+.. autosummary::
+    :toctree: generated/
+
+    comb    -- [+]Combinations of N things taken k at a time, "N choose k"
+    perm    -- [+]Permutations of N things taken k at a time, "k-permutations of N"
+
 Other Special Functions
 -----------------------
 
@@ -493,6 +504,9 @@ Other Special Functions
    expn         -- Exponential integral.
    exp1         -- Exponential integral of order 1 (for complex argument)
    expi         -- Another exponential integral -- Ei(x)
+   factorial    -- The factorial function, n! = special.gamma(n+1)
+   factorial2   -- Double factorial, (n!)!
+   factorialk   -- [+](...((n!)!)!...)! where there are k '!'
    shichi       -- Hyperbolic sine and cosine integrals.
    sici         -- Integral of the sinc and "cosinc" functions.
    spence       -- Dilogarithm integral.

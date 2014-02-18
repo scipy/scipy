@@ -33,7 +33,7 @@ B-splines
    cspline2d      -- Coefficients for 2-D cubic (3rd order) B-spline.
    qspline2d      -- Coefficients for 2-D quadratic (2nd order) B-spline.
    cspline1d_eval -- Evaluate a cubic spline at the given points.
-   cspline1d_eval -- Evaluate a quadratic spline at the given points.
+   qspline1d_eval -- Evaluate a quadratic spline at the given points.
    spline_filter  -- Smoothing spline (cubic) filtering of a rank-2 array.
 
 Filtering
@@ -224,6 +224,7 @@ Spectral Analysis
    periodogram    -- Computes a (modified) periodogram
    welch          -- Compute a periodogram using Welch's method
    lombscargle    -- Computes the Lomb-Scargle periodogram
+   vectorstrength -- Computes the vector strength
 
 """
 from __future__ import division, print_function, absolute_import
@@ -251,3 +252,4 @@ from ._peak_finding import *
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
 test = Tester().test
+bench = Tester().bench

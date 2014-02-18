@@ -739,7 +739,7 @@ class BivariateSpline(_BivariateSplineBase):
     def ev(self, xi, yi, dx=0, dy=0):
         """
         Evaluate the spline at points
-        
+
         Returns the interpolated value at ``(xi[i], yi[i]),
         i=0,...,len(xi)-1``.
 
@@ -1062,7 +1062,7 @@ class SphereBivariateSpline(_BivariateSplineBase):
     def ev(self, theta, phi, dtheta=0, dphi=0):
         """
         Evaluate the spline at points
-        
+
         Returns the interpolated value at ``(theta[i], phi[i]),
         i=0,...,len(theta)-1``.
 

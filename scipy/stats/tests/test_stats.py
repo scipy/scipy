@@ -11,10 +11,11 @@ from __future__ import division, print_function, absolute_import
 import warnings
 from collections import namedtuple
 
-from numpy.testing import TestCase, assert_, assert_equal, \
-    assert_almost_equal, assert_array_almost_equal, assert_array_equal, \
-    assert_approx_equal, assert_raises, run_module_suite, \
-    assert_allclose, dec
+from numpy.testing import (TestCase, assert_, assert_equal,
+                           assert_almost_equal, assert_array_almost_equal,
+                           assert_array_equal, assert_approx_equal,
+                           assert_raises, run_module_suite, assert_allclose,
+                           dec)
 import numpy.ma.testutils as mat
 from numpy import array, arange, float32, float64, power
 import numpy as np
@@ -22,7 +23,7 @@ import numpy as np
 import scipy.stats as stats
 
 
-""" Numbers in docstrings begining with 'W' refer to the section numbers
+""" Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
     considered to be essential functionality.  True testing and
     evaluation of a statistics package requires use of the
@@ -1032,9 +1033,23 @@ class TestScoreatpercentile(TestCase):
         assert_equal(scoreatperc(np.array([1, 10, 100]), 50, limit=(1, 10),
                                  interpolation_method='higher'), 10)
 
-    def test_sequence(self):
+    def test_sequence_per(self):
         x = arange(8) * 0.5
-        assert_equal(stats.scoreatpercentile(x, [0, 100, 50]), [0, 3.5, 1.75])
+        expected = np.array([0, 3.5, 1.75])
+        res = stats.scoreatpercentile(x, [0, 100, 50])
+        assert_allclose(res, expected)
+        assert_(isinstance(res, np.ndarray))
+        # Test with ndarray.  Regression test for gh-2861
+        assert_allclose(stats.scoreatpercentile(x, np.array([0, 100, 50])),
+                        expected)
+        # Also test combination of 2-D array, axis not None and array-like per
+        res2 = stats.scoreatpercentile(np.arange(12).reshape((3,4)),
+                                       np.array([0, 1, 100, 100]), axis=1)
+        expected2 = array([[0, 4, 8],
+                           [0.03, 4.03, 8.03],
+                           [3, 7, 11],
+                           [3, 7, 11]])
+        assert_allclose(res2, expected2)
 
     def test_axis(self):
         scoreatperc = stats.scoreatpercentile
@@ -1053,6 +1068,11 @@ class TestScoreatpercentile(TestCase):
             interpolation_method='foobar')
         assert_raises(ValueError, stats.scoreatpercentile, [1], 101)
         assert_raises(ValueError, stats.scoreatpercentile, [1], -1)
+
+    def test_empty(self):
+        assert_equal(stats.scoreatpercentile([], 50), np.nan)
+        assert_equal(stats.scoreatpercentile(np.array([[], []]), 50), np.nan)
+        assert_equal(stats.scoreatpercentile([], [50, 99]), [np.nan, np.nan])
 
 
 class TestItemfreq(object):
@@ -1089,7 +1109,7 @@ class TestItemfreq(object):
         bb = np.array(list(zip(b, b)), dt)
         v = stats.itemfreq(aa)
         # Arrays don't compare equal because v[:,0] is object array
-        assert_equal(v[2, 0], bb[2])
+        assert_equal(tuple(v[2, 0]), tuple(bb[2]))
 
 
 class TestMode(TestCase):
@@ -1121,6 +1141,9 @@ class TestVariability(TestCase):
         # assert_approx_equal(y,0.775177399)
         y = stats.sem(self.testcase)
         assert_approx_equal(y,0.6454972244)
+        n = len(self.testcase)
+        assert_allclose(stats.sem(self.testcase, ddof=0) * np.sqrt(n/(n-2)),
+                         stats.sem(self.testcase, ddof=2))
 
     def test_zmap(self):
         # not in R, so tested by using:
@@ -1538,7 +1561,6 @@ class TestPowerDivergence(object):
                    mobs, case.f_exp, case.ddof, case.axis,
                    2/3, case.cr)
 
-
     def test_axis(self):
         case0 = power_div_1d_cases[0]
         case1 = power_div_1d_cases[1]
@@ -1709,22 +1731,22 @@ def test_power_divergence_against_cressie_read_data():
         ]).reshape(-1, 2)
     table5 = np.array([
         # lambda, statistic
-        -10.0,  72.2e3,
-         -5.0,  28.9e1,
-         -3.0,  65.6,
-         -2.0,  40.6,
-         -1.5,  34.0,
-         -1.0,  29.5,
-         -0.5,  26.5,
-          0.0,  24.6,
-          0.5,  23.4,
+        -10.0, 72.2e3,
+         -5.0, 28.9e1,
+         -3.0, 65.6,
+         -2.0, 40.6,
+         -1.5, 34.0,
+         -1.0, 29.5,
+         -0.5, 26.5,
+          0.0, 24.6,
+          0.5, 23.4,
           0.67, 23.1,
-          1.0,  22.7,
-          1.5,  22.6,
-          2.0,  22.9,
-          3.0,  24.8,
-          5.0,  35.5,
-         10.0,  21.4e1,
+          1.0, 22.7,
+          1.5, 22.6,
+          2.0, 22.9,
+          3.0, 24.8,
+          5.0, 35.5,
+         10.0, 21.4e1,
         ]).reshape(-1, 2)
 
     for lambda_, expected_stat in table5:
@@ -2423,6 +2445,7 @@ def test_binomtest():
     assert_approx_equal(stats.binom_test(50,100,0.1), 5.8320387857343647e-024,
                             significant=12, err_msg='fail forp=%f' % p)
 
+
 def test_binomtest2():
     # test added for issue #2384
     res2 = [
@@ -2444,6 +2467,7 @@ def test_binomtest2():
     for k in range(1, 11):
         res1 = [stats.binom_test(v, k, 0.5) for v in range(k + 1)]
         assert_almost_equal(res1, res2[k-1], decimal=10)
+
 
 def test_binomtest3():
     # test added for issue #2384
@@ -2528,6 +2552,7 @@ def test_binomtest3():
     assert_almost_equal(res4_p1, binom_testp1, decimal=13)
     assert_almost_equal(res4_m1, binom_testm1, decimal=13)
 
+
 class TestTrim(object):
     # test trim functions
     def test_trim1(self):
@@ -2550,7 +2575,7 @@ class TestTrim(object):
 
     def test_trim_mean(self):
         # don't use pre-sorted arrays
-        a = np.array([ 4,  8,  2,  0,  9,  5, 10,  1,  7,  3,  6])
+        a = np.array([4, 8, 2, 0, 9, 5, 10, 1, 7, 3, 6])
         idx = np.array([3, 5, 0, 1, 2, 4])
         a2 = np.arange(24).reshape(6, 4)[idx, :]
         a3 = np.arange(24).reshape(6, 4, order='F')[idx, :]
@@ -2563,8 +2588,8 @@ class TestTrim(object):
         assert_equal(stats.trim_mean(a4, 2/6.),
                      np.array([9., 10., 11., 12., 13., 14.]))
         # shuffled arange(24) as array_like
-        a = [7, 11, 12, 21, 16,  6, 22,  1,  5,  0, 18, 10, 17,  9, 19, 15, 23,
-             20,  2, 14,  4, 13,  8,  3]
+        a = [7, 11, 12, 21, 16, 6, 22, 1, 5, 0, 18, 10, 17, 9, 19, 15, 23,
+             20, 2, 14, 4, 13, 8, 3]
         assert_equal(stats.trim_mean(a, 2/6.), 11.5)
         assert_equal(stats.trim_mean([5,4,3,1,2,0], 2/6.), 2.5)
 

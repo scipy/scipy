@@ -13,7 +13,7 @@ from scipy.lib.six import xrange
 from .base import isspmatrix
 from .sparsetools import csc_tocsr
 from . import sparsetools
-from .sputils import upcast, isintlike, IndexMixin
+from .sputils import upcast, isintlike, IndexMixin, get_index_dtype
 
 from .compressed import _cs_matrix
 
@@ -127,13 +127,19 @@ class csc_matrix(_cs_matrix, IndexMixin):
 
     def tocsr(self):
         M,N = self.shape
-        indptr = np.empty(M + 1, dtype=np.intc)
-        indices = np.empty(self.nnz, dtype=np.intc)
+        idx_dtype = get_index_dtype((self.indptr, self.indices),
+                                    maxval=max(self.nnz, N))
+        indptr = np.empty(M + 1, dtype=idx_dtype)
+        indices = np.empty(self.nnz, dtype=idx_dtype)
         data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
         csc_tocsr(M, N,
-                 self.indptr, self.indices, self.data,
-                 indptr, indices, data)
+                  self.indptr.astype(idx_dtype),
+                  self.indices.astype(idx_dtype),
+                  self.data,
+                  indptr,
+                  indices,
+                  data)
 
         from .csr import csr_matrix
         A = csr_matrix((data, indices, indptr), shape=self.shape)
@@ -159,8 +165,8 @@ class csc_matrix(_cs_matrix, IndexMixin):
         # Get row and col indices, from _cs_matrix.tocoo
         major_dim, minor_dim = self._swap(self.shape)
         minor_indices = self.indices
-        major_indices = np.empty(len(minor_indices), dtype=np.intc)
-        sparsetools.expandptr(major_dim,self.indptr, major_indices)
+        major_indices = np.empty(len(minor_indices), dtype=self.indptr.dtype)
+        sparsetools.expandptr(major_dim, self.indptr, major_indices)
         row, col = self._swap((major_indices, minor_indices))
 
         # Sort them to be in C-style order

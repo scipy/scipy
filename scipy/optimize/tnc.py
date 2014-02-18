@@ -35,7 +35,7 @@ value of the function, and whose second argument is the gradient of the function
 from __future__ import division, print_function, absolute_import
 
 from scipy.optimize import moduleTNC, approx_fprime
-from .optimize import MemoizeJac, Result, _check_unknown_options
+from .optimize import MemoizeJac, OptimizeResult, _check_unknown_options
 from numpy import inf, array, zeros, asfarray
 
 __all__ = ['fmin_tnc']
@@ -102,7 +102,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
            gradient (a list of floats).
 
         2. Return the function value but supply gradient function
-           seperately as `fprime`.
+           separately as `fprime`.
 
         3. Return the function value and set ``approx_grad=True``.
 
@@ -130,7 +130,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         factors are up-low for interval bounded variables and
         1+|x| for the others.  Defaults to None.
     offset : array_like
-        Value to substract from each variable.  If None, the
+        Value to subtract from each variable.  If None, the
         offsets are (up+low)/2 for interval bounded variables
         and x for the others.
     messages :
@@ -282,7 +282,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
             factors are up-low for interval bounded variables and
             1+|x] fo the others.  Defaults to None
         offset : float
-            Value to substract from each variable.  If None, the
+            Value to subtract from each variable.  If None, the
             offsets are (up+low)/2 for interval bounded variables
             and x for the others.
         disp : bool
@@ -399,8 +399,8 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
 
     funv, jacv = func_and_grad(x)
 
-    return Result(x=x, fun=funv, jac=jacv, nfev=nf, nit=nit, status=rc,
-                  message=RCSTRINGS[rc], success=(-1 < rc < 3))
+    return OptimizeResult(x=x, fun=funv, jac=jacv, nfev=nf, nit=nit, status=rc,
+                          message=RCSTRINGS[rc], success=(-1 < rc < 3))
 
 if __name__ == '__main__':
     # Examples for TNC

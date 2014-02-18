@@ -156,7 +156,7 @@ def label(input, structure=None, output=None):
     # Use 32 bits if it's large enough for this image.
     # _ni_label.label()  needs two entries for background and
     # foreground tracking
-    need_64bits = input.size < (2**32 - 2)
+    need_64bits = input.size >= (2**31 - 2)
 
     if isinstance(output, numpy.ndarray):
         if output.shape != input.shape:
@@ -165,7 +165,7 @@ def label(input, structure=None, output=None):
     else:
         caller_provided_output = False
         if output is None:
-            output = np.empty(input.shape, np.uintp if need_64bits else np.uint32)
+            output = np.empty(input.shape, np.intp if need_64bits else np.int32)
         else:
             output = np.empty(input.shape, output)
 
@@ -188,7 +188,7 @@ def label(input, structure=None, output=None):
     except _ni_label.NeedMoreBits:
         # Make another attempt with enough bits, then try to cast to the
         # new type.
-        tmp_output = np.empty(input.shape, np.uintp if need_64bits else np.uint32)
+        tmp_output = np.empty(input.shape, np.intp if need_64bits else np.int32)
         max_label = _ni_label._label(input, structure, tmp_output)
         output[...] = tmp_output[...]
         if not np.all(output == tmp_output):
@@ -558,7 +558,7 @@ def sum(input, labels=None, index=None):
     sum : ndarray or scalar
         An array of the sums of values of `input` inside the regions defined
         by `labels` with the same shape as `index`. If 'index' is None or scalar,
-        a scalar is returned. 
+        a scalar is returned.
 
     See also
     --------

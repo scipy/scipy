@@ -119,13 +119,31 @@ ctypedef bint (*write_line_func_t)(void *p, np.intp_t stride,
 cdef inline np.uintp_t mark_for_merge(np.uintp_t a,
                                       np.uintp_t b,
                                       np.uintp_t *mergetable) nogil:
-    # we keep the mergetable such that merged labels always point to the
-    # smallest value in the merge.
-    if mergetable[a] < mergetable[b]:
-        mergetable[b] = mergetable[a]
-    elif mergetable[a] > mergetable[b]:
-        mergetable[a] = mergetable[b]
-    return mergetable[a]
+
+    cdef:
+        np.uintp_t orig_a, orig_b, minlabel
+
+    orig_a = a
+    orig_b = b
+    # find smallest root for each of a and b
+    while a != mergetable[a]:
+        a = mergetable[a]
+    while b != mergetable[b]:
+        b = mergetable[b]
+    minlabel = a if (a < b) else b
+
+    # merge roots
+    mergetable[a] = mergetable[b] = minlabel
+
+    # merge every step to minlabel
+    a = orig_a
+    b = orig_b
+    while a != minlabel:
+        a, mergetable[a] = mergetable[a], minlabel
+    while b != minlabel:
+        b, mergetable[b] = mergetable[b], minlabel
+
+    return minlabel
 
 
 ######################################################################
@@ -384,6 +402,10 @@ cpdef _label(np.ndarray input,
             mergetable[FOREGROUND] = -1  # should never be encountered
             mergetable[2] = 1  # labels started here
             dest_label = 2
+            # next_region is still the original value -> we found no regions
+            # set dest_label to 1 so we return 0
+            if next_region < 3:
+                dest_label = 1
             for src_label in range(3, next_region):
                 # labels that map to themselves are new regions
                 if mergetable[src_label] == src_label:
@@ -408,4 +430,5 @@ cpdef _label(np.ndarray input,
         PyDataMem_FREE(<void *> mergetable)
         raise
 
+    PyDataMem_FREE(<void *> mergetable)
     return dest_label - 1

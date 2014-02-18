@@ -4,7 +4,7 @@ Tests for numerical integration.
 """
 from __future__ import division, print_function, absolute_import
 
-import numpy
+import numpy as np
 from numpy import arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp, \
                   allclose
 
@@ -213,6 +213,7 @@ class TestComplexOde(TestCase):
                 continue
             self._do_problem(problem, 'dop853')
 
+
 class TestSolout(TestCase):
     # Check integrate.ode correctly handles solout for dopri5 and dop853
     def _run_solout_test(self, integrator):
@@ -222,11 +223,14 @@ class TestSolout(TestCase):
         t0 = 0.0
         tend = 10.0
         y0 = [1.0, 2.0]
+
         def solout(t, y):
             ts.append(t)
             ys.append(y.copy())
+
         def rhs(t, y):
             return [y[0] + y[1], -y[1]**2]
+
         ig = ode(rhs).set_integrator(integrator)
         ig.set_solout(solout)
         ig.set_initial_value(y0, t0)
@@ -247,13 +251,16 @@ class TestSolout(TestCase):
         t0 = 0.0
         tend = 10.0
         y0 = [1.0, 2.0]
+
         def solout(t, y):
             ts.append(t)
             ys.append(y.copy())
             if t > tend/2.0:
                 return -1
+
         def rhs(t, y):
             return [y[0] + y[1], -y[1]**2]
+
         ig = ode(rhs).set_integrator(integrator)
         ig.set_solout(solout)
         ig.set_initial_value(y0, t0)
@@ -278,11 +285,14 @@ class TestComplexSolout(TestCase):
         t0 = 0.0
         tend = 20.0
         y0 = [0.0]
+
         def solout(t, y):
             ts.append(t)
             ys.append(y.copy())
+
         def rhs(t, y):
             return [1.0/(t - 10.0 - 1j)]
+
         ig = complex_ode(rhs).set_integrator(integrator)
         ig.set_solout(solout)
         ig.set_initial_value(y0, t0)
@@ -303,13 +313,16 @@ class TestComplexSolout(TestCase):
         t0 = 0.0
         tend = 20.0
         y0 = [0.0]
+
         def solout(t, y):
             ts.append(t)
             ys.append(y.copy())
             if t > tend/2.0:
                 return -1
+
         def rhs(t, y):
             return [1.0/(t - 10.0 - 1j)]
+
         ig = complex_ode(rhs).set_integrator(integrator)
         ig.set_solout(solout)
         ig.set_initial_value(y0, t0)
@@ -395,7 +408,7 @@ class Pi(ODE):
         return array([1./(t - 10 + 1j)])
 
     def verify(self, zs, t):
-        u = -2j*numpy.arctan(10)
+        u = -2j * np.arctan(10)
         return allclose(u, zs[-1,:], atol=self.atol, rtol=self.rtol)
 
 PROBLEMS = [SimpleOscillator, ComplexExp, Pi]
@@ -528,6 +541,53 @@ class ZVODECheckParameterUse(ODECheckParameterUse, TestCase):
 class LSODACheckParameterUse(ODECheckParameterUse, TestCase):
     solver_name = 'lsoda'
     solver_uses_jac = True
+
+
+def test_odeint_banded_jacobian():
+    # Test the use of the `Dfun`, `ml` and `mu` options of odeint.
+
+    def func(y, t, c):
+        return c.dot(y)
+
+    def jac(y, t, c):
+        return c
+
+    def bjac_cols(y, t, c):
+        return np.column_stack((np.r_[0, np.diag(c, 1)], np.diag(c)))
+
+    def bjac_rows(y, t, c):
+        return np.row_stack((np.r_[0, np.diag(c, 1)], np.diag(c)))
+
+    c = array([[-50,   75,     0],
+               [  0, -0.1,     1],
+               [  0,    0, -1e-4]])
+
+    y0 = arange(3)
+    t = np.linspace(0, 50, 6)
+
+    # The results of the following three calls should be the same.
+    sol0, info0 = odeint(func, y0, t, args=(c,), full_output=True,
+                         Dfun=jac)
+
+    sol1, info1 = odeint(func, y0, t, args=(c,), full_output=True,
+                         Dfun=bjac_cols, ml=0, mu=1, col_deriv=True)
+
+    sol2, info2 = odeint(func, y0, t, args=(c,), full_output=True,
+                         Dfun=bjac_rows, ml=0, mu=1)
+
+    # These could probably be compared using `assert_array_equal`.
+    # The code paths might not be *exactly* the same, so `allclose` is used
+    # to compare the solutions.
+    assert_allclose(sol0, sol1)
+    assert_allclose(sol0, sol2)
+
+    # Verify that the number of jacobian evaluations was the same
+    # for all three calls of odeint.  This is a regression test--there
+    # was a bug in the handling of banded jacobians that resulted in
+    # an incorrect jacobian matrix being passed to the LSODA code.
+    # That would cause errors or excessive jacobian evaluations.
+    assert_array_equal(info0['nje'], info1['nje'])
+    assert_array_equal(info0['nje'], info2['nje'])
 
 
 if __name__ == "__main__":

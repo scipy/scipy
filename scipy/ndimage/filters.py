@@ -92,15 +92,15 @@ _extra_keywords_doc = \
     dict of extra keyword arguments to pass to passed function"""
 
 docdict = {
-    'input':_input_doc,
-    'axis':_axis_doc,
-    'output':_output_doc,
-    'size_foot':_size_foot_doc,
-    'mode':_mode_doc,
-    'cval':_cval_doc,
-    'origin':_origin_doc,
-    'extra_arguments':_extra_arguments_doc,
-    'extra_keywords':_extra_keywords_doc,
+    'input': _input_doc,
+    'axis': _axis_doc,
+    'output': _output_doc,
+    'size_foot': _size_foot_doc,
+    'mode': _mode_doc,
+    'cval': _cval_doc,
+    'origin': _origin_doc,
+    'extra_arguments': _extra_arguments_doc,
+    'extra_keywords': _extra_keywords_doc,
     }
 
 docfiller = doccer.filldoc(docdict)
@@ -823,6 +823,13 @@ def maximum_filter1d(input, size, axis=-1, output=None,
     %(mode)s
     %(cval)s
     %(origin)s
+
+    Returns
+    -------
+    maximum1d : ndarray, None
+        Maximum-filtered array with same shape as input.
+        None if `output` is not None
+
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
@@ -849,7 +856,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         else:
             footprint = numpy.asarray(footprint)
             footprint = footprint.astype(bool)
-            if numpy.alltrue(numpy.ravel(footprint),axis=0):
+            if numpy.alltrue(numpy.ravel(footprint), axis=0):
                 size = footprint.shape
                 footprint = None
                 separable = True

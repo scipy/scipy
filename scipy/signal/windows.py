@@ -537,7 +537,7 @@ def bartlett(M, sym=True):
     -------
     w : ndarray
         The triangular window, with the first and last samples equal to zero
-        and the maximum value normalized to 1 (though the value 1 does not 
+        and the maximum value normalized to 1 (though the value 1 does not
         appear if `M` is even and `sym` is True).
 
     Notes
@@ -642,7 +642,7 @@ def hann(M, sym=True):
     .. math::  w(n) = 0.5 - 0.5 \cos\left(\frac{2\pi{n}}{M-1}\right)
                \qquad 0 \leq n \leq M-1
 
-    The window was named for Julius van Hann, an Austrian meterologist. It is
+    The window was named for Julius van Hann, an Austrian meteorologist. It is
     also known as the Cosine Bell. It is sometimes erroneously referred to as
     the "Hanning" window, from the use of "hann" as a verb in the original
     paper and confusion with the very similar Hamming window.
@@ -1155,9 +1155,9 @@ def chebwin(M, at, sym=True):
               \cosh^{-1}(10^\frac{A}{20}) \right ]
 
     and 0 <= abs(k) <= M-1. A is the attenuation in decibels (`at`).
-    
-    The time domain window is then generated using the IFFT, so 
-    power-of-two `M` are the fastest to generate, and prime number `M` are 
+
+    The time domain window is then generated using the IFFT, so
+    power-of-two `M` are the fastest to generate, and prime number `M` are
     the slowest.
 
     The equiripple condition in the frequency domain creates impulses in the

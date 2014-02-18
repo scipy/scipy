@@ -38,7 +38,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy import array, asarray, float64, int32, zeros
 from . import _lbfgsb
-from .optimize import (approx_fprime, MemoizeJac, Result,
+from .optimize import (approx_fprime, MemoizeJac, OptimizeResult,
                        _check_unknown_options, wrap_function)
 
 __all__ = ['fmin_l_bfgs_b']
@@ -333,9 +333,9 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     else:
         warnflag = 2
 
-    return Result(fun=f, jac=g, nfev=n_function_evals[0], nit=n_iterations,
-                  status=warnflag, message=task_str, x=x,
-                  success=(warnflag == 0))
+    return OptimizeResult(fun=f, jac=g, nfev=n_function_evals[0],
+                          nit=n_iterations, status=warnflag, message=task_str,
+                          x=x, success=(warnflag == 0))
 
 
 if __name__ == '__main__':

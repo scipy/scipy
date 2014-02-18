@@ -272,7 +272,7 @@ def ricker(points, a):
 
         ``A (1 - x^2/a^2) exp(-x^2/2 a^2)``,
 
-    where ``A = 2/sqrt(3a)pi^1/3``.
+    where ``A = 2/sqrt(3a)pi^1/4``.
 
     Parameters
     ----------

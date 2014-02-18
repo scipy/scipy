@@ -1686,116 +1686,132 @@ def _get_tick_rotation(p):
 
 def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
                      no_labels, color_list, leaf_font_size=None,
-                     leaf_rotation=None, contraction_marks=None):
+                     leaf_rotation=None, contraction_marks=None,
+                     ax=None):
     # Import matplotlib here so that it's not imported unless dendrograms
     # are plotted. Raise an informative error if importing fails.
     try:
-        import matplotlib.pylab
+        # if an axis is provided, don't use pylab at all
+        if ax is None:
+            import matplotlib.pylab
         import matplotlib.patches
         import matplotlib.collections
     except ImportError:
         raise ImportError("You must install the matplotlib library to plot the dendrogram. Use no_plot=True to calculate the dendrogram without plotting.")
 
-    axis = matplotlib.pylab.gca()
+    if ax is None:
+        ax = matplotlib.pylab.gca()
+        # if we're using pylab, we want to trigger a draw at the end
+        trigger_redraw = True
+    else:
+        trigger_redraw = False
+
     # Independent variable plot width
     ivw = len(ivl) * 10
     # Depenendent variable plot height
     dvw = mh + mh * 0.05
     ivticks = np.arange(5, len(ivl) * 10 + 5, 10)
     if orientation == 'top':
-        axis.set_ylim([0, dvw])
-        axis.set_xlim([0, ivw])
+        ax.set_ylim([0, dvw])
+        ax.set_xlim([0, ivw])
         xlines = icoords
         ylines = dcoords
         if no_labels:
-            axis.set_xticks([])
-            axis.set_xticklabels([])
+            ax.set_xticks([])
+            ax.set_xticklabels([])
         else:
-            axis.set_xticks(ivticks)
-            axis.set_xticklabels(ivl)
-        axis.xaxis.set_ticks_position('bottom')
-        lbls = axis.get_xticklabels()
+            ax.set_xticks(ivticks)
+            ax.set_xticklabels(ivl)
+        ax.xaxis.set_ticks_position('bottom')
+
+        lbls = ax.get_xticklabels()
         if leaf_rotation:
-            matplotlib.pylab.setp(lbls, 'rotation', leaf_rotation)
+            map(lambda lbl: lbl.set_rotation(leaf_rotation), lbls)
         else:
-            matplotlib.pylab.setp(lbls, 'rotation',
-                                  float(_get_tick_rotation(len(ivl))))
+            leaf_rot = float(_get_tick_rotation(len(ivl)))
+            map(lambda lbl: lbl.set_rotation(leaf_rot), lbls)
         if leaf_font_size:
-            matplotlib.pylab.setp(lbls, 'size', leaf_font_size)
+            map(lambda lbl: lbl.set_size(leaf_font_size), lbls)
         else:
-            matplotlib.pylab.setp(lbls, 'size',
-                                  float(_get_tick_text_size(len(ivl))))
+            leaf_fs = float(_get_tick_text_size(len(ivl)))
+            map(lambda lbl: lbl.set_rotation(leaf_fs), lbls)
 
         # Make the tick marks invisible because they cover up the links
-        for line in axis.get_xticklines():
+        for line in ax.get_xticklines():
             line.set_visible(False)
     elif orientation == 'bottom':
-        axis.set_ylim([dvw, 0])
-        axis.set_xlim([0, ivw])
+        ax.set_ylim([dvw, 0])
+        ax.set_xlim([0, ivw])
         xlines = icoords
         ylines = dcoords
         if no_labels:
-            axis.set_xticks([])
-            axis.set_xticklabels([])
+            ax.set_xticks([])
+            ax.set_xticklabels([])
         else:
-            axis.set_xticks(ivticks)
-            axis.set_xticklabels(ivl)
-        lbls = axis.get_xticklabels()
+            ax.set_xticks(ivticks)
+            ax.set_xticklabels(ivl)
+
+        lbls = ax.get_xticklabels()
         if leaf_rotation:
-            matplotlib.pylab.setp(lbls, 'rotation', leaf_rotation)
+            map(lambda lbl: lbl.set_rotation(leaf_rotation), lbls)
         else:
-            matplotlib.pylab.setp(lbls, 'rotation',
-                                  float(_get_tick_rotation(p)))
+            leaf_rot = float(_get_tick_rotation(p))
+            map(lambda lbl: lbl.set_rotation(leaf_rot), lbls)
+
         if leaf_font_size:
-            matplotlib.pylab.setp(lbls, 'size', leaf_font_size)
+            map(lambda lbl: lbl.set_size(leaf_font_size), lbls)
         else:
-            matplotlib.pylab.setp(lbls, 'size',
-                                  float(_get_tick_text_size(p)))
-        axis.xaxis.set_ticks_position('top')
+            leaf_fs = float(_get_tick_text_size(p))
+            map(lambda lbl: lbl.set_rotation(leaf_fs), lbls)
+
+        ax.xaxis.set_ticks_position('top')
         # Make the tick marks invisible because they cover up the links
-        for line in axis.get_xticklines():
+        for line in ax.get_xticklines():
             line.set_visible(False)
     elif orientation == 'left':
-        axis.set_xlim([0, dvw])
-        axis.set_ylim([0, ivw])
+        ax.set_xlim([0, dvw])
+        ax.set_ylim([0, ivw])
         xlines = dcoords
         ylines = icoords
         if no_labels:
-            axis.set_yticks([])
-            axis.set_yticklabels([])
+            ax.set_yticks([])
+            ax.set_yticklabels([])
         else:
-            axis.set_yticks(ivticks)
-            axis.set_yticklabels(ivl)
+            ax.set_yticks(ivticks)
+            ax.set_yticklabels(ivl)
 
-        lbls = axis.get_yticklabels()
+        lbls = ax.get_yticklabels()
         if leaf_rotation:
-            matplotlib.pylab.setp(lbls, 'rotation', leaf_rotation)
+            map(lambda lbl: lbl.set_rotation(leaf_rotation), lbls)
         if leaf_font_size:
-            matplotlib.pylab.setp(lbls, 'size', leaf_font_size)
-        axis.yaxis.set_ticks_position('left')
+            map(lambda lbl: lbl.set_size(leaf_font_size), lbls)
+
+        ax.yaxis.set_ticks_position('left')
         # Make the tick marks invisible because they cover up the
         # links
-        for line in axis.get_yticklines():
+        for line in ax.get_yticklines():
             line.set_visible(False)
     elif orientation == 'right':
-        axis.set_xlim([dvw, 0])
-        axis.set_ylim([0, ivw])
+        ax.set_xlim([dvw, 0])
+        ax.set_ylim([0, ivw])
         xlines = dcoords
         ylines = icoords
         if no_labels:
-            axis.set_yticks([])
-            axis.set_yticklabels([])
+            ax.set_yticks([])
+            ax.set_yticklabels([])
         else:
-            axis.set_yticks(ivticks)
-            axis.set_yticklabels(ivl)
-        lbls = axis.get_yticklabels()
+            ax.set_yticks(ivticks)
+            ax.set_yticklabels(ivl)
+
+        lbls = ax.get_yticklabels()
         if leaf_rotation:
-            matplotlib.pylab.setp(lbls, 'rotation', leaf_rotation)
+            map(lambda lbl: lbl.set_rotation(leaf_rotation), lbls)
         if leaf_font_size:
-            matplotlib.pylab.setp(lbls, 'size', leaf_font_size)
-        axis.yaxis.set_ticks_position('right')
+            map(lambda lbl: lbl.set_size(leaf_font_size), lbls)
+
+        ax.yaxis.set_ticks_position('right')
         # Make the tick marks invisible because they cover up the links
-        for line in axis.get_yticklines():
+        for line in ax.get_yticklines():
             line.set_visible(False)
 
     # Let's use collections instead. This way there is a separate legend
@@ -1820,18 +1836,18 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
 
     for color in colors_used:
         if color != 'b':
-            axis.add_collection(colors_to_collections[color])
+            ax.add_collection(colors_to_collections[color])
     # If there is a blue grouping (i.e., links above the color threshold),
     # it should go last.
     if 'b' in colors_to_collections:
-        axis.add_collection(colors_to_collections['b'])
+        ax.add_collection(colors_to_collections['b'])
 
     if contraction_marks is not None:
         if orientation in ('left', 'right'):
             for (x, y) in contraction_marks:
                 e = matplotlib.patches.Ellipse((y, x),
                                                width=dvw / 100, height=1.0)
-                axis.add_artist(e)
+                ax.add_artist(e)
                 e.set_clip_box(axis.bbox)
                 e.set_alpha(0.5)
                 e.set_facecolor('k')
@@ -1839,12 +1855,13 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             for (x, y) in contraction_marks:
                 e = matplotlib.patches.Ellipse((x, y),
                                              width=1.0, height=dvw / 100)
-                axis.add_artist(e)
+                ax.add_artist(e)
                 e.set_clip_box(axis.bbox)
                 e.set_alpha(0.5)
                 e.set_facecolor('k')
 
-    matplotlib.pylab.draw_if_interactive()
+    if trigger_redraw:
+        matplotlib.pylab.draw_if_interactive()
 
 _link_line_colors = ['g', 'r', 'c', 'm', 'y', 'k']
 
@@ -1880,7 +1897,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                no_plot=False, no_labels=False, color_list=None,
                leaf_font_size=None, leaf_rotation=None, leaf_label_func=None,
                no_leaves=False, show_contracted=False,
-               link_color_func=None):
+               link_color_func=None, ax=None):
     """
     Plots the hierarchical clustering as a dendrogram.
 
@@ -1906,19 +1923,21 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         large. Truncation is used to condense the dendrogram. There
         are several modes:
 
-        None/'none': no truncation is performed (Default)
+        ``None/'none'``
+          No truncation is performed (Default).
 
-        'lastp': the last ``p`` non-singleton formed in the linkage
-          are the only non-leaf nodes in the linkage; they correspond
-          to rows ``Z[n-p-2:end]`` in ``Z``. All other non-singleton
-          clusters are contracted into leaf nodes.
+        ``'lastp'``
+          The last ``p`` non-singleton formed in the linkage are the only
+          non-leaf nodes in the linkage; they correspond to rows
+          ``Z[n-p-2:end]`` in ``Z``. All other non-singleton clusters are
+          contracted into leaf nodes.
 
-        'mlab': This corresponds to MATLAB(TM) behavior. (not
-          implemented yet)
+        ``'mlab'``
+          This corresponds to MATLAB(TM) behavior. (not implemented yet)
 
-        'level'/'mtica': no more than ``p`` levels of the
-          dendrogram tree are displayed. This corresponds to
-          Mathematica(TM) behavior.
+        ``'level'/'mtica'``
+          No more than ``p`` levels of the dendrogram tree are displayed.
+          This corresponds to Mathematica(TM) behavior.
 
     color_threshold : double, optional
         For brevity, let :math:`t` be the ``color_threshold``.
@@ -1939,55 +1958,60 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         The direction to plot the dendrogram, which can be any
         of the following strings:
 
-        'top' plots the root at the top, and plot descendent
-          links going downwards. (default).
+        ``'top'``
+          Plots the root at the top, and plot descendent links going downwards.
+          (default).
 
-        'bottom'- plots the root at the bottom, and plot descendent
-          links going upwards.
+        ``'bottom'``
+          Plots the root at the bottom, and plot descendent links going
+          upwards.
 
-        'left'- plots the root at the left, and plot descendent
-          links going right.
+        ``'left'``
+          Plots the root at the left, and plot descendent links going right.
 
-        'right'- plots the root at the right, and plot descendent
-          links going left.
+        ``'right'``
+          Plots the root at the right, and plot descendent links going left.
 
     labels : ndarray, optional
-        By default ``labels`` is None so the index of the
-        original observation is used to label the leaf nodes.
-        Otherwise, this is an :math:`n` -sized list (or tuple). The
-        ``labels[i]`` value is the text to put under the :math:`i` th
-        leaf node only if it corresponds to an original observation
-        and not a non-singleton cluster.
+        By default ``labels`` is None so the index of the original observation
+        is used to label the leaf nodes.  Otherwise, this is an :math:`n`
+        -sized list (or tuple). The ``labels[i]`` value is the text to put
+        under the :math:`i` th leaf node only if it corresponds to an original
+        observation and not a non-singleton cluster.
     count_sort : str or bool, optional
         For each node n, the order (visually, from left-to-right) n's
         two descendent links are plotted is determined by this
         parameter, which can be any of the following values:
 
-        False: nothing is done.
+        ``False``
+          Nothing is done.
 
-        'ascending'/True: the child with the minimum number of
-          original objects in its cluster is plotted first.
+        ``'ascending'`` or ``True``
+          The child with the minimum number of original objects in its cluster
+          is plotted first.
 
-        'descendent': the child with the maximum number of
-          original objects in its cluster is plotted first.
+        ``'descendent'``
+          The child with the maximum number of original objects in its cluster
+          is plotted first.
 
-        Note ``distance_sort`` and ``count_sort`` cannot both be
-        True.
+        Note ``distance_sort`` and ``count_sort`` cannot both be True.
     distance_sort : str or bool, optional
         For each node n, the order (visually, from left-to-right) n's
         two descendent links are plotted is determined by this
         parameter, which can be any of the following values:
 
-        False: nothing is done.
+        ``False``
+          Nothing is done.
 
-        'ascending'/True: the child with the minimum distance
-          between its direct descendents is plotted first.
+        ``'ascending'`` or ``True``
+          The child with the minimum distance between its direct descendents is
+          plotted first.
 
-        'descending': the child with the maximum distance
-          between its direct descendents is plotted first.
+        ``'descending'``
+          The child with the maximum distance between its direct descendents is
+          plotted first.
 
-        Note ``distance_sort`` and ``count_sort`` cannot both be
-        True.
+        Note ``distance_sort`` and ``count_sort`` cannot both be True.
     show_leaf_counts : bool, optional
          When True, leaf nodes representing :math:`k>1` original
          observation are labeled with the number of observations they
@@ -2002,7 +2026,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     leaf_label_rotation : double, optional
         Specifies the angle (in degrees) to rotate the leaf
         labels. When unspecified, the rotation based on the number of
-        nodes in the dendrogram. (Default=0)
+        nodes in the dendrogram (default is 0).
     leaf_font_size : int, optional
         Specifies the font size (in points) of the leaf labels. When
         unspecified, the size based on the number of nodes in the
@@ -2032,22 +2056,26 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         >>>  # a rotation of 90 degrees.
         >>>  dendrogram(Z, leaf_label_func=llf, leaf_rotation=90)
 
-    show_contracted : bool
+    show_contracted : bool, optional
         When True the heights of non-singleton nodes contracted
         into a leaf node are plotted as crosses along the link
         connecting that leaf node.  This really is only useful when
         truncation is used (see ``truncate_mode`` parameter).
-    link_color_func : lambda/function
-        When a callable function,
-        link_color_function is called with each non-singleton id
-        corresponding to each U-shaped link it will paint. The
-        function is expected to return the color to paint the link,
-        encoded as a matplotlib color string code. For example:
+    link_color_func : callable, optional
+        If given, `link_color_function` is called with each non-singleton id
+        corresponding to each U-shaped link it will paint. The function is
+        expected to return the color to paint the link, encoded as a matplotlib
+        color string code. For example:
 
         >>> dendrogram(Z, link_color_func=lambda k: colors[k])
 
         colors the direct links below each untruncated non-singleton node
         ``k`` using ``colors[k]``.
+    ax : matplotlib Axes instance, optional
+        If None and `no_plot` is not True, the dendrogram will be plotted
+        on the current axes.  Otherwise if `no_plot` is not True the
+        dendrogram will be plotted on the given ``Axes`` instance. This can be
+        useful if the dendrogram is part of a more complex figure.
 
     Returns
     -------
@@ -2055,27 +2083,27 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         A dictionary of data structures computed to render the
         dendrogram. Its has the following keys:
 
-           'icoords': a list of lists ``[I1, I2, ..., Ip]`` where
-             ``Ik`` is a list of 4 independent variable coordinates
-             corresponding to the line that represents the k'th link
-             painted.
+        ``'icoords'``
+          A list of lists ``[I1, I2, ..., Ip]`` where ``Ik`` is a list of 4
+          independent variable coordinates corresponding to the line that
+          represents the k'th link painted.
 
-           'dcoords': a list of lists ``[I2, I2, ..., Ip]`` where
-             ``Ik`` is a list of 4 independent variable coordinates
-             corresponding to the line that represents the k'th link
-             painted.
+        ``'dcoords'``
+          A list of lists ``[I2, I2, ..., Ip]`` where ``Ik`` is a list of 4
+          independent variable coordinates corresponding to the line that
+          represents the k'th link painted.
 
-           'ivl': a list of labels corresponding to the leaf nodes.
+        ``'ivl'``
+          A list of labels corresponding to the leaf nodes.
 
-           'leaves': for each i, ``H[i] == j``, cluster node
-             ``j`` appears in position ``i`` in the left-to-right
-             traversal of the leaves, where :math:`j < 2n-1`
-             and :math:`i < n`. If ``j`` is less than ``n``, the
-             ``i`` th leaf node corresponds to an original observation.
-             Otherwise, it corresponds to a non-singleton cluster.
+        ``'leaves'``
+          For each i, ``H[i] == j``, cluster node ``j`` appears in position
+          ``i`` in the left-to-right traversal of the leaves, where
+          :math:`j < 2n-1` and :math:`i < n`. If ``j`` is less than ``n``, the
+          ``i``-th leaf node corresponds to an original observation.
+          Otherwise, it corresponds to a non-singleton cluster.
 
     """
-
     # Features under consideration.
     #
     #         ... = dendrogram(..., leaves_order=None)
@@ -2105,10 +2133,12 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     if truncate_mode == 'mtica' or truncate_mode == 'level':
         if p <= 0:
             p = np.inf
+
     if get_leaves:
         lvs = []
     else:
         lvs = None
+
     icoord_list = []
     dcoord_list = []
     color_list = []
@@ -2118,6 +2148,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         ivl = None
     else:
         ivl = []
+
     if color_threshold is None or \
        (isinstance(color_threshold, string_types) and
                            color_threshold == 'default'):
@@ -2128,6 +2159,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         contraction_marks = []
     else:
         contraction_marks = None
+
     _dendrogram_calculate_info(
         Z=Z, p=p,
         truncate_mode=truncate_mode,
@@ -2152,7 +2184,8 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         _plot_dendrogram(icoord_list, dcoord_list, ivl, p, n, mh, orientation,
                          no_labels, color_list, leaf_font_size=leaf_font_size,
                          leaf_rotation=leaf_rotation,
-                         contraction_marks=contraction_marks)
+                         contraction_marks=contraction_marks,
+                         ax=ax)
 
     return R
 

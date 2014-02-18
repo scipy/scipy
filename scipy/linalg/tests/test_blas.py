@@ -458,7 +458,7 @@ class TestTRMM(TestCase):
         if f is not None:
             result = f(1., self.a, self.b)
             expected = np.array([[13., 16., -5.],
-                                 [5., 6., -2.]]) # default a is upper triangular
+                                 [5., 6., -2.]])  # default a is upper triangular
             assert_array_almost_equal(result, expected)
 
     def test_ab_lower(self):
@@ -466,7 +466,7 @@ class TestTRMM(TestCase):
         if f is not None:
             result = f(1., self.a, self.b, lower=True)
             expected = np.array([[3., 4., -1.],
-                                 [-1., -2., 0.]]) # now a is lower triangular
+                                 [-1., -2., 0.]])  # now a is lower triangular
             assert_array_almost_equal(result, expected)
 
     def test_b_overwrites(self):
@@ -478,7 +478,7 @@ class TestTRMM(TestCase):
                 bcopy = self.b.copy()
                 result = f(1., self.a, bcopy, overwrite_b=overwr)
                 # C-contiguous arrays are copied
-                assert_(bcopy.flags.f_contiguous is False and 
+                assert_(bcopy.flags.f_contiguous is False and
                         np.may_share_memory(bcopy, result) is False)
                 assert_equal(bcopy, self.b)
 

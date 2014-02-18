@@ -15,7 +15,7 @@ FUNCTIONS = ('multiquadric', 'inverse multiquadric', 'gaussian',
 
 
 def check_rbf1d_interpolation(function):
-    """Check that the Rbf function interpolates throught the nodes (1D)"""
+    """Check that the Rbf function interpolates through the nodes (1D)"""
     olderr = np.seterr(all="ignore")
     try:
         x = linspace(0,10,9)
@@ -29,7 +29,7 @@ def check_rbf1d_interpolation(function):
 
 
 def check_rbf2d_interpolation(function):
-    """Check that the Rbf function interpolates throught the nodes (2D)"""
+    """Check that the Rbf function interpolates through the nodes (2D)"""
     olderr = np.seterr(all="ignore")
     try:
         x = random.rand(50,1)*4-2
@@ -44,7 +44,7 @@ def check_rbf2d_interpolation(function):
 
 
 def check_rbf3d_interpolation(function):
-    """Check that the Rbf function interpolates throught the nodes (3D)"""
+    """Check that the Rbf function interpolates through the nodes (3D)"""
     olderr = np.seterr(all="ignore")
     try:
         x = random.rand(50,1)*4-2

@@ -7,14 +7,12 @@ __docformat__ = "restructuredtext en"
 __all__ = ['csr_matrix', 'isspmatrix_csr']
 
 
-from warnings import warn
-
 import numpy as np
 from scipy.lib.six import xrange
 
 from .sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks, \
         get_csr_submatrix, csr_sample_values
-from .sputils import upcast, isintlike, IndexMixin, issequence
+from .sputils import upcast, isintlike, IndexMixin, issequence, get_index_dtype
 
 from .compressed import _cs_matrix
 
@@ -136,13 +134,19 @@ class csr_matrix(_cs_matrix, IndexMixin):
             return self
 
     def tocsc(self):
-        indptr = np.empty(self.shape[1] + 1, dtype=np.intc)
-        indices = np.empty(self.nnz, dtype=np.intc)
+        idx_dtype = get_index_dtype((self.indptr, self.indices),
+                                    maxval=max(self.nnz, self.shape[0]))
+        indptr = np.empty(self.shape[1] + 1, dtype=idx_dtype)
+        indices = np.empty(self.nnz, dtype=idx_dtype)
         data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
         csr_tocsc(self.shape[0], self.shape[1],
-                  self.indptr, self.indices, self.data,
-                  indptr, indices, data)
+                  self.indptr.astype(idx_dtype),
+                  self.indices.astype(idx_dtype),
+                  self.data,
+                  indptr,
+                  indices,
+                  data)
 
         from .csc import csc_matrix
         A = csc_matrix((data, indices, indptr), shape=self.shape)
@@ -169,12 +173,17 @@ class csr_matrix(_cs_matrix, IndexMixin):
 
             blks = csr_count_blocks(M,N,R,C,self.indptr,self.indices)
 
-            indptr = np.empty(M//R + 1, dtype=np.intc)
-            indices = np.empty(blks, dtype=np.intc)
+            idx_dtype = get_index_dtype((self.indptr, self.indices),
+                                        maxval=max(N//C, blks))
+            indptr = np.empty(M//R+1, dtype=idx_dtype)
+            indices = np.empty(blks, dtype=idx_dtype)
             data = np.zeros((blks,R,C), dtype=self.dtype)
 
-            csr_tobsr(M, N, R, C, self.indptr, self.indices, self.data,
-                    indptr, indices, data.ravel())
+            csr_tobsr(M, N, R, C,
+                      self.indptr.astype(idx_dtype),
+                      self.indices.astype(idx_dtype),
+                      self.data,
+                      indptr, indices, data.ravel())
 
             return bsr_matrix((data,indices,indptr), shape=self.shape)
 
@@ -188,13 +197,17 @@ class csr_matrix(_cs_matrix, IndexMixin):
     def __getitem__(self, key):
         def asindices(x):
             try:
-                x = np.asarray(x, dtype=np.intc)
+                x = np.asarray(x)
+                x = x.astype(get_index_dtype(x))
             except:
                 raise IndexError('invalid index')
             else:
                 return x
 
-        def check_bounds(indices,N):
+        def check_bounds(indices, N):
+            if indices.size == 0:
+                return (0, 0)
+
             max_indx = indices.max()
             if max_indx >= N:
                 raise IndexError('index (%d) out of range' % max_indx)
@@ -217,7 +230,7 @@ class csr_matrix(_cs_matrix, IndexMixin):
                 indices = indices.copy()
                 indices[indices < 0] += N
 
-            indptr = np.arange(len(indices) + 1, dtype=np.intc)
+            indptr = np.arange(len(indices)+1, dtype=indices.dtype)
             data = np.ones(len(indices), dtype=self.dtype)
             shape = (len(indices),N)
 
@@ -255,55 +268,31 @@ class csr_matrix(_cs_matrix, IndexMixin):
             if isintlike(col) or isinstance(col,slice):
                 P = extractor(row, self.shape[0])     # [[1,2],j] or [[1,2],1:2]
                 return (P*self)[:,col]
-            elif issequence(col):                     # [[1,2],[1,2]]
-                row = asindices(row)
-                col = asindices(col)
-                if row.ndim == 1:
-                    if row.shape != col.shape:
-                        raise IndexError('number of row and column indices differ')
-                    check_bounds(row, self.shape[0])
-                    check_bounds(col, self.shape[1])
 
-                    num_samples = len(row)
-                    val = np.empty(num_samples, dtype=self.dtype)
-                    csr_sample_values(self.shape[0], self.shape[1],
-                                      self.indptr, self.indices, self.data,
-                                      num_samples, row, col, val)
-                    return np.asmatrix(val)
+        if not (issequence(col) and issequence(row)):
+            # Sample elementwise
+            row, col = self._index_to_arrays(row, col)
 
-        # If all else fails, try elementwise
-        row, col = self._index_to_arrays(row, col)
+        row = asindices(row)
+        col = asindices(col)
+        if row.shape != col.shape:
+            raise IndexError('number of row and column indices differ')
+        assert row.ndim <= 2
 
-        return self.__class__([[self._get_single_element(iii, jjj) for
-                                iii, jjj in zip(ii, jj)] for ii, jj in
-                               zip(row.tolist(), col.tolist())])
+        num_samples = np.size(row)
+        if num_samples == 0:
+            return csr_matrix(np.atleast_2d(row).shape, dtype=self.dtype)
+        check_bounds(row, self.shape[0])
+        check_bounds(col, self.shape[1])
 
-    def _get_single_element(self,row,col):
-        """Returns the single element self[row, col]
-        """
-        M, N = self.shape
-        if (row < 0):
-            row += M
-        if (col < 0):
-            col += N
-        if not (0 <= row < M) or not (0 <= col < N):
-            raise IndexError("index out of bounds")
-
-        # TODO make use of sorted indices (if present)
-
-        start = self.indptr[row]
-        end = self.indptr[row+1]
-        indxs = np.where(col == self.indices[start:end])[0]
-
-        num_matches = len(indxs)
-
-        if num_matches == 0:
-            # entry does not appear in the matrix
-            return self.dtype.type(0)
-        elif num_matches == 1:
-            return self.data[start:end][indxs[0]]
-        else:
-            raise ValueError('nonzero entry (%d,%d) occurs more than once' % (row,col))
+        val = np.empty(num_samples, dtype=self.dtype)
+        csr_sample_values(self.shape[0], self.shape[1],
+                          self.indptr, self.indices, self.data,
+                          num_samples, row.ravel(), col.ravel(), val)
+        if row.ndim == 1:
+            # row and col are 1d
+            return np.asmatrix(val)
+        return self.__class__(val.reshape(row.shape))
 
     def getrow(self, i):
         """Returns a copy of row i of the matrix, as a (1 x n)

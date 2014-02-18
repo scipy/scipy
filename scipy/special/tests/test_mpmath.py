@@ -920,9 +920,10 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_ci(self):
         def ci(x):
             return sc.sici(x)[1]
+        # oscillating function: limit range
         assert_mpmath_equal(ci,
                             mpmath.ci,
-                            [Arg()])
+                            [Arg(-1e8, 1e8)])
 
     def test_digamma(self):
         assert_mpmath_equal(sc.digamma,
@@ -1381,10 +1382,34 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             legenp,
                             [IntArg(-100, 100), Arg(-100, 100), Arg(-1, 1)])
 
-    def test_legenp_complex(self):
+    def test_legenp_complex_2(self):
         def clpnm(n, m, z):
             try:
-                return sc.clpmn(m.real, n.real, z)[0][-1,-1]
+                return sc.clpmn(m.real, n.real, z, type=2)[0][-1,-1]
+            except ValueError:
+                return np.nan
+
+        def legenp(n, m, z):
+            if abs(z) < 1e-15:
+                # mpmath has bad performance here
+                return np.nan
+            return _exception_to_nan(mpmath.legenp)(int(n.real), int(m.real), z, type=2)
+
+        # mpmath is quite slow here
+        x = np.array([-2, -0.99, -0.5, 0, 1e-5, 0.5, 0.99, 20, 2e3])
+        y = np.array([-1e3, -0.5, 0.5, 1.3])
+        z = (x[:,None] + 1j*y[None,:]).ravel()
+
+        assert_mpmath_equal(clpnm,
+                            legenp,
+                            [FixedArg([-2, -1, 0, 1, 2, 10]), FixedArg([-2, -1, 0, 1, 2, 10]), FixedArg(z)],
+                            rtol=1e-6,
+                            n=500)
+
+    def test_legenp_complex_3(self):
+        def clpnm(n, m, z):
+            try:
+                return sc.clpmn(m.real, n.real, z, type=3)[0][-1,-1]
             except ValueError:
                 return np.nan
 
@@ -1546,3 +1571,38 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(mpmath.zeta),
                             [Arg(a=1, b=1e10, inclusive_a=False),
                              Arg(a=0, inclusive_a=False)])
+
+    def test_boxcox(self):
+
+        def mp_boxcox(x, lmbda):
+            x = mpmath.mp.mpf(x)
+            lmbda = mpmath.mp.mpf(lmbda)
+            if lmbda == 0:
+                return mpmath.mp.log(x)
+            else:
+                return mpmath.mp.powm1(x, lmbda) / lmbda
+
+        assert_mpmath_equal(sc.boxcox,
+                            _exception_to_nan(mp_boxcox),
+                            [Arg(a=0, inclusive_a=False), Arg()],
+                            n=200,
+                            dps=60,
+                            rtol=1e-13)
+
+    def test_boxcox1p(self):
+
+        def mp_boxcox1p(x, lmbda):
+            x = mpmath.mp.mpf(x)
+            lmbda = mpmath.mp.mpf(lmbda)
+            one = mpmath.mp.mpf(1)
+            if lmbda == 0:
+                return mpmath.mp.log(one + x)
+            else:
+                return mpmath.mp.powm1(one + x, lmbda) / lmbda
+
+        assert_mpmath_equal(sc.boxcox1p,
+                            _exception_to_nan(mp_boxcox1p),
+                            [Arg(a=-1, inclusive_a=False), Arg()],
+                            n=200,
+                            dps=60,
+                            rtol=1e-13)

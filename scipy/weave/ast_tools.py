@@ -83,7 +83,7 @@ def atom_list(expr_string):
 
 
 def find_first_pattern(ast_tuple,pattern_list):
-    """* Find the first occurence of a pattern one of a list of patterns
+    """* Find the first occurrence of a pattern one of a list of patterns
         in ast_tuple.
 
         Used for testing at the moment.
@@ -145,7 +145,7 @@ def remove_reserved_names(lst):
 
 
 def harvest_variables(ast_list):
-    """ Retreive all the variables that need to be defined.
+    """ Retrieve all the variables that need to be defined.
     """
     variables = []
     if issequence(ast_list):

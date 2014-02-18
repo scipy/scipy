@@ -103,7 +103,7 @@ def check_sum(file):
     except IOError:
         bytes = ''
     chk_sum = sha256(bytes)
-    return chk_sum.hexdigest()
+    return chk_sum.hexdigest()[:32]  # truncation needed, see gh-3216
 
 
 def get_compiler_dir(compiler_name):

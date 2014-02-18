@@ -36,4 +36,4 @@ notifications:
   # let's wait to see what people think before turning that on.
   email: false
 after_success:
-    - if [ "${TESTMODE}" == "full" ]; then coveralls; fi
+    - if [ "${TESTMODE}" == "full" ]; then cp build/test/.coverage . && coveralls; fi

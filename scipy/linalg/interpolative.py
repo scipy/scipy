@@ -389,6 +389,7 @@ import numpy as np
 _DTYPE_ERROR = ValueError("invalid input dtype (input must be float64 or complex128)")
 _TYPE_ERROR = TypeError("invalid input type (must be array or LinearOperator)")
 
+
 def _is_real(A):
     try:
         if A.dtype == np.complex128:

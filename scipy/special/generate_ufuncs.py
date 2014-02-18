@@ -290,6 +290,8 @@ erfi -- faddeeva_erfi: d->d, faddeeva_erfi_complex: D->D   -- _faddeeva.h++
 xlogy -- xlogy[double]: dd->d, xlogy[double_complex]: DD->D -- _xlogy.pxd
 xlog1py -- xlog1py: dd->d                                  -- _xlogy.pxd
 poch -- poch: dd->d                                        -- c_misc/misc.h
+boxcox -- boxcox: dd->d                                    -- _boxcox.pxd
+boxcox1p -- boxcox1p: dd->d                                -- _boxcox.pxd
 """
 
 #---------------------------------------------------------------------------------
@@ -787,7 +789,7 @@ class Ufunc(object):
         toplevel += "cdef char ufunc_%s_types[%d]\n" % (self.name, len(types))
         toplevel += 'cdef char *ufunc_%s_doc = (\n    "%s")\n' % (
             self.name,
-            self.doc.replace('"', '\\"').replace('\n', '\\n\"\n    "')
+            self.doc.replace("\\", "\\\\").replace('"', '\\"').replace('\n', '\\n\"\n    "')
             )
 
         for j, function in enumerate(loops):

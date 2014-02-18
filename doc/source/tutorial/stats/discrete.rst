@@ -195,7 +195,7 @@ so that a normal distribution has a kurtosis of zero.
 Moment generating function
 --------------------------
 
-The moment generating funtion is defined as
+The moment generating function is defined as
 
 .. math::
    :nowrap:

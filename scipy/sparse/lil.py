@@ -14,7 +14,7 @@ from scipy.lib.six import xrange
 
 from .base import spmatrix, isspmatrix
 from .sputils import getdtype, isshape, issequence, isscalarlike, ismatrix, \
-    IndexMixin, upcast_scalar
+    IndexMixin, upcast_scalar, get_index_dtype
 
 from warnings import warn
 from .base import SparseEfficiencyWarning
@@ -177,8 +177,28 @@ class lil_matrix(spmatrix, IndexMixin):
     # Whenever the dimensions change, empty lists should be created for each
     # row
 
-    def getnnz(self):
-        return sum([len(rowvals) for rowvals in self.data])
+    def getnnz(self, axis=None):
+        """Get the count of explicitly-stored values (nonzeros)
+
+        Parameters
+        ----------
+        axis : None, 0, or 1
+            Select between the number of values across the whole matrix, in
+            each column, or in each row.
+        """
+        if axis is None:
+            return sum([len(rowvals) for rowvals in self.data])
+        if axis < 0:
+            axis += 2
+        if axis == 0:
+            out = np.zeros(self.shape[1])
+            for row in self.rows:
+                out[row] += 1
+            return out
+        elif axis == 1:
+            return np.array([len(rowvals) for rowvals in self.data])
+        else:
+            raise ValueError('axis out of bounds')
     nnz = property(fget=getnnz)
 
     def __str__(self):
@@ -238,11 +258,11 @@ class lil_matrix(spmatrix, IndexMixin):
 
         i, j = self._index_to_arrays(i, j)
         if i.size == 0:
-            return lil_matrix((0,0), dtype=self.dtype)
+            return lil_matrix(i.shape, dtype=self.dtype)
 
         return self.__class__([[self._get1(iii, jjj) for iii, jjj in
                                 zip(ii, jj)] for ii, jj in
-                               zip(i.tolist(), j.tolist())])
+                               zip(i.tolist(), j.tolist())], dtype=self.dtype)
 
     def _insertat2(self, row, data, j, x):
         """ helper for __setitem__: insert a value in the given row/data at
@@ -367,15 +387,16 @@ class lil_matrix(spmatrix, IndexMixin):
         """ Return Compressed Sparse Row format arrays for this matrix.
         """
 
-        indptr = np.asarray([len(x) for x in self.rows], dtype=np.intc)
-        indptr = np.concatenate((np.array([0], dtype=np.intc), np.cumsum(indptr)))
-
-        nnz = indptr[-1]
+        lst = [len(x) for x in self.rows]
+        idx_dtype = get_index_dtype(maxval=max(self.shape[1], sum(lst)))
+        indptr = np.asarray(lst, dtype=idx_dtype)
+        indptr = np.concatenate((np.array([0], dtype=idx_dtype),
+                                 np.cumsum(indptr, dtype=idx_dtype)))
 
         indices = []
         for x in self.rows:
             indices.extend(x)
-        indices = np.asarray(indices, dtype=np.intc)
+        indices = np.asarray(indices, dtype=idx_dtype)
 
         data = []
         for x in self.data:

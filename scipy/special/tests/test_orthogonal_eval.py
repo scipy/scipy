@@ -1,19 +1,20 @@
 from __future__ import division, print_function, absolute_import
 
-from distutils.version import LooseVersion
 import sys
 
 import numpy as np
 from numpy.testing import assert_, assert_allclose, dec
 import scipy.special.orthogonal as orth
 
+from scipy.lib._version import NumpyVersion
 from scipy.special._testutils import FuncData
+
 
 # Early Numpy versions have bugs in ufunc keyword argument parsing
 numpy_version_requirement = dec.skipif(
-    LooseVersion(np.version.version) < LooseVersion('1.6')
-    and sys.version_info[0] >= 3,
+    NumpyVersion(np.__version__) < '1.6.0' and sys.version_info[0] >= 3,
     "Bug in Numpy < 1.6 on Python 3")
+
 
 def test_eval_chebyt():
     n = np.arange(0, 10000, 7)
@@ -265,8 +266,6 @@ class TestRecurrence(object):
 
     @numpy_version_requirement
     def test_hermite(self):
-        v =  orth.eval_hermite(70, 1.0)
-        a = -1.457076485701412e60 
+        v = orth.eval_hermite(70, 1.0)
+        a = -1.457076485701412e60
         assert_allclose(v,a)
-
-        

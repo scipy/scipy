@@ -55,7 +55,7 @@ class NDInterpolatorBase(object):
     """
 
     def __init__(self, points, values, fill_value=np.nan, ndim=None,
-                 rescale=False):
+                 rescale=False, need_contiguous=True, need_values=True):
         """
         Check shape of points and values arrays, and reshape values to
         (npoints, nvalues).  Ensure the `points` and values arrays are
@@ -77,25 +77,29 @@ class NDInterpolatorBase(object):
 
         self._check_init_shape(points, values, ndim=ndim)
 
-        points = np.ascontiguousarray(points, dtype=np.double)
+        if need_contiguous:
+            points = np.ascontiguousarray(points, dtype=np.double)
 
-        self.values_shape = values.shape[1:]
-        if values.ndim == 1:
-            self.values = values[:,None]
-        elif values.ndim == 2:
-            self.values = values
-        else:
-            self.values = values.reshape(values.shape[0],
-                                         np.prod(values.shape[1:]))
+        if need_values:
+            self.values_shape = values.shape[1:]
+            if values.ndim == 1:
+                self.values = values[:,None]
+            elif values.ndim == 2:
+                self.values = values
+            else:
+                self.values = values.reshape(values.shape[0],
+                                             np.prod(values.shape[1:]))
 
-        # Complex or real?
-        self.is_complex = np.issubdtype(self.values.dtype, np.complexfloating)
-        if self.is_complex:
-            self.values = np.ascontiguousarray(self.values, dtype=np.complex)
-            self.fill_value = complex(fill_value)
-        else:
-            self.values = np.ascontiguousarray(self.values, dtype=np.double)
-            self.fill_value = float(fill_value)
+            # Complex or real?
+            self.is_complex = np.issubdtype(self.values.dtype, np.complexfloating)
+            if self.is_complex:
+                if need_contiguous:
+                    self.values = np.ascontiguousarray(self.values, dtype=np.complex)
+                self.fill_value = complex(fill_value)
+            else:
+                if need_contiguous:
+                    self.values = np.ascontiguousarray(self.values, dtype=np.double)
+                self.fill_value = float(fill_value)
 
         if not rescale:
             self.scale = None
@@ -129,6 +133,12 @@ class NDInterpolatorBase(object):
             raise ValueError("number of dimensions in xi does not match x")
         return xi
 
+    def _scale_x(self, xi):
+        if self.scale is None:
+            return xi
+        else:
+            return (xi - self.offset) / self.scale
+
     def __call__(self, *args):
         """
         interpolator(xi)
@@ -147,16 +157,10 @@ class NDInterpolatorBase(object):
         xi = xi.reshape(-1, shape[-1])
         xi = np.ascontiguousarray(xi, dtype=np.double)
 
-        if self.scale is None:
-            if self.is_complex:
-                r = self._evaluate_complex(xi)
-            else:
-                r = self._evaluate_double(xi)
+        if self.is_complex:
+            r = self._evaluate_complex(self._scale_x(xi))
         else:
-            if self.is_complex:
-                r = self._evaluate_complex((xi - self.offset) / self.scale)
-            else:
-                r = self._evaluate_double((xi - self.offset) / self.scale)
+            r = self._evaluate_double(self._scale_x(xi))
 
         return np.asarray(r).reshape(shape[:-1] + self.values_shape)
 

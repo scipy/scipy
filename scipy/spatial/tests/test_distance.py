@@ -1696,15 +1696,15 @@ class TestIsValidDM(TestCase):
             D[i, i] = 2.0
         self.assertTrue(is_valid_dm(D) == False)
 
-    def test_is_valid_dm_assymetric_E(self):
-        "Tests is_valid_dm(*) on an assymetric distance matrix. Exception expected."
+    def test_is_valid_dm_asymmetric_E(self):
+        "Tests is_valid_dm(*) on an asymmetric distance matrix. Exception expected."
         y = np.random.rand(10)
         D = squareform(y)
         D[1,3] = D[3,1] + 1
         self.assertRaises(ValueError, is_valid_dm_throw, (D))
 
-    def test_is_valid_dm_assymetric_F(self):
-        "Tests is_valid_dm(*) on an assymetric distance matrix. False expected."
+    def test_is_valid_dm_asymmetric_F(self):
+        "Tests is_valid_dm(*) on an asymmetric distance matrix. False expected."
         y = np.random.rand(10)
         D = squareform(y)
         D[1,3] = D[3,1] + 1

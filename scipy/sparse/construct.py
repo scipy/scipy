@@ -12,7 +12,7 @@ from warnings import warn
 
 import numpy as np
 
-from .sputils import upcast
+from .sputils import upcast, get_index_dtype
 
 from .csr import csr_matrix
 from .csc import csc_matrix
@@ -254,14 +254,16 @@ def eye(m, n=None, k=0, dtype=float, format=None):
     if m == n and k == 0:
         # fast branch for special formats
         if format in ['csr', 'csc']:
-            indptr = np.arange(n+1, dtype=np.intc)
-            indices = np.arange(n, dtype=np.intc)
+            idx_dtype = get_index_dtype(maxval=n)
+            indptr = np.arange(n+1, dtype=idx_dtype)
+            indices = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
             cls = {'csr': csr_matrix, 'csc': csc_matrix}[format]
             return cls((data,indices,indptr),(n,n))
         elif format == 'coo':
-            row = np.arange(n, dtype=np.intc)
-            col = np.arange(n, dtype=np.intc)
+            idx_dtype = get_index_dtype(maxval=n)
+            row  = np.arange(n, dtype=idx_dtype)
+            col  = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
             return coo_matrix((data,(row,col)),(n,n))
 
@@ -393,6 +395,34 @@ def kronsum(A, B, format=None):
     return (L+R).asformat(format)  # since L + R is not always same format
 
 
+def _compressed_sparse_stack(blocks, axis):
+    """
+    Stacking fast path for CSR/CSC matrices
+    (i) vstack for CSR, (ii) hstack for CSC.
+    """
+    other_axis = 1 if axis == 0 else 0
+    data = np.concatenate([b.data for b in blocks])
+    indices = np.concatenate([b.indices for b in blocks])
+    indptr = []
+    last_indptr = 0
+    constant_dim = blocks[0].shape[other_axis]
+    sum_dim = 0
+    for b in blocks:
+        if b.shape[other_axis] != constant_dim:
+            raise ValueError('incompatible dimensions for axis %d' % other_axis)
+        sum_dim += b.shape[axis]
+        indptr.append(b.indptr[:-1] + last_indptr)
+        last_indptr += b.indptr[-1]
+    indptr.append([last_indptr])
+    indptr = np.concatenate(indptr)
+    if axis == 0:
+        return csr_matrix((data, indices, indptr),
+                          shape=(sum_dim, constant_dim))
+    else:
+        return csc_matrix((data, indices, indptr),
+                          shape=(constant_dim, sum_dim))
+
+
 def hstack(blocks, format=None, dtype=None):
     """
     Stack sparse matrices horizontally (column wise)
@@ -464,8 +494,9 @@ def bmat(blocks, format=None, dtype=None):
         Grid of sparse matrices with compatible shapes.
         An entry of None implies an all-zero matrix.
     format : {'bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil'}, optional
-        The sparse format of the result (e.g. "csr").  If not given, the matrix
-        is returned in "coo" format.
+        The sparse format of the result (e.g. "csr").  By default an
+        appropriate sparse matrix format is returned.
+        This choice is subject to change.
     dtype : dtype specifier, optional
         The data-type of the output matrix.  If not given, the dtype is
         determined from that of `blocks`.
@@ -473,7 +504,6 @@ def bmat(blocks, format=None, dtype=None):
     Returns
     -------
     bmat : sparse matrix
-        A "coo" sparse matrix or type of sparse matrix identified by `format`.
 
     See Also
     --------
@@ -504,9 +534,23 @@ def bmat(blocks, format=None, dtype=None):
 
     M,N = blocks.shape
 
+    # check for fast path cases
+    if (N == 1 and format in (None, 'csr')
+        and all(isinstance(b, csr_matrix) for b in blocks.flat)):
+        A = _compressed_sparse_stack(blocks[:,0], 0)
+        if dtype is not None:
+            A = A.astype(dtype)
+        return A
+    elif (M == 1 and format in (None, 'csc')
+          and all(isinstance(b, csc_matrix) for b in blocks.flat)):
+        A = _compressed_sparse_stack(blocks[0,:], 1)
+        if dtype is not None:
+            A = A.astype(dtype)
+        return A
+
     block_mask = np.zeros(blocks.shape, dtype=np.bool)
-    brow_lengths = np.zeros(blocks.shape[0], dtype=np.intc)
-    bcol_lengths = np.zeros(blocks.shape[1], dtype=np.intc)
+    brow_lengths = np.zeros(M, dtype=np.int64)
+    bcol_lengths = np.zeros(N, dtype=np.int64)
 
     # convert everything to COO format
     for i in range(M):
@@ -541,9 +585,12 @@ def bmat(blocks, format=None, dtype=None):
     row_offsets = np.concatenate(([0], np.cumsum(brow_lengths)))
     col_offsets = np.concatenate(([0], np.cumsum(bcol_lengths)))
 
+    shape = (np.sum(brow_lengths), np.sum(bcol_lengths))
+
     data = np.empty(nnz, dtype=dtype)
-    row = np.empty(nnz, dtype=np.intc)
-    col = np.empty(nnz, dtype=np.intc)
+    idx_dtype = get_index_dtype(maxval=max(shape))
+    row  = np.empty(nnz, dtype=idx_dtype)
+    col  = np.empty(nnz, dtype=idx_dtype)
 
     nnz = 0
     for i in range(M):
@@ -559,7 +606,6 @@ def bmat(blocks, format=None, dtype=None):
 
                 nnz += A.nnz
 
-    shape = (np.sum(brow_lengths), np.sum(bcol_lengths))
     return coo_matrix((data, (row, col)), shape=shape).asformat(format)
 
 
@@ -643,8 +689,10 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
 
     mn = m * n
 
-    # XXX: sparse uses intc instead of intp...
-    tp = np.intp
+    tp = np.intc
+    if mn > np.iinfo(tp).max:
+        tp = np.int64
+
     if mn > np.iinfo(tp).max:
         msg = """\
 Trying to generate a random sparse matrix such as the product of dimensions is

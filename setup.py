@@ -179,7 +179,7 @@ def configuration(parent_package='',top_path=None):
 
 def setup_package():
 
-    # Rewrite the version file everytime
+    # Rewrite the version file every time
     write_version_py()
 
     if HAVE_SPHINX:
@@ -194,7 +194,7 @@ def setup_package():
         description = DOCLINES[0],
         long_description = "\n".join(DOCLINES[2:]),
         url = "http://www.scipy.org",
-        download_url = "http://sourceforge.net/project/showfiles.php?group_id=27747&package_id=19531",
+        download_url = "http://sourceforge.net/projects/scipy/files/scipy/",
         license = 'BSD',
         cmdclass=cmdclass,
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
@@ -218,6 +218,10 @@ def setup_package():
         FULLVERSION, GIT_REVISION = get_version_info()
         metadata['version'] = FULLVERSION
     else:
+        if len(sys.argv) >= 2 and sys.argv[1] == 'bdist_wheel':
+            # bdist_wheel needs setuptools
+            import setuptools
+
         from numpy.distutils.core import setup
 
         cwd = os.path.abspath(os.path.dirname(__file__))

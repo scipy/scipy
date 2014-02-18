@@ -93,9 +93,13 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         Jacobian is assumed to be banded.  These give the number of
         lower and upper non-zero diagonals in this banded matrix.
         For the banded case, `Dfun` should return a matrix whose
-        columns contain the non-zero bands (starting with the
-        lowest diagonal).  Thus, the return matrix from `Dfun` should
-        have shape ``len(y0) * (ml + mu + 1)`` when ``ml >=0`` or ``mu >=0``.
+        rows contain the non-zero bands (starting with the lowest diagonal).
+        Thus, the return matrix `jac` from `Dfun` should have shape
+        ``(ml + mu + 1, len(y0))`` when ``ml >=0`` or ``mu >=0``.
+        The data in `jac` must be stored such that ``jac[i - j + mu, j]``
+        holds the derivative of the `i`th equation with respect to the `j`th
+        state variable.  If `col_deriv` is True, the transpose of this
+        `jac` must be returned.
     rtol, atol : float, optional
         The input parameters `rtol` and `atol` determine the error
         control performed by the solver.  The solver will control the

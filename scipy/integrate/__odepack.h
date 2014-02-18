@@ -114,7 +114,7 @@ int ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu, double
     return -1;
   }
   if (multipack_jac_transpose == 1) 
-    MATRIXC2F(pd, result_array->data, *n, *nrowpd)
+    MATRIXC2F(pd, result_array->data, *nrowpd, *n)
   else
     memcpy(pd, result_array->data, (*n)*(*nrowpd)*sizeof(double));
 
@@ -271,7 +271,7 @@ static PyObject *odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdic
   if (ap_yout== NULL) goto fail;
   yout = (double *) ap_yout->data;
   /* Copy initial vector into first row of output */
-  memcpy(yout, y, neq*sizeof(double));  /* copy intial value to output */
+  memcpy(yout, y, neq*sizeof(double));  /* copy initial value to output */
   yout_ptr = yout + neq;    /* set output pointer to next position */
 
   itol = setup_extra_inputs(&ap_rtol, o_rtol, &ap_atol, o_atol, &ap_tcrit, o_tcrit, &numcrit, neq);

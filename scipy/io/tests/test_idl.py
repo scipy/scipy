@@ -13,7 +13,7 @@ from scipy.io.idl import readsav
 
 
 def object_array(*args):
-    '''Constructs a numpy array of objects'''
+    """Constructs a numpy array of objects"""
     array = np.empty(len(args), dtype=np.object)
     for i in range(len(args)):
         array[i] = args[i]
@@ -21,7 +21,7 @@ def object_array(*args):
 
 
 def assert_identical(a, b):
-    '''Assert whether value AND type are the same'''
+    """Assert whether value AND type are the same"""
     assert_equal(a, b)
     if type(b) is np.str:
         assert_equal(type(a), type(b))
@@ -30,7 +30,7 @@ def assert_identical(a, b):
 
 
 def assert_array_identical(a, b):
-    '''Assert whether values AND type are the same'''
+    """Assert whether values AND type are the same"""
     assert_array_equal(a, b)
     assert_equal(a.dtype.type, b.dtype.type)
 
@@ -40,7 +40,6 @@ vect_id = np.vectorize(id)
 
 
 class TestIdict:
-    '''Test the idict= argument to read'''
 
     def test_idict(self):
         custom_dict = {'a': np.int16(999)}
@@ -53,7 +52,7 @@ class TestIdict:
 
 
 class TestScalars:
-    '''Test that scalar values are read in with the correct value and type'''
+    # Test that scalar values are read in with the correct value and type
 
     def test_byte(self):
         s = readsav(path.join(DATA_PATH, 'scalar_byte.sav'), verbose=False)
@@ -114,7 +113,7 @@ class TestScalars:
 
 
 class TestCompressed(TestScalars):
-    '''Test that compressed .sav files can be read in'''
+    # Test that compressed .sav files can be read in
 
     def test_compressed(self):
         with warnings.catch_warnings():
@@ -132,7 +131,7 @@ class TestCompressed(TestScalars):
 
 
 class TestArrayDimensions:
-    '''Test that multi-dimensional arrays are read in with the correct dimensions'''
+    # Test that multi-dimensional arrays are read in with the correct dimensions
 
     def test_1d(self):
         s = readsav(path.join(DATA_PATH, 'array_float32_1d.sav'), verbose=False)
@@ -168,7 +167,6 @@ class TestArrayDimensions:
 
 
 class TestStructures:
-    '''Test that structures are correctly read in'''
 
     def test_scalars(self):
         s = readsav(path.join(DATA_PATH, 'struct_scalars.sav'), verbose=False)
@@ -205,7 +203,6 @@ class TestStructures:
         assert_array_identical(s.arrays.d[0], np.array([b"cheese", b"bacon", b"spam"], dtype=np.object))
 
     def test_arrays_replicated(self):
-
         s = readsav(path.join(DATA_PATH, 'struct_arrays_replicated.sav'), verbose=False)
 
         # Check column types
@@ -222,13 +219,18 @@ class TestStructures:
 
         # Check values
         for i in range(5):
-            assert_array_identical(s.arrays_rep.a[i], np.array([1, 2, 3], dtype=np.int16))
-            assert_array_identical(s.arrays_rep.b[i], np.array([4., 5., 6., 7.], dtype=np.float32))
-            assert_array_identical(s.arrays_rep.c[i], np.array([np.complex64(1+2j), np.complex64(7+8j)]))
-            assert_array_identical(s.arrays_rep.d[i], np.array([b"cheese", b"bacon", b"spam"], dtype=np.object))
+            assert_array_identical(s.arrays_rep.a[i],
+                                   np.array([1, 2, 3], dtype=np.int16))
+            assert_array_identical(s.arrays_rep.b[i],
+                                   np.array([4., 5., 6., 7.], dtype=np.float32))
+            assert_array_identical(s.arrays_rep.c[i],
+                                   np.array([np.complex64(1+2j),
+                                             np.complex64(7+8j)]))
+            assert_array_identical(s.arrays_rep.d[i],
+                                   np.array([b"cheese", b"bacon", b"spam"],
+                                            dtype=np.object))
 
     def test_arrays_replicated_3d(self):
-
         s = readsav(path.join(DATA_PATH, 'struct_arrays_replicated_3d.sav'), verbose=False)
 
         # Check column types
@@ -247,10 +249,17 @@ class TestStructures:
         for i in range(4):
             for j in range(3):
                 for k in range(2):
-                    assert_array_identical(s.arrays_rep.a[i, j, k], np.array([1, 2, 3], dtype=np.int16))
-                    assert_array_identical(s.arrays_rep.b[i, j, k], np.array([4., 5., 6., 7.], dtype=np.float32))
-                    assert_array_identical(s.arrays_rep.c[i, j, k], np.array([np.complex64(1+2j), np.complex64(7+8j)]))
-                    assert_array_identical(s.arrays_rep.d[i, j, k], np.array([b"cheese", b"bacon", b"spam"], dtype=np.object))
+                    assert_array_identical(s.arrays_rep.a[i, j, k],
+                                           np.array([1, 2, 3], dtype=np.int16))
+                    assert_array_identical(s.arrays_rep.b[i, j, k],
+                                           np.array([4., 5., 6., 7.],
+                                                    dtype=np.float32))
+                    assert_array_identical(s.arrays_rep.c[i, j, k],
+                                           np.array([np.complex64(1+2j),
+                                                     np.complex64(7+8j)]))
+                    assert_array_identical(s.arrays_rep.d[i, j, k],
+                                           np.array([b"cheese", b"bacon", b"spam"],
+                                                    dtype=np.object))
 
     def test_inheritance(self):
         s = readsav(path.join(DATA_PATH, 'struct_inherit.sav'), verbose=False)
@@ -261,7 +270,7 @@ class TestStructures:
 
 
 class TestPointers:
-    '''Check that pointers in .sav files produce references to the same object in Python'''
+    # Check that pointers in .sav files produce references to the same object in Python
 
     def test_pointers(self):
         s = readsav(path.join(DATA_PATH, 'scalar_heap_pointer.sav'), verbose=False)
@@ -271,7 +280,7 @@ class TestPointers:
 
 
 class TestPointerArray:
-    '''Test that pointers in arrays are correctly read in'''
+    # Test that pointers in arrays are correctly read in
 
     def test_1d(self):
         s = readsav(path.join(DATA_PATH, 'array_float32_pointer_1d.sav'), verbose=False)
@@ -323,7 +332,7 @@ class TestPointerArray:
 
 
 class TestPointerStructures:
-    '''Test that structures are correctly read in'''
+    # Test that structures are correctly read in
 
     def test_scalars(self):
         s = readsav(path.join(DATA_PATH, 'struct_pointers.sav'), verbose=False)
@@ -339,8 +348,9 @@ class TestPointerStructures:
 
     def test_pointers_replicated_3d(self):
         s = readsav(path.join(DATA_PATH, 'struct_pointers_replicated_3d.sav'), verbose=False)
-        assert_identical(s.pointers_rep.g, np.repeat(np.float32(4.), 24).reshape(4, 3, 2).astype(np.object_))
-        assert_identical(s.pointers_rep.h, np.repeat(np.float32(4.), 24).reshape(4, 3, 2).astype(np.object_))
+        s_expect = np.repeat(np.float32(4.), 24).reshape(4, 3, 2).astype(np.object_)
+        assert_identical(s.pointers_rep.g, s_expect)
+        assert_identical(s.pointers_rep.h, s_expect)
         assert_(np.all(vect_id(s.pointers_rep.g) == vect_id(s.pointers_rep.h)))
 
     def test_arrays(self):
@@ -352,7 +362,6 @@ class TestPointerStructures:
         assert_(id(s.arrays.g[0][0]) == id(s.arrays.h[0][0]))
 
     def test_arrays_replicated(self):
-
         s = readsav(path.join(DATA_PATH, 'struct_pointer_arrays_replicated.sav'), verbose=False)
 
         # Check column types
@@ -390,8 +399,10 @@ class TestPointerStructures:
         for i in range(4):
             for j in range(3):
                 for k in range(2):
-                    assert_array_identical(s.arrays_rep.g[i, j, k], np.repeat(np.float32(4.), 2).astype(np.object_))
-                    assert_array_identical(s.arrays_rep.h[i, j, k], np.repeat(np.float32(4.), 3).astype(np.object_))
+                    assert_array_identical(s.arrays_rep.g[i, j, k],
+                            np.repeat(np.float32(4.), 2).astype(np.object_))
+                    assert_array_identical(s.arrays_rep.h[i, j, k],
+                            np.repeat(np.float32(4.), 3).astype(np.object_))
                     assert_(np.all(vect_id(s.arrays_rep.g[i, j, k]) == id(s.arrays_rep.g[0, 0, 0][0])))
                     assert_(np.all(vect_id(s.arrays_rep.h[i, j, k]) == id(s.arrays_rep.h[0, 0, 0][0])))
 

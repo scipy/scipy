@@ -77,21 +77,20 @@ def mmread(source):
 
 def mmwrite(target, a, comment='', field=None, precision=None):
     """
-    Writes the sparse or dense matrix A to a Matrix Market formatted file.
+    Writes the sparse or dense array `a` to a Matrix Market formatted file.
 
     Parameters
     ----------
     target : file
         Matrix Market filename (extension .mtx) or open file object
     a : array like
-        Sparse or full matrix
+        Sparse or dense 2D array
     comment : str, optional
         comments to be prepended to the Matrix Market file
-    field : str, optional
+    field : None or str, optional
         Either 'real', 'complex', 'pattern', or 'integer'.
-    precision : int, optional
+    precision : None or int, optional
         Number of digits to display for real or complex values.
-
     """
     MMFile().write(target, a, comment, field, precision)
 
@@ -509,7 +508,7 @@ class MMFile (object):
             rep = self.FORMAT_ARRAY
             a = asarray(a)
             if len(a.shape) != 2:
-                raise ValueError('expected matrix')
+                raise ValueError('Expected 2 dimensional array')
             rows,cols = a.shape
             entries = rows*cols
 

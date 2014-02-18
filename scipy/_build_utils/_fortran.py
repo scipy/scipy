@@ -2,6 +2,7 @@ import re
 import sys
 import os
 import glob
+from distutils.dep_util import newer
 
 
 __all__ = ['needs_g77_abi_wrapper', 'split_fortran_files',
@@ -18,8 +19,10 @@ def _uses_veclib(info):
 
     return False
 
+
 def uses_accelerate(info):
     return _uses_veclib(info)
+
 
 def uses_mkl(info):
     r_mkl = re.compile("mkl_core")
@@ -133,11 +136,13 @@ def split_fortran_files(source_dir, subroutines=None):
             for nfile in range(num_files):
                 new_fname = fname[:-2] + '_subr_' + str(nfile) + '.f'
                 new_fnames.append(new_fname)
+                if not newer(fname, new_fname):
+                    continue
                 with open(new_fname, 'wb') as fn:
                     if nfile + 1 == num_files:
                         fn.writelines(lines[subs[nfile]:])
                     else:
-                        fn.writelines(lines[subs[nfile] : subs[nfile+1]])
+                        fn.writelines(lines[subs[nfile]:subs[nfile+1]])
 
         return new_fnames
 

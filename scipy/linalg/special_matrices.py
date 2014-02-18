@@ -2,14 +2,13 @@ from __future__ import division, print_function, absolute_import
 
 import math
 import numpy as np
-from scipy.misc import comb
 from scipy.lib.six import xrange
 from scipy.lib.six import string_types
 
 
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
            'hadamard', 'leslie', 'all_mat', 'kron', 'block_diag', 'companion',
-           'hilbert', 'invhilbert', 'pascal']
+           'hilbert', 'invhilbert', 'pascal', 'dft']
 
 
 #-----------------------------------------------------------------------------
@@ -430,6 +429,7 @@ def leslie(f, s):
     return a
 
 
+@np.deprecate
 def all_mat(*args):
     return list(map(np.matrix, args))
 
@@ -702,6 +702,7 @@ def invhilbert(n, exact=False):
     42475099528537378560L
 
     """
+    from scipy.special import comb
     if exact:
         if n > 14:
             dtype = object
@@ -743,7 +744,7 @@ def pascal(n, kind='symmetric', exact=True):
         If `exact` is True, the result is either an array of type
         numpy.uint64 (if n <= 35) or an object array of Python long integers.
         If `exact` is False, the coefficients in the matrix are computed using
-        `scipy.misc.comb` with `exact=False`.  The result will be a floating
+        `scipy.special.comb` with `exact=False`.  The result will be a floating
         point array, and the values in the array will not be the exact
         coefficients, but this version is much faster than `exact=True`.
 
@@ -772,12 +773,13 @@ def pascal(n, kind='symmetric', exact=True):
            [1, 3, 3, 1]], dtype=uint64)
     >>> pascal(50)[-1, -1]
     25477612258980856902730428600L
-    >>> from scipy.misc import comb
+    >>> from scipy.special import comb
     >>> comb(98, 49, exact=True)
     25477612258980856902730428600L
 
     """
 
+    from scipy.special import comb
     if kind not in ['symmetric', 'lower', 'upper']:
         raise ValueError("kind must be 'symmetric', 'lower', or 'upper'")
 
@@ -801,3 +803,68 @@ def pascal(n, kind='symmetric', exact=True):
         p = np.dot(L_n, L_n.T)
 
     return p
+
+
+def dft(n, scale=None):
+    """
+    Discrete Fourier transform matrix.
+
+    Create the matrix that computes the discrete Fourier transform of a
+    sequence [1]_.  The n-th primitive root of unity used to generate the
+    matrix is exp(-2*pi*i/n), where i = sqrt(-1).
+
+    Parameters
+    ----------
+    n : int
+        Size the matrix to create.
+    scale : str, optional
+        Must be None, 'sqrtn', or 'n'.
+        If `scale` is 'sqrtn', the matrix is divided by `sqrt(n)`.
+        If `scale` is 'n', the matrix is divided by `n`.
+        If `scale` is None (the default), the matrix is not normalized, and the
+        return value is simply the Vandermonde matrix of the roots of unity.
+
+    Returns
+    -------
+    m : (n, n) ndarray
+        The DFT matrix.
+
+    Notes
+    -----
+    When `scale` is None, multiplying a vector by the matrix returned by
+    `dft` is mathematically equivalent to (but much less efficient than)
+    the calculation performed by `scipy.fftpack.fft`.
+
+    .. versionadded:: 0.14.0
+
+    References
+    ----------
+    .. [1] "DFT matrix", http://en.wikipedia.org/wiki/DFT_matrix
+
+    Examples
+    --------
+    >>> np.set_printoptions(precision=5, suppress=True)
+    >>> x = np.array([1, 2, 3, 0, 3, 2, 1, 0])
+    >>> m = dft(8)
+    >>> m.dot(x)   # Comute the DFT of x
+    array([ 12.+0.j,  -2.-2.j,   0.-4.j,  -2.+2.j,   4.+0.j,  -2.-2.j,
+            -0.+4.j,  -2.+2.j])
+
+    Verify that ``m.dot(x)`` is the same as ``fft(x)``.
+
+    >>> from scipy.fftpack import fft
+    >>> fft(x)     # Same result as m.dot(x)
+    array([ 12.+0.j,  -2.-2.j,   0.-4.j,  -2.+2.j,   4.+0.j,  -2.-2.j,
+             0.+4.j,  -2.+2.j])
+    """
+    if scale not in [None, 'sqrtn', 'n']:
+        raise ValueError("scale must be None, 'sqrtn', or 'n'; "
+                         "%r is not valid." % (scale,))
+
+    omegas = np.exp(-2j * np.pi * np.arange(n) / n).reshape(-1, 1)
+    m = omegas ** np.arange(n)
+    if scale == 'sqrtn':
+        m /= math.sqrt(n)
+    elif scale == 'n':
+        m /= n
+    return m

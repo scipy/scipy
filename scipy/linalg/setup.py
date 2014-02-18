@@ -4,6 +4,7 @@ from __future__ import division, print_function, absolute_import
 import os
 from os.path import join
 
+
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info, NotFoundError
     from numpy.distutils.misc_util import Configuration
@@ -118,7 +119,7 @@ def configuration(parent_package='',top_path=None):
                                  routines_to_split)
     fnames = [join('src', 'id_dist', 'src', f) for f in fnames]
     config.add_extension('_interpolative', fnames + ["interpolative.pyf"],
-                         extra_info = lapack_opt
+                         extra_info=lapack_opt
                          )
 
     config.add_data_dir('tests')

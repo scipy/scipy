@@ -15,7 +15,7 @@ from scipy.lib.six import callable
 
 from warnings import warn
 
-from .optimize import MemoizeJac, Result, _check_unknown_options
+from .optimize import MemoizeJac, OptimizeResult, _check_unknown_options
 from .minpack import _root_hybr, leastsq
 from . import nonlin
 
@@ -67,12 +67,12 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
 
     Returns
     -------
-    sol : Result
-        The solution represented as a ``Result`` object.
+    sol : OptimizeResult
+        The solution represented as a ``OptimizeResult`` object.
         Important attributes are: ``x`` the solution array, ``success`` a
         Boolean flag indicating if the algorithm exited successfully and
         ``message`` which describes the cause of the termination. See
-        `Result` for a description of other attributes.
+        `OptimizeResult` for a description of other attributes.
 
     See also
     --------
@@ -201,9 +201,9 @@ def _root_leastsq(func, x0, args=(), jac=None,
                                        ftol=ftol, gtol=gtol,
                                        maxfev=maxiter, epsfcn=eps,
                                        factor=factor, diag=diag)
-    sol = Result(x=x, message=msg, status=ier,
-                 success=ier in (1, 2, 3, 4), cov_x=cov_x,
-                 fun=info.pop('fvec'))
+    sol = OptimizeResult(x=x, message=msg, status=ier,
+                         success=ier in (1, 2, 3, 4), cov_x=cov_x,
+                         fun=info.pop('fvec'))
     sol.update(info)
     return sol
 
@@ -251,6 +251,6 @@ def _root_nonlin_solve(func, x0, args=(), jac=None,
                                   line_search=line_search,
                                   callback=_callback, full_output=True,
                                   raise_exception=False)
-    sol = Result(x=x)
+    sol = OptimizeResult(x=x)
     sol.update(info)
     return sol

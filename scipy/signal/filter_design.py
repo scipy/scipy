@@ -5,9 +5,10 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy
-from numpy import atleast_1d, poly, polyval, roots, real, asarray, allclose, \
-    resize, pi, absolute, logspace, r_, sqrt, tan, log10, arctan, arcsinh, \
-    cos, exp, cosh, arccosh, ceil, conjugate, zeros, sinh
+from numpy import (atleast_1d, poly, polyval, roots, real, asarray, allclose,
+                   resize, pi, absolute, logspace, r_, sqrt, tan, log10,
+                   arctan, arcsinh, sin, exp, cosh, arccosh, ceil, conjugate,
+                   zeros, sinh, append, concatenate, prod, ones)
 from numpy import mintypecode
 from scipy import special, optimize
 from scipy.misc import comb
@@ -117,7 +118,7 @@ def freqs(b, a, worN=None, plot=None):
     -----
     Using Matplotlib's "plot" function as the callable for `plot` produces
     unexpected results,  this plots the real part of the complex transfer
-    function, not the magnitude.
+    function, not the magnitude.  Try ``lambda w, h: plot(w, abs(h))``.
 
     Examples
     --------
@@ -195,7 +196,7 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     -----
     Using Matplotlib's "plot" function as the callable for `plot` produces
     unexpected results,  this plots the real part of the complex transfer
-    function, not the magnitude.
+    function, not the magnitude.  Try ``lambda w, h: plot(w, abs(h))``.
 
     Examples
     --------
@@ -311,6 +312,29 @@ def zpk2tf(z, p, k):
     else:
         b = k * poly(z)
     a = atleast_1d(poly(p))
+
+    # Use real output if possible.  Copied from numpy.poly, since
+    # we can't depend on a specific version of numpy.
+    if issubclass(b.dtype.type, numpy.complexfloating):
+        # if complex roots are all complex conjugates, the roots are real.
+        roots = numpy.asarray(z, complex)
+        pos_roots = numpy.compress(roots.imag > 0, roots)
+        neg_roots = numpy.conjugate(numpy.compress(roots.imag < 0, roots))
+        if len(pos_roots) == len(neg_roots):
+            if numpy.all(numpy.sort_complex(neg_roots) ==
+                         numpy.sort_complex(pos_roots)):
+                b = b.real.copy()
+
+    if issubclass(a.dtype.type, numpy.complexfloating):
+        # if complex roots are all complex conjugates, the roots are real.
+        roots = numpy.asarray(p, complex)
+        pos_roots = numpy.compress(roots.imag > 0, roots)
+        neg_roots = numpy.conjugate(numpy.compress(roots.imag < 0, roots))
+        if len(pos_roots) == len(neg_roots):
+            if numpy.all(numpy.sort_complex(neg_roots) ==
+                         numpy.sort_complex(pos_roots)):
+                a = a.real.copy()
+
     return b, a
 
 
@@ -441,7 +465,7 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
 
 def lp2bs(b, a, wo=1.0, bw=1.0):
     """
-    Transform a lowpass filter prototype to a highpass filter.
+    Transform a lowpass filter prototype to a bandstop filter.
 
     Return an analog band-stop filter with center frequency `wo` and
     bandwidth `bw` from an analog low-pass filter prototype with unity
@@ -566,6 +590,14 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
         Zeros, poles, and system gain of the IIR filter transfer
         function.  Only returned if ``output='zpk'``.
 
+    See Also
+    --------
+    butter : Filter design using order and critical points
+    cheby1, cheby2, ellip, bessel
+    buttord : Find order and critical points from passband and stopband spec
+    cheb1ord, cheb2ord, ellipord
+    iirfilter : General filter design using order and critical frequencies
+
     """
     try:
         ordfunc = filter_dict[ftype][1]
@@ -634,7 +666,33 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     See Also
     --------
-    buttord, cheb1ord, cheb2ord, ellipord
+    butter : Filter design using order and critical points
+    cheby1, cheby2, ellip, bessel
+    buttord : Find order and critical points from passband and stopband spec
+    cheb1ord, cheb2ord, ellipord
+    iirdesign : General filter design using passband and stopband spec
+
+    Examples
+    --------
+    Generate a 17th-order Chebyshev II bandpass filter and plot the frequency
+    response:
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> b, a = signal.iirfilter(17, [50, 200], rs=60, btype='band',
+    ...                         analog=True, ftype='cheby2')
+    >>> w, h = signal.freqs(b, a, 1000)
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(w, 20 * np.log10(abs(h)))
+    >>> ax.set_xscale('log')
+    >>> ax.set_title('Chebyshev Type II bandpass frequency response')
+    >>> ax.set_xlabel('Frequency [radians / second]')
+    >>> ax.set_ylabel('Amplitude [dB]')
+    >>> ax.axis((10, 1000, -100, 10))
+    >>> ax.grid(which='both', axis='both')
+    >>> plt.show()
 
     """
     ftype, btype, output = [x.lower() for x in (ftype, btype, output)]
@@ -642,15 +700,15 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     try:
         btype = band_dict[btype]
     except KeyError:
-        raise ValueError("%s is an invalid bandtype for filter." % btype)
+        raise ValueError("'%s' is an invalid bandtype for filter." % btype)
 
     try:
         typefunc = filter_dict[ftype][0]
     except KeyError:
-        raise ValueError("%s is not a valid basic iir filter." % ftype)
+        raise ValueError("'%s' is not a valid basic IIR filter." % ftype)
 
     if output not in ['ba', 'zpk']:
-        raise ValueError("%s is not a valid output form." % output)
+        raise ValueError("'%s' is not a valid output form." % output)
 
     if rp is not None and rp < 0:
         raise ValueError("passband ripple (rp) must be positive")
@@ -677,42 +735,370 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
                              "elliptic filter.")
         z, p, k = typefunc(N, rp, rs)
     else:
-        raise NotImplementedError("%s not implemented in iirfilter." % ftype)
-
-    b, a = zpk2tf(z, p, k)
+        raise NotImplementedError("'%s' not implemented in iirfilter." % ftype)
 
     # Pre-warp frequencies for digital filter design
     if not analog:
+        if numpy.any(Wn < 0) or numpy.any(Wn > 1):
+            raise ValueError("Digital filter critical frequencies "
+                             "must be 0 <= Wn <= 1")
         fs = 2.0
         warped = 2 * fs * tan(pi * Wn / fs)
     else:
         warped = Wn
 
     # transform to lowpass, bandpass, highpass, or bandstop
-    if btype == 'lowpass':
-        b, a = lp2lp(b, a, wo=warped)
-    elif btype == 'highpass':
-        b, a = lp2hp(b, a, wo=warped)
-    elif btype == 'bandpass':
-        bw = warped[1] - warped[0]
-        wo = sqrt(warped[0] * warped[1])
-        b, a = lp2bp(b, a, wo=wo, bw=bw)
-    elif btype == 'bandstop':
-        bw = warped[1] - warped[0]
-        wo = sqrt(warped[0] * warped[1])
-        b, a = lp2bs(b, a, wo=wo, bw=bw)
+    if btype in ('lowpass', 'highpass'):
+        if numpy.size(Wn) != 1:
+            raise ValueError('Must specify a single critical frequency Wn')
+
+        if btype == 'lowpass':
+            z, p, k = _zpklp2lp(z, p, k, wo=warped)
+        elif btype == 'highpass':
+            z, p, k = _zpklp2hp(z, p, k, wo=warped)
+    elif btype in ('bandpass', 'bandstop'):
+        try:
+            bw = warped[1] - warped[0]
+            wo = sqrt(warped[0] * warped[1])
+        except IndexError:
+            raise ValueError('Wn must specify start and stop frequencies')
+
+        if btype == 'bandpass':
+            z, p, k = _zpklp2bp(z, p, k, wo=wo, bw=bw)
+        elif btype == 'bandstop':
+            z, p, k = _zpklp2bs(z, p, k, wo=wo, bw=bw)
     else:
-        raise NotImplementedError("%s not implemented in iirfilter." % btype)
+        raise NotImplementedError("'%s' not implemented in iirfilter." % btype)
 
     # Find discrete equivalent if necessary
     if not analog:
-        b, a = bilinear(b, a, fs=fs)
+        z, p, k = _zpkbilinear(z, p, k, fs=fs)
 
     # Transform to proper out type (pole-zero, state-space, numer-denom)
     if output == 'zpk':
-        return tf2zpk(b, a)
+        return z, p, k
+    elif output == 'ba':
+        return zpk2tf(z, p, k)
+
+def _relative_degree(z, p):
+    """
+    Return relative degree of transfer function from zeros and poles
+    """
+    degree = len(p) - len(z)
+    if degree < 0:
+        raise ValueError("Improper transfer function. "
+                         "Must have at least as many poles as zeros.")
     else:
-        return b, a
+        return degree
+
+
+# TODO: merge these into existing functions or make public versions
+
+def _zpkbilinear(z, p, k, fs):
+    """
+    Return a digital filter from an analog one using a bilinear transform.
+
+    Transform a set of poles and zeros from the analog s-plane to the digital
+    z-plane using Tustin's method, which substitutes ``(z-1) / (z+1)`` for
+    ``s``, maintaining the shape of the frequency response.
+
+    Parameters
+    ----------
+    z : ndarray
+        Zeros of the analog IIR filter transfer function.
+    p : ndarray
+        Poles of the analog IIR filter transfer function.
+    k : float
+        System gain of the analog IIR filter transfer function.
+    fs : float
+        Sample rate, as ordinary frequency (e.g. hertz). No prewarping is
+        done in this function.
+
+    Returns
+    -------
+    z : ndarray
+        Zeros of the transformed digital filter transfer function.
+    p : ndarray
+        Poles of the transformed digital filter transfer function.
+    k : float
+        System gain of the transformed digital filter.
+
+    """
+    z = atleast_1d(z)
+    p = atleast_1d(p)
+
+    degree = _relative_degree(z, p)
+
+    fs2 = 2*fs
+
+    # Bilinear transform the poles and zeros
+    z_z = (fs2 + z) / (fs2 - z)
+    p_z = (fs2 + p) / (fs2 - p)
+
+    # Any zeros that were at infinity get moved to the Nyquist frequency
+    z_z = append(z_z, -ones(degree))
+
+    # Compensate for gain change
+    k_z = k * real(prod(fs2 - z) / prod(fs2 - p))
+
+    return z_z, p_z, k_z
+
+
+def _zpklp2lp(z, p, k, wo=1.0):
+    """
+    Transform a lowpass filter prototype to a different frequency.
+
+    Return an analog low-pass filter with cutoff frequency `wo`
+    from an analog low-pass filter prototype with unity cutoff frequency,
+    using zeros, poles, and gain ('zpk') representation.
+
+    Parameters
+    ----------
+    z : ndarray
+        Zeros of the analog IIR filter transfer function.
+    p : ndarray
+        Poles of the analog IIR filter transfer function.
+    k : float
+        System gain of the analog IIR filter transfer function.
+    wo : float
+        Desired cutoff, as angular frequency (e.g. rad/s).
+        Defaults to no change.
+
+    Returns
+    -------
+    z : ndarray
+        Zeros of the transformed low-pass filter transfer function.
+    p : ndarray
+        Poles of the transformed low-pass filter transfer function.
+    k : float
+        System gain of the transformed low-pass filter.
+
+    Notes
+    -----
+    This is derived from the s-plane substitution
+
+    .. math:: s \rightarrow \frac{s}{\omega_0}
+
+    """
+    z = atleast_1d(z)
+    p = atleast_1d(p)
+    wo = float(wo) # Avoid np.int wraparound
+
+    degree = _relative_degree(z, p)
+
+    # Scale all points radially from origin to shift cutoff frequency
+    z_lp = wo * z
+    p_lp = wo * p
+
+    # Each shifted pole decreases gain by wo, each shifted zero increases it.
+    # Cancel out the net change to keep overall gain the same
+    k_lp = k * wo**degree
+
+    return z_lp, p_lp, k_lp
+
+
+def _zpklp2hp(z, p, k, wo=1.0):
+    """
+    Transform a lowpass filter prototype to a highpass filter.
+
+    Return an analog high-pass filter with cutoff frequency `wo`
+    from an analog low-pass filter prototype with unity cutoff frequency,
+    using zeros, poles, and gain ('zpk') representation.
+
+    Parameters
+    ----------
+    z : ndarray
+        Zeros of the analog IIR filter transfer function.
+    p : ndarray
+        Poles of the analog IIR filter transfer function.
+    k : float
+        System gain of the analog IIR filter transfer function.
+    wo : float
+        Desired cutoff, as angular frequency (e.g. rad/s).
+        Defaults to no change.
+
+    Returns
+    -------
+    z : ndarray
+        Zeros of the transformed high-pass filter transfer function.
+    p : ndarray
+        Poles of the transformed high-pass filter transfer function.
+    k : float
+        System gain of the transformed high-pass filter.
+
+    Notes
+    -----
+    This is derived from the s-plane substitution
+
+    .. math:: s \rightarrow \frac{\omega_0}{s}
+
+    This maintains symmetry of the lowpass and highpass responses on a
+    logarithmic scale.
+
+    """
+    z = atleast_1d(z)
+    p = atleast_1d(p)
+    wo = float(wo)
+
+    degree = _relative_degree(z, p)
+
+    # Invert positions radially about unit circle to convert LPF to HPF
+    # Scale all points radially from origin to shift cutoff frequency
+    z_hp = wo / z
+    p_hp = wo / p
+
+    # If lowpass had zeros at infinity, inverting moves them to origin.
+    z_hp = append(z_hp, zeros(degree))
+
+    # Cancel out gain change caused by inversion
+    k_hp = k * real(prod(-z) / prod(-p))
+
+    return z_hp, p_hp, k_hp
+
+
+def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
+    """
+    Transform a lowpass filter prototype to a bandpass filter.
+
+    Return an analog band-pass filter with center frequency `wo` and
+    bandwidth `bw` from an analog low-pass filter prototype with unity
+    cutoff frequency, using zeros, poles, and gain ('zpk') representation.
+
+    Parameters
+    ----------
+    z : ndarray
+        Zeros of the analog IIR filter transfer function.
+    p : ndarray
+        Poles of the analog IIR filter transfer function.
+    k : float
+        System gain of the analog IIR filter transfer function.
+    wo : float
+        Desired passband center, as angular frequency (e.g. rad/s).
+        Defaults to no change.
+    bw : float
+        Desired passband width, as angular frequency (e.g. rad/s).
+        Defaults to 1.
+
+    Returns
+    -------
+    z : ndarray
+        Zeros of the transformed band-pass filter transfer function.
+    p : ndarray
+        Poles of the transformed band-pass filter transfer function.
+    k : float
+        System gain of the transformed band-pass filter.
+
+    Notes
+    -----
+    This is derived from the s-plane substitution
+
+    .. math:: s \rightarrow \frac{s^2 + {\omega_0}^2}{s \cdot \mathrm{BW}}
+
+    This is the "wideband" transformation, producing a passband with
+    geometric (log frequency) symmetry about `wo`.
+
+    """
+    z = atleast_1d(z)
+    p = atleast_1d(p)
+    wo = float(wo)
+    bw = float(bw)
+
+    degree = _relative_degree(z, p)
+
+    # Scale poles and zeros to desired bandwidth
+    z_lp = z * bw/2
+    p_lp = p * bw/2
+
+    # Square root needs to produce complex result, not NaN
+    z_lp = z_lp.astype(complex)
+    p_lp = p_lp.astype(complex)
+
+    # Duplicate poles and zeros and shift from baseband to +wo and -wo
+    z_bp = concatenate((z_lp + sqrt(z_lp**2 - wo**2),
+                        z_lp - sqrt(z_lp**2 - wo**2)))
+    p_bp = concatenate((p_lp + sqrt(p_lp**2 - wo**2),
+                        p_lp - sqrt(p_lp**2 - wo**2)))
+
+    # Move degree zeros to origin, leaving degree zeros at infinity for BPF
+    z_bp = append(z_bp, zeros(degree))
+
+    # Cancel out gain change from frequency scaling
+    k_bp = k * bw**degree
+
+    return z_bp, p_bp, k_bp
+
+
+def _zpklp2bs(z, p, k, wo=1.0, bw=1.0):
+    """
+    Transform a lowpass filter prototype to a bandstop filter.
+
+    Return an analog band-stop filter with center frequency `wo` and
+    stopband width `bw` from an analog low-pass filter prototype with unity
+    cutoff frequency, using zeros, poles, and gain ('zpk') representation.
+
+    Parameters
+    ----------
+    z : ndarray
+        Zeros of the analog IIR filter transfer function.
+    p : ndarray
+        Poles of the analog IIR filter transfer function.
+    k : float
+        System gain of the analog IIR filter transfer function.
+    wo : float
+        Desired stopband center, as angular frequency (e.g. rad/s).
+        Defaults to no change.
+    bw : float
+        Desired stopband width, as angular frequency (e.g. rad/s).
+        Defaults to 1.
+
+    Returns
+    -------
+    z : ndarray
+        Zeros of the transformed band-stop filter transfer function.
+    p : ndarray
+        Poles of the transformed band-stop filter transfer function.
+    k : float
+        System gain of the transformed band-stop filter.
+
+    Notes
+    -----
+    This is derived from the s-plane substitution
+
+    .. math:: s \rightarrow \frac{s \cdot \mathrm{BW}}{s^2 + {\omega_0}^2}
+
+    This is the "wideband" transformation, producing a stopband with
+    geometric (log frequency) symmetry about `wo`.
+
+    """
+    z = atleast_1d(z)
+    p = atleast_1d(p)
+    wo = float(wo)
+    bw = float(bw)
+
+    degree = _relative_degree(z, p)
+
+    # Invert to a highpass filter with desired bandwidth
+    z_hp = (bw/2) / z
+    p_hp = (bw/2) / p
+
+    # Square root needs to produce complex result, not NaN
+    z_hp = z_hp.astype(complex)
+    p_hp = p_hp.astype(complex)
+
+    # Duplicate poles and zeros and shift from baseband to +wo and -wo
+    z_bs = concatenate((z_hp + sqrt(z_hp**2 - wo**2),
+                        z_hp - sqrt(z_hp**2 - wo**2)))
+    p_bs = concatenate((p_hp + sqrt(p_hp**2 - wo**2),
+                        p_hp - sqrt(p_hp**2 - wo**2)))
+
+    # Move any zeros that were at infinity to the center of the stopband
+    z_bs = append(z_bs, +1j*wo * ones(degree))
+    z_bs = append(z_bs, -1j*wo * ones(degree))
+
+    # Cancel out gain change caused by inversion
+    k_bs = k * real(prod(-z) / prod(-p))
+
+    return z_bs, p_bs, k_bs
 
 
 def butter(N, Wn, btype='low', analog=False, output='ba'):
@@ -837,6 +1223,10 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
 
     Type I filters roll off faster than Type II (`cheby2`), but Type II
     filters do not have any ripple in the passband.
+
+    The equiripple passband has N maxima or minima (for example, a
+    5th-order filter has 3 maxima and 2 minima).  Consequently, the DC gain is
+    unity for odd-order filters, or -rp dB for even-order filters.
 
     Examples
     --------
@@ -998,6 +1388,10 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
     type II filter (`cheby2`).  As `rs` approaches 0, it becomes a Chebyshev
     type I filter (`cheby1`).  As both approach 0, it becomes a Butterworth
     filter (`butter`).
+
+    The equiripple passband has N maxima or minima (for example, a
+    5th-order filter has 3 maxima and 2 minima).  Consequently, the DC gain is
+    unity for odd-order filters, or -rp dB for even-order filters.
 
     Examples
     --------
@@ -1220,6 +1614,39 @@ def buttord(wp, ws, gpass, gstop, analog=False):
         The Butterworth natural frequency (i.e. the "3dB frequency").  Should
         be used with `butter` to give filter results.
 
+    See Also
+    --------
+    butter : Filter design using order and critical points
+    cheb1ord : Find order and critical points from passband and stopband spec
+    cheb2ord, ellipord
+    iirfilter : General filter design using order and critical frequencies
+    iirdesign : General filter design using passband and stopband spec
+
+    Examples
+    --------
+    Design an analog bandpass filter with passband within 3 dB from 20 to
+    50 rad/s, while rejecting at least -40 dB below 14 and above 60 rad/s.
+    Plot its frequency response, showing the passband and stopband
+    constraints in gray.
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> N, Wn = signal.buttord([20, 50], [14, 60], 3, 40, True)
+    >>> b, a = signal.butter(N, Wn, 'band', True)
+    >>> w, h = signal.freqs(b, a, np.logspace(1, 2, 500))
+    >>> plt.plot(w, 20 * np.log10(abs(h)))
+    >>> plt.xscale('log')
+    >>> plt.title('Butterworth bandpass filter fit to constraints')
+    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.fill([1,  14,  14,   1], [-40, -40, 99, 99], '0.9', lw=0) # stop
+    >>> plt.fill([20, 20,  50,  50], [-99, -3, -3, -99], '0.9', lw=0) # pass
+    >>> plt.fill([60, 60, 1e9, 1e9], [99, -40, -40, 99], '0.9', lw=0) # stop
+    >>> plt.axis([10, 100, -60, 3])
+    >>> plt.show()
+
     """
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
@@ -1263,13 +1690,13 @@ def buttord(wp, ws, gpass, gstop, analog=False):
     GPASS = 10 ** (0.1 * abs(gpass))
     ord = int(ceil(log10((GSTOP - 1.0) / (GPASS - 1.0)) / (2 * log10(nat))))
 
-    # Find the Butterworth natural frequency W0 (or the "3dB" frequency")
-    # to give exactly gstop at nat. W0 will be between 1 and nat
+    # Find the Butterworth natural frequency WN (or the "3dB" frequency")
+    # to give exactly gpass at passb.
     try:
-        W0 = nat / ((10 ** (0.1 * abs(gstop)) - 1) ** (1.0 / (2.0 * ord)))
+        W0 = (GPASS - 1.0) ** (-1.0 / (2.0 * ord))
     except ZeroDivisionError:
-        W0 = nat
-        print("Warning, order is zero...check input parametegstop.")
+        W0 = 1.0
+        print("Warning, order is zero...check input parameters.")
 
     # now convert this frequency back from lowpass prototype
     # to the original analog filter
@@ -1341,6 +1768,37 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False):
     wn : ndarray or float
         The Chebyshev natural frequency (the "3dB frequency") for use with
         `cheby1` to give filter results.
+
+    See Also
+    --------
+    cheby1 : Filter design using order and critical points
+    buttord : Find order and critical points from passband and stopband spec
+    cheb2ord, ellipord
+    iirfilter : General filter design using order and critical frequencies
+    iirdesign : General filter design using passband and stopband spec
+
+    Examples
+    --------
+    Design a digital lowpass filter such that the passband is within 3 dB up
+    to 0.2*(fs/2), while rejecting at least -40 dB above 0.3*(fs/2).  Plot its
+    frequency response, showing the passband and stopband constraints in gray.
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> N, Wn = signal.cheb1ord(0.2, 0.3, 3, 40)
+    >>> b, a = signal.cheby1(N, 3, Wn, 'low')
+    >>> w, h = signal.freqz(b, a)
+    >>> plt.plot(w / np.pi, 20 * np.log10(abs(h)))
+    >>> plt.xscale('log')
+    >>> plt.title('Chebyshev I lowpass filter fit to constraints')
+    >>> plt.xlabel('Normalized frequency')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.fill([.01, 0.2, 0.2, .01], [-3, -3, -99, -99], '0.9', lw=0) # stop
+    >>> plt.fill([0.3, 0.3,   2,   2], [ 9, -40, -40,  9], '0.9', lw=0) # pass
+    >>> plt.axis([0.08, 1, -60, 3])
+    >>> plt.show()
 
     """
     wp = atleast_1d(wp)
@@ -1433,6 +1891,39 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False):
     wn : ndarray or float
         The Chebyshev natural frequency (the "3dB frequency") for use with
         `cheby2` to give filter results.
+
+    See Also
+    --------
+    cheby2 : Filter design using order and critical points
+    buttord : Find order and critical points from passband and stopband spec
+    cheb1ord, ellipord
+    iirfilter : General filter design using order and critical frequencies
+    iirdesign : General filter design using passband and stopband spec
+
+    Examples
+    --------
+    Design a digital bandstop filter which rejects -60 dB from 0.2*(fs/2) to
+    0.5*(fs/2), while staying within 3 dB below 0.1*(fs/2) or above
+    0.6*(fs/2).  Plot its frequency response, showing the passband and
+    stopband constraints in gray.
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> N, Wn = signal.cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+    >>> b, a = signal.cheby2(N, 60, Wn, 'stop')
+    >>> w, h = signal.freqz(b, a)
+    >>> plt.plot(w / np.pi, 20 * np.log10(abs(h)))
+    >>> plt.xscale('log')
+    >>> plt.title('Chebyshev II bandstop filter fit to constraints')
+    >>> plt.xlabel('Normalized frequency')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.fill([.01, .1, .1, .01], [-3,  -3, -99, -99], '0.9', lw=0) # stop
+    >>> plt.fill([.2,  .2, .5,  .5], [ 9, -60, -60,   9], '0.9', lw=0) # pass
+    >>> plt.fill([.6,  .6,  2,   2], [-99, -3,  -3, -99], '0.9', lw=0) # stop
+    >>> plt.axis([0.06, 1, -80, 3])
+    >>> plt.show()
 
     """
     wp = atleast_1d(wp)
@@ -1548,6 +2039,37 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
         The Chebyshev natural frequency (the "3dB frequency") for use with
         `ellip` to give filter results.
 
+    See Also
+    --------
+    ellip : Filter design using order and critical points
+    buttord : Find order and critical points from passband and stopband spec
+    cheb1ord, cheb2ord
+    iirfilter : General filter design using order and critical frequencies
+    iirdesign : General filter design using passband and stopband spec
+
+    Examples
+    --------
+    Design an analog highpass filter such that the passband is within 3 dB
+    above 30 rad/s, while rejecting -60 dB at 10 rad/s.  Plot its
+    frequency response, showing the passband and stopband constraints in gray.
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> N, Wn = signal.ellipord(30, 10, 3, 60, True)
+    >>> b, a = signal.ellip(N, 3, 60, Wn, 'high', True)
+    >>> w, h = signal.freqs(b, a, np.logspace(0, 3, 500))
+    >>> plt.plot(w, 20 * np.log10(abs(h)))
+    >>> plt.xscale('log')
+    >>> plt.title('Elliptical highpass filter fit to constraints')
+    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.fill([.1, 10,  10,  .1], [1e4, 1e4, -60, -60], '0.9', lw=0) # stop
+    >>> plt.fill([30, 30, 1e9, 1e9], [-99,  -3,  -3, -99], '0.9', lw=0) # pass
+    >>> plt.axis([1, 300, -80, 3])
+    >>> plt.show()
+
     """
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
@@ -1609,9 +2131,12 @@ def buttap(N):
     of 1.
 
     """
+    if abs(int(N)) != N:
+        raise ValueError("Filter order must be a nonnegative integer")
     z = numpy.array([])
-    n = numpy.arange(1, N + 1)
-    p = numpy.exp(1j * (2 * n - 1) / (2.0 * N) * pi) * 1j
+    m = numpy.arange(-N+1, N, 2)
+    # Middle value is 0 to ensure an exactly real pole
+    p = -numpy.exp(1j * pi * m / (2 * N))
     k = 1
     return z, p, k
 
@@ -1624,16 +2149,27 @@ def cheb1ap(N, rp):
     defined as the point at which the gain first drops below -`rp`.
 
     """
+    if abs(int(N)) != N:
+        raise ValueError("Filter order must be a nonnegative integer")
+    elif N == 0:
+        # Avoid divide-by-zero error
+        # Even order filters have DC gain of -rp dB
+        return numpy.array([]), numpy.array([]), 10**(-rp/20)
     z = numpy.array([])
+
+    # Ripple factor (epsilon)
     eps = numpy.sqrt(10 ** (0.1 * rp) - 1.0)
-    n = numpy.arange(1, N + 1)
-    mu = 1.0 / N * numpy.log((1.0 + numpy.sqrt(1 + eps * eps)) / eps)
-    theta = pi / 2.0 * (2 * n - 1.0) / N
-    p = (-numpy.sinh(mu) * numpy.sin(theta) +
-         1j * numpy.cosh(mu) * numpy.cos(theta))
+    mu = 1.0 / N * arcsinh(1 / eps)
+
+    # Arrange poles in an ellipse on the left half of the S-plane
+    m = numpy.arange(-N+1, N, 2)
+    theta = pi * m / (2*N)
+    p = -sinh(mu + 1j*theta)
+
     k = numpy.prod(-p, axis=0).real
     if N % 2 == 0:
         k = k / sqrt((1 + eps * eps))
+
     return z, p, k
 
 
@@ -1645,19 +2181,30 @@ def cheb2ap(N, rs):
     defined as the point at which the gain first reaches -`rs`.
 
     """
+    if abs(int(N)) != N:
+        raise ValueError("Filter order must be a nonnegative integer")
+    elif N == 0:
+        # Avoid divide-by-zero warning
+        return numpy.array([]), numpy.array([]), 1
+
+    # Ripple factor (epsilon)
     de = 1.0 / sqrt(10 ** (0.1 * rs) - 1)
     mu = arcsinh(1.0 / de) / N
 
     if N % 2:
-        n = numpy.concatenate((numpy.arange(1, N - 1, 2),
-                               numpy.arange(N + 2, 2 * N, 2)))
+        m = numpy.concatenate((numpy.arange(-N+1, 0, 2),
+                               numpy.arange(   2, N, 2)))
     else:
-        n = numpy.arange(1, 2 * N, 2)
+        m = numpy.arange(-N+1, N, 2)
 
-    z = conjugate(1j / cos(n * pi / (2.0 * N)))
-    p = exp(1j * (pi * numpy.arange(1, 2 * N, 2) / (2.0 * N) + pi / 2.0))
+    z = -conjugate(1j / sin(m * pi / (2.0 * N)))
+
+    # Poles around the unit circle like Butterworth
+    p = -exp(1j * pi * numpy.arange(-N+1, N, 2) / (2 * N))
+    # Warp into Chebyshev II
     p = sinh(mu) * p.real + 1j * cosh(mu) * p.imag
     p = 1.0 / p
+
     k = (numpy.prod(-p, axis=0) / numpy.prod(-z, axis=0)).real
     return z, p, k
 
@@ -1701,7 +2248,13 @@ def ellipap(N, rp, rs):
     and 12.
 
     """
-    if N == 1:
+    if abs(int(N)) != N:
+        raise ValueError("Filter order must be a nonnegative integer")
+    elif N == 0:
+        # Avoid divide-by-zero warning
+        # Even order filters have DC gain of -rp dB
+        return numpy.array([]), numpy.array([]), 10**(-rp/20)
+    elif N == 1:
         p = -sqrt(1.0 / (10 ** (0.1 * rp) - 1.0))
         k = -p
         z = []
@@ -2124,19 +2677,23 @@ def besselap(N):
              -.2373280669322028974199184 - 1.211476658382565356579418j,
              -.2373280669322028974199184 + 1.211476658382565356579418j]
     else:
-        raise ValueError("Bessel Filter not supported for order %d" % N)
+        raise ValueError("Bessel Filter not supported for order %s" % N)
 
     return asarray(z), asarray(p), k
 
 filter_dict = {'butter': [buttap, buttord],
                'butterworth': [buttap, buttord],
+
                'cauer': [ellipap, ellipord],
                'elliptic': [ellipap, ellipord],
                'ellip': [ellipap, ellipord],
+
                'bessel': [besselap],
+
                'cheby1': [cheb1ap, cheb1ord],
                'chebyshev1': [cheb1ap, cheb1ord],
                'chebyshevi': [cheb1ap, cheb1ord],
+
                'cheby2': [cheb2ap, cheb2ord],
                'chebyshev2': [cheb2ap, cheb2ord],
                'chebyshevii': [cheb2ap, cheb2ord],
@@ -2146,14 +2703,19 @@ band_dict = {'band': 'bandpass',
              'bandpass': 'bandpass',
              'pass': 'bandpass',
              'bp': 'bandpass',
+
              'bs': 'bandstop',
              'bandstop': 'bandstop',
              'bands': 'bandstop',
              'stop': 'bandstop',
+
              'l': 'lowpass',
              'low': 'lowpass',
              'lowpass': 'lowpass',
+             'lp': 'lowpass',
+
              'high': 'highpass',
              'highpass': 'highpass',
              'h': 'highpass',
+             'hp': 'highpass',
              }

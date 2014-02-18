@@ -115,7 +115,7 @@ The new function ``onenormest`` provides a lower bound of the 1-norm of a
 linear operator and has been implemented according to Higham and Tisseur
 (2000).  This function is not only useful for sparse matrices, but can also be
 used to estimate the norm of products or powers of dense matrices without
-explictly building the intermediate matrix.
+explicitly building the intermediate matrix.
 
 The multiplicative action of the matrix exponential of a linear operator
 (``expm_multiply``) has been implemented following the description in Al-Mohy
@@ -245,7 +245,7 @@ rather than giving the result::
             [ 0.,  1.,  2.]])
 
 Users relying on the previous behavior will need to revisit their code.
-The previous behavior is obtained by ``x[numpy.ix_([0,1,2],[0,1,2])] = ...`.
+The previous behavior is obtained by ``x[numpy.ix_([0,1,2],[0,1,2])] = ...``.
 
 
 Deprecated ``radon`` function removed

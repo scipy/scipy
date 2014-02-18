@@ -179,7 +179,6 @@ which work for masked arrays.
 .. autosummary::
    :toctree: generated/
 
-   cmedian           -- Computed median
    describe          -- Descriptive statistics
    gmean             -- Geometric mean
    hmean             -- Harmonic mean
@@ -275,7 +274,13 @@ which work for masked arrays.
    binom_test
    fligner
    mood
-   oneway
+
+.. autosummary::
+   :toctree: generated/
+
+   boxcox
+   boxcox_normmax
+   boxcox_llf
 
 Contingency table functions
 ===========================
@@ -288,14 +293,6 @@ Contingency table functions
    contingency.margins
    fisher_exact
 
-General linear model
-====================
-
-.. autosummary::
-   :toctree: generated/
-
-   glm
-
 Plot-tests
 ==========
 
@@ -305,6 +302,7 @@ Plot-tests
    ppcc_max
    ppcc_plot
    probplot
+   boxcox_normplot
 
 
 Masked statistics functions

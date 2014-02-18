@@ -16,6 +16,7 @@ from .mio5 import MatFile5Reader, MatFile5Writer
 __all__ = ['find_mat_file', 'mat_reader_factory', 'loadmat', 'savemat',
            'whosmat']
 
+
 def _open_file(file_like, appendmat):
     ''' Open `file_like` and return as file-like object '''
     if isinstance(file_like, string_types):
@@ -188,13 +189,10 @@ def savemat(file_name, mdict,
             file_name = file_name + ".mat"
         file_stream = open(file_name, 'wb')
     else:
-        try:
-            file_name.write(b'')
-        except AttributeError:
+        if not hasattr(file_name, 'write'):
             raise IOError('Writer needs file name or writeable '
                            'file-like object')
         file_stream = file_name
-
     if format == '4':
         if long_field_names:
             raise ValueError("Long field names are not available for version 4 files")

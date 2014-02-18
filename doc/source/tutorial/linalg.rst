@@ -475,7 +475,7 @@ returns :math:`\lambda` and :math:`\mathbf{v}.` However, it can also
 return :math:`\mathbf{v}_{L}` and just :math:`\lambda` by itself (
 :obj:`linalg.eigvals` returns just :math:`\lambda` as well).
 
-In addtion, :obj:`linalg.eig` can also solve the more general eigenvalue problem
+In addition, :obj:`linalg.eig` can also solve the more general eigenvalue problem
 
 .. math::
    :nowrap:
@@ -556,7 +556,7 @@ the eigenvalue problem to matrices that are not square. Let
 :math:`\mathbf{A}\mathbf{A}^{H}` are square hermitian matrices [#]_ of
 size :math:`N\times N` and :math:`M\times M` respectively. It is known
 that the eigenvalues of square hermitian matrices are real and
-non-negative. In addtion, there are at most
+non-negative. In addition, there are at most
 :math:`\min\left(M,N\right)` identical non-zero eigenvalues of
 :math:`\mathbf{A}^{H}\mathbf{A}` and :math:`\mathbf{A}\mathbf{A}^{H}.`
 Define these positive eigenvalues as :math:`\sigma_{i}^{2}.` The
@@ -674,7 +674,7 @@ then decompositions of :math:`\mathbf{A}` can be found so that
 
 where :math:`\mathbf{L}` is lower-triangular and :math:`\mathbf{U}` is
 upper triangular. Notice that :math:`\mathbf{L}=\mathbf{U}^{H}.` The
-command :obj:`linagl.cholesky` computes the cholesky
+command :obj:`linalg.cholesky` computes the cholesky
 factorization. For using cholesky factorization to solve systems of
 equations there are also :obj:`linalg.cho_factor` and
 :obj:`linalg.cho_solve` routines that work similarly to their LU

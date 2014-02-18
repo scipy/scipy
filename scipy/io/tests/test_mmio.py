@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
-from tempfile import mktemp
+from tempfile import mkdtemp, mktemp
+import os
+import shutil
 from numpy import array,transpose
 from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal, \
             assert_equal, rand
@@ -9,12 +11,17 @@ from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal,
 import scipy.sparse
 from scipy.io.mmio import mminfo,mmread,mmwrite
 
-
 class TestMMIOArray(TestCase):
+    def setUp(self):
+        self.tmpdir = mkdtemp()
+        self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir)
 
     def test_simple(self):
         a = [[1,2],[3,4]]
-        fn = mktemp()
+        fn = self.fn
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(2,2,4,'array','integer','general'))
         b = mmread(fn)
@@ -22,7 +29,7 @@ class TestMMIOArray(TestCase):
 
     def test_simple_rectangular(self):
         a = [[1,2,3],[4,5,6]]
-        fn = mktemp()
+        fn = self.fn
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(2,3,6,'array','integer','general'))
         b = mmread(fn)
@@ -30,7 +37,7 @@ class TestMMIOArray(TestCase):
 
     def test_simple_rectangular_real(self):
         a = [[1,2],[3.5,4],[5,6]]
-        fn = mktemp()
+        fn = self.fn
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(3,2,6,'array','real','general'))
         b = mmread(fn)
@@ -38,7 +45,7 @@ class TestMMIOArray(TestCase):
 
     def test_simple_real(self):
         a = [[1,2],[3,4.0]]
-        fn = mktemp()
+        fn = self.fn
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(2,2,4,'array','real','general'))
         b = mmread(fn)
@@ -46,7 +53,7 @@ class TestMMIOArray(TestCase):
 
     def test_simple_complex(self):
         a = [[1,2],[3,4j]]
-        fn = mktemp()
+        fn = self.fn
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(2,2,4,'array','complex','general'))
         b = mmread(fn)
@@ -54,7 +61,7 @@ class TestMMIOArray(TestCase):
 
     def test_simple_symmetric(self):
         a = [[1,2],[2,4]]
-        fn = mktemp()
+        fn = self.fn
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(2,2,4,'array','integer','symmetric'))
         b = mmread(fn)
@@ -62,7 +69,7 @@ class TestMMIOArray(TestCase):
 
     def test_simple_skew_symmetric(self):
         a = [[1,2],[-2,4]]
-        fn = mktemp()
+        fn = self.fn
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(2,2,4,'array','integer','skew-symmetric'))
         b = mmread(fn)
@@ -70,7 +77,7 @@ class TestMMIOArray(TestCase):
 
     def test_simple_skew_symmetric_float(self):
         a = array([[1,2],[-2.0,4]],'f')
-        fn = mktemp()
+        fn = self.fn
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(2,2,4,'array','real','skew-symmetric'))
         b = mmread(fn)
@@ -78,7 +85,7 @@ class TestMMIOArray(TestCase):
 
     def test_simple_hermitian(self):
         a = [[1,2+3j],[2-3j,4]]
-        fn = mktemp()
+        fn = self.fn
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(2,2,4,'array','complex','hermitian'))
         b = mmread(fn)
@@ -88,7 +95,7 @@ class TestMMIOArray(TestCase):
         sz = (20,20)
         a = rand(*sz)
         a = a + transpose(a)
-        fn = mktemp()
+        fn = self.fn
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(20,20,400,'array','real','symmetric'))
         b = mmread(fn)
@@ -97,7 +104,7 @@ class TestMMIOArray(TestCase):
     def test_random_rect_real(self):
         sz = (20,15)
         a = rand(*sz)
-        fn = mktemp()
+        fn = self.fn
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(20,15,300,'array','real','general'))
         b = mmread(fn)
@@ -187,9 +194,15 @@ _symmetric_pattern_example = '''\
 
 
 class TestMMIOCoordinate(TestCase):
+    def setUp(self):
+        self.tmpdir = mkdtemp()
+        self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+
     def test_read_general(self):
-        """read a general matrix"""
-        fn = mktemp()
+        fn = self.fn
         f = open(fn,'w')
         f.write(_general_example)
         f.close()
@@ -203,8 +216,7 @@ class TestMMIOCoordinate(TestCase):
         assert_array_almost_equal(a,b)
 
     def test_read_hermitian(self):
-        """read a hermitian matrix"""
-        fn = mktemp()
+        fn = self.fn
         f = open(fn,'w')
         f.write(_hermitian_example)
         f.close()
@@ -218,8 +230,7 @@ class TestMMIOCoordinate(TestCase):
         assert_array_almost_equal(a,b)
 
     def test_read_skew(self):
-        """read a skew-symmetric matrix"""
-        fn = mktemp()
+        fn = self.fn
         f = open(fn,'w')
         f.write(_skew_example)
         f.close()
@@ -233,8 +244,7 @@ class TestMMIOCoordinate(TestCase):
         assert_array_almost_equal(a,b)
 
     def test_read_symmetric(self):
-        """read a symmetric matrix"""
-        fn = mktemp()
+        fn = self.fn
         f = open(fn,'w')
         f.write(_symmetric_example)
         f.close()
@@ -248,8 +258,7 @@ class TestMMIOCoordinate(TestCase):
         assert_array_almost_equal(a,b)
 
     def test_read_symmetric_pattern(self):
-        """read a symmetric pattern matrix"""
-        fn = mktemp()
+        fn = self.fn
         f = open(fn,'w')
         f.write(_symmetric_pattern_example)
         f.close()
@@ -266,7 +275,7 @@ class TestMMIOCoordinate(TestCase):
         #http://projects.scipy.org/scipy/ticket/883
 
         b = scipy.sparse.coo_matrix((10,10))
-        fn = mktemp()
+        fn = self.fn
         mmwrite(fn,b)
 
         assert_equal(mminfo(fn),(10,10,0,'coordinate','real','general'))
@@ -281,7 +290,7 @@ class TestMMIOCoordinate(TestCase):
 
         b = scipy.sparse.coo_matrix((V,(I,J)),shape=(5,5))
 
-        fn = mktemp()
+        fn = self.fn
         mmwrite(fn,b)
 
         assert_equal(mminfo(fn),(5,5,8,'coordinate','real','general'))
@@ -297,7 +306,7 @@ class TestMMIOCoordinate(TestCase):
 
         b = scipy.sparse.coo_matrix((V,(I,J)),shape=(5,5))
 
-        fn = mktemp()
+        fn = self.fn
         mmwrite(fn,b)
 
         assert_equal(mminfo(fn),(5,5,8,'coordinate','complex','general'))
@@ -321,7 +330,7 @@ class TestMMIOCoordinate(TestCase):
         for mat in mats:
             expected = mat.todense()
             for fmt in ['csr','csc','coo']:
-                fn = mktemp()
+                fn = mktemp(dir=self.tmpdir) # safe, we own tmpdir
                 mmwrite(fn, mat.asformat(fmt))
 
                 result = mmread(fn).todense()

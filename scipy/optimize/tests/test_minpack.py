@@ -327,14 +327,62 @@ class TestCurveFit(TestCase):
              1550.0, 949.0, 841.0]
         guess = [574.1861428571428, 574.2155714285715, 1302.0, 1302.0,
                  0.0035019999999983615, 859.0]
-        good = [ 5.74177150e+02, 5.74209188e+02, 1.74187044e+03, 1.58646166e+03,
-                 1.0068462e-02, 8.57450661e+02]
+        good = [5.74177150e+02, 5.74209188e+02, 1.74187044e+03, 1.58646166e+03,
+                1.0068462e-02, 8.57450661e+02]
 
         def f_double_gauss(x, x0, x1, A0, A1, sigma, c):
             return (A0*np.exp(-(x-x0)**2/(2.*sigma**2))
                     + A1*np.exp(-(x-x1)**2/(2.*sigma**2)) + c)
         popt, pcov = curve_fit(f_double_gauss, x, y, guess, maxfev=10000)
         assert_allclose(popt, good, rtol=1e-5)
+
+    def test_pcov(self):
+        xdata = np.array([0, 1, 2, 3, 4, 5])
+        ydata = np.array([1, 1, 5, 7, 8, 12])
+        sigma = np.array([1, 2, 1, 2, 1, 2])
+
+        def f(x, a, b):
+            return a*x + b
+
+        popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=sigma)
+        perr_scaled = np.sqrt(np.diag(pcov))
+        assert_allclose(perr_scaled, [ 0.20659803, 0.57204404], rtol=1e-3)
+
+        popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=3*sigma)
+        perr_scaled = np.sqrt(np.diag(pcov))
+        assert_allclose(perr_scaled, [ 0.20659803, 0.57204404], rtol=1e-3)
+
+        popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=sigma,
+                               absolute_sigma=True)
+        perr = np.sqrt(np.diag(pcov))
+        assert_allclose(perr, [0.30714756, 0.85045308], rtol=1e-3)
+
+        popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=3*sigma,
+                               absolute_sigma=True)
+        perr = np.sqrt(np.diag(pcov))
+        assert_allclose(perr, [3*0.30714756, 3*0.85045308], rtol=1e-3)
+
+        # infinite variances
+
+        def f_flat(x, a, b):
+            return a*x
+
+        popt, pcov = curve_fit(f_flat, xdata, ydata, p0=[2, 0], sigma=sigma)
+        assert_(pcov.shape == (2, 2))
+        assert_array_equal(pcov, np.inf)
+
+        popt, pcov = curve_fit(f, xdata[:2], ydata[:2], p0=[2, 0])
+        assert_(pcov.shape == (2, 2))
+        assert_array_equal(pcov, np.inf)
+
+    def test_array_like(self):
+        # Test sequence input.  Regression test for gh-3037.
+        def f_linear(x, a, b):
+            return a*x + b
+
+        x = [1, 2, 3, 4]
+        y = [2, 4, 6, 8]
+        assert_allclose(curve_fit(f_linear, x, y)[0], [2, 0], atol=1e-10)
 
 
 class TestFixedPoint(TestCase):

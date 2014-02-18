@@ -100,7 +100,7 @@ def test_normal_1D():
     # agree with the standard normal distribution in scipy.stats.distributions
     x = np.linspace(0, 2, 10)
     mean, cov = 1.2, 0.9
-    scale=cov**0.5
+    scale = cov**0.5
     d1 = norm.pdf(x, mean, scale)
     d2 = multivariate_normal.pdf(x, mean, cov)
     assert_allclose(d1, d2)
@@ -154,7 +154,8 @@ def test_pseudodet_pinv():
     cov = np.dot(x, x.T)
     s, u = scipy.linalg.eigh(cov)
     s = 0.5 * np.ones(n)
-    s[0] = 1.0; s[-1] = 1e-7
+    s[0] = 1.0
+    s[-1] = 1e-7
     cov = np.dot(u, np.dot(np.diag(s), u.T))
 
     # Set cond so that the lowest eigenvalue is below the cutoff
@@ -218,7 +219,8 @@ def test_R_values():
 def test_rvs_shape():
     # Check that rvs parses the mean and covariance correctly, and returns
     # an array of the right shape
-    N = 300; d = 4
+    N = 300
+    d = 4
     sample = multivariate_normal.rvs(mean=np.zeros(d), cov=1, size=N)
     assert_equal(sample.shape, (N, d))
 

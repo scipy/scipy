@@ -34,7 +34,7 @@ from .cobyla import _minimize_cobyla
 from .slsqp import _minimize_slsqp
 
 
-def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
+def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
              callback=None, options=None):
     """
@@ -59,7 +59,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
             - 'CG'
             - 'BFGS'
             - 'Newton-CG'
-            - 'Anneal'
+            - 'Anneal (deprecated as of scipy version 0.14.0)'
             - 'L-BFGS-B'
             - 'TNC'
             - 'COBYLA'
@@ -67,21 +67,23 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
             - 'dogleg'
             - 'trust-ncg'
 
+        If not given, chosen to be one of ``BFGS``, ``L-BFGS-B``, ``SLSQP``,
+        depending if the problem has constraints or bounds.
     jac : bool or callable, optional
-        Jacobian of objective function. Only for CG, BFGS, Newton-CG,
-        L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg.
+        Jacobian (gradient) of objective function. Only for CG, BFGS,
+        Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg.
         If `jac` is a Boolean and is True, `fun` is assumed to return the
-        value of Jacobian along with the objective function. If False, the
-        Jacobian will be estimated numerically.
-        `jac` can also be a callable returning the Jacobian of the
+        gradient along with the objective function. If False, the
+        gradient will be estimated numerically.
+        `jac` can also be a callable returning the gradient of the
         objective. In this case, it must accept the same arguments as `fun`.
     hess, hessp : callable, optional
-        Hessian of objective function or Hessian of objective function
-        times an arbitrary vector p.  Only for Newton-CG,
-        dogleg, trust-ncg.
+        Hessian (matrix of second-order derivatives) of objective function or
+        Hessian of objective function times an arbitrary vector p.  Only for
+        Newton-CG, dogleg, trust-ncg.
         Only one of `hessp` or `hess` needs to be given.  If `hess` is
         provided, then `hessp` will be ignored.  If neither `hess` nor
-        `hessp` is provided, then the hessian product will be approximated
+        `hessp` is provided, then the Hessian product will be approximated
         using finite differences on `jac`. `hessp` must compute the Hessian
         times an arbitrary vector.
     bounds : sequence, optional
@@ -120,12 +122,12 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
 
     Returns
     -------
-    res : Result
-        The optimization result represented as a ``Result`` object.
+    res : OptimizeResult
+        The optimization result represented as a ``OptimizeResult`` object.
         Important attributes are: ``x`` the solution array, ``success`` a
         Boolean flag indicating if the optimizer exited successfully and
         ``message`` which describes the cause of the termination. See
-        `Result` for a description of other attributes.
+        `OptimizeResult` for a description of other attributes.
 
 
     See also
@@ -161,7 +163,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     Goldfarb, and Shanno (BFGS) [5]_ pp. 136. It uses the first derivatives
     only. BFGS has proven good performance even for non-smooth
     optimizations. This method also returns an approximation of the Hessian
-    inverse, stored as `hess_inv` in the Result object.
+    inverse, stored as `hess_inv` in the OptimizeResult object.
 
     Method *Newton-CG* uses a Newton-CG algorithm [5]_ pp. 168 (also known
     as the truncated Newton method). It uses a CG method to the compute the
@@ -201,7 +203,9 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     Method *SLSQP* uses Sequential Least SQuares Programming to minimize a
     function of several variables with any combination of bounds, equality
     and inequality constraints. The method wraps the SLSQP Optimization
-    subroutine originally implemented by Dieter Kraft [12]_.
+    subroutine originally implemented by Dieter Kraft [12]_. Note that the
+    wrapper handles infinite values in bounds by converting them into large
+    floating values.
 
     References
     ----------
@@ -301,7 +305,21 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
     It should converge to the theoretical solution (1.4 ,1.7).
 
     """
+
+    if method is None:
+        # Select automatically
+        if constraints:
+            method = 'SLSQP'
+        elif bounds is not None:
+            method = 'L-BFGS-B'
+        else:
+            method = 'BFGS'
+
     meth = method.lower()
+    # deprecated methods
+    if meth == 'anneal':
+        warn('Method %s is deprecated in scipy 0.14.0' % method,
+                DeprecationWarning)
     if options is None:
         options = {}
     # check if optional parameters are supported by the selected method
@@ -330,7 +348,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - callback
-    if (meth in ['anneal', 'cobyla', 'slsqp'] and
+    if (meth in ['anneal', 'cobyla'] and
         callback is not None):
         warn('Method %s does not support callback.' % method,
              RuntimeWarning)
@@ -384,7 +402,7 @@ def minimize(fun, x0, args=(), method='BFGS', jac=None, hess=None,
         return _minimize_cobyla(fun, x0, args, constraints, **options)
     elif meth == 'slsqp':
         return _minimize_slsqp(fun, x0, args, jac, bounds,
-                               constraints, **options)
+                               constraints, callback=callback, **options)
     elif meth == 'dogleg':
         return _minimize_dogleg(fun, x0, args, jac, hess,
                                 callback=callback, **options)
@@ -439,12 +457,12 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
     Returns
     -------
-    res : Result
-        The optimization result represented as a ``Result`` object.
+    res : OptimizeResult
+        The optimization result represented as a ``OptimizeResult`` object.
         Important attributes are: ``x`` the solution array, ``success`` a
         Boolean flag indicating if the optimizer exited successfully and
         ``message`` which describes the cause of the termination. See
-        `Result` for a description of other attributes.
+        `OptimizeResult` for a description of other attributes.
 
     See also
     --------

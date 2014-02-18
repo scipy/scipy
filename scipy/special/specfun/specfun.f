@@ -233,17 +233,18 @@ C
 
 C       **********************************
 
-        SUBROUTINE CLPMN(MM,M,N,X,Y,CPM,CPD)
+        SUBROUTINE CLPMN(MM,M,N,X,Y,NTYPE,CPM,CPD)
 C
 C       =========================================================
 C       Purpose: Compute the associated Legendre functions Pmn(z)
 C                and their derivatives Pmn'(z) for a complex
 C                argument
-C       Input :  x  --- Real part of z
-C                y  --- Imaginary part of z
-C                m  --- Order of Pmn(z),  m = 0,1,2,...,n
-C                n  --- Degree of Pmn(z), n = 0,1,2,...,N
-C                mm --- Physical dimension of CPM and CPD
+C       Input :  x     --- Real part of z
+C                y     --- Imaginary part of z
+C                m     --- Order of Pmn(z),  m = 0,1,2,...,n
+C                n     --- Degree of Pmn(z), n = 0,1,2,...,N
+C                mm    --- Physical dimension of CPM and CPD
+C                ntype --- type of cut, either 2 or 3
 C       Output:  CPM(m,n) --- Pmn(z)
 C                CPD(m,n) --- Pmn'(z)
 C       =========================================================
@@ -272,12 +273,20 @@ C
 20         CONTINUE
            RETURN
         ENDIF
+        if (NTYPE.EQ.2) THEN
+C       sqrt(1 - z^2) with branch cut on |x|>1
+           ZS=(1.0D0-Z*Z)
+           ZQ=-CDSQRT(ZS)
+           LS=-1
+        ELSE
 C       sqrt(z^2 - 1) with branch cut between [-1, 1]
-        ZQ=CDSQRT(Z*Z-1.0D0)
-        IF (X.LT.0D0) THEN
-           ZQ=-ZQ
+           ZS=(Z*Z-1.0D0)
+           ZQ=CDSQRT(ZS)
+           IF (X.LT.0D0) THEN
+              ZQ=-ZQ
+           END IF
+           LS=1
         END IF
-        ZS=(Z*Z-1.0D0)
         DO 25 I=1,M
 C       DLMF 14.7.15
 25         CPM(I,I)=(2.0D0*I-1.0D0)*ZQ*CPM(I-1,I-1)
@@ -293,12 +302,13 @@ C       DLMF 14.10.3
         CPD(0,0)=(0.0D0,0.0D0)
         DO 40 J=1,N
 C       DLMF 14.10.5
-40         CPD(0,J)=J*(Z*CPM(0,J)-CPM(0,J-1))/ZS
+40         CPD(0,J)=LS*J*(Z*CPM(0,J)-CPM(0,J-1))/ZS
         DO 45 I=1,M
         DO 45 J=I,N
-C       derivative of DLMF 14.7.11 & DLMF 14.10.6
-           CPD(I,J)=-I*Z*CPM(I,J)/ZS+(J+I)*(J-I+1.0D0)
-     &              /ZQ*CPM(I-1,J)
+C       derivative of DLMF 14.7.11 & DLMF 14.10.6 for type 3
+C       derivative of DLMF 14.7.8 & DLMF 14.10.1 for type 2
+           CPD(I,J)=LS*(-I*Z*CPM(I,J)/ZS+(J+I)*(J-I+1.0D0)
+     &                  /ZQ*CPM(I-1,J))
 45      CONTINUE
         RETURN
         END
@@ -5657,10 +5667,11 @@ C       Input  : a  --- Parameter
 C                b  --- Parameter ( b <> 0,-1,-2,... )
 C                x  --- Argument
 C       Output:  HG --- M(a,b,x)
-C       Routine called: GAMMA2 for computing Г(x)
+C       Routine called: CGAMA for computing complex ln[Г(x)]
 C       ===================================================
 C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        IMPLICIT DOUBLE PRECISION (A-B,D-H,O-Z)
+        IMPLICIT COMPLEX*16 (C)
         PI=3.141592653589793D0
         A0=A
         A1=A
@@ -5712,10 +5723,16 @@ C
                  IF (HG.NE.0D0.AND.DABS(RG/HG).LT.1.0D-15) GO TO 25
 15            CONTINUE
            ELSE
-              CALL GAMMA2(A,TA)
-              CALL GAMMA2(B,TB)
+              Y=0.0D0
+              CALL CGAMA(A,Y,0,TAR,TAI)
+              CTA=CMPLX(TAR,TAI,8)
+              Y=0.0D0
+              CALL CGAMA(B,Y,0,TBR,TBI)
+              CTB=CMPLX(TBR,TBI,8)
               XG=B-A
-              CALL GAMMA2(XG,TBA)
+              Y=0.0D0
+              CALL CGAMA(XG,Y,0,TBAR,TBAI)
+              CTBA=CMPLX(TBAR,TBAI,8)
               SUM1=1.0D0
               SUM2=1.0D0
               R1=1.0D0
@@ -5725,8 +5742,8 @@ C
                  R2=-R2*(B-A+I-1.0D0)*(A-I)/(X*I)
                  SUM1=SUM1+R1
 20               SUM2=SUM2+R2
-              HG1=TB/TBA*X**(-A)*DCOS(PI*A)*SUM1
-              HG2=TB/TA*DEXP(X)*X**(A-B)*SUM2
+              HG1=DBLE(CDEXP(CTB-CTBA))*X**(-A)*DCOS(PI*A)*SUM1
+              HG2=DBLE(CDEXP(CTB-CTA+X))*X**(A-B)*SUM2
               HG=HG1+HG2
            ENDIF
 25         IF (N.EQ.0) Y0=HG
@@ -6001,7 +6018,7 @@ C       Input :  a --- Parameter
 C                b --- Parameter
 C                z --- Complex argument
 C       Output:  CHG --- M(a,b,z)
-C       Routine called: GAMMA2 for computing gamma function
+C       Routine called: CGAMA for computing complex ln[Г(x)]
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A,B,D-H,O-Y)
@@ -6057,10 +6074,16 @@ C
                     CHW=CHG
 15               CONTINUE
               ELSE
-                 CALL GAMMA2(A,G1)
-                 CALL GAMMA2(B,G2)
+                 Y=0.0D0
+                 CALL CGAMA(A,Y,0,G1R,G1I)
+                 CG1=CMPLX(G1R,G1I,8)
+                 Y=0.0D0
+                 CALL CGAMA(B,Y,0,G2R,G2I)
+                 CG2=CMPLX(G2R,G2I,8)
                  BA=B-A
-                 CALL GAMMA2(BA,G3)
+                 Y=0.0D0
+                 CALL CGAMA(BA,Y,0,G3R,G3I)
+                 CG3=CMPLX(G3R,G3I,8)
                  CS1=(1.0D0,0.0D0)
                  CS2=(1.0D0,0.0D0)
                  CR1=(1.0D0,0.0D0)
@@ -6083,8 +6106,8 @@ C
                  IF (PHI.GT.-1.5*PI.AND.PHI.LE.-0.5*PI) NS=-1
                  CFAC=CDEXP(NS*CI*PI*A)
                  IF (Y.EQ.0.0D0) CFAC=DCOS(PI*A)
-                 CHG1=G2/G3*Z**(-A)*CFAC*CS1
-                 CHG2=G2/G1*CDEXP(Z)*Z**(A-B)*CS2
+                 CHG1=CDEXP(CG2-CG3)*Z**(-A)*CFAC*CS1
+                 CHG2=CDEXP(CG2-CG1+Z)*Z**(A-B)*CS2
                  CHG=CHG1+CHG2
               ENDIF
 25            IF (N.EQ.0) CY0=CHG

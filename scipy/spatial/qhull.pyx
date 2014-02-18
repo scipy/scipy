@@ -2176,7 +2176,7 @@ class ConvexHull(_QhullUser):
 
     Notes
     -----
-    The convex hull is computed using the Qhull libary [Qhull]_.
+    The convex hull is computed using the Qhull library [Qhull]_.
 
     Do not call the ``add_points`` method from a ``__del__``
     destructor.
@@ -2303,7 +2303,7 @@ class Voronoi(_QhullUser):
 
     Notes
     -----
-    The Voronoi diagram is computed using the Qhull libary [Qhull]_.
+    The Voronoi diagram is computed using the Qhull library [Qhull]_.
 
     Do not call the ``add_points`` method from a ``__del__``
     destructor.

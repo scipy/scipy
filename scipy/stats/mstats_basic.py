@@ -49,42 +49,42 @@ from scipy.lib.six import iteritems
 import itertools
 import warnings
 
-
-# import scipy.stats as stats
 from . import stats
+from . import distributions
 import scipy.special as special
 import scipy.misc as misc
-# import scipy.stats.futil as futil
 from . import futil
 
 
 genmissingvaldoc = """
-Notes
------
+
+    Notes
+    -----
     Missing values are considered pair-wise: if a value is missing in x,
     the corresponding value in y is masked.
-"""
+    """
 #------------------------------------------------------------------------------
 
 
 def _chk_asarray(a, axis):
+    # Always returns a masked array, raveled for axis=None
+    a = ma.asanyarray(a)
     if axis is None:
         a = ma.ravel(a)
         outaxis = 0
     else:
-        a = ma.asanyarray(a)
         outaxis = axis
     return a, outaxis
 
 
 def _chk2_asarray(a, b, axis):
+    a = ma.asanyarray(a)
+    b = ma.asanyarray(b)
     if axis is None:
         a = ma.ravel(a)
         b = ma.ravel(b)
         outaxis = 0
     else:
-        a = ma.asanyarray(a)
-        b = ma.asanyarray(b)
         outaxis = axis
     return a, b, outaxis
 
@@ -145,13 +145,13 @@ def find_repeats(arr):
     """Find repeats in arr and return a tuple (repeats, repeat_count).
     Masked values are discarded.
 
-Parameters
-----------
+    Parameters
+    ----------
     arr : sequence
         Input array. The array is flattened if it is not 1D.
 
-Returns
--------
+    Returns
+    -------
     repeats : ndarray
         Array of repeated values.
     counts : ndarray
@@ -223,17 +223,17 @@ def rankdata(data, axis=None, use_missing=False):
 
     Parameters
     ----------
-        data : sequence
-            Input data. The data is transformed to a masked array
-        axis : {None,int}, optional
-            Axis along which to perform the ranking.
-            If None, the array is first flattened. An exception is raised if
-            the axis is specified for arrays with a dimension larger than 2
-        use_missing : {boolean}, optional
-            Whether the masked values have a rank of 0 (False) or equal to the
-            average rank of the unmasked values (True).
+    data : sequence
+        Input data. The data is transformed to a masked array
+    axis : {None,int}, optional
+        Axis along which to perform the ranking.
+        If None, the array is first flattened. An exception is raised if
+        the axis is specified for arrays with a dimension larger than 2
+    use_missing : {boolean}, optional
+        Whether the masked values have a rank of 0 (False) or equal to the
+        average rank of the unmasked values (True).
+
     """
-    #
     def _rank1d(data, use_missing=False):
         n = data.count()
         rk = np.empty(data.size, dtype=float)
@@ -284,6 +284,7 @@ hmean.__doc__ = stats.hmean.__doc__
 
 def mode(a, axis=0):
     a, axis = _chk_asarray(a, axis)
+
     def _mode1D(a):
         (rep,cnt) = find_repeats(a)
         if not cnt.ndim:
@@ -763,38 +764,48 @@ def sen_seasonal_slopes(x):
 #---- --- Inferential statistics ---
 #####--------------------------------------------------------------------------
 
-def ttest_onesamp(a, popmean):
-    a = ma.asarray(a)
-    x = a.mean(axis=None)
-    v = a.var(axis=None,ddof=1)
-    n = a.count(axis=None)
-    df = n-1
-    svar = ((n-1)*v) / float(df)
-    t = (x-popmean)/ma.sqrt(svar*(1.0/n))
-    prob = betai(0.5*df,0.5,df/(df+t*t))
-    return t,prob
-ttest_onesamp.__doc__ = stats.ttest_1samp.__doc__
-ttest_1samp = ttest_onesamp
+def ttest_1samp(a, popmean, axis=0):
+    a, axis = _chk_asarray(a, axis)
+    if a.size == 0:
+        return (np.nan, np.nan)
+
+    x = a.mean(axis=axis)
+    v = a.var(axis=axis, ddof=1)
+    n = a.count(axis=axis)
+    df = n - 1.
+    svar = ((n - 1) * v) / df
+    t = (x - popmean) / ma.sqrt(svar / n)
+    prob = betai(0.5 * df, 0.5, df / (df + t*t))
+    return t, prob
+ttest_1samp.__doc__ = stats.ttest_1samp.__doc__
+ttest_onesamp = ttest_1samp
 
 
 def ttest_ind(a, b, axis=0):
     a, b, axis = _chk2_asarray(a, b, axis)
+    if a.size == 0 or b.size == 0:
+        return (np.nan, np.nan)
+
     (x1, x2) = (a.mean(axis), b.mean(axis))
     (v1, v2) = (a.var(axis=axis, ddof=1), b.var(axis=axis, ddof=1))
     (n1, n2) = (a.count(axis), b.count(axis))
-    df = n1+n2-2
-    svar = ((n1-1)*v1+(n2-1)*v2) / float(df)
+    df = n1 + n2 - 2.
+    svar = ((n1-1)*v1+(n2-1)*v2) / df
     t = (x1-x2)/ma.sqrt(svar*(1.0/n1 + 1.0/n2))  # N-D COMPUTATION HERE!!!!!!
     t = ma.filled(t, 1)           # replace NaN t-values with 1.0
-    probs = betai(0.5*df,0.5,float(df)/(df+t*t)).reshape(t.shape)
+    probs = betai(0.5 * df, 0.5, df/(df + t*t)).reshape(t.shape)
     return t, probs.squeeze()
 ttest_ind.__doc__ = stats.ttest_ind.__doc__
 
 
-def ttest_rel(a,b,axis=None):
+def ttest_rel(a, b, axis=0):
     a, b, axis = _chk2_asarray(a, b, axis)
     if len(a) != len(b):
         raise ValueError('unequal length arrays')
+
+    if a.size == 0 or b.size == 0:
+        return (np.nan, np.nan)
+
     (x1, x2) = (a.mean(axis), b.mean(axis))
     (v1, v2) = (a.var(axis=axis, ddof=1), b.var(axis=axis, ddof=1))
     n = a.count(axis)
@@ -1405,12 +1416,12 @@ def tsem(a, limits=None, inclusive=(True,True)):
 tsem.__doc__ = stats.tsem.__doc__
 
 
-def winsorize(a, limits=None, inclusive=(True,True), inplace=False, axis=None):
-    """
-    Returns a Winsorized version of the input array.
+def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
+              axis=None):
+    """Returns a Winsorized version of the input array.
 
     The (limits[0])th lowest values are set to the (limits[0])th percentile,
-    and the (limits[1])th highest values are set to the (limits[1])th
+    and the (limits[1])th highest values are set to the (1 - limits[1])th
     percentile.
     Masked values are skipped.
 
@@ -1436,29 +1447,34 @@ def winsorize(a, limits=None, inclusive=(True,True), inplace=False, axis=None):
         Axis along which to trim. If None, the whole array is trimmed, but its
         shape is maintained.
 
+    Notes
+    -----
+    This function is applied to reduce the effect of possibly spurious outliers
+    by limiting the extreme values.
+
     """
     def _winsorize1D(a, low_limit, up_limit, low_include, up_include):
         n = a.count()
         idx = a.argsort()
         if low_limit:
             if low_include:
-                lowidx = int(low_limit*n)
+                lowidx = int(low_limit * n)
             else:
-                lowidx = np.round(low_limit*n)
+                lowidx = np.round(low_limit * n)
             a[idx[:lowidx]] = a[idx[lowidx]]
         if up_limit is not None:
             if up_include:
-                upidx = n - int(n*up_limit)
+                upidx = n - int(n * up_limit)
             else:
-                upidx = n - np.round(n*up_limit)
-            a[idx[upidx:]] = a[idx[upidx-1]]
+                upidx = n - np.round(n * up_limit)
+            a[idx[upidx:]] = a[idx[upidx - 1]]
         return a
     # We gonna modify a: better make a copy
     a = ma.array(a, copy=np.logical_not(inplace))
     #
     if limits is None:
         return a
-    if (not isinstance(limits,tuple)) and isinstance(limits,float):
+    if (not isinstance(limits, tuple)) and isinstance(limits, float):
         limits = (limits, limits)
     # Check the limits
     (lolim, uplim) = limits
@@ -1474,9 +1490,10 @@ def winsorize(a, limits=None, inclusive=(True,True), inplace=False, axis=None):
     #
     if axis is None:
         shp = a.shape
-        return _winsorize1D(a.ravel(),lolim,uplim,loinc,upinc).reshape(shp)
+        return _winsorize1D(a.ravel(), lolim, uplim, loinc, upinc).reshape(shp)
     else:
-        return ma.apply_along_axis(_winsorize1D, axis,a,lolim,uplim,loinc,upinc)
+        return ma.apply_along_axis(_winsorize1D, axis, a, lolim, uplim, loinc,
+                                   upinc)
 
 
 #####--------------------------------------------------------------------------
@@ -1611,15 +1628,15 @@ def describe(a, axis=0):
 
 def stde_median(data, axis=None):
     """Returns the McKean-Schrader estimate of the standard error of the sample
-median along the given axis. masked values are discarded.
+    median along the given axis. masked values are discarded.
 
     Parameters
     ----------
-        data : ndarray
-            Data to trim.
-        axis : {None,int}, optional
-            Axis along which to perform the trimming.
-            If None, the input array is first flattened.
+    data : ndarray
+        Data to trim.
+    axis : {None,int}, optional
+        Axis along which to perform the trimming.
+        If None, the input array is first flattened.
 
     """
     def _stdemed_1D(data):
@@ -1650,9 +1667,9 @@ def skewtest(a, axis=0):
     b2 = skew(a,axis)
     n = a.count(axis)
     if np.min(n) < 8:
-        warnings.warn(
-            "skewtest only valid for n>=8 ... continuing anyway, n=%i" %
-            np.min(n))
+        raise ValueError(
+            "skewtest is not valid with less than 8 samples; %i samples"
+            " were given." % np.min(n))
     y = b2 * ma.sqrt(((n+1)*(n+3)) / (6.0*(n-2)))
     beta2 = (3.0*(n*n+27*n-70)*(n+1)*(n+3)) / ((n-2.0)*(n+5)*(n+7)*(n+9))
     W2 = -1 + ma.sqrt(2*(beta2-1))
@@ -1660,13 +1677,17 @@ def skewtest(a, axis=0):
     alpha = ma.sqrt(2.0/(W2-1))
     y = ma.where(y == 0, 1, y)
     Z = delta*ma.log(y/alpha + ma.sqrt((y/alpha)**2+1))
-    return Z, (1.0 - stats.zprob(Z))*2
+    return Z, 2 * distributions.norm.sf(np.abs(Z))
 skewtest.__doc__ = stats.skewtest.__doc__
 
 
 def kurtosistest(a, axis=0):
     a, axis = _chk_asarray(a, axis)
-    n = a.count(axis=axis).astype(float)
+    n = a.count(axis=axis)
+    if np.min(n) < 5:
+        raise ValueError(
+            "kurtosistest requires at least 5 observations; %i observations"
+            " were given." % np.min(n))
     if np.min(n) < 20:
         warnings.warn(
             "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" %
@@ -1680,10 +1701,15 @@ def kurtosistest(a, axis=0):
     A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
     term1 = 1 - 2./(9.0*A)
     denom = 1 + x*ma.sqrt(2/(A-4.0))
-    denom[denom < 0] = masked
+    if np.ma.isMaskedArray(denom):
+        # For multi-dimensional array input
+        denom[denom < 0] = masked
+    elif denom < 0:
+        denom = masked
+
     term2 = ma.power((1-2.0/A)/denom,1/3.0)
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))
-    return Z, (1.0-stats.zprob(Z))*2
+    return Z, 2 * distributions.norm.sf(np.abs(Z))
 kurtosistest.__doc__ = stats.kurtosistest.__doc__
 
 
@@ -1909,13 +1935,13 @@ meppf = plotting_positions
 
 def obrientransform(*args):
     """
-Computes a transform on input data (any number of columns).  Used to
-test for homogeneity of variance prior to running one-way stats.  Each
-array in *args is one level of a factor.  If an F_oneway() run on the
-transformed data and found significant, variances are unequal.   From
-Maxwell and Delaney, p.112.
+    Computes a transform on input data (any number of columns).  Used to
+    test for homogeneity of variance prior to running one-way stats.  Each
+    array in *args is one level of a factor.  If an F_oneway() run on the
+    transformed data and found significant, variances are unequal.   From
+    Maxwell and Delaney, p.112.
 
-Returns: transformed data for use in an ANOVA
+    Returns: transformed data for use in an ANOVA
     """
     data = argstoarray(*args).T
     v = data.var(axis=0,ddof=1)
@@ -1938,22 +1964,22 @@ def signaltonoise(data, axis=0):
 
     Parameters
     ----------
-        data : sequence
-            Input data
-        axis : {0, int}, optional
-            Axis along which to compute. If None, the computation is performed
-            on a flat version of the array.
-"""
+    data : sequence
+        Input data
+    axis : {0, int}, optional
+        Axis along which to compute. If None, the computation is performed
+        on a flat version of the array.
+    """
     data = ma.array(data, copy=False)
     m = data.mean(axis)
     sd = data.std(axis, ddof=0)
     return m/sd
 
 
-def sem(a, axis=0):
+def sem(a, axis=0, ddof=1):
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis=axis)
-    s = a.std(axis=axis,ddof=0) / ma.sqrt(n-1)
+    s = a.std(axis=axis, ddof=ddof) / ma.sqrt(n)
     return s
 sem.__doc__ = stats.sem.__doc__
 
@@ -1968,13 +1994,14 @@ zscore = stats.zscore
 
 def f_oneway(*args):
     """
-Performs a 1-way ANOVA, returning an F-value and probability given
-any number of groups.  From Heiman, pp.394-7.
+    Performs a 1-way ANOVA, returning an F-value and probability given
+    any number of groups.  From Heiman, pp.394-7.
 
-Usage:   f_oneway (*args)    where *args is 2 or more arrays, one per
-                                  treatment group
-Returns: f-value, probability
-"""
+    Usage: ``f_oneway(*args)``, where ``*args`` is 2 or more arrays,
+                                one per treatment group.
+    Returns: f-value, probability
+
+    """
     # Construct a single array of arguments: each row is a group
     data = argstoarray(*args)
     ngroups = len(data)
@@ -1987,12 +2014,12 @@ Returns: f-value, probability
     msb = ssbg/float(dfbg)
     msw = sswg/float(dfwg)
     f = msb/msw
-    prob = stats.fprob(dfbg,dfwg,f)
+    prob = special.fdtrc(dfbg, dfwg, f)  # equivalent to stats.f.sf
     return f, prob
 
 
 def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
-    """Calculation of Wilks lambda F-statistic for multivarite data, per
+    """Calculation of Wilks lambda F-statistic for multivariate data, per
     Maxwell & Delaney p.657.
     """
     ER = ma.array(ER, copy=False, ndmin=2)
@@ -2041,9 +2068,7 @@ def friedmanchisquare(*args):
     repeats = np.array([find_repeats(_) for _ in ranked.T], dtype=object)
     ties = repeats[repeats.nonzero()].reshape(-1,2)[:,-1].astype(int)
     tie_correction = 1 - (ties**3-ties).sum()/float(n*(k**3-k))
-    #
+
     ssbg = np.sum((ranked.sum(-1) - n*(k+1)/2.)**2)
     chisq = ssbg * 12./(n*k*(k+1)) * 1./tie_correction
     return chisq, stats.chisqprob(chisq,k-1)
-
-#-############################################################################-#

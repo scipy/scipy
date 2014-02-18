@@ -20,6 +20,8 @@ INSTANTIATE_ALL(bsr_elmul_bsr)
 INSTANTIATE_ALL(bsr_eldiv_bsr)
 INSTANTIATE_ALL(bsr_plus_bsr)
 INSTANTIATE_ALL(bsr_minus_bsr)
+INSTANTIATE_ALL(bsr_maximum_bsr)
+INSTANTIATE_ALL(bsr_minimum_bsr)
 INSTANTIATE_ALL(bsr_sort_indices)
 
 INSTANTIATE_BOOL_OUT(bsr_ne_bsr)

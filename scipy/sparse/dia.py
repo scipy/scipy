@@ -10,7 +10,7 @@ import numpy as np
 
 from .base import isspmatrix, _formats
 from .data import _data_matrix
-from .sputils import isshape, upcast, upcast_char, getdtype
+from .sputils import isshape, upcast, upcast_char, getdtype, get_index_dtype
 from .sparsetools import dia_matvec
 
 
@@ -96,7 +96,8 @@ class dia_matrix(_data_matrix):
                 # create empty matrix
                 self.shape = arg1   # spmatrix checks for errors here
                 self.data = np.zeros((0,0), getdtype(dtype, default=float))
-                self.offsets = np.zeros((0), dtype=np.intc)
+                idx_dtype = get_index_dtype(maxval=max(self.shape))
+                self.offsets = np.zeros((0), dtype=idx_dtype)
             else:
                 try:
                     # Try interpreting it as (data, offsets)
@@ -107,7 +108,9 @@ class dia_matrix(_data_matrix):
                     if shape is None:
                         raise ValueError('expected a shape argument')
                     self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
-                    self.offsets = np.atleast_1d(np.array(arg1[1], dtype=np.intc, copy=copy))
+                    self.offsets = np.atleast_1d(np.array(arg1[1],
+                                                          dtype=get_index_dtype(maxval=max(shape)),
+                                                          copy=copy))
                     self.shape = shape
         else:
             #must be dense, convert to COO first, then to DIA
@@ -180,6 +183,20 @@ class dia_matrix(_data_matrix):
 
     def _mul_multimatrix(self, other):
         return np.hstack([self._mul_vector(col).reshape(-1,1) for col in other.T])
+
+    def setdiag(self, values, k=0):
+        M, N = self.shape
+        if k <= -M or k >= N:
+            raise ValueError('k exceeds matrix dimensions')
+        if k in self.offsets:
+            self.data[self.offsets == k, :] = values
+        else:
+            self.offsets = np.append(self.offsets, self.offsets.dtype.type(k))
+            self.data = np.vstack((self.data,
+                                   np.empty((1, N), dtype=self.data.dtype)))
+            self.data[-1, :] = values
+
+    setdiag.__doc__ = _data_matrix.setdiag.__doc__
 
     def todia(self,copy=False):
         if copy:

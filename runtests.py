@@ -11,6 +11,7 @@ Examples::
     $ python runtests.py -t {SAMPLE_TEST}
     $ python runtests.py --ipython
     $ python runtests.py --python somescript.py
+    $ python runtests.py --bench
 
 Run a debugger:
 
@@ -100,6 +101,8 @@ def main(argv):
                         help="Debug build")
     parser.add_argument("--show-build-log", action="store_true",
                         help="Show build output rather than using a log file")
+    parser.add_argument("--bench", action="store_true",
+                        help="Run benchmark suite instead of test suite")
     parser.add_argument("args", metavar="ARGS", default=[], nargs=REMAINDER,
                         help="Arguments to pass to Nose, Python or shell")
     args = parser.parse_args(argv)
@@ -169,9 +172,12 @@ def main(argv):
         modname = PROJECT_MODULE + '.' + args.submodule
         try:
             __import__(modname)
-            test = sys.modules[modname].test
-        except (ImportError, KeyError, AttributeError):
-            print("Cannot run tests for %s" % modname)
+            if args.bench:
+                test = sys.modules[modname].bench
+            else:
+                test = sys.modules[modname].test
+        except (ImportError, KeyError, AttributeError) as e:
+            print("Cannot run tests for %s (%s)" % (modname, e))
             sys.exit(2)
     elif args.tests:
         def fix_test_path(x):
@@ -188,10 +194,16 @@ def main(argv):
             extra_argv = extra_argv + tests[1:]
             kw['extra_argv'] = extra_argv
             from numpy.testing import Tester
-            return Tester(tests[0]).test(*a, **kw)
+            if args.bench:
+                return Tester(tests[0]).bench(*a, **kw)
+            else:
+                return Tester(tests[0]).test(*a, **kw)
     else:
         __import__(PROJECT_MODULE)
-        test = sys.modules[PROJECT_MODULE].test
+        if args.bench:
+            test = sys.modules[PROJECT_MODULE].bench
+        else:
+            test = sys.modules[PROJECT_MODULE].test
 
     # Run the tests under build/test
     try:
@@ -206,15 +218,22 @@ def main(argv):
     cwd = os.getcwd()
     try:
         os.chdir(test_dir)
-        result = test(args.mode,
-                      verbose=args.verbose,
-                      extra_argv=extra_argv,
-                      doctests=args.doctests,
-                      coverage=args.coverage)
+        if args.bench:
+            result = test(args.mode,
+                          verbose=args.verbose,
+                          extra_argv=extra_argv)
+        else:
+            result = test(args.mode,
+                          verbose=args.verbose,
+                          extra_argv=extra_argv,
+                          doctests=args.doctests,
+                          coverage=args.coverage)
     finally:
         os.chdir(cwd)
 
-    if result.wasSuccessful():
+    if isinstance(result, bool):
+        sys.exit(0 if result else 1)
+    elif result.wasSuccessful():
         sys.exit(0)
     else:
         sys.exit(1)

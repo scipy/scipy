@@ -2,17 +2,23 @@
 # Author: Nathan Woods 2013 (nquad &c)
 from __future__ import division, print_function, absolute_import
 
+import sys
+import warnings
 from functools import partial
 
 from . import _quadpack
-import sys
 import numpy
 from numpy import Inf
 
-__all__ = ['quad', 'dblquad', 'tplquad', 'nquad', 'quad_explain']
+__all__ = ['quad', 'dblquad', 'tplquad', 'nquad', 'quad_explain',
+           'IntegrationWarning']
 
 
 error = _quadpack.error
+
+
+class IntegrationWarning(UserWarning):
+    pass
 
 
 def quad_explain(output=sys.stdout):
@@ -202,7 +208,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     For finite integration limits, the integration is performed using a
     Clenshaw-Curtis method which uses Chebyshev moments.  For repeated
     calculations, these moments are saved in the output dictionary:
-    
+
     'momcom'
         The maximum level of Chebyshev moments that have been computed,
         i.e., if M_c is infodict['momcom'] then the moments have been
@@ -312,8 +318,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
             else:
                 return retval[:-1] + (msg,)
         else:
-            import warnings
-            warnings.warn(msg)
+            warnings.warn(msg, IntegrationWarning)
             return retval[:-1]
     else:
         raise ValueError(msg)
@@ -695,4 +700,3 @@ class _NQuad(object):
         else:
             # Final result of n-D integration with error
             return value, self.abserr
-

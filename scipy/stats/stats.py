@@ -177,7 +177,7 @@ pysum = sum  # save it before it gets overwritten
 
 # Scipy imports.
 from scipy.lib.six import callable, string_types
-from numpy import array, asarray, dot, ma, zeros, sum
+from numpy import array, asarray, ma, zeros, sum
 import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
@@ -187,7 +187,7 @@ from . import distributions
 
 from ._rank import rankdata, tiecorrect
 
-__all__ = ['find_repeats', 'gmean', 'hmean', 'cmedian', 'mode',
+__all__ = ['find_repeats', 'gmean', 'hmean', 'mode',
            'tmean', 'tvar', 'tmin', 'tmax', 'tstd', 'tsem',
            'moment', 'variation', 'skew', 'kurtosis', 'describe',
            'skewtest', 'kurtosistest', 'normaltest', 'jarque_bera',
@@ -201,8 +201,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'cmedian', 'mode',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'zprob', 'chisqprob', 'ksprob', 'fprob', 'betai',
-           'glm', 'f_value_wilks_lambda',
-           'f_value', 'f_value_multivariate',
+           'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
            'ss', 'square_of_sums',
            'fastsort', 'rankdata',
            'nanmean', 'nanstd', 'nanmedian',
@@ -564,66 +563,6 @@ def hmean(a, axis=0, dtype=None):
         return size / np.sum(1.0/a, axis=axis, dtype=dtype)
     else:
         raise ValueError("Harmonic mean only defined if all elements greater than zero")
-
-
-@np.deprecate(message="Deprecated in scipy 0.13.0 - use numpy.median instead.")
-def cmedian(a, numbins=1000):
-    """
-    Returns the computed median value of an array.
-
-    All of the values in the input array are used. The input array is first
-    histogrammed using `numbins` bins. The bin containing the median is
-    selected by searching for the halfway point in the cumulative histogram.
-    The median value is then computed by linearly interpolating across that
-    bin.
-
-    Parameters
-    ----------
-    a : array_like
-        Input array.
-    numbins : int
-        The number of bins used to histogram the data. More bins give greater
-        accuracy to the approximation of the median.
-
-    Returns
-    -------
-    cmedian : float
-        An approximation of the median.
-
-    References
-    ----------
-    [CRCProbStat2000]_ Section 2.2.6
-
-    .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
-       Probability and Statistics Tables and Formulae. Chapman & Hall: New
-       York. 2000.
-
-    """
-    # TODO: numpy.median() always seems to be a better choice.
-    # A better version of this function would take already-histogrammed data
-    # and compute the median from that.
-    a = np.ravel(a)
-    n = float(len(a))
-
-    # We will emulate the (fixed!) bounds selection scheme used by
-    # scipy.stats.histogram(), but use numpy.histogram() since it is faster.
-    amin = a.min()
-    amax = a.max()
-    estbinwidth = (amax - amin)/float(numbins - 1)
-    binsize = (amax - amin + estbinwidth) / float(numbins)
-    (hist, bins) = np.histogram(a, numbins,
-        range=(amin-binsize*0.5, amax+binsize*0.5))
-    binsize = bins[1] - bins[0]
-    cumhist = np.cumsum(hist)           # make cumulative histogram
-    cfbin = np.searchsorted(cumhist, n/2.0)
-    LRL = bins[cfbin]      # get lower read limit of that bin
-    if cfbin == 0:
-        cfbelow = 0.0
-    else:
-        cfbelow = cumhist[cfbin-1]       # cum. freq. below bin
-    freq = hist[cfbin]                  # frequency IN the 50%ile bin
-    median = LRL + ((n/2.0-cfbelow)/float(freq))*binsize  # MEDIAN
-    return median
 
 
 def mode(a, axis=0):
@@ -1428,7 +1367,7 @@ def itemfreq(a):
 
 
 def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
-        axis=None):
+                      axis=None):
     """
     Calculate the score at a given percentile of the input sequence.
 
@@ -1463,12 +1402,20 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
 
     Returns
     -------
-    score : float (or sequence of floats)
-        Score at percentile.
+    score : float or ndarray
+        Score at percentile(s).
 
     See Also
     --------
-    percentileofscore
+    percentileofscore, numpy.percentile
+
+    Notes
+    -----
+    This function will become obsolete in the future.
+    For Numpy 1.9 and higher, `numpy.percentile` provides all the functionality
+    that `scoreatpercentile` provides.  And it's significantly faster.
+    Therefore it's recommended to use `numpy.percentile` for users that have
+    numpy >= 1.9.
 
     Examples
     --------
@@ -1478,16 +1425,18 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
     49.5
 
     """
-    # adapted from NumPy's percentile function
+    # adapted from NumPy's percentile function.  When we require numpy >= 1.8,
+    # the implementation of this function can be replaced by np.percentile.
     a = np.asarray(a)
+    if a.size == 0:
+        # empty array, return nan(s) with shape matching `per`
+        if np.isscalar(per):
+            return np.nan
+        else:
+            return np.ones(np.asarray(per).shape, dtype=np.float64) * np.nan
 
     if limit:
         a = a[(limit[0] <= a) & (a <= limit[1])]
-
-    if per == 0:
-        return a.min(axis=axis)
-    elif per == 100:
-        return a.max(axis=axis)
 
     sorted = np.sort(a, axis=axis)
     if axis is None:
@@ -1499,8 +1448,9 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
 # handle sequence of per's without calling sort multiple times
 def _compute_qth_percentile(sorted, per, interpolation_method, axis):
     if not np.isscalar(per):
-        return [_compute_qth_percentile(sorted, i, interpolation_method, axis)
-             for i in per]
+        score = [_compute_qth_percentile(sorted, i, interpolation_method, axis)
+                 for i in per]
+        return np.array(score)
 
     if (per < 0) or (per > 100):
         raise ValueError("percentile must be in the range [0, 100]")
@@ -1534,7 +1484,7 @@ def _compute_qth_percentile(sorted, per, interpolation_method, axis):
         weights.shape = wshape
         sumval = weights.sum()
 
-    # Use np.add.reduce to coerce data type
+    # Use np.add.reduce (== np.sum but a little faster) to coerce data type
     return np.add.reduce(sorted[indexer] * weights, axis=axis) / sumval
 
 
@@ -2436,7 +2386,7 @@ def f_oneway(*args):
     msb = ssbn / float(dfbn)
     msw = sswn / float(dfwn)
     f = msb / msw
-    prob = fprob(dfbn, dfwn, f)
+    prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
     return f, prob
 
 
@@ -3150,7 +3100,7 @@ def ttest_1samp(a, popmean, axis=0):
     t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t)
 
-    return t,prob
+    return t, prob
 
 
 def _ttest_finish(df,t):
@@ -3251,6 +3201,9 @@ def ttest_ind(a, b, axis=0, equal_var=True):
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
+    if a.size == 0 or b.size == 0:
+        return (np.nan, np.nan)
+
     v1 = np.var(a, axis, ddof=1)
     v2 = np.var(b, axis, ddof=1)
     n1 = a.shape[axis]
@@ -3334,6 +3287,9 @@ def ttest_rel(a, b, axis=0):
     a, b, axis = _chk2_asarray(a, b, axis)
     if a.shape[axis] != b.shape[axis]:
         raise ValueError('unequal length arrays')
+
+    if a.size == 0 or b.size == 0:
+        return (np.nan, np.nan)
 
     n = a.shape[axis]
     df = float(n - 1)
@@ -3928,7 +3884,7 @@ def ks_2samp(data1, data2):
     # Note: d absolute not signed distance
     en = np.sqrt(n1*n2/float(n1+n2))
     try:
-        prob = ksprob((en+0.12+0.11/en)*d)
+        prob = distributions.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
     except:
         prob = 1.0
     return d, prob
@@ -4164,7 +4120,9 @@ def friedmanchisquare(*args):
 ####  PROBABILITY CALCULATIONS  ####
 #####################################
 
-zprob = special.ndtr
+zprob = np.deprecate(message='zprob is deprecated in scipy 0.14, '
+        'use norm.cdf or special.ndtr instead\n',
+        old_name='zprob')(special.ndtr)
 
 
 def chisqprob(chisq, df):
@@ -4188,8 +4146,13 @@ def chisqprob(chisq, df):
     """
     return special.chdtrc(df,chisq)
 
-ksprob = special.kolmogorov
-fprob = special.fdtrc
+ksprob = np.deprecate(message='ksprob is deprecated in scipy 0.14, '
+        'use stats.kstwobign.sf or special.kolmogorov instead\n',
+        old_name='ksprob')(special.kolmogorov)
+
+fprob = np.deprecate(message='fprob is deprecated in scipy 0.14, '
+        'use stats.f.sf or special.fdtrc instead\n',
+        old_name='fprob')(special.fdtrc)
 
 
 def betai(a, b, x):
@@ -4222,92 +4185,10 @@ def betai(a, b, x):
     x = np.where(x < 1.0, x, 1.0)  # if x > 1 then return 1.0
     return special.betainc(a, b, x)
 
+
 #####################################
 #######  ANOVA CALCULATIONS  #######
 #####################################
-
-
-_msg = """`glm` is deprecated in scipy 0.13.0 and will be removed in 0.14.0.
-Use `ttest_ind` for the same functionality in scipy.stats, or `statsmodels.OLS`
-for a more full-featured general linear model."""
-@np.deprecate_with_doc(_msg)
-def glm(data, para):
-    """
-    Calculates a linear model fit ...
-    anova/ancova/lin-regress/t-test/etc. Taken from:
-
-    Returns
-    -------
-    statistic, p-value ???
-
-    References
-    ----------
-    Peterson et al. Statistical limitations in functional neuroimaging
-    I. Non-inferential methods and statistical models.  Phil Trans Royal Soc
-    Lond B 354: 1239-1260.
-
-    """
-    def _unique_rows(inarray):
-        """Returns unique items in the FIRST dimension of the passed array. Only
-        works on arrays NOT including string items (e.g., type 'O' or 'c').
-        """
-        inarray = asarray(inarray)
-        uniques = np.array([inarray[0]])
-        if len(uniques.shape) == 1:            # IF IT'S A 1D ARRAY
-            for item in inarray[1:]:
-                if np.add.reduce(np.equal(uniques,item).flat) == 0:
-                    try:
-                        uniques = np.concatenate([uniques,np.array[np.newaxis,:]])
-                    except TypeError:
-                        uniques = np.concatenate([uniques,np.array([item])])
-        else:                                  # IT MUST BE A 2+D ARRAY
-            if inarray.dtype.char != 'O':  # not an Object array
-                for item in inarray[1:]:
-                    if not np.sum(np.alltrue(np.equal(uniques,item),1),axis=0):
-                        try:
-                            uniques = np.concatenate([uniques,item[np.newaxis,:]])
-                        except TypeError:    # the item to add isn't a list
-                            uniques = np.concatenate([uniques,np.array([item])])
-                    else:
-                        pass  # this item is already in the uniques array
-            else:   # must be an Object array, alltrue/equal functions don't work
-                for item in inarray[1:]:
-                    newflag = 1
-                    for unq in uniques:  # NOTE: cmp --> 0=same, -1=<, 1=>
-                        test = np.sum(abs(np.array(list(map(cmp,item,unq)))),axis=0)
-                        if test == 0:   # if item identical to any 1 row in uniques
-                            newflag = 0  # then not a novel item to add
-                            break
-                    if newflag == 1:
-                        try:
-                            uniques = np.concatenate([uniques,item[np.newaxis,:]])
-                        except TypeError:    # the item to add isn't a list
-                            uniques = np.concatenate([uniques,np.array([item])])
-        return uniques
-
-    if len(para) != len(data):
-        raise ValueError("data and para must be same length in aglm")
-    n = len(para)
-    p = _unique_rows(para)
-    x = zeros((n,len(p)))  # design matrix
-    for l in range(len(p)):
-        x[:,l] = para == p[l]
-    # fixme: normal equations are bad. Use linalg.lstsq instead.
-    b = dot(dot(linalg.inv(dot(np.transpose(x),x)),  # i.e., b=inv(X'X)X'Y
-                    np.transpose(x)),data)
-    diffs = (data - dot(x,b))
-    s_sq = 1./(n-len(p)) * dot(np.transpose(diffs), diffs)
-
-    if len(p) == 2:  # ttest_ind
-        c = array([1,-1])
-        df = n-2
-        fact = np.sum(1.0/np.sum(x,0),axis=0)  # i.e., 1/n1 + 1/n2 + 1/n3 ...
-        t = dot(c,b) / np.sqrt(s_sq*fact)
-        probs = betai(0.5*df,0.5,float(df)/(df+t*t))
-        return t, probs
-    else:
-        raise ValueError("only ttest_ind implemented")
-
 
 def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
     """Calculation of Wilks lambda F-statistic for multivarite data, per

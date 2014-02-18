@@ -40,6 +40,7 @@
 void dist_to_squareform_from_vector(double *M, const double *v, int n);
 void dist_to_vector_from_squareform(const double *M, double *v, int n);
 void pdist_euclidean(const double *X, double *dm, int m, int n);
+void pdist_sqeuclidean(const double *X, double *dm, int m, int n);
 void pdist_seuclidean(const double *X,
 		      const double *var, double *dm, int m, int n);
 void pdist_mahalanobis(const double *X, const double *covinv,
@@ -65,6 +66,7 @@ void pdist_sokalmichener_bool(const char *X, double *dm, int m, int n);
 void pdist_sokalsneath_bool(const char *X, double *dm, int m, int n);
 
 void cdist_euclidean(const double *XA, const double *XB, double *dm, int mA, int mB, int n);
+void cdist_sqeuclidean(const double *XA, const double *XB, double *dm, int mA, int mB, int n);
 void cdist_mahalanobis(const double *XA, const double *XB,
 		       const double *covinv,
 		       double *dm, int mA, int mB, int n);

@@ -269,8 +269,6 @@ class TestStep(_TestStepFuncs):
         step(([], [-1], 1+0j))
 
 
-
-
 def test_lti_instantiation():
     # Test that lti can be instantiated with sequences, scalars.  See PR-225.
     s = lti([1], [-1])

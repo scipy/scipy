@@ -2,7 +2,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from numpy import arange, add, array, eye, copy
+from numpy import arange, add, array, eye, copy, sqrt
 from numpy.testing import TestCase, run_module_suite, assert_raises, \
     assert_equal, assert_array_equal, assert_array_almost_equal, \
     assert_allclose
@@ -12,7 +12,8 @@ from scipy.lib.six import xrange
 from scipy.misc import comb
 from scipy.linalg import toeplitz, hankel, circulant, hadamard, leslie, \
                             companion, tri, triu, tril, kron, block_diag, \
-                            hilbert, invhilbert, pascal
+                            hilbert, invhilbert, pascal, dft
+from scipy.fftpack import fft
 from numpy.linalg import cond
 
 
@@ -486,6 +487,22 @@ class TestPascal(TestCase):
     def test_big(self):
         p = pascal(50)
         assert_equal(p[-1, -1], comb(98, 49, exact=True))
+
+
+def test_dft():
+    m = dft(2)
+    expected = array([[1.0, 1.0], [1.0, -1.0]])
+    yield (assert_array_almost_equal, m, expected)
+    m = dft(2, scale='n')
+    yield (assert_array_almost_equal, m, expected/2.0)
+    m = dft(2, scale='sqrtn')
+    yield (assert_array_almost_equal, m, expected/sqrt(2.0))
+
+    x = array([0, 1, 2, 3, 4, 5, 0, 1])
+    m = dft(8)
+    mx = m.dot(x)
+    fx = fft(x)
+    yield (assert_array_almost_equal, mx, fx)
 
 
 if __name__ == "__main__":

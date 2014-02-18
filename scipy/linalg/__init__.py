@@ -98,6 +98,7 @@ Matrix Functions
    sqrtm - Matrix square root
    funm - Evaluating an arbitrary matrix function
    expm_frechet - Frechet derivative of the matrix exponential
+   expm_cond - Relative condition number of expm in the Frobenius norm
    fractional_matrix_power - Fractional matrix power
 
 
@@ -123,6 +124,7 @@ Special Matrices
    block_diag - Construct a block diagonal matrix from submatrices
    circulant - Circulant matrix
    companion - Companion matrix
+   dft - Discrete Fourier transform matrix
    hadamard - Hadamard matrix of order 2**n
    hankel - Hankel matrix
    hilbert - Hilbert matrix

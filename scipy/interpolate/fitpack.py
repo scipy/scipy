@@ -363,7 +363,7 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
         the number of datapoints in x, y, and w. default : s=m-sqrt(2*m) if
         weights are supplied. s = 0.0 (interpolating) if no weights are
         supplied.
-    t : int
+    t : array_like
         The knots needed for task=-1. If given then task is automatically set
         to -1.
     full_output : bool
@@ -553,7 +553,7 @@ def splev(x, tck, der=0, ext=0):
     -------
     y : ndarray or list of ndarrays
         An array of values representing the spline function evaluated at
-        the points in ``x``.  If `tck` was returned from splrep, then this
+        the points in ``x``.  If `tck` was returned from `splprep`, then this
         is a list of arrays representing the curve in N-dimensional space.
 
     See Also

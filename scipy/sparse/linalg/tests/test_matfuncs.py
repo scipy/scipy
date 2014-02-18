@@ -28,6 +28,7 @@ from scipy.misc import factorial
 import scipy.sparse
 import scipy.sparse.linalg
 
+
 def _burkardt_13_power(n, p):
     """
     A helper function for testing matrix functions.
@@ -83,6 +84,19 @@ class TestExpM(TestCase):
     def test_zero_matrix(self):
         a = np.matrix([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
+
+    def test_misc_types(self):
+        A = expm(np.array([[1]]))
+        yield assert_allclose, expm(((1,),)), A
+        yield assert_allclose, expm([[1]]), A
+        yield assert_allclose, expm(np.matrix([[1]])), A
+        yield assert_allclose, expm(np.array([[1]])), A
+        yield assert_allclose, expm(csc_matrix([[1]])), A
+        B = expm(np.array([[1j]]))
+        yield assert_allclose, expm(((1j,),)), B
+        yield assert_allclose, expm([[1j]]), B
+        yield assert_allclose, expm(np.matrix([[1j]])), B
+        yield assert_allclose, expm(csc_matrix([[1j]])), B
 
     def test_bidiagonal_sparse(self):
         A = csc_matrix([
@@ -334,9 +348,9 @@ class TestExpM(TestCase):
             [4, 4, 16],
             ], dtype=float)
         desired = np.array([
-            [13*exp16 - exp4, 13*exp16 - 5*exp4,  2*exp16 - 2*exp4],
+            [13*exp16 - exp4, 13*exp16 - 5*exp4, 2*exp16 - 2*exp4],
             [-9*exp16 + exp4, -9*exp16 + 5*exp4, -2*exp16 + 2*exp4],
-            [16*exp16,        16*exp16,           4*exp16         ],
+            [16*exp16, 16*exp16, 4*exp16],
             ], dtype=float) * 0.25
         actual = expm(A)
         assert_allclose(actual, desired)

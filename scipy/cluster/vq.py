@@ -144,7 +144,7 @@ def vq(obs, code_book):
     centroid.
 
     The features in `obs` should have unit variance, which can be
-    acheived by passing them through the whiten function.  The code
+    achieved by passing them through the whiten function.  The code
     book can be created with the k-means algorithm or a different
     encoding algorithm.
 
@@ -515,7 +515,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
         if k < 1:
             raise ValueError("Asked for 0 cluster ? ")
         for i in range(iter):
-            # the intial code book is randomly selected from observations
+            # the initial code book is randomly selected from observations
             guess = take(obs, randint(0, No, k), 0)
             book, dist = _kmeans(obs, guess, thresh=thresh)
             if dist < best_dist:

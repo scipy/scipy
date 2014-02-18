@@ -50,12 +50,16 @@ class TestCobyla(TestCase):
 
         def p(w):
             return pb.dot(w)
+
         def f(w):
             return -(w * spread).sum()
+
         def c1(w):
             return 500 - abs(p(w)).sum()
+
         def c2(w):
             return 5 - abs(p(w).sum())
+
         def c3(w):
             return 5 - abs(p(w)).max()
 

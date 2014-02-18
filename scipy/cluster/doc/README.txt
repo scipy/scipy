@@ -84,7 +84,7 @@ the low distortion means that it is pretty dang sure about that.
     Charlie Joiner         0 --> receiver          5.83
 
 Most of the classifications make sense, but the distortions have some problems. 
-Noteably that my 1 year old son is about as likely to be a receiver as R. Perry 
+Notably that my 1 year old son is about as likely to be a receiver as R. Perry 
 is to be a lineman.  Looking at the data, it is obvious that R. Perry is a 
 lineman. It isn't obvious where Zach falls because he's small (like a receiver) 
 and slow (like a lineman).  So we should be quite a bit more sure about the 

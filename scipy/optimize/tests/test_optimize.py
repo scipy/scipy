@@ -11,11 +11,13 @@ To run it in its simplest form::
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_raises, assert_allclose, \
-        assert_equal, assert_, TestCase, run_module_suite, dec
+import warnings
+
+import numpy as np
+from numpy.testing import (assert_raises, assert_allclose, assert_equal,
+                           assert_, TestCase, run_module_suite, dec)
 
 from scipy import optimize
-import numpy as np
 
 
 class TestOptimize(object):
@@ -467,12 +469,16 @@ class TestOptimize(object):
                 jac = None
             else:
                 jac = dfunc
-            sol1 = optimize.minimize(func, [1,1], jac=jac, tol=1e-10,
-                                     method=method)
-            sol2 = optimize.minimize(func, [1,1], jac=jac, tol=1.0,
-                                     method=method)
-            assert_(func(sol1.x) < func(sol2.x),
-                    "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
+
+            with warnings.catch_warnings():
+                # suppress deprecation warning for 'anneal'
+                warnings.filterwarnings('ignore', category=DeprecationWarning)
+                sol1 = optimize.minimize(func, [1,1], jac=jac, tol=1e-10,
+                                         method=method)
+                sol2 = optimize.minimize(func, [1,1], jac=jac, tol=1.0,
+                                         method=method)
+                assert_(func(sol1.x) < func(sol2.x),
+                        "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
 
     def test_no_increase(self):
         # Check that the solver doesn't return a value worse than the
@@ -500,9 +506,45 @@ class TestOptimize(object):
             assert_(func(sol.x) <= f0)
 
         for method in ['nelder-mead', 'powell', 'cg', 'bfgs',
-                       'newton-cg', 'anneal', 'l-bfgs-b', 'tnc',
+                       'newton-cg', 'l-bfgs-b', 'tnc',
                        'cobyla', 'slsqp']:
             yield check, method
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            yield check, 'anneal'
+
+    def test_slsqp_respect_bounds(self):
+        # github issue 3108
+        def f(x):
+            return sum((x - np.array([1., 2., 3., 4.]))**2)
+        def cons(x):
+            a = np.array([[-1, -1, -1, -1], [-3, -3, -2, -1]])
+            return np.concatenate([np.dot(a, x) + np.array([5, 10]), x])
+        x0 = np.array([0.5, 1., 1.5, 2.])
+        res = optimize.minimize(f, x0, method='slsqp',
+                                constraints={'type': 'ineq', 'fun': cons})
+        assert_allclose(res.x, np.array([0., 2, 5, 8])/3, atol=1e-12)
+
+    def test_minimize_automethod(self):
+        def f(x):
+            return x**2
+        def cons(x):
+            return x - 2
+
+        x0 = np.array([10.])
+        sol_0 = optimize.minimize(f, x0)
+        sol_1 = optimize.minimize(f, x0, constraints=[{'type': 'ineq', 'fun': cons}])
+        sol_2 = optimize.minimize(f, x0, bounds=[(5, 10)])
+        sol_3 = optimize.minimize(f, x0, constraints=[{'type': 'ineq', 'fun': cons}], bounds=[(5, 10)])
+        sol_4 = optimize.minimize(f, x0, constraints=[{'type': 'ineq', 'fun': cons}], bounds=[(1, 10)])
+        for sol in [sol_0, sol_1, sol_2, sol_3, sol_4]:
+            assert_(sol.success)
+        assert_allclose(sol_0.x, 0, atol=1e-8)
+        assert_allclose(sol_1.x, 2, atol=1e-8)
+        assert_allclose(sol_2.x, 5, atol=1e-8)
+        assert_allclose(sol_3.x, 5, atol=1e-8)
+        assert_allclose(sol_4.x, 2, atol=1e-8)
 
 
 class TestLBFGSBBounds(TestCase):

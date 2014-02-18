@@ -229,11 +229,11 @@ class TestInterpolativeDecomposition(object):
 
     def test_rand(self):
         pymatrixid.seed('default')
-        assert_(np.allclose(pymatrixid.rand(2), [0.8932059 ,  0.64500803], 1e-4))
+        assert_(np.allclose(pymatrixid.rand(2), [0.8932059, 0.64500803], 1e-4))
 
         pymatrixid.seed(1234)
         x1 = pymatrixid.rand(2)
-        assert_(np.allclose(x1, [0.7513823 ,  0.06861718], 1e-4))
+        assert_(np.allclose(x1, [0.7513823, 0.06861718], 1e-4))
 
         np.random.seed(1234)
         pymatrixid.seed()

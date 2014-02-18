@@ -224,6 +224,12 @@ class spmatrix(object):
         """
         return self.tocsr().multiply(other)
 
+    def maximum(self, other):
+        return self.tocsr().maximum(other)
+
+    def minimum(self, other):
+        return self.tocsr().minimum(other)
+
     def dot(self, other):
         """Ordinary dot product
 
@@ -394,7 +400,7 @@ class spmatrix(object):
                     return r.astype(self.dtype)
                 else:
                     return r
-                    
+
         elif isdense(other):
             if not rdivide:
                 if true_divide:
@@ -668,16 +674,18 @@ class spmatrix(object):
         else:
             res_dtype = self.dtype
 
-        # Calculate the sum.
+        if axis is None:
+            # sum over rows and columns
+            return (self * np.asmatrix(np.ones((n, 1), dtype=res_dtype))).sum()
+
+        if axis < 0:
+            axis += 2
         if axis == 0:
             # sum over columns
             return np.asmatrix(np.ones((1, m), dtype=res_dtype)) * self
         elif axis == 1:
             # sum over rows
             return self * np.asmatrix(np.ones((n, 1), dtype=res_dtype))
-        elif axis is None:
-            # sum over rows and columns
-            return (self * np.asmatrix(np.ones((n, 1), dtype=res_dtype))).sum()
         else:
             raise ValueError("axis out of bounds")
 
@@ -697,7 +705,11 @@ class spmatrix(object):
         else:
             res_dtype = self.dtype
 
-        # Calculate the mean.
+        if axis is None:
+            return self.sum(None) * 1.0 / (self.shape[0]*self.shape[1])
+
+        if axis < 0:
+            axis += 2
         if axis == 0:
             mean = self.astype(res_dtype).sum(0)
             mean *= 1.0 / self.shape[0]
@@ -706,8 +718,6 @@ class spmatrix(object):
             mean = self.astype(res_dtype).sum(1)
             mean *= 1.0 / self.shape[1]
             return mean
-        elif axis is None:
-            return self.sum(None) * 1.0 / (self.shape[0]*self.shape[1])
         else:
             raise ValueError("axis out of bounds")
 
@@ -728,7 +738,7 @@ class spmatrix(object):
         """
         M, N = self.shape
         if (k > 0 and k >= N) or (k < 0 and -k >= M):
-            raise ValueError("k exceedes matrix dimensions")
+            raise ValueError("k exceeds matrix dimensions")
         if k < 0:
             max_index = min(M+k, N, len(values))
             for i,v in enumerate(values[:max_index]):
@@ -787,6 +797,10 @@ class spmatrix(object):
         elif func is np.true_divide:
             rdivide = (pos == 1)
             result = self._divide(*without_self, true_divide=True, rdivide=rdivide)
+        elif func is np.maximum:
+            result = self.maximum(*without_self)
+        elif func is np.minimum:
+            result = self.minimum(*without_self)
         elif func in (np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh,
                       np.arcsinh, np.arctanh, np.rint, np.sign, np.expm1, np.log1p,
                       np.deg2rad, np.rad2deg, np.floor, np.ceil, np.trunc, np.sqrt):

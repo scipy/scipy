@@ -26,7 +26,7 @@ if sys.version_info[0] >= 3:
 from .weave_version import weave_version as __version__
 
 try:
-    from .blitz_tools import blitz
+    from .blitz_tools import blitz, BlitzWarning
 except ImportError:
     pass  # scipy (core) wasn't available
 

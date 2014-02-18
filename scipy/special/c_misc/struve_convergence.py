@@ -121,7 +121,8 @@ def main():
     plt.show()
 
 if __name__ == "__main__":
-    import os, sys
+    import os
+    import sys
     if '--main' in sys.argv:
         main()
     else:

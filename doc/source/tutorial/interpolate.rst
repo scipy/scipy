@@ -31,7 +31,7 @@ for data in 1, 2, and higher dimensions:
 1-D interpolation (:class:`interp1d`)
 =====================================
 
-The interp1d class in scipy.interpolate is a convenient method to
+The `interp1d` class in `scipy.interpolate` is a convenient method to
 create a function based on fixed data points which can be evaluated
 anywhere within the domain defined by the given data using linear
 interpolation. An instance of this class is created by passing the 1-d
@@ -233,17 +233,17 @@ example that follows.
    >>> plt.show()
 
 Spline interpolation in 1-d: Object-oriented (:class:`UnivariateSpline`)
------------------------------------------------------------------------------
+------------------------------------------------------------------------
 
 The spline-fitting capabilities described above are also available via
 an objected-oriented interface.  The one dimensional splines are
 objects of the `UnivariateSpline` class, and are created with the
 :math:`x` and :math:`y` components of the curve provided as arguments
-to the constructor.  The class defines __call__, allowing the object
+to the constructor.  The class defines :meth:`__call__ <UnivariateSpline.__call__>`, allowing the object
 to be called with the x-axis values at which the spline should be
 evaluated, returning the interpolated y-values.  This is shown in
 the example below for the subclass `InterpolatedUnivariateSpline`.
-The methods :meth:`integral <UnivariateSpline.integral>`,
+The :meth:`integral <UnivariateSpline.integral>`,
 :meth:`derivatives <UnivariateSpline.derivatives>`, and
 :meth:`roots <UnivariateSpline.roots>` methods are also available
 on `UnivariateSpline` objects, allowing definite integrals,
@@ -260,9 +260,9 @@ It is a subclass of `UnivariateSpline` that always passes  through all
 points (equivalent to forcing the smoothing parameter to 0).  This
 class is demonstrated in the example below.
 
-The `LSQUnivarateSpline` is the other subclass of `UnivarateSpline`.
+The `LSQUnivariateSpline` class is the other subclass of `UnivariateSpline`.
 It allows the user to specify the number and location of internal
-knots as explicitly with the parameter `t`.  This allows creation
+knots explicitly with the parameter `t`.  This allows creation
 of customized splines with non-linear spacing, to interpolate in
 some domains and smooth in others, or change the character of the
 spline.
@@ -338,8 +338,8 @@ processing toolbox contains more appropriate algorithms for finding
 the spline representation of an image. The two dimensional
 interpolation commands are intended for use when interpolating a two
 dimensional function as shown in the example that follows. This
-example uses the :obj:`mgrid <numpy.mgrid>` command in SciPy which is
-useful for defining a "mesh-grid "in many dimensions. (See also the
+example uses the :obj:`mgrid <numpy.mgrid>` command in NumPy which is
+useful for defining a "mesh-grid" in many dimensions. (See also the
 :obj:`ogrid <numpy.ogrid>` command if the full-mesh is not
 needed). The number of output arguments and the number of dimensions
 of each argument is determined by the number of indexing objects
@@ -398,7 +398,7 @@ outside of the observed data range.
 1-d Example
 -----------
 
-This example compares the usage of the Rbf and UnivariateSpline classes
+This example compares the usage of the `Rbf` and `UnivariateSpline` classes
 from the scipy.interpolate module.
 
 .. plot::

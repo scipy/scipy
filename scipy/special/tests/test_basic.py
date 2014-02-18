@@ -185,6 +185,11 @@ class TestCephes(TestCase):
         assert_allclose(p, [1.21805009e-09, 2.81979982e-09, 6.25652736e-09,
                             1.33520017e-08, 2.74909967e-08],
                         rtol=1e-6, atol=0)
+        assert_almost_equal(cephes.chndtr(np.inf, np.inf, 0), 2.0)
+        assert_almost_equal(cephes.chndtr(2, 1, np.inf), 0.0)
+        assert_(np.isnan(cephes.chndtr(np.nan, 1, 2)))
+        assert_(np.isnan(cephes.chndtr(5, np.nan, 2)))
+        assert_(np.isnan(cephes.chndtr(5, 1, np.nan)))
 
     def test_chndtridf(self):
         assert_equal(cephes.chndtridf(0,0,1),5.0)
@@ -1061,6 +1066,43 @@ class TestBeta(TestCase):
         assert_almost_equal(comp,.5,5)
 
 
+class TestCombinatorics(TestCase):
+    def test_comb(self):
+        assert_array_almost_equal(special.comb([10, 10], [3, 4]), [120., 210.])
+        assert_almost_equal(special.comb(10, 3), 120.)
+        assert_equal(special.comb(10, 3, exact=True), 120)
+        assert_equal(special.comb(10, 3, exact=True, repetition=True), 220)
+
+    def test_comb_with_np_int64(self):
+        n = 70
+        k = 30
+        np_n = np.int64(n)
+        np_k = np.int64(k)
+        assert_equal(special.comb(np_n, np_k, exact=True),
+                     special.comb(n, k, exact=True))
+
+    def test_comb_zeros(self):
+        assert_equal(special.comb(2, 3, exact=True), 0)
+        assert_equal(special.comb(-1, 3, exact=True), 0)
+        assert_equal(special.comb(2, -1, exact=True), 0)
+        assert_equal(special.comb(2, -1, exact=False), 0)
+        assert_array_almost_equal(special.comb([2, -1, 2, 10], [3, 3, -1, 3]),
+                [0., 0., 0., 120.])
+
+    def test_perm(self):
+        assert_array_almost_equal(special.perm([10, 10], [3, 4]), [720., 5040.])
+        assert_almost_equal(special.perm(10, 3), 720.)
+        assert_equal(special.perm(10, 3, exact=True), 720)
+
+    def test_perm_zeros(self):
+        assert_equal(special.perm(2, 3, exact=True), 0)
+        assert_equal(special.perm(-1, 3, exact=True), 0)
+        assert_equal(special.perm(2, -1, exact=True), 0)
+        assert_equal(special.perm(2, -1, exact=False), 0)
+        assert_array_almost_equal(special.perm([2, -1, 2, 10], [3, 3, -1, 3]),
+                [0., 0., 0., 720.])
+
+
 class TestTrigonometric(TestCase):
     def test_cbrt(self):
         cb = special.cbrt(27)
@@ -1113,18 +1155,9 @@ class TestTrigonometric(TestCase):
         assert_almost_equal(special.cotdg(765), 1.0, 14)
 
     def test_sinc(self):
-        c = arange(-2,2,.1)
-        y = special.sinc(c)
-        yre = sin(pi*c)/(pi*c)
-        yre[20] = 1.0
-        assert_array_almost_equal(y, yre, 4)
-
-        # Regression test for ticket 1751.
-        assert_array_almost_equal(special.sinc([0]), 1)
-
-    def test_0(self):
-        x = 0.0
-        assert_equal(special.sinc(x),1.0)
+        # the sinc implementation and more extensive sinc tests are in numpy
+        assert_array_equal(special.sinc([0]), 1)
+        assert_equal(special.sinc(0.0), 1.0)
 
     def test_sindg(self):
         sn = special.sindg(90)
@@ -1353,6 +1386,22 @@ class TestExp(TestCase):
         ex1 = (special.expm1(2),special.expm1(2.1),special.expm1(2.2))
         exrl1 = (exp(2)-1,exp(2.1)-1,exp(2.2)-1)
         assert_array_almost_equal(ex1,exrl1,8)
+
+
+class TestFactorialFunctions(TestCase):
+    def test_factorial(self):
+        assert_array_almost_equal([6., 24., 120.],
+                special.factorial([3, 4, 5], exact=False))
+        assert_equal(special.factorial(5, exact=True), 120)
+
+    def test_factorial2(self):
+        assert_array_almost_equal([105., 384., 945.],
+                special.factorial2([7, 8, 9], exact=False))
+        assert_equal(special.factorial2(7, exact=True), 105)
+
+    def test_factorialk(self):
+        assert_equal(special.factorialk(5, 1, exact=True), 120)
+        assert_equal(special.factorialk(5, 3, exact=True), 10)
 
 
 class TestFresnel(TestCase):
@@ -1649,6 +1698,11 @@ class TestHyper(TestCase):
         for a,b,c,expected in ref_data:
             result = special.hyp1f1(a,b,c)
             assert_(abs(expected - result)/expected < 1e-4)
+
+    def test_hyp1f1_gh2957(self):
+        hyp1 = special.hyp1f1(0.5, 1.5, -709.7827128933)
+        hyp2 = special.hyp1f1(0.5, 1.5, -709.7827128934)
+        assert_almost_equal(hyp1, hyp2, 12)
 
     def test_hyp1f2(self):
         pass
@@ -2336,35 +2390,48 @@ class TestLog1p(TestCase):
 class TestLegendreFunctions(TestCase):
     def test_clpmn(self):
         z = 0.5+0.3j
-        clp = special.clpmn(2, 2, z)
+        clp = special.clpmn(2, 2, z, 3)
         assert_array_almost_equal(clp,
                    (array([[1.0000, z, 0.5*(3*z*z-1)],
                            [0.0000, sqrt(z*z-1), 3*z*sqrt(z*z-1)],
                            [0.0000, 0.0000, 3*(z*z-1)]]),
                     array([[0.0000, 1.0000, 3*z],
                            [0.0000, z/sqrt(z*z-1), 3*(2*z*z-1)/sqrt(z*z-1)],
-                           [0.0000, 0.0000, 6*z]]))
-                       ,7)
+                           [0.0000, 0.0000, 6*z]])),
+                    7)
 
-    def test_clpmn_close_to_real(self):
+    def test_clpmn_close_to_real_2(self):
         eps = 1e-10
         m = 1
         n = 3
         x = 0.5
-        clp_plus = special.clpmn(m, n, x+1j*eps)[0][m, n]
-        clp_minus = special.clpmn(m, n, x-1j*eps)[0][m, n]
+        clp_plus = special.clpmn(m, n, x+1j*eps, 2)[0][m, n]
+        clp_minus = special.clpmn(m, n, x-1j*eps, 2)[0][m, n]
+        assert_array_almost_equal(array([clp_plus, clp_minus]),
+                                  array([special.lpmv(m, n, x),
+                                         special.lpmv(m, n, x)]),
+                                  7)
+
+    def test_clpmn_close_to_real_3(self):
+        eps = 1e-10
+        m = 1
+        n = 3
+        x = 0.5
+        clp_plus = special.clpmn(m, n, x+1j*eps, 3)[0][m, n]
+        clp_minus = special.clpmn(m, n, x-1j*eps, 3)[0][m, n]
         assert_array_almost_equal(array([clp_plus, clp_minus]),
                                   array([special.lpmv(m, n, x)*np.exp(-0.5j*m*np.pi),
-                                         special.lpmv(m, n, x)*np.exp(0.5j*m*np.pi)])
-                                  ,7)
+                                         special.lpmv(m, n, x)*np.exp(0.5j*m*np.pi)]),
+                                  7)
 
     def test_clpmn_across_unit_circle(self):
         eps = 1e-7
         m = 1
         n = 1
         x = 1j
-        assert_almost_equal(special.clpmn(m, n, x+1j*eps)[0][m, n],
-                            special.clpmn(m, n, x-1j*eps)[0][m, n], 6)
+        for type in [2, 3]:
+            assert_almost_equal(special.clpmn(m, n, x+1j*eps, type)[0][m, n],
+                            special.clpmn(m, n, x-1j*eps, type)[0][m, n], 6)
 
     def test_inf(self):
         for z in (1, -1):
@@ -2374,6 +2441,21 @@ class TestLegendreFunctions(TestCase):
                     assert_(np.isinf(lp[1][1,1:]).all())
                     lp = special.lpmn(m, n, z)
                     assert_(np.isinf(lp[1][1,1:]).all())
+
+    def test_deriv_clpmn(self):
+        # data inside and outside of the unit circle
+        zvals = [0.5+0.5j, -0.5+0.5j, -0.5-0.5j, 0.5-0.5j,
+                 1+1j, -1+1j, -1-1j, 1-1j]
+        m = 2
+        n = 3
+        for type in [2, 3]:
+            for z in zvals:
+                for h in [1e-3, 1e-3j]:
+                    approx_derivative = (special.clpmn(m, n, z+0.5*h, type)[0]
+                                         - special.clpmn(m, n, z-0.5*h, type)[0])/h
+                    assert_allclose(special.clpmn(m, n, z, type)[1],
+                                    approx_derivative,
+                                    rtol=1e-4)
 
     def test_lpmn(self):
         lp = special.lpmn(0,2,.5)
@@ -2629,6 +2711,21 @@ class TestSpherical(TestCase):
         spikn = r_[special.sph_in(1,.2) + special.sph_kn(1,.2)]
         inkn = r_[special.sph_inkn(1,.2)]
         assert_array_almost_equal(inkn,spikn,10)
+
+    def test_sph_in_kn_order0(self):
+        x = 1.
+        sph_i0 = special.sph_in(0, x)
+        sph_i0_expected = np.array([np.sinh(x)/x,
+                                    np.cosh(x)/x-np.sinh(x)/x**2])
+        assert_array_almost_equal(r_[sph_i0], sph_i0_expected)
+        sph_k0 = special.sph_kn(0, x)
+        sph_k0_expected = np.array([0.5*pi*exp(-x)/x,
+                                    -0.5*pi*exp(-x)*(1/x+1/x**2)])
+        assert_array_almost_equal(r_[sph_k0], sph_k0_expected)
+        sph_i0k0 = special.sph_inkn(0, x)
+        assert_array_almost_equal(r_[sph_i0+sph_k0],
+                                  r_[sph_i0k0],
+                                  10)
 
     def test_sph_jn(self):
         s1 = special.sph_jn(2,.2)

@@ -386,7 +386,7 @@ class TestProbplot(TestCase):
         x = stats.norm.rvs(size=20)
         osm, osr = stats.probplot(x, fit=False)
         osm_expected = [-1.8241636, -1.38768012, -1.11829229, -0.91222575,
-                        -0.73908135, -0.5857176 , -0.44506467, -0.31273668,
+                        -0.73908135, -0.5857176, -0.44506467, -0.31273668,
                         -0.18568928, -0.06158146, 0.06158146, 0.18568928,
                         0.31273668, 0.44506467, 0.5857176, 0.73908135,
                         0.91222575, 1.11829229, 1.38768012, 1.8241636]
@@ -497,10 +497,151 @@ def test_ppcc_max_bad_arg():
     assert_raises(ValueError, stats.ppcc_max, data, dist="plate_of_shrimp")
 
 
-def test_boxcox_bad_arg():
-    # Raise ValueError if any data value is negative.
-    x = np.array([-1])
-    assert_raises(ValueError, stats.boxcox, x)
+class TestBoxcox_llf(TestCase):
+
+    def test_basic(self):
+        np.random.seed(54321)
+        x = stats.norm.rvs(size=10000, loc=10)
+        lmbda = 1
+        llf = stats.boxcox_llf(lmbda, x)
+        llf_expected = -x.size / 2. * np.log(np.sum(x.std()**2))
+        assert_allclose(llf, llf_expected)
+
+    def test_array_like(self):
+        np.random.seed(54321)
+        x = stats.norm.rvs(size=100, loc=10)
+        lmbda = 1
+        llf = stats.boxcox_llf(lmbda, x)
+        llf2 = stats.boxcox_llf(lmbda, list(x))
+        assert_allclose(llf, llf2, rtol=1e-12)
+
+    def test_2d_input(self):
+        # Note: boxcox_llf() was already working with 2-D input (sort of), so
+        # keep it like that.  boxcox() doesn't work with 2-D input though, due
+        # to brent() returning a scalar.
+        np.random.seed(54321)
+        x = stats.norm.rvs(size=100, loc=10)
+        lmbda = 1
+        llf = stats.boxcox_llf(lmbda, x)
+        llf2 = stats.boxcox_llf(lmbda, np.vstack([x, x]).T)
+        assert_allclose([llf, llf], llf2, rtol=1e-12)
+
+    def test_empty(self):
+        assert_(np.isnan(stats.boxcox_llf(1, [])))
+
+
+class TestBoxcox(TestCase):
+
+    def test_fixed_lmbda(self):
+        np.random.seed(12345)
+        x = stats.loggamma.rvs(5, size=50) + 5
+        xt = stats.boxcox(x, lmbda=1)
+        assert_allclose(xt, x - 1)
+        xt = stats.boxcox(x, lmbda=-1)
+        assert_allclose(xt, 1 - 1/x)
+
+        xt = stats.boxcox(x, lmbda=0)
+        assert_allclose(xt, np.log(x))
+
+        # Also test that array_like input works
+        xt = stats.boxcox(list(x), lmbda=0)
+        assert_allclose(xt, np.log(x))
+
+    def test_lmbda_None(self):
+        np.random.seed(1234567)
+        # Start from normal rv's, do inverse transform to check that
+        # optimization function gets close to the right answer.
+        np.random.seed(1245)
+        lmbda = 2.5
+        x = stats.norm.rvs(loc=10, size=50000)
+        x_inv = (x * lmbda + 1)**(-lmbda)
+        xt, maxlog = stats.boxcox(x_inv)
+
+        assert_almost_equal(maxlog, -1 / lmbda, decimal=2)
+
+    def test_alpha(self):
+        np.random.seed(1234)
+        x = stats.loggamma.rvs(5, size=50) + 5
+
+        # Some regular values for alpha, on a small sample size
+        _, _, interval = stats.boxcox(x, alpha=0.75)
+        assert_allclose(interval, [4.004485780226041, 5.138756355035744])
+        _, _, interval = stats.boxcox(x, alpha=0.05)
+        assert_allclose(interval, [1.2138178554857557, 8.209033272375663])
+
+        # Try some extreme values, see we don't hit the N=500 limit
+        x = stats.loggamma.rvs(7, size=500) + 15
+        _, _, interval = stats.boxcox(x, alpha=0.001)
+        assert_allclose(interval, [0.3988867, 11.40553131])
+        _, _, interval = stats.boxcox(x, alpha=0.999)
+        assert_allclose(interval, [5.83316246, 5.83735292])
+
+    def test_boxcox_bad_arg(self):
+        # Raise ValueError if any data value is negative.
+        x = np.array([-1])
+        assert_raises(ValueError, stats.boxcox, x)
+
+    def test_empty(self):
+        assert_(stats.boxcox([]).shape == (0,))
+
+
+class TestBoxcoxNormmax(TestCase):
+    def setUp(self):
+        np.random.seed(12345)
+        self.x = stats.loggamma.rvs(5, size=50) + 5
+
+    def test_pearsonr(self):
+        maxlog = stats.boxcox_normmax(self.x)
+        assert_allclose(maxlog, 1.804465, rtol=1e-6)
+
+    def test_mle(self):
+        maxlog = stats.boxcox_normmax(self.x, method='mle')
+        assert_allclose(maxlog, 1.758101, rtol=1e-6)
+
+        # Check that boxcox() uses 'mle'
+        _, maxlog_boxcox = stats.boxcox(self.x)
+        assert_allclose(maxlog_boxcox, maxlog)
+
+    def test_all(self):
+        maxlog_all = stats.boxcox_normmax(self.x, method='all')
+        assert_allclose(maxlog_all, [1.804465, 1.758101], rtol=1e-6)
+
+
+class TestBoxcoxNormplot(TestCase):
+    def setUp(self):
+        np.random.seed(7654321)
+        self.x = stats.loggamma.rvs(5, size=500) + 5
+
+    def test_basic(self):
+        N = 5
+        lmbdas, ppcc = stats.boxcox_normplot(self.x, -10, 10, N=N)
+        ppcc_expected = [0.57783375, 0.83610988, 0.97524311, 0.99756057,
+                         0.95843297]
+        assert_allclose(lmbdas, np.linspace(-10, 10, num=N))
+        assert_allclose(ppcc, ppcc_expected)
+
+    @dec.skipif(not have_matplotlib)
+    def test_plot_kwarg(self):
+        # Check with the matplotlib.pyplot module
+        fig = plt.figure()
+        fig.add_subplot(111)
+        stats.boxcox_normplot(self.x, -20, 20, plot=plt)
+        plt.close()
+
+        # Check that a Matplotlib Axes object is accepted
+        fig.add_subplot(111)
+        ax = fig.add_subplot(111)
+        stats.boxcox_normplot(self.x, -20, 20, plot=ax)
+        plt.close()
+
+    def test_invalid_inputs(self):
+        # `lb` has to be larger than `la`
+        assert_raises(ValueError, stats.boxcox_normplot, self.x, 1, 0)
+        # `x` can not contain negative values
+        assert_raises(ValueError, stats.boxcox_normplot, [-1, 1] , 0, 1)
+
+    def test_empty(self):
+        assert_(stats.boxcox_normplot([], 0, 1).size == 0)
 
 
 class TestCircFuncs(TestCase):

@@ -116,6 +116,7 @@ class TestRegression(TestCase):
                 assert_raises(Exception, ungrq, rq[-2:], tau, lwork=1)
                 ungrq(rq[-2:], tau, lwork=2)
 
+
 class TestDpotr(TestCase):
     def test_gh_2691(self):
         # 'lower' argument of dportf/dpotri
