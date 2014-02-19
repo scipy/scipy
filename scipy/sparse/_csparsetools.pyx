@@ -31,6 +31,19 @@ ctypedef fused value_t:
     double complex
 
 
+def prepare_index_arrays(cnp.ndarray i, cnp.ndarray j, cnp.ndarray x=None):
+    if not i.flags.writeable or not i.dtype in (np.int32, np.int64):
+        i = i.astype(np.intp)
+    if not j.flags.writeable or not j.dtype in (np.int32, np.int64):
+        j = j.astype(np.intp)
+    if x is not None:
+        if not x.flags.writeable:
+            x = x.copy()
+        return i, j, x
+    else:
+        return i, j
+
+
 cpdef lil_get1(cnp.npy_intp M, cnp.npy_intp N, object[:] rows, object[:] datas, cnp.npy_intp i, cnp.npy_intp j):
     cdef list row, data
 
@@ -105,9 +118,10 @@ def lil_fancy_get(cnp.npy_intp M, cnp.npy_intp N,
                   object[:] data,
                   object[:] new_rows,
                   object[:] new_data,
-                  cnp.ndarray[cnp.npy_intp, ndim=2] i_idx,
-                  cnp.ndarray[cnp.npy_intp, ndim=2] j_idx):
-    cdef cnp.npy_intp x, y, i, j
+                  idx_t[:,:] i_idx,
+                  idx_t[:,:] j_idx):
+    cdef cnp.npy_intp x, y
+    cdef idx_t i, j
     cdef object value
 
     for x in range(i_idx.shape[0]):
@@ -128,11 +142,12 @@ def lil_fancy_get(cnp.npy_intp M, cnp.npy_intp N,
 def lil_fancy_set(cnp.npy_intp M, cnp.npy_intp N,
                   object[:] rows,
                   object[:] data,
-                  cnp.ndarray[cnp.npy_intp, ndim=2] i_idx,
-                  cnp.ndarray[cnp.npy_intp, ndim=2] j_idx,
+                  idx_t[:,:] i_idx,
+                  idx_t[:,:] j_idx,
                   value_t[:,:] values):
 
-    cdef cnp.npy_intp x, y, i, j
+    cdef cnp.npy_intp x, y
+    cdef idx_t i, j
 
     for x in range(i_idx.shape[0]):
         for y in range(i_idx.shape[1]):

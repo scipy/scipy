@@ -248,11 +248,7 @@ class lil_matrix(spmatrix, IndexMixin):
 
         new = lil_matrix(i.shape, dtype=self.dtype)
 
-        if i.dtype != np.intp:
-            i = i.astype(np.intp)
-        if j.dtype != np.intp:
-            j = j.astype(np.intp)
-
+        i, j = _csparsetools.prepare_index_arrays(i, j)
         _csparsetools.lil_fancy_get(self.shape[0], self.shape[1],
                                     self.rows, self.data,
                                     new.rows, new.data,
@@ -284,13 +280,7 @@ class lil_matrix(spmatrix, IndexMixin):
             raise ValueError("shape mismatch in assignment")
 
         # Set values
-        if i.dtype != np.intp:
-            i = i.astype(np.intp)
-        if j.dtype != np.intp:
-            j = j.astype(np.intp)
-        if x.dtype != self.dtype:
-            x = x.astype(self.dtype)
-
+        i, j, x = _csparsetools.prepare_index_arrays(i, j, x)
         _csparsetools.lil_fancy_set(self.shape[0], self.shape[1],
                                     self.rows, self.data,
                                     i, j, x)
