@@ -45,6 +45,11 @@ gradient methods), and can search large areas of candidate space, but often
 requires larger numbers of function evaluations than conventional gradient
 based techniques.
 
+``scipy.signal`` improvements
+-----------------------------
+The function ``max_len_seq`` was added, which computes a Maximum
+Length Sequence (MLS) signal.
+
 Deprecated features
 ===================
 
@@ -78,6 +83,7 @@ Authors
 
 * Rob Falck
 * Andrew Nelson
+* Eric Larson
 
 Issues closed
 -------------
@@ -87,6 +93,6 @@ Pull requests
 -------------
 
 - `#3342 <https://github.com/scipy/scipy/pull/3342>`__: ENH: linprog function for linear programming
+- `#3351 <https://github.com/scipy/scipy/pull/3351>`__: ENH: Add MLS method
 - `#3446 <https://github.com/scipy/scipy/pull/3446>`__: ENH: scipy.optimize - adding differential_evolution
-
 

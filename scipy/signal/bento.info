@@ -10,6 +10,8 @@ Library:
             medianfilter.c
     Extension: _spectral
         Sources: _spectral.c
+    Extension: _max_len_seq
+        Sources: _max_len_seq.c
     Extension: spline
         Sources:
             splinemodule.c,
