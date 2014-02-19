@@ -366,7 +366,7 @@ class interp1d(_Interpolator1D):
         if not assume_sorted:
             ind = np.argsort(x)
             x = x[ind]
-            np.take(y, ind, axis=axis, out=y)
+            y = np.take(y, ind, axis=axis)
 
         if x.ndim != 1:
             raise ValueError("the x array must have exactly one dimension.")
