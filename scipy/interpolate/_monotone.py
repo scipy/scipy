@@ -3,6 +3,8 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 from . import BPoly, PPoly
+from .polyint import _isscalar
+
 
 __all__ = ["PchipInterpolator", "pchip_interpolate", "pchip",
            "AkimaInterpolator"]
