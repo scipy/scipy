@@ -198,6 +198,10 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     .. versionadded:: 0.9
 
+    Methods
+    -------
+    __call__
+
     Parameters
     ----------
     points : ndarray of floats, shape (npoints, ndims); or Delaunay
@@ -767,6 +771,10 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
 
     .. versionadded:: 0.9
+
+    Methods
+    -------
+    __call__
 
     Parameters
     ----------
