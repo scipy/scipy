@@ -1466,26 +1466,25 @@ class RegularGridInterpolator(object):
     def __init__(self, points, values, kind="linear", bounds_error=True,
                  fill_value=np.nan):
         if kind not in ["linear", "nearest"]:
-            raise ValueError("Kind '{}' is not defined".format(kind))
+            raise ValueError("Kind '%s' is not defined" % kind)
         self.kind = kind
         self.bounds_error = bounds_error
         if fill_value is not None and not isinstance(fill_value, float):
             raise ValueError("fill_value must be either 'None' or a float")
         self.fill_value = fill_value
         if not len(points) == values.ndim:
-            raise ValueError("There are {} point arrays, but values has {} "
-                             "dimensions".format(len(points), values.ndim))
+            raise ValueError("There are %d point arrays, but values has %d "
+                             "dimensions" % (len(points), values.ndim))
         for i, p in enumerate(points):
             if not np.all(np.diff(p) > 0.):
-                raise ValueError("The points in dimension {} must be strictly "
-                                 "ascending".format(i))
+                raise ValueError("The points in dimension %d must be strictly "
+                                 "ascending" % i)
             if not np.asarray(p).ndim == 1:
-                raise ValueError("The points in dimension {} must be "
-                                 "1-dimensional".format(i))
+                raise ValueError("The points in dimension %d must be "
+                                 "1-dimensional" % i)
             if not values.shape[i] == len(p):
-                raise ValueError("There are {} points and {} values in "
-                                 "dimension {}".format(len(p), values.shape[i],
-                                                       i))
+                raise ValueError("There are %d points and %d values in "
+                                 "dimension %d" % (len(p), values.shape[i], i))
         self.grid = tuple([np.asarray(p) for p in points])
         self.values = values
 
@@ -1505,18 +1504,18 @@ class RegularGridInterpolator(object):
         """
         kind = self.kind if kind is None else kind
         if kind not in ["linear", "nearest"]:
-            raise ValueError("Kind '{}' is not defined".format(kind))
+            raise ValueError("Kind '%s' is not defined" % kind)
         xi = np.atleast_2d(xi)
         if not xi.shape[1] == len(self.grid):
             raise ValueError("The requested sample points xi have dimension "
-                             "{}, but this RegularGridInterpolator has "
-                             "dimension {}".format(xi.shape[1], len(self.grid)))
+                             "%d, but this RegularGridInterpolator has "
+                             "dimension %d" % (xi.shape[1], len(self.grid)))
         if self.bounds_error:
             for i, p in enumerate(xi.T):
                 if not np.logical_and(np.all(self.grid[i][0] <= p),
                                       np.all(p <= self.grid[i][-1])):
                     raise ValueError("One of the requested xi is out of bounds "
-                                     "in dimension {}".format(i))
+                                     "in dimension %d" % i)
 
         indices, norm_distances, out_of_bounds = self._find_indices(xi.T)
         if kind == "linear":
@@ -1604,39 +1603,43 @@ def interpn(points, values, xi, method="linear"):
     # sanity check 'method' kwarg
     if method not in ["linear", "nearest", "splinef2d"]:
         raise ValueError("interpn only understands the methods 'linear', "
-                         "'nearest', and 'splinef2d'. You provided "
-                         "{}".format(method))
+                         "'nearest', and 'splinef2d'. You provided %s." %
+                         method)
     ndim = values.ndim
     if ndim > 2 and method == "splinef2d":
         raise ValueError("The method spline2fd can only be used for "
                          "2-dimensional input data")
+
     # sanity check consistency of input dimensions
     if not len(points) == ndim:
-        raise ValueError("There are {} point arrays, but values has {} "
-                         "dimensions".format(len(points), ndim))
+        raise ValueError("There are %d point arrays, but values has %d "
+                         "dimensions" % (len(points), ndim))
+
     # sanity check input grid
     for i, p in enumerate(points):
         if not np.all(np.diff(p) > 0.):
-            raise ValueError("The points in dimension {} must be strictly "
-                             "ascending".format(i))
+            raise ValueError("The points in dimension %d must be strictly "
+                             "ascending" % i)
         if not np.asarray(p).ndim == 1:
-            raise ValueError("The points in dimension {} must be "
-                             "1-dimensional".format(i))
+            raise ValueError("The points in dimension %d must be "
+                             "1-dimensional" % i)
         if not values.shape[i] == len(p):
-            raise ValueError("There are {} points and {} values in "
-                             "dimension {}".format(len(p), values.shape[i], i))
+            raise ValueError("There are %d points and %d values in "
+                             "dimension %d" % (len(p), values.shape[i], i))
     grid = tuple([np.asarray(p) for p in points])
+
     # sanity check requested xi
     xi = np.atleast_2d(xi)
     if not xi.shape[1] == len(grid):
         raise ValueError("The requested sample points xi have dimension "
-                         "{}, but this RegularGridInterpolator has "
-                         "dimension {}".format(xi.shape[1], len(grid)))
+                         "%d, but this RegularGridInterpolator has "
+                         "dimension %d" % (xi.shape[1], len(grid)))
     for i, p in enumerate(xi.T):
         if not np.logical_and(np.all(grid[i][0] <= p),
                               np.all(p <= grid[i][-1])):
             raise ValueError("One of the requested xi is out of bounds "
-                             "in dimension {}".format(i))
+                             "in dimension %d" % i)
+
     # perform interpolation
     if method == "linear":
         interp = RegularGridInterpolator(points, values, kind="linear")
