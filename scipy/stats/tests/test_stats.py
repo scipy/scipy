@@ -450,6 +450,11 @@ class TestFisherExact(TestCase):
             res.append(stats.fisher_exact(table, alternative="greater")[1])
             assert_allclose(res, pval, atol=0, rtol=1e-7)
 
+    def test_gh3014(self):
+        # check if issue #3014 has been fixed.
+        # before, this would have risen a ValueError
+        odds, pvalue = stats.fisher_exact([[1, 2], [9, 84419233]])
+
 
 class TestCorrSpearmanr(TestCase):
     """ W.II.D. Compute a correlation matrix on all the variables.
