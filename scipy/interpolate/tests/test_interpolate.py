@@ -1160,7 +1160,7 @@ class TestRegularGridInterpolator(TestCase):
         values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
         values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
         values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
-        interp = RegularGridInterpolator(points, values, kind="nearest")
+        interp = RegularGridInterpolator(points, values, method="nearest")
         sample = np.asarray([0.1, 0.1, .9, .9])
         wanted = 1100.
         assert_array_almost_equal(interp(sample), wanted)
@@ -1207,7 +1207,7 @@ class TestRegularGridInterpolator(TestCase):
         assert_raises(ValueError, RegularGridInterpolator, points, values)
         points = [(0., .5, 1.), (0., .5, 1.)]
         assert_raises(ValueError, RegularGridInterpolator, points, values,
-                      kind="undefkind")
+                      method="undefmethod")
 
     def test_valid_call(self):
         # create a 4d grid of 3 points in each dimension
@@ -1220,7 +1220,7 @@ class TestRegularGridInterpolator(TestCase):
         values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
         interp = RegularGridInterpolator(points, values)
         sample = np.asarray([[0., 0., 0., 0.], [1., 1., 1., 1.]])
-        assert_raises(ValueError, interp, sample, "undefkind")
+        assert_raises(ValueError, interp, sample, "undefmethod")
         sample = np.asarray([[0., 0., 0.], [1., 1., 1.]])
         assert_raises(ValueError, interp, sample)
         sample = np.asarray([[0., 0., 0., 0.], [1., 1., 1., 1.1]])
@@ -1240,9 +1240,9 @@ class TestRegularGridInterpolator(TestCase):
         sample = np.asarray([[-.1, -.1, -.1, -.1], [1.1, 1.1, 1.1, 1.1],
                              [21, 2.1, -1.1, -11], [2.1, 2.1, -1.1, -1.1]])
         wanted = np.asarray([0., 1111., 11., 11.])
-        assert_array_almost_equal(interp(sample, kind="nearest"), wanted)
+        assert_array_almost_equal(interp(sample, method="nearest"), wanted)
         wanted = np.asarray([-111.1, 1222.1, -11068., -1186.9])
-        assert_array_almost_equal(interp(sample, kind="linear"), wanted)
+        assert_array_almost_equal(interp(sample, method="linear"), wanted)
 
     def test_out_of_bounds_extrap2(self):
         # create a 4d grid of 3 points in each dimension
@@ -1258,9 +1258,9 @@ class TestRegularGridInterpolator(TestCase):
         sample = np.asarray([[-.1, -.1, -.1, -.1], [1.1, 1.1, 1.1, 1.1],
                              [21, 2.1, -1.1, -11], [2.1, 2.1, -1.1, -1.1]])
         wanted = np.asarray([0., 11., 11., 11.])
-        assert_array_almost_equal(interp(sample, kind="nearest"), wanted)
+        assert_array_almost_equal(interp(sample, method="nearest"), wanted)
         wanted = np.asarray([-12.1, 133.1, -1069., -97.9])
-        assert_array_almost_equal(interp(sample, kind="linear"), wanted)
+        assert_array_almost_equal(interp(sample, method="linear"), wanted)
 
     def test_out_of_bounds_fill(self):
         # create a 4d grid of 3 points in each dimension
@@ -1276,8 +1276,8 @@ class TestRegularGridInterpolator(TestCase):
         sample = np.asarray([[-.1, -.1, -.1, -.1], [1.1, 1.1, 1.1, 1.1],
                              [2.1, 2.1, -1.1, -1.1]])
         wanted = np.asarray([np.nan, np.nan, np.nan])
-        assert_array_almost_equal(interp(sample, kind="nearest"), wanted)
-        assert_array_almost_equal(interp(sample, kind="linear"), wanted)
+        assert_array_almost_equal(interp(sample, method="nearest"), wanted)
+        assert_array_almost_equal(interp(sample, method="linear"), wanted)
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
         wanted = np.asarray([1001.1, 846.2, 555.5])
@@ -1292,7 +1292,7 @@ class TestRegularGridInterpolator(TestCase):
         values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
         values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
         values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
-        interp = RegularGridInterpolator(points, values, kind="nearest")
+        interp = RegularGridInterpolator(points, values, method="nearest")
         points_qhull = itertools.product(*points)
         points_qhull = [p for p in points_qhull]
         points_qhull = np.asarray(points_qhull)
@@ -1365,7 +1365,7 @@ class TestInterpN(TestCase):
         values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
         values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
         interp_rg = RegularGridInterpolator(points, values)
-        sample = np.asarray([0.1, 0.1, 10., 9.])
+        sample = np.asarray([[0.1, 0.1, 10., 9.]])
         wanted = interpn(points, values, sample, method="linear")
         assert_array_almost_equal(interp_rg(sample), wanted)
 
@@ -1378,7 +1378,7 @@ class TestInterpN(TestCase):
         values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
         values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
         values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
-        sample = np.asarray([0.1, -0.1, 10.1, 9.])
+        sample = np.asarray([[0.1, -0.1, 10.1, 9.]])
         wanted = 999.99
         actual = interpn(points, values, sample, method="linear",
                          bounds_error=False, fill_value=999.99)
@@ -1393,8 +1393,8 @@ class TestInterpN(TestCase):
         values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
         values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
         values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
-        interp_rg = RegularGridInterpolator(points, values, kind="nearest")
-        sample = np.asarray([0.1, 0.1, 10., 9.])
+        interp_rg = RegularGridInterpolator(points, values, method="nearest")
+        sample = np.asarray([[0.1, 0.1, 10., 9.]])
         wanted = interpn(points, values, sample, method="nearest")
         assert_array_almost_equal(interp_rg(sample), wanted)
 
@@ -1407,11 +1407,23 @@ class TestInterpN(TestCase):
         values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
         values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
         values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
-        sample = np.asarray([0.1, -0.1, 10.1, 9.])
+        sample = np.asarray([[0.1, -0.1, 10.1, 9.]])
         wanted = 999.99
         actual = interpn(points, values, sample, method="nearest",
                          bounds_error=False, fill_value=999.99)
         assert_array_almost_equal(actual, wanted)
+
+    def test_raises_xi1d(self):
+        # verify that xi has to be 2D
+        points = [(0., .5, 1.)] * 2 + [(0., 5., 10.)] * 2
+        values = np.asarray([0., .5, 1.])
+        values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
+        values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
+        values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
+        values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
+        values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
+        sample = np.asarray([0.1, -0.1, 10.1, 9.])
+        assert_raises(ValueError, interpn, points, values, sample)
 
 if __name__ == "__main__":
     run_module_suite()

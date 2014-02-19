@@ -1401,8 +1401,10 @@ class RegularGridInterpolator(object):
 
     The data must be defined on a regular grid; the grid spacing however may be
     uneven.  Linear and nearest-neighbour interpolation are supported. After
-    setting up the interpolator object, the interpolation kind (*linear* or
+    setting up the interpolator object, the interpolation method (*linear* or
     *nearest*) may be chosen at each evaluation.
+
+    .. versionadded:: 0.14
 
     Parameters
     ----------
@@ -1412,8 +1414,8 @@ class RegularGridInterpolator(object):
     values : anything of dtype float that can be indexed like an ndarray of shape (m1, ..., mn)
         The data on the regular grid in n dimensions.
 
-    kind : str
-        The kind of interpolation to perform. Supported are "linear" and
+    method : str
+        The method of interpolation to perform. Supported are "linear" and
         "nearest". This parameter will become the default for the object's
         ``__call__`` method.
 
@@ -1433,8 +1435,6 @@ class RegularGridInterpolator(object):
 
     Notes
     -----
-    .. versionadded:: 0.14
-
     Contrary to LinearNDInterpolator and NearestNDInterpolator, this class
     avoids expensive triangulation of the input data by taking advantage of the
     regular grid structure.
@@ -1463,11 +1463,11 @@ class RegularGridInterpolator(object):
     # this class is based on code originally programmed by Johannes Buchner,
     # see https://github.com/JohannesBuchner/regulargrid
 
-    def __init__(self, points, values, kind="linear", bounds_error=True,
+    def __init__(self, points, values, method="linear", bounds_error=True,
                  fill_value=np.nan):
-        if kind not in ["linear", "nearest"]:
-            raise ValueError("Kind '%s' is not defined" % kind)
-        self.kind = kind
+        if method not in ["linear", "nearest"]:
+            raise ValueError("Method '%s' is not defined" % method)
+        self.method = method
         self.bounds_error = bounds_error
         if fill_value is not None and not isinstance(fill_value, float):
             raise ValueError("fill_value must be either 'None' or a float")
@@ -1488,7 +1488,7 @@ class RegularGridInterpolator(object):
         self.grid = tuple([np.asarray(p) for p in points])
         self.values = values
 
-    def __call__(self, xi, kind=None):
+    def __call__(self, xi, method=None):
         """
         interpolation at coordinates
 
@@ -1497,14 +1497,14 @@ class RegularGridInterpolator(object):
         xi : ndarray of shape (ndim, ) or (nsamplepoints, ndim)
             The coordinates to sample the gridded data at
 
-        kind : str
-            The kind of interpolation to perform. Supported are "linear" and
+        method : str
+            The method of interpolation to perform. Supported are "linear" and
             "nearest".
 
         """
-        kind = self.kind if kind is None else kind
-        if kind not in ["linear", "nearest"]:
-            raise ValueError("Kind '%s' is not defined" % kind)
+        method = self.method if method is None else method
+        if method not in ["linear", "nearest"]:
+            raise ValueError("Method '%s' is not defined" % method)
         xi = np.atleast_2d(xi)
         if not xi.shape[1] == len(self.grid):
             raise ValueError("The requested sample points xi have dimension "
@@ -1518,9 +1518,9 @@ class RegularGridInterpolator(object):
                                      "in dimension %d" % i)
 
         indices, norm_distances, out_of_bounds = self._find_indices(xi.T)
-        if kind == "linear":
+        if method == "linear":
             result = self._evaluate_linear(indices, norm_distances, out_of_bounds)
-        elif kind == "nearest":
+        elif method == "nearest":
             result = self._evaluate_nearest(indices, norm_distances, out_of_bounds)
         if not self.bounds_error and self.fill_value is not None:
             result[out_of_bounds] = self.fill_value
@@ -1570,6 +1570,8 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     """
     Multidimensional interpolation on regular grids.
 
+    .. versionadded:: 0.14
+
     Parameters
     ----------
     points : tuple of ndarray of float, with shapes (m1, ), ..., (mn, )
@@ -1578,7 +1580,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     values : anything of dtype float that can be indexed like an ndarray of shape (m1, ..., mn)
         The data on the regular grid in n dimensions.
 
-    xi : ndarray of shape (n, ) or (nsamplepoints, n)
+    xi : ndarray of shape (nsamplepoints, n)
         The coordinates to sample the gridded data at
 
     method : str
@@ -1594,11 +1596,8 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     fill_value : number, optional
         If provided, the value to use for points outside of the
         interpolation domain. If None, values outside
-        the domain are extrapolated.
-
-    Notes
-    -----
-    .. versionadded:: 0.14
+        the domain are extrapolated.  Extrapolation is not supported by method
+        "splinef2d".
 
     See also
     --------
@@ -1645,7 +1644,11 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     grid = tuple([np.asarray(p) for p in points])
 
     # sanity check requested xi
-    xi = np.atleast_2d(xi)
+    if not xi.ndim == 2:
+        raise ValueError("The requested sample points xi must have "
+                         "shape (nsamplepoints, ndim), so xi must have "
+                         "dimension 2. The xi you provided has shape %s." %
+                         xi.shape)
     if not xi.shape[1] == len(grid):
         raise ValueError("The requested sample points xi have dimension "
                          "%d, but this RegularGridInterpolator has "
@@ -1658,12 +1661,12 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     # perform interpolation
     if method == "linear":
-        interp = RegularGridInterpolator(points, values, kind="linear",
+        interp = RegularGridInterpolator(points, values, method="linear",
                                          bounds_error=bounds_error,
                                          fill_value=fill_value)
         return interp(xi)
     elif method == "nearest":
-        interp = RegularGridInterpolator(points, values, kind="nearest",
+        interp = RegularGridInterpolator(points, values, method="nearest",
                                          bounds_error=bounds_error,
                                          fill_value=fill_value)
         return interp(xi)
@@ -1673,7 +1676,9 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
                             grid[1][0] <= xi[:, 1], xi[:, 1] <= grid[1][-1]),
                            axis=0)
         result = np.empty_like(xi[:, 0])
-        interp = RectBivariateSpline(points[0], points[1], values)
+
+        # make a copy of values for RectBivariateSpline
+        interp = RectBivariateSpline(points[0], points[1], values[:])
         result[idx_valid] = interp.ev(xi[idx_valid, 0], xi[idx_valid, 1])
         result[np.logical_not(idx_valid)] = fill_value
         return result
