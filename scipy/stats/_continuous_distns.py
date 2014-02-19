@@ -1439,12 +1439,15 @@ class genpareto_gen(rv_continuous):
         return -boxcox(q, -c)
 
     def _munp(self, n, c):
-        if c != 0:
-            k = arange(0, n+1)
-            val = (-1.0/c)**n * sum(comb(n, k)*(-1)**k / (1.0-c*k), axis=0)
-            return where(c*n < 1, val, inf)
-        else:
-            return gam(n+1)
+        def __munp(n, c):
+            val = 0.0
+            k = arange(0, n + 1)
+            for ki, cnk in zip(k, comb(n, k)):
+                val = val + cnk * (-1) ** ki / (1.0 - c * ki)
+            return where(c * n < 1, val * (-1.0 / c) ** n, inf)
+        return _lazywhere(c != 0, (c,),
+                lambda c: __munp(n, c),
+                gam(n + 1))
 
     def _entropy(self, c):
         return 1. + c
