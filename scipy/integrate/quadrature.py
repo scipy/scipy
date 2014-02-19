@@ -813,12 +813,11 @@ def newton_cotes(rn, equal=0):
     yi = rn / float(N)
     ti = 2.0*yi - 1
     nvec = np.arange(0,N+1)
-    C = np.mat(ti**nvec[:,np.newaxis])
-    Cinv = C.I
+    C = ti**nvec[:,np.newaxis]
+    Cinv = np.linalg.inv(C)
     # improve precision of result
-    Cinv = 2*Cinv - Cinv*C*Cinv
-    Cinv = 2*Cinv - Cinv*C*Cinv
-    Cinv = Cinv.A
+    for i in range(2):
+        Cinv = 2*Cinv - Cinv.dot(C).dot(Cinv)
     vec = 2.0 / (nvec[::2]+1)
     ai = np.dot(Cinv[:,::2],vec) * N/2
 
