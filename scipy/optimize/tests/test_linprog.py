@@ -161,7 +161,7 @@ class TestLinprog(TestCase):
 
         assert_(res.status == 0,
                 "Test of linprog with negative variable failed.  "
-                "Expected status = 0, got {:d}.".format(res.status))
+                "Expected status = 0, got %d." % res.status)
 
         assert_allclose(-res.fun,80/7,err_msg="Test of linprog with negative "
                                               "variable converged but yielded "
