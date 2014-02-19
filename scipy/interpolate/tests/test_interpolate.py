@@ -1336,6 +1336,25 @@ class TestInterpN(TestCase):
         assert_array_almost_equal(interpn((x, y), z, xi, method="splinef2d"),
                                   lut.ev(xi[:, 0], xi[:, 1]))
 
+    def test_spline_2d_outofbounds(self):
+        x = np.array([.5, 2., 3., 4., 5.5])
+        y = np.array([.5, 2., 3., 4., 5.5])
+        z = np.array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
+                      [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
+        lut = RectBivariateSpline(x, y, z)
+
+        xi = np.array([[1, 2.3, 6.3, 0.5, 3.3, 1.2, 3],
+                       [1, 3.3, 1.2, -4.0, 5.0, 1.0, 3]]).T
+        actual = interpn((x, y), z, xi, method="splinef2d",
+                         bounds_error=False, fill_value=999.99)
+        expected = lut.ev(xi[:, 0], xi[:, 1])
+        expected[2:4] = 999.99
+        assert_array_almost_equal(actual, expected)
+        
+        # no extrapolation for splinef2d
+        assert_raises(ValueError, interpn, (x, y), z, xi, method="splinef2d",
+                      bounds_error=False, fill_value=None)
+
     def test_linear_4d(self):
         # create a 4d grid of 3 points in each dimension
         points = [(0., .5, 1.)] * 2 + [(0., 5., 10.)] * 2
@@ -1350,6 +1369,21 @@ class TestInterpN(TestCase):
         wanted = interpn(points, values, sample, method="linear")
         assert_array_almost_equal(interp_rg(sample), wanted)
 
+    def test_4d_linear_outofbounds(self):
+        # create a 4d grid of 3 points in each dimension
+        points = [(0., .5, 1.)] * 2 + [(0., 5., 10.)] * 2
+        values = np.asarray([0., .5, 1.])
+        values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
+        values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
+        values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
+        values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
+        values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
+        sample = np.asarray([0.1, -0.1, 10.1, 9.])
+        wanted = 999.99
+        actual = interpn(points, values, sample, method="linear",
+                         bounds_error=False, fill_value=999.99)
+        assert_array_almost_equal(actual, wanted)
+
     def test_nearest_4d(self):
         # create a 4d grid of 3 points in each dimension
         points = [(0., .5, 1.)] * 2 + [(0., 5., 10.)] * 2
@@ -1363,6 +1397,21 @@ class TestInterpN(TestCase):
         sample = np.asarray([0.1, 0.1, 10., 9.])
         wanted = interpn(points, values, sample, method="nearest")
         assert_array_almost_equal(interp_rg(sample), wanted)
+
+    def test_4d_nearest_outofbounds(self):
+        # create a 4d grid of 3 points in each dimension
+        points = [(0., .5, 1.)] * 2 + [(0., 5., 10.)] * 2
+        values = np.asarray([0., .5, 1.])
+        values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
+        values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
+        values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
+        values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
+        values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
+        sample = np.asarray([0.1, -0.1, 10.1, 9.])
+        wanted = 999.99
+        actual = interpn(points, values, sample, method="nearest",
+                         bounds_error=False, fill_value=999.99)
+        assert_array_almost_equal(actual, wanted)
 
 if __name__ == "__main__":
     run_module_suite()
