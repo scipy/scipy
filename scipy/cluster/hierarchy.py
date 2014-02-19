@@ -465,7 +465,7 @@ def ward(y):
     return linkage(y, method='ward', metric='euclidean')
 
 
-def linkage(y, method='single', metric='euclidean'):
+def linkage(y, method='single', metric='euclidean', redundant_dm=False):
     """
     Performs hierarchical/agglomerative clustering on the condensed
     distance matrix y.
@@ -607,6 +607,8 @@ def linkage(y, method='single', metric='euclidean'):
     metric : str, optional
         The distance metric to use. See the ``distance.pdist`` function for a
         list of valid distance metrics.
+    redundant_dm: bool, optional
+        Boolean. True if y is a redundant distance matrix.
 
     Returns
     -------
@@ -640,7 +642,8 @@ def linkage(y, method='single', metric='euclidean'):
         if method not in _cpy_linkage_methods:
             raise ValueError('Invalid method: %s' % method)
         if method in _cpy_non_euclid_methods:
-            dm = distance.pdist(X, metric)
+            if redundant_dm: dm = distance.squareform(X)
+            else: dm = distance.pdist(X, metric)
             Z = np.zeros((n - 1, 4))
             _hierarchy_wrap.linkage_wrap(dm, Z, n,
                                        int(_cpy_non_euclid_methods[method]))
@@ -648,7 +651,8 @@ def linkage(y, method='single', metric='euclidean'):
             if metric != 'euclidean':
                 raise ValueError(('Method %s requires the distance metric to '
                                  'be euclidean') % s)
-            dm = distance.pdist(X, metric)
+            if redundant_dm: dm = distance.squareform(X)
+            else: dm = distance.pdist(X, metric)
             Z = np.zeros((n - 1, 4))
             _hierarchy_wrap.linkage_euclid_wrap(dm, Z, X, m, n,
                                               int(_cpy_euclid_methods[method]))
