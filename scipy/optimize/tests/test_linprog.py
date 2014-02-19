@@ -30,7 +30,7 @@ class TestLinprog(TestCase):
 
         assert_(res.status == 0,
                 "Test of linprog upper bound constraints failed.  "
-                "Expected status = 0, got {:d}.".format(res.status))
+                "Expected status = 0, got %d." % res.status)
 
         assert_array_almost_equal(res.x,np.array([2.0,6.0]),
                                   err_msg="Test of linprog upper bound "
@@ -39,7 +39,7 @@ class TestLinprog(TestCase):
 
         assert_almost_equal(-res.fun,18,err_msg="Test of linprog upper bound"
                             " constraints failed. "
-                            "Expected f=18, got {:f}.".format(res.fun))
+                            "Expected f=18, got %f." % res.fun)
 
     def test_linprog_mixed_constraints(self):
         """ Minimize linear function subject to non-negative variables. """
@@ -54,7 +54,7 @@ class TestLinprog(TestCase):
 
         assert_(res.status == 0,
                 "Test of linprog with artificial variables failed.  "
-                "Expected status = 0, got {:d}.".format(res.status))
+                "Expected status = 0, got %d." % res.status)
 
         assert_array_almost_equal(res.x,[2/3,1/3],
                                   err_msg="Test of linprog with artificial "
@@ -79,7 +79,7 @@ class TestLinprog(TestCase):
 
         assert_(res.status == 0,
                 "Test of linprog recovery from cycling failed.  Expected status"
-                " = 0, got {:d}.".format(res.status))
+                " = 0, got %d." % res.status)
 
         assert_array_almost_equal(res.x,[0,0,10000],
                                   err_msg="Test of linprog recovery from "
@@ -133,16 +133,16 @@ class TestLinprog(TestCase):
 
         assert_(res.status == 0,
                 "Test of linprog with nontrivial problem failed.  "
-                "Expected status = 0, got {:d}.".format(res.status))
+                "Expected status = 0, got %d." % res.status)
 
         assert_almost_equal(res.fun,7083/1391,9,
                 "Test of linprog with nontrivial problem converged but yielded "
-                "unexpected result (fun)")
+                "unexpected result (%f)" % res.fun)
 
         assert_array_almost_equal(res.x,[101/1391,1462/1391,0,752/1391],
                                   err_msg="Test of linprog with nontrivial "
                                           "problem converged but yielded "
-                                          "unexpected result (x)")
+                                          "unexpected result.")
 
     def test_negative_variable(self):
         """  Test linprog with a problem with one unbounded variable and
@@ -170,7 +170,7 @@ class TestLinprog(TestCase):
         assert_array_almost_equal(res.x,[-8/7,18/7],
                                   err_msg="Test of linprog with negative "
                                           "variable converged but yielded "
-                                          "unexpected result (x)")
+                                          "unexpected result")
 
 if __name__ == "__main__":
     run_module_suite()
