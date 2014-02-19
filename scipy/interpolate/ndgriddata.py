@@ -27,6 +27,10 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     .. versionadded:: 0.9
 
+    Methods
+    -------
+    __call__
+
     Parameters
     ----------
     points : (Npoints, Ndims) ndarray of floats
