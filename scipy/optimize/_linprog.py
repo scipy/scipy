@@ -20,9 +20,9 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import numpy.ma as ma
 
-from .optimize import Result, _check_unknown_options
+from .optimize import OptimizeResult
 
-__all__ = ['linprog', '_solve_simplex','liprog_verbose_callback','linprog_terse_callback']
+__all__ = ['linprog','linprog_verbose_callback','linprog_terse_callback']
 
 __docformat__ = "restructuredtext en"
 
@@ -75,7 +75,6 @@ def linprog_verbose_callback(xk,**kwargs):
         print("Tableau:")
 
     if iter >= 0:
-        #print(" " + "".join(["{:>13}".format(columns[i]) for i in range(t_cols)]))
         print("" + str(tableau) + "\n")
         if not complete:
             print("Pivot Element: T[{:.0f},{:.0f}]\n".format(pivrow,pivcol))
@@ -284,8 +283,8 @@ def _solve_simplex(T,n,basis,maxiter=1000,phase=2,callback=None,
 
     Returns
     -------
-    res : Result
-        The optimization result represented as a ``Result`` object.
+    res : OptimizeResult
+        The optimization result represented as a ``OptimizeResult`` object.
         Important attributes are: ``x`` the solution array, ``success`` a
         Boolean flag indicating if the optimizer exited successfully and
         ``message`` which describes the cause of the termination. Possible
@@ -296,7 +295,7 @@ def _solve_simplex(T,n,basis,maxiter=1000,phase=2,callback=None,
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
 
-        See `Result` for a description of other attributes.
+        See `OptimizeResult` for a description of other attributes.
     """
     nit = nit0
     complete = False
@@ -416,7 +415,7 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
 
     Returns
     -------
-    A scipy.optimize.Result consisting of the following fields::
+    A scipy.optimize.OptimizeResult consisting of the following fields::
         x : ndarray
             The independent variable vector which optimizes the linear
             programming problem.
@@ -665,7 +664,7 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
         # Invalid inputs provided
         if disp:
             print(message)
-        return Result(x=np.zeros_like(cc),fun=0.0,nit=0,status=status,
+        return OptimizeResult(x=np.zeros_like(cc),fun=0.0,nit=0,status=status,
                       message=message, success=False)
 
     # Create the tableau
@@ -737,7 +736,7 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
         # Failure to find a feasible starting point
         if disp:
             print(message)
-        return Result(x=np.nan,fun=-T[-1,-1],nit=nit1,status=status,
+        return OptimizeResult(x=np.nan,fun=-T[-1,-1],nit=nit1,status=status,
                       message=message, success=False)
 
     # Phase 2
@@ -776,7 +775,7 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
             print(messages[status])
             print("         Iterations: {:d}".format(nit2))
 
-    return Result(x=x,fun=obj,nit=int(nit2),status=status,slack=slack,
+    return OptimizeResult(x=x,fun=obj,nit=int(nit2),status=status,slack=slack,
                   message=messages[status],success=(status == 0))
 
 
@@ -842,7 +841,7 @@ def linprog(c,A_eq=None,b_eq=None,A_ub=None,b_ub=None,
 
     Returns
     -------
-    A scipy.optimize.Result consisting of the following fields::
+    A scipy.optimize.OptimizeResult consisting of the following fields::
         x : ndarray
             The independent variable vector which optimizes the linear
             programming problem.
@@ -918,12 +917,12 @@ def linprog(c,A_eq=None,b_eq=None,A_ub=None,b_ub=None,
 
     Returns
     -------
-    res : Result
-        The optimization result represented as a ``Result`` object.
+    res : OptimizeResult
+        The optimization result represented as a ``OptimizeResult`` object.
         Important attributes are: ``x`` the solution array, ``success`` a
         Boolean flag indicating if the optimizer exited successfully and
         ``message`` which describes the cause of the termination. See
-        `Result` for a description of other attributes.
+        `OptimizeResult` for a description of other attributes.
 
     See also
     --------
