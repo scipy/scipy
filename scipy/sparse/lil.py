@@ -225,22 +225,30 @@ class lil_matrix(spmatrix, IndexMixin):
         new.data[0] = self.data[i][:]
         return new
 
-    def _get1(self, i, j):
-        v = _csparsetools.lil_get1(self.shape[0], self.shape[1],
-                                   self.rows, self.data,
-                                   i, j)
-        return self.dtype.type(v)
-
     def __getitem__(self, index):
         """Return the element(s) index=(i, j), where j may be a slice.
         This always returns a copy for consistency, since slices into
         Python lists return copies.
         """
+
+        # Scalar fast path first
+        if isinstance(index, tuple) and len(index) == 2:
+            i, j = index
+            if ((isinstance(i, int) or isinstance(i, np.integer)) and
+                (isinstance(j, int) or isinstance(j, np.integer))):
+                v = _csparsetools.lil_get1(self.shape[0], self.shape[1],
+                                           self.rows, self.data,
+                                           i, j)
+                return self.dtype.type(v)
+
         # Utilities found in IndexMixin
         i, j = self._unpack_index(index)
 
         if isscalarlike(i) and isscalarlike(j):
-            return self._get1(int(i), int(j))
+            v = _csparsetools.lil_get1(self.shape[0], self.shape[1],
+                                       self.rows, self.data,
+                                       i, j)
+            return self.dtype.type(v)
 
         i, j = self._index_to_arrays(i, j)
         if i.size == 0:
@@ -256,6 +264,21 @@ class lil_matrix(spmatrix, IndexMixin):
         return new
 
     def __setitem__(self, index, x):
+        # Scalar fast path first
+        if isinstance(index, tuple) and len(index) == 2:
+            i, j = index
+            if ((isinstance(i, int) or isinstance(i, np.integer)) and
+                (isinstance(j, int) or isinstance(j, np.integer))):
+                x = self.dtype.type(x)
+                if x.size > 1:
+                    # Triggered if input was an ndarray
+                    raise ValueError("Trying to assign a sequence to an item")
+                _csparsetools.lil_insert(self.shape[0], self.shape[1],
+                                         self.rows, self.data,
+                                         i, j, x)
+                return
+
+        # General indexing
         i, j = self._unpack_index(index)
 
         # shortcut for common case of full matrix assign:
