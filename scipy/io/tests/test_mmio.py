@@ -283,6 +283,56 @@ class TestMMIOCoordinate(TestCase):
         b = mmread(fn).todense()
         assert_array_almost_equal(a,b)
 
+    def test_bzip2_py3(self):
+        # test if fix for #2152 works
+        try:
+            # bz2 module isn't always built when building Python.
+            import bz2
+        except:
+            return
+        I = array([0, 0, 1, 2, 3, 3, 3, 4])
+        J = array([0, 3, 1, 2, 1, 3, 4, 4])
+        V = array([1.0, 6.0, 10.5, 0.015, 250.5, -280.0, 33.32, 12.0])
+
+        b = scipy.sparse.coo_matrix((V,(I,J)),shape=(5,5))
+
+        fn = self.fn
+        mmwrite(fn, b)
+
+        fn_bzip2 = "%s.bz2" % fn
+        with open(fn, 'rb') as f_in:
+            f_out = bz2.BZ2File(fn_bzip2, 'wb')
+            f_out.write(f_in.read())
+            f_out.close()
+
+        a = mmread(fn_bzip2).todense()
+        assert_array_almost_equal(a, b.todense())
+
+    def test_gzip_py3(self):
+        # test if fix for #2152 works
+        try:
+            # gzip module can be missing from Python installation
+            import gzip
+        except:
+            return
+        I = array([0, 0, 1, 2, 3, 3, 3, 4])
+        J = array([0, 3, 1, 2, 1, 3, 4, 4])
+        V = array([1.0, 6.0, 10.5, 0.015, 250.5, -280.0, 33.32, 12.0])
+
+        b = scipy.sparse.coo_matrix((V,(I,J)),shape=(5,5))
+
+        fn = self.fn
+        mmwrite(fn, b)
+
+        fn_gzip = "%s.gz" % fn
+        with open(fn, 'rb') as f_in:
+            f_out = gzip.open(fn_gzip, 'wb')
+            f_out.write(f_in.read())
+            f_out.close()
+
+        a = mmread(fn_gzip).todense()
+        assert_array_almost_equal(a, b.todense())
+
     def test_real_write_read(self):
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
