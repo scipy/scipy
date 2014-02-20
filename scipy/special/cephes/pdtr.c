@@ -29,7 +29,7 @@
  *
  * y = pdtr( k, m ) = igamc( k+1, m ).
  *
- * The arguments must both be positive.
+ * The arguments must both be nonnegative.
  *
  *
  *
@@ -38,9 +38,9 @@
  * See igamc().
  *
  */
-/*							pdtrc()
+/*  pdtrc()
  *
- *	Complemented poisson distribution
+ *  Complemented poisson distribution
  *
  *
  *
@@ -69,7 +69,7 @@
  *
  * y = pdtrc( k, m ) = igam( k+1, m ).
  *
- * The arguments must both be positive.
+ * The arguments must both be nonnegative.
  *
  *
  *
@@ -78,9 +78,9 @@
  * See igam.c.
  *
  */
-/*							pdtri()
+/*  pdtri()
  *
- *	Inverse Poisson distribution
+ *  Inverse Poisson distribution
  *
  *
  *
@@ -119,7 +119,7 @@
  *                     k < 0
  *
  */
-
+
 /*
  * Cephes Math Library Release 2.3:  March, 1995
  * Copyright 1984, 1987, 1995 by Stephen L. Moshier
@@ -133,14 +133,16 @@ double m;
 {
     double v;
 
-    if ((k < 0) || (m <= 0.0)) {
-	mtherr("pdtrc", DOMAIN);
-	return (NPY_NAN);
+    if ((k < 0) || (m < 0.0)) {
+        mtherr("pdtrc", DOMAIN);
+        return (NPY_NAN);
+    }
+    if (m == 0.0) {
+        return 0.0;
     }
     v = k + 1;
     return (igam(v, m));
 }
-
 
 
 double pdtr(k, m)
@@ -149,9 +151,12 @@ double m;
 {
     double v;
 
-    if ((k < 0) || (m <= 0.0)) {
-	mtherr("pdtr", DOMAIN);
-	return (NPY_NAN);
+    if ((k < 0) || (m < 0.0)) {
+        mtherr("pdtr", DOMAIN);
+        return (NPY_NAN);
+    }
+    if (m == 0.0) {
+        return 1.0;
     }
     v = k + 1;
     return (igamc(v, m));
@@ -165,8 +170,8 @@ double y;
     double v;
 
     if ((k < 0) || (y < 0.0) || (y >= 1.0)) {
-	mtherr("pdtri", DOMAIN);
-	return (NPY_NAN);
+        mtherr("pdtri", DOMAIN);
+        return (NPY_NAN);
     }
     v = k + 1;
     v = igami(v, y);

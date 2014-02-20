@@ -12,7 +12,7 @@ from scipy.lib.six import xrange
 from scipy.lib._version import NumpyVersion
 
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
-         ppform, splrep, splev, splantider, splint, sproot)
+         ppform, splrep, splev, splantider, splint, sproot, Akima1DInterpolator)
 
 from scipy.interpolate import _ppoly
 
@@ -348,6 +348,75 @@ class TestLagrange(TestCase):
         pl = lagrange(xs,ys)
         assert_array_almost_equal(p.coeffs,pl.coeffs)
 
+
+class TestAkima1DInterpolator(TestCase):
+    def test_eval(self):
+        x = np.arange(0., 11.)
+        y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+        ak = Akima1DInterpolator(x, y)
+        xi = np.array([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
+            8.6, 9.9, 10.])
+        yi = np.array([0., 1.375, 2., 1.5, 1.953125, 2.484375,
+            4.1363636363636366866103344, 5.9803623910336236590978842,
+            5.5067291516462386624652936, 5.2031367459745245795943447,
+            4.1796554159017080820603951, 3.4110386597938129327189927,
+            3.])
+        assert_allclose(ak(xi), yi)
+
+    def test_eval_2d(self):
+        x = np.arange(0., 11.)
+        y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+        y = np.column_stack((y, 2. * y))
+        ak = Akima1DInterpolator(x, y)
+        xi = np.array([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
+                       8.6, 9.9, 10.])
+        yi = np.array([0., 1.375, 2., 1.5, 1.953125, 2.484375,
+                       4.1363636363636366866103344,
+                       5.9803623910336236590978842,
+                       5.5067291516462386624652936,
+                       5.2031367459745245795943447,
+                       4.1796554159017080820603951,
+                       3.4110386597938129327189927, 3.])
+        yi = np.column_stack((yi, 2. * yi))
+        assert_allclose(ak(xi), yi)
+
+    def test_eval_3d(self):
+        x = np.arange(0., 11.)
+        y_ = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+        y = np.empty((11, 2, 2))
+        y[:, 0, 0] = y_
+        y[:, 1, 0] = 2. * y_
+        y[:, 0, 1] = 3. * y_
+        y[:, 1, 1] = 4. * y_
+        ak = Akima1DInterpolator(x, y)
+        xi = np.array([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
+                       8.6, 9.9, 10.])
+        yi = np.empty((13, 2, 2))
+        yi_ = np.array([0., 1.375, 2., 1.5, 1.953125, 2.484375,
+                        4.1363636363636366866103344,
+                        5.9803623910336236590978842,
+                        5.5067291516462386624652936,
+                        5.2031367459745245795943447,
+                        4.1796554159017080820603951,
+                        3.4110386597938129327189927, 3.])
+        yi[:, 0, 0] = yi_
+        yi[:, 1, 0] = 2. * yi_
+        yi[:, 0, 1] = 3. * yi_
+        yi[:, 1, 1] = 4. * yi_
+        assert_allclose(ak(xi), yi)
+
+    def test_extend(self):
+        x = np.arange(0., 11.)
+        y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+        ak = Akima1DInterpolator(x, y)
+        try:
+            ak.extend()
+        except NotImplementedError as e:
+            if str(e) != ("Extending a 1D Akima interpolator is not "
+                    "yet implemented"):
+                raise
+        except:
+            raise
 
 class TestPPolyCommon(TestCase):
     # test basic functionality for PPoly and BPoly
