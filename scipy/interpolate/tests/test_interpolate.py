@@ -12,7 +12,7 @@ from scipy.lib.six import xrange
 from scipy.lib._version import NumpyVersion
 
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
-         ppform, splrep, splev, splantider, splint, sproot, AkimaInterpolator)
+         ppform, splrep, splev, splantider, splint, sproot, Akima1DInterpolator)
 
 from scipy.interpolate import _ppoly
 
@@ -349,11 +349,11 @@ class TestLagrange(TestCase):
         assert_array_almost_equal(p.coeffs,pl.coeffs)
 
 
-class TestAkimaInterpolator(TestCase):
+class TestAkima1DInterpolator(TestCase):
     def test_eval(self):
         x = np.arange(0., 11.)
         y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
-        ak = AkimaInterpolator(x, y)
+        ak = Akima1DInterpolator(x, y)
         xi = np.array([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
             8.6, 9.9, 10.])
         yi = np.array([0., 1.375, 2., 1.5, 1.953125, 2.484375,
@@ -367,7 +367,7 @@ class TestAkimaInterpolator(TestCase):
         x = np.arange(0., 11.)
         y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
         y = np.column_stack((y, 2. * y))
-        ak = AkimaInterpolator(x, y)
+        ak = Akima1DInterpolator(x, y)
         xi = np.array([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
                        8.6, 9.9, 10.])
         yi = np.array([0., 1.375, 2., 1.5, 1.953125, 2.484375,
@@ -388,7 +388,7 @@ class TestAkimaInterpolator(TestCase):
         y[:, 1, 0] = 2. * y_
         y[:, 0, 1] = 3. * y_
         y[:, 1, 1] = 4. * y_
-        ak = AkimaInterpolator(x, y)
+        ak = Akima1DInterpolator(x, y)
         xi = np.array([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
                        8.6, 9.9, 10.])
         yi = np.empty((13, 2, 2))
@@ -408,7 +408,7 @@ class TestAkimaInterpolator(TestCase):
     def test_extend(self):
         x = np.arange(0., 11.)
         y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
-        ak = AkimaInterpolator(x, y)
+        ak = Akima1DInterpolator(x, y)
         try:
             ak.extend()
         except NotImplementedError as e:
