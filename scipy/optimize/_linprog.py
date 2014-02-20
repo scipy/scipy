@@ -10,8 +10,8 @@ Functions
    :toctree: generated/
 
     linprog
-    _linprog_simplex
-    _solve_simplex
+    linprog_verbose_callback
+    linprog_terse_callback
 
 """
 
