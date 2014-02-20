@@ -7,7 +7,7 @@ from .polyint import _isscalar
 
 
 __all__ = ["PchipInterpolator", "pchip_interpolate", "pchip",
-           "AkimaInterpolator"]
+           "Akima1DInterpolator"]
 
 
 class PchipInterpolator(object):
@@ -229,7 +229,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
 pchip = PchipInterpolator
 
 
-class AkimaInterpolator(PPoly):
+class Akima1DInterpolator(PPoly):
     """
     Akima interpolator
 
@@ -317,7 +317,7 @@ class AkimaInterpolator(PPoly):
         coeff[1] = c
         coeff[0] = d
 
-        super(AkimaInterpolator, self).__init__(coeff, x, extrapolate=False)
+        super(Akima1DInterpolator, self).__init__(coeff, x, extrapolate=False)
 
     def extend(self):
         raise NotImplementedError("Extending a 1D Akima interpolator is not "
