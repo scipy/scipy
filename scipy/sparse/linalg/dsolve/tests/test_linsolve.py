@@ -12,7 +12,7 @@ import scipy.linalg
 from scipy.linalg import norm, inv
 from scipy.sparse import spdiags, SparseEfficiencyWarning, csc_matrix, csr_matrix, \
      isspmatrix, dok_matrix, lil_matrix, bsr_matrix
-from scipy.sparse.linalg.dsolve import spsolve, use_solver, splu, spilu
+from scipy.sparse.linalg.dsolve import spsolve, use_solver, splu, spilu, MatrixRankWarning
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
@@ -28,9 +28,13 @@ def toarray(a):
 
 class TestLinsolve(TestCase):
     def test_singular(self):
-        A = csc_matrix((5,5), dtype='d')
-        b = array([1, 2, 3, 4, 5],dtype='d')
-        x = spsolve(A, b, use_umfpack=False)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=MatrixRankWarning)
+
+            A = csc_matrix((5,5), dtype='d')
+            b = array([1, 2, 3, 4, 5],dtype='d')
+            x = spsolve(A, b, use_umfpack=False)
+            assert_(not np.isfinite(x).any())
 
     def test_twodiags(self):
         A = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
@@ -176,24 +180,71 @@ class TestSplu(object):
         self.A = spdiags((d, 2*d, d[::-1]), (-3, 0, 5), n, n)
         random.seed(1234)
 
+    def _smoketest(self, spxlu, check, dtype):
+        if np.issubdtype(dtype, np.complexfloating):
+            A = self.A + 1j*self.A.T
+        else:
+            A = self.A
+
+        A = A.astype(dtype)
+        lu = spxlu(A)
+
+        # Input shapes
+        for k in [None, 1, 2, self.n, self.n+2]:
+            msg = "k=%r" % (k,)
+
+            if k is None:
+                b = random.rand(self.n)
+            else:
+                b = random.rand(self.n, k)
+
+            if np.issubdtype(dtype, np.complexfloating):
+                b = b + 1j*random.rand(*b.shape)
+            b = b.astype(dtype)
+
+            x = lu.solve(b)
+            check(A, b, x, msg)
+
+            x = lu.solve(b, 'T')
+            check(A.T, b, x, msg)
+
+            x = lu.solve(b, 'H')
+            check(A.T.conj(), b, x, msg)
+
     def test_splu_smoketest(self):
+        # Check that splu works at all
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-            # Check that splu works at all
-            x = random.rand(self.n)
-            lu = splu(self.A)
-            r = self.A*lu.solve(x)
-            assert_(abs(x - r).max() < 1e-13)
+
+            def check(A, b, x, msg=""):
+                eps = np.finfo(A.dtype).eps
+                r = A * x
+                assert_(abs(r - b).max() < 1e3*eps, msg)
+
+            self._smoketest(splu, check, np.float32)
+            self._smoketest(splu, check, np.float64)
+            self._smoketest(splu, check, np.complex64)
+            self._smoketest(splu, check, np.complex128)
 
     def test_spilu_smoketest(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-            # Check that spilu works at all
-            x = random.rand(self.n)
-            lu = spilu(self.A, drop_tol=1e-2, fill_factor=5)
-            r = self.A*lu.solve(x)
-            assert_(abs(x - r).max() < 1e-2)
-            assert_(abs(x - r).max() > 1e-5)
+
+            errors = []
+
+            def check(A, b, x, msg=""):
+                r = A * x
+                err = abs(r - b).max()
+                assert_(err < 1e-2, msg)
+                if b.dtype in (np.float64, np.complex128):
+                    errors.append(err)
+
+            self._smoketest(spilu, check, np.float32)
+            self._smoketest(spilu, check, np.float64)
+            self._smoketest(spilu, check, np.complex64)
+            self._smoketest(spilu, check, np.complex128)
+
+            assert_(max(errors) > 1e-5)
 
     def test_splu_nnz0(self):
         A = csc_matrix((5,5), dtype='d')
@@ -255,7 +306,6 @@ class TestSplu(object):
         lu = splu(a_)
 
         # And now test that we don't have a refcount bug
-        import gc
         import sys
         rc = sys.getrefcount(lu)
         for attr in ('perm_r', 'perm_c'):
@@ -263,6 +313,24 @@ class TestSplu(object):
             assert_equal(sys.getrefcount(lu), rc + 1)
             del perm
             assert_equal(sys.getrefcount(lu), rc)
+
+    def test_bad_inputs(self):
+        A = self.A.tocsc()
+
+        assert_raises(ValueError, splu, A[:,:4])
+        assert_raises(ValueError, spilu, A[:,:4])
+
+        for lu in [splu(A), spilu(A)]:
+            b = random.rand(42)
+            B = random.rand(42, 3)
+            BB = random.rand(self.n, 3, 9)
+            assert_raises(ValueError, lu.solve, b)
+            assert_raises(ValueError, lu.solve, B)
+            assert_raises(ValueError, lu.solve, BB)
+            assert_raises(TypeError, lu.solve,
+                          b.astype(np.complex64))
+            assert_raises(TypeError, lu.solve,
+                          b.astype(np.complex128))
 
 
 if __name__ == "__main__":

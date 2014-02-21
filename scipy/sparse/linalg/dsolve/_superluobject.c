@@ -22,20 +22,20 @@ extern jmp_buf _superlu_py_jmpbuf;
  * SciPyLUObject methods
  */
 
-static char solve_doc[] = "x = self.solve(b, trans)\n\
-\n\
-solves linear system of equations with one or sereral right hand sides.\n\
-\n\
-parameters\n\
-----------\n\
-\n\
-b        array, right hand side(s) of equation\n\
-x        array, solution vector(s)\n\
-trans    'N': solve A   * x == b\n\
-         'T': solve A^T * x == b\n\
-         'H': solve A^H * x == b\n\
-         (optional, default value 'N')\n\
-";
+static char solve_doc[] = (
+    "x = self.solve(b, trans)\n"
+    "\n"
+    "solves linear system of equations with one or sereral right hand sides.\n"
+    "\n"
+    "parameters\n"
+    "----------\n"
+    "\n"
+    "b        array, right hand side(s) of equation\n"
+    "x        array, solution vector(s)\n"
+    "trans    'N': solve A   * x == b\n"
+    "         'T': solve A^T * x == b\n"
+    "         'H': solve A^H * x == b\n"
+    "         (optional, default value 'N')\n");
 
 static PyObject *SciPyLU_solve(SciPyLUObject * self, PyObject * args,
 			       PyObject * kwds)
@@ -60,10 +60,11 @@ static PyObject *SciPyLU_solve(SciPyLUObject * self, PyObject * args,
 
 #ifndef NPY_PY3K
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|c", kwlist,
+				     &PyArray_Type, &b, &itrans))
 #else
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|C", kwlist,
-#endif
 				     &PyArray_Type, &b, &itrans))
+#endif
 	return NULL;
 
     /* solve transposed system: matrix was passed row-wise instead of
@@ -79,18 +80,22 @@ static PyObject *SciPyLU_solve(SciPyLUObject * self, PyObject * args,
 	return NULL;
     }
 
-    if ((x = (PyArrayObject *)
-	 PyArray_CopyFromObject((PyObject *) b, self->type, 1, 2)) == NULL)
-	return NULL;
+    x = (PyArrayObject*)PyArray_FROMANY(
+        (PyObject*)b, self->type, 1, 2,
+        NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_ENSURECOPY);
+    if (x == NULL) {
+        goto fail;
+    }
 
-    if (b->dimensions[0] != self->n)
+    if (x->dimensions[0] != self->n) {
+        PyErr_SetString(PyExc_ValueError, "b is of incompatible size");
 	goto fail;
-
+    }
 
     if (setjmp(_superlu_py_jmpbuf))
 	goto fail;
 
-    if (DenseSuper_from_Numeric(&B, (PyObject *) x))
+    if (DenseSuper_from_Numeric(&B, (PyObject *)x))
 	goto fail;
 
     StatInit(&stat);
@@ -283,18 +288,29 @@ PyTypeObject SciPySuperLUType = {
 };
 
 
-int DenseSuper_from_Numeric(SuperMatrix * X, PyObject * PyX)
+int DenseSuper_from_Numeric(SuperMatrix *X, PyObject *PyX)
 {
-    int m, n, ldx, nd;
     PyArrayObject *aX;
+    int m, n, ldx, nd;
 
     if (!PyArray_Check(PyX)) {
-	PyErr_SetString(PyExc_TypeError,
-			"dgssv: Second argument is not an array.");
-	return -1;
+        PyErr_SetString(PyExc_TypeError,
+                        "argument is not an array.");
+        return -1;
     }
 
-    aX = (PyArrayObject *) PyX;
+    aX = (PyArrayObject*)PyX;
+
+    if (!CHECK_SLU_TYPE(aX->descr->type_num)) {
+        PyErr_SetString(PyExc_ValueError, "unsupported array data type");
+        return -1;
+    }
+
+    if (!(aX->flags & NPY_ARRAY_F_CONTIGUOUS)) {
+        PyErr_SetString(PyExc_ValueError, "array is not fortran contiguous");
+        return -1;
+    }
+
     nd = aX->nd;
 
     if (nd == 1) {
@@ -302,19 +318,19 @@ int DenseSuper_from_Numeric(SuperMatrix * X, PyObject * PyX)
 	n = 1;
 	ldx = m;
     }
-    else {			/* nd == 2 */
-	m = aX->dimensions[1];
-	n = aX->dimensions[0];
+    else if (nd == 2) {
+	m = aX->dimensions[0];
+	n = aX->dimensions[1];
 	ldx = m;
+    }
+    else {
+        PyErr_SetString(PyExc_ValueError, "wrong number of dimensions in array");
+        return -1;
     }
 
     if (setjmp(_superlu_py_jmpbuf))
 	return -1;
     else {
-	if (!CHECK_SLU_TYPE(aX->descr->type_num)) {
-	    PyErr_SetString(PyExc_ValueError, "unsupported data type");
-	    return -1;
-	}
 	Create_Dense_Matrix(aX->descr->type_num, X, m, n,
 			    aX->data, ldx, SLU_DN,
 			    NPY_TYPECODE_TO_SLU(aX->descr->type_num),

@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 from warnings import warn
 
+import numpy as np
 from numpy import asarray, empty, ravel, nonzero
 from scipy.sparse import (isspmatrix_csc, isspmatrix_csr, isspmatrix,
                           SparseEfficiencyWarning, csc_matrix)
@@ -16,8 +17,12 @@ except ImportError:
 
 useUmfpack = not noScikit
 
+__all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized',
+           'MatrixRankWarning']
 
-__all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized']
+
+class MatrixRankWarning(UserWarning):
+    pass
 
 
 def use_solver(**kwargs):
@@ -104,37 +109,46 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     use_umfpack = use_umfpack and useUmfpack
 
-    if b_is_vector:
+    if b_is_vector and use_umfpack:
         if b_is_sparse:
             b_vec = b.toarray()
         else:
             b_vec = b
         b_vec = asarray(b_vec, dtype=A.dtype).ravel()
 
-        if use_umfpack:
-            if noScikit:
-                raise RuntimeError('Scikits.umfpack not installed.')
+        if noScikit:
+            raise RuntimeError('Scikits.umfpack not installed.')
 
-            if A.dtype.char not in 'dD':
-                raise ValueError("convert matrix data to double, please, using"
-                      " .astype(), or set linsolve.useUmfpack = False")
+        if A.dtype.char not in 'dD':
+            raise ValueError("convert matrix data to double, please, using"
+                  " .astype(), or set linsolve.useUmfpack = False")
 
-            family = {'d': 'di', 'D': 'zi'}
-            umf = umfpack.UmfpackContext(family[A.dtype.char])
-            x = umf.linsolve(umfpack.UMFPACK_A, A, b_vec,
-                             autoTranspose=True)
-
-        else:
-            if isspmatrix_csc(A):
-                flag = 1  # CSC format
-            else:
-                flag = 0  # CSR format
-            options = dict(ColPerm=permc_spec)
-            x = _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr, b_vec, flag,
-                              options=options)[0]
+        family = {'d': 'di', 'D': 'zi'}
+        umf = umfpack.UmfpackContext(family[A.dtype.char])
+        x = umf.linsolve(umfpack.UMFPACK_A, A, b_vec,
+                         autoTranspose=True)
     else:
-        # Cover the case where b is a matrix
-        if b_is_sparse:
+        if b_is_vector and b_is_sparse:
+            b = b.toarray()
+            b_is_sparse = False
+
+
+        if isspmatrix_csc(A):
+            flag = 1  # CSC format
+        else:
+            flag = 0  # CSR format
+        options = dict(ColPerm=permc_spec)
+
+        if not b_is_sparse:
+            x, info = _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr,
+                                    b, flag, options=options)
+            if info != 0:
+                warn("Matrix is exactly singular", MatrixRankWarning)
+                x.fill(np.nan)
+            if b_is_vector:
+                x = x.ravel()
+        else:
+            # b is sparse
             Afactsolve = factorized(A)
             tempj = empty(M, dtype=int)
             x = A.__class__(b.shape)
@@ -151,12 +165,6 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
                 tempj.fill(j)
                 x = x + A.__class__((xj[w], (w, tempj[:len(w)])),
                                     shape=b.shape, dtype=A.dtype)
-        else:
-            # Dense b
-            Afactsolve = factorized(A)
-            x = empty(b.shape, dtype=A.dtype)
-            for j in range(b.shape[1]):
-                x[:,j] = Afactsolve(b[:,j])
 
     return x
 
