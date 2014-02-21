@@ -345,14 +345,24 @@ int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
 			   PyArrayObject * nzvals, PyArrayObject * colind,
 			   PyArrayObject * rowptr, int typenum)
 {
-    int err = 0;
+    int ok = 0;
 
-    err = (nzvals->descr->type_num != typenum);
-    err += (nzvals->nd != 1);
-    err += (nnz > nzvals->dimensions[0]);
-    if (err) {
-	PyErr_SetString(PyExc_TypeError,
-			"Fourth argument must be a 1-D array at least as big as third argument.");
+    ok = (PyArray_EquivTypenums(PyArray_DESCR(nzvals)->type_num, typenum) &&
+          PyArray_EquivTypenums(PyArray_DESCR(colind)->type_num, NPY_INT) &&
+          PyArray_EquivTypenums(PyArray_DESCR(rowptr)->type_num, NPY_INT) &&
+          PyArray_NDIM(nzvals) == 1 &&
+          PyArray_NDIM(colind) == 1 &&
+          PyArray_NDIM(rowptr) == 1 &&
+          PyArray_ISCARRAY(nzvals) &&
+          PyArray_ISCARRAY(colind) &&
+          PyArray_ISCARRAY(rowptr) &&
+          nnz <= PyArray_DIM(nzvals, 0) &&
+          nnz <= PyArray_DIM(colind, 0) &&
+          m+1 <= PyArray_DIM(rowptr, 0));
+    if (!ok) {
+	PyErr_SetString(PyExc_ValueError,
+			"sparse matrix arrays must be 1-D C-contigous and of proper "
+                        "sizes and types");
 	return -1;
     }
 
@@ -378,14 +388,24 @@ int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
 			   PyArrayObject * nzvals, PyArrayObject * rowind,
 			   PyArrayObject * colptr, int typenum)
 {
-    int err = 0;
+    int ok = 0;
 
-    err = (nzvals->descr->type_num != typenum);
-    err += (nzvals->nd != 1);
-    err += (nnz > nzvals->dimensions[0]);
-    if (err) {
-	PyErr_SetString(PyExc_TypeError,
-			"Fifth argument must be a 1-D array at least as big as fourth argument.");
+    ok = (PyArray_EquivTypenums(PyArray_DESCR(nzvals)->type_num, typenum) &&
+          PyArray_EquivTypenums(PyArray_DESCR(rowind)->type_num, NPY_INT) &&
+          PyArray_EquivTypenums(PyArray_DESCR(colptr)->type_num, NPY_INT) &&
+          PyArray_NDIM(nzvals) == 1 &&
+          PyArray_NDIM(rowind) == 1 &&
+          PyArray_NDIM(colptr) == 1 &&
+          PyArray_ISCARRAY(nzvals) &&
+          PyArray_ISCARRAY(rowind) &&
+          PyArray_ISCARRAY(colptr) &&
+          nnz <= PyArray_DIM(nzvals, 0) &&
+          nnz <= PyArray_DIM(rowind, 0) &&
+          n+1 <= PyArray_DIM(colptr, 0));
+    if (!ok) {
+	PyErr_SetString(PyExc_ValueError,
+			"sparse matrix arrays must be 1-D C-contigous and of proper "
+                        "sizes and types");
 	return -1;
     }
 
@@ -812,44 +832,47 @@ int set_superlu_options_from_dict(superlu_options_t * options,
     _relax = sp_ienv(2);
 
     if (option_dict == NULL) {
-	return 0;
+        /* Proceed with default options */
+        ret = 1;
     }
-
-    args = PyTuple_New(0);
-    ret = PyArg_ParseTupleAndKeywords(args, option_dict,
-				      "|O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&",
-				      kwlist, fact_cvt, &options->Fact,
-				      yes_no_cvt, &options->Equil,
-				      colperm_cvt, &options->ColPerm,
-				      trans_cvt, &options->Trans,
-				      iterrefine_cvt, &options->IterRefine,
-				      double_cvt,
-				      &options->DiagPivotThresh,
-				      yes_no_cvt, &options->PivotGrowth,
-				      yes_no_cvt,
-				      &options->ConditionNumber,
-				      rowperm_cvt, &options->RowPerm,
-				      yes_no_cvt, &options->SymmetricMode,
-				      yes_no_cvt, &options->PrintStat,
-				      yes_no_cvt,
-				      &options->ReplaceTinyPivot,
-				      yes_no_cvt,
-				      &options->SolveInitialized,
-				      yes_no_cvt,
-				      &options->RefineInitialized,
-				      norm_cvt, &options->ILU_Norm,
-				      milu_cvt, &options->ILU_MILU,
-				      double_cvt, &options->ILU_DropTol,
-				      double_cvt, &options->ILU_FillTol,
-				      double_cvt, &options->ILU_FillFactor,
-				      droprule_cvt, &options->ILU_DropRule,
-				      int_cvt, &_panel_size, int_cvt,
-				      &_relax);
-    Py_DECREF(args);
+    else {
+        args = PyTuple_New(0);
+        ret = PyArg_ParseTupleAndKeywords(args, option_dict,
+                                          "|O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&O&",
+                                          kwlist, fact_cvt, &options->Fact,
+                                          yes_no_cvt, &options->Equil,
+                                          colperm_cvt, &options->ColPerm,
+                                          trans_cvt, &options->Trans,
+                                          iterrefine_cvt, &options->IterRefine,
+                                          double_cvt,
+                                          &options->DiagPivotThresh,
+                                          yes_no_cvt, &options->PivotGrowth,
+                                          yes_no_cvt,
+                                          &options->ConditionNumber,
+                                          rowperm_cvt, &options->RowPerm,
+                                          yes_no_cvt, &options->SymmetricMode,
+                                          yes_no_cvt, &options->PrintStat,
+                                          yes_no_cvt,
+                                          &options->ReplaceTinyPivot,
+                                          yes_no_cvt,
+                                          &options->SolveInitialized,
+                                          yes_no_cvt,
+                                          &options->RefineInitialized,
+                                          norm_cvt, &options->ILU_Norm,
+                                          milu_cvt, &options->ILU_MILU,
+                                          double_cvt, &options->ILU_DropTol,
+                                          double_cvt, &options->ILU_FillTol,
+                                          double_cvt, &options->ILU_FillFactor,
+                                          droprule_cvt, &options->ILU_DropRule,
+                                          int_cvt, &_panel_size, int_cvt,
+                                          &_relax);
+        Py_DECREF(args);
+    }
 
     if (panel_size != NULL) {
 	*panel_size = _panel_size;
     }
+
     if (relax != NULL) {
 	*relax = _relax;
     }

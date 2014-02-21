@@ -12,7 +12,8 @@ import scipy.linalg
 from scipy.linalg import norm, inv
 from scipy.sparse import spdiags, SparseEfficiencyWarning, csc_matrix, csr_matrix, \
      isspmatrix, dok_matrix, lil_matrix, bsr_matrix
-from scipy.sparse.linalg.dsolve import spsolve, use_solver, splu, spilu, MatrixRankWarning
+from scipy.sparse.linalg.dsolve import spsolve, use_solver, splu, spilu, \
+     MatrixRankWarning, _superlu
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
@@ -170,6 +171,39 @@ class TestLinsolve(TestCase):
         b = array([[2., 0.], [2., 2.]])
 
         assert_array_almost_equal(x, spsolve(A, b))
+
+    def test_gssv_badinput(self):
+        N = 10
+        d = arange(N) + 1.0
+        A = spdiags((d, 2*d, d[::-1]), (-3, 0, 5), N, N)
+
+        for spmatrix in (csc_matrix, csr_matrix):
+            A = spmatrix(A)
+            b = np.arange(N)
+
+            def not_c_contig(x):
+                return x.repeat(2)[::2]
+            def not_1dim(x):
+                return x[:,None]
+            def bad_type(x):
+                return x.astype(bool)
+            def too_short(x):
+                return x[:-1]
+
+            badops = [not_c_contig, not_1dim, bad_type, too_short]
+
+            for badop in badops:
+                msg = "%r %r" % (spmatrix, badop)
+                # Not C-contiguous
+                assert_raises((ValueError, TypeError), _superlu.gssv,
+                              N, A.nnz, badop(A.data), A.indices, A.indptr,
+                              b, int(spmatrix == csc_matrix), err_msg=msg)
+                assert_raises((ValueError, TypeError), _superlu.gssv,
+                              N, A.nnz, A.data, badop(A.indices), A.indptr,
+                              b, int(spmatrix == csc_matrix), err_msg=msg)
+                assert_raises((ValueError, TypeError), _superlu.gssv,
+                              N, A.nnz, A.data, A.indices, badop(A.indptr),
+                              b, int(spmatrix == csc_matrix), err_msg=msg)
 
 
 class TestSplu(object):
