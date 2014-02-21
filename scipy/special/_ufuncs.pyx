@@ -1167,6 +1167,9 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_ellik "ellik"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_ellpk "ellpk"(double) nogil
+from _entr cimport entr as _func_entr
+ctypedef double _proto_entr_t(double) nogil
+cdef _proto_entr_t *_proto_entr_t_var = &_func_entr
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_erf "erf"(double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -1448,6 +1451,9 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_ker_wrap "ker_wrap"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_kerp_wrap "kerp_wrap"(double) nogil
+from _kl_div cimport kl_div as _func_kl_div
+ctypedef double _proto_kl_div_t(double, double) nogil
+cdef _proto_kl_div_t *_proto_kl_div_t_var = &_func_kl_div
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_cbesk_wrap_real_int "cbesk_wrap_real_int"(int, double) nogil
 from _legacy cimport kn_unsafe as _func_kn_unsafe
@@ -3142,6 +3148,43 @@ ufunc_ellipkm1_ptr[2*1+1] = <void*>(<char*>"ellipkm1")
 ufunc_ellipkm1_data[0] = &ufunc_ellipkm1_ptr[2*0]
 ufunc_ellipkm1_data[1] = &ufunc_ellipkm1_ptr[2*1]
 ellipkm1 = np.PyUFunc_FromFuncAndData(ufunc_ellipkm1_loops, ufunc_ellipkm1_data, ufunc_ellipkm1_types, 2, 1, 1, 0, "ellipkm1", ufunc_ellipkm1_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_entr_loops[2]
+cdef void *ufunc_entr_ptr[4]
+cdef void *ufunc_entr_data[2]
+cdef char ufunc_entr_types[4]
+cdef char *ufunc_entr_doc = (
+    "entr(x)\n"
+    "\n"
+    "Compute ``-x*log(x)`` so that the result is 0 if `x = 0`\n"
+    "and is negative infinity if `x < 0`.\n"
+    "If x is a finite distribution then the sum of entr is the entropy.\n"
+    "This function is concave.\n"
+    "\n"
+    ".. versionadded:: 0.14.0\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Argument\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "y : array_like\n"
+    "    Computed -x*log(x)")
+ufunc_entr_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_entr_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_entr_types[0] = <char>NPY_FLOAT
+ufunc_entr_types[1] = <char>NPY_FLOAT
+ufunc_entr_types[2] = <char>NPY_DOUBLE
+ufunc_entr_types[3] = <char>NPY_DOUBLE
+ufunc_entr_ptr[2*0] = <void*>_func_entr
+ufunc_entr_ptr[2*0+1] = <void*>(<char*>"entr")
+ufunc_entr_ptr[2*1] = <void*>_func_entr
+ufunc_entr_ptr[2*1+1] = <void*>(<char*>"entr")
+ufunc_entr_data[0] = &ufunc_entr_ptr[2*0]
+ufunc_entr_data[1] = &ufunc_entr_ptr[2*1]
+entr = np.PyUFunc_FromFuncAndData(ufunc_entr_loops, ufunc_entr_data, ufunc_entr_types, 2, 1, 1, 0, "entr", ufunc_entr_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_erf_loops[4]
 cdef void *ufunc_erf_ptr[8]
@@ -6142,6 +6185,49 @@ ufunc_kerp_ptr[2*1+1] = <void*>(<char*>"kerp")
 ufunc_kerp_data[0] = &ufunc_kerp_ptr[2*0]
 ufunc_kerp_data[1] = &ufunc_kerp_ptr[2*1]
 kerp = np.PyUFunc_FromFuncAndData(ufunc_kerp_loops, ufunc_kerp_data, ufunc_kerp_types, 2, 1, 1, 0, "kerp", ufunc_kerp_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_kl_div_loops[2]
+cdef void *ufunc_kl_div_ptr[4]
+cdef void *ufunc_kl_div_data[2]
+cdef char ufunc_kl_div_types[6]
+cdef char *ufunc_kl_div_doc = (
+    "kl_div(x, y)\n"
+    "\n"
+    "Compute ``x*log(x/y)-x+y`` carefully handling the domain,\n"
+    "so that the result is infinity if either value is negative or if\n"
+    "y is zero and x is positive.  Otherwise if `x = 0` then the result is y.\n"
+    "If x and y are finite distributions then the sum of kl_div is\n"
+    "the Kullback-Leibler divergence of y from x.\n"
+    "This function is convex.\n"
+    "\n"
+    ".. versionadded:: 0.14.0\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Argument\n"
+    "y : array_like\n"
+    "    Argument\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "z : array_like\n"
+    "    Computed x*log(x/y)-x+y")
+ufunc_kl_div_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_kl_div_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_kl_div_types[0] = <char>NPY_FLOAT
+ufunc_kl_div_types[1] = <char>NPY_FLOAT
+ufunc_kl_div_types[2] = <char>NPY_FLOAT
+ufunc_kl_div_types[3] = <char>NPY_DOUBLE
+ufunc_kl_div_types[4] = <char>NPY_DOUBLE
+ufunc_kl_div_types[5] = <char>NPY_DOUBLE
+ufunc_kl_div_ptr[2*0] = <void*>_func_kl_div
+ufunc_kl_div_ptr[2*0+1] = <void*>(<char*>"kl_div")
+ufunc_kl_div_ptr[2*1] = <void*>_func_kl_div
+ufunc_kl_div_ptr[2*1+1] = <void*>(<char*>"kl_div")
+ufunc_kl_div_data[0] = &ufunc_kl_div_ptr[2*0]
+ufunc_kl_div_data[1] = &ufunc_kl_div_ptr[2*1]
+kl_div = np.PyUFunc_FromFuncAndData(ufunc_kl_div_loops, ufunc_kl_div_data, ufunc_kl_div_types, 2, 2, 1, 0, "kl_div", ufunc_kl_div_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_kn_loops[4]
 cdef void *ufunc_kn_ptr[8]

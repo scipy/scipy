@@ -567,6 +567,29 @@ add_newdoc("scipy.special", "ellipkinc",
         integral(1/sqrt(1-m*sin(t)**2),t=0..phi)
     """)
 
+add_newdoc("scipy.special", "entr",
+    """
+    entr(x)
+
+    Compute ``-x*log(x)`` so that the result is 0 if `x = 0`
+    and is negative infinity if `x < 0`.
+    If x is a finite distribution then the sum of entr is the entropy.
+    This function is concave.
+
+    .. versionadded:: 0.14.0
+
+    Parameters
+    ----------
+    x : array_like
+        Argument
+
+    Returns
+    -------
+    y : array_like
+        Computed -x*log(x)
+
+    """)
+
 add_newdoc("scipy.special", "erf",
     """
     erf(z)
@@ -1598,6 +1621,33 @@ add_newdoc("scipy.special", "kerp",
     kerp(x)
 
     Derivative of the Kelvin function ker
+    """)
+
+add_newdoc("scipy.special", "kl_div",
+    """
+    kl_div(x, y)
+
+    Compute ``x*log(x/y)-x+y`` carefully handling the domain,
+    so that the result is infinity if either value is negative or if
+    y is zero and x is positive.  Otherwise if `x = 0` then the result is y.
+    If x and y are finite distributions then the sum of kl_div is
+    the Kullback-Leibler divergence of y from x.
+    This function is convex.
+
+    .. versionadded:: 0.14.0
+
+    Parameters
+    ----------
+    x : array_like
+        Argument
+    y : array_like
+        Argument
+
+    Returns
+    -------
+    z : array_like
+        Computed x*log(x/y)-x+y
+
     """)
 
 add_newdoc("scipy.special", "kn",
