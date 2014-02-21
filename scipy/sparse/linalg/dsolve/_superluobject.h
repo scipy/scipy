@@ -28,8 +28,7 @@
  * SuperLUObject definition
  */
 typedef struct {
-    PyObject_HEAD
-    npy_intp m,n;
+    PyObject_HEAD npy_intp m, n;
     SuperMatrix L;
     SuperMatrix U;
     int *perm_r;
@@ -41,14 +40,14 @@ extern PyTypeObject SciPySuperLUType;
 
 int DenseSuper_from_Numeric(SuperMatrix *, PyObject *);
 int NRFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
-                           PyArrayObject *, PyArrayObject *, int);
+			   PyArrayObject *, PyArrayObject *, int);
 int NCFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
-                           PyArrayObject *, PyArrayObject *, int);
+			   PyArrayObject *, PyArrayObject *, int);
 colperm_t superlu_module_getpermc(int);
-PyObject *newSciPyLUObject(SuperMatrix *, PyObject*, int, int);
-int set_superlu_options_from_dict(superlu_options_t *options,
-                                  int ilu, PyObject *option_dict,
-                                  int *panel_size, int *relax);
+PyObject *newSciPyLUObject(SuperMatrix *, PyObject *, int, int);
+int set_superlu_options_from_dict(superlu_options_t * options,
+				  int ilu, PyObject * option_dict,
+				  int *panel_size, int *relax);
 
 void XDestroy_SuperMatrix_Store(SuperMatrix *);
 void XDestroy_SuperNode_Matrix(SuperMatrix *);
@@ -135,4 +134,4 @@ TYPE_GENERIC_FUNC(Create_Dense_Matrix, void);
 TYPE_GENERIC_FUNC(Create_CompRow_Matrix, void);
 TYPE_GENERIC_FUNC(Create_CompCol_Matrix, void);
 
-#endif  /* __SUPERLU_OBJECT */
+#endif				/* __SUPERLU_OBJECT */
