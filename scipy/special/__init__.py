@@ -500,7 +500,7 @@ Information Theoretic Functions
 .. autosummary::
    :toctree: generated/
 
-   entr         -- A ufunc related to entropy: x*log(x).
+   entr         -- A ufunc related to entropy: -x*log(x).
    kl_div       -- A ufunc related to K-L divergence: x*log(x/y)-x+y.
 
 Other Special Functions
