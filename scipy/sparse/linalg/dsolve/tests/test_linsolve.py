@@ -32,6 +32,23 @@ class TestLinsolve(TestCase):
         b = array([1, 2, 3, 4, 5],dtype='d')
         x = spsolve(A, b, use_umfpack=False)
 
+    def test_singular_gh_3312(self):
+        # "Bad" test case that leads SuperLU to call LAPACK with invalid
+        # arguments. Check that it fails moderately gracefully.
+        ij = np.array([(17, 0), (17, 6), (17, 12), (10, 13)], dtype=np.int32)
+        v = np.array([ 0.284213  ,  0.94933781,  0.15767017,  0.38797296])
+        A = csc_matrix((v, ij.T), shape=(20, 20))
+        b = np.arange(20)
+
+        with warnings.catch_warnings():
+            try:
+                # should either raise a runtimeerror or return value
+                # appropriate for singular input
+                x = spsolve(A, b, use_umfpack=False)
+                assert_(not np.isfinite(x).any())
+            except RuntimeError:
+                pass
+
     def test_twodiags(self):
         A = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
         b = array([1, 2, 3, 4, 5])
