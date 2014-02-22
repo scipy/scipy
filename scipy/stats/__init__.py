@@ -231,6 +231,7 @@ which work for masked arrays.
 .. autosummary::
    :toctree: generated/
 
+   sigmaclip
    threshold
    trimboth
    trim1
