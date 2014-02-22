@@ -9,7 +9,7 @@ Functions
 from __future__ import division, print_function, absolute_import
 
 
-__all__ = ['minimize', 'minimize_scalar']
+__all__ = ['minimize', 'minimize_scalar', 'register_minimize', 'register_minimize_scalar']
 
 
 from warnings import warn
@@ -32,6 +32,10 @@ from .lbfgsb import _minimize_lbfgsb
 from .tnc import _minimize_tnc
 from .cobyla import _minimize_cobyla
 from .slsqp import _minimize_slsqp
+
+# User-registered methods registry
+_user_method = {}
+_user_method_scalar = {}
 
 
 def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
@@ -66,6 +70,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             - 'SLSQP'
             - 'dogleg'
             - 'trust-ncg'
+            - custom (see the `register_minimize` function)
 
         If not given, chosen to be one of ``BFGS``, ``L-BFGS-B``, ``SLSQP``,
         depending if the problem has constraints or bounds.
@@ -320,6 +325,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     if meth == 'anneal':
         warn('Method %s is deprecated in scipy 0.14.0' % method,
                 DeprecationWarning)
+    # check whether a method is user-provided
+    is_user = meth in _user_method
     if options is None:
         options = {}
     # check if optional parameters are supported by the selected method
@@ -328,11 +335,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s does not use gradient information (jac).' % method,
              RuntimeWarning)
     # - hess
-    if meth not in ('newton-cg', 'dogleg', 'trust-ncg') and hess is not None:
+    if meth not in ('newton-cg', 'dogleg', 'trust-ncg') and not is_user and hess is not None:
         warn('Method %s does not use Hessian information (hess).' % method,
              RuntimeWarning)
     # - hessp
-    if meth not in ('newton-cg', 'dogleg', 'trust-ncg') and hessp is not None:
+    if meth not in ('newton-cg', 'dogleg', 'trust-ncg') and not is_user and hessp is not None:
         warn('Method %s does not use Hessian-vector product '
                 'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
@@ -379,7 +386,22 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         if meth in ['cobyla']:
             options.setdefault('tol', tol)
 
-    if meth == 'nelder-mead':
+    if is_user:
+        if bool(jac):
+            options['jac'] = jac
+        if bool(hess):
+            options['hess'] = hess
+        if bool(hessp):
+            options['hessp'] = hessp
+        if bool(bounds):
+            options['bounds'] = bounds
+        if bool(constraints):
+            options['constraints'] = constraints
+        if bool(tol):
+            options['tol'] = tol
+        return _user_method[meth](fun, x0, args, callback, options)
+
+    elif meth == 'nelder-mead':
         return _minimize_neldermead(fun, x0, args, callback, **options)
     elif meth == 'powell':
         return _minimize_powell(fun, x0, args, callback, **options)
@@ -443,6 +465,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
             - 'Brent'
             - 'Bounded'
             - 'Golden'
+            - custom (see the `register_minimize_scalar` function)
     tol : float, optional
         Tolerance for termination. For detailed control, use solver-specific
         options.
@@ -509,6 +532,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
 
     """
     meth = method.lower()
+    is_user = meth in _user_method_scalar
     if options is None:
         options = {}
 
@@ -518,10 +542,19 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
             warn("Method 'bounded' does not support relative tolerance in x; "
                  "defaulting to absolute tolerance.", RuntimeWarning)
             options['xatol'] = tol
+        elif is_user:
+            options['tol'] = tol
         else:
             options.setdefault('xtol', tol)
 
-    if meth == 'brent':
+    if is_user:
+        if bool(bounds):
+            options['bounds'] = bounds
+        if bool(bracket):
+            options['bracket'] = bracket
+        return _user_method_scalar[meth](fun, args, options)
+
+    elif meth == 'brent':
         return _minimize_scalar_brent(fun, bracket, args, **options)
     elif meth == 'bounded':
         if bounds is None:
@@ -532,3 +565,87 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         return _minimize_scalar_golden(fun, bracket, args, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
+
+
+def register_minimize(method, min_fun):
+    """
+    Register a custom minimization method.
+
+    .. versionadded:: 0.14.0
+
+    Parameters
+    ----------
+    method : str
+        Name of the minimize method.  Method names are not case sensitive.
+        To prevent name clashes with future versions of scipy, it is *strongly
+        recommended* that users prefix all names they register with an
+        underscore ('_').
+    min_fun : callable
+        The minimization method.  The method shall be a callable like
+        `def min_fun(fun, x0, args, callback, options)`, where the ``options``
+        dict contains both the original ``options`` passed to `minimize` and
+        values of all other named parameters passed to `minimize` (e.g.
+        ``bounds`` or ``jac``).  Must return an `OptimizeResult` object.
+
+    See also
+    --------
+    minimize : Interface to minimization algorithms for scalar multivariate
+        functions
+
+    Notes
+    -----
+    Register a custom method for the `minimize` function in a global registry
+    of user methods.  The provided method name can be referred in all future
+    `minimize` calls.  Usually, one would use this facility to make use of
+    other functions calling `minimize` (e.g. `basinhopping`) with a custom
+    minimization implementation.
+
+    In case of a name conflict, this can override even methods provided
+    internally by scipy.optimize.  However, this functionality should be
+    used only with extreme caution.  Preventing future accidents in this
+    regard is why we ask users to prefix their methods with '_'.
+    """
+    meth = method.lower()
+    _user_method[meth] = min_fun
+
+
+def register_minimize_scalar(method, min_fun):
+    """
+    Register a custom minimization method (for functions of one parameter).
+
+    .. versionadded:: 0.14.0
+
+    Parameters
+    ----------
+    method : str
+        Name of the minimize method.  Method names are not case sensitive.
+        To prevent name clashes with future versions of scipy, it is *strongly
+        recommended* that users prefix all names they register with an
+        underscore ('_').
+    min_fun : callable
+        The minimization method.  The method shall be a callable like
+        `def min_fun(fun, args, options)`, where the ``options`` dict
+        contains both the original ``options`` passed to `minimize` and
+        values of all other named parameters passed to `minimize` (e.g.
+        ``bounds`` or ``tol``).  Must return an `OptimizeResult` object.
+
+    See also
+    --------
+    minimize : Interface to minimization algorithms for scalar multivariate
+        functions
+
+    Notes
+    -----
+    Register a custom method for the `minimize_scalar` function in a global
+    registry of user methods.  The provided method name can be referred in all
+    future `minimize_scalar` calls.  Usually, one would use this facility
+    to make use of other functions calling `minimize_scalar` with a custom
+    minimization implementation.
+
+    In case of a name conflict, this can override even methods provided
+    internally by scipy.optimize.  However, this functionality should be
+    used only with extreme caution.  Preventing future accidents in this
+    regard is why we ask users to prefix their methods with '_'.
+    """
+    meth = method.lower()
+    _user_method_scalar[meth] = min_fun

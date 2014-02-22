@@ -155,6 +155,8 @@ Utility Functions
    line_search - Return a step that satisfies the strong Wolfe conditions
 
    show_options - Show specific options optimization solvers
+   register_minimize - Register a custom minimize method
+   register_minimize_scalar - Register a custom scalar minimize method
 
 """
 
