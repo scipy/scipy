@@ -15,4 +15,4 @@ cdef inline double kl_div(double x, double y) nogil:
     elif x == 0:
         return y;
     else:
-        return x * log(x / y) - x + y;
+        return x*log(x) - x*log(y) - x + y;
