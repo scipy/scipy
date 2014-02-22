@@ -58,6 +58,10 @@ has been added.
 `scipy.optimize.curve_fit` now has more controllable error estimation via the
 ``absolute_sigma`` keyword.
 
+Support for passing custom minimization methods to ``optimize.minimize()``
+and ``optimize.minimize_scalar()`` has been added, currently useful especially
+for combining ``optimize.basinhopping()`` with custom local optimizer routines.
+
 
 ``scipy.stats`` improvements
 ----------------------------
@@ -184,6 +188,7 @@ Authors
 * Marc Abramowitz +
 * andbo +
 * Vincent Arel-Bundock +
+* Petr Baudis +
 * Max Bolingbroke
 * François Boulogne
 * Matthew Brett
