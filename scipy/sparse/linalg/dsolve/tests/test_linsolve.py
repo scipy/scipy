@@ -6,7 +6,8 @@ import numpy as np
 from numpy import array, finfo, arange, eye, all, unique, ones, dot, matrix
 import numpy.random as random
 from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal, \
-    assert_raises, assert_almost_equal, assert_equal, assert_array_equal, assert_
+    assert_raises, assert_almost_equal, assert_equal, assert_array_equal, assert_, \
+    assert_allclose
 
 import scipy.linalg
 from scipy.linalg import norm, inv
@@ -365,6 +366,25 @@ class TestSplu(object):
                           b.astype(np.complex64))
             assert_raises(TypeError, lu.solve,
                           b.astype(np.complex128))
+
+    def test_lu_attr(self):
+        A = self.A
+        n = A.shape[0]
+        lu = splu(A)
+
+        # Check that the decomposition is as advertized
+
+        Pc = np.zeros((n, n))
+        Pc[np.arange(n), lu.perm_c] = 1
+
+        Pr = np.zeros((n, n))
+        Pr[lu.perm_r, np.arange(n)] = 1
+
+        Ad = A.toarray()
+        lhs = Pr.dot(Ad).dot(Pc)
+        rhs = (lu.L * lu.U).toarray()
+
+        assert_allclose(lhs, rhs, atol=1e-10)
 
 
 if __name__ == "__main__":
