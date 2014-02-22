@@ -91,6 +91,7 @@ Complete or incomplete LU factorizations
 
    splu -- Compute a LU decomposition for a sparse matrix
    spilu -- Compute an incomplete LU decomposition for a sparse matrix
+   SuperLU -- Object representing an LU factorization
 
 Exceptions
 ----------
