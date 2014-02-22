@@ -17,68 +17,11 @@
 
 extern jmp_buf _superlu_py_jmpbuf;
 
-static char factored_lu_doc[] = (
-    "LU factorization of a sparse matrix\n"
-    "\n"
-    "Factorization is represented as::\n"
-    "\n"
-    "    Pr * A * Pc = (I + L) * (I + U)\n"
-    "\n"
-    "Attributes\n"
-    "-----------\n"
-    "shape : 2-tuple\n"
-    "    Shape of the orginal matrix factored\n"
-    "nnz : int\n"
-    "    Number of non-zero elements in the matrix\n"
-    "perm_c : ndarray of int\n"
-    "    Permutation Pc represented as an array of indices\n"
-    "perm_r : ndarray of int\n"
-    "    Permutation Pr represented as an array of indices\n"
-    "L : scipy.sparse.coo_matrix\n"
-    "    Lower triangular factor in the decomposition\n"
-    "U : scipy.sparse.csc_matrix\n"
-    "    Upper triangular factor in the decomposition.\n"
-    "    The unit diagonal is omitted from the matrix.\n"
-    "\n"
-    "Methods\n"
-    "-------\n"
-    "solve\n"
-    "\n"
-    "Examples\n"
-    "--------\n"
-    "The inverse matrix can be constructed from\n"
-    "\n"
-    "\n"
-    "\n"
-    );
-
-static char solve_doc[] = (
-    "solve(b[, trans])\n"
-    "\n"
-    "Solves linear system of equations with one or several right hand sides.\n"
-    "\n"
-    "Parameters\n"
-    "----------\n"
-    "b : ndarray, shape (n,) or (n, k)\n"
-    "    Right hand side(s) of equation\n"
-    "trans : {'N', 'T', 'H'}, optional\n"
-    "    Type of system to solve::\n"
-    "\n"
-    "        'N': solve A   * x == b  (default)\n"
-    "        'T': solve A^T * x == b\n"
-    "        'H': solve A^H * x == b\n"
-    "\n"
-    "Returns\n"
-    "-------\n"
-    "x : ndarray, shape b.shape\n"
-    "    Solution vector(s)\n"
-    );
-
 /*********************************************************************** 
- * SciPyLUObject methods
+ * SuperLUObject methods
  */
 
-static PyObject *SciPyLU_solve(SciPyLUObject * self, PyObject * args,
+static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
 			       PyObject * kwds)
 {
     PyArrayObject *b, *x = NULL;
@@ -166,18 +109,17 @@ static PyObject *SciPyLU_solve(SciPyLUObject * self, PyObject * args,
 
 /** table of object methods
  */
-PyMethodDef SciPyLU_methods[] = {
-    {"solve", (PyCFunction) SciPyLU_solve, METH_VARARGS | METH_KEYWORDS,
-     solve_doc},
+PyMethodDef SuperLU_methods[] = {
+    {"solve", (PyCFunction) SuperLU_solve, METH_VARARGS | METH_KEYWORDS, NULL},
     {NULL, NULL}		/* sentinel */
 };
 
 
 /*********************************************************************** 
- * SciPySuperLUType methods
+ * SuperLUType methods
  */
 
-static void SciPyLU_dealloc(SciPyLUObject * self)
+static void SuperLU_dealloc(SuperLUObject * self)
 {
     Py_XDECREF(self->cached_U);
     Py_XDECREF(self->cached_L);
@@ -192,7 +134,7 @@ static void SciPyLU_dealloc(SciPyLUObject * self)
     PyObject_Del(self);
 }
 
-static PyObject *SciPyLU_getter(SciPyLUObject *self, void *data)
+static PyObject *SuperLU_getter(SuperLUObject *self, void *data)
 {
     char *name = (char*)data;
 
@@ -259,31 +201,31 @@ static PyObject *SciPyLU_getter(SciPyLUObject *self, void *data)
 
 
 /***********************************************************************
- * SciPySuperLUType structure
+ * SuperLUType structure
  */
 
-PyGetSetDef SciPyLU_getset[] = {
-    {"shape", SciPyLU_getter, (setter)NULL, (char*)NULL, (void*)"shape"},
-    {"nnz", SciPyLU_getter, (setter)NULL, (char*)NULL, (void*)"nnz"},
-    {"perm_r", SciPyLU_getter, (setter)NULL, (char*)NULL, (void*)"perm_r"},
-    {"perm_c", SciPyLU_getter, (setter)NULL, (char*)NULL, (void*)"perm_c"},
-    {"U", SciPyLU_getter, (setter)NULL, (char*)NULL, (void*)"U"},
-    {"L", SciPyLU_getter, (setter)NULL, (char*)NULL, (void*)"L"},
+PyGetSetDef SuperLU_getset[] = {
+    {"shape", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"shape"},
+    {"nnz", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"nnz"},
+    {"perm_r", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"perm_r"},
+    {"perm_c", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"perm_c"},
+    {"U", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"U"},
+    {"L", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"L"},
     NULL
 };
 
 
-PyTypeObject SciPySuperLUType = {
+PyTypeObject SuperLUType = {
 #if defined(NPY_PY3K)
     PyVarObject_HEAD_INIT(NULL, 0)
 #else
     PyObject_HEAD_INIT(NULL)
     0,
 #endif
-    "factored_lu",
-    sizeof(SciPyLUObject),
+    "SuperLU",
+    sizeof(SuperLUObject),
     0,
-    (destructor) SciPyLU_dealloc,	/* tp_dealloc */
+    (destructor) SuperLU_dealloc, /* tp_dealloc */
     0,				/* tp_print */
     0,	                        /* tp_getattr */
     0,				/* tp_setattr */
@@ -299,16 +241,16 @@ PyTypeObject SciPySuperLUType = {
     0,				/* tp_setattro */
     0,				/* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,		/* tp_flags */
-    factored_lu_doc,		/* tp_doc */
+    NULL,                       /* tp_doc */
     0,				/* tp_traverse */
     0,				/* tp_clear */
     0,				/* tp_richcompare */
     0,				/* tp_weaklistoffset */
     0,				/* tp_iter */
     0,				/* tp_iternext */
-    SciPyLU_methods,		/* tp_methods */
+    SuperLU_methods,		/* tp_methods */
     0,				/* tp_members */
-    SciPyLU_getset,		/* tp_getset */
+    SuperLU_getset,		/* tp_getset */
     0,				/* tp_base */
     0,				/* tp_dict */
     0,				/* tp_descr_get */
@@ -724,12 +666,12 @@ size_error:
 }
 
 
-PyObject *newSciPyLUObject(SuperMatrix * A, PyObject * option_dict,
-			   int intype, int ilu)
+PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
+                           int intype, int ilu)
 {
 
     /* A must be in SLU_NC format used by the factorization routine. */
-    SciPyLUObject *self;
+    SuperLUObject *self;
     SuperMatrix AC = { 0 };	/* Matrix postmultiplied by Pc */
     int lwork = 0;
     int *etree = NULL;
@@ -746,8 +688,8 @@ PyObject *newSciPyLUObject(SuperMatrix * A, PyObject * option_dict,
 	return NULL;
     }
 
-    /* Create SciPyLUObject */
-    self = PyObject_New(SciPyLUObject, &SciPySuperLUType);
+    /* Create SLUObject */
+    self = PyObject_New(SuperLUObject, &SuperLUType);
     if (self == NULL)
 	return PyErr_NoMemory();
     self->m = A->nrow;

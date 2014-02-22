@@ -206,7 +206,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     Returns
     -------
-    invA : scipy.sparse.linalg.dsolve._superlu.SciPyLUType
+    invA : scipy.sparse.linalg.SuperLU
         Object, which has a ``solve`` method.
 
     See also
@@ -273,7 +273,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     Returns
     -------
-    invA_approx : scipy.sparse.linalg.dsolve._superlu.SciPyLUType
+    invA_approx : scipy.sparse.linalg.SuperLU
         Object, which has a ``solve`` method.
 
     See also
