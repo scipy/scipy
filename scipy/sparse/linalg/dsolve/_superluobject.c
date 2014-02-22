@@ -127,8 +127,7 @@ static PyObject *SciPyLU_solve(SciPyLUObject * self, PyObject * args,
  */
 PyMethodDef SciPyLU_methods[] = {
     {"solve", (PyCFunction) SciPyLU_solve, METH_VARARGS | METH_KEYWORDS,
-     solve_doc}
-    ,
+     solve_doc},
     {NULL, NULL}		/* sentinel */
 };
 
@@ -148,68 +147,58 @@ static void SciPyLU_dealloc(SciPyLUObject * self)
     PyObject_Del(self);
 }
 
-static PyObject *SciPyLU_getattr(SciPyLUObject * self, char *name)
+static PyObject *SciPyLU_getter(SciPyLUObject *self, void *data)
 {
-    if (strcmp(name, "shape") == 0)
+    char *name = (char*)data;
+
+    if (strcmp(name, "shape") == 0) {
 	return Py_BuildValue("(i,i)", self->m, self->n);
-    if (strcmp(name, "nnz") == 0)
+    }
+    else if (strcmp(name, "nnz") == 0)
 	return Py_BuildValue("i",
 			     ((SCformat *) self->L.Store)->nnz +
 			     ((SCformat *) self->U.Store)->nnz);
-    if (strcmp(name, "perm_r") == 0) {
-	PyArrayObject *perm_r =
-	    PyArray_SimpleNewFromData(1, (npy_intp *) (&self->n), NPY_INT,
-				      (void *) self->perm_r);
+    else if (strcmp(name, "perm_r") == 0) {
+	PyObject *perm_r;
+        perm_r = PyArray_SimpleNewFromData(
+            1, (npy_intp *) (&self->n), NPY_INT,
+            (void *) self->perm_r);
+        if (perm_r == NULL) {
+            return NULL;
+        }
 
 	/* For ref counting of the memory */
-	PyArray_BASE(perm_r) = self;
+	PyArray_BASE(perm_r) = (PyObject*)self;
 	Py_INCREF(self);
 	return perm_r;
     }
-    if (strcmp(name, "perm_c") == 0) {
-	PyArrayObject *perm_c =
-	    PyArray_SimpleNewFromData(1, (npy_intp *) (&self->n), NPY_INT,
-				      (void *) self->perm_c);
+    else if (strcmp(name, "perm_c") == 0) {
+	PyObject *perm_c;
+
+        perm_c = PyArray_SimpleNewFromData(
+            1, (npy_intp *) (&self->n), NPY_INT,
+            (void *) self->perm_c);
+        if (perm_c == NULL) {
+            return NULL;
+        }
 
 	/* For ref counting of the memory */
-	PyArray_BASE(perm_c) = self;
+	PyArray_BASE(perm_c) = (PyObject*)self;
 	Py_INCREF(self);
 	return perm_c;
     }
-    if (strcmp(name, "__members__") == 0) {
-	char *members[] = { "shape", "nnz", "perm_r", "perm_c" };
-	int i;
-
-	PyObject *list = PyList_New(sizeof(members) / sizeof(char *));
-
-	if (list != NULL) {
-	    for (i = 0; i < sizeof(members) / sizeof(char *); i++)
-		PyList_SetItem(list, i, PyUString_FromString(members[i]));
-	    if (PyErr_Occurred()) {
-		Py_DECREF(list);
-		list = NULL;
-	    }
-	}
-	return list;
+    else {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "internal error (this is a bug)");
+        return NULL;
     }
-#if PY_VERSION_HEX >= 0x03000000
-    if (1) {
-	PyObject *str, *ret;
-
-	str = PyUnicode_FromString(name);
-	ret = PyObject_GenericGetAttr((PyObject *) self, str);
-	Py_DECREF(str);
-	return ret;
-    }
-#else
-    return Py_FindMethod(SciPyLU_methods, (PyObject *) self, name);
-#endif
 }
 
 
 /***********************************************************************
  * SciPySuperLUType structure
  */
+
 static char factored_lu_doc[] = "\
 Object resulting from a factorization of a sparse matrix\n\
 \n\
@@ -232,19 +221,30 @@ solve\n\
 \n\
 ";
 
+PyGetSetDef SciPyLU_getset[] = {
+    {"shape", SciPyLU_getter, (setter)NULL, (char*)NULL, (void*)"shape"},
+    {"nnz", SciPyLU_getter, (setter)NULL, (char*)NULL, (void*)"nnz"},
+    {"perm_r", SciPyLU_getter, (setter)NULL, (char*)NULL, (void*)"perm_r"},
+    {"perm_c", SciPyLU_getter, (setter)NULL, (char*)NULL, (void*)"perm_c"},
+    {"U", SciPyLU_getter, (setter)NULL, (char*)NULL, (void*)"U"},
+    {"L", SciPyLU_getter, (setter)NULL, (char*)NULL, (void*)"L"},
+    NULL
+};
+
+
 PyTypeObject SciPySuperLUType = {
 #if defined(NPY_PY3K)
     PyVarObject_HEAD_INIT(NULL, 0)
 #else
     PyObject_HEAD_INIT(NULL)
-	0,
+    0,
 #endif
     "factored_lu",
     sizeof(SciPyLUObject),
     0,
     (destructor) SciPyLU_dealloc,	/* tp_dealloc */
     0,				/* tp_print */
-    (getattrfunc) SciPyLU_getattr,	/* tp_getattr */
+    0,	                        /* tp_getattr */
     0,				/* tp_setattr */
     0,				/* tp_compare / tp_reserved */
     0,				/* tp_repr */
@@ -267,7 +267,7 @@ PyTypeObject SciPySuperLUType = {
     0,				/* tp_iternext */
     SciPyLU_methods,		/* tp_methods */
     0,				/* tp_members */
-    0,				/* tp_getset */
+    SciPyLU_getset,		/* tp_getset */
     0,				/* tp_base */
     0,				/* tp_dict */
     0,				/* tp_descr_get */
