@@ -17,25 +17,66 @@
 
 extern jmp_buf _superlu_py_jmpbuf;
 
+static char factored_lu_doc[] = (
+    "LU factorization of a sparse matrix\n"
+    "\n"
+    "Factorization is represented as::\n"
+    "\n"
+    "    Pr * A * Pc = (I + L) * (I + U)\n"
+    "\n"
+    "Attributes\n"
+    "-----------\n"
+    "shape : 2-tuple\n"
+    "    Shape of the orginal matrix factored\n"
+    "nnz : int\n"
+    "    Number of non-zero elements in the matrix\n"
+    "perm_c : ndarray of int\n"
+    "    Permutation Pc represented as an array of indices\n"
+    "perm_r : ndarray of int\n"
+    "    Permutation Pr represented as an array of indices\n"
+    "L : scipy.sparse.coo_matrix\n"
+    "    Lower triangular factor in the decomposition\n"
+    "U : scipy.sparse.csc_matrix\n"
+    "    Upper triangular factor in the decomposition.\n"
+    "    The unit diagonal is omitted from the matrix.\n"
+    "\n"
+    "Methods\n"
+    "-------\n"
+    "solve\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    "The inverse matrix can be constructed from\n"
+    "\n"
+    "\n"
+    "\n"
+    );
+
+static char solve_doc[] = (
+    "solve(b[, trans])\n"
+    "\n"
+    "Solves linear system of equations with one or several right hand sides.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "b : ndarray, shape (n,) or (n, k)\n"
+    "    Right hand side(s) of equation\n"
+    "trans : {'N', 'T', 'H'}, optional\n"
+    "    Type of system to solve::\n"
+    "\n"
+    "        'N': solve A   * x == b  (default)\n"
+    "        'T': solve A^T * x == b\n"
+    "        'H': solve A^H * x == b\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "x : ndarray, shape b.shape\n"
+    "    Solution vector(s)\n"
+    );
 
 /*********************************************************************** 
  * SciPyLUObject methods
  */
-
-static char solve_doc[] = (
-    "x = self.solve(b, trans)\n"
-    "\n"
-    "solves linear system of equations with one or sereral right hand sides.\n"
-    "\n"
-    "parameters\n"
-    "----------\n"
-    "\n"
-    "b        array, right hand side(s) of equation\n"
-    "x        array, solution vector(s)\n"
-    "trans    'N': solve A   * x == b\n"
-    "         'T': solve A^T * x == b\n"
-    "         'H': solve A^H * x == b\n"
-    "         (optional, default value 'N')\n");
 
 static PyObject *SciPyLU_solve(SciPyLUObject * self, PyObject * args,
 			       PyObject * kwds)
@@ -138,6 +179,10 @@ PyMethodDef SciPyLU_methods[] = {
 
 static void SciPyLU_dealloc(SciPyLUObject * self)
 {
+    Py_XDECREF(self->cached_U);
+    Py_XDECREF(self->cached_L);
+    self->cached_U = NULL;
+    self->cached_L = NULL;
     SUPERLU_FREE(self->perm_r);
     SUPERLU_FREE(self->perm_c);
     self->perm_r = NULL;
@@ -187,6 +232,24 @@ static PyObject *SciPyLU_getter(SciPyLUObject *self, void *data)
 	Py_INCREF(self);
 	return perm_c;
     }
+    else if (strcmp(name, "U") == 0 || strcmp(name, "L") == 0) {
+        int ok;
+        if (self->cached_U == NULL) {
+            ok = LU_to_csc_matrix(&self->L, &self->U,
+                                  &self->cached_L, &self->cached_U);
+            if (ok != 0) {
+                return NULL;
+            }
+        }
+        if (strcmp(name, "U") == 0) {
+            Py_INCREF(self->cached_U);
+            return self->cached_U;
+        }
+        else {
+            Py_INCREF(self->cached_L);
+            return self->cached_L;
+        }
+    }
     else {
         PyErr_SetString(PyExc_RuntimeError,
                         "internal error (this is a bug)");
@@ -198,28 +261,6 @@ static PyObject *SciPyLU_getter(SciPyLUObject *self, void *data)
 /***********************************************************************
  * SciPySuperLUType structure
  */
-
-static char factored_lu_doc[] = "\
-Object resulting from a factorization of a sparse matrix\n\
-\n\
-Attributes\n\
------------\n\
-\n\
-shape : 2-tuple\n\
-    the shape of the orginal matrix factored\n\
-nnz : int\n\
-    the number of non-zero elements in the matrix\n\
-perm_c\n\
-    the permutation applied to the colums of the matrix for the LU factorization\n\
-perm_r\n\
-    the permutation applied to the rows of the matrix for the LU factorization\n\
-\n\
-Methods\n\
--------\n\
-solve\n\
-    solves the system for a given right hand side vector\n \
-\n\
-";
 
 PyGetSetDef SciPyLU_getset[] = {
     {"shape", SciPyLU_getter, (setter)NULL, (char*)NULL, (void*)"shape"},
@@ -428,6 +469,261 @@ int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
     return 0;
 }
 
+
+/*
+ * Create Scipy sparse matrices out from Superlu LU decomposition.
+ */
+
+static int LU_to_csc(SuperMatrix *L, SuperMatrix *U,
+                     int *U_indices, int *U_indptr, char *U_data,
+                     int *L_indices, int *L_indptr, char *L_data,
+                     Dtype_t dtype);
+
+int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
+                     PyObject **L_csc, PyObject **U_csc)
+{
+    SCformat *Lstore;
+    NCformat *Ustore;
+    PyObject *U_indices = NULL, *U_indptr = NULL, *U_data = NULL;
+    PyObject *L_indices = NULL, *L_indptr = NULL, *L_data = NULL;
+    PyObject *scipy_sparse = NULL, *datatuple = NULL, *shape = NULL;
+    int result = -1, ok;
+    int type;
+    npy_intp dims[1];
+
+    *L_csc = NULL;
+    *U_csc = NULL;
+
+    if (U->Stype != SLU_NC || L->Stype != SLU_SC ||
+        U->Mtype != SLU_TRU || L->Mtype != SLU_TRLU ||
+        L->nrow != U->nrow || L->ncol != L->nrow ||
+        U->ncol != U->nrow || L->Dtype != U->Dtype)
+    {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "internal error: invalid Superlu matrix data");
+        return -1;
+    }
+
+    Ustore = (NCformat*)U->Store;
+    Lstore = (NCformat*)L->Store;
+
+    type = SLU_TYPECODE_TO_NPY(L->Dtype);
+
+    /* Allocate output */
+#define CREATE_1D_ARRAY(name, type, size)               \
+        do {                                            \
+            dims[0] = size;                             \
+            name = PyArray_EMPTY(1, dims, type, 0);     \
+            if (name == NULL) goto fail;                \
+        } while (0)
+
+    CREATE_1D_ARRAY(L_indices, NPY_INT, Lstore->nnz);
+    CREATE_1D_ARRAY(L_indptr, NPY_INT, L->ncol + 1);
+    CREATE_1D_ARRAY(L_data, type, Lstore->nnz);
+
+    CREATE_1D_ARRAY(U_indices, NPY_INT, Ustore->nnz);
+    CREATE_1D_ARRAY(U_indptr, NPY_INT, U->ncol + 1);
+    CREATE_1D_ARRAY(U_data, type, Ustore->nnz);
+
+#undef CREATE_1D_ARRAY
+
+    /* Copy data over */
+    ok = LU_to_csc(
+        L, U,
+        (int*)PyArray_DATA(L_indices),
+        (int*)PyArray_DATA(L_indptr),
+        (void*)PyArray_DATA(L_data),
+        (int*)PyArray_DATA(U_indices),
+        (int*)PyArray_DATA(U_indptr),
+        (void*)PyArray_DATA(U_data),
+        L->Dtype
+        );
+
+    if (ok != 0) {
+        goto fail;
+    }
+
+    /* Create sparse matrices */
+    scipy_sparse = PyImport_ImportModule("scipy.sparse");
+    if (scipy_sparse == NULL) {
+        goto fail;
+    }
+
+    shape = Py_BuildValue("ii", L->nrow, L->ncol);
+    if (shape == NULL) {
+        goto fail;
+    }
+
+    datatuple = Py_BuildValue("OOO", L_data, L_indices, L_indptr);
+    if (datatuple == NULL) {
+        goto fail;
+    }
+    *L_csc = PyObject_CallMethod(scipy_sparse, "csc_matrix",
+                                 "OO", datatuple, shape);
+    if (*L_csc == NULL) {
+        goto fail;
+    }
+
+    Py_DECREF(datatuple);
+    datatuple = Py_BuildValue("OOO", U_data, U_indices, U_indptr);
+    if (datatuple == NULL) {
+        Py_DECREF(*L_csc);
+        *L_csc = NULL;
+        goto fail;
+    }
+    *U_csc = PyObject_CallMethod(scipy_sparse, "csc_matrix",
+                                 "OO", datatuple, shape);
+    if (*U_csc == NULL) {
+        Py_DECREF(*L_csc);
+        *L_csc = NULL;
+        goto fail;
+    }
+
+    result = 0;
+    
+fail:
+    Py_XDECREF(U_indices);
+    Py_XDECREF(U_indptr);
+    Py_XDECREF(U_data);
+    Py_XDECREF(L_indices);
+    Py_XDECREF(L_indptr);
+    Py_XDECREF(L_data);
+    Py_XDECREF(shape);
+    Py_XDECREF(scipy_sparse);
+    Py_XDECREF(datatuple);
+
+    return result;
+}
+
+
+/*
+ * Convert SuperLU L and U matrices to CSC format.
+ *
+ * The LU decomposition U factor is partly stored in U and partly in the upper
+ * diagonal of L.  The L matrix is stored in column-addressable rectangular
+ * superblock format.
+ *
+ * This routine is partly adapted from SuperLU MATLAB wrappers and the
+ * SuperLU Print_SuperNode_Matrix routine.
+ */
+static int
+LU_to_csc(SuperMatrix *L, SuperMatrix *U,
+          int *L_rowind, int *L_colptr, char *L_data,
+          int *U_rowind, int *U_colptr, char *U_data,
+          Dtype_t dtype)
+{
+    SCformat *Lstore;
+    NCformat *Ustore;
+    npy_intp elsize;
+    int isup, icol, icolstart, icolend, ncols, irow, iptr, istart, iend, L_nrow;
+    char *src, *dst;
+    int U_nnz, L_nnz;
+
+    Ustore = (NCformat*)U->Store;
+    Lstore = (NCformat*)L->Store;
+
+    switch (dtype) {
+    case SLU_S: elsize = 4; break;
+    case SLU_D: elsize = 8; break;
+    case SLU_C: elsize = 8; break;
+    case SLU_Z: elsize = 16; break;
+    }
+    
+#define IS_ZERO(p)                                                      \
+    ((dtype == SLU_S) ? (*(float*)(p) == 0) :                           \
+     ((dtype == SLU_D) ? (*(double*)(p) == 0) :                         \
+      ((dtype == SLU_C) ? (*(float*)(p) == 0 || *((float*)(p)+1) == 0) : \
+       (*(double*)(p) == 0 || *((double*)(p)+1) == 0))))
+
+    U_colptr[0] = 0;
+    L_colptr[0] = 0;
+    U_nnz = 0;
+    L_nnz = 0;
+
+    /* For each supernode */
+    for (isup = 0; isup <= Lstore->nsuper; ++isup) {
+        icolstart = Lstore->sup_to_col[isup];
+        icolend = Lstore->sup_to_col[isup+1];
+        istart = Lstore->rowind_colptr[icolstart];
+        iend = Lstore->rowind_colptr[icolstart+1];
+
+        /* For each column in supernode */
+        for (icol = icolstart; icol < icolend; ++icol) {
+
+            /* Process data in Ustore */
+            for (iptr = Ustore->colptr[icol]; iptr < Ustore->colptr[icol+1]; ++iptr) {
+                src = (char*)Ustore->nzval + elsize * iptr;
+                if (!IS_ZERO(src)) {
+                    if (U_nnz >= Ustore->nnz)
+                        goto size_error;
+                    U_rowind[U_nnz] = Ustore->rowind[iptr];
+                    /* "U_data[U_nnz] = Ustore->nzvals[iptr]" */
+                    dst = U_data + elsize * U_nnz;
+                    memcpy(dst, src, elsize);
+                    ++U_nnz;
+                }
+            }
+
+            /* Process data in Lstore */
+            src = (char*)Lstore->nzval + elsize * Lstore->nzval_colptr[icol];
+            iptr = istart;
+
+            /* Upper triangle part */
+            for (; iptr < iend; ++iptr) {
+                if (Lstore->rowind[iptr] > icol) {
+                    break;
+                }
+                if (!IS_ZERO(src)) {
+                    if (U_nnz >= Ustore->nnz)
+                        goto size_error;
+                    U_rowind[U_nnz] = Lstore->rowind[iptr];
+                    dst = U_data + elsize * U_nnz;
+                    memcpy(dst, src, elsize);
+                    ++U_nnz;
+                }
+                src += elsize;
+            }
+
+            /* Add unit diagonal in L */
+            if (L_nnz >= Lstore->nnz) return -1;
+            dst = L_data + elsize * L_nnz;
+            switch (dtype) {
+            case SLU_S: *(float*)dst = 1.0; break;
+            case SLU_D: *(double*)dst = 1.0; break;
+            case SLU_C: *(float*)dst = 1.0; *((float*)dst+1) = 0.0; break;
+            case SLU_Z: *(double*)dst = 1.0; *((double*)dst+1) = 0.0; break;
+            }
+            L_rowind[L_nnz] = icol;
+            ++L_nnz;
+
+            /* Lower triangle part */
+            for (; iptr < iend; ++iptr) {
+                if (!IS_ZERO(src)) {
+                    if (L_nnz >= Lstore->nnz)
+                         goto size_error;
+                    L_rowind[L_nnz] = Lstore->rowind[iptr];
+                    dst = L_data + elsize * L_nnz;
+                    memcpy(dst, src, elsize);
+                    ++L_nnz;
+                }
+                src += elsize;
+            }
+
+            /* Record column pointers */
+            U_colptr[icol+1] = U_nnz;
+            L_colptr[icol+1] = L_nnz;
+        }
+    }
+
+    return 0;
+
+size_error:
+    PyErr_SetString(PyExc_RuntimeError,
+                    "internal error: superlu matrixes have wrong nnz");
+    return -1;
+}
+
+
 PyObject *newSciPyLUObject(SuperMatrix * A, PyObject * option_dict,
 			   int intype, int ilu)
 {
@@ -460,6 +756,8 @@ PyObject *newSciPyLUObject(SuperMatrix * A, PyObject * option_dict,
     self->perm_c = NULL;
     self->L.Store = NULL;
     self->U.Store = NULL;
+    self->cached_U = NULL;
+    self->cached_L = NULL;
     self->type = intype;
 
     if (setjmp(_superlu_py_jmpbuf))
