@@ -27,6 +27,7 @@ from . import _fitpack
 from .polyint import _Interpolator1D
 from . import _ppoly
 from .fitpack2 import RectBivariateSpline
+from .interpnd import _ndim_coords_from_arrays
 
 def reduce_sometrue(a):
     all = a
@@ -1486,11 +1487,11 @@ class RegularGridInterpolator(object):
 
     def __call__(self, xi, method=None):
         """
-        interpolation at coordinates
+        Interpolation at coordinates
 
         Parameters
         ----------
-        xi : ndarray of shape (ndim, ) or (nsamplepoints, ndim)
+        xi : ndarray of shape (..., ndim)
             The coordinates to sample the gridded data at
 
         method : str
@@ -1501,11 +1502,16 @@ class RegularGridInterpolator(object):
         method = self.method if method is None else method
         if method not in ["linear", "nearest"]:
             raise ValueError("Method '%s' is not defined" % method)
-        xi = np.atleast_2d(xi)
-        if not xi.shape[1] == len(self.grid):
+
+        xi = _ndim_coords_from_arrays(xi, ndim=len(self.grid))
+        if xi.shape[-1] != len(self.grid):
             raise ValueError("The requested sample points xi have dimension "
                              "%d, but this RegularGridInterpolator has "
                              "dimension %d" % (xi.shape[1], len(self.grid)))
+
+        xi_shape = xi.shape
+        xi = xi.reshape(-1, xi_shape[-1])
+
         if self.bounds_error:
             for i, p in enumerate(xi.T):
                 if not np.logical_and(np.all(self.grid[i][0] <= p),
@@ -1520,7 +1526,8 @@ class RegularGridInterpolator(object):
             result = self._evaluate_nearest(indices, norm_distances, out_of_bounds)
         if not self.bounds_error and self.fill_value is not None:
             result[out_of_bounds] = self.fill_value
-        return result
+
+        return result.reshape(xi_shape[:-1] + result.shape[1:])
 
     def _evaluate_linear(self, indices, norm_distances, out_of_bounds):
         # find relevant values
@@ -1576,7 +1583,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     values : anything of dtype float that can be indexed like an ndarray of shape (m1, ..., mn)
         The data on the regular grid in n dimensions.
 
-    xi : ndarray of shape (nsamplepoints, n)
+    xi : ndarray of shape (..., ndim)
         The coordinates to sample the gridded data at
 
     method : str
@@ -1640,15 +1647,12 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     grid = tuple([np.asarray(p) for p in points])
 
     # sanity check requested xi
-    if not xi.ndim == 2:
-        raise ValueError("The requested sample points xi must have "
-                         "shape (nsamplepoints, ndim), so xi must have "
-                         "dimension 2. The xi you provided has shape %s." %
-                         xi.shape)
-    if not xi.shape[1] == len(grid):
+    xi = _ndim_coords_from_arrays(xi, ndim=len(grid))
+    if xi.shape[-1] != len(grid):
         raise ValueError("The requested sample points xi have dimension "
                          "%d, but this RegularGridInterpolator has "
                          "dimension %d" % (xi.shape[1], len(grid)))
+
     for i, p in enumerate(xi.T):
         if bounds_error and not np.logical_and(np.all(grid[i][0] <= p),
                                                np.all(p <= grid[i][-1])):
@@ -1667,6 +1671,9 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
                                          fill_value=fill_value)
         return interp(xi)
     elif method == "splinef2d":
+        xi_shape = xi.shape
+        xi = xi.reshape(-1, xi.shape[-1])
+
         # RectBivariateSpline doesn't support fill_value; we need to wrap here
         idx_valid = np.all((grid[0][0] <= xi[:, 0], xi[:, 0] <= grid[0][-1],
                             grid[1][0] <= xi[:, 1], xi[:, 1] <= grid[1][-1]),
@@ -1677,7 +1684,8 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         interp = RectBivariateSpline(points[0], points[1], values[:])
         result[idx_valid] = interp.ev(xi[idx_valid, 0], xi[idx_valid, 1])
         result[np.logical_not(idx_valid)] = fill_value
-        return result
+
+        return result.reshape(xi_shape[:-1])
 
 
 # backward compatibility wrapper
