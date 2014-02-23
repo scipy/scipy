@@ -589,6 +589,7 @@ class TestCephes(TestCase):
 
     def test_nctdtr(self):
         assert_equal(cephes.nctdtr(1,0,0),0.5)
+        assert_equal(cephes.nctdtr(9, 65536, 45), 0.0)
 
         assert_approx_equal(cephes.nctdtr(np.inf, 1., 1.), 0.5, 5)
         assert_(np.isnan(cephes.nctdtr(2., np.inf, 10.)))
