@@ -51,7 +51,10 @@ Unstructured data:
 For data on a grid:
 
 .. autosummary::
+   :toctree: generated/
 
+   interpn
+   RegularGridInterpolator
    RectBivariateSpline
 
 .. seealso:: `scipy.ndimage.interpolation.map_coordinates`
