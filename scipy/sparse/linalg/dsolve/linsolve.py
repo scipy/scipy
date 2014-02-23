@@ -132,14 +132,13 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             b = b.toarray()
             b_is_sparse = False
 
-
-        if isspmatrix_csc(A):
-            flag = 1  # CSC format
-        else:
-            flag = 0  # CSR format
-        options = dict(ColPerm=permc_spec)
-
         if not b_is_sparse:
+            if isspmatrix_csc(A):
+                flag = 1  # CSC format
+            else:
+                flag = 0  # CSR format
+
+            options = dict(ColPerm=permc_spec)
             x, info = _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr,
                                     b, flag, options=options)
             if info != 0:
