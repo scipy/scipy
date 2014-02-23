@@ -126,7 +126,7 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
     /* Create Space for output */
     Py_X = (PyArrayObject*)PyArray_FROMANY(
         Py_B, type, 1, 2,
-        NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_ENSURECOPY);
+        NPY_F_CONTIGUOUS | NPY_ENSURECOPY);
     if (Py_X == NULL)
 	return NULL;
 

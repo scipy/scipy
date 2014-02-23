@@ -82,7 +82,7 @@ static PyObject *SciPyLU_solve(SciPyLUObject * self, PyObject * args,
 
     x = (PyArrayObject*)PyArray_FROMANY(
         (PyObject*)b, self->type, 1, 2,
-        NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_ENSURECOPY);
+        NPY_F_CONTIGUOUS | NPY_ENSURECOPY);
     if (x == NULL) {
         goto fail;
     }
@@ -306,7 +306,7 @@ int DenseSuper_from_Numeric(SuperMatrix *X, PyObject *PyX)
         return -1;
     }
 
-    if (!(aX->flags & NPY_ARRAY_F_CONTIGUOUS)) {
+    if (!(aX->flags & NPY_F_CONTIGUOUS)) {
         PyErr_SetString(PyExc_ValueError, "array is not fortran contiguous");
         return -1;
     }
