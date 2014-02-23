@@ -1259,6 +1259,24 @@ class TestRegularGridInterpolator(TestCase):
             v2 = interp(sample)
             assert_allclose(v1, v2)
 
+    def test_complex(self):
+        points, values = self._get_sample_4d()
+        values = values - 2j*values
+        sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
+                             [0.5, 0.5, .5, .5]])
+
+        for method in ['linear', 'nearest']:
+            interp = RegularGridInterpolator(points, values,
+                                             method=method)
+            rinterp = RegularGridInterpolator(points, values.real,
+                                              method=method)
+            iinterp = RegularGridInterpolator(points, values.imag,
+                                              method=method)
+
+            v1 = interp(sample)
+            v2 = rinterp(sample) + 1j*iinterp(sample)
+            assert_allclose(v1, v2)
+
     def test_linear_xi1d(self):
         points, values = self._get_sample_4d_2()
         interp = RegularGridInterpolator(points, values)
@@ -1550,6 +1568,26 @@ class TestInterpN(TestCase):
         assert_raises(ValueError, interpn, points, values, sample,
                       method='splinef2d')
 
+    def test_complex(self):
+        x, y, values = self._sample_2d_data()
+        points = (x, y)
+        values = values - 2j*values
+
+        sample = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
+                           [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
+
+        for method in ['linear', 'nearest']:
+            v1 = interpn(points, values, sample, method=method)
+            v2r = interpn(points, values.real, sample, method=method)
+            v2i = interpn(points, values.imag, sample, method=method)
+            v2 = v2r + 1j*v2i
+            assert_allclose(v1, v2)
+
+        # Complex-valued data not supported by spline2fd
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", category=np.ComplexWarning)
+            assert_raises(np.ComplexWarning, interpn, points, values,
+                          sample, method='splinef2d')
 
 if __name__ == "__main__":
     run_module_suite()
