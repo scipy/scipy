@@ -11,6 +11,8 @@ add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU',
     To construct these `SuperLU` objects, call the `splu` and `spilu`
     functions.
 
+    .. versionadded:: 0.14.0
+
     Attributes
     ----------
     shape
@@ -108,14 +110,14 @@ add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU', ('L',
     Lower triangular factor with unit diagonal as a
     `scipy.sparse.csc_matrix`.
 
-    .. versionadded:: 0.15.0
+    .. versionadded:: 0.14.0
     """))
 
 add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU', ('U',
     """
     Upper triangular factor as a `scipy.sparse.csc_matrix`.
 
-    .. versionadded:: 0.15.0
+    .. versionadded:: 0.14.0
     """))
 
 add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU', ('shape',
