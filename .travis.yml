@@ -1,10 +1,13 @@
 # After changing this file, check it on:
 #   http://lint.travis-ci.org/
 language: python
-python:
-  - 3.3
 matrix:
   include:
+    - python: 3.3
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - NUMPYSPEC=
     - python: 2.7
       env:
         - TESTMODE=full
@@ -12,6 +15,7 @@ matrix:
     - python: 2.6
       env:
         - TESTMODE=fast
+        - NUMPYSPEC===1.5.1
         - OPTIMIZE=-OO
     - python: 2.7
       env:
@@ -30,14 +34,12 @@ before_install:
   - mkdir builds
   - pushd builds
   - pip install --upgrade pip setuptools  # Upgrade pip and setuptools to get ones with `wheel` support
-  - pip install --find-links http://wheels.astropy.org/ --find-links http://wheels2.astropy.org/ --use-wheel --use-mirrors nose numpy Cython mpmath argparse
+  - pip install --find-links http://wheels.astropy.org/ --find-links http://wheels2.astropy.org/ --use-wheel --use-mirrors nose numpy$NUMPYSPEC Cython mpmath argparse
   - if [ "${TESTMODE}" == "full" ]; then pip install coverage coveralls; fi
   - python -V
   - popd
 script:
   - python $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE
-env:
-  - TESTMODE=fast
 notifications:
   # Perhaps we should have status emails sent to the mailing list, but
   # let's wait to see what people think before turning that on.
