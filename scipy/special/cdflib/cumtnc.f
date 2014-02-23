@@ -111,7 +111,7 @@ C     Case pnonc essentially zero
 
 C     ******************** Case i = lambda
 
-      cent = int(lambda)
+      cent = aint(lambda)
 
       IF (cent.LT.one) cent = one
 
