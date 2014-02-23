@@ -151,7 +151,7 @@ class NDInterpolatorBase(object):
             Points where to interpolate data at.
 
         """
-        xi = _ndim_coords_from_arrays(args)
+        xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
         xi = self._check_call_shape(xi)
         shape = xi.shape
         xi = xi.reshape(-1, shape[-1])
@@ -164,7 +164,7 @@ class NDInterpolatorBase(object):
 
         return np.asarray(r).reshape(shape[:-1] + self.values_shape)
 
-def _ndim_coords_from_arrays(points):
+def _ndim_coords_from_arrays(points, ndim=None):
     """
     Convert a tuple of coordinate arrays to a (..., ndim)-shaped array.
 
@@ -183,7 +183,10 @@ def _ndim_coords_from_arrays(points):
     else:
         points = np.asanyarray(points)
         if points.ndim == 1:
-            points = points.reshape(-1, 1)
+            if ndim is None:
+                points = points.reshape(-1, 1)
+            else:
+                points = points.reshape(-1, ndim)
     return points
 
 #------------------------------------------------------------------------------

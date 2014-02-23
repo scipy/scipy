@@ -24,6 +24,11 @@ New features
 ``scipy.interpolate`` improvements
 ----------------------------------
 
+A new wrapper function `scipy.interpolate.interpn` for interpolation on regular
+grids has been added. `interpn` supports linear and nearest-neighbor
+interpolation in arbitrary dimensions and spline interpolation in two
+dimensions.
+
 Faster implementations of piecewise polynomials in power and Bernstein
 polynomial bases have been added as `scipy.interpolate.PPoly` and
 `scipy.interpolate.BPoly`. New users should use these in favor of
@@ -38,6 +43,11 @@ Functionality for evaluation of bivariate spline derivatives in
 
 The new class `scipy.interpolate.Akima1DInterpolator` implements the piecewise
 cubic polynomial interpolation scheme devised by H. Akima.
+
+Functionality for fast interpolation on regular, unevenly spaced grids
+in arbitrary dimensions has been added as
+`scipy.interpolate.RegularGridInterpolator` .
+
 
 ``scipy.linalg`` improvements
 -----------------------------
