@@ -1285,21 +1285,22 @@ def anderson_ksamp(samples, midrank=True):
     not at the 2.5% level. The interpolation gives an approximate
     significance level of 3.1%:
 
-    >>> stats.anderson_ksamp(np.random.normal(size=50), ...
-            np.random.normal(loc=0.5, size=30))
-    (2.4632469079409978, array([ 0.325,  1.226,  1.961,  2.718,  3.752]),
-      0.03130207656720708)
+    >>> stats.anderson_ksamp([np.random.normal(size=50), 
+    ... np.random.normal(loc=0.5, size=30)])
+    (2.4615796189876105,
+      array([ 0.325,  1.226,  1.961,  2.718,  3.752]),
+      0.03134990135800783)
+
 
     The null hypothesis cannot be rejected for three samples from an
     identical distribution. The approximate p-value (87%) has to be
     computed by extrapolation and may not be very accurate:
 
-    >>> stats.anderson_ksamp(np.random.normal(size=50), ...
-            np.random.normal(size=30), np.random.normal(size=20))
-    (-0.72478622084152444,
-      array([ 0.44925884,  1.3052767,  1.9434184,  2.57696569,  3.41634856]),
-      0.8732440333177699)
-
+    >>> stats.anderson_ksamp([np.random.normal(size=50),
+    ... np.random.normal(size=30), np.random.normal(size=20)])
+    (-0.73091722665244196,
+      array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856]),
+      0.8789283903979661)
     """
 
     k = len(samples)
