@@ -1472,16 +1472,21 @@ class RegularGridInterpolator(object):
         self.method = method
         self.bounds_error = bounds_error
 
-        values = np.asarray(values)
+        if not hasattr(values, 'ndim'):
+            # allow reasonable duck-typed values
+            values = np.asarray(values)
+
         if len(points) > values.ndim:
             raise ValueError("There are %d point arrays, but values has %d "
                              "dimensions" % (len(points), values.ndim))
-        if not np.issubdtype(values.dtype, np.inexact):
-            values = values.astype(float)
+
+        if hasattr(values, 'dtype') and hasattr(values, 'astype'):
+            if not np.issubdtype(values.dtype, np.inexact):
+                values = values.astype(float)
 
         self.fill_value = fill_value
         if fill_value is not None:
-            if not np.can_cast(fill_value, values.dtype):
+            if hasattr(values, 'dtype') and not np.can_cast(fill_value, values.dtype):
                 raise ValueError("fill_value must be either 'None' or "
                                  "of a type compatible with values")
 
@@ -1516,11 +1521,12 @@ class RegularGridInterpolator(object):
         if method not in ["linear", "nearest"]:
             raise ValueError("Method '%s' is not defined" % method)
 
-        xi = _ndim_coords_from_arrays(xi, ndim=len(self.grid))
+        ndim = len(self.grid)
+        xi = _ndim_coords_from_arrays(xi, ndim=ndim)
         if xi.shape[-1] != len(self.grid):
             raise ValueError("The requested sample points xi have dimension "
                              "%d, but this RegularGridInterpolator has "
-                             "dimension %d" % (xi.shape[1], len(self.grid)))
+                             "dimension %d" % (xi.shape[1], ndim))
 
         xi_shape = xi.shape
         xi = xi.reshape(-1, xi_shape[-1])
@@ -1540,7 +1546,7 @@ class RegularGridInterpolator(object):
         if not self.bounds_error and self.fill_value is not None:
             result[out_of_bounds] = self.fill_value
 
-        return result.reshape(xi_shape[:-1] + result.shape[1:])
+        return result.reshape(xi_shape[:-1] + self.values.shape[ndim:])
 
     def _evaluate_linear(self, indices, norm_distances, out_of_bounds):
         # slice for broadcasting over trailing dimensions in self.values
@@ -1554,7 +1560,7 @@ class RegularGridInterpolator(object):
             weight = 1.
             for ei, i, yi in zip(edge_indices, indices, norm_distances):
                 weight *= np.where(ei == i, 1 - yi, yi)
-            values += self.values[edge_indices] * weight[vslice]
+            values += np.asarray(self.values[edge_indices]) * weight[vslice]
         return values
 
     def _evaluate_nearest(self, indices, norm_distances, out_of_bounds):
@@ -1643,7 +1649,9 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
                          "'nearest', and 'splinef2d'. You provided %s." %
                          method)
 
-    values = np.asarray(values)
+    if not hasattr(values, 'ndim'):
+        values = np.asarray(values)
+
     ndim = values.ndim
     if ndim > 2 and method == "splinef2d":
         raise ValueError("The method spline2fd can only be used for "

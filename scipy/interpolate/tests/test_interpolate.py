@@ -1406,6 +1406,55 @@ class TestRegularGridInterpolator(TestCase):
                              [0.5, 0.5, .5, .5]])
         assert_array_almost_equal(interp(sample), interp_qhull(sample))
 
+    def test_duck_typed_values(self):
+        x = np.linspace(0, 2, 5)
+        y = np.linspace(0, 1, 7)
+
+        values = MyValue((5, 7))
+
+        for method in ('nearest', 'linear'):
+            interp = RegularGridInterpolator((x, y), values,
+                                             method=method)
+            v1 = interp([0.4, 0.7])
+
+            interp = RegularGridInterpolator((x, y), values._v,
+                                             method=method)
+            v2 = interp([0.4, 0.7])
+            assert_allclose(v1, v2)
+
+    def test_invalid_fill_value(self):
+        np.random.seed(1234)
+        x = np.linspace(0, 2, 5)
+        y = np.linspace(0, 1, 7)
+        values = np.random.rand(5, 7)
+
+        # integers can be cast to floats
+        RegularGridInterpolator((x, y), values, fill_value=1)
+
+        # complex values cannot
+        assert_raises(ValueError, RegularGridInterpolator,
+                      (x, y), values, fill_value=1+2j)
+        
+
+class MyValue(object):
+    """
+    Minimal indexable object
+    """
+
+    def __init__(self, shape):
+        self.ndim = 2
+        self.shape = shape
+        self._v = np.arange(np.prod(shape)).reshape(shape)
+
+    def __getitem__(self, idx):
+        return self._v[idx]
+
+    def __array_interface__(self):
+        return None
+
+    def __array__(self):
+        raise RuntimeError("No array representation")
+
 
 class TestInterpN(TestCase):
     def _sample_2d_data(self):
@@ -1588,6 +1637,31 @@ class TestInterpN(TestCase):
             warnings.simplefilter("error", category=np.ComplexWarning)
             assert_raises(np.ComplexWarning, interpn, points, values,
                           sample, method='splinef2d')
+
+    def test_duck_typed_values(self):
+        x = np.linspace(0, 2, 5)
+        y = np.linspace(0, 1, 7)
+
+        values = MyValue((5, 7))
+
+        for method in ('nearest', 'linear'):
+            v1 = interpn((x, y), values, [0.4, 0.7], method=method)
+            v2 = interpn((x, y), values._v, [0.4, 0.7], method=method)
+            assert_allclose(v1, v2)
+
+    def test_matrix_input(self):
+        x = np.linspace(0, 2, 5)
+        y = np.linspace(0, 1, 7)
+
+        values = np.matrix(np.random.rand(5, 7))
+
+        sample = np.random.rand(3, 7, 2)
+
+        for method in ('nearest', 'linear', 'splinef2d'):
+            v1 = interpn((x, y), values, sample, method=method)
+            v2 = interpn((x, y), np.asarray(values), sample, method=method)
+            assert_allclose(v1, np.asmatrix(v2))
+
 
 if __name__ == "__main__":
     run_module_suite()
