@@ -263,7 +263,7 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
 
     Notes
     -----
-    This routines automatically chooses between Fortran/C
+    This routine automatically chooses between Fortran/C
     interfaces. Fortran code is used whenever possible for arrays with
     column major order. In all other cases, C code is preferred.
 
