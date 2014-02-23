@@ -6,7 +6,7 @@
 #   Added sweep_poly()
 from __future__ import division, print_function, absolute_import
 
-
+import numpy as np
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
      exp, cos, sin, polyval, polyint
 
@@ -264,7 +264,7 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
 
     Parameters
     ----------
-    t : ndarray
+    t : array_like
         Times at which to evaluate the waveform.
     f0 : float
         Frequency (e.g. Hz) at time t=0.
@@ -335,7 +335,7 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
 
         ``f(t) = f0*f1*t1 / ((f0 - f1)*t + f1*t1)``
 
-        f1 must be positive, and f0 must be greater than f1.
+        f0 and f1 must be nonzero.
 
     """
     # 'phase' is computed in _chirp_phase, to make testing easier.
@@ -352,6 +352,7 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
     See `chirp_phase` for a description of the arguments.
 
     """
+    t = asarray(t)
     f0 = float(f0)
     t1 = float(t1)
     f1 = float(f1)
@@ -368,7 +369,7 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
 
     elif method in ['logarithmic', 'log', 'lo']:
         if f0 * f1 <= 0.0:
-            raise ValueError("For a geometric chirp, f0 and f1 must be "
+            raise ValueError("For a logarithmic chirp, f0 and f1 must be "
                              "nonzero and have the same sign.")
         if f0 == f1:
             phase = 2 * pi * f0 * t
@@ -377,11 +378,17 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
             phase = 2 * pi * beta * f0 * (pow(f1 / f0, t / t1) - 1.0)
 
     elif method in ['hyperbolic', 'hyp']:
-        if f1 <= 0.0 or f0 <= f1:
-            raise ValueError("hyperbolic chirp requires f0 > f1 > 0.0.")
-        c = f1 * t1
-        df = f0 - f1
-        phase = 2 * pi * (f0 * c / df) * log((df * t + c) / c)
+        if f0 == 0 or f1 == 0:
+            raise ValueError("For a hyperbolic chirp, f0 and f1 must be "
+                             "nonzero.")
+        if f0 == f1:
+            # Degenerate case: constant frequency.
+            phase = 2 * pi * f0 * t
+        else:
+            # Singular point: the instantaneous frequency blows up
+            # when t == sing.
+            sing = -f1 * t1 / (f0 - f1)
+            phase = 2 * pi * (-sing * f0) * log(np.abs(1 - t/sing))
 
     else:
         raise ValueError("method must be 'linear', 'quadratic', 'logarithmic',"
