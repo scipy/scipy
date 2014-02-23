@@ -13,7 +13,8 @@ Run tests if fftpack is not installed:
   python tests/test_helper.py [<level>]
 """
 
-from numpy.testing import *
+from numpy.testing import (TestCase, assert_array_almost_equal, rand,
+                           run_module_suite)
 from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
 
 from numpy import pi
