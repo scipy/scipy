@@ -28,7 +28,8 @@
  * SuperLUObject definition
  */
 typedef struct {
-    PyObject_HEAD npy_intp m, n;
+    PyObject_HEAD
+    npy_intp m, n;
     SuperMatrix L;
     SuperMatrix U;
     int *perm_r;

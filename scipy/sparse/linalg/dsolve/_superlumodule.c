@@ -74,7 +74,8 @@ void XStatFree(SuperLUStat_t * stat)
 static PyObject *Py_gssv(PyObject * self, PyObject * args,
 			 PyObject * kwdict)
 {
-    PyObject *Py_B = NULL, *Py_X = NULL;
+    PyObject *Py_B = NULL;
+    PyArrayObject *Py_X = NULL;
     PyArrayObject *nzvals = NULL;
     PyArrayObject *colind = NULL, *rowptr = NULL;
     int N, nnz;
@@ -91,9 +92,9 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
     int type;
     int ssv_finished = 0;
 
-    static char *kwlist[] =
-	{ "N", "nnz", "nzvals", "colind", "rowptr", "B", "csc",
-	"options", NULL
+    static char *kwlist[] = {
+        "N", "nnz", "nzvals", "colind", "rowptr", "B", "csc",
+        "options", NULL
     };
 
     /* Get input arguments */
@@ -123,9 +124,18 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
     }
 
     /* Create Space for output */
-    Py_X = PyArray_CopyFromObject(Py_B, type, 1, 2);
+    Py_X = (PyArrayObject*)PyArray_FROMANY(
+        Py_B, type, 1, 2,
+        NPY_F_CONTIGUOUS | NPY_ENSURECOPY);
     if (Py_X == NULL)
 	return NULL;
+
+    if (Py_X->dimensions[0] != N) {
+        PyErr_SetString(PyExc_ValueError,
+                        "b array has invalid shape");
+        Py_DECREF(Py_X);
+        return NULL;
+    }
 
     if (csc) {
 	if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr,
