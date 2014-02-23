@@ -1408,7 +1408,7 @@ class RegularGridInterpolator(object):
     points : tuple of ndarray of float, with shapes (m1, ), ..., (mn, )
         The points defining the regular grid in n dimensions.
 
-    values : anything of dtype float that can be indexed like an ndarray of shape (m1, ..., mn)
+    values : array_like, shape (m1, ..., mn, ...)
         The data on the regular grid in n dimensions.
 
     method : str
@@ -1466,12 +1466,20 @@ class RegularGridInterpolator(object):
             raise ValueError("Method '%s' is not defined" % method)
         self.method = method
         self.bounds_error = bounds_error
-        if fill_value is not None and not isinstance(fill_value, float):
-            raise ValueError("fill_value must be either 'None' or a float")
-        self.fill_value = fill_value
-        if not len(points) == values.ndim:
+
+        values = np.asarray(values)
+        if len(points) > values.ndim:
             raise ValueError("There are %d point arrays, but values has %d "
                              "dimensions" % (len(points), values.ndim))
+        if not np.issubdtype(values.dtype, np.inexact):
+            values = values.astype(float)
+
+        self.fill_value = fill_value
+        if fill_value is not None:
+            if not np.can_cast(fill_value, values.dtype):
+                raise ValueError("fill_value must be either 'None' or "
+                                 "of a type compatible with values")
+
         for i, p in enumerate(points):
             if not np.all(np.diff(p) > 0.):
                 raise ValueError("The points in dimension %d must be strictly "
@@ -1530,6 +1538,9 @@ class RegularGridInterpolator(object):
         return result.reshape(xi_shape[:-1] + result.shape[1:])
 
     def _evaluate_linear(self, indices, norm_distances, out_of_bounds):
+        # slice for broadcasting over trailing dimensions in self.values
+        vslice = (slice(None),) + (None,)*(self.values.ndim - len(indices))
+
         # find relevant values
         # each i and i+1 represents a edge
         edges = itertools.product(*[[i, i + 1] for i in indices])
@@ -1538,7 +1549,7 @@ class RegularGridInterpolator(object):
             weight = 1.
             for ei, i, yi in zip(edge_indices, indices, norm_distances):
                 weight *= np.where(ei == i, 1 - yi, yi)
-            values += self.values[edge_indices] * weight
+            values += self.values[edge_indices] * weight[vslice]
         return values
 
     def _evaluate_nearest(self, indices, norm_distances, out_of_bounds):
@@ -1580,7 +1591,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     points : tuple of ndarray of float, with shapes (m1, ), ..., (mn, )
         The points defining the regular grid in n dimensions.
 
-    values : anything of dtype float that can be indexed like an ndarray of shape (m1, ..., mn)
+    values : array_like, shape (m1, ..., mn, ...)
         The data on the regular grid in n dimensions.
 
     xi : ndarray of shape (..., ndim)
@@ -1629,9 +1640,12 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         raise ValueError("The method spline2fd does not support extrapolation.")
 
     # sanity check consistency of input dimensions
-    if not len(points) == ndim:
+    if len(points) > ndim:
         raise ValueError("There are %d point arrays, but values has %d "
                          "dimensions" % (len(points), ndim))
+    if len(points) != ndim and method == 'splinef2d':
+        raise ValueError("The method spline2fd can only be used for "
+                         "scalar data with one point per coordinate")
 
     # sanity check input grid
     for i, p in enumerate(points):

@@ -1546,6 +1546,30 @@ class TestInterpN(TestCase):
                          method=method, bounds_error=False)
             assert_allclose(v1, v2.reshape(v1.shape))
 
+    def test_nonscalar_values(self):
+        # Verify that non-scalar valued values also works
+        points, values = self._sample_4d_data()
+
+        np.random.seed(1234)
+        values = np.random.rand(3, 3, 3, 3, 6)
+        sample = np.random.rand(7, 11, 4)
+
+        for method in ['nearest', 'linear']:
+            v = interpn(points, values, sample, method=method,
+                        bounds_error=False)
+            assert_equal(v.shape, (7, 11, 6), err_msg=method)
+
+            vs = [interpn(points, values[...,j], sample, method=method,
+                          bounds_error=False)
+                  for j in range(6)]
+            v2 = np.array(vs).transpose(1, 2, 0)
+
+            assert_allclose(v, v2, err_msg=method)
+
+        # Vector-valued splines supported with fitpack
+        assert_raises(ValueError, interpn, points, values, sample,
+                      method='splinef2d')
+
 
 if __name__ == "__main__":
     run_module_suite()
