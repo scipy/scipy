@@ -411,7 +411,8 @@ def imresize(arr, size, interp='bilinear', mode=None):
     im = toimage(arr, mode=mode)
     ts = type(size)
     if issubdtype(ts,int):
-        size = size / 100.0
+        percent = size / 100.0
+        size = (array(im.size)*percent).astype(int)
     elif issubdtype(type(size),float):
         size = (array(im.size)*size).astype(int)
     else:
