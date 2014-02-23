@@ -135,6 +135,11 @@ class interp2d(object):
         interpolation domain. If omitted (None), values outside
         the domain are extrapolated.
 
+    Returns
+    -------
+    values_x : ndarray, shape xi.shape[:-1] + values.shape[ndim:]
+        Interpolated values at input coordinates.
+
     See Also
     --------
     RectBivariateSpline :
@@ -1612,6 +1617,11 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         interpolation domain. If None, values outside
         the domain are extrapolated.  Extrapolation is not supported by method
         "splinef2d".
+
+    Returns
+    -------
+    values_x : ndarray, shape xi.shape[:-1] + values.shape[ndim:]
+        Interpolated values at input coordinates.
 
     See also
     --------
