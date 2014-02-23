@@ -1242,6 +1242,23 @@ class TestRegularGridInterpolator(TestCase):
         values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
         return points, values
 
+    def test_list_input(self):
+        points, values = self._get_sample_4d()
+
+        sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
+                             [0.5, 0.5, .5, .5]])
+
+        for method in ['linear', 'nearest']:
+            interp = RegularGridInterpolator(points,
+                                             values.tolist(),
+                                             method=method)
+            v1 = interp(sample.tolist())
+            interp = RegularGridInterpolator(points,
+                                             values,
+                                             method=method)
+            v2 = interp(sample)
+            assert_allclose(v1, v2)
+
     def test_linear_xi1d(self):
         points, values = self._get_sample_4d_2()
         interp = RegularGridInterpolator(points, values)
@@ -1390,6 +1407,17 @@ class TestInterpN(TestCase):
                        [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
         assert_array_almost_equal(interpn((x, y), z, xi, method="splinef2d"),
                                   lut.ev(xi[:, 0], xi[:, 1]))
+
+    def test_list_input(self):
+        x, y, z = self._sample_2d_data()
+        xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
+                       [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
+
+        for method in ['nearest', 'linear', 'splinef2d']:
+            v1 = interpn((x, y), z, xi, method=method)
+            v2 = interpn((x.tolist(), y.tolist()), z.tolist(),
+                         xi.tolist(), method=method)
+            assert_allclose(v1, v2, err_msg=method)
 
     def test_spline_2d_outofbounds(self):
         x = np.array([.5, 2., 3., 4., 5.5])

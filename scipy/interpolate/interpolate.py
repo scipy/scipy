@@ -1632,6 +1632,8 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         raise ValueError("interpn only understands the methods 'linear', "
                          "'nearest', and 'splinef2d'. You provided %s." %
                          method)
+
+    values = np.asarray(values)
     ndim = values.ndim
     if ndim > 2 and method == "splinef2d":
         raise ValueError("The method spline2fd can only be used for "
