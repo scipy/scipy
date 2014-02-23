@@ -1419,14 +1419,19 @@ class TestRegularGridInterpolator(TestCase):
                              [0.5, 0.5, .5, .5]])
         assert_array_almost_equal(interp(sample), interp_qhull(sample))
 
+
 class TestInterpN(TestCase):
-    def test_spline_2d(self):
+    def _sample_2d_data(self):
         x = np.arange(1, 6)
         x = np.array([.5, 2., 3., 4., 5.5])
         y = np.arange(1, 6)
         y = np.array([.5, 2., 3., 4., 5.5])
         z = np.array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
                       [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
+        return x, y, z
+    
+    def test_spline_2d(self):
+        x, y, z = self._sample_2d_data()
         lut = RectBivariateSpline(x, y, z)
 
         xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
@@ -1453,8 +1458,7 @@ class TestInterpN(TestCase):
         assert_raises(ValueError, interpn, (x, y), z, xi, method="splinef2d",
                       bounds_error=False, fill_value=None)
 
-    def test_linear_4d(self):
-        # create a 4d grid of 3 points in each dimension
+    def _sample_4d_data(self):
         points = [(0., .5, 1.)] * 2 + [(0., 5., 10.)] * 2
         values = np.asarray([0., .5, 1.])
         values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
@@ -1462,6 +1466,11 @@ class TestInterpN(TestCase):
         values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
         values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
         values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
+        return points, values
+
+    def test_linear_4d(self):
+        # create a 4d grid of 3 points in each dimension
+        points, values = self._sample_4d_data()
         interp_rg = RegularGridInterpolator(points, values)
         sample = np.asarray([[0.1, 0.1, 10., 9.]])
         wanted = interpn(points, values, sample, method="linear")
@@ -1469,13 +1478,7 @@ class TestInterpN(TestCase):
 
     def test_4d_linear_outofbounds(self):
         # create a 4d grid of 3 points in each dimension
-        points = [(0., .5, 1.)] * 2 + [(0., 5., 10.)] * 2
-        values = np.asarray([0., .5, 1.])
-        values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
-        values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
-        values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
-        values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
-        values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
+        points, values = self._sample_4d_data()
         sample = np.asarray([[0.1, -0.1, 10.1, 9.]])
         wanted = 999.99
         actual = interpn(points, values, sample, method="linear",
@@ -1484,13 +1487,7 @@ class TestInterpN(TestCase):
 
     def test_nearest_4d(self):
         # create a 4d grid of 3 points in each dimension
-        points = [(0., .5, 1.)] * 2 + [(0., 5., 10.)] * 2
-        values = np.asarray([0., .5, 1.])
-        values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
-        values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
-        values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
-        values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
-        values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
+        points, values = self._sample_4d_data()
         interp_rg = RegularGridInterpolator(points, values, method="nearest")
         sample = np.asarray([[0.1, 0.1, 10., 9.]])
         wanted = interpn(points, values, sample, method="nearest")
@@ -1498,30 +1495,57 @@ class TestInterpN(TestCase):
 
     def test_4d_nearest_outofbounds(self):
         # create a 4d grid of 3 points in each dimension
-        points = [(0., .5, 1.)] * 2 + [(0., 5., 10.)] * 2
-        values = np.asarray([0., .5, 1.])
-        values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
-        values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
-        values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
-        values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
-        values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
+        points, values = self._sample_4d_data()
         sample = np.asarray([[0.1, -0.1, 10.1, 9.]])
         wanted = 999.99
         actual = interpn(points, values, sample, method="nearest",
                          bounds_error=False, fill_value=999.99)
         assert_array_almost_equal(actual, wanted)
 
-    def test_raises_xi1d(self):
-        # verify that xi has to be 2D
-        points = [(0., .5, 1.)] * 2 + [(0., 5., 10.)] * 2
-        values = np.asarray([0., .5, 1.])
-        values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
-        values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
-        values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
-        values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
-        values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
-        sample = np.asarray([0.1, -0.1, 10.1, 9.])
-        assert_raises(ValueError, interpn, points, values, sample)
+    def test_xi_1d(self):
+        # verify that 1D xi works as expected
+        points, values = self._sample_4d_data()
+        sample = np.asarray([0.1, 0.1, 10., 9.])
+        v1 = interpn(points, values, sample, bounds_error=False)
+        v2 = interpn(points, values, sample[None,:], bounds_error=False)
+        assert_allclose(v1, v2)
+
+    def test_xi_nd(self):
+        # verify that higher-d xi works as expected
+        points, values = self._sample_4d_data()
+
+        np.random.seed(1234)
+        sample = np.random.rand(2, 3, 4)
+
+        v1 = interpn(points, values, sample, method='nearest',
+                     bounds_error=False)
+        assert_equal(v1.shape, (2, 3))
+
+        v2 = interpn(points, values, sample.reshape(-1, 4),
+                     method='nearest', bounds_error=False)
+        assert_allclose(v1, v2.reshape(v1.shape))
+
+    def test_xi_broadcast(self):
+        # verify that the interpolators broadcast xi
+        x, y, values = self._sample_2d_data()
+        points = (x, y)
+
+        xi = np.linspace(0, 1, 2)
+        yi = np.linspace(0, 3, 3)
+
+        for method in ['nearest', 'linear', 'splinef2d']:
+            sample = (xi[:,None], yi[None,:])
+            v1 = interpn(points, values, sample, method=method,
+                         bounds_error=False)
+            assert_equal(v1.shape, (2, 3))
+
+            xx, yy = np.meshgrid(xi, yi, indexing='ij')
+            sample = np.c_[xx.ravel(), yy.ravel()]
+
+            v2 = interpn(points, values, sample,
+                         method=method, bounds_error=False)
+            assert_allclose(v1, v2.reshape(v1.shape))
+
 
 if __name__ == "__main__":
     run_module_suite()
