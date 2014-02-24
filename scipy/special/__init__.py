@@ -494,6 +494,15 @@ Combinatorics
     comb    -- [+]Combinations of N things taken k at a time, "N choose k"
     perm    -- [+]Permutations of N things taken k at a time, "k-permutations of N"
 
+Information Theoretic Functions
+-------------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   entr         -- A ufunc related to entropy: -x*log(x).
+   kl_div       -- A ufunc related to K-L divergence: x*log(x/y)-x+y.
+
 Other Special Functions
 -----------------------
 
