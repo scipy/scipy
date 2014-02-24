@@ -150,6 +150,7 @@ scipy/optimize/slsqp/_slsqpmodule.c
 scipy/signal/_spectral.c
 scipy/signal/correlate_nd.c
 scipy/signal/lfilter.c
+scipy/sparse/_csparsetools.c
 scipy/sparse/csgraph/_min_spanning_tree.c
 scipy/sparse/csgraph/_shortest_path.c
 scipy/sparse/csgraph/_tools.c
