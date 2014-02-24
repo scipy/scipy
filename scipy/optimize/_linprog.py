@@ -289,7 +289,6 @@ def _solve_simplex(T,n,basis,maxiter=1000,phase=2,callback=None,
         Boolean flag indicating if the optimizer exited successfully and
         ``message`` which describes the cause of the termination. Possible
         values for the ``status`` attribute are:
-        -1 : Invalid arguments
          0 : Optimization terminated successfully
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
@@ -428,7 +427,6 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
             solution.
         status : int
             An integer representing the exit status of the optimization::
-            -1 : Invalid arguments
              0 : Optimization terminated successfully
              1 : Iteration limit reached
              2 : Problem appears to be infeasible
@@ -534,7 +532,7 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
                         raise IndexError()
                     L[i] = bounds[i][0] if not bounds[i][0] is None else -np.inf
                     U[i] = bounds[i][1] if not bounds[i][1] is None else np.inf
-            except IndexError as err:
+            except IndexError:
                 status = -1
                 message = "Invalid input.  bounds must be a n x 2 " \
                           "sequence/array where n = len(c)."
@@ -628,13 +626,13 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
         Aub_rows, Aub_cols = Aub.shape
     except ValueError:
         status = -1
-        message = "Invalid input.  A_ub must be two-dimensional"
+        raise ValueError("Invalid input.  A_ub must be two-dimensional")
 
     try:
         Aeq_rows, Aeq_cols = Aeq.shape
     except ValueError:
         status = -1
-        message = "Invalid input.  A_eq must be two-dimensional"
+        raise ValueError("Invalid input.  A_eq must be two-dimensional")
 
     if Aeq_rows != meq:
         status = -1
@@ -658,10 +656,7 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
 
     if status != 0:
         # Invalid inputs provided
-        if disp:
-            print(message)
-        return OptimizeResult(x=np.zeros_like(cc),fun=0.0,nit=0,status=status,
-                      message=message, success=False)
+        raise ValueError(message)
 
     # Create the tableau
     T = np.zeros([m+2,n+n_slack+n_artificial+1])
@@ -850,7 +845,6 @@ def linprog(c,A_eq=None,b_eq=None,A_ub=None,b_ub=None,
             solution.
         status : int
             An integer representing the exit status of the optimization::
-            -1 : Invalid arguments
              0 : Optimization terminated successfully
              1 : Iteration limit reached
              2 : Problem appears to be infeasible
