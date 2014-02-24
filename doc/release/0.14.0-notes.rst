@@ -80,6 +80,10 @@ Moment calculations (skew and kurtosis mainly) are fixed and verified, all
 examples are now runnable, and many small accuracy and performance improvements
 for individual distributions were merged.
 
+The new function `scipy.stats.anderson_ksamp` computes the k-sample
+Anderson-Darling test for the null hypothesis that k samples come from
+the same parent population.
+
 
 ``scipy.signal`` improvements
 -----------------------------
