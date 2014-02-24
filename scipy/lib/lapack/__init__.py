@@ -223,6 +223,7 @@ def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
                 func2 = getattr(m2,func_name,None)
                 if func2 is not None:
                     import new
+                    func_code = None   # defined in exec
                     exec(_colmajor_func_template % {'func_name':func_name})
                     func = new.function(func_code,{'clapack_func':func2},func_name)
                     func.module_name = m2_name
