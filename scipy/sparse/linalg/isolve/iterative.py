@@ -195,8 +195,6 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(work[slice1])
         elif (ijob == 2):
-            if psolve is None:
-                psolve = get_psolve(A)
             work[slice1] = psolve(work[slice2])
         elif (ijob == 3):
             work[slice2] *= sclr2
