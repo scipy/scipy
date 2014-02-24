@@ -13,6 +13,7 @@ from numpy.ma import masked, nomask
 import scipy.stats.mstats as mstats
 from scipy import stats
 from numpy.testing import TestCase, run_module_suite
+from numpy.testing.decorators import skipif
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
     assert_allclose, assert_raises)
@@ -58,6 +59,9 @@ class TestGMean(TestCase):
         desired1 = mstats.gmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
 
+    @skipif(not hasattr(np, 'float96'), 'cannot find float96 so skipping')
+    def test_1D_float96(self):
+        a = (1,2,3,4)
         actual_dt = mstats.gmean(a, dtype=np.float96)
         desired_dt = np.power(1 * 2 * 3, 1. / 3.).astype(np.float96)
         assert_almost_equal(actual_dt, desired_dt, decimal=14)
@@ -96,6 +100,9 @@ class TestHMean(TestCase):
         desired1 = mstats.hmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
 
+    @skipif(not hasattr(np, 'float96'), 'cannot find float96 so skipping')
+    def test_1D_float96(self):
+        a = (1,2,3,4)
         actual_dt = mstats.hmean(a, dtype=np.float96)
         desired_dt = np.asarray(3. / (1. / 1 + 1. / 2 + 1. / 3),
                                 dtype=np.float96)
