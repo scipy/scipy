@@ -6,12 +6,9 @@ from __future__ import division, print_function, absolute_import
 import numpy
 from numpy.testing import assert_almost_equal, run_module_suite
 
-from scipy import arange, ones, rand, set_printoptions, r_, diag, linalg, eye
+from scipy import arange, ones, rand, r_, diag, linalg, eye
 from scipy.linalg import eig
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg
-
-
-set_printoptions(precision=3,linewidth=90)
 
 
 def ElasticRod(n):
@@ -87,6 +84,7 @@ def test_trivial():
     X = ones((n, 1))
     A = eye(n)
     compare_solutions(A, None, n)
+
 
 if __name__ == "__main__":
     run_module_suite()
