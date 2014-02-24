@@ -31,10 +31,15 @@ ctypedef fused value_t:
     double complex
 
 
-def prepare_index_arrays(cnp.ndarray i, cnp.ndarray j, cnp.ndarray x=None):
+def prepare_index_for_memoryview(cnp.ndarray i, cnp.ndarray j, cnp.ndarray x=None):
     """
     Convert index and data arrays to form suitable for passing to the
     Cython fancy getset routines.
+
+    The conversions are necessary since to (i) ensure the integer
+    index arrays are in one of the accepted types, and (ii) to ensure
+    the arrays are writable so that Cython memoryview support doesn't
+    choke on them.
 
     Parameters
     ----------
@@ -84,15 +89,15 @@ cpdef lil_get1(cnp.npy_intp M, cnp.npy_intp N, object[:] rows, object[:] datas,
     """
     cdef list row, data
 
+    if i < -M or i >= M:
+        raise IndexError('row index (%d) out of bounds' % (i,))
     if i < 0:
         i += M
-    if i < 0 or i >= M:
-        raise IndexError('row index out of bounds')
 
+    if j < -N or j >= N:
+        raise IndexError('column index (%d) out of bounds' % (j,))
     if j < 0:
         j += N
-    if j < 0 or j >= N:
-        raise IndexError('column index out of bounds')
 
     row = rows[i]
     data = datas[i]
@@ -124,15 +129,15 @@ cpdef lil_insert(cnp.npy_intp M, cnp.npy_intp N, object[:] rows, object[:] datas
     cdef list row, data
     cdef int is_zero
 
+    if i < -M or i >= M:
+        raise IndexError('row index (%d) out of bounds' % (i,))
     if i < 0:
         i += M
-    if i < 0 or i >= M:
-        raise IndexError('row index out of bounds')
 
+    if j < -N or j >= N:
+        raise IndexError('column index (%d) out of bounds' % (j,))
     if j < 0:
         j += N
-    if j < 0 or j >= N:
-        raise IndexError('column index out of bounds')
 
     row = rows[i]
     data = datas[i]
@@ -145,9 +150,9 @@ cpdef lil_insert(cnp.npy_intp M, cnp.npy_intp N, object[:] rows, object[:] datas
 
 def lil_fancy_get(cnp.npy_intp M, cnp.npy_intp N,
                   object[:] rows,
-                  object[:] data,
+                  object[:] datas,
                   object[:] new_rows,
-                  object[:] new_data,
+                  object[:] new_datas,
                   idx_t[:,:] i_idx,
                   idx_t[:,:] j_idx):
     """
@@ -157,7 +162,7 @@ def lil_fancy_get(cnp.npy_intp M, cnp.npy_intp N,
     Parameters
     ----------
     M, N, rows, data
-        LIL matrix data
+        LIL matrix data, initially empty
     new_rows, new_idx
         Data for LIL matrix to insert to.
         Must be preallocated to shape `i_idx.shape`!
@@ -168,21 +173,26 @@ def lil_fancy_get(cnp.npy_intp M, cnp.npy_intp N,
     cdef cnp.npy_intp x, y
     cdef idx_t i, j
     cdef object value
+    cdef list new_row
+    cdef list new_data
 
     for x in range(i_idx.shape[0]):
+        new_row = []
+        new_data = []
+
         for y in range(i_idx.shape[1]):
             i = i_idx[x,y]
             j = j_idx[x,y]
 
-            value = lil_get1(M, N, rows, data, i, j)
+            value = lil_get1(M, N, rows, datas, i, j)
 
-            if value is 0:
+            if value is not 0:
                 # Object identity as shortcut
-                continue
+                new_row.append(y)
+                new_data.append(value)
 
-            lil_insertat_nocheck(new_rows[x], new_data[x],
-                                 y, value)
-
+        new_rows[x] = new_row
+        new_datas[x] = new_data
 
 def lil_fancy_set(cnp.npy_intp M, cnp.npy_intp N,
                   object[:] rows,

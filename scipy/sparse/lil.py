@@ -234,6 +234,9 @@ class lil_matrix(spmatrix, IndexMixin):
         # Scalar fast path first
         if isinstance(index, tuple) and len(index) == 2:
             i, j = index
+            # Use isinstance checks for common index types; this is
+            # ~25-50% faster than isscalarlike. Other types are
+            # handled below.
             if ((isinstance(i, int) or isinstance(i, np.integer)) and
                 (isinstance(j, int) or isinstance(j, np.integer))):
                 v = _csparsetools.lil_get1(self.shape[0], self.shape[1],
@@ -244,6 +247,7 @@ class lil_matrix(spmatrix, IndexMixin):
         # Utilities found in IndexMixin
         i, j = self._unpack_index(index)
 
+        # Proper check for other scalar index types
         if isscalarlike(i) and isscalarlike(j):
             v = _csparsetools.lil_get1(self.shape[0], self.shape[1],
                                        self.rows, self.data,
@@ -256,7 +260,7 @@ class lil_matrix(spmatrix, IndexMixin):
 
         new = lil_matrix(i.shape, dtype=self.dtype)
 
-        i, j = _csparsetools.prepare_index_arrays(i, j)
+        i, j = _csparsetools.prepare_index_for_memoryview(i, j)
         _csparsetools.lil_fancy_get(self.shape[0], self.shape[1],
                                     self.rows, self.data,
                                     new.rows, new.data,
@@ -267,6 +271,10 @@ class lil_matrix(spmatrix, IndexMixin):
         # Scalar fast path first
         if isinstance(index, tuple) and len(index) == 2:
             i, j = index
+            # Use isinstance checks for common index types; this is
+            # ~25-50% faster than isscalarlike. Scalar index
+            # assignment for other types is handled below together
+            # with fancy indexing.
             if ((isinstance(i, int) or isinstance(i, np.integer)) and
                 (isinstance(j, int) or isinstance(j, np.integer))):
                 x = self.dtype.type(x)
@@ -303,7 +311,7 @@ class lil_matrix(spmatrix, IndexMixin):
             raise ValueError("shape mismatch in assignment")
 
         # Set values
-        i, j, x = _csparsetools.prepare_index_arrays(i, j, x)
+        i, j, x = _csparsetools.prepare_index_for_memoryview(i, j, x)
         _csparsetools.lil_fancy_set(self.shape[0], self.shape[1],
                                     self.rows, self.data,
                                     i, j, x)
