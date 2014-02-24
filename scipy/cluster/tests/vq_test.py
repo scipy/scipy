@@ -32,9 +32,9 @@ def read_data(name):
     f = open(name,'r')
     data = []
     for line in f.readlines():
-        data.append(list(map(float,string.split(line))))
+        data.append(list(map(float, line.split())))
     f.close()
-    return array(data)
+    return np.array(data)
 
 
 def main():

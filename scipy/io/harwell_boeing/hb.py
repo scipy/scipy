@@ -29,7 +29,7 @@ from scipy.io.harwell_boeing._fortran_format_parser import \
 
 from scipy.lib.six import string_types
 
-__all__ = ["MalformedHeader", "read_hb", "write", "HBInfo", "HBFile",
+__all__ = ["MalformedHeader", "hb_read", "hb_write", "HBInfo", "HBFile",
            "HBMatrixType"]
 
 
@@ -255,7 +255,7 @@ class HBInfo(object):
             # XXX: fortran int -> dtype association ?
             values_dtype = np.int
         else:
-            raise ValueError("Unsupported format for values %s" % ct[2])
+            raise ValueError("Unsupported format for values %r" % (values_format,))
 
         self.pointer_format = pointer_format
         self.indices_format = indices_format
