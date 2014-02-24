@@ -241,10 +241,10 @@ class FuncData(object):
                 minf_x = np.isinf(x)
                 minf_y = np.isinf(y)
             else:
-                pinf_x = np.isinf(x) & (x > 0)
-                pinf_y = np.isinf(y) & (y > 0)
-                minf_x = np.isinf(x) & (x < 0)
-                minf_y = np.isinf(y) & (y < 0)
+                pinf_x = np.isposinf(x)
+                pinf_y = np.isposinf(y)
+                minf_x = np.isneginf(x)
+                minf_y = np.isneginf(y)
             nan_x = np.isnan(x)
             nan_y = np.isnan(y)
 
