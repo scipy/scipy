@@ -1285,7 +1285,7 @@ def anderson_ksamp(samples, midrank=True):
     not at the 2.5% level. The interpolation gives an approximate
     significance level of 3.1%:
 
-    >>> stats.anderson_ksamp([np.random.normal(size=50), 
+    >>> stats.anderson_ksamp([np.random.normal(size=50),
     ... np.random.normal(loc=0.5, size=30)])
     (2.4615796189876105,
       array([ 0.325,  1.226,  1.961,  2.718,  3.752]),
@@ -1331,6 +1331,7 @@ def anderson_ksamp(samples, midrank=True):
     for l in arange(1, N-1):
         inner = np.array([1. / ((N - l) * m) for m in arange(l+1, N)])
         g += inner.sum()
+
     a = (4*g - 6) * (k - 1) + (10 - 6*g)*H
     b = (2*g - 4)*k**2 + 8*h*k + (2*g - 14*h - 4)*H - 8*h + 4*g - 6
     c = (6*h + 2*g - 2)*k**2 + (4*h - 4*g + 6)*k + (2*h - 6)*H + 4*h

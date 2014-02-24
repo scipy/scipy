@@ -93,8 +93,12 @@ class TestAndersonKSamp(TestCase):
         t2 = np.array([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8])
         t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
         t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
-        Tk, tm, p = assert_warns(UserWarning, stats.anderson_ksamp, (t1, t2,
-                                 t3, t4), midrank=False)
+        assert_warns(UserWarning, stats.anderson_ksamp, (t1, t2, t3, t4),
+                     midrank=False)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', message='approximate p-value')
+            Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4), midrank=False)
+
         assert_almost_equal(Tk, 4.449, 3)
         assert_array_almost_equal([0.4985, 1.3237, 1.9158, 2.4930, 3.2459],
                                   tm, 4)
@@ -109,8 +113,10 @@ class TestAndersonKSamp(TestCase):
         t2 = np.array([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8])
         t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
         t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
-        Tk, tm, p = assert_warns(UserWarning, stats.anderson_ksamp, (t1, t2,
-                                 t3, t4), midrank=True)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', message='approximate p-value')
+            Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4), midrank=True)
+
         assert_almost_equal(Tk, 4.480, 3)
         assert_array_almost_equal([0.4985, 1.3237, 1.9158, 2.4930, 3.2459],
                                   tm, 4)
@@ -139,9 +145,12 @@ class TestAndersonKSamp(TestCase):
         t13 = [487, 18, 100, 7, 98, 5, 85, 91, 43, 230, 3, 130]
         t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
                61, 34]
-        Tk, tm, p = assert_warns(UserWarning, stats.anderson_ksamp,
-                                 (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10,
-                                  t11, t12, t13, t14), midrank=False)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', message='approximate p-value')
+            Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
+                                              t9, t10, t11, t12, t13, t14),
+                                             midrank=False)
+
         assert_almost_equal(Tk, 3.288, 3)
         assert_array_almost_equal([0.5990, 1.3269, 1.8052, 2.2486, 2.8009],
                                   tm, 4)
@@ -169,9 +178,12 @@ class TestAndersonKSamp(TestCase):
         t13 = [487, 18, 100, 7, 98, 5, 85, 91, 43, 230, 3, 130]
         t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
                61, 34]
-        Tk, tm, p = assert_warns(UserWarning, stats.anderson_ksamp,
-                                 (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10,
-                                  t11, t12, t13, t14), midrank=True)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', message='approximate p-value')
+            Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
+                                              t9, t10, t11, t12, t13, t14),
+                                             midrank=True)
+
         assert_almost_equal(Tk, 3.294, 3)
         assert_array_almost_equal([0.5990, 1.3269, 1.8052, 2.2486, 2.8009],
                                   tm, 4)
