@@ -2899,7 +2899,7 @@ def test_entr():
         else:
             return -special.xlogy(x, x)
     values = (0, 0.5, 1.0, np.inf)
-    signs = (-1, 1)
+    signs = [1]
     arr = []
     for sgn, v in itertools.product(signs, values):
         arr.append(sgn * v)
@@ -2921,7 +2921,7 @@ def test_kl_div():
         else:
             return special.xlogy(x, x) - special.xlogy(x, y) - x + y
     values = (0, 0.5, 1.0)
-    signs = (-1, 1)
+    signs = [1]
     arr = []
     for sgna, va, sgnb, vb in itertools.product(signs, values, signs, values):
         arr.append((sgna*va, sgnb*vb))
@@ -2934,7 +2934,7 @@ def test_rel_entr():
     def xfunc(x, y):
         return special.xlogy(x, x) - special.xlogy(x, y)
     values = (0, 0.5, 1.0)
-    signs = (-1, 1)
+    signs = [1]
     arr = []
     for sgna, va, sgnb, vb in itertools.product(signs, values, signs, values):
         arr.append((sgna*va, sgnb*vb))
