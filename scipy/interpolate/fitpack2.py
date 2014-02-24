@@ -204,7 +204,7 @@ class UnivariateSpline(object):
         else:
             if not n <= nest:
                 raise ValueError("`nest` can only be increased")
-        t, c, fpint, nrdata = [np.resize(data[n], nest) for n in [8,9,11,12]]
+        t, c, fpint, nrdata = [np.resize(data[j], nest) for j in [8,9,11,12]]
 
         args = data[:8] + (t,c,n,fpint,nrdata,data[13])
         data = dfitpack.fpcurf1(*args)
