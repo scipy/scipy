@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import numpy.ma as ma
 
-from .optimize import OptimizeResult
+from .optimize import OptimizeResult, _check_unknown_options
 
 __all__ = ['linprog','linprog_verbose_callback','linprog_terse_callback']
 
@@ -487,6 +487,8 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
     .. [3] Bland, Robert G. New finite pivoting rules for the simplex method.
            Mathematics of Operations Research (2), 1977: pp. 103-107.
     """
+    _check_unknown_options(unknown_options)
+
     status = 0
     messages = {0: "Optimization terminated successfully.",
                 1: "Iteration limit reached.",

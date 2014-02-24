@@ -3,11 +3,14 @@ Unit test for Linear Programming via Simplex Algorithm.
 """
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 from numpy.testing import assert_, assert_array_almost_equal, TestCase, \
-                          assert_allclose, run_module_suite, assert_almost_equal
+                          assert_allclose, run_module_suite, assert_almost_equal, \
+                          assert_raises
 import numpy as np
 
-from scipy.optimize import linprog, linprog_verbose_callback
+from scipy.optimize import linprog, OptimizeWarning
 
 
 def lpgen_2d(m,n):
@@ -228,6 +231,60 @@ class TestLinprog(TestCase):
         assert_almost_equal(res.fun,-64.049494229,
                             err_msg="Test of linprog with 400 x 40 problem"
                                     "gave incorrect solution")
+
+
+    def test_callback(self):
+        # Check that callback is as advertised
+
+        callback_complete = [False]
+        last_xk = []
+
+        def cb(xk, **kwargs):
+            kwargs.pop('tableau')
+            assert_(isinstance(kwargs.pop('phase'), int))
+            assert_(isinstance(kwargs.pop('iter'), int))
+
+            i, j = kwargs.pop('pivot')
+            assert_(np.isscalar(i))
+            assert_(np.isscalar(j))
+
+            basis = kwargs.pop('basis')
+            assert_(isinstance(basis, np.ndarray))
+            assert_(basis.dtype == np.int_)
+
+            complete = kwargs.pop('complete')
+            assert_(isinstance(complete, bool))
+            if complete:
+                last_xk.append(xk)
+                callback_complete[0] = True
+            else:
+                assert_(not callback_complete[0])
+
+            # no more kwargs
+            assert_(not kwargs)
+        
+        c = np.array([-3,-2])
+        A_ub = [[2,1], [1,1], [1,0]]
+        b_ub = [10,8,4]
+        res = linprog(c,A_ub=A_ub,b_ub=b_ub, callback=cb)
+
+        assert_(callback_complete[0])
+        assert_allclose(last_xk[0], res.x)
+
+    def test_unknown_options_or_solver(self):
+        c = np.array([-3,-2])
+        A_ub = [[2,1], [1,1], [1,0]]
+        b_ub = [10,8,4]
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", OptimizeWarning)
+            assert_raises(OptimizeWarning, linprog,
+                          c, A_ub=A_ub, b_ub=b_ub,
+                          options=dict(spam='42'))
+
+        assert_raises(ValueError, linprog,
+                      c, A_ub=A_ub, b_ub=b_ub,
+                      method='ekki-ekki-ekki')
 
 
 if __name__ == "__main__":
