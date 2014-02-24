@@ -112,6 +112,23 @@ class TestLinprog(TestCase):
                                           "cycling failed with incorrect "
                                           "result.")
 
+    def test_linprog_cyclic_bland(self):
+        # Test the effect of Bland's rule on a cycling problem
+        c = np.array([-10, 57, 9, 24.])
+        A_ub = np.array([[0.5, -5.5, -2.5, 9],
+                         [0.5, -1.5, -0.5, 1],
+                         [1, 0, 0, 0]])
+        b_ub = [0, 0, 1]
+
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub,
+                      options=dict(maxiter=100))
+        assert_(not res.success)
+
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub,
+                      options=dict(maxiter=100, bland=True,))
+        assert_(res.success)
+        assert_allclose(res.x, [1, 0, 1, 0])
+
     def test_linprog_unbounded(self):
         # Test linprog response to an unbounded problem
         c = np.array([1,1])*-1  # maximize
