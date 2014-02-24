@@ -12,6 +12,7 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+import sys
 from numpy import asarray, real, imag, conj, zeros, ndarray, concatenate, \
                   ones, ascontiguousarray, vstack, savetxt, fromfile, fromstring
 from numpy.compat import asbytes, asstr
@@ -450,9 +451,15 @@ class MMFile (object):
                 return coo_matrix((rows, cols), dtype=dtype)
 
             try:
+                # passing a gzipped file to fromfile/fromstring doesn't work
+                # with Python3
+                if (sys.version_info >= (3, 0) and
+                        isinstance(stream, (gzip.GzipFile, bz2.BZ2File))):
+                    flat_data = fromstring(stream.read(), sep=' ')
                 # fromfile works for normal files
-                flat_data = fromfile(stream, sep=' ')
-            except:
+                else:
+                    flat_data = fromfile(stream, sep=' ')
+            except Exception:
                 # fallback - fromfile fails for some file-like objects
                 flat_data = fromstring(stream.read(), sep=' ')
 
