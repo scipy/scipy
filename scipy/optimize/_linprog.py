@@ -530,7 +530,7 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
         else:
             try:
                 for i in range(n):
-                    if len(bounds[0]) != 2:
+                    if len(bounds[i]) != 2:
                         raise IndexError()
                     L[i] = bounds[i][0] if not bounds[i][0] is None else -np.inf
                     U[i] = bounds[i][1] if not bounds[i][1] is None else np.inf
