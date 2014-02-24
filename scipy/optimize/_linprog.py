@@ -518,10 +518,10 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
     U = np.ones(n,dtype=np.float64)*np.inf
     if bounds is None or len(bounds) == 0:
         pass
-    elif len(bounds) == 1:
+    elif len(bounds) == 2 and not hasattr(bounds[0], '__len__'):
         # All bounds are the same
-        L = np.asarray(n*bounds[0][0],dtype=np.float64)
-        U = np.asarray(n*bounds[0][1],dtype=np.float64)
+        L = np.asarray(n*[bounds[0]], dtype=np.float64)
+        U = np.asarray(n*[bounds[1]], dtype=np.float64)
     else:
         if len(bounds) != n:
             status = -1
@@ -625,19 +625,13 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
     n_artificial = meq + np.count_nonzero(bub < 0)
 
     try:
-        if not Aub is None:
-            Aub_rows, Aub_cols = Aub.shape
-        else:
-            Aub_rows, Aub_cols = 0,0
+        Aub_rows, Aub_cols = Aub.shape
     except ValueError:
         status = -1
         message = "Invalid input.  A_ub must be two-dimensional"
 
     try:
-        if not Aeq is None:
-            Aeq_rows, Aeq_cols = Aeq.shape
-        else:
-            Aeq_rows, Aeq_cols = 0,0
+        Aeq_rows, Aeq_cols = Aeq.shape
     except ValueError:
         status = -1
         message = "Invalid input.  A_eq must be two-dimensional"

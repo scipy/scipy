@@ -286,6 +286,16 @@ class TestLinprog(TestCase):
                       c, A_ub=A_ub, b_ub=b_ub,
                       method='ekki-ekki-ekki')
 
+    def test_no_constraints(self):
+        res = linprog([-1, -2])
+        assert_allclose(res.x, [0, 0])
+
+    def test_simple_bounds(self):
+        res = linprog([1, 2], bounds=(1, 2))
+        assert_allclose(res.x, [1, 1])
+        res = linprog([1, 2], bounds=[(1, 2), (1, 2)])
+        assert_allclose(res.x, [1, 1])
+
 
 if __name__ == "__main__":
     run_module_suite()
