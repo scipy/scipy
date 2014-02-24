@@ -1,11 +1,9 @@
 from __future__ import division, print_function, absolute_import
 
-from scipy import array, arange, ones, sort, cos, pi, rand, \
-     set_printoptions, r_
+from scipy import array, arange, ones, sort, cos, pi, rand, r_
 from scipy.sparse.linalg import lobpcg
 from scipy import sparse
 from pylab import loglog, show, xlabel, ylabel, title
-set_printoptions(precision=8,linewidth=90)
 import time
 
 
@@ -28,6 +26,7 @@ def sakurai(n):
 
 m = 3  # Blocksize
 
+
 #
 # Large scale
 #
@@ -36,7 +35,8 @@ A,B, w_ex = sakurai(n)  # Mikota pair
 X = rand(n,m)
 data = []
 tt = time.clock()
-eigs,vecs, resnh = lobpcg(X,A,B, residualTolerance=1e-6, maxIterations=500, retResidualNormsHistory=1)
+eigs,vecs, resnh = lobpcg(X,A,B, residualTolerance=1e-6, maxIterations=500,
+                          retResidualNormsHistory=1)
 data.append(time.clock()-tt)
 print('Results by LOBPCG for n='+str(n))
 print()

@@ -18,8 +18,6 @@ __all__ = ['argstoarray',
            'chisquare','count_tied_groups',
            'describe',
            'f_oneway','f_value_wilks_lambda','find_repeats','friedmanchisquare',
-           'gmean',
-           'hmean',
            'kendalltau','kendalltau_seasonal','kruskal','kruskalwallis',
            'ks_twosamp','ks_2samp','kurtosis','kurtosistest',
            'linregress',
@@ -264,23 +262,6 @@ def rankdata(data, axis=None, use_missing=False):
 #####--------------------------------------------------------------------------
 #---- --- Central tendency ---
 #####--------------------------------------------------------------------------
-
-def gmean(a, axis=0):
-    a, axis = _chk_asarray(a, axis)
-    log_a = ma.log(a)
-    return ma.exp(log_a.mean(axis=axis))
-gmean.__doc__ = stats.gmean.__doc__
-
-
-def hmean(a, axis=0):
-    a, axis = _chk_asarray(a, axis)
-    if isinstance(a, MaskedArray):
-        size = a.count(axis)
-    else:
-        size = a.shape[axis]
-    return size / (1.0/a).sum(axis)
-hmean.__doc__ = stats.hmean.__doc__
-
 
 def mode(a, axis=0):
     a, axis = _chk_asarray(a, axis)

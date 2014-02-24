@@ -8,3 +8,5 @@ Library:
         linalg,
         sparsetools,
         csgraph
+    Extension: _csparsetools
+        Sources: _csparsetools.c

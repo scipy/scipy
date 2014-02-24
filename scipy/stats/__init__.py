@@ -272,6 +272,7 @@ which work for masked arrays.
    levene
    shapiro
    anderson
+   anderson_ksamp
    binom_test
    fligner
    mood
