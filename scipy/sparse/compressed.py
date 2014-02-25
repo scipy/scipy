@@ -14,7 +14,8 @@ from .data import _data_matrix, _minmax_mixin
 from .dia import dia_matrix
 from . import sparsetools
 from .sputils import upcast, upcast_char, to_native, isdense, isshape, \
-     getdtype, isscalarlike, isintlike, IndexMixin, get_index_dtype
+     getdtype, isscalarlike, isintlike, IndexMixin, get_index_dtype, \
+     downcast_intp_index
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
@@ -102,7 +103,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             axis, _ = self._swap((axis, 1 - axis))
             _, N = self._swap(self.shape)
             if axis == 0:
-                return np.bincount(self.indices, minlength=N)
+                return np.bincount(downcast_intp_index(self.indices),
+                                   minlength=N)
             elif axis == 1:
                 return np.diff(self.indptr)
             raise ValueError('axis out of bounds')
@@ -588,7 +590,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # Numpy < 1.8.0 don't handle empty arrays in reduceat
             value = np.zeros_like(self.data)
         else:
-            value = ufunc.reduceat(self.data, self.indptr[major_index])
+            value = ufunc.reduceat(self.data,
+                                   downcast_intp_index(self.indptr[major_index]))
         return major_index, value
 
     #######################

@@ -51,7 +51,8 @@ import nose
 warnings.simplefilter('ignore', SparseEfficiencyWarning)
 warnings.simplefilter('ignore', ComplexWarning)
 
-def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None):
+def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
+                            downcast_maxval=None):
     """
     Monkeypatch the maxval threshold at which scipy.sparse switches to
     64-bit index arrays, or make it (pseudo-)random.
@@ -79,6 +80,12 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None):
                     dtype = np.int64
             return dtype
 
+    if downcast_maxval is not None:
+        def new_downcast_intp_index(arr):
+            if arr.max() > downcast_maxval:
+                raise AssertionError("downcast limited")
+            return arr.astype(np.intp)
+
     @decorator
     def deco(func, *a, **kw):
         backup = []
@@ -88,12 +95,18 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None):
                    scipy.sparse.compressed, scipy.sparse.construct]
         try:
             for mod in modules:
-                backup.append((mod, getattr(mod, 'get_index_dtype', None)))
+                backup.append((mod, 'get_index_dtype',
+                               getattr(mod, 'get_index_dtype', None)))
                 setattr(mod, 'get_index_dtype', new_get_index_dtype)
+                if downcast_maxval is not None:
+                    backup.append((mod, 'downcast_intp_index',
+                                   getattr(mod, 'downcast_intp_index', None)))
+                    setattr(mod, 'downcast_intp_index', new_downcast_intp_index)
             return func(*a, **kw)
         finally:
-            for mod, oldfunc in backup:
-                setattr(mod, 'get_index_dtype', oldfunc)
+            for mod, name, oldfunc in backup:
+                if oldfunc is not None:
+                    setattr(mod, name, oldfunc)
 
     return deco
 
@@ -3803,6 +3816,42 @@ class Test64Bit(object):
         for t in self._check_resiliency(fixed_dtype=np.int64):
             yield t
 
+    def test_downcast_intp(self):
+        # Check that bincount and ufunc.reduceat intp downcasts are
+        # dealt with. The point here is to trigger points in the code
+        # that can fail on 32-bit systems when using 64-bit indices,
+        # due to use of functions that only work with intp-size
+        # indices.
+
+        @with_64bit_maxval_limit(fixed_dtype=np.int64,
+                                 downcast_maxval=1)
+        def check_limited():
+            # These involve indices larger than `downcast_maxval`
+            a = csc_matrix([[1, 2], [3, 4], [5, 6]])
+            assert_raises(AssertionError, a.getnnz, axis=1)
+            assert_raises(AssertionError, a.sum, axis=0)
+
+            a = csr_matrix([[1, 2, 3], [3, 4, 6]])
+            assert_raises(AssertionError, a.getnnz, axis=0)
+
+            a = coo_matrix([[1, 2, 3], [3, 4, 5]])
+            assert_raises(AssertionError, a.getnnz, axis=0)
+
+        @with_64bit_maxval_limit(fixed_dtype=np.int64)
+        def check_unlimited():
+            # These involve indices larger than `downcast_maxval`
+            a = csc_matrix([[1, 2], [3, 4], [5, 6]])
+            a.getnnz(axis=1)
+            a.sum(axis=0)
+
+            a = csr_matrix([[1, 2, 3], [3, 4, 6]])
+            a.getnnz(axis=0)
+
+            a = coo_matrix([[1, 2, 3], [3, 4, 5]])
+            a.getnnz(axis=0)
+
+        check_limited()
+        check_unlimited()
 
 if __name__ == "__main__":
     run_module_suite()
