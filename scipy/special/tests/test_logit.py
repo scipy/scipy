@@ -73,3 +73,9 @@ class TestExpit(TestCase):
                             0.79139147, 0.9022274,
                             0.95734875, 0.98201379])
         self.check_expit_out('f8', expected)
+
+    def test_large_inputs(self):
+        dtypes = ['f4', 'f8']
+        inputs = [500, 900]
+        for x, d in zip(inputs, dtypes):
+            assert_equal(expit(np.array(x, dtype=d)), np.array(1, dtype=d))
