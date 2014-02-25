@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import numpy.ma as ma
 
-from .optimize import OptimizeResult
+from .optimize import OptimizeResult, _check_unknown_options
 
 __all__ = ['linprog','linprog_verbose_callback','linprog_terse_callback']
 
@@ -289,7 +289,6 @@ def _solve_simplex(T,n,basis,maxiter=1000,phase=2,callback=None,
         Boolean flag indicating if the optimizer exited successfully and
         ``message`` which describes the cause of the termination. Possible
         values for the ``status`` attribute are:
-        -1 : Invalid arguments
          0 : Optimization terminated successfully
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
@@ -428,7 +427,6 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
             solution.
         status : int
             An integer representing the exit status of the optimization::
-            -1 : Invalid arguments
              0 : Optimization terminated successfully
              1 : Iteration limit reached
              2 : Problem appears to be infeasible
@@ -487,6 +485,8 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
     .. [3] Bland, Robert G. New finite pivoting rules for the simplex method.
            Mathematics of Operations Research (2), 1977: pp. 103-107.
     """
+    _check_unknown_options(unknown_options)
+
     status = 0
     messages = {0: "Optimization terminated successfully.",
                 1: "Iteration limit reached.",
@@ -516,10 +516,10 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
     U = np.ones(n,dtype=np.float64)*np.inf
     if bounds is None or len(bounds) == 0:
         pass
-    elif len(bounds) == 1:
+    elif len(bounds) == 2 and not hasattr(bounds[0], '__len__'):
         # All bounds are the same
-        L = np.asarray(n*bounds[0][0],dtype=np.float64)
-        U = np.asarray(n*bounds[0][1],dtype=np.float64)
+        L = np.asarray(n*[bounds[0]], dtype=np.float64)
+        U = np.asarray(n*[bounds[1]], dtype=np.float64)
     else:
         if len(bounds) != n:
             status = -1
@@ -528,11 +528,11 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
         else:
             try:
                 for i in range(n):
-                    if len(bounds[0]) != 2:
+                    if len(bounds[i]) != 2:
                         raise IndexError()
                     L[i] = bounds[i][0] if not bounds[i][0] is None else -np.inf
                     U[i] = bounds[i][1] if not bounds[i][1] is None else np.inf
-            except IndexError as err:
+            except IndexError:
                 status = -1
                 message = "Invalid input for linprog with method = 'simplex'.  " \
                           "bounds must be a n x 2 sequence/array where " \
@@ -627,24 +627,14 @@ def _linprog_simplex(c,A_ub=None,b_ub=None,A_eq=None,b_eq=None,
     n_artificial = meq + np.count_nonzero(bub < 0)
 
     try:
-        if not Aub is None:
-            Aub_rows, Aub_cols = Aub.shape
-        else:
-            Aub_rows, Aub_cols = 0,0
+        Aub_rows, Aub_cols = Aub.shape
     except ValueError:
-        status = -1
-        message = "Invalid input for linprog with method = 'simplex'.  " \
-                  "A_ub must be two-dimensional"
+        raise ValueError("Invalid input.  A_ub must be two-dimensional")
 
     try:
-        if not Aeq is None:
-            Aeq_rows, Aeq_cols = Aeq.shape
-        else:
-            Aeq_rows, Aeq_cols = 0,0
+        Aeq_rows, Aeq_cols = Aeq.shape
     except ValueError:
-        status = -1
-        message = "Invalid input for linprog with method = 'simplex'.  " \
-                  "A_eq must be two-dimensional"
+        raise ValueError("Invalid input.  A_eq must be two-dimensional")
 
     if Aeq_rows != meq:
         status = -1
@@ -860,7 +850,6 @@ def linprog(c,A_eq=None,b_eq=None,A_ub=None,b_ub=None,
             solution.
         status : int
             An integer representing the exit status of the optimization::
-            -1 : Invalid arguments
              0 : Optimization terminated successfully
              1 : Iteration limit reached
              2 : Problem appears to be infeasible
