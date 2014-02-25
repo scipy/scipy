@@ -28,7 +28,7 @@
 
 @type@ expit@c@(@type@ x)
 {
-    if (x > 0) {
+    if (x < 0) {
         x = npy_exp@c@(x);
         return x / (1 + x);
     }
