@@ -244,7 +244,7 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
 	goto fail;
     }
 
-    result = newSciPyLUObject(&A, option_dict, type, ilu);
+    result = newSuperLUObject(&A, option_dict, type, ilu);
     if (result == NULL) {
 	goto fail;
     }
@@ -323,7 +323,7 @@ PyObject *PyInit__superlu(void)
 
     import_array();
 
-    if (PyType_Ready(&SciPySuperLUType) < 0) {
+    if (PyType_Ready(&SuperLUType) < 0) {
 	return NULL;
     }
 
@@ -331,8 +331,8 @@ PyObject *PyInit__superlu(void)
     d = PyModule_GetDict(m);
 
     Py_INCREF(&PyArrayFlags_Type);
-    PyDict_SetItemString(d, "SciPyLUType",
-			 (PyObject *) & SciPySuperLUType);
+    PyDict_SetItemString(d, "SuperLU",
+			 (PyObject *) &SuperLUType);
 
     if (PyErr_Occurred())
 	Py_FatalError("can't initialize module _superlu");
@@ -348,8 +348,8 @@ PyMODINIT_FUNC init_superlu(void)
 
     import_array();
 
-    SciPySuperLUType.ob_type = &PyType_Type;
-    if (PyType_Ready(&SciPySuperLUType) < 0) {
+    SuperLUType.ob_type = &PyType_Type;
+    if (PyType_Ready(&SuperLUType) < 0) {
 	return;
     }
 
@@ -357,8 +357,8 @@ PyMODINIT_FUNC init_superlu(void)
     d = PyModule_GetDict(m);
 
     Py_INCREF(&PyArrayFlags_Type);
-    PyDict_SetItemString(d, "SciPyLUType",
-			 (PyObject *) & SciPySuperLUType);
+    PyDict_SetItemString(d, "SuperLU",
+			 (PyObject *) & SuperLUType);
 }
 
 #endif
