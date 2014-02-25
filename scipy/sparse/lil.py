@@ -326,16 +326,16 @@ class lil_matrix(spmatrix, IndexMixin):
             new = self.copy()
             new = new.astype(res_dtype)
             # Multiply this scalar by every element.
-            new.data[:] = [[val*other for val in rowvals] for
-                           rowvals in new.data]
+            for j, rowvals in enumerate(new.data):
+                new.data[j] = [val*other for val in rowvals]
         return new
 
     def __truediv__(self, other):           # self / other
         if isscalarlike(other):
             new = self.copy()
             # Divide every element by this scalar
-            new.data[:] = [[val/other for val in rowvals] for
-                           rowvals in new.data]
+            for j, rowvals in enumerate(new.data):
+                new.data[j] = [val/other for val in rowvals]
             return new
         else:
             return self.tocsr() / other
