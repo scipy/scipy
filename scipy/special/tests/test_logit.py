@@ -1,7 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import TestCase, assert_equal, assert_almost_equal
+from numpy.testing import (TestCase, assert_equal, assert_almost_equal,
+        assert_allclose)
 from scipy.lib._version import NumpyVersion
 from scipy.special import logit, expit
 
@@ -75,8 +76,8 @@ class TestExpit(TestCase):
         self.check_expit_out('f8', expected)
 
     def test_float64_large(self):
-        assert_allclose(expit(710), 1.0)
-        assert_allclose(expit(7100), 1.0)
-        assert_allclose(expit(-710), 0.0)
-        assert_allclose(expit(-7100), 0.0)
+        assert_allclose(expit(710), 1.0, atol=1e-20)
+        assert_allclose(expit(7100), 1.0, atol=1e-20)
+        assert_allclose(expit(-710), 0.0, atol=1e-20)
+        assert_allclose(expit(-7100), 0.0, atol=1e-20)
 
