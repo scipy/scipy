@@ -1849,6 +1849,28 @@ class _TestInplaceArithmetic:
             if not np.can_cast(dtype, np.int_):
                 yield check, dtype
 
+    def test_inplace_success(self):
+        # Inplace ops should work even if a specialized version is not
+        # implemented, falling back to x = x <op> y
+        a = self.spmatrix(np.eye(5))
+        b = self.spmatrix(np.eye(5))
+        bp = self.spmatrix(np.eye(5))
+
+        b += a
+        bp = bp + a
+        assert_allclose(b.A, bp.A)
+
+        b *= a
+        bp = bp * a
+        assert_allclose(b.A, bp.A)
+
+        b -= a
+        bp = bp - a
+        assert_allclose(b.A, bp.A)
+
+        assert_raises(TypeError, operator.itruediv, a, b)
+        assert_raises(TypeError, operator.ifloordiv, a, b)
+
 
 class _TestGetSet:
     def test_getelement(self):
