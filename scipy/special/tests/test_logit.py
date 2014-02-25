@@ -78,5 +78,8 @@ class TestExpit(TestCase):
     def test_large(self):
         for dtype in (np.float32, np.float64, np.float128):
             for n in (88, 89, 709, 710, 11356, 11357):
+                n = np.array(n, dtype=dtype)
                 assert_allclose(expit(n), 1.0, atol=1e-20)
                 assert_allclose(expit(-n), 0.0, atol=1e-20)
+                assert_equal(expit(n).dtype, dtype)
+                assert_equal(expit(-n).dtype, dtype)
