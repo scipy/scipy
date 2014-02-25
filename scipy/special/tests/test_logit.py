@@ -75,6 +75,8 @@ class TestExpit(TestCase):
         self.check_expit_out('f8', expected)
 
     def test_float64_large(self):
-        yield assert_allclose, 1.0, expit(710)
-        yield assert_allclose, 0.0, expit(-710)
+        assert_allclose(expit(710), 1.0)
+        assert_allclose(expit(7100), 1.0)
+        assert_allclose(expit(-710), 0.0)
+        assert_allclose(expit(-7100), 0.0)
 
