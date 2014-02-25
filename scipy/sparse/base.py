@@ -728,25 +728,52 @@ class spmatrix(object):
         return self.tocsr().diagonal()
 
     def setdiag(self, values, k=0):
-        """Fills the diagonal elements {a_ii} with the values from the
-        given sequence.  If k != 0, fills the off-diagonal elements
-        {a_{i,i+k}} instead.
+        """
+        Set diagonal or off-diagonal elements of the array.
 
-        values may have any length.  If the diagonal is longer than values,
-        then the remaining diagonal entries will not be set.  If values if
-        longer than the diagonal, then the remaining values are ignored.
+        Parameters
+        ----------
+        values : array_like
+            New values of the diagonal elements.
+
+            Values may have any length.  If the diagonal is longer than values,
+            then the remaining diagonal entries will not be set.  If values if
+            longer than the diagonal, then the remaining values are ignored.
+
+            If a scalar value is given, all of the diagonal is set to it.
+
+        k : int, optional
+            Which off-diagonal to set, corresponding to elements a[i,i+k].
+            Default: 0 (the main diagonal).
+
         """
         M, N = self.shape
         if (k > 0 and k >= N) or (k < 0 and -k >= M):
             raise ValueError("k exceeds matrix dimensions")
         if k < 0:
-            max_index = min(M+k, N, len(values))
-            for i,v in enumerate(values[:max_index]):
-                self[i - k, i] = v
+            if np.asarray(values).ndim == 0:
+                # broadcast
+                max_index = min(M+k, N)
+                for i in xrange(max_index):
+                    self[i - k, i] = values
+            else:
+                max_index = min(M+k, N, len(values))
+                if max_index <= 0:
+                    return
+                for i,v in enumerate(values[:max_index]):
+                    self[i - k, i] = v
         else:
-            max_index = min(M, N-k, len(values))
-            for i,v in enumerate(values[:max_index]):
-                self[i, i + k] = v
+            if np.asarray(values).ndim == 0:
+                # broadcast
+                max_index = min(M, N-k)
+                for i in xrange(max_index):
+                    self[i, i + k] = values
+            else:
+                max_index = min(M, N-k, len(values))
+                if max_index <= 0:
+                    return
+                for i,v in enumerate(values[:max_index]):
+                    self[i, i + k] = v
 
     def _process_toarray_args(self, order, out):
         if out is not None:
