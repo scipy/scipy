@@ -1647,31 +1647,35 @@ class _TestInplaceArithmetic:
         a = np.ones((3, 4))
         b = self.spmatrix(a)
 
-        x = a.copy()
-        y = a.copy()
-        x += a
-        y += b
-        assert_array_equal(x, y)
+        with warnings.catch_warnings():
+            if NumpyVersion(np.__version__) < '1.9.0.dev-0':
+                warnings.simplefilter("ignore", DeprecationWarning)
 
-        x = a.copy()
-        y = a.copy()
-        x -= a
-        y -= b
-        assert_array_equal(x, y)
+            x = a.copy()
+            y = a.copy()
+            x += a
+            y += b
+            assert_array_equal(x, y)
 
-        # This is matrix product, from __rmul__
-        assert_raises(ValueError, operator.imul, x, b)
-        x = a.copy()
-        y = a.copy()
-        x = x.dot(a.T)
-        y *= b.T
-        assert_array_equal(x, y)
+            x = a.copy()
+            y = a.copy()
+            x -= a
+            y -= b
+            assert_array_equal(x, y)
 
-        # Matrix (non-elementwise) division is not defined
-        assert_raises(TypeError, operator.itruediv, x, b)
+            # This is matrix product, from __rmul__
+            assert_raises(ValueError, operator.imul, x, b)
+            x = a.copy()
+            y = a.copy()
+            x = x.dot(a.T)
+            y *= b.T
+            assert_array_equal(x, y)
 
-        # Matrix (non-elementwise) floor division is not defined
-        assert_raises(TypeError, operator.ifloordiv, x, b)
+            # Matrix (non-elementwise) division is not defined
+            assert_raises(TypeError, operator.itruediv, x, b)
+
+            # Matrix (non-elementwise) floor division is not defined
+            assert_raises(TypeError, operator.ifloordiv, x, b)
 
     def test_imul_scalar(self):
         def check(dtype):
