@@ -283,7 +283,7 @@ class lil_matrix(spmatrix, IndexMixin):
                     raise ValueError("Trying to assign a sequence to an item")
                 _csparsetools.lil_insert(self.shape[0], self.shape[1],
                                          self.rows, self.data,
-                                         i, j, x)
+                                         i, j, x, self.dtype)
                 return
 
         # General indexing

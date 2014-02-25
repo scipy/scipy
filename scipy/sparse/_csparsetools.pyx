@@ -11,8 +11,8 @@ import numpy as np
 
 
 ctypedef fused idx_t:
-    cnp.int32_t
-    cnp.int64_t
+    cnp.npy_int32
+    cnp.npy_int64
 
 
 ctypedef fused value_t:
@@ -27,8 +27,29 @@ ctypedef fused value_t:
     cnp.npy_uint64
     cnp.npy_float32
     cnp.npy_float64
+    long double
     float complex
     double complex
+    long double complex
+
+
+DTYPE_NAME_MAP = {
+    np.dtype(np.bool_): "npy_bool",
+    np.dtype(np.int8): "npy_int8",
+    np.dtype(np.uint8): "npy_uint8",
+    np.dtype(np.int16): "npy_int16",
+    np.dtype(np.uint16): "npy_uint16",
+    np.dtype(np.int32): "npy_int32",
+    np.dtype(np.uint32): "npy_uint32",
+    np.dtype(np.int64): "npy_int64",
+    np.dtype(np.uint64): "npy_uint64",
+    np.dtype(np.float32): "npy_float32",
+    np.dtype(np.float64): "npy_float64",
+    np.dtype(np.longdouble): "long double",
+    np.dtype(np.complex64): "float complex",
+    np.dtype(np.complex128): "double complex",
+    np.dtype(np.clongdouble): "long double complex"
+}
 
 
 def prepare_index_for_memoryview(cnp.ndarray i, cnp.ndarray j, cnp.ndarray x=None):
@@ -109,8 +130,21 @@ cpdef lil_get1(cnp.npy_intp M, cnp.npy_intp N, object[:] rows, object[:] datas,
         return 0
 
 
-cpdef lil_insert(cnp.npy_intp M, cnp.npy_intp N, object[:] rows, object[:] datas,
-                 cnp.npy_intp i, cnp.npy_intp j, value_t x):
+def lil_insert(cnp.npy_intp M, cnp.npy_intp N, object[:] rows, object[:] datas,
+               cnp.npy_intp i, cnp.npy_intp j, object x, object dtype):
+    """
+    Work around broken Cython fused type dispatch
+    """
+    try:
+        key = DTYPE_NAME_MAP[dtype]
+    except KeyError:
+        raise ValueError("Unsupported data type: %r" % (dtype,))
+
+    _lil_insert[key](M, N, rows, datas, i, j, x)
+
+
+cpdef _lil_insert(cnp.npy_intp M, cnp.npy_intp N, object[:] rows, object[:] datas,
+                  cnp.npy_intp i, cnp.npy_intp j, value_t x):
     """
     Insert a single item to LIL matrix.
 
@@ -194,12 +228,39 @@ def lil_fancy_get(cnp.npy_intp M, cnp.npy_intp N,
         new_rows[x] = new_row
         new_datas[x] = new_data
 
+
 def lil_fancy_set(cnp.npy_intp M, cnp.npy_intp N,
                   object[:] rows,
                   object[:] data,
-                  idx_t[:,:] i_idx,
-                  idx_t[:,:] j_idx,
-                  value_t[:,:] values):
+                  object i_idx,
+                  object j_idx,
+                  object values):
+    """
+    Work around broken Cython fused type dispatch
+    """
+    try:
+        key = DTYPE_NAME_MAP[values.dtype]
+        ikey = DTYPE_NAME_MAP[i_idx.dtype]
+    except KeyError:
+        raise ValueError("Unsupported data type")
+
+    if key != "npy_bool":
+        _lil_fancy_set[ikey, key](M, N, rows, data, i_idx, j_idx, values)
+    else:
+        # bool has no memoryview support
+        for x in range(i_idx.shape[0]):
+            for y in range(i_idx.shape[1]):
+                i = i_idx[x,y]
+                j = j_idx[x,y]
+                _lil_insert[key](M, N, rows, data, i, j, values[x, y])
+
+
+cpdef _lil_fancy_set(cnp.npy_intp M, cnp.npy_intp N,
+                     object[:] rows,
+                     object[:] data,
+                     idx_t[:,:] i_idx,
+                     idx_t[:,:] j_idx,
+                     value_t[:,:] values):
     """
     Set multiple items to a LIL matrix.
 
@@ -222,7 +283,7 @@ def lil_fancy_set(cnp.npy_intp M, cnp.npy_intp N,
         for y in range(i_idx.shape[1]):
             i = i_idx[x,y]
             j = j_idx[x,y]
-            lil_insert[value_t](M, N, rows, data, i, j, values[x, y])
+            _lil_insert[value_t](M, N, rows, data, i, j, values[x, y])
 
 
 cdef lil_insertat_nocheck(list row, list data, cnp.npy_intp j, object x):
