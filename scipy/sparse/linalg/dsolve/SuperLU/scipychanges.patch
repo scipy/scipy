@@ -11,6 +11,9 @@
     - Do not exit(1) when ILU decomposition encounters singularity;
       instead call ABORT (which is hooked up in Scipy)
 
+    - Add missing declarations of dlamch_ (call without declaration to
+      functions returning floating point can cause NaN to appear later on, on i386).
+
 diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpivotL.c
 index a14ea72..f60c4dc 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpivotL.c
@@ -73,6 +76,20 @@ index bcfa96d..6a66068 100644
  	perm_r[*pivrow] = jcol;
  #else
  	perm_r[diagind] = jcol;
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
+index b6b0328..5a7203d 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
+@@ -17,6 +17,9 @@ int num_drop_U;
+ #endif
+ 
+ extern void ccopy_(int *, complex [], int *, complex [], int *);
++#if SCIPY_FIX
++extern double dlamch_(char *);
++#endif
+ 
+ #if 0
+ static complex *A;  /* used in _compare_ only */
 diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cpivotL.c
 index d806485..98991d7 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cpivotL.c
@@ -137,6 +154,20 @@ index 33c316d..0cbb21d 100644
  	    }
  
  	    *pivrow = swap[icol];
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
+index 7e0e97c..b9fd387 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
+@@ -17,6 +17,9 @@ int num_drop_U;
+ #endif
+ 
+ extern void scopy_(int *, float [], int *, float [], int *);
++#if SCIPY_FIX
++extern double dlamch_(char *);
++#endif
+ 
+ #if 0
+ static float *A;  /* used in _compare_ only */
 diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_spivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_spivotL.c
 index 25b6b00..ff36657 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_spivotL.c
