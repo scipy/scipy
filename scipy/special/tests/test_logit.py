@@ -75,9 +75,8 @@ class TestExpit(TestCase):
                             0.95734875, 0.98201379])
         self.check_expit_out('f8', expected)
 
-    def test_float64_large(self):
-        assert_allclose(expit(710), 1.0, atol=1e-20)
-        assert_allclose(expit(7100), 1.0, atol=1e-20)
-        assert_allclose(expit(-710), 0.0, atol=1e-20)
-        assert_allclose(expit(-7100), 0.0, atol=1e-20)
-
+    def test_large(self):
+        for dtype in (np.float32, np.float64, np.float128):
+            for n in (88, 89, 709, 710, 11356, 11357):
+                assert_allclose(expit(n), 1.0, atol=1e-20)
+                assert_allclose(expit(-n), 0.0, atol=1e-20)
