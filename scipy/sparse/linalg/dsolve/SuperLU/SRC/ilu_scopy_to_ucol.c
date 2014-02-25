@@ -17,6 +17,9 @@ int num_drop_U;
 #endif
 
 extern void scopy_(int *, float [], int *, float [], int *);
+#if SCIPY_FIX
+extern double dlamch_(char *);
+#endif
 
 #if 0
 static float *A;  /* used in _compare_ only */

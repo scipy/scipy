@@ -366,6 +366,22 @@ class TestSplu(object):
             assert_raises(TypeError, lu.solve,
                           b.astype(np.complex128))
 
+    def test_superlu_dlamch_i386_nan(self):
+        # SuperLU 4.3 calls some functions returning floats without
+        # declaring them. On i386@linux call convention, this fails to
+        # clear floating point registers after call. As a result, NaN
+        # can appear in the next floating point operation made.
+        #
+        # Here's a test case that triggered the issue.
+        n = 8
+        d = np.arange(n) + 1
+        A = spdiags((d, 2*d, d[::-1]), (-3, 0, 5), n, n)
+        A = A.astype(np.float32)
+        spilu(A)
+        A = A + 1j*A
+        B = A.A
+        assert_(not np.isnan(B).any())
+
 
 if __name__ == "__main__":
     run_module_suite()

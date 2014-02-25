@@ -17,6 +17,9 @@ int num_drop_U;
 #endif
 
 extern void ccopy_(int *, complex [], int *, complex [], int *);
+#if SCIPY_FIX
+extern double dlamch_(char *);
+#endif
 
 #if 0
 static complex *A;  /* used in _compare_ only */
