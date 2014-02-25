@@ -1852,24 +1852,36 @@ class _TestInplaceArithmetic:
     def test_inplace_success(self):
         # Inplace ops should work even if a specialized version is not
         # implemented, falling back to x = x <op> y
-        a = self.spmatrix(np.eye(5))
-        b = self.spmatrix(np.eye(5))
-        bp = self.spmatrix(np.eye(5))
+        rng = np.random.RandomState(1234).randn
+        a = self.spmatrix(rng(5,5))
+        b = self.spmatrix(rng(5,5))
+        bp = self.spmatrix(rng(5,5))
+        ad = a.A
+        bd = b.A
 
         b += a
+        bd += ad
         bp = bp + a
         assert_allclose(b.A, bp.A)
+        assert_allclose(b.A, bd)
 
         b *= a
+        bd = np.dot(bd, ad)
         bp = bp * a
         assert_allclose(b.A, bp.A)
+        assert_allclose(b.A, bd)
 
         b -= a
+        bd -= ad
         bp = bp - a
         assert_allclose(b.A, bp.A)
+        assert_allclose(b.A, bd)
 
-        assert_raises(TypeError, operator.itruediv, a, b)
-        assert_raises(TypeError, operator.ifloordiv, a, b)
+        b /= a
+        bd /= ad
+        bp = bp / a
+        assert_allclose(b.A, bp.A)
+        assert_allclose(b.A, bd)
 
 
 class _TestGetSet:

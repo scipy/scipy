@@ -432,12 +432,11 @@ class spmatrix(object):
         return self._divide(other, true_divide=True)
 
     def __rtruediv__(self, other):
-        # Implementing this as the inverse would be too magical -- bail out
-        return NotImplemented
+        return self._divide(other, true_divide=True, rdivide=True)
 
     def __rdiv__(self, other):
-        # Implementing this as the inverse would be too magical -- bail out
-        return NotImplemented
+        # Always do true division
+        return self._divide(other, true_divide=True, rdivide=True)
 
     def __neg__(self):
         return -self.tocsr()
