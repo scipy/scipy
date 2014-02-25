@@ -11,6 +11,7 @@ import keyword
 import re
 import inspect
 import types
+import warnings
 
 from scipy.misc import doccer
 from ._distr_params import distcont, distdiscrete

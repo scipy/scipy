@@ -1848,7 +1848,7 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
                 e = matplotlib.patches.Ellipse((y, x),
                                                width=dvw / 100, height=1.0)
                 ax.add_artist(e)
-                e.set_clip_box(axis.bbox)
+                e.set_clip_box(ax.bbox)
                 e.set_alpha(0.5)
                 e.set_facecolor('k')
         if orientation in ('top', 'bottom'):
@@ -1856,7 +1856,7 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
                 e = matplotlib.patches.Ellipse((x, y),
                                              width=1.0, height=dvw / 100)
                 ax.add_artist(e)
-                e.set_clip_box(axis.bbox)
+                e.set_clip_box(ax.bbox)
                 e.set_alpha(0.5)
                 e.set_facecolor('k')
 

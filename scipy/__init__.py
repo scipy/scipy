@@ -74,6 +74,7 @@ from numpy import __version__ as __numpy_version__
 
 # Import numpy symbols to scipy name space
 import numpy as _num
+linalg = None
 from numpy import *
 from numpy.random import rand, randn
 from numpy.fft import fft, ifft

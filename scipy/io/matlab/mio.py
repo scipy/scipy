@@ -13,8 +13,7 @@ from .miobase import get_matfile_version, docfiller
 from .mio4 import MatFile4Reader, MatFile4Writer
 from .mio5 import MatFile5Reader, MatFile5Writer
 
-__all__ = ['find_mat_file', 'mat_reader_factory', 'loadmat', 'savemat',
-           'whosmat']
+__all__ = ['mat_reader_factory', 'loadmat', 'savemat', 'whosmat']
 
 
 def _open_file(file_like, appendmat):

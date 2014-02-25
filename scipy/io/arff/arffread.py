@@ -244,26 +244,6 @@ def tokenize_attribute(iterable, attribute):
     return name, type, next_item
 
 
-def tokenize_multilines(iterable, val):
-    """Can tokenize an attribute spread over several lines."""
-    # If one line does not match, read all the following lines up to next
-    # line with meta character, and try to parse everything up to there.
-    if not r_mcomattrval.match(val):
-        all = [val]
-        i = next(iterable)
-        while not r_meta.match(i):
-            all.append(i)
-            i = next(iterable)
-        if r_mend.search(i):
-            raise ValueError("relational attribute not supported yet")
-        print("".join(all[:-1]))
-        m = r_comattrval.match("".join(all[:-1]))
-        return m.group(1), m.group(2), i
-    else:
-        raise ValueError("Cannot parse attribute names spread over multi "
-                        "lines yet")
-
-
 def tokenize_single_comma(val):
     # XXX we match twice the same string (here and at the caller level). It is
     # stupid, but it is easier for now...
@@ -662,23 +642,6 @@ def test_weka(filename):
 
 # make sure nose does not find this as a test
 test_weka.__test__ = False
-
-
-def floupi(filename):
-    data, meta = loadarff(filename)
-    from attrselect import print_dataset_info
-    print_dataset_info(data)
-    print("relation %s, has %d instances" % (meta.name, data.size))
-    itp = iter(types)
-    for i in data.dtype.names:
-        print_attribute(i,next(itp),data[i])
-        #tp = itp.next()
-        #if tp == 'numeric' or tp == 'real' or tp == 'integer':
-        #    min, max, mean, std = basic_stats(data[i])
-        #    print "\tinstance %s: min %f, max %f, mean %f, std %f" % \
-        #            (i, min, max, mean, std)
-        #else:
-        #    print "\tinstance %s is non numeric" % i
 
 
 if __name__ == '__main__':

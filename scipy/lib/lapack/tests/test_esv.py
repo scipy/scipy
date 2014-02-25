@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import TestCase, assert_array_almost_equal, dec, \
-                          assert_equal, assert_
+                          assert_equal, assert_, run_module_suite
 
 from common import FUNCS_TP, FLAPACK_IS_EMPTY, CLAPACK_IS_EMPTY, FUNCS_FLAPACK, \
                    FUNCS_CLAPACK, PREC

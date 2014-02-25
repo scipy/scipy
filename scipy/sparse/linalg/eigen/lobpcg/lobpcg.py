@@ -348,6 +348,11 @@ def lobpcg(A, X,
 
     ##
     # Main iteration loop.
+
+    blockVectorP = None  # set during iteration
+    blockVectorAP = None
+    blockVectorBP = None
+
     for iterationNumber in xrange(maxIterations):
         if verbosityLevel > 0:
             print('iteration %d' % iterationNumber)

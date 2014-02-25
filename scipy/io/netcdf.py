@@ -411,8 +411,8 @@ class netcdf_file(object):
                 vsize = var.data[0].size * var.data.itemsize
             except IndexError:
                 vsize = 0
-            rec_vars = len([var for var in self.variables.values()
-                    if var.isrec])
+            rec_vars = len([v for v in self.variables.values()
+                            if v.isrec])
             if rec_vars > 1:
                 vsize += -vsize % 4
         self.variables[name].__dict__['_vsize'] = vsize

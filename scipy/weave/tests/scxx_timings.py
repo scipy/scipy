@@ -97,11 +97,6 @@ def list_copy_c(a,b):
     weave.inline(code,['a','b'],force=force,compiler='gcc')
 
 
-def list_copy_py(a,b):
-    for item in a:
-        b[i] = item
-
-
 def time_list_copy(N):
     """ Compare the list append method from scxx to using the Python API
         directly.
