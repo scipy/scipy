@@ -390,6 +390,7 @@ def _nanmedian(arr1d):  # This only works on 1d arrays
     c = np.isnan(x)
     s = np.where(c)[0]
     if s.size == x.size:
+        warnings.warn("All-NaN slice encountered", RuntimeWarning)
         return np.nan
     elif s.size != 0:
         # select non-nans at end of array

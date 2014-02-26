@@ -171,6 +171,14 @@ class TestNanFunc(TestCase):
         m = stats.nanmedian(self.X)
         assert_approx_equal(m, np.median(self.X))
 
+    def test_nanmedian_axis(self):
+        # Check nanmedian with axis
+        X = self.X.reshape(3,3)
+        m = stats.nanmedian(X, axis=0)
+        assert_equal(m, np.median(X, axis=0))
+        m = stats.nanmedian(X, axis=1)
+        assert_equal(m, np.median(X, axis=1))
+
     def test_nanmedian_some(self):
         # Check nanmedian when some values only are nan.
         m = stats.nanmedian(self.Xsome)
@@ -178,8 +186,21 @@ class TestNanFunc(TestCase):
 
     def test_nanmedian_all(self):
         # Check nanmedian when all values are nan.
-        m = stats.nanmedian(self.Xall)
-        assert_(np.isnan(m))
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            m = stats.nanmedian(self.Xall)
+            assert_(np.isnan(m))
+            assert_equal(len(w), 1)
+            assert_(issubclass(w[0].category, RuntimeWarning))
+
+    def test_nanmedian_all_axis(self):
+        # Check nanmedian when all values are nan.
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            m = stats.nanmedian(self.Xall.reshape(3,3), axis=1)
+            assert_(np.isnan(m).all())
+            assert_equal(len(w), 3)
+            assert_(issubclass(w[0].category, RuntimeWarning))
 
     def test_nanmedian_scalars(self):
         # Check nanmedian for scalar inputs. See ticket #1098.
