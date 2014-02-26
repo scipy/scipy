@@ -52,7 +52,7 @@ C
               ELSE
                  CALL GAIH(VA0,GA0)
                  PD=DSQRT(PI)/(2.0D0**(-.5D0*N)*GA0)
-                 CDN=CMPLX(PD,0.0D0)
+                 CDN = DCMPLX(PD, 0.0D0)
               ENDIF
            ELSE
               XN=-N
@@ -60,7 +60,7 @@ C
               CB0=2.0D0**(-0.5D0*N-1.0D0)*CA0/G1
               VT=-.5D0*N
               CALL GAIH(VT,G0)
-              CDN=CMPLX(G0,0.0D0)
+              CDN = DCMPLX(G0, 0.0D0)
               CR=(1.0D0,0.0D0)
               DO 10 M=1,250
                  VM=.5D0*(M-N)
@@ -252,7 +252,7 @@ C
         IMPLICIT DOUBLE PRECISION (D,X,Y)
         IMPLICIT COMPLEX*16 (C,Z)
         DIMENSION CPM(0:MM,0:N),CPD(0:MM,0:N)
-        Z=CMPLX(X,Y)
+        Z = DCMPLX(X, Y)
         DO 10 I=0,N
         DO 10 J=0,M
            CPM(J,I)=(0.0D0,0.0D0)
@@ -1825,7 +1825,7 @@ C       ==========================================================
 35            W2=EI2
 40         ERI=EI1+C0*EI2
         ENDIF
-        CER=CMPLX(ERR,ERI)
+        CER = DCMPLX(ERR, ERI)
         CDER=2.0D0/DSQRT(PI)*CDEXP(-Z*Z)
         RETURN
         END
@@ -2243,7 +2243,7 @@ C
         IMPLICIT DOUBLE PRECISION (X,Y)
         IMPLICIT COMPLEX*16 (C,Z)
         DIMENSION CQN(0:N),CQD(0:N)
-        Z=CMPLX(X,Y)
+        Z = DCMPLX(X, Y)
         IF (Z.EQ.1.0D0) THEN
            DO 10 K=0,N
               CQN(K)=(1.0D+300,0.0D0)
@@ -4866,7 +4866,7 @@ C
            PV=PI*DSQRT(2.0D0*NR-0.25D0)
            PX=0.5*PU-0.5*DLOG(PV)/PU
            PY=0.5*PU+0.5*DLOG(PV)/PU
-           Z=CMPLX(PX,PY)
+           Z = DCMPLX(PX, PY)
            IT=0
 15         IT=IT+1
            CALL CERF(Z,ZF,ZD)
@@ -5253,7 +5253,7 @@ C
         IMPLICIT DOUBLE PRECISION (X,Y)
         IMPLICIT COMPLEX *16 (C,Z)
         DIMENSION CPN(0:N),CPD(0:N)
-        Z=CMPLX(X,Y)
+        Z = DCMPLX(X, Y)
         CPN(0)=(1.0D0,0.0D0)
         CPN(1)=Z
         CPD(0)=(0.0D0,0.0D0)
@@ -5725,14 +5725,14 @@ C
            ELSE
               Y=0.0D0
               CALL CGAMA(A,Y,0,TAR,TAI)
-              CTA=CMPLX(TAR,TAI,8)
+              CTA = DCMPLX(TAR, TAI)
               Y=0.0D0
               CALL CGAMA(B,Y,0,TBR,TBI)
-              CTB=CMPLX(TBR,TBI,8)
+              CTB = DCMPLX(TBR, TBI)
               XG=B-A
               Y=0.0D0
               CALL CGAMA(XG,Y,0,TBAR,TBAI)
-              CTBA=CMPLX(TBAR,TBAI,8)
+              CTBA = DCMPLX(TBAR, TBAI)
               SUM1=1.0D0
               SUM2=1.0D0
               R1=1.0D0
@@ -6076,14 +6076,14 @@ C
               ELSE
                  Y=0.0D0
                  CALL CGAMA(A,Y,0,G1R,G1I)
-                 CG1=CMPLX(G1R,G1I,8)
+                 CG1 = DCMPLX(G1R, G1I)
                  Y=0.0D0
                  CALL CGAMA(B,Y,0,G2R,G2I)
-                 CG2=CMPLX(G2R,G2I,8)
+                 CG2 = DCMPLX(G2R,G2I)
                  BA=B-A
                  Y=0.0D0
                  CALL CGAMA(BA,Y,0,G3R,G3I)
-                 CG3=CMPLX(G3R,G3I,8)
+                 CG3 = DCMPLX(G3R, G3I)
                  CS1=(1.0D0,0.0D0)
                  CS2=(1.0D0,0.0D0)
                  CR1=(1.0D0,0.0D0)
@@ -7775,7 +7775,7 @@ C
            IF (KF.EQ.2) PSQ=2.0D0*NR**(0.5)
            PX=PSQ-DLOG(PI*PSQ)/(PI*PI*PSQ**3.0)
            PY=DLOG(PI*PSQ)/(PI*PSQ)
-           Z=CMPLX(PX,PY)
+           Z = DCMPLX(PX, PY)
            IF (KF.EQ.2) THEN
               IF (NR.EQ.2) Z=(2.8334,0.2443)
               IF (NR.EQ.3) Z=(3.4674,0.2185)
@@ -9984,7 +9984,7 @@ C       ===========================================================
         ENDIF
         IF (KF.EQ.1) X=-0.503
         IF (KF.EQ.2) X=0.577
-        ZERO=CMPLX(X,Y)
+        ZERO = DCMPLX(X, Y)
         Z=ZERO
         W=0.0D0
         DO 35 NR=1,NT
@@ -10238,7 +10238,7 @@ C
            CDI(1)=0.3333333333333333D0
            RETURN
         ENDIF
-        CI=CMPLX(0.0D0,1.0D0)
+        CI = DCMPLX(0.0D0, 1.0D0)
         CSINH=CDSIN(CI*Z)/CI
         CCOSH=CDCOS(CI*Z)
         CSI0=CSINH/Z
@@ -12172,7 +12172,7 @@ C
         IMPLICIT DOUBLE PRECISION (X,Y)
         IMPLICIT COMPLEX*16 (C,Z)
         DIMENSION CQM(0:MM,0:N),CQD(0:MM,0:N)
-        Z=CMPLX(X,Y)
+        Z = DCMPLX(X, Y)
         IF (DABS(X).EQ.1.0D0.AND.Y.EQ.0.0D0) THEN
            DO 10 I=0,M
            DO 10 J=0,N
