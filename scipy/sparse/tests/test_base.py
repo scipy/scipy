@@ -1802,44 +1802,56 @@ class _TestInplaceArithmetic:
 
 class _TestGetSet:
     def test_getelement(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-            D = array([[1,0,0],
-                       [4,3,0],
-                       [0,2,0],
-                       [0,0,0]])
-            A = self.spmatrix(D)
+        def check(dtype):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                D = array([[1,0,0],
+                           [4,3,0],
+                           [0,2,0],
+                           [0,0,0]], dtype=dtype)
+                A = self.spmatrix(D)
 
-            M,N = D.shape
+                M,N = D.shape
 
-            for i in range(-M, M):
-                for j in range(-N, N):
-                    assert_equal(A[i,j], D[i,j])
+                for i in range(-M, M):
+                    for j in range(-N, N):
+                        assert_equal(A[i,j], D[i,j])
 
-            for ij in [(0,3),(-1,3),(4,0),(4,3),(4,-1), (1, 2, 3)]:
-                assert_raises((IndexError, TypeError), A.__getitem__, ij)
+                for ij in [(0,3),(-1,3),(4,0),(4,3),(4,-1), (1, 2, 3)]:
+                    assert_raises((IndexError, TypeError), A.__getitem__, ij)
+
+        for dtype in supported_dtypes:
+            yield check, np.dtype(dtype)
 
     def test_setelement(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-            A = self.spmatrix((3,4))
-            A[0, 0] = 0  # bug 870
-            A[1, 2] = 4.0
-            A[0, 1] = 3
-            A[2, 0] = 2.0
-            A[0,-1] = 8
-            A[-1,-2] = 7
-            A[0, 1] = 5
-            assert_array_equal(A.todense(),[[0,5,0,8],[0,0,4,0],[2,0,7,0]])
+        def check(dtype):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                A = self.spmatrix((3,4), dtype=dtype)
+                A[0, 0] = dtype.type(0)  # bug 870
+                A[1, 2] = dtype.type(4.0)
+                A[0, 1] = dtype.type(3)
+                A[2, 0] = dtype.type(2.0)
+                A[0,-1] = dtype.type(8)
+                A[-1,-2] = dtype.type(7)
+                A[0, 1] = dtype.type(5)
 
-            for ij in [(0,4),(-1,4),(3,0),(3,4),(3,-1)]:
-                assert_raises(IndexError, A.__setitem__, ij, 123.0)
+                if dtype != np.bool_:
+                    assert_array_equal(A.todense(),[[0,5,0,8],[0,0,4,0],[2,0,7,0]])
 
-            for v in [[1,2,3], array([1,2,3])]:
-                assert_raises(ValueError, A.__setitem__, (0,0), v)
+                for ij in [(0,4),(-1,4),(3,0),(3,4),(3,-1)]:
+                    assert_raises(IndexError, A.__setitem__, ij, 123.0)
 
-            for v in [3j]:
-                assert_raises(TypeError, A.__setitem__, (0,0), v)
+                for v in [[1,2,3], array([1,2,3])]:
+                    assert_raises(ValueError, A.__setitem__, (0,0), v)
+
+                if (not np.issubdtype(dtype, np.complexfloating) and
+                    dtype != np.bool_):
+                    for v in [3j]:
+                        assert_raises(TypeError, A.__setitem__, (0,0), v)
+
+        for dtype in supported_dtypes:
+            yield check, np.dtype(dtype)
 
     def test_scalar_assign_2(self):
         n, m = (5, 10)
@@ -2415,6 +2427,19 @@ class _TestFancyIndexingAssign:
                 _test_set_slice(i, j)
             for i, j in [(np.arange(3), np.arange(3)), ((0, 3, 4), (1, 2, 4))]:
                 _test_set_slice(i, j)
+
+    def test_fancy_assignment_dtypes(self):
+        def check(dtype):
+            A = self.spmatrix((5, 5), dtype=dtype)
+            A[[0,1],[0,1]] = dtype.type(1)
+            assert_equal(A.sum(), dtype.type(1)*2)
+            A[0:2,0:2] = dtype.type(1.0)
+            assert_equal(A.sum(), dtype.type(1)*4)
+            A[2,2] = dtype.type(1.0)
+            assert_equal(A.sum(), dtype.type(1)*4 + dtype.type(1))
+
+        for dtype in supported_dtypes:
+            yield check, np.dtype(dtype)
 
     def test_sequence_assignment(self):
         with warnings.catch_warnings():
