@@ -646,8 +646,8 @@ def linkage(y, method='single', metric='euclidean'):
                                        int(_cpy_non_euclid_methods[method]))
         elif method in _cpy_euclid_methods:
             if metric != 'euclidean':
-                raise ValueError(('Method %s requires the distance metric to '
-                                 'be euclidean') % s)
+                raise ValueError(("Method '%s' requires the distance metric "
+                                 "to be euclidean") % method)
             dm = distance.pdist(X, metric)
             Z = np.zeros((n - 1, 4))
             _hierarchy_wrap.linkage_euclid_wrap(dm, Z, X, m, n,
