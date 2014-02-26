@@ -511,3 +511,9 @@ class gaussian_kde(object):
         self.covariance = self._data_covariance * self.factor**2
         self.inv_cov = self._data_inv_cov / self.factor**2
         self._norm_factor = sqrt(linalg.det(2*pi*self.covariance)) * self.n
+
+    def pdf(self, x):
+        return self.evaluate(x)
+
+    def logpdf(self, x):
+        return numpy.log(self.evaluate(x))
