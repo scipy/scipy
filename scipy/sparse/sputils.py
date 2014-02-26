@@ -9,6 +9,8 @@ __all__ = ['upcast','getdtype','isscalarlike','isintlike',
 import warnings
 import numpy as np
 
+from scipy.lib._version import NumpyVersion
+
 # keep this list syncronized with sparsetools
 #supported_dtypes = ['bool', 'int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32',
 #        'int64', 'uint64', 'float32', 'float64',
@@ -330,3 +332,52 @@ class IndexMixin(object):
             raise IndexError("Index dimension must be <= 2")
 
         return i, j
+
+
+if NumpyVersion(np.__version__) > '1.7.0-dev':
+    _safe_unique = np.unique
+else:
+    def _safe_unique(ar, return_index=False, return_inverse=False):
+        """
+        Copy of numpy.unique() from Numpy 1.7.1.
+
+        Earlier versions have bugs in how return_index behaves.
+        """
+        try:
+            ar = ar.flatten()
+        except AttributeError:
+            if not return_inverse and not return_index:
+                items = sorted(set(ar))
+                return np.asarray(items)
+            else:
+                ar = np.asanyarray(ar).flatten()
+
+        if ar.size == 0:
+            if return_inverse and return_index:
+                return ar, np.empty(0, np.bool), np.empty(0, np.bool)
+            elif return_inverse or return_index:
+                return ar, np.empty(0, np.bool)
+            else:
+                return ar
+
+        if return_inverse or return_index:
+            if return_index:
+                perm = ar.argsort(kind='mergesort')
+            else:
+                perm = ar.argsort()
+            aux = ar[perm]
+            flag = np.concatenate(([True], aux[1:] != aux[:-1]))
+            if return_inverse:
+                iflag = np.cumsum(flag) - 1
+                iperm = perm.argsort()
+                if return_index:
+                    return aux[flag], perm[flag], iflag[iperm]
+                else:
+                    return aux[flag], iflag[iperm]
+            else:
+                return aux[flag], perm[flag]
+
+        else:
+            ar.sort()
+            flag = np.concatenate(([True], ar[1:] != ar[:-1]))
+            return ar[flag]

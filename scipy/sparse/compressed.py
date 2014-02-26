@@ -15,7 +15,7 @@ from .dia import dia_matrix
 from . import sparsetools
 from .sputils import upcast, upcast_char, to_native, isdense, isshape, \
      getdtype, isscalarlike, isintlike, IndexMixin, get_index_dtype, \
-     downcast_intp_index
+     downcast_intp_index, _safe_unique
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
@@ -727,7 +727,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # Collate old and new in chunks by major index
         indices_parts = []
         data_parts = []
-        ui, ui_indptr = np.unique(i, return_index=True)
+        ui, ui_indptr = _safe_unique(i, return_index=True)
         ui_indptr = np.append(ui_indptr, len(j))
         new_nnzs = np.diff(ui_indptr)
         prev = 0
@@ -739,7 +739,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             data_parts.append(self.data[start:stop])
 
             # handle duplicate j: keep last setting
-            uj, uj_indptr = np.unique(j[js:je][::-1], return_index=True)
+            uj, uj_indptr = _safe_unique(j[js:je][::-1], return_index=True)
             if len(uj) == je - js:
                 indices_parts.append(j[js:je])
                 data_parts.append(x[js:je])
