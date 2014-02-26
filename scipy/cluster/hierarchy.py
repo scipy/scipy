@@ -795,8 +795,8 @@ class ClusterNode:
         n = self.count
 
         curNode = [None] * (2 * n)
-        lvisited = np.zeros((2 * n,), dtype=bool)
-        rvisited = np.zeros((2 * n,), dtype=bool)
+        lvisited = set()
+        rvisited = set()
         curNode[0] = self
         k = 0
         preorder = []
@@ -807,13 +807,13 @@ class ClusterNode:
                 preorder.append(func(nd))
                 k = k - 1
             else:
-                if not lvisited[ndid]:
+                if ndid not in lvisited:
                     curNode[k + 1] = nd.left
-                    lvisited[ndid] = True
+                    lvisited.add(ndid)
                     k = k + 1
-                elif not rvisited[ndid]:
+                elif ndid not in rvisited:
                     curNode[k + 1] = nd.right
-                    rvisited[ndid] = True
+                    rvisited.add(ndid)
                     k = k + 1
                 # If we've visited the left and right of this non-leaf
                 # node already, go up in the tree.
