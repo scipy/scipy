@@ -813,6 +813,14 @@ class TestLeavesList(TestCase):
         node = to_tree(Z)
         self.assertTrue((node.pre_order() == leaves_list(Z)).all())
 
+    def test_iris_subtree_pre_order(self):
+        "Tests that pre_order() works when called on sub-trees."
+        X = eo['iris']
+        Y = pdist(X)
+        Z = linkage(X, 'single')
+        node = to_tree(Z)
+        self.assertTrue(node.pre_order() == (node.get_left().pre_order() + node.get_right().pre_order()))
+
 
 class TestCorrespond(TestCase):
     def test_correspond_empty(self):
