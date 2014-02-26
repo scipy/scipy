@@ -511,3 +511,18 @@ class gaussian_kde(object):
         self.covariance = self._data_covariance * self.factor**2
         self.inv_cov = self._data_inv_cov / self.factor**2
         self._norm_factor = sqrt(linalg.det(2*pi*self.covariance)) * self.n
+
+    def pdf(self, x):
+        """
+        Evaluate the estimated pdf on a provided set of points.
+        This is equivalent to evaluate method of gaussian kde class.
+        See evaluate docstring for more details.        
+        """
+        return self.evaluate(x)
+
+    def logpdf(self, x):
+        """
+        Calculate the log of the estimated pdf on a provided set
+        of points.
+        """
+        return np.log(self.evaluate(x))
