@@ -60,6 +60,12 @@ if np.dtype('q').itemsize == 4:
 elif np.dtype('q').itemsize == 8:
     DTYPE_NAME_MAP['q'] = "npy_int64"
     DTYPE_NAME_MAP['Q'] = "npy_uint64"
+if np.dtype('i').itemsize == 4:
+    DTYPE_NAME_MAP['i'] = "npy_int32"
+    DTYPE_NAME_MAP['I'] = "npy_uint32"
+elif np.dtype('i').itemsize == 8:
+    DTYPE_NAME_MAP['i'] = "npy_int64"
+    DTYPE_NAME_MAP['I'] = "npy_uint64"
 
 
 def prepare_index_for_memoryview(cnp.ndarray i, cnp.ndarray j, cnp.ndarray x=None):
