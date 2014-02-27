@@ -37,7 +37,8 @@ from __future__ import division, print_function, absolute_import
 import os.path
 
 import numpy as np
-from numpy.testing import TestCase, run_module_suite, dec, assert_raises
+from numpy.testing import (
+        TestCase, run_module_suite, dec, assert_raises, assert_allclose)
 
 from scipy.lib.six import xrange
 from scipy.lib.six import u
@@ -1480,6 +1481,12 @@ def test_euclidean_linkage_value_error():
     for method in scipy.cluster.hierarchy._cpy_euclid_methods:
         assert_raises(ValueError,
                 linkage, [[1, 1], [1, 1]], method=method, metric='cityblock')
+
+
+def test_2x2_linkage():
+    Z1 = linkage([1], method='single', metric='euclidean')
+    Z2 = linkage([[0, 1], [0, 0]], method='single', metric='euclidean')
+    assert_allclose(Z1, Z2)
 
 
 if __name__ == "__main__":

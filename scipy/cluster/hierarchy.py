@@ -908,7 +908,7 @@ def to_tree(Z, rd=False):
 
 def _convert_to_bool(X):
     if X.dtype != np.bool:
-        X = np.bool_(X)
+        X = X.astype(np.bool)
     if not X.flags.contiguous:
         X = X.copy()
     return X
@@ -916,7 +916,7 @@ def _convert_to_bool(X):
 
 def _convert_to_double(X):
     if X.dtype != np.double:
-        X = np.double(X)
+        X = X.astype(np.double)
     if not X.flags.contiguous:
         X = X.copy()
     return X
