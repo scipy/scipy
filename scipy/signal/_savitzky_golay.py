@@ -118,7 +118,8 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
 
     order = np.arange(polyorder + 1).reshape(-1, 1)
     if order.size == 1:
-        # Avoid numpy DeprecationWarning for ``[1] ** [2]]``
+        # Avoid spurious DeprecationWarning in numpy 1.8.0 for
+        # ``[1] ** [[2]]``, see numpy gh-4145.
         A = np.atleast_2d(x ** order[0, 0])
     else:
         A = x ** order
