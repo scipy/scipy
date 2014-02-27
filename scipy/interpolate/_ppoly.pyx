@@ -21,11 +21,11 @@ ctypedef fused double_or_complex:
     double
     double complex
 
-cdef extern:
-    void dgeev_(char *jobvl, char *jobvr, int *n, double *a,
-                int *lda, double *wr, double *wi, double *vl, int *ldvl,
-                double *vr, int *ldvr, double *work, int *lwork,
-                int *info)
+cdef extern from "blas_defs.h":
+    void c_dgeev(char *jobvl, char *jobvr, int *n, double *a,
+                 int *lda, double *wr, double *wi, double *vl, int *ldvl,
+                 double *vr, int *ldvr, double *work, int *lwork,
+                 int *info)
 
 #------------------------------------------------------------------------------
 # Piecewise power basis polynomials
@@ -640,8 +640,8 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
 
     # Compute companion matrix eigenvalues
     info = 0
-    dgeev_("N", "N", &order, a, &order, <double*>wr, <double*>wi,
-           NULL, &order, NULL, &order, work, &lwork, &info)
+    c_dgeev("N", "N", &order, a, &order, <double*>wr, <double*>wi,
+            NULL, &order, NULL, &order, work, &lwork, &info)
     if info != 0:
         # Failure
         return -2
