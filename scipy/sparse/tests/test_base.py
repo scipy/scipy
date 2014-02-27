@@ -3743,8 +3743,8 @@ class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
                                                     indptr=M.indptr)
         # unsorted
         for start, stop in izip(indptr, indptr[1:]):
-            indices[start:stop] = indices[start:stop][::-1]
-            data[start:stop] = data[start:stop][::-1]
+            indices[start:stop] = indices[start:stop][::-1].copy()
+            data[start:stop] = data[start:stop][::-1].copy()
         return data, indices, indptr
 
 
