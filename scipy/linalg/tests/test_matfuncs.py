@@ -17,8 +17,7 @@ from numpy import array, identity, dot, sqrt, double
 from numpy.testing import (TestCase, run_module_suite,
         assert_array_equal, assert_array_less, assert_equal,
         assert_array_almost_equal, assert_array_almost_equal_nulp,
-        assert_allclose, assert_, assert_raises, decorators,
-        assert_raises)
+        assert_allclose, assert_, decorators, assert_warns)
 
 import scipy.linalg
 from scipy.linalg import norm
@@ -212,24 +211,16 @@ class TestLogM(TestCase):
         B = np.asarray([[1, 1], [0, 0]])
         for M in A, A.T, B, B.T:
             expected_warning = _matfuncs_inv_ssq.LogmExactlySingularWarning
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter('always')
-                L, info = logm(M, disp=False)
-                assert_equal(len(w), 1)
-                assert_(issubclass(w[-1].category, expected_warning))
-                E = expm(L)
-                assert_allclose(E, M, atol=1e-14)
+            L, info = assert_warns(expected_warning, logm, M, disp=False)
+            E = expm(L)
+            assert_allclose(E, M, atol=1e-14)
 
     def test_logm_nearly_singular(self):
         M = np.array([[1e-100]])
         expected_warning = _matfuncs_inv_ssq.LogmNearlySingularWarning
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always')
-            L, info = logm(M, disp=False)
-            assert_equal(len(w), 1)
-            assert_(issubclass(w[-1].category, expected_warning))
-            E = expm(L)
-            assert_allclose(E, M, atol=1e-14)
+        L, info = assert_warns(expected_warning, logm, M, disp=False)
+        E = expm(L)
+        assert_allclose(E, M, atol=1e-14)
 
 
 class TestSqrtM(TestCase):
