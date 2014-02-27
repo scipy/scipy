@@ -334,67 +334,73 @@ class IndexMixin(object):
         return i, j
 
 
+def _compat_unique_impl(ar, return_index=False, return_inverse=False):
+    """
+    Copy of numpy.unique() from Numpy 1.7.1.
+
+    Earlier versions have bugs in how return_index behaves.
+    """
+    try:
+        ar = ar.flatten()
+    except AttributeError:
+        if not return_inverse and not return_index:
+            items = sorted(set(ar))
+            return np.asarray(items)
+        else:
+            ar = np.asanyarray(ar).flatten()
+
+    if ar.size == 0:
+        if return_inverse and return_index:
+            return ar, np.empty(0, np.bool), np.empty(0, np.bool)
+        elif return_inverse or return_index:
+            return ar, np.empty(0, np.bool)
+        else:
+            return ar
+
+    if return_inverse or return_index:
+        if return_index:
+            perm = ar.argsort(kind='mergesort')
+        else:
+            perm = ar.argsort()
+        aux = ar[perm]
+        flag = np.concatenate(([True], aux[1:] != aux[:-1]))
+        if return_inverse:
+            iflag = np.cumsum(flag) - 1
+            iperm = perm.argsort()
+            if return_index:
+                return aux[flag], perm[flag], iflag[iperm]
+            else:
+                return aux[flag], iflag[iperm]
+        else:
+            return aux[flag], perm[flag]
+
+    else:
+        ar.sort()
+        flag = np.concatenate(([True], ar[1:] != ar[:-1]))
+        return ar[flag]
+
+
 if NumpyVersion(np.__version__) > '1.7.0-dev':
     _compat_unique = np.unique
 else:
-    def _compat_unique(ar, return_index=False, return_inverse=False):
-        """
-        Copy of numpy.unique() from Numpy 1.7.1.
+    _compat_unique = _compat_unique_impl
 
-        Earlier versions have bugs in how return_index behaves.
-        """
-        try:
-            ar = ar.flatten()
-        except AttributeError:
-            if not return_inverse and not return_index:
-                items = sorted(set(ar))
-                return np.asarray(items)
-            else:
-                ar = np.asanyarray(ar).flatten()
 
-        if ar.size == 0:
-            if return_inverse and return_index:
-                return ar, np.empty(0, np.bool), np.empty(0, np.bool)
-            elif return_inverse or return_index:
-                return ar, np.empty(0, np.bool)
-            else:
-                return ar
-
-        if return_inverse or return_index:
-            if return_index:
-                perm = ar.argsort(kind='mergesort')
-            else:
-                perm = ar.argsort()
-            aux = ar[perm]
-            flag = np.concatenate(([True], aux[1:] != aux[:-1]))
-            if return_inverse:
-                iflag = np.cumsum(flag) - 1
-                iperm = perm.argsort()
-                if return_index:
-                    return aux[flag], perm[flag], iflag[iperm]
-                else:
-                    return aux[flag], iflag[iperm]
-            else:
-                return aux[flag], perm[flag]
-
-        else:
-            ar.sort()
-            flag = np.concatenate(([True], ar[1:] != ar[:-1]))
-            return ar[flag]
+def _compat_bincount_impl(x, weights=None, minlength=None):
+    """
+    Bincount with minlength keyword added for Numpy 1.5.
+    """
+    if weights is None:
+        x = np.bincount(x)
+    else:
+        x = np.bincount(x, weights=weights)
+    if minlength is not None:
+        if x.shape[0] < minlength:
+            x = np.r_[x, np.zeros((minlength - x.shape[0],))]
+    return x
 
 
 if NumpyVersion(np.__version__) > '1.6.0-dev':
     _compat_bincount = np.bincount
 else:
-    def _compat_bincount(x, weights=None, minlength=None):
-        """
-        Bincount with minlength keyword added for Numpy 1.5.
-        """
-        if weights is None:
-            x = np.bincount(x)
-        else:
-            x = np.bincount(x, weights=weights)
-        if minlength is not None:
-            if x.shape[0] < minlength:
-                x = np.r_[x, np.zeros((minlength - x.shape[0],))]
-        return x
+    _compat_bincount = _compat_bincount_impl
