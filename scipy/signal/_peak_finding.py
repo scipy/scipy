@@ -392,9 +392,9 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
     row_one = cwt[0, :]
     noises = np.zeros_like(row_one)
     for ind, val in enumerate(row_one):
-        window = np.arange(max([ind - hf_window, 0]), min([ind + hf_window, num_points]))
-        window = window.astype(int)
-        noises[ind] = scoreatpercentile(row_one[window], per=noise_perc)
+        window_start = int(max(ind - hf_window, 0))
+        window_end = int(min(ind + hf_window, num_points))
+        noises[ind] = scoreatpercentile(row_one[window_start:window_end], per=noise_perc)
 
     def filt_func(line):
         if len(line[0]) < min_length:
