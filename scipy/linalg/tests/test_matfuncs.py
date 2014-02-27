@@ -5,12 +5,9 @@
 """ Test functions for linalg.matfuncs module
 
 """
-
 from __future__ import division, print_function, absolute_import
 
-import random
-import warnings
-import functools
+import random, warnings, functools
 
 import numpy as np
 from numpy import array, identity, dot, sqrt, double
@@ -19,50 +16,16 @@ from numpy.testing import (TestCase, run_module_suite,
         assert_array_almost_equal, assert_array_almost_equal_nulp,
         assert_allclose, assert_, decorators)
 
+from scipy.lib._numpy_compat import _assert_warns
+
 import scipy.linalg
-from scipy.linalg import norm
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
-        expm, expm_frechet, expm_cond)
+        expm, expm_frechet, expm_cond, norm)
 from scipy.linalg.matfuncs import expm2, expm3
 from scipy.linalg import _matfuncs_inv_ssq
 import scipy.linalg._expm_frechet
 
 from scipy.optimize import minimize
-
-
-def _assert_warns(warning_class, func, *args, **kw):
-    """
-    Fail unless the given callable throws the specified warning.
-
-    This definition is copypasted from numpy 1.9.0.dev.
-    The version in numpy 1.5.1 returns None.
-
-    Parameters
-    ----------
-    warning_class : class
-        The class defining the warning that `func` is expected to throw.
-    func : callable
-        The callable to test.
-    \\*args : Arguments
-        Arguments passed to `func`.
-    \\*\\*kwargs : Kwargs
-        Keyword arguments passed to `func`.
-
-    Returns
-    -------
-    The value returned by `func`.
-
-    """
-    with warnings.catch_warnings(record=True) as l:
-        warnings.simplefilter('always')
-        result = func(*args, **kw)
-        if not len(l) > 0:
-            raise AssertionError("No warning raised when calling %s"
-                    % func.__name__)
-        if not l[0].category is warning_class:
-            raise AssertionError("First warning for %s is not a " \
-                    "%s( is %s)" % (func.__name__, warning_class, l[0]))
-    return result
 
 
 def _get_al_mohy_higham_2012_experiment_1():
