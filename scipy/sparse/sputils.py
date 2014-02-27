@@ -335,9 +335,9 @@ class IndexMixin(object):
 
 
 if NumpyVersion(np.__version__) > '1.7.0-dev':
-    _safe_unique = np.unique
+    _compat_unique = np.unique
 else:
-    def _safe_unique(ar, return_index=False, return_inverse=False):
+    def _compat_unique(ar, return_index=False, return_inverse=False):
         """
         Copy of numpy.unique() from Numpy 1.7.1.
 
@@ -384,9 +384,9 @@ else:
 
 
 if NumpyVersion(np.__version__) > '1.6.0-dev':
-    _safe_bincount = np.bincount
+    _compat_bincount = np.bincount
 else:
-    def _safe_bincount(x, weights=None, minlength=None):
+    def _compat_bincount(x, weights=None, minlength=None):
         """
         Bincount with minlength keyword added for Numpy 1.5.
         """
