@@ -17,27 +17,11 @@
 
 extern jmp_buf _superlu_py_jmpbuf;
 
-
 /*********************************************************************** 
- * SciPyLUObject methods
+ * SuperLUObject methods
  */
 
-static char solve_doc[] = (
-    "x = self.solve(b, trans)\n"
-    "\n"
-    "solves linear system of equations with one or sereral right hand sides.\n"
-    "\n"
-    "parameters\n"
-    "----------\n"
-    "\n"
-    "b        array, right hand side(s) of equation\n"
-    "x        array, solution vector(s)\n"
-    "trans    'N': solve A   * x == b\n"
-    "         'T': solve A^T * x == b\n"
-    "         'H': solve A^H * x == b\n"
-    "         (optional, default value 'N')\n");
-
-static PyObject *SciPyLU_solve(SciPyLUObject * self, PyObject * args,
+static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
 			       PyObject * kwds)
 {
     PyArrayObject *b, *x = NULL;
@@ -125,20 +109,22 @@ static PyObject *SciPyLU_solve(SciPyLUObject * self, PyObject * args,
 
 /** table of object methods
  */
-PyMethodDef SciPyLU_methods[] = {
-    {"solve", (PyCFunction) SciPyLU_solve, METH_VARARGS | METH_KEYWORDS,
-     solve_doc}
-    ,
+PyMethodDef SuperLU_methods[] = {
+    {"solve", (PyCFunction) SuperLU_solve, METH_VARARGS | METH_KEYWORDS, NULL},
     {NULL, NULL}		/* sentinel */
 };
 
 
 /*********************************************************************** 
- * SciPySuperLUType methods
+ * SuperLUType methods
  */
 
-static void SciPyLU_dealloc(SciPyLUObject * self)
+static void SuperLU_dealloc(SuperLUObject * self)
 {
+    Py_XDECREF(self->cached_U);
+    Py_XDECREF(self->cached_L);
+    self->cached_U = NULL;
+    self->cached_L = NULL;
     SUPERLU_FREE(self->perm_r);
     SUPERLU_FREE(self->perm_c);
     self->perm_r = NULL;
@@ -148,103 +134,100 @@ static void SciPyLU_dealloc(SciPyLUObject * self)
     PyObject_Del(self);
 }
 
-static PyObject *SciPyLU_getattr(SciPyLUObject * self, char *name)
+static PyObject *SuperLU_getter(SuperLUObject *self, void *data)
 {
-    if (strcmp(name, "shape") == 0)
+    char *name = (char*)data;
+
+    if (strcmp(name, "shape") == 0) {
 	return Py_BuildValue("(i,i)", self->m, self->n);
-    if (strcmp(name, "nnz") == 0)
+    }
+    else if (strcmp(name, "nnz") == 0)
 	return Py_BuildValue("i",
 			     ((SCformat *) self->L.Store)->nnz +
 			     ((SCformat *) self->U.Store)->nnz);
-    if (strcmp(name, "perm_r") == 0) {
-	PyArrayObject *perm_r =
-	    PyArray_SimpleNewFromData(1, (npy_intp *) (&self->n), NPY_INT,
-				      (void *) self->perm_r);
+    else if (strcmp(name, "perm_r") == 0) {
+	PyObject *perm_r;
+        perm_r = PyArray_SimpleNewFromData(
+            1, (npy_intp *) (&self->n), NPY_INT,
+            (void *) self->perm_r);
+        if (perm_r == NULL) {
+            return NULL;
+        }
 
 	/* For ref counting of the memory */
-	PyArray_BASE(perm_r) = self;
+	PyArray_BASE(perm_r) = (PyObject*)self;
 	Py_INCREF(self);
 	return perm_r;
     }
-    if (strcmp(name, "perm_c") == 0) {
-	PyArrayObject *perm_c =
-	    PyArray_SimpleNewFromData(1, (npy_intp *) (&self->n), NPY_INT,
-				      (void *) self->perm_c);
+    else if (strcmp(name, "perm_c") == 0) {
+	PyObject *perm_c;
+
+        perm_c = PyArray_SimpleNewFromData(
+            1, (npy_intp *) (&self->n), NPY_INT,
+            (void *) self->perm_c);
+        if (perm_c == NULL) {
+            return NULL;
+        }
 
 	/* For ref counting of the memory */
-	PyArray_BASE(perm_c) = self;
+	PyArray_BASE(perm_c) = (PyObject*)self;
 	Py_INCREF(self);
 	return perm_c;
     }
-    if (strcmp(name, "__members__") == 0) {
-	char *members[] = { "shape", "nnz", "perm_r", "perm_c" };
-	int i;
-
-	PyObject *list = PyList_New(sizeof(members) / sizeof(char *));
-
-	if (list != NULL) {
-	    for (i = 0; i < sizeof(members) / sizeof(char *); i++)
-		PyList_SetItem(list, i, PyUString_FromString(members[i]));
-	    if (PyErr_Occurred()) {
-		Py_DECREF(list);
-		list = NULL;
-	    }
-	}
-	return list;
+    else if (strcmp(name, "U") == 0 || strcmp(name, "L") == 0) {
+        int ok;
+        if (self->cached_U == NULL) {
+            ok = LU_to_csc_matrix(&self->L, &self->U,
+                                  &self->cached_L, &self->cached_U);
+            if (ok != 0) {
+                return NULL;
+            }
+        }
+        if (strcmp(name, "U") == 0) {
+            Py_INCREF(self->cached_U);
+            return self->cached_U;
+        }
+        else {
+            Py_INCREF(self->cached_L);
+            return self->cached_L;
+        }
     }
-#if PY_VERSION_HEX >= 0x03000000
-    if (1) {
-	PyObject *str, *ret;
-
-	str = PyUnicode_FromString(name);
-	ret = PyObject_GenericGetAttr((PyObject *) self, str);
-	Py_DECREF(str);
-	return ret;
+    else {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "internal error (this is a bug)");
+        return NULL;
     }
-#else
-    return Py_FindMethod(SciPyLU_methods, (PyObject *) self, name);
-#endif
 }
 
 
 /***********************************************************************
- * SciPySuperLUType structure
+ * SuperLUType structure
  */
-static char factored_lu_doc[] = "\
-Object resulting from a factorization of a sparse matrix\n\
-\n\
-Attributes\n\
------------\n\
-\n\
-shape : 2-tuple\n\
-    the shape of the orginal matrix factored\n\
-nnz : int\n\
-    the number of non-zero elements in the matrix\n\
-perm_c\n\
-    the permutation applied to the colums of the matrix for the LU factorization\n\
-perm_r\n\
-    the permutation applied to the rows of the matrix for the LU factorization\n\
-\n\
-Methods\n\
--------\n\
-solve\n\
-    solves the system for a given right hand side vector\n \
-\n\
-";
 
-PyTypeObject SciPySuperLUType = {
+PyGetSetDef SuperLU_getset[] = {
+    {"shape", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"shape"},
+    {"nnz", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"nnz"},
+    {"perm_r", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"perm_r"},
+    {"perm_c", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"perm_c"},
+    {"U", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"U"},
+    {"L", SuperLU_getter, (setter)NULL, (char*)NULL, (void*)"L"},
+    NULL
+};
+
+
+PyTypeObject SuperLUType = {
 #if defined(NPY_PY3K)
     PyVarObject_HEAD_INIT(NULL, 0)
 #else
     PyObject_HEAD_INIT(NULL)
-	0,
-#endif
-    "factored_lu",
-    sizeof(SciPyLUObject),
     0,
-    (destructor) SciPyLU_dealloc,	/* tp_dealloc */
+#endif
+    "SuperLU",
+    sizeof(SuperLUObject),
+    0,
+    (destructor) SuperLU_dealloc, /* tp_dealloc */
     0,				/* tp_print */
-    (getattrfunc) SciPyLU_getattr,	/* tp_getattr */
+    0,	                        /* tp_getattr */
     0,				/* tp_setattr */
     0,				/* tp_compare / tp_reserved */
     0,				/* tp_repr */
@@ -258,16 +241,16 @@ PyTypeObject SciPySuperLUType = {
     0,				/* tp_setattro */
     0,				/* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,		/* tp_flags */
-    factored_lu_doc,		/* tp_doc */
+    NULL,                       /* tp_doc */
     0,				/* tp_traverse */
     0,				/* tp_clear */
     0,				/* tp_richcompare */
     0,				/* tp_weaklistoffset */
     0,				/* tp_iter */
     0,				/* tp_iternext */
-    SciPyLU_methods,		/* tp_methods */
+    SuperLU_methods,		/* tp_methods */
     0,				/* tp_members */
-    0,				/* tp_getset */
+    SuperLU_getset,		/* tp_getset */
     0,				/* tp_base */
     0,				/* tp_dict */
     0,				/* tp_descr_get */
@@ -428,12 +411,267 @@ int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
     return 0;
 }
 
-PyObject *newSciPyLUObject(SuperMatrix * A, PyObject * option_dict,
-			   int intype, int ilu)
+
+/*
+ * Create Scipy sparse matrices out from Superlu LU decomposition.
+ */
+
+static int LU_to_csc(SuperMatrix *L, SuperMatrix *U,
+                     int *U_indices, int *U_indptr, char *U_data,
+                     int *L_indices, int *L_indptr, char *L_data,
+                     Dtype_t dtype);
+
+int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
+                     PyObject **L_csc, PyObject **U_csc)
+{
+    SCformat *Lstore;
+    NCformat *Ustore;
+    PyObject *U_indices = NULL, *U_indptr = NULL, *U_data = NULL;
+    PyObject *L_indices = NULL, *L_indptr = NULL, *L_data = NULL;
+    PyObject *scipy_sparse = NULL, *datatuple = NULL, *shape = NULL;
+    int result = -1, ok;
+    int type;
+    npy_intp dims[1];
+
+    *L_csc = NULL;
+    *U_csc = NULL;
+
+    if (U->Stype != SLU_NC || L->Stype != SLU_SC ||
+        U->Mtype != SLU_TRU || L->Mtype != SLU_TRLU ||
+        L->nrow != U->nrow || L->ncol != L->nrow ||
+        U->ncol != U->nrow || L->Dtype != U->Dtype)
+    {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "internal error: invalid Superlu matrix data");
+        return -1;
+    }
+
+    Ustore = (NCformat*)U->Store;
+    Lstore = (NCformat*)L->Store;
+
+    type = SLU_TYPECODE_TO_NPY(L->Dtype);
+
+    /* Allocate output */
+#define CREATE_1D_ARRAY(name, type, size)               \
+        do {                                            \
+            dims[0] = size;                             \
+            name = PyArray_EMPTY(1, dims, type, 0);     \
+            if (name == NULL) goto fail;                \
+        } while (0)
+
+    CREATE_1D_ARRAY(L_indices, NPY_INT, Lstore->nnz);
+    CREATE_1D_ARRAY(L_indptr, NPY_INT, L->ncol + 1);
+    CREATE_1D_ARRAY(L_data, type, Lstore->nnz);
+
+    CREATE_1D_ARRAY(U_indices, NPY_INT, Ustore->nnz);
+    CREATE_1D_ARRAY(U_indptr, NPY_INT, U->ncol + 1);
+    CREATE_1D_ARRAY(U_data, type, Ustore->nnz);
+
+#undef CREATE_1D_ARRAY
+
+    /* Copy data over */
+    ok = LU_to_csc(
+        L, U,
+        (int*)PyArray_DATA(L_indices),
+        (int*)PyArray_DATA(L_indptr),
+        (void*)PyArray_DATA(L_data),
+        (int*)PyArray_DATA(U_indices),
+        (int*)PyArray_DATA(U_indptr),
+        (void*)PyArray_DATA(U_data),
+        L->Dtype
+        );
+
+    if (ok != 0) {
+        goto fail;
+    }
+
+    /* Create sparse matrices */
+    scipy_sparse = PyImport_ImportModule("scipy.sparse");
+    if (scipy_sparse == NULL) {
+        goto fail;
+    }
+
+    shape = Py_BuildValue("ii", L->nrow, L->ncol);
+    if (shape == NULL) {
+        goto fail;
+    }
+
+    datatuple = Py_BuildValue("OOO", L_data, L_indices, L_indptr);
+    if (datatuple == NULL) {
+        goto fail;
+    }
+    *L_csc = PyObject_CallMethod(scipy_sparse, "csc_matrix",
+                                 "OO", datatuple, shape);
+    if (*L_csc == NULL) {
+        goto fail;
+    }
+
+    Py_DECREF(datatuple);
+    datatuple = Py_BuildValue("OOO", U_data, U_indices, U_indptr);
+    if (datatuple == NULL) {
+        Py_DECREF(*L_csc);
+        *L_csc = NULL;
+        goto fail;
+    }
+    *U_csc = PyObject_CallMethod(scipy_sparse, "csc_matrix",
+                                 "OO", datatuple, shape);
+    if (*U_csc == NULL) {
+        Py_DECREF(*L_csc);
+        *L_csc = NULL;
+        goto fail;
+    }
+
+    result = 0;
+    
+fail:
+    Py_XDECREF(U_indices);
+    Py_XDECREF(U_indptr);
+    Py_XDECREF(U_data);
+    Py_XDECREF(L_indices);
+    Py_XDECREF(L_indptr);
+    Py_XDECREF(L_data);
+    Py_XDECREF(shape);
+    Py_XDECREF(scipy_sparse);
+    Py_XDECREF(datatuple);
+
+    return result;
+}
+
+
+/*
+ * Convert SuperLU L and U matrices to CSC format.
+ *
+ * The LU decomposition U factor is partly stored in U and partly in the upper
+ * diagonal of L.  The L matrix is stored in column-addressable rectangular
+ * superblock format.
+ *
+ * This routine is partly adapted from SuperLU MATLAB wrappers and the
+ * SuperLU Print_SuperNode_Matrix routine.
+ */
+static int
+LU_to_csc(SuperMatrix *L, SuperMatrix *U,
+          int *L_rowind, int *L_colptr, char *L_data,
+          int *U_rowind, int *U_colptr, char *U_data,
+          Dtype_t dtype)
+{
+    SCformat *Lstore;
+    NCformat *Ustore;
+    npy_intp elsize;
+    int isup, icol, icolstart, icolend, ncols, irow, iptr, istart, iend, L_nrow;
+    char *src, *dst;
+    int U_nnz, L_nnz;
+
+    Ustore = (NCformat*)U->Store;
+    Lstore = (NCformat*)L->Store;
+
+    switch (dtype) {
+    case SLU_S: elsize = 4; break;
+    case SLU_D: elsize = 8; break;
+    case SLU_C: elsize = 8; break;
+    case SLU_Z: elsize = 16; break;
+    }
+    
+#define IS_ZERO(p)                                                      \
+    ((dtype == SLU_S) ? (*(float*)(p) == 0) :                           \
+     ((dtype == SLU_D) ? (*(double*)(p) == 0) :                         \
+      ((dtype == SLU_C) ? (*(float*)(p) == 0 || *((float*)(p)+1) == 0) : \
+       (*(double*)(p) == 0 || *((double*)(p)+1) == 0))))
+
+    U_colptr[0] = 0;
+    L_colptr[0] = 0;
+    U_nnz = 0;
+    L_nnz = 0;
+
+    /* For each supernode */
+    for (isup = 0; isup <= Lstore->nsuper; ++isup) {
+        icolstart = Lstore->sup_to_col[isup];
+        icolend = Lstore->sup_to_col[isup+1];
+        istart = Lstore->rowind_colptr[icolstart];
+        iend = Lstore->rowind_colptr[icolstart+1];
+
+        /* For each column in supernode */
+        for (icol = icolstart; icol < icolend; ++icol) {
+
+            /* Process data in Ustore */
+            for (iptr = Ustore->colptr[icol]; iptr < Ustore->colptr[icol+1]; ++iptr) {
+                src = (char*)Ustore->nzval + elsize * iptr;
+                if (!IS_ZERO(src)) {
+                    if (U_nnz >= Ustore->nnz)
+                        goto size_error;
+                    U_rowind[U_nnz] = Ustore->rowind[iptr];
+                    /* "U_data[U_nnz] = Ustore->nzvals[iptr]" */
+                    dst = U_data + elsize * U_nnz;
+                    memcpy(dst, src, elsize);
+                    ++U_nnz;
+                }
+            }
+
+            /* Process data in Lstore */
+            src = (char*)Lstore->nzval + elsize * Lstore->nzval_colptr[icol];
+            iptr = istart;
+
+            /* Upper triangle part */
+            for (; iptr < iend; ++iptr) {
+                if (Lstore->rowind[iptr] > icol) {
+                    break;
+                }
+                if (!IS_ZERO(src)) {
+                    if (U_nnz >= Ustore->nnz)
+                        goto size_error;
+                    U_rowind[U_nnz] = Lstore->rowind[iptr];
+                    dst = U_data + elsize * U_nnz;
+                    memcpy(dst, src, elsize);
+                    ++U_nnz;
+                }
+                src += elsize;
+            }
+
+            /* Add unit diagonal in L */
+            if (L_nnz >= Lstore->nnz) return -1;
+            dst = L_data + elsize * L_nnz;
+            switch (dtype) {
+            case SLU_S: *(float*)dst = 1.0; break;
+            case SLU_D: *(double*)dst = 1.0; break;
+            case SLU_C: *(float*)dst = 1.0; *((float*)dst+1) = 0.0; break;
+            case SLU_Z: *(double*)dst = 1.0; *((double*)dst+1) = 0.0; break;
+            }
+            L_rowind[L_nnz] = icol;
+            ++L_nnz;
+
+            /* Lower triangle part */
+            for (; iptr < iend; ++iptr) {
+                if (!IS_ZERO(src)) {
+                    if (L_nnz >= Lstore->nnz)
+                         goto size_error;
+                    L_rowind[L_nnz] = Lstore->rowind[iptr];
+                    dst = L_data + elsize * L_nnz;
+                    memcpy(dst, src, elsize);
+                    ++L_nnz;
+                }
+                src += elsize;
+            }
+
+            /* Record column pointers */
+            U_colptr[icol+1] = U_nnz;
+            L_colptr[icol+1] = L_nnz;
+        }
+    }
+
+    return 0;
+
+size_error:
+    PyErr_SetString(PyExc_RuntimeError,
+                    "internal error: superlu matrixes have wrong nnz");
+    return -1;
+}
+
+
+PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
+                           int intype, int ilu)
 {
 
     /* A must be in SLU_NC format used by the factorization routine. */
-    SciPyLUObject *self;
+    SuperLUObject *self;
     SuperMatrix AC = { 0 };	/* Matrix postmultiplied by Pc */
     int lwork = 0;
     int *etree = NULL;
@@ -450,8 +688,8 @@ PyObject *newSciPyLUObject(SuperMatrix * A, PyObject * option_dict,
 	return NULL;
     }
 
-    /* Create SciPyLUObject */
-    self = PyObject_New(SciPyLUObject, &SciPySuperLUType);
+    /* Create SLUObject */
+    self = PyObject_New(SuperLUObject, &SuperLUType);
     if (self == NULL)
 	return PyErr_NoMemory();
     self->m = A->nrow;
@@ -460,6 +698,8 @@ PyObject *newSciPyLUObject(SuperMatrix * A, PyObject * option_dict,
     self->perm_c = NULL;
     self->L.Store = NULL;
     self->U.Store = NULL;
+    self->cached_U = NULL;
+    self->cached_L = NULL;
     self->type = intype;
 
     if (setjmp(_superlu_py_jmpbuf))

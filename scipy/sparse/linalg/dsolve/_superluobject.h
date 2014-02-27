@@ -34,18 +34,22 @@ typedef struct {
     SuperMatrix U;
     int *perm_r;
     int *perm_c;
+    PyObject *cached_U;
+    PyObject *cached_L;
     int type;
-} SciPyLUObject;
+} SuperLUObject;
 
-extern PyTypeObject SciPySuperLUType;
+extern PyTypeObject SuperLUType;
 
 int DenseSuper_from_Numeric(SuperMatrix *, PyObject *);
 int NRFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
 			   PyArrayObject *, PyArrayObject *, int);
 int NCFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
 			   PyArrayObject *, PyArrayObject *, int);
+int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
+                     PyObject **L_csc, PyObject **U_csc);
 colperm_t superlu_module_getpermc(int);
-PyObject *newSciPyLUObject(SuperMatrix *, PyObject *, int, int);
+PyObject *newSuperLUObject(SuperMatrix *, PyObject *, int, int);
 int set_superlu_options_from_dict(superlu_options_t * options,
 				  int ilu, PyObject * option_dict,
 				  int *panel_size, int *relax);
