@@ -381,3 +381,20 @@ else:
             ar.sort()
             flag = np.concatenate(([True], ar[1:] != ar[:-1]))
             return ar[flag]
+
+
+if NumpyVersion(np.__version__) > '1.6.0-dev':
+    _safe_bincount = np.bincount
+else:
+    def _safe_bincount(x, weights=None, minlength=None):
+        """
+        Bincount with minlength keyword added for Numpy 1.5.
+        """
+        if weights is None:
+            x = np.bincount(x)
+        else:
+            x = np.bincount(x, weights=weights)
+        if minlength is not None:
+            if x.shape[0] < minlength:
+                x = np.r_[x, np.zeros((minlength - x.shape[0],))]
+        return x

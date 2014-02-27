@@ -15,7 +15,7 @@ from .sparsetools import coo_tocsr, coo_todense, coo_matvec
 from .base import isspmatrix
 from .data import _data_matrix, _minmax_mixin
 from .sputils import upcast, upcast_char, to_native, isshape, getdtype, isintlike, \
-     get_index_dtype, downcast_intp_index
+     get_index_dtype, downcast_intp_index, _safe_bincount
 
 
 class coo_matrix(_data_matrix, _minmax_mixin):
@@ -224,11 +224,11 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         if axis < 0:
             axis += 2
         if axis == 0:
-            return np.bincount(downcast_intp_index(self.col),
-                               minlength=self.shape[1])
+            return _safe_bincount(downcast_intp_index(self.col),
+                                  minlength=self.shape[1])
         elif axis == 1:
-            return np.bincount(downcast_intp_index(self.row),
-                               minlength=self.shape[0])
+            return _safe_bincount(downcast_intp_index(self.row),
+                                  minlength=self.shape[0])
         else:
             raise ValueError('axis out of bounds')
     nnz = property(fget=getnnz)

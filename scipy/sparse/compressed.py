@@ -15,7 +15,7 @@ from .dia import dia_matrix
 from . import sparsetools
 from .sputils import upcast, upcast_char, to_native, isdense, isshape, \
      getdtype, isscalarlike, isintlike, IndexMixin, get_index_dtype, \
-     downcast_intp_index, _safe_unique
+     downcast_intp_index, _safe_unique, _safe_bincount
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
@@ -103,8 +103,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             axis, _ = self._swap((axis, 1 - axis))
             _, N = self._swap(self.shape)
             if axis == 0:
-                return np.bincount(downcast_intp_index(self.indices),
-                                   minlength=N)
+                return _safe_bincount(downcast_intp_index(self.indices),
+                                      minlength=N)
             elif axis == 1:
                 return np.diff(self.indptr)
             raise ValueError('axis out of bounds')
