@@ -470,15 +470,18 @@ def ward(y):
 
 def linkage(y, method='single', metric='euclidean'):
     """
-    Performs hierarchical/agglomerative clustering on the condensed
-    distance matrix y.
+    Performs hierarchical/agglomerative clustering.
+    
+    The input y may be either a 1d compressed distance matrix
+    or a 2d array of observation vectors.
 
-    y must be a :math:`{n \\choose 2}` sized
+    If y is a 1d compressed distance matrix,
+    then y must be a :math:`{n \\choose 2}` sized
     vector where n is the number of original observations paired
     in the distance matrix. The behavior of this function is very
     similar to the MATLAB linkage function.
 
-    An :math:`(n-1)` by 4  matrix ``Z`` is returned. At the
+    A :math:`(n-1)` by 4 matrix ``Z`` is returned. At the
     :math:`i`-th iteration, clusters with indices ``Z[i, 0]`` and
     ``Z[i, 1]`` are combined to form cluster :math:`n + i`. A
     cluster with an index less than :math:`n` corresponds to one of
@@ -599,7 +602,7 @@ def linkage(y, method='single', metric='euclidean'):
     Parameters
     ----------
     y : ndarray
-        A condensed or redundant distance matrix. A condensed distance matrix
+        A condensed distance matrix. A condensed distance matrix
         is a flat array containing the upper triangular of the distance matrix.
         This is the form that ``pdist`` returns. Alternatively, a collection of
         :math:`m` observation vectors in n dimensions may be passed as an
