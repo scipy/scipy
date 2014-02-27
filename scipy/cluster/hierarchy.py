@@ -196,8 +196,12 @@ __all__ = ['ClusterNode', 'average', 'centroid', 'complete', 'cophenet',
            'to_mlab_linkage', 'to_tree', 'ward', 'weighted', 'distance']
 
 
+class ClusterWarning(UserWarning):
+    pass
+
+
 def _warning(s):
-    warnings.warn('scipy.cluster: %s' % s, stacklevel=3)
+    warnings.warn('scipy.cluster: %s' % s, ClusterWarning, stacklevel=3)
 
 
 def _copy_array_if_base_present(a):
@@ -340,8 +344,8 @@ def centroid(y):
     """
     Performs centroid/UPGMC linkage.
 
-    See ``linkage`` for more information on the return structure
-    and algorithm.
+    See ``linkage`` for more information on the input matrix,
+    return structure, and algorithm.
 
     The following are common calling conventions:
 
@@ -360,7 +364,7 @@ def centroid(y):
     Parameters
     ----------
     y : ndarray
-        A condensed or redundant distance matrix. A condensed
+        A condensed distance matrix. A condensed
         distance matrix is a flat array containing the upper
         triangular of the distance matrix. This is the form that
         ``pdist`` returns. Alternatively, a collection of
@@ -406,7 +410,7 @@ def median(y):
     Parameters
     ----------
     y : ndarray
-        A condensed or redundant distance matrix. A condensed
+        A condensed distance matrix. A condensed
         distance matrix is a flat array containing the upper
         triangular of the distance matrix. This is the form that
         ``pdist`` returns. Alternatively, a collection of
@@ -428,7 +432,7 @@ def median(y):
 
 def ward(y):
     """
-    Performs Ward's linkage on a condensed or redundant distance matrix.
+    Performs Ward's linkage on a condensed distance matrix.
 
     See linkage for more information on the return structure
     and algorithm.
@@ -448,7 +452,7 @@ def ward(y):
     Parameters
     ----------
     y : ndarray
-        A condensed or redundant distance matrix. A condensed
+        A condensed distance matrix. A condensed
         distance matrix is a flat array containing the upper
         triangular of the distance matrix. This is the form that
         ``pdist`` returns. Alternatively, a collection of
@@ -648,6 +652,11 @@ def linkage(y, method='single', metric='euclidean'):
                                int(_cpy_non_euclid_methods[method]))
 
     elif len(s) == 2:
+        if s[0] == s[1] and np.allclose(np.diag(y), 0):
+            if np.all(y >= 0) and np.allclose(y, y.T):
+                _warning('the symmetric non-negative hollow observation '
+                        'matrix looks suspiciously like an uncondensed '
+                        'distance matrix')
         X = y
         n = s[0]
         if method not in _cpy_linkage_methods:

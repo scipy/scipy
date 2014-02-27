@@ -36,14 +36,15 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (TestCase, run_module_suite, dec, assert_raises,
-                           assert_allclose, assert_equal, assert_)
+                           assert_allclose, assert_equal, assert_, assert_warns)
 
 from scipy._lib.six import xrange, u
 
 import scipy.cluster.hierarchy
 from scipy.cluster.hierarchy import (
-    linkage, from_mlab_linkage, to_mlab_linkage, num_obs_linkage, inconsistent,
-    cophenet, fclusterdata, fcluster, is_isomorphic, single, leaders,
+    ClusterWarning, linkage, from_mlab_linkage, to_mlab_linkage,
+    num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster,
+    is_isomorphic, single, leaders, complete, weighted, centroid,
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
     set_link_color_palette, cut_tree, _order_cluster_tree)
@@ -891,6 +892,14 @@ def calculate_maximum_inconsistencies(Z, R, k=3):
         q[2] = R[i, k]
         B[i] = q.max()
     return B
+
+
+def within_tol(a, b, tol):
+    return np.abs(a - b).max() < tol
+
+
+def test_unsupported_uncondensed_distance_matrix_linkage_warning():
+    assert_warns(ClusterWarning, linkage, [[0, 1], [1, 0]])
 
 
 def test_euclidean_linkage_value_error():
