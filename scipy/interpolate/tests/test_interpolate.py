@@ -1586,8 +1586,8 @@ class TestInterpN(TestCase):
                          bounds_error=False)
             assert_equal(v1.shape, (2, 3))
 
-            xx, yy = np.meshgrid(xi, yi, indexing='ij')
-            sample = np.c_[xx.ravel(), yy.ravel()]
+            xx, yy = np.meshgrid(xi, yi)
+            sample = np.c_[xx.T.ravel(), yy.T.ravel()]
 
             v2 = interpn(points, values, sample,
                          method=method, bounds_error=False)

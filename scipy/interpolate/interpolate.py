@@ -1486,7 +1486,8 @@ class RegularGridInterpolator(object):
 
         self.fill_value = fill_value
         if fill_value is not None:
-            if hasattr(values, 'dtype') and not np.can_cast(fill_value, values.dtype):
+            fill_value_dtype = np.asarray(fill_value).dtype
+            if hasattr(values, 'dtype') and not np.can_cast(fill_value_dtype, values.dtype):
                 raise ValueError("fill_value must be either 'None' or "
                                  "of a type compatible with values")
 
