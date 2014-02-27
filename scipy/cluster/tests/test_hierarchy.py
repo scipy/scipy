@@ -37,11 +37,12 @@ from __future__ import division, print_function, absolute_import
 import os.path
 
 import numpy as np
-from numpy.testing import TestCase, run_module_suite, dec
+from numpy.testing import TestCase, run_module_suite, dec, assert_raises
 
 from scipy.lib.six import xrange
 from scipy.lib.six import u
 
+import scipy.cluster.hierarchy
 from scipy.cluster.hierarchy import (
     linkage, from_mlab_linkage, to_mlab_linkage,
     num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster,
@@ -1473,6 +1474,12 @@ def calculate_maximum_inconsistencies(Z, R, k=3):
 
 def within_tol(a, b, tol):
     return np.abs(a - b).max() < tol
+
+
+def test_euclidean_linkage_value_error():
+    for method in scipy.cluster.hierarchy._cpy_euclid_methods:
+        assert_raises(ValueError,
+                linkage, [[1, 1], [1, 1]], method=method, metric='cityblock')
 
 
 if __name__ == "__main__":
