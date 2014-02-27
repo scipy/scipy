@@ -73,11 +73,11 @@ add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU',
 
     We can reassemble the original matrix:
 
-    >>> (Pr * (lu.L * lu.U) * Pc).A
-    array([[ 0.,  1.,  2.,  4.],
-           [ 0.,  1.,  0.,  1.],
-           [ 2.,  1.,  0.,  1.],
-           [ 1.,  2.,  2.,  0.]])
+    >>> (Pr.T * (lu.L * lu.U) * Pc.T).A
+    array([[ 1.,  2.,  0.,  4.],
+           [ 1.,  0.,  0.,  1.],
+           [ 1.,  0.,  2.,  1.],
+           [ 2.,  2.,  1.,  0.]])
     """)
 
 add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU', ('solve',
