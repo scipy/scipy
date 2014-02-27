@@ -925,7 +925,11 @@ class PPoly(_PPolyBase):
             return r[0]
         else:
             r2 = np.empty(prod(self.c.shape[2:]), dtype=object)
-            r2[...] = r
+            # this for-loop is equivalent to ``r2[...] = r``, but that's broken
+            # in numpy 1.6.0
+            for ii, root in enumerate(r):
+                r2[ii] = root
+
             return r2.reshape(self.c.shape[2:])
 
     @classmethod

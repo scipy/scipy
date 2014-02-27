@@ -1,5 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 from numpy.testing import (assert_almost_equal, assert_array_equal,
         TestCase, run_module_suite, assert_allclose, assert_equal, assert_)
 from scipy.interpolate import (KroghInterpolator, krogh_interpolate,
@@ -291,11 +293,17 @@ class CheckPiecewise(TestCase):
         self.yi = [[splev(x, self.tck, der=j) for j in xrange(3)] for x in self.xi]
 
     def test_construction(self):
-        P = PiecewisePolynomial(self.xi, self.yi, 3)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            P = PiecewisePolynomial(self.xi, self.yi, 3)
+
         assert_almost_equal(P(self.test_xs), self.spline_ys)
 
     def test_scalar(self):
-        P = PiecewisePolynomial(self.xi,self.yi,3)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            P = PiecewisePolynomial(self.xi,self.yi,3)
+
         assert_almost_equal(P(self.test_xs[0]),self.spline_ys[0])
         assert_almost_equal(P.derivative(self.test_xs[0],1),self.spline_yps[0])
         assert_almost_equal(P(np.array(self.test_xs[0])),self.spline_ys[0])
@@ -303,11 +311,17 @@ class CheckPiecewise(TestCase):
                             self.spline_yps[0])
 
     def test_derivative(self):
-        P = PiecewisePolynomial(self.xi,self.yi,3)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            P = PiecewisePolynomial(self.xi,self.yi,3)
+
         assert_almost_equal(P.derivative(self.test_xs,1),self.spline_yps)
 
     def test_derivatives(self):
-        P = PiecewisePolynomial(self.xi,self.yi,3)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            P = PiecewisePolynomial(self.xi,self.yi,3)
+
         m = 4
         r = P.derivatives(self.test_xs,m)
         #print r.shape, r
@@ -317,9 +331,12 @@ class CheckPiecewise(TestCase):
     def test_vector(self):
         xs = [0, 1, 2]
         ys = [[[0,1]],[[1,0],[-1,-1]],[[2,1]]]
-        P = PiecewisePolynomial(xs,ys)
-        Pi = [PiecewisePolynomial(xs,[[yd[i] for yd in y] for y in ys])
-            for i in xrange(len(ys[0][0]))]
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            P = PiecewisePolynomial(xs,ys)
+            Pi = [PiecewisePolynomial(xs,[[yd[i] for yd in y] for y in ys])
+                for i in xrange(len(ys[0][0]))]
+
         test_xs = np.linspace(-1,3,100)
         assert_almost_equal(P(test_xs),
                 np.rollaxis(np.asarray([p(test_xs) for p in Pi]),-1))
@@ -328,20 +345,29 @@ class CheckPiecewise(TestCase):
                     (1,0)))
 
     def test_incremental(self):
-        P = PiecewisePolynomial([self.xi[0]], [self.yi[0]], 3)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            P = PiecewisePolynomial([self.xi[0]], [self.yi[0]], 3)
+
         for i in xrange(1,len(self.xi)):
             P.append(self.xi[i],self.yi[i],3)
         assert_almost_equal(P(self.test_xs),self.spline_ys)
 
     def test_shapes_scalarvalue(self):
-        P = PiecewisePolynomial(self.xi,self.yi,4)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            P = PiecewisePolynomial(self.xi,self.yi,4)
+
         assert_array_equal(np.shape(P(0)), ())
         assert_array_equal(np.shape(P(np.array(0))), ())
         assert_array_equal(np.shape(P([0])), (1,))
         assert_array_equal(np.shape(P([0,1])), (2,))
 
     def test_shapes_scalarvalue_derivative(self):
-        P = PiecewisePolynomial(self.xi,self.yi,4)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            P = PiecewisePolynomial(self.xi,self.yi,4)
+
         n = 4
         assert_array_equal(np.shape(P.derivative(0,1)), ())
         assert_array_equal(np.shape(P.derivative(np.array(0),1)), ())
@@ -350,30 +376,53 @@ class CheckPiecewise(TestCase):
 
     def test_shapes_vectorvalue(self):
         yi = np.multiply.outer(np.asarray(self.yi),np.arange(3))
-        P = PiecewisePolynomial(self.xi,yi,4)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            P = PiecewisePolynomial(self.xi,yi,4)
+
         assert_array_equal(np.shape(P(0)), (3,))
         assert_array_equal(np.shape(P([0])), (1,3))
         assert_array_equal(np.shape(P([0,1])), (2,3))
 
     def test_shapes_vectorvalue_1d(self):
         yi = np.multiply.outer(np.asarray(self.yi),np.arange(1))
-        P = PiecewisePolynomial(self.xi,yi,4)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            P = PiecewisePolynomial(self.xi,yi,4)
+
         assert_array_equal(np.shape(P(0)), (1,))
         assert_array_equal(np.shape(P([0])), (1,1))
         assert_array_equal(np.shape(P([0,1])), (2,1))
 
     def test_shapes_vectorvalue_derivative(self):
-        P = PiecewisePolynomial(self.xi,np.multiply.outer(self.yi,np.arange(3)),4)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            P = PiecewisePolynomial(self.xi, np.multiply.outer(self.yi,
+                                                               np.arange(3)),4)
+
         n = 4
         assert_array_equal(np.shape(P.derivative(0,1)), (3,))
         assert_array_equal(np.shape(P.derivative([0],1)), (1,3))
         assert_array_equal(np.shape(P.derivative([0,1],1)), (2,3))
 
     def test_wrapper(self):
-        P = PiecewisePolynomial(self.xi,self.yi)
-        assert_almost_equal(P(self.test_xs),piecewise_polynomial_interpolate(self.xi,self.yi,self.test_xs))
-        assert_almost_equal(P.derivative(self.test_xs,2),piecewise_polynomial_interpolate(self.xi,self.yi,self.test_xs,der=2))
-        assert_almost_equal(P.derivatives(self.test_xs,2),piecewise_polynomial_interpolate(self.xi,self.yi,self.test_xs,der=[0,1]))
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            P = PiecewisePolynomial(self.xi,self.yi)
+
+        assert_almost_equal(P(self.test_xs),
+                            piecewise_polynomial_interpolate(self.xi, self.yi,
+                                                             self.test_xs))
+        assert_almost_equal(P.derivative(self.test_xs,2),
+                            piecewise_polynomial_interpolate(self.xi,
+                                                             self.yi,
+                                                             self.test_xs,
+                                                             der=2))
+        assert_almost_equal(P.derivatives(self.test_xs,2),
+                            piecewise_polynomial_interpolate(self.xi,
+                                                             self.yi,
+                                                             self.test_xs,
+                                                             der=[0,1]))
 
 
 class TestPCHIP(TestCase):

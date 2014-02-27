@@ -76,7 +76,7 @@ class TestExpit(TestCase):
         self.check_expit_out('f8', expected)
 
     def test_large(self):
-        for dtype in (np.float32, np.float64, np.float128):
+        for dtype in (np.float32, np.float64, np.longdouble):
             for n in (88, 89, 709, 710, 11356, 11357):
                 n = np.array(n, dtype=dtype)
                 assert_allclose(expit(n), 1.0, atol=1e-20)
