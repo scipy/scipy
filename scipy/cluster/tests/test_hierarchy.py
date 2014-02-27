@@ -818,7 +818,7 @@ class TestLeavesList(TestCase):
         Y = pdist(X)
         Z = linkage(X, 'single')
         node = to_tree(Z)
-        self.assertTrue((node.pre_order() == (node.get_left().pre_order() + node.get_right().pre_order())).all())
+        self.assertTrue(node.pre_order() == (node.get_left().pre_order() + node.get_right().pre_order()))
 
 
 class TestCorrespond(TestCase):
