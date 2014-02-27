@@ -1,6 +1,7 @@
 """Functions copypasted from newer versions of numpy.
 
 """
+from __future__ import division, print_function, absolute_import
 
 import warnings
 
