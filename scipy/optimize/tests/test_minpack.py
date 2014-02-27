@@ -369,11 +369,12 @@ class TestCurveFit(TestCase):
 
         popt, pcov = curve_fit(f_flat, xdata, ydata, p0=[2, 0], sigma=sigma)
         assert_(pcov.shape == (2, 2))
-        assert_array_equal(pcov, np.inf)
+        pcov_expected = np.array([np.inf]*4).reshape(2, 2)
+        assert_array_equal(pcov, pcov_expected)
 
         popt, pcov = curve_fit(f, xdata[:2], ydata[:2], p0=[2, 0])
         assert_(pcov.shape == (2, 2))
-        assert_array_equal(pcov, np.inf)
+        assert_array_equal(pcov, pcov_expected)
 
     def test_array_like(self):
         # Test sequence input.  Regression test for gh-3037.
