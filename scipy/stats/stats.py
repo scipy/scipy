@@ -2370,7 +2370,8 @@ def f_oneway(*args):
     .. [2] Heiman, G.W.  Research Methods in Statistics. 2002.
 
     """
-    args = list(map(np.asarray, args))  # convert to an numpy array
+    # convert to an numpy array
+    args = [np.asarray(arg, dtype=float)  for arg in args]
     na = len(args)              # ANOVA on 'na' groups, each in it's own array
     alldata = np.concatenate(args)
     bign = len(alldata)
