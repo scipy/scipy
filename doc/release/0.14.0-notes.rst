@@ -212,7 +212,6 @@ Authors
 * CJ Carey +
 * Thomas A Caswell +
 * Pawel Chojnacki +
-* Clemens +
 * Phillip Cloud +
 * Stefano Costa +
 * David Cournapeau
@@ -261,27 +260,27 @@ Authors
 * Clemens Novak
 * Emanuele Olivetti +
 * Stefan Otte +
-* patricksnape +
 * peb +
+* Josef Perktold
 * pjwerneck
-* polyatail +
+* Andrew Sczesnak +
 * poolio
 * Jérôme Roy +
 * Carl Sandrock +
 * Shauna +
 * Fabrice Silva
 * Daniel B. Smith
+* Patrick Snape +
 * Thomas Spura +
 * Jacob Stevenson
 * Julian Taylor
 * Tomas Tomecek
 * Richard Tsai
-* unknown
 * Joris Vankerschaver +
 * Pauli Virtanen
 * Warren Weckesser
 
-A total of 80 people contributed to this release.
+A total of 78 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -313,7 +312,7 @@ Issues closed
 - `#2238 <https://github.com/scipy/scipy/issues/2238>`__: Negative p-value on hypergeom.cdf (Trac #1719)
 - `#2283 <https://github.com/scipy/scipy/issues/2283>`__: ascending order in interpolation routines (Trac #1764)
 - `#2288 <https://github.com/scipy/scipy/issues/2288>`__: mstats.kurtosistest is incorrectly converting to float, and fails...
-- `#2396 <https://github.com/scipy/scipy/issues/2396>`__: lpmn wrong results for |z| > 1 (Trac #1877)
+- `#2396 <https://github.com/scipy/scipy/issues/2396>`__: lpmn wrong results for ``|z| > 1`` (Trac #1877)
 - `#2398 <https://github.com/scipy/scipy/issues/2398>`__: ss2tf returns num as 2D array instead of 1D (Trac #1879)
 - `#2406 <https://github.com/scipy/scipy/issues/2406>`__: linkage does not take Unicode strings as method names (Trac #1887)
 - `#2443 <https://github.com/scipy/scipy/issues/2443>`__: IIR filter design should not transform to tf representation internally
@@ -430,7 +429,7 @@ Pull requests
 - `#3223 <https://github.com/scipy/scipy/pull/3223>`__: Fix test errors with numpy master
 - `#3224 <https://github.com/scipy/scipy/pull/3224>`__: Fix int32 overflows in sparsetools
 - `#3228 <https://github.com/scipy/scipy/pull/3228>`__: DOC: tf2ss zpk2ss note controller canonical form
-- `#3234 <https://github.com/scipy/scipy/pull/3234>`__: Add See Also links and Example graphs to filter design *ord functions
+- `#3234 <https://github.com/scipy/scipy/pull/3234>`__: Add See Also links and Example graphs to filter design ``*ord`` functions
 - `#3235 <https://github.com/scipy/scipy/pull/3235>`__: Updated the buttord function to be consistent with the other...
 - `#3239 <https://github.com/scipy/scipy/pull/3239>`__: correct doc for pchip interpolation
 - `#3240 <https://github.com/scipy/scipy/pull/3240>`__: DOC: fix ReST errors in the BPoly docstring
@@ -460,14 +459,14 @@ Pull requests
 - `#3356 <https://github.com/scipy/scipy/pull/3356>`__: ENH: sparse: speed up LIL indexing + assignment via Cython
 - `#3357 <https://github.com/scipy/scipy/pull/3357>`__: Fix "imresize does not work with size = int"
 - `#3358 <https://github.com/scipy/scipy/pull/3358>`__: MAINT: rename AkimaInterpolator to Akima1DInterpolator
-- `#3366 <https://github.com/scipy/scipy/pull/3366>`__: WHT: sparse: reindent dsolve/*.c *.h
+- `#3366 <https://github.com/scipy/scipy/pull/3366>`__: WHT: sparse: reindent ``dsolve/*.c *.h``
 - `#3367 <https://github.com/scipy/scipy/pull/3367>`__: BUG: sparse/dsolve: fix dense matrix fortran order bugs in superlu...
 - `#3369 <https://github.com/scipy/scipy/pull/3369>`__: ENH minimize, minimize_scalar: Add support for user-provided...
 - `#3371 <https://github.com/scipy/scipy/pull/3371>`__: scipy.stats.sigmaclip doesn't appear in the html docs.
 - `#3373 <https://github.com/scipy/scipy/pull/3373>`__: BUG: sparse/dsolve: detect invalid LAPACK parameters in superlu...
 - `#3375 <https://github.com/scipy/scipy/pull/3375>`__: ENH: sparse/dsolve: make the L and U factors of splu and spilu...
 - `#3377 <https://github.com/scipy/scipy/pull/3377>`__: MAINT: make travis build one target against Numpy 1.5
-- `#3378 <https://github.com/scipy/scipy/pull/3378>`__: MAINT: fftpack: Remove the use of 'import *' in a couple test...
+- `#3378 <https://github.com/scipy/scipy/pull/3378>`__: MAINT: fftpack: Remove the use of ``'import *'`` in a couple test...
 - `#3381 <https://github.com/scipy/scipy/pull/3381>`__: MAINT: replace np.isinf(x) & (x>0) -> np.isposinf(x) to avoid...
 - `#3383 <https://github.com/scipy/scipy/pull/3383>`__: MAINT: skip float96 tests on platforms without float96
 - `#3384 <https://github.com/scipy/scipy/pull/3384>`__: MAINT: add pyflakes to Travis-CI
