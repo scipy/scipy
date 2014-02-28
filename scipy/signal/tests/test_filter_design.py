@@ -460,7 +460,7 @@ class TestCheb2ord(TestCase):
 
         assert_equal(N, 10)
         assert_allclose(Wn, [0.19926249974781743, 0.50125246585567362],
-                        rtol=1e-15)
+                        rtol=1e-6)
 
     def test_analog(self):
         wp = [20, 50]
@@ -821,7 +821,7 @@ class TestButter(TestCase):
         assert_array_equal(z, z2)
         assert_allclose(sorted(p, key=np.imag),
                         sorted(p2, key=np.imag), rtol=1e-13)
-        assert_allclose(k, k2, rtol=1e-15)
+        assert_allclose(k, k2, rtol=1e-13)
 
         # bandpass analog
         z, p, k = butter(4, [90.5, 110.5], 'bp', analog=True, output='zpk')
