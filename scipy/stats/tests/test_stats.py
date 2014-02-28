@@ -2668,22 +2668,25 @@ class TestSigamClip(object):
 
 
 class TestFOneWay(TestCase):
-
     def test_trivial(self):
         # A trivial test of stats.f_oneway, with F=0.
         F, p = stats.f_oneway([0,2], [0,2])
         assert_equal(F, 0.0)
 
     def test_basic(self):
-        # A test of stats.f_oneway, with F=2.
-        F, p = stats.f_oneway([0,2], [2,4])
         # Despite being a floating point calculation, this data should
         # result in F being exactly 2.0.
+        F, p = stats.f_oneway([0,2], [2,4])
         assert_equal(F, 2.0)
+
+    def test_large_integer_array(self):
+        a = np.array([655, 788], dtype=np.uint16)
+        b = np.array([789, 772], dtype=np.uint16)
+        F, p = stats.f_oneway(a, b)
+        assert_almost_equal(F, 0.77450216931805538)
 
 
 class TestKruskal(TestCase):
-
     def test_simple(self):
         x = [1]
         y = [2]
