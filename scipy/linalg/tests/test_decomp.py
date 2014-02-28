@@ -1983,12 +1983,25 @@ class TestOrdQZ(TestCase):
     def setupClass(cls):
         #http://www.nag.com/lapack-ex/node119.html
         cls.A1 = np.array(
+                [[-21.10-22.50j, 53.5-50.5j, -34.5+127.5j,   7.5+ 0.5j],
+                [ -0.46- 7.78j, -3.5-37.5j, -15.5+ 58.5j, -10.5- 1.5j],
+                [  4.30- 5.50j, 39.7-17.1j, -68.5+ 12.5j,  -7.5- 3.5j],
+                [  5.50+ 4.40j, 14.4+43.3j, -32.5- 46.0j, -19.0-32.5j]])
+
+        cls.B1 = np.array(
+                [[1.0-5.0j,  1.6+1.2j, -3+0j,  0.0-1.0j],
+                [0.8-0.6j,  3.0-5.0j, -4+3j, -2.4-3.2j],
+                [1.0+0.0j,  2.4+1.8j, -4-5j,  0.0-3.0j],
+                [0.0+1.0j, -1.8+2.4j,  0-4j,  4.0-5.0j]])
+
+        #http://www.nag.com/numeric/fl/nagdoc_fl23/xhtml/F08/f08yuf.xml
+        cls.A2 = np.array(
                   [[3.9, 12.5, -34.5, -0.5],
                   [4.3, 21.5, -47.5,  7.5],
                   [4.3, 21.5, -43.5,  3.5],
                   [4.4, 26.0, -46.0,  6.0]] )
 
-        cls.B1 = np.array(
+        cls.B2 = np.array(
                   [[1,    2,   -3,    1],
                   [1,    3,   -5,    4],
                   [1,    3,   -4,    3],
@@ -2001,12 +2014,12 @@ class TestOrdQZ(TestCase):
         #  * one eigenvalue in the lhp
         #  * 2 eigenvalues in the unit circle
         #  * 2 non-real eigenvalues
-        cls.A2 = np.array(
+        cls.A3 = np.array(
                     [[ 5.,  1.,  3.,  3.],
                     [ 4.,  4.,  2.,  7.],
                     [ 7.,  4.,  1.,  3.],
                     [ 0.,  4.,  8.,  7.]] )
-        cls.B2 = np.array(
+        cls.B3 = np.array(
                     [[  8.,  10.,   6.,  10.],
                     [  7.,   7.,   2.,   9.],
                     [  9.,   1.,   6.,   6.],
@@ -2014,8 +2027,9 @@ class TestOrdQZ(TestCase):
 
     def qz_decomp(self, sort):
         retc = ordqz(self.A1, self.B1, sort=sort)
-        ret = ordqz(self.A2, self.B2, sort=sort)
-        return retc, ret
+        ret1 = ordqz(self.A2, self.B2, sort=sort)
+        ret2 = ordqz(self.A3, self.B3, sort=sort)
+        return retc, ret1, ret2
 
     def check(self, A, B, sort, AA, BB, alpha, beta, Q, Z):
         I = np.eye(*A.shape)
@@ -2066,44 +2080,50 @@ class TestOrdQZ(TestCase):
             lastsort = cursort
 
     def test_lhp(self):
-        retc, ret = self.qz_decomp('lhp')
+        retc, ret1, ret2 = self.qz_decomp('lhp')
 
         self.check(self.A1, self.B1, 'lhp', *retc)
-        self.check(self.A2, self.B2, 'lhp', *ret)
+        self.check(self.A2, self.B2, 'lhp', *ret1)
+        self.check(self.A3, self.B3, 'lhp', *ret2)
 
     def test_rhp(self):
-        retc, ret = self.qz_decomp('rhp')
+        retc, ret1, ret2 = self.qz_decomp('rhp')
 
         self.check(self.A1, self.B1, 'rhp', *retc)
-        self.check(self.A2, self.B2, 'rhp', *ret)
+        self.check(self.A2, self.B2, 'rhp', *ret1)
+        self.check(self.A3, self.B3, 'rhp', *ret2)
 
     def test_iuc(self):
-        retc, ret = self.qz_decomp('iuc')
+        retc, ret1, ret2 = self.qz_decomp('iuc')
 
         self.check(self.A1, self.B1, 'iuc', *retc)
-        self.check(self.A2, self.B2, 'iuc', *ret)
+        self.check(self.A2, self.B2, 'iuc', *ret1)
+        self.check(self.A3, self.B3, 'iuc', *ret2)
 
     def test_ouc(self):
-        retc, ret = self.qz_decomp('ouc')
+        retc, ret1, ret2 = self.qz_decomp('ouc')
 
         self.check(self.A1, self.B1, 'ouc', *retc)
-        self.check(self.A2, self.B2, 'ouc', *ret)
+        self.check(self.A2, self.B2, 'ouc', *ret1)
+        self.check(self.A3, self.B3, 'ouc', *ret2)
 
     def test_ref(self):
         # real eigenvalues first (top-left corner)
         sort = lambda x, y: (x/y).imag == 0
-        retc, ret = self.qz_decomp(sort)
+        retc, ret1, ret2 = self.qz_decomp(sort)
 
         self.check(self.A1, self.B1, sort, *retc)
-        self.check(self.A2, self.B2, sort, *ret)
+        self.check(self.A2, self.B2, sort, *ret1)
+        self.check(self.A3, self.B3, sort, *ret2)
 
     def test_cef(self):
         # complex eigenvalues first (top-left corner)
         sort = lambda x, y: (x/y).imag != 0
-        retc, ret = self.qz_decomp(sort)
+        retc, ret1, ret2 = self.qz_decomp(sort)
 
         self.check(self.A1, self.B1, sort, *retc)
-        self.check(self.A2, self.B2, sort, *ret)
+        self.check(self.A2, self.B2, sort, *ret1)
+        self.check(self.A3, self.B3, sort, *ret2)
 
 
 class TestDatacopied(TestCase):
