@@ -60,8 +60,10 @@ NAME_MAP = {
     u('kat'): u('Kat Huang'),
     u('Mark'): u('Mark Wiebe'),
     u('mdroe'): u('Michael Droettboom'),
+    u('patricksnape'): u('Patrick Snape'),
     u('pbrod'): u('Per Brodtkorb'),
     u('pierregm'): u('Pierre GM'),
+    u('polyatail'): u('Andrew Sczesnak'),
     u('rgommers'): u('Ralf Gommers'),
     u('sebhaase'): u('Sebastian Haase'),
     u('SytseK'): u('Sytse Knypstra'),
@@ -159,9 +161,6 @@ def main():
 Authors
 =======
 
-This release contains work by the following people (contributed at least
-one patch to this release, names in alphabetical order):
-
 """)
 
     for author in authors:
@@ -173,6 +172,7 @@ one patch to this release, names in alphabetical order):
     stdout_b.write(("""
 A total of %(count)d people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
 
 """ % dict(count=len(authors))).encode('utf-8'))
 
