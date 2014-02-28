@@ -316,7 +316,12 @@ def ordqz(A, B, sort='lhp', output='real',  overwrite_a=False,
 
     if lwork is None or lwork == -1:
         result = tgsen(select, AA, BB, Q, Z, lwork=-1)
-        lwork = result[-3][0]
+        if typ in ['F', 'D']:
+            lwork = int(result[-3][0].real) # not complex
+            # looks like wrong value passed to ZTGSYL if not
+            lwork += 1
+        else:
+            lwork = result[-3][0]
     liwork = None
     if liwork is None or liwork == -1:
         result = tgsen(select, AA, BB, Q, Z, liwork=-1)
