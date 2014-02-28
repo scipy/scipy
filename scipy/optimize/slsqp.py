@@ -174,7 +174,88 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
 
     Examples
     --------
-    Examples are given :ref:`in the tutorial <tutorial-sqlsp>`.
+    Let us consider the problem of minimizing the following function under
+    ``x``
+
+    >>> from scipy.optimize import fmin_slsqp, minimize
+    >>> def fun(x, r=[4, 2, 4, 2, 1]):
+    ...    return exp(x[0]) * (r[0] * x[0]**2 + r[1] * x[1]**2 +
+    ...                     r[2] * x[0] * x[1] + r[3] * x[1] +
+    ...                     r[4])
+
+    The first parameter is bounded > 0.1, the second > 0.2, so
+
+    >> bnds = array([[-inf]*2, [inf]*2]).T
+    >> bnds[:, 0] = [0.1, 0.2]
+
+    We optimize under the following equality constraints
+
+    >>> def feqcon(x, b=1):
+    ...     return array([x[0]**2 + x[1] - b])
+
+    We can use the Jacobian of the equality constraint here
+
+    >>> def jeqcon(x, b=1):
+    ...     return array([[2*x[0], 1]])
+
+    Next we consider the inequality constraint that ``x[0]*x[1] > -10``,
+
+    >>> def fieqcon(x, c=10):
+    ...     return array([x[0] * x[1] + c])
+
+    We can use the Jacobian of the inequality constraint to speed up
+    optimization
+
+    >>> def jieqcon(x, c=10):
+    ...     return array([[1, 1]])
+
+
+    For the ``minimize`` wrapper, a constraints dictionary can be constructed
+
+    >>> cons1 = ({'type': 'eq', 'fun': feqcon, 'args': (1, )},
+    ...   {'type': 'ineq', 'fun': fieqcon, 'args': (10,)})
+    >>> cons2 = ({'type': 'eq', 'fun': feqcon, 'jac': jeqcon, 'args': (1, )},
+    ...   {'type': 'ineq', 'fun': fieqcon, 'jac': jieqcon, 'args': (10,)})
+
+    Let us solve a bounded constraint problem and an equality/inequality
+    problem with and without using the Jacobians
+
+    >>> print(' Only bounds constraints '.center(72, '-'))
+    >>> print(' * fmin_slsqp')
+    >>> x, f = fmin_slsqp(fun, array([-1, 1]), bounds=bnds, disp=1,
+    ...               full_output=True)[:2]
+    >>> print('Minimum x:', x)
+    >>> print(' * minimize wrapper')
+    >>> res = minimize(fun, array([-1, 1]), method='slsqp', bounds=bnds,
+    ...                   **{'disp': True})
+    >>> print('Minimum x:', res.x)
+
+    >>> print(' Equality and inequality constraints - No Jacobian'.center(72, '-'))
+    >>> print(' * fmin_slsqp')
+    >>> x, f = fmin_slsqp(fun, array([-1, 1]),
+    ...               f_eqcons=feqcon,
+    ...               f_ieqcons=fieqcon,
+    ...               disp=1, full_output=True)[:2]
+    >>> print('Minimum x:', x)
+    >>> print(' * minimize wrapper')
+    >>> res = _minimize_slsqp(fun, array([-1, 1]), constraints=cons1,
+    ...                   **{'disp': True})
+    >>> print('Minimum x:', res.x)
+
+    >>> print(' Equality and inequality constraints - Jacobian'.center(72, '-'))
+    >>> print(' * fmin_slsqp')
+    >>> x, f = fmin_slsqp(fun, array([-1, 1]),
+    ...               f_eqcons=feqcon, fprime_eqcons=jeqcon,
+    ...               f_ieqcons=fieqcon, fprime_ieqcons=jieqcon,
+    ...               disp=1, full_output=True)[:2]
+    >>> print('Minimum x:', x)
+    >>> print(' * minimize wrapper')
+    >>> res = _minimize_slsqp(fun, array([-1, 1]), constraints=cons2,
+    ...                   **{'disp': True})
+    >>> print('Minimum x:', res.x)
+
+
+    More examples are given :ref:`in the tutorial <tutorial-sqlsp>`.
 
     """
     if disp is not None:
