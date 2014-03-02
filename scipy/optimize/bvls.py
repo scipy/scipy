@@ -18,9 +18,8 @@ def bounded_lstsq(A, b, bounds=()):
         Right-hand side vector.
     bounds : list
         A list of tuples specifying the lower and upper bound for each
-        independent variables [(xl0, xu0), (xl1, xu1), ...] Infinite values
-        or None will be interpreted as large floating values, negated as
-        appropriate.
+        independent variables [(xl0, xu0), (xl1, xu1), ...]. None or
+        -inf, inf, can be used to indicate no bounds.
 
     Returns
     -------
@@ -38,6 +37,25 @@ def bounded_lstsq(A, b, bounds=()):
     The Fortran code for this was originally written by Charles Lawson and
     Richard Hanson, who agreed to release the code under the BSD license
     for inclusion in scipy.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import optimize
+
+    >>> x = np.array([-1.7237128E+00,1.8712276E+00,-9.6608055E-01,
+    ...                 -2.8394297E-01,1.3416969E+00,1.3757038E+00,
+    ...                 -1.3703436E+00,4.2581975E-02,-1.4970151E-01,
+    ...                 8.2065094E-01])[:,None]
+    >>> x = np.column_stack((np.ones_like(x), x))
+    >>> np.random.seed(12)
+    >>> y = np.dot(x, [1.8, 5.4]) + np.random.random(len(x))
+    >>> bounds = None
+
+    >>> print optimize.bounded_lstsq(x, y, bounds=bounds)
+
+    >>> bounds = [(None, None), (None, 4)]
+    >>> print optimize.bounded_lstsq(x, y, bounds=bounds)
     """
     A, b = map(asarray_chkfinite, (A, b))
     A = A.astype(dtype=float, order='F')
