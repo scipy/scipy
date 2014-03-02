@@ -1,7 +1,8 @@
 from . import _bvls
-from numpy import asarray_chkfinite, zeros, float32, array, isfinite, inf
+from numpy import asarray_chkfinite, zeros, array, isfinite, inf
 
 __all__ = ['bounded_lstsq']
+
 
 def bounded_lstsq(A, b, bounds=()):
     """
@@ -39,16 +40,15 @@ def bounded_lstsq(A, b, bounds=()):
     for inclusion in scipy.
     """
     A, b = map(asarray_chkfinite, (A, b))
-    #TODO: remove this when sorted
-    A = A.astype(dtype=float32, order='F')
-    b = b.astype(dtype=float32, order='F')
+    A = A.astype(dtype=float, order='F')
+    b = b.astype(dtype=float, order='F')
 
     if A.ndim != 2:
         raise ValueError("A must be 2-dimensional")
     m, n = A.shape
 
     if b.ndim != 1:
-        raise VelueError("Expected 1-dimensional b")
+        raise ValueError("Expected 1-dimensional b")
     if A.shape[0] != b.shape[0]:
         raise ValueError("A and b are not conformable")
 
@@ -63,9 +63,9 @@ def bounded_lstsq(A, b, bounds=()):
             raise ValueError("The length of bounds is not compatible with "
                              "Ax=b. Got %d. Expected %d" (len(bnds), n))
 
-    w = zeros((n,), dtype=float32, order='F')
+    w = zeros((n,), dtype=float, order='F')
     index = zeros((n,), dtype=int, order='F')
-    x = zeros((n,), dtype=float32, order='F')
+    x = zeros((n,), dtype=float, order='F')
 
     rnorm, nsetp, ierr = _bvls.bvls(A, b, bnds, x, w, index)
     if ierr == 1:

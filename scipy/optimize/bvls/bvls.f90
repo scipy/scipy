@@ -44,7 +44,7 @@ SUBROUTINE BVLS ( A, B, BND, X, RNORM, NSETP, W, INDEX, IERR )
 !
 !INTERFACE
 !   SUBROUTINE BVLS (A, B, BND, X, RNORM, NSETP, W, INDEX, IERR)
-!    REAL(KIND(1E0)) A(:,:), B(:), BND(:,:), X(:), RNORM, W(:)
+!    REAL(KIND=8) A(:,:), B(:), BND(:,:), X(:), RNORM, W(:)
 !    INTEGER NSETP, INDEX(:), IERR
 !   END SUBROUTINE
 !END INTERFACE
@@ -114,7 +114,7 @@ SUBROUTINE BVLS ( A, B, BND, X, RNORM, NSETP, W, INDEX, IERR )
 !   	= 4   Exceed maximum number of iterations.
 !
 !   Selected internal variables:
-!   EPS [real(kind(one))]
+!   EPS [real(kind=8)]
 !   	Determines the relative linear dependence of a column vector
 !   	for a variable moved from its initial value.  This is used in
 !   	one place with the default value EPS=EPSILON(ONE).  Other
@@ -139,11 +139,11 @@ integer INDEX(:)
 !   Z()     [Scratch]  An M-array (automatic) of working space.
 !   S()     [Scratch]  An N-array (automatic) of working space.
 !
-      real(kind(1E0)), parameter :: ZERO = 0E0, ONE=1E0, TWO = 2E0
-      real(kind(one)) :: A(:,:), B(:), S(size(A,2)), X(:), W(:),&
+      real(kind=8), parameter :: ZERO = 0E0, ONE=1E0, TWO = 2E0
+      real(kind=8) :: A(:,:), B(:), S(size(A,2)), X(:), W(:),&
                                  Z(size(A,1)), BND(:,:)
-      real(kind(one)) ALPHA, ASAVE, CC, EPS, RANGE, RNORM
-      real(kind(one)) NORM, SM, SS, T, UNORM, UP, ZTEST
+      real(kind=8) ALPHA, ASAVE, CC, EPS, RANGE, RNORM
+      real(kind=8) NORM, SM, SS, T, UNORM, UP, ZTEST
 
 CALL  INITIALIZE
 !
@@ -630,7 +630,7 @@ SUBROUTINE ROTG(SA,SB,C,S)
 !
 !! ROTG performs a Givens rotation.
 !
-   REAL(KIND(ONE)) SA,SB,C,S,ROE,SCALE,R
+   REAL(KIND=8) SA,SB,C,S,ROE,SCALE,R
 
    ROE = SB
    IF( ABS(SA) .GT. ABS(SB) ) ROE = SA
@@ -648,7 +648,7 @@ SUBROUTINE ROTG(SA,SB,C,S)
    RETURN
 END SUBROUTINE !ROTG
 
-REAL(KIND(ONE)) FUNCTION NRM2 (X)
+REAL(KIND=8) FUNCTION NRM2 (X)
 
 !*****************************************************************************80
 !
@@ -656,7 +656,7 @@ REAL(KIND(ONE)) FUNCTION NRM2 (X)
 !
 !   NRM2 := sqrt( x'*x )
 !
-   REAL(KIND(ONE)) ABSXI, X(:), NORM, SCALE, SSQ
+   REAL(KIND=8) ABSXI, X(:), NORM, SCALE, SSQ
    INTEGER N, IX
    N=SIZE(X)
    IF( N < 1)THEN
@@ -692,8 +692,8 @@ SUBROUTINE HTC (P, U, UP)
 !! HTC constructs a Householder transformation.
 !
    INTEGER P
-   REAL(KIND(ONE)) U(:)
-   REAL UP, VNORM
+   REAL(KIND=8) U(:)
+   REAL(KIND=8) UP, VNORM
    VNORM=NRM2(U(P:SIZE(U)))
    IF(U(P) > ZERO) VNORM=-VNORM
    UP=U(P)-VNORM
