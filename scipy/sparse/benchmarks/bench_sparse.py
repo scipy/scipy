@@ -301,6 +301,7 @@ class BenchmarkSparse(TestCase):
         print('-'*80)
 
         for M, density in itertools.product(Ms, densities):
+            np.random.seed(1234)
             A = rand(M, M, density=density)
             for N, spat in itertools.product(Ns, spats):
                 # indices to assign to
@@ -349,6 +350,7 @@ class BenchmarkSparse(TestCase):
         A[i, j]
 
     def _getset_args_random(self, A, N):
+        np.random.seed(1234)
         i, j = [], []
         while len(i) < N:
             n = N - len(i)
@@ -377,6 +379,7 @@ class BenchmarkSparse(TestCase):
                            msg='__getitem__[i, j]; len(i) = len(j) = N; random indices')
 
     def _getset_args_fullrows(self, A, N):
+        np.random.seed(1234)
         N //= A.shape[0]
         i, j = [], slice(None)
         while len(i) < N:
@@ -425,6 +428,7 @@ class BenchmarkSparse(TestCase):
                            msg="__getitem__[:,idx]; len(idx)*M == N")
 
     def _getset_args_slices(self, A, N):
+        np.random.seed(1234)
         k = max(1, int(np.sqrt(N)))
         i = slice((A.shape[0]-k)//2, (A.shape[0]+k)//2)
         j = slice((A.shape[0]-k)//2, (A.shape[0]+k)//2)
