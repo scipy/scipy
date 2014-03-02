@@ -71,7 +71,7 @@ def bounded_lstsq(A, b, bounds=()):
         raise ValueError("A and b are not conformable")
 
     if bounds is None or len(bounds) == 0:
-        bnds = array([[-1.0E12]*n, [1.0E12]*n])
+        bnds = array([[-inf]*n, [inf]*n])
     else:
         bnds = array(bounds, float).T
         infbnd = ~isfinite(bnds)
