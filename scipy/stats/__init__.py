@@ -284,6 +284,8 @@ which work for masked arrays.
    boxcox_normmax
    boxcox_llf
 
+   entropy
+
 Contingency table functions
 ===========================
 
