@@ -15,7 +15,7 @@ __all__ = ['qz', 'ordqz']
 _double_precision = ['i', 'l', 'd']
 
 
-def _select_function(sort, typ):
+def _select_function(sort):
     if callable(sort):
         # assume the user knows what they're doing
         sfunction = sort
@@ -106,7 +106,7 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     elif info == a_n+3:
         raise LinAlgError("Reordering failed in <s,d,c,z>tgsen")
 
-    return result, typa
+    return result, gges.typecode
 
 def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
        overwrite_b=False, check_finite=True):
@@ -304,20 +304,20 @@ def ordqz(A, B, sort='lhp', output='real',  overwrite_a=False,
                  overwrite_a=overwrite_a, overwrite_b=overwrite_b,
                  check_finite=check_finite)
     AA, BB, Q, Z = result[0], result[1], result[-4], result[-3]
-    if typ in ['f', 'd']:
+    if typ not in 'cz':
         alpha, beta = result[3] + result[4]*1.j, result[5]
     else:
         alpha, beta = result[3], result[4]
 
-    sfunction = _select_function(sort, typ)
+    sfunction = _select_function(sort)
     select = sfunction(alpha, beta)
 
     tgsen, = get_lapack_funcs(('tgsen',), (AA,BB))
 
     if lwork is None or lwork == -1:
         result = tgsen(select, AA, BB, Q, Z, lwork=-1)
-        if typ in ['F', 'D']:
-            lwork = int(result[-3][0].real) # not complex
+        if typ in 'cz':
+            lwork = result[-3][0].real.astype(np.int) # not complex
             # looks like wrong value passed to ZTGSYL if not
             lwork += 1
         else:
