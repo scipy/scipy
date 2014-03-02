@@ -42,6 +42,12 @@ SUBROUTINE BVLS ( A, B, BND, X, RNORM, NSETP, W, INDEX, IERR )
 !    ISBN: 0898713560,
 !    LC: QA275.L38.
 !
+!  License:
+!   
+!    The code was released under the BSD license by the original authors
+!    for inclusion into SciPy.
+!
+!
 !INTERFACE
 !   SUBROUTINE BVLS (A, B, BND, X, RNORM, NSETP, W, INDEX, IERR)
 !    REAL(KIND=8) A(:,:), B(:), BND(:,:), X(:), RNORM, W(:)
