@@ -2125,6 +2125,12 @@ class TestOrdQZ(TestCase):
         self.check(self.A2, self.B2, sort, *ret1)
         self.check(self.A3, self.B3, sort, *ret2)
 
+    def test_diff_input_types(self):
+        ret = ordqz(self.A1, self.B2, sort='lhp')
+        self.check(self.A1, self.B2, 'lhp', *ret)
+
+        ret = ordqz(self.B2, self.A1, sort='lhp')
+        self.check(self.B2, self.A1, 'lhp', *ret)
 
 class TestDatacopied(TestCase):
 
