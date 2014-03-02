@@ -294,9 +294,6 @@ class lil_matrix(spmatrix, IndexMixin):
 
             if i_shape is None or len(i_shape) == 1:
                 return self._get_row_ranges(i, j)
-        elif isinstance(i, slice):
-            # yes, this is quite a bit faster
-            return self.tocsr()[i,j].tolil()
 
         i, j = self._index_to_arrays(i, j)
         if i.size == 0:
@@ -329,50 +326,16 @@ class lil_matrix(spmatrix, IndexMixin):
         """
         j_start, j_stop, j_stride = col_slice.indices(self.shape[1])
         col_range = xrange(j_start, j_stop, j_stride)
+        nj = len(col_range)
+        new = lil_matrix((len(rows), nj), dtype=self.dtype)
 
-        if not isinstance(rows, xrange):
-            rows = [self._check_row_bounds(k) for k in rows]
+        _csparsetools.lil_get_row_ranges(self.shape[0], self.shape[1],
+                                         self.rows, self.data,
+                                         new.rows, new.data,
+                                         rows,
+                                         j_start, j_stop, j_stride, nj)
 
-        if j_stride == 1 and len(col_range) == self.shape[1]:
-            # full row slice
-            new = lil_matrix((len(rows), self.shape[1]), dtype=self.dtype)
-            for nk, k in enumerate(rows):
-                new.rows[nk] = self.rows[k][:]
-                new.data[nk] = self.data[k][:]
-            return new
-        else:
-            # partial row slice
-            nj = len(col_range)
-            new = lil_matrix((len(rows), nj), dtype=self.dtype)
-            for nk, k in enumerate(rows):
-                cur_row = self.rows[k]
-
-                if j_stride > 0:
-                    a = bisect_left(cur_row, j_start)
-                    b = bisect_left(cur_row, j_stop)
-
-                    if j_stride == 1:
-                        new.rows[nk].extend(j - j_start for j in cur_row[a:b])
-                        new.data[nk].extend(self.data[k][a:b])
-                    else:
-                        for j, v in izip(cur_row[a:b], self.data[k][a:b]):
-                            p, r = divmod(j - j_start, j_stride)
-                            if r != 0:
-                                continue
-                            new.rows[nk].append(p)
-                            new.data[nk].append(v)
-                else:
-                    a = bisect_right(cur_row, j_stop)
-                    b = bisect_right(cur_row, j_start)
-
-                    for j, v in izip(cur_row[a:b], self.data[k][a:b]):
-                        p, r = divmod(j - j_start, j_stride)
-                        if r != 0:
-                            continue
-                        new.rows[nk].insert(0, p)
-                        new.data[nk].insert(0, v)
-                            
-            return new
+        return new
 
     def __setitem__(self, index, x):
         # Scalar fast path first
