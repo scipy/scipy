@@ -198,7 +198,6 @@ class netcdf_file(object):
             if mmap is None:
                 mmap = True
         self.use_mmap = mmap
-        self._fds = []
         self.version_byte = version
 
         if not mode in 'rw':
@@ -231,8 +230,6 @@ class netcdf_file(object):
         if not self.fp.closed:
             try:
                 self.flush()
-                for mmap_fd in self._fds:
-                    mmap_fd.close()
             finally:
                 self.fp.close()
     __del__ = close
@@ -598,7 +595,7 @@ class netcdf_file(object):
                     mm = mmap(self.fp.fileno(), begin_+a_size, access=ACCESS_READ)
                     data = ndarray.__new__(ndarray, shape, dtype=dtype_,
                             buffer=mm, offset=begin_, order=0)
-                    self._fds.append(mm)
+                    mm.close()
                 else:
                     pos = self.fp.tell()
                     self.fp.seek(begin_)
@@ -621,7 +618,7 @@ class netcdf_file(object):
                 mm = mmap(self.fp.fileno(), begin+self._recs*self._recsize, access=ACCESS_READ)
                 rec_array = ndarray.__new__(ndarray, (self._recs,), dtype=dtypes,
                         buffer=mm, offset=begin, order=0)
-                self._fds.append(mm)
+                mm.close()
             else:
                 pos = self.fp.tell()
                 self.fp.seek(begin)
