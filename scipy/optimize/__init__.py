@@ -42,6 +42,7 @@ Constrained multivariate methods:
    fmin_tnc - Truncated Newton code
    fmin_cobyla - Constrained optimization by linear approximation
    fmin_slsqp - Minimization using sequential least-squares programming
+   differential_evolution - stochastic minimization using differential evolution
 
 Univariate (scalar) minimization methods:
 
@@ -70,6 +71,7 @@ Global Optimization
    anneal - Simulated annealing
    basinhopping - Basinhopping stochastic optimizer
    brute - Brute force searching optimizer
+   differential_evolution - stochastic minimization using differential evolution
 
 Rosenbrock function
 -------------------
@@ -184,6 +186,7 @@ from .slsqp import fmin_slsqp
 from .nnls import nnls
 from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
+from ._DEsolver import differential_evolution
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
