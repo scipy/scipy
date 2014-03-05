@@ -507,12 +507,10 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     body += "    cdef void *func = (<void**>data)[0]\n"
     body += "    cdef char *func_name = <char*>(<void**>data)[1]\n"
 
-    pointers = []
     for j in range(len(ufunc_inputs)):
-        pointers.append("*ip%d = args[%d]" % (j, j))
+        body += "    cdef char *ip%d = args[%d]\n" % (j, j)
     for j in range(len(ufunc_outputs)):
-        pointers.append("*op%d = args[%d]" % (j, j + len(ufunc_inputs)))
-    body += "    cdef char %s\n" % ", ".join(pointers)
+        body += "    cdef char *op%d = args[%d]\n" % (j, j + len(ufunc_inputs))
 
     ftypes = []
     fvars = []
