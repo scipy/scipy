@@ -140,16 +140,19 @@ def differential_evolution(func, bounds, args=(), DEstrategy=None,
                           'real valued (min, max) pairs for each value'
                           ' in x')
 
-    solver = DEsolver(func, limits, args=args, DEstrategy=DEstrategy,
-                      maxiter=maxiter, popsize=popsize,
-                      tol=tol, mutation=mutation, recombination=recombination,
-                      seed=seed, polish=polish, callback=callback)
+    solver = DifferentialEvolutionSolver(func, limits, args=args,
+                                         DEstrategy=DEstrategy, maxiter=maxiter,
+                                         popsize=popsize, tol=tol,
+                                         mutation=mutation,
+                                         recombination=recombination,
+                                         seed=seed, polish=polish,
+                                         callback=callback)
 
     result = solver.solve()
     return result
 
 
-class DEsolver(object):
+class DifferentialEvolutionSolver(object):
 
     """
     Parameters
@@ -205,9 +208,10 @@ class DEsolver(object):
                  **options):
 
         if DEstrategy is not None:
-            self.DEstrategy = getattr(DEsolver, '_' + DEstrategy.lower())
+            self.DEstrategy = getattr(
+                DifferentialEvolutionSolver, '_' + DEstrategy.lower())
         else:
-            self.DEstrategy = getattr(DEsolver, '_best1bin')
+            self.DEstrategy = getattr(DifferentialEvolutionSolver, '_best1bin')
 
         self.callback = callback
         self.polish = polish
@@ -228,9 +232,9 @@ class DEsolver(object):
         self.args = args
         self.limits = limits
         if np.any(np.isnan(limits)):
-            raise BoundsException('Bounds should be a sequence'
-                                  ' containing real valued '
-                                  '(min, max) pairs for each value in x')
+            raise BoundsError('Bounds should be a sequence'
+                              ' containing real valued '
+                              '(min, max) pairs for each value in x')
         self.bounds = [(self.limits[0, idx], self.limits[1, idx])
                        for idx in range(np.size(self.limits, 1))]
 
@@ -240,7 +244,7 @@ class DEsolver(object):
         self.parameter_count = np.size(self.limits, 1)
         self.population_size = popsize * self.parameter_count
 
-        self.random_number_generator = _check_random_state(seed)
+        self.random_number_generator = _make_random_gen(seed)
 
         self.population = self.random_number_generator.rand(
             popsize *
@@ -315,7 +319,8 @@ class DEsolver(object):
                             res = scipy.optimize.minimize(self.func,
                                                           parameters,
                                                           method='L-BFGS-B',
-                                                          bounds=self.bounds)
+                                                          bounds=self.bounds,
+                                                          args=self.args)
 
                             trial = self._unscale_parameters(res.x)
                             energy = res.fun
@@ -598,7 +603,7 @@ class DEsolver(object):
         return r1, r2, r3, r4, r5
 
 
-def _check_random_state(seed):
+def _make_random_gen(seed):
     """Turn seed into a np.random.RandomState instance
 
     If seed is None, return the RandomState singleton used by np.random.
