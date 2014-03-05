@@ -5,6 +5,8 @@ import scipy.optimize
 
 __all__ = ['differential_evolution']
 
+MACHEPS = 2.22e-16
+
 # standard status messages of optimizers
 _status_message = {'success': 'Optimization terminated successfully.',
                    'maxfev': 'Maximum number of function evaluations has '
@@ -13,7 +15,7 @@ _status_message = {'success': 'Optimization terminated successfully.',
                               'exceeded.',
                    'pr_loss': 'Desired error not necessarily achieved due '
                               'to precision loss.',
-                   'aborted': 'Minimization aborted by callback function'}
+                   'terminated': 'Minimization terminated by callback function'}
 
 
 class BoundsError(Exception):
@@ -26,7 +28,7 @@ class BoundsError(Exception):
 
 
 def differential_evolution(func, bounds, args=(), DEstrategy=None,
-                           maxiter=None, popsize=20, tol=0.01,
+                           maxiter=None, popsize=10, tol=0.03,
                            mutation=0.7, recombination=0.5, seed=None,
                            callback=None, disp=False, polish=False, **options):
     """
@@ -76,9 +78,9 @@ def differential_evolution(func, bounds, args=(), DEstrategy=None,
         When the mean of the population energies, multiplied by tol,
         divided by the standard deviation of the population energies
         is greater than 1 the solving process terminates.
-        i.e. mean(pop) * tol / stdev(pop) > 1
+        i.e. convergence = mean(pop) * tol / stdev(pop) > 1
     mutation : float, optional:
-        The mutation constant, should be in the range [0, 1].
+        The mutation constant, should be in the range [0, 2].
     recombination : float, optional:
         The recombination constant, should be in the range [0, 1].
     seed : int or np.RandomState, optional:
@@ -96,10 +98,12 @@ def differential_evolution(func, bounds, args=(), DEstrategy=None,
         the current value of ``x0``. ``val`` represents the fractional
         value of the population convergence.  When ``val`` is greater than one
         the function halts.
-        If this function returns False, then the minimization is halted.
+        If callback returns True, then the minimization is halted (any
+        polishing is still carried out).
     polish : bool, optional
         If true, then scipy.optimize.minimize with the `L-BFGS-B` method
-        is used to polish each the best population member if it improves. 
+        is used to polish the best population member at the end. This requires
+        a few more function evaluations.
 
     Returns
     -------
@@ -108,7 +112,8 @@ def differential_evolution(func, bounds, args=(), DEstrategy=None,
         Important attributes are: ``x`` the solution array, ``success`` a
         Boolean flag indicating if the optimizer exited successfully and
         ``message`` which describes the cause of the termination. See
-        `OptimizeResult` for a description of other attributes.
+        `OptimizeResult` for a description of other attributes. If polish was
+        employed, then OptimizeResult also contains the ``jac`` attribute.
 
     References
     ----------
@@ -121,11 +126,8 @@ def differential_evolution(func, bounds, args=(), DEstrategy=None,
     function is implemented in `rosen` in `scipy.optimize`.
 
     >>> from scipy.optimize import rosen, differential_evolution
-    >>> func = lambda x: np.cos(14.5 * x - 0.3) + (x + 0.2) * x
-    >>> bounds = [(-3, 3)]
-    >>> result = differential_evolution(func, bounds,
-    ... tol=1e-2, popsize=40, mutation=0.6, recombination=0.9,
-    ... DEstrategy='best1bin')
+    >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
+    >>> result = differential_evolution(rosen, bounds)
     >>> print result
 
     """
@@ -146,7 +148,8 @@ def differential_evolution(func, bounds, args=(), DEstrategy=None,
                                          mutation=mutation,
                                          recombination=recombination,
                                          seed=seed, polish=polish,
-                                         callback=callback)
+                                         callback=callback,
+                                         disp=disp)
 
     result = solver.solve()
     return result
@@ -182,7 +185,7 @@ class DifferentialEvolutionSolver(object):
         than 1 the solving process terminates.
         i.e. mean(pop) * tol / stdev(pop) > 1
     mutation : float, optional:
-        The mutation constant, should be in the range [0, 1].
+        The mutation constant, should be in the range [0, 2].
     recombination : float, optional:
         The recombination constant, should be in the range [0, 1].
     seed : int or np.RandomState, optional:
@@ -194,11 +197,15 @@ class DifferentialEvolutionSolver(object):
         Specify seed for repeatable minimizations.
     callback : callable, optional:
         A function to follow the progress of the minimization.
-        Called as ``callback(xk)``, where ``xk`` is the current value of ``x0``.
+        Called as ``callback(xk, convergence=val)``, where ``xk`` is the
+        current value of ``x0``. ``val`` represents the fractional value
+        of the population convergence.  When ``val`` is greater than one
+        the function halts. If callback returns True, then the minimization
+        is halted (any polishing is still carried out).
     disp : bool, optional
     polish : bool, optional
         If true, then scipy.optimize.minimize with the `L-BFGS-B` method
-        is used to polish each the best population member if it improves. 
+        is used to polish the best population member at the end.
     """
 
     def __init__(self, func, limits, args=(),
@@ -235,6 +242,7 @@ class DifferentialEvolutionSolver(object):
             raise BoundsError('Bounds should be a sequence'
                               ' containing real valued '
                               '(min, max) pairs for each value in x')
+
         self.bounds = [(self.limits[0, idx], self.limits[1, idx])
                        for idx in range(np.size(self.limits, 1))]
 
@@ -265,8 +273,13 @@ class DifferentialEvolutionSolver(object):
             Important attributes are: ``x`` the solution array, ``success`` a
             Boolean flag indicating if the optimizer exited successfully and
             ``message`` which describes the cause of the termination. See
-            `OptimizeResult` for a description of other attributes.
+            `OptimizeResult` for a description of other attributes. If polish
+            was employed, then OptimizeResult also contains the ``hess_inv`` and
+            ``jac`` attributes.
         """
+
+        self.nfev = 0
+        self.nit = 0
         status_message = _status_message['success']
         warning_flag = False
 
@@ -279,9 +292,9 @@ class DifferentialEvolutionSolver(object):
                 *self.args)
             self.nfev += 1
 
-            if self.nfev == self.maxfun:
+            if self.nfev > self.maxfun:
                 warning_flag = True
-                status_message = status_message['maxfev']
+                status_message = _status_message['maxfev']
 
         minval = np.argmin(self.population_energies)
 
@@ -296,7 +309,7 @@ class DifferentialEvolutionSolver(object):
         for iteration in xrange(self.maxiter):
             for candidate in xrange(self.population_size):
                 if self.nfev >= self.maxfun:
-                    warning_flag == True
+                    warning_flag = True
                     status_message = _status_message['maxfev']
                     break
 
@@ -315,34 +328,26 @@ class DifferentialEvolutionSolver(object):
                         self.population_energies[0] = energy
                         self.population[0] = trial
 
-                        if self.polish:
-                            res = scipy.optimize.minimize(self.func,
-                                                          parameters,
-                                                          method='L-BFGS-B',
-                                                          bounds=self.bounds,
-                                                          args=self.args)
-
-                            trial = self._unscale_parameters(res.x)
-                            energy = res.fun
-                            self.nfev += res.nfev
-
-                        if self.disp:
-                            print("differential_evolution step %d: f %g"
-                                  % (self.iteration,
-                                     self.population_energies[0]))
-
             # stop when the fractional s.d. of the population is less than tol
             # of the mean energy
             self.convergence = np.std(self.population_energies) / \
-                np.mean(self.population_energies)
+                    np.abs(np.mean(self.population_energies) + MACHEPS)
+                
+            self.nit = iteration + 1
+            
+            if self.disp:
+                print("differential_evolution step %d: f(x)= %g"
+                      % (self.nit,
+                         self.population_energies[0]))
 
             if self.callback:
-                should_continue = self.callback(
-                    self._scale_parameters(self.population[0]),
-                    convergence=self.tol / self.convergence)
-                if should_continue is False:
+                if self.callback(
+                        self._scale_parameters(self.population[0]),
+                        convergence=self.tol / self.convergence) \
+                        is True:
+
                     warning_flag = True
-                    status_message = _status_message['aborted']
+                    status_message = _status_message['terminated']
                     break
 
             if self.convergence < self.tol:
@@ -351,13 +356,11 @@ class DifferentialEvolutionSolver(object):
             if warning_flag:
                 break
 
-            self.nit += 1
-
         if self.nit == self.maxiter:
             status_message = _status_message['maxiter']
             warning_flag = True
 
-        result = scipy.optimize.OptimizeResult(
+        DE_result = scipy.optimize.OptimizeResult(
             x=self._scale_parameters(self.population[0]),
             fun=self.population_energies[0],
             nfev=self.nfev,
@@ -365,7 +368,26 @@ class DifferentialEvolutionSolver(object):
             message=status_message,
             success=(warning_flag != True))
 
-        return result
+        if self.polish:
+            result = scipy.optimize.minimize(self.func,
+                                             np.copy(DE_result.x),
+                                             method='L-BFGS-B',
+                                             bounds=self.bounds,
+                                             args=self.args)
+
+            self.nfev += result.nfev
+            DE_result.nfev = self.nfev
+
+            if result.fun < DE_result.fun+100:
+                DE_result.fun = result.fun
+                DE_result.x = result.x
+#                 DE_result.hess_inv = result.hess_inv
+                DE_result.jac = result.jac
+                # to keep internal state consistent
+                self.population_energies[0] = result.fun
+                self.population[0] = self._unscale_parameters(result.x)
+
+        return DE_result
 
     def _scale_parameters(self, trial):
         return (
@@ -621,14 +643,13 @@ def _make_random_gen(seed):
                      ' instance' % seed)
 
 if __name__ == "__main__":
-    # minimum expected at ~-0.195
-    func = lambda x: np.cos(14.5 * x - 0.3) + (x + 0.2) * x
-    bounds = [(-3, 3)]
-    result = differential_evolution(func,
+    from scipy.optimize import rosen
+    # minimum expected at [1, 1, 1, 1, 1]
+    bounds = [(0, 2), (0, 2), (0, 2), (0, 2), (0, 2)]
+    result = differential_evolution(rosen,
                                     bounds,
-                                    tol=1e-2,
-                                    popsize=40,
-                                    mutation=0.6,
+                                    mutation=0.7,
                                     recomb=0.9,
-                                    DEstrategy='best1bin')
+                                    polish=True,
+                                    disp=True)
     print result
