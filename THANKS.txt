@@ -126,6 +126,7 @@ Pawel Chojnacki for simple documentation fixes.
 Gert-Ludwig Ingold for contributions to special functions.
 Joris Vankerschaver for multivariate Gaussian functionality.
 Jörg Dietrich for the k-sample Anderson Darling test.
+Blake Griffith for improvements to scipy.sparse.
 
 
 Institutions
