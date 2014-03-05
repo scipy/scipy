@@ -186,7 +186,7 @@ from .slsqp import fmin_slsqp
 from .nnls import nnls
 from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
-from ._DEsolver import differential_evolution
+from ._differentialevolution import differential_evolution
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester

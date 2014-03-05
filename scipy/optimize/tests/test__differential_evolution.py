@@ -2,7 +2,7 @@
 Unit tests for the differential global minimization algorithm.
 """
 import unittest
-from scipy.optimize._DEsolver import differential_evolution
+from scipy.optimize._differentialevolution import differential_evolution
 import numpy as np
 from scipy.optimize import rosen
 import numpy.testing as npt
@@ -32,13 +32,13 @@ class TestDEsolver(unittest.TestCase):
         '''
         f = lambda x: np.cos(14.5 * x - 0.3) + (x + 0.2) * x
         bounds = [(-3, None)]
-        self.assertRaises(DEsolver.BoundsException,
+        self.assertRaises(DEsolver.BoundsError,
                           DEsolver.differential_evolution, f, bounds)
         bounds = [(-3)]
-        self.assertRaises(DEsolver.BoundsException,
+        self.assertRaises(DEsolver.BoundsError,
                           DEsolver.differential_evolution, f, bounds)
         bounds = [(-3, 3), (3,4,5)]
-        self.assertRaises(DEsolver.BoundsException,
+        self.assertRaises(DEsolver.BoundsError,
                           DEsolver.differential_evolution, f, bounds)
 
     def test_select_samples(self):
