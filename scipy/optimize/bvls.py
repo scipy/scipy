@@ -1,5 +1,5 @@
 from . import _bvls
-from numpy import asarray_chkfinite, zeros, array, isfinite, inf
+from numpy import zeros, array, isfinite, inf
 
 __all__ = ['bounded_lstsq']
 
@@ -57,9 +57,10 @@ def bounded_lstsq(A, b, bounds=()):
     >>> bounds = [(None, None), (None, 4)]
     >>> print optimize.bounded_lstsq(x, y, bounds=bounds)
     """
-    A, b = map(asarray_chkfinite, (A, b))
-    A = A.astype(dtype=float, order='F')
-    b = b.astype(dtype=float, order='F')
+    A = array(A, dtype=float, copy=True, order='F')
+    b = array(b, dtype=float, copy=True, order='F')
+    if not isfinite(A).all() or not isfinite(b).all():
+        raise ValueError("A and b may not contain NaNs or infs")
 
     if A.ndim != 2:
         raise ValueError("A must be 2-dimensional")
