@@ -1227,14 +1227,14 @@ def chebwin(M, at, sym=True):
     if M % 2:
         w = np.real(fft(p))
         n = (M + 1) // 2
-        w = w[:n] / w[0]
+        w = w[:n]
         w = np.concatenate((w[n - 1:0:-1], w))
     else:
         p = p * np.exp(1.j * np.pi / M * np.r_[0:M])
         w = np.real(fft(p))
         n = M // 2 + 1
-        w = w / w[1]
         w = np.concatenate((w[n - 1:0:-1], w[1:n]))
+    w = w / max(w)
     if not sym and not odd:
         w = w[:-1]
     return w
