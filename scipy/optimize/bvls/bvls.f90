@@ -160,7 +160,7 @@ LOOPA: DO
 !   Quit on error flag, or if all coefficients are already in the
 !   solution, .or. if M columns of A have been triangularized.
 !
-   IF  (IERR  /=   0  .or.  IZ1  > IZ2 .or. NSETP >= M) exit LOOPA
+   IF  (IERR.ne.0  .or.  IZ1.gt.IZ2 .or. NSETP.ge.M) exit LOOPA
 
    CALL  SELECT_ANOTHER_COEFF_TO!_SOLVE_FOR
 !
@@ -189,34 +189,34 @@ SUBROUTINE INITIALIZE
 !! INITIALIZE initializes internal data.
 !
    M=size(A,1); N=size(A,2)
-   IF  (M  <=  0 .or. N  <=  0) then
+   IF  (M.le.0 .or. N.le.0) then
       IERR = 1
       RETURN
    END IF
 !
 ! Check array sizes for consistency and with M and N.
 !
-   IF(SIZE(X) < N) THEN
+   IF(SIZE(X).lt.N) THEN
       IERR=2
       RETURN
    END IF
-   IF(SIZE(B) < M) THEN
+   IF(SIZE(B).lt.M) THEN
       IERR=2
       RETURN
    END IF
-   IF(SIZE(BND,1) /= 2) THEN
+   IF(SIZE(BND,1).ne.2) THEN
       IERR=2
       RETURN
    END IF
-   IF(SIZE(BND,2) < N) THEN
+   IF(SIZE(BND,2).lt.N) THEN
       IERR=2
       RETURN
    END IF
-   IF(SIZE(W) < N) THEN
+   IF(SIZE(W).lt.N) THEN
       IERR=2
       RETURN
    END IF
-   IF(SIZE(INDEX) < N) THEN
+   IF(SIZE(INDEX).lt.N) THEN
       IERR=2
       RETURN
    END IF
@@ -244,19 +244,19 @@ IERR = 0
 !
    IZ=IZ1
    DO
-      IF  (IZ  >  IZ2 ) EXIT
+      IF  (IZ.gt.IZ2 ) EXIT
       J=INDEX(IZ)
-      IF  ( BND(1,J)   <=   -huge(ONE)) then
-         IF  (BND(2,J)   >=    huge(ONE)) then
+      IF  ( BND(1,J).le.-huge(ONE)) then
+         IF  (BND(2,J).ge.huge(ONE)) then
             X(J) = ZERO
          else
             X(J) = min(ZERO,BND(2,J))
          END IF
-     ELSE  IF  ( BND(2,J)   >=   huge(ONE)) then
+     ELSE  IF  ( BND(2,J).ge.huge(ONE)) then
         X(J) = max(ZERO,BND(1,J))
      else
         RANGE = BND(2,J) - BND(1,J)
-        IF  ( RANGE   <=   ZERO ) then
+        IF  ( RANGE.le.ZERO ) then
 !
 !   Here X(J) is constrained to a single value.
 !
@@ -266,7 +266,7 @@ IERR = 0
            IZ2=IZ2-1
            X(J)=BND(1,J)
            W(J)=ZERO
-         ELSE  IF  ( RANGE  >  ZERO) then
+         ELSE  IF  ( RANGE.gt.ZERO) then
 !
 !   The following statement sets X(J) to 0 if the constraint interval
 !   includes 0, and otherwise sets X(J) to the endpoint of the
@@ -279,7 +279,7 @@ IERR = 0
          END IF! ( RANGE:.)
    END IF
 
-      IF  ( abs(X(J))   >   ZERO ) then
+      IF  ( abs(X(J)).gt.ZERO ) then
 !
 !   Change B() to reflect a nonzero starting value for X(J).
 !
@@ -321,8 +321,8 @@ SUBROUTINE  SELECT_ANOTHER_COEFF_TO!_SOLVE_FOR
 !   Set FREE = true if X(J) is not at either end-point of its
 !   constraint region.
 !
-     FREE1 = X(J)   >   BND(1,J)
-     FREE2 = X(J)   <   BND(2,J)
+     FREE1 = X(J).gt.BND(1,J)
+     FREE2 = X(J).lt.BND(2,J)
      FREE = FREE1 .and. FREE2
 
      IF  ( FREE ) then
@@ -335,10 +335,10 @@ SUBROUTINE  SELECT_ANOTHER_COEFF_TO!_SOLVE_FOR
 !
 !   Can X(J) move in the direction indicated by the sign of W(J)?
 !
-          IF  ( W(J)   <  ZERO ) then
+          IF  ( W(J).lt.ZERO ) then
              IF  ( FREE1 ) &
                 CALL TEST_COEF_J_FOR_DIAG!_ELT_AND_DIRECTION_OF_CHANGE
-          ELSE  IF  ( W(J)   >  ZERO ) then
+          ELSE  IF  ( W(J).gt.ZERO ) then
              IF  ( FREE2 ) &
                 CALL TEST_COEF_J_FOR_DIAG!_ELT_AND_DIRECTION_OF_CHANGE
           END IF
@@ -360,7 +360,7 @@ SUBROUTINE TEST_COEF_J_FOR_DIAG!_ELT_AND_DIRECTION_OF_CHANGE
    ASAVE=A(NPP1,J)
    call HTC (NPP1, A(1:M,J), UP)
    UNORM = NRM2(A(1:NSETP,J))
-   IF  ( abs(A(NPP1,J)) > EPS * UNORM) then
+   IF  ( abs(A(NPP1,J)).gt.EPS * UNORM) then
 !
 !   Column J is sufficiently independent.  Copy b into Z, update Z.
 !
@@ -369,13 +369,13 @@ SUBROUTINE TEST_COEF_J_FOR_DIAG!_ELT_AND_DIRECTION_OF_CHANGE
 ! Compute product of transormation and updated right-hand side.
 !
       NORM=A(NPP1,J); A(NPP1,J)=UP
-      IF(ABS(NORM) > ZERO) THEN
+      IF(ABS(NORM).gt.ZERO) THEN
          SM=DOT_PRODUCT(A(NPP1:M,J)/NORM, Z(NPP1:M))/UP
          Z(NPP1:M)=Z(NPP1:M)+SM*A(NPP1:M,J)
          A(NPP1,J)=NORM
       END IF
 
-      IF  (abs(X(J)) >  ZERO) Z(1:NPP1)=Z(1:NPP1)+A(1:NPP1,J)*X(J)
+      IF  (abs(X(J)).gt.ZERO) Z(1:NPP1)=Z(1:NPP1)+A(1:NPP1,J)*X(J)
 !
 !   Adjust Z() as though X(J) had been reset to zero.
 !
@@ -388,8 +388,8 @@ SUBROUTINE TEST_COEF_J_FOR_DIAG!_ELT_AND_DIRECTION_OF_CHANGE
 !   the expected direction indicated by the sign of W(J).
 !
          ZTEST=Z(NPP1)/A(NPP1,J)
-         FIND = ( W(J)  <  ZERO  .and.  ZTEST   <  X(J) )  .or. &
-         ( W(J)  >  ZERO  .and.  ZTEST  >  X(J) )
+         FIND = ( W(J).lt.ZERO  .and.  ZTEST.lt.X(J) )  .or. &
+         ( W(J).gt.ZERO  .and.  ZTEST.gt.X(J) )
       END IF
    END IF
 !
@@ -425,7 +425,7 @@ SUBROUTINE MOVE_J_FROM_SET_Z_TO_SET_P
 !   The following loop can be null or not required.
 !
    NORM=A(NSETP,J); A(NSETP,J)=UP
-   IF(ABS(NORM) > ZERO) THEN
+   IF(ABS(NORM).gt.ZERO) THEN
       DO JZ=IZ1,IZ2
          JJ=INDEX(JZ)
          SM=DOT_PRODUCT(A(NSETP:M,J)/NORM, A(NSETP:M,JJ))/UP
@@ -445,7 +445,7 @@ SUBROUTINE MOVE_J_FROM_SET_Z_TO_SET_P
 !   Solve the triangular system.  Store this solution temporarily in Z().
 !
    DO I = NSETP, 1, -1
-      IF  (I  /=  NSETP) Z(1:I)=Z(1:I)-A(1:I,II)*Z(I+1)
+      IF  (I.ne.NSETP) Z(1:I)=Z(1:I)-A(1:I,II)*Z(I+1)
       II=INDEX(I)
       Z(I)=Z(I)/A(I,II)
    END DO
@@ -462,7 +462,7 @@ SUBROUTINE TEST_SET_P_AGAINST_CONSTRAINTS
 !   The solution obtained by solving the current set P is in the array Z().
 !
       ITER=ITER+1
-      IF  (ITER   >  ITMAX) then
+      IF  (ITER.gt.ITMAX) then
          IERR = 4
          exit LOOPB
       END IF
@@ -494,7 +494,7 @@ SUBROUTINE TEST_SET_P_AGAINST_CONSTRAINTS
 !
          CALL  MOVE_COEF_I_FROM_SET_P_TO_SET_Z
 
-         IF  (NSETP  <=  0) exit LOOPB
+         IF  (NSETP.le.0) exit LOOPB
 !
 !   See if the remaining coefficients in set P are feasible.  They should
 !   be because of the way ALPHA was determined.  If any are infeasible
@@ -504,15 +504,15 @@ SUBROUTINE TEST_SET_P_AGAINST_CONSTRAINTS
            IBOUND = 0
            DO JJ=1,NSETP
               I=INDEX(JJ)
-              IF  ( X(I)  <=  BND(1,I)) then
+              IF  ( X(I).le.BND(1,I)) then
                   IBOUND=1
                   EXIT
-              ELSE IF ( X(I)  >=  BND(2,I)) then
+              ELSE IF ( X(I).ge.BND(2,I)) then
                   IBOUND=2
                   EXIT
               END IF
             END DO
-            IF  (IBOUND   <=   0)   EXIT
+            IF  (IBOUND.le.0)   EXIT
       END DO
 !
 !   Copy B( ) into Z( ).  Then solve again and loop back.
@@ -520,7 +520,7 @@ SUBROUTINE TEST_SET_P_AGAINST_CONSTRAINTS
       Z(1:M)=B(1:M)
 
       DO I = NSETP, 1, -1
-         IF  (I  /=  NSETP) Z(1:I)=Z(1:I)-A(1:I,II)*Z(I+1)
+         IF  (I.ne.NSETP) Z(1:I)=Z(1:I)-A(1:I,II)*Z(I+1)
          II=INDEX(I)
          Z(I)=Z(I)/A(I,II)
       END DO
@@ -550,12 +550,12 @@ SUBROUTINE  SEE_IF_ALL_CONSTRAINED_COEFFS!_ARE_FEASIBLE
    ALPHA=TWO
    DO IP=1,NSETP
       L=INDEX(IP)
-      IF  (Z(IP)  <=  BND(1,L)) then
+      IF  (Z(IP).le.BND(1,L)) then
 !
 !   Z(IP) HITS LOWER BOUND
 !
          LBOUND=1
-      ELSE  IF  (Z(IP)  >=  BND(2,L)) then
+      ELSE  IF  (Z(IP).ge.BND(2,L)) then
 !
 !   Z(IP) HITS UPPER BOUND
 !
@@ -564,16 +564,16 @@ SUBROUTINE  SEE_IF_ALL_CONSTRAINED_COEFFS!_ARE_FEASIBLE
          LBOUND = 0
       END IF
 
-      IF  ( LBOUND   /=   0 ) then
+      IF  ( LBOUND.ne.0 ) then
          T=(BND(LBOUND,L)-X(L))/(Z(IP)-X(L))
-         IF  (ALPHA   >  T) then
+         IF  (ALPHA.gt.T) then
            ALPHA=T
            JJ=IP
            IBOUND=LBOUND
          END IF! ( LBOUND )
       END IF! ( ALPHA   >  T )
    END DO
-HITBND = abs(ALPHA   -  TWO) > ZERO
+HITBND = abs(ALPHA   -  TWO).gt.ZERO
 END SUBROUTINE!( SEE IF ALL CONSTRAINED COEFFS ARE FEASIBLE )
 
 SUBROUTINE MOVE_COEF_I_FROM_SET_P_TO_SET_Z
@@ -583,7 +583,7 @@ SUBROUTINE MOVE_COEF_I_FROM_SET_P_TO_SET_Z
 !! MOVE_COEF_I_FROM_SET_P_TO_SET_Z
 !
    X(I)=BND(IBOUND,I)
-   IF  (abs(X(I))   >  ZERO .and.  JJ > 0) B(1:JJ)=B(1:JJ)-A(1:JJ,I)*X(I)
+   IF  (abs(X(I)).gt.ZERO .and.  JJ.gt.0) B(1:JJ)=B(1:JJ)-A(1:JJ,I)*X(I)
 !
 !   The following loop can be null.
 !
@@ -616,12 +616,12 @@ SUBROUTINE TERMINATION
 !
 !! TERMINATION
 !
-   IF  (IERR   <=   0) then
+   IF  (IERR.le.0) then
 !
 !   Compute the norm of the residual vector.
 !
       SM=ZERO
-      IF  (NPP1   <=   M) then
+      IF  (NPP1.le.M) then
          SM=NRM2(B(NPP1:M))
       else
          W(1:N)=ZERO
@@ -647,7 +647,7 @@ SUBROUTINE ROTG(SA,SB,C,S)
       RETURN
   END IF
    R = SCALE*SQRT((SA/SCALE)**2 + (SB/SCALE)**2)
-   IF(ROE < ZERO)R=-R
+   IF(ROE.lt.ZERO)R=-R
    C = SA/R
    S = SB/R
    SA = R
@@ -665,9 +665,9 @@ REAL(KIND=8) FUNCTION NRM2 (X)
    REAL(KIND=8) ABSXI, X(:), NORM, SCALE, SSQ
    INTEGER N, IX
    N=SIZE(X)
-   IF( N < 1)THEN
+   IF( N.lt.1)THEN
       NORM  = ZERO
-   ELSE IF( N == 1 )THEN
+   ELSE IF( N.eq.1 )THEN
       NORM  = ABS( X( 1 ) )
    ELSE
       SCALE = ZERO
@@ -675,8 +675,8 @@ REAL(KIND=8) FUNCTION NRM2 (X)
 
       DO IX = 1, N
          ABSXI = ABS( X( IX ) )
-          IF(ABSXI > ZERO )THEN
-             IF( SCALE < ABSXI )THEN
+          IF(ABSXI.gt.ZERO )THEN
+             IF( SCALE.lt.ABSXI )THEN
                 SSQ   = ONE + SSQ*( SCALE/ABSXI )**2
                 SCALE = ABSXI
              ELSE
@@ -701,7 +701,7 @@ SUBROUTINE HTC (P, U, UP)
    REAL(KIND=8) U(:)
    REAL(KIND=8) UP, VNORM
    VNORM=NRM2(U(P:SIZE(U)))
-   IF(U(P) > ZERO) VNORM=-VNORM
+   IF(U(P).gt.ZERO) VNORM=-VNORM
    UP=U(P)-VNORM
    U(P)=VNORM
 END SUBROUTINE ! HTC
