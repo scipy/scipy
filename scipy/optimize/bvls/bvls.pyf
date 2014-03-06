@@ -3,19 +3,21 @@
 
 python module _bvls ! in 
     interface  ! in :_bvls
-        subroutine bvls(a,b,bnd,x,rnorm,nsetp,w,index_bn,ierr) ! in :_bvls:bvls.f90
-            real(kind=8) dimension(:,:),intent(inout) :: a
-            real(kind=8) dimension(:),intent(inout) :: b
-            real(kind=8) dimension(:,:),intent(in) :: bnd
-            real(kind=8) dimension(:),intent(inout) :: x
+        subroutine bvls(a,b,m,n,bnd,x,rnorm,nsetp,w,index_bn,ierr) ! in :_bvls:bvls.f90
+            real(kind=8) dimension(m,n),intent(inout) :: a
+            real(kind=8) dimension(m),depend(m),intent(inout) :: b
+            integer, optional,check(shape(a,0)==m),depend(a),intent(hide) :: m=shape(a,0)
+            integer, optional,check(shape(a,1)==n),depend(a),intent(hide) :: n=shape(a,1)
+            real(kind=8) dimension(2,n),depend(n),intent(in) :: bnd
+            real(kind=8) dimension(n),depend(n),intent(inout) :: x
             real(kind=8),intent(out) :: rnorm
             integer,intent(out) :: nsetp
-            real(kind=8) dimension(:),intent(in) :: w
-            integer dimension(:),intent(in) :: index_bn
+            real(kind=8) dimension(n),depend(n),intent(in) :: w
+            integer dimension(n),depend(n),intent(in) :: index_bn
             integer,intent(out) :: ierr
         end subroutine bvls
     end interface 
-end python module bvls
+end python module _bvls
 
 ! This file was auto-generated with f2py (version:2).
 ! See http://cens.ioc.ee/projects/f2py2e/
