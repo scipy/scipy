@@ -595,6 +595,8 @@ class netcdf_file(object):
                     mm = mmap(self.fp.fileno(), begin_+a_size, access=ACCESS_READ)
                     data = ndarray.__new__(ndarray, shape, dtype=dtype_,
                                            buffer=mm, offset=begin_, order=0).copy()
+                    if self.mode is 'r':
+                        data.flags.writeable = False
                     mm.close()
                 else:
                     pos = self.fp.tell()
@@ -618,6 +620,8 @@ class netcdf_file(object):
                 mm = mmap(self.fp.fileno(), begin+self._recs*self._recsize, access=ACCESS_READ)
                 rec_array = ndarray.__new__(ndarray, (self._recs,), dtype=dtypes,
                                             buffer=mm, offset=begin, order=0).copy()
+                if self.mode is 'r':
+                    rec_array.flags.writeable = False
                 mm.close()
             else:
                 pos = self.fp.tell()
