@@ -40,7 +40,7 @@ class TestDifferentialEvolutionSolver(unittest.TestCase):
         result = _differentialevolution.differential_evolution(
             rosen, bounds, callback=callback)
             
-        assert result.message == 'Minimization terminated by callback function'
+        assert result.message == 'callback function requested stop early by returning True'
 
     def test_bounds_checking(self):
         '''

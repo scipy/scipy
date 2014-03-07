@@ -185,7 +185,7 @@ class BenchSmoothUnbounded(TestCase):
     #    print "checking gradient", scipy.optimize.check_grad(s.get_energy, s.get_gradient, np.random.uniform(-2,2,3*4))
         natoms = 4
         b = _BenchOptimizers("%d atom Lennard Jones potential" % (natoms),
-                             fun=s.get_energy, der=s.get_gradient, hess=None)
+                             fun=s.fun, der=s.der, hess=None)
         for i in range(10):
             b.bench_run(np.random.uniform(-2,2,natoms*3))
         b.print_results()

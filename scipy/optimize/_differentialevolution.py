@@ -15,7 +15,8 @@ _status_message = {'success': 'Optimization terminated successfully.',
                               'exceeded.',
                    'pr_loss': 'Desired error not necessarily achieved due '
                               'to precision loss.',
-                   'terminated': 'Minimization terminated by callback function'}
+                   'terminated': 'callback function requested stop early by '
+                              'returning True'}
 
 
 class BoundsError(Exception):
@@ -26,10 +27,26 @@ class BoundsError(Exception):
     def __str__(self):
         return repr(self.message)
 
+def bounds_to_limits(bounds):
+    """
+        convert tuple of lower and upper bounds to limits
+        [(low_0, high_0), ..., (low_n, high_n] 
+            -> [[low_0, ..., low_n], [high_0, ..., high_n]]
+    """
+    return np.array(bounds, float).T
+
+def limits_to_bounds(limits):
+    """
+        convert limits to tuple of lower and upper bounds
+        [[low_0, ..., low_n], [high_0, ..., high_n]] -->
+            [(low_0, high_0), ..., (low_n, high_n] 
+    """
+    return [(limits[0, idx], limits[1, idx])
+                   for idx in range(np.size(limits, 1))]
 
 def differential_evolution(func, bounds, args=(), DEstrategy=None,
-                           maxiter=None, popsize=10, tol=0.03,
-                           mutation=0.7, recombination=0.5, seed=None,
+                           maxiter=None, popsize=15, tol=0.01,
+                           mutation=0.8, recombination=0.8, seed=None,
                            callback=None, disp=False, polish=False, **options):
     """
     Find the global minimum of a multivariate function using the differential
@@ -134,7 +151,7 @@ def differential_evolution(func, bounds, args=(), DEstrategy=None,
 
     # assemble the bounds into the limits
     try:
-        limits = np.array(bounds, float).T
+        limits = bounds_to_limits(bounds)
         assert np.size(limits, 0) == 2
     except (ValueError, AssertionError) as e:
         # it is required to have (min, max) pairs for each value in x
@@ -209,8 +226,8 @@ class DifferentialEvolutionSolver(object):
     """
 
     def __init__(self, func, limits, args=(),
-                 DEstrategy=None, maxiter=None, popsize=10,
-                 tol=0.02, mutation=0.7, recombination=0.5, seed=None,
+                 DEstrategy=None, maxiter=None, popsize=15,
+                 tol=0.01, mutation=0.8, recombination=0.8, seed=None,
                  maxfun=None, callback=None, disp=False, polish=False,
                  **options):
 
@@ -243,8 +260,7 @@ class DifferentialEvolutionSolver(object):
                               ' containing real valued '
                               '(min, max) pairs for each value in x')
 
-        self.bounds = [(self.limits[0, idx], self.limits[1, idx])
-                       for idx in range(np.size(self.limits, 1))]
+        self.bounds = limits_to_bounds(self.limits)
 
         self.nfev = 0
         self.nit = 0
@@ -378,7 +394,7 @@ class DifferentialEvolutionSolver(object):
             self.nfev += result.nfev
             DE_result.nfev = self.nfev
 
-            if result.fun < DE_result.fun+100:
+            if result.fun < DE_result.fun:
                 DE_result.fun = result.fun
                 DE_result.x = result.x
 #                 DE_result.hess_inv = result.hess_inv
@@ -652,4 +668,4 @@ if __name__ == "__main__":
                                     recomb=0.9,
                                     polish=True,
                                     disp=True)
-    print result
+    print (result)
