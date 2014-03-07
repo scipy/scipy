@@ -33,7 +33,7 @@ __all__ = ['netcdf_file']
 
 
 from operator import mul
-from mmap import mmap, ACCESS_READ
+import mmap as mm
 
 import numpy as np
 from numpy.compat import asbytes, asstr
@@ -204,6 +204,10 @@ class netcdf_file(object):
             raise ValueError("Mode must be either 'r' or 'w'.")
         self.mode = mode
 
+        self._mm = None
+        if self.use_mmap and self.mode is 'r':
+            self._mm = mm.mmap(self.fp.fileno(), 0, access=mm.ACCESS_READ)
+
         self.dimensions = {}
         self.variables = {}
 
@@ -231,6 +235,8 @@ class netcdf_file(object):
             try:
                 self.flush()
             finally:
+                if self._mm is not None:
+                    self._mm.close()
                 self.fp.close()
     __del__ = close
 
@@ -592,17 +598,17 @@ class netcdf_file(object):
                 # Calculate size to avoid problems with vsize (above)
                 a_size = reduce(mul, shape, 1) * size
                 if self.use_mmap:
-                    mm = mmap(self.fp.fileno(), begin_+a_size, access=ACCESS_READ)
-                    data = ndarray.__new__(ndarray, shape, dtype=dtype_,
-                                           buffer=mm, offset=begin_, order=0).copy()
+                    data = fromstring(self._mm[begin_:begin_+a_size], dtype=dtype_)
+                    data.shape = shape
                     if self.mode is 'r':
                         data.flags.writeable = False
-                    mm.close()
                 else:
                     pos = self.fp.tell()
                     self.fp.seek(begin_)
                     data = fromstring(self.fp.read(a_size), dtype=dtype_)
                     data.shape = shape
+                    if self.mode is 'r':
+                        data.flags.writeable = False
                     self.fp.seek(pos)
 
             # Add variable.
@@ -617,22 +623,22 @@ class netcdf_file(object):
 
             # Build rec array.
             if self.use_mmap:
-                mm = mmap(self.fp.fileno(), begin+self._recs*self._recsize, access=ACCESS_READ)
-                rec_array = ndarray.__new__(ndarray, (self._recs,), dtype=dtypes,
-                                            buffer=mm, offset=begin, order=0).copy()
+                rec_array = fromstring(self._mm[begin:begin+self._recs*self._recsize],
+                                       dtype=dtypes)
+                rec_array.shape = (self._recs,)
                 if self.mode is 'r':
                     rec_array.flags.writeable = False
-                mm.close()
             else:
                 pos = self.fp.tell()
                 self.fp.seek(begin)
                 rec_array = fromstring(self.fp.read(self._recs*self._recsize), dtype=dtypes)
                 rec_array.shape = (self._recs,)
+                if self.mode is 'r':
+                    rec_array.flags.writeable = False
                 self.fp.seek(pos)
 
             for var in rec_vars:
                 self.variables[var].__dict__['data'] = rec_array[var]
-
 
     def _read_var(self):
         name = asstr(self._unpack_string())
