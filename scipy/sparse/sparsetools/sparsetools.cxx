@@ -4,8 +4,8 @@
  * Python module wrapping the sparsetools C++ routines.
  *
  * Each C++ routine is templated vs. an integer (I) and a data (T) parameter.
- * The `generate_sparsetools.py` script generates a `sparsetools_gen.h` header
- * that contains thunk functions with a datatype-based switch statement calling
+ * The `generate_sparsetools.py` script generates a `*_impl.h` headers
+ * that contain thunk functions with a datatype-based switch statement calling
  * each templated instantiation.
  *
  * `generate_sparsetools.py` also generates a PyMethodDef list of Python
