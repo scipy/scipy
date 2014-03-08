@@ -170,7 +170,11 @@ scipy/sparse/linalg/isolve/iterative/STOPTEST2.f
 scipy/sparse/linalg/isolve/iterative/_iterative.pyf
 scipy/sparse/linalg/isolve/iterative/_iterativemodule.c
 scipy/sparse/linalg/isolve/iterative/getbreak.f
-scipy/sparse/sparsetools/sparsetools_gen.h
+scipy/sparse/sparsetools/bsr_impl.h
+scipy/sparse/sparsetools/csc_impl.h
+scipy/sparse/sparsetools/csr_impl.h
+scipy/sparse/sparsetools/other_impl.h
+scipy/sparse/sparsetools/sparsetools_impl.h
 scipy/spatial/ckdtree.c
 scipy/spatial/qhull.c
 scipy/special/_logit.c

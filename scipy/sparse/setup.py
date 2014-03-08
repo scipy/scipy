@@ -29,13 +29,22 @@ def configuration(parent_package='',top_path=None):
                          '--no-force'])
         return []
 
-    depends = [os.path.join('sparsetools', 'sparsetools_gen.h')]
+    depends = [os.path.join('sparsetools', 'sparsetools_impl.h'),
+               os.path.join('sparsetools', 'bsr_impl.h'),
+               os.path.join('sparsetools', 'csc_impl.h'),
+               os.path.join('sparsetools', 'csr_impl.h'),
+               os.path.join('sparsetools', 'other_impl.h'),
+               ]
     depends += glob.glob('sparsetools/*.h')
     config.add_extension('sparsetools',
                          define_macros=[('__STDC_FORMAT_MACROS', 1)],
                          depends=depends,
                          include_dirs=['sparsetools'],
                          sources=[os.path.join('sparsetools', 'sparsetools.cxx'),
+                                  os.path.join('sparsetools', 'csr.cxx'),
+                                  os.path.join('sparsetools', 'csc.cxx'),
+                                  os.path.join('sparsetools', 'bsr.cxx'),
+                                  os.path.join('sparsetools', 'other.cxx'),
                                   get_sparsetools_sources]
                          )
 
