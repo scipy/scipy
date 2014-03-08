@@ -5,9 +5,9 @@ from bento.commands import hooks
 
 @hooks.pre_build
 def pre_build(context):
-    subprocess.call([sys.executable,
-                     os.path.join(os.path.dirname(__file__),
-                                  'generate_sparsetools.py'),
-                     '--no-force'])
+    subprocess.check_call([sys.executable,
+                           os.path.join(os.path.dirname(__file__),
+                                        'generate_sparsetools.py'),
+                           '--no-force'])
     context.tweak_extension("sparsetools", features="cxx cxxshlib pyext bento",
                             defines=('__STDC_FORMAT_MACROS',))

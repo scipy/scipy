@@ -22,10 +22,10 @@ def configuration(parent_package='',top_path=None):
 
     def get_sparsetools_sources(ext, build_dir):
         # Defer generation of source files
-        subprocess.call([sys.executable,
-                         os.path.join(os.path.dirname(__file__),
-                                      'generate_sparsetools.py'),
-                         '--no-force'])
+        subprocess.check_call([sys.executable,
+                               os.path.join(os.path.dirname(__file__),
+                                            'generate_sparsetools.py'),
+                               '--no-force'])
         return []
 
     depends = ['sparsetools_impl.h',
