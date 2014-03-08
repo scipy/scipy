@@ -375,7 +375,7 @@ def main():
                            unit_name + '_impl.h')
         if newer(__file__, dst) or options.force:
             print("[generate_sparsetools] generating %r" % (dst,))
-            with open(dst, 'wb') as f:
+            with open(dst, 'w') as f:
                 write_autogen_blurb(f)
                 f.write(getter_code)
                 for thunk in thunks:
@@ -405,7 +405,7 @@ def main():
 
     if newer(__file__, dst) or options.force:
         print("[generate_sparsetools] generating %r" % (dst,))
-        with open(dst, 'wb') as f:
+        with open(dst, 'w') as f:
             write_autogen_blurb(f)
             f.write(method_defs)
             f.write(method_struct)
