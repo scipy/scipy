@@ -196,8 +196,8 @@ class _BenchOptimizers(object):
 class BenchGlobalOptimizers(TestCase):
     """Benchmark the global optimizers"""
     
-    def __init__(self):
-        pass
+#     def __init__(self, extra_argv):
+#         pass
         
     def bench_all(self):
         functions = ['Ackley', 'Levi', 'HolderTable', 'EggHolder',

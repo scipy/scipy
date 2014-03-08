@@ -145,6 +145,8 @@ HolderTable, Ackey and Levi have many competing local minima and are suited
 for global minimizers such as basinhopping or differential_evolution.
 (http://en.wikipedia.org/wiki/Test_functions_for_optimization)
 
+See also http://mpra.ub.uni-muenchen.de/2718/1/MPRA_paper_2718.pdf
+
 """
 
 
@@ -195,7 +197,7 @@ class Ackley(object):
     xmax = np.array([5, 5])
 
     def fun(self, x):
-        E = -20. * exp(-0.2 * sqrt(x[0] ** 2 + x[1] ** 2)) - \
+        E = -20. * exp(-0.2 * sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))) - \
             exp(0.5 * (cos(2. * pi * x[0]) + cos(2. * pi * x[1]))) + 20. + np.e
         return E
 
