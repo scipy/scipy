@@ -19,11 +19,12 @@ import optparse
 import os
 from distutils.dep_util import newer
 
+#
 # List of all routines and their argument types
-ROUTINES = """
 #
+
 # bsr.h
-#
+BSR_ROUTINES = """
 bsr_diagonal        v iiiiIIT*T
 bsr_scale_rows      v iiiiII*TT
 bsr_scale_columns   v iiiiII*TT
@@ -43,19 +44,10 @@ bsr_lt_bsr          v iiiiIITIIT*I*I*B
 bsr_gt_bsr          v iiiiIITIIT*I*I*B
 bsr_le_bsr          v iiiiIITIIT*I*I*B
 bsr_ge_bsr          v iiiiIITIIT*I*I*B
+"""
 
-#
-# coo.h
-#
-coo_tocsr           v iiiIIT*I*I*T
-coo_tocsc           v iiiIIT*I*I*T
-coo_todense         v iiiIIT*Ti
-coo_matvec          v iIITT*T
-coo_count_diagonals i iII
-
-#
 # csc.h
-#
+CSC_ROUTINES = """
 csc_diagonal        v iiIIT*T
 csc_tocsr           v iiIIT*I*I*T
 csc_matmat_pass1    v iiIIII*I
@@ -73,10 +65,10 @@ csc_lt_csc          v iiIITIIT*I*I*B
 csc_gt_csc          v iiIITIIT*I*I*B
 csc_le_csc          v iiIITIIT*I*I*B
 csc_ge_csc          v iiIITIIT*I*I*B
+"""
 
-#
 # csr.h
-#
+CSR_ROUTINES = """
 csr_matmat_pass1    v iiIIII*I
 csr_matmat_pass2    v iiIITIIT*I*I*T
 csr_diagonal        v iiIIT*T
@@ -108,18 +100,25 @@ expandptr           v iI*I
 test_throw_error    i
 csr_has_sorted_indices    i iII
 csr_has_canonical_format  i iII
-
-#
-# dia.h
-#
-dia_matvec          v iiiiITT*T
-
-#
-# csgraph.h
-#
-cs_graph_components i iII*I
-
 """
+
+# coo.h, dia.h, csgraph.h
+OTHER_ROUTINES = """
+coo_tocsr           v iiiIIT*I*I*T
+coo_tocsc           v iiiIIT*I*I*T
+coo_todense         v iiiIIT*Ti
+coo_matvec          v iIITT*T
+coo_count_diagonals i iII
+dia_matvec          v iiiiITT*T
+cs_graph_components i iII*I
+"""
+
+COMPILATION_UNITS = [
+    ('bsr', BSR_ROUTINES),
+    ('csr', CSR_ROUTINES),
+    ('csc', CSC_ROUTINES),
+    ('other', OTHER_ROUTINES),
+]
 
 # List of the supported index typenums and the corresponding C++ types
 I_TYPES = [
@@ -156,7 +155,8 @@ static Py_ssize_t %(name)s_thunk(int I_typenum, int T_typenum, void **a)
 """
 
 METHOD_TEMPLATE = """
-static PyObject *%(name)s_method(PyObject *self, PyObject *args)
+NPY_VISIBILITY_HIDDEN PyObject *
+%(name)s_method(PyObject *self, PyObject *args)
 {
     return call_thunk('%(ret_spec)s', "%(arg_spec)s", %(name)s_thunk, args);
 }
@@ -276,38 +276,61 @@ def main(force=True):
                  dest="force", default=True)
     options, args = p.parse_args()
 
-    thunks = []
-    methods = []
     names = []
 
     i_types, it_types, getter_code = get_thunk_type_set()
 
-    # Generate thunks and methods for all routines
-    for line in ROUTINES.splitlines():
-        line = line.strip()
-        if not line or line.startswith('#'):
-            continue
+    for unit_name, routines in COMPILATION_UNITS:
+        thunks = []
+        methods = []
 
-        try:
-            name, args = line.split(None, 1)
-        except ValueError:
-            raise ValueError("Malformed line: %r" % (line,))
+        # Generate thunks and methods for all routines
+        for line in routines.splitlines():
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
 
-        args = "".join(args.split())
-        if 't' in args or 'T' in args:
-            thunk, method = parse_routine(name, args, it_types)
+            try:
+                name, args = line.split(None, 1)
+            except ValueError:
+                raise ValueError("Malformed line: %r" % (line,))
+
+            args = "".join(args.split())
+            if 't' in args or 'T' in args:
+                thunk, method = parse_routine(name, args, it_types)
+            else:
+                thunk, method = parse_routine(name, args, i_types)
+
+            if name in names:
+                raise ValueError("Duplicate routine %r" % (name,))
+
+            names.append(name)
+            thunks.append(thunk)
+            methods.append(method)
+
+
+        # Produce output
+        dst = os.path.join(os.path.dirname(__file__),
+                           'sparsetools',
+                           unit_name + '_impl.h')
+        if newer(__file__, dst) or options.force:
+            print("[generate_sparsetools] generating %r" % (dst,))
+            with open(dst, 'wb') as f:
+                write_autogen_blurb(f)
+                f.write(getter_code)
+                for thunk in thunks:
+                    f.write(thunk)
+                for method in methods:
+                    f.write(method)
         else:
-            thunk, method = parse_routine(name, args, i_types)
-
-        if name in names:
-            raise ValueError("Duplicate routine %r" % (name,))
-
-        names.append(name)
-        thunks.append(thunk)
-        methods.append(method)
+            print("[generate_sparsetools] output up-to-date")
 
     # Generate method struct
-    method_struct = """static struct PyMethodDef sparsetools_methods[] = {"""
+    method_defs = ""
+    for name in names:
+        method_defs += "NPY_VISIBILITY_HIDDEN PyObject *%s_method(PyObject *, PyObject *);\n" % (name,)
+
+    method_struct = """\nstatic struct PyMethodDef sparsetools_methods[] = {"""
     for name in names:
         method_struct += """
         {"%(name)s", (PyCFunction)%(name)s_method, METH_VARARGS, NULL},""" % dict(name=name)
@@ -318,24 +341,24 @@ def main(force=True):
     # Produce output (if necessary)
     dst = os.path.join(os.path.dirname(__file__),
                        'sparsetools',
-                       'sparsetools_gen.h')
+                       'sparsetools_impl.h')
 
     if newer(__file__, dst) or options.force:
         print("[generate_sparsetools] generating %r" % (dst,))
         with open(dst, 'wb') as f:
-            f.write("""\
+            write_autogen_blurb(f)
+            f.write(method_defs)
+            f.write(method_struct)
+    else:
+        print("[generate_sparsetools] output up-to-date")
+
+
+def write_autogen_blurb(stream):
+    stream.write("""\
 /* This file is autogenerated by generate_sparsetools.py
  * Do not edit manually or check into VCS.
  */
 """)
-            f.write(getter_code)
-            for thunk in thunks:
-                f.write(thunk)
-            for method in methods:
-                f.write(method)
-            f.write(method_struct)
-    else:
-        print("[generate_sparsetools] output up-to-date")
 
 
 if __name__ == "__main__":

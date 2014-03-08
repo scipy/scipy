@@ -22,6 +22,8 @@
  * listed below in the call_spec function.
  */
 
+#define PY_ARRAY_UNIQUE_SYMBOL _scipy_sparse_sparsetools_ARRAY_API
+
 #include <string>
 #include <stdexcept>
 #include <vector>
@@ -30,19 +32,9 @@
 #include <Python.h>
 #include "numpy/ndarrayobject.h"
 
+#include "sparsetools.h"
+
 #define MAX_ARGS 16
-
-#include "bool_ops.h"
-#include "complex_ops.h"
-#include "bsr.h"
-#include "coo.h"
-#include "csr.h"
-#include "csc.h"
-#include "dia.h"
-#include "csgraph.h"
-
-
-typedef Py_ssize_t thunk_t(int I_typenum, int T_typenum, void **args);
 
 static const int supported_I_typenums[] = {NPY_INT32, NPY_INT64};
 static const int n_supported_I_typenums = sizeof(supported_I_typenums) / sizeof(int);
@@ -97,7 +89,8 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output);
  *     The Python return value
  *
  */
-static PyObject *call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
+NPY_VISIBILITY_HIDDEN PyObject *
+call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
 {
     void *arg_list[MAX_ARGS];
     PyObject *arg_arrays[MAX_ARGS];
@@ -531,21 +524,12 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output)
 
 
 /*
- * Include the wrapper routines
- */
-
-extern "C" {
-
-#include "sparsetools_gen.h"
-
-}
-
-
-/*
  * Python module initialization
  */
 
 extern "C" {
+
+#include "sparsetools_impl.h"
 
 #if PY_VERSION_HEX >= 0x03000000
 static struct PyModuleDef moduledef = {

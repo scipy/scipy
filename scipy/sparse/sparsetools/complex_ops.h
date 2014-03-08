@@ -160,7 +160,7 @@ class complex_wrapper : public npy_type {
 };
 
 template<class x, class y> 
-std::ostream& operator<<(std::ostream& out, const complex_wrapper<x,y>& cw){
+inline std::ostream& operator<<(std::ostream& out, const complex_wrapper<x,y>& cw){
     return out << cw.real << " " << cw.imag;
 }
 

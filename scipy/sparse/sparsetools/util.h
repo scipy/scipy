@@ -22,7 +22,7 @@ struct safe_divides {
 };
 
 #define OVERRIDE_safe_divides(typ) \
-    template<> typ safe_divides<typ>::operator()(const typ& x, const typ& y) const { return x/y; }
+    template<> inline typ safe_divides<typ>::operator()(const typ& x, const typ& y) const { return x/y; }
 
 OVERRIDE_safe_divides(float)
 OVERRIDE_safe_divides(double)

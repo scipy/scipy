@@ -10,4 +10,8 @@ Library:
         Sources: _csparsetools.c
     Extension: sparsetools
         Sources:
-            sparsetools/sparsetools.cxx
+            sparsetools/sparsetools.cxx,
+            sparsetools/bsr.cxx,
+            sparsetools/csc.cxx,
+            sparsetools/csr.cxx,
+            sparsetools/other.cxx
