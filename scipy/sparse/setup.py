@@ -3,7 +3,6 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
-import glob
 import subprocess
 
 def configuration(parent_package='',top_path=None):
@@ -29,13 +28,24 @@ def configuration(parent_package='',top_path=None):
                          '--no-force'])
         return []
 
-    depends = [os.path.join('sparsetools', 'sparsetools_impl.h'),
-               os.path.join('sparsetools', 'bsr_impl.h'),
-               os.path.join('sparsetools', 'csc_impl.h'),
-               os.path.join('sparsetools', 'csr_impl.h'),
-               os.path.join('sparsetools', 'other_impl.h'),
-               ]
-    depends += glob.glob('sparsetools/*.h')
+    depends = ['sparsetools_impl.h',
+               'bsr_impl.h',
+               'csc_impl.h',
+               'csr_impl.h',
+               'other_impl.h',
+               'bool_ops.h',
+               'bsr.h',
+               'complex_ops.h',
+               'coo.h',
+               'csc.h',
+               'csgraph.h',
+               'csr.h',
+               'dense.h',
+               'dia.h',
+               'py3k.h',
+               'sparsetools.h',
+               'util.h']
+    depends = [os.path.join('sparsetools', hdr) for hdr in depends],
     config.add_extension('sparsetools',
                          define_macros=[('__STDC_FORMAT_MACROS', 1)],
                          depends=depends,
