@@ -1,12 +1,13 @@
 Recurse:
     linalg,
-    sparsetools,
     csgraph
 
 Library:
     Packages:
         linalg,
-        sparsetools,
         csgraph
     Extension: _csparsetools
         Sources: _csparsetools.c
+    Extension: sparsetools
+        Sources:
+            sparsetools/sparsetools.cxx
