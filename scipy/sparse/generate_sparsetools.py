@@ -11,6 +11,7 @@ Type codes used:
     'V':  std::vector<integer>*
     'W':  std::vector<data>*
     '*':  indicates that the next argument is an output argument
+    'v':  void
 
 See _sparsetools.cxx for more details.
 
@@ -20,7 +21,9 @@ import os
 from distutils.dep_util import newer
 
 #
-# List of all routines and their argument types
+# List of all routines and their argument types.
+#
+# The first code indicates the return value, the rest the arguments.
 #
 
 # bsr.h
@@ -258,6 +261,7 @@ def parse_routine(name, args, types):
         j = 0
         for t in arg_spec:
             const = '' if next_is_writeable else 'const '
+            next_is_writeable = False
             if t == '*':
                 next_is_writeable = True
                 continue
@@ -270,9 +274,13 @@ def parse_routine(name, args, types):
             elif t == 'B':
                 args.append("(npy_bool_wrapper*)a[%d]" % (j,))
             elif t == 'V':
-                args.append("(std::vector<%s>*)a[%d]" % (const + I_type, j,))
+                if const:
+                    raise ValueError("'V' argument must be an output arg")
+                args.append("(std::vector<%s>*)a[%d]" % (I_type, j,))
             elif t == 'W':
-                args.append("(std::vector<%s>*)a[%d]" % (const + T_type, j,))
+                if const:
+                    raise ValueError("'W' argument must be an output arg")
+                args.append("(std::vector<%s>*)a[%d]" % (T_type, j,))
             else:
                 raise ValueError("Invalid spec character %r" % (t,))
             j += 1
