@@ -348,7 +348,8 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
 
     """
     cdef double Q[2*2]
-    cdef double s[2], r[2]
+    cdef double s[2]
+    cdef double r[2]
     cdef int ipoint, iiter, k, ipoint2, jpoint2
     cdef double f1, f2, df2, ex, ey, L, L3, det, err, change
 
