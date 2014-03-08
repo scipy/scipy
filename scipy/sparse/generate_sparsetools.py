@@ -13,7 +13,7 @@ Type codes used:
     '*':  indicates that the next argument is an output argument
     'v':  void
 
-See _sparsetools.cxx for more details.
+See sparsetools.cxx for more details.
 
 """
 import optparse
@@ -329,7 +329,7 @@ def parse_routine(name, args, types):
     return thunk_code, method_code
 
 
-def main(force=True):
+def main():
     p = optparse.OptionParser(usage=__doc__.strip())
     p.add_option("--no-force", action="store_false",
                  dest="force", default=True)
@@ -422,4 +422,4 @@ def write_autogen_blurb(stream):
 
 
 if __name__ == "__main__":
-    main(force=True)
+    main()
