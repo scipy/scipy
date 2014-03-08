@@ -113,6 +113,7 @@ dia_matvec          v iiiiITT*T
 cs_graph_components i iII*I
 """
 
+# List of compilation units
 COMPILATION_UNITS = [
     ('bsr', BSR_ROUTINES),
     ('csr', CSR_ROUTINES),
@@ -120,13 +121,17 @@ COMPILATION_UNITS = [
     ('other', OTHER_ROUTINES),
 ]
 
+#
 # List of the supported index typenums and the corresponding C++ types
+#
 I_TYPES = [
     ('NPY_INT32', 'npy_int32'),
     ('NPY_INT64', 'npy_int64'),
 ]
 
+#
 # List of the supported data typenums and the corresponding C++ types
+#
 T_TYPES = [
     ('NPY_BOOL', 'npy_bool_wrapper'),
     ('NPY_BYTE', 'npy_byte'),
@@ -147,6 +152,10 @@ T_TYPES = [
     ('NPY_CLONGDOUBLE', 'npy_clongdouble_wrapper'),
 ]
 
+#
+# Code templates
+#
+
 THUNK_TEMPLATE = """
 static Py_ssize_t %(name)s_thunk(int I_typenum, int T_typenum, void **a)
 {
@@ -162,21 +171,46 @@ NPY_VISIBILITY_HIDDEN PyObject *
 }
 """
 
+GET_THUNK_CASE_TEMPLATE = """
+static int get_thunk_case(int I_typenum, int T_typenum)
+{
+    %(content)s;
+    return -1;
+}
+"""
+
+#
+# Code generation
+#
 
 def get_thunk_type_set():
+    """
+    Get a list containing cartesian product of data types, plus a getter routine.
+
+    Returns
+    -------
+    i_types : list [(j, I_typenum, None, I_type, None), ...] 
+         Pairing of index type numbers and the corresponding C++ types,
+         and an unique index `j`. This is for routines that are parameterized
+         only by I but not by T.
+    it_types : list [(j, I_typenum, T_typenum, I_type, T_type), ...]
+         Same as `i_types`, but for routines parameterized both by T and I.
+    getter_code : str
+         C++ code for a function that takes I_typenum, T_typenum and returns
+         the unique index corresponding to the lists, or -1 if no match was
+         found.
+
+    """
     it_types = []
     i_types = []
 
     j = 0
 
-    getter_code = """
-static int get_thunk_case(int I_typenum, int T_typenum)
-{
-    if (0) {}"""
+    getter_code = "    if (0) {}"
 
     for I_typenum, I_type in I_TYPES:
         piece = """
-        else if (PyArray_EquivTypenums(I_typenum, %(I_typenum)s)) {
+        else if (I_typenum == %(I_typenum)s) {
             if (T_typenum == -1) { return %(j)s; }"""
         getter_code += piece % dict(I_typenum=I_typenum, j=j)
 
@@ -185,7 +219,7 @@ static int get_thunk_case(int I_typenum, int T_typenum)
 
         for T_typenum, T_type in T_TYPES:
             piece = """
-            else if (PyArray_EquivTypenums(T_typenum, %(T_typenum)s)) { return %(j)s; }"""
+            else if (T_typenum == %(T_typenum)s) { return %(j)s; }"""
             getter_code += piece % dict(T_typenum=T_typenum, j=j)
 
             it_types.append((j, I_typenum, T_typenum, I_type, T_type))
@@ -194,18 +228,31 @@ static int get_thunk_case(int I_typenum, int T_typenum)
         getter_code += """
         }"""
 
-    getter_code += """
-    return -1;
-}
-    """
-    return i_types, it_types, getter_code
+    return i_types, it_types, GET_THUNK_CASE_TEMPLATE % dict(content=getter_code)
 
 
 def parse_routine(name, args, types):
+    """
+    Generate thunk and method code for a given routine.
+
+    Parameters
+    ----------
+    name : str
+        Name of the C++ routine
+    args : str
+        Argument list specification (in format explained above)
+    types : list
+        List of types to instantiate, as returned `get_thunk_type_set`
+
+    """
+
     ret_spec = args[0]
     arg_spec = args[1:]
 
     def get_arglist(I_type, T_type):
+        """
+        Generate argument list for calling the C++ function
+        """
         args = []
         next_is_writeable = False
         j = 0
@@ -231,8 +278,9 @@ def parse_routine(name, args, types):
             j += 1
         return ", ".join(args)
 
-    thunk_content = """
-    int j = get_thunk_case(I_typenum, T_typenum);
+    # Generate thunk code: a giant switch statement with different
+    # type combinations inside.
+    thunk_content = """int j = get_thunk_case(I_typenum, T_typenum);
     switch (j) {"""
     for j, I_typenum, T_typenum, I_type, T_type in types:
         arglist = get_arglist(I_type, T_type)
@@ -262,11 +310,14 @@ def parse_routine(name, args, types):
         throw std::runtime_error("internal error: invalid argument typenums");
     }"""
 
+    thunk_code = THUNK_TEMPLATE % dict(name=name,
+                                       thunk_content=thunk_content)
+
+    # Generate method code
     method_code = METHOD_TEMPLATE % dict(name=name,
                                          ret_spec=ret_spec,
                                          arg_spec=arg_spec)
-    thunk_code = THUNK_TEMPLATE % dict(name=name,
-                                       thunk_content=thunk_content)
+
     return thunk_code, method_code
 
 
@@ -280,6 +331,7 @@ def main(force=True):
 
     i_types, it_types, getter_code = get_thunk_type_set()
 
+    # Generate *_impl.h for each compilation unit
     for unit_name, routines in COMPILATION_UNITS:
         thunks = []
         methods = []
@@ -323,9 +375,9 @@ def main(force=True):
                 for method in methods:
                     f.write(method)
         else:
-            print("[generate_sparsetools] output up-to-date")
+            print("[generate_sparsetools] %r already up-to-date" % (dst,))
 
-    # Generate method struct
+    # Generate code for method struct
     method_defs = ""
     for name in names:
         method_defs += "NPY_VISIBILITY_HIDDEN PyObject *%s_method(PyObject *, PyObject *);\n" % (name,)
@@ -338,7 +390,7 @@ def main(force=True):
         {NULL, NULL, 0, NULL}
     };"""
 
-    # Produce output (if necessary)
+    # Produce sparsetools_impl.h
     dst = os.path.join(os.path.dirname(__file__),
                        'sparsetools',
                        'sparsetools_impl.h')
@@ -350,7 +402,7 @@ def main(force=True):
             f.write(method_defs)
             f.write(method_struct)
     else:
-        print("[generate_sparsetools] output up-to-date")
+        print("[generate_sparsetools] %r already up-to-date" % (dst,))
 
 
 def write_autogen_blurb(stream):
