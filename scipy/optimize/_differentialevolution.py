@@ -1,7 +1,7 @@
 from __future__ import division
 import numpy as np
-import numpy.random as npr
-import scipy.optimize
+from scipy.optimize import OptimizeResult, minimize
+import numbers
 
 __all__ = ['differential_evolution']
 
@@ -55,6 +55,8 @@ def differential_evolution(func, bounds, args=(), DEstrategy=None,
     space, but often requires large numbers of function evaluations.
 
     The algorithm is originally due to Storn and Price [1]_.
+
+    .. versionadded:: 0.15.0
 
     Parameters
     ----------
@@ -153,7 +155,7 @@ def differential_evolution(func, bounds, args=(), DEstrategy=None,
     try:
         limits = bounds_to_limits(bounds)
         assert np.size(limits, 0) == 2
-    except (ValueError, AssertionError) as e:
+    except (ValueError, AssertionError):
         # it is required to have (min, max) pairs for each value in x
         raise BoundsError('Bounds should be a sequence containing '
                           'real valued (min, max) pairs for each value'
@@ -376,7 +378,7 @@ class DifferentialEvolutionSolver(object):
             status_message = _status_message['maxiter']
             warning_flag = True
 
-        DE_result = scipy.optimize.OptimizeResult(
+        DE_result = OptimizeResult(
             x=self._scale_parameters(self.population[0]),
             fun=self.population_energies[0],
             nfev=self.nfev,
@@ -385,7 +387,7 @@ class DifferentialEvolutionSolver(object):
             success=(warning_flag != True))
 
         if self.polish:
-            result = scipy.optimize.minimize(self.func,
+            result = minimize(self.func,
                                              np.copy(DE_result.x),
                                              method='L-BFGS-B',
                                              bounds=self.bounds,
