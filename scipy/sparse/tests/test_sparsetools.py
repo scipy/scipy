@@ -26,7 +26,7 @@ def xslow(func, *a, **kw):
 
 
 def test_exception():
-    assert_raises(MemoryError, sparsetools.csr.test_throw_error)
+    assert_raises(MemoryError, sparsetools.test_throw_error)
 
 
 class TestInt32Overflow(object):
