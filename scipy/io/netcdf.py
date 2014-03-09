@@ -194,7 +194,8 @@ class netcdf_file(object):
                 raise ValueError('Cannot use file object for mmap')
         else:  # maybe it's a string
             self.filename = filename
-            self.fp = open(self.filename, '%sb' % 'r+' if mode == 'a' else mode)
+            self.fp = open(self.filename, '%sb' %
+                           ('r+' if mode == 'a' else mode))
             if mmap is None:
                 mmap = True
         self.use_mmap = mmap
