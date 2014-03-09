@@ -55,7 +55,7 @@ class kstwobign_gen(rv_continuous):
 
     """
     def _cdf(self, x):
-        return 1.0-special.kolmogorov(x)
+        return 1.0 - special.kolmogorov(x)
 
     def _sf(self, x):
         return special.kolmogorov(x)
@@ -985,7 +985,7 @@ class exponweib_gen(rv_continuous):
 
     def _logpdf(self, x, a, c):
         negxc = -x**c
-        exm1c = -expm1(negxc)
+        exm1c = -special.expm1(negxc)
         logp = (log(a) + log(c) + special.xlogy(a - 1.0, exm1c) +
                 negxc + special.xlogy(c - 1.0, x))
         return logp
@@ -1400,13 +1400,17 @@ class genpareto_gen(rv_continuous):
 
         genpareto.pdf(x, c) = (1 + c * x)**(-1 - 1/c)
 
-    for ``c >= 0`` ``x >= 0``, and 
+    for ``c >= 0`` ``x >= 0``, and
     for ``c < 0`` ``0 <= x <= -1/c``
 
-    For ``c == 0``, `genpareto` reduces to the exponential 
+    For ``c == 0``, `genpareto` reduces to the exponential
     distribution, `expon`::
 
         genpareto.pdf(x, c=0) = exp(-x)
+
+    For ``c == -1``, `genpareto` is uniform on ``[0, 1]``::
+
+        genpareto.cdf(x, c=-1) = x
 
     %(example)s
 
@@ -1421,16 +1425,20 @@ class genpareto_gen(rv_continuous):
         return np.exp(self._logpdf(x, c))
 
     def _logpdf(self, x, c):
-        return -(c + 1.) * self._log1pcx(x, c)
+        return _lazywhere((x == x) & (c != 0), (x, c),
+            lambda x, c: -special.xlog1py(c+1., c*x) / c,
+            -x)
 
     def _cdf(self, x, c):
         return -special.expm1(self._logsf(x, c))
 
     def _sf(self, x, c):
-       return np.exp(self._logsf(x, c))
+        return np.exp(self._logsf(x, c))
 
     def _logsf(self, x, c):
-        return -self._log1pcx(x, c)
+        return _lazywhere((x == x) & (c != 0), (x, c),
+            lambda x, c: -special.log1p(c*x) / c,
+            -x)
 
     def _ppf(self, q, c):
         return -boxcox1p(-q, -c)
@@ -1451,12 +1459,6 @@ class genpareto_gen(rv_continuous):
 
     def _entropy(self, c):
         return 1. + c
-
-    def _log1pcx(self, x, c):
-        # log(1+c*x)/c incl c\to 0 limit
-        return _lazywhere((x==x) & (c != 0), (x, c),
-            lambda x, c: special.log1p(c*x) / c,
-            x)
 genpareto = genpareto_gen(a=0.0, name='genpareto')
 
 
@@ -1486,7 +1488,7 @@ class genexpon_gen(rv_continuous):
 
     """
     def _pdf(self, x, a, b, c):
-        return (a + b*(-special.expm1(-c*x)))*exp((-a-b)*x + \
+        return (a + b*(-special.expm1(-c*x)))*exp((-a-b)*x +
             b*(-special.expm1(-c*x))/c)
 
     def _cdf(self, x, a, b, c):

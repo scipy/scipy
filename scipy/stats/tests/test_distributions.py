@@ -490,6 +490,20 @@ class TestGenpareto(TestCase):
         q = np.linspace(0., 1., 10)
         assert_allclose(rv.ppf(q), stats.expon.ppf(q))
 
+    def test_cm1(self):
+        # with c=-1, genpareto reduces to the uniform distr on [0, 1]
+        rv = stats.genpareto(c=-1.)
+        x = np.linspace(0, 10., 30)
+        assert_allclose(rv.pdf(x), stats.uniform.pdf(x))
+        assert_allclose(rv.cdf(x), stats.uniform.cdf(x))
+        assert_allclose(rv.sf(x), stats.uniform.sf(x))
+
+        q = np.linspace(0., 1., 10)
+        assert_allclose(rv.ppf(q), stats.uniform.ppf(q))
+
+        # logpdf(1., c=-1) should be zero
+        assert_allclose(rv.logpdf(1), 0)
+
     def test_x_inf(self):
         # make sure x=inf is handled gracefully 
         rv = stats.genpareto(c=0.1)
@@ -500,36 +514,43 @@ class TestGenpareto(TestCase):
         assert_allclose([rv.pdf(np.inf), rv.cdf(np.inf)], [0., 1.])
         assert_(np.isneginf(rv.logpdf(np.inf)))
 
-    def test_c_continuity(self):
-        # pdf is continuous at c=0
-        x = np.linspace(0, 10, 30)
-        pdf0 = stats.genpareto.pdf(x, c=0)
-        for c in [1e-14, -1e-14]:
-            pdfc = stats.genpareto.pdf(x, c)
-            assert_allclose(pdf0, pdfc, atol=1e-12)
+        rv = stats.genpareto(c=-1.)
+        assert_allclose([rv.pdf(np.inf), rv.cdf(np.inf)], [0., 1.])
+        assert_(np.isneginf(rv.logpdf(np.inf)))
 
-        cdf0 = stats.genpareto.cdf(x, c=0)
-        for c in [1e-14, -1e-14]:
-            cdfc = stats.genpareto.cdf(x, c)
-            assert_allclose(cdf0, cdfc, atol=1e-12)
+    def test_c_continuity(self):
+        # pdf is continuous at c=0, -1
+        x = np.linspace(0, 10, 30)
+        for c in [0, -1]:
+            pdf0 = stats.genpareto.pdf(x, c)
+            for dc in [1e-14, -1e-14]:
+                pdfc = stats.genpareto.pdf(x, c + dc)
+                assert_allclose(pdf0, pdfc, atol=1e-12)
+
+            cdf0 = stats.genpareto.cdf(x, c)
+            for dc in [1e-14, 1e-14]:
+                cdfc = stats.genpareto.cdf(x, c + dc)
+                assert_allclose(cdf0, cdfc, atol=1e-12)
 
     def test_c_continuity_ppf(self):
         q = np.r_[np.logspace(1e-12, 0.01, base=0.1),
                   np.linspace(0.01, 1, 30, endpoint=False),
                   1. - np.logspace(1e-12, 0.01, base=0.1)]
-        ppf0 = stats.genpareto.ppf(q, c=0)
-        for c in [1e-14, -1e-14]:
-            ppfc = stats.genpareto.ppf(q, c)
-            assert_allclose(ppf0, ppfc, atol=1e-12)
+        for c in [0., -1.]:
+            ppf0 = stats.genpareto.ppf(q, c)
+            for dc in [1e-14, -1e-14]:
+                ppfc = stats.genpareto.ppf(q, c + dc)
+                assert_allclose(ppf0, ppfc, atol=1e-12)
 
     def test_c_continuity_isf(self):
         q = np.r_[np.logspace(1e-12, 0.01, base=0.1),
                   np.linspace(0.01, 1, 30, endpoint=False),
                   1. - np.logspace(1e-12, 0.01, base=0.1)]
-        isf0 = stats.genpareto.isf(q, c=0)
-        for c in [1e-14, -1e-14]:
-            isfc = stats.genpareto.isf(q, c)
-            assert_allclose(isf0, isfc, atol=1e-12)
+        for c in [0., -1.]:
+            isf0 = stats.genpareto.isf(q, c)
+            for dc in [1e-14, -1e-14]:
+                isfc = stats.genpareto.isf(q, c + dc)
+                assert_allclose(isf0, isfc, atol=1e-12)
 
     def test_cdf_ppf_roundtrip(self):
         # this should pass with machine precision. hat tip @pbrod
