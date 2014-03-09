@@ -44,12 +44,12 @@ class TestPILUtil(TestCase):
         assert_equal(im2.shape, (30,60))
 
     def test_imresize4(self):
-        im = np.array([[1,2],
-                       [3,4]])
-        res = np.array([[ 1. ,  1. ,  1.5,  2. ],
-                        [ 1. ,  1. ,  1.5,  2. ],
-                        [ 2. ,  2. ,  2.5,  3. ],
-                        [ 3. ,  3. ,  3.5,  4. ]], dtype=np.float32)
+        im = np.array([[1, 2],
+                       [3, 4]])
+        res = np.array([[1., 1., 1.5, 2.],
+                        [1., 1., 1.5, 2.],
+                        [2., 2., 2.5, 3.],
+                        [3., 3., 3.5, 4.]], dtype=np.float32)
         # Check that resizing by target size, float and int are the same
         im2 = misc.imresize(im, (4,4), mode='F')  # output size
         im3 = misc.imresize(im, 2., mode='F')  # fraction

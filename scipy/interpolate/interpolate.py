@@ -29,17 +29,20 @@ from . import _ppoly
 from .fitpack2 import RectBivariateSpline
 from .interpnd import _ndim_coords_from_arrays
 
+
 def reduce_sometrue(a):
     all = a
     while len(shape(all)) > 1:
         all = sometrue(all, axis=0)
     return all
 
+
 def prod(x):
     """Product of a list of numbers; ~40x faster vs np.prod for Python tuples"""
     if len(x) == 0:
         return 1
     return functools.reduce(operator.mul, x)
+
 
 def lagrange(x, w):
     """
@@ -326,8 +329,7 @@ class interp1d(_Interpolator1D):
         is NaN.
     assume_sorted : bool, optional
         If False, values of `x` can be in any order and they are sorted first.
-	If True, `x` has to be an array of monotonically increasing values.
-
+        If True, `x` has to be an array of monotonically increasing values.
 
     See Also
     --------

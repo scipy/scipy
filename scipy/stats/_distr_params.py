@@ -55,7 +55,7 @@ distcont = [
     ['levy', ()],
     ['levy_l', ()],
     ['levy_stable', (0.35667405469844993,
-                     -0.67450531578494011)], #NotImplementedError
+                     -0.67450531578494011)],  # NotImplementedError
     #           rvs not tested
     ['loggamma', (0.41411931826052117,)],
     ['logistic', ()],

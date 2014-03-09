@@ -452,7 +452,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             return coo_matrix(self.shape, dtype=self.dtype)
         else:
             idx_dtype = get_index_dtype(maxval=max(self.shape[0], self.shape[1]))
-            data    = np.asarray(_list(self.values()), dtype=self.dtype)
+            data = np.asarray(_list(self.values()), dtype=self.dtype)
             indices = np.asarray(_list(self.keys()), dtype=idx_dtype).T
             return coo_matrix((data,indices), shape=self.shape, dtype=self.dtype)
 

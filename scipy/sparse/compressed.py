@@ -318,6 +318,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                 "Comparing a sparse matrix with a scalar "
                                 "greater than zero using <= is inefficient, "
                                 "try using > instead.")
+
     def __ge__(self,other):
         return self._inequality(other, operator.ge, '_ge_',
                                 "Comparing a sparse matrix with a scalar "
@@ -465,7 +466,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         K2, N = other.shape
 
         major_axis = self._swap((M,N))[0]
-        other = self.__class__(other) # convert to this format
+        other = self.__class__(other)  # convert to this format
 
         idx_dtype = get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices),
@@ -489,13 +490,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         data = np.empty(nnz, dtype=upcast(self.dtype, other.dtype))
 
         fn = getattr(sparsetools, self.format + '_matmat_pass2')
-        fn( M, N, self.indptr.astype(idx_dtype),
-                  self.indices.astype(idx_dtype),
-                  self.data,
-                  other.indptr.astype(idx_dtype),
-                  other.indices.astype(idx_dtype),
-                  other.data,
-                  indptr, indices, data)
+        fn(M, N, self.indptr.astype(idx_dtype),
+           self.indices.astype(idx_dtype),
+           self.data,
+           other.indptr.astype(idx_dtype),
+           other.indices.astype(idx_dtype),
+           other.data,
+           indptr, indices, data)
 
         return self.__class__((data,indices,indptr),shape=(M,N))
 
@@ -651,6 +652,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         Here (i,j) index major and minor respectively.
         """
         M, N = self._swap(self.shape)
+
         def check_bounds(indices, bound):
             idx = indices.max()
             if idx >= bound:

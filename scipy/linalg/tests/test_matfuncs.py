@@ -706,16 +706,18 @@ def _help_expm_cond_search(A, A_norm, X, X_norm, eps, p):
     scaled_relative_error = norm(X_prime - X) / (X_norm * eps)
     return -scaled_relative_error
 
+
 def _normalized_like(A, B):
     return A * (scipy.linalg.norm(B) / scipy.linalg.norm(A))
+
 
 def _relative_error(f, A, perturbation):
     X = f(A)
     X_prime = f(A + perturbation)
     return norm(X_prime - X) / norm(X)
 
-class TestExpmConditionNumber(TestCase):
 
+class TestExpmConditionNumber(TestCase):
     def test_expm_cond_smoke(self):
         np.random.seed(1234)
         for n in range(1, 4):
@@ -725,9 +727,9 @@ class TestExpmConditionNumber(TestCase):
 
     def test_expm_bad_condition_number(self):
         A = np.array([
-            [-1.128679820,  9.614183771e4,  -4.524855739e9,  2.924969411e14],
-            [0, -1.201010529,  9.634696872e4, -4.681048289e9],
-            [0, 0,  -1.132893222,  9.532491830e4],
+            [-1.128679820, 9.614183771e4, -4.524855739e9, 2.924969411e14],
+            [0, -1.201010529, 9.634696872e4, -4.681048289e9],
+            [0, 0, -1.132893222, 9.532491830e4],
             [0, 0, 0, -1.179475332],
             ])
         kappa = expm_cond(A)

@@ -21,6 +21,7 @@ warnings.simplefilter('ignore',SparseEfficiencyWarning)
 # TODO add more comprehensive tests
 use_solver(useUmfpack=False)
 
+
 def toarray(a):
     if isspmatrix(a):
         return a.toarray()
@@ -42,7 +43,7 @@ class TestLinsolve(TestCase):
         # "Bad" test case that leads SuperLU to call LAPACK with invalid
         # arguments. Check that it fails moderately gracefully.
         ij = np.array([(17, 0), (17, 6), (17, 12), (10, 13)], dtype=np.int32)
-        v = np.array([ 0.284213  ,  0.94933781,  0.15767017,  0.38797296])
+        v = np.array([0.284213, 0.94933781, 0.15767017, 0.38797296])
         A = csc_matrix((v, ij.T), shape=(20, 20))
         b = np.arange(20)
 
@@ -201,10 +202,13 @@ class TestLinsolve(TestCase):
 
             def not_c_contig(x):
                 return x.repeat(2)[::2]
+
             def not_1dim(x):
                 return x[:,None]
+
             def bad_type(x):
                 return x.astype(bool)
+
             def too_short(x):
                 return x[:-1]
 

@@ -815,6 +815,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     elif output == 'ba':
         return zpk2tf(z, p, k)
 
+
 def _relative_degree(z, p):
     """
     Return relative degree of transfer function from zeros and poles
@@ -917,7 +918,7 @@ def _zpklp2lp(z, p, k, wo=1.0):
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
-    wo = float(wo) # Avoid np.int wraparound
+    wo = float(wo)  # Avoid np.int wraparound
 
     degree = _relative_degree(z, p)
 
@@ -2228,7 +2229,7 @@ def cheb2ap(N, rs):
 
     if N % 2:
         m = numpy.concatenate((numpy.arange(-N+1, 0, 2),
-                               numpy.arange(   2, N, 2)))
+                               numpy.arange(2, N, 2)))
     else:
         m = numpy.arange(-N+1, N, 2)
 

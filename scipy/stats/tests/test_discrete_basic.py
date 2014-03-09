@@ -12,6 +12,7 @@ from common_tests import (check_normalization, check_moment, check_mean_expect,
 from scipy.stats._distr_params import distdiscrete
 knf = npt.dec.knownfailureif
 
+
 def test_discrete_basic():
     for distname, arg in distdiscrete:
         distfn = getattr(stats, distname)

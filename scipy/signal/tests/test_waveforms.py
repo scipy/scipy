@@ -148,10 +148,10 @@ class TestChirp(TestCase):
         t1 = 1.0
         t = np.linspace(0, t1, 10000)
         #           f0     f1
-        cases = [[ 10.0,   1.0],
-                 [  1.0,  10.0],
-                 [-10.0,  -1.0],
-                 [ -1.0, -10.0]]
+        cases = [[10.0, 1.0],
+                 [1.0, 10.0],
+                 [-10.0, -1.0],
+                 [-1.0, -10.0]]
         for f0, f1 in cases:
             phase = waveforms._chirp_phase(t, f0, t1, f1, method)
             tf, f = compute_frequency(t, phase)
