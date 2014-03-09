@@ -11,6 +11,7 @@ from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal,
 import scipy.sparse
 from scipy.io.mmio import mminfo,mmread,mmwrite
 
+
 class TestMMIOArray(TestCase):
     def setUp(self):
         self.tmpdir = mkdtemp()
@@ -380,7 +381,7 @@ class TestMMIOCoordinate(TestCase):
         for mat in mats:
             expected = mat.todense()
             for fmt in ['csr','csc','coo']:
-                fn = mktemp(dir=self.tmpdir) # safe, we own tmpdir
+                fn = mktemp(dir=self.tmpdir)  # safe, we own tmpdir
                 mmwrite(fn, mat.asformat(fmt))
 
                 result = mmread(fn).todense()

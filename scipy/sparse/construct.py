@@ -262,8 +262,8 @@ def eye(m, n=None, k=0, dtype=float, format=None):
             return cls((data,indices,indptr),(n,n))
         elif format == 'coo':
             idx_dtype = get_index_dtype(maxval=n)
-            row  = np.arange(n, dtype=idx_dtype)
-            col  = np.arange(n, dtype=idx_dtype)
+            row = np.arange(n, dtype=idx_dtype)
+            col = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
             return coo_matrix((data,(row,col)),(n,n))
 
@@ -589,8 +589,8 @@ def bmat(blocks, format=None, dtype=None):
 
     data = np.empty(nnz, dtype=dtype)
     idx_dtype = get_index_dtype(maxval=max(shape))
-    row  = np.empty(nnz, dtype=idx_dtype)
-    col  = np.empty(nnz, dtype=idx_dtype)
+    row = np.empty(nnz, dtype=idx_dtype)
+    col = np.empty(nnz, dtype=idx_dtype)
 
     nnz = 0
     for i in range(M):

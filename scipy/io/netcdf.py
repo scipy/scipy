@@ -632,7 +632,6 @@ class netcdf_file(object):
             for var in rec_vars:
                 self.variables[var].__dict__['data'] = rec_array[var]
 
-
     def _read_var(self):
         name = asstr(self._unpack_string())
         dimensions = []

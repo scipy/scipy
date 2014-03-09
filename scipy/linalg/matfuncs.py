@@ -475,6 +475,7 @@ def signm(A, disp=True):
 
     """
     A = _asarray_square(A)
+
     def rounded_sign(x):
         rx = np.real(x)
         if rx.dtype.char == 'f':

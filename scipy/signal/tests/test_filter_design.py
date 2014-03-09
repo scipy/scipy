@@ -161,6 +161,7 @@ class TestLp2hp(TestCase):
         assert_allclose(b_hp, [1, 0, 0, 0])
         assert_allclose(a_hp, [1, 1.1638e5, 2.3522e9, 1.2373e14], rtol=1e-4)
 
+
 class TestLp2bp(TestCase):
 
     def test_basic(self):
@@ -265,7 +266,7 @@ class TestButtord(TestCase):
         w /= np.pi
         assert_array_less(-rp - 0.1,
                           dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
-        assert_array_less(dB(h[np.logical_or( w <= ws[0], ws[1] <= w)]),
+        assert_array_less(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]),
                           -rs + 0.1)
 
         assert_equal(N, 18)
@@ -282,7 +283,7 @@ class TestButtord(TestCase):
         w, h = freqz(b, a)
         w /= np.pi
         assert_array_less(-rp,
-                          dB(h[np.logical_or( w <= wp[0], wp[1] <= w)]))
+                          dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
         assert_array_less(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]),
                           -rs)
 
@@ -354,7 +355,7 @@ class TestCheb1ord(TestCase):
         w /= np.pi
         assert_array_less(-rp - 0.1,
                           dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
-        assert_array_less(dB(h[np.logical_or( w <= ws[0], ws[1] <= w)]),
+        assert_array_less(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]),
                           -rs + 0.1)
 
         assert_equal(N, 9)
@@ -370,7 +371,7 @@ class TestCheb1ord(TestCase):
         w, h = freqz(b, a)
         w /= np.pi
         assert_array_less(-rp - 0.1,
-                          dB(h[np.logical_or( w <= wp[0], wp[1] <= w)]))
+                          dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
         assert_array_less(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]),
                           -rs + 0.1)
 
@@ -437,7 +438,7 @@ class TestCheb2ord(TestCase):
         w /= np.pi
         assert_array_less(-rp - 0.1,
                           dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
-        assert_array_less(dB(h[np.logical_or( w <= ws[0], ws[1] <= w)]),
+        assert_array_less(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]),
                           -rs + 0.1)
 
         assert_equal(N, 9)
@@ -454,7 +455,7 @@ class TestCheb2ord(TestCase):
         w, h = freqz(b, a)
         w /= np.pi
         assert_array_less(-rp - 0.1,
-                          dB(h[np.logical_or( w <= wp[0], wp[1] <= w)]))
+                          dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
         assert_array_less(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]),
                           -rs + 0.1)
 
@@ -472,11 +473,11 @@ class TestCheb2ord(TestCase):
         w, h = freqs(b, a)
         assert_array_less(-rp - 0.1,
                           dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
-        assert_array_less(dB(h[np.logical_or( w <= ws[0], ws[1] <= w)]),
+        assert_array_less(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]),
                           -rs + 0.1)
 
         assert_equal(N, 11)
-        assert_allclose(Wn, [1.673740595370124e+01,  5.974641487254268e+01],
+        assert_allclose(Wn, [1.673740595370124e+01, 5.974641487254268e+01],
                         rtol=1e-15)
 
 
@@ -523,7 +524,7 @@ class TestEllipord(TestCase):
         w /= np.pi
         assert_array_less(-rp - 0.1,
                           dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
-        assert_array_less(dB(h[np.logical_or( w <= ws[0], ws[1] <= w)]),
+        assert_array_less(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]),
                           -rs + 0.1)
 
         assert_equal(N, 6)
@@ -539,7 +540,7 @@ class TestEllipord(TestCase):
         w, h = freqz(b, a)
         w /= np.pi
         assert_array_less(-rp - 0.1,
-                          dB(h[np.logical_or( w <= wp[0], wp[1] <= w)]))
+                          dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
         assert_array_less(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]),
                           -rs + 0.1)
 
@@ -555,7 +556,7 @@ class TestEllipord(TestCase):
         b, a = ellip(N, rp, rs, Wn, 'bs', True)
         w, h = freqs(b, a)
         assert_array_less(-rp - 0.1,
-                          dB(h[np.logical_or( w <= wp[0], wp[1] <= w)]))
+                          dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
         assert_array_less(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]),
                           -rs + 0.1)
 
@@ -644,7 +645,7 @@ class TestBessel(TestCase):
              -6.965966033906477e+02 - 7.207341374730186e+02j,
              -6.225903228776276e+02 + 8.301558302815096e+02j,
              -6.225903228776276e+02 - 8.301558302815096e+02j,
-             -9.066732476324988e+02                         ]
+             -9.066732476324988e+02]
         k2 = 9.999999999999983e+68
         assert_array_equal(z, z2)
         assert_allclose(sorted(p, key=np.imag), sorted(p2, key=np.imag))
@@ -667,7 +668,7 @@ class TestButter(TestCase):
         z, p, k = butter(1, 0.3, output='zpk')
         assert_array_equal(z, [-1])
         assert_allclose(p, [3.249196962329063e-01], rtol=1e-14)
-        assert_allclose(k,  3.375401518835469e-01, rtol=1e-14)
+        assert_allclose(k, 3.375401518835469e-01, rtol=1e-14)
 
     def test_basic(self):
         # analog s-plane
@@ -678,15 +679,15 @@ class TestButter(TestCase):
             assert_(len(p) == N)
             # All poles should be at distance wn from origin
             assert_array_almost_equal(wn, abs(p))
-            assert_(all(np.real(p) <= 0)) # No poles in right half of S-plane
+            assert_(all(np.real(p) <= 0))  # No poles in right half of S-plane
             assert_array_almost_equal(wn**N, k)
 
         # digital z-plane
         for N in range(25):
             wn = 0.01
             z, p, k = butter(N, wn, 'high', analog=False, output='zpk')
-            assert_array_equal(np.ones(N), z) # All zeros exactly at DC
-            assert_(all(np.abs(p) <= 1)) # No poles outside unit circle
+            assert_array_equal(np.ones(N), z)  # All zeros exactly at DC
+            assert_(all(np.abs(p) <= 1))  # No poles outside unit circle
 
         b1, a1 = butter(2, 1, analog=True)
         assert_array_almost_equal(b1, [1])
@@ -712,10 +713,10 @@ class TestButter(TestCase):
                         0.0026, 0.0002]), decimal=0)
 
         b, a = butter(5, 0.4)
-        assert_array_almost_equal(b, [0.0219,  0.1097,  0.2194,
-                                      0.2194,  0.1097,  0.0219], decimal=4)
-        assert_array_almost_equal(a, [1.0000, -0.9853,  0.9738,
-                                     -0.3864,  0.1112, -0.0113], decimal=4)
+        assert_array_almost_equal(b, [0.0219, 0.1097, 0.2194,
+                                      0.2194, 0.1097, 0.0219], decimal=4)
+        assert_array_almost_equal(a, [1.0000, -0.9853, 0.9738,
+                                     -0.3864, 0.1112, -0.0113], decimal=4)
 
     def test_highpass(self):
         # highpass, high even order
@@ -797,7 +798,7 @@ class TestButter(TestCase):
 
     def test_bandpass(self):
         z, p, k = butter(8, [0.25, 0.33], 'band', output='zpk')
-        z2 = [1,  1,  1,  1,  1,  1,  1,  1,
+        z2 = [1, 1, 1, 1, 1, 1, 1, 1,
              -1, -1, -1, -1, -1, -1, -1, -1]
         p2 = [
             4.979909925436156e-01 + 8.367609424799387e-01j,
@@ -909,7 +910,7 @@ class TestCheby1(TestCase):
         z, p, k = cheby1(1, 0.1, 0.3, output='zpk')
         assert_array_equal(z, [-1])
         assert_allclose(p, [-5.390126972799615e-01], rtol=1e-14)
-        assert_allclose(k,   7.695063486399808e-01, rtol=1e-14)
+        assert_allclose(k, 7.695063486399808e-01, rtol=1e-14)
 
     def test_basic(self):
         for N in range(25):
@@ -917,13 +918,13 @@ class TestCheby1(TestCase):
             z, p, k = cheby1(N, 1, wn, 'low', analog=True, output='zpk')
             assert_array_almost_equal([], z)
             assert_(len(p) == N)
-            assert_(all(np.real(p) <= 0)) # No poles in right half of S-plane
+            assert_(all(np.real(p) <= 0))  # No poles in right half of S-plane
 
         for N in range(25):
             wn = 0.01
             z, p, k = cheby1(N, 1, wn, 'high', analog=False, output='zpk')
-            assert_array_equal(np.ones(N), z) # All zeros exactly at DC
-            assert_(all(np.abs(p) <= 1)) # No poles outside unit circle
+            assert_array_equal(np.ones(N), z)  # All zeros exactly at DC
+            assert_(all(np.abs(p) <= 1))  # No poles outside unit circle
 
         # Same test as TestNormalize
         b, a = cheby1(8, 0.5, 0.048)
@@ -959,9 +960,9 @@ class TestCheby1(TestCase):
             0.19709881128793, 0.05631394608227, 0.00703924326028]),
             decimal=13)
         assert_array_almost_equal(a, [
-              1.00000000000000, -7.44912258934158,  24.46749067762108,
+              1.00000000000000, -7.44912258934158, 24.46749067762108,
             -46.27560200466141, 55.11160187999928, -42.31640010161038,
-             20.45543300484147, -5.69110270561444,   0.69770374759022],
+             20.45543300484147, -5.69110270561444, 0.69770374759022],
             decimal=13)
 
         b, a = cheby1(8, 0.5, 0.25)
@@ -971,9 +972,9 @@ class TestCheby1(TestCase):
             0.25067311889837, 0.07162089111382, 0.00895261138923]),
             decimal=13)
         assert_array_almost_equal(a, [
-              1.00000000000000, -5.97529229188545,  16.58122329202101,
+              1.00000000000000, -5.97529229188545, 16.58122329202101,
             -27.71423273542923, 30.39509758355313, -22.34729670426879,
-             10.74509800434910, -3.08924633697497,   0.40707685889802],
+             10.74509800434910, -3.08924633697497, 0.40707685889802],
             decimal=13)
 
     def test_highpass(self):
@@ -1067,7 +1068,7 @@ class TestCheby1(TestCase):
 
     def test_bandpass(self):
         z, p, k = cheby1(8, 1, [0.3, 0.4], 'bp', output='zpk')
-        z2 = [1,  1,  1,  1,  1,  1,  1,  1,
+        z2 = [1, 1, 1, 1, 1, 1, 1, 1,
              -1, -1, -1, -1, -1, -1, -1, -1]
         p2 = [
             3.077784854851463e-01 + 9.453307017592942e-01j,
@@ -1137,18 +1138,18 @@ class TestCheby1(TestCase):
     def test_ba_output(self):
         # with transfer function conversion,  without digital conversion
         b, a = cheby1(5, 0.9, [210, 310], 'stop', analog=True)
-        b2 = [1.000000000000006e+00,                         0,
-              3.255000000000020e+05,                         0,
-              4.238010000000026e+10,                         0,
-              2.758944510000017e+15,                         0,
-              8.980364380050052e+19,                         0,
+        b2 = [1.000000000000006e+00, 0,
+              3.255000000000020e+05, 0,
+              4.238010000000026e+10, 0,
+              2.758944510000017e+15, 0,
+              8.980364380050052e+19, 0,
               1.169243442282517e+24
               ]
-        a2 = [1.000000000000000e+00,     4.630555945694342e+02,
-              4.039266454794788e+05,     1.338060988610237e+08,
-              5.844333551294591e+10,     1.357346371637638e+13,
-              3.804661141892782e+15,     5.670715850340080e+17,
-              1.114411200988328e+20,     8.316815934908471e+21,
+        a2 = [1.000000000000000e+00, 4.630555945694342e+02,
+              4.039266454794788e+05, 1.338060988610237e+08,
+              5.844333551294591e+10, 1.357346371637638e+13,
+              3.804661141892782e+15, 5.670715850340080e+17,
+              1.114411200988328e+20, 8.316815934908471e+21,
               1.169243442282517e+24
               ]
         assert_allclose(b, b2, rtol=1e-14)
@@ -1172,19 +1173,19 @@ class TestCheby2(TestCase):
         z, p, k = cheby2(1, 50, 0.3, output='zpk')
         assert_array_equal(z, [-1])
         assert_allclose(p, [9.967826460175649e-01], rtol=1e-14)
-        assert_allclose(k,  1.608676991217512e-03, rtol=1e-14)
+        assert_allclose(k, 1.608676991217512e-03, rtol=1e-14)
 
     def test_basic(self):
         for N in range(25):
             wn = 0.01
             z, p, k = cheby2(N, 40, wn, 'low', analog=True, output='zpk')
             assert_(len(p) == N)
-            assert_(all(np.real(p) <= 0)) # No poles in right half of S-plane
+            assert_(all(np.real(p) <= 0))  # No poles in right half of S-plane
 
         for N in range(25):
             wn = 0.01
             z, p, k = cheby2(N, 40, wn, 'high', analog=False, output='zpk')
-            assert_(all(np.abs(p) <= 1)) # No poles outside unit circle
+            assert_(all(np.abs(p) <= 1))  # No poles outside unit circle
 
         B, A = cheby2(18, 100, 0.5)
         assert_array_almost_equal(B, [
@@ -1423,11 +1424,11 @@ class TestCheby2(TestCase):
         # with transfer function conversion, without digital conversion
         b, a = cheby2(5, 20, [2010, 2100], 'stop', True)
         b2 = [
-                1.000000000000000e+00, 0, # Matlab: 6.683253076978249e-12,
-                2.111512500000000e+07, 0, # Matlab: 1.134325604589552e-04,
-                1.782966433781250e+14, 0, # Matlab: 7.216787944356781e+02,
-                7.525901316990656e+20, 0, # Matlab: 2.039829265789886e+09,
-                1.587960565565748e+27, 0, # Matlab: 2.161236218626134e+15,
+                1.000000000000000e+00, 0,  # Matlab: 6.683253076978249e-12,
+                2.111512500000000e+07, 0,  # Matlab: 1.134325604589552e-04,
+                1.782966433781250e+14, 0,  # Matlab: 7.216787944356781e+02,
+                7.525901316990656e+20, 0,  # Matlab: 2.039829265789886e+09,
+                1.587960565565748e+27, 0,  # Matlab: 2.161236218626134e+15,
                 1.339913493808585e+33
                 ]
         a2 = [
@@ -1460,19 +1461,19 @@ class TestEllip(TestCase):
         z, p, k = ellip(1, 1, 55, 0.3, output='zpk')
         assert_allclose(z, [-9.999999999999998e-01], rtol=1e-14)
         assert_allclose(p, [-6.660721153525525e-04], rtol=1e-10)
-        assert_allclose(k,   5.003330360576763e-01, rtol=1e-14)
+        assert_allclose(k, 5.003330360576763e-01, rtol=1e-14)
 
     def test_basic(self):
         for N in range(25):
             wn = 0.01
             z, p, k = ellip(N, 1, 40, wn, 'low', analog=True, output='zpk')
             assert_(len(p) == N)
-            assert_(all(np.real(p) <= 0)) # No poles in right half of S-plane
+            assert_(all(np.real(p) <= 0))  # No poles in right half of S-plane
 
         for N in range(25):
             wn = 0.01
             z, p, k = ellip(N, 1, 40, wn, 'high', analog=False, output='zpk')
-            assert_(all(np.abs(p) <= 1)) # No poles outside unit circle
+            assert_(all(np.abs(p) <= 1))  # No poles outside unit circle
 
         b3, a3 = ellip(5, 3, 26, 1, analog=True)
         assert_array_almost_equal(b3, [0.1420, 0, 0.3764, 0,
@@ -1551,7 +1552,7 @@ class TestEllip(TestCase):
         # high odd order
         z, p, k = ellip(23, 1, 70, 0.5, 'high', output='zpk')
         z2 = [
-              9.999999999998661e-01                         ,
+              9.999999999998661e-01,
               6.603717261750994e-01 + 7.509388678638675e-01j,
               6.603717261750994e-01 - 7.509388678638675e-01j,
               2.788635267510325e-01 + 9.603307416968041e-01j,
@@ -1576,7 +1577,7 @@ class TestEllip(TestCase):
               1.143655290967426e-04 - 9.999999934602630e-01j,
               ]
         p2 = [
-             -6.322017026545028e-01                         ,
+             -6.322017026545028e-01,
              -4.648423756662754e-01 + 5.852407464440732e-01j,
              -4.648423756662754e-01 - 5.852407464440732e-01j,
              -2.249233374627773e-01 + 8.577853017985717e-01j,
@@ -1610,14 +1611,14 @@ class TestEllip(TestCase):
     def test_bandpass(self):
         z, p, k = ellip(7, 1, 40, [0.07, 0.2], 'pass', output='zpk')
         z2 = [
-             -9.999999999999991e-01                         ,
+             -9.999999999999991e-01,
               6.856610961780020e-01 + 7.279209168501619e-01j,
               6.856610961780020e-01 - 7.279209168501619e-01j,
               7.850346167691289e-01 + 6.194518952058737e-01j,
               7.850346167691289e-01 - 6.194518952058737e-01j,
               7.999038743173071e-01 + 6.001281461922627e-01j,
               7.999038743173071e-01 - 6.001281461922627e-01j,
-              9.999999999999999e-01                         ,
+              9.999999999999999e-01,
               9.862938983554124e-01 + 1.649980183725925e-01j,
               9.862938983554124e-01 - 1.649980183725925e-01j,
               9.788558330548762e-01 + 2.045513580850601e-01j,
@@ -1728,11 +1729,11 @@ class TestEllip(TestCase):
         # with transfer function conversion,  without digital conversion
         b, a = ellip(5, 1, 40, [201, 240], 'stop', True)
         b2 = [
-             1.000000000000000e+00, 0, # Matlab: 1.743506051190569e-13,
-             2.426561778314366e+05, 0, # Matlab: 3.459426536825722e-08,
-             2.348218683400168e+10, 0, # Matlab: 2.559179747299313e-03,
-             1.132780692872241e+15, 0, # Matlab: 8.363229375535731e+01,
-             2.724038554089566e+19, 0, # Matlab: 1.018700994113120e+06,
+             1.000000000000000e+00, 0,  # Matlab: 1.743506051190569e-13,
+             2.426561778314366e+05, 0,  # Matlab: 3.459426536825722e-08,
+             2.348218683400168e+10, 0,  # Matlab: 2.559179747299313e-03,
+             1.132780692872241e+15, 0,  # Matlab: 8.363229375535731e+01,
+             2.724038554089566e+19, 0,  # Matlab: 1.018700994113120e+06,
              2.612380874940186e+23
              ]
         a2 = [

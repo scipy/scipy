@@ -592,8 +592,10 @@ def _ncx2_log_pdf(x, df, nc):
     fac = -nc/2.0 - x/2.0 + (a-1)*log(x) - a*log(2) - gammaln(a)
     return fac + np.nan_to_num(log(hyp0f1(a, nc * x/4.0)))
 
+
 def _ncx2_pdf(x, df, nc):
     return np.exp(_ncx2_log_pdf(x, df, nc))
+
 
 def _ncx2_cdf(x, df, nc):
     return chndtr(x, df, nc)

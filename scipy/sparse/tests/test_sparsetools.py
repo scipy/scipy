@@ -29,7 +29,6 @@ def test_exception():
     assert_raises(MemoryError, sparsetools.csr.test_throw_error)
 
 
-
 class TestInt32Overflow(object):
     """
     Some of the sparsetools routines use dense 2D matrices whose
@@ -190,11 +189,11 @@ class TestInt32Overflow(object):
 
         # _bsr_matmat
         m2 = bsr_matrix(np.ones((n, 2), dtype=np.int8), blocksize=(m.blocksize[1], 2))
-        m.dot(m2) # shouldn't SIGSEGV
+        m.dot(m2)  # shouldn't SIGSEGV
 
         # _bsr_matmat
         m2 = bsr_matrix(np.ones((2, n), dtype=np.int8), blocksize=(2, m.blocksize[0]))
-        m2.dot(m) # shouldn't SIGSEGV
+        m2.dot(m)  # shouldn't SIGSEGV
 
     @dec.slow
     def test_csr_matmat(self):
@@ -243,6 +242,7 @@ def get_mem_info_linux():
             p = line.split()
             info[p[0].strip(':').lower()] = float(p[1]) * 1e3
     return info
+
 
 def get_own_memusage_linux():
     """

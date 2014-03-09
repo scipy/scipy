@@ -70,7 +70,11 @@ cdef void loop_d_dddd__As_ffff_f(char **args, np.npy_intp *dims, np.npy_intp *st
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(double, double, double, double) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0], <double>(<float*>ip2)[0], <double>(<float*>ip3)[0])
@@ -86,7 +90,8 @@ cdef void loop_f_f__As_f_f(char **args, np.npy_intp *dims, np.npy_intp *steps, v
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
     cdef float ov0
     for i in range(n):
         ov0 = (<float(*)(float) nogil>func)(<float>(<float*>ip0)[0])
@@ -99,7 +104,11 @@ cdef void loop_d_ddi_d_As_ddl_dd(char **args, np.npy_intp *dims, np.npy_intp *st
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3], *op1 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
+    cdef char *op1 = args[4]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -122,7 +131,13 @@ cdef void loop_i_ddddd_dd_As_ddddd_dd(char **args, np.npy_intp *dims, np.npy_int
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *ip4 = args[4], *op0 = args[5], *op1 = args[6]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *ip4 = args[4]
+    cdef char *op0 = args[5]
+    cdef char *op1 = args[6]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -142,7 +157,9 @@ cdef void loop_D_dD__As_dD_D(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double, double complex) nogil>func)(<double>(<double*>ip0)[0], <double complex>(<double complex*>ip1)[0])
@@ -156,7 +173,9 @@ cdef void loop_i_d_dd_As_d_dd(char **args, np.npy_intp *dims, np.npy_intp *steps
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -172,7 +191,9 @@ cdef void loop_D_DD__As_DD_D(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double complex, double complex) nogil>func)(<double complex>(<double complex*>ip0)[0], <double complex>(<double complex*>ip1)[0])
@@ -186,7 +207,8 @@ cdef void loop_D_D__As_D_D(char **args, np.npy_intp *dims, np.npy_intp *steps, v
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double complex) nogil>func)(<double complex>(<double complex*>ip0)[0])
@@ -199,7 +221,12 @@ cdef void loop_d_dddi_d_As_fffl_ff(char **args, np.npy_intp *dims, np.npy_intp *
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4], *op1 = args[5]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
+    cdef char *op1 = args[5]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -223,7 +250,9 @@ cdef void loop_i_D_DD_As_F_FF(char **args, np.npy_intp *dims, np.npy_intp *steps
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
     cdef double complex ov0
     cdef double complex ov1
     for i in range(n):
@@ -239,7 +268,11 @@ cdef void loop_i_d_DDDD_As_f_FFFF(char **args, np.npy_intp *dims, np.npy_intp *s
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2], *op2 = args[3], *op3 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
+    cdef char *op2 = args[3]
+    cdef char *op3 = args[4]
     cdef double complex ov0
     cdef double complex ov1
     cdef double complex ov2
@@ -261,7 +294,11 @@ cdef void loop_i_D_DDDD_As_F_FFFF(char **args, np.npy_intp *dims, np.npy_intp *s
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2], *op2 = args[3], *op3 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
+    cdef char *op2 = args[3]
+    cdef char *op3 = args[4]
     cdef double complex ov0
     cdef double complex ov1
     cdef double complex ov2
@@ -283,7 +320,12 @@ cdef void loop_d_dddi_d_As_dddl_dd(char **args, np.npy_intp *dims, np.npy_intp *
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4], *op1 = args[5]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
+    cdef char *op1 = args[5]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -307,7 +349,10 @@ cdef void loop_d_ldd__As_ldd_d(char **args, np.npy_intp *dims, np.npy_intp *step
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(long, double, double) nogil>func)(<long>(<long*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0])
@@ -322,7 +367,10 @@ cdef void loop_d_ddd__As_fff_f(char **args, np.npy_intp *dims, np.npy_intp *step
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(double, double, double) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0], <double>(<float*>ip2)[0])
@@ -337,7 +385,9 @@ cdef void loop_d_dd__As_ff_f(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(double, double) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0])
@@ -351,7 +401,12 @@ cdef void loop_i_dd_dddd_As_ff_ffff(char **args, np.npy_intp *dims, np.npy_intp 
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2], *op1 = args[3], *op2 = args[4], *op3 = args[5]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
+    cdef char *op1 = args[3]
+    cdef char *op2 = args[4]
+    cdef char *op3 = args[5]
     cdef double ov0
     cdef double ov1
     cdef double ov2
@@ -374,7 +429,10 @@ cdef void loop_i_dd_dd_As_dd_dd(char **args, np.npy_intp *dims, np.npy_intp *ste
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2], *op1 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
+    cdef char *op1 = args[3]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -391,7 +449,11 @@ cdef void loop_i_ddd_dd_As_fff_ff(char **args, np.npy_intp *dims, np.npy_intp *s
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3], *op1 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
+    cdef char *op1 = args[4]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -409,7 +471,10 @@ cdef void loop_D_ddD__As_ddD_D(char **args, np.npy_intp *dims, np.npy_intp *step
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double, double, double complex) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double complex>(<double complex*>ip2)[0])
@@ -424,7 +489,11 @@ cdef void loop_D_dddD__As_dddD_D(char **args, np.npy_intp *dims, np.npy_intp *st
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double, double, double, double complex) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], <double complex>(<double complex*>ip3)[0])
@@ -440,7 +509,11 @@ cdef void loop_i_d_dddd_As_d_dddd(char **args, np.npy_intp *dims, np.npy_intp *s
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2], *op2 = args[3], *op3 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
+    cdef char *op2 = args[3]
+    cdef char *op3 = args[4]
     cdef double ov0
     cdef double ov1
     cdef double ov2
@@ -462,7 +535,13 @@ cdef void loop_i_ddddd_dd_As_fffff_ff(char **args, np.npy_intp *dims, np.npy_int
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *ip4 = args[4], *op0 = args[5], *op1 = args[6]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *ip4 = args[4]
+    cdef char *op0 = args[5]
+    cdef char *op1 = args[6]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -482,7 +561,8 @@ cdef void loop_D_D__As_F_F(char **args, np.npy_intp *dims, np.npy_intp *steps, v
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double complex) nogil>func)(<double complex>(<float complex*>ip0)[0])
@@ -495,7 +575,11 @@ cdef void loop_i_d_DDDD_As_d_DDDD(char **args, np.npy_intp *dims, np.npy_intp *s
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2], *op2 = args[3], *op3 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
+    cdef char *op2 = args[3]
+    cdef char *op3 = args[4]
     cdef double complex ov0
     cdef double complex ov1
     cdef double complex ov2
@@ -517,7 +601,11 @@ cdef void loop_i_ddd_dd_As_ddd_dd(char **args, np.npy_intp *dims, np.npy_intp *s
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3], *op1 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
+    cdef char *op1 = args[4]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -535,7 +623,10 @@ cdef void loop_D_Dld__As_Dld_D(char **args, np.npy_intp *dims, np.npy_intp *step
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double complex, long, double) nogil>func)(<double complex>(<double complex*>ip0)[0], <long>(<long*>ip1)[0], <double>(<double*>ip2)[0])
@@ -550,7 +641,11 @@ cdef void loop_d_ddi_d_As_ffl_ff(char **args, np.npy_intp *dims, np.npy_intp *st
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3], *op1 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
+    cdef char *op1 = args[4]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -573,7 +668,10 @@ cdef void loop_i_dd_dd_As_ff_ff(char **args, np.npy_intp *dims, np.npy_intp *ste
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2], *op1 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
+    cdef char *op1 = args[3]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -590,7 +688,11 @@ cdef void loop_D_dddD__As_fffF_F(char **args, np.npy_intp *dims, np.npy_intp *st
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double, double, double, double complex) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0], <double>(<float*>ip2)[0], <double complex>(<float complex*>ip3)[0])
@@ -606,7 +708,9 @@ cdef void loop_d_id__As_lf_f(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double ov0
     for i in range(n):
         if <int>(<long*>ip0)[0] == (<long*>ip0)[0]:
@@ -624,7 +728,11 @@ cdef void loop_d_dddd__As_dddd_d(char **args, np.npy_intp *dims, np.npy_intp *st
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(double, double, double, double) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], <double>(<double*>ip3)[0])
@@ -640,7 +748,9 @@ cdef void loop_D_DD__As_FF_F(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double complex, double complex) nogil>func)(<double complex>(<float complex*>ip0)[0], <double complex>(<float complex*>ip1)[0])
@@ -654,7 +764,10 @@ cdef void loop_d_iid__As_lld_d(char **args, np.npy_intp *dims, np.npy_intp *step
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double ov0
     for i in range(n):
         if <int>(<long*>ip0)[0] == (<long*>ip0)[0] and <int>(<long*>ip1)[0] == (<long*>ip1)[0]:
@@ -673,7 +786,9 @@ cdef void loop_i_d_DD_As_d_DD(char **args, np.npy_intp *dims, np.npy_intp *steps
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
     cdef double complex ov0
     cdef double complex ov1
     for i in range(n):
@@ -689,7 +804,8 @@ cdef void loop_d_d__As_f_f(char **args, np.npy_intp *dims, np.npy_intp *steps, v
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(double) nogil>func)(<double>(<float*>ip0)[0])
@@ -702,7 +818,8 @@ cdef void loop_d_d__As_d_d(char **args, np.npy_intp *dims, np.npy_intp *steps, v
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(double) nogil>func)(<double>(<double*>ip0)[0])
@@ -715,7 +832,12 @@ cdef void loop_d_dddd_d_As_ffff_ff(char **args, np.npy_intp *dims, np.npy_intp *
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4], *op1 = args[5]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
+    cdef char *op1 = args[5]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -734,7 +856,10 @@ cdef void loop_d_iid__As_llf_f(char **args, np.npy_intp *dims, np.npy_intp *step
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double ov0
     for i in range(n):
         if <int>(<long*>ip0)[0] == (<long*>ip0)[0] and <int>(<long*>ip1)[0] == (<long*>ip1)[0]:
@@ -753,7 +878,11 @@ cdef void loop_d_lddd__As_lddd_d(char **args, np.npy_intp *dims, np.npy_intp *st
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(long, double, double, double) nogil>func)(<long>(<long*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], <double>(<double*>ip3)[0])
@@ -769,7 +898,10 @@ cdef void loop_D_ddD__As_ffF_F(char **args, np.npy_intp *dims, np.npy_intp *step
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double, double, double complex) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0], <double complex>(<float complex*>ip2)[0])
@@ -784,7 +916,11 @@ cdef void loop_i_d_dddd_As_f_ffff(char **args, np.npy_intp *dims, np.npy_intp *s
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2], *op2 = args[3], *op3 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
+    cdef char *op2 = args[3]
+    cdef char *op3 = args[4]
     cdef double ov0
     cdef double ov1
     cdef double ov2
@@ -806,7 +942,11 @@ cdef void loop_d_lddd__As_lfff_f(char **args, np.npy_intp *dims, np.npy_intp *st
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(long, double, double, double) nogil>func)(<long>(<long*>ip0)[0], <double>(<float*>ip1)[0], <double>(<float*>ip2)[0], <double>(<float*>ip3)[0])
@@ -822,7 +962,12 @@ cdef void loop_d_dddd_d_As_dddd_dd(char **args, np.npy_intp *dims, np.npy_intp *
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4], *op1 = args[5]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
+    cdef char *op1 = args[5]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -841,7 +986,9 @@ cdef void loop_i_D_DD_As_D_DD(char **args, np.npy_intp *dims, np.npy_intp *steps
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
     cdef double complex ov0
     cdef double complex ov1
     for i in range(n):
@@ -857,7 +1004,10 @@ cdef void loop_D_Dld__As_Flf_F(char **args, np.npy_intp *dims, np.npy_intp *step
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double complex, long, double) nogil>func)(<double complex>(<float complex*>ip0)[0], <long>(<long*>ip1)[0], <double>(<float*>ip2)[0])
@@ -872,7 +1022,12 @@ cdef void loop_i_dd_dddd_As_dd_dddd(char **args, np.npy_intp *dims, np.npy_intp 
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2], *op1 = args[3], *op2 = args[4], *op3 = args[5]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
+    cdef char *op1 = args[3]
+    cdef char *op2 = args[4]
+    cdef char *op3 = args[5]
     cdef double ov0
     cdef double ov1
     cdef double ov2
@@ -895,7 +1050,9 @@ cdef void loop_D_dD__As_fF_F(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double, double complex) nogil>func)(<double>(<float*>ip0)[0], <double complex>(<float complex*>ip1)[0])
@@ -909,7 +1066,9 @@ cdef void loop_i_d_dd_As_f_ff(char **args, np.npy_intp *dims, np.npy_intp *steps
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -925,7 +1084,9 @@ cdef void loop_d_ld__As_lf_f(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(long, double) nogil>func)(<long>(<long*>ip0)[0], <double>(<float*>ip1)[0])
@@ -939,7 +1100,9 @@ cdef void loop_d_id__As_ld_d(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double ov0
     for i in range(n):
         if <int>(<long*>ip0)[0] == (<long*>ip0)[0]:
@@ -957,7 +1120,9 @@ cdef void loop_d_dd__As_dd_d(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(double, double) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0])
@@ -971,7 +1136,9 @@ cdef void loop_i_d_DD_As_f_FF(char **args, np.npy_intp *dims, np.npy_intp *steps
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
     cdef double complex ov0
     cdef double complex ov1
     for i in range(n):
@@ -987,7 +1154,10 @@ cdef void loop_d_ddd__As_ddd_d(char **args, np.npy_intp *dims, np.npy_intp *step
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(double, double, double) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0])
@@ -1002,7 +1172,11 @@ cdef void loop_i_D_DDDD_As_D_DDDD(char **args, np.npy_intp *dims, np.npy_intp *s
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2], *op2 = args[3], *op3 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
+    cdef char *op2 = args[3]
+    cdef char *op3 = args[4]
     cdef double complex ov0
     cdef double complex ov1
     cdef double complex ov2
@@ -1024,7 +1198,8 @@ cdef void loop_g_g__As_g_g(char **args, np.npy_intp *dims, np.npy_intp *steps, v
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
     cdef long double ov0
     for i in range(n):
         ov0 = (<long double(*)(long double) nogil>func)(<long double>(<long double*>ip0)[0])
@@ -1037,7 +1212,10 @@ cdef void loop_d_ldd__As_lff_f(char **args, np.npy_intp *dims, np.npy_intp *step
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(long, double, double) nogil>func)(<long>(<long*>ip0)[0], <double>(<float*>ip1)[0], <double>(<float*>ip2)[0])
@@ -1052,7 +1230,9 @@ cdef void loop_d_ld__As_ld_d(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(long, double) nogil>func)(<long>(<long*>ip0)[0], <double>(<double*>ip1)[0])

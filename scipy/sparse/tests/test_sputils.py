@@ -76,7 +76,7 @@ class TestSparseUtils(TestCase):
                       8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9,9],
                      dtype=np.int32)
         y, j1 = sputils._compat_unique_impl(x, return_index=True)
-        j2 = np.array([ 0,  7, 14, 21, 28, 35, 42, 49, 56, 63])
+        j2 = np.array([0, 7, 14, 21, 28, 35, 42, 49, 56, 63])
         assert_array_equal(j1, j2)
 
     def test_compat_bincount(self):
