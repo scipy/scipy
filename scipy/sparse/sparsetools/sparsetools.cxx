@@ -24,12 +24,13 @@
 
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_sparse_sparsetools_ARRAY_API
 
+#include <Python.h>
+
 #include <string>
 #include <stdexcept>
 #include <vector>
 #include <cstdlib>
 
-#include <Python.h>
 #include "numpy/ndarrayobject.h"
 
 #include "sparsetools.h"
