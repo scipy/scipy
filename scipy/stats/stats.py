@@ -386,10 +386,19 @@ def _nanmedian(arr1d):  # This only works on 1d arrays
     m : float
         The median.
     """
-    cond = ~np.isnan(arr1d)
-    x = np.compress(cond, arr1d, axis=-1)
-    if x.size == 0:
+    x = arr1d.copy()
+    c = np.isnan(x)
+    s = np.where(c)[0]
+    if s.size == x.size:
+        warnings.warn("All-NaN slice encountered", RuntimeWarning)
         return np.nan
+    elif s.size != 0:
+        # select non-nans at end of array
+        enonan = x[-s.size:][~c[-s.size:]]
+        # fill nans in beginning of array with non-nans of end
+        x[s[:enonan.size]] = enonan
+        # slice nans away
+        x = x[:-s.size]
     return np.median(x, overwrite_input=True)
 
 
