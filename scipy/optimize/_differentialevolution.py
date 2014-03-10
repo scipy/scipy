@@ -37,6 +37,7 @@ def bounds_to_limits(bounds):
     """
     return np.array(bounds, float).T
 
+
 def limits_to_bounds(limits):
     """
         convert limits to tuple of lower and upper bounds
@@ -696,7 +697,7 @@ if __name__ == "__main__":
                                     disp=True)
     print (result)
 
-    #now do Ackley function    
+    # now do Ackley function
     def ackley(x):
         arg1 = -0.2 * sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))
         arg2 = 0.5 * (cos(2. * pi * x[0]) + cos(2. * pi * x[1]))
