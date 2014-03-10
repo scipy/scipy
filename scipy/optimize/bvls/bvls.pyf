@@ -4,15 +4,15 @@
 python module _bvls ! in 
     interface  ! in :_bvls
         subroutine bvls(a,b,m,n,bnd,x,rnorm,nsetp,w,index_bn,ierr) ! in :_bvls:bvls.f90
-            real(kind=8) dimension(m,n),intent(inout) :: a
-            real(kind=8) dimension(m),depend(m),intent(inout) :: b
+            real*8 dimension(m,n),intent(inout) :: a
+            real*8 dimension(m),depend(m),intent(inout) :: b
             integer, optional,check(shape(a,0)==m),depend(a),intent(hide) :: m=shape(a,0)
             integer, optional,check(shape(a,1)==n),depend(a),intent(hide) :: n=shape(a,1)
-            real(kind=8) dimension(2,n),depend(n),intent(in) :: bnd
-            real(kind=8) dimension(n),depend(n),intent(inout) :: x
-            real(kind=8),intent(out) :: rnorm
+            real*8 dimension(2,n),depend(n),intent(in) :: bnd
+            real*8 dimension(n),depend(n),intent(inout) :: x
+            real*8,intent(out) :: rnorm
             integer,intent(out) :: nsetp
-            real(kind=8) dimension(n),depend(n),intent(in) :: w
+            real*8 dimension(n),depend(n),intent(in) :: w
             integer dimension(n),depend(n),intent(in) :: index_bn
             integer,intent(out) :: ierr
         end subroutine bvls
