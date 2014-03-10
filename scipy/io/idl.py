@@ -164,7 +164,6 @@ def _read_string(f):
         _align_32(f)
         chars = asstr(chars)
     else:
-        warnings.warn("warning: empty strings are now set to '' instead of None")
         chars = ''
     return chars
 
@@ -177,7 +176,6 @@ def _read_string_data(f):
         string_data = _read_bytes(f, length)
         _align_32(f)
     else:
-        warnings.warn("warning: empty strings are now set to '' instead of None")
         string_data = ''
     return string_data
 
