@@ -207,6 +207,7 @@ class netcdf_file(object):
         self._mm = None
         if self.use_mmap and self.mode is 'r':
             self._mm = mm.mmap(self.fp.fileno(), 0, access=mm.ACCESS_READ)
+            self._mm_buf = np.frombuffer(self._mm, dtype=np.int8)
 
         self.dimensions = {}
         self.variables = {}
@@ -236,6 +237,7 @@ class netcdf_file(object):
                 self.flush()
             finally:
                 if self._mm is not None:
+                    self._mm_buf = None
                     self._mm.close()
                 self.fp.close()
     __del__ = close
@@ -598,7 +600,7 @@ class netcdf_file(object):
                 # Calculate size to avoid problems with vsize (above)
                 a_size = reduce(mul, shape, 1) * size
                 if self.use_mmap:
-                    data = fromstring(self._mm[begin_:begin_+a_size], dtype=dtype_)
+                    data = self._mm_buf[begin_:begin_+a_size].view(dtype=dtype_)
                     data.shape = shape
                     if self.mode is 'r':
                         data.flags.writeable = False
@@ -623,8 +625,7 @@ class netcdf_file(object):
 
             # Build rec array.
             if self.use_mmap:
-                rec_array = fromstring(self._mm[begin:begin+self._recs*self._recsize],
-                                       dtype=dtypes)
+                rec_array = self._mm_buf[begin:begin+self._recs*self._recsize].view(dtype=dtypes)
                 rec_array.shape = (self._recs,)
                 if self.mode is 'r':
                     rec_array.flags.writeable = False
