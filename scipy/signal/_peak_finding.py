@@ -386,14 +386,16 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
         min_length = np.ceil(cwt.shape[0] / 4)
     if window_size is None:
         window_size = np.ceil(num_points / 20)
-    hf_window = window_size / 2
+
+    window_size = int(window_size)
+    hf_window, odd = divmod(window_size, 2)
 
     #Filter based on SNR
     row_one = cwt[0, :]
     noises = np.zeros_like(row_one)
     for ind, val in enumerate(row_one):
-        window_start = int(max(ind - hf_window, 0))
-        window_end = int(min(ind + hf_window, num_points))
+        window_start = max(ind - hf_window, 0)
+        window_end = min(ind + hf_window + odd, num_points)
         noises[ind] = scoreatpercentile(row_one[window_start:window_end], per=noise_perc)
 
     def filt_func(line):
