@@ -8,7 +8,7 @@ import re
 from nose import SkipTest
 import numpy as np
 from numpy.testing import assert_raises, assert_equal, dec, run_module_suite
-from scipy.sparse import (sparsetools, coo_matrix, csr_matrix, csc_matrix,
+from scipy.sparse import (_sparsetools, coo_matrix, csr_matrix, csc_matrix,
                           bsr_matrix, dia_matrix)
 from scipy.lib.decorator import decorator
 
@@ -26,7 +26,7 @@ def xslow(func, *a, **kw):
 
 
 def test_exception():
-    assert_raises(MemoryError, sparsetools.test_throw_error)
+    assert_raises(MemoryError, _sparsetools.test_throw_error)
 
 
 class TestInt32Overflow(object):

@@ -14,7 +14,6 @@ def configuration(parent_package='',top_path=None):
     config.add_data_dir('benchmarks')
 
     config.add_subpackage('linalg')
-    config.add_subpackage('sparsetools')
     config.add_subpackage('csgraph')
 
     config.add_extension('_csparsetools',
@@ -46,7 +45,7 @@ def configuration(parent_package='',top_path=None):
                'sparsetools.h',
                'util.h']
     depends = [os.path.join('sparsetools', hdr) for hdr in depends],
-    config.add_extension('sparsetools',
+    config.add_extension('_sparsetools',
                          define_macros=[('__STDC_FORMAT_MACROS', 1)],
                          depends=depends,
                          include_dirs=['sparsetools'],

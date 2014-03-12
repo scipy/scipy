@@ -10,7 +10,7 @@ __all__ = ['csr_matrix', 'isspmatrix_csr']
 import numpy as np
 from scipy.lib.six import xrange
 
-from .sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks, \
+from ._sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks, \
         get_csr_submatrix, csr_sample_values
 from .sputils import upcast, isintlike, IndexMixin, issequence, get_index_dtype
 

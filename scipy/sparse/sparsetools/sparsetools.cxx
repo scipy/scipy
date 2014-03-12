@@ -540,7 +540,7 @@ extern "C" {
 #if PY_VERSION_HEX >= 0x03000000
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
-    "sparsetools",
+    "_sparsetools",
     NULL,
     -1,
     sparsetools_methods,
@@ -550,7 +550,7 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit_sparsetools(void)
+PyObject *PyInit__sparsetools(void)
 {
     PyObject *m;
     m = PyModule_Create(&moduledef);
@@ -558,9 +558,9 @@ PyObject *PyInit_sparsetools(void)
     return m;
 }
 #else
-PyMODINIT_FUNC initsparsetools(void) {
+PyMODINIT_FUNC init_sparsetools(void) {
     PyObject *m;
-    m = Py_InitModule("sparsetools", sparsetools_methods);
+    m = Py_InitModule("_sparsetools", sparsetools_methods);
     import_array();
     if (m == NULL) {
         Py_FatalError("can't initialize module _sparsetools");
