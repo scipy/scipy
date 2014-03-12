@@ -4,7 +4,7 @@
  * Python module wrapping the sparsetools C++ routines.
  *
  * Each C++ routine is templated vs. an integer (I) and a data (T) parameter.
- * The `generate_sparsetools.py` script generates a `*_impl.h` headers
+ * The `generate_sparsetools.py` script generates `*_impl.h` headers
  * that contain thunk functions with a datatype-based switch statement calling
  * each templated instantiation.
  *
@@ -13,7 +13,7 @@
  * `call_thunk`.
  *
  * The `call_thunk` function below determines the templated I and T data types
- * based on the Python arguments. It then allocates an arrays with pointers to
+ * based on the Python arguments. It then allocates arrays with pointers to
  * the raw data, with appropriate types, and calls the thunk function after
  * that.
  *
@@ -295,7 +295,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         else {
             cur_typenum = (*p == 'I' || *p == 'i') ? I_typenum : T_typenum;
 
-            /* Never cast */
+            /* Cast if necessary */
             arg = arg_arrays[j];
             if (!PyArray_EquivTypenums(PyArray_DESCR(arg)->type_num,
                                        cur_typenum))
