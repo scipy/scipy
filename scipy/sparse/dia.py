@@ -11,7 +11,7 @@ import numpy as np
 from .base import isspmatrix, _formats
 from .data import _data_matrix
 from .sputils import isshape, upcast, upcast_char, getdtype, get_index_dtype
-from .sparsetools import dia_matvec
+from ._sparsetools import dia_matvec
 
 
 class dia_matrix(_data_matrix):

@@ -11,5 +11,5 @@ def pre_build(context):
                            os.path.join(os.path.dirname(__file__),
                                         'generate_sparsetools.py'),
                            '--no-force'])
-    context.tweak_extension("sparsetools", features="cxx cxxshlib pyext bento",
+    context.tweak_extension("_sparsetools", features="cxx cxxshlib pyext bento",
                             defines=('__STDC_FORMAT_MACROS',))

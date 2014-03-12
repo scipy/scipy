@@ -12,7 +12,7 @@ from scipy.lib.six import xrange, zip as izip
 from .base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from .data import _data_matrix, _minmax_mixin
 from .dia import dia_matrix
-from . import sparsetools
+from . import _sparsetools
 from .sputils import upcast, upcast_char, to_native, isdense, isshape, \
      getdtype, isscalarlike, isintlike, IndexMixin, get_index_dtype, \
      downcast_intp_index, _compat_unique, _compat_bincount
@@ -442,7 +442,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                                other.dtype.char))
 
         # csr_matvec or csc_matvec
-        fn = getattr(sparsetools,self.format + '_matvec')
+        fn = getattr(_sparsetools,self.format + '_matvec')
         fn(M, N, self.indptr, self.indices, self.data, other, result)
 
         return result
@@ -455,7 +455,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                                         other.dtype.char))
 
         # csr_matvecs or csc_matvecs
-        fn = getattr(sparsetools,self.format + '_matvecs')
+        fn = getattr(_sparsetools,self.format + '_matvecs')
         fn(M, N, n_vecs, self.indptr, self.indices, self.data, other.ravel(), result.ravel())
 
         return result
@@ -472,7 +472,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                     maxval=M*N)
         indptr = np.empty(major_axis + 1, dtype=idx_dtype)
 
-        fn = getattr(sparsetools, self.format + '_matmat_pass1')
+        fn = getattr(_sparsetools, self.format + '_matmat_pass1')
         fn(M, N,
            self.indptr.astype(idx_dtype),
            self.indices.astype(idx_dtype),
@@ -488,14 +488,14 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         indices = np.empty(nnz, dtype=idx_dtype)
         data = np.empty(nnz, dtype=upcast(self.dtype, other.dtype))
 
-        fn = getattr(sparsetools, self.format + '_matmat_pass2')
-        fn( M, N, self.indptr.astype(idx_dtype),
-                  self.indices.astype(idx_dtype),
-                  self.data,
-                  other.indptr.astype(idx_dtype),
-                  other.indices.astype(idx_dtype),
-                  other.data,
-                  indptr, indices, data)
+        fn = getattr(_sparsetools, self.format + '_matmat_pass2')
+        fn(M, N, self.indptr.astype(idx_dtype),
+           self.indices.astype(idx_dtype),
+           self.data,
+           other.indptr.astype(idx_dtype),
+           other.indices.astype(idx_dtype),
+           other.data,
+           indptr, indices, data)
 
         return self.__class__((data,indices,indptr),shape=(M,N))
 
@@ -503,7 +503,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """Returns the main diagonal of the matrix
         """
         # TODO support k-th diagonal
-        fn = getattr(sparsetools, self.format + "_diagonal")
+        fn = getattr(_sparsetools, self.format + "_diagonal")
         y = np.empty(min(self.shape), dtype=upcast(self.dtype))
         fn(self.shape[0], self.shape[1], self.indptr, self.indices, self.data, y)
         return y
@@ -669,14 +669,14 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         n_samples = len(x)
         offsets = np.empty(n_samples, dtype=self.indices.dtype)
-        ret = sparsetools.csr_sample_offsets(M, N, self.indptr, self.indices,
-                                             n_samples, i, j, offsets)
+        ret = _sparsetools.csr_sample_offsets(M, N, self.indptr, self.indices,
+                                              n_samples, i, j, offsets)
         if ret == 1:
             # rinse and repeat
             self.sum_duplicates()
-            sparsetools.csr_sample_offsets(M, N, self.indptr,
-                                           self.indices, n_samples, i, j,
-                                           offsets)
+            _sparsetools.csr_sample_offsets(M, N, self.indptr,
+                                            self.indices, n_samples, i, j,
+                                            offsets)
 
         if -1 not in offsets:
             # only affects existing non-zero cells
@@ -852,7 +852,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         _in_bounds(i0, i1, shape0)
         _in_bounds(j0, j1, shape1)
 
-        aux = sparsetools.get_csr_submatrix(shape0, shape1,
+        aux = _sparsetools.get_csr_submatrix(shape0, shape1,
                                              self.indptr, self.indices,
                                              self.data,
                                              i0, i1, j0, j1)
@@ -888,7 +888,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         major_indices = np.empty(len(minor_indices), dtype=self.indices.dtype)
 
-        sparsetools.expandptr(major_dim,self.indptr,major_indices)
+        _sparsetools.expandptr(major_dim,self.indptr,major_indices)
 
         row,col = self._swap((major_indices,minor_indices))
 
@@ -908,7 +908,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         The is an *in place* operation
         """
-        fn = sparsetools.csr_eliminate_zeros
+        fn = _sparsetools.csr_eliminate_zeros
         M,N = self._swap(self.shape)
         fn(M, N, self.indptr, self.indices, self.data)
 
@@ -931,7 +931,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # not sorted => not canonical
             self._has_canonical_format = False
         elif not hasattr(self, '_has_canonical_format'):
-            fn = sparsetools.csr_has_canonical_format
+            fn = _sparsetools.csr_has_canonical_format
             self.has_canonical_format = \
                     fn(len(self.indptr) - 1, self.indptr, self.indices)
         return self._has_canonical_format
@@ -953,7 +953,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return
         self.sort_indices()
 
-        fn = sparsetools.csr_sum_duplicates
+        fn = _sparsetools.csr_sum_duplicates
         M,N = self._swap(self.shape)
         fn(M, N, self.indptr, self.indices, self.data)
 
@@ -971,7 +971,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # first check to see if result was cached
         if not hasattr(self,'_has_sorted_indices'):
-            fn = sparsetools.csr_has_sorted_indices
+            fn = _sparsetools.csr_has_sorted_indices
             self._has_sorted_indices = \
                     fn(len(self.indptr) - 1, self.indptr, self.indices)
         return self._has_sorted_indices
@@ -997,7 +997,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """
 
         if not self.has_sorted_indices:
-            fn = sparsetools.csr_sort_indices
+            fn = _sparsetools.csr_sort_indices
             fn(len(self.indptr) - 1, self.indptr, self.indices, self.data)
             self.has_sorted_indices = True
 
@@ -1038,7 +1038,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         other = self.__class__(other)
 
         # e.g. csr_plus_csr, csr_minus_csr, etc.
-        fn = getattr(sparsetools, self.format + op + self.format)
+        fn = getattr(_sparsetools, self.format + op + self.format)
 
         maxnnz = self.nnz + other.nnz
         idx_dtype = get_index_dtype((self.indptr, self.indices,

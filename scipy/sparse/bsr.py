@@ -14,9 +14,9 @@ from .data import _data_matrix, _minmax_mixin
 from .compressed import _cs_matrix
 from .base import isspmatrix, _formats
 from .sputils import isshape, getdtype, to_native, upcast, get_index_dtype
-from . import sparsetools
-from .sparsetools import bsr_matvec, bsr_matvecs, csr_matmat_pass1, \
-                        bsr_matmat_pass2, bsr_transpose, bsr_sort_indices
+from . import _sparsetools
+from ._sparsetools import bsr_matvec, bsr_matvecs, csr_matmat_pass1, \
+     bsr_matmat_pass2, bsr_transpose, bsr_sort_indices
 
 
 class bsr_matrix(_cs_matrix, _minmax_mixin):
@@ -282,8 +282,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         M,N = self.shape
         R,C = self.blocksize
         y = np.empty(min(M,N), dtype=upcast(self.dtype))
-        sparsetools.bsr_diagonal(M//R, N//C, R, C,
-                self.indptr, self.indices, np.ravel(self.data), y)
+        _sparsetools.bsr_diagonal(M//R, N//C, R, C,
+                                  self.indptr, self.indices,
+                                  np.ravel(self.data), y)
         return y
 
     ##########################
@@ -535,7 +536,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         other = self.__class__(other, blocksize=self.blocksize)
 
         # e.g. bsr_plus_bsr, etc.
-        fn = getattr(sparsetools, self.format + op + self.format)
+        fn = getattr(_sparsetools, self.format + op + self.format)
 
         R,C = self.blocksize
 
