@@ -7,6 +7,7 @@ from numpy import deprecate
 # This file shouldn't be imported by scipy --- Scipy code should use
 # internally scipy.sparse._sparsetools
 
+
 @deprecate(old_name="scipy.sparse.sparsetools",
            message=("scipy.sparse.sparsetools is a private module for scipy.sparse, "
                     "and should not be used."))

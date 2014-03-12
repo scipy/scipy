@@ -182,6 +182,7 @@ static int get_thunk_case(int I_typenum, int T_typenum)
 }
 """
 
+
 #
 # Code generation
 #
@@ -367,7 +368,6 @@ def main():
             names.append(name)
             thunks.append(thunk)
             methods.append(method)
-
 
         # Produce output
         dst = os.path.join(os.path.dirname(__file__),
