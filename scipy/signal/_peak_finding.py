@@ -396,7 +396,8 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
     for ind, val in enumerate(row_one):
         window_start = max(ind - hf_window, 0)
         window_end = min(ind + hf_window + odd, num_points)
-        noises[ind] = scoreatpercentile(row_one[window_start:window_end], per=noise_perc)
+        noises[ind] = scoreatpercentile(row_one[window_start:window_end],
+                                        per=noise_perc)
 
     def filt_func(line):
         if len(line[0]) < min_length:
