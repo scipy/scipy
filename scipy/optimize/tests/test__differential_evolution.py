@@ -17,11 +17,19 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
                                 [2., 2.]])
         self.bounds = [(0, 2), (0, 2)]
 
-        def dummy_function():
-            pass
         dummy_limits = np.array([[0.], [100]])
         self.dummy_solver = _differentialevolution.DifferentialEvolutionSolver(
-            dummy_function, dummy_limits)
+            self.dummy_function, dummy_limits)
+
+    def dummy_function(self):
+        pass
+
+    def test__can_init_with_dithering(self):
+        mutation = (0.5, 1)
+        solver = _differentialevolution.DifferentialEvolutionSolver(
+            self.dummy_function, self.limits, mutation=mutation)
+        if hasattr(solver, 'dither') is False:
+            raise AttributeError
 
     def test__scale_parameters(self):
         trial = np.array([0.3])
@@ -48,7 +56,7 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
         # test that the Jmin of DifferentialEvolutionSolver
         # is the same as the function evaluation
         solver = _differentialevolution.DifferentialEvolutionSolver(
-            rosen, self.limits, xtol=1e-2)
+            rosen, self.limits)
         result = solver.solve()
         npt.assert_almost_equal(result.fun, rosen(result.x))
 

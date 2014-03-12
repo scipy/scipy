@@ -50,7 +50,7 @@ def limits_to_bounds(limits):
 
 def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            maxiter=None, popsize=15, tol=0.01,
-                           mutation=0.8, recombination=0.45, seed=None,
+                           mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=False):
     """
     Find the global minimum of a multivariate function using the differential
@@ -103,9 +103,15 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         divided by the standard deviation of the population energies
         is greater than 1 the solving process terminates:
         ``convergence = mean(pop) * tol / stdev(pop) > 1``
-    mutation : float, optional:
-        The mutation constant, should be in the range [0, 2]. Increasing this
-        number increases the search radius, but will slow down convergence.
+    mutation : float or tuple(float, float), optional:
+        The mutation constant.
+        If specified as a float it should be in the range [0, 2].
+        If specified as a tuple ``(min, max)`` dithering is employed. Dithering
+        randomly changes the mutation constant on a generation by generation
+        basis. The mutation constant for that generation is taken from
+        U[min, max). Dithering can help speed convergence significantly.
+        Increasing the mutation constant increases the search radius, but will
+        slow down convergence.
     recombination : float, optional:
         The recombination constant, should be in the range [0, 1]. Increasing
         this value allows a larger number of mutants to progress into the next
@@ -149,20 +155,21 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     creating trial candidates, which suit some problems more than others. The
     'best1bin' strategy is a good starting point for many systems. In this
     strategy two members of the population are randomly chosen. Their difference
-    is used to mutate the best member, b_0, so far:
+    is used to mutate the best member (the `best` in `best1bin`), b_0, so far:
     .. math:: 
         b' = b_0 + mutation * (population[rand0] - population[rand1])
     
     A trial vector is then constructed. Starting with a randomly chosen ``i``'th
     parameter the trial is sequentially filled (in modulo) with parameters from
     ``b'`` or the original candidate. The choice of whether to use ``b'`` or the
-    original candidate is made with a binomial distribution - a random number in
-    ``[0, 1)`` is generated.  If this number is less than the ``recombination``
-    constant then the parameter is loaded from ``b'``, otherwise it is loaded
-    from the original candidate.  The final parameter is always loaded from
-    ``b'``.  Once the trial candidate is built its fitness is assessed. If the
-    trial is better than the original candidate then it takes its place. If it
-    is also better than the best overall candidate it also replaces that.
+    original candidate is made with a binomial distribution (the `bin` in
+    `best1bin`) - a random number in ``[0, 1)`` is generated.  If this number is
+    less than the ``recombination`` constant then the parameter is loaded from
+    ``b'``, otherwise it is loaded from the original candidate.  The final
+    parameter is always loaded from ``b'``.  Once the trial candidate is built
+    its fitness is assessed. If the trial is better than the original candidate
+    then it takes its place. If it is also better than the best overall
+    candidate it also replaces that.
     To improve your chances of finding a global minimum use higher ``popsize``
     values, with higher ``mutation``, but lower ``recombination``, values. This
     has the effect of widening the search radius, but slowing convergence.
@@ -177,7 +184,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     >>> result = differential_evolution(rosen, bounds)
     >>> print result
     
-    Next find the minimum of the Ackley function (http://en.wikipedia.org/wiki/Test_functions_for_optimization).
+    Next find the minimum of the Ackley function
+    (http://en.wikipedia.org/wiki/Test_functions_for_optimization).
     
     >>> from scipy.optimize import differential_evolution
     >>> from numpy import exp, sqrt, cos, pi, e
@@ -207,6 +215,15 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         raise BoundsError('Bounds should be a sequence containing '
                           'real valued (min, max) pairs for each value'
                           ' in x')
+
+    if type(mutation) is tuple:
+        mutation_err_message = 'The mutation constant must be a float in '
+        'U[0, 2), or specified as a tuple(min, max) where min < max and min, '
+        'max are in U[0, 2.'
+        if len(mutation) < 2:
+            raise ValueError(mutation_err_message)
+        if mutation[0] > mutation[1]:
+            mutation = (mutation[1], mutation[0])
 
     solver = DifferentialEvolutionSolver(func, limits, args=args,
                                          strategy=strategy, maxiter=maxiter,
@@ -276,9 +293,8 @@ class DifferentialEvolutionSolver(object):
 
     def __init__(self, func, limits, args=(),
                  strategy=None, maxiter=None, popsize=15,
-                 tol=0.01, mutation=0.8, recombination=0.45, seed=None,
-                 maxfun=None, callback=None, disp=False, polish=False,
-                 **options):
+                 tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
+                 maxfun=None, callback=None, disp=False, polish=False):
 
         if strategy is not None:
             self.strategy = getattr(
@@ -299,6 +315,10 @@ class DifferentialEvolutionSolver(object):
 
         self.tol = tol
         self.scale = mutation
+        self.dither = None
+        if type(mutation) is tuple:
+            self.dither = mutation
+
         self.cross_over_probability = recombination
 
         self.func = func
@@ -310,6 +330,12 @@ class DifferentialEvolutionSolver(object):
                               '(min, max) pairs for each value in x')
 
         self.bounds = limits_to_bounds(self.limits)
+        # population is scaled to between [0, 1].
+        # We have to scale between parameter <-> population
+        # save these arguments for _scale_parameter and
+        #_unscale_parameter. This is an optimization
+        self.__scale_arg1 = 0.5 * (self.limits[0] + self.limits[1])
+        self.__scale_arg2 = np.fabs(self.limits[0] - self.limits[1])
 
         self.nfev = 0
         self.nit = 0
@@ -348,6 +374,13 @@ class DifferentialEvolutionSolver(object):
         status_message = _status_message['success']
         warning_flag = False
 
+        # population is scaled to between [0, 1].
+        # We have to scale between parameter <-> population
+        # save these arguments for _scale_parameter and
+        #_unscale_parameter. This is an optimization
+        self.__scale_arg1 = 0.5 * (self.limits[0] + self.limits[1])
+        self.__scale_arg2 = np.fabs(self.limits[0] - self.limits[1])
+
         # calculate energies to start with
         for index, candidate in enumerate(self.population):
             parameters = self._scale_parameters(candidate)
@@ -372,6 +405,9 @@ class DifferentialEvolutionSolver(object):
 
         # do the optimisation.
         for iteration in xrange(self.maxiter):
+            if self.dither is not None:
+                self.scale = self.random_number_generator.rand(
+                ) * (self.dither[1] - self.dither[0]) + self.dither[0]
             for candidate in xrange(self.population_size):
                 if self.nfev >= self.maxfun:
                     warning_flag = True
@@ -455,14 +491,12 @@ class DifferentialEvolutionSolver(object):
         return DE_result
 
     def _scale_parameters(self, trial):
-        return (
-            0.5 * (self.limits[0] + self.limits[1]) +
-            (trial - 0.5) * np.fabs(self.limits[0] - self.limits[1])
-        )
+        # scale from a number between 0 and 1 to parameters
+        return self.__scale_arg1 + (trial - 0.5) * self.__scale_arg2
 
     def _unscale_parameters(self, parameters):
-        return (parameters - 0.5 * (self.limits[0] + self.limits[1])) / \
-            np.fabs(self.limits[0] - self.limits[1]) + 0.5
+        # scale from parameters to a number between 0 and 1.
+        return (parameters - self.__scale_arg1) / self.__scale_arg2 + 0.5
 
     def _ensure_constraint(self, trial):
         for index, param in enumerate(trial):
@@ -471,14 +505,41 @@ class DifferentialEvolutionSolver(object):
 
     def _best1bin(self, candidate):
         r0, r1 = self._select_samples(candidate, 2)
+
         n = self.random_number_generator.randint(0, self.parameter_count)
+
         trial = np.copy(self.population[candidate])
         i = 0
 
+        crossovers = self.random_number_generator.rand(self.parameter_count)
+        crossovers = crossovers < self.cross_over_probability
+
         while i < self.parameter_count:
-            if self.random_number_generator.rand() < self.cross_over_probability or i == self.parameter_count - 1:
+            if crossovers[i] or i == self.parameter_count - 1:
                 trial[n] = self.population[0, n] + self.scale * \
                     (self.population[r0, n] - self.population[r1, n])
+
+            n = (n + 1) % self.parameter_count
+            i += 1
+
+        return trial
+
+    def _rand1bin(self, candidate):
+        r0, r1, r2 = self._select_samples(candidate, 3)
+
+        n = self.random_number_generator.randint(0, self.parameter_count)
+
+        trial = np.copy(self.population[candidate])
+        i = 0
+
+        crossovers = self.random_number_generator.rand(self.parameter_count)
+        crossovers = crossovers < self.cross_over_probability
+
+        while i < self.parameter_count:
+            if crossovers[i] or i == self.parameter_count - 1:
+                trial[n] = self.population[r0, n] + self.scale * \
+                    (self.population[r1, n]
+                     - self.population[r2, n])
 
             n = (n + 1) % self.parameter_count
             i += 1
@@ -565,11 +626,9 @@ class DifferentialEvolutionSolver(object):
         i = 0
 
         while i < self.parameter_count and self.random_number_generator.rand() < self.cross_over_probability:
-            trial[n] = self.population[r0, n]
-            + self.scale * (self.population[r1, n]
-                            + self.population[r2, n]
-                            - self.population[r3, n]
-                            - self.population[r4, n])
+            trial[n] = self.population[r0, n] + self.scale * \
+                (self.population[r1, n] + self.population[r2, n]
+                 - self.population[r3, n] - self.population[r4, n])
 
             n = (n + 1) % self.parameter_count
             i += 1
@@ -584,10 +643,14 @@ class DifferentialEvolutionSolver(object):
         trial = np.copy(self.population[candidate])
         i = 0
 
+        crossovers = self.random_number_generator.rand(self.parameter_count)
+        crossovers = crossovers < self.cross_over_probability
+
         while i < self.parameter_count:
-            if self.random_number_generator.rand() < self.cross_over_probability or i == self.parameter_count - 1:
-                trial[n] += self.scale * (self.population[0, n] - trial[n])
-                + self.scale * \
+            if crossovers[i] or i == self.parameter_count - 1:
+                trial[n] += self.scale * \
+                    (self.population[0, n] - trial[n]) + \
+                    self.scale * \
                     (self.population[r0, n] - self.population[r1, n])
 
             n = (n + 1) % self.parameter_count
@@ -603,13 +666,14 @@ class DifferentialEvolutionSolver(object):
         trial = np.copy(self.population[candidate])
         i = 0
 
+        crossovers = self.random_number_generator.rand(self.parameter_count)
+        crossovers = crossovers < self.cross_over_probability
+
         while i < self.parameter_count:
-            if self.random_number_generator.rand() < self.cross_over_probability or i == self.parameter_count - 1:
-                trial[n] = self.population[0, n]
-                + self.scale * (self.population[r0, n]
-                                + self.population[r1, n]
-                                - self.population[r2, n]
-                                - self.population[r3, n])
+            if crossovers[i] or i == self.parameter_count - 1:
+                trial[n] = self.population[0, n]    + self.scale * \
+                    (self.population[r0, n] + self.population[r1, n]
+                     - self.population[r2, n] - self.population[r3, n])
 
             n = (n + 1) % self.parameter_count
             i += 1
@@ -624,31 +688,14 @@ class DifferentialEvolutionSolver(object):
         trial = np.copy(self.population[candidate])
         i = 0
 
+        crossovers = self.random_number_generator.rand(self.parameter_count)
+        crossovers = crossovers < self.cross_over_probability
+
         while i < self.parameter_count:
-            if self.random_number_generator.rand() < self.cross_over_probability or i == self.parameter_count - 1:
-                trial[n] = self.population[r0, n]
-                + self.scale * (self.population[r1, n]
-                                + self.population[r2, n]
-                                - self.population[r3, n]
-                                - self.population[r4, n])
-
-            n = (n + 1) % self.parameter_count
-            i += 1
-
-        return trial
-
-    def _rand1bin(self, candidate):
-        r0, r1, r2 = self._select_samples(candidate, 3)
-
-        n = self.random_number_generator.randint(0, self.parameter_count)
-
-        trial = np.copy(self.population[candidate])
-        i = 0
-        while i < self.parameter_count:
-            if self.random_number_generator.rand() < self.cross_over_probability or i == self.parameter_count - 1:
-                trial[n] = self.population[r0, n]
-                + self.scale * (self.population[r1, n]
-                                - self.population[r2, n])
+            if crossovers[i] or i == self.parameter_count - 1:
+                trial[n] = self.population[r0, n] + self.scale * \
+                    (self.population[r1, n] + self.population[r2, n] -
+                     self.population[r3, n] - self.population[r4, n])
 
             n = (n + 1) % self.parameter_count
             i += 1
@@ -662,11 +709,9 @@ class DifferentialEvolutionSolver(object):
         """
         idxs = range(self.population_size)
         idxs.remove(candidate)
-        samples = self.random_number_generator.choice(idxs,
-                                                      size=number_samples,
-                                                      replace=False)
-
-        return tuple(samples)
+        self.random_number_generator.shuffle(idxs)
+        idxs = idxs[:number_samples]
+        return idxs
 
 
 def _make_random_gen(seed):
@@ -686,25 +731,32 @@ def _make_random_gen(seed):
     raise ValueError('%r cannot be used to seed a numpy.random.RandomState'
                      ' instance' % seed)
 
-if __name__ == "__main__":
-    from scipy.optimize import rosen
-    from numpy import exp, sqrt, cos, pi, e
-    # minimum expected at [1, 1, 1, 1, 1]
-    bounds = [(0, 2), (0, 2), (0, 2), (0, 2), (0, 2)]
-    result = differential_evolution(rosen,
-                                    bounds,
-                                    polish=True,
-                                    disp=True)
-    print (result)
 
-    # now do Ackley function
-    def ackley(x):
-        arg1 = -0.2 * sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))
-        arg2 = 0.5 * (cos(2. * pi * x[0]) + cos(2. * pi * x[1]))
-        return -20. * exp(arg1) - exp(arg2) + 20. + e
-    bounds = [(-5, 5), (-5, 5)]
-    result = differential_evolution(ackley,
-                                    bounds,
-                                    disp=True,
-                                    polish=True)
-    print (result)
+if __name__ == "__main__":
+    def test():
+        from scipy.optimize import rosen
+        from numpy import exp, sqrt, cos, pi, e
+        # minimum expected at [1, 1, 1, 1, 1]
+        bounds = [(0, 2), (0, 2), (0, 2), (0, 2), (0, 2)]
+        result = differential_evolution(rosen,
+                                        bounds,
+                                        seed=1,
+                                        polish=True,
+                                        disp=False)
+        print (result)
+
+        # now do Ackley function
+        def ackley(x):
+            arg1 = -0.2 * sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))
+            arg2 = 0.5 * (cos(2. * pi * x[0]) + cos(2. * pi * x[1]))
+            return -20. * exp(arg1) - exp(arg2) + 20. + e
+        bounds = [(-5, 5), (-5, 5)]
+        result = differential_evolution(ackley,
+                                        bounds,
+                                        disp=False,
+                                        polish=True)
+        print (result)
+
+#     import cProfile
+#     cProfile.run('test()')
+    test()
