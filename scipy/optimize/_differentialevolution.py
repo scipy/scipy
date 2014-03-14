@@ -526,7 +526,6 @@ class DifferentialEvolutionSolver(object):
             if param > 1 or param < 0:
                 trial[index] = self.random_number_generator.rand()
 
-
     def _mutate(self, candidate):
         trial = np.copy(self.population[candidate])
         n = self.random_number_generator.randint(0, self.parameter_count)
@@ -541,8 +540,6 @@ class DifferentialEvolutionSolver(object):
             # true. If you don't use a loop then you can have any random entry
             # be True.
             crossovers[n] = True
-
-            crossovers = strategy_info['crossovers']
             trial = np.where(crossovers, bprime, trial)
             return trial
             
@@ -602,7 +599,7 @@ class DifferentialEvolutionSolver(object):
         return (self.population[r0] + self.scale *
                 (self.population[r1] - self.population[r2]))
 
-    def _randtobest1exp(self, candidate):
+    def _randtobest1exp(self, candidate, samples):
         r0, r1, r2, r3, r4 = samples
         bprime = np.copy(self.population[candidate])
         bprime += self.scale * (self.population[0] - bprime)
@@ -610,7 +607,7 @@ class DifferentialEvolutionSolver(object):
                                 self.population[r1])
         return bprime
         
-    def _best2exp(self, candidate):
+    def _best2exp(self, candidate, samples):
         r0, r1, r2, r3, r4 = samples
         bprime = (self.population[0]
                   + self.scale * (self.population[r0]
@@ -620,7 +617,7 @@ class DifferentialEvolutionSolver(object):
 
         return bprime
 
-    def _rand2exp(self, candidate):
+    def _rand2exp(self, candidate, samples):
         r0, r1, r2, r3, r4 = samples
         bprime = (self.population[r0] + self.scale *
                       (self.population[r1] + self.population[r2]

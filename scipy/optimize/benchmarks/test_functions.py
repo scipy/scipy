@@ -3,7 +3,6 @@ import numpy as np
 from numpy import sin, cos, pi, e, exp, sqrt, abs
 
 
-
 class SimpleQuadratic(object):
 
     def fun(self, x):
@@ -112,7 +111,6 @@ class LJ13(LJ):
     target_E = -44.326801
 
 
-
 class Booth(object):
     def fun(self, coords):
         x, y = coords
@@ -132,10 +130,10 @@ class Beale(object):
 
     def der(self, coords):
         x, y = coords
-        dx = 2. * (1.5 - x + x * y) * (-1. + y) + 2. * (2.25 - x + x * y ** 2) * \
-            (-1. + y ** 2) + 2. * (2.625 - x + x * y ** 3) * (-1. + y ** 3)
-        dy = 2. * (1.5 - x + x * y) * (x) +       2. * (2.25 - x + x * y ** 2) * \
-            (2. * y * x) + 2. * (2.625 - x + x * y ** 3) * (3. * x * y ** 2)
+        dx = (2. * (1.5 - x + x * y) * (-1. + y) + 2. * (2.25 - x + x * y ** 2) * 
+            (-1. + y ** 2) + 2. * (2.625 - x + x * y ** 3) * (-1. + y ** 3))
+        dy = (2. * (1.5 - x + x * y) * (x) + 2. * (2.25 - x + x * y ** 2) * 
+            (2. * y * x) + 2. * (2.625 - x + x * y ** 3) * (3. * x * y ** 2))
         return np.array([dx, dy])
 
 """
@@ -197,8 +195,8 @@ class Ackley(object):
     xmax = np.array([5, 5])
 
     def fun(self, x):
-        E = -20. * exp(-0.2 * sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))) - \
-            exp(0.5 * (cos(2. * pi * x[0]) + cos(2. * pi * x[1]))) + 20. + np.e
+        E = (-20. * exp(-0.2 * sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))) - 
+            exp(0.5 * (cos(2. * pi * x[0]) + cos(2. * pi * x[1]))) + 20. + np.e)
         return E
 
     def der(self, x):
@@ -221,20 +219,20 @@ class Levi(object):
     xmax = np.array([10, 10])
 
     def fun(self, x):
-        E = sin(3. * pi * x[0]) ** 2 + (x[0] - 1.) ** 2 * \
-            (1. + sin(3 * pi * x[1]) ** 2) + \
-            (x[1] - 1.) ** 2 * (1. + sin(2 * pi * x[1]) ** 2)
+        E = (sin(3. * pi * x[0]) ** 2 + (x[0] - 1.) ** 2 * 
+            (1. + sin(3 * pi * x[1]) ** 2) + 
+            (x[1] - 1.) ** 2 * (1. + sin(2 * pi * x[1]) ** 2))
         return E
 
     def der(self, x):
 
-        dEdx = 2. * 3. * pi * \
-            cos(3. * pi * x[0]) * sin(3. * pi * x[0]) + \
-            2. * (x[0] - 1.) * (1. + sin(3 * pi * x[1]) ** 2)
+        dEdx = (2. * 3. * pi * 
+            cos(3. * pi * x[0]) * sin(3. * pi * x[0]) + 
+            2. * (x[0] - 1.) * (1. + sin(3 * pi * x[1]) ** 2))
 
-        dEdy = (x[0] - 1.) ** 2 * 2. * 3. * pi * cos(3. * pi * x[1]) * sin(3. * pi * x[1]) + 2. *  (x[1] - 1.) * \
-            (1. + sin(2 * pi * x[1]) ** 2) + (x[1] - 1.) ** 2 * \
-            2. * 2. * pi * cos(2. * pi * x[1]) * sin(2. * pi * x[1])
+        dEdy = ((x[0] - 1.) ** 2 * 2. * 3. * pi * cos(3. * pi * x[1]) * sin(3. * pi * x[1]) + 2. * (x[1] - 1.) * 
+            (1. + sin(2 * pi * x[1]) ** 2) + (x[1] - 1.) ** 2 * 
+            2. * 2. * pi * cos(2. * pi * x[1]) * sin(2. * pi * x[1]))
 
         return np.array([dEdx, dEdy])
 

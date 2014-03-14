@@ -127,4 +127,4 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    npt.run_module_suite()
