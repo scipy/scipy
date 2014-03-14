@@ -246,7 +246,6 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                          seed=seed, polish=polish,
                                          callback=callback,
                                          disp=disp)
-
     result = solver.solve()
     return result
 
@@ -330,6 +329,9 @@ class DifferentialEvolutionSolver(object):
         If True, then scipy.optimize.minimize with the `L-BFGS-B` method
         is used to polish the best population member at the end. This requires
         a few more function evaluations.
+    maxfun : int, optional
+        Set the maximum number of function evaluations. However, it probably
+        makes more sense to set `maxiter` instead.
     """
 
     def __init__(self, func, limits, args=(),
