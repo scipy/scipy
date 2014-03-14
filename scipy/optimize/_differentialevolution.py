@@ -430,11 +430,11 @@ class DifferentialEvolutionSolver(object):
         self.population[[0, minval], :] = self.population[[minval, 0], :]
 
         # do the optimisation.
-        for iteration in xrange(self.maxiter):
+        for iteration in range(self.maxiter):
             if self.dither is not None:
                 self.scale = self.random_number_generator.rand(
                 ) * (self.dither[1] - self.dither[0]) + self.dither[0]
-            for candidate in xrange(self.population_size):
+            for candidate in range(self.population_size):
                 if self.nfev >= self.maxfun:
                     warning_flag = True
                     status_message = _status_message['maxfev']
@@ -630,7 +630,7 @@ class DifferentialEvolutionSolver(object):
             obtain random integers from range(self.population_size), without
             replacement.  You can't have the original candidate either
         """
-        idxs = range(self.population_size)
+        idxs = list(range(self.population_size))
         idxs.remove(candidate)
         self.random_number_generator.shuffle(idxs)
         idxs = idxs[:number_samples]

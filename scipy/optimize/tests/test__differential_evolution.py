@@ -49,7 +49,7 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
 
     def test__ensure_constraint(self):
         trial = np.array([1.1, -100, 2., 300., -0.00001])
-        trial = self.dummy_solver._ensure_constraint(trial)
+        self.dummy_solver._ensure_constraint(trial)
         npt.assert_equal(np.all(trial <= 1), True)
 
     def test_differential_evolution(self):
