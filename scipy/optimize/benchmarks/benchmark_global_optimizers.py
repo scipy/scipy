@@ -12,7 +12,7 @@ import numpy.testing as npt
 from numpy.testing import Tester, TestCase
 from collections import defaultdict
 
-NUMTRIALS = 100
+NUMTRIALS = 10
 
 
 class _BenchOptimizers(object):
