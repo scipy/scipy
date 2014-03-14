@@ -1,23 +1,22 @@
-from __future__ import division
+"""
+differentialevolution: The differential evolution global optimization algorithm
+"""
+from __future__ import division, print_function, absolute_import
 import numpy as np
-from scipy.optimize import OptimizeResult, minimize
-import numbers
 import numpy.testing as npt
+from scipy.optimize import OptimizeResult, minimize
+from scipy.optimize.optimize import _status_message
+import numbers
 
 __all__ = ['differential_evolution']
 
-MACHEPS = 2.22e-16
+MACHEPS = np.finfo(np.float64).eps
 
-# standard status messages of optimizers
-_status_message = {'success': 'Optimization terminated successfully.',
-                   'maxfev': 'Maximum number of function evaluations has '
-                              'been exceeded.',
-                   'maxiter': 'Maximum number of iterations has been '
-                              'exceeded.',
-                   'pr_loss': 'Desired error not necessarily achieved due '
-                              'to precision loss.',
-                   'terminated': 'callback function requested stop early by '
-                              'returning True'}
+# list whether a mutation strategy is binomial or exponential
+binomial = ['_best1bin', '_randtobest1bin', '_best2bin', '_rand2bin',
+            '_rand1bin']
+exponential = ['_best1exp', '_rand1exp', '_randtobest1exp', '_best2exp',
+               'rand2exp']
 
 
 class BoundsError(Exception):
@@ -32,7 +31,7 @@ class BoundsError(Exception):
 def bounds_to_limits(bounds):
     """
         convert tuple of lower and upper bounds to limits
-        [(low_0, high_0), ..., (low_n, high_n] 
+        [(low_0, high_0), ..., (low_n, high_n]
             -> [[low_0, ..., low_n], [high_0, ..., high_n]]
     """
     return np.array(bounds, float).T
@@ -42,7 +41,7 @@ def limits_to_bounds(limits):
     """
         convert limits to tuple of lower and upper bounds
         [[low_0, ..., low_n], [high_0, ..., high_n]] -->
-            [(low_0, high_0), ..., (low_n, high_n] 
+            [(low_0, high_0), ..., (low_n, high_n]
     """
     return [(limits[0, idx], limits[1, idx])
             for idx in range(np.size(limits, 1))]
@@ -51,12 +50,12 @@ def limits_to_bounds(limits):
 def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            maxiter=None, popsize=15, tol=0.01,
                            mutation=(0.5, 1), recombination=0.7, seed=None,
-                           callback=None, disp=False, polish=False):
-    """
-    Find the global minimum of a multivariate function using the differential
-    evolution algorithm. It is stochastic in nature (does not use gradient
+                           callback=None, disp=False, polish=True):
+    """Finds the global minimum of a multivariate function.
+    Differential Evolution is stochastic in nature (does not use gradient
     methods) to find the minimium, and can search large areas of candidate
-    space, but often requires large numbers of function evaluations.
+    space, but often requires larger numbers of function evaluations than
+    conventional gradient based techniques.
 
     The algorithm is due to Storn and Price [1]_.
 
@@ -66,14 +65,14 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     ----------
     func : callable
         The objective function to be minimized.  Must be in the form
-        ``f(x, *args)``, where `x` is the argument in the form of a 1-D array
-        and ``args`` is a  tuple of any additional fixed parameters needed to
+        `f(x, *args)`, where `x` is the argument in the form of a 1-D array
+        and `args` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
     bounds: sequence
-        Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
+        Bounds for variables.  `(min, max)` pairs for each element in `x`,
         defining the lower and upper bounds for the optimizing argument of
-        ``func``. It is required to have ``len(bounds) == len(x)``.
-        ``len(bounds)`` is used to determine the number of parameters in ``x``.
+        `func`. It is required to have ``len(bounds) == len(x)``.
+        ``len(bounds)`` is used to determine the number of parameters in `x`.
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
@@ -91,6 +90,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             - 'rand2bin'
             - 'rand1bin'
 
+        The default is 'best1bin'
     maxiter: int, optional
         The maximum number of times the entire population is evolved.
         The maximum number of function evaluations is:
@@ -106,7 +106,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     mutation : float or tuple(float, float), optional:
         The mutation constant.
         If specified as a float it should be in the range [0, 2].
-        If specified as a tuple ``(min, max)`` dithering is employed. Dithering
+        If specified as a tuple `(min, max)` dithering is employed. Dithering
         randomly changes the mutation constant on a generation by generation
         basis. The mutation constant for that generation is taken from
         U[min, max). Dithering can help speed convergence significantly.
@@ -125,27 +125,27 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Specify seed for repeatable minimizations.
     disp : bool, optional:
         Display status messages
-    callback : callable, ``callback(xk, convergence=val)``, optional:
-        A function to follow the progress of the minimization. ``xk`` is
-        the current value of ``x0``. ``val`` represents the fractional
-        value of the population convergence.  When ``val`` is greater than one
-        the function halts. If callback returns ``True``, then the minimization
+    callback : callable, `callback(xk, convergence=val)`, optional:
+        A function to follow the progress of the minimization. `xk` is
+        the current value of `x0`. `val` represents the fractional
+        value of the population convergence.  When `val` is greater than one
+        the function halts. If callback returns `True`, then the minimization
         is halted (any polishing is still carried out).
     polish : bool, optional
-        If true, then scipy.optimize.minimize with the `L-BFGS-B` method
-        is used to polish the best population member at the end. This requires
-        a few more function evaluations.
+        If True (default), then scipy.optimize.minimize with the `L-BFGS-B`
+        method is used to polish the best population member at the end, which
+        can improve the minimization slightly.
 
     Returns
     -------
     res : OptimizeResult
-        The optimization result represented as a ``OptimizeResult`` object.
-        Important attributes are: ``x`` the solution array, ``success`` a
+        The optimization result represented as a `OptimizeResult` object.
+        Important attributes are: `x` the solution array, `success` a
         Boolean flag indicating if the optimizer exited successfully and
-        ``message`` which describes the cause of the termination. See
-        `OptimizeResult` for a description of other attributes. If ``polish``
-        was employed, then OptimizeResult also contains the ``jac`` attribute.
-    
+        `message` which describes the cause of the termination. See
+        `OptimizeResult` for a description of other attributes. If `polish`
+        was employed, then OptimizeResult also contains the `jac` attribute.
+
     Notes
     -----
     Differential evolution is a stochastic population based method that is
@@ -155,25 +155,29 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     creating trial candidates, which suit some problems more than others. The
     'best1bin' strategy is a good starting point for many systems. In this
     strategy two members of the population are randomly chosen. Their difference
-    is used to mutate the best member (the `best` in `best1bin`), b_0, so far:
-    .. math:: 
+    is used to mutate the best member (the `best` in `best1bin`), :math:`b_0`,
+    so far:
+
+    .. math::
+
         b' = b_0 + mutation * (population[rand0] - population[rand1])
-    
-    A trial vector is then constructed. Starting with a randomly chosen ``i``'th
+
+    A trial vector is then constructed. Starting with a randomly chosen 'i'th
     parameter the trial is sequentially filled (in modulo) with parameters from
-    ``b'`` or the original candidate. The choice of whether to use ``b'`` or the
-    original candidate is made with a binomial distribution (the `bin` in
-    `best1bin`) - a random number in ``[0, 1)`` is generated.  If this number is
-    less than the ``recombination`` constant then the parameter is loaded from
-    ``b'``, otherwise it is loaded from the original candidate.  The final
-    parameter is always loaded from ``b'``.  Once the trial candidate is built
+    `b'` or the original candidate. The choice of whether to use `b'` or the
+    original candidate is made with a binomial distribution (the 'bin' in
+    'best1bin') - a random number in [0, 1) is generated.  If this number is
+    less than the `recombination` constant then the parameter is loaded from
+    `b'`, otherwise it is loaded from the original candidate.  The final
+    parameter is always loaded from `b'`.  Once the trial candidate is built
     its fitness is assessed. If the trial is better than the original candidate
     then it takes its place. If it is also better than the best overall
     candidate it also replaces that.
-    To improve your chances of finding a global minimum use higher ``popsize``
-    values, with higher ``mutation``, but lower ``recombination``, values. This
-    has the effect of widening the search radius, but slowing convergence.
-    
+    To improve your chances of finding a global minimum use higher `popsize`
+    values, with higher `mutation` and (dithering), but lower `recombination`
+    values. This has the effect of widening the search radius, but slowing
+    convergence.
+
     Examples
     --------
     Let us consider the problem of minimizing the Rosenbrock function. This
@@ -183,19 +187,19 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = differential_evolution(rosen, bounds)
     >>> print result
-    
+
     Next find the minimum of the Ackley function
     (http://en.wikipedia.org/wiki/Test_functions_for_optimization).
-    
+
     >>> from scipy.optimize import differential_evolution
-    >>> from numpy import exp, sqrt, cos, pi, e
+    >>> import numpy as np
     >>> def ackley(x):
-    ...     arg1 = -0.2 * sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))
-    ...     arg2 = 0.5 * (cos(2. * pi * x[0]) + cos(2. * pi * x[1]))
-    ...     return -20. * exp(arg1) - exp(arg2) + 20. + e
+    ...     arg1 = -0.2 * np.sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))
+    ...     arg2 = 0.5 * (np.cos(2. * np.pi * x[0]) + np.cos(2. * np.pi * x[1]))
+    ...     return -20. * np.exp(arg1) - np.exp(arg2) + 20. + np.e
     >>> bounds = [(-5, 5), (-5, 5)]
     >>> result = differential_evolution(ackley, bounds)
-    >>> print result
+    >>> result
 
     References
     ----------
@@ -210,6 +214,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     try:
         limits = bounds_to_limits(bounds)
         npt.assert_equal(np.size(limits, 0), 2)
+        npt.assert_equal(np.all(np.isfinite(limits)), True)
     except (ValueError, AssertionError):
         # it is required to have (min, max) pairs for each value in x
         raise BoundsError('Bounds should be a sequence containing '
@@ -240,7 +245,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
 class DifferentialEvolutionSolver(object):
 
-    """
+    """This class implements the differential evolution solver
+
     Parameters
     ----------
     func : callable
@@ -248,29 +254,55 @@ class DifferentialEvolutionSolver(object):
         `f(x, *args)`, where `x` is the argument in the form of a 1-D array
         and `args` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
-    limits: 2-D ndarray
-        lower and upper limits for the optimizing argument of func. Must have
-        shape (2, len(x))
+    bounds: sequence
+        Bounds for variables.  `(min, max)` pairs for each element in `x`,
+        defining the lower and upper bounds for the optimizing argument of
+        `func`. It is required to have ``len(bounds) == len(x)``.
+        ``len(bounds)`` is used to determine the number of parameters in `x`.
     args : tuple, optional
-        Any additional fixed parameters needed to completely
-        specify the objective function.
+        Any additional fixed parameters needed to
+        completely specify the objective function.
     strategy : str, optional
-        The differential evolution strategy to use.
+        The differential evolution strategy to use. Should be one of:
+
+            - 'best1bin'
+            - 'best1exp'
+            - 'rand1exp'
+            - 'randtobest1exp'
+            - 'best2exp'
+            - 'rand2exp'
+            - 'randtobest1bin'
+            - 'best2bin'
+            - 'rand2bin'
+            - 'rand1bin'
+
+        The default is 'best1bin'
+
     maxiter: int, optional
         The maximum number of times the entire population is evolved. The
-        maximum number of function evaluations is: maxiter * popsize * len(x)
+        maximum number of function evaluations is:
+        ``maxiter * popsize * len(x)``
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
-        popsize * len(x) individuals.
+        ``popsize * len(x)`` individuals.
     tol : float, optional:
         When the mean of the population energies, multiplied by tol,
-        divided by the standard deviation of the population energies is greater
-        than 1 the solving process terminates.
-        i.e. mean(pop) * tol / stdev(pop) > 1
-    mutation : float, optional:
-        The mutation constant, should be in the range [0, 2].
+        divided by the standard deviation of the population energies
+        is greater than 1 the solving process terminates:
+        ``convergence = mean(pop) * tol / stdev(pop) > 1``
+    mutation : float or tuple(float, float), optional:
+        The mutation constant.
+        If specified as a float it should be in the range [0, 2].
+        If specified as a tuple `(min, max)` dithering is employed. Dithering
+        randomly changes the mutation constant on a generation by generation
+        basis. The mutation constant for that generation is taken from
+        U[min, max). Dithering can help speed convergence significantly.
+        Increasing the mutation constant increases the search radius, but will
+        slow down convergence.
     recombination : float, optional:
-        The recombination constant, should be in the range [0, 1].
+        The recombination constant, should be in the range [0, 1]. Increasing
+        this value allows a larger number of mutants to progress into the next
+        generation, but at the risk of population stability.
     seed : int or np.RandomState, optional:
         If seed is not specified the np.RandomState singleton is used.
         If seed is an int, a new np.RandomState instance is used,
@@ -278,41 +310,38 @@ class DifferentialEvolutionSolver(object):
         If seed is already a np.RandomState instance, then that
         np.RandomState instance is used.
         Specify seed for repeatable minimizations.
-    callback : callable, optional:
-        A function to follow the progress of the minimization.
-        Called as ``callback(xk, convergence=val)``, where ``xk`` is the
-        current value of ``x0``. ``val`` represents the fractional value
-        of the population convergence.  When ``val`` is greater than one
-        the function halts. If callback returns True, then the minimization
+    disp : bool, optional:
+        Display status messages
+    callback : callable, `callback(xk, convergence=val)`, optional:
+        A function to follow the progress of the minimization. `xk` is
+        the current value of `x0`. `val` represents the fractional
+        value of the population convergence.  When `val` is greater than one
+        the function halts. If callback returns `True`, then the minimization
         is halted (any polishing is still carried out).
-    disp : bool, optional
     polish : bool, optional
-        If true, then scipy.optimize.minimize with the `L-BFGS-B` method
-        is used to polish the best population member at the end.
+        If True, then scipy.optimize.minimize with the `L-BFGS-B` method
+        is used to polish the best population member at the end. This requires
+        a few more function evaluations.
     """
 
     def __init__(self, func, limits, args=(),
                  strategy=None, maxiter=None, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
-                 maxfun=None, callback=None, disp=False, polish=False):
+                 maxfun=None, callback=None, disp=False, polish=True):
 
         if strategy is not None:
-            self.strategy = getattr(
-                DifferentialEvolutionSolver, '_' + strategy.lower())
+            self.strategy = getattr(self, '_' + strategy.lower())
         else:
-            self.strategy = getattr(DifferentialEvolutionSolver, '_best1bin')
+            self.strategy = self._best1bin
 
-        self.callback = callback
+        def default_callback(parameters, convergence=0):
+            return False
+        self.callback = callback or default_callback
         self.polish = polish
 
-        self.maxiter = 1000
-        if maxiter is not None:
-            self.maxiter = maxiter
-
-        self.maxfun = (self.maxiter + 1) * popsize * np.size(limits, 1)
-        if maxfun is not None:
-            self.maxfun = maxfun
-
+        self.maxiter = maxiter or 1000
+        self.maxfun = maxfun or (self.maxiter + 1) * popsize * np.size(limits,
+                                                                       1)
         self.tol = tol
         self.scale = mutation
         self.dither = None
@@ -324,16 +353,12 @@ class DifferentialEvolutionSolver(object):
         self.func = func
         self.args = args
         self.limits = limits
-        if np.any(np.isnan(limits)):
-            raise BoundsError('Bounds should be a sequence'
-                              ' containing real valued '
-                              '(min, max) pairs for each value in x')
-
         self.bounds = limits_to_bounds(self.limits)
+
         # population is scaled to between [0, 1].
         # We have to scale between parameter <-> population
         # save these arguments for _scale_parameter and
-        #_unscale_parameter. This is an optimization
+        # _unscale_parameter. This is an optimization
         self.__scale_arg1 = 0.5 * (self.limits[0] + self.limits[1])
         self.__scale_arg2 = np.fabs(self.limits[0] - self.limits[1])
 
@@ -351,12 +376,13 @@ class DifferentialEvolutionSolver(object):
             self.parameter_count)
 
         self.population_energies = np.ones(
-            popsize * self.parameter_count) * 1.e300
+            popsize * self.parameter_count) * np.inf
 
         self.disp = disp
 
     def solve(self):
-        """
+        """Runs the DifferentialEvolutionSolver.
+
         Returns
         -------
         res : OptimizeResult
@@ -413,8 +439,7 @@ class DifferentialEvolutionSolver(object):
                     warning_flag = True
                     status_message = _status_message['maxfev']
                     break
-
-                trial = self.strategy(self, candidate)
+                trial = self._mutate(candidate)
                 self._ensure_constraint(trial)
                 parameters = self._scale_parameters(trial)
 
@@ -431,8 +456,9 @@ class DifferentialEvolutionSolver(object):
 
             # stop when the fractional s.d. of the population is less than tol
             # of the mean energy
-            self.convergence = np.std(self.population_energies) / \
-                np.abs(np.mean(self.population_energies) + MACHEPS)
+            self.convergence = (np.std(self.population_energies) /
+                                np.abs(np.mean(self.population_energies) +
+                                       MACHEPS))
 
             self.nit = iteration + 1
 
@@ -441,15 +467,13 @@ class DifferentialEvolutionSolver(object):
                       % (self.nit,
                          self.population_energies[0]))
 
-            if self.callback:
-                if self.callback(
-                        self._scale_parameters(self.population[0]),
-                        convergence=self.tol / self.convergence) \
-                        is True:
+            if self.callback(self._scale_parameters(self.population[0]),
+                             convergence=self.tol / self.convergence) is True:
 
-                    warning_flag = True
-                    status_message = _status_message['terminated']
-                    break
+                warning_flag = True
+                status_message = ('callback function requested stop early '
+                                  'by returning True')
+                break
 
             if self.convergence < self.tol:
                 break
@@ -482,7 +506,6 @@ class DifferentialEvolutionSolver(object):
             if result.fun < DE_result.fun:
                 DE_result.fun = result.fun
                 DE_result.x = result.x
-#                 DE_result.hess_inv = result.hess_inv
                 DE_result.jac = result.jac
                 # to keep internal state consistent
                 self.population_energies[0] = result.fun
@@ -503,204 +526,118 @@ class DifferentialEvolutionSolver(object):
             if param > 1 or param < 0:
                 trial[index] = self.random_number_generator.rand()
 
-    def _best1bin(self, candidate):
-        r0, r1 = self._select_samples(candidate, 2)
-
+    def _strategy_info(self, candidate, num_samples):
         n = self.random_number_generator.randint(0, self.parameter_count)
-
-        trial = np.copy(self.population[candidate])
-        i = 0
 
         crossovers = self.random_number_generator.rand(self.parameter_count)
-        crossovers = crossovers < self.cross_over_probability
+        crossovers = crossovers < self.cross_over_probability        
+        # the last one is always from the bprime vector for binomial
+        # If you fill in modulo with a loop you have to set the last one to
+        # true. If you don't use a loop then you can have any random entry
+        # be True.
+        crossovers[n] = True
 
-        while i < self.parameter_count:
-            if crossovers[i] or i == self.parameter_count - 1:
-                trial[n] = self.population[0, n] + self.scale * \
-                    (self.population[r0, n] - self.population[r1, n])
+        strategy_info = {
+            'samples': self._select_samples(candidate, num_samples),
+            'n': n,
+            'trial': np.copy(self.population[candidate]),
+            'crossovers': crossovers}
 
-            n = (n + 1) % self.parameter_count
-            i += 1
+        return strategy_info
 
-        return trial
+    def _mutate(self, candidate):
+        strategy_info = self._strategy_info(candidate, 5)
+        trial = strategy_info['trial']
 
-    def _rand1bin(self, candidate):
-        r0, r1, r2 = self._select_samples(candidate, 3)
+        bprime = self.strategy(candidate, strategy_info['samples'])
 
-        n = self.random_number_generator.randint(0, self.parameter_count)
+        if self.strategy.func_name in binomial:
+            crossovers = strategy_info['crossovers']
+            trial = np.where(crossovers, bprime, trial)
+            return trial
+            
+        elif self.strategy.func_name in exponential:
+            i = 0
+            n = strategy_info['n']
+            while (i < self.parameter_count and
+                   self.random_number_generator.rand() < 
+                   self.cross_over_probability):
 
-        trial = np.copy(self.population[candidate])
-        i = 0
+                trial[n] = bprime[n]
+                n = (n + 1) % self.parameter_count
+                i += 1
 
-        crossovers = self.random_number_generator.rand(self.parameter_count)
-        crossovers = crossovers < self.cross_over_probability
+            return trial
 
-        while i < self.parameter_count:
-            if crossovers[i] or i == self.parameter_count - 1:
-                trial[n] = self.population[r0, n] + self.scale * \
-                    (self.population[r1, n]
-                     - self.population[r2, n])
+    def _best1bin(self, candidate, samples):
+        r0, r1, r2, r3, r4 = samples
+        return (self.population[0] + self.scale *
+                (self.population[r0] - self.population[r1]))
 
-            n = (n + 1) % self.parameter_count
-            i += 1
+    def _rand1bin(self, candidate, samples):
+        r0, r1, r2, r3, r4 = samples
+        return (self.population[r0] + self.scale *
+                (self.population[r1] - self.population[r2]))
 
-        return trial
+    def _randtobest1bin(self, candidate, samples):
+        r0, r1, r2, r3, r4 = samples
+        bprime = np.copy(self.population[candidate])
+        bprime += self.scale * (self.population[0] - bprime)
+        bprime += self.scale * (self.population[r0] -
+                                self.population[r1])
+        return bprime
 
-    def _best1exp(self, candidate):
-        r0, r1 = self._select_samples(candidate, 2)
+    def _best2bin(self, candidate, samples):
+        r0, r1, r2, r3, r4 = samples
+        bprime = (self.population[0] + self.scale *
+                            (self.population[r0] + self.population[r1]
+                           - self.population[r2] - self.population[r3]))
 
-        n = self.random_number_generator.randint(0, self.parameter_count)
+        return bprime
 
-        trial = np.copy(self.population[candidate])
-        i = 0
-        while i < self.parameter_count and self.random_number_generator.rand() < self.cross_over_probability:
-            trial[n] = self.population[0, n] + self.scale * \
-                (self.population[r0, n] - self.population[r1, n])
-            n = (n + 1) % self.parameter_count
-            i += 1
+    def _rand2bin(self, candidate, samples):
+        r0, r1, r2, r3, r4 = samples
+        bprime = (self.population[r0] + self.scale *
+                 (self.population[r1] + self.population[r2] -
+                  self.population[r3] - self.population[r4]))
 
-        return trial
+        return bprime
 
-    def _rand1exp(self, candidate):
-        r0, r1, r2 = self._select_samples(candidate, 3)
+    def _best1exp(self, candidate, samples):
+        r0, r1, r2, r3, r4 = samples
+        return (self.population[0] + self.scale *
+                (self.population[r0] - self.population[r1]))
 
-        n = self.random_number_generator.randint(0, self.parameter_count)
-
-        trial = np.copy(self.population[candidate])
-        i = 0
-
-        while i < self.parameter_count and self.random_number_generator.rand() < self.cross_over_probability:
-            trial[n] = self.population[r0, n] + self.scale * \
-                (self.population[r1, n] - self.population[r2, n])
-
-            n = (n + 1) % self.parameter_count
-            i += 1
-
-        return trial
+    def _rand1exp(self, candidate, samples):
+        r0, r1, r2, r3, r4 = samples
+        return (self.population[r0] + self.scale *
+                (self.population[r1] - self.population[r2]))
 
     def _randtobest1exp(self, candidate):
-        r0, r1 = self._select_samples(candidate, 2)
-
-        n = self.random_number_generator.randint(0, self.parameter_count)
-
-        trial = np.copy(self.population[candidate])
-        i = 0
-
-        while i < self.parameter_count and self.random_number_generator.rand() < self.cross_over_probability:
-            trial[n] += self.scale * (self.population[0, n] - trial[n]) + \
-                self.scale * \
-                (self.population[r0, n]
-                 - self.population[r1, n])
-
-            n = (n + 1) % self.parameter_count
-            i += 1
-
-        return trial
-
+        r0, r1, r2, r3, r4 = samples
+        bprime = np.copy(self.population[candidate])
+        bprime += self.scale * (self.population[0] - bprime)
+        bprime += self.scale * (self.population[r0] -
+                                self.population[r1])
+        return bprime
+        
     def _best2exp(self, candidate):
-        r0, r1, r2, r3 = self._select_samples(candidate, 4)
+        r0, r1, r2, r3, r4 = samples
+        bprime = (self.population[0]
+                  + self.scale * (self.population[r0]
+                                  + self.population[r1]
+                                  - self.population[r2]
+                                  - self.population[r3]))
 
-        n = self.random_number_generator.randint(0, self.parameter_count)
-
-        trial = np.copy(self.population[candidate])
-        i = 0
-
-        while i < self.parameter_count and self.random_number_generator.rand() < self.cross_over_probability:
-            trial[n] = self.population[0, n]
-            + self.scale * (self.population[r0, n]
-                            + self.population[r1, n]
-                            - self.population[r2, n]
-                            - self.population[r3, n])
-
-            n = (n + 1) % self.parameter_count
-            i += 1
-
-        return trial
+        return bprime
 
     def _rand2exp(self, candidate):
-        r0, r1, r2, r3, r4 = self._select_samples(candidate, 5)
+        r0, r1, r2, r3, r4 = samples
+        bprime = (self.population[r0] + self.scale *
+                      (self.population[r1] + self.population[r2]
+                     - self.population[r3] - self.population[r4]))
 
-        n = self.random_number_generator.randint(0, self.parameter_count)
-
-        trial = np.copy(self.population[candidate])
-        i = 0
-
-        while i < self.parameter_count and self.random_number_generator.rand() < self.cross_over_probability:
-            trial[n] = self.population[r0, n] + self.scale * \
-                (self.population[r1, n] + self.population[r2, n]
-                 - self.population[r3, n] - self.population[r4, n])
-
-            n = (n + 1) % self.parameter_count
-            i += 1
-
-        return trial
-
-    def _randtobest1bin(self, candidate):
-        r0, r1 = self._select_samples(candidate, 2)
-
-        n = self.random_number_generator.randint(0, self.parameter_count)
-
-        trial = np.copy(self.population[candidate])
-        i = 0
-
-        crossovers = self.random_number_generator.rand(self.parameter_count)
-        crossovers = crossovers < self.cross_over_probability
-
-        while i < self.parameter_count:
-            if crossovers[i] or i == self.parameter_count - 1:
-                trial[n] += self.scale * \
-                    (self.population[0, n] - trial[n]) + \
-                    self.scale * \
-                    (self.population[r0, n] - self.population[r1, n])
-
-            n = (n + 1) % self.parameter_count
-            i += 1
-
-        return trial
-
-    def _best2bin(self, candidate):
-        r0, r1, r2, r3 = self._select_samples(candidate, 4)
-
-        n = self.random_number_generator.randint(0, self.parameter_count)
-
-        trial = np.copy(self.population[candidate])
-        i = 0
-
-        crossovers = self.random_number_generator.rand(self.parameter_count)
-        crossovers = crossovers < self.cross_over_probability
-
-        while i < self.parameter_count:
-            if crossovers[i] or i == self.parameter_count - 1:
-                trial[n] = self.population[0, n]    + self.scale * \
-                    (self.population[r0, n] + self.population[r1, n]
-                     - self.population[r2, n] - self.population[r3, n])
-
-            n = (n + 1) % self.parameter_count
-            i += 1
-
-        return trial
-
-    def _rand2bin(self, candidate):
-        r0, r1, r2, r3, r4 = self._select_samples(candidate, 5)
-
-        n = self.random_number_generator.randint(0, self.parameter_count)
-
-        trial = np.copy(self.population[candidate])
-        i = 0
-
-        crossovers = self.random_number_generator.rand(self.parameter_count)
-        crossovers = crossovers < self.cross_over_probability
-
-        while i < self.parameter_count:
-            if crossovers[i] or i == self.parameter_count - 1:
-                trial[n] = self.population[r0, n] + self.scale * \
-                    (self.population[r1, n] + self.population[r2, n] -
-                     self.population[r3, n] - self.population[r4, n])
-
-            n = (n + 1) % self.parameter_count
-            i += 1
-
-        return trial
+        return bprime
 
     def _select_samples(self, candidate, number_samples):
         """
@@ -757,6 +694,6 @@ if __name__ == "__main__":
                                         polish=True)
         print (result)
 
-#     import cProfile
-#     cProfile.run('test()')
-    test()
+    import cProfile
+    cProfile.run('test()')
+#     test()
