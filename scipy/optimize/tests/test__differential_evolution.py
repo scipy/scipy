@@ -20,9 +20,49 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
         dummy_limits = np.array([[0.], [100]])
         self.dummy_solver = _differentialevolution.DifferentialEvolutionSolver(
             self.dummy_function, dummy_limits)
-
+            
+        limits = np.array([[0.], [1.]])
+        #dummy_solver2 will be used to test mutation strategies
+        self.dummy_solver2 = _differentialevolution.DifferentialEvolutionSolver(
+            self.dummy_function, limits, popsize=7, mutation=0.5)
+        #create a population that's only 7 members long
+        #[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+        population = np.atleast_2d(np.arange(0.1, 0.8, 0.1)).T
+        self.dummy_solver2.population = population
+        
     def dummy_function(self):
         pass
+
+    """
+    test all the mutation strategies
+    """
+    def test__mutate1(self):
+        #strategies */1/*, i.e. rand/1/bin, best/1/exp, etc.
+        result = np.array([0.05])
+        trial = self.dummy_solver2._best1(1, (2, 3, 4, 5, 6))
+        npt.assert_allclose(trial, result)
+
+        result = np.array([0.25])
+        trial = self.dummy_solver2._rand1(1, (2, 3, 4, 5, 6))
+        npt.assert_allclose(trial, result)
+
+    def test__mutate2(self):
+        #strategies */2/*, i.e. rand/2/bin, best/2/exp, etc.
+        #[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+
+        result = np.array([-0.1])
+        trial = self.dummy_solver2._best2(1, (2, 3, 4, 5, 6))
+        npt.assert_allclose(trial, result)
+
+        result = np.array([0.1])
+        trial = self.dummy_solver2._rand2(1, (2, 3, 4, 5, 6))
+        npt.assert_allclose(trial, result)
+
+    def test__randtobest1(self):
+        #strategies randtobest/1/*
+        result = np.array([0.1])
+        trial = self.dummy_solver2._randtobest1(1, (2, 3, 4, 5, 6))
+        npt.assert_allclose(trial, result)
 
     def test__can_init_with_dithering(self):
         mutation = (0.5, 1)
@@ -74,18 +114,34 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
                                 'callback function requested stop early '
                                 'by returning True')
 
+    def test_init_with_invalid_strategy(self):
+        #test that passing an invalid strategy raises ValueError
+        f = rosen
+        bounds = [(-3, 3)]
+        self.assertRaises(ValueError,
+                          _differentialevolution.differential_evolution,
+                          f,
+                          bounds,
+                          strategy='abc')
+                          
     def test_bounds_checking(self):
         # test that the bounds checking works
         f = rosen
         bounds = [(-3, None)]
         self.assertRaises(_differentialevolution.BoundsError,
-                          _differentialevolution.differential_evolution, f, bounds)
+                          _differentialevolution.differential_evolution,
+                          f,
+                          bounds)
         bounds = [(-3)]
         self.assertRaises(_differentialevolution.BoundsError,
-                          _differentialevolution.differential_evolution, f, bounds)
+                          _differentialevolution.differential_evolution,
+                          f,
+                          bounds)
         bounds = [(-3, 3), (3, 4, 5)]
         self.assertRaises(_differentialevolution.BoundsError,
-                          _differentialevolution.differential_evolution, f, bounds)
+                          _differentialevolution.differential_evolution,
+                          f,
+                          bounds)
 
     def test_select_samples(self):
         # select_samples should return 5 separate random numbers.

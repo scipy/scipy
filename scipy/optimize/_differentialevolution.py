@@ -12,11 +12,19 @@ __all__ = ['differential_evolution']
 
 MACHEPS = np.finfo(np.float64).eps
 
-# list whether a mutation strategy is binomial or exponential
-binomial = ['_best1bin', '_randtobest1bin', '_best2bin', '_rand2bin',
-            '_rand1bin']
-exponential = ['_best1exp', '_rand1exp', '_randtobest1exp', '_best2exp',
-               'rand2exp']
+#dict specifying whether mutation strategy binomial or exponential.
+#also holds mutation strategies.
+binomial = {'best1bin': '_best1',
+            'randtobest1bin': '_randtobest1',
+            'best2bin': '_best2',
+            'rand2bin': '_rand2',
+            'rand1bin': '_rand1'}
+            
+exponential = {'best1exp': '_best1',
+               'rand1exp': '_rand1',
+               'randtobest1exp': '_randtobest1',
+               'best2exp': '_best2',
+               'rand2exp': '_rand2'}
 
 
 class BoundsError(Exception):
@@ -328,12 +336,19 @@ class DifferentialEvolutionSolver(object):
                  strategy=None, maxiter=None, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=None, callback=None, disp=False, polish=True):
-
-        if strategy is not None:
-            self.strategy = getattr(self, '_' + strategy.lower())
+        
+        if strategy is None:
+            strategy = 'best1bin'
+        
+        if strategy in binomial:
+            self.strategy = strategy
+            self.mutation_func = getattr(self, binomial[strategy])
+        elif strategy in exponential:
+            self.strategy = strategy
+            self.mutation_func = getattr(self, exponential[strategy])
         else:
-            self.strategy = self._best1bin
-
+            raise ValueError("Please select a valid mutation strategy")
+   
         def default_callback(parameters, convergence=0):
             return False
         self.callback = callback or default_callback
@@ -530,9 +545,10 @@ class DifferentialEvolutionSolver(object):
         trial = np.copy(self.population[candidate])
         n = self.random_number_generator.randint(0, self.parameter_count)
 
-        bprime = self.strategy(candidate, self._select_samples(candidate, 5))
+        bprime = self.mutation_func(candidate,
+                                    self._select_samples(candidate, 5))
 
-        if self.strategy.func_name in binomial:
+        if self.strategy in binomial:
             crossovers = self.random_number_generator.rand(self.parameter_count)
             crossovers = crossovers < self.cross_over_probability        
             # the last one is always from the bprime vector for binomial
@@ -543,7 +559,7 @@ class DifferentialEvolutionSolver(object):
             trial = np.where(crossovers, bprime, trial)
             return trial
             
-        elif self.strategy.func_name in exponential:
+        elif self.strategy in exponential:
             i = 0
             while (i < self.parameter_count and
                    self.random_number_generator.rand() < 
@@ -555,17 +571,17 @@ class DifferentialEvolutionSolver(object):
 
             return trial
 
-    def _best1bin(self, candidate, samples):
+    def _best1(self, candidate, samples):
         r0, r1, r2, r3, r4 = samples
         return (self.population[0] + self.scale *
                 (self.population[r0] - self.population[r1]))
-
-    def _rand1bin(self, candidate, samples):
+                
+    def _rand1(self, candidate, samples):
         r0, r1, r2, r3, r4 = samples
         return (self.population[r0] + self.scale *
                 (self.population[r1] - self.population[r2]))
 
-    def _randtobest1bin(self, candidate, samples):
+    def _randtobest1(self, candidate, samples):
         r0, r1, r2, r3, r4 = samples
         bprime = np.copy(self.population[candidate])
         bprime += self.scale * (self.population[0] - bprime)
@@ -573,7 +589,7 @@ class DifferentialEvolutionSolver(object):
                                 self.population[r1])
         return bprime
 
-    def _best2bin(self, candidate, samples):
+    def _best2(self, candidate, samples):
         r0, r1, r2, r3, r4 = samples
         bprime = (self.population[0] + self.scale *
                             (self.population[r0] + self.population[r1]
@@ -581,47 +597,11 @@ class DifferentialEvolutionSolver(object):
 
         return bprime
 
-    def _rand2bin(self, candidate, samples):
+    def _rand2(self, candidate, samples):
         r0, r1, r2, r3, r4 = samples
         bprime = (self.population[r0] + self.scale *
                  (self.population[r1] + self.population[r2] -
                   self.population[r3] - self.population[r4]))
-
-        return bprime
-
-    def _best1exp(self, candidate, samples):
-        r0, r1, r2, r3, r4 = samples
-        return (self.population[0] + self.scale *
-                (self.population[r0] - self.population[r1]))
-
-    def _rand1exp(self, candidate, samples):
-        r0, r1, r2, r3, r4 = samples
-        return (self.population[r0] + self.scale *
-                (self.population[r1] - self.population[r2]))
-
-    def _randtobest1exp(self, candidate, samples):
-        r0, r1, r2, r3, r4 = samples
-        bprime = np.copy(self.population[candidate])
-        bprime += self.scale * (self.population[0] - bprime)
-        bprime += self.scale * (self.population[r0] -
-                                self.population[r1])
-        return bprime
-        
-    def _best2exp(self, candidate, samples):
-        r0, r1, r2, r3, r4 = samples
-        bprime = (self.population[0]
-                  + self.scale * (self.population[r0]
-                                  + self.population[r1]
-                                  - self.population[r2]
-                                  - self.population[r3]))
-
-        return bprime
-
-    def _rand2exp(self, candidate, samples):
-        r0, r1, r2, r3, r4 = samples
-        bprime = (self.population[r0] + self.scale *
-                      (self.population[r1] + self.population[r2]
-                     - self.population[r3] - self.population[r4]))
 
         return bprime
 
@@ -666,8 +646,8 @@ if __name__ == "__main__":
                                         seed=1,
                                         polish=True,
                                         disp=False)
-        print (result)
-
+        print(result)
+        
         # now do Ackley function
         def ackley(x):
             arg1 = -0.2 * sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))
@@ -678,8 +658,6 @@ if __name__ == "__main__":
                                         bounds,
                                         disp=False,
                                         polish=True)
-        print (result)
+        print(result)
 
-    import cProfile
-    cProfile.run('test()')
-#     test()
+    test()
