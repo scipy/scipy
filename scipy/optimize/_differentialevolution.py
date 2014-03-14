@@ -526,39 +526,28 @@ class DifferentialEvolutionSolver(object):
             if param > 1 or param < 0:
                 trial[index] = self.random_number_generator.rand()
 
-    def _strategy_info(self, candidate, num_samples):
-        n = self.random_number_generator.randint(0, self.parameter_count)
-
-        crossovers = self.random_number_generator.rand(self.parameter_count)
-        crossovers = crossovers < self.cross_over_probability        
-        # the last one is always from the bprime vector for binomial
-        # If you fill in modulo with a loop you have to set the last one to
-        # true. If you don't use a loop then you can have any random entry
-        # be True.
-        crossovers[n] = True
-
-        strategy_info = {
-            'samples': self._select_samples(candidate, num_samples),
-            'n': n,
-            'trial': np.copy(self.population[candidate]),
-            'crossovers': crossovers}
-
-        return strategy_info
 
     def _mutate(self, candidate):
-        strategy_info = self._strategy_info(candidate, 5)
-        trial = strategy_info['trial']
+        trial = np.copy(self.population[candidate])
+        n = self.random_number_generator.randint(0, self.parameter_count)
 
-        bprime = self.strategy(candidate, strategy_info['samples'])
+        bprime = self.strategy(candidate, self._select_samples(candidate, 5))
 
         if self.strategy.func_name in binomial:
+            crossovers = self.random_number_generator.rand(self.parameter_count)
+            crossovers = crossovers < self.cross_over_probability        
+            # the last one is always from the bprime vector for binomial
+            # If you fill in modulo with a loop you have to set the last one to
+            # true. If you don't use a loop then you can have any random entry
+            # be True.
+            crossovers[n] = True
+
             crossovers = strategy_info['crossovers']
             trial = np.where(crossovers, bprime, trial)
             return trial
             
         elif self.strategy.func_name in exponential:
             i = 0
-            n = strategy_info['n']
             while (i < self.parameter_count and
                    self.random_number_generator.rand() < 
                    self.cross_over_probability):
