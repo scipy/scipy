@@ -926,8 +926,8 @@ class _TestCommon:
         assert_array_equal(spbool.toarray(), arrbool)
 
     def test_astype(self):
-        D = array([[1.0 + 3j, 0, 0],
-                   [0, 2.0 + 5, 0],
+        D = array([[2.0 + 3j, 0, 0],
+                   [0, 4.0 + 5j, 0],
                    [0, 0, 0]])
         S = self.spmatrix(D)
 
@@ -3686,8 +3686,8 @@ def _same_sum_duplicate(data, *inds, **kwargs):
             return (data,) + inds + (indptr,)
 
     data = data.repeat(2, axis=0)
-    data[::2] *= 2
-    data[1::2] *= -1
+    data[::2] -= 1
+    data[1::2] = 1
 
     inds = tuple(indices.repeat(2) for indices in inds)
 
