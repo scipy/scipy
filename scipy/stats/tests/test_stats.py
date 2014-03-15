@@ -2681,6 +2681,14 @@ class TestFOneWay(TestCase):
         # result in F being exactly 2.0.
         assert_equal(F, 2.0)
 
+    def test_large_integer_array(self):
+        # A test of stats.f_oneway on an array of type np.uint16, with large
+        # integer values
+        a = np.array([655, 788], dtype=np.uint16)
+        b = np.array([789, 772], dtype=np.uint16)
+        F, p = stats.f_oneway(a, b)
+        assert_almost_equal(F, 0.77450216931805538)
+
 
 class TestKruskal(TestCase):
 
