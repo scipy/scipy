@@ -42,52 +42,52 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
         solver = _differentialevolution.DifferentialEvolutionSolver(
             rosen, self.limits, strategy='best1exp')
         npt.assert_equal(solver.strategy, 'best1exp')
-        npt.assert_equal(solver.mutation_func.func_name, '_best1')
+        npt.assert_equal(solver.mutation_func.__name__, '_best1')
 
         solver = _differentialevolution.DifferentialEvolutionSolver(
             rosen, self.limits, strategy='best1bin')
         npt.assert_equal(solver.strategy, 'best1bin')
-        npt.assert_equal(solver.mutation_func.func_name, '_best1')
+        npt.assert_equal(solver.mutation_func.__name__, '_best1')
 
         solver = _differentialevolution.DifferentialEvolutionSolver(
             rosen, self.limits, strategy='rand1bin')
         npt.assert_equal(solver.strategy, 'rand1bin')
-        npt.assert_equal(solver.mutation_func.func_name, '_rand1')
+        npt.assert_equal(solver.mutation_func.__name__, '_rand1')
 
         solver = _differentialevolution.DifferentialEvolutionSolver(
             rosen, self.limits, strategy='rand1exp')
         npt.assert_equal(solver.strategy, 'rand1exp')
-        npt.assert_equal(solver.mutation_func.func_name, '_rand1')
+        npt.assert_equal(solver.mutation_func.__name__, '_rand1')
         
         solver = _differentialevolution.DifferentialEvolutionSolver(
             rosen, self.limits, strategy='rand2exp')
         npt.assert_equal(solver.strategy, 'rand2exp')
-        npt.assert_equal(solver.mutation_func.func_name, '_rand2')
+        npt.assert_equal(solver.mutation_func.__name__, '_rand2')
 
         solver = _differentialevolution.DifferentialEvolutionSolver(
             rosen, self.limits, strategy='best2bin')
         npt.assert_equal(solver.strategy, 'best2bin')
-        npt.assert_equal(solver.mutation_func.func_name, '_best2')
+        npt.assert_equal(solver.mutation_func.__name__, '_best2')
 
         solver = _differentialevolution.DifferentialEvolutionSolver(
             rosen, self.limits, strategy='rand2bin')
         npt.assert_equal(solver.strategy, 'rand2bin')
-        npt.assert_equal(solver.mutation_func.func_name, '_rand2')
+        npt.assert_equal(solver.mutation_func.__name__, '_rand2')
 
         solver = _differentialevolution.DifferentialEvolutionSolver(
             rosen, self.limits, strategy='rand2exp')
         npt.assert_equal(solver.strategy, 'rand2exp')
-        npt.assert_equal(solver.mutation_func.func_name, '_rand2')
+        npt.assert_equal(solver.mutation_func.__name__, '_rand2')
 
         solver = _differentialevolution.DifferentialEvolutionSolver(
             rosen, self.limits, strategy='randtobest1bin')
         npt.assert_equal(solver.strategy, 'randtobest1bin')
-        npt.assert_equal(solver.mutation_func.func_name, '_randtobest1')
+        npt.assert_equal(solver.mutation_func.__name__, '_randtobest1')
 
         solver = _differentialevolution.DifferentialEvolutionSolver(
             rosen, self.limits, strategy='randtobest1exp')
         npt.assert_equal(solver.strategy, 'randtobest1exp')
-        npt.assert_equal(solver.mutation_func.func_name, '_randtobest1')
+        npt.assert_equal(solver.mutation_func.__name__, '_randtobest1')
 
     def test__mutate1(self):
         #strategies */1/*, i.e. rand/1/bin, best/1/exp, etc.
