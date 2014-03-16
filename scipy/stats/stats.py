@@ -1078,20 +1078,19 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals
 
 
-def describe(a, axis=0,ddof=1):
+def describe(a, axis=0, ddof=1):
     """
     Computes several descriptive statistics of the passed array.
 
     Parameters
     ----------
     a : array_like
-       data
-    axis : int or None
-       axis along which statistics are calculated. If axis is None, then data
-       array is raveled. The default axis is zero.
-    ddof : int
-        degree of freedom (default 1)
-
+       Input data.
+    axis : int, optional
+       Axis along which statistics are calculated.  If axis is None, then data
+       array is raveled.  The default axis is zero.
+    ddof : int, optional
+        Delta degrees of freedom.  Default is 1.
 
     Returns
     -------
@@ -1113,8 +1112,7 @@ def describe(a, axis=0,ddof=1):
 
     See Also
     --------
-    skew
-    kurtosis
+    skew, kurtosis
 
     """
     a, axis = _chk_asarray(a, axis)

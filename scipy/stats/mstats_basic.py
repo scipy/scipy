@@ -630,9 +630,11 @@ if stats.pointbiserialr.__doc__:
 
 def linregress(*args):
     """
-    linear regression calculation
+    Linear regression calculation
 
-    the function of stats is used for that purpose
+    Note that the non-masked version is used, and that this docstring is
+    replaced by the non-masked docstring + some info on missing data.
+
     """
     if len(args) == 1:  # more than 1D array?
         args = ma.array(args[0], copy=True)
@@ -640,23 +642,26 @@ def linregress(*args):
             x = args[0]
             y = args[1]
         else:
-            x = args[:,0]
-            y = args[:,1]
+            x = args[:, 0]
+            y = args[:, 1]
     else:
         x = ma.array(args[0]).flatten()
         y = ma.array(args[1]).flatten()
+
     m = ma.mask_or(ma.getmask(x), ma.getmask(y), shrink=False)
     if m is not nomask:
         x = ma.array(x, mask=m)
         y = ma.array(y, mask=m)
 
-    # use same routine as stats for regression, return None,
-    # if invalid number of samples
+    # use same routine as stats for regression;
+    # return None if invalid number of samples
     if (~m).sum() > 1:
-        slope, intercept, r, prob, sterrest = stats.linregress(x.data[~m],y.data[~m])
+        slope, intercept, r, prob, sterrest = stats.linregress(x.data[~m],
+                                                               y.data[~m])
         return slope, intercept, r, prob, sterrest
     else:
         return None, None, None, None, None
+
 if stats.linregress.__doc__:
     linregress.__doc__ = stats.linregress.__doc__ + genmissingvaldoc
 
@@ -974,29 +979,30 @@ def threshold(a, threshmin=None, threshmax=None, newval=0):
 
 
 def trima(a, limits=None, inclusive=(True,True)):
-    """Trims an array by masking the data outside some given limits.
+    """
+    Trims an array by masking the data outside some given limits.
+
     Returns a masked version of the input array.
 
     Parameters
     ----------
-    a : sequence
+    a : array_like
         Input array.
     limits : {None, tuple}, optional
         Tuple of (lower limit, upper limit) in absolute values.
         Values of the input array lower (greater) than the lower (upper) limit
-        will be masked. A limit is None indicates an open interval.
-    inclusive : {(True,True) tuple}, optional
+        will be masked.  A limit is None indicates an open interval.
+    inclusive : (bool, bool) tuple, optional
         Tuple of (lower flag, upper flag), indicating whether values exactly
         equal to the lower (upper) limit are allowed.
 
     """
     a = ma.asarray(a)
     a.unshare_mask()
-    if limits is None:
+    if (limits is None) or (limits == (None, None)):
         return a
+
     (lower_lim, upper_lim) = limits
-    if (lower_lim is None) and (upper_lim is None):
-        return a
     (lower_in, upper_in) = inclusive
     condition = False
     if lower_lim is not None:
@@ -1009,6 +1015,7 @@ def trima(a, limits=None, inclusive=(True,True)):
             condition |= (a > upper_lim)
         else:
             condition |= (a >= upper_lim)
+
     a[condition.filled(True)] = masked
     return a
 
@@ -1351,12 +1358,12 @@ tmean.__doc__ = stats.tmean.__doc__
 
 def tvar(a, limits=None, inclusive=(True,True)):
     a = a.astype(float).ravel()
-
     if limits is None:
         n = (~a.mask).sum()  # todo: better way to do that?
-        r = trima(a, limits=limits, inclusive=inclusive).var()*(n/(n-1.))
+        r = trima(a, limits=limits, inclusive=inclusive).var() * (n/(n-1.))
     else:
         raise ValueError('mstats.tvar() with limits not implemented yet so far')
+
     return r
 tvar.__doc__ = stats.tvar.__doc__
 
@@ -1999,9 +2006,10 @@ def sem(a, axis=0, ddof=0):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis=axis)
-    s = a.std(axis=axis,ddof=ddof) / ma.sqrt(n)  # todo: does it need to be n-ddof in the denominator ???
+    # TODO: check, does it need to be n-ddof in the denominator?
+    s = a.std(axis=axis, ddof=ddof) / ma.sqrt(n)
     return s
-#sem.__doc__ = stats.sem.__doc__
+
 
 zmap = stats.zmap
 zscore = stats.zscore
