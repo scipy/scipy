@@ -45,7 +45,7 @@ class TestGMean(TestCase):
         a = (1,2,3,4)
         actual = mstats.gmean(a)
         desired = np.power(1*2*3*4,1./4.)
-        assert_almost_equal(actual,desired,decimal=14)
+        assert_almost_equal(actual, desired, decimal=14)
 
         desired1 = mstats.gmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
@@ -125,7 +125,6 @@ class TestHMean(TestCase):
 
 
 class TestRanking(TestCase):
-
     def __init__(self, *args, **kwargs):
         TestCase.__init__(self, *args, **kwargs)
 
@@ -136,22 +135,21 @@ class TestRanking(TestCase):
         x[[3,4]] = masked
         assert_almost_equal(mstats.rankdata(x),
                            [1,2.5,2.5,0,0,4,5,6.5,6.5,8])
-        assert_almost_equal(mstats.rankdata(x,use_missing=True),
+        assert_almost_equal(mstats.rankdata(x, use_missing=True),
                             [1,2.5,2.5,4.5,4.5,4,5,6.5,6.5,8])
         x = ma.array([0,1,5,1,2,4,3,5,1,6,])
         assert_almost_equal(mstats.rankdata(x),
                            [1,3,8.5,3,5,7,6,8.5,3,10])
         x = ma.array([[0,1,1,1,2], [3,4,5,5,6,]])
-        assert_almost_equal(mstats.rankdata(x),[[1,3,3,3,5],
-                            [6,7,8.5,8.5,10]])
-        assert_almost_equal(mstats.rankdata(x,axis=1),
-                           [[1,3,3,3,5],[1,2,3.5,3.5,5]])
+        assert_almost_equal(mstats.rankdata(x),
+                            [[1,3,3,3,5], [6,7,8.5,8.5,10]])
+        assert_almost_equal(mstats.rankdata(x, axis=1),
+                           [[1,3,3,3,5], [1,2,3.5,3.5,5]])
         assert_almost_equal(mstats.rankdata(x,axis=0),
-                           [[1,1,1,1,1],[2,2,2,2,2,]])
+                           [[1,1,1,1,1], [2,2,2,2,2,]])
 
 
 class TestCorr(TestCase):
-
     def test_pearsonr(self):
         # Tests some computations of Pearson's r
         x = ma.arange(10)
@@ -451,12 +449,14 @@ class TestVariability(TestCase):
         # This is not in R, so used:
         #     mean(testcase, axis=0) / (sqrt(var(testcase)*3/4))
         y = mstats.signaltonoise(self.testcase)
-        assert_almost_equal(y,2.236067977)
+        assert_almost_equal(y, 2.236067977)
 
     def test_sem(self):
         # This is not in R, so used: sqrt(var(testcase)*3/4) / sqrt(3)
+        # Note, differs from stats.sem return due to different ddof (backwards
+        # compat reasons).
         y = mstats.sem(self.testcase)
-        assert_almost_equal(y, 0.6454972244)
+        assert_almost_equal(y, 0.55901699437494745)
         n = self.testcase.count()
         assert_allclose(mstats.sem(self.testcase, ddof=0) * np.sqrt(n/(n-2)),
                         mstats.sem(self.testcase, ddof=2))
@@ -530,9 +530,8 @@ def test_regress_simple():
     y += np.sin(np.linspace(0, 20, 100))
 
     slope, intercept, r_value, p_value, sterr = mstats.linregress(x, y)
-    if slope is not None:
-        assert_almost_equal(slope, 0.19644990055858422)
-        assert_almost_equal(intercept, 10.211269918932341)
+    assert_almost_equal(slope, 0.19644990055858422)
+    assert_almost_equal(intercept, 10.211269918932341)
 
 
 def test_plotting_positions():
@@ -588,7 +587,6 @@ class TestNormalitytests():
 
 #TODO: for all ttest functions, add tests with masked array inputs
 class TestTtest_rel():
-
     def test_vs_nonmasked(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
@@ -625,7 +623,6 @@ class TestTtest_rel():
 
 
 class TestTtest_ind():
-
     def test_vs_nonmasked(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
@@ -653,7 +650,6 @@ class TestTtest_ind():
 
 
 class TestTtest_1samp():
-
     def test_vs_nonmasked(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
@@ -682,11 +678,15 @@ class TestTtest_1samp():
 
 class TestCompareWithStats(TestCase):
     """
-    Class to compare mstats results with stats results
-    It is in general assumed that scipy.stats is at a more mature stage than stats.mstats. If a routine in mstats
-    results in similar results like in scipy.stats, this is considered also as a proper validation of scipy.mstats routine
+    Class to compare mstats results with stats results.
 
-    Different sample sizes are used for testing, as some problems between stats and mstats are dependent on sample size
+    It is in general assumed that scipy.stats is at a more mature stage than
+    stats.mstats.  If a routine in mstats results in similar results like in
+    scipy.stats, this is considered also as a proper validation of scipy.mstats
+    routine.
+
+    Different sample sizes are used for testing, as some problems between stats
+    and mstats are dependent on sample size.
 
     Author: Alexander Loew
 
@@ -699,10 +699,9 @@ class TestCompareWithStats(TestCase):
     but issuing reports on scipy-dev
 
     """
-
     def get_n(self):
-        """returns list of sample sizes to be used for comparison"""
-        return [1000,100,10,5]
+        """ Returns list of sample sizes to be used for comparison. """
+        return [1000, 100, 10, 5]
 
     def generate_xy_sample(self, n):
         # This routine generates numpy arrays and corresponding masked arrays
@@ -834,29 +833,29 @@ class TestCompareWithStats(TestCase):
             x, y, xm, ym = self.generate_xy_sample(n)
 
             #reference solution
-            zx = (x-x.mean()) / x.std()
-            zy = (y-y.mean()) / y.std()
+            zx = (x - x.mean()) / x.std()
+            zy = (y - y.mean()) / y.std()
 
             #validate stats
-            assert(np.any(abs(stats.zscore(x)-zx) < 1.E-10))
-            assert(np.any(abs(stats.zscore(y)-zy) < 1.E-10))
+            assert_allclose(stats.zscore(x), zx, rtol=1e-10)
+            assert_allclose(stats.zscore(y), zy, rtol=1e-10)
 
             #compare stats and mstats
-            assert(np.any(abs(stats.zscore(x)
-                        - stats.mstats.zscore(xm[0:len(x)])) < 1.E-10))
-            assert(np.any(abs(stats.zscore(y)
-                        - stats.mstats.zscore(ym[0:len(y)])) < 1.E-10))
+            assert_allclose(stats.zscore(x), stats.mstats.zscore(xm[0:len(x)]),
+                            rtol=1e-10)
+            assert_allclose(stats.zscore(y), stats.mstats.zscore(ym[0:len(y)]),
+                            rtol=1e-10)
 
     def test_kurtosis(self):
         for n in self.get_n():
             x, y, xm, ym = self.generate_xy_sample(n)
             r = stats.kurtosis(x)
             rm = stats.mstats.kurtosis(xm)
-            assert_almost_equal(r,rm,10)
+            assert_almost_equal(r, rm, 10)
 
             r = stats.kurtosis(y)
             rm = stats.mstats.kurtosis(ym)
-            assert_almost_equal(r,rm,10)
+            assert_almost_equal(r, rm, 10)
 
     def test_sem(self):
         # example from stats.sem doc

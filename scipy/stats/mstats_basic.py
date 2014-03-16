@@ -636,7 +636,8 @@ def linregress(*args):
     replaced by the non-masked docstring + some info on missing data.
 
     """
-    if len(args) == 1:  # more than 1D array?
+    if len(args) == 1:
+        # Input is a single 2-D array containing x and y
         args = ma.array(args[0], copy=True)
         if len(args) == 2:
             x = args[0]
@@ -645,6 +646,7 @@ def linregress(*args):
             x = args[:, 0]
             y = args[:, 1]
     else:
+        # Input is two 1-D arrays
         x = ma.array(args[0]).flatten()
         y = ma.array(args[1]).flatten()
 
@@ -652,15 +654,16 @@ def linregress(*args):
     if m is not nomask:
         x = ma.array(x, mask=m)
         y = ma.array(y, mask=m)
-
-    # use same routine as stats for regression;
-    # return None if invalid number of samples
-    if (~m).sum() > 1:
-        slope, intercept, r, prob, sterrest = stats.linregress(x.data[~m],
-                                                               y.data[~m])
-        return slope, intercept, r, prob, sterrest
+        if np.any(~m):
+            slope, intercept, r, prob, sterrest = stats.linregress(x.data[~m],
+                                                                   y.data[~m])
+        else:
+            # All data is masked
+            return None, None, None, None, None
     else:
-        return None, None, None, None, None
+        slope, intercept, r, prob, sterrest = stats.linregress(x.data, y.data)
+
+    return slope, intercept, r, prob, sterrest
 
 if stats.linregress.__doc__:
     linregress.__doc__ = stats.linregress.__doc__ + genmissingvaldoc
