@@ -40,7 +40,7 @@ __all__ = ['argstoarray',
 import numpy as np
 from numpy import ndarray
 import numpy.ma as ma
-from numpy.ma import MaskedArray, masked, nomask
+from numpy.ma import masked, nomask
 
 from scipy.lib.six import iteritems
 
@@ -50,7 +50,6 @@ import warnings
 from . import stats
 from . import distributions
 import scipy.special as special
-import scipy.misc as misc
 from . import futil
 
 

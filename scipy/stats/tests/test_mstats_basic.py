@@ -18,8 +18,6 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
     assert_allclose, assert_raises)
 
-from nose.tools import nottest
-
 
 class TestMquantiles(TestCase):
     def test_mquantiles_limit_keyword(self):
@@ -707,75 +705,61 @@ class TestCompareWithStats(TestCase):
         return [1000,100,10,5]
 
     def generate_xy_sample(self, n):
-        # generate some sample data
-        # This routine generates numpy arrays and corresponding masked arrays with the same data, but additional
-        # masked values
-
-        assert(isinstance(n, int))
-        assert(n > 3)
-
+        # This routine generates numpy arrays and corresponding masked arrays
+        # with the same data, but additional masked values
+        np.random.seed(1234567)
         x = np.random.randn(n)
         y = x + np.random.randn(n)
-        xm = np.ones(len(x)+5)*np.nan
-        ym = np.ones(len(y)+5)*np.nan
+        xm = np.ones(len(x) + 5) * np.nan
+        ym = np.ones(len(y) + 5) * np.nan
         xm[0:len(x)] = x
         ym[0:len(y)] = y
-        xm = np.ma.array(xm,mask=np.isnan(xm))
-        ym = np.ma.array(ym,mask=np.isnan(ym))
-
-        return x,y,xm,ym
+        xm = np.ma.array(xm, mask=np.isnan(xm))
+        ym = np.ma.array(ym, mask=np.isnan(ym))
+        return x, y, xm, ym
 
     def generate_xy_sample2D(self, n, nx):
-        # generate sample data for 2D
-        x = np.ones((n, nx))*np.nan
-        y = np.ones((n, nx))*np.nan
-        xm = np.ones((n+5, nx))*np.nan
-        ym = np.ones((n+5, nx))*np.nan
+        x = np.ones((n, nx)) * np.nan
+        y = np.ones((n, nx)) * np.nan
+        xm = np.ones((n+5, nx)) * np.nan
+        ym = np.ones((n+5, nx)) * np.nan
 
         for i in xrange(nx):
-            x[:,i],y[:,i],dx,dy = self.generate_xy_sample(n)
-        xm[0:n,:] = x[0:n]
-        ym[0:n,:] = y[0:n]
-        xm = np.ma.array(xm,mask=np.isnan(xm))
-        ym = np.ma.array(ym,mask=np.isnan(ym))
+            x[:,i], y[:,i], dx, dy = self.generate_xy_sample(n)
 
-        return x,y,xm,ym
+        xm[0:n, :] = x[0:n]
+        ym[0:n, :] = y[0:n]
+        xm = np.ma.array(xm, mask=np.isnan(xm))
+        ym = np.ma.array(ym, mask=np.isnan(ym))
+        return x, y, xm, ym
 
     def test_linregress(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
-            slope,intercept,r_value,p_value,std_err = stats.linregress(x,y)
-            slopem,interceptm,r_valuem,p_valuem,std_errm = stats.mstats.linregress(xm,ym)
-
-            if slopem is not None:
-                assert_equal(slope,slopem)
-                assert_equal(intercept,interceptm)
-                assert_equal(r_value,r_valuem)
-                assert_equal(p_value,p_valuem)
-                assert_equal(std_err,std_errm)
+            x, y, xm, ym = self.generate_xy_sample(n)
+            res1 = stats.linregress(x, y)
+            res2 = stats.mstats.linregress(xm, ym)
+            assert_allclose(np.asarray(res1), np.asarray(res2))
 
     def test_pearsonr(self):
-        """ test for pearsonr """
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
-            r,p = stats.pearsonr(x,y)
-            rm,pm = stats.mstats.pearsonr(xm,ym)
+            x, y, xm, ym = self.generate_xy_sample(n)
+            r, p = stats.pearsonr(x, y)
+            rm, pm = stats.mstats.pearsonr(xm, ym)
 
-            assert_almost_equal(r,rm,14)
-            assert_almost_equal(p,pm,14)
+            assert_almost_equal(r, rm, decimal=14)
+            assert_almost_equal(p, pm, decimal=14)
 
     def test_spearmanr(self):
-        """ test spearmanr """
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
-            r,p = stats.spearmanr(x,y)
-            rm,pm = stats.mstats.spearmanr(xm,ym)
-            assert_almost_equal(r,rm,14)
-            assert_almost_equal(p,pm,14)
+            x, y, xm, ym = self.generate_xy_sample(n)
+            r, p = stats.spearmanr(x, y)
+            rm, pm = stats.mstats.spearmanr(xm, ym)
+            assert_almost_equal(r, rm, 14)
+            assert_almost_equal(p, pm, 14)
 
     def test_gmean(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
+            x, y, xm, ym = self.generate_xy_sample(n)
             r = stats.gmean(abs(x))
             rm = stats.mstats.gmean(abs(xm))
             assert_equal(r,rm)
@@ -786,71 +770,68 @@ class TestCompareWithStats(TestCase):
 
     def test_hmean(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
+            x, y, xm, ym = self.generate_xy_sample(n)
 
             r = stats.hmean(abs(x))
             rm = stats.mstats.hmean(abs(xm))
-            assert_almost_equal(r,rm,10)
+            assert_almost_equal(r, rm, 10)
 
             r = stats.hmean(abs(y))
             rm = stats.mstats.hmean(abs(ym))
-            assert_almost_equal(r,rm,10)
+            assert_almost_equal(r, rm, 10)
 
     def test_skew(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
+            x, y, xm, ym = self.generate_xy_sample(n)
 
             r = stats.skew(x)
             rm = stats.mstats.skew(xm)
-            assert_almost_equal(r,rm,10)
+            assert_almost_equal(r, rm, 10)
 
             r = stats.skew(y)
             rm = stats.mstats.skew(ym)
-            assert_almost_equal(r,rm,10)
+            assert_almost_equal(r, rm, 10)
 
     def test_moment(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
+            x, y, xm, ym = self.generate_xy_sample(n)
 
             r = stats.moment(x)
             rm = stats.mstats.moment(xm)
-            assert_almost_equal(r,rm,10)
+            assert_almost_equal(r, rm, 10)
 
             r = stats.moment(y)
             rm = stats.mstats.moment(ym)
-            assert_almost_equal(r,rm,10)
+            assert_almost_equal(r, rm, 10)
 
     def test_signaltonoise(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
+            x, y, xm, ym = self.generate_xy_sample(n)
 
             r = stats.signaltonoise(x)
             rm = stats.mstats.signaltonoise(xm)
-            assert_almost_equal(r,rm,10)
+            assert_almost_equal(r, rm, 10)
 
             r = stats.signaltonoise(y)
             rm = stats.mstats.signaltonoise(ym)
-            assert_almost_equal(r,rm,10)
+            assert_almost_equal(r, rm, 10)
 
     def test_betai(self):
-        """ test incomplete beta function """
+        np.random.seed(12345)
         for i in range(10):
-            a = np.random.rand()*5.
-            b = np.random.rand()*200.
-            assert_equal(stats.betai(a,b,0.),0.)
-            assert_equal(stats.betai(a,b,1.),1.)
-            assert_equal(stats.mstats.betai(a,b,0.),0.)
-            assert_equal(stats.mstats.betai(a,b,1.),1.)
-        for i in range(10):
-            a = np.random.rand()*5.
-            b = np.random.rand()*200.
+            a = np.random.rand() * 5.
+            b = np.random.rand() * 200.
+            assert_equal(stats.betai(a, b, 0.), 0.)
+            assert_equal(stats.betai(a, b, 1.), 1.)
+            assert_equal(stats.mstats.betai(a, b, 0.), 0.)
+            assert_equal(stats.mstats.betai(a, b, 1.), 1.)
             x = np.random.rand()
-            assert_equal(stats.betai(a,b,x),stats.mstats.betai(a,b,x))
+            assert_almost_equal(stats.betai(a, b, x),
+                                stats.mstats.betai(a, b, x), decimal=13)
 
     def test_zscore(self):
-        """ test zscore """
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
+            x, y, xm, ym = self.generate_xy_sample(n)
 
             #reference solution
             zx = (x-x.mean()) / x.std()
@@ -867,10 +848,8 @@ class TestCompareWithStats(TestCase):
                         - stats.mstats.zscore(ym[0:len(y)])) < 1.E-10))
 
     def test_kurtosis(self):
-        """ test kurtosis """
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
-
+            x, y, xm, ym = self.generate_xy_sample(n)
             r = stats.kurtosis(x)
             rm = stats.mstats.kurtosis(xm)
             assert_almost_equal(r,rm,10)
@@ -880,100 +859,100 @@ class TestCompareWithStats(TestCase):
             assert_almost_equal(r,rm,10)
 
     def test_sem(self):
-        #example from stats.sem doc
+        # example from stats.sem doc
         a = np.arange(20).reshape(5,4)
         am = np.ma.array(a)
         r = stats.sem(a,ddof=1)
-        rm = stats.mstats.sem(am,ddof=1.)
+        rm = stats.mstats.sem(am, ddof=1)
 
-        assert(np.all(abs(r - 2.82842712) < 1.E-5))
-        assert(np.all(abs(rm - 2.82842712) < 1.E-5))
+        assert_allclose(r, 2.82842712, atol=1e-5)
+        assert_allclose(rm, 2.82842712, atol=1e-5)
 
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
-            assert_equal(stats.mstats.sem(xm,axis=None,ddof=0),
-                         stats.sem(x, axis=None, ddof=0))
-            assert_equal(stats.mstats.sem(ym,axis=None,ddof=0),
-                         stats.sem(y, axis=None, ddof=0))
-            assert_equal(stats.mstats.sem(xm,axis=None,ddof=1),
-                         stats.sem(x, axis=None, ddof=1))
-            assert_equal(stats.mstats.sem(ym,axis=None,ddof=1),
-                         stats.sem(y, axis=None, ddof=1))
+            x, y, xm, ym = self.generate_xy_sample(n)
+            assert_almost_equal(stats.mstats.sem(xm, axis=None, ddof=0),
+                                stats.sem(x, axis=None, ddof=0), decimal=13)
+            assert_almost_equal(stats.mstats.sem(ym, axis=None, ddof=0),
+                                stats.sem(y, axis=None, ddof=0), decimal=13)
+            assert_almost_equal(stats.mstats.sem(xm, axis=None, ddof=1),
+                                stats.sem(x, axis=None, ddof=1), decimal=13)
+            assert_almost_equal(stats.mstats.sem(ym, axis=None, ddof=1),
+                                stats.sem(y, axis=None, ddof=1), decimal=13)
 
     def test_describe(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
-            r = stats.describe(x,ddof=1)
-            rm = stats.mstats.describe(xm,ddof=1)
-            assert_equal(r[0],rm[0])
-            assert_equal(r[1][0],rm[1][0])
-            assert_equal(r[1][1],rm[1][1])
-            assert_equal(r[2],rm[2])
-            assert_equal(r[3],rm[3])
-            assert_equal(r[4],rm[4])
-            assert_equal(r[5],rm[5])
+            x, y, xm, ym = self.generate_xy_sample(n)
+            r = stats.describe(x, ddof=1)
+            rm = stats.mstats.describe(xm, ddof=1)
+            for ii in range(6):
+                assert_almost_equal(np.asarray(r[ii]),
+                                    np.asarray(rm[ii]),
+                                    decimal=12)
 
     def test_rankdata(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
+            x, y, xm, ym = self.generate_xy_sample(n)
             r = stats.rankdata(x)
             rm = stats.mstats.rankdata(x)
-            assert(np.all((r-rm) == 0.))
+            assert_allclose(r, rm)
 
     def test_tmean(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
+            x, y, xm, ym = self.generate_xy_sample(n)
             assert_equal(stats.tmean(x),stats.mstats.tmean(xm))
             assert_equal(stats.tmean(y),stats.mstats.tmean(ym))
 
     def test_tmax(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
+            x, y, xm, ym = self.generate_xy_sample(n)
             assert_almost_equal(stats.tmax(x,2.),
-                                stats.mstats.tmax(xm,2.),10)
+                                stats.mstats.tmax(xm,2.), 10)
             assert_almost_equal(stats.tmax(y,2.),
-                                stats.mstats.tmax(ym,2.),10)
+                                stats.mstats.tmax(ym,2.), 10)
 
     def test_tmin(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
+            x, y, xm, ym = self.generate_xy_sample(n)
             assert_equal(stats.tmin(x),stats.mstats.tmin(xm))
             assert_equal(stats.tmin(y),stats.mstats.tmin(ym))
 
             assert_almost_equal(stats.tmin(x,lowerlimit=-1.),
-                                stats.mstats.tmin(xm,lowerlimit=-1.),10)
+                                stats.mstats.tmin(xm,lowerlimit=-1.), 10)
             assert_almost_equal(stats.tmin(y,lowerlimit=-1.),
-                                stats.mstats.tmin(ym,lowerlimit=-1.),10)
+                                stats.mstats.tmin(ym,lowerlimit=-1.), 10)
 
     def test_zmap(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
+            x, y, xm, ym = self.generate_xy_sample(n)
             z = stats.zmap(x,y)
             zm = stats.mstats.zmap(xm,ym)
-            assert(np.all(abs(z-zm[0:len(z)]) < 1.E-10))
+            assert_allclose(z, zm[0:len(z)], atol=1e-10)
 
     def test_variation(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
-            assert_equal(stats.variation(x),stats.mstats.variation(xm))
-            assert_equal(stats.variation(y),stats.mstats.variation(ym))
+            x, y, xm, ym = self.generate_xy_sample(n)
+            assert_almost_equal(stats.variation(x), stats.mstats.variation(xm),
+                                decimal=12)
+            assert_almost_equal(stats.variation(y), stats.mstats.variation(ym),
+                                decimal=12)
 
     def test_tvar(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
-            assert_equal(stats.tvar(x),stats.mstats.tvar(xm))
-            assert_equal(stats.tvar(y),stats.mstats.tvar(ym))
+            x, y, xm, ym = self.generate_xy_sample(n)
+            assert_almost_equal(stats.tvar(x), stats.mstats.tvar(xm),
+                                decimal=12)
+            assert_almost_equal(stats.tvar(y), stats.mstats.tvar(ym),
+                                decimal=12)
 
     def test_trimboth(self):
         a = np.arange(20)
-        b = stats.trimboth(a,0.1)
-        bm = stats.mstats.trimboth(a,0.1)
-
-        assert(np.all(b == bm.data[~bm.mask]))
+        b = stats.trimboth(a, 0.1)
+        bm = stats.mstats.trimboth(a, 0.1)
+        assert_allclose(b, bm.data[~bm.mask])
 
     def test_tsem(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
+            x, y, xm, ym = self.generate_xy_sample(n)
             assert_equal(stats.tsem(x),stats.mstats.tsem(xm))
             assert_equal(stats.tsem(y),stats.mstats.tsem(ym))
             assert_equal(stats.tsem(x,limits=(-2.,2.)),
@@ -983,28 +962,28 @@ class TestCompareWithStats(TestCase):
         # this test is for 1D data
         for n in self.get_n():
             if n > 8:
-                x,y,xm,ym = self.generate_xy_sample(n)
+                x, y, xm, ym = self.generate_xy_sample(n)
                 r = stats.skewtest(x)
                 rm = stats.mstats.skewtest(xm)
                 assert_equal(r[0], rm[0])
-                # TODO this test is not performed as it is a known issue that mstats returns a slightly different p-value
-                # what is a bit strange is that other tests like test_maskedarray_input
-                # don't fail!
+                # TODO this test is not performed as it is a known issue that
+                # mstats returns a slightly different p-value what is a bit
+                # strange is that other tests like test_maskedarray_input don't
+                # fail!
                 #~ assert_almost_equal(r[1], rm[1])
 
     def test_skewtest_2D_notmasked(self):
         # a normal ndarray is passed to the masked function
-        x = np.random.random((20,2))*20.
+        x = np.random.random((20, 2)) * 20.
         r = stats.skewtest(x)
         rm = stats.mstats.skewtest(x)
-        assert_equal(r[0][0],rm[0][0])
-        assert_equal(r[0][1],rm[0][1])
+        assert_allclose(np.asarray(r), np.asarray(rm))
 
     def test_skewtest_2D_WithMask(self):
         nx = 2
         for n in self.get_n():
             if n > 8:
-                x,y,xm,ym = self.generate_xy_sample2D(n, nx)
+                x, y, xm, ym = self.generate_xy_sample2D(n, nx)
                 r = stats.skewtest(x)
                 rm = stats.mstats.skewtest(xm)
 
@@ -1014,16 +993,17 @@ class TestCompareWithStats(TestCase):
     def test_normaltest(self):
         for n in self.get_n():
             if n > 8:
-                x,y,xm,ym = self.generate_xy_sample(n)
+                x, y, xm, ym = self.generate_xy_sample(n)
                 r = stats.normaltest(x)
                 rm = stats.mstats.normaltest(xm)
-                assert_almost_equal(r[0],rm[0],10)
-                assert_almost_equal(r[1],rm[1],10)
+                assert_almost_equal(r[0], rm[0], decimal=10)
+                assert_almost_equal(r[1], rm[1], decimal=10)
 
     def test_find_repeats(self):
         x = np.asarray([1,1,2,2,3,3,3,4,4,4,4]).astype('float')
         tmp = np.asarray([1,1,2,2,3,3,3,4,4,4,4,5,5,5,5]).astype('float')
-        xm = np.ma.array(tmp,mask=tmp == 5.)
+        mask = (tmp == 5.)
+        xm = np.ma.array(tmp, mask=mask)
 
         r = stats.find_repeats(x)
         rm = stats.mstats.find_repeats(xm)
@@ -1032,18 +1012,19 @@ class TestCompareWithStats(TestCase):
 
     def test_kendalltau(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
-            r = stats.kendalltau(x,y)
-            rm = stats.mstats.kendalltau(xm,ym)
-            assert_almost_equal(r[0],rm[0],10)
-            assert_almost_equal(r[1],rm[1],7)
+            x, y, xm, ym = self.generate_xy_sample(n)
+            r = stats.kendalltau(x, y)
+            rm = stats.mstats.kendalltau(xm, ym)
+            assert_almost_equal(r[0], rm[0], decimal=10)
+            assert_almost_equal(r[1], rm[1], decimal=7)
 
     def test_obrientransform(self):
         for n in self.get_n():
-            x,y,xm,ym = self.generate_xy_sample(n)
+            x, y, xm, ym = self.generate_xy_sample(n)
             r = stats.obrientransform(x)
             rm = stats.mstats.obrientransform(xm)
-            assert_almost_equal(r.T,rm[0:len(x)])
+            assert_almost_equal(r.T, rm[0:len(x)])
+
 
 if __name__ == "__main__":
     run_module_suite()
