@@ -1274,8 +1274,8 @@ def anderson_ksamp(samples, midrank=True):
            Anderson-Darling Tests, Journal of the American Statistical
            Association, Vol. 82, pp. 918-924.
 
-    Examples:
-    ---------
+    Examples
+    --------
     >>> from scipy import stats
     >>> np.random.seed(314159)
 
@@ -1301,8 +1301,8 @@ def anderson_ksamp(samples, midrank=True):
     (-0.73091722665244196,
       array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856]),
       0.8789283903979661)
-    """
 
+    """
     k = len(samples)
     if (k < 2):
         raise ValueError("anderson_ksamp needs at least two samples")
