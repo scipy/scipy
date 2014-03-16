@@ -990,13 +990,15 @@ class TestCompareWithStats(TestCase):
                 assert_equal(r[0][1],rm[0][1])
 
     def test_normaltest(self):
+        np.seterr(over='raise')
         for n in self.get_n():
             if n > 8:
-                x, y, xm, ym = self.generate_xy_sample(n)
-                r = stats.normaltest(x)
-                rm = stats.mstats.normaltest(xm)
-                assert_almost_equal(r[0], rm[0], decimal=10)
-                assert_almost_equal(r[1], rm[1], decimal=10)
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('ignore', category=UserWarning)
+                    x, y, xm, ym = self.generate_xy_sample(n)
+                    r = stats.normaltest(x)
+                    rm = stats.mstats.normaltest(xm)
+                    assert_allclose(np.asarray(r), np.asarray(rm))
 
     def test_find_repeats(self):
         x = np.asarray([1,1,2,2,3,3,3,4,4,4,4]).astype('float')

@@ -1529,8 +1529,8 @@ skew.__doc__ = stats.skew.__doc__
 
 def kurtosis(a, axis=0, fisher=True, bias=True):
     a, axis = _chk_asarray(a, axis)
-    m2 = moment(a,2,axis)
-    m4 = moment(a,4,axis)
+    m2 = moment(a, 2, axis)
+    m4 = moment(a, 4, axis)
     olderr = np.seterr(all='ignore')
     try:
         vals = ma.where(m2 == 0, 0, m4 / m2**2.0)
@@ -1676,9 +1676,10 @@ def kurtosistest(a, axis=0):
         warnings.warn(
             "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" %
             np.min(n))
+
     b2 = kurtosis(a, axis, fisher=False)
     E = 3.0*(n-1) / (n+1)
-    varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1)*(n+3)*(n+5))
+    varb2 = 24.0*n*(n-2.)*(n-3) / ((n+1)*(n+1.)*(n+3)*(n+5))
     x = (b2-E)/ma.sqrt(varb2)
     sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5)) /
                                                         (n*(n-2)*(n-3)))
@@ -1699,8 +1700,8 @@ kurtosistest.__doc__ = stats.kurtosistest.__doc__
 
 def normaltest(a, axis=0):
     a, axis = _chk_asarray(a, axis)
-    s,_ = skewtest(a,axis)
-    k,_ = kurtosistest(a,axis)
+    s, _ = skewtest(a, axis)
+    k, _ = kurtosistest(a, axis)
     k2 = s*s + k*k
     return k2, stats.chisqprob(k2,2)
 normaltest.__doc__ = stats.normaltest.__doc__

@@ -1215,7 +1215,7 @@ def kurtosistest(a, axis=0):
             int(n))
     b2 = kurtosis(a, axis, fisher=False)
     E = 3.0*(n-1) / (n+1)
-    varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1)*(n+3)*(n+5))
+    varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1.)*(n+3)*(n+5))
     x = (b2-E)/np.sqrt(varb2)
     sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5)) /
                                                        (n*(n-2)*(n-3)))
@@ -1269,8 +1269,8 @@ def normaltest(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
-    s,p = skewtest(a,axis)
-    k,p = kurtosistest(a,axis)
+    s, _ = skewtest(a, axis)
+    k, _ = kurtosistest(a, axis)
     k2 = s*s + k*k
     return k2, chisqprob(k2,2)
 
