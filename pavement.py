@@ -116,7 +116,7 @@ RELEASE = 'doc/release/0.14.0-notes.rst'
 
 # Start/end of the log (from git)
 LOG_START = 'v0.13.0'
-LOG_END = 'v0.14.0b1'
+LOG_END = 'v0.14.0rc1'
 
 
 #-------------------------------------------------------
@@ -509,8 +509,9 @@ def _build_mpkg(pyver):
             raise ValueError("Scipy 0.14.x should be built against numpy "
                              "1.5.1, (detected %s)" % numverstr)
     else:
-        raise ValueError("Scipy 0.14.x should be built against numpy "
-                         "1.7.1, (detected %s) for Python >= 3.3" % numverstr)
+        if not numver == (1, 7, 1):
+            raise ValueError("Scipy 0.14.x should be built against numpy "
+                             "1.7.1, (detected %s) for Python >= 3.3" % numverstr)
 
     prepare_static_gfortran_runtime("build")
     # account for differences between Python 2.7.1 versions from python.org
