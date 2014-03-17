@@ -4,7 +4,7 @@ Richard Hanson, who agreed to release the code under the BSD license
 for inclusion in scipy.
 """
 
-from . import _bvls
+from . import _bvlslib
 import numpy as np
 
 __all__ = ['bounded_lstsq']
@@ -107,7 +107,7 @@ def bounded_lstsq(A, b, bounds=()):
     index = np.zeros(n, dtype=int, order='F')
     x = np.zeros(n, dtype=float, order='F')
 
-    rnorm, nsetp, ierr = _bvls.bvls(A, b, bnds, x, w, index)
+    rnorm, nsetp, ierr = _bvlslib.bvls(A, b, bnds, x, w, index)
 
     if ierr > 0:
         raise ValueError(_error_msg_dict[ierr])

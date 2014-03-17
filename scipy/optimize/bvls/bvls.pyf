@@ -1,9 +1,9 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module _bvls ! in 
-    interface  ! in :_bvls
-        subroutine bvls(a,b,m,n,bnd,x,rnorm,nsetp,w,index_bn,ierr) ! in :_bvls:bvls.f
+python module _bvlslib ! in 
+    interface  ! in :_bvlslib
+        subroutine bvls(a,b,m,n,bnd,x,rnorm,nsetp,w,index_bn,ierr) ! in :_bvlslib:bvls.f
             real*8 dimension(m,n),intent(inout) :: a
             real*8 dimension(m),depend(m),intent(inout) :: b
             integer, optional,check(shape(a,0)==m),depend(a),intent(hide) :: m=shape(a,0)
