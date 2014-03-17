@@ -1,7 +1,20 @@
+"""
+The Fortran code for this was originally written by Charles Lawson and
+Richard Hanson, who agreed to release the code under the BSD license
+for inclusion in scipy.
+"""
+
 from . import _bvls
-from numpy import zeros, array, isfinite, inf
+import numpy as np
 
 __all__ = ['bounded_lstsq']
+
+_error_msg_dict = {
+                   1: "M <= 0 or N <= 0",
+                   2: "Size or shape violation.",
+                   3: "Input bounds are inconsistent",
+                   4: "Exceeded maximum number of iterations."
+                   }
 
 
 def bounded_lstsq(A, b, bounds=()):
@@ -34,12 +47,6 @@ def bounded_lstsq(A, b, bounds=()):
     --------
     scipy.optimize.nnls
 
-    Notes
-    -----
-    The Fortran code for this was originally written by Charles Lawson and
-    Richard Hanson, who agreed to release the code under the BSD license
-    for inclusion in scipy.
-
     Examples
     --------
     >>> from scipy import optimize
@@ -59,10 +66,21 @@ def bounded_lstsq(A, b, bounds=()):
     >>> bounds = [(None, None), (None, 4)]
     >>> optimize.bounded_lstsq(x, y, bounds=bounds)
     (array([ 2.39941956,  4.        ]), 5.379227084630758, 1)
+
+    References
+    ----------
+
+    The reference for the original Fortran code ::
+
+        Charles Lawson, Richard Hanson,
+        Solving Least Squares Problems,
+        SIAM, 1995,
+        ISBN: 0898713560,
+        LC: QA275.L38.
     """
-    A = array(A, dtype=float, copy=True, order='F')
-    b = array(b, dtype=float, copy=True, order='F')
-    if not isfinite(A).all() or not isfinite(b).all():
+    A = np.array(A, dtype=float, copy=True, order='F')
+    b = np.array(b, dtype=float, copy=True, order='F')
+    if not np.isfinite(A).all() or not np.isfinite(b).all():
         raise ValueError("A and b may not contain NaNs or infs")
 
     if A.ndim != 2:
@@ -75,27 +93,23 @@ def bounded_lstsq(A, b, bounds=()):
         raise ValueError("A and b are not conformable")
 
     if bounds is None or len(bounds) == 0:
-        bnds = array([[-inf]*n, [inf]*n])
+        bnds = np.array([[-np.inf]*n, [np.inf]*n])
     else:
-        bnds = array(bounds, float).T
-        infbnd = ~isfinite(bnds)
-        bnds[0, infbnd[0]] = -inf
-        bnds[1, infbnd[1]] = inf
+        bnds = np.asarray(bounds, dtype=float).T
+        infbnd = ~np.isfinite(bnds)
+        bnds[0, infbnd[0]] = -np.inf
+        bnds[1, infbnd[1]] = np.inf
         if bnds.shape[1] != n:
             raise ValueError("The length of bounds is not compatible with "
                              "Ax=b. Got %d. Expected %d" (len(bnds), n))
 
-    w = zeros((n,), dtype=float, order='F')
-    index = zeros((n,), dtype=int, order='F')
-    x = zeros((n,), dtype=float, order='F')
+    w = np.zeros(n, dtype=float, order='F')
+    index = np.zeros(n, dtype=int, order='F')
+    x = np.zeros(n, dtype=float, order='F')
 
     rnorm, nsetp, ierr = _bvls.bvls(A, b, bnds, x, w, index)
-    if ierr == 1:
-        raise ValueError("M <= 0 or N <= 0")
-    elif ierr == 2:
-        raise ValueError("Size or shape violation.")
-    elif ierr == 3:
-        raise ValueError("Input bounds are inconsistent")
-    elif ierr == 4:
-        raise ValueError("Exceeded maximum number of iterations.")
+
+    if ierr > 0:
+        raise ValueError(_error_msg_dict[ierr])
+
     return x, rnorm, nsetp
