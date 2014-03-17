@@ -43,5 +43,5 @@ Library:
             slsqp/slsqp.pyf
     Extension: _bvls
         Sources:
-            bvls/bvls.f90,
+            bvls/bvls.f,
             bvls/bvls.pyf
