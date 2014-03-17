@@ -1,6 +1,8 @@
 """The suite of window functions."""
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 from scipy import special, linalg
 from scipy.fftpack import fft
@@ -1200,6 +1202,9 @@ def chebwin(M, at, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    if np.abs(at) < 45:
+        warnings.warn("This window is not suitable for spectral analysis "
+                      "for attenuation values lower than about 45dB.")
     if M < 1:
         return np.array([])
     if M == 1:
