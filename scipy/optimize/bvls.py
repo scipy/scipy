@@ -16,10 +16,10 @@ def bounded_lstsq(A, b, bounds=()):
         Matrix ``A`` as shown above.
     b : ndarray
         Right-hand side vector.
-    bounds : list
-        A list of tuples specifying the lower and upper bound for each
-        independent variables [(xl0, xu0), (xl1, xu1), ...]. None or
-        -inf, inf, can be used to indicate no bounds.
+    bounds : array_like
+        An (N,2) shape array or a list of tuples specifying the lower and upper
+        bound for each independent variables ``[(xl0, xu0), (xl1, xu1), ...]``.
+        None or -inf, inf, can be used to indicate no bounds.
 
     Returns
     -------
@@ -27,6 +27,8 @@ def bounded_lstsq(A, b, bounds=()):
         Solution vector
     rnorm : float
         The residual, ``|| Ax-b ||_2``.
+    nsetp : int
+        The number of items in x that are not at their constraint value
 
     See also
     --------
@@ -40,7 +42,6 @@ def bounded_lstsq(A, b, bounds=()):
 
     Examples
     --------
-    >>> import numpy as np
     >>> from scipy import optimize
 
     >>> x = np.array([-1.7237128E+00,1.8712276E+00,-9.6608055E-01,
@@ -52,10 +53,12 @@ def bounded_lstsq(A, b, bounds=()):
     >>> y = np.dot(x, [1.8, 5.4]) + np.random.random(len(x))
     >>> bounds = None
 
-    >>> print optimize.bounded_lstsq(x, y, bounds=bounds)
+    >>> optimize.bounded_lstsq(x, y, bounds=bounds)
+    (array([ 2.26327373,  5.42102807]), 1.160159078139885, 2)
 
     >>> bounds = [(None, None), (None, 4)]
-    >>> print optimize.bounded_lstsq(x, y, bounds=bounds)
+    >>> optimize.bounded_lstsq(x, y, bounds=bounds)
+    (array([ 2.39941956,  4.        ]), 5.379227084630758, 1)
     """
     A = array(A, dtype=float, copy=True, order='F')
     b = array(b, dtype=float, copy=True, order='F')
