@@ -21,7 +21,7 @@ def test_imread():
     img = ndi.imread(lp, flatten=True)
     assert_array_equal(img.shape, (300, 420))
     
-    with open(lp) as fobj:
+    with open(lp, 'rb') as fobj:
         img = ndi.imread(fobj, mode="RGB")
         assert_array_equal(img.shape, (300, 420, 3))
 
