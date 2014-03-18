@@ -87,6 +87,8 @@ def downcast_intp_index(arr):
     intp.
     """
     if arr.dtype.itemsize > np.dtype(np.intp).itemsize:
+        if arr.size == 0:
+            return arr.astype(np.intp)
         maxval = arr.max()
         minval = arr.min()
         if maxval > np.iinfo(np.intp).max or minval < np.iinfo(np.intp).min:
