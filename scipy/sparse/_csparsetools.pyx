@@ -91,11 +91,16 @@ def prepare_index_for_memoryview(cnp.ndarray i, cnp.ndarray j, cnp.ndarray x=Non
         Re-formatted arrays (x is omitted, if input was None)
 
     """
+    if i.dtype > j.dtype:
+        j = j.astype(i.dtype)
+    elif i.dtype < j.dtype:
+        i = i.astype(j.dtype)
 
     if not i.flags.writeable or not i.dtype in (np.int32, np.int64):
         i = i.astype(np.intp)
     if not j.flags.writeable or not j.dtype in (np.int32, np.int64):
         j = j.astype(np.intp)
+
     if x is not None:
         if not x.flags.writeable:
             x = x.copy()
