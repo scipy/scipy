@@ -52,7 +52,7 @@ warnings.simplefilter('ignore', SparseEfficiencyWarning)
 warnings.simplefilter('ignore', ComplexWarning)
 
 def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
-                            downcast_maxval=None):
+                            downcast_maxval=None, assert_32bit=False):
     """
     Monkeypatch the maxval threshold at which scipy.sparse switches to
     64-bit index arrays, or make it (pseudo-)random.
@@ -61,8 +61,13 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
     if maxval_limit is None:
         maxval_limit = 10
 
-    if fixed_dtype is not None:
-        def new_get_index_dtype(arrays=(), maxval=None):
+    if assert_32bit:
+        def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
+            tp = get_index_dtype(arrays, maxval, check_contents)
+            assert_equal(tp, np.int32)
+            return tp
+    elif fixed_dtype is not None:
+        def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
             return fixed_dtype
     elif random:
         counter = np.random.RandomState(seed=1234)
@@ -620,6 +625,7 @@ class _TestCommon:
         for m in mats:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
 
+    @dec.slow
     def test_setdiag(self):
         def dense_setdiag(a, v, k):
             v = np.asarray(v)
@@ -3912,7 +3918,9 @@ class Test64Bit(object):
 
         for cls in self.TEST_CLASSES:
             for method_name in dir(cls):
+                method = getattr(cls, method_name)
                 if (method_name.startswith('test_') and
+                    not getattr(method, 'slow', False) and
                     (cls.__name__ + '.' + method_name) not in skip):
                     msg = self.SKIP_TESTS.get(method_name)
                     yield dec.skipif(msg, msg)(check), cls, method_name
@@ -3936,6 +3944,10 @@ class Test64Bit(object):
 
     def test_resiliency_all_64(self):
         for t in self._check_resiliency(fixed_dtype=np.int64):
+            yield t
+
+    def test_no_64(self):
+        for t in self._check_resiliency(assert_32bit=True):
             yield t
 
     def test_downcast_intp(self):
