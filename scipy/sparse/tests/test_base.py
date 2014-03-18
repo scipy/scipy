@@ -39,7 +39,7 @@ import scipy.sparse as sparse
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
         eye, isspmatrix, SparseEfficiencyWarning, issparse
-from scipy.sparse.sputils import supported_dtypes, isscalarlike
+from scipy.sparse.sputils import supported_dtypes, isscalarlike, get_index_dtype
 from scipy.sparse.linalg import splu, expm, inv
 
 from scipy.lib._version import NumpyVersion
@@ -68,17 +68,27 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
     elif random:
         counter = np.random.RandomState(seed=1234)
 
-        def new_get_index_dtype(arrays=(), maxval=None):
+        def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
             return (np.int32, np.int64)[counter.randint(2)]
     else:
-        def new_get_index_dtype(arrays=(), maxval=None):
+        def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
             dtype = np.int32
             if maxval is not None:
                 if maxval > maxval_limit:
                     dtype = np.int64
             for arr in arrays:
                 arr = np.asarray(arr)
-                if arr.dtype.itemsize > 4:
+                if arr.dtype > np.int32:
+                    if check_contents:
+                        if arr.size == 0:
+                            # a bigger type not needed
+                            continue
+                        elif np.issubdtype(arr.dtype, np.integer):
+                            maxval = arr.max()
+                            minval = arr.min()
+                            if minval >= -maxval_limit and maxval <= maxval_limit:
+                                # a bigger type not needed
+                                continue
                     dtype = np.int64
             return dtype
 
