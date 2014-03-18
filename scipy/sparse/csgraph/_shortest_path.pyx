@@ -119,7 +119,7 @@ def shortest_path(csgraph, method='auto',
     directed == False.  i.e., if csgraph[i,j] and csgraph[j,i] are non-equal
     edges, method='D' may yield an incorrect result.
     """
-    validate_graph(csgraph, directed, DTYPE)
+    csgraph = validate_graph(csgraph, directed, DTYPE)
 
     if method == 'auto':
         # guess fastest method based on number of nodes and edges
