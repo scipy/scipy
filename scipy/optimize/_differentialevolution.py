@@ -3,7 +3,6 @@ differentialevolution: The differential evolution global optimization algorithm
 """
 from __future__ import division, print_function, absolute_import
 import numpy as np
-import numpy.testing as npt
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
 import numbers
@@ -25,34 +24,6 @@ exponential = {'best1exp': '_best1',
                'randtobest1exp': '_randtobest1',
                'best2exp': '_best2',
                'rand2exp': '_rand2'}
-
-
-class BoundsError(Exception):
-
-    def __init__(self, message):
-        self.message = message
-
-    def __str__(self):
-        return repr(self.message)
-
-
-def bounds_to_limits(bounds):
-    """
-        convert tuple of lower and upper bounds to limits
-        [(low_0, high_0), ..., (low_n, high_n]
-            -> [[low_0, ..., low_n], [high_0, ..., high_n]]
-    """
-    return np.array(bounds, float).T
-
-
-def limits_to_bounds(limits):
-    """
-        convert limits to tuple of lower and upper bounds
-        [[low_0, ..., low_n], [high_0, ..., high_n]] -->
-            [(low_0, high_0), ..., (low_n, high_n]
-    """
-    return [(limits[0, idx], limits[1, idx])
-            for idx in range(np.size(limits, 1))]
 
 
 def differential_evolution(func, bounds, args=(), strategy='best1bin',
@@ -124,12 +95,12 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         The recombination constant, should be in the range [0, 1]. Increasing
         this value allows a larger number of mutants to progress into the next
         generation, but at the risk of population stability.
-    seed : int or np.RandomState, optional:
+    seed : int or np.random.RandomState, optional:
         If seed is not specified the np.RandomState singleton is used.
-        If seed is an int, a new np.RandomState instance is used,
+        If seed is an int, a new np.random.RandomState instance is used,
         seeded with seed.
-        If seed is already a np.RandomState instance, then that
-        np.RandomState instance is used.
+        If seed is already a np.random.RandomState instance, then that
+        np.random.RandomState instance is used.
         Specify seed for repeatable minimizations.
     disp : bool, optional:
         Display status messages
@@ -220,14 +191,19 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     # assemble the bounds into the limits
     try:
-        limits = bounds_to_limits(bounds)
-        npt.assert_equal(np.size(limits, 0), 2)
-        npt.assert_equal(np.all(np.isfinite(limits)), True)
+        # convert tuple of lower and upper bounds to limits
+        # [(low_0, high_0), ..., (low_n, high_n]
+        #     -> [[low_0, ..., low_n], [high_0, ..., high_n]]
+        limits = np.array(bounds, float).T
+        if np.size(limits, 0) != 2:
+            raise ValueError
+        if np.all(np.isfinite(limits)) == False:
+            raise ValueError
     except (ValueError, AssertionError):
         # it is required to have (min, max) pairs for each value in x
-        raise BoundsError('Bounds should be a sequence containing '
-                          'real valued (min, max) pairs for each value'
-                          ' in x')
+        raise ValueError('Bounds should be a sequence containing '
+                         'real valued (min, max) pairs for each value'
+                         ' in x')
 
     if type(mutation) is tuple:
         mutation_err_message = 'The mutation constant must be a float in '
@@ -310,12 +286,12 @@ class DifferentialEvolutionSolver(object):
         The recombination constant, should be in the range [0, 1]. Increasing
         this value allows a larger number of mutants to progress into the next
         generation, but at the risk of population stability.
-    seed : int or np.RandomState, optional:
-        If seed is not specified the np.RandomState singleton is used.
-        If seed is an int, a new np.RandomState instance is used,
+    seed : int or np.random.RandomState, optional:
+        If seed is not specified the np.random.RandomState singleton is used.
+        If seed is an int, a new np.random.RandomState instance is used,
         seeded with seed.
-        If seed is already a np.RandomState instance, then that
-        np.RandomState instance is used.
+        If seed is already a np.random.RandomState instance, then that
+        np.random.RandomState instance is used.
         Specify seed for repeatable minimizations.
     disp : bool, optional:
         Display status messages
@@ -351,9 +327,7 @@ class DifferentialEvolutionSolver(object):
         else:
             raise ValueError("Please select a valid mutation strategy")
    
-        def default_callback(parameters, convergence=0):
-            return False
-        self.callback = callback or default_callback
+        self.callback = callback
         self.polish = polish
 
         self.maxiter = maxiter or 1000
@@ -370,7 +344,12 @@ class DifferentialEvolutionSolver(object):
         self.func = func
         self.args = args
         self.limits = limits
-        self.bounds = limits_to_bounds(self.limits)
+
+        #convert limits to tuple of lower and upper bounds
+        #[[low_0, ..., low_n], [high_0, ..., high_n]] -->
+        #[(low_0, high_0), ..., (low_n, high_n]
+        self.bounds = [(self.limits[0, idx], self.limits[1, idx])
+                       for idx in range(np.size(self.limits, 1))]
 
         # population is scaled to between [0, 1].
         # We have to scale between parameter <-> population
@@ -484,8 +463,9 @@ class DifferentialEvolutionSolver(object):
                       % (self.nit,
                          self.population_energies[0]))
 
-            if self.callback(self._scale_parameters(self.population[0]),
-                             convergence=self.tol / self.convergence) is True:
+            if (self.callback and
+                self.callback(self._scale_parameters(self.population[0]),
+                             convergence=self.tol / self.convergence) is True):
 
                 warning_flag = True
                 status_message = ('callback function requested stop early '

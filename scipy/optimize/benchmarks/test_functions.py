@@ -168,22 +168,24 @@ class HolderTable(object):
         else:
             return 0.
 
-    def der(self, x):
-        R = sqrt(x[0] ** 2 + x[1] ** 2)
-        g = 1. - R / pi
-        f = sin(x[0]) * cos(x[1]) * exp(abs(g))
-        E = -abs(f)
-
-        dRdx = x[0] / R
-        dgdx = - dRdx / pi
-        dfdx = cos(x[0]) * cos(x[1]) * exp(abs(g)) + f * self.dabs(g) * dgdx
-        dEdx = - self.dabs(f) * dfdx
-
-        dRdy = x[1] / R
-        dgdy = - dRdy / pi
-        dfdy = -sin(x[0]) * sin(x[1]) * exp(abs(g)) + f * self.dabs(g) * dgdy
-        dEdy = - self.dabs(f) * dfdy
-        return np.array([dEdx, dEdy])
+#commented out at the because it causes FloatingPointError in 
+#basinhopping
+#     def der(self, x):
+#         R = sqrt(x[0] ** 2 + x[1] ** 2)
+#         g = 1. - R / pi
+#         f = sin(x[0]) * cos(x[1]) * exp(abs(g))
+#         E = -abs(f)
+# 
+#         dRdx = x[0] / R
+#         dgdx = - dRdx / pi
+#         dfdx = cos(x[0]) * cos(x[1]) * exp(abs(g)) + f * self.dabs(g) * dgdx
+#         dEdx = - self.dabs(f) * dfdx
+# 
+#         dRdy = x[1] / R
+#         dgdy = - dRdy / pi
+#         dfdy = -sin(x[0]) * sin(x[1]) * exp(abs(g)) + f * self.dabs(g) * dgdy
+#         dEdy = - self.dabs(f) * dfdy
+#         return np.array([dEdx, dEdy])
 
 
 class Ackley(object):

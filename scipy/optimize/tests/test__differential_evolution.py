@@ -181,17 +181,17 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
         # test that the bounds checking works
         f = rosen
         bounds = [(-3, None)]
-        self.assertRaises(_differentialevolution.BoundsError,
+        self.assertRaises(ValueError,
                           _differentialevolution.differential_evolution,
                           f,
                           bounds)
         bounds = [(-3)]
-        self.assertRaises(_differentialevolution.BoundsError,
+        self.assertRaises(ValueError,
                           _differentialevolution.differential_evolution,
                           f,
                           bounds)
         bounds = [(-3, 3), (3, 4, 5)]
-        self.assertRaises(_differentialevolution.BoundsError,
+        self.assertRaises(ValueError,
                           _differentialevolution.differential_evolution,
                           f,
                           bounds)
