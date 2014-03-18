@@ -155,8 +155,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             elif len(arg1) == 3:
                 # (data,indices,indptr) format
                 (data, indices, indptr) = arg1
-                self.indices = np.array(indices, copy=copy)
-                self.indptr = np.array(indptr, copy=copy)
+                idx_dtype = get_index_dtype((indices, indptr), check_contents=True)
+                self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
+                self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                 self.data = np.array(data, copy=copy, dtype=getdtype(dtype, data))
             else:
                 raise ValueError('unrecognized bsr_matrix constructor usage')

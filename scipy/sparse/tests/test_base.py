@@ -3897,6 +3897,8 @@ class Test64Bit(object):
         # Resiliency test, to check that sparse matrices deal reasonably
         # with varying index data types.
 
+        skip = kw.pop('skip', ())
+
         @with_64bit_maxval_limit(**kw)
         def check(cls, method_name):
             instance = cls()
@@ -3910,7 +3912,8 @@ class Test64Bit(object):
 
         for cls in self.TEST_CLASSES:
             for method_name in dir(cls):
-                if method_name.startswith('test_'):
+                if (method_name.startswith('test_') and
+                    (cls.__name__ + '.' + method_name) not in skip):
                     msg = self.SKIP_TESTS.get(method_name)
                     yield dec.skipif(msg, msg)(check), cls, method_name
 
@@ -3919,7 +3922,12 @@ class Test64Bit(object):
             yield t
 
     def test_resiliency_random(self):
-        for t in self._check_resiliency(random=True):
+        # bsr_matrix.eliminate_zeros relies on csr_matrix constructor
+        # not making copies of index arrays --- this is not
+        # necessarily true when we pick the index data type randomly
+        skip = ['TestBSR.test_eliminate_zeros']
+
+        for t in self._check_resiliency(random=True, skip=skip):
             yield t
 
     def test_resiliency_all_32(self):
