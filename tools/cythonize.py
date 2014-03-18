@@ -82,13 +82,20 @@ def process_pyx(fromfile, tofile):
         raise OSError('Cython needs to be installed')
 
 def process_tempita_pyx(fromfile, tofile):
-    import tempita
-    with open(fromfile, "rb") as f:
+    try:
+        try:
+            from Cython import Tempita as tempita
+        except ImportError:
+            import tempita
+    except ImportError:
+        raise Exception('Building SciPy requires Tempita: '
+                        'pip install --user Tempita')
+    with open(fromfile, "r") as f:
         tmpl = f.read()
     pyxcontent = tempita.sub(tmpl)
     assert fromfile.endswith('.pyx.in')
     pyxfile = fromfile[:-len('.pyx.in')] + '.pyx'
-    with open(pyxfile, "wb") as f:
+    with open(pyxfile, "w") as f:
         f.write(pyxcontent)
     process_pyx(pyxfile, tofile)
 
@@ -163,6 +170,9 @@ def find_process_files(root_dir):
     hash_db = load_hashes(HASH_FILE)
     for cur_dir, dirs, files in os.walk(root_dir):
         for filename in files:
+            in_file = os.path.join(cur_dir, filename + ".in")
+            if filename.endswith('.pyx') and os.path.isfile(in_file):
+                continue
             for fromext, function in rules.items():
                 if filename.endswith(fromext):
                     toext = ".c"
