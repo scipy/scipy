@@ -487,7 +487,11 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         from .csr import csr_matrix
 
         # modifies self.indptr and self.indices *in place*
+        # since CSR constructor may end up in making copies (in case
+        # our index arrays are invalid in some way), play it safe
         proxy = csr_matrix((mask,self.indices,self.indptr),shape=(M//R,N//C))
+        proxy.indices = self.indices
+        proxy.indptr = self.indptr
         proxy.eliminate_zeros()
 
         self.prune()
