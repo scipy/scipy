@@ -119,6 +119,8 @@ def shortest_path(csgraph, method='auto',
     directed == False.  i.e., if csgraph[i,j] and csgraph[j,i] are non-equal
     edges, method='D' may yield an incorrect result.
     """
+    # validate here to catch errors early but don't store the result;
+    # we'll validate again later
     validate_graph(csgraph, directed, DTYPE)
 
     if method == 'auto':
@@ -130,8 +132,8 @@ def shortest_path(csgraph, method='auto',
             Nk = np.sum(csgraph > 0)
 
         if Nk < N * N / 4:
-            if ((isspmatrix(csgraph)
-                 and np.any(csgraph.data < 0)) or np.any(csgraph < 0)):
+            if ((isspmatrix(csgraph) and np.any(csgraph.data < 0))
+                      or (not isspmatrix(csgraph) and np.any(csgraph < 0))):
                 method = 'J'
             else:
                 method = 'D'
