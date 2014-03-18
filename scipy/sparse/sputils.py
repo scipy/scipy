@@ -128,10 +128,27 @@ def getdtype(dtype, a=None, default=None):
 
     return newdtype
 
-def get_index_dtype(arrays=(), maxval=None):
+
+def get_index_dtype(arrays=(), maxval=None, check_contents=False):
     """
     Based on input (integer) arrays `a`, determine a suitable index data
     type that can hold the data in the arrays.
+
+    Parameters
+    ----------
+    arrays : tuple of array_like
+        Input arrays whose types/contents to check
+    maxval : float, optional
+        Maximum value needed
+    check_contents : bool, optional
+        Whether to check the values in the arrays and not just their types.
+        Default: False (check only the types)
+
+    Returns
+    -------
+    dtype : dtype
+        Suitable index data type (int32 or int64)
+
     """
 
     int32max = np.iinfo(np.int32).max
@@ -147,7 +164,20 @@ def get_index_dtype(arrays=(), maxval=None):
     for arr in arrays:
         arr = np.asarray(arr)
         if arr.dtype > np.int32:
+            if check_contents:
+                if arr.size == 0:
+                    # a bigger type not needed
+                    continue
+                elif np.issubdtype(arr.dtype, np.integer):
+                    maxval = arr.max()
+                    minval = arr.min()
+                    if minval >= np.iinfo(np.int32).min and maxval <= np.iinfo(np.int32).max:
+                        # a bigger type not needed
+                        continue
+
             dtype = np.int64
+            break
+
     return dtype
 
 def isscalarlike(x):
