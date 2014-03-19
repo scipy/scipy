@@ -2,7 +2,7 @@ import numpy as np
 
 from numpy.testing import TestCase, run_module_suite, assert_allclose
 
-from scipy.signal.hankel import HankelTransform
+import scipy.signal.hankel as HT
 
 def run_test(transform, func, true, B):
 
@@ -15,7 +15,6 @@ class TestHankelTransforms(TestCase):
 
     def test_all(self, name=None):
         # With no arguments, test the 801-point filter due to Anderson (1979)
-        HT = HankelTransform(name)
 
         # First, generate the vector of B values.
         B = np.r_[0.0001, 0.001, 0.01:0.05:0.01,  0.05:5.01:0.05 ]
@@ -32,7 +31,7 @@ class TestHankelTransforms(TestCase):
         run_test(HT.hankel1, lambda g: np.exp(-g),
                           lambda b: (np.sqrt(1+b**2)-1)/(b*np.sqrt(1+b**2)), B);
 
-        #  Test 4, int(g*exp(-2*g)*J1(g*B),g=0..infinity)=
+        #  Test 4, int(g*exp(-2*g)*J1(g*B),g=0..infinity)=B/(4+B^2)**(3/2)
         run_test(HT.hankel1, lambda g: g * np.exp(-2*g),
                           lambda b: b / (4+b**2)**(3./2.), B)
 
