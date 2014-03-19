@@ -1204,7 +1204,11 @@ def chebwin(M, at, sym=True):
     """
     if np.abs(at) < 45:
         warnings.warn("This window is not suitable for spectral analysis "
-                      "for attenuation values lower than about 45dB.")
+                      "for attenuation values lower than about 45dB because "
+                      "the equivalent noise bandwidth of a Chebyshev window "
+                      "does not grow monotonically with increasing sidelobe "
+                      "attenuation when the attenuation is smaller than "
+                      "about 45 dB.")
     if M < 1:
         return np.array([])
     if M == 1:
