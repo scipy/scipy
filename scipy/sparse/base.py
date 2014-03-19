@@ -837,8 +837,14 @@ class spmatrix(object):
             result = self.minimum(*without_self)
         elif func in (np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh,
                       np.arcsinh, np.arctanh, np.rint, np.sign, np.expm1, np.log1p,
-                      np.deg2rad, np.rad2deg, np.floor, np.ceil, np.trunc, np.sqrt):
-            func_name = func.__name__
+                      np.deg2rad, np.rad2deg, np.floor, np.ceil, np.trunc, np.sqrt,
+                      np.abs):
+            if func is np.abs:
+                # Special case: map the numpy absolute ufunc to the builtin
+                # __abs__ ufunc
+                func_name = '__abs__'
+            else:
+                func_name = func.__name__
             if hasattr(self, func_name):
                 result = getattr(self, func_name)()
             else:
