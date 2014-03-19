@@ -1558,7 +1558,8 @@ class _TestCommon:
 
         for name in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
                      "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
-                     "deg2rad", "rad2deg", "floor", "ceil", "trunc", "sqrt"]:
+                     "deg2rad", "rad2deg", "floor", "ceil", "trunc", "sqrt",
+                     "abs"]:
             yield check, name
 
     def test_binary_ufunc_overrides(self):
