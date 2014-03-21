@@ -209,7 +209,8 @@ def find_objects(input, max_label=0):
     Parameters
     ----------
     input : ndarray of ints
-        Array containing objects defined by different labels.
+        Array containing objects defined by different labels. Labels with
+        value 0 are ignored.
     max_label : int, optional
         Maximum label to be searched for in `input`. If max_label is not
         given, the positions of all objects are returned.
