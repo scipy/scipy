@@ -119,6 +119,7 @@ double a, b, c, x;
     s = 1.0 - x;
     ia = round(a);		/* nearest integer to a */
     ib = round(b);
+    ic = round(c);
 
     if (x == 0.0) {
 	return 1.0;
@@ -138,6 +139,10 @@ double a, b, c, x;
     if (b <= 0 && fabs(b - ib) < EPS) {	/* b is a negative integer */
 	neg_int_b = 1;
     }
+   
+    if (c < 0 && !(neg_int_a || neg_int_b) &&
+         fabs( c - ic) > EPS && ( s > 0 && s < 1))
+        goto hypok; 
 
     if (d <= -1 && !(fabs(d - id) > EPS && s < 0)
 	&& !(neg_int_a || neg_int_b)) {
@@ -471,9 +476,9 @@ static double hys2f1(a, b, c, x, loss)
 double a, b, c, x;
 double *loss;			/* estimates loss of significance */
 {
-    double f, g, h, k, m, s, u, umax, t;
+    double f, g, h, k, m, s, u, umax, t, flag;
     int i;
-    int ia, ib, intflag = 0;
+    int ia, ib, ic, intflag = 0;
 
     if (fabs(b) > fabs(a)) {
 	/* Ensure that |a| > |b| ... */
@@ -484,6 +489,7 @@ double *loss;			/* estimates loss of significance */
 
     ia = round(a);
     ib = round(b);
+    ic = round(c);
 
     if (fabs(b - ib) < EPS && ib <= 0 && fabs(b) < fabs(a)) {
 	/* .. except when `b` is a smaller negative integer */
@@ -510,6 +516,12 @@ double *loss;			/* estimates loss of significance */
     s = 1.0;
     u = 1.0;
     k = 0.0;
+    flag = MACHEP;
+    if (c < 0 && !(a < 0 || b < 0) &&
+         fabs( c - ic) > EPS && ( x > 0 && x < 1)) {
+         flag = 10e-300; /*locally changing the precision*/
+        }
+  
     do {
 	if (fabs(h) < EPS) {
 	    *loss = 1.0;
@@ -527,11 +539,10 @@ double *loss;			/* estimates loss of significance */
 	    return (s);
 	}
     }
-    while (s == 0 || fabs(u / s) > MACHEP);
+    while (s == 0 || fabs(u / s) > flag);
 
     /* return estimated relative error */
     *loss = (MACHEP * umax) / fabs(s) + (MACHEP * i);
-
     return (s);
 }
 
