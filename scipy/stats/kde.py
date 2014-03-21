@@ -525,4 +525,4 @@ class gaussian_kde(object):
         Calculate the log of the estimated pdf on a provided set
         of points.
         """
-        return numpy.log(self.evaluate(x))
+        return np.log(self.evaluate(x))
