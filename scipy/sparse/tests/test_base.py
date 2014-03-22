@@ -24,21 +24,21 @@ import operator
 
 import numpy as np
 from scipy.lib.six import xrange, zip as izip
-from numpy import arange, zeros, array, dot, matrix, asmatrix, asarray, \
-                  vstack, ndarray, transpose, diag, kron, inf, conjugate, \
-                  int8, ComplexWarning
+from numpy import (arange, zeros, array, dot, matrix, asmatrix, asarray,
+                   vstack, ndarray, transpose, diag, kron, inf, conjugate,
+                   int8, ComplexWarning)
 
 import random
-from numpy.testing import assert_raises, assert_equal, assert_array_equal, \
-        assert_array_almost_equal, assert_almost_equal, assert_, \
-        dec, run_module_suite, assert_allclose
+from numpy.testing import (assert_raises, assert_equal, assert_array_equal,
+        assert_array_almost_equal, assert_almost_equal, assert_,
+        dec, run_module_suite, assert_allclose)
 
 import scipy.linalg
 
 import scipy.sparse as sparse
-from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
-        coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
-        eye, isspmatrix, SparseEfficiencyWarning, issparse
+from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
+        coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
+        eye, isspmatrix, SparseEfficiencyWarning, issparse)
 from scipy.sparse.sputils import supported_dtypes, isscalarlike, get_index_dtype
 from scipy.sparse.linalg import splu, expm, inv
 
@@ -65,7 +65,8 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
     if assert_32bit:
         def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
             tp = get_index_dtype(arrays, maxval, check_contents)
-            assert_equal(tp, np.int32)
+            assert_equal(np.iinfo(tp).max, np.iinfo(np.int32).max)
+            assert_(tp == np.int32 or tp == np.intc)
             return tp
     elif fixed_dtype is not None:
         def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
