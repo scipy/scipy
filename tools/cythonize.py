@@ -90,12 +90,12 @@ def process_tempita_pyx(fromfile, tofile):
     except ImportError:
         raise Exception('Building SciPy requires Tempita: '
                         'pip install --user Tempita')
-    with open(fromfile, "rb") as f:
+    with open(fromfile, "r") as f:
         tmpl = f.read()
     pyxcontent = tempita.sub(tmpl)
     assert fromfile.endswith('.pyx.in')
     pyxfile = fromfile[:-len('.pyx.in')] + '.pyx'
-    with open(pyxfile, "wb") as f:
+    with open(pyxfile, "w") as f:
         f.write(pyxcontent)
     process_pyx(pyxfile, tofile)
 
