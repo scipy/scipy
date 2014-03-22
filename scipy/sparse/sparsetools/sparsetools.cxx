@@ -286,10 +286,16 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         }
         else if (*p == 'V') {
             arg_list[j] = allocate_std_vector_typenum(I_typenum);
+            if (arg_list[j] == NULL) {
+                goto fail;
+            }
             continue;
         }
         else if (*p == 'W') {
             arg_list[j] = allocate_std_vector_typenum(T_typenum);
+            if (arg_list[j] == NULL) {
+                goto fail;
+            }
             continue;
         }
         else {
@@ -424,20 +430,24 @@ static void *allocate_std_vector_typenum(int typenum)
         return (void*)(new std::vector<ctype>());               \
     }
 
-    PROCESS(NPY_BOOL, npy_bool_wrapper);
-    PROCESS(NPY_BYTE, npy_byte);
-    PROCESS(NPY_UBYTE, npy_ubyte);
-    PROCESS(NPY_SHORT, npy_short);
-    PROCESS(NPY_USHORT, npy_ushort);
-    PROCESS(NPY_INT, npy_uint);
-    PROCESS(NPY_LONG, npy_ulong);
-    PROCESS(NPY_LONGLONG, npy_ulonglong);
-    PROCESS(NPY_FLOAT, npy_float);
-    PROCESS(NPY_DOUBLE, npy_double);
-    PROCESS(NPY_LONGDOUBLE, npy_longdouble);
-    PROCESS(NPY_CFLOAT, npy_cfloat_wrapper);
-    PROCESS(NPY_CDOUBLE, npy_cdouble_wrapper);
-    PROCESS(NPY_CLONGDOUBLE, npy_clongdouble_wrapper);
+    try {
+        PROCESS(NPY_BOOL, npy_bool_wrapper);
+        PROCESS(NPY_BYTE, npy_byte);
+        PROCESS(NPY_UBYTE, npy_ubyte);
+        PROCESS(NPY_SHORT, npy_short);
+        PROCESS(NPY_USHORT, npy_ushort);
+        PROCESS(NPY_INT, npy_uint);
+        PROCESS(NPY_LONG, npy_ulong);
+        PROCESS(NPY_LONGLONG, npy_ulonglong);
+        PROCESS(NPY_FLOAT, npy_float);
+        PROCESS(NPY_DOUBLE, npy_double);
+        PROCESS(NPY_LONGDOUBLE, npy_longdouble);
+        PROCESS(NPY_CFLOAT, npy_cfloat_wrapper);
+        PROCESS(NPY_CDOUBLE, npy_cdouble_wrapper);
+        PROCESS(NPY_CLONGDOUBLE, npy_clongdouble_wrapper);
+    } catch (std::exception &e) {
+        /* failed */
+    }
 
 #undef PROCESS
 
