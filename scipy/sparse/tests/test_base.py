@@ -39,7 +39,7 @@ import scipy.sparse as sparse
 from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
         eye, isspmatrix, SparseEfficiencyWarning, issparse
-from scipy.sparse.sputils import supported_dtypes, isscalarlike
+from scipy.sparse.sputils import supported_dtypes, isscalarlike, get_index_dtype
 from scipy.sparse.linalg import splu, expm, inv
 
 from scipy.lib._version import NumpyVersion
@@ -53,7 +53,7 @@ warnings.simplefilter('ignore', ComplexWarning)
 
 
 def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
-                            downcast_maxval=None):
+                            downcast_maxval=None, assert_32bit=False):
     """
     Monkeypatch the maxval threshold at which scipy.sparse switches to
     64-bit index arrays, or make it (pseudo-)random.
@@ -62,23 +62,38 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
     if maxval_limit is None:
         maxval_limit = 10
 
-    if fixed_dtype is not None:
-        def new_get_index_dtype(arrays=(), maxval=None):
+    if assert_32bit:
+        def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
+            tp = get_index_dtype(arrays, maxval, check_contents)
+            assert_equal(tp, np.int32)
+            return tp
+    elif fixed_dtype is not None:
+        def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
             return fixed_dtype
     elif random:
         counter = np.random.RandomState(seed=1234)
 
-        def new_get_index_dtype(arrays=(), maxval=None):
+        def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
             return (np.int32, np.int64)[counter.randint(2)]
     else:
-        def new_get_index_dtype(arrays=(), maxval=None):
+        def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
             dtype = np.int32
             if maxval is not None:
                 if maxval > maxval_limit:
                     dtype = np.int64
             for arr in arrays:
                 arr = np.asarray(arr)
-                if arr.dtype.itemsize > 4:
+                if arr.dtype > np.int32:
+                    if check_contents:
+                        if arr.size == 0:
+                            # a bigger type not needed
+                            continue
+                        elif np.issubdtype(arr.dtype, np.integer):
+                            maxval = arr.max()
+                            minval = arr.min()
+                            if minval >= -maxval_limit and maxval <= maxval_limit:
+                                # a bigger type not needed
+                                continue
                     dtype = np.int64
             return dtype
 
@@ -612,6 +627,7 @@ class _TestCommon:
         for m in mats:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
 
+    @dec.slow
     def test_setdiag(self):
         def dense_setdiag(a, v, k):
             v = np.asarray(v)
@@ -3888,6 +3904,8 @@ class Test64Bit(object):
         # Resiliency test, to check that sparse matrices deal reasonably
         # with varying index data types.
 
+        skip = kw.pop('skip', ())
+
         @with_64bit_maxval_limit(**kw)
         def check(cls, method_name):
             instance = cls()
@@ -3901,7 +3919,10 @@ class Test64Bit(object):
 
         for cls in self.TEST_CLASSES:
             for method_name in dir(cls):
-                if method_name.startswith('test_'):
+                method = getattr(cls, method_name)
+                if (method_name.startswith('test_') and
+                    not getattr(method, 'slow', False) and
+                    (cls.__name__ + '.' + method_name) not in skip):
                     msg = self.SKIP_TESTS.get(method_name)
                     yield dec.skipif(msg, msg)(check), cls, method_name
 
@@ -3910,7 +3931,12 @@ class Test64Bit(object):
             yield t
 
     def test_resiliency_random(self):
-        for t in self._check_resiliency(random=True):
+        # bsr_matrix.eliminate_zeros relies on csr_matrix constructor
+        # not making copies of index arrays --- this is not
+        # necessarily true when we pick the index data type randomly
+        skip = ['TestBSR.test_eliminate_zeros']
+
+        for t in self._check_resiliency(random=True, skip=skip):
             yield t
 
     def test_resiliency_all_32(self):
@@ -3919,6 +3945,10 @@ class Test64Bit(object):
 
     def test_resiliency_all_64(self):
         for t in self._check_resiliency(fixed_dtype=np.int64):
+            yield t
+
+    def test_no_64(self):
+        for t in self._check_resiliency(assert_32bit=True):
             yield t
 
     def test_downcast_intp(self):

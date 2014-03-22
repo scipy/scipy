@@ -198,7 +198,11 @@ class csr_matrix(_cs_matrix, IndexMixin):
         def asindices(x):
             try:
                 x = np.asarray(x)
-                x = x.astype(get_index_dtype(x))
+
+                # Check index contents, to avoid creating 64-bit arrays needlessly
+                idx_dtype = get_index_dtype((x,), check_contents=True)
+                if idx_dtype != x.dtype:
+                    x = x.astype(idx_dtype)
             except:
                 raise IndexError('invalid index')
             else:
