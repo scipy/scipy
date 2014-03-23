@@ -1764,6 +1764,7 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
     References
     ----------
     .. [1] *R* statistical software at http://www.r-project.org/
+    .. [2] *R* ``quantile`` function http://stat.ethz.ch/R-manual/R-devel/library/stats/html/quantile.html
 
     Examples
     --------
