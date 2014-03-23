@@ -95,8 +95,8 @@ class netcdf_file(object):
     ----------
     filename : string or file-like
         string -> filename
-    mode : {'r', 'w'}, optional
-        read-write mode, default is 'r'
+    mode : {'r', 'w', 'a'}, optional
+        read/write/update mode, default is 'r'
     mmap : None or bool, optional
         Whether to mmap `filename` when reading.  Default is True
         when `filename` is a file name, False when `filename` is a
@@ -194,15 +194,16 @@ class netcdf_file(object):
                 raise ValueError('Cannot use file object for mmap')
         else:  # maybe it's a string
             self.filename = filename
-            self.fp = open(self.filename, '%sb' % mode)
+            self.fp = open(self.filename, '%sb' %
+                           ('r+' if mode == 'a' else mode))
             if mmap is None:
                 mmap = True
         self.use_mmap = mmap
         self._fds = []
         self.version_byte = version
 
-        if not mode in 'rw':
-            raise ValueError("Mode must be either 'r' or 'w'.")
+        if not mode in 'rwa':
+            raise ValueError("Mode must be either 'r', 'w' or 'a'.")
         self.mode = mode
 
         self.dimensions = {}
@@ -214,7 +215,7 @@ class netcdf_file(object):
 
         self._attributes = {}
 
-        if mode == 'r':
+        if mode in 'ra':
             self._read()
 
     def __setattr__(self, attr, value):
@@ -318,7 +319,7 @@ class netcdf_file(object):
         sync : Identical function
 
         """
-        if hasattr(self, 'mode') and self.mode is 'w':
+        if hasattr(self, 'mode') and self.mode in 'wa':
             self._write()
     sync = flush
 
