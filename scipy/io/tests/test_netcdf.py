@@ -222,14 +222,14 @@ def test_append():
 
         # "append" some stuff
         with netcdf_file('simple.nc', 'a') as f:
-            f.killroy = "was here"
+            f.killroy = b'was here'
             x = f.createDimension('x2',4)
             v = f.createVariable('sparticus', 'i2', ['x2'])
             v[:] = 104
 
         # check that it looks ok
         with netcdf_file('simple.nc', 'r') as f:
-            assert_equal(f.killroy, "was here")
+            assert_equal(f.killroy, b'was here')
             assert_true('sparticus' in f.variables)
             v = f.variables['sparticus']
             assert_equal(v.shape, (4,))
