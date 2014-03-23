@@ -52,31 +52,32 @@ def test_read_write_files():
         os.chdir(tmpdir)
         with make_simple('simple.nc', 'w') as f:
             pass
-        # To read the NetCDF file we just created::
-        with netcdf_file('simple.nc') as f:
-            # Using mmap is the default
-            yield assert_true, f.use_mmap
-            for testargs in gen_for_simple(f):
-                yield testargs
+        for mode in "ra":
+            # To read the NetCDF file we just created::
+            with netcdf_file('simple.nc', mode) as f:
+                # Using mmap is the default
+                yield assert_true, f.use_mmap
+                for testargs in gen_for_simple(f):
+                    yield testargs
 
-        # Now without mmap
-        with netcdf_file('simple.nc', mmap=False) as f:
-            # Using mmap is the default
-            yield assert_false, f.use_mmap
-            for testargs in gen_for_simple(f):
-                yield testargs
+            # Now without mmap
+            with netcdf_file('simple.nc', mode=mode, mmap=False) as f:
+                # Using mmap is the default
+                yield assert_false, f.use_mmap
+                for testargs in gen_for_simple(f):
+                    yield testargs
 
-        # To read the NetCDF file we just created, as file object, no
-        # mmap.  When n * n_bytes(var_type) is not divisible by 4, this
-        # raised an error in pupynere 1.0.12 and scipy rev 5893, because
-        # calculated vsize was rounding up in units of 4 - see
-        # http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html
-        fobj = open('simple.nc', 'rb')
-        with netcdf_file(fobj) as f:
-            # by default, don't use mmap for file-like
-            yield assert_false, f.use_mmap
-            for testargs in gen_for_simple(f):
-                yield testargs
+            # To read the NetCDF file we just created, as file object, no
+            # mmap.  When n * n_bytes(var_type) is not divisible by 4, this
+            # raised an error in pupynere 1.0.12 and scipy rev 5893, because
+            # calculated vsize was rounding up in units of 4 - see
+            # http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html
+            fobj = open('simple.nc', 'r+b' if mode == "a" else 'rb')
+            with netcdf_file(fobj, mode) as f:
+                # by default, don't use mmap for file-like
+                yield assert_false, f.use_mmap
+                for testargs in gen_for_simple(f):
+                    yield testargs
     except:
         os.chdir(cwd)
         shutil.rmtree(tmpdir)
@@ -119,10 +120,11 @@ def test_read_write_sio():
 def test_read_example_data():
     # read any example data files
     for fname in glob(pjoin(TEST_DATA_PATH, '*.nc')):
-        with netcdf_file(fname, 'r') as f:
-            pass
-        with netcdf_file(fname, 'r', mmap=False) as f:
-            pass
+        for mode in "ra":
+            with netcdf_file(fname, mode) as f:
+                pass
+            with netcdf_file(fname, mode, mmap=False) as f:
+                pass
 
 
 def test_itemset_no_segfault_on_readonly():
@@ -207,3 +209,37 @@ def test_mmaps_closed():
         f = netcdf_file(filename, mmap=True)
         vars.append(f.variables['lat'])
         f.close()
+
+def test_append():
+    cwd = os.getcwd()
+    try:
+        tmpdir = tempfile.mkdtemp()
+        os.chdir(tmpdir)
+
+        # create
+        with make_simple('simple.nc', 'w') as f:
+            pass
+
+        # "append" some stuff
+        with netcdf_file('simple.nc', 'a') as f:
+            f.killroy = "was here"
+            x = f.createDimension('x2',4)
+            v = f.createVariable('sparticus', 'i2', ['x2'])
+            v[:] = 104
+
+        # check that it looks ok
+        with netcdf_file('simple.nc', 'r') as f:
+            assert_equal(f.killroy, "was here")
+            assert_true('sparticus' in f.variables)
+            v = f.variables['sparticus']
+            assert_equal(v.shape, (4,))
+            assert_equal(v[0], 104)
+
+            # check that time did not get borked
+            v = f.variables['time']
+            assert_equal(v.shape, (11,))
+
+    except:
+        os.chdir(cwd)
+        shutil.rmtree(tmpdir)
+        raise
