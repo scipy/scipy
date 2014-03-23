@@ -723,7 +723,7 @@ class TestCompareWithStats(TestCase):
         xm = np.ones((n+5, nx)) * np.nan
         ym = np.ones((n+5, nx)) * np.nan
 
-        for i in xrange(nx):
+        for i in range(nx):
             x[:,i], y[:,i], dx, dy = self.generate_xy_sample(n)
 
         xm[0:n, :] = x[0:n]
@@ -952,10 +952,11 @@ class TestCompareWithStats(TestCase):
     def test_tsem(self):
         for n in self.get_n():
             x, y, xm, ym = self.generate_xy_sample(n)
-            assert_equal(stats.tsem(x),stats.mstats.tsem(xm))
-            assert_equal(stats.tsem(y),stats.mstats.tsem(ym))
-            assert_equal(stats.tsem(x,limits=(-2.,2.)),
-                         stats.mstats.tsem(xm,limits=(-2.,2.)))
+            assert_almost_equal(stats.tsem(x),stats.mstats.tsem(xm), decimal=14)
+            assert_almost_equal(stats.tsem(y),stats.mstats.tsem(ym), decimal=14)
+            assert_almost_equal(stats.tsem(x,limits=(-2.,2.)),
+                                stats.mstats.tsem(xm,limits=(-2.,2.)),
+                                decimal=14)
 
     def test_skewtest(self):
         # this test is for 1D data
