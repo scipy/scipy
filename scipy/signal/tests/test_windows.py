@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 from numpy import array
 from numpy.testing import (assert_array_almost_equal, assert_array_equal,
-                           assert_, run_module_suite)
+                           run_module_suite)
 from scipy import signal
 
 
