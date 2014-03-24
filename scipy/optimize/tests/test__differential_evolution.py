@@ -137,6 +137,9 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
         if solver.dither is False:
             raise AttributeError
 
+        if solver.dither is None:
+            raise AttributeError
+
     def test_invalid_mutation_values_arent_accepted(self):
         f = rosen
         mutation = (0.5, 3)

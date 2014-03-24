@@ -321,7 +321,8 @@ class DifferentialEvolutionSolver(object):
 
         self.dither = False
         if hasattr(mutation, '__iter__') and len(mutation) > 1:
-            self.dither = [mutation[0], mutation[1]].sort()
+            self.dither = [mutation[0], mutation[1]]
+            self.dither.sort()
 
         self.cross_over_probability = recombination
 
@@ -397,7 +398,7 @@ class DifferentialEvolutionSolver(object):
                 *self.args)
             self.nfev += 1
 
-            if self.nfev >= self.maxfun:
+            if self.nfev > self.maxfun:
                 warning_flag = True
                 status_message = _status_message['maxfev']            
                 break
@@ -426,10 +427,11 @@ class DifferentialEvolutionSolver(object):
                 self.scale = self.random_number_generator.rand(
                 ) * (self.dither[1] - self.dither[0]) + self.dither[0]
             for candidate in range(self.population_size):
-                if self.nfev >= self.maxfun:
+                if self.nfev > self.maxfun:
                     warning_flag = True
                     status_message = _status_message['maxfev']
                     break
+
                 trial = self._mutate(candidate)
                 self._ensure_constraint(trial)
                 parameters = self._scale_parameters(trial)
