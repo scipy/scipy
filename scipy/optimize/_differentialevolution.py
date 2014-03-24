@@ -189,32 +189,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     .. [3] http://en.wikipedia.org/wiki/Differential_evolution
     """
 
-    # assemble the bounds into the limits
-    try:
-        # convert tuple of lower and upper bounds to limits
-        # [(low_0, high_0), ..., (low_n, high_n]
-        #     -> [[low_0, ..., low_n], [high_0, ..., high_n]]
-        limits = np.array(bounds, float).T
-        if np.size(limits, 0) != 2:
-            raise ValueError
-        if np.all(np.isfinite(limits)) == False:
-            raise ValueError
-    except (ValueError, AssertionError):
-        # it is required to have (min, max) pairs for each value in x
-        raise ValueError('Bounds should be a sequence containing '
-                         'real valued (min, max) pairs for each value'
-                         ' in x')
-
-    if type(mutation) is tuple:
-        mutation_err_message = 'The mutation constant must be a float in '
-        'U[0, 2), or specified as a tuple(min, max) where min < max and min, '
-        'max are in U[0, 2.'
-        if len(mutation) < 2:
-            raise ValueError(mutation_err_message)
-        if mutation[0] > mutation[1]:
-            mutation = (mutation[1], mutation[0])
-
-    solver = DifferentialEvolutionSolver(func, limits, args=args,
+    solver = DifferentialEvolutionSolver(func, bounds, args=args,
                                          strategy=strategy, maxiter=maxiter,
                                          popsize=popsize, tol=tol,
                                          mutation=mutation,
@@ -310,7 +285,7 @@ class DifferentialEvolutionSolver(object):
         makes more sense to set `maxiter` instead.
     """
 
-    def __init__(self, func, limits, args=(),
+    def __init__(self, func, bounds, args=(),
                  strategy=None, maxiter=None, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=None, callback=None, disp=False, polish=True):
@@ -330,26 +305,57 @@ class DifferentialEvolutionSolver(object):
         self.callback = callback
         self.polish = polish
 
-        self.maxiter = maxiter or 1000
-        self.maxfun = maxfun or (self.maxiter + 1) * popsize * np.size(limits,
-                                                                       1)
         self.tol = tol
+
+        #Mutation constant should be in [0, 2). If specified as a sequence
+        #then dithering is performed.
         self.scale = mutation
-        self.dither = None
-        if type(mutation) is tuple:
-            self.dither = mutation
+        mutation_err_message = 'The mutation constant must be a float in '
+        'U[0, 2), or specified as a tuple(min, max) where min < max and min, '
+        'max are in U[0, 2).'
+
+        try:
+            if not np.all(np.isfinite(mutation)):
+                raise ValueError(mutation_err_message)
+            if (np.any(np.array(mutation) >= 2)
+                 or np.any(np.array(mutation) < 0)):
+                raise ValueError(mutation_err_message)        
+        except (TypeError):    
+            #you supply something that's not a number
+            raise TypeError(mutation_err_message)
+
+        try:
+            if len(mutation) > 1:
+                self.dither = [mutation[0], mutation[1]].sort()
+        except (TypeError):
+            #mutation isn't iterable, so it's a single number
+            self.dither = False
 
         self.cross_over_probability = recombination
 
         self.func = func
         self.args = args
-        self.limits = limits
+        
+        # assemble the bounds into the limits
+        self.bounds = bounds
+        try:
+            # convert tuple of lower and upper bounds to limits
+            # [(low_0, high_0), ..., (low_n, high_n]
+            #     -> [[low_0, ..., low_n], [high_0, ..., high_n]]
+            self.limits = np.array(bounds, float).T
+            if (np.size(self.limits, 0) != 2 or not
+                 np.all(np.isfinite(self.limits))):
+                raise ValueError
+        except (ValueError):
+            # it is required to have (min, max) pairs for each value in x
+            raise ValueError('bounds should be a sequence containing '
+                             'real valued (min, max) pairs for each value'
+                             ' in x')
 
-        #convert limits to tuple of lower and upper bounds
-        #[[low_0, ..., low_n], [high_0, ..., high_n]] -->
-        #[(low_0, high_0), ..., (low_n, high_n]
-        self.bounds = [(self.limits[0, idx], self.limits[1, idx])
-                       for idx in range(np.size(self.limits, 1))]
+        self.maxiter = maxiter or 1000
+        self.maxfun = (maxfun 
+                        or ((self.maxiter + 1) * popsize
+                             * np.size(self.limits, 1)))
 
         # population is scaled to between [0, 1].
         # We have to scale between parameter <-> population
@@ -367,9 +373,7 @@ class DifferentialEvolutionSolver(object):
         self.random_number_generator = _make_random_gen(seed)
 
         self.population = self.random_number_generator.rand(
-            popsize *
-            self.parameter_count,
-            self.parameter_count)
+            popsize * self.parameter_count, self.parameter_count)
 
         self.population_energies = np.ones(
             popsize * self.parameter_count) * np.inf
@@ -396,13 +400,6 @@ class DifferentialEvolutionSolver(object):
         status_message = _status_message['success']
         warning_flag = False
 
-        # population is scaled to between [0, 1].
-        # We have to scale between parameter <-> population
-        # save these arguments for _scale_parameter and
-        #_unscale_parameter. This is an optimization
-        self.__scale_arg1 = 0.5 * (self.limits[0] + self.limits[1])
-        self.__scale_arg2 = np.fabs(self.limits[0] - self.limits[1])
-
         # calculate energies to start with
         for index, candidate in enumerate(self.population):
             parameters = self._scale_parameters(candidate)
@@ -427,7 +424,7 @@ class DifferentialEvolutionSolver(object):
 
         # do the optimisation.
         for iteration in range(self.maxiter):
-            if self.dither is not None:
+            if self.dither:
                 self.scale = self.random_number_generator.rand(
                 ) * (self.dither[1] - self.dither[0]) + self.dither[0]
             for candidate in range(self.population_size):
