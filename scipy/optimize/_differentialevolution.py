@@ -397,9 +397,10 @@ class DifferentialEvolutionSolver(object):
                 *self.args)
             self.nfev += 1
 
-            if self.nfev > self.maxfun:
+            if self.nfev >= self.maxfun:
                 warning_flag = True
-                status_message = _status_message['maxfev']
+                status_message = _status_message['maxfev']            
+                break
 
         minval = np.argmin(self.population_energies)
 
@@ -410,6 +411,15 @@ class DifferentialEvolutionSolver(object):
 
         self.population[[0, minval], :] = self.population[[minval, 0], :]
 
+        if warning_flag:
+            return OptimizeResult(
+                           x=self._scale_parameters(self.population[0]),
+                           fun=self.population_energies[0],
+                           nfev=self.nfev,
+                           nit=self.nit,
+                           message=status_message,
+                           success=(warning_flag != True))
+                            
         # do the optimisation.
         for iteration in range(self.maxiter):
             if self.dither:
