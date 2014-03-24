@@ -17,7 +17,7 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
         np.seterr(invalid='raise')
         self.limits = np.array([[0., 0.],
                                 [2., 2.]])
-        self.bounds = [(0, 2), (0, 2)]
+        self.bounds = [(0., 2.), (0., 2.)]
 
         self.dummy_solver = DifferentialEvolutionSolver(self.dummy_function,
                                                         [(0, 100)])
@@ -254,8 +254,8 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
 
     def test_select_samples(self):
         # select_samples should return 5 separate random numbers.
-        limits = np.arange(12.).reshape(2, 6)
-        bounds = zip(limits[0, :], limits[1, :])
+        limits = np.arange(12., dtype='float64').reshape(2, 6)
+        bounds = list(zip(limits[0, :], limits[1, :]))
         solver = DifferentialEvolutionSolver(None, bounds, popsize=1)
         candidate = 0
         r1, r2, r3, r4, r5 = solver._select_samples(candidate, 5)
@@ -276,6 +276,8 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
         #the solver stops
         solver = DifferentialEvolutionSolver(rosen, self.bounds, maxfun=1)
         result = solver.solve()
+
+        npt.assert_equal(result.nfev, 2)
         npt.assert_equal(result.success, False)
         npt.assert_equal(result.message,
                          'Maximum number of function evaluations has '

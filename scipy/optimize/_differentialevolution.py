@@ -334,7 +334,7 @@ class DifferentialEvolutionSolver(object):
         # convert tuple of lower and upper bounds to limits
         # [(low_0, high_0), ..., (low_n, high_n]
         #     -> [[low_0, ..., low_n], [high_0, ..., high_n]]
-        self.limits = np.array(bounds, float).T
+        self.limits = np.array(bounds, dtype='float').T
         if (np.size(self.limits, 0) != 2
              or not np.all(np.isfinite(self.limits))):
             raise ValueError('bounds should be a sequence containing '
