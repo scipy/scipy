@@ -313,23 +313,15 @@ class DifferentialEvolutionSolver(object):
         mutation_err_message = 'The mutation constant must be a float in '
         'U[0, 2), or specified as a tuple(min, max) where min < max and min, '
         'max are in U[0, 2).'
+        if (not np.all(np.isfinite(mutation))
+             or np.any(np.array(mutation) >= 2)
+              or np.any(np.array(mutation) < 0)):
+              
+            raise ValueError(mutation_err_message)
 
-        try:
-            if not np.all(np.isfinite(mutation)):
-                raise ValueError(mutation_err_message)
-            if (np.any(np.array(mutation) >= 2)
-                 or np.any(np.array(mutation) < 0)):
-                raise ValueError(mutation_err_message)        
-        except (TypeError):    
-            #you supply something that's not a number
-            raise TypeError(mutation_err_message)
-
-        try:
-            if len(mutation) > 1:
-                self.dither = [mutation[0], mutation[1]].sort()
-        except (TypeError):
-            #mutation isn't iterable, so it's a single number
-            self.dither = False
+        self.dither = False
+        if hasattr(mutation, '__iter__') and len(mutation) > 1:
+            self.dither = [mutation[0], mutation[1]].sort()
 
         self.cross_over_probability = recombination
 
@@ -338,16 +330,12 @@ class DifferentialEvolutionSolver(object):
         
         # assemble the bounds into the limits
         self.bounds = bounds
-        try:
-            # convert tuple of lower and upper bounds to limits
-            # [(low_0, high_0), ..., (low_n, high_n]
-            #     -> [[low_0, ..., low_n], [high_0, ..., high_n]]
-            self.limits = np.array(bounds, float).T
-            if (np.size(self.limits, 0) != 2 or not
-                 np.all(np.isfinite(self.limits))):
-                raise ValueError
-        except (ValueError):
-            # it is required to have (min, max) pairs for each value in x
+        # convert tuple of lower and upper bounds to limits
+        # [(low_0, high_0), ..., (low_n, high_n]
+        #     -> [[low_0, ..., low_n], [high_0, ..., high_n]]
+        self.limits = np.array(bounds, float).T
+        if (np.size(self.limits, 0) != 2
+             or not np.all(np.isfinite(self.limits))):
             raise ValueError('bounds should be a sequence containing '
                              'real valued (min, max) pairs for each value'
                              ' in x')

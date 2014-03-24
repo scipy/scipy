@@ -2,6 +2,8 @@
 Unit tests for the differential global minimization algorithm.
 """
 import scipy.optimize._differentialevolution as _differentialevolution
+from scipy.optimize._differentialevolution import DifferentialEvolutionSolver
+from scipy.optimize import differential_evolution
 import numpy as np
 from scipy.optimize import rosen
 import numpy.testing as npt
@@ -17,12 +19,14 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
                                 [2., 2.]])
         self.bounds = [(0, 2), (0, 2)]
 
-        self.dummy_solver = _differentialevolution.DifferentialEvolutionSolver(
-            self.dummy_function, [(0, 100)])
+        self.dummy_solver = DifferentialEvolutionSolver(self.dummy_function,
+                                                        [(0, 100)])
             
         #dummy_solver2 will be used to test mutation strategies
-        self.dummy_solver2 = _differentialevolution.DifferentialEvolutionSolver(
-            self.dummy_function, [(0, 1)], popsize=7, mutation=0.5)
+        self.dummy_solver2 = DifferentialEvolutionSolver(self.dummy_function,
+                                                         [(0, 1)],
+                                                         popsize=7,
+                                                         mutation=0.5)
         #create a population that's only 7 members long
         #[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
         population = np.atleast_2d(np.arange(0.1, 0.8, 0.1)).T
@@ -37,53 +41,63 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
     def test__strategy_resolves(self):
         #test that the correct mutation function is resolved by
         #different requested strategy arguments
-        solver = _differentialevolution.DifferentialEvolutionSolver(
-            rosen, self.bounds, strategy='best1exp')
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='best1exp')
         npt.assert_equal(solver.strategy, 'best1exp')
         npt.assert_equal(solver.mutation_func.__name__, '_best1')
 
-        solver = _differentialevolution.DifferentialEvolutionSolver(
-            rosen, self.bounds, strategy='best1bin')
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='best1bin')
         npt.assert_equal(solver.strategy, 'best1bin')
         npt.assert_equal(solver.mutation_func.__name__, '_best1')
 
-        solver = _differentialevolution.DifferentialEvolutionSolver(
-            rosen, self.bounds, strategy='rand1bin')
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='rand1bin')
         npt.assert_equal(solver.strategy, 'rand1bin')
         npt.assert_equal(solver.mutation_func.__name__, '_rand1')
 
-        solver = _differentialevolution.DifferentialEvolutionSolver(
-            rosen, self.bounds, strategy='rand1exp')
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='rand1exp')
         npt.assert_equal(solver.strategy, 'rand1exp')
         npt.assert_equal(solver.mutation_func.__name__, '_rand1')
         
-        solver = _differentialevolution.DifferentialEvolutionSolver(
-            rosen, self.bounds, strategy='rand2exp')
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='rand2exp')
         npt.assert_equal(solver.strategy, 'rand2exp')
         npt.assert_equal(solver.mutation_func.__name__, '_rand2')
 
-        solver = _differentialevolution.DifferentialEvolutionSolver(
-            rosen, self.bounds, strategy='best2bin')
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='best2bin')
         npt.assert_equal(solver.strategy, 'best2bin')
         npt.assert_equal(solver.mutation_func.__name__, '_best2')
 
-        solver = _differentialevolution.DifferentialEvolutionSolver(
-            rosen, self.bounds, strategy='rand2bin')
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='rand2bin')
         npt.assert_equal(solver.strategy, 'rand2bin')
         npt.assert_equal(solver.mutation_func.__name__, '_rand2')
 
-        solver = _differentialevolution.DifferentialEvolutionSolver(
-            rosen, self.bounds, strategy='rand2exp')
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='rand2exp')
         npt.assert_equal(solver.strategy, 'rand2exp')
         npt.assert_equal(solver.mutation_func.__name__, '_rand2')
 
-        solver = _differentialevolution.DifferentialEvolutionSolver(
-            rosen, self.bounds, strategy='randtobest1bin')
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='randtobest1bin')
         npt.assert_equal(solver.strategy, 'randtobest1bin')
         npt.assert_equal(solver.mutation_func.__name__, '_randtobest1')
 
-        solver = _differentialevolution.DifferentialEvolutionSolver(
-            rosen, self.bounds, strategy='randtobest1exp')
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='randtobest1exp')
         npt.assert_equal(solver.strategy, 'randtobest1exp')
         npt.assert_equal(solver.mutation_func.__name__, '_randtobest1')
 
@@ -117,8 +131,9 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
 
     def test_can_init_with_dithering(self):
         mutation = (0.5, 1)
-        solver = _differentialevolution.DifferentialEvolutionSolver(
-            self.dummy_function, self.bounds, mutation=mutation)
+        solver = DifferentialEvolutionSolver(self.dummy_function,
+                                             self.bounds,
+                                             mutation=mutation)
         if solver.dither is False:
             raise AttributeError
 
@@ -126,31 +141,43 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
         f = rosen
         mutation = (0.5, 3)
         self.assertRaises(ValueError,
-                          _differentialevolution.DifferentialEvolutionSolver,
+                          DifferentialEvolutionSolver,
                           f,
                           self.bounds,
                           mutation=mutation)
 
         mutation = (-1, 3)
         self.assertRaises(ValueError,
-                          _differentialevolution.DifferentialEvolutionSolver,
+                          DifferentialEvolutionSolver,
                           f,
                           self.bounds,
                           mutation=mutation)
 
         mutation = (-1, 'a')
-        self.assertRaises(TypeError,
-                          _differentialevolution.DifferentialEvolutionSolver,
+        try:
+            DifferentialEvolutionSolver(f,
+                                        self.bounds,
+                                        mutation=mutation)
+            raise Exception("DifferentialEvolutionSolver should've raised some "
+                            "error with mutation=(-1, 'a')")
+        except Exception:
+            #np.isfinite will either raise TypeError or NotImplementedError
+            #for a string value
+            pass                                  
+
+        mutation = (0.1, np.nan)
+        self.assertRaises(ValueError,
+                          DifferentialEvolutionSolver,
                           f,
                           self.bounds,
                           mutation=mutation)
 
-        mutation = (0.1, np.nan)
-        self.assertRaises(ValueError,
-                          _differentialevolution.DifferentialEvolutionSolver,
-                          f,
-                          self.bounds,
-                          mutation=mutation)
+        mutation = (0.5)
+        solver = DifferentialEvolutionSolver(f,
+                                             self.bounds,
+                                             mutation=mutation)
+        npt.assert_equal(0.5, solver.scale)
+        npt.assert_equal(False, solver.dither)
 
     def test__scale_parameters(self):
         trial = np.array([0.3])
@@ -176,8 +203,7 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
     def test_differential_evolution(self):
         # test that the Jmin of DifferentialEvolutionSolver
         # is the same as the function evaluation
-        solver = _differentialevolution.DifferentialEvolutionSolver(
-            rosen, self.bounds)
+        solver = DifferentialEvolutionSolver(rosen, self.bounds)
         result = solver.solve()
         npt.assert_almost_equal(result.fun, rosen(result.x))
 
@@ -188,8 +214,7 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
         def callback(param, convergence=0.):
             return True
 
-        result = _differentialevolution.differential_evolution(
-            rosen, bounds, callback=callback)
+        result = differential_evolution(rosen, bounds, callback=callback)
 
         npt.assert_string_equal(result.message,
                                 'callback function requested stop early '
@@ -200,7 +225,7 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
         f = rosen
         bounds = [(-3, 3)]
         self.assertRaises(ValueError,
-                          _differentialevolution.differential_evolution,
+                          differential_evolution,
                           f,
                           bounds,
                           strategy='abc')
@@ -210,17 +235,17 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
         f = rosen
         bounds = [(-3, None)]
         self.assertRaises(ValueError,
-                          _differentialevolution.differential_evolution,
+                          differential_evolution,
                           f,
                           bounds)
         bounds = [(-3)]
         self.assertRaises(ValueError,
-                          _differentialevolution.differential_evolution,
+                          differential_evolution,
                           f,
                           bounds)
         bounds = [(-3, 3), (3, 4, 5)]
         self.assertRaises(ValueError,
-                          _differentialevolution.differential_evolution,
+                          differential_evolution,
                           f,
                           bounds)
 
@@ -228,8 +253,7 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
         # select_samples should return 5 separate random numbers.
         limits = np.arange(12.).reshape(2, 6)
         bounds = zip(limits[0, :], limits[1, :])
-        solver = _differentialevolution.DifferentialEvolutionSolver(
-            None, bounds, popsize=1)
+        solver = DifferentialEvolutionSolver(None, bounds, popsize=1)
         candidate = 0
         r1, r2, r3, r4, r5 = solver._select_samples(candidate, 5)
         npt.assert_equal(
@@ -238,8 +262,7 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
     def test_maxiter_stops_solve(self):
         #test that if the maximum number of iterations is exceeded
         #the solver stops
-        solver = _differentialevolution.DifferentialEvolutionSolver(
-            rosen, self.bounds, maxiter=1)
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, maxiter=1)
         result = solver.solve()
         npt.assert_equal(result.success, False)
         npt.assert_equal(result.message,
@@ -248,8 +271,7 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
     def test_maxfun_stops_solve(self):
         #test that if the maximum number of function evaluations is exceeded
         #the solver stops
-        solver = _differentialevolution.DifferentialEvolutionSolver(
-            rosen, self.bounds, maxfun=1)
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, maxfun=1)
         result = solver.solve()
         npt.assert_equal(result.success, False)
         npt.assert_equal(result.message,
@@ -259,22 +281,22 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
     @npt.dec.slow
     def test_rosen(self):
         # test the Rosenbrock function from object
-        solver = _differentialevolution.DifferentialEvolutionSolver(
-            rosen, self.bounds)
+        solver = DifferentialEvolutionSolver(rosen, self.bounds)
         result = solver.solve()
 
     @npt.dec.slow
     def test_rosen_from_diff_ev(self):
         # test the Rosenbrock function from differential_evolution function
 
-        result = _differentialevolution.differential_evolution(
-            rosen, self.bounds)
+        result = differential_evolution(rosen, self.bounds)
 
     def test_exp_runs(self):
         # test whether exponential mutation loop runs
-        solver = _differentialevolution.DifferentialEvolutionSolver(
-            rosen, self.bounds, strategy='best1exp', maxiter=1)
-        
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='best1exp',
+                                             maxiter=1)
+
         solver.solve()
 
     def test__make_random_gen(self):
