@@ -273,11 +273,29 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
 
     def test_maxfun_stops_solve(self):
         #test that if the maximum number of function evaluations is exceeded
-        #the solver stops
+        #during initialisation the solver stops
         solver = DifferentialEvolutionSolver(rosen, self.bounds, maxfun=1)
         result = solver.solve()
 
         npt.assert_equal(result.nfev, 2)
+        npt.assert_equal(result.success, False)
+        npt.assert_equal(result.message,
+                         'Maximum number of function evaluations has '
+                              'been exceeded.')
+
+        #test that if the maximum number of function evaluations is exceeded
+        #during the actual minimisation, then the solver stops.
+        #Have to turn polishing off, as this will still occur even if maxfun
+        #is reached. For popsize=5 and len(bounds)=2, then there are only 10
+        #function evaluations during initialisation.
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             popsize=5,
+                                             polish=False,
+                                             maxfun=40)
+        result = solver.solve()
+
+        npt.assert_equal(result.nfev, 41)
         npt.assert_equal(result.success, False)
         npt.assert_equal(result.message,
                          'Maximum number of function evaluations has '

@@ -469,10 +469,7 @@ class DifferentialEvolutionSolver(object):
                                   'by returning True')
                 break
 
-            if self.convergence < self.tol:
-                break
-
-            if warning_flag:
+            if self.convergence < self.tol or warning_flag:
                 break
 
         if self.nit == self.maxiter:
