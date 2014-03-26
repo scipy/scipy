@@ -60,7 +60,7 @@ def _process_parameters(dim, mean, cov):
         cov = np.diag(cov)
     elif cov.ndim == 2 and cov.shape != (dim, dim):
         raise ValueError("Array 'cov' must be square if it is two dimensional, "
-                "but cov.shape = %s" % cov.shape)
+                "but cov.shape = %s" % str(cov.shape))
     elif cov.ndim > 2:
         raise ValueError("Array 'cov' must be at most two-dimensional, "
                 "but cov.ndim = %d" % cov.ndim)
