@@ -58,10 +58,12 @@ def _process_parameters(dim, mean, cov):
         cov = cov * np.eye(dim)
     elif cov.ndim == 1:
         cov = np.diag(cov)
-    else:
-        if cov.shape != (dim, dim):
-            raise ValueError("Array 'cov' must be at most two-dimensional,"
-                                 " but cov.ndim = %d" % cov.ndim)
+    elif cov.ndim == 2 and cov.shape != (dim, dim):
+        raise ValueError("Array 'cov' must be square if it is two dimensional, "
+                "but cov.shape = %s" % cov.shape)
+    elif cov.ndim > 2:
+        raise ValueError("Array 'cov' must be at most two-dimensional, "
+                "but cov.ndim = %d" % cov.ndim)
 
     return dim, mean, cov
 
