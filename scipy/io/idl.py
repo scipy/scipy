@@ -261,7 +261,6 @@ def _read_structure(f, array_desc, struct_desc):
 
     # Reshape structure if needed
     if array_desc['ndims'] > 1:
-        warnings.warn("warning: multi-dimensional structures are now correctly reshaped")
         dims = array_desc['dims'][:int(array_desc['ndims'])]
         dims.reverse()
         structure = structure.reshape(dims)
