@@ -133,37 +133,33 @@ class _PSD(object):
     The functions are designed to coordinate with scipy.linalg.pinvh()
     but not necessarily with np.linalg.det() or with np.linalg.matrix_rank().
 
+    Parameters
+    ----------
+    M : 2d array-like
+        Symmetric positive semidefinite matrix.
+    cond, rcond : float, optional
+        Cutoff for small eigenvalues.
+        Singular values smaller than rcond * largest_eigenvalue are
+        considered zero.
+        If None or -1, suitable machine precision is used.
+    lower : bool, optional
+        Whether the pertinent array data is taken from the lower
+        or upper triangle of M. (Default: lower)
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite
+        numbers. Disabling may give a performance gain, but may result
+        in problems (crashes, non-termination) if the inputs do contain
+        infinities or NaNs.
+    allow_singular : bool, optional
+        Whether to allow a singular matrix.  (Default: True)
+
+    Notes
+    -----
+    The arguments are similar to those of scipy.linalg.pinvh().
+
     """
     def __init__(self, M, cond=None, rcond=None, lower=True,
             check_finite=True, allow_singular=True):
-        """
-        Compute functions of a symmetric positive semidefinite matrix.
-
-        Parameters
-        ----------
-        M : 2d array-like
-            Symmetric positive semidefinite matrix.
-        cond, rcond : float, optional
-            Cutoff for small eigenvalues.
-            Singular values smaller than rcond * largest_eigenvalue are
-            considered zero.
-            If None or -1, suitable machine precision is used.
-        lower : bool, optional
-            Whether the pertinent array data is taken from the lower
-            or upper triangle of M. (Default: lower)
-        check_finite : bool, optional
-            Whether to check that the input matrices contain only finite
-            numbers. Disabling may give a performance gain, but may result
-            in problems (crashes, non-termination) if the inputs do contain
-            infinities or NaNs.
-        allow_singular : bool, optional
-            Whether to allow a singular matrix.  (Default: True)
-
-        Notes
-        -----
-        The arguments are similar to those of scipy.linalg.pinvh().
-
-        """
         # Compute the symmetric eigendecomposition.
         # Note that eigh takes care of array conversion, chkfinite,
         # and assertion that the matrix is square.
