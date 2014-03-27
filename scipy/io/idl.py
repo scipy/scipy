@@ -229,7 +229,6 @@ def _read_structure(f, array_desc, struct_desc):
     '''
 
     nrows = array_desc['nelements']
-    ncols = struct_desc['ntags']
     columns = struct_desc['tagtable']
 
     dtype = []
@@ -319,8 +318,6 @@ def _read_record(f):
     '''Function to read in a full record'''
 
     record = {}
-
-    recpos = f.tell()
     record['rectype'] = _read_long(f)
 
     nextrec = _read_uint32(f)
