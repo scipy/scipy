@@ -1714,6 +1714,12 @@ class TestHessenberg(TestCase):
         h,q = hessenberg(a,calc_q=1)
         assert_array_almost_equal(dot(transp(q),dot(a,q)),h)
 
+    def test_simple3(self):
+        a = np.eye(3)
+        a[-1, 0] = 2
+        h, q = hessenberg(a, calc_q=1)
+        assert_array_almost_equal(dot(transp(q), dot(a, q)), h)
+
     def test_random(self):
         n = 20
         for k in range(2):
