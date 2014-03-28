@@ -1,6 +1,6 @@
 from __future__ import division
 import numpy as np
-from numpy import sin, cos, pi, e, exp, sqrt, abs
+from numpy import sin, cos, pi, exp, sqrt, abs
 
 
 class SimpleQuadratic(object):
@@ -55,17 +55,19 @@ class LJ(object):
         self.eps = eps
 
     def vij(self, r):
-        return 4. * self.eps * ((self.sig / r) ** 12 - (self.sig / r) ** 6)
+        return 4. * self.eps * ((self.sig / r)**12 - (self.sig / r)**6)
 
     def dvij(self, r):
-        return 4. * self.eps * (-12. / self.sig * (self.sig / r) ** 13 + 6. / self.sig * (self.sig / r) ** 7)
+        p7 = 6. / self.sig * (self.sig / r)**7
+        p13 = -12. / self.sig * (self.sig / r)**13
+        return 4. * self.eps * (p7 + p13)
 
     def fun(self, coords):
         natoms = coords.size // 3
         coords = np.reshape(coords, [natoms, 3])
         energy = 0.
-        for i in xrange(natoms):
-            for j in xrange(i + 1, natoms):
+        for i in range(natoms):
+            for j in range(i + 1, natoms):
                 dr = coords[j,:] - coords[i,:]
                 r = np.linalg.norm(dr)
                 energy += self.vij(r)
@@ -76,8 +78,8 @@ class LJ(object):
         coords = np.reshape(coords, [natoms, 3])
         energy = 0.
         grad = np.zeros([natoms, 3])
-        for i in xrange(natoms):
-            for j in xrange(i + 1, natoms):
+        for i in range(natoms):
+            for j in range(i + 1, natoms):
                 dr = coords[j,:] - coords[i,:]
                 r = np.linalg.norm(dr)
                 energy += self.vij(r)
@@ -88,7 +90,8 @@ class LJ(object):
         return grad
 
     def get_random_configuration(self):
-        return np.random.uniform(-1, 1, [3 * self.natoms]) * float(self.natoms) ** (1. / 3)
+        rnd = np.random.uniform(-1, 1, [3 * self.natoms])
+        return rnd * float(self.natoms)**(1. / 3)
 
 
 class LJ38(LJ):
@@ -112,29 +115,44 @@ class LJ13(LJ):
 
 
 class Booth(object):
+    target_E = 0.
+    solution = np.array([1., 3.])
+    xmin = np.array([-10., -10.])
+    xmax = np.array([10., 10.])
+
     def fun(self, coords):
         x, y = coords
-        return (x + 2. * y - 7.) ** 2 + (2. * x + y - 5.) ** 2
+        return (x + 2. * y - 7.)**2 + (2. * x + y - 5.)**2
 
     def der(self, coords):
         x, y = coords
-        dx = 2. * (x + 2. * y - 7.) + 4. * (2. * x + y - 5.)
-        dy = 4. * (x + 2. * y - 7.) + 2. * (2. * x + y - 5.)
-        return np.array([dx, dy])
+        dfdx = 2. * (x + 2. * y - 7.) + 4. * (2. * x + y - 5.)
+        dfdy = 4. * (x + 2. * y - 7.) + 2. * (2. * x + y - 5.)
+        return np.array([dfdx, dfdy])
 
 
 class Beale(object):
+    target_E = 0.
+    solution = np.array([3., 0.5])
+    xmin = np.array([-4.5, -4.5])
+    xmax = np.array([4.5, 4.5])
+
     def fun(self, coords):
         x, y = coords
-        return (1.5 - x + x*y)**2 + (2.25 - x + x * y**2)**2 + (2.625 - x + x * y**3)**2
+        p1 = (1.5 - x + x * y)**2
+        p2 = (2.25 - x + x * y**2)**2
+        p3 = (2.625 - x + x * y**3)**2
+        return p1 + p2 + p3
 
     def der(self, coords):
         x, y = coords
-        dx = (2. * (1.5 - x + x * y) * (-1. + y) + 2. * (2.25 - x + x * y ** 2) * 
-            (-1. + y ** 2) + 2. * (2.625 - x + x * y ** 3) * (-1. + y ** 3))
-        dy = (2. * (1.5 - x + x * y) * (x) + 2. * (2.25 - x + x * y ** 2) * 
-            (2. * y * x) + 2. * (2.625 - x + x * y ** 3) * (3. * x * y ** 2))
-        return np.array([dx, dy])
+        dfdx = (2. * (1.5 - x + x * y) * (-1. + y) +
+                2. * (2.25 - x + x * y**2) * (-1. + y**2) +
+                2. * (2.625 - x + x * y**3) * (-1. + y**3))
+        dfdy = (2. * (1.5 - x + x * y) * (x) +
+                2. * (2.25 - x + x * y**2) * (2. * y * x) +
+                2. * (2.625 - x + x * y**3) * (3. * x * y**2))
+        return np.array([dfdx, dfdy])
 
 """
 Global Test functions for minimizers.
@@ -157,7 +175,8 @@ class HolderTable(object):
     temperature = 2.
 
     def fun(self, x):
-        return - abs(sin(x[0]) * cos(x[1]) * exp(abs(1. - sqrt(x[0] ** 2 + x[1] ** 2) / pi)))
+        return - abs(sin(x[0]) * cos(x[1]) * exp(abs(1. - sqrt(x[0]**2 +
+                     x[1]**2) / pi)))
 
     def dabs(self, x):
         """derivative of absolute value"""
@@ -168,19 +187,19 @@ class HolderTable(object):
         else:
             return 0.
 
-#commented out at the because it causes FloatingPointError in 
+#commented out at the because it causes FloatingPointError in
 #basinhopping
 #     def der(self, x):
-#         R = sqrt(x[0] ** 2 + x[1] ** 2)
+#         R = sqrt(x[0]**2 + x[1]**2)
 #         g = 1. - R / pi
 #         f = sin(x[0]) * cos(x[1]) * exp(abs(g))
 #         E = -abs(f)
-# 
+#
 #         dRdx = x[0] / R
 #         dgdx = - dRdx / pi
 #         dfdx = cos(x[0]) * cos(x[1]) * exp(abs(g)) + f * self.dabs(g) * dgdx
 #         dEdx = - self.dabs(f) * dfdx
-# 
+#
 #         dRdy = x[1] / R
 #         dgdy = - dRdy / pi
 #         dfdy = -sin(x[0]) * sin(x[1]) * exp(abs(g)) + f * self.dabs(g) * dgdy
@@ -197,21 +216,21 @@ class Ackley(object):
     xmax = np.array([5, 5])
 
     def fun(self, x):
-        E = (-20. * exp(-0.2 * sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))) - 
-            exp(0.5 * (cos(2. * pi * x[0]) + cos(2. * pi * x[1]))) + 20. + np.e)
+        E = (-20. * exp(-0.2 * sqrt(0.5 * (x[0]**2 + x[1]**2))) + 20. + np.e -
+             exp(0.5 * (cos(2. * pi * x[0]) + cos(2. * pi * x[1]))))
         return E
 
     def der(self, x):
-        R = sqrt(x[0] ** 2 + x[1] ** 2)
+        R = sqrt(x[0]**2 + x[1]**2)
         term1 = -20. * exp(-0.2 * R)
         term2 = -exp(0.5 * (cos(2. * pi * x[0]) + cos(2. * pi * x[1])))
 
         deriv1 = term1 * (-0.2 * 0.5 / R)
 
-        dEdx = 2. * deriv1 * x[0] - term2 * pi * sin(2. * pi * x[0])
-        dEdy = 2. * deriv1 * x[1] - term2 * pi * sin(2. * pi * x[1])
+        dfdx = 2. * deriv1 * x[0] - term2 * pi * sin(2. * pi * x[0])
+        dfdy = 2. * deriv1 * x[1] - term2 * pi * sin(2. * pi * x[1])
 
-        return np.array([dEdx, dEdy])
+        return np.array([dfdx, dfdy])
 
 
 class Levi(object):
@@ -221,22 +240,23 @@ class Levi(object):
     xmax = np.array([10, 10])
 
     def fun(self, x):
-        E = (sin(3. * pi * x[0]) ** 2 + (x[0] - 1.) ** 2 * 
-            (1. + sin(3 * pi * x[1]) ** 2) + 
-            (x[1] - 1.) ** 2 * (1. + sin(2 * pi * x[1]) ** 2))
+        E = (sin(3. * pi * x[0])**2 + (x[0] - 1.)**2 *
+             (1. + sin(3 * pi * x[1])**2) +
+             (x[1] - 1.)**2 * (1. + sin(2 * pi * x[1])**2))
         return E
 
     def der(self, x):
 
-        dEdx = (2. * 3. * pi * 
-            cos(3. * pi * x[0]) * sin(3. * pi * x[0]) + 
-            2. * (x[0] - 1.) * (1. + sin(3 * pi * x[1]) ** 2))
+        dfdx = (2. * 3. * pi *
+                cos(3. * pi * x[0]) * sin(3. * pi * x[0]) +
+                2. * (x[0] - 1.) * (1. + sin(3 * pi * x[1])**2))
 
-        dEdy = ((x[0] - 1.) ** 2 * 2. * 3. * pi * cos(3. * pi * x[1]) * sin(3. * pi * x[1]) + 2. * (x[1] - 1.) * 
-            (1. + sin(2 * pi * x[1]) ** 2) + (x[1] - 1.) ** 2 * 
-            2. * 2. * pi * cos(2. * pi * x[1]) * sin(2. * pi * x[1]))
+        dfdy = ((x[0] - 1.)**2 * 2. * 3. * pi * cos(3. * pi * x[1]) * sin(3. *
+                pi * x[1]) + 2. * (x[1] - 1.) *
+                (1. + sin(2 * pi * x[1])**2) + (x[1] - 1.)**2 *
+                2. * 2. * pi * cos(2. * pi * x[1]) * sin(2. * pi * x[1]))
 
-        return np.array([dEdx, dEdy])
+        return np.array([dfdx, dfdy])
 
 
 class EggHolder(object):

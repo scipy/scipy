@@ -305,13 +305,13 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
     def test_rosen(self):
         # test the Rosenbrock function from object
         solver = DifferentialEvolutionSolver(rosen, self.bounds)
-        result = solver.solve()
+        solver.solve()
 
     @npt.dec.slow
     def test_rosen_from_diff_ev(self):
         # test the Rosenbrock function from differential_evolution function
 
-        result = differential_evolution(rosen, self.bounds)
+        differential_evolution(rosen, self.bounds)
 
     def test_exp_runs(self):
         # test whether exponential mutation loop runs
@@ -323,10 +323,10 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
         solver.solve()
 
     def test__make_random_gen(self):
-#     If seed is None, return the RandomState singleton used by np.random.
-#     If seed is an int, return a new RandomState instance seeded with seed.
-#     If seed is already a RandomState instance, return it.
-#     Otherwise raise ValueError.
+        # If seed is None, return the RandomState singleton used by np.random.
+        # If seed is an int, return a new RandomState instance seeded with seed.
+        # If seed is already a RandomState instance, return it.
+        # Otherwise raise ValueError.
         rsi = _differentialevolution._make_random_gen(1)
         npt.assert_equal(type(rsi), np.random.RandomState)
         rsi = _differentialevolution._make_random_gen(rsi)

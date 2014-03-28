@@ -42,9 +42,6 @@ class _BenchOptimizers(object):
                        for idx in range(np.size(limits, 1))]
 
         self.minimizer_kwargs = minimizer_kwargs
-#         if "tol" not in minimizer_kwargs:
-#             minimizer_kwargs["tol"] = 1e-4
-#
         self.tol = 1e-4
 
         self.results = []
@@ -87,7 +84,7 @@ class _BenchOptimizers(object):
                                           np.abs(self.function.solution),
                                           decimal=4)
             return True
-        except (AssertionError) as e:
+        except (AssertionError):
             return False
 
     def add_result(self, result, t, name):
@@ -106,16 +103,17 @@ class _BenchOptimizers(object):
         results = sorted(results, key=lambda x: (x.nfail, x.mean_time))
         print("")
         print("=========================================================")
-        print("Optimizer benchmark: %s" % (self.function_name))
-        print("dimensions: %d, extra kwargs: %s" %
-              (results[0].ndim, str(self.minimizer_kwargs)))
-        print("averaged over %d starting configurations" %
-              (results[0].ntrials))
+        print(("Optimizer benchmark: %s" % (self.function_name)))
+        print(("dimensions: %d, extra kwargs: %s" %
+              (results[0].ndim, str(self.minimizer_kwargs))))
+        print(("averaged over %d starting configurations" %
+              (results[0].ntrials)))
         print("  Optimizer    nfail   nfev    njev    nhev    time")
         print("---------------------------------------------------------")
         for res in results:
-            print("%30s   | %4d  | %8d  | %4d  | %4d  | %.6g" %
-                  (res.name, res.nfail, res.mean_nfev, res.mean_njev, res.mean_nhev, res.mean_time))
+            print(("%30s   | %4d  | %8d  | %4d  | %4d  | %.6g" %
+                  (res.name, res.nfail, res.mean_nfev, res.mean_njev,
+                   res.mean_nhev, res.mean_time)))
 
     def average_results(self):
         """group the results by minimizer and average over the runs"""
@@ -206,7 +204,8 @@ class BenchGlobalOptimizers(TestCase):
 
     def bench_all(self):
         functions = ['Ackley', 'Levi', 'HolderTable', 'EggHolder',
-                     'Schaffer2', 'Schaffer4', 'CrossInTray']
+                     'Schaffer2', 'Schaffer4', 'CrossInTray',
+                     'Booth', 'Beale']
 
         for function in functions:
             f = getattr(funcs, function)()

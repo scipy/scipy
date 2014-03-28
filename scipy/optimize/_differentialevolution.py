@@ -165,7 +165,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     >>> from scipy.optimize import rosen, differential_evolution
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = differential_evolution(rosen, bounds)
-    >>> print result
+    >>> result
 
     Next find the minimum of the Ackley function
     (http://en.wikipedia.org/wiki/Test_functions_for_optimization).
@@ -613,16 +613,7 @@ def _make_random_gen(seed):
 
 if __name__ == "__main__":
     def test():
-        from scipy.optimize import rosen
         from numpy import exp, sqrt, cos, pi, e
-        # minimum expected at [1, 1, 1, 1, 1]
-        bounds = [(0, 2), (0, 2), (0, 2), (0, 2), (0, 2)]
-        result = differential_evolution(rosen,
-                                        bounds,
-                                        seed=1,
-                                        polish=True,
-                                        disp=False)
-        print(result)
         
         # now do Ackley function
         def ackley(x):
