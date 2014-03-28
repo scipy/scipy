@@ -225,6 +225,9 @@ All functions
    ctrtrs
    ztrtrs
 
+   cunghr
+   zunghr
+
    cungqr
    zungqr
 
@@ -246,6 +249,9 @@ All functions
 
    slamch
    dlamch
+
+   sorghr
+   dorghr
 
    sorgqr
    dorgqr
@@ -315,6 +321,7 @@ del empty_module
 
 # some convenience alias for complex functions
 _lapack_alias = {
+    'corghr': 'cunghr', 'zorghr': 'zunghr',
     'corgqr': 'cungqr', 'zorgqr': 'zungqr',
     'cormqr': 'cunmqr', 'zormqr': 'zunmqr',
     'corgrq': 'cungrq', 'zorgrq': 'zungrq',
