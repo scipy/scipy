@@ -81,9 +81,8 @@ __all__ = ['whiten', 'vq', 'kmeans', 'kmeans2']
 import warnings
 
 from numpy.random import randint
-from numpy import shape, zeros, sqrt, argmin, minimum, array, \
-     newaxis, arange, compress, equal, common_type, single, double, take, \
-     std, mean
+from numpy import (shape, zeros, sqrt, argmin, minimum, array, newaxis,
+    arange, compress, equal, common_type, single, double, take, std, mean)
 import numpy as np
 
 
@@ -131,6 +130,12 @@ def whiten(obs):
 
     """
     std_dev = std(obs, axis=0)
+    zero_std_mask = std_dev == 0
+    if zero_std_mask.any():
+        std_dev[zero_std_mask] = 1.0
+        warnings.warn("Some columns have standard deviation zero. "
+                      "The values of these columns will not change.",
+                      RuntimeWarning)
     return obs / std_dev
 
 

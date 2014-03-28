@@ -8,10 +8,11 @@ import os.path
 import warnings
 
 import numpy as np
-from numpy.testing import assert_array_equal, assert_array_almost_equal, \
-        TestCase, run_module_suite, assert_raises
+from numpy.testing import (assert_array_equal, assert_array_almost_equal,
+    TestCase, run_module_suite, assert_raises, assert_allclose)
 
-from scipy.cluster.vq import kmeans, kmeans2, py_vq, py_vq2, vq, ClusterError
+from scipy.cluster.vq import (kmeans, kmeans2, py_vq, py_vq2, vq, whiten,
+    ClusterError)
 try:
     from scipy.cluster import _vq
     TESTC = True
@@ -19,7 +20,7 @@ except ImportError:
     print("== Error while importing _vq, not testing C imp of vq ==")
     TESTC = False
 
-#Optional:
+# Optional:
 # import modules that are located in the same directory as this file.
 DATAFILE1 = os.path.join(os.path.dirname(__file__), "data.txt")
 
@@ -37,6 +38,30 @@ CODET2 = np.array([[11.0/3, 8.0/3],
                    [6.2500, 1.7500]])
 
 LABEL1 = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
+
+
+class TestWhiten(TestCase):
+    def test_whiten(self):
+        obs = np.array([[0.98744510, 0.82766775],
+                        [0.62093317, 0.19406729],
+                        [0.87545741, 0.00735733],
+                        [0.85124403, 0.26499712],
+                        [0.45067590, 0.45464607]])
+        result = np.array([[5.08738849, 2.97091878],
+                           [3.19909255, 0.69660580],
+                           [4.51041982, 0.02640918],
+                           [4.38567074, 0.95120889],
+                           [2.32191480, 1.63195503]])
+        assert_allclose(whiten(obs), result, rtol=1e-5)
+
+    def test_whiten_zero_std(self):
+        obs = np.array([[0., 1., 0.74109533],
+                        [0., 1., 0.34243798],
+                        [0., 1., 0.96785929]])
+        result = np.array([[0., 1.0, 2.86666544],
+                           [0., 1.0, 1.32460034],
+                           [0., 1.0, 3.74382172]])
+        assert_allclose(whiten(obs), result, rtol=1e-5)
 
 
 class TestVq(TestCase):
@@ -59,14 +84,14 @@ class TestVq(TestCase):
         else:
             print("== not testing C imp of vq ==")
 
-    #def test_py_vq_1d(self):
-    #    """Test special rank 1 vq algo, python implementation."""
-    #    data = X[:, 0]
-    #    initc = data[:3]
-    #    a, b = _py_vq_1d(data, initc)
-    #    ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
-    #    assert_array_equal(a, ta)
-    #    assert_array_equal(b, tb)
+    # def test_py_vq_1d(self):
+    #     """Test special rank 1 vq algo, python implementation."""
+    #     data = X[:, 0]
+    #     initc = data[:3]
+    #     a, b = _py_vq_1d(data, initc)
+    #     ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
+    #     assert_array_equal(a, ta)
+    #     assert_array_equal(b, tb)
 
     def test_vq_1d(self):
         """Test special rank 1 vq algo, python implementation."""
