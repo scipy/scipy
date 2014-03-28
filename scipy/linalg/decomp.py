@@ -875,28 +875,15 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gehrd '
                                         '(hessenberg)' % -info)
-
+    h = numpy.triu(hq, -1)
     if not calc_q:
-        for i in range(lo, hi):
-            hq[i+2:hi+1, i] = 0.0
-        return hq
+        return h
 
-    # XXX: Use ORGHR routines to compute q.
-    typecode = hq.dtype
-    ger,gemm = get_blas_funcs(('ger','gemm'), dtype=typecode)
-    q = None
-    for i in range(lo, hi):
-        if tau[i] == 0.0:
-            continue
-        v = zeros(n, dtype=typecode)
-        v[i+1] = 1.0
-        v[i+2:hi+1] = hq[i+2:hi+1, i]
-        hq[i+2:hi+1, i] = 0.0
-        h = ger(-tau[i], v, v,a=diag(ones(n, dtype=typecode)), overwrite_a=1)
-        if q is None:
-            q = h
-        else:
-            q = gemm(1.0, q, h)
-    if q is None:
-        q = diag(ones(n, dtype=typecode))
-    return hq, q
+    # use orghr/unghr to compute q
+    orghr, = get_lapack_funcs(('orghr',), (a1,))
+    lwork = calc_lwork.orghr(orghr.typecode, n, lo, hi)
+    q, info = orghr(a=hq, tau=tau, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
+    if info < 0:
+        raise ValueError('illegal value in %d-th argument of internal orghr '
+                         '(hessenberg)' % -info)
+    return h, q
