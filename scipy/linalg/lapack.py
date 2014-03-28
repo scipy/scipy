@@ -64,6 +64,7 @@ All functions
    ctrsyl
    ctrtri
    ctrtrs
+   cunghr
    cungqr
    cungrq
    cunmqr
@@ -89,6 +90,7 @@ All functions
    dlamch
    dlaswp
    dlauum
+   dorghr
    dorgqr
    dorgrq
    dormqr
@@ -133,6 +135,7 @@ All functions
    slamch
    slaswp
    slauum
+   sorghr
    sorgqr
    sorgrq
    sormqr
@@ -194,6 +197,7 @@ All functions
    ztrsyl
    ztrtri
    ztrtrs
+   zunghr
    zungqr
    zungrq
    zunmqr
@@ -230,6 +234,7 @@ del empty_module
 
 # some convenience alias for complex functions
 _lapack_alias = {
+    'corghr': 'cunghr', 'zorghr': 'zunghr',
     'corgqr': 'cungqr', 'zorgqr': 'zungqr',
     'cormqr': 'cunmqr', 'zormqr': 'zunmqr',
     'corgrq': 'cungrq', 'zorgrq': 'zungrq',
