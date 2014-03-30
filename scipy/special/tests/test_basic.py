@@ -2543,8 +2543,8 @@ class TestMathieu(TestCase):
         # Q not defined broken and cannot figure out proper reporting order
 
     def test_mathieu_odd_coef(self):
+        # same problem as above
         pass
-            # same problem as above
 
 
 class TestFresnelIntegral(TestCase):
