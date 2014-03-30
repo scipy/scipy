@@ -227,6 +227,7 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
         # test that the args tuple is passed to the cost function properly.
         bounds = [(-10, 10)]
         args = (1., 2., 3.)
+
         def quadratic(x, *args):
             if type(args) != tuple:
                 raise ValueError('args should be a tuple')

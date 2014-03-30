@@ -310,8 +310,8 @@ class DifferentialEvolutionSolver(object):
         #then dithering is performed.
         self.scale = mutation
         if (not np.all(np.isfinite(mutation))
-            or np.any(np.array(mutation) >= 2)
-            or np.any(np.array(mutation) < 0)):
+             or np.any(np.array(mutation) >= 2)
+             or np.any(np.array(mutation) < 0)):
 
             raise ValueError('The mutation constant must be a float in '
                              'U[0, 2), or specified as a tuple(min, max)'
@@ -521,7 +521,7 @@ class DifferentialEvolutionSolver(object):
         fill_point = self.random_number_generator.randint(0, parameter_count)
 
         if (self.strategy == 'randtobest1exp'
-            or self.strategy == 'randtobest1bin'):
+             or self.strategy == 'randtobest1bin'):
             bprime = self.mutation_func(candidate,
                                         self._select_samples(candidate, 5))
         else:

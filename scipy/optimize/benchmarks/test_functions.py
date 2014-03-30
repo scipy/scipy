@@ -68,7 +68,7 @@ class LJ(object):
         energy = 0.
         for i in range(natoms):
             for j in range(i + 1, natoms):
-                dr = coords[j,:] - coords[i,:]
+                dr = coords[j, :] - coords[i, :]
                 r = np.linalg.norm(dr)
                 energy += self.vij(r)
         return energy
@@ -80,12 +80,12 @@ class LJ(object):
         grad = np.zeros([natoms, 3])
         for i in range(natoms):
             for j in range(i + 1, natoms):
-                dr = coords[j,:] - coords[i,:]
+                dr = coords[j, :] - coords[i, :]
                 r = np.linalg.norm(dr)
                 energy += self.vij(r)
                 g = self.dvij(r)
-                grad[i,:] += -g * dr/r
-                grad[j,:] += g * dr/r
+                grad[i, :] += -g * dr/r
+                grad[j, :] += g * dr/r
         grad = grad.reshape([natoms * 3])
         return grad
 
