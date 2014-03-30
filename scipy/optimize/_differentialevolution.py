@@ -29,7 +29,8 @@ _exponential = {'best1exp': '_best1',
 def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            maxiter=None, popsize=15, tol=0.01,
                            mutation=(0.5, 1), recombination=0.7, seed=None,
-                           callback=None, disp=False, polish=True):
+                           callback=None, disp=False, polish=True,
+                           init='latinhypercube'):
     """Finds the global minimum of a multivariate function.
     Differential Evolution is stochastic in nature (does not use gradient
     methods) to find the minimium, and can search large areas of candidate
@@ -69,7 +70,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             - 'rand2bin'
             - 'rand1bin'
 
-        The default is 'best1bin'
+        The default is 'best1bin'.
     maxiter: int, optional
         The maximum number of times the entire population is evolved.
         The maximum number of function evaluations is:
@@ -114,6 +115,16 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         If True (default), then scipy.optimize.minimize with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
         can improve the minimization slightly.
+    init : string, optional
+        Specify how the population initialization is performed. Should be
+        one of:
+            - 'latinhypercube'
+            - 'random'
+
+        The default is 'latinhypercube'. Latin Hypercube sampling tries to
+        maximize coverage of the available parameter space. 'random' initializes
+        the population randomly - this has the drawback that clustering can
+        occur, preventing the whole of parameter space being covered.
 
     Returns
     -------
@@ -196,7 +207,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                          recombination=recombination,
                                          seed=seed, polish=polish,
                                          callback=callback,
-                                         disp=disp)
+                                         disp=disp,
+                                         init=init)
     result = solver.solve()
     return result
 
@@ -283,12 +295,18 @@ class DifferentialEvolutionSolver(object):
     maxfun : int, optional
         Set the maximum number of function evaluations. However, it probably
         makes more sense to set `maxiter` instead.
+    init : string, optional
+        Specify which type of population initialization is performed. Should be
+        one of:
+            - 'latinhypercube'
+            - 'random'
     """
 
     def __init__(self, func, bounds, args=(),
                  strategy=None, maxiter=None, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
-                 maxfun=None, callback=None, disp=False, polish=True):
+                 maxfun=None, callback=None, disp=False, polish=True,
+                 init='latinhypercube'):
 
         if strategy is None:
             strategy = 'best1bin'
@@ -352,16 +370,70 @@ class DifferentialEvolutionSolver(object):
         parameter_count = np.size(self.limits, 1)
         self.random_number_generator = _make_random_gen(seed)
 
-        self.population = self.random_number_generator.rand(
-            popsize * parameter_count, parameter_count)
+        #default initialization is a latin hypercube design, but there
+        #are other population initializations possible.
+        self.population = np.zeros((popsize * parameter_count,
+                                    parameter_count))
+        if init == 'latinhypercube':
+            self.init_population_lhs()
+        elif init == 'random':
+            self.init_population_random()
+        else:
+            raise ValueError("The population initialization method must be one"
+                             "of 'latinhypercube' or 'random'")
 
         self.population_energies = np.ones(
             popsize * parameter_count) * np.inf
 
         self.disp = disp
 
+    def init_population_lhs(self):
+        """
+        Initializes the population with Latin Hypercube Sampling
+        Latin Hypercube Sampling ensures that the sampling of parameter space
+        is maximised.
+        """
+        samples = np.size(self.population, 0)
+        N = np.size(self.population, 1)
+        rng = self.random_number_generator
+
+        # Generate the intervals
+        segsize = 1.0 / samples
+
+        # Fill points uniformly in each interval
+        rdrange = rng.rand(samples, N) * segsize
+        rdrange += np.atleast_2d(np.arange(0., 1., segsize)).T
+
+        # Make the random pairings
+        self.population = np.zeros_like(rdrange)
+
+        for j in range(N):
+            order = rng.permutation(range(samples))
+            self.population[:, j] = rdrange[order, j]
+
+    def init_population_random(self):
+        """
+        Initialises the population at random.  This type of initialization
+        can possess clustering, Latin Hypercube sampling is generally better.
+        """
+        rng = self.random_number_generator
+        self.population = rng.random_sample(self.population.shape)
+
+    @property
+    def x(self):
+        """
+        The best solution from the solver
+
+        Returns
+        -------
+        x - ndarray
+            The best solution from the solver.
+        """
+        return self._scale_parameters(self.population[0])
+
     def solve(self):
-        """Runs the DifferentialEvolutionSolver.
+        """
+        Runs the DifferentialEvolutionSolver.
 
         Returns
         -------
@@ -401,7 +473,7 @@ class DifferentialEvolutionSolver(object):
 
         if warning_flag:
             return OptimizeResult(
-                           x=self._scale_parameters(self.population[0]),
+                           x=self.x,
                            fun=self.population_energies[0],
                            nfev=nfev,
                            nit=nit,
@@ -464,7 +536,7 @@ class DifferentialEvolutionSolver(object):
             warning_flag = True
 
         DE_result = OptimizeResult(
-            x=self._scale_parameters(self.population[0]),
+            x=self.x,
             fun=self.population_energies[0],
             nfev=nfev,
             nit=nit,

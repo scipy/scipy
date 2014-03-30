@@ -19,11 +19,11 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
                                 [2., 2.]])
         self.bounds = [(0., 2.), (0., 2.)]
 
-        self.dummy_solver = DifferentialEvolutionSolver(self.dummy_function,
+        self.dummy_solver = DifferentialEvolutionSolver(self.quadratic,
                                                         [(0, 100)])
 
         #dummy_solver2 will be used to test mutation strategies
-        self.dummy_solver2 = DifferentialEvolutionSolver(self.dummy_function,
+        self.dummy_solver2 = DifferentialEvolutionSolver(self.quadratic,
                                                          [(0, 1)],
                                                          popsize=7,
                                                          mutation=0.5)
@@ -32,8 +32,8 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
         population = np.atleast_2d(np.arange(0.1, 0.8, 0.1)).T
         self.dummy_solver2.population = population
 
-    def dummy_function(self):
-        pass
+    def quadratic(self, x):
+        return x[0]**2
 
     """
     test all the mutation strategies
@@ -131,7 +131,7 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
 
     def test_can_init_with_dithering(self):
         mutation = (0.5, 1)
-        solver = DifferentialEvolutionSolver(self.dummy_function,
+        solver = DifferentialEvolutionSolver(self.quadratic,
                                              self.bounds,
                                              mutation=mutation)
         if solver.dither is False:
@@ -206,9 +206,15 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
     def test_differential_evolution(self):
         # test that the Jmin of DifferentialEvolutionSolver
         # is the same as the function evaluation
-        solver = DifferentialEvolutionSolver(rosen, self.bounds)
+        solver = DifferentialEvolutionSolver(self.quadratic, [(-2, 2)])
         result = solver.solve()
-        npt.assert_almost_equal(result.fun, rosen(result.x))
+        npt.assert_almost_equal(result.fun, self.quadratic(result.x))
+
+    def test_best_solution_retrieval(self):
+        # test that the getter property method for the best solution works.
+        solver = DifferentialEvolutionSolver(self.quadratic, [(-2, 2)])
+        result = solver.solve()
+        npt.assert_equal(result.x, solver.x)
 
     def test_callback_terminates(self):
         # test that if the callback returns true, then the minimization halts
@@ -317,17 +323,31 @@ class TestDifferentialEvolutionSolver(npt.TestCase):
                          'Maximum number of function evaluations has '
                               'been exceeded.')
 
-    @npt.dec.slow
-    def test_rosen(self):
-        # test the Rosenbrock function from object
-        solver = DifferentialEvolutionSolver(rosen, self.bounds)
+    def test_quadratic(self):
+        # test the quadratic function from object
+        solver = DifferentialEvolutionSolver(self.quadratic,
+                                             [(-100, 100)],
+                                             tol=0.02)
         solver.solve()
 
-    @npt.dec.slow
-    def test_rosen_from_diff_ev(self):
-        # test the Rosenbrock function from differential_evolution function
+    def test_quadratic_from_diff_ev(self):
+        # test the quadratic function from differential_evolution function
+        differential_evolution(self.quadratic,
+                               [(-100, 100)],
+                               tol=0.02)
 
-        differential_evolution(rosen, self.bounds)
+    def test_seed_gives_repeatability(self):
+        result = differential_evolution(self.quadratic,
+                                        [(-100, 100)],
+                                        polish=False,
+                                        seed=1,
+                                        tol=0.5)
+        result2 = differential_evolution(self.quadratic,
+                                        [(-100, 100)],
+                                        polish=False,
+                                        seed=1,
+                                        tol=0.5)
+        npt.assert_equal(result.x, result2.x)
 
     def test_exp_runs(self):
         # test whether exponential mutation loop runs
