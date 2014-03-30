@@ -475,7 +475,7 @@ def to_writeable(source):
         values = []
         for field, value in source.items():
             if (isinstance(field, string_types) and
-                not field[0] in '_0123456789'):
+                    not field[0] in '_0123456789'):
                 dtype.append((field,object))
                 values.append(value)
         if dtype:

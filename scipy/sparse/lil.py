@@ -238,7 +238,7 @@ class lil_matrix(spmatrix, IndexMixin):
             # ~25-50% faster than isscalarlike. Other types are
             # handled below.
             if ((isinstance(i, int) or isinstance(i, np.integer)) and
-                (isinstance(j, int) or isinstance(j, np.integer))):
+                    (isinstance(j, int) or isinstance(j, np.integer))):
                 v = _csparsetools.lil_get1(self.shape[0], self.shape[1],
                                            self.rows, self.data,
                                            i, j)
@@ -276,7 +276,7 @@ class lil_matrix(spmatrix, IndexMixin):
             # assignment for other types is handled below together
             # with fancy indexing.
             if ((isinstance(i, int) or isinstance(i, np.integer)) and
-                (isinstance(j, int) or isinstance(j, np.integer))):
+                    (isinstance(j, int) or isinstance(j, np.integer))):
                 x = self.dtype.type(x)
                 if x.size > 1:
                     # Triggered if input was an ndarray

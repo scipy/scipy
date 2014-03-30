@@ -696,10 +696,10 @@ class spmatrix(object):
         # Mimic numpy's casting.  The int32/int64 check works around numpy
         # 1.5.x behavior of np.issubdtype, see gh-2677.
         if (np.issubdtype(self.dtype, np.float_) or
-            np.issubdtype(self.dtype, np.int_) or
-            self.dtype in [np.dtype('int32'), np.dtype('int64')] or
-            np.issubdtype(self.dtype, np.bool_)):
-                res_dtype = np.float_
+                np.issubdtype(self.dtype, np.int_) or
+                self.dtype in [np.dtype('int32'), np.dtype('int64')] or
+                np.issubdtype(self.dtype, np.bool_)):
+            res_dtype = np.float_
         elif np.issubdtype(self.dtype, np.complex_):
             res_dtype = np.complex_
         else:

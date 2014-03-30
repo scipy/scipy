@@ -362,9 +362,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s does not use Hessian-vector product '
                 'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
-    if (meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
-        'dogleg', 'trust-ncg'] and
-        (bounds is not None or any(constraints))):
+    if (meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg', 'dogleg',
+                 'trust-ncg'] and (bounds is not None or any(constraints))):
         warn('Method %s cannot handle constraints nor bounds.' % method,
              RuntimeWarning)
     if meth in ['l-bfgs-b', 'tnc'] and any(constraints):
@@ -374,13 +373,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - callback
-    if (meth in ['anneal', 'cobyla'] and
-        callback is not None):
-        warn('Method %s does not support callback.' % method,
-             RuntimeWarning)
+    if (meth in ['anneal', 'cobyla'] and callback is not None):
+        warn('Method %s does not support callback.' % method, RuntimeWarning)
     # - return_all
     if (meth in ['anneal', 'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and
-        options.get('return_all', False)):
+            options.get('return_all', False)):
         warn('Method %s does not support the return_all option.' % method,
              RuntimeWarning)
 

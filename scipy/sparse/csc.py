@@ -152,7 +152,7 @@ class csc_matrix(_cs_matrix, IndexMixin):
         row, col = self._unpack_index(key)
         # Things that return submatrices. row or col is a int or slice.
         if (isinstance(row, slice) or isinstance(col, slice) or
-            isintlike(row) or isintlike(col)):
+                isintlike(row) or isintlike(col)):
             return self.T[col, row].T
         # Things that return a sequence of values.
         else:

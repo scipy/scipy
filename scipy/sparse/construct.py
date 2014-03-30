@@ -535,8 +535,8 @@ def bmat(blocks, format=None, dtype=None):
     M,N = blocks.shape
 
     # check for fast path cases
-    if (N == 1 and format in (None, 'csr')
-        and all(isinstance(b, csr_matrix) for b in blocks.flat)):
+    if (N == 1 and format in (None, 'csr') and all(isinstance(b, csr_matrix)
+                                                   for b in blocks.flat)):
         A = _compressed_sparse_stack(blocks[:,0], 0)
         if dtype is not None:
             A = A.astype(dtype)
