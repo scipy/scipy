@@ -88,7 +88,9 @@ class _BenchOptimizers(object):
             return False
 
     def add_result(self, result, t, name):
-        """add a result to the list"""
+        """
+        add a result to the list
+        """
         result.time = t
         result.name = name
         if not hasattr(result, "njev"):
@@ -98,7 +100,9 @@ class _BenchOptimizers(object):
         self.results.append(result)
 
     def print_results(self):
-        """print the current list of results"""
+        """
+        print the current list of results
+        """
         results = self.average_results()
         results = sorted(results, key=lambda x: (x.nfail, x.mean_time))
         print("")
@@ -116,7 +120,9 @@ class _BenchOptimizers(object):
                    res.mean_nhev, res.mean_time)))
 
     def average_results(self):
-        """group the results by minimizer and average over the runs"""
+        """
+        group the results by minimizer and average over the runs
+        """
         grouped_results = defaultdict(list)
         for res in self.results:
             grouped_results[res.name].append(res)
@@ -139,7 +145,9 @@ class _BenchOptimizers(object):
         return averaged_results.values()
 
     def bench_run(self, **minimizer_kwargs):
-        """do an optimization test starting at x0 for all the optimizers"""
+        """
+        do an optimization test starting at x0 for all the optimizers
+        """
         kwargs = self.minimizer_kwargs
 
         if hasattr(self.fun, "temperature"):
@@ -178,7 +186,7 @@ class _BenchOptimizers(object):
         t1 = time.time()
         res.success = True
         if not self.found_target(res):
-                res.success = False
+            res.success = False
         self.add_result(res, t1 - t0, 'basinhopping - no gradient')
 
         # differential_evolution
