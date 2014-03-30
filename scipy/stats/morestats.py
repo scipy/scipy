@@ -1111,14 +1111,14 @@ def anderson(x,dist='norm'):
         critical = around(_Avals_logistic / (1.0+0.25/N),3)
     else:  # (dist == 'gumbel') or (dist == 'extreme1'):
         # the following is incorrect, see ticket:1097
-##        def fixedsolve(th,xj,N):
-##            val = stats.sum(xj)*1.0/N
-##            tmp = exp(-xj/th)
-##            term = sum(xj*tmp,axis=0)
-##            term /= sum(tmp,axis=0)
-##            return val - term
-##        s = optimize.fixed_point(fixedsolve, 1.0, args=(x,N),xtol=1e-5)
-##        xbar = -s*log(sum(exp(-x/s),axis=0)*1.0/N)
+        #def fixedsolve(th,xj,N):
+        #    val = stats.sum(xj)*1.0/N
+        #    tmp = exp(-xj/th)
+        #    term = sum(xj*tmp,axis=0)
+        #    term /= sum(tmp,axis=0)
+        #    return val - term
+        #s = optimize.fixed_point(fixedsolve, 1.0, args=(x,N),xtol=1e-5)
+        #xbar = -s*log(sum(exp(-x/s),axis=0)*1.0/N)
         xbar, s = distributions.gumbel_l.fit(x)
         w = (y-xbar)/s
         z = distributions.gumbel_l.cdf(w)

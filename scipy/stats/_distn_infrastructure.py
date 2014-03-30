@@ -319,7 +319,7 @@ Display the probability mass function (``pmf``):
 Alternatively, freeze the distribution and display the frozen ``pmf``:
 
 >>> rv = %(name)s(%(shapes)s)
->>> ax.vlines(x, 0, rv.pmf(x), colors='k', linestyles='-', lw=1, 
+>>> ax.vlines(x, 0, rv.pmf(x), colors='k', linestyles='-', lw=1,
 ...         label='frozen pmf')
 >>> ax.legend(loc='best', frameon=False)
 >>> plt.show()
@@ -2312,10 +2312,10 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
         if (qb == q):
             return b
         if b <= a+1:
-    # testcase: return wrong number at lower index
-    # python -c "from scipy.stats import zipf;print zipf.ppf(0.01, 2)" wrong
-    # python -c "from scipy.stats import zipf;print zipf.ppf([0.01, 0.61, 0.77, 0.83], 2)"
-    # python -c "from scipy.stats import logser;print logser.ppf([0.1, 0.66, 0.86, 0.93], 0.6)"
+            # testcase: return wrong number at lower index
+            # python -c "from scipy.stats import zipf;print zipf.ppf(0.01, 2)" wrong
+            # python -c "from scipy.stats import zipf;print zipf.ppf([0.01, 0.61, 0.77, 0.83], 2)"
+            # python -c "from scipy.stats import logser;print logser.ppf([0.1, 0.66, 0.86, 0.93], 0.6)"
             if qa > q:
                 return a
             else:
