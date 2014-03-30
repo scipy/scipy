@@ -2713,7 +2713,7 @@ def spearmanr(a, b=None, axis=0):
     ar = np.apply_along_axis(rankdata,axisout,a)
 
     br = None
-    if not b is None:
+    if b is not None:
         b, axisout = _chk_asarray(b, axis)
         br = np.apply_along_axis(rankdata,axisout,b)
     n = a.shape[axisout]

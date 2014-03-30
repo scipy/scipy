@@ -146,8 +146,9 @@ def freqs(b, a, worN=None, plot=None):
     w = atleast_1d(w)
     s = 1j * w
     h = polyval(b, s) / polyval(a, s)
-    if not plot is None:
+    if plot is not None:
         plot(w, h)
+
     return w, h
 
 
@@ -238,8 +239,9 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     w = atleast_1d(w)
     zm1 = exp(-1j * w)
     h = polyval(b[::-1], zm1) / polyval(a[::-1], zm1)
-    if not plot is None:
+    if plot is not None:
         plot(w, h)
+
     return w, h
 
 
@@ -299,8 +301,8 @@ def tf2zpk(b, a):
         {a_0 + a_1 z^{-1} + \cdots + a_N z^{-N}}
 
     Although this is true for common filters, remember that this is not true
-    in the general case.  If `M` and `N` are not equal, the discrete-time 
-    transfer function coefficients must first be converted to the "positive 
+    in the general case.  If `M` and `N` are not equal, the discrete-time
+    transfer function coefficients must first be converted to the "positive
     powers" form before finding the poles and zeros.
 
     """

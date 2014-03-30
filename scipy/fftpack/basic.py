@@ -123,7 +123,7 @@ def _asfarray(x):
         # We cannot use asfarray directly because it converts sequences of
         # complex to sequence of real
         ret = numpy.asarray(x)
-        if not ret.dtype.char in numpy.typecodes["AllFloat"]:
+        if ret.dtype.char not in numpy.typecodes["AllFloat"]:
             return numpy.asfarray(x)
         return ret
 
