@@ -2962,8 +2962,8 @@ class ncf_gen(rv_continuous):
         Px *= (n2+n1*x)**(-(n1+n2)/2)
         Px *= special.assoc_laguerre(-nc*n1*x/(2.0*(n2+n1*x)), n2/2, n1/2-1)
         Px /= special.beta(n1/2, n2/2)
-        # this function does not have a return drop it for now, the generic
-        # function seems to work ok
+        # This function does not have a return.  Drop it for now, the generic
+        # function seems to work OK.
 
     def _cdf(self, x, dfn, dfd, nc):
         return special.ncfdtr(dfn, dfd, nc, x)
