@@ -103,7 +103,7 @@ Ubuntu >= 8.10
 
 You can get all the dependencies as follows::
 
-        sudo apt-get install python python-dev libatlas3-base-dev gcc gfortran g++
+        sudo apt-get install python python-dev libatlas-base-dev gcc gfortran g++
 
 Ubuntu < 8.10, Debian
 ~~~~~~~~~~~~~~~~~~~~~
