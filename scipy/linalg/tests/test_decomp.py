@@ -20,8 +20,7 @@ from scipy.lib.six import xrange
 
 from scipy.linalg import eig, eigvals, lu, svd, svdvals, cholesky, qr, \
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq, \
-     eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, LinAlgError, \
-     qz
+     eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, qz
 from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
      dsbev, dsbevd, dsbevx, zhbevd, zhbevx
 from scipy.linalg.misc import norm
@@ -583,16 +582,16 @@ def test_eigh():
         for typ in v['dtype']:
             for overwrite in v['overwrite']:
                 for turbo in v['turbo']:
-                    for eigvals in v['eigvals']:
+                    for eigenvals in v['eigvals']:
                         for lower in v['lower']:
                             yield (eigenhproblem_standard,
                                    'ordinary',
                                    dim, typ, overwrite, lower,
-                                   turbo, eigvals)
+                                   turbo, eigenvals)
                             yield (eigenhproblem_general,
                                    'general ',
                                    dim, typ, overwrite, lower,
-                                   turbo, eigvals)
+                                   turbo, eigenvals)
 
 
 def _complex_symrand(dim, dtype):

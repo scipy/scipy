@@ -17,7 +17,6 @@ default = [c_spec.int_converter(),
            c_spec.tuple_converter(),
            c_spec.file_converter(),
            c_spec.instance_converter(),]
-          #common_spec.module_converter()]
 
 #----------------------------------------------------------------------------
 # add numpy array converters to the default

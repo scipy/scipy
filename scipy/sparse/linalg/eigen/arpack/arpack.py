@@ -1017,7 +1017,7 @@ def get_OPinv_matvec(A, M, sigma, symmetric=False, tol=0):
         #M is the identity matrix
         if isdense(A):
             if (np.issubdtype(A.dtype, np.complexfloating)
-                or np.imag(sigma) == 0):
+                    or np.imag(sigma) == 0):
                 A = np.copy(A)
             else:
                 A = A + 0j
@@ -1033,7 +1033,7 @@ def get_OPinv_matvec(A, M, sigma, symmetric=False, tol=0):
                               M, sigma, tol=tol).matvec
     else:
         if ((not isdense(A) and not isspmatrix(A)) or
-            (not isdense(M) and not isspmatrix(M))):
+                (not isdense(M) and not isspmatrix(M))):
             return IterOpInv(_aslinearoperator_with_dtype(A),
                               _aslinearoperator_with_dtype(M),
                               sigma, tol=tol).matvec

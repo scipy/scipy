@@ -1311,8 +1311,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
                              'observations.')
         n = Z.shape[0]
         if n > 1:
-            if ((Z[:, 0] < 0).any() or
-                (Z[:, 1] < 0).any()):
+            if ((Z[:, 0] < 0).any() or (Z[:, 1] < 0).any()):
                 if name:
                     raise ValueError(('Linkage \'%s\' contains negative '
                                       'indices.') % name)

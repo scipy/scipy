@@ -66,9 +66,7 @@ class TestQueryBallPoint(TestCase):
         print('===============================================================')
         print(' dim | # points | # queries | probe radius |  KDTree  | cKDTree | flat cKDTree')
 
-        for (m, n, r, repeat) in [(3,10000,1000,3)]:  # ,
-#                                  (8,10000,1000,3),
-#                                  (16,10000,1000,3)]:
+        for (m, n, r, repeat) in [(3,10000,1000,3)]:
             for probe_radius in (0.2, 0.5):
                 print('%4s | %8s | %9s | %11.1f ' % (m, n, r, probe_radius), end=' ')
                 sys.stdout.flush()

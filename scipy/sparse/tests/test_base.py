@@ -1866,7 +1866,7 @@ class _TestGetSet:
                     assert_raises(ValueError, A.__setitem__, (0,0), v)
 
                 if (not np.issubdtype(dtype, np.complexfloating) and
-                    dtype != np.bool_):
+                        dtype != np.bool_):
                     for v in [3j]:
                         assert_raises(TypeError, A.__setitem__, (0,0), v)
 
@@ -3922,8 +3922,8 @@ class Test64Bit(object):
             for method_name in dir(cls):
                 method = getattr(cls, method_name)
                 if (method_name.startswith('test_') and
-                    not getattr(method, 'slow', False) and
-                    (cls.__name__ + '.' + method_name) not in skip):
+                        not getattr(method, 'slow', False) and
+                        (cls.__name__ + '.' + method_name) not in skip):
                     msg = self.SKIP_TESTS.get(method_name)
                     yield dec.skipif(msg, msg)(check), cls, method_name
 

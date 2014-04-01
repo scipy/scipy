@@ -385,8 +385,7 @@ class csr_matrix(_cs_matrix, IndexMixin):
             if not (0 <= i0 <= num) or not (0 <= i1 <= num) or not (i0 <= i1):
                 raise IndexError(
                       "index out of bounds: 0 <= %d <= %d, 0 <= %d <= %d,"
-                       " %d <= %d" %
-                      (i0, num, i1, num, i0, i1))
+                      " %d <= %d" % (i0, num, i1, num, i0, i1))
 
         i0, i1 = process_slice(row_slice, M)
         j0, j1 = process_slice(col_slice, N)

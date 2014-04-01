@@ -4,7 +4,7 @@ import numpy as np
 class SimpleQuadratic(object):
     def fun(self, x):
         return np.dot(x, x)
-    
+
     def der(self, x):
         return 2. * x
 
@@ -15,7 +15,7 @@ class SimpleQuadratic(object):
 class AsymmetricQuadratic(object):
     def fun(self, x):
         return np.dot(x, x) + x[0]
-    
+
     def der(self, x):
         d = 2. * x
         d[0] += 1
@@ -73,11 +73,6 @@ class LJ(object):
 
 
 class Booth(object):
-#    target_E = 0.
-#    target_coords = np.array([1., 3.])
-#    xmin = np.array([-10., -10.])
-##    xmin = np.array([0., 0.])
-#    xmax = np.array([10., 10.])
     def fun(self, coords):
         x, y = coords
         return (x + 2.*y - 7.)**2 + (2.*x + y - 5.)**2
@@ -90,15 +85,10 @@ class Booth(object):
 
 
 class Beale(object):
-#    target_E = 0.
-#    target_coords = np.array([3., 0.5])
-#    xmin = np.array([-4.5, -4.5])
-##    xmin = np.array([0., 0.])
-#    xmax = np.array([4.5, 4.5])
     def fun(self, coords):
         x, y = coords
         return (1.5 - x + x*y)**2 + (2.25 - x + x * y**2)**2 + (2.625 - x + x * y**3)**2
-        
+
     def der(self, coords):
         x, y = coords
         dx = 2. * (1.5 - x + x*y) * (-1. + y) + 2. * (2.25 - x + x * y**2) * (-1. + y**2) + 2. * (2.625 - x + x * y**3) * (-1. + y**3)

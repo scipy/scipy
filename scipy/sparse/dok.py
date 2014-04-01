@@ -232,8 +232,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         if isinstance(index, tuple) and len(index) == 2:
             # Integer index fast path
             i, j = index
-            if (isintlike(i) and isintlike(j) and 
-                0 <= i < self.shape[0] and 0 <= j < self.shape[1]):
+            if (isintlike(i) and isintlike(j) and 0 <= i < self.shape[0]
+                    and 0 <= j < self.shape[1]):
                 v = np.asarray(x, dtype=self.dtype)
                 if v.ndim == 0 and v != 0:
                     dict.__setitem__(self, (int(i), int(j)), v[()])

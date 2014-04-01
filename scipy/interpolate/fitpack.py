@@ -582,7 +582,7 @@ def splev(x, tck, der=0, ext=0):
     else:
         if not (0 <= der <= k):
             raise ValueError("0<=der=%d<=k=%d must hold" % (der,k))
-        if not ext in (0,1,2):
+        if ext not in (0,1,2):
             raise ValueError("ext not in (0, 1, 2)")
 
         x = asarray(x)
@@ -628,7 +628,7 @@ def splint(a,b,tck,full_output=0):
     Notes
     -----
     splint silently assumes that the spline function is zero outside the data
-    interval (a, b). 
+    interval (a, b).
 
     See Also
     --------

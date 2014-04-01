@@ -66,9 +66,9 @@ def polyline(dc,line,xoffset=0,yoffset=0):
                Polyline(hdc,(POINT*)line,Nline[0]);
                """
     else:
-        if (line.typecode() != uint16 or
-            not line.iscontiguous()):
+        if (line.typecode() != uint16 or not line.iscontiguous()):
             line = line.astype(uint16)
+
         code = """
                GdkWindow* win = dc->m_window;
                GdkGC* pen = dc->m_penGC;

@@ -344,10 +344,10 @@ def py_vq2(obs, code_book):
     diff = obs[newaxis, :, :] - code_book[:,newaxis,:]
     dist = sqrt(np.sum(diff * diff, -1))
     code = argmin(dist, 0)
-    min_dist = minimum.reduce(dist, 0)  # the next line I think is equivalent
-                                      #  - and should be faster
-    # min_dist = choose(code,dist) # but in practice, didn't seem to make
-                                  # much difference.
+    min_dist = minimum.reduce(dist, 0)
+    # The next line I think is equivalent and should be faster than the one
+    # above, but in practice didn't seem to make much difference:
+    # min_dist = choose(code,dist)
     return code, min_dist
 
 
