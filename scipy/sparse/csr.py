@@ -103,6 +103,25 @@ class csr_matrix(_cs_matrix, IndexMixin):
            [0, 0, 3],
            [4, 5, 6]])
 
+    As an example of how to construct a CSR matrix incrementally,
+    the following snippet builds a term-document matrix from texts:
+
+    >>> docs = [["hello", "world", "hello"], ["goodbye", "cruel", "world"]]
+    >>> indptr = [0]
+    >>> indices = []
+    >>> data = []
+    >>> vocabulary = {}
+    >>> for d in docs:
+    ...     for term in d:
+    ...         index = vocabulary.setdefault(term, len(vocabulary))
+    ...         indices.append(index)
+    ...         data.append(1)
+    ...     indptr.append(len(indices))
+    ...
+    >>> csr_matrix((data, indices, indptr), dtype=int).toarray()
+    array([[2, 1, 0, 0],
+           [0, 1, 1, 1]])
+
     """
 
     def transpose(self, copy=False):
