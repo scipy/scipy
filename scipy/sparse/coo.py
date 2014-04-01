@@ -88,29 +88,29 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     Examples
     --------
     >>> from scipy.sparse import coo_matrix
-    >>> coo_matrix((3,4), dtype=np.int8).todense()
-    matrix([[0, 0, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0]], dtype=int8)
+    >>> coo_matrix((3, 4), dtype=np.int8).toarray()
+    array([[0, 0, 0, 0],
+           [0, 0, 0, 0],
+           [0, 0, 0, 0]], dtype=int8)
 
-    >>> row  = np.array([0,3,1,0])
-    >>> col  = np.array([0,3,1,2])
-    >>> data = np.array([4,5,7,9])
-    >>> coo_matrix((data,(row,col)), shape=(4,4)).todense()
-    matrix([[4, 0, 9, 0],
-            [0, 7, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 5]])
+    >>> row  = np.array([0, 3, 1, 0])
+    >>> col  = np.array([0, 3, 1, 2])
+    >>> data = np.array([4, 5, 7, 9])
+    >>> coo_matrix((data, (row, col)), shape=(4, 4)).toarray()
+    array([[4, 0, 9, 0],
+           [0, 7, 0, 0],
+           [0, 0, 0, 0],
+           [0, 0, 0, 5]])
 
     >>> # example with duplicates
-    >>> row  = np.array([0,0,1,3,1,0,0])
-    >>> col  = np.array([0,2,1,3,1,0,0])
-    >>> data = np.array([1,1,1,1,1,1,1])
-    >>> coo_matrix((data, (row,col)), shape=(4,4)).todense()
-    matrix([[3, 0, 1, 0],
-            [0, 2, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 1]])
+    >>> row  = np.array([0, 0, 1, 3, 1, 0, 0])
+    >>> col  = np.array([0, 2, 1, 3, 1, 0, 0])
+    >>> data = np.array([1, 1, 1, 1, 1, 1, 1])
+    >>> coo_matrix((data, (row, col)), shape=(4, 4)).toarray()
+    array([[3, 0, 1, 0],
+           [0, 2, 0, 0],
+           [0, 0, 0, 0],
+           [0, 0, 0, 1]])
 
     """
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
@@ -284,15 +284,15 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         --------
         >>> from numpy import array
         >>> from scipy.sparse import coo_matrix
-        >>> row  = array([0,0,1,3,1,0,0])
-        >>> col  = array([0,2,1,3,1,0,0])
-        >>> data = array([1,1,1,1,1,1,1])
-        >>> A = coo_matrix( (data,(row,col)), shape=(4,4)).tocsc()
-        >>> A.todense()
-        matrix([[3, 0, 1, 0],
-                [0, 2, 0, 0],
-                [0, 0, 0, 0],
-                [0, 0, 0, 1]])
+        >>> row  = array([0, 0, 1, 3, 1, 0, 0])
+        >>> col  = array([0, 2, 1, 3, 1, 0, 0])
+        >>> data = array([1, 1, 1, 1, 1, 1, 1])
+        >>> A = coo_matrix((data, (row, col)), shape=(4, 4)).tocsc()
+        >>> A.toarray()
+        array([[3, 0, 1, 0],
+               [0, 2, 0, 0],
+               [0, 0, 0, 0],
+               [0, 0, 0, 1]])
 
         """
         from .csc import csc_matrix
@@ -326,15 +326,15 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         --------
         >>> from numpy import array
         >>> from scipy.sparse import coo_matrix
-        >>> row  = array([0,0,1,3,1,0,0])
-        >>> col  = array([0,2,1,3,1,0,0])
-        >>> data = array([1,1,1,1,1,1,1])
-        >>> A = coo_matrix( (data,(row,col)), shape=(4,4)).tocsr()
-        >>> A.todense()
-        matrix([[3, 0, 1, 0],
-                [0, 2, 0, 0],
-                [0, 0, 0, 0],
-                [0, 0, 0, 1]])
+        >>> row  = array([0, 0, 1, 3, 1, 0, 0])
+        >>> col  = array([0, 2, 1, 3, 1, 0, 0])
+        >>> data = array([1, 1, 1, 1, 1, 1, 1])
+        >>> A = coo_matrix((data, (row, col)), shape=(4, 4)).tocsr()
+        >>> A.toarray()
+        array([[3, 0, 1, 0],
+               [0, 2, 0, 0],
+               [0, 0, 0, 0],
+               [0, 0, 0, 1]])
 
         """
         from .csr import csr_matrix

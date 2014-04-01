@@ -46,13 +46,13 @@ def spdiags(data, diags, m, n, format=None):
 
     Examples
     --------
-    >>> data = np.array([[1,2,3,4],[1,2,3,4],[1,2,3,4]])
-    >>> diags = np.array([0,-1,2])
-    >>> spdiags(data, diags, 4, 4).todense()
-    matrix([[1, 0, 3, 0],
-            [1, 2, 0, 4],
-            [0, 2, 3, 0],
-            [0, 0, 3, 4]])
+    >>> data = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
+    >>> diags = array([0, -1, 2])
+    >>> spdiags(data, diags, 4, 4).toarray()
+    array([[1, 0, 3, 0],
+           [1, 2, 0, 4],
+           [0, 2, 3, 0],
+           [0, 0, 3, 4]])
 
     """
     return dia_matrix((data, diags), shape=(m,n)).asformat(format)
@@ -103,31 +103,31 @@ def diags(diagonals, offsets, shape=None, format=None, dtype=None):
 
     Examples
     --------
-    >>> diagonals = [[1,2,3,4], [1,2,3], [1,2]]
-    >>> diags(diagonals, [0, -1, 2]).todense()
-    matrix([[1, 0, 1, 0],
-            [1, 2, 0, 2],
-            [0, 2, 3, 0],
-            [0, 0, 3, 4]])
+    >>> diagonals = [[1, 2, 3, 4], [1, 2, 3], [1, 2]]
+    >>> diags(diagonals, [0, -1, 2]).toarray()
+    array([[1, 0, 1, 0],
+           [1, 2, 0, 2],
+           [0, 2, 3, 0],
+           [0, 0, 3, 4]])
 
     Broadcasting of scalars is supported (but shape needs to be
     specified):
 
-    >>> diags([1, -2, 1], [-1, 0, 1], shape=(4, 4)).todense()
-    matrix([[-2.,  1.,  0.,  0.],
-            [ 1., -2.,  1.,  0.],
-            [ 0.,  1., -2.,  1.],
-            [ 0.,  0.,  1., -2.]])
+    >>> diags([1, -2, 1], [-1, 0, 1], shape=(4, 4)).toarray()
+    array([[-2.,  1.,  0.,  0.],
+           [ 1., -2.,  1.,  0.],
+           [ 0.,  1., -2.,  1.],
+           [ 0.,  0.,  1., -2.]])
 
 
     If only one diagonal is wanted (as in `numpy.diag`), the following
     works as well:
 
-    >>> diags([1, 2, 3], 1).todense()
-    matrix([[ 0.,  1.,  0.,  0.],
-            [ 0.,  0.,  2.,  0.],
-            [ 0.,  0.,  0.,  3.],
-            [ 0.,  0.,  0.,  0.]])
+    >>> diags([1, 2, 3], 1).toarray()
+    array([[ 0.,  1.,  0.,  0.],
+           [ 0.,  0.,  2.,  0.],
+           [ 0.,  0.,  0.,  3.],
+           [ 0.,  0.,  0.,  0.]])
     """
     # if offsets is not a sequence, assume that there's only one diagonal
     try:
@@ -201,10 +201,10 @@ def identity(n, dtype='d', format=None):
 
     Examples
     --------
-    >>> identity(3).todense()
-    matrix([[ 1.,  0.,  0.],
-            [ 0.,  1.,  0.],
-            [ 0.,  0.,  1.]])
+    >>> identity(3).toarray()
+    array([[ 1.,  0.,  0.],
+           [ 0.,  1.,  0.],
+           [ 0.,  0.,  1.]])
     >>> identity(3, dtype='int8', format='dia')
     <3x3 sparse matrix of type '<type 'numpy.int8'>'
             with 3 stored elements (1 diagonals) in DIAgonal format>
@@ -235,10 +235,10 @@ def eye(m, n=None, k=0, dtype=float, format=None):
     Examples
     --------
     >>> from scipy import sparse
-    >>> sparse.eye(3).todense()
-    matrix([[ 1.,  0.,  0.],
-            [ 0.,  1.,  0.],
-            [ 0.,  0.,  1.]])
+    >>> sparse.eye(3).toarray()
+    array([[ 1.,  0.,  0.],
+           [ 0.,  1.,  0.],
+           [ 0.,  0.,  1.]])
     >>> sparse.eye(3, dtype=np.int8)
     <3x3 sparse matrix of type '<type 'numpy.int8'>'
         with 3 stored elements (1 diagonals) in DIAgonal format>
@@ -288,19 +288,19 @@ def kron(A, B, format=None):
     Examples
     --------
     >>> from scipy import sparse
-    >>> A = sparse.csr_matrix(np.array([[0,2],[5,0]]))
-    >>> B = sparse.csr_matrix(np.array([[1,2],[3,4]]))
-    >>> kron(A, B).todense()
-    matrix([[ 0,  0,  2,  4],
-            [ 0,  0,  6,  8],
-            [ 5, 10,  0,  0],
-            [15, 20,  0,  0]])
+    >>> A = sparse.csr_matrix(array([[0, 2], [5, 0]]))
+    >>> B = sparse.csr_matrix(array([[1, 2], [3, 4]]))
+    >>> kron(A, B).toarray()
+    array([[ 0,  0,  2,  4],
+           [ 0,  0,  6,  8],
+           [ 5, 10,  0,  0],
+           [15, 20,  0,  0]])
 
-    >>> kron(A, [[1,2],[3,4]]).todense()
-    matrix([[ 0,  0,  2,  4],
-            [ 0,  0,  6,  8],
-            [ 5, 10,  0,  0],
-            [15, 20,  0,  0]])
+    >>> kron(A, [[1, 2], [3, 4]]).toarray()
+    array([[ 0,  0,  2,  4],
+           [ 0,  0,  6,  8],
+           [ 5, 10,  0,  0],
+           [15, 20,  0,  0]])
 
     """
     B = coo_matrix(B)
@@ -441,11 +441,11 @@ def hstack(blocks, format=None, dtype=None):
     Examples
     --------
     >>> from scipy.sparse import coo_matrix, hstack
-    >>> A = coo_matrix([[1,2],[3,4]])
-    >>> B = coo_matrix([[5],[6]])
-    >>> hstack( [A,B] ).todense()
-    matrix([[1, 2, 5],
-            [3, 4, 6]])
+    >>> A = coo_matrix([[1, 2], [3, 4]])
+    >>> B = coo_matrix([[5], [6]])
+    >>> hstack([A,B]).toarray()
+    array([[1, 2, 5],
+           [3, 4, 6]])
 
     """
     return bmat([blocks], format=format, dtype=dtype)
@@ -471,12 +471,12 @@ def vstack(blocks, format=None, dtype=None):
     Examples
     --------
     >>> from scipy.sparse import coo_matrix, vstack
-    >>> A = coo_matrix([[1,2],[3,4]])
-    >>> B = coo_matrix([[5,6]])
-    >>> vstack( [A,B] ).todense()
-    matrix([[1, 2],
-            [3, 4],
-            [5, 6]])
+    >>> A = coo_matrix([[1, 2], [3, 4]])
+    >>> B = coo_matrix([[5, 6]])
+    >>> vstack([A, B]).toarray()
+    array([[1, 2],
+           [3, 4],
+           [5, 6]])
 
     """
     return bmat([[b] for b in blocks], format=format, dtype=dtype)
@@ -510,18 +510,18 @@ def bmat(blocks, format=None, dtype=None):
     Examples
     --------
     >>> from scipy.sparse import coo_matrix, bmat
-    >>> A = coo_matrix([[1,2],[3,4]])
-    >>> B = coo_matrix([[5],[6]])
+    >>> A = coo_matrix([[1, 2], [3, 4]])
+    >>> B = coo_matrix([[5], [6]])
     >>> C = coo_matrix([[7]])
-    >>> bmat( [[A,B],[None,C]] ).todense()
-    matrix([[1, 2, 5],
-            [3, 4, 6],
-            [0, 0, 7]])
+    >>> bmat([[A, B], [None, C]]).toarray()
+    array([[1, 2, 5],
+           [3, 4, 6],
+           [0, 0, 7]])
 
-    >>> bmat( [[A,None],[None,C]] ).todense()
-    matrix([[1, 2, 0],
-            [3, 4, 0],
-            [0, 0, 7]])
+    >>> bmat([[A, None], [None, C]]).toarray()
+    array([[1, 2, 0],
+           [3, 4, 0],
+           [0, 0, 7]])
 
     """
 
@@ -637,12 +637,12 @@ def block_diag(mats, format=None, dtype=None):
     >>> A = coo_matrix([[1, 2], [3, 4]])
     >>> B = coo_matrix([[5], [6]])
     >>> C = coo_matrix([[7]])
-    >>> block_diag((A, B, C)).todense()
-    matrix([[1, 2, 0, 0],
-            [3, 4, 0, 0],
-            [0, 0, 5, 0],
-            [0, 0, 6, 0],
-            [0, 0, 0, 7]])
+    >>> block_diag((A, B, C)).toarray()
+    array([[1, 2, 0, 0],
+           [3, 4, 0, 0],
+           [0, 0, 5, 0],
+           [0, 0, 6, 0],
+           [0, 0, 0, 7]])
 
     """
     nmat = len(mats)

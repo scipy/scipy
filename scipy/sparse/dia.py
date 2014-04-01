@@ -58,18 +58,18 @@ class dia_matrix(_data_matrix):
 
     >>> from scipy.sparse import *
     >>> from scipy import *
-    >>> dia_matrix( (3,4), dtype=int8).todense()
-    matrix([[0, 0, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0]], dtype=int8)
+    >>> dia_matrix((3, 4), dtype=int8).toarray()
+    array([[0, 0, 0, 0],
+           [0, 0, 0, 0],
+           [0, 0, 0, 0]], dtype=int8)
 
-    >>> data = array([[1,2,3,4]]).repeat(3,axis=0)
+    >>> data = array([[1, 2, 3, 4]]).repeat(3, axis=0)
     >>> offsets = array([0,-1,2])
-    >>> dia_matrix( (data,offsets), shape=(4,4)).todense()
-    matrix([[1, 0, 3, 0],
-            [1, 2, 0, 4],
-            [0, 2, 3, 0],
-            [0, 0, 3, 4]])
+    >>> dia_matrix((data, offsets), shape=(4, 4)).toarray()
+    array([[1, 0, 3, 0],
+           [1, 2, 0, 4],
+           [0, 2, 3, 0],
+           [0, 0, 3, 4]])
 
     """
 
