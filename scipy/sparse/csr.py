@@ -82,26 +82,45 @@ class csr_matrix(_cs_matrix, IndexMixin):
 
     >>> from scipy.sparse import *
     >>> from scipy import *
-    >>> csr_matrix( (3,4), dtype=int8 ).todense()
-    matrix([[0, 0, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0]], dtype=int8)
+    >>> csr_matrix((3, 4), dtype=int8).toarray()
+    array([[0, 0, 0, 0],
+           [0, 0, 0, 0],
+           [0, 0, 0, 0]], dtype=int8)
 
-    >>> row = array([0,0,1,2,2,2])
-    >>> col = array([0,2,2,0,1,2])
-    >>> data = array([1,2,3,4,5,6])
-    >>> csr_matrix( (data,(row,col)), shape=(3,3) ).todense()
-    matrix([[1, 0, 2],
-            [0, 0, 3],
-            [4, 5, 6]])
+    >>> row = array([0, 0, 1, 2, 2, 2])
+    >>> col = array([0, 2, 2, 0, 1, 2])
+    >>> data = array([1, 2, 3, 4, 5, 6])
+    >>> csr_matrix((data, (row, col)), shape=(3, 3)).toarray()
+    array([[1, 0, 2],
+           [0, 0, 3],
+           [4, 5, 6]])
 
-    >>> indptr = array([0,2,3,6])
-    >>> indices = array([0,2,2,0,1,2])
-    >>> data = array([1,2,3,4,5,6])
-    >>> csr_matrix( (data,indices,indptr), shape=(3,3) ).todense()
-    matrix([[1, 0, 2],
-            [0, 0, 3],
-            [4, 5, 6]])
+    >>> indptr = array([0, 2, 3, 6])
+    >>> indices = array([0, 2, 2, 0, 1, 2])
+    >>> data = array([1, 2, 3, 4, 5, 6])
+    >>> csr_matrix((data, indices, indptr), shape=(3, 3)).toarray()
+    array([[1, 0, 2],
+           [0, 0, 3],
+           [4, 5, 6]])
+
+    As an example of how to construct a CSR matrix incrementally,
+    the following snippet builds a term-document matrix from texts:
+
+    >>> docs = [["hello", "world", "hello"], ["goodbye", "cruel", "world"]]
+    >>> indptr = [0]
+    >>> indices = []
+    >>> data = []
+    >>> vocabulary = {}
+    >>> for d in docs:
+    ...     for term in d:
+    ...         index = vocabulary.setdefault(term, len(vocabulary))
+    ...         indices.append(index)
+    ...         data.append(1)
+    ...     indptr.append(len(indices))
+    ...
+    >>> csr_matrix((data, indices, indptr), dtype=int).toarray()
+    array([[2, 1, 0, 0],
+           [0, 1, 1, 1]])
 
     """
 

@@ -90,29 +90,29 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     Examples
     --------
     >>> from scipy.sparse import bsr_matrix
-    >>> bsr_matrix((3,4), dtype=np.int8).todense()
-    matrix([[0, 0, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0]], dtype=int8)
+    >>> bsr_matrix((3, 4), dtype=np.int8).toarray()
+    array([[0, 0, 0, 0],
+           [0, 0, 0, 0],
+           [0, 0, 0, 0]], dtype=int8)
 
-    >>> row = np.array([0,0,1,2,2,2])
-    >>> col = np.array([0,2,2,0,1,2])
-    >>> data = np.array([1,2,3,4,5,6])
-    >>> bsr_matrix((data, (row,col)), shape=(3,3)).todense()
-    matrix([[1, 0, 2],
-            [0, 0, 3],
-            [4, 5, 6]])
+    >>> row = np.array([0, 0, 1, 2, 2, 2])
+    >>> col = np.array([0, 2, 2, 0, 1, 2])
+    >>> data = np.array([1, 2, 3 ,4, 5, 6])
+    >>> bsr_matrix((data, (row, col)), shape=(3, 3)).toarray()
+    array([[1, 0, 2],
+           [0, 0, 3],
+           [4, 5, 6]])
 
-    >>> indptr = np.array([0,2,3,6])
-    >>> indices = np.array([0,2,2,0,1,2])
-    >>> data = np.array([1,2,3,4,5,6]).repeat(4).reshape(6,2,2)
-    >>> bsr_matrix((data,indices,indptr), shape=(6,6)).todense()
-    matrix([[1, 1, 0, 0, 2, 2],
-            [1, 1, 0, 0, 2, 2],
-            [0, 0, 0, 0, 3, 3],
-            [0, 0, 0, 0, 3, 3],
-            [4, 4, 5, 5, 6, 6],
-            [4, 4, 5, 5, 6, 6]])
+    >>> indptr = np.array([0, 2, 3, 6])
+    >>> indices = np.array([0, 2, 2, 0, 1, 2])
+    >>> data = np.array([1, 2, 3, 4, 5, 6]).repeat(4).reshape(6, 2, 2)
+    >>> bsr_matrix((data,indices,indptr), shape=(6, 6)).toarray()
+    array([[1, 1, 0, 0, 2, 2],
+           [1, 1, 0, 0, 2, 2],
+           [0, 0, 0, 0, 3, 3],
+           [0, 0, 0, 0, 3, 3],
+           [4, 4, 5, 5, 6, 6],
+           [4, 4, 5, 5, 6, 6]])
 
     """
     def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):

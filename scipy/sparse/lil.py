@@ -24,8 +24,10 @@ from . import _csparsetools
 class lil_matrix(spmatrix, IndexMixin):
     """Row-based linked list sparse matrix
 
-    This is an efficient structure for constructing sparse
-    matrices incrementally.
+    This is a structure for constructing sparse matrices incrementally.
+    Note that inserting a single item can take linear time in the worst case;
+    to construct a matrix efficiently, make sure the items are pre-sorted by
+    index, per row.
 
     This can be instantiated in several ways:
         lil_matrix(D)
