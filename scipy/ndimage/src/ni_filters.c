@@ -335,6 +335,72 @@ NI_UniformFilter1D(PyArrayObject *input, npy_intp filter_size,
     return PyErr_Occurred() ? 0 : 1;
 }
 
+#define WINDOW_MIN(ptr, win_size, min, min_off) \
+    do { \
+        npy_intp j_; \
+        min = *ptr++; \
+        min_off = 0; \
+        for (j_ = 1; j_ < win_size; j_++) { \
+            double val = *ptr++; \
+            if (val <= min) { \
+                min = val; \
+                min_off = 0; \
+            } \
+            else { \
+                min_off++; \
+            } \
+        } \
+    } while (0)
+
+#define UPDATE_WINDOW_MIN(ptr, win_size, min, min_off) \
+    do { \
+        double val = *ptr++; \
+        if (val <= min) { \
+            min = val; \
+            min_off = 0; \
+        } \
+        else { \
+            min_off++; \
+            if (min_off >= win_size) { \
+                double *tmp = ptr - win_size; \
+                WINDOW_MIN(tmp, win_size, min, min_off); \
+            } \
+        } \
+    } while (0)
+
+#define WINDOW_MAX(ptr, win_size, max, max_off) \
+    do { \
+        npy_intp j_; \
+        max = *ptr++; \
+        max_off = 0; \
+        for (j_ = 1; j_ < win_size; j_++) { \
+            double val = *ptr++; \
+            if (val >= max) { \
+                max = val; \
+                max_off = 0; \
+            } \
+            else { \
+                max_off++; \
+            } \
+        } \
+    } while (0)
+
+#define UPDATE_WINDOW_MAX(ptr, win_size, max, max_off) \
+    do { \
+        double val = *ptr++; \
+        if (val >= max) { \
+            max = val; \
+            max_off = 0; \
+        } \
+        else { \
+            max_off++; \
+            if (max_off >= win_size) { \
+                double *tmp = ptr - win_size; \
+                WINDOW_MAX(tmp, win_size, max, max_off); \
+            } \
+        } \
+    } while (0)
+
 int
 NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
                                         int axis, PyArrayObject *output, NI_ExtendMode mode,
@@ -371,22 +437,24 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
         /* iterate over the lines in the buffers: */
         for(kk = 0; kk < lines; kk++) {
             /* get lines: */
-            double *iline = NI_GET_LINE(iline_buffer, kk) + size1;
+            double *iline = NI_GET_LINE(iline_buffer, kk);
             double *oline = NI_GET_LINE(oline_buffer, kk);
-            for(ll = 0; ll < length; ll++) {
-            /* find minimum or maximum filter: */
-                double val = iline[ll - size1];
-                for(jj = -size1 + 1; jj <= size2; jj++) {
-                    double tmp = iline[ll + jj];
-                    if (minimum) {
-                        if (tmp < val)
-                            val = tmp;
-                    } else {
-                        if (tmp > val)
-                            val = tmp;
-                    }
+            double minmax;
+            npy_intp minmax_off;
+
+            if (minimum) {
+                WINDOW_MIN(iline, filter_size - 1, minmax, minmax_off);
+                for (ll = 0; ll < length; ll++) {
+                    UPDATE_WINDOW_MIN(iline, filter_size, minmax, minmax_off);
+                    *oline++ = minmax;
                 }
-                oline[ll] = val;
+            }
+            else {
+                WINDOW_MAX(iline, filter_size - 1, minmax, minmax_off);
+                for (ll = 0; ll < length; ll++) {
+                    UPDATE_WINDOW_MAX(iline, filter_size, minmax, minmax_off);
+                    *oline++ = minmax;
+                }
             }
         }
         /* copy lines from buffer to array: */
@@ -399,6 +467,11 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
     if (obuffer) free(obuffer);
     return PyErr_Occurred() ? 0 : 1;
 }
+
+#undef UPDATE_WINDOW_MAX
+#undef WINDOW_MAX
+#undef UPDATE_WINDOW_MIN
+#undef WINDOW_MIN
 
 
 #define CASE_MIN_OR_MAX_POINT(_pi, _offsets, _filter_size, _cval, \
