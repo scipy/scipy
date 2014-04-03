@@ -859,6 +859,13 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or (_datacopied(a1, a))
+
+    # if 2x2 or smaller: already in Hessenberg
+    if a1.shape[0] <= 2:
+        if calc_q:
+            return a1, numpy.eye(a1.shape[0])
+        return a1
+
     gehrd, gebal, gehrd_lwork = get_lapack_funcs(('gehrd','gebal', 'gehrd_lwork'), (a1,))
     ba, lo, hi, pivscale, info = gebal(a1, permute=0, overwrite_a=overwrite_a)
     if info < 0:
