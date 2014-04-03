@@ -151,7 +151,7 @@ def vq(obs, code_book):
     Parameters
     ----------
     obs : ndarray
-        Each row of the 'N' x 'M' array is an observation.  The columns are
+        Each row of the 'M' x 'N' array is an observation.  The columns are
         the "features" seen during each observation. The features must be
         whitened first using the whiten function or something equivalent.
     code_book : ndarray
@@ -168,7 +168,7 @@ def vq(obs, code_book):
     Returns
     -------
     code : ndarray
-        A length N array holding the code book index for each observation.
+        A length M array holding the code book index for each observation.
     dist : ndarray
         The distortion (distance) between the observation and its nearest
         code.
