@@ -22,11 +22,11 @@ matrix:
         - PYFLAKES=1
         - PEP8=1
       before_install:
-        - pip install pep8
+        - pip install pep8==1.5.1
         - pip install pyflakes
       script:
-        - pep8 scipy
         - PYFLAKES_NODOCTEST=1 pyflakes scipy | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused' > test.out; cat test.out; test \! -s test.out
+        - pep8 scipy
 before_install:
   - uname -a
   - free -m
