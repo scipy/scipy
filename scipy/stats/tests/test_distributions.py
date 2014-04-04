@@ -1153,6 +1153,10 @@ class TestFrozen(TestCase):
         rv1 = stats.genpareto(c=0.1)
         assert_(rv1.dist is not rv.dist)
 
+    def test_rv_frozen_in_namespace(self):
+        # Regression test for gh-3522
+        assert_(hasattr(stats.distributions, 'rv_frozen'))
+
 
 class TestExpect(TestCase):
     # Test for expect method.
