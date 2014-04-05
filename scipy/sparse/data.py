@@ -18,6 +18,12 @@ from .base import spmatrix
 from .sputils import isscalarlike
 from .lil import lil_matrix
 
+try:
+    from numpy import count_nonzero as _count_nonzero
+except ImportError:     # NumPy < 1.6.0
+    def _count_nonzero(x):
+        return len(np.flatnonzero(x))
+
 
 # TODO implement all relevant operations
 # use .data.__methods__() instead of /=, *=, etc.
@@ -67,6 +73,16 @@ class _data_matrix(spmatrix):
 
     def copy(self):
         return self._with_data(self.data.copy(), copy=True)
+
+    def count_nonzero(self):
+        """Number of non-zero entries.
+
+        Unlike getnnz and the nnz property, which return the number of stored
+        entries (the length of the data attribute) and tacitly assumes no
+        zeros are stored, this method counts the actual number of non-zero
+        entries in data.
+        """
+        return _count_nonzero(self.data)
 
     ###########################
     # Multiplication handlers #
