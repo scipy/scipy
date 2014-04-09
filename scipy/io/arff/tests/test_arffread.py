@@ -18,6 +18,8 @@ from numpy.testing import (TestCase, assert_array_almost_equal, assert_equal,
 from scipy.io.arff.arffread import loadarff
 from scipy.io.arff.arffread import read_header, parse_type, ParseArffError
 
+import scipy.sparse as sp
+import scipy
 
 data_path = pjoin(os.path.dirname(__file__), 'data')
 
@@ -28,6 +30,7 @@ test3 = os.path.join(data_path, 'test3.arff')
 test4 = pjoin(data_path, 'test4.arff')
 test5 = pjoin(data_path, 'test5.arff')
 test6 = pjoin(data_path, 'test6.arff')
+test7 = pjoin(data_path, 'test7.arff')
 expect4_data = [(0.1, 0.2, 0.3, 0.4, 'class1'),
         (-0.1, -0.2, -0.3, -0.4, 'class2'),
         (1, 2, 3, 4, 'class3')]
@@ -38,7 +41,8 @@ expect_missing_raw = np.array([[1, 5], [2, 4], [np.nan, np.nan]])
 expect_missing = np.empty(3, [('yop', np.float), ('yap', np.float)])
 expect_missing['yop'] = expect_missing_raw[:, 0]
 expect_missing['yap'] = expect_missing_raw[:, 1]
-
+expect7_data=np.matrix([[0.488144,0.198068,0.,0.,0.],[0.,0., 0.247897,0.153404,0.],[-0.0621701,0.184011,-0.19966,0.0513624,0.133107]])
+expected_types7 = ['nominal', 'nominal', 'nominal', 'nominal', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric']
 
 class DataTest(TestCase):
     def test1(self):
@@ -52,21 +56,36 @@ class DataTest(TestCase):
     def test3(self):
         # Parsing trivial file with nominal attribute of 1 character.
         self._test(test6)
+        
+    def test4(self):
+        # Parsing sparse
+        self._test(test7)
 
     def _test(self, test_file):
-        data, meta = loadarff(test_file)
-        for i in range(len(data)):
-            for j in range(4):
-                assert_array_almost_equal(expect4_data[i][j], data[i][j])
-        assert_equal(meta.types(), expected_types)
+        data, meta, classes = loadarff(test_file)
+	
+	if sp.issparse(data):
+	    ld=data.shape[0]
+	else:
+	    ld=len(data)
+	if sp.issparse(data):
+	    assert_(scipy.absolute(data.todense()-expect7_data).sum()==0)
+	else:
+	    for i in range(ld):
+		for j in range(4):		
+		    assert_array_almost_equal(expect4_data[i][j], data[i][j])
+	if sp.issparse(data):	    
+	    assert_equal(meta.types(), expected_types7)
+	else:
+	    assert_equal(meta.types(), expected_types)
 
     def test_filelike(self):
         # Test reading from file-like object (StringIO)
         f1 = open(test1)
-        data1, meta1 = loadarff(f1)
+        data1, meta1, classes = loadarff(f1)
         f1.close()
         f2 = open(test1)
-        data2, meta2 = loadarff(StringIO(f2.read()))
+        data2, meta2, classes = loadarff(StringIO(f2.read()))
         f2.close()
         assert_(data1 == data2)
         assert_(repr(meta1) == repr(meta2))
@@ -74,7 +93,7 @@ class DataTest(TestCase):
 
 class MissingDataTest(TestCase):
     def test_missing(self):
-        data, meta = loadarff(missing)
+        data, meta, classes = loadarff(missing)
         for i in ['yop', 'yap']:
             assert_array_almost_equal(data[i], expect_missing[i])
 
@@ -83,7 +102,7 @@ class HeaderTest(TestCase):
     def test_type_parsing(self):
         # Test parsing type of attribute from their value.
         ofile = open(test2)
-        rel, attrs = read_header(ofile)
+        rel, attrs, nrclasses = read_header(ofile)
         ofile.close()
 
         expected = ['numeric', 'numeric', 'numeric', 'numeric', 'numeric',
@@ -95,7 +114,7 @@ class HeaderTest(TestCase):
     def test_badtype_parsing(self):
         # Test parsing wrong type of attribute from their value.
         ofile = open(test3)
-        rel, attrs = read_header(ofile)
+        rel, attrs, nrclasses = read_header(ofile)
         ofile.close()
 
         for name, value in attrs:
@@ -104,7 +123,7 @@ class HeaderTest(TestCase):
     def test_fullheader1(self):
         # Parsing trivial header with nothing.
         ofile = open(test1)
-        rel, attrs = read_header(ofile)
+        rel, attrs, nrclasses = read_header(ofile)
         ofile.close()
 
         # Test relation
