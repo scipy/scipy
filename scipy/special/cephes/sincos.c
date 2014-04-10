@@ -226,10 +226,7 @@ static double sintbl[92] = {
     9.99847695156391239157E-1,
 };
 
-void sincos(x, s, c, flg)
-double x;
-double *s, *c;
-int flg;
+void sincos(double x, double *s, double *c, int flg)
 {
     int ix, ssign, csign, xsign;
     double y, z, sx, sz, cx, cz;
