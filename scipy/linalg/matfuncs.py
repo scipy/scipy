@@ -95,7 +95,7 @@ def _maybe_real(A, B, tol=None):
 # Matrix functions.
 
 
-def fractional_matrix_power(A, p):
+def fractional_matrix_power(A, t):
     """
     Compute the fractional power of a matrix.
 
@@ -105,7 +105,7 @@ def fractional_matrix_power(A, p):
     ----------
     A : (N, N) array_like
         Matrix whose fractional power to evaluate.
-    p : float
+    t : float
         Fractional power.
 
     Returns
@@ -135,7 +135,7 @@ def fractional_matrix_power(A, p):
     """
     A = _asarray_square(A)
     import scipy.linalg._matfuncs_inv_ssq
-    return scipy.linalg._matfuncs_inv_ssq.fractional_matrix_power(A, p)
+    return scipy.linalg._matfuncs_inv_ssq.fractional_matrix_power(A, t)
 
 
 def logm(A, disp=True):
