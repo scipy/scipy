@@ -122,7 +122,7 @@ class gaussian_kde(object):
     with ``n`` the number of data points and ``d`` the number of dimensions.
     Silverman's Rule [2]_, implemented as `silverman_factor`, is::
 
-        n * (d + 2) / 4.)**(-1. / (d + 4)).
+        (n * (d + 2) / 4.)**(-1. / (d + 4)).
 
     Good general descriptions of kernel density estimation can be found in [1]_
     and [2]_, the mathematics for this multi-dimensional implementation can be
