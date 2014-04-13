@@ -15,8 +15,8 @@ from .compressed import _cs_matrix
 from .base import isspmatrix, _formats
 from .sputils import isshape, getdtype, to_native, upcast, get_index_dtype
 from . import _sparsetools
-from ._sparsetools import bsr_matvec, bsr_matvecs, csr_matmat_pass1, \
-     bsr_matmat_pass2, bsr_transpose, bsr_sort_indices
+from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_pass1,
+                           bsr_matmat_pass2, bsr_transpose, bsr_sort_indices)
 
 
 class bsr_matrix(_cs_matrix, _minmax_mixin):
@@ -24,7 +24,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
     This can be instantiated in several ways:
         bsr_matrix(D, [blocksize=(R,C)])
-            with a dense matrix or rank-2 ndarray D
+            where D is a dense matrix or 2-D ndarray.
 
         bsr_matrix(S, [blocksize=(R,C)])
             with another sparse matrix S (equivalent to S.tobsr())
@@ -224,10 +224,10 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         self.data = to_native(self.data)
 
         # check array shapes
-        if np.rank(self.indices) != 1 or np.rank(self.indptr) != 1:
-            raise ValueError("indices, and indptr should be rank 1")
-        if np.rank(self.data) != 3:
-            raise ValueError("data should be rank 3")
+        if self.indices.ndim != 1 or self.indptr.ndim != 1:
+            raise ValueError("indices, and indptr should be 1-D")
+        if self.data.ndim != 3:
+            raise ValueError("data should be 3-D")
 
         # check index pointer
         if (len(self.indptr) != M//R + 1):

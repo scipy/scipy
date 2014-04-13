@@ -500,7 +500,7 @@ class _SymmetricArpackParams(_ArpackParams):
             raise ValueError("which must be one of %s"
                              % ' '.join(_SEUPD_WHICH))
         if k >= n:
-            raise ValueError("k must be less than rank(A), k=%d" % k)
+            raise ValueError("k must be less than ndim(A), k=%d" % k)
 
         _ArpackParams.__init__(self, n, k, tp, mode, sigma,
                                ncv, v0, maxiter, which, tol)
@@ -682,7 +682,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
             raise ValueError("Parameter which must be one of %s"
                              % ' '.join(_NEUPD_WHICH))
         if k >= n - 1:
-            raise ValueError("k must be less than rank(A)-1, k=%d" % k)
+            raise ValueError("k must be less than ndim(A)-1, k=%d" % k)
 
         _ArpackParams.__init__(self, n, k, tp, mode, sigma,
                                ncv, v0, maxiter, which, tol)
@@ -1206,7 +1206,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     n = A.shape[0]
 
     if k <= 0 or k >= n:
-        raise ValueError("k=%d must be between 1 and rank(A)-1=%d"
+        raise ValueError("k=%d must be between 1 and ndim(A)-1=%d"
                          % (k, n - 1))
 
     if sigma is None:
@@ -1484,7 +1484,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     n = A.shape[0]
 
     if k <= 0 or k >= n:
-        raise ValueError("k must be between 1 and rank(A)-1")
+        raise ValueError("k must be between 1 and ndim(A)-1")
 
     if sigma is None:
         A = _aslinearoperator_with_dtype(A)

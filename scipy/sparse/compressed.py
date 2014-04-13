@@ -152,8 +152,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self.data = to_native(self.data)
 
         # check array shapes
-        if np.rank(self.data) != 1 or np.rank(self.indices) != 1 or np.rank(self.indptr) != 1:
-            raise ValueError('data, indices, and indptr should be rank 1')
+        if self.data.ndim != 1 or self.indices.ndim != 1 or self.indptr.ndim != 1:
+            raise ValueError('data, indices, and indptr should be 1-D')
 
         # check index pointer
         if (len(self.indptr) != major_dim + 1):

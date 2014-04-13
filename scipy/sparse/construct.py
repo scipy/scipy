@@ -529,8 +529,8 @@ def bmat(blocks, format=None, dtype=None):
 
     blocks = np.asarray(blocks, dtype='object')
 
-    if np.rank(blocks) != 2:
-        raise ValueError('blocks must have rank 2')
+    if blocks.ndim != 2:
+        raise ValueError('blocks must be 2-D')
 
     M,N = blocks.shape
 

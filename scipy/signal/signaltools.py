@@ -15,7 +15,7 @@ from numpy import (allclose, angle, arange, argsort, array, asarray,
                    atleast_1d, atleast_2d, cast, dot, exp, expand_dims,
                    iscomplexobj, isscalar, mean, ndarray, newaxis, ones, pi,
                    poly, polyadd, polyder, polydiv, polymul, polysub, polyval,
-                   prod, product, r_, rank, ravel, real_if_close, reshape,
+                   prod, product, r_, ravel, real_if_close, reshape,
                    roots, sort, sum, take, transpose, unique, where, zeros)
 import numpy as np
 from scipy.misc import factorial
@@ -103,7 +103,7 @@ def correlate(in1, in2, mode='full'):
 
     Notes
     -----
-    The correlation z of two arrays x and y of rank d is defined as:
+    The correlation z of two d-dimensional arrays x and y is defined as:
 
       z[...,k,...] = sum[..., i_l, ...]
                          x[..., i_l,...] * conj(y[..., i_l + k,...])
@@ -119,10 +119,10 @@ def correlate(in1, in2, mode='full'):
         raise ValueError("Acceptable mode flags are 'valid',"
                          " 'same', or 'full'.")
 
-    if rank(in1) == rank(in2) == 0:
+    if in1.ndim == in2.ndim == 0:
         return in1 * in2
     elif not in1.ndim == in2.ndim:
-        raise ValueError("in1 and in2 should have the same rank")
+        raise ValueError("in1 and in2 should have the same dimensionality")
 
     if mode == 'valid':
         _check_valid_mode_shapes(in1.shape, in2.shape)
@@ -248,10 +248,10 @@ def fftconvolve(in1, in2, mode="full"):
     in1 = asarray(in1)
     in2 = asarray(in2)
 
-    if rank(in1) == rank(in2) == 0:  # scalar inputs
+    if in1.ndim == in2.ndim == 0:  # scalar inputs
         return in1 * in2
     elif not in1.ndim == in2.ndim:
-        raise ValueError("in1 and in2 should have the same rank")
+        raise ValueError("in1 and in2 should have the same dimensionality")
     elif in1.size == 0 or in2.size == 0:  # empty arrays
         return array([])
 
@@ -323,7 +323,7 @@ def convolve(in1, in2, mode='full'):
     volume = asarray(in1)
     kernel = asarray(in2)
 
-    if rank(volume) == rank(kernel) == 0:
+    if volume.ndim == kernel.ndim == 0:
         return volume * kernel
 
     slice_obj = [slice(None, None, -1)] * len(kernel.shape)
@@ -920,7 +920,7 @@ def hilbert2(x, N=None):
     """
     x = atleast_2d(x)
     if len(x.shape) > 2:
-        raise ValueError("x must be rank 2.")
+        raise ValueError("x must be 2-D.")
     if iscomplexobj(x):
         raise ValueError("x must be real.")
     if N is None:
@@ -1655,10 +1655,10 @@ def lfilter_zi(b, a):
     # b to be 2D.
     b = np.atleast_1d(b)
     if b.ndim != 1:
-        raise ValueError("Numerator b must be rank 1.")
+        raise ValueError("Numerator b must be 1-D.")
     a = np.atleast_1d(a)
     if a.ndim != 1:
-        raise ValueError("Denominator a must be rank 1.")
+        raise ValueError("Denominator a must be 1-D.")
 
     while len(a) > 1 and a[0] == 0.0:
         a = a[1:]
