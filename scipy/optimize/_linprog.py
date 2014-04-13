@@ -128,6 +128,11 @@ def linprog_terse_callback(xk, **kwargs):
     print(xk)
 
 
+def _count_nonzero(x):
+    """_count_nonzero not available in numpy 1.5.x"""
+    return np.sum(x != 0)
+
+
 def _pivot_col(T, tol=1.0E-12, bland=False):
     """
     Given a linear programming simplex tableau, determine the column
@@ -624,7 +629,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     # The number of artificial variables (one for each lower-bound and equality
     # constraint)
-    n_artificial = meq + np.count_nonzero(bub < 0)
+    n_artificial = meq + _count_nonzero(bub < 0)
 
     try:
         Aub_rows, Aub_cols = Aub.shape
