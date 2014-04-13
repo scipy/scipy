@@ -1078,17 +1078,19 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals
 
 
-def describe(a, axis=0):
+def describe(a, axis=0, ddof=1):
     """
     Computes several descriptive statistics of the passed array.
 
     Parameters
     ----------
     a : array_like
-       data
-    axis : int or None
-       axis along which statistics are calculated. If axis is None, then data
-       array is raveled. The default axis is zero.
+       Input data.
+    axis : int, optional
+       Axis along which statistics are calculated.  If axis is None, then data
+       array is raveled.  The default axis is zero.
+    ddof : int, optional
+        Delta degrees of freedom.  Default is 1.
 
     Returns
     -------
@@ -1110,15 +1112,14 @@ def describe(a, axis=0):
 
     See Also
     --------
-    skew
-    kurtosis
+    skew, kurtosis
 
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
     mm = (np.min(a, axis=axis), np.max(a, axis=axis))
     m = np.mean(a, axis=axis)
-    v = np.var(a, axis=axis, ddof=1)
+    v = np.var(a, axis=axis, ddof=ddof)
     sk = skew(a, axis)
     kurt = kurtosis(a, axis)
     return n, mm, m, v, sk, kurt
@@ -1214,7 +1215,7 @@ def kurtosistest(a, axis=0):
             int(n))
     b2 = kurtosis(a, axis, fisher=False)
     E = 3.0*(n-1) / (n+1)
-    varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1)*(n+3)*(n+5))
+    varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1.)*(n+3)*(n+5))
     x = (b2-E)/np.sqrt(varb2)
     sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5)) /
                                                        (n*(n-2)*(n-3)))
@@ -1268,8 +1269,8 @@ def normaltest(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
-    s,p = skewtest(a,axis)
-    k,p = kurtosistest(a,axis)
+    s, _ = skewtest(a, axis)
+    k, _ = kurtosistest(a, axis)
     k2 = s*s + k*k
     return k2, chisqprob(k2,2)
 
