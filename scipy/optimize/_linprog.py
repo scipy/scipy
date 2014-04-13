@@ -322,7 +322,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
                 status = 3
                 complete = True
 
-        if not callback is None:
+        if callback is not None:
             solution[:] = 0
             solution[basis[:m]] = T[:m, -1]
             callback(solution[:n], **{"tableau": T,
@@ -505,10 +505,10 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     n = len(c)
 
     # Convert the input arguments to arrays (sized to zero if not provided)
-    Aeq = np.asarray(A_eq) if not A_eq is None else np.empty([0, len(cc)])
-    Aub = np.asarray(A_ub) if not A_ub is None else np.empty([0, len(cc)])
-    beq = np.ravel(np.asarray(b_eq)) if not b_eq is None else np.empty([0])
-    bub = np.ravel(np.asarray(b_ub)) if not b_ub is None else np.empty([0])
+    Aeq = np.asarray(A_eq) if A_eq is not None else np.empty([0, len(cc)])
+    Aub = np.asarray(A_ub) if A_ub is not None else np.empty([0, len(cc)])
+    beq = np.ravel(np.asarray(b_eq)) if b_eq is not None else np.empty([0])
+    bub = np.ravel(np.asarray(b_ub)) if b_ub is not None else np.empty([0])
 
     # Analyze the bounds and determine what modifications to me made to
     # the constraints in order to accommodate them.
