@@ -2467,10 +2467,12 @@ class levy_gen(rv_continuous):
         return 1 / sqrt(2*pi*x) / x * exp(-1/(2*x))
 
     def _cdf(self, x):
-        return 2 * (1 - _norm_cdf(1 / sqrt(x)))
+        # Equivalent to 2*norm.sf(sqrt(1/x))
+        return special.erfc(sqrt(0.5 / x))
 
     def _ppf(self, q):
-        val = _norm_ppf(1 - q / 2.0)
+        # Equivalent to 1.0/(norm.isf(q/2)**2) or 0.5/(erfcinv(q)**2)
+        val = -special.ndtri(q/2)
         return 1.0 / (val * val)
 
     def _stats(self):
