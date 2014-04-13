@@ -212,7 +212,7 @@ def isshape(x):
         return False
     else:
         if isintlike(M) and isintlike(N):
-            if np.rank(M) == 0 and np.rank(N) == 0:
+            if np.ndim(M) == 0 and np.ndim(N) == 0:
                 return True
         return False
 

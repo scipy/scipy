@@ -142,7 +142,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
                 if shape is None:
                     if len(self.row) == 0 or len(self.col) == 0:
-                        raise ValueError('cannot infer dimensions from zero sized index arrays')
+                        raise ValueError('cannot infer dimensions from zero '
+                                         'sized index arrays')
                     M = self.row.max() + 1
                     N = self.col.max() + 1
                     self.shape = (M, N)
@@ -186,8 +187,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 except:
                     raise TypeError('invalid input format')
 
-                if np.rank(M) != 2:
-                    raise TypeError('expected rank <= 2 array or matrix')
+                if M.ndim != 2:
+                    raise TypeError('expected dimension <= 2 array or matrix')
                 else:
                     self.shape = M.shape
 
@@ -214,10 +215,9 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 raise ValueError('row, column, and data array must all be the '
                                  'same length')
 
-            if np.rank(self.data) != 1 or np.rank(self.row) != 1 or \
-               np.rank(self.col) != 1:
-                raise ValueError('row, column, and data arrays must have '
-                                 'rank 1')
+            if self.data.ndim != 1 or self.row.ndim != 1 or \
+                    self.col.ndim != 1:
+                raise ValueError('row, column, and data arrays must be 1-D')
 
             return int(nnz)
 
