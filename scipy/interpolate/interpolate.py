@@ -29,17 +29,20 @@ from . import _ppoly
 from .fitpack2 import RectBivariateSpline
 from .interpnd import _ndim_coords_from_arrays
 
+
 def reduce_sometrue(a):
     all = a
     while len(shape(all)) > 1:
         all = sometrue(all, axis=0)
     return all
 
+
 def prod(x):
     """Product of a list of numbers; ~40x faster vs np.prod for Python tuples"""
     if len(x) == 0:
         return 1
     return functools.reduce(operator.mul, x)
+
 
 def lagrange(x, w):
     """
@@ -326,8 +329,7 @@ class interp1d(_Interpolator1D):
         is NaN.
     assume_sorted : bool, optional
         If False, values of `x` can be in any order and they are sorted first.
-	If True, `x` has to be an array of monotonically increasing values.
-
+        If True, `x` has to be an array of monotonically increasing values.
 
     See Also
     --------
@@ -925,7 +927,11 @@ class PPoly(_PPolyBase):
             return r[0]
         else:
             r2 = np.empty(prod(self.c.shape[2:]), dtype=object)
-            r2[...] = r
+            # this for-loop is equivalent to ``r2[...] = r``, but that's broken
+            # in numpy 1.6.0
+            for ii, root in enumerate(r):
+                r2[ii] = root
+
             return r2.reshape(self.c.shape[2:])
 
     @classmethod
@@ -1486,7 +1492,8 @@ class RegularGridInterpolator(object):
 
         self.fill_value = fill_value
         if fill_value is not None:
-            if hasattr(values, 'dtype') and not np.can_cast(fill_value, values.dtype):
+            fill_value_dtype = np.asarray(fill_value).dtype
+            if hasattr(values, 'dtype') and not np.can_cast(fill_value_dtype, values.dtype):
                 raise ValueError("fill_value must be either 'None' or "
                                  "of a type compatible with values")
 

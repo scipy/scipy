@@ -454,8 +454,8 @@ def downcast(var_specs):
 
     # if arrays are present, but none of them are double precision,
     # make all numeric types float or complex(float)
-    if (('f' in numeric_types or 'F' in numeric_types) and
-        not ('d' in numeric_types or 'D' in numeric_types)):
+    if (('f' in numeric_types or 'F' in numeric_types) and not (
+            'd' in numeric_types or 'D' in numeric_types)):
         for var in var_specs:
             if hasattr(var,'numeric_type'):
                 if issubclass(var.numeric_type, complex):

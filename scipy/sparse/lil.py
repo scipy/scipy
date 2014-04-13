@@ -24,8 +24,10 @@ from . import _csparsetools
 class lil_matrix(spmatrix, IndexMixin):
     """Row-based linked list sparse matrix
 
-    This is an efficient structure for constructing sparse
-    matrices incrementally.
+    This is a structure for constructing sparse matrices incrementally.
+    Note that inserting a single item can take linear time in the worst case;
+    to construct a matrix efficiently, make sure the items are pre-sorted by
+    index, per row.
 
     This can be instantiated in several ways:
         lil_matrix(D)
@@ -238,7 +240,7 @@ class lil_matrix(spmatrix, IndexMixin):
             # ~25-50% faster than isscalarlike. Other types are
             # handled below.
             if ((isinstance(i, int) or isinstance(i, np.integer)) and
-                (isinstance(j, int) or isinstance(j, np.integer))):
+                    (isinstance(j, int) or isinstance(j, np.integer))):
                 v = _csparsetools.lil_get1(self.shape[0], self.shape[1],
                                            self.rows, self.data,
                                            i, j)
@@ -276,14 +278,14 @@ class lil_matrix(spmatrix, IndexMixin):
             # assignment for other types is handled below together
             # with fancy indexing.
             if ((isinstance(i, int) or isinstance(i, np.integer)) and
-                (isinstance(j, int) or isinstance(j, np.integer))):
+                    (isinstance(j, int) or isinstance(j, np.integer))):
                 x = self.dtype.type(x)
                 if x.size > 1:
                     # Triggered if input was an ndarray
                     raise ValueError("Trying to assign a sequence to an item")
                 _csparsetools.lil_insert(self.shape[0], self.shape[1],
                                          self.rows, self.data,
-                                         i, j, x)
+                                         i, j, x, self.dtype)
                 return
 
         # General indexing
@@ -326,16 +328,16 @@ class lil_matrix(spmatrix, IndexMixin):
             new = self.copy()
             new = new.astype(res_dtype)
             # Multiply this scalar by every element.
-            new.data[:] = [[val*other for val in rowvals] for
-                           rowvals in new.data]
+            for j, rowvals in enumerate(new.data):
+                new.data[j] = [val*other for val in rowvals]
         return new
 
     def __truediv__(self, other):           # self / other
         if isscalarlike(other):
             new = self.copy()
             # Divide every element by this scalar
-            new.data[:] = [[val/other for val in rowvals] for
-                           rowvals in new.data]
+            for j, rowvals in enumerate(new.data):
+                new.data[j] = [val/other for val in rowvals]
             return new
         else:
             return self.tocsr() / other

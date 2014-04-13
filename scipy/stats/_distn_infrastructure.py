@@ -11,6 +11,7 @@ import keyword
 import re
 import inspect
 import types
+import warnings
 
 from scipy.misc import doccer
 from ._distr_params import distcont, distdiscrete
@@ -318,7 +319,7 @@ Display the probability mass function (``pmf``):
 Alternatively, freeze the distribution and display the frozen ``pmf``:
 
 >>> rv = %(name)s(%(shapes)s)
->>> ax.vlines(x, 0, rv.pmf(x), colors='k', linestyles='-', lw=1, 
+>>> ax.vlines(x, 0, rv.pmf(x), colors='k', linestyles='-', lw=1,
 ...         label='frozen pmf')
 >>> ax.legend(loc='best', frameon=False)
 >>> plt.show()
@@ -591,8 +592,10 @@ def _ncx2_log_pdf(x, df, nc):
     fac = -nc/2.0 - x/2.0 + (a-1)*log(x) - a*log(2) - gammaln(a)
     return fac + np.nan_to_num(log(hyp0f1(a, nc * x/4.0)))
 
+
 def _ncx2_pdf(x, df, nc):
     return np.exp(_ncx2_log_pdf(x, df, nc))
+
 
 def _ncx2_cdf(x, df, nc):
     return chndtr(x, df, nc)
@@ -2309,10 +2312,10 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
         if (qb == q):
             return b
         if b <= a+1:
-    # testcase: return wrong number at lower index
-    # python -c "from scipy.stats import zipf;print zipf.ppf(0.01, 2)" wrong
-    # python -c "from scipy.stats import zipf;print zipf.ppf([0.01, 0.61, 0.77, 0.83], 2)"
-    # python -c "from scipy.stats import logser;print logser.ppf([0.1, 0.66, 0.86, 0.93], 0.6)"
+            # testcase: return wrong number at lower index
+            # python -c "from scipy.stats import zipf;print zipf.ppf(0.01, 2)" wrong
+            # python -c "from scipy.stats import zipf;print zipf.ppf([0.01, 0.61, 0.77, 0.83], 2)"
+            # python -c "from scipy.stats import logser;print logser.ppf([0.1, 0.66, 0.86, 0.93], 0.6)"
             if qa > q:
                 return a
             else:

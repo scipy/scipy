@@ -880,17 +880,6 @@ kruskalwallis.__doc__ = stats.kruskal.__doc__
 _kolmog2 = special.kolmogorov
 
 
-def _kolmog1(x,n):
-    if x <= 0:
-        return 0
-    if x >= 1:
-        return 1
-    j = np.arange(np.floor(n*(1-x))+1)
-    return 1 - x * np.sum(np.exp(np.log(misc.comb(n,j))
-                                       + (n-j) * np.log(1-x-j/float(n))
-                                       + (j-1) * np.log(x+j/float(n))))
-
-
 def ks_twosamp(data1, data2, alternative="two-sided"):
     """
     Computes the Kolmogorov-Smirnov test on two samples.
@@ -1774,7 +1763,9 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
 
     References
     ----------
-    .. [1] *R* statistical software at http://www.r-project.org/
+    .. [1] *R* statistical software: http://www.r-project.org/
+    .. [2] *R* ``quantile`` function:
+            http://stat.ethz.ch/R-manual/R-devel/library/stats/html/quantile.html
 
     Examples
     --------

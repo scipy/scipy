@@ -77,8 +77,9 @@ def cleanup_temp_dir(d):
             else:
                 os.remove(i)
         except OSError:
-            pass  # failed to remove file for whatever reason
-                  # (maybe it is a DLL Python is currently using)
+            # failed to remove file for whatever reason (maybe it is a DLL
+            # Python is currently using)
+            pass
     try:
         os.rmdir(d)
     except OSError:

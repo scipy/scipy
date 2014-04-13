@@ -21,11 +21,11 @@ ctypedef fused double_or_complex:
     double
     double complex
 
-cdef extern:
-    void dgeev_(char *jobvl, char *jobvr, int *n, double *a,
-                int *lda, double *wr, double *wi, double *vl, int *ldvl,
-                double *vr, int *ldvr, double *work, int *lwork,
-                int *info)
+cdef extern from "blas_defs.h":
+    void c_dgeev(char *jobvl, char *jobvr, int *n, double *a,
+                 int *lda, double *wr, double *wi, double *vl, int *ldvl,
+                 double *vr, int *ldvr, double *work, int *lwork,
+                 int *info)
 
 #------------------------------------------------------------------------------
 # Piecewise power basis polynomials
@@ -274,7 +274,9 @@ def real_roots(double[:,:,::1] c, double[::1] x, int report_discont,
     cdef list cur_roots
     cdef int interval, jp, k, i, p
 
-    cdef double *wr, *wi, last_root, va, vb
+    cdef double *wr
+    cdef double *wi
+    cdef double last_root, va, vb
     cdef double f, df, dx
     cdef void *workspace
 
@@ -556,7 +558,9 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
     Uses LAPACK + the companion matrix method.
 
     """
-    cdef double *a, *work, a0, a1, a2, d, br, bi
+    cdef double *a
+    cdef double *work
+    cdef double a0, a1, a2, d, br, bi
     cdef int lwork, n, i, j, order
     cdef int nworkspace, info
 
@@ -640,8 +644,8 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
 
     # Compute companion matrix eigenvalues
     info = 0
-    dgeev_("N", "N", &order, a, &order, <double*>wr, <double*>wi,
-           NULL, &order, NULL, &order, work, &lwork, &info)
+    c_dgeev("N", "N", &order, a, &order, <double*>wr, <double*>wi,
+            NULL, &order, NULL, &order, work, &lwork, &info)
     if info != 0:
         # Failure
         return -2
@@ -681,7 +685,8 @@ def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w):
 
     """
 
-    cdef double *wr, *wi
+    cdef double *wr
+    cdef double *wi
     cdef void *workspace
     cdef int i, j, k, nroots
 

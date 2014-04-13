@@ -137,7 +137,7 @@ EXTS_simd = dict(
     sse4_1='mpsadbw phminposuw pmulld pmuldq     dpps dppd     blendps blendpd blendvps blendvpd pblendvb pblendw     pminsb pmaxsb pminuw pmaxuw pminud pmaxud pminsd pmaxsd     roundps roundss roundpd roundsd     insertps pinsrb pinsrd/pinsrq extractps pextrb pextrw pextrd/pextrq     pmovsxbw pmovzxbw pmovsxbd pmovzxbd pmovsxbq pmovzxbq pmovsxwd pmovzxwd pmovsxwq pmovzxwq pmovsxdq pmovzxdq     ptest     pcmpeqq     packusdw     movntdqa',
     sse4a='extrq insertq movntsd movntss',
     sse4_2='crc32     pcmpestri     pcmpestrm     pcmpistri     pcmpistrm     pcmpgtq',
-    fma='vfmaddpd vfmaddps vfmaddsd vfmaddss vfmaddsubpd vfmaddsubps vfmsubaddpd vfmsubaddps vfmsubpd vfmsubps vfmsubsd vfmsubss vfnmaddpd fndmaddps vfnmaddsd vfnmadss vfnmsubpd vfnmsubpd vfnmsubps vfnmsubsd vfnmsubss',
+    fma='vfmaddpd vfmaddps vfmaddsd vfmaddss vfmaddsubpd vfmaddsubps vfmsubaddpd vfmsubaddps vfmsubpd vfmsubps vfmsubsd vfmsubss vfnmaddpd vfnmaddps vfnmaddsd vfnmadss vfnmsubpd vfnmsubps vfnmsubsd vfnmsubss',
 )
 
 INSTRS = dict()

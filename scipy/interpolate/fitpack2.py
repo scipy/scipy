@@ -204,7 +204,7 @@ class UnivariateSpline(object):
         else:
             if not n <= nest:
                 raise ValueError("`nest` can only be increased")
-        t, c, fpint, nrdata = [np.resize(data[n], nest) for n in [8,9,11,12]]
+        t, c, fpint, nrdata = [np.resize(data[j], nest) for j in [8,9,11,12]]
 
         args = data[:8] + (t,c,n,fpint,nrdata,data[13])
         data = dfitpack.fpcurf1(*args)
@@ -967,7 +967,7 @@ class RectBivariateSpline(BivariateSpline):
         nx, tx, ny, ty, c, fp, ier = dfitpack.regrid_smth(x, y, z, xb, xe, yb,
                                                           ye, kx, ky, s)
 
-        if not ier in [0, -1, -2]:
+        if ier not in [0, -1, -2]:
             msg = _surfit_messages.get(ier, 'ier=%s' % (ier))
             raise ValueError(msg)
 
@@ -1164,9 +1164,10 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
         nt_, tt_, np_, tp_, c, fp, ier = dfitpack.spherfit_smth(theta, phi,
                                                                 r, w=w, s=s,
                                                                 eps=eps)
-        if not ier in [0, -1, -2]:
+        if ier not in [0, -1, -2]:
             message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
             raise ValueError(message)
+
         self.fp = fp
         self.tck = tt_[:nt_], tp_[:np_], c[:(nt_ - 4) * (np_ - 4)]
         self.degrees = (3, 3)
@@ -1267,9 +1268,10 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
             deficiency = 6 + (nt_ - 8) * (np_ - 7) + ier
             message = _spherefit_messages.get(-3) % (deficiency, -ier)
             warnings.warn(message)
-        elif not ier in [0, -1, -2]:
+        elif ier not in [0, -1, -2]:
             message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
             raise ValueError(message)
+
         self.fp = fp
         self.tck = tt_, tp_, c
         self.degrees = (3, 3)
@@ -1486,7 +1488,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         nu, tu, nv, tv, c, fp, ier = dfitpack.regrid_smth_spher(iopt, ider,
                                        u.copy(), v.copy(), r.copy(), r0, r1, s)
 
-        if not ier in [0, -1, -2]:
+        if ier not in [0, -1, -2]:
             msg = _spfit_messages.get(ier, 'ier=%s' % (ier))
             raise ValueError(msg)
 

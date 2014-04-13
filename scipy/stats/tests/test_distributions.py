@@ -323,7 +323,7 @@ class TestHypergeom(TestCase):
     def test_cdf_above_one(self):
         # for some values of parameters, hypergeom cdf was >1, see gh-2238
         assert_(0 <= stats.hypergeom.cdf(30, 13397950, 4363, 12390) <= 1.0)
-     
+
     def test_precision2(self):
         # Test hypergeom precision for large numbers.  See #1218.
         # Results compared with those from R.
@@ -365,9 +365,9 @@ class TestLoggamma(TestCase):
         # Chan (thesis, McMaster University, 1993).
         table = np.array([
                 # c,    mean,   var,    skew,    exc. kurt.
-                 0.5, -1.9635, 4.9348, -1.5351, 4.0000,
-                 1.0, -0.5772, 1.6449, -1.1395, 2.4000,
-                 12.0, 2.4427, 0.0869, -0.2946, 0.1735,
+                0.5, -1.9635, 4.9348, -1.5351, 4.0000,
+                1.0, -0.5772, 1.6449, -1.1395, 2.4000,
+                12.0, 2.4427, 0.0869, -0.2946, 0.1735,
             ]).reshape(-1, 5)
         for c, mean, var, skew, kurt in table:
             computed = stats.loggamma.stats(c, moments='msvk')
@@ -534,7 +534,6 @@ class TestDLaplace(TestCase):
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
         assert_(stats.dlaplace.rvs(0.8) is not None)
-
 
     def test_stats(self):
         # compare the explicit formulas w/ direct summation using pmf
@@ -1136,7 +1135,7 @@ class TestFrozen(TestCase):
         assert_equal(m1, m2)
 
     def test_ab(self):
-        # test that the support of a frozen distribution 
+        # test that the support of a frozen distribution
         # (i) remains frozen even if it changes for the original one
         # (ii) is actually correct if the shape parameters are such that
         #      the values of [a, b] are not the default [0, inf]
@@ -1153,6 +1152,10 @@ class TestFrozen(TestCase):
 
         rv1 = stats.genpareto(c=0.1)
         assert_(rv1.dist is not rv.dist)
+
+    def test_rv_frozen_in_namespace(self):
+        # Regression test for gh-3522
+        assert_(hasattr(stats.distributions, 'rv_frozen'))
 
 
 class TestExpect(TestCase):

@@ -433,6 +433,44 @@ class TestOptimize(object):
 
             assert_allclose(v, self.func(self.solution), rtol=tol)
 
+    def test_custom(self):
+        # This function comes from the documentation example.
+        def custmin(fun, x0, args=(), maxfev=None, stepsize=0.1,
+                maxiter=100, callback=None, **options):
+            bestx = x0
+            besty = fun(x0)
+            funcalls = 1
+            niter = 0
+            improved = True
+            stop = False
+
+            while improved and not stop and niter < maxiter:
+                improved = False
+                niter += 1
+                for dim in range(np.size(x0)):
+                    for s in [bestx[dim] - stepsize, bestx[dim] + stepsize]:
+                        testx = np.copy(bestx)
+                        testx[dim] = s
+                        testy = fun(testx, *args)
+                        funcalls += 1
+                        if testy < besty:
+                            besty = testy
+                            bestx = testx
+                            improved = True
+                    if callback is not None:
+                        callback(bestx)
+                    if maxfev is not None and funcalls >= maxfev:
+                        stop = True
+                        break
+
+            return optimize.OptimizeResult(fun=besty, x=bestx, nit=niter,
+                                           nfev=funcalls, success=(niter > 1))
+
+        x0 = [1.35, 0.9, 0.8, 1.1, 1.2]
+        res = optimize.minimize(optimize.rosen, x0, method=custmin,
+                                options=dict(stepsize=0.05))
+        assert_allclose(res.x, 1.0, rtol=1e-4, atol=1e-4)
+
     def test_minimize(self):
         """Tests for the minimize wrapper."""
         self.setUp()
@@ -451,6 +489,8 @@ class TestOptimize(object):
         self.test_neldermead(True)
         self.setUp()
         self.test_powell(True)
+        self.setUp()
+        self.test_custom()
 
     def test_minimize_tol_parameter(self):
         # Check that the minimize() tol= argument does something
@@ -518,9 +558,11 @@ class TestOptimize(object):
         # github issue 3108
         def f(x):
             return sum((x - np.array([1., 2., 3., 4.]))**2)
+
         def cons(x):
             a = np.array([[-1, -1, -1, -1], [-3, -3, -2, -1]])
             return np.concatenate([np.dot(a, x) + np.array([5, 10]), x])
+
         x0 = np.array([0.5, 1., 1.5, 2.])
         res = optimize.minimize(f, x0, method='slsqp',
                                 constraints={'type': 'ineq', 'fun': cons})
@@ -529,6 +571,7 @@ class TestOptimize(object):
     def test_minimize_automethod(self):
         def f(x):
             return x**2
+
         def cons(x):
             return x - 2
 
@@ -693,6 +736,40 @@ class TestOptimizeScalar(TestCase):
         x = optimize.minimize_scalar(self.fun, bounds=(1, np.array(5)),
                                      method='bounded').x
         assert_allclose(x, self.solution, atol=1e-6)
+
+    def test_minimize_scalar_custom(self):
+        # This function comes from the documentation example.
+        def custmin(fun, bracket, args=(), maxfev=None, stepsize=0.1,
+                maxiter=100, callback=None, **options):
+            bestx = (bracket[1] + bracket[0]) / 2.0
+            besty = fun(bestx)
+            funcalls = 1
+            niter = 0
+            improved = True
+            stop = False
+
+            while improved and not stop and niter < maxiter:
+                improved = False
+                niter += 1
+                for testx in [bestx - stepsize, bestx + stepsize]:
+                    testy = fun(testx, *args)
+                    funcalls += 1
+                    if testy < besty:
+                        besty = testy
+                        bestx = testx
+                        improved = True
+                if callback is not None:
+                    callback(bestx)
+                if maxfev is not None and funcalls >= maxfev:
+                    stop = True
+                    break
+
+            return optimize.OptimizeResult(fun=besty, x=bestx, nit=niter,
+                                           nfev=funcalls, success=(niter > 1))
+
+        res = optimize.minimize_scalar(self.fun, bracket=(0, 4), method=custmin,
+                                       options=dict(stepsize=0.05))
+        assert_allclose(res.x, self.solution, atol=1e-6)
 
 
 class TestNewtonCg(object):

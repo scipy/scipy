@@ -126,14 +126,17 @@ def teardown_test_location():
 
 if not msvc_exists():
     for _n in dir():
-        if _n[:8] == 'TestMsvc': exec('del '+_n)
+        if _n[:8] == 'TestMsvc':
+            exec('del '+_n)
 else:
     for _n in dir():
-        if _n[:8] == 'TestUnix': exec('del '+_n)
+        if _n[:8] == 'TestUnix':
+            exec('del '+_n)
 
 if not (gcc_exists() and msvc_exists() and sys.platform == 'win32'):
     for _n in dir():
-        if _n[:7] == 'TestGcc': exec('del '+_n)
+        if _n[:7] == 'TestGcc':
+            exec('del '+_n)
 
 
 if __name__ == "__main__":

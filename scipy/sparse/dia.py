@@ -11,7 +11,7 @@ import numpy as np
 from .base import isspmatrix, _formats
 from .data import _data_matrix
 from .sputils import isshape, upcast, upcast_char, getdtype, get_index_dtype
-from .sparsetools import dia_matvec
+from ._sparsetools import dia_matvec
 
 
 class dia_matrix(_data_matrix):
@@ -58,18 +58,18 @@ class dia_matrix(_data_matrix):
 
     >>> from scipy.sparse import *
     >>> from scipy import *
-    >>> dia_matrix( (3,4), dtype=int8).todense()
-    matrix([[0, 0, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0]], dtype=int8)
+    >>> dia_matrix((3, 4), dtype=int8).toarray()
+    array([[0, 0, 0, 0],
+           [0, 0, 0, 0],
+           [0, 0, 0, 0]], dtype=int8)
 
-    >>> data = array([[1,2,3,4]]).repeat(3,axis=0)
+    >>> data = array([[1, 2, 3, 4]]).repeat(3, axis=0)
     >>> offsets = array([0,-1,2])
-    >>> dia_matrix( (data,offsets), shape=(4,4)).todense()
-    matrix([[1, 0, 3, 0],
-            [1, 2, 0, 4],
-            [0, 2, 3, 0],
-            [0, 0, 3, 4]])
+    >>> dia_matrix((data, offsets), shape=(4, 4)).toarray()
+    array([[1, 0, 3, 0],
+           [1, 2, 0, 4],
+           [0, 2, 3, 0],
+           [0, 0, 3, 4]])
 
     """
 
@@ -188,13 +188,37 @@ class dia_matrix(_data_matrix):
         M, N = self.shape
         if k <= -M or k >= N:
             raise ValueError('k exceeds matrix dimensions')
+
+        values = np.asarray(values)
+
+        if values.ndim == 0:
+            # broadcast
+            values_n = np.inf
+        else:
+            values_n = len(values)
+
+        if k < 0:
+            n = min(M + k, N, values_n)
+            min_index = 0
+            max_index = n
+        else:
+            n = min(M, N - k, values_n)
+            min_index = k
+            max_index = k + n
+
+        if values.ndim != 0:
+            # allow also longer sequences
+            values = values[:n]
+
         if k in self.offsets:
-            self.data[self.offsets == k, :] = values
+            self.data[self.offsets == k, min_index:max_index] = values
         else:
             self.offsets = np.append(self.offsets, self.offsets.dtype.type(k))
-            self.data = np.vstack((self.data,
-                                   np.empty((1, N), dtype=self.data.dtype)))
-            self.data[-1, :] = values
+            m = max(max_index, self.data.shape[1])
+            data = np.zeros((self.data.shape[0]+1, m), dtype=self.data.dtype)
+            data[:-1,:self.data.shape[1]] = self.data
+            data[-1, min_index:max_index] = values
+            self.data = data
 
     setdiag.__doc__ = _data_matrix.setdiag.__doc__
 

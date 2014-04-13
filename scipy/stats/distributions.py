@@ -7,7 +7,8 @@
 #
 from __future__ import division, print_function, absolute_import
 
-from ._distn_infrastructure import entropy, rv_discrete, rv_continuous
+from ._distn_infrastructure import (entropy, rv_discrete, rv_continuous,
+                                    rv_frozen)
 
 from . import _continuous_distns
 from . import _discrete_distns

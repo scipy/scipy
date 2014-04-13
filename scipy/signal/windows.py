@@ -1,6 +1,8 @@
 """The suite of window functions."""
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 from scipy import special, linalg
 from scipy.fftpack import fft
@@ -1200,6 +1202,13 @@ def chebwin(M, at, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    if np.abs(at) < 45:
+        warnings.warn("This window is not suitable for spectral analysis "
+                      "for attenuation values lower than about 45dB because "
+                      "the equivalent noise bandwidth of a Chebyshev window "
+                      "does not grow monotonically with increasing sidelobe "
+                      "attenuation when the attenuation is smaller than "
+                      "about 45 dB.")
     if M < 1:
         return np.array([])
     if M == 1:
@@ -1227,14 +1236,14 @@ def chebwin(M, at, sym=True):
     if M % 2:
         w = np.real(fft(p))
         n = (M + 1) // 2
-        w = w[:n] / w[0]
+        w = w[:n]
         w = np.concatenate((w[n - 1:0:-1], w))
     else:
         p = p * np.exp(1.j * np.pi / M * np.r_[0:M])
         w = np.real(fft(p))
         n = M // 2 + 1
-        w = w / w[1]
         w = np.concatenate((w[n - 1:0:-1], w[1:n]))
+    w = w / max(w)
     if not sym and not odd:
         w = w[:-1]
     return w

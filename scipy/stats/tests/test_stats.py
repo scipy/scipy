@@ -171,6 +171,14 @@ class TestNanFunc(TestCase):
         m = stats.nanmedian(self.X)
         assert_approx_equal(m, np.median(self.X))
 
+    def test_nanmedian_axis(self):
+        # Check nanmedian with axis
+        X = self.X.reshape(3,3)
+        m = stats.nanmedian(X, axis=0)
+        assert_equal(m, np.median(X, axis=0))
+        m = stats.nanmedian(X, axis=1)
+        assert_equal(m, np.median(X, axis=1))
+
     def test_nanmedian_some(self):
         # Check nanmedian when some values only are nan.
         m = stats.nanmedian(self.Xsome)
@@ -178,8 +186,21 @@ class TestNanFunc(TestCase):
 
     def test_nanmedian_all(self):
         # Check nanmedian when all values are nan.
-        m = stats.nanmedian(self.Xall)
-        assert_(np.isnan(m))
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            m = stats.nanmedian(self.Xall)
+            assert_(np.isnan(m))
+            assert_equal(len(w), 1)
+            assert_(issubclass(w[0].category, RuntimeWarning))
+
+    def test_nanmedian_all_axis(self):
+        # Check nanmedian when all values are nan.
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            m = stats.nanmedian(self.Xall.reshape(3,3), axis=1)
+            assert_(np.isnan(m).all())
+            assert_equal(len(w), 3)
+            assert_(issubclass(w[0].category, RuntimeWarning))
 
     def test_nanmedian_scalars(self):
         # Check nanmedian for scalar inputs. See ticket #1098.
@@ -1719,39 +1740,39 @@ def test_power_divergence_against_cressie_read_data():
         11, 13.952,
         14, 12.831,
         17, 11.800,
-         5, 10.852,
+        5, 10.852,
         11, 9.9796,
         10, 9.1777,
-         4, 8.4402,
-         8, 7.7620,
+        4, 8.4402,
+        8, 7.7620,
         10, 7.1383,
-         7, 6.5647,
-         9, 6.0371,
+        7, 6.5647,
+        9, 6.0371,
         11, 5.5520,
-         3, 5.1059,
-         6, 4.6956,
-         1, 4.3183,
-         1, 3.9713,
-         4, 3.6522,
+        3, 5.1059,
+        6, 4.6956,
+        1, 4.3183,
+        1, 3.9713,
+        4, 3.6522,
         ]).reshape(-1, 2)
     table5 = np.array([
         # lambda, statistic
         -10.0, 72.2e3,
-         -5.0, 28.9e1,
-         -3.0, 65.6,
-         -2.0, 40.6,
-         -1.5, 34.0,
-         -1.0, 29.5,
-         -0.5, 26.5,
-          0.0, 24.6,
-          0.5, 23.4,
-          0.67, 23.1,
-          1.0, 22.7,
-          1.5, 22.6,
-          2.0, 22.9,
-          3.0, 24.8,
-          5.0, 35.5,
-         10.0, 21.4e1,
+        -5.0, 28.9e1,
+        -3.0, 65.6,
+        -2.0, 40.6,
+        -1.5, 34.0,
+        -1.0, 29.5,
+        -0.5, 26.5,
+        0.0, 24.6,
+        0.5, 23.4,
+        0.67, 23.1,
+        1.0, 22.7,
+        1.5, 22.6,
+        2.0, 22.9,
+        3.0, 24.8,
+        5.0, 35.5,
+        10.0, 21.4e1,
         ]).reshape(-1, 2)
 
     for lambda_, expected_stat in table5:
@@ -2647,22 +2668,25 @@ class TestSigamClip(object):
 
 
 class TestFOneWay(TestCase):
-
     def test_trivial(self):
         # A trivial test of stats.f_oneway, with F=0.
         F, p = stats.f_oneway([0,2], [0,2])
         assert_equal(F, 0.0)
 
     def test_basic(self):
-        # A test of stats.f_oneway, with F=2.
-        F, p = stats.f_oneway([0,2], [2,4])
         # Despite being a floating point calculation, this data should
         # result in F being exactly 2.0.
+        F, p = stats.f_oneway([0,2], [2,4])
         assert_equal(F, 2.0)
+
+    def test_large_integer_array(self):
+        a = np.array([655, 788], dtype=np.uint16)
+        b = np.array([789, 772], dtype=np.uint16)
+        F, p = stats.f_oneway(a, b)
+        assert_almost_equal(F, 0.77450216931805538)
 
 
 class TestKruskal(TestCase):
-
     def test_simple(self):
         x = [1]
         y = [2]

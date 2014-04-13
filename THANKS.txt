@@ -127,6 +127,7 @@ Gert-Ludwig Ingold for contributions to special functions.
 Joris Vankerschaver for multivariate Gaussian functionality.
 Rob Falck for the SLSQP interface and linprog.
 Jörg Dietrich for the k-sample Anderson Darling test.
+Blake Griffith for improvements to scipy.sparse.
 
 
 Institutions

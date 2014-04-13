@@ -1,10 +1,11 @@
 from __future__ import division, print_function, absolute_import
 
 
+import warnings
 import numpy as np
 from numpy import array
 from numpy.testing import (assert_array_almost_equal, assert_array_equal,
-                           assert_, run_module_suite)
+                           run_module_suite)
 from scipy import signal
 
 
@@ -68,13 +69,35 @@ cheb_even_true = array([0.203894, 0.107279, 0.133904,
 
 class TestChebWin(object):
 
-    def test_cheb_odd(self):
-        cheb_odd = signal.chebwin(53, at=-40)
+    def test_cheb_odd_high_attenuation(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            cheb_odd = signal.chebwin(53, at=-40)
         assert_array_almost_equal(cheb_odd, cheb_odd_true, decimal=4)
 
-    def test_cheb_even(self):
-        cheb_even = signal.chebwin(54, at=-40)
+    def test_cheb_even_high_attenuation(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            cheb_even = signal.chebwin(54, at=-40)
         assert_array_almost_equal(cheb_even, cheb_even_true, decimal=4)
+
+    def test_cheb_odd_low_attenuation(self):
+        cheb_odd_low_at_true = array([1.000000, 0.519052, 0.586405,
+                                      0.610151, 0.586405, 0.519052,
+                                      1.000000])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            cheb_odd = signal.chebwin(7, at=-10)
+        assert_array_almost_equal(cheb_odd, cheb_odd_low_at_true, decimal=4)
+
+    def test_cheb_even_low_attenuation(self):
+        cheb_even_low_at_true = array([1.000000, 0.451924, 0.51027,
+                                       0.541338, 0.541338, 0.51027,
+                                       0.451924, 1.000000])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            cheb_even = signal.chebwin(8, at=-10)
+        assert_array_almost_equal(cheb_even, cheb_even_low_at_true, decimal=4)
 
 
 class TestGetWindow(object):
@@ -84,11 +107,15 @@ class TestGetWindow(object):
         assert_array_equal(w, np.ones_like(w))
 
     def test_cheb_odd(self):
-        w = signal.get_window(('chebwin', -40), 53, fftbins=False)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            w = signal.get_window(('chebwin', -40), 53, fftbins=False)
         assert_array_almost_equal(w, cheb_odd_true, decimal=4)
 
     def test_cheb_even(self):
-        w = signal.get_window(('chebwin', -40), 54, fftbins=False)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            w = signal.get_window(('chebwin', -40), 54, fftbins=False)
         assert_array_almost_equal(w, cheb_even_true, decimal=4)
 
 

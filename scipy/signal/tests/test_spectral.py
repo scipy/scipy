@@ -184,25 +184,32 @@ class TestWelch(TestCase):
                 scaling='foo', nperseg=4)
 
     def test_detrend_linear(self):
-        x = np.arange(10, dtype=np.float64)+0.04
+        x = np.arange(10, dtype=np.float64) + 0.04
         f, p = welch(x, nperseg=10, detrend='linear')
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
+    def test_no_detrending(self):
+        x = np.arange(10, dtype=np.float64) + 0.04
+        f1, p1 = welch(x, nperseg=10, detrend=False)
+        f2, p2 = welch(x, nperseg=10, detrend=lambda x: x)
+        assert_allclose(f1, f2, atol=1e-15)
+        assert_allclose(p1, p2, atol=1e-15)
+
     def test_detrend_external(self):
-        x = np.arange(10, dtype=np.float64)+0.04
+        x = np.arange(10, dtype=np.float64) + 0.04
         f, p = welch(x, nperseg=10,
                 detrend=lambda seg: signal.detrend(seg, type='l'))
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
     def test_detrend_external_nd_m1(self):
-        x = np.arange(40, dtype=np.float64)+0.04
+        x = np.arange(40, dtype=np.float64) + 0.04
         x = x.reshape((2,2,10))
         f, p = welch(x, nperseg=10,
                 detrend=lambda seg: signal.detrend(seg, type='l'))
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
     def test_detrend_external_nd_0(self):
-        x = np.arange(20, dtype=np.float64)+0.04
+        x = np.arange(20, dtype=np.float64) + 0.04
         x = x.reshape((2,1,10))
         x = np.rollaxis(x, 2, 0)
         f, p = welch(x, nperseg=10, axis=0,
@@ -210,7 +217,7 @@ class TestWelch(TestCase):
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
     def test_nd_axis_m1(self):
-        x = np.arange(20, dtype=np.float64)+0.04
+        x = np.arange(20, dtype=np.float64) + 0.04
         x = x.reshape((2,1,10))
         f, p = welch(x, nperseg=10)
         assert_array_equal(p.shape, (2, 1, 6))
@@ -219,7 +226,7 @@ class TestWelch(TestCase):
         assert_allclose(p0[np.newaxis,:], p[1,:], atol=1e-13, rtol=1e-13)
 
     def test_nd_axis_0(self):
-        x = np.arange(20, dtype=np.float64)+0.04
+        x = np.arange(20, dtype=np.float64) + 0.04
         x = x.reshape((10,2,1))
         f, p = welch(x, nperseg=10, axis=0)
         assert_array_equal(p.shape, (6,2,1))

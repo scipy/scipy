@@ -201,10 +201,10 @@ class netcdf_file(object):
         self._fds = []
         self.version_byte = version
 
-        if not mode in 'rw':
+        if mode not in 'rw':
             raise ValueError("Mode must be either 'r' or 'w'.")
-        self.mode = mode
 
+        self.mode = mode
         self.dimensions = {}
         self.variables = {}
 
@@ -411,8 +411,8 @@ class netcdf_file(object):
                 vsize = var.data[0].size * var.data.itemsize
             except IndexError:
                 vsize = 0
-            rec_vars = len([var for var in self.variables.values()
-                    if var.isrec])
+            rec_vars = len([v for v in self.variables.values()
+                            if v.isrec])
             if rec_vars > 1:
                 vsize += -vsize % 4
         self.variables[name].__dict__['_vsize'] = vsize
@@ -519,7 +519,7 @@ class netcdf_file(object):
 
     def _read_dim_array(self):
         header = self.fp.read(4)
-        if not header in [ZERO, NC_DIMENSION]:
+        if header not in [ZERO, NC_DIMENSION]:
             raise ValueError("Unexpected header.")
         count = self._unpack_int()
 
@@ -535,7 +535,7 @@ class netcdf_file(object):
 
     def _read_att_array(self):
         header = self.fp.read(4)
-        if not header in [ZERO, NC_ATTRIBUTE]:
+        if header not in [ZERO, NC_ATTRIBUTE]:
             raise ValueError("Unexpected header.")
         count = self._unpack_int()
 
@@ -547,7 +547,7 @@ class netcdf_file(object):
 
     def _read_var_array(self):
         header = self.fp.read(4)
-        if not header in [ZERO, NC_VARIABLE]:
+        if header not in [ZERO, NC_VARIABLE]:
             raise ValueError("Unexpected header.")
 
         begin = 0
@@ -631,7 +631,6 @@ class netcdf_file(object):
 
             for var in rec_vars:
                 self.variables[var].__dict__['data'] = rec_array[var]
-
 
     def _read_var(self):
         name = asstr(self._unpack_string())

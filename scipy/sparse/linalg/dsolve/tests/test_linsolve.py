@@ -6,7 +6,8 @@ import numpy as np
 from numpy import array, finfo, arange, eye, all, unique, ones, dot, matrix
 import numpy.random as random
 from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal, \
-    assert_raises, assert_almost_equal, assert_equal, assert_array_equal, assert_
+    assert_raises, assert_almost_equal, assert_equal, assert_array_equal, assert_, \
+    assert_allclose
 
 import scipy.linalg
 from scipy.linalg import norm, inv
@@ -19,6 +20,7 @@ warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
 # TODO add more comprehensive tests
 use_solver(useUmfpack=False)
+
 
 def toarray(a):
     if isspmatrix(a):
@@ -36,6 +38,23 @@ class TestLinsolve(TestCase):
             b = array([1, 2, 3, 4, 5],dtype='d')
             x = spsolve(A, b, use_umfpack=False)
             assert_(not np.isfinite(x).any())
+
+    def test_singular_gh_3312(self):
+        # "Bad" test case that leads SuperLU to call LAPACK with invalid
+        # arguments. Check that it fails moderately gracefully.
+        ij = np.array([(17, 0), (17, 6), (17, 12), (10, 13)], dtype=np.int32)
+        v = np.array([0.284213, 0.94933781, 0.15767017, 0.38797296])
+        A = csc_matrix((v, ij.T), shape=(20, 20))
+        b = np.arange(20)
+
+        with warnings.catch_warnings():
+            try:
+                # should either raise a runtimeerror or return value
+                # appropriate for singular input
+                x = spsolve(A, b, use_umfpack=False)
+                assert_(not np.isfinite(x).any())
+            except RuntimeError:
+                pass
 
     def test_twodiags(self):
         A = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
@@ -167,7 +186,7 @@ class TestLinsolve(TestCase):
 
     def test_ndarray_support(self):
         A = array([[1., 2.], [2., 0.]])
-        x = array([[1., 1.], [0.5, -0.5]]) 
+        x = array([[1., 1.], [0.5, -0.5]])
         b = array([[2., 0.], [2., 2.]])
 
         assert_array_almost_equal(x, spsolve(A, b))
@@ -183,10 +202,13 @@ class TestLinsolve(TestCase):
 
             def not_c_contig(x):
                 return x.repeat(2)[::2]
+
             def not_1dim(x):
                 return x[:,None]
+
             def bad_type(x):
                 return x.astype(bool)
+
             def too_short(x):
                 return x[:-1]
 
@@ -365,6 +387,41 @@ class TestSplu(object):
                           b.astype(np.complex64))
             assert_raises(TypeError, lu.solve,
                           b.astype(np.complex128))
+
+    def test_superlu_dlamch_i386_nan(self):
+        # SuperLU 4.3 calls some functions returning floats without
+        # declaring them. On i386@linux call convention, this fails to
+        # clear floating point registers after call. As a result, NaN
+        # can appear in the next floating point operation made.
+        #
+        # Here's a test case that triggered the issue.
+        n = 8
+        d = np.arange(n) + 1
+        A = spdiags((d, 2*d, d[::-1]), (-3, 0, 5), n, n)
+        A = A.astype(np.float32)
+        spilu(A)
+        A = A + 1j*A
+        B = A.A
+        assert_(not np.isnan(B).any())
+
+    def test_lu_attr(self):
+        A = self.A
+        n = A.shape[0]
+        lu = splu(A)
+
+        # Check that the decomposition is as advertized
+
+        Pc = np.zeros((n, n))
+        Pc[np.arange(n), lu.perm_c] = 1
+
+        Pr = np.zeros((n, n))
+        Pr[lu.perm_r, np.arange(n)] = 1
+
+        Ad = A.toarray()
+        lhs = Pr.dot(Ad).dot(Pc)
+        rhs = (lu.L * lu.U).toarray()
+
+        assert_allclose(lhs, rhs, atol=1e-10)
 
 
 if __name__ == "__main__":

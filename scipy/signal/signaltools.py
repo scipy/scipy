@@ -173,7 +173,7 @@ def _next_regular(target):
     if not (target & (target-1)):
         return target
 
-    match = float('inf') # Anything found will be smaller
+    match = float('inf')  # Anything found will be smaller
     p5 = 1
     while p5 < target:
         p35 = p5
@@ -318,6 +318,11 @@ def convolve(in1, in2, mode='full'):
     convolve : array
         An N-dimensional array containing a subset of the discrete linear
         convolution of `in1` with `in2`.
+
+    See also
+    --------
+    numpy.polymul : performs polynomial multiplication (same operation, but
+                    also accepts poly1d objects)
 
     """
     volume = asarray(in1)
@@ -791,29 +796,42 @@ def lfiltic(b, a, y, x=None):
 def deconvolve(signal, divisor):
     """Deconvolves `divisor` out of `signal`.
 
+    Returns the quotient and remainder such that
+    ``signal = convolve(divisor, quotient) + remainder``
+
     Parameters
     ----------
-    signal : array
-        Signal input
-    divisor : array
-        Divisor input
+    signal : array_like
+        Signal data, typically a recorded signal
+    divisor : array_like
+        Divisor data, typically an impulse response or filter that was
+        applied to the original signal
 
     Returns
     -------
-    q : array
-        Quotient of the division
-    r : array
+    quotient : ndarray
+        Quotient, typically the recovered original signal
+    remainder : ndarray
         Remainder
 
     Examples
     --------
+    Deconvolve a signal that's been filtered:
+
     >>> from scipy import signal
-    >>> sig = np.array([0, 0, 0, 0, 0, 1, 1, 1, 1,])
-    >>> filter = np.array([1,1,0])
-    >>> res = signal.convolve(sig, filter)
-    >>> signal.deconvolve(res, filter)
-    (array([ 0.,  0.,  0.,  0.,  0.,  1.,  1.,  1.,  1.]),
-     array([ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.]))
+    >>> original = [0, 1, 0, 0, 1, 1, 0, 0]
+    >>> impulse_response = [2, 1]
+    >>> recorded = signal.convolve(impulse_response, original)
+    >>> recorded
+    array([0, 2, 1, 0, 2, 3, 1, 0, 0])
+    >>> recovered, remainder = signal.deconvolve(recorded, impulse_response)
+    >>> recovered
+    array([ 0.,  1.,  0.,  0.,  1.,  1.,  0.,  0.])
+
+    See also
+    --------
+    numpy.polydiv : performs polynomial division (same operation, but
+                    also accepts poly1d objects)
 
     """
     num = atleast_1d(signal)

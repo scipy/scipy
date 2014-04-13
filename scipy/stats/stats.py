@@ -386,10 +386,19 @@ def _nanmedian(arr1d):  # This only works on 1d arrays
     m : float
         The median.
     """
-    cond = ~np.isnan(arr1d)
-    x = np.compress(cond, arr1d, axis=-1)
-    if x.size == 0:
+    x = arr1d.copy()
+    c = np.isnan(x)
+    s = np.where(c)[0]
+    if s.size == x.size:
+        warnings.warn("All-NaN slice encountered", RuntimeWarning)
         return np.nan
+    elif s.size != 0:
+        # select non-nans at end of array
+        enonan = x[-s.size:][~c[-s.size:]]
+        # fill nans in beginning of array with non-nans of end
+        x[s[:enonan.size]] = enonan
+        # slice nans away
+        x = x[:-s.size]
     return np.median(x, overwrite_input=True)
 
 
@@ -2370,14 +2379,15 @@ def f_oneway(*args):
     .. [2] Heiman, G.W.  Research Methods in Statistics. 2002.
 
     """
-    args = list(map(np.asarray, args))  # convert to an numpy array
-    na = len(args)              # ANOVA on 'na' groups, each in it's own array
+    args = [np.asarray(arg, dtype=float) for arg in args]
+    na = len(args)    # ANOVA on 'na' groups, each in it's own array
     alldata = np.concatenate(args)
     bign = len(alldata)
     sstot = ss(alldata) - (square_of_sums(alldata) / float(bign))
     ssbn = 0
     for a in args:
         ssbn += square_of_sums(a) / float(len(a))
+
     ssbn -= (square_of_sums(alldata) / float(bign))
     sswn = sstot - ssbn
     dfbn = na - 1
@@ -2703,7 +2713,7 @@ def spearmanr(a, b=None, axis=0):
     ar = np.apply_along_axis(rankdata,axisout,a)
 
     br = None
-    if not b is None:
+    if b is not None:
         b, axisout = _chk_asarray(b, axis)
         br = np.apply_along_axis(rankdata,axisout,b)
     n = a.shape[axisout]

@@ -151,7 +151,7 @@ def vq(obs, code_book):
     Parameters
     ----------
     obs : ndarray
-        Each row of the 'N' x 'M' array is an observation.  The columns are
+        Each row of the 'M' x 'N' array is an observation.  The columns are
         the "features" seen during each observation. The features must be
         whitened first using the whiten function or something equivalent.
     code_book : ndarray
@@ -168,7 +168,7 @@ def vq(obs, code_book):
     Returns
     -------
     code : ndarray
-        A length N array holding the code book index for each observation.
+        A length M array holding the code book index for each observation.
     dist : ndarray
         The distortion (distance) between the observation and its nearest
         code.
@@ -344,10 +344,10 @@ def py_vq2(obs, code_book):
     diff = obs[newaxis, :, :] - code_book[:,newaxis,:]
     dist = sqrt(np.sum(diff * diff, -1))
     code = argmin(dist, 0)
-    min_dist = minimum.reduce(dist, 0)  # the next line I think is equivalent
-                                      #  - and should be faster
-    # min_dist = choose(code,dist) # but in practice, didn't seem to make
-                                  # much difference.
+    min_dist = minimum.reduce(dist, 0)
+    # The next line I think is equivalent and should be faster than the one
+    # above, but in practice didn't seem to make much difference:
+    # min_dist = choose(code,dist)
     return code, min_dist
 
 

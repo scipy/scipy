@@ -24,22 +24,22 @@ import operator
 
 import numpy as np
 from scipy.lib.six import xrange, zip as izip
-from numpy import arange, zeros, array, dot, matrix, asmatrix, asarray, \
-                  vstack, ndarray, transpose, diag, kron, inf, conjugate, \
-                  int8, ComplexWarning
+from numpy import (arange, zeros, array, dot, matrix, asmatrix, asarray,
+                   vstack, ndarray, transpose, diag, kron, inf, conjugate,
+                   int8, ComplexWarning)
 
 import random
-from numpy.testing import assert_raises, assert_equal, assert_array_equal, \
-        assert_array_almost_equal, assert_almost_equal, assert_, \
-        dec, run_module_suite, assert_allclose
+from numpy.testing import (assert_raises, assert_equal, assert_array_equal,
+        assert_array_almost_equal, assert_almost_equal, assert_,
+        dec, run_module_suite, assert_allclose)
 
 import scipy.linalg
 
 import scipy.sparse as sparse
-from scipy.sparse import csc_matrix, csr_matrix, dok_matrix, \
-        coo_matrix, lil_matrix, dia_matrix, bsr_matrix, \
-        eye, isspmatrix, SparseEfficiencyWarning, issparse
-from scipy.sparse.sputils import supported_dtypes, isscalarlike
+from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
+        coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
+        eye, isspmatrix, SparseEfficiencyWarning, issparse)
+from scipy.sparse.sputils import supported_dtypes, isscalarlike, get_index_dtype
 from scipy.sparse.linalg import splu, expm, inv
 
 from scipy.lib._version import NumpyVersion
@@ -51,7 +51,9 @@ import nose
 warnings.simplefilter('ignore', SparseEfficiencyWarning)
 warnings.simplefilter('ignore', ComplexWarning)
 
-def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None):
+
+def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
+                            downcast_maxval=None, assert_32bit=False):
     """
     Monkeypatch the maxval threshold at which scipy.sparse switches to
     64-bit index arrays, or make it (pseudo-)random.
@@ -60,24 +62,47 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None):
     if maxval_limit is None:
         maxval_limit = 10
 
-    if fixed_dtype is not None:
-        def new_get_index_dtype(arrays=(), maxval=None):
+    if assert_32bit:
+        def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
+            tp = get_index_dtype(arrays, maxval, check_contents)
+            assert_equal(np.iinfo(tp).max, np.iinfo(np.int32).max)
+            assert_(tp == np.int32 or tp == np.intc)
+            return tp
+    elif fixed_dtype is not None:
+        def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
             return fixed_dtype
     elif random:
         counter = np.random.RandomState(seed=1234)
-        def new_get_index_dtype(arrays=(), maxval=None):
+
+        def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
             return (np.int32, np.int64)[counter.randint(2)]
     else:
-        def new_get_index_dtype(arrays=(), maxval=None):
+        def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
             dtype = np.int32
             if maxval is not None:
                 if maxval > maxval_limit:
                     dtype = np.int64
             for arr in arrays:
                 arr = np.asarray(arr)
-                if arr.dtype.itemsize > 4:
+                if arr.dtype > np.int32:
+                    if check_contents:
+                        if arr.size == 0:
+                            # a bigger type not needed
+                            continue
+                        elif np.issubdtype(arr.dtype, np.integer):
+                            maxval = arr.max()
+                            minval = arr.min()
+                            if minval >= -maxval_limit and maxval <= maxval_limit:
+                                # a bigger type not needed
+                                continue
                     dtype = np.int64
             return dtype
+
+    if downcast_maxval is not None:
+        def new_downcast_intp_index(arr):
+            if arr.max() > downcast_maxval:
+                raise AssertionError("downcast limited")
+            return arr.astype(np.intp)
 
     @decorator
     def deco(func, *a, **kw):
@@ -88,14 +113,21 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None):
                    scipy.sparse.compressed, scipy.sparse.construct]
         try:
             for mod in modules:
-                backup.append((mod, getattr(mod, 'get_index_dtype', None)))
+                backup.append((mod, 'get_index_dtype',
+                               getattr(mod, 'get_index_dtype', None)))
                 setattr(mod, 'get_index_dtype', new_get_index_dtype)
+                if downcast_maxval is not None:
+                    backup.append((mod, 'downcast_intp_index',
+                                   getattr(mod, 'downcast_intp_index', None)))
+                    setattr(mod, 'downcast_intp_index', new_downcast_intp_index)
             return func(*a, **kw)
         finally:
-            for mod, oldfunc in backup:
-                setattr(mod, 'get_index_dtype', oldfunc)
+            for mod, name, oldfunc in backup:
+                if oldfunc is not None:
+                    setattr(mod, name, oldfunc)
 
     return deco
+
 
 def _can_cast_samekind(dtype1, dtype2):
     """Compatibility function for numpy 1.5.1; `casting` kw is numpy >=1.6.x
@@ -596,15 +628,74 @@ class _TestCommon:
         for m in mats:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
 
+    @dec.slow
     def test_setdiag(self):
+        def dense_setdiag(a, v, k):
+            v = np.asarray(v)
+            if k >= 0:
+                n = min(a.shape[0], a.shape[1] - k)
+                if v.ndim != 0:
+                    n = min(n, len(v))
+                    v = v[:n]
+                i = np.arange(0, n)
+                j = np.arange(k, k + n)
+                a[i,j] = v
+            elif k < 0:
+                dense_setdiag(a.T, v, -k)
+                return
+
+        def check_setdiag(a, b, k):
+            # Check setting diagonal using a scalar, a vector of
+            # correct length, and too short or too long vectors
+            for r in [-1, len(np.diag(a, k)), 2, 30]:
+                if r < 0:
+                    v = int(np.random.randint(1, 20, size=1))
+                else:
+                    v = np.random.randint(1, 20, size=r)
+
+                dense_setdiag(a, v, k)
+                b.setdiag(v, k)
+
+                # check that dense_setdiag worked
+                d = np.diag(a, k)
+                if np.asarray(v).ndim == 0:
+                    assert_array_equal(d, v, err_msg=msg + " %d" % (r,))
+                else:
+                    n = min(len(d), len(v))
+                    assert_array_equal(d[:n], v[:n], err_msg=msg + " %d" % (r,))
+                # check that sparse setdiag worked
+                assert_array_equal(b.A, a, err_msg=msg + " %d" % (r,))
+
+        # comprehensive test
+        np.random.seed(1234)
+        for dtype in [np.int8, np.float64]:
+            for m in [0, 1, 3, 10]:
+                for n in [0, 1, 3, 10]:
+                    for k in range(-m+1, n-1):
+                        msg = repr((dtype, m, n, k))
+                        a = np.zeros((m, n), dtype=dtype)
+                        b = self.spmatrix((m, n), dtype=dtype)
+
+                        check_setdiag(a, b, k)
+
+                        # check overwriting etc
+                        for k2 in np.random.randint(-m+1, n-1, size=12):
+                            check_setdiag(a, b, k2)
+
+        # simpler test case
         m = self.spmatrix(np.eye(3))
         values = [3, 2, 1]
-        # it is out of limits
         assert_raises(ValueError, m.setdiag, values, k=4)
         m.setdiag(values)
         assert_array_equal(m.diagonal(), values)
-
-        # test setting offdiagonals (k!=0)
+        m.setdiag(values, k=1)
+        assert_array_equal(m.A, np.array([[3, 3, 0],
+                                          [0, 2, 2],
+                                          [0, 0, 1]]))
+        m.setdiag(values, k=-2)
+        assert_array_equal(m.A, np.array([[3, 3, 0],
+                                          [0, 2, 2],
+                                          [3, 0, 1]]))
         m.setdiag((9,), k=2)
         assert_array_equal(m.A[0,2], 9)
         m.setdiag((9,), k=-2)
@@ -642,7 +733,6 @@ class _TestCommon:
             dat = np.matrix(matrices[j], dtype=dtype)
             datsp = self.spmatrix(dat, dtype=dtype)
 
-            # Does the matrix's .sum(axis=...) method work?
             assert_array_almost_equal(dat.sum(), datsp.sum())
             assert_equal(dat.sum().dtype, datsp.sum().dtype)
             assert_array_almost_equal(dat.sum(axis=None), datsp.sum(axis=None))
@@ -651,10 +741,12 @@ class _TestCommon:
             assert_equal(dat.sum(axis=0).dtype, datsp.sum(axis=0).dtype)
             assert_array_almost_equal(dat.sum(axis=1), datsp.sum(axis=1))
             assert_equal(dat.sum(axis=1).dtype, datsp.sum(axis=1).dtype)
-            assert_array_almost_equal(dat.sum(axis=-2), datsp.sum(axis=-2))
-            assert_equal(dat.sum(axis=-2).dtype, datsp.sum(axis=-2).dtype)
-            assert_array_almost_equal(dat.sum(axis=-1), datsp.sum(axis=-1))
-            assert_equal(dat.sum(axis=-1).dtype, datsp.sum(axis=-1).dtype)
+            if NumpyVersion(np.__version__) >= '1.7.0':
+                # np.matrix.sum with negative axis arg doesn't work for < 1.7
+                assert_array_almost_equal(dat.sum(axis=-2), datsp.sum(axis=-2))
+                assert_equal(dat.sum(axis=-2).dtype, datsp.sum(axis=-2).dtype)
+                assert_array_almost_equal(dat.sum(axis=-1), datsp.sum(axis=-1))
+                assert_equal(dat.sum(axis=-1).dtype, datsp.sum(axis=-1).dtype)
 
         for dtype in self.checked_dtypes:
             for j in range(len(matrices)):
@@ -667,7 +759,6 @@ class _TestCommon:
                             [-6, 7, 9]], dtype=dtype)
             datsp = self.spmatrix(dat, dtype=dtype)
 
-            # Does the matrix's .mean(axis=...) method work?
             assert_array_almost_equal(dat.mean(), datsp.mean())
             assert_equal(dat.mean().dtype, datsp.mean().dtype)
             assert_array_almost_equal(dat.mean(axis=None), datsp.mean(axis=None))
@@ -676,10 +767,12 @@ class _TestCommon:
             assert_equal(dat.mean(axis=0).dtype, datsp.mean(axis=0).dtype)
             assert_array_almost_equal(dat.mean(axis=1), datsp.mean(axis=1))
             assert_equal(dat.mean(axis=1).dtype, datsp.mean(axis=1).dtype)
-            assert_array_almost_equal(dat.mean(axis=-2), datsp.mean(axis=-2))
-            assert_equal(dat.mean(axis=-2).dtype, datsp.mean(axis=-2).dtype)
-            assert_array_almost_equal(dat.mean(axis=-1), datsp.mean(axis=-1))
-            assert_equal(dat.mean(axis=-1).dtype, datsp.mean(axis=-1).dtype)
+            if NumpyVersion(np.__version__) >= '1.7.0':
+                # np.matrix.sum with negative axis arg doesn't work for < 1.7
+                assert_array_almost_equal(dat.mean(axis=-2), datsp.mean(axis=-2))
+                assert_equal(dat.mean(axis=-2).dtype, datsp.mean(axis=-2).dtype)
+                assert_array_almost_equal(dat.mean(axis=-1), datsp.mean(axis=-1))
+                assert_equal(dat.mean(axis=-1).dtype, datsp.mean(axis=-1).dtype)
 
         for dtype in self.checked_dtypes:
             yield check, dtype
@@ -850,8 +943,8 @@ class _TestCommon:
         assert_array_equal(spbool.toarray(), arrbool)
 
     def test_astype(self):
-        D = array([[1.0 + 3j, 0, 0],
-                   [0, 2.0 + 5, 0],
+        D = array([[2.0 + 3j, 0, 0],
+                   [0, 4.0 + 5j, 0],
                    [0, 0, 0]])
         S = self.spmatrix(D)
 
@@ -1244,7 +1337,7 @@ class _TestCommon:
         dat_1 = self.dat
         dat_2 = np.array([[]])
         matrices = [dat_1, dat_2]
-        
+
         def check(dtype, j):
             dat = np.matrix(matrices[j], dtype=dtype)
             datsp = self.spmatrix(dat)
@@ -1484,7 +1577,8 @@ class _TestCommon:
 
         for name in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
                      "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
-                     "deg2rad", "rad2deg", "floor", "ceil", "trunc", "sqrt"]:
+                     "deg2rad", "rad2deg", "floor", "ceil", "trunc", "sqrt",
+                     "abs"]:
             yield check, name
 
     def test_binary_ufunc_overrides(self):
@@ -1607,7 +1701,6 @@ class _TestCommon:
                     if i == 'sparse' or j == 'sparse':
                         yield check, i, j, dtype
 
-
     @dec.skipif(NumpyVersion(np.__version__) < '1.9.0.dev-0',
                 "feature requires Numpy 1.9")
     def test_ufunc_object_array(self):
@@ -1642,36 +1735,41 @@ class _TestCommon:
         assert_(isinstance(d, sparse.spmatrix))
         assert_allclose(d.A, (b - c).A)
 
+
 class _TestInplaceArithmetic:
     def test_inplace_dense(self):
         a = np.ones((3, 4))
         b = self.spmatrix(a)
 
-        x = a.copy()
-        y = a.copy()
-        x += a
-        y += b
-        assert_array_equal(x, y)
+        with warnings.catch_warnings():
+            if NumpyVersion(np.__version__) < '1.9.0.dev-0':
+                warnings.simplefilter("ignore", DeprecationWarning)
 
-        x = a.copy()
-        y = a.copy()
-        x -= a
-        y -= b
-        assert_array_equal(x, y)
+            x = a.copy()
+            y = a.copy()
+            x += a
+            y += b
+            assert_array_equal(x, y)
 
-        # This is matrix product, from __rmul__
-        assert_raises(ValueError, operator.imul, x, b)
-        x = a.copy()
-        y = a.copy()
-        x = x.dot(a.T)
-        y *= b.T
-        assert_array_equal(x, y)
+            x = a.copy()
+            y = a.copy()
+            x -= a
+            y -= b
+            assert_array_equal(x, y)
 
-        # Matrix (non-elementwise) division is not defined
-        assert_raises(TypeError, operator.itruediv, x, b)
+            # This is matrix product, from __rmul__
+            assert_raises(ValueError, operator.imul, x, b)
+            x = a.copy()
+            y = a.copy()
+            x = x.dot(a.T)
+            y *= b.T
+            assert_array_equal(x, y)
 
-        # Matrix (non-elementwise) floor division is not defined
-        assert_raises(TypeError, operator.ifloordiv, x, b)
+            # Matrix (non-elementwise) division is not defined
+            assert_raises(TypeError, operator.itruediv, x, b)
+
+            # Matrix (non-elementwise) floor division is not defined
+            assert_raises(TypeError, operator.ifloordiv, x, b)
 
     def test_imul_scalar(self):
         def check(dtype):
@@ -1724,44 +1822,56 @@ class _TestInplaceArithmetic:
 
 class _TestGetSet:
     def test_getelement(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-            D = array([[1,0,0],
-                       [4,3,0],
-                       [0,2,0],
-                       [0,0,0]])
-            A = self.spmatrix(D)
+        def check(dtype):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                D = array([[1,0,0],
+                           [4,3,0],
+                           [0,2,0],
+                           [0,0,0]], dtype=dtype)
+                A = self.spmatrix(D)
 
-            M,N = D.shape
+                M,N = D.shape
 
-            for i in range(-M, M):
-                for j in range(-N, N):
-                    assert_equal(A[i,j], D[i,j])
+                for i in range(-M, M):
+                    for j in range(-N, N):
+                        assert_equal(A[i,j], D[i,j])
 
-            for ij in [(0,3),(-1,3),(4,0),(4,3),(4,-1), (1, 2, 3)]:
-                assert_raises((IndexError, TypeError), A.__getitem__, ij)
+                for ij in [(0,3),(-1,3),(4,0),(4,3),(4,-1), (1, 2, 3)]:
+                    assert_raises((IndexError, TypeError), A.__getitem__, ij)
+
+        for dtype in supported_dtypes:
+            yield check, np.dtype(dtype)
 
     def test_setelement(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-            A = self.spmatrix((3,4))
-            A[0, 0] = 0  # bug 870
-            A[1, 2] = 4.0
-            A[0, 1] = 3
-            A[2, 0] = 2.0
-            A[0,-1] = 8
-            A[-1,-2] = 7
-            A[0, 1] = 5
-            assert_array_equal(A.todense(),[[0,5,0,8],[0,0,4,0],[2,0,7,0]])
+        def check(dtype):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                A = self.spmatrix((3,4), dtype=dtype)
+                A[0, 0] = dtype.type(0)  # bug 870
+                A[1, 2] = dtype.type(4.0)
+                A[0, 1] = dtype.type(3)
+                A[2, 0] = dtype.type(2.0)
+                A[0,-1] = dtype.type(8)
+                A[-1,-2] = dtype.type(7)
+                A[0, 1] = dtype.type(5)
 
-            for ij in [(0,4),(-1,4),(3,0),(3,4),(3,-1)]:
-                assert_raises(IndexError, A.__setitem__, ij, 123.0)
+                if dtype != np.bool_:
+                    assert_array_equal(A.todense(),[[0,5,0,8],[0,0,4,0],[2,0,7,0]])
 
-            for v in [[1,2,3], array([1,2,3])]:
-                assert_raises(ValueError, A.__setitem__, (0,0), v)
+                for ij in [(0,4),(-1,4),(3,0),(3,4),(3,-1)]:
+                    assert_raises(IndexError, A.__setitem__, ij, 123.0)
 
-            for v in [3j]:
-                assert_raises(TypeError, A.__setitem__, (0,0), v)
+                for v in [[1,2,3], array([1,2,3])]:
+                    assert_raises(ValueError, A.__setitem__, (0,0), v)
+
+                if (not np.issubdtype(dtype, np.complexfloating) and
+                        dtype != np.bool_):
+                    for v in [3j]:
+                        assert_raises(TypeError, A.__setitem__, (0,0), v)
+
+        for dtype in supported_dtypes:
+            yield check, np.dtype(dtype)
 
     def test_scalar_assign_2(self):
         n, m = (5, 10)
@@ -1818,6 +1928,7 @@ class _TestSlicing:
         assert_equal(self.spmatrix((1,10), dtype=np.int32)[0,1:5].dtype, np.int32)
         assert_equal(self.spmatrix((1,10), dtype=np.float32)[0,1:5].dtype, np.float32)
         assert_equal(self.spmatrix((1,10), dtype=np.float64)[0,1:5].dtype, np.float64)
+
     def test_get_horiz_slice(self):
         B = asmatrix(arange(50.).reshape(5,10))
         A = self.spmatrix(B)
@@ -2338,6 +2449,19 @@ class _TestFancyIndexingAssign:
             for i, j in [(np.arange(3), np.arange(3)), ((0, 3, 4), (1, 2, 4))]:
                 _test_set_slice(i, j)
 
+    def test_fancy_assignment_dtypes(self):
+        def check(dtype):
+            A = self.spmatrix((5, 5), dtype=dtype)
+            A[[0,1],[0,1]] = dtype.type(1)
+            assert_equal(A.sum(), dtype.type(1)*2)
+            A[0:2,0:2] = dtype.type(1.0)
+            assert_equal(A.sum(), dtype.type(1)*4)
+            A[2,2] = dtype.type(1.0)
+            assert_equal(A.sum(), dtype.type(1)*4 + dtype.type(1))
+
+        for dtype in supported_dtypes:
+            yield check, np.dtype(dtype)
+
     def test_sequence_assignment(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
@@ -2384,7 +2508,6 @@ class _TestFancyIndexingAssign:
         B[:,2] = 0
         B[3,6] = 0
         A = self.spmatrix(B)
-
 
         K = np.array([False, False, False, False, False])
         A[K] = 42
@@ -2677,40 +2800,53 @@ class _TestMinMax(object):
         D[2, 2] = -1
         X = self.spmatrix(D)
 
-        for axis in [-2, -1, 0, 1]:
+        if NumpyVersion(np.__version__) >= '1.7.0':
+            # np.matrix.sum with negative axis arg doesn't work for < 1.7
+            axes = [-2, -1, 0, 1]
+        else:
+            axes = [0, 1]
+
+        for axis in axes:
             assert_array_equal(X.max(axis=axis).A, D.max(axis=axis).A)
             assert_array_equal(X.min(axis=axis).A, D.min(axis=axis).A)
 
         # full matrix
         D = np.matrix(np.arange(1, 51).reshape(10, 5))
         X = self.spmatrix(D)
-        for axis in [-2, -1, 0, 1]:
+        for axis in axes:
             assert_array_equal(X.max(axis=axis).A, D.max(axis=axis).A)
             assert_array_equal(X.min(axis=axis).A, D.min(axis=axis).A)
 
         # empty matrix
         D = np.matrix(np.zeros((10, 5)))
         X = self.spmatrix(D)
-        for axis in [-2, -1, 0, 1]:
+        for axis in axes:
             assert_array_equal(X.max(axis=axis).A, D.max(axis=axis).A)
             assert_array_equal(X.min(axis=axis).A, D.min(axis=axis).A)
+
+        if NumpyVersion(np.__version__) >= '1.7.0':
+            axes_even = [0, -2]
+            axes_odd = [1, -1]
+        else:
+            axes_even = [0]
+            axes_odd = [1]
 
         # zero-size matrices
         D = np.zeros((0, 10))
         X = self.spmatrix(D)
-        for axis in [0, -2]:
+        for axis in axes_even:
             assert_raises(ValueError, X.min, axis=axis)
             assert_raises(ValueError, X.max, axis=axis)
-        for axis in [1, -1]:
+        for axis in axes_odd:
             assert_array_equal(np.zeros((0, 1)), X.min(axis=axis).A)
             assert_array_equal(np.zeros((0, 1)), X.max(axis=axis).A)
 
         D = np.zeros((10, 0))
         X = self.spmatrix(D)
-        for axis in [1, -1]:
+        for axis in axes_odd:
             assert_raises(ValueError, X.min, axis=axis)
             assert_raises(ValueError, X.max, axis=axis)
-        for axis in [0, -2]:
+        for axis in axes_even:
             assert_array_equal(np.zeros((1, 0)), X.min(axis=axis).A)
             assert_array_equal(np.zeros((1, 0)), X.max(axis=axis).A)
 
@@ -2727,8 +2863,11 @@ class _TestGetNnzAxis(object):
         assert_array_equal(bool_dat.sum(), datsp.getnnz())
         assert_array_equal(bool_dat.sum(axis=0), datsp.getnnz(axis=0))
         assert_array_equal(bool_dat.sum(axis=1), datsp.getnnz(axis=1))
-        assert_array_equal(bool_dat.sum(axis=-2), datsp.getnnz(axis=-2))
-        assert_array_equal(bool_dat.sum(axis=-1), datsp.getnnz(axis=-1))
+        if NumpyVersion(np.__version__) >= '1.7.0':
+            # np.matrix.sum with negative axis arg doesn't work for < 1.7
+            assert_array_equal(bool_dat.sum(axis=-2), datsp.getnnz(axis=-2))
+            assert_array_equal(bool_dat.sum(axis=-1), datsp.getnnz(axis=-1))
+
         assert_raises(ValueError, datsp.getnnz, axis=2)
 
 
@@ -3565,8 +3704,8 @@ def _same_sum_duplicate(data, *inds, **kwargs):
             return (data,) + inds + (indptr,)
 
     data = data.repeat(2, axis=0)
-    data[::2] *= 2
-    data[1::2] *= -1
+    data[::2] -= 1
+    data[1::2] = 1
 
     inds = tuple(indices.repeat(2) for indices in inds)
 
@@ -3624,8 +3763,8 @@ class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
                                                     indptr=M.indptr)
         # unsorted
         for start, stop in izip(indptr, indptr[1:]):
-            indices[start:stop] = indices[start:stop][::-1]
-            data[start:stop] = data[start:stop][::-1]
+            indices[start:stop] = indices[start:stop][::-1].copy()
+            data[start:stop] = data[start:stop][::-1].copy()
         return data, indices, indptr
 
 
@@ -3766,6 +3905,8 @@ class Test64Bit(object):
         # Resiliency test, to check that sparse matrices deal reasonably
         # with varying index data types.
 
+        skip = kw.pop('skip', ())
+
         @with_64bit_maxval_limit(**kw)
         def check(cls, method_name):
             instance = cls()
@@ -3779,7 +3920,10 @@ class Test64Bit(object):
 
         for cls in self.TEST_CLASSES:
             for method_name in dir(cls):
-                if method_name.startswith('test_'):
+                method = getattr(cls, method_name)
+                if (method_name.startswith('test_') and
+                        not getattr(method, 'slow', False) and
+                        (cls.__name__ + '.' + method_name) not in skip):
                     msg = self.SKIP_TESTS.get(method_name)
                     yield dec.skipif(msg, msg)(check), cls, method_name
 
@@ -3788,7 +3932,12 @@ class Test64Bit(object):
             yield t
 
     def test_resiliency_random(self):
-        for t in self._check_resiliency(random=True):
+        # bsr_matrix.eliminate_zeros relies on csr_matrix constructor
+        # not making copies of index arrays --- this is not
+        # necessarily true when we pick the index data type randomly
+        skip = ['TestBSR.test_eliminate_zeros']
+
+        for t in self._check_resiliency(random=True, skip=skip):
             yield t
 
     def test_resiliency_all_32(self):
@@ -3799,6 +3948,46 @@ class Test64Bit(object):
         for t in self._check_resiliency(fixed_dtype=np.int64):
             yield t
 
+    def test_no_64(self):
+        for t in self._check_resiliency(assert_32bit=True):
+            yield t
+
+    def test_downcast_intp(self):
+        # Check that bincount and ufunc.reduceat intp downcasts are
+        # dealt with. The point here is to trigger points in the code
+        # that can fail on 32-bit systems when using 64-bit indices,
+        # due to use of functions that only work with intp-size
+        # indices.
+
+        @with_64bit_maxval_limit(fixed_dtype=np.int64,
+                                 downcast_maxval=1)
+        def check_limited():
+            # These involve indices larger than `downcast_maxval`
+            a = csc_matrix([[1, 2], [3, 4], [5, 6]])
+            assert_raises(AssertionError, a.getnnz, axis=1)
+            assert_raises(AssertionError, a.sum, axis=0)
+
+            a = csr_matrix([[1, 2, 3], [3, 4, 6]])
+            assert_raises(AssertionError, a.getnnz, axis=0)
+
+            a = coo_matrix([[1, 2, 3], [3, 4, 5]])
+            assert_raises(AssertionError, a.getnnz, axis=0)
+
+        @with_64bit_maxval_limit(fixed_dtype=np.int64)
+        def check_unlimited():
+            # These involve indices larger than `downcast_maxval`
+            a = csc_matrix([[1, 2], [3, 4], [5, 6]])
+            a.getnnz(axis=1)
+            a.sum(axis=0)
+
+            a = csr_matrix([[1, 2, 3], [3, 4, 6]])
+            a.getnnz(axis=0)
+
+            a = coo_matrix([[1, 2, 3], [3, 4, 5]])
+            a.getnnz(axis=0)
+
+        check_limited()
+        check_unlimited()
 
 if __name__ == "__main__":
     run_module_suite()

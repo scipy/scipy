@@ -2676,6 +2676,8 @@ def show_options(solver=None, method=None):
             The iteration will stop when ``max{|proj g_i | i = 1, ..., n}
             <= gtol`` where ``pg_i`` is the i-th component of the
             projected gradient.
+        eps : float or ndarray
+            If `jac` is approximated, use this value for the step size.            
         maxcor : int
             The maximum number of variable metric corrections used to
             define the limited memory matrix. (The limited memory BFGS

@@ -831,7 +831,7 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
     methods = {'pearsonr': _pearsonr,
                'mle': _mle,
                'all': _all}
-    if not method in methods.keys():
+    if method not in methods.keys():
         raise ValueError("Method %s not recognized." % method)
 
     optimfunc = methods[method]
@@ -989,7 +989,7 @@ def shapiro(x, a=None, reta=False):
         init = 1
     y = sort(x)
     a, w, pw, ifault = statlib.swilk(y, a[:N//2], init)
-    if not ifault in [0,2]:
+    if ifault not in [0,2]:
         warnings.warn(str(ifault))
     if N > 5000:
         warnings.warn("p-value may not be accurate for N > 5000.")
@@ -1078,7 +1078,7 @@ def anderson(x,dist='norm'):
            pp. 591-595.
 
     """
-    if not dist in ['norm','expon','gumbel','extreme1','logistic']:
+    if dist not in ['norm','expon','gumbel','extreme1','logistic']:
         raise ValueError("Invalid distribution; dist must be 'norm', "
                             "'expon', 'gumbel', 'extreme1' or 'logistic'.")
     y = sort(x)
@@ -1111,14 +1111,14 @@ def anderson(x,dist='norm'):
         critical = around(_Avals_logistic / (1.0+0.25/N),3)
     else:  # (dist == 'gumbel') or (dist == 'extreme1'):
         # the following is incorrect, see ticket:1097
-##        def fixedsolve(th,xj,N):
-##            val = stats.sum(xj)*1.0/N
-##            tmp = exp(-xj/th)
-##            term = sum(xj*tmp,axis=0)
-##            term /= sum(tmp,axis=0)
-##            return val - term
-##        s = optimize.fixed_point(fixedsolve, 1.0, args=(x,N),xtol=1e-5)
-##        xbar = -s*log(sum(exp(-x/s),axis=0)*1.0/N)
+        #def fixedsolve(th,xj,N):
+        #    val = stats.sum(xj)*1.0/N
+        #    tmp = exp(-xj/th)
+        #    term = sum(xj*tmp,axis=0)
+        #    term /= sum(tmp,axis=0)
+        #    return val - term
+        #s = optimize.fixed_point(fixedsolve, 1.0, args=(x,N),xtol=1e-5)
+        #xbar = -s*log(sum(exp(-x/s),axis=0)*1.0/N)
         xbar, s = distributions.gumbel_l.fit(x)
         w = (y-xbar)/s
         z = distributions.gumbel_l.cdf(w)
@@ -1274,8 +1274,8 @@ def anderson_ksamp(samples, midrank=True):
            Anderson-Darling Tests, Journal of the American Statistical
            Association, Vol. 82, pp. 918-924.
 
-    Examples:
-    ---------
+    Examples
+    --------
     >>> from scipy import stats
     >>> np.random.seed(314159)
 
@@ -1301,8 +1301,8 @@ def anderson_ksamp(samples, midrank=True):
     (-0.73091722665244196,
       array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856]),
       0.8789283903979661)
-    """
 
+    """
     k = len(samples)
     if (k < 2):
         raise ValueError("anderson_ksamp needs at least two samples")
@@ -1555,7 +1555,7 @@ def levene(*args,**kwds):
     Ni = zeros(k)
     Yci = zeros(k,'d')
 
-    if not center in ['mean','median','trimmed']:
+    if center not in ['mean','median','trimmed']:
         raise ValueError("Keyword argument <center> must be 'mean', 'median'"
               + "or 'trimmed'.")
 
@@ -1731,7 +1731,7 @@ def fligner(*args,**kwds):
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
 
-    if not center in ['mean','median','trimmed']:
+    if center not in ['mean','median','trimmed']:
         raise ValueError("Keyword argument <center> must be 'mean', 'median'"
               + "or 'trimmed'.")
 
@@ -1941,7 +1941,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
 
     """
 
-    if not zero_method in ["wilcox", "pratt", "zsplit"]:
+    if zero_method not in ["wilcox", "pratt", "zsplit"]:
         raise ValueError("Zero method should be either 'wilcox' \
                           or 'pratt' or 'zsplit'")
 

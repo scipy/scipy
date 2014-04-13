@@ -646,8 +646,8 @@ def linkage(y, method='single', metric='euclidean'):
                                        int(_cpy_non_euclid_methods[method]))
         elif method in _cpy_euclid_methods:
             if metric != 'euclidean':
-                raise ValueError(('Method %s requires the distance metric to '
-                                 'be euclidean') % s)
+                raise ValueError(("Method '%s' requires the distance metric "
+                                 "to be euclidean") % method)
             dm = distance.pdist(X, metric)
             Z = np.zeros((n - 1, 4))
             _hierarchy_wrap.linkage_euclid_wrap(dm, Z, X, m, n,
@@ -795,8 +795,8 @@ class ClusterNode:
         n = self.count
 
         curNode = [None] * (2 * n)
-        lvisited = np.zeros((2 * n,), dtype=bool)
-        rvisited = np.zeros((2 * n,), dtype=bool)
+        lvisited = set()
+        rvisited = set()
         curNode[0] = self
         k = 0
         preorder = []
@@ -807,13 +807,13 @@ class ClusterNode:
                 preorder.append(func(nd))
                 k = k - 1
             else:
-                if not lvisited[ndid]:
+                if ndid not in lvisited:
                     curNode[k + 1] = nd.left
-                    lvisited[ndid] = True
+                    lvisited.add(ndid)
                     k = k + 1
-                elif not rvisited[ndid]:
+                elif ndid not in rvisited:
                     curNode[k + 1] = nd.right
-                    rvisited[ndid] = True
+                    rvisited.add(ndid)
                     k = k + 1
                 # If we've visited the left and right of this non-leaf
                 # node already, go up in the tree.
@@ -1311,8 +1311,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
                              'observations.')
         n = Z.shape[0]
         if n > 1:
-            if ((Z[:, 0] < 0).any() or
-                (Z[:, 1] < 0).any()):
+            if ((Z[:, 0] < 0).any() or (Z[:, 1] < 0).any()):
                 if name:
                     raise ValueError(('Linkage \'%s\' contains negative '
                                       'indices.') % name)
@@ -1848,7 +1847,7 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
                 e = matplotlib.patches.Ellipse((y, x),
                                                width=dvw / 100, height=1.0)
                 ax.add_artist(e)
-                e.set_clip_box(axis.bbox)
+                e.set_clip_box(ax.bbox)
                 e.set_alpha(0.5)
                 e.set_facecolor('k')
         if orientation in ('top', 'bottom'):
@@ -1856,7 +1855,7 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
                 e = matplotlib.patches.Ellipse((x, y),
                                              width=1.0, height=dvw / 100)
                 ax.add_artist(e)
-                e.set_clip_box(axis.bbox)
+                e.set_clip_box(ax.bbox)
                 e.set_alpha(0.5)
                 e.set_facecolor('k')
 

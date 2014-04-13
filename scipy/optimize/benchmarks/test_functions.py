@@ -1,19 +1,21 @@
 import numpy as np
 
+
 class SimpleQuadratic(object):
     def fun(self, x):
         return np.dot(x, x)
-    
+
     def der(self, x):
         return 2. * x
 
     def hess(self, x):
         return 2. * np.eye(x.size)
 
+
 class AsymmetricQuadratic(object):
     def fun(self, x):
         return np.dot(x, x) + x[0]
-    
+
     def der(self, x):
         d = 2. * x
         d[0] += 1
@@ -21,6 +23,7 @@ class AsymmetricQuadratic(object):
 
     def hess(self, x):
         return 2. * np.eye(x.size)
+
 
 class LJ(object):
     """
@@ -32,18 +35,18 @@ class LJ(object):
         self.eps = eps
 
     def vij(self, r):
-        return 4.*self.eps * ( (self.sig/r)**12 - (self.sig/r)**6 )
+        return 4.*self.eps * ((self.sig/r)**12 - (self.sig/r)**6)
 
     def dvij(self, r):
-        return 4.*self.eps * ( -12./self.sig*(self.sig/r)**13 + 6./self.sig*(self.sig/r)**7 )
+        return 4.*self.eps * (-12./self.sig*(self.sig/r)**13 + 6./self.sig*(self.sig/r)**7)
 
     def get_energy(self, coords):
         coords = np.reshape(coords, [-1,3])
         natoms = coords.shape[0]
-        energy=0.
+        energy = 0.
         for i in range(natoms):
             for j in range(i+1,natoms):
-                dr = coords[j,:]- coords[i,:]
+                dr = coords[j,:] - coords[i,:]
                 r = np.linalg.norm(dr)
                 energy += self.vij(r)
         return energy
@@ -51,11 +54,11 @@ class LJ(object):
     def get_energy_gradient(self, coords):
         coords = np.reshape(coords, [-1,3])
         natoms = coords.shape[0]
-        energy=0.
+        energy = 0.
         V = np.zeros([natoms,3])
         for i in range(natoms):
             for j in range(i+1,natoms):
-                dr = coords[j,:]- coords[i,:]
+                dr = coords[j,:] - coords[i,:]
                 r = np.linalg.norm(dr)
                 energy += self.vij(r)
                 g = self.dvij(r)
@@ -68,12 +71,8 @@ class LJ(object):
         e, g = self.get_energy_gradient(coords)
         return g
 
+
 class Booth(object):
-#    target_E = 0.
-#    target_coords = np.array([1., 3.])
-#    xmin = np.array([-10., -10.])
-##    xmin = np.array([0., 0.])
-#    xmax = np.array([10., 10.])
     def fun(self, coords):
         x, y = coords
         return (x + 2.*y - 7.)**2 + (2.*x + y - 5.)**2
@@ -84,19 +83,14 @@ class Booth(object):
         dy = 4.*(x + 2.*y - 7.) + 2.*(2.*x + y - 5.)
         return np.array([dx, dy])
 
+
 class Beale(object):
-#    target_E = 0.
-#    target_coords = np.array([3., 0.5])
-#    xmin = np.array([-4.5, -4.5])
-##    xmin = np.array([0., 0.])
-#    xmax = np.array([4.5, 4.5])
     def fun(self, coords):
         x, y = coords
         return (1.5 - x + x*y)**2 + (2.25 - x + x * y**2)**2 + (2.625 - x + x * y**3)**2
-        
+
     def der(self, coords):
         x, y = coords
         dx = 2. * (1.5 - x + x*y) * (-1. + y) + 2. * (2.25 - x + x * y**2) * (-1. + y**2) + 2. * (2.625 - x + x * y**3) * (-1. + y**3)
-        dy = 2. * (1.5 - x + x*y) * (x) +       2. * (2.25 - x + x * y**2) * (2. * y * x) + 2. * (2.625 - x + x * y**3) * (3. * x * y**2)
+        dy = 2. * (1.5 - x + x*y) * (x) + 2. * (2.25 - x + x * y**2) * (2. * y * x) + 2. * (2.625 - x + x * y**3) * (3. * x * y**2)
         return np.array([dx, dy])
-

@@ -222,7 +222,7 @@ class FuncData(object):
         # Grab the correct results
         if self.result_columns is not None:
             # Correct results passed in with the data
-            wanted = tuple([data[:,j] for j in self.result_columns])
+            wanted = tuple([data[:,icol] for icol in self.result_columns])
         else:
             # Function producing correct results passed in
             skip_mask = None

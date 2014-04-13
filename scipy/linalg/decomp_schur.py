@@ -87,7 +87,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     rsf2csf : Convert real Schur form to complex Schur form
 
     """
-    if not output in ['real','complex','r','c']:
+    if output not in ['real','complex','r','c']:
         raise ValueError("argument must be 'real', or 'complex'")
     if check_finite:
         a1 = asarray_chkfinite(a)

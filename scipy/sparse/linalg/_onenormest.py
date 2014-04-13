@@ -348,6 +348,7 @@ def _onenormest_core(A, AT, t, itmax):
     est_old = 0
     S = np.zeros((n, t), dtype=float)
     k = 1
+    ind = None
     while True:
         Y = np.asarray(A_linear_operator.matmat(X))
         nmults += 1

@@ -112,10 +112,10 @@ finally:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/0.14.0-notes.rst'
+RELEASE = 'doc/release/0.15.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v0.13.0'
+LOG_START = 'v0.14.0'
 LOG_END = 'master'
 
 
@@ -401,7 +401,15 @@ def bdist_superpack(options):
             os.remove(target)
         if not os.path.exists(os.path.dirname(target)):
             os.makedirs(os.path.dirname(target))
-        os.rename(source, target)
+
+        try:
+            os.rename(source, target)
+        except OSError:
+            # May be due to dev version having 'Unknown' in name, if git isn't
+            # found.  This can be the case when compiling under Wine.
+            ix = source.find('.dev-') + 5
+            source = source[:ix] + 'Unknown' + source[ix+7:]
+            os.rename(source, target)
 
     bdist_wininst_arch(pyver, 'nosse')
     copy_bdist("nosse")

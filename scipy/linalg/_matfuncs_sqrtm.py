@@ -141,6 +141,17 @@ def sqrtm(A, disp=True, blocksize=64):
            "Blocked Schur Algorithms for Computing the Matrix Square Root,
            Lecture Notes in Computer Science, 7782. pp. 171-182.
 
+    Examples
+    --------
+    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
+    >>> r = sqrtm(a)
+    >>> r
+    array([[ 0.75592895,  1.13389342],
+           [ 0.37796447,  1.88982237]])
+    >>> r.dot(r)
+    array([[ 1.,  3.],
+           [ 1.,  4.]])
+
     """
     A = np.asarray(A)
     if len(A.shape) != 2:

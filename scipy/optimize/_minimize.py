@@ -51,7 +51,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     args : tuple, optional
         Extra arguments passed to the objective function and its
         derivatives (Jacobian, Hessian).
-    method : str, optional
+    method : str or callable, optional
         Type of solver.  Should be one of
 
             - 'Nelder-Mead'
@@ -66,6 +66,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             - 'SLSQP'
             - 'dogleg'
             - 'trust-ncg'
+            - custom - a callable object (added in version 0.14.0)
 
         If not given, chosen to be one of ``BFGS``, ``L-BFGS-B``, ``SLSQP``,
         depending if the problem has constraints or bounds.
@@ -207,6 +208,27 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     wrapper handles infinite values in bounds by converting them into large
     floating values.
 
+    **Custom minimizers**
+
+    It may be useful to pass a custom minimization method, for example
+    when using a frontend to this method such as `scipy.optimize.basinhopping`
+    or a different library.  You can simply pass a callable as the ``method``
+    parameter.
+
+    The callable is called as ``method(fun, x0, args, **kwargs, **options)``
+    where ``kwargs`` corresponds to any other parameters passed to `minimize`
+    (such as `callback`, `hess`, etc.), except the `options` dict, which has
+    its contents also passed as `method` parameters pair by pair.  Also, if
+    `jac` has been passed as a bool type, `jac` and `fun` are mangled so that
+    `fun` returns just the function values and `jac` is converted to a function
+    returning the Jacobian.  The method shall return an ``OptimizeResult``
+    object.
+
+    The provided `method` callable must be able to accept (and possibly ignore)
+    arbitrary parameters; the set of parameters accepted by `minimize` may
+    expand in future versions and then these parameters will be passed to
+    the method.  You can find an example in the scipy.optimize tutorial.
+
     References
     ----------
     .. [1] Nelder, J A, and R Mead. 1965. A Simplex Method for Function
@@ -315,7 +337,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         else:
             method = 'BFGS'
 
-    meth = method.lower()
+    if callable(method):
+        meth = "_custom"
+    else:
+        meth = method.lower()
+
     # deprecated methods
     if meth == 'anneal':
         warn('Method %s is deprecated in scipy 0.14.0' % method,
@@ -328,17 +354,16 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s does not use gradient information (jac).' % method,
              RuntimeWarning)
     # - hess
-    if meth not in ('newton-cg', 'dogleg', 'trust-ncg') and hess is not None:
+    if meth not in ('newton-cg', 'dogleg', 'trust-ncg', '_custom') and hess is not None:
         warn('Method %s does not use Hessian information (hess).' % method,
              RuntimeWarning)
     # - hessp
-    if meth not in ('newton-cg', 'dogleg', 'trust-ncg') and hessp is not None:
+    if meth not in ('newton-cg', 'dogleg', 'trust-ncg', '_custom') and hessp is not None:
         warn('Method %s does not use Hessian-vector product '
                 'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
-    if (meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
-        'dogleg', 'trust-ncg'] and
-        (bounds is not None or any(constraints))):
+    if (meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg', 'dogleg',
+                 'trust-ncg'] and (bounds is not None or any(constraints))):
         warn('Method %s cannot handle constraints nor bounds.' % method,
              RuntimeWarning)
     if meth in ['l-bfgs-b', 'tnc'] and any(constraints):
@@ -348,13 +373,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - callback
-    if (meth in ['anneal', 'cobyla'] and
-        callback is not None):
-        warn('Method %s does not support callback.' % method,
-             RuntimeWarning)
+    if (meth in ['anneal', 'cobyla'] and callback is not None):
+        warn('Method %s does not support callback.' % method, RuntimeWarning)
     # - return_all
     if (meth in ['anneal', 'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and
-        options.get('return_all', False)):
+            options.get('return_all', False)):
         warn('Method %s does not support the return_all option.' % method,
              RuntimeWarning)
 
@@ -376,10 +399,14 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             options.setdefault('ftol', tol)
         if meth in ['bfgs', 'cg', 'l-bfgs-b', 'tnc', 'dogleg', 'trust-ncg']:
             options.setdefault('gtol', tol)
-        if meth in ['cobyla']:
+        if meth in ['cobyla', '_custom']:
             options.setdefault('tol', tol)
 
-    if meth == 'nelder-mead':
+    if meth == '_custom':
+        return method(fun, x0, args=args, jac=jac, hess=hess, hessp=hessp,
+                      bounds=bounds, constraints=constraints,
+                      callback=callback, **options)
+    elif meth == 'nelder-mead':
         return _minimize_neldermead(fun, x0, args, callback, **options)
     elif meth == 'powell':
         return _minimize_powell(fun, x0, args, callback, **options)
@@ -437,12 +464,13 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         corresponding to the optimization bounds.
     args : tuple, optional
         Extra arguments passed to the objective function.
-    method : str, optional
+    method : str or callable, optional
         Type of solver.  Should be one of
 
             - 'Brent'
             - 'Bounded'
             - 'Golden'
+            - custom - a callable object (added in version 0.14.0)
     tol : float, optional
         Tolerance for termination. For detailed control, use solver-specific
         options.
@@ -486,6 +514,23 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     Method *Bounded* can perform bounded minimization. It uses the Brent
     method to find a local minimum in the interval x1 < xopt < x2.
 
+    **Custom minimizers**
+
+    It may be useful to pass a custom minimization method, for example
+    when using some library frontend to minimize_scalar.  You can simply
+    pass a callable as the ``method`` parameter.
+
+    The callable is called as ``method(fun, args, **kwargs, **options)``
+    where ``kwargs`` corresponds to any other parameters passed to `minimize`
+    (such as `bracket`, `tol`, etc.), except the `options` dict, which has
+    its contents also passed as `method` parameters pair by pair.  The method
+    shall return an ``OptimizeResult`` object.
+
+    The provided `method` callable must be able to accept (and possibly ignore)
+    arbitrary parameters; the set of parameters accepted by `minimize` may
+    expand in future versions and then these parameters will be passed to
+    the method.  You can find an example in the scipy.optimize tutorial.
+
     Examples
     --------
     Consider the problem of minimizing the following function.
@@ -508,7 +553,10 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     -2.0000002026
 
     """
-    meth = method.lower()
+    if callable(method):
+        meth = "_custom"
+    else:
+        meth = method.lower()
     if options is None:
         options = {}
 
@@ -518,10 +566,14 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
             warn("Method 'bounded' does not support relative tolerance in x; "
                  "defaulting to absolute tolerance.", RuntimeWarning)
             options['xatol'] = tol
+        elif meth == '_custom':
+            options.setdefault('tol', tol)
         else:
             options.setdefault('xtol', tol)
 
-    if meth == 'brent':
+    if meth == '_custom':
+        return method(fun, args=args, bracket=bracket, bounds=bounds, **options)
+    elif meth == 'brent':
         return _minimize_scalar_brent(fun, bracket, args, **options)
     elif meth == 'bounded':
         if bounds is None:
