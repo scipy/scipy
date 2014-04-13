@@ -232,10 +232,8 @@ class TestLinprog(TestCase):
                             err_msg="Test of linprog with 400 x 40 problem"
                                     "gave incorrect solution")
 
-
     def test_callback(self):
         # Check that callback is as advertised
-
         callback_complete = [False]
         last_xk = []
 
@@ -306,14 +304,12 @@ class TestLinprog(TestCase):
             assert_raises(ValueError, linprog,
                           [1, 2, 3], bounds=bad_bound)
 
-
         assert_raises(ValueError, linprog, [1,2], A_ub=[[1,2]], b_ub=[1,2])
         assert_raises(ValueError, linprog, [1,2], A_ub=[[1]], b_ub=[1])
         assert_raises(ValueError, linprog, [1,2], A_eq=[[1,2]], b_eq=[1,2])
         assert_raises(ValueError, linprog, [1,2], A_eq=[[1]], b_eq=[1])
         assert_raises(ValueError, linprog, [1,2], A_eq=[1], b_eq=1)
         assert_raises(ValueError, linprog, [1,2], A_ub=np.zeros((1,1,3)), b_eq=1)
-
 
 if __name__ == "__main__":
     run_module_suite()
