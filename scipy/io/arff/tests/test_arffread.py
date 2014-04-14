@@ -41,8 +41,9 @@ expect_missing_raw = np.array([[1, 5], [2, 4], [np.nan, np.nan]])
 expect_missing = np.empty(3, [('yop', np.float), ('yap', np.float)])
 expect_missing['yop'] = expect_missing_raw[:, 0]
 expect_missing['yap'] = expect_missing_raw[:, 1]
-expect7_data=np.matrix([[0.488144,0.198068,0.,0.,0.],[0.,0., 0.247897,0.153404,0.],[-0.0621701,0.184011,-0.19966,0.0513624,0.133107]])
+expect7_data = np.matrix([[0.488144,0.198068,0.,0.,0.],[0.,0., 0.247897,0.153404,0.],[-0.0621701,0.184011,-0.19966,0.0513624,0.133107]])
 expected_types7 = ['nominal', 'nominal', 'nominal', 'nominal', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric']
+
 
 class DataTest(TestCase):
     def test1(self):
@@ -63,21 +64,21 @@ class DataTest(TestCase):
 
     def _test(self, test_file):
         data, meta, classes = loadarff(test_file)
-	
-	if sp.issparse(data):
-	    ld=data.shape[0]
-	else:
-	    ld=len(data)
-	if sp.issparse(data):
-	    assert_(scipy.absolute(data.todense()-expect7_data).sum()==0)
-	else:
-	    for i in range(ld):
-		for j in range(4):		
-		    assert_array_almost_equal(expect4_data[i][j], data[i][j])
-	if sp.issparse(data):	    
-	    assert_equal(meta.types(), expected_types7)
-	else:
-	    assert_equal(meta.types(), expected_types)
+
+        if sp.issparse(data):
+            ld = data.shape[0]
+        else:
+            ld = len(data)
+        if sp.issparse(data):
+            assert_(scipy.absolute(data.todense()-expect7_data).sum() == 0)
+        else:
+            for i in range(ld):
+                for j in range(4):
+                    assert_array_almost_equal(expect4_data[i][j], data[i][j])
+        if sp.issparse(data):
+            assert_equal(meta.types(), expected_types7)
+        else:
+            assert_equal(meta.types(), expected_types)
 
     def test_filelike(self):
         # Test reading from file-like object (StringIO)
