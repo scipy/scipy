@@ -607,6 +607,7 @@ def _loadarff(ofile):
         # row elements and got slightly worse performance.
         elems = list(range(ni))
 
+        row = raw.split(delim)
         #check if sparse
         if row[0][0] == '{':
             yield "sparse"
