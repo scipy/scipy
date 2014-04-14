@@ -95,6 +95,8 @@ def get_nominal(attribute):
 def read_data_list(ofile):
     """Read each line of the iterable and put it in a list."""
     data = [next(ofile)]
+    if data[0].strip()[0] == '{':
+        raise ValueError("This looks like a sparse ARFF: not supported yet")
     data.extend([i for i in ofile])
     return data
 
@@ -103,6 +105,8 @@ def get_ndata(ofile):
     """Read the whole file to get number of data attributes."""
     data = [next(ofile)]
     loc = 1
+    if data[0].strip()[0] == '{':
+        raise ValueError("This looks like a sparse ARFF: not supported yet")
     for i in ofile:
         loc += 1
     return loc
@@ -293,12 +297,12 @@ def read_header(ofile):
                 isrel = r_relation.match(i)
                 if isrel:
                     relation = isrel.group(1)
-		    words=i.split()
-		    found=0
-		    for tk in range(len(words)):
-			if words[tk]=='-C':
-			    if tk+1<len(words):
-				nrclasses=int( words[tk+1].replace("'",''))
+                    words = i.split()
+                    found = 0
+                    for tk in range(len(words)):
+                        if words[tk] == '-C':
+                            if tk+1 < len(words):
+                                nrclasses = int(words[tk+1].replace("'",''))
                 else:
                     raise ValueError("Error parsing line %s" % i)
                 i = next(ofile)
@@ -407,7 +411,7 @@ class MetaData(object):
     """
     def __init__(self, rel, attr, nrclasses):
         self.name = rel
-	self._numberclasses=nrclasses
+        self._numberclasses = nrclasses
         # We need the dictionary to be ordered
         # XXX: may be better to implement an ordered dictionary
         self._attributes = {}
@@ -446,8 +450,8 @@ class MetaData(object):
         return attr_types
 
     def numberofclasses(self):
-	"""Return the number of attribute that are classes (the first #)."""
-	return self._numberclasses
+        """Return the number of attribute that are classes (the first #)."""
+        return self._numberclasses
 
 
 def loadarff(f):
@@ -489,9 +493,8 @@ def loadarff(f):
     * date type attributes
     * string type attributes
 
-    It can read files with numeric and nominal attributes.  It can read
-    files with sparse data ({} in the file), it supports also classes
-    as in meka (multi-label weka).  However, this function can
+    It can read files with numeric and nominal attributes.  It cannot read
+    files with sparse data ({} in the file).  However, this function can
     read files with missing data (? in the file), representing the data
     points as NaNs.
 
@@ -604,42 +607,40 @@ def _loadarff(ofile):
         # row elements and got slightly worse performance.
         elems = list(range(ni))
 
-	row = raw.split(delim)
-	#check if sparse
-	if row[0][0]=='{':
-	    yield "sparse"
-	    vd=[tuple(row[0][1:].split())]
-	    vd.extend([tuple(row[tk].split()) for tk in range(1,len(row)-1)])
-	    if row[-1].strip()!='}':
-		vd.append(tuple(row[-1].strip()[:-1].split()))
-	    yield dict(vd)
-	    for raw in row_iter:
-		while r_comment.match(raw):
-		    raw = next(row_iter)
-		while r_empty.match(raw):
-		    raw = next(row_iter)
-		row = raw.split(delim)
-		vd=[tuple(row[0][1:].split())]
-		vd.extend([tuple(row[tk].split()) for tk in range(1,len(row)-1)])
-		
-		if row[-1].strip()!='}':
-		    vd.append(tuple(row[-1].strip()[:-1].split()))
-		yield dict(vd)
-		
-	    
-	else:
-	    yield "full"
-	    yield tuple([convertors[i](row[i]) for i in elems])
-	    for raw in row_iter:
-		while r_comment.match(raw):
-		    raw = next(row_iter)
-		while r_empty.match(raw):
-		    raw = next(row_iter)
-		row = raw.split(delim)
-		yield tuple([convertors[i](row[i]) for i in elems])
+        #check if sparse
+        if row[0][0] == '{':
+            yield "sparse"
+            vd = [tuple(row[0][1:].split())]
+            vd.extend([tuple(row[tk].split()) for tk in range(1,len(row)-1)])
+            if row[-1].strip() != '}':
+                vd.append(tuple(row[-1].strip()[:-1].split()))
+            yield dict(vd)
+            for raw in row_iter:
+                while r_comment.match(raw):
+                    raw = next(row_iter)
+                while r_empty.match(raw):
+                    raw = next(row_iter)
+                row = raw.split(delim)
+                vd = [tuple(row[0][1:].split())]
+                vd.extend([tuple(row[tk].split()) for tk in range(1,len(row)-1)])
+                
+                if row[-1].strip() != '}':
+                    vd.append(tuple(row[-1].strip()[:-1].split()))
+                yield dict(vd)
 
-    a = generator(ofile, delim = delim)
-    sparse= a.next()=="sparse"
+        else:
+            yield "full"
+            yield tuple([convertors[i](row[i]) for i in elems])
+            for raw in row_iter:
+                while r_comment.match(raw):
+                    raw = next(row_iter)
+                while r_empty.match(raw):
+                    raw = next(row_iter)
+                row = raw.split(delim)
+                yield tuple([convertors[i](row[i]) for i in elems])
+
+    a = generator(ofile, delim=delim)
+    sparse = (a.next() == "sparse")
     if sparse:
         data, classes = createsparsevec(a, descr, nrclasses)
         return data, meta, classes
@@ -654,33 +655,27 @@ def _loadarff(ofile):
 def createsparsevec(rows, descr, nrclasses):
     import scipy.sparse
     import scipy as sp
-    drows=[]
-    dcols=[]
-    ddata=[]
-    crows=[]
-    ccols=[]
-    cdata=[]
+    drows = []
+    dcols = []
+    ddata = []
+    crows = []
+    ccols = []
+    cdata = []
 
     for i1,row in enumerate(rows):
-	
-	
-	for cell in row:
-	    icell=int(cell)
-	    if icell<nrclasses:
-		cdata.append(int(row[cell]))
-		ccols.append(icell)
-		crows.append(i1)
-	    else:
-		ddata.append(float(row[cell]))
-		dcols.append(icell-nrclasses)
-		drows.append(i1)
-    classes=scipy.sparse.coo_matrix((cdata,(crows,ccols))).tocsc()
-    data=scipy.sparse.coo_matrix((ddata,(drows,dcols))).tocsc()
+        for cell in row:
+            icell = int(cell)
+            if icell < nrclasses:
+                cdata.append(int(row[cell]))
+                ccols.append(icell)
+                crows.append(i1)
+            else:
+                ddata.append(float(row[cell]))
+                dcols.append(icell-nrclasses)
+                drows.append(i1)
+    classes = scipy.sparse.coo_matrix((cdata,(crows,ccols))).tocsc()
+    data = scipy.sparse.coo_matrix((ddata,(drows,dcols))).tocsc()
     return data, classes
-    
-			    
-    
- 
 
 
 #-----
@@ -710,10 +705,10 @@ def test_weka(filename):
     print(len(data.dtype))
     print(data.size)
     for i1,i in enumerate(meta):
-        if classes!=[] and i1<meta.numberofclasses():
-            if i1==0:
+        if classes != [] and i1 < meta.numberofclasses():
+            if i1 == 0:
                 print("Classes")
-        if meta.numberofclasses()>0 and i1==meta.numberofclasses():
+        if meta.numberofclasses() > 0 and i1 == meta.numberofclasses():
             print("Attributes")
         print_attribute(i,meta[i],data[i])
 
