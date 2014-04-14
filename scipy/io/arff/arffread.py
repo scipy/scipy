@@ -641,7 +641,7 @@ def _loadarff(ofile):
                 yield tuple([convertors[i](row[i]) for i in elems])
 
     a = generator(ofile, delim=delim)
-    sparse = (a.next() == "sparse")
+    sparse = (next(a) == "sparse")
     if sparse:
         data, classes = createsparsevec(a, descr, nrclasses)
         return data, meta, classes
