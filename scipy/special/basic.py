@@ -459,7 +459,7 @@ def erfcinv(y):
     """
     Inverse function for erfc
     """
-    return ndtri((2-y)/2.0)/sqrt(2)
+    return -ndtri(0.5*y)/sqrt(2)
 
 
 def erf_zeros(nt):
