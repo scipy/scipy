@@ -6,13 +6,14 @@ This module exists to avoid cyclic imports.
 """
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['sqrtm']
+__all__ = ['sqrtm', 'sqrtm_psd']
 
 import numpy as np
 
 
 # Local imports
 from .misc import norm
+from .decomp import eigh
 from .lapack import ztrsyl, dtrsyl
 from .decomp_schur import schur, rsf2csf
 
@@ -135,6 +136,16 @@ def sqrtm(A, disp=True, blocksize=64):
 
         Frobenius norm of the estimated error, ||err||_F / ||A||_F
 
+    Notes
+    -----
+    Technically this function computes the unique principal matrix square root
+    and requires that no eigenvalue of the input matrix lies on the closed
+    negative real line.
+
+    See also
+    --------
+    sqrtm_psd : Matrix square root of a positive semi-definite matrix.
+
     References
     ----------
     .. [1] Edvin Deadman, Nicholas J. Higham, Rui Ralha (2013)
@@ -153,11 +164,23 @@ def sqrtm(A, disp=True, blocksize=64):
            [ 1.,  4.]])
 
     """
+    # Validate input.
     A = np.asarray(A)
     if len(A.shape) != 2:
         raise ValueError("Non-matrix input to matrix function.")
     if blocksize < 1:
         raise ValueError("The blocksize should be at least 1.")
+
+    # Special-case matrices that are exactly identically zero.
+    # Otherwise, generic singular matrices do not necessarily have
+    # matrix square roots.
+    A_frob_norm = norm(A, 'fro')
+    if not A_frob_norm:
+        if disp:
+            return A
+        else:
+            return A, np.inf
+
     keep_it_real = np.isrealobj(A)
     if keep_it_real:
         T, Z = schur(A)
@@ -175,6 +198,7 @@ def sqrtm(A, disp=True, blocksize=64):
         X = np.empty_like(A)
         X.fill(np.nan)
 
+    # disp and arg2 are for backward compatibility
     if disp:
         nzeig = np.any(np.diag(T) == 0)
         if nzeig:
@@ -184,9 +208,57 @@ def sqrtm(A, disp=True, blocksize=64):
         return X
     else:
         try:
-            arg2 = norm(X.dot(X) - A,'fro')**2 / norm(A,'fro')
+            arg2 = norm(X.dot(X) - A, 'fro')**2 / A_frob_norm
         except ValueError:
             # NaNs in matrix
             arg2 = np.inf
 
         return X, arg2
+
+
+def sqrtm_psd(A, check_finite=True):
+    """
+    Matrix square root of a positive semi-definite matrix.
+
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Positive semi-definite matrix whose square root to evaluate.
+    check_finite : boolean, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+
+    Returns
+    -------
+    sqrtm : (N, N) ndarray
+        Value of the sqrt function at `A`.
+    
+    See also
+    --------
+    sqrtm : Matrix square root without the psd restriction.
+
+    Examples
+    --------
+    >>> from scipy import linalg
+    >>> a = np.ones((4, 4))
+    >>> r = linalg.sqrtm_psd(a)
+    >>> r
+    array([[ 0.5,  0.5,  0.5,  0.5],
+           [ 0.5,  0.5,  0.5,  0.5],
+           [ 0.5,  0.5,  0.5,  0.5],
+           [ 0.5,  0.5,  0.5,  0.5]])
+    >>> r.dot(r)
+    array([[ 1.,  1.,  1.,  1.],
+           [ 1.,  1.,  1.,  1.],
+           [ 1.,  1.,  1.,  1.],
+           [ 1.,  1.,  1.,  1.]])
+
+    """
+    A = np.asarray(A)
+    if len(A.shape) != 2:
+        raise ValueError("Non-matrix input to matrix function.")
+    w, v = eigh(A, check_finite=check_finite)
+    w = np.sqrt(np.maximum(w, 0))
+    return (v * w).dot(v.conj().T)
+

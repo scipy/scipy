@@ -96,6 +96,7 @@ Matrix Functions
    tanhm - Matrix hyperbolic tangent
    signm - Matrix sign
    sqrtm - Matrix square root
+   sqrtm_psd - Matrix square root of a positive semi-definite matrix
    funm - Evaluating an arbitrary matrix function
    expm_frechet - Frechet derivative of the matrix exponential
    expm_cond - Relative condition number of expm in the Frobenius norm
