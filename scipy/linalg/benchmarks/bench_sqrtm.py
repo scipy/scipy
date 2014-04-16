@@ -55,3 +55,40 @@ def bench_sqrtm():
             # Check that the results are the same for all block sizes.
             assert_allclose(B_1, B_32)
             assert_allclose(B_1, B_64)
+
+
+def bench_sqrtm_psd():
+    np.random.seed(1234)
+    print()
+    print('            Positive Semi-Definite Matrix Square Root')
+    print('================================================================')
+    print('      shape      |    method    |        dtype       |   time   ')
+    print('                 |              |                    | (seconds)')
+    print('----------------------------------------------------------------')
+    fmt = ' %15s |   %9s  | %18s | %6.2f '
+    for n in (64, 256, 1024):
+        for dtype in (np.float64, np.complex128):
+
+            # Sample a random matrix.
+            if dtype == np.complex128:
+                A = np.random.rand(n, n) + 1j*np.random.rand(n, n)
+                A = np.dot(A, np.conj(A).T)
+            else:
+                A = np.random.rand(n, n)
+                A = np.dot(A, A.T)
+
+            # Compute the matrix square root generically.
+            tm = time.clock()
+            B_sqrtm, info = scipy.linalg.sqrtm(A, disp=False)
+            nseconds = time.clock() - tm
+            print(fmt % (A.shape, 'sqrtm', A.dtype, nseconds))
+
+            # Compute the matrix square root using positive semidefiniteness.
+            tm = time.clock()
+            B_sqrtm_psd = scipy.linalg.sqrtm_psd(A)
+            nseconds = time.clock() - tm
+            print(fmt % (A.shape, 'sqrtm_psd', A.dtype, nseconds))
+
+            # Check that the results of the two methods are the same.
+            assert_allclose(B_sqrtm_psd, B_sqrtm)
+

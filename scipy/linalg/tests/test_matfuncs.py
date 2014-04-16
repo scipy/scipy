@@ -14,6 +14,7 @@ import functools
 
 import numpy as np
 from numpy import array, identity, dot, sqrt, double
+from numpy.linalg import matrix_power
 from numpy.testing import (TestCase, run_module_suite,
         assert_array_equal, assert_array_less, assert_equal,
         assert_array_almost_equal, assert_array_almost_equal_nulp,
@@ -22,8 +23,8 @@ from numpy.testing import (TestCase, run_module_suite,
 
 import scipy.linalg
 from scipy.linalg import norm
-from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
-        expm, expm_frechet, expm_cond)
+from scipy.linalg import (funm, signm, logm, sqrtm, sqrtm_psd,
+        fractional_matrix_power, expm, expm_frechet, expm_cond)
 from scipy.linalg.matfuncs import expm2, expm3
 from scipy.linalg import _matfuncs_inv_ssq
 import scipy.linalg._expm_frechet
@@ -374,10 +375,64 @@ class TestSqrtM(TestCase):
     def test_disp(self):
         from io import StringIO
         np.random.seed(1234)
-
         A = np.random.rand(3, 3)
         B = sqrtm(A, disp=True)
         assert_allclose(B.dot(B), A)
+
+    def test_zeros(self):
+        # Although the Higham sqrtm implementation technically does not
+        # allow matrices with eigenvalues on the closed negative real line,
+        # we have special-cased zero-matrices in our implementation.
+        dtypes = np.float32, np.float64, np.complex64, np.complex128
+        for n in range(1, 5):
+            for dtype in dtypes:
+                A = np.zeros((n, n), dtype=dtype)
+                assert_allclose(sqrtm(A), A)
+
+
+class TestSqrtMPSD(TestCase):
+    # Test matrix square roots of positive semidefinite matrices.
+    def _assert_allclose_roundtrip(self, A):
+        A_sqrtm, info = sqrtm(A, disp=False)
+        A_sqrtm_psd = sqrtm_psd(A)
+        assert_allclose(matrix_power(A_sqrtm, 2), A)
+        assert_allclose(matrix_power(A_sqrtm_psd, 2), A)
+
+    def test_zeros_and_ones(self):
+        for dtype in np.float32, np.float64, np.complex64, np.complex128:
+            if dtype in (np.float32, np.complex64):
+                rtol = 1e-5
+            elif dtype in (np.float64, np.complex128):
+                rtol = 1e-7
+            for n in range(1, 5):
+                for f in np.zeros, np.ones:
+                    A = f((n, n), dtype=dtype)
+                    A_sqrtm_psd = sqrtm_psd(A)
+                    assert_allclose(matrix_power(A_sqrtm_psd, 2), A, rtol=rtol)
+
+    def test_random_psd_float(self):
+        np.random.seed(1234)
+        for n in range(1, 5):
+            for m in range(1, 5):
+                for dtype in np.float32, np.float64:
+                    A = np.random.randn(n, m)
+                    A = np.dot(A, A.T)
+                    self._assert_allclose_roundtrip(A)
+
+    def test_random_psd_complex(self):
+        np.random.seed(1234)
+        for n in range(1, 5):
+            for m in range(1, 5):
+                for dtype in np.complex64, np.complex128:
+                    A = np.random.randn(n, m)
+                    A = np.dot(A, A.conj().T)
+                    self._assert_allclose_roundtrip(A)
+
+    def test_check_finite(self):
+        for value in np.nan, np.inf, -np.inf:
+            A = np.identity(4)
+            A[0, 0] = value
+            assert_raises(ValueError, sqrtm_psd, A, check_finite=True)
 
 
 class TestFractionalMatrixPower(TestCase):
