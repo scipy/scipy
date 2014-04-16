@@ -6,14 +6,13 @@ This module exists to avoid cyclic imports.
 """
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['sqrtm', 'sqrtm_psd']
+__all__ = ['sqrtm']
 
 import numpy as np
 
 
 # Local imports
 from .misc import norm
-from .decomp import eigh
 from .lapack import ztrsyl, dtrsyl
 from .decomp_schur import schur, rsf2csf
 
@@ -214,47 +213,4 @@ def sqrtm(A, disp=True, blocksize=64):
             arg2 = np.inf
 
         return X, arg2
-
-
-def sqrtm_psd(A, check_finite=True):
-    """
-    Matrix square root of a positive semi-definite matrix.
-
-    Parameters
-    ----------
-    A : (N, N) array_like
-        Positive semi-definite matrix whose square root to evaluate.
-    check_finite : boolean, optional
-        Whether to check that the input matrices contain only finite numbers.
-        Disabling may give a performance gain, but may result in problems
-        (crashes, non-termination) if the inputs do contain infinities or NaNs.
-
-    Returns
-    -------
-    sqrtm : (N, N) ndarray
-        Value of the sqrt function at `A`.
-    
-    See also
-    --------
-    sqrtm : Matrix square root without the psd restriction.
-
-    Examples
-    --------
-    >>> from scipy import linalg
-    >>> a = np.outer([1, 2], [1, 2])
-    >>> r = scipy.linalg.sqrtm_psd(a)
-    >>> r
-    array([[ 0.4472136 ,  0.89442719],
-           [ 0.89442719,  1.78885438]])
-    >>> r.dot(r)
-    array([[ 1.,  2.],
-           [ 2.,  4.]])
-
-    """
-    A = np.asarray(A)
-    if len(A.shape) != 2:
-        raise ValueError("Non-matrix input to matrix function.")
-    w, v = eigh(A, check_finite=check_finite)
-    w = np.sqrt(np.maximum(w, 0))
-    return (v * w).dot(v.conj().T)
 
