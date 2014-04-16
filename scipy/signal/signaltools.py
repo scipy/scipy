@@ -108,6 +108,30 @@ def correlate(in1, in2, mode='full'):
       z[...,k,...] = sum[..., i_l, ...]
                          x[..., i_l,...] * conj(y[..., i_l + k,...])
 
+    Examples
+    --------
+    Implement a matched filter using cross-correlation, to recover a signal
+    that has passed through a noisy channel.
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> sig = np.repeat([0., 1., 1., 0., 1., 0., 0., 1.], 128)
+    >>> clk = np.arange(64, len(sig), 128)
+    >>> fig, (ax_orig, ax_noise, ax_corr) = plt.subplots(3, 1, sharex=True)
+    >>> ax_orig.plot(sig)
+    >>> ax_orig.plot(clk, sig[clk], 'ro')
+    >>> ax_orig.set_title('Original signal')
+    >>> sig += np.random.randn(len(sig))
+    >>> ax_noise.plot(sig)
+    >>> ax_noise.set_title('Signal with noise')
+    >>> corr = signal.correlate(sig, np.ones(128), mode='same')/128
+    >>> ax_corr.plot(corr)
+    >>> ax_corr.plot(clk, corr[clk], 'ro')
+    >>> ax_corr.axhline(0.5, ls=':')
+    >>> ax_corr.set_title('Cross-correlated with rectangular pulse')
+    >>> ax_orig.margins(0, 0.1)
+    >>> fig.show()
+
     """
     in1 = asarray(in1)
     in2 = asarray(in2)
