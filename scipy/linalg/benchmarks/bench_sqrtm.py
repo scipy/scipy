@@ -10,6 +10,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import scipy.linalg
 
+
 def bench_sqrtm():
     np.random.seed(1234)
     print()
