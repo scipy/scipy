@@ -241,18 +241,14 @@ def sqrtm_psd(A, check_finite=True):
     Examples
     --------
     >>> from scipy import linalg
-    >>> a = np.ones((4, 4))
-    >>> r = linalg.sqrtm_psd(a)
+    >>> a = np.outer([1, 2], [1, 2])
+    >>> r = scipy.linalg.sqrtm_psd(a)
     >>> r
-    array([[ 0.5,  0.5,  0.5,  0.5],
-           [ 0.5,  0.5,  0.5,  0.5],
-           [ 0.5,  0.5,  0.5,  0.5],
-           [ 0.5,  0.5,  0.5,  0.5]])
+    array([[ 0.4472136 ,  0.89442719],
+           [ 0.89442719,  1.78885438]])
     >>> r.dot(r)
-    array([[ 1.,  1.,  1.,  1.],
-           [ 1.,  1.,  1.,  1.],
-           [ 1.,  1.,  1.,  1.],
-           [ 1.,  1.,  1.,  1.]])
+    array([[ 1.,  2.],
+           [ 2.,  4.]])
 
     """
     A = np.asarray(A)
