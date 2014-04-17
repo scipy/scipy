@@ -63,7 +63,7 @@ class DataTest(TestCase):
         self._test(test7)
 
     def _test(self, test_file):
-        data, meta, classes = loadarff(test_file)
+        data, meta, classes = loadarff(test_file,returnclasses=True)
 
         if sp.issparse(data):
             ld = data.shape[0]
@@ -83,10 +83,10 @@ class DataTest(TestCase):
     def test_filelike(self):
         # Test reading from file-like object (StringIO)
         f1 = open(test1)
-        data1, meta1, classes = loadarff(f1)
+        data1, meta1, classes = loadarff(f1,returnclasses=True)
         f1.close()
         f2 = open(test1)
-        data2, meta2, classes = loadarff(StringIO(f2.read()))
+        data2, meta2, classes = loadarff(StringIO(f2.read()),returnclasses=True)
         f2.close()
         assert_(data1 == data2)
         assert_(repr(meta1) == repr(meta2))
@@ -94,7 +94,7 @@ class DataTest(TestCase):
 
 class MissingDataTest(TestCase):
     def test_missing(self):
-        data, meta, classes = loadarff(missing)
+        data, meta, classes = loadarff(missing,returnclasses=True)
         for i in ['yop', 'yap']:
             assert_array_almost_equal(data[i], expect_missing[i])
 
@@ -103,7 +103,7 @@ class HeaderTest(TestCase):
     def test_type_parsing(self):
         # Test parsing type of attribute from their value.
         ofile = open(test2)
-        rel, attrs, nrclasses = read_header(ofile)
+        rel, attrs, nrclasses = read_header(ofile,returnclasses=True)
         ofile.close()
 
         expected = ['numeric', 'numeric', 'numeric', 'numeric', 'numeric',
@@ -115,7 +115,7 @@ class HeaderTest(TestCase):
     def test_badtype_parsing(self):
         # Test parsing wrong type of attribute from their value.
         ofile = open(test3)
-        rel, attrs, nrclasses = read_header(ofile)
+        rel, attrs, nrclasses = read_header(ofile,returnclasses=True)
         ofile.close()
 
         for name, value in attrs:
@@ -124,7 +124,7 @@ class HeaderTest(TestCase):
     def test_fullheader1(self):
         # Parsing trivial header with nothing.
         ofile = open(test1)
-        rel, attrs, nrclasses = read_header(ofile)
+        rel, attrs, nrclasses = read_header(ofile,returnclasses=True)
         ofile.close()
 
         # Test relation

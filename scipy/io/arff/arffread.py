@@ -274,8 +274,9 @@ def tokenize_single_wcomma(val):
     return name, type
 
 
-def read_header(ofile):
+def read_header(ofile, returnclasses=False):
     """Read the header of the iterable ofile."""
+    
     i = next(ofile)
 
     # Pass first comments
@@ -309,7 +310,10 @@ def read_header(ofile):
         else:
             i = next(ofile)
 
-    return relation, attributes, nrclasses
+    if returnclasses:
+        return relation, attributes, nrclasses
+    else:
+        return relation, attributes
 
 
 #--------------------
@@ -409,7 +413,7 @@ class MetaData(object):
     meta, where meta is an instance of MetaData, will return the
     different attribute names in the order they were defined.
     """
-    def __init__(self, rel, attr, nrclasses):
+    def __init__(self, rel, attr, nrclasses=0):
         self.name = rel
         self._numberclasses = nrclasses
         # We need the dictionary to be ordered
@@ -454,7 +458,7 @@ class MetaData(object):
         return self._numberclasses
 
 
-def loadarff(f):
+def loadarff(f,returnclasses=False):
     """
     Read an arff file.
 
@@ -499,21 +503,25 @@ def loadarff(f):
     points as NaNs.
 
     """
+    
     if hasattr(f, 'read'):
         ofile = f
     else:
         ofile = open(f, 'rt')
     try:
-        return _loadarff(ofile)
+        return _loadarff(ofile,returnclasses)
     finally:
         if ofile is not f:  # only close what we opened
             ofile.close()
 
 
-def _loadarff(ofile):
+def _loadarff(ofile, returnclasses):
     # Parse the header file
     try:
-        rel, attr, nrclasses = read_header(ofile)
+        if returnclasses:
+            rel, attr, nrclasses = read_header(ofile, returnclasses)
+        else:
+            rel, attr = read_header(ofile)
     except ValueError as e:
         msg = "Error while parsing header, error was: " + str(e)
         raise ParseArffError(msg)
@@ -525,7 +533,10 @@ def _loadarff(ofile):
         if type == 'string':
             hasstr = True
 
-    meta = MetaData(rel, attr, nrclasses)
+    if returnclasses:
+        meta = MetaData(rel, attr, nrclasses)
+    else:
+        meta = MetaData(rel, attr)
 
     # XXX The following code is not great
     # Build the type descriptor descr and the list of convertors to convert
@@ -643,17 +654,25 @@ def _loadarff(ofile):
     a = generator(ofile, delim=delim)
     sparse = (next(a) == "sparse")
     if sparse:
-        data, classes = createsparsevec(a, descr, nrclasses)
-        return data, meta, classes
+        if returnclasses:
+            data, classes = createsparsevec(a, descr, nrclasses)
+            return data, meta, classes
+        else:
+            data = createsparsevec(a, descr)
+            return data, meta
+            
     else:
         # No error should happen here: it is a bug otherwise
         data = np.fromiter(a, descr)
-        return data, meta, []
+        if returnclasses:
+            return data, meta, []
+        else:
+            return data, meta
 
 
 #create sparse matrixes for class and attributes
 #assume class is 
-def createsparsevec(rows, descr, nrclasses):
+def createsparsevec(rows, descr, nrclasses=0):
     import scipy.sparse
     import scipy as sp
     drows = []
@@ -674,8 +693,8 @@ def createsparsevec(rows, descr, nrclasses):
                 ddata.append(float(row[cell]))
                 dcols.append(icell-nrclasses)
                 drows.append(i1)
-    classes = scipy.sparse.coo_matrix((cdata,(crows,ccols))).tocsc()
     data = scipy.sparse.coo_matrix((ddata,(drows,dcols))).tocsc()
+    classes = scipy.sparse.coo_matrix((cdata,(crows,ccols))).tocsc()
     return data, classes
 
 
@@ -702,16 +721,21 @@ def print_attribute(name, tp, data):
 
 
 def test_weka(filename):
-    data, meta, classes = loadarff(filename)
+    data, meta, classes = loadarff(filename,returnclasses=True)
     print(len(data.dtype))
     print(data.size)
     for i1,i in enumerate(meta):
-        if classes != [] and i1 < meta.numberofclasses():
-            if i1 == 0:
-                print("Classes")
-        if meta.numberofclasses() > 0 and i1 == meta.numberofclasses():
-            print("Attributes")
-        print_attribute(i,meta[i],data[i])
+        if classes != []:
+            if i1 < meta.numberofclasses():
+                if i1 == 0:
+                    print("Classes")
+                print_attribute(i,meta[i],classes[:,i1].todense())
+            else:
+                if i1 == meta.numberofclasses():
+                    print("Attributes")
+                print_attribute(i,meta[i],data[:,i1-meta.numberofclasses()].todense())
+        else:
+            print_attribute(i,meta[i],data[i])
 
 # make sure nose does not find this as a test
 test_weka.__test__ = False
