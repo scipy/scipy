@@ -29,6 +29,13 @@ Deprecated features
 Backwards incompatible changes
 ==============================
 
+scipy.ndimage
+-------------
+
+The functions ``scipy.ndimage.minimum_positions``,
+``scipy.ndimage.maximum_positions`` and ``scipy.ndimage.extrema`` return
+positions as ints instead of floats.
+
 
 Other changes
 =============
