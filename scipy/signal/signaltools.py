@@ -114,19 +114,20 @@ def correlate(in1, in2, mode='full'):
     that has passed through a noisy channel.
 
     >>> from scipy import signal
-    >>> import matplotlib.pyplot as plt
     >>> sig = np.repeat([0., 1., 1., 0., 1., 0., 0., 1.], 128)
-    >>> clk = np.arange(64, len(sig), 128)
+    >>> sig_noise = sig + np.random.randn(len(sig))
+    >>> corr = signal.correlate(sig_noise, np.ones(128), mode='same') / 128
+
+    >>> import matplotlib.pyplot as plt
+    >>> clock = np.arange(64, len(sig), 128)
     >>> fig, (ax_orig, ax_noise, ax_corr) = plt.subplots(3, 1, sharex=True)
     >>> ax_orig.plot(sig)
-    >>> ax_orig.plot(clk, sig[clk], 'ro')
+    >>> ax_orig.plot(clock, sig[clock], 'ro')
     >>> ax_orig.set_title('Original signal')
-    >>> sig += np.random.randn(len(sig))
-    >>> ax_noise.plot(sig)
+    >>> ax_noise.plot(sig_noise)
     >>> ax_noise.set_title('Signal with noise')
-    >>> corr = signal.correlate(sig, np.ones(128), mode='same')/128
     >>> ax_corr.plot(corr)
-    >>> ax_corr.plot(clk, corr[clk], 'ro')
+    >>> ax_corr.plot(clock, corr[clock], 'ro')
     >>> ax_corr.axhline(0.5, ls=':')
     >>> ax_corr.set_title('Cross-correlated with rectangular pulse')
     >>> ax_orig.margins(0, 0.1)
@@ -274,9 +275,10 @@ def fftconvolve(in1, in2, mode="full"):
     as fast as `convolve`.)
 
     >>> from scipy import signal
-    >>> import matplotlib.pyplot as plt
     >>> sig = np.random.randn(1000)
     >>> autocorr = signal.fftconvolve(sig, sig[::-1], mode='full')
+
+    >>> import matplotlib.pyplot as plt
     >>> fig, (ax_orig, ax_mag) = plt.subplots(2, 1)
     >>> ax_orig.plot(sig)
     >>> ax_orig.set_title('White noise')
@@ -293,6 +295,7 @@ def fftconvolve(in1, in2, mode="full"):
     >>> lena = misc.lena()
     >>> kernel = np.outer(signal.gaussian(70, 8), signal.gaussian(70, 8))
     >>> blurred = signal.fftconvolve(lena, kernel, mode='same')
+
     >>> fig, (ax_orig, ax_kernel, ax_blurred) = plt.subplots(1, 3)
     >>> ax_orig.imshow(lena, cmap='gray')
     >>> ax_orig.set_title('Original')
@@ -607,12 +610,13 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     >>> from scipy import signal
     >>> from scipy import misc
-    >>> import matplotlib.pyplot as plt
     >>> lena = misc.lena()
     >>> scharr = np.array([[ -3-3j, 0-10j,  +3 -3j],
     ...                    [-10+0j, 0+ 0j, +10 +0j],
     ...                    [ -3+3j, 0+10j,  +3 +3j]]) # Gx + j*Gy
     >>> grad = signal.convolve2d(lena, scharr, boundary='symm', mode='same')
+
+    >>> import matplotlib.pyplot as plt
     >>> fig, (ax_orig, ax_mag, ax_ang) = plt.subplots(1, 3)
     >>> ax_orig.imshow(lena, cmap='gray')
     >>> ax_orig.set_title('Original')
@@ -693,12 +697,14 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     >>> from scipy import signal
     >>> from scipy import misc
-    >>> import matplotlib.pyplot as plt
     >>> lena = misc.lena() - misc.lena().mean()
     >>> template = np.copy(lena[235:295, 310:370]) # right eye
     >>> template -= template.mean()
-    >>> lena = lena + np.random.randn(*lena.shape)*50
+    >>> lena = lena + np.random.randn(*lena.shape) * 50 # add noise
     >>> corr = signal.correlate2d(lena, template, boundary='symm', mode='same')
+    >>> y, x = np.unravel_index(np.argmax(corr), corr.shape) # find the match
+
+    >>> import matplotlib.pyplot as plt
     >>> fig, (ax_orig, ax_template, ax_corr) = plt.subplots(1, 3)
     >>> ax_orig.imshow(lena, cmap='gray')
     >>> ax_orig.set_title('Original')
@@ -709,7 +715,6 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     >>> ax_corr.imshow(corr, cmap='gray')
     >>> ax_corr.set_title('Cross-correlation')
     >>> ax_corr.set_axis_off()
-    >>> y, x = np.unravel_index(np.argmax(corr), corr.shape)
     >>> ax_orig.plot(x, y, 'ro')
     >>> fig.show()
 
