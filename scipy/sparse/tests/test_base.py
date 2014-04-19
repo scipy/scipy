@@ -1055,6 +1055,11 @@ class _TestCommon:
             assert_array_equal(datsp - A.todense(),dat - A.todense())
 
         for dtype in self.checked_dtypes:
+            if (dtype == np.dtype('bool')) and (
+                    NumpyVersion(np.__version__) >= '1.9.0.dev'):
+                # boolean array subtraction deprecated in 1.9.0
+                continue
+
             yield check, dtype
 
     def test_add0(self):
@@ -1389,6 +1394,11 @@ class _TestCommon:
                 assert_array_equal(sum2, dat + dat)
 
         for dtype in self.checked_dtypes:
+            if (dtype == np.dtype('bool')) and (
+                    NumpyVersion(np.__version__) >= '1.9.0.dev'):
+                # boolean array subtraction deprecated in 1.9.0
+                continue
+
             yield check, dtype
 
     def test_maximum_minimum(self):
@@ -2092,6 +2102,7 @@ class _TestSlicing:
             for j, b in enumerate(slices):
                 yield check_2, a, b
 
+    @dec.skipif(NumpyVersion(np.__version__) >= '1.9.0.dev')
     def test_ellipsis_slicing(self):
         b = asmatrix(arange(50).reshape(5,10))
         a = self.spmatrix(b)
@@ -2709,6 +2720,11 @@ class _TestArithmetic:
                 assert_array_equal(A + Bsp,D1)          # check dense + sparse
 
                 # subtraction
+                if (np.dtype('bool') in [x, y]) and (
+                        NumpyVersion(np.__version__) >= '1.9.0.dev'):
+                    # boolean array subtraction deprecated in 1.9.0
+                    continue
+
                 D1 = A - B
                 S1 = Asp - Bsp
 

@@ -73,7 +73,7 @@ class NumpyVersion():
             else:
                 self.pre_release = ''
 
-        self.is_devversion = bool(re.search(r'.dev-', vstring))
+        self.is_devversion = bool(re.search(r'.dev', vstring))
 
     def _compare_version(self, other):
         """Compare major.minor.bugfix"""
