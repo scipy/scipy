@@ -35,24 +35,24 @@ class TestOdeint(TestCase):
             self._do_problem(problem)
 
 
-class TestOde(TestCase):
-    # Check integrate.ode
+class TestODEClass(TestCase):
+
+    ode_class = None   # Set in subclass.
+
     def _do_problem(self, problem, integrator, method='adams'):
 
         # ode has callback arguments in different order than odeint
         f = lambda t, z: problem.f(z, t)
         jac = None
-
-        integrator_params = {}
         if hasattr(problem, 'jac'):
             jac = lambda t, z: problem.jac(z, t)
-            integrator_params['with_jacobian'] = True
 
-        if problem.lband != None:
+        integrator_params = {}
+        if problem.lband is not None or problem.uband is not None:
             integrator_params['uband'] = problem.uband
             integrator_params['lband'] = problem.lband
 
-        ig = ode(f, jac)
+        ig = self.ode_class(f, jac)
         ig.set_integrator(integrator,
                           atol=problem.atol/10,
                           rtol=problem.rtol/10,
@@ -62,8 +62,14 @@ class TestOde(TestCase):
         ig.set_initial_value(problem.z0, t=0.0)
         z = ig.integrate(problem.stop_t)
 
+        assert_array_equal(z, ig.y)
         assert_(ig.successful(), (problem, method))
         assert_(problem.verify(array([z]), problem.stop_t), (problem, method))
+
+
+class TestOde(TestODEClass):
+
+    ode_class = ode
 
     def test_vode(self):
         # Check the vode solver
@@ -165,27 +171,9 @@ class TestOde(TestCase):
                 assert_allclose(r2.y, 0.2)
 
 
-class TestComplexOde(TestCase):
-    # Check integrate.complex_ode
-    def _do_problem(self, problem, integrator, method='adams'):
+class TestComplexOde(TestODEClass):
 
-        # ode has callback arguments in different order than odeint
-        f = lambda t, z: problem.f(z, t)
-        jac = None
-        if hasattr(problem, 'jac'):
-            jac = lambda t, z: problem.jac(z, t)
-        ig = complex_ode(f, jac)
-        ig.set_integrator(integrator,
-                          atol=problem.atol/10,
-                          rtol=problem.rtol/10,
-                          method=method)
-        ig.set_initial_value(problem.z0, t=0.0)
-        z = ig.integrate(problem.stop_t)
-        z2 = ig.y
-
-        assert_array_equal(z, z2)
-        assert_(ig.successful(), (problem, method))
-        assert_(problem.verify(array([z]), problem.stop_t), (problem, method))
+    ode_class = complex_ode
 
     def test_vode(self):
         # Check the vode solver
@@ -429,22 +417,36 @@ lmbd = [0.17, 0.23, 0.29] # fictious decay constants
 class CoupledDecay(ODE):
     r"""
     3 coupled decays suited for banded treatment
-    (banded mode makes is neccessary when N>>3)
+    (banded mode makes it necessary when N>>3)
     """
 
     stiff = True
     stop_t = 0.5
     z0 = [5.0, 7.0, 13.0]
-    ml = 1
-    mu = 1
+    lband = 1
+    uband = 0
 
     def f(self, z, t):
-        return np.array([-lmbd[0]*z[0], -lmbd[1]*z[1]+lmbd[0]*z[0], -lmbd[2]*z[2]+lmbd[1]*z[1]])
+        return np.array([-lmbd[0]*z[0],
+                         -lmbd[1]*z[1] + lmbd[0]*z[0],
+                         -lmbd[2]*z[2] + lmbd[1]*z[1]])
 
     def jac(self, z, t):
-        j = np.zeros((1*self.ml+self.mu+1, 3), order='F')
+        # The full Jacobian is
+        #
+        #    [-lmbd[0]      0         0   ]
+        #    [ lmbd[0]  -lmbd[1]      0   ]
+        #    [    0      lmbd[1]  -lmbd[2]]
+        #
+        # The lower and upper bandwidths are lband=1 and uband=0, resp.
+        # The representation of this array in packed format is
+        #
+        #    [-lmbd[0]  -lmbd[1]  -lmbd[2]]
+        #    [ lmbd[0]   lmbd[1]      0   ]
+
+        j = np.zeros((self.lband + self.uband + 1, 3), order='F')
         def set_j(ri, ci, val):
-            j[self.mu+ri-ci, ci] = val
+            j[self.uband + ri - ci, ci] = val
         set_j(0, 0, -lmbd[0])
         set_j(1, 0,  lmbd[0])
         set_j(1, 1, -lmbd[1])
@@ -453,31 +455,29 @@ class CoupledDecay(ODE):
         return j
 
     def verify(self, zs, t):
-        # if isinstance(t, float) or isinstance(t, int):
-        #     t = np.array([t])
-        # nt = t.size
-        u = np.vstack(( # Formulae derived by hand
+         # Formulae derived by hand
+        u = np.vstack((
             self.z0[0]*np.exp(-lmbd[0]*t),
-            self.z0[1]*np.exp(-lmbd[1] * t) + \
-                self.z0[0] * lmbd[0] / \
-                (lmbd[1] - lmbd[0]) * \
-                (np.exp(-lmbd[0]*t) - \
+            self.z0[1]*np.exp(-lmbd[1] * t) +
+                self.z0[0] * lmbd[0] /
+                (lmbd[1] - lmbd[0]) *
+                (np.exp(-lmbd[0]*t) -
                 np.exp( - lmbd[1] * t)),
-            self.z0[2] * np.exp(-lmbd[2] * t) + \
-                self.z0[1] * lmbd[1] / \
-                (lmbd[2] - lmbd[1]) * \
-                (np.exp(-lmbd[1]*t) - \
-                 np.exp(-lmbd[2]*t)) + \
-                lmbd[1] * lmbd[0] * \
-                self.z0[0] / (lmbd[1] - \
-                              lmbd[0]) * \
-                (1 / (lmbd[2] - \
-                      lmbd[0]) * \
-                 (np.exp( - lmbd[0] * t) - \
-                  np.exp( - lmbd[2] * t)) - \
-                 1 / (lmbd[2] - \
-                      lmbd[1]) * \
-                 (np.exp( - lmbd[1] * t) - \
+            self.z0[2] * np.exp(-lmbd[2] * t) +
+                self.z0[1] * lmbd[1] /
+                (lmbd[2] - lmbd[1]) *
+                (np.exp(-lmbd[1]*t) -
+                 np.exp(-lmbd[2]*t)) +
+                lmbd[1] * lmbd[0] *
+                self.z0[0] / (lmbd[1] -
+                              lmbd[0]) *
+                (1 / (lmbd[2] -
+                      lmbd[0]) *
+                 (np.exp( - lmbd[0] * t) -
+                  np.exp( - lmbd[2] * t)) -
+                 1 / (lmbd[2] -
+                      lmbd[1]) *
+                 (np.exp( - lmbd[1] * t) -
                   np.exp( - lmbd[2] * t)))
         )).transpose()
         return allclose(u, zs, atol=self.atol, rtol=self.rtol)

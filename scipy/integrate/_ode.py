@@ -88,7 +88,7 @@ __docformat__ = "restructuredtext en"
 import re
 import warnings
 
-from numpy import asarray, array, zeros, int32, isscalar, real, imag
+from numpy import asarray, array, zeros, int32, isscalar, real, imag, vstack
 
 from . import vode as _vode
 from . import _dop
@@ -308,9 +308,9 @@ class ode(object):
     >>> y0, t0 = [1.0j, 2.0], 0
     >>>
     >>> def f(t, y, arg1):
-    >>>     return [1j*arg1*y[0] + y[1], -arg1*y[1]**2]
+    ...     return [1j*arg1*y[0] + y[1], -arg1*y[1]**2]
     >>> def jac(t, y, arg1):
-    >>>     return [[1j*arg1, 1], [0, -arg1*2*y[1]]]
+    ...     return [[1j*arg1, 1], [0, -arg1*2*y[1]]]
 
     The integration:
 
@@ -319,8 +319,8 @@ class ode(object):
     >>> t1 = 10
     >>> dt = 1
     >>> while r.successful() and r.t < t1:
-    >>>     r.integrate(r.t+dt)
-    >>>     print("%g %g" % (r.t, r.y))
+    ...     r.integrate(r.t+dt)
+    ...     print("%g %g" % (r.t, r.y))
 
     References
     ----------
@@ -437,6 +437,25 @@ class ode(object):
                             + " choose another one")
 
 
+def _transform_banded_jac(bjac):
+    """
+    Convert a real matrix of the form (for example)
+
+        [0 0 A B]        [0 0 0 B]
+        [0 0 C D]        [0 0 A D]
+        [E F G H]   to   [0 F C H]
+        [I J K L]        [E J G L]
+                         [I 0 K 0]
+
+    That is, every other column is shifted up one.
+    """
+    # Shift every other column.
+    newjac = zeros((bjac.shape[0] + 1, bjac.shape[1]))
+    newjac[1:,::2] = bjac[:, ::2]
+    newjac[:-1, 1::2] = bjac[:, 1::2]
+    return newjac
+
+
 class complex_ode(ode):
     """
     A wrapper of ode for complex systems.
@@ -476,16 +495,34 @@ class complex_ode(ode):
 
     def _wrap(self, t, y, *f_args):
         f = self.cf(*((t, y[::2] + 1j * y[1::2]) + f_args))
+        # self.tmp is a real-valued array containing the interleaved
+        # real and imaginary parts of f.
         self.tmp[::2] = real(f)
         self.tmp[1::2] = imag(f)
         return self.tmp
 
     def _wrap_jac(self, t, y, *jac_args):
+        # jac is the complex Jacobian computed by the user-defined function.
         jac = self.cjac(*((t, y[::2] + 1j * y[1::2]) + jac_args))
-        self.jac_tmp[1::2, 1::2] = self.jac_tmp[::2, ::2] = real(jac)
-        self.jac_tmp[1::2, ::2] = imag(jac)
-        self.jac_tmp[::2, 1::2] = -self.jac_tmp[1::2, ::2]
-        return self.jac_tmp
+
+        # jac_tmp is the real version of the complex Jacobian.  Each complex
+        # entry in jac, say 2+3j, becomes a 2x2 block of the form
+        #     [2 -3]
+        #     [3  2]
+        jac_tmp = zeros((2*jac.shape[0], 2*jac.shape[1]))
+        jac_tmp[1::2, 1::2] = jac_tmp[::2, ::2] = real(jac)
+        jac_tmp[1::2, ::2] = imag(jac)
+        jac_tmp[::2, 1::2] = -jac_tmp[1::2, ::2]
+
+        ml = getattr(self._integrator, 'ml', None)
+        mu = getattr(self._integrator, 'mu', None)
+        if ml is not None or mu is not None:
+            # Jacobian is banded.  The user's Jacobian function has computed
+            # the complex Jacobian in packed format.  The corresponding
+            # real-valued version has every other column shifted up.
+            jac_tmp = _transform_banded_jac(jac_tmp)
+
+        return jac_tmp
 
     @property
     def y(self):
@@ -503,7 +540,18 @@ class complex_ode(ode):
             Additional parameters for the integrator.
         """
         if name == 'zvode':
-            raise ValueError("zvode should be used with ode, not zode")
+            raise ValueError("zvode must be used with ode, not complex_ode")
+
+        lband = integrator_params.get('lband')
+        uband = integrator_params.get('uband')
+        if lband is not None or uband is not None:
+            # The Jacobian is banded.  Override the user-supplied bandwidths
+            # (which are for the complex Jacobian) with the bandwidths of
+            # the corresponding real-valued Jacobian wrapper of the complex
+            # Jacobian.
+            integrator_params['lband'] = 2*(lband or 0) + 1
+            integrator_params['uband'] = 2*(uband or 0) + 1
+
         return ode.set_integrator(self, name, **integrator_params)
 
     def set_initial_value(self, y, t=0.0):
@@ -512,8 +560,6 @@ class complex_ode(ode):
         self.tmp = zeros(y.size * 2, 'float')
         self.tmp[::2] = real(y)
         self.tmp[1::2] = imag(y)
-        if self.cjac is not None:
-            self.jac_tmp = zeros((y.size * 2, y.size * 2), 'float')
         return ode.set_initial_value(self, self.tmp, t)
 
     def integrate(self, t, step=0, relax=0):
@@ -613,6 +659,20 @@ class IntegratorBase(object):
                 self.__class__.__name__)
 
     #XXX: __str__ method for getting visual state of the integrator
+
+
+def _vode_banded_jac_wrapper(jacfunc, ml, jac_params):
+    """
+    Wrap a banded Jacobian function with a function that pads
+    the Jacobian with `ml` rows of zeros.
+    """
+
+    def jac_wrapper(t, y):
+        jac = asarray(jacfunc(t, y, *jac_params))
+        padded_jac = vstack((jac, zeros((ml, jac.shape[1]))))
+        return padded_jac
+
+    return jac_wrapper
 
 
 class vode(IntegratorBase):
@@ -723,7 +783,6 @@ class vode(IntegratorBase):
         mf = 10 * self.meth + miter
         return mf
 
-
     def reset(self, n, has_jac):
         mf = self._determine_mf_and_set_bands(has_jac)
 
@@ -772,16 +831,24 @@ class vode(IntegratorBase):
         self.success = 1
         self.initialized = False
 
-    def run(self, *args):
+    def run(self, f, jac, y0, t0, t1, f_params, jac_params):
         if self.initialized:
             self.check_handle()
         else:
             self.initialized = True
             self.acquire_new_handle()
-        y1, t, istate = self.runner(*(args[:5] + tuple(self.call_args) +
-                                      args[5:]))
+
+        if self.ml is not None and self.ml > 0:
+            # Banded Jacobian.  Wrap the user-provided function with one
+            # that pads the Jacobian array with the extra `self.ml` rows
+            # required by the f2py-generated wrapper.
+            jac = _vode_banded_jac_wrapper(jac, self.ml, jac_params)
+
+        args = ((f, jac, y0, t0, t1) + tuple(self.call_args) +
+                (f_params, jac_params))
+        y1, t, istate = self.runner(*args)
         if istate < 0:
-            warnings.warn('vode: ' +
+            warnings.warn(self.__class__.__name__ + ': ' +
                           self.messages.get(istate,
                                             'Unexpected istate=%s' % istate))
             self.success = 0
@@ -874,22 +941,6 @@ class zvode(vode):
                           self.zwork, self.rwork, self.iwork, mf]
         self.success = 1
         self.initialized = False
-
-    def run(self, *args):
-        if self.initialized:
-            self.check_handle()
-        else:
-            self.initialized = True
-            self.acquire_new_handle()
-        y1, t, istate = self.runner(*(args[:5] + tuple(self.call_args) +
-                                    args[5:]))
-        if istate < 0:
-            warnings.warn('zvode: ' +
-                self.messages.get(istate, 'Unexpected istate=%s' % istate))
-            self.success = 0
-        else:
-            self.call_args[3] = 2  # upgrade istate from 1 to 2
-        return y1, t
 
 
 if zvode.runner is not None:
