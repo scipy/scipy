@@ -163,7 +163,12 @@ class ode(object):
         - method: 'adams' or 'bdf'
           Which solver to use, Adams (non-stiff) or BDF (stiff)
         - with_jacobian : bool
-          Whether to use the jacobian
+          This option is only considered when the user has not supplied a
+          Jacobian function and has not indicated (by setting either band)
+          that the Jacobian is banded.  In this case, `with_jacobian` specifies
+          whether the iteration method of the ODE solver's correction step is
+          chord iteration with an internally generated full Jacobian or
+          functional iteration with no Jacobian.
         - nsteps : int
           Maximum number of (internally defined) steps allowed during one
           call to the solver.
@@ -232,7 +237,7 @@ class ode(object):
           Setting these requires your jac routine to return the jacobian
           in packed format, jac_packed[i-j+uband, j] = jac[i,j].
         - with_jacobian : bool
-          Whether to use the jacobian
+          *Not used.*
         - nsteps : int
           Maximum number of (internally defined) steps allowed during one
           call to the solver.
@@ -309,7 +314,7 @@ class ode(object):
 
     The integration:
 
-    >>> r = ode(f, jac).set_integrator('zvode', method='bdf', with_jacobian=True)
+    >>> r = ode(f, jac).set_integrator('zvode', method='bdf')
     >>> r.set_initial_value(y0, t0).set_f_params(2.0).set_jac_params(2.0)
     >>> t1 = 10
     >>> dt = 1
@@ -629,7 +634,7 @@ class vode(IntegratorBase):
 
     def __init__(self,
                  method='adams',
-                 with_jacobian=0,
+                 with_jacobian=False,
                  rtol=1e-6, atol=1e-12,
                  lband=None, uband=None,
                  order=12,
@@ -1031,7 +1036,7 @@ class lsoda(IntegratorBase):
     }
 
     def __init__(self,
-                 with_jacobian=0,
+                 with_jacobian=False,
                  rtol=1e-6, atol=1e-12,
                  lband=None, uband=None,
                  nsteps=500,
