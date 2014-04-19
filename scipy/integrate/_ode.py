@@ -665,33 +665,68 @@ class vode(IntegratorBase):
 
         self.initialized = False
 
-    def reset(self, n, has_jac):
-        # Calculate parameters for Fortran subroutine dvode.
+    def _determine_mf_and_set_bands(self, has_jac):
+        """
+        Determine the `MF` parameter (Method Flag) for the Fortran subroutine `dvode`.
+
+        In the Fortran code, the legal values of `MF` are:
+            10, 11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 25,
+            -11, -12, -14, -15, -21, -22, -24, -25
+        but this python wrapper does not use negative values.
+
+        Returns
+
+            mf  = 10*self.meth + miter
+
+        self.meth is the linear multistep method:
+            self.meth == 1:  method="adams"
+            self.meth == 2:  method="bdf"
+
+        miter is the correction iteration method:
+            miter == 0:  Functional iteraton; no Jacobian involved.
+            miter == 1:  Chord iteration with user-supplied full Jacobian
+            miter == 2:  Chord iteration with internally computed full Jacobian
+            miter == 3:  Chord iteration with internally computed diagonal Jacobian
+            miter == 4:  Chord iteration with user-supplied banded Jacobian
+            miter == 5:  Chord iteration with internally computed banded Jacobian
+
+        Side effects: If either self.mu or self.ml is not None and the other is None,
+        then the one that is None is set to 0.
+        """
+
+        jac_is_banded = self.mu is not None or self.ml is not None
+        if jac_is_banded:
+            if self.mu is None:
+                self.mu = 0
+            if self.ml is None:
+                self.ml = 0
+
+        # has_jac is True if the user provided a jacobian function.
         if has_jac:
-            if self.mu is None and self.ml is None:
-                miter = 1
-            else:
-                if self.mu is None:
-                    self.mu = 0
-                if self.ml is None:
-                    self.ml = 0
+            if jac_is_banded:
                 miter = 4
-        else:
-            if self.mu is None and self.ml is None:
-                if self.with_jacobian:
-                    miter = 2
-                else:
-                    miter = 0
             else:
-                if self.mu is None:
-                    self.mu = 0
-                if self.ml is None:
-                    self.ml = 0
+                miter = 1
+        else:
+            if jac_is_banded:
                 if self.ml == self.mu == 0:
-                    miter = 3
+                    miter = 3  # Chord iteration with internal diagonal Jacobian.
                 else:
-                    miter = 5
+                    miter = 5  # Chord iteration with internal banded Jacobian.
+            else:
+                # self.with_jacobian is set by the user in the call to ode.set_integrator.
+                if self.with_jacobian:
+                    miter = 2  # Chord iteration with internal full Jacobian.
+                else:
+                    miter = 0  # Functional iteraton; no Jacobian involved.
+
         mf = 10 * self.meth + miter
+        return mf
+
+
+    def reset(self, n, has_jac):
+        mf = self._determine_mf_and_set_bands(has_jac)
+
         if mf == 10:
             lrw = 20 + 16 * n
         elif mf in [11, 12]:
@@ -710,15 +745,18 @@ class vode(IntegratorBase):
             lrw = 22 + 11 * n + (3 * self.ml + 2 * self.mu) * n
         else:
             raise ValueError('Unexpected mf=%s' % mf)
-        if miter in [0, 3]:
+
+        if mf % 10 in [0, 3]:
             liw = 30
         else:
             liw = 30 + n
+
         rwork = zeros((lrw,), float)
         rwork[4] = self.first_step
         rwork[5] = self.max_step
         rwork[6] = self.min_step
         self.rwork = rwork
+
         iwork = zeros((liw,), int32)
         if self.ml is not None:
             iwork[0] = self.ml
@@ -728,6 +766,7 @@ class vode(IntegratorBase):
         iwork[5] = self.nsteps
         iwork[6] = 2           # mxhnil
         self.iwork = iwork
+
         self.call_args = [self.rtol, self.atol, 1, 1,
                           self.rwork, self.iwork, mf]
         self.success = 1
@@ -778,33 +817,7 @@ class zvode(vode):
     active_global_handle = 0
 
     def reset(self, n, has_jac):
-        # Calculate parameters for Fortran subroutine dvode.
-        if has_jac:
-            if self.mu is None and self.ml is None:
-                miter = 1
-            else:
-                if self.mu is None:
-                    self.mu = 0
-                if self.ml is None:
-                    self.ml = 0
-                miter = 4
-        else:
-            if self.mu is None and self.ml is None:
-                if self.with_jacobian:
-                    miter = 2
-                else:
-                    miter = 0
-            else:
-                if self.mu is None:
-                    self.mu = 0
-                if self.ml is None:
-                    self.ml = 0
-                if self.ml == self.mu == 0:
-                    miter = 3
-                else:
-                    miter = 5
-
-        mf = 10 * self.meth + miter
+        mf = self._determine_mf_and_set_bands(has_jac)
 
         if mf in (10,):
             lzw = 15 * n
@@ -833,7 +846,7 @@ class zvode(vode):
 
         lrw = 20 + n
 
-        if miter in (0, 3):
+        if mf % 10 in (0, 3):
             liw = 30
         else:
             liw = 30 + n
