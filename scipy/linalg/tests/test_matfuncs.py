@@ -7,7 +7,9 @@
 """
 from __future__ import division, print_function, absolute_import
 
-import random, warnings, functools
+import random
+import warnings
+import functools
 
 import numpy as np
 from numpy import array, identity, dot, sqrt, double

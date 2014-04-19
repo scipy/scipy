@@ -9,11 +9,11 @@ import numpy as np
 
 from scipy.lib._version import NumpyVersion
 
-if NumpyVersion(np.__version__) > '1.7.0-dev':
+if NumpyVersion(np.__version__) > '1.7.0.dev':
     _assert_warns = np.testing.assert_warns
 else:
     def _assert_warns(warning_class, func, *args, **kw):
-        """
+        r"""
         Fail unless the given callable throws the specified warning.
 
         This definition is copypasted from numpy 1.9.0.dev.
@@ -25,9 +25,9 @@ else:
             The class defining the warning that `func` is expected to throw.
         func : callable
             The callable to test.
-        \\*args : Arguments
+        *args : Arguments
             Arguments passed to `func`.
-        \\*\\*kwargs : Kwargs
+        **kwargs : Kwargs
             Keyword arguments passed to `func`.
 
         Returns
