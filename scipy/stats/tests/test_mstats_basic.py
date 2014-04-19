@@ -255,25 +255,28 @@ class TestTrimming(TestCase):
 
         a = ma.arange(12)
         a[[0,-1]] = a[5] = masked
-        assert_equal(mstats.trim(a,(2,8)),
-                     [None,None,2,3,4,None,6,7,8,None,None,None])
+        assert_equal(mstats.trim(a, (2,8)),
+                     [None, None, 2, 3, 4, None, 6, 7, 8, None, None, None])
 
-        x = ma.arange(100).reshape(10,10)
-        trimx = mstats.trim(x,(0.1,0.2),relative=True,axis=None)
-        assert_equal(trimx._mask.ravel(),[1]*10+[0]*70+[1]*20)
-        trimx = mstats.trim(x,(0.1,0.2),relative=True,axis=0)
-        assert_equal(trimx._mask.ravel(),[1]*10+[0]*70+[1]*20)
-        trimx = mstats.trim(x,(0.1,0.2),relative=True,axis=-1)
-        assert_equal(trimx._mask.T.ravel(),[1]*10+[0]*70+[1]*20)
+        x = ma.arange(100).reshape(10, 10)
+        expected = [1]*10 + [0]*70 + [1]*20
+        trimx = mstats.trim(x, (0.1,0.2), relative=True, axis=None)
+        assert_equal(trimx._mask.ravel(), expected)
+        trimx = mstats.trim(x, (0.1,0.2), relative=True, axis=0)
+        assert_equal(trimx._mask.ravel(), expected)
+        trimx = mstats.trim(x, (0.1,0.2), relative=True, axis=-1)
+        assert_equal(trimx._mask.T.ravel(), expected)
 
-        x = ma.arange(110).reshape(11,10)
+        # same as above, but with an extra masked row inserted
+        x = ma.arange(110).reshape(11, 10)
         x[1] = masked
-        trimx = mstats.trim(x,(0.1,0.2),relative=True,axis=None)
-        assert_equal(trimx._mask.ravel(),[1]*20+[0]*70+[1]*20)
-        trimx = mstats.trim(x,(0.1,0.2),relative=True,axis=0)
-        assert_equal(trimx._mask.ravel(),[1]*20+[0]*70+[1]*20)
-        trimx = mstats.trim(x.T,(0.1,0.2),relative=True,axis=-1)
-        assert_equal(trimx.T._mask.ravel(),[1]*20+[0]*70+[1]*20)
+        expected = [1]*20 + [0]*70 + [1]*20
+        trimx = mstats.trim(x, (0.1,0.2), relative=True, axis=None)
+        assert_equal(trimx._mask.ravel(), expected)
+        trimx = mstats.trim(x, (0.1,0.2), relative=True, axis=0)
+        assert_equal(trimx._mask.ravel(), expected)
+        trimx = mstats.trim(x.T, (0.1,0.2), relative=True, axis=-1)
+        assert_equal(trimx.T._mask.ravel(), expected)
 
     def test_trim_old(self):
         x = ma.arange(100)
@@ -898,8 +901,8 @@ class TestCompareWithStats(TestCase):
     def test_tmean(self):
         for n in self.get_n():
             x, y, xm, ym = self.generate_xy_sample(n)
-            assert_equal(stats.tmean(x),stats.mstats.tmean(xm))
-            assert_equal(stats.tmean(y),stats.mstats.tmean(ym))
+            assert_almost_equal(stats.tmean(x),stats.mstats.tmean(xm), 14)
+            assert_almost_equal(stats.tmean(y),stats.mstats.tmean(ym), 14)
 
     def test_tmax(self):
         for n in self.get_n():
