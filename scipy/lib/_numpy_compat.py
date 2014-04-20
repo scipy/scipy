@@ -42,6 +42,6 @@ else:
                 raise AssertionError("No warning raised when calling %s"
                         % func.__name__)
             if not l[0].category is warning_class:
-                raise AssertionError("First warning for %s is not a " \
+                raise AssertionError("First warning for %s is not a "
                         "%s( is %s)" % (func.__name__, warning_class, l[0]))
         return result
