@@ -2102,7 +2102,6 @@ class _TestSlicing:
             for j, b in enumerate(slices):
                 yield check_2, a, b
 
-    @dec.skipif(NumpyVersion(np.__version__) >= '1.9.0.dev')
     def test_ellipsis_slicing(self):
         b = asmatrix(arange(50).reshape(5,10))
         a = self.spmatrix(b)
@@ -2110,21 +2109,28 @@ class _TestSlicing:
         assert_array_equal(a[...].A, b[...].A)
         assert_array_equal(a[...,].A, b[...,].A)
 
-        assert_array_equal(a[..., ...].A, b[..., ...].A)
         assert_array_equal(a[1, ...].A, b[1, ...].A)
         assert_array_equal(a[..., 1].A, b[..., 1].A)
         assert_array_equal(a[1:, ...].A, b[1:, ...].A)
         assert_array_equal(a[..., 1:].A, b[..., 1:].A)
 
-        assert_array_equal(a[..., ..., ...].A, b[..., ..., ...].A)
-        assert_array_equal(a[1, ..., ...].A, b[1, ..., ...].A)
-        assert_array_equal(a[1:, ..., ...].A, b[1:, ..., ...].A)
-        assert_array_equal(a[..., ..., 1:].A, b[..., ..., 1:].A)
         assert_array_equal(a[1:, 1, ...].A, b[1:, 1, ...].A)
         assert_array_equal(a[1, ..., 1:].A, b[1, ..., 1:].A)
         # These return ints
         assert_equal(a[1, 1, ...], b[1, 1, ...])
         assert_equal(a[1, ..., 1], b[1, ..., 1])
+
+    @dec.skipif(NumpyVersion(np.__version__) >= '1.9.0.dev')
+    def test_multiple_ellipsis_slicing(self):
+        b = asmatrix(arange(50).reshape(5,10))
+        a = self.spmatrix(b)
+
+        assert_array_equal(a[..., ...].A, b[..., ...].A)
+        assert_array_equal(a[..., ..., ...].A, b[..., ..., ...].A)
+        assert_array_equal(a[1, ..., ...].A, b[1, ..., ...].A)
+        assert_array_equal(a[1:, ..., ...].A, b[1:, ..., ...].A)
+        assert_array_equal(a[..., ..., 1:].A, b[..., ..., 1:].A)
+
         # Bug in NumPy's slicing
         assert_array_equal(a[..., ..., 1].A, b[..., ..., 1].A.reshape((5,1)))
 
