@@ -187,6 +187,16 @@ def setup_package():
     else:
         cmdclass = {}
 
+    # Figure out whether to add ``*_requires = ['numpy']``.
+    # We don't want to do that unconditionally, because we risk updating
+    # an installed numpy which fails too often.  Just if it's not installed, we
+    # may give it a try.  See gh-3379.
+    build_requires = []
+    try:
+        import numpy
+    except:
+        build_requires = ['numpy']
+
     metadata = dict(
         name = 'scipy',
         maintainer = "SciPy Developers",
@@ -200,6 +210,8 @@ def setup_package():
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
         platforms = ["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         test_suite='nose.collector',
+        setup_requires = build_requires,
+        install_requires = build_requires,
     )
 
     if len(sys.argv) >= 2 and ('--help' in sys.argv[1:] or
