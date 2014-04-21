@@ -712,12 +712,13 @@ class TestCompareWithStats(TestCase):
         np.random.seed(1234567)
         x = np.random.randn(n)
         y = x + np.random.randn(n)
-        xm = np.ones(len(x) + 5) * np.nan
-        ym = np.ones(len(y) + 5) * np.nan
+        xm = np.ones(len(x) + 5) * 1e16
+        ym = np.ones(len(y) + 5) * 1e16
         xm[0:len(x)] = x
         ym[0:len(y)] = y
-        xm = np.ma.array(xm, mask=np.isnan(xm))
-        ym = np.ma.array(ym, mask=np.isnan(ym))
+        mask = xm > 9e15
+        xm = np.ma.array(xm, mask=mask)
+        ym = np.ma.array(ym, mask=mask)
         return x, y, xm, ym
 
     def generate_xy_sample2D(self, n, nx):
@@ -764,11 +765,11 @@ class TestCompareWithStats(TestCase):
             x, y, xm, ym = self.generate_xy_sample(n)
             r = stats.gmean(abs(x))
             rm = stats.mstats.gmean(abs(xm))
-            assert_equal(r,rm)
+            assert_equal(r, rm)
 
             r = stats.gmean(abs(y))
             rm = stats.mstats.gmean(abs(ym))
-            assert_equal(r,rm)
+            assert_equal(r, rm)
 
     def test_hmean(self):
         for n in self.get_n():
