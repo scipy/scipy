@@ -63,6 +63,17 @@ class TestInterp2D(TestCase):
         assert_equal(ip1(x, y), ip2(x, y))
         assert_equal(ip1(x, y), ip3(x, y))
 
+    def test_interp2d_eval_unsorted(self):
+        y, x = mgrid[0:2:20j, 0:pi:21j]
+        z = sin(x + 0.5*y)
+        func = interp2d(x, y, z)
+
+        xe = np.array([3, 4, 5])
+        ye = np.array([5.3, 7.1])
+        assert_allclose(func(xe, ye), func(xe, ye[::-1]))
+
+        assert_raises(ValueError, func, xe, ye[::-1], 0, 0, True)
+
     def test_interp2d_linear(self):
         # Ticket #898
         a = np.zeros([5, 5])
@@ -983,7 +994,7 @@ class TestBPolyCalculus(TestCase):
         xp = np.linspace(x[0], x[-1], 21)
         for i in range(k):
             assert_allclose(bp(xp, i), bp.derivative(i)(xp))
-            
+
 
 class TestPolyConversions(TestCase):
     def test_bp_from_pp(self):
@@ -1435,7 +1446,7 @@ class TestRegularGridInterpolator(TestCase):
         # complex values cannot
         assert_raises(ValueError, RegularGridInterpolator,
                       (x, y), values, fill_value=1+2j)
-        
+
 
 class MyValue(object):
     """
@@ -1466,7 +1477,7 @@ class TestInterpN(TestCase):
         z = np.array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
                       [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
         return x, y, z
-    
+
     def test_spline_2d(self):
         x, y, z = self._sample_2d_data()
         lut = RectBivariateSpline(x, y, z)
@@ -1501,7 +1512,7 @@ class TestInterpN(TestCase):
         expected = lut.ev(xi[:, 0], xi[:, 1])
         expected[2:4] = 999.99
         assert_array_almost_equal(actual, expected)
-        
+
         # no extrapolation for splinef2d
         assert_raises(ValueError, interpn, (x, y), z, xi, method="splinef2d",
                       bounds_error=False, fill_value=None)
