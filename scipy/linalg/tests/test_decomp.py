@@ -1978,52 +1978,52 @@ def _make_pos(X):
     # the decompositions can have different signs than verified results
     return np.sign(X)*X
 
+
 class TestOrdQZ(TestCase):
     @classmethod
     def setupClass(cls):
-        #http://www.nag.com/lapack-ex/node119.html
-        cls.A1 = np.array(
-                [[-21.10-22.50j, 53.5-50.5j, -34.5+127.5j,   7.5+ 0.5j],
-                [ -0.46- 7.78j, -3.5-37.5j, -15.5+ 58.5j, -10.5- 1.5j],
-                [  4.30- 5.50j, 39.7-17.1j, -68.5+ 12.5j,  -7.5- 3.5j],
-                [  5.50+ 4.40j, 14.4+43.3j, -32.5- 46.0j, -19.0-32.5j]])
+        # http://www.nag.com/lapack-ex/node119.html
+        cls.A1 = np.array([[-21.10 - 22.50j, 53.5 - 50.5j, -34.5 + 127.5j,
+                            7.5 + 0.5j],
+                           [-0.46 - 7.78j, -3.5 - 37.5j, -15.5 + 58.5j,
+                            -10.5 - 1.5j],
+                           [4.30 - 5.50j, 39.7 - 17.1j, -68.5 + 12.5j,
+                            -7.5 - 3.5j],
+                           [5.50 + 4.40j, 14.4 + 43.3j, -32.5 - 46.0j,
+                            -19.0 - 32.5j]])
 
-        cls.B1 = np.array(
-                [[1.0-5.0j,  1.6+1.2j, -3+0j,  0.0-1.0j],
-                [0.8-0.6j,  3.0-5.0j, -4+3j, -2.4-3.2j],
-                [1.0+0.0j,  2.4+1.8j, -4-5j,  0.0-3.0j],
-                [0.0+1.0j, -1.8+2.4j,  0-4j,  4.0-5.0j]])
+        cls.B1 = np.array([[1.0 - 5.0j, 1.6 + 1.2j, -3 + 0j, 0.0 - 1.0j],
+                           [0.8 - 0.6j, .0 - 5.0j, -4 + 3j, -2.4 - 3.2j],
+                           [1.0 + 0.0j, 2.4 + 1.8j, -4 - 5j, 0.0 - 3.0j],
+                           [0.0 + 1.0j, -1.8 + 2.4j, 0 - 4j, 4.0 - 5.0j]])
 
-        #http://www.nag.com/numeric/fl/nagdoc_fl23/xhtml/F08/f08yuf.xml
-        cls.A2 = np.array(
-                  [[3.9, 12.5, -34.5, -0.5],
-                  [4.3, 21.5, -47.5,  7.5],
-                  [4.3, 21.5, -43.5,  3.5],
-                  [4.4, 26.0, -46.0,  6.0]] )
+        # http://www.nag.com/numeric/fl/nagdoc_fl23/xhtml/F08/f08yuf.xml
+        cls.A2 = np.array([[3.9, 12.5, -34.5, -0.5],
+                           [4.3, 21.5, -47.5, 7.5],
+                           [4.3, 21.5, -43.5, 3.5],
+                           [4.4, 26.0, -46.0, 6.0]])
 
-        cls.B2 = np.array(
-                  [[1,    2,   -3,    1],
-                  [1,    3,   -5,    4],
-                  [1,    3,   -4,    3],
-                  [1,    3,   -4,    4]] )
+        cls.B2 = np.array([[1, 2, -3, 1],
+                           [1, 3, -5, 4],
+                           [1, 3, -4, 3],
+                           [1, 3, -4, 4]])
 
         # example with the eigenvalues
-        # -0.33891648, 1.61217396+0.74013521j, 1.61217396-0.74013521j, 0.61244091
+        # -0.33891648, 1.61217396+0.74013521j, 1.61217396-0.74013521j,
+        # 0.61244091
         # thus featuring:
         #  * one complex conjugate eigenvalue pair,
         #  * one eigenvalue in the lhp
         #  * 2 eigenvalues in the unit circle
         #  * 2 non-real eigenvalues
-        cls.A3 = np.array(
-                    [[ 5.,  1.,  3.,  3.],
-                    [ 4.,  4.,  2.,  7.],
-                    [ 7.,  4.,  1.,  3.],
-                    [ 0.,  4.,  8.,  7.]] )
-        cls.B3 = np.array(
-                    [[  8.,  10.,   6.,  10.],
-                    [  7.,   7.,   2.,   9.],
-                    [  9.,   1.,   6.,   6.],
-                    [  5.,   1.,   4.,   7.]] )
+        cls.A3 = np.array([[5., 1., 3., 3.],
+                           [4., 4., 2., 7.],
+                           [7., 4., 1., 3.],
+                           [0., 4., 8., 7.]])
+        cls.B3 = np.array([[8., 10., 6., 10.],
+                           [7., 7., 2., 9.],
+                           [9., 1., 6., 6.],
+                           [5., 1., 4., 7.]])
 
     def qz_decomp(self, sort):
         retc = ordqz(self.A1, self.B1, sort=sort)
@@ -2046,29 +2046,29 @@ class TestOrdQZ(TestCase):
         for i in range(A.shape[0]):
             # does the current diagonal element belong to a 2-by-2 block
             # that was already checked?
-            if i>0 and A[i,i-1]!=0:
+            if i > 0 and A[i, i - 1] != 0:
                 continue
             # take care of 2-by-2 blocks
-            if i<AA.shape[0]-1 and AA[i+1,i]!=0:
-                evals, _ = eig(AA[i:i+2,i:i+2], BB[i:i+2,i:i+2])
+            if i < AA.shape[0] - 1 and AA[i + 1, i] != 0:
+                evals, _ = eig(AA[i:i + 2, i:i + 2], BB[i:i + 2, i:i + 2])
                 # make sure the pair of complex conjugate eigenvalues
                 # is ordered consistently (positive imaginary part first)
-                if evals[0].imag<0:
-                    evals = evals[[1,0]]
-                tmp = alpha[i:i+2]/beta[i:i+2]
-                if tmp[0].imag<0:
-                    tmp = tmp[[1,0]]
+                if evals[0].imag < 0:
+                    evals = evals[[1, 0]]
+                tmp = alpha[i:i + 2]/beta[i:i + 2]
+                if tmp[0].imag < 0:
+                    tmp = tmp[[1, 0]]
                 assert_array_almost_equal(evals, tmp)
             else:
-                assert_almost_equal(AA[i,i]/BB[i,i], alpha[i]/beta[i])
+                assert_almost_equal(AA[i, i]/BB[i, i], alpha[i]/beta[i])
         sortfun = sort
-        if sortfun=='lhp':
+        if sortfun == 'lhp':
             sortfun = lambda x, y: (x/y).real < 0
-        if sortfun=='rhp':
+        if sortfun == 'rhp':
             sortfun = lambda x, y: (x/y).real > 0
-        if sortfun=='iuc':
+        if sortfun == 'iuc':
             sortfun = lambda x, y: np.abs(x/y) < 1
-        if sortfun=='ouc':
+        if sortfun == 'ouc':
             sortfun = lambda x, y: np.abs(x/y) > 1
         lastsort = True
         for i in range(A.shape[0]):

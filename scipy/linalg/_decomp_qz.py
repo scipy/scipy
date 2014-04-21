@@ -20,28 +20,26 @@ def _select_function(sort):
         # assume the user knows what they're doing
         sfunction = sort
     elif sort == 'lhp':
-        sfunction = lambda x,y: (np.real(x/y) < 0.0)
+        sfunction = lambda x, y: (np.real(x/y) < 0.0)
     elif sort == 'rhp':
-        sfunction = lambda x,y: (np.real(x/y) > 0.0)
+        sfunction = lambda x, y: (np.real(x/y) > 0.0)
     elif sort == 'iuc':
-        sfunction = lambda x,y: (abs(x/y) < 1.0)
+        sfunction = lambda x, y: (abs(x/y) < 1.0)
     elif sort == 'ouc':
-        sfunction = lambda x,y: (abs(x/y) > 1.0)
+        sfunction = lambda x, y: (abs(x/y) > 1.0)
     else:
         raise ValueError("sort parameter must be None, a callable, or "
-            "one of ('lhp','rhp','iuc','ouc')")
+                         "one of ('lhp','rhp','iuc','ouc')")
 
     return sfunction
+
 
 def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         overwrite_b=False, check_finite=True):
     if sort is not None:
-        from warnings import warn
-        warn(FutureWarning, "Use ordqz instead. The sort keyword will be "
-             "removed in 0.18")
         # Disabled due to segfaults on win32, see ticket 1717.
         raise ValueError("The 'sort' input of qz() has to be None and will be "
-                         "removed in 0.18. Use ordqz instead.")
+                         "removed in a future release. Use ordqz instead.")
 
     if output not in ['real', 'complex', 'r', 'c']:
         raise ValueError("argument must be 'real', or 'complex'")
@@ -59,7 +57,7 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         raise ValueError("Array dimensions must be square and agree")
 
     typa = a1.dtype.char
-    if output in ['complex', 'c'] and typa not in ['F','D']:
+    if output in ['complex', 'c'] and typa not in ['F', 'D']:
         if typa in _double_precision:
             a1 = a1.astype('D')
             typa = 'D'
@@ -67,7 +65,7 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
             a1 = a1.astype('F')
             typa = 'F'
     typb = b1.dtype.char
-    if output in ['complex', 'c'] and typb not in ['F','D']:
+    if output in ['complex', 'c'] and typb not in ['F', 'D']:
         if typb in _double_precision:
             b1 = b1.astype('D')
             typb = 'D'
@@ -75,17 +73,17 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
             b1 = b1.astype('F')
             typb = 'F'
 
-    overwrite_a = overwrite_a or (_datacopied(a1,A))
-    overwrite_b = overwrite_b or (_datacopied(b1,B))
+    overwrite_a = overwrite_a or (_datacopied(a1, A))
+    overwrite_b = overwrite_b or (_datacopied(b1, B))
 
-    gges, = get_lapack_funcs(('gges',), (a1,b1))
+    gges, = get_lapack_funcs(('gges',), (a1, b1))
 
     if lwork is None or lwork == -1:
         # get optimal work array size
         result = gges(lambda x: None, a1, b1, lwork=-1)
         lwork = result[-2][0].real.astype(np.int)
 
-    sfunction = lambda x : None
+    sfunction = lambda x: None
     result = gges(sfunction, a1, b1, lwork=lwork, overwrite_a=overwrite_a,
                   overwrite_b=overwrite_b, sort_t=0)
 
@@ -94,19 +92,20 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         raise ValueError("Illegal value in argument %d of gges" % -info)
     elif info > 0 and info <= a_n:
         warnings.warn("The QZ iteration failed. (a,b) are not in Schur "
-                "form, but ALPHAR(j), ALPHAI(j), and BETA(j) should be correct "
-                "for J=%d,...,N" % info-1, UserWarning)
+                      "form, but ALPHAR(j), ALPHAI(j), and BETA(j) should be "
+                      "correct for J=%d,...,N" % info-1, UserWarning)
     elif info == a_n+1:
         raise LinAlgError("Something other than QZ iteration failed")
     elif info == a_n+2:
         raise LinAlgError("After reordering, roundoff changed values of some "
-                "complex eigenvalues so that leading eigenvalues in the "
-                "Generalized Schur form no longer satisfy sort=True. "
-                "This could also be caused due to scaling.")
+                          "complex eigenvalues so that leading eigenvalues "
+                          "in the Generalized Schur form no longer satisfy "
+                          "sort=True. This could also be due to scaling.")
     elif info == a_n+3:
         raise LinAlgError("Reordering failed in <s,d,c,z>tgsen")
 
     return result, gges.typecode
+
 
 def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
        overwrite_b=False, check_finite=True):
@@ -151,11 +150,11 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         may be passed that, given a eigenvalue, returns a boolean denoting
         whether the eigenvalue should be sorted to the top-left (True). For
         real matrix pairs, the sort function takes three real arguments
-        (alphar, alphai, beta). The eigenvalue x = (alphar + alphai*1j)/beta.
-        For complex matrix pairs or output='complex', the sort function
-        takes two complex arguments (alpha, beta). The eigenvalue
-        x = (alpha/beta).
-        Alternatively, string parameters may be used:
+        (alphar, alphai, beta). The eigenvalue
+        ``x = (alphar + alphai*1j)/beta``.  For complex matrix pairs or
+        output='complex', the sort function takes two complex arguments
+        (alpha, beta). The eigenvalue ``x = (alpha/beta)``.  Alternatively,
+        string parameters may be used:
 
             - 'lhp'   Left-hand plane (x.real < 0.0)
             - 'rhp'   Right-hand plane (x.real > 0.0)
@@ -216,23 +215,24 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
 
     See also
     --------
-    scipy.linalg.ordqz
+    ordqz
     """
     # output for real
     # AA, BB, sdim, alphar, alphai, beta, vsl, vsr, work, info
     # output for complex
     # AA, BB, sdim, alpha, beta, vsl, vsr, work, info
     result, _ = _qz(A, B, output=output, lwork=lwork, sort=sort,
-                 overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                 check_finite=check_finite)
+                    overwrite_a=overwrite_a, overwrite_b=overwrite_b,
+                    check_finite=check_finite)
     return result[0], result[1], result[-4], result[-3]
 
-def ordqz(A, B, sort='lhp', output='real',  overwrite_a=False,
+
+def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
           overwrite_b=False, check_finite=True):
     """
     QZ decomposition for a pair of matrices with reordering.
 
-    .. versionadded:: 0.18.0
+    .. versionadded:: 0.17.0
 
     Parameters
     ----------
@@ -245,10 +245,10 @@ def ordqz(A, B, sort='lhp', output='real',  overwrite_a=False,
         may be passed that, given a eigenvalue, returns a boolean denoting
         whether the eigenvalue should be sorted to the top-left (True). For
         real matrix pairs, the sort function takes three real arguments
-        (alphar, alphai, beta). The eigenvalue x = (alphar + alphai*1j)/beta.
-        For complex matrix pairs or output='complex', the sort function
-        takes two complex arguments (alpha, beta). The eigenvalue
-        x = (alpha/beta).
+        (alphar, alphai, beta). The eigenvalue
+        ``x = (alphar + alphai*1j)/beta``.  For complex matrix pairs or
+        output='complex', the sort function takes two complex arguments
+        (alpha, beta). The eigenvalue ``x = (alpha/beta)``.
         Alternatively, string parameters may be used:
 
             - 'lhp'   Left-hand plane (x.real < 0.0)
@@ -256,14 +256,14 @@ def ordqz(A, B, sort='lhp', output='real',  overwrite_a=False,
             - 'iuc'   Inside the unit circle (x*x.conjugate() < 1.0)
             - 'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
 
-    output : str {'real','complex'}
+    output : str {'real','complex'}, optional
         Construct the real or complex QZ decomposition for real matrices.
         Default is 'real'.
-    overwrite_a : bool
+    overwrite_a : bool, optional
         If True, the contents of A are overwritten.
-    overwrite_b : bool
+    overwrite_b : bool, optional
         If True, the contents of B are overwritten.
-    check_finite : boolean
+    check_finite : bool, optional
         If true checks the elements of `A` and `B` are finite numbers. If
         false does no checking and passes matrix through to
         underlying algorithm.
@@ -285,24 +285,24 @@ def ordqz(A, B, sort='lhp', output='real',  overwrite_a=False,
 
     Notes
     -----
-    On exit, (ALPHAR(j) + ALPHAI(j)*i)/BETA(j), j=1,...,N, will be the
-    generalized eigenvalues.  ALPHAR(j) + ALPHAI(j)*i and BETA(j),j=1,...,N
-    are the diagonals of the complex Schur form (S,T) that would result if the
-    2-by-2 diagonal blocks of the real generalized Schur form of (A,B) were
-    further reduced to triangular form using complex unitary transformations.
-    If ALPHAI(j) is zero, then the j-th eigenvalue is real; if positive, then
-    the j-th and (j+1)-st eigenvalues are a complex conjugate pair, with
-    ALPHAI(j+1) negative.
+    On exit, ``(ALPHAR(j) + ALPHAI(j)*i)/BETA(j), j=1,...,N``, will be the
+    generalized eigenvalues.  ``ALPHAR(j) + ALPHAI(j)*i`` and
+    ``BETA(j),j=1,...,N`` are the diagonals of the complex Schur form (S,T)
+    that would result if the 2-by-2 diagonal blocks of the real generalized
+    Schur form of (A,B) were further reduced to triangular form using complex
+    unitary transformations. If ALPHAI(j) is zero, then the j-th eigenvalue is
+    real; if positive, then the ``j``-th and ``(j+1)``-st eigenvalues are a complex
+    conjugate pair, with ``ALPHAI(j+1)`` negative.
 
     See also
     --------
-    scipy.linalg.qz
+    qz
     """
     #NOTE: should users be able to set these?
     lwork = None
     result, typ = _qz(A, B, output=output, lwork=lwork, sort=None,
-                 overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                 check_finite=check_finite)
+                      overwrite_a=overwrite_a, overwrite_b=overwrite_b,
+                      check_finite=check_finite)
     AA, BB, Q, Z = result[0], result[1], result[-4], result[-3]
     if typ not in 'cz':
         alpha, beta = result[3] + result[4]*1.j, result[5]
@@ -312,12 +312,12 @@ def ordqz(A, B, sort='lhp', output='real',  overwrite_a=False,
     sfunction = _select_function(sort)
     select = sfunction(alpha, beta)
 
-    tgsen, = get_lapack_funcs(('tgsen',), (AA,BB))
+    tgsen, = get_lapack_funcs(('tgsen',), (AA, BB))
 
     if lwork is None or lwork == -1:
         result = tgsen(select, AA, BB, Q, Z, lwork=-1)
         if typ in 'cz':
-            lwork = result[-3][0].real.astype(np.int) # not complex
+            lwork = result[-3][0].real.astype(np.int)  # not complex
             # looks like wrong value passed to ZTGSYL if not
             lwork += 1
         else:
@@ -334,10 +334,11 @@ def ordqz(A, B, sort='lhp', output='real',  overwrite_a=False,
         raise ValueError("Illegal value in argument %d of tgsen" % -info)
     elif info == 1:
         raise ValueError("Reordering of (A, B) failed because the transformed"
-                " matrix pair (A, B) would be too far from generalized "
-                "Schur form; the problem is very ill-conditioned. (A, B) may "
-                "have been partially reorded. If requested, 0 is returned in "
-                "DIF(*), PL, and PR.")
+                         " matrix pair (A, B) would be too far from "
+                         "generalized Schur form; the problem is very "
+                         "ill-conditioned. (A, B) may have been partially "
+                         "reorded. If requested, 0 is returned in DIF(*), "
+                         "PL, and PR.")
 
     # for real results has a, b, alphar, alphai, beta, q, z, m, pl, pr, dif,
     # work, iwork, info
