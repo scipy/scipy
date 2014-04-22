@@ -17,9 +17,6 @@ from scipy.sparse.linalg import onenormest
 import scipy.special
 
 
-__all__ = ['logm', 'fractional_matrix_power']
-
-
 class LogmRankWarning(UserWarning):
     pass
 
@@ -680,30 +677,11 @@ def _remainder_matrix_power(A, t):
         return U
 
 
-def fractional_matrix_power(A, p):
+def _fractional_matrix_power(A, p):
     """
     Compute the fractional power of a matrix.
 
-    Proceeds according to the discussion in section (6) of [1]_.
-
-    Parameters
-    ----------
-    A : (N, N) array_like
-        Matrix whose fractional power to evaluate.
-    p : float
-        Fractional power.
-
-    Returns
-    -------
-    X : (N, N) array_like
-        The fractional power of the matrix.
-
-    References
-    ----------
-    .. [1] Nicholas J. Higham and Lijing lin (2011)
-           "A Schur-Pade Algorithm for Fractional Powers of a Matrix."
-           SIAM Journal on Matrix Analysis and Applications,
-           32 (3). pp. 1056-1078. ISSN 0895-4798
+    See the fractional_matrix_power docstring in matfuncs.py for more info.
 
     """
     A = np.asarray(A)
@@ -868,49 +846,23 @@ def _logm_force_nonsingular_triangular_matrix(T, inplace=False):
     return T
 
 
-def logm(A):
+def _logm(A):
     """
-    Compute matrix logarithm.
+    Compute the matrix logarithm.
 
-    The matrix logarithm is the inverse of
-    expm: expm(logm(`A`)) == `A`
+    See the logm docstring in matfuncs.py for more info.
 
-    Parameters
-    ----------
-    A : (N, N) array_like
-        Matrix whose logarithm to evaluate
-
-    Returns
-    -------
-    logm : (N, N) ndarray
-        Matrix logarithm of `A`
-
-    References
-    ----------
-    .. [1] Awad H. Al-Mohy and Nicholas J. Higham (2012)
-           "Improved Inverse Scaling and Squaring Algorithms
-           for the Matrix Logarithm."
-           SIAM Journal on Scientific Computing, 34 (4). C152-C169.
-           ISSN 1095-7197
-
-    .. [2] Nicholas J. Higham (2008)
-           "Functions of Matrices: Theory and Computation"
-           ISBN 978-0-898716-46-7
-
-    .. [3] Nicholas J. Higham and Lijing lin (2011)
-           "A Schur-Pade Algorithm for Fractional Powers of a Matrix."
-           SIAM Journal on Matrix Analysis and Applications,
-           32 (3). pp. 1056-1078. ISSN 0895-4798
+    Notes
+    -----
+    In this function we look at triangular matrices that are similar
+    to the input matrix.  If any diagonal entry of such a triangular matrix
+    is exactly zero then the original matrix is singular.
+    The matrix logarithm does not exist for such matrices,
+    but in such cases we will pretend that the diagonal entries that are zero
+    are actually slightly positive by an ad-hoc amount, in the interest
+    of returning something more useful than NaN.  This will cause a warning.
 
     """
-    # In this function we look at triangular matrices that are similar
-    # to the input matrix.  If any diagonal entry of such a triangular matrix
-    # is exactly zero then the original matrix is singular.
-    # The matrix logarithm does not exist for such matrices,
-    # but in such cases we will pretend that the diagonal entries that are zero
-    # are actually slightly positive by an ad-hoc amount, in the interest
-    # of returning something more useful than NaN.  This will cause a warning.
-
     A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
