@@ -96,11 +96,48 @@ def _maybe_real(A, B, tol=None):
 
 
 def fractional_matrix_power(A, t):
+    """
+    Compute the fractional power of a matrix.
+
+    Proceeds according to the discussion in section (6) of [1]_.
+
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix whose fractional power to evaluate.
+    t : float
+        Fractional power.
+
+    Returns
+    -------
+    X : (N, N) array_like
+        The fractional power of the matrix.
+
+    References
+    ----------
+    .. [1] Nicholas J. Higham and Lijing lin (2011)
+           "A Schur-Pade Algorithm for Fractional Powers of a Matrix."
+           SIAM Journal on Matrix Analysis and Applications,
+           32 (3). pp. 1056-1078. ISSN 0895-4798
+
+    Examples
+    --------
+    >>> from scipy.linalg import fractional_matrix_power
+    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
+    >>> b = fractional_matrix_power(a, 0.5)
+    >>> b
+    array([[ 0.75592895,  1.13389342],
+           [ 0.37796447,  1.88982237]])
+    >>> np.dot(b, b)      # Verify square root
+    array([[ 1.,  3.],
+           [ 1.,  4.]])
+
+    """
     # This fixes some issue with imports;
     # this function calls onenormest which is in scipy.sparse.
     A = _asarray_square(A)
     import scipy.linalg._matfuncs_inv_ssq
-    return scipy.linalg._matfuncs_inv_ssq.fractional_matrix_power(A, t)
+    return scipy.linalg._matfuncs_inv_ssq._fractional_matrix_power(A, t)
 
 
 def logm(A, disp=True):
@@ -127,6 +164,23 @@ def logm(A, disp=True):
 
         1-norm of the estimated error, ||err||_1 / ||A||_1
 
+    References
+    ----------
+    .. [1] Awad H. Al-Mohy and Nicholas J. Higham (2012)
+           "Improved Inverse Scaling and Squaring Algorithms
+           for the Matrix Logarithm."
+           SIAM Journal on Scientific Computing, 34 (4). C152-C169.
+           ISSN 1095-7197
+
+    .. [2] Nicholas J. Higham (2008)
+           "Functions of Matrices: Theory and Computation"
+           ISBN 978-0-898716-46-7
+
+    .. [3] Nicholas J. Higham and Lijing lin (2011)
+           "A Schur-Pade Algorithm for Fractional Powers of a Matrix."
+           SIAM Journal on Matrix Analysis and Applications,
+           32 (3). pp. 1056-1078. ISSN 0895-4798
+
     Examples
     --------
     >>> from scipy.linalg import logm, expm
@@ -143,7 +197,7 @@ def logm(A, disp=True):
     A = _asarray_square(A)
     # Avoid circular import ... this is OK, right?
     import scipy.linalg._matfuncs_inv_ssq
-    F = scipy.linalg._matfuncs_inv_ssq.logm(A)
+    F = scipy.linalg._matfuncs_inv_ssq._logm(A)
     errtol = 1000*eps
     #TODO use a better error approximation
     errest = norm(expm(F)-A,1) / norm(A,1)
