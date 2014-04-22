@@ -120,6 +120,18 @@ def fractional_matrix_power(A, t):
            SIAM Journal on Matrix Analysis and Applications,
            32 (3). pp. 1056-1078. ISSN 0895-4798
 
+    Examples
+    --------
+    >>> from scipy.linalg import fractional_matrix_power
+    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
+    >>> b = fractional_matrix_power(a, 0.5)
+    >>> b
+    array([[ 0.75592895,  1.13389342],
+           [ 0.37796447,  1.88982237]])
+    >>> np.dot(b, b)      # Verify square root
+    array([[ 1.,  3.],
+           [ 1.,  4.]])
+
     """
     # This fixes some issue with imports;
     # this function calls onenormest which is in scipy.sparse.
