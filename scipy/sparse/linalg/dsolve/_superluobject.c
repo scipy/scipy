@@ -336,15 +336,15 @@ int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
           PyArray_NDIM(nzvals) == 1 &&
           PyArray_NDIM(colind) == 1 &&
           PyArray_NDIM(rowptr) == 1 &&
-          PyArray_ISCARRAY(nzvals) &&
-          PyArray_ISCARRAY(colind) &&
-          PyArray_ISCARRAY(rowptr) &&
+          PyArray_IS_C_CONTIGUOUS(nzvals) &&
+          PyArray_IS_C_CONTIGUOUS(colind) &&
+          PyArray_IS_C_CONTIGUOUS(rowptr) &&
           nnz <= PyArray_DIM(nzvals, 0) &&
           nnz <= PyArray_DIM(colind, 0) &&
           m+1 <= PyArray_DIM(rowptr, 0));
     if (!ok) {
 	PyErr_SetString(PyExc_ValueError,
-			"sparse matrix arrays must be 1-D C-contigous and of proper "
+			"sparse matrix arrays must be 1-D C-contiguous and of proper "
                         "sizes and types");
 	return -1;
     }
@@ -379,15 +379,15 @@ int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
           PyArray_NDIM(nzvals) == 1 &&
           PyArray_NDIM(rowind) == 1 &&
           PyArray_NDIM(colptr) == 1 &&
-          PyArray_ISCARRAY(nzvals) &&
-          PyArray_ISCARRAY(rowind) &&
-          PyArray_ISCARRAY(colptr) &&
+          PyArray_IS_C_CONTIGUOUS(nzvals) &&
+          PyArray_IS_C_CONTIGUOUS(rowind) &&
+          PyArray_IS_C_CONTIGUOUS(colptr) &&
           nnz <= PyArray_DIM(nzvals, 0) &&
           nnz <= PyArray_DIM(rowind, 0) &&
           n+1 <= PyArray_DIM(colptr, 0));
     if (!ok) {
 	PyErr_SetString(PyExc_ValueError,
-			"sparse matrix arrays must be 1-D C-contigous and of proper "
+			"sparse matrix arrays must be 1-D C-contiguous and of proper "
                         "sizes and types");
 	return -1;
     }
