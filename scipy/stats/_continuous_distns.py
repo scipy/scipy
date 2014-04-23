@@ -1001,16 +1001,18 @@ class exponweib_gen(rv_continuous):
 
     """
     def _pdf(self, x, a, c):
-        exc = exp(-x**c)
-        return a*c*(1-exc)**asarray(a-1) * exc * x**(c-1)
+        return exp(self._logpdf(x, a, c))
 
     def _logpdf(self, x, a, c):
-        exc = exp(-x**c)
-        return log(a) + log(c) + (a-1.)*log(1-exc) - x**c + (c-1.0)*log(x)
+        negxc = -x**c
+        exm1c = -expm1(negxc)
+        logp = (log(a) + log(c) + special.xlogy(a - 1.0, exm1c) +
+                negxc + special.xlogy(c - 1.0, x))
+        return logp
 
     def _cdf(self, x, a, c):
         exm1c = -expm1(-x**c)
-        return (exm1c)**a
+        return exm1c**a
 
     def _ppf(self, q, a, c):
         return (-log1p(-q**(1.0/a)))**asarray(1.0/c)

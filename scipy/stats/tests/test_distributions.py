@@ -1345,6 +1345,50 @@ class TestErlang(TestCase):
             assert_allclose(result_erlang, result_gamma, rtol=1e-3)
 
 
+class TestExponWeib(TestCase):
+
+    def test_pdf_logpdf(self):
+        # Regression test for gh-3508.
+        x = 0.1
+        a = 1.0
+        c = 100.0
+        p = stats.exponweib.pdf(x, a, c)
+        logp = stats.exponweib.logpdf(x, a, c)
+        # Expected values were computed with mpmath.
+        assert_allclose([p, logp],
+                        [1.0000000000000054e-97, -223.35075402042244])
+
+    def test_a_is_1(self):
+        # For issue gh-3508.
+        # Check that when a=1, the pdf and logpdf methods of exponweib are the
+        # same as those of weibull_min.
+        x = np.logspace(-4, -1, 4)
+        a = 1
+        c = 100
+
+        p = stats.exponweib.pdf(x, a, c)
+        expected = stats.weibull_min.pdf(x, c)
+        assert_allclose(p, expected)
+
+        logp = stats.exponweib.logpdf(x, a, c)
+        expected = stats.weibull_min.logpdf(x, c)
+        assert_allclose(logp, expected)
+
+    def test_a_is_1_c_is_1(self):
+        # When a = 1 and c = 1, the distribution is exponential.
+        x = np.logspace(-8, 1, 10)
+        a = 1
+        c = 1
+
+        p = stats.exponweib.pdf(x, a, c)
+        expected = stats.expon.pdf(x)
+        assert_allclose(p, expected)
+
+        logp = stats.exponweib.logpdf(x, a, c)
+        expected = stats.expon.logpdf(x)
+        assert_allclose(logp, expected)
+
+
 class TestRdist(TestCase):
     @dec.slow
     def test_rdist_cdf_gh1285(self):
