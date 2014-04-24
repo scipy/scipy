@@ -55,6 +55,8 @@ from scipy.spatial.distance import squareform, pdist
 # Matplotlib is not a scipy dependency but is optionally used in dendrogram, so
 # check if it's available
 try:
+    import matplotlib
+    matplotlib.rcParams['backend'] = 'Agg'
     import matplotlib.pyplot as plt
     have_matplotlib = True
 except:
