@@ -695,36 +695,38 @@ def theilslopes(y, x=None, alpha=0.05):
 
     """
     y = ma.asarray(y).flatten()
-    y[-1] = masked
-    n = len(y)
     if x is None:
         x = ma.arange(len(y), dtype=float)
     else:
         x = ma.asarray(x).flatten()
-        if len(x) != n:
-            raise ValueError("Incompatible lengths ! (%s<>%s)" % (n,len(x)))
+        if len(x) != len(y):
+            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y),len(x)))
     m = ma.mask_or(ma.getmask(x), ma.getmask(y))
     y._mask = x._mask = m
-    ny = y.count()
-    #
-    slopes = ma.hstack([(y[i+1:]-y[i])/(x[i+1:]-x[i]) for i in range(n-1)])
+    # Disregard any masked elements of x or y
+    y = y.compressed()
+    x = x.compressed().astype(float)
+    # Compute sorted slopes only when deltax > 0
+    deltax = x[:,np.newaxis] - x
+    deltay = y[:,np.newaxis] - y
+    slopes = deltay[deltax > 0] / deltax[deltax > 0]
     slopes.sort()
     medslope = ma.median(slopes)
     medinter = ma.median(y) - medslope*ma.median(x)
-    #
+    # Now compute confidence intervals
     if alpha > 0.5:
         alpha = 1.-alpha
     z = stats.distributions.norm.ppf(alpha/2.)
     #
-    (xties, yties) = (count_tied_groups(x), count_tied_groups(y))
-    nt = ny*(ny-1)/2.
-    sigsq = (ny*(ny-1)*(2*ny+5)/18.)
-    sigsq -= np.sum(v*k*(k-1)*(2*k+5) for (k,v) in iteritems(xties))
-    sigsq -= np.sum(v*k*(k-1)*(2*k+5) for (k,v) in iteritems(yties))
+    xties = count_tied_groups(x)
+    nt = len(slopes)       # N in Sen (1968)
+    ny = len(y)            # n in Sen (1968)
+    sigsq = (1/18.) * (    # equation 2.6 in Sen (1968)
+        ny*(ny-1)*(2*ny+5)
+        - np.sum(v*k*(k-1)*(2*k+5) for (k,v) in iteritems(xties)))
     sigma = np.sqrt(sigsq)
-
-    Ru = min(np.round((nt - z*sigma)/2. + 1), len(slopes)-1)
-    Rl = max(np.round((nt + z*sigma)/2.), 0)
+    Ru = min(np.round((nt - z*sigma)/2.), len(slopes)-1)
+    Rl = max(np.round((nt + z*sigma)/2.) - 1, 0)
     delta = slopes[[Rl,Ru]]
     return medslope, medinter, delta[0], delta[1]
 
