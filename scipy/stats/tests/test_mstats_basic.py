@@ -765,11 +765,11 @@ class TestCompareWithStats(TestCase):
             x, y, xm, ym = self.generate_xy_sample(n)
             r = stats.gmean(abs(x))
             rm = stats.mstats.gmean(abs(xm))
-            assert_equal(r, rm)
+            assert_allclose(r, rm, rtol=1e-13)
 
             r = stats.gmean(abs(y))
             rm = stats.mstats.gmean(abs(ym))
-            assert_equal(r, rm)
+            assert_allclose(r, rm, rtol=1e-13)
 
     def test_hmean(self):
         for n in self.get_n():
