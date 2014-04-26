@@ -699,77 +699,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             i[i < 0] += M
             j = j[mask]
             j[j < 0] += N
-            self._insert_many(i, j, x[mask])
-
-    def _insert_many(self, i, j, x):
-        """Inserts new nonzero at each (i, j) with value x
-
-        Here (i,j) index major and minor respectively.
-        i, j and x must be non-empty, 1d arrays.
-        Inserts each major group (e.g. all entries per row) at a time.
-        Maintains has_sorted_indices property.
-        Modifies i, j, x in place.
-        """
-        order = np.argsort(i, kind='mergesort')  # stable for duplicates
-        i = i.take(order, mode='clip')
-        j = j.take(order, mode='clip')
-        x = x.take(order, mode='clip')
-
-        do_sort = self.has_sorted_indices
-
-        # Update index data type
-        idx_dtype = get_index_dtype((self.indices, self.indptr),
-                                    maxval=(self.indptr[-1] + x.size))
-        if idx_dtype != self.indptr.dtype:
-            self.indptr = self.indptr.astype(idx_dtype)
-            self.indices = self.indices.astype(idx_dtype)
-        if idx_dtype != i.dtype or idx_dtype != j.dtype:
-            i = i.astype(idx_dtype)
-            j = j.astype(idx_dtype)
-
-        # Collate old and new in chunks by major index
-        indices_parts = []
-        data_parts = []
-        ui, ui_indptr = _compat_unique(i, return_index=True)
-        ui_indptr = np.append(ui_indptr, len(j))
-        new_nnzs = np.diff(ui_indptr)
-        prev = 0
-        for c, (ii, js, je) in enumerate(izip(ui, ui_indptr, ui_indptr[1:])):
-            # old entries
-            start = self.indptr[prev]
-            stop = self.indptr[ii]
-            indices_parts.append(self.indices[start:stop])
-            data_parts.append(self.data[start:stop])
-
-            # handle duplicate j: keep last setting
-            uj, uj_indptr = _compat_unique(j[js:je][::-1], return_index=True)
-            if len(uj) == je - js:
-                indices_parts.append(j[js:je])
-                data_parts.append(x[js:je])
-            else:
-                indices_parts.append(j[js:je][::-1][uj_indptr])
-                data_parts.append(x[js:je][::-1][uj_indptr])
-                new_nnzs[c] = len(uj)
-
-            prev = ii
-
-        # remaining old entries
-        start = self.indptr[ii]
-        indices_parts.append(self.indices[start:])
-        data_parts.append(self.data[start:])
-
-        # update attributes
-        self.indices = np.concatenate(indices_parts)
-        self.data = np.concatenate(data_parts)
-        nnzs = np.ediff1d(self.indptr, to_begin=0).astype(idx_dtype)
-        nnzs[1:][ui] += new_nnzs
-        self.indptr = np.cumsum(nnzs, out=nnzs)
-
-        if do_sort:
-            # TODO: only sort where necessary
-            self.sort_indices()
-
-        self.check_format(full_check=False)
+            from .coo import coo_matrix
+            out = self + coo_matrix((x[mask], (i, j)), shape=self.shape)
+            assert out.format == self.format
+            self.indices = out.indices
+            self.data = out.data
+            self.indptr = out.indptr
 
     def _get_single_element(self,row,col):
         M, N = self.shape
