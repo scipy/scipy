@@ -699,8 +699,20 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             i[i < 0] += M
             j = j[mask]
             j[j < 0] += N
+            x = x[mask]
+
+            # remove duplicates, retaining last
+            order = np.lexsort([j, i])[::-1]
+            mask = np.zeros(len(i), dtype=bool)
+            mask[order] = np.hstack([True, np.logical_or(np.diff(i[order]),
+                                                         np.diff(j[order]))])
+            i = i[mask]
+            j = j[mask]
+            x = x[mask]
+
+            # use matrix addition
             from .coo import coo_matrix
-            out = self + coo_matrix((x[mask], (i, j)), shape=self.shape)
+            out = self + coo_matrix((x, (i, j)), shape=self.shape)
             assert out.format == self.format
             self.indices = out.indices
             self.data = out.data
