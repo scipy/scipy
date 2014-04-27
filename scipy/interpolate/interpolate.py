@@ -233,7 +233,7 @@ class interp2d(object):
         self.x_min, self.x_max = np.amin(x), np.amax(x)
         self.y_min, self.y_max = np.amin(y), np.amax(y)
 
-    def __call__(self, x, y, dx=0, dy=0):
+    def __call__(self, x, y, dx=0, dy=0, assume_sorted=False):
         """Interpolate the function.
 
         Parameters
@@ -246,6 +246,11 @@ class interp2d(object):
             Order of partial derivatives in x.
         dy : int >= 0, < ky
             Order of partial derivatives in y.
+        assume_sorted : bool, optional
+            If False, values of `x` and `y` can be in any order and they are
+            sorted first.
+            If True, `x` and `y` have to be arrays of monotonically
+            increasing values.
 
         Returns
         -------
@@ -259,6 +264,10 @@ class interp2d(object):
 
         if x.ndim != 1 or y.ndim != 1:
             raise ValueError("x and y should both be 1-D arrays")
+
+        if not assume_sorted:
+            x = np.sort(x)
+            y = np.sort(y)
 
         if self.bounds_error or self.fill_value is not None:
             out_of_bounds_x = (x < self.x_min) | (x > self.x_max)
