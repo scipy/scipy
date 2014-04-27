@@ -139,7 +139,7 @@ gallon = gallon_US = 231 * inch**3  # US
 fluid_ounce = fluid_ounce_US = gallon_US / 128
 bbl = barrel = 42 * gallon_US  # for oil
 
-gallon_imp = 4.54609e-3  # uk
+gallon_imp = 4.54609e-3  # UK
 fluid_ounce_imp = gallon_imp / 160
 
 # speed in meter per second
