@@ -5,17 +5,18 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 
 from __future__ import division, print_function, absolute_import
 
+import numpy
 from numpy import (exp, log, asarray, arange, newaxis, hstack, product, array,
                    zeros, eye, poly1d, r_, rollaxis, sum, fromstring, isfinite,
-                   squeeze, amax, version, reshape)
+                   squeeze, amax, reshape)
 
 from scipy.lib._version import NumpyVersion
 
 __all__ = ['logsumexp', 'central_diff_weights', 'derivative', 'pade', 'lena',
            'ascent', 'face']
 
-# XXX: the factorial functions could move to scipy.special, and the others
-# to numpy perhaps?
+
+_NUMPY_170 = (NumpyVersion(numpy.__version__) >= NumpyVersion('1.7.0'))
 
 
 def logsumexp(a, axis=None, b=None, keepdims=False):
@@ -85,8 +86,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False):
     # Because SciPy supports versions earlier than 1.7.0, we have to handle
     # those old versions differently
 
-    if NumpyVersion(version.version) < NumpyVersion('1.7.0'):
-
+    if not _NUMPY_170:
         # When support for Numpy < 1.7.0 is dropped, this implementation can be
         # removed. This implementation is a bit hacky. Similarly to old NumPy's
         # sum and amax functions, 'axis' must be an integer or None, tuples and
@@ -106,25 +106,22 @@ def logsumexp(a, axis=None, b=None, keepdims=False):
             a_max[~isfinite(a_max)] = 0
         elif not isfinite(a_max):
             a_max = 0
-            
+
         if b is not None:
             b = asarray(b)
             out = log(sum(b * exp(a - reshape(a_max, sh_keepdims)), axis=axis))
         else:
             out = log(sum(exp(a - reshape(a_max, sh_keepdims)), axis=axis))
-            
+
         out += a_max
 
         if keepdims:
             # Put back the reduced axes with size one
             out = reshape(out, sh_keepdims)
-        
     else:
-
         # This is a more elegant implementation, requiring NumPy >= 1.7.0
-
         a_max = amax(a, axis=axis, keepdims=True)
-        
+
         if a_max.ndim > 0:
             a_max[~isfinite(a_max)] = 0
         elif not isfinite(a_max):
