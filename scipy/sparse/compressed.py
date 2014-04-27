@@ -687,36 +687,21 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return
 
         else:
-            warn("Changing the sparsity structure of a %s_matrix is expensive. "
-                 "lil_matrix is more efficient." % self.format,
-                 SparseEfficiencyWarning)
-            # replace where possible
-            mask = offsets > -1
-            self.data[offsets[mask]] = x[mask]
-            # only insertions remain
-            mask = ~mask
-            i = i[mask]
-            i[i < 0] += M
-            j = j[mask]
-            j[j < 0] += N
-            x = x[mask]
-
-            # remove duplicates, retaining last
-            order = np.lexsort([j, i])[::-1]
-            mask = np.zeros(len(i), dtype=bool)
-            mask[order] = np.hstack([True, np.logical_or(np.diff(i[order]),
-                                                         np.diff(j[order]))])
-            i = i[mask]
-            j = j[mask]
-            x = x[mask]
-
-            # use matrix addition
+            # Use matrix addition to create new entries
             from .coo import coo_matrix
             out = self + coo_matrix((x, (i, j)), shape=self.shape)
             assert out.format == self.format
             self.indices = out.indices
             self.data = out.data
             self.indptr = out.indptr
+
+            # Store final values
+            # something like this is needed to handle duplicates in (i,j):
+            # only the last setting applies
+            offsets = np.empty(len(x), dtype=self.indices.dtype)
+            _sparsetools.csr_sample_offsets(M, N, self.indptr, self.indices,
+                                            len(x), i, j, offsets)
+            self.data[offsets] = x
 
     def _get_single_element(self,row,col):
         M, N = self.shape
