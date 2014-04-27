@@ -135,13 +135,6 @@ def test_itemset_no_segfault_on_readonly():
     # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!
     assert_raises(RuntimeError, time_var.assignValue, 42)
 
-    # test without mmap
-    with netcdf_file(filename, 'r', mmap=False) as f:
-        time_var = f.variables['time']
-
-    # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!
-    assert_raises(RuntimeError, time_var.assignValue, 42)
-
 
 def test_write_invalid_dtype():
     dtypes = ['int64', 'uint64']
