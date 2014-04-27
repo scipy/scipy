@@ -49,6 +49,7 @@ http://physics.nist.gov/cuu/Constants/
 
 """
 from __future__ import division, print_function, absolute_import
+from fnmatch import fnmatch
 
 
 import warnings
@@ -954,6 +955,18 @@ def find(sub=None, disp=False):
     ----------
     sub : str, unicode
         Sub-string to search keys for.  By default, return all keys.
+
+        The sub-string may contain wildcards and other patterns:
+
+        ============   ============================
+        Character(s)   Role
+        ============   ============================
+        *              Matches everything
+        ?              Matches any single character
+        [seq]          Matches any character in seq
+        [!seq]         Matches any char not in seq
+        ============   ============================
+
     disp : bool
         If True, print the keys that are found, and return None.
         Otherwise, return the list of keys without printing anything.
@@ -973,8 +986,11 @@ def find(sub=None, disp=False):
     if sub is None:
         result = list(_current_constants.keys())
     else:
-        result = [key for key in _current_constants
-                 if sub.lower() in key.lower()]
+        if not sub.startswith('*'):
+            sub = '*' + sub
+        if not sub.endswith('*'):
+            sub = sub + '*'
+        result = [key for key in _current_constants if fnmatch(key, sub)]
 
     result.sort()
     if disp:
