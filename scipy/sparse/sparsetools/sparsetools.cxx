@@ -111,6 +111,8 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
     int j, k, arg_j;
     const char *p;
     Py_ssize_t ret;
+    Py_ssize_t max_array_size = 0;
+    NPY_BEGIN_THREADS_DEF;
 
     if (!PyTuple_Check(args)) {
         PyErr_SetString(PyExc_ValueError, "args is not a tuple");
@@ -286,10 +288,16 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         }
         else if (*p == 'V') {
             arg_list[j] = allocate_std_vector_typenum(I_typenum);
+            if (arg_list[j] == NULL) {
+                goto fail;
+            }
             continue;
         }
         else if (*p == 'W') {
             arg_list[j] = allocate_std_vector_typenum(T_typenum);
+            if (arg_list[j] == NULL) {
+                goto fail;
+            }
             continue;
         }
         else {
@@ -310,18 +318,30 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
 
         /* Grab value */
         arg_list[j] = PyArray_DATA(arg_arrays[j]);
+
+        /* Find maximum array size */
+        if (PyArray_SIZE(arg_arrays[j]) > max_array_size) {
+            max_array_size = PyArray_SIZE(arg_arrays[j]);
+        }
     }
 
 
     /*
      * Call thunk
      */
+    if (max_array_size > 100) {
+        /* Threshold GIL release: it's not a free operation */
+        NPY_BEGIN_THREADS;
+    }
     try {
         ret = thunk(I_typenum, T_typenum, arg_list);
+        NPY_END_THREADS;
     } catch (const std::bad_alloc &e) {
+        NPY_END_THREADS;
         PyErr_SetString(PyExc_MemoryError, e.what());
         goto fail;
     } catch (const std::exception &e) {
+        NPY_END_THREADS;
         PyErr_SetString(PyExc_RuntimeError, e.what());
         goto fail;
     }
@@ -424,20 +444,24 @@ static void *allocate_std_vector_typenum(int typenum)
         return (void*)(new std::vector<ctype>());               \
     }
 
-    PROCESS(NPY_BOOL, npy_bool_wrapper);
-    PROCESS(NPY_BYTE, npy_byte);
-    PROCESS(NPY_UBYTE, npy_ubyte);
-    PROCESS(NPY_SHORT, npy_short);
-    PROCESS(NPY_USHORT, npy_ushort);
-    PROCESS(NPY_INT, npy_uint);
-    PROCESS(NPY_LONG, npy_ulong);
-    PROCESS(NPY_LONGLONG, npy_ulonglong);
-    PROCESS(NPY_FLOAT, npy_float);
-    PROCESS(NPY_DOUBLE, npy_double);
-    PROCESS(NPY_LONGDOUBLE, npy_longdouble);
-    PROCESS(NPY_CFLOAT, npy_cfloat_wrapper);
-    PROCESS(NPY_CDOUBLE, npy_cdouble_wrapper);
-    PROCESS(NPY_CLONGDOUBLE, npy_clongdouble_wrapper);
+    try {
+        PROCESS(NPY_BOOL, npy_bool_wrapper);
+        PROCESS(NPY_BYTE, npy_byte);
+        PROCESS(NPY_UBYTE, npy_ubyte);
+        PROCESS(NPY_SHORT, npy_short);
+        PROCESS(NPY_USHORT, npy_ushort);
+        PROCESS(NPY_INT, npy_uint);
+        PROCESS(NPY_LONG, npy_ulong);
+        PROCESS(NPY_LONGLONG, npy_ulonglong);
+        PROCESS(NPY_FLOAT, npy_float);
+        PROCESS(NPY_DOUBLE, npy_double);
+        PROCESS(NPY_LONGDOUBLE, npy_longdouble);
+        PROCESS(NPY_CFLOAT, npy_cfloat_wrapper);
+        PROCESS(NPY_CDOUBLE, npy_cdouble_wrapper);
+        PROCESS(NPY_CLONGDOUBLE, npy_clongdouble_wrapper);
+    } catch (std::exception &e) {
+        /* failed */
+    }
 
 #undef PROCESS
 
