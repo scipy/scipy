@@ -1000,8 +1000,8 @@ exact_values = {
 # sanity check
 for key in exact_values:
     val = _current_constants[key][0]
-    if abs(exact_values[key][0] - val) / val > 1e-9:
-        raise ValueError("Constants.codata: exact values too far off.")
+    assert abs(exact_values[key][0] - val) / val <= 1e-9, \
+        "constants.codata: exact values too far off."
 
 physical_constants.update(exact_values)
 
