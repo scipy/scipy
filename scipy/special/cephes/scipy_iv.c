@@ -78,7 +78,7 @@ void ikv_temme(double v, double x, double *Iv, double *Kv);
 double iv(double v, double x)
 {
     int sign;
-    double t, vp, ax, res;
+    double t, ax, res;
 
     /* If v is a negative integer, invoke symmetry */
     t = floor(v);
@@ -138,7 +138,7 @@ double iv(double v, double x)
  */
 static double iv_asymptotic(double v, double x)
 {
-    double mu, mup;
+    double mu;
     double sum, term, prefactor, factor;
     int k;
 

@@ -217,7 +217,7 @@ double struve_power_series(double v, double z, int is_h, double *err)
 {
     int n, sgn;
     double term, sum, maxterm, scaleexp, tmp;
-    double2_t cterm, csum, cdiv, z2, c2v, ctmp, ctmp2;
+    double2_t cterm, csum, cdiv, z2, c2v, ctmp;
 
     if (is_h) {
         sgn = -1;
@@ -292,7 +292,7 @@ double struve_power_series(double v, double z, int is_h, double *err)
  */
 double struve_bessel_series(double v, double z, int is_h, double *err)
 {
-    int n, sgn;
+    int n;
     double term, cterm, sum, maxterm;
 
     if (is_h && v < 0) {

@@ -187,7 +187,6 @@ double quad_function(double *x) {
 
   double d_result;
   PyObject *arg1 = NULL, *arglist=NULL, *result=NULL;
-  PyNumberMethods *nb;
 
   /* Build argument list */
   if ((arg1 = PyTuple_New(1)) == NULL) goto fail;
