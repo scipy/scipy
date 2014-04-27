@@ -441,15 +441,6 @@ class spmatrix(object):
     def __neg__(self):
         return -self.tocsr()
 
-    def __iadd__(self, other):
-        return NotImplemented
-
-    def __isub__(self, other):
-        return NotImplemented
-
-    def __imul__(self, other):
-        return NotImplemented
-
     def __idiv__(self, other):
         return self.__itruediv__(other)
 
