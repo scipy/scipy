@@ -689,7 +689,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         else:
             # Use matrix addition to create new entries
             from .coo import coo_matrix
-            out = self + coo_matrix((x, (i, j)), shape=self.shape)
+            out = self + coo_matrix((x, self._swap((i, j))), shape=self.shape)
             assert out.format == self.format
             self.indices = out.indices
             self.data = out.data
