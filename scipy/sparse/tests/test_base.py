@@ -148,13 +148,25 @@ def todense(a):
     return a.todense()
 
 
-class MultipliesWithMatrix(object):
-    """Class that knows how to multiply with a sparse matrix."""
+class BinopTester(object):
+    # Custom type to test binary operations on sparse matrices.
 
-    def __mul__(self, other):
+    def __add__(self, mat):
         return "matrix on the right"
 
-    def __rmul__(self, other):
+    def __mul__(self, mat):
+        return "matrix on the right"
+
+    def __sub__(self, mat):
+        return "matrix on the right"
+
+    def __radd__(self, mat):
+        return "matrix on the left"
+
+    def __rmul__(self, mat):
+        return "matrix on the left"
+
+    def __rsub__(self, mat):
         return "matrix on the left"
 
 
@@ -1196,10 +1208,18 @@ class _TestCommon:
         assert_equal(A * array([1]), array([1,2,3]))
         assert_equal(A * array([[1]]), array([[1],[2],[3]]))
 
-    def test_multiply_custom(self):
+    def test_binop_custom_type(self):
+        # Non-regression test: previously, binary operations would raise
+        # NotImplementedError instead of returning NotImplemented
+        # (https://docs.python.org/library/constants.html#NotImplemented)
+        # so overloading Custom + matrix etc. didn't work.
         A = self.spmatrix([[1], [2], [3]])
-        B = MultipliesWithMatrix()
+        B = BinopTester()
+        assert_equal(A + B, "matrix on the left")
+        assert_equal(A - B, "matrix on the left")
         assert_equal(A * B, "matrix on the left")
+        assert_equal(B + A, "matrix on the right")
+        assert_equal(B - A, "matrix on the right")
         assert_equal(B * A, "matrix on the right")
 
     def test_matvec(self):
