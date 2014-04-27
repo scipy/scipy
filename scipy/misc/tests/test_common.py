@@ -6,6 +6,8 @@ from numpy.testing import assert_array_equal, assert_almost_equal, \
 
 from scipy.misc import pade, logsumexp, face, ascent
 
+from scipy.lib._version import NumpyVersion
+
 
 def test_pade_trivial():
     nump, denomp = pade([1.0], 0)
@@ -59,6 +61,31 @@ def test_logsumexp():
     assert_array_almost_equal(np.exp(logsumexp(logX)), X.sum())
     assert_array_almost_equal(np.exp(logsumexp(logX, axis=0)), X.sum(axis=0))
     assert_array_almost_equal(np.exp(logsumexp(logX, axis=1)), X.sum(axis=1))
+
+    # Handling special values properly
+    with np.errstate(divide='ignore'):
+        assert_equal(logsumexp(np.inf), np.inf)
+        assert_equal(logsumexp(-np.inf), -np.inf)
+        assert_equal(logsumexp(np.nan), np.nan)
+
+    # Handling an array with different magnitudes on the axes
+    assert_array_almost_equal(logsumexp([[1e10, 1e-10],
+                                         [-1e10, -np.inf]], axis=-1),
+                              [1e10, -1e10])
+
+    # Test keeping dimensions
+    assert_array_almost_equal(logsumexp([[1e10, 1e-10],
+                                         [-1e10, -np.inf]], 
+                                        axis=-1,
+                                        keepdims=True),
+                              [[1e10], [-1e10]])
+
+    # Test multiple axes
+    if NumpyVersion(np.__version__) >= NumpyVersion('1.7.0'):
+        assert_array_almost_equal(logsumexp([[1e10, 1e-10],
+                                             [-1e10, -np.inf]], 
+                                            axis=(-1,-2)),
+                                  1e10)
 
 
 def test_logsumexp_b():
