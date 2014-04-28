@@ -432,30 +432,20 @@ class spmatrix(object):
         return self._divide(other, true_divide=True)
 
     def __rtruediv__(self, other):
-        # Implementing this as the inverse would be too magical -- bail out
-        return NotImplemented
+        return self._divide(other, true_divide=True, rdivide=True)
 
     def __rdiv__(self, other):
-        # Implementing this as the inverse would be too magical -- bail out
-        return NotImplemented
+        # Always do true division
+        return self._divide(other, true_divide=True, rdivide=True)
 
     def __neg__(self):
         return -self.tocsr()
-
-    def __iadd__(self, other):
-        raise NotImplementedError
-
-    def __isub__(self, other):
-        raise NotImplementedError
-
-    def __imul__(self, other):
-        raise NotImplementedError
 
     def __idiv__(self, other):
         return self.__itruediv__(other)
 
     def __itruediv__(self, other):
-        raise NotImplementedError
+        return NotImplemented
 
     def __pow__(self, other):
         if self.shape[0] != self.shape[1]:
