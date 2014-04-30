@@ -3,11 +3,12 @@
 """
 from __future__ import division, print_function, absolute_import
 
-import numpy
-from numpy.testing import assert_almost_equal, run_module_suite
+import numpy as np
+from numpy.testing import (run_module_suite, assert_almost_equal, assert_equal,
+        assert_allclose, assert_array_less)
 
 from scipy import arange, ones, rand, r_, diag, linalg, eye
-from scipy.linalg import eig
+from scipy.linalg import eig, eigh, toeplitz
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg
 
 
@@ -39,7 +40,7 @@ def MikotaPair(n):
 def compare_solutions(A,B,m):
     n = A.shape[0]
 
-    numpy.random.seed(0)
+    np.random.seed(0)
 
     V = rand(n,m)
     X = linalg.orth(V)
@@ -84,6 +85,68 @@ def test_trivial():
     X = ones((n, 1))
     A = eye(n)
     compare_solutions(A, None, n)
+
+
+def _check_eigen(M, w, V, rtol=1e-8, atol=1e-14):
+    assert_allclose(np.multiply(w, V), np.dot(M, V), rtol=rtol, atol=atol)
+
+
+def _check_fiedler(n, p):
+    # This is not necessarily the recommended way to find the Fiedler vector.
+    np.random.seed(1234)
+    col = np.zeros(n)
+    col[1] = 1
+    A = toeplitz(col)
+    D = np.diag(A.sum(axis=1))
+    L = D - A
+    # Compute the full eigendecomposition using tricks, e.g.
+    # http://www.cs.yale.edu/homes/spielman/561/2009/lect02-09.pdf
+    tmp = np.pi * np.arange(n) / n
+    analytic_w = 2 * (1 - np.cos(tmp))
+    analytic_V = np.cos(np.outer(np.arange(n) + 1/2, tmp))
+    _check_eigen(L, analytic_w, analytic_V)
+    # Compute the full eigendecomposition using eigh.
+    eigh_w, eigh_V = eigh(L)
+    _check_eigen(L, eigh_w, eigh_V)
+    # Check that the first eigenvalue is near zero and that the rest agree.
+    assert_array_less(np.abs([eigh_w[0], analytic_w[0]]), 1e-14)
+    assert_allclose(eigh_w[1:], analytic_w[1:])
+
+    # Check small lobpcg eigenvalues.
+    X = analytic_V[:, :p]
+    lobpcg_w, lobpcg_V = lobpcg(L, X, largest=False)
+    assert_equal(lobpcg_w.shape, (p,))
+    assert_equal(lobpcg_V.shape, (n, p))
+    _check_eigen(L, lobpcg_w, lobpcg_V)
+    assert_array_less(np.abs(np.min(lobpcg_w)), 1e-14)
+    assert_allclose(np.sort(lobpcg_w)[1:], analytic_w[1:p])
+
+    # Check large lobpcg eigenvalues.
+    X = analytic_V[:, -p:]
+    lobpcg_w, lobpcg_V = lobpcg(L, X, largest=True)
+    assert_equal(lobpcg_w.shape, (p,))
+    assert_equal(lobpcg_V.shape, (n, p))
+    _check_eigen(L, lobpcg_w, lobpcg_V)
+    assert_allclose(np.sort(lobpcg_w), analytic_w[-p:])
+
+    # Look for the Fiedler vector using some legitimate preconditioning.
+    preconditioned_fiedler = np.concatenate((np.ones(n//2), -np.ones(n-n//2)))
+    X = np.vstack((np.ones(n), preconditioned_fiedler)).T
+    lobpcg_w, lobpcg_V = lobpcg(L, X, largest=False)
+    # Mathematically, the smaller eigenvalue should be zero
+    # and the larger should be the algebraic connectivity.
+    lobpcg_w = np.sort(lobpcg_w)
+    assert_allclose(lobpcg_w, analytic_w[:2], atol=1e-14)
+
+
+def test_fiedler_small_8():
+    # This triggers the dense path because 8 < 2*5.
+    _check_fiedler(8, 2)
+
+
+def test_fiedler_large_12():
+    # This does not trigger the dense path, because 2*5 <= 12.
+    _check_fiedler(12, 2)
 
 
 if __name__ == "__main__":
