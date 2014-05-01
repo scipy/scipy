@@ -28,7 +28,8 @@ __all__ = ['lobpcg']
 ##     raise ImportError('lobpcg requires symeig')
 
 
-def symeig(mtxA, mtxB=None, eigenvectors=True, select=None):
+def symeig(mtxA, mtxB=None, select=None):
+    # Selection notation is like eigh.
     import scipy.linalg as sla
     if select is None:
         if np.iscomplexobj(mtxA):
@@ -52,19 +53,9 @@ def symeig(mtxA, mtxB=None, eigenvectors=True, select=None):
 ##         print info
 ##         from symeig import symeig
 ##         print symeig( mtxA, mtxB )
+        return out[:-1]
     else:
-        out = sla.eig(mtxA, mtxB, right=eigenvectors)
-        w = out[0]
-        ii = np.argsort(w)
-        w = w[slice(*select)]
-        if eigenvectors:
-            v = out[1][:,ii]
-            v = v[:,slice(*select)]
-            out = w, v, 0
-        else:
-            out = w, 0
-
-    return out[:-1]
+        return sla.eigh(mtxA, mtxB, eigvals=select)
 
 
 def pause():
@@ -252,10 +243,11 @@ def lobpcg(A, X,
         if blockVectorY is not None:
             raise NotImplementedError('symeig does not support constraints')
 
+        # Note that this uses the same notation as eigh selection of eigvals.
         if largest:
-            lohi = (n - sizeX, n)
+            lohi = (n - sizeX, n-1)
         else:
-            lohi = (1, sizeX)
+            lohi = (0, sizeX-1)
 
         A_dense = A(np.eye(n))
 
