@@ -215,6 +215,9 @@ def main(argv):
     except OSError:
         pass
 
+    shutil.copyfile(os.path.join(ROOT_DIR, '.coveragerc'),
+                    os.path.join(test_dir, '.coveragerc'))
+
     cwd = os.getcwd()
     try:
         os.chdir(test_dir)
