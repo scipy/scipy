@@ -143,6 +143,16 @@ Simple iterations:
 
 :mod:`Additional information on the nonlinear solvers <scipy.optimize.nonlin>`
 
+Linear Programming
+==================
+
+Simplex Algorithm:
+
+.. autosummary::
+   :toctree: generated/
+
+   linprog -- Linear programming using the simplex algorithm
+
 Utility Functions
 =================
 
@@ -173,6 +183,7 @@ from .nonlin import *
 from .slsqp import fmin_slsqp
 from .nnls import nnls
 from ._basinhopping import basinhopping
+from ._linprog import linprog, linprog_verbose_callback
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester

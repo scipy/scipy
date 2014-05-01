@@ -2578,7 +2578,8 @@ def show_options(solver=None, method=None):
     Parameters
     ----------
     solver : str
-        Type of optimization solver. One of 'minimize', 'minimize_scalar', 'root'.
+        Type of optimization solver. One of 'minimize', 'minimize_scalar',
+        'root', or 'linprog'.
     method : str, optional
         If not given, shows all methods of the specified solver. Otherwise,
         show only the options for the specified method. Valid values
@@ -3154,6 +3155,24 @@ def show_options(solver=None, method=None):
 
                 See `scipy.sparse.linalg.lgmres` for details.
 
+    **linprog options**
+
+    *simplex* options:
+
+        maxiter : int, optional
+            Maximum number of iterations to make.
+
+        tol : float, optional
+            The tolerance which determines when the Phase 1 objective is
+            sufficiently close to zero to be considered a basic feasible
+            solution or when the Phase 2 objective coefficients are close
+            enough to positive for the objective to be considered optimal.
+
+        bland : bool, optional
+            If True, choose pivots using Bland's rule.  In problems which
+            fail to converge due to cycling, using Bland's rule can provide
+            convergence at the expense of a less optimal path about the simplex.
+
     """
     import textwrap
 
@@ -3167,10 +3186,13 @@ def show_options(solver=None, method=None):
         print("\nroot")
         print("----\n")
         show_options('root')
+        print('\nlinprog')
+        print('-------\n')
+        show_options('linprog')
         return
 
     solver = solver.lower()
-    if solver not in ('minimize', 'minimize_scalar', 'root'):
+    if solver not in ('minimize', 'minimize_scalar', 'root', 'linprog'):
         raise ValueError('Unknown solver.')
 
     solvers_doc = [s.strip()
