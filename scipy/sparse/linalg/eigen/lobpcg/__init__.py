@@ -60,7 +60,7 @@ of required eigenvalues (smallest or largest).
 The LOBPCG code internally solves eigenproblems of the size 3``m`` on every
 iteration by calling the "standard" dense eigensolver, so if ``m`` is not
 small enough compared to ``n``, it does not make sense to call the LOBPCG
-code, but rather one should use the "standard" eigensolver, e.g. scipy or symeig
+code, but rather one should use the "standard" eigensolver, e.g. numpy or scipy
 function in this case. If one calls the LOBPCG algorithm for 5``m``>``n``,
 it will most likely break internally, so the code tries to call the standard
 function instead.

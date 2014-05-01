@@ -48,19 +48,10 @@ def compare_solutions(A,B,m):
     eigs,vecs = lobpcg(A, X, B=B, tol=1e-5, maxiter=30)
     eigs.sort()
 
-    #w,v = symeig(A,B)
     w,v = eig(A,b=B)
     w.sort()
 
     assert_almost_equal(w[:int(m/2)],eigs[:int(m/2)],decimal=2)
-
-    #from pylab import plot, show, legend, xlabel, ylabel
-    #plot(arange(0,len(w[:m])),w[:m],'bx',label='Results by symeig')
-    #plot(arange(0,len(eigs)),eigs,'r+',label='Results by lobpcg')
-    #legend()
-    #xlabel(r'Eigenvalue $i$')
-    #ylabel(r'$\lambda_i$')
-    #show()
 
 
 def test_Small():
