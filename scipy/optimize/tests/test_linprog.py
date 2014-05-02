@@ -3,14 +3,13 @@ Unit test for Linear Programming via Simplex Algorithm.
 """
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
 from numpy.testing import (assert_, assert_array_almost_equal, TestCase,
         assert_allclose, run_module_suite, assert_almost_equal, assert_raises,
         assert_equal)
 import numpy as np
 
 from scipy.optimize import linprog, OptimizeWarning
+from scipy.lib._numpy_compat import _assert_warns
 
 
 def lpgen_2d(m,n):
@@ -57,18 +56,16 @@ class TestLinprog(TestCase):
 
         res = (linprog(c,A_ub=A_ub,b_ub=b_ub))
 
-        assert_(res.status == 0,
-                "Test of linprog upper bound constraints failed.  "
-                "Expected status = 0, got %d." % res.status)
+        assert_equal(res.status, 0,
+                err_msg="Test of linprog upper bound constraints failed.")
 
         assert_array_almost_equal(res.x,np.array([2.0,6.0]),
                                   err_msg="Test of linprog upper bound "
                                           "constraints failed with incorrect "
                                           "result.")
 
-        assert_almost_equal(-res.fun,18,err_msg="Test of linprog upper bound"
-                            " constraints failed. "
-                            "Expected f=18, got %f." % res.fun)
+        assert_almost_equal(-res.fun, 18, err_msg="Test of linprog upper bound "
+                "constraints converged with incorrect objective value.")
 
     def test_linprog_mixed_constraints(self):
         # Minimize linear function subject to non-negative variables.
@@ -81,9 +78,8 @@ class TestLinprog(TestCase):
 
         res = linprog(c,A_ub=A_ub,b_ub=b_ub)
 
-        assert_(res.status == 0,
-                "Test of linprog with artificial variables failed.  "
-                "Expected status = 0, got %d." % res.status)
+        assert_equal(res.status, 0,
+                err_msg="Test of linprog with artificial variables failed.")
 
         assert_array_almost_equal(res.x,[2/3,1/3],
                                   err_msg="Test of linprog with artificial "
@@ -106,9 +102,8 @@ class TestLinprog(TestCase):
 
         res = linprog(c,A_ub=A_ub,b_ub=b_ub)
 
-        assert_(res.status == 0,
-                "Test of linprog recovery from cycling failed.  Expected status"
-                " = 0, got %d." % res.status)
+        assert_equal(res.status, 0,
+                err_msg="Test of linprog recovery from cycling failed.")
 
         assert_array_almost_equal(res.x,[0,0,10000],
                                   err_msg="Test of linprog recovery from "
@@ -141,8 +136,8 @@ class TestLinprog(TestCase):
 
         res = linprog(c,A_ub=A_ub,b_ub=b_ub)
 
-        assert_(res.status == 3,"Test of linprog response to an "
-                                "unbounded problem failed.")
+        assert_equal(res.status, 3, err_msg="Test of linprog response to an "
+                "unbounded problem failed.")
 
     def test_linprog_infeasible(self):
         # Test linrpog response to an infeasible problem
@@ -158,8 +153,8 @@ class TestLinprog(TestCase):
         assert_(not res.success,"Test of linprog with an infeasible problem "
                                 "errantly ended with success")
 
-        assert_(res.status == 2,"Test of linprog with an infeasible "
-                                "problem did not acknowledge its infeasibility")
+        assert_equal(res.status, 2, err_msg="Test of linprog with an "
+                "infeasible problem did not acknowledge its infeasibility")
 
     def test_nontrivial_problem(self):
         # Test linprog for a problem involving all constraint types,
@@ -177,13 +172,12 @@ class TestLinprog(TestCase):
 
         res = linprog(c,A_ub=A_ub,b_ub=b_ub,A_eq=A_eq,b_eq=b_eq)
 
-        assert_(res.status == 0,
-                "Test of linprog with nontrivial problem failed.  "
-                "Expected status = 0, got %d." % res.status)
+        assert_equal(res.status, 0,
+                err_msg="Test of linprog with nontrivial problem failed.")
 
-        assert_almost_equal(res.fun,7083/1391,9,
-                "Test of linprog with nontrivial problem converged but yielded "
-                "unexpected result (%f)" % res.fun)
+        assert_almost_equal(res.fun, 7083/1391, 9,
+                err_msg="Test of linprog with nontrivial problem converged "
+                "but yielded unexpected result")
 
         assert_array_almost_equal(res.x,[101/1391,1462/1391,0,752/1391],
                                   err_msg="Test of linprog with nontrivial "
@@ -205,9 +199,8 @@ class TestLinprog(TestCase):
 
         res = linprog(c,A_ub=A_ub,b_ub=b_ub,bounds=(x0_bounds,x1_bounds))
 
-        assert_(res.status == 0,
-                "Test of linprog with negative variable failed.  "
-                "Expected status = 0, got %d." % res.status)
+        assert_equal(res.status, 0,
+                err_msg="Test of linprog with negative variable failed.")
 
         assert_allclose(-res.fun,80/7,err_msg="Test of linprog with negative "
                                               "variable converged but yielded "
@@ -224,9 +217,8 @@ class TestLinprog(TestCase):
         A,b,c = lpgen_2d(20,20)
         res = linprog(c,A_ub=A,b_ub=b)
 
-        assert_(res.status == 0,
-                "Test of linprog with large problem failed.  "
-                "Expected status = 0, got %d." % res.status)
+        assert_equal(res.status, 0,
+                err_msg="Test of linprog with large problem failed.")
 
         assert_almost_equal(res.fun,-64.049494229,
                             err_msg="Test of linprog with 400 x 40 problem"
@@ -236,7 +228,7 @@ class TestLinprog(TestCase):
         # A network flow problem with supply and demand at nodes
         # and with costs along directed edges.
         # https://www.princeton.edu/~rvdb/542/lectures/lec10.pdf
-        c = np.array([2, 4, 9, 11, 4, 3, 8, 7, 0, 15, 16, 18], dtype=float)
+        c = np.array([2, 4, 9, 11, 4, 3, 8, 7, 0, 15, 16, 18])
         n, p = -1, 1
         A_eq = np.array([
             [n, n, p, 0, p, 0, 0, 0, 0, p, 0, 0],
@@ -246,11 +238,16 @@ class TestLinprog(TestCase):
             [0, 0, 0, 0, n, n, n, 0, p, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, n, n, 0, 0, p],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, n, n, n],
-            ], dtype=float)
-        b_eq = np.array([0, 19, -16, 33, 0, 0, -36], dtype=float)
-        result = linprog(c=c, A_eq=A_eq, b_eq=b_eq)
-        assert_equal(result.status, 0)
-        assert_allclose(result.fun, 755)
+            ])
+        b_eq = np.array([0, 19, -16, 33, 0, 0, -36])
+        res = linprog(c=c, A_eq=A_eq, b_eq=b_eq)
+
+        assert_equal(res.status, 0,
+                err_msg="Test of linprog solution of network flow failed.")
+
+        assert_allclose(res.fun, 755,
+                err_msg="Test of linprog solution of network flow "
+                "converged but yielded unexpected total cost.")
 
     def test_callback(self):
         # Check that callback is as advertised
@@ -294,15 +291,11 @@ class TestLinprog(TestCase):
         A_ub = [[2,1], [1,1], [1,0]]
         b_ub = [10,8,4]
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", OptimizeWarning)
-            assert_raises(OptimizeWarning, linprog,
-                          c, A_ub=A_ub, b_ub=b_ub,
-                          options=dict(spam='42'))
+        _assert_warns(OptimizeWarning, linprog,
+                c, A_ub=A_ub, b_ub=b_ub, options=dict(spam='42'))
 
         assert_raises(ValueError, linprog,
-                      c, A_ub=A_ub, b_ub=b_ub,
-                      method='ekki-ekki-ekki')
+                c, A_ub=A_ub, b_ub=b_ub, method='ekki-ekki-ekki')
 
     def test_no_constraints(self):
         res = linprog([-1, -2])
