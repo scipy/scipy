@@ -253,8 +253,12 @@ class TestLinprog(TestCase):
         # and with costs and capacities along directed edges.
         # http://blog.sommer-forst.de/2013/04/10/
         cost = [2, 2, 1, 3, 1]
-        lb = [0, 0, 0, 0, 0]
-        ub = [4, 2, 2, 3, 5]
+        bounds = [
+                [0, 4],
+                [0, 2],
+                [0, 2],
+                [0, 3],
+                [0, 5]]
         n, p = -1, 1
         A_eq = [
                 [n, n, 0, 0, 0],
@@ -262,7 +266,7 @@ class TestLinprog(TestCase):
                 [0, p, p, 0, n],
                 [0, 0, 0, p, p]]
         b_eq = [-4, 0, 0, 4]
-        res = linprog(c=cost, A_eq=A_eq, b_eq=b_eq, bounds=zip(lb, ub))
+        res = linprog(c=cost, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
 
         assert_equal(res.status, 0,
                 err_msg="Test of linprog solution of network flow "
