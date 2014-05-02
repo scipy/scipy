@@ -293,6 +293,33 @@ class TestLinprog(TestCase):
                 err_msg="Test of linprog solution of Wikipedia example "
                 "converged but yielded unexpected objective value.")
 
+    def test_enzo_example(self):
+        # http://projects.scipy.org/scipy/attachment/ticket/1252/lp2.py
+        #
+        # Translated from Octave code at:
+        # http://www.ecs.shimane-u.ac.jp/~kyoshida/lpeng.htm
+        # and placed under MIT licence by Enzo Michelangeli
+        # with permission explicitly granted by the original author,
+        # Prof. Kazunobu Yoshida  
+        c = [4, 8, 3, 0, 0, 0]
+        A_eq = [
+                [2, 5, 3, -1, 0, 0],
+                [3, 2.5, 8, 0, -1, 0],
+                [8, 10, 4, 0, 0, -1]]
+        b_eq = [185, 155, 600]
+        res = linprog(c=c, A_eq=A_eq, b_eq=b_eq)
+
+        assert_equal(res.status, 0,
+                err_msg="Test of linprog solution of Enzo's example failed.")
+
+        assert_allclose(res.fun, 317.5,
+                err_msg="Test of linprog solution of Enzo's example "
+                "converged but yielded unexpected objective value.")
+
+        assert_allclose(res.x, [66.25, 0, 17.5, 0, 183.75, 0],
+                err_msg="Test of linprog solution of Enzo's example "
+                "converged but yielded unexpected optimal solution.")
+
     def test_callback(self):
         # Check that callback is as advertised
         callback_complete = [False]
