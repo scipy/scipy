@@ -320,6 +320,84 @@ class TestLinprog(TestCase):
                 err_msg="Test of linprog solution of Enzo's example "
                 "converged but yielded unexpected optimal solution.")
 
+    def test_enzo_example_b(self):
+        # rescued from https://github.com/scipy/scipy/pull/218
+        c = [2.8, 6.3, 10.8, -2.8, -6.3, -10.8]
+        A_eq = [
+                [-1, -1, -1,  0,  0,  0],
+                [ 0,  0,  0,  1,  1,  1],
+                [ 1,  0,  0,  1,  0,  0],
+                [ 0,  1,  0,  0,  1,  0],
+                [ 0,  0,  1,  0,  0,  1]]
+        b_eq = [-0.5, 0.4, 0.3, 0.3, 0.3]
+        res = linprog(c=c, A_eq=A_eq, b_eq=b_eq)
+
+        assert_equal(res.status, 0,
+                err_msg="Test of linprog solution of Enzo's example b failed.")
+
+        assert_allclose(res.fun, -1.77,
+                err_msg="Test of linprog solution of Enzo's example b "
+                "converged but yielded unexpected objective value.")
+
+        assert_allclose(res.x, [0.3, 0.2, 0.0, 0.0, 0.1, 0.3],
+                err_msg="Test of linprog solution of Enzo's example "
+                "converged but yielded unexpected optimal solution.")
+
+    def test_enzo_example_c_with_degeneracy(self):
+        # rescued from https://github.com/scipy/scipy/pull/218
+        m = 20
+        c = -np.ones(m)
+        tmp = 2*np.pi*np.arange(1, m+1)/(m+1)
+        A_eq = np.vstack((np.cos(tmp)-1, np.sin(tmp)))
+        b_eq = [0, 0]
+        res = linprog(c=c, A_eq=A_eq, b_eq=b_eq)
+
+        assert_equal(res.status, 0,
+                err_msg="Test of linprog solution of Enzo's example c "
+                "with degeneracy failed.")
+
+        assert_allclose(res.fun, 0,
+                err_msg="Test of linprog solution of Enzo's example c "
+                "with degeneracy converged but yielded unexpected "
+                "objective value.")
+
+        assert_allclose(res.x, np.zeros(m),
+                err_msg="Test of linprog solution of Enzo's example c "
+                "with degeneracy converged but yielded unexpected "
+                "optimal solution.")
+
+    def test_enzo_example_c_with_unboundedness(self):
+        # rescued from https://github.com/scipy/scipy/pull/218
+        m = 50
+        c = -np.ones(m)
+        tmp = 2*np.pi*np.arange(m)/(m+1)
+        A_eq = np.vstack((np.cos(tmp)-1, np.sin(tmp)))
+        b_eq = [0, 0]
+        res = linprog(c=c, A_eq=A_eq, b_eq=b_eq)
+
+        assert_(not res.success,"Test of linprog with an unbounded problem "
+                                "errantly ended with success")
+
+        assert_equal(res.status, 3,
+                err_msg="Test of linprog solution of Enzo's example c "
+                "with unboundedness returned a status that does not "
+                "indicate unboundedness.")
+
+    def test_enzo_example_c_with_infeasibility(self):
+        # rescued from https://github.com/scipy/scipy/pull/218
+        m = 50
+        c = -np.ones(m)
+        tmp = 2*np.pi*np.arange(m)/(m+1)
+        A_eq = np.vstack((np.cos(tmp)-1, np.sin(tmp)))
+        b_eq = [1, 1]
+        res = linprog(c=c, A_eq=A_eq, b_eq=b_eq)
+
+        assert_(not res.success,"Test of linprog with an infeasible problem "
+                                "errantly ended with success")
+
+        assert_equal(res.status, 2, err_msg="Test of linprog with an "
+                "infeasible problem did not acknowledge its infeasibility")
+
     def test_callback(self):
         # Check that callback is as advertised
         callback_complete = [False]
