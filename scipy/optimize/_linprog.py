@@ -43,7 +43,7 @@ def linprog_verbose_callback(xk, **kwargs):
             The current tableau of the simplex algorithm.  Its structure is defined in _solve_simplex.
         phase : int
             The current Phase of the simplex algorithm (1 or 2)
-        iter : int
+        nit : int
             The current iteration number.
         pivot : tuple(int, int)
             The index of the tableau selected as the next pivot, or nan if no pivot exists
@@ -54,7 +54,7 @@ def linprog_verbose_callback(xk, **kwargs):
             True if the simplex algorithm has completed (and this is the final call to callback), otherwise False.
     """
     tableau = kwargs["tableau"]
-    iter = kwargs["iter"]
+    nit = kwargs["nit"]
     pivrow, pivcol = kwargs["pivot"]
     phase = kwargs["phase"]
     basis = kwargs["basis"]
@@ -66,14 +66,14 @@ def linprog_verbose_callback(xk, **kwargs):
     if complete:
         print("--------- Iteration Complete - Phase {:d} -------\n".format(phase))
         print("Tableau:")
-    elif iter == 0:
+    elif nit == 0:
         print("--------- Initial Tableau - Phase {:d} ----------\n".format(phase))
 
     else:
-        print("--------- Iteration {:d}  - Phase {:d} --------\n".format(iter, phase))
+        print("--------- Iteration {:d}  - Phase {:d} --------\n".format(nit, phase))
         print("Tableau:")
 
-    if iter >= 0:
+    if nit >= 0:
         print("" + str(tableau) + "\n")
         if not complete:
             print("Pivot Element: T[{:.0f}, {:.0f}]\n".format(pivrow, pivcol))
@@ -119,11 +119,11 @@ def linprog_terse_callback(xk, **kwargs):
         complete : bool
             True if the simplex algorithm has completed (and this is the final call to callback), otherwise False.
     """
-    iter = kwargs["iter"]
+    nit = kwargs["nit"]
 
-    if iter == 0:
+    if nit == 0:
         print("Iter:   X:")
-    print("{: <5d}   ".format(iter), end="")
+    print("{: <5d}   ".format(nit), end="")
     print(xk)
 
 
@@ -331,7 +331,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
             solution[basis[:m]] = T[:m, -1]
             callback(solution[:n], **{"tableau": T,
                                       "phase":phase,
-                                      "iter":nit,
+                                      "nit":nit,
                                       "pivot":(pivrow, pivcol),
                                       "basis":basis,
                                       "complete": complete and phase == 2})

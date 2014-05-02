@@ -240,7 +240,7 @@ class TestLinprog(TestCase):
         def cb(xk, **kwargs):
             kwargs.pop('tableau')
             assert_(isinstance(kwargs.pop('phase'), int))
-            assert_(isinstance(kwargs.pop('iter'), int))
+            assert_(isinstance(kwargs.pop('nit'), int))
 
             i, j = kwargs.pop('pivot')
             assert_(np.isscalar(i))
