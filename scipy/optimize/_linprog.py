@@ -18,7 +18,6 @@ Functions
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-import numpy.ma as ma
 
 from .optimize import OptimizeResult, _check_unknown_options
 
@@ -752,7 +751,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     # For those variables with finite negative lower bounds,
     # reverse the change of variables
-    masked_L = ma.array(L, mask=np.isinf(L), fill_value=0.0).filled()
+    masked_L = np.ma.array(L, mask=np.isinf(L), fill_value=0.0).filled()
     x = x + masked_L
 
     # For those variables with infinite negative lower bounds,
