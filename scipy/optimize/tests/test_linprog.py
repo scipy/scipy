@@ -228,18 +228,17 @@ class TestLinprog(TestCase):
         # A network flow problem with supply and demand at nodes
         # and with costs along directed edges.
         # https://www.princeton.edu/~rvdb/542/lectures/lec10.pdf
-        c = np.array([2, 4, 9, 11, 4, 3, 8, 7, 0, 15, 16, 18])
+        c = [2, 4, 9, 11, 4, 3, 8, 7, 0, 15, 16, 18]
         n, p = -1, 1
-        A_eq = np.array([
-            [n, n, p, 0, p, 0, 0, 0, 0, p, 0, 0],
-            [p, 0, 0, p, 0, p, 0, 0, 0, 0, 0, 0],
-            [0, 0, n, n, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, p, p, 0, 0, p, 0],
-            [0, 0, 0, 0, n, n, n, 0, p, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, n, n, 0, 0, p],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, n, n, n],
-            ])
-        b_eq = np.array([0, 19, -16, 33, 0, 0, -36])
+        A_eq = [
+                [n, n, p, 0, p, 0, 0, 0, 0, p, 0, 0],
+                [p, 0, 0, p, 0, p, 0, 0, 0, 0, 0, 0],
+                [0, 0, n, n, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, p, p, 0, 0, p, 0],
+                [0, 0, 0, 0, n, n, n, 0, p, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, n, n, 0, 0, p],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, n, n, n]]
+        b_eq = [0, 19, -16, 33, 0, 0, -36]
         res = linprog(c=c, A_eq=A_eq, b_eq=b_eq)
 
         assert_equal(res.status, 0,
@@ -248,6 +247,31 @@ class TestLinprog(TestCase):
         assert_allclose(res.fun, 755,
                 err_msg="Test of linprog solution of network flow "
                 "converged but yielded unexpected total cost.")
+
+    def test_network_flow_limited_capacity(self):
+        # A network flow problem with supply and demand at nodes
+        # and with costs and capacities along directed edges.
+        # http://blog.sommer-forst.de/2013/04/10/
+        cost = [2, 2, 1, 3, 1]
+        lb = [0, 0, 0, 0, 0]
+        ub = [4, 2, 2, 3, 5]
+        n, p = -1, 1
+        A_eq = [
+                [n, n, 0, 0, 0],
+                [p, 0, n, n, 0],
+                [0, p, p, 0, n],
+                [0, 0, 0, p, p]]
+        b_eq = [-4, 0, 0, 4]
+        res = linprog(c=cost, A_eq=A_eq, b_eq=b_eq, bounds=zip(lb, ub))
+
+        assert_equal(res.status, 0,
+                err_msg="Test of linprog solution of network flow "
+                "with limited capacity failed.")
+
+        assert_allclose(res.fun, 14,
+                err_msg="Test of linprog solution of network flow "
+                "with limited capacity converged but yielded unexpected "
+                "total cost.")
 
     def test_callback(self):
         # Check that callback is as advertised
