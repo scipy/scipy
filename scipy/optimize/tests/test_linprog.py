@@ -273,6 +273,22 @@ class TestLinprog(TestCase):
                 "with limited capacity converged but yielded unexpected "
                 "total cost.")
 
+    def test_simplex_algorithm_wikipedia_example(self):
+        # http://en.wikipedia.org/wiki/Simplex_algorithm#Example
+        Z = [-2, -3, -4]
+        A_ub = [
+                [3, 2, 1],
+                [2, 5, 3]]
+        b_ub = [10, 15]
+        res = linprog(c=Z, A_ub=A_ub, b_ub=b_ub)
+
+        assert_equal(res.status, 0,
+                err_msg="Test of linprog solution of Wikipedia example failed.")
+
+        assert_allclose(res.fun, -20,
+                err_msg="Test of linprog solution of Wikipedia example "
+                "converged but yielded unexpected objective value.")
+
     def test_callback(self):
         # Check that callback is as advertised
         callback_complete = [False]
