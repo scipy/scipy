@@ -2,7 +2,7 @@
 A top-level linear programming interface. Currently this interface only
 solves linear programming problems via the Simplex Method.
 
-.. versionadded:: 0.14.0
+.. versionadded:: 0.15.0
 
 Functions
 ---------
@@ -793,7 +793,7 @@ def linprog(c, A_eq=None, b_eq=None, A_ub=None, b_ub=None,
     Subject to:   A_ub * x <= b_ub
                   A_eq * x == b_eq
 
-    .. versionadded:: 0.14.0
+    .. versionadded:: 0.15.0
 
     Parameters
     ----------
