@@ -3099,12 +3099,14 @@ def theilslopes(y, x=None, alpha=0.05):
         alpha = 1.-alpha
     z = distributions.norm.ppf(alpha/2.)
     # this implements (2.6) from Sen (1968)
-    xreps, nreps = find_repeats(x)
+    _, nxreps = find_repeats(x)
+    _, nyreps = find_repeats(y)
     nt = len(slopes)       # N in Sen (1968)
     ny = len(y)            # n in Sen (1968)
     sigsq = (1/18.) * (    # equation 2.6 in Sen (1968)
         ny*(ny-1)*(2*ny+5)
-        - np.sum(k*(k-1)*(2*k+5) for k in nreps))
+        - np.sum(k*(k-1)*(2*k+5) for k in nxreps)
+        - np.sum(k*(k-1)*(2*k+5) for k in nyreps))
     # find the confidence interval indices in `slopes`
     sigma = np.sqrt(sigsq)
     Ru = min(np.round((nt - z*sigma)/2.), len(slopes)-1)
