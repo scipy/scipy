@@ -5,9 +5,8 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 
-from numpy.testing import assert_, assert_array_almost_equal, TestCase, \
-                          assert_allclose, run_module_suite, assert_almost_equal, \
-                          assert_raises
+from numpy.testing import (assert_, assert_array_almost_equal, TestCase,
+        assert_allclose, run_module_suite, assert_almost_equal, assert_raises)
 import numpy as np
 
 from scipy.optimize import linprog, OptimizeWarning

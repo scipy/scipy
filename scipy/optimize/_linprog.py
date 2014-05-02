@@ -527,8 +527,8 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     else:
         if len(bounds) != n:
             status = -1
-            message = "Invalid input for linprog with method = 'simplex'.  " \
-                      "Length of bounds is inconsistent with the length of c"
+            message = ("Invalid input for linprog with method = 'simplex'.  "
+                      "Length of bounds is inconsistent with the length of c")
         else:
             try:
                 for i in range(n):
@@ -538,9 +538,9 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                     U[i] = bounds[i][1] if not bounds[i][1] is None else np.inf
             except IndexError:
                 status = -1
-                message = "Invalid input for linprog with method = 'simplex'.  " \
-                          "bounds must be a n x 2 sequence/array where " \
-                          "n = len(c)."
+                message = ("Invalid input for linprog with "
+                          "method = 'simplex'.  bounds must be a n x 2 "
+                          "sequence/array where n = len(c).")
 
     if np.any(L == -np.inf):
         # If any lower-bound constraint is a free variable
@@ -560,18 +560,18 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     for i in range(n):
         if(L[i] > U[i]):
             status = -1
-            message = "Invalid input for linprog with method = 'simplex'.  " \
-                      "Lower bound %d is greater than upper bound %d" % (i, i)
+            message = ("Invalid input for linprog with method = 'simplex'.  "
+                      "Lower bound %d is greater than upper bound %d" % (i, i))
 
         if np.isinf(L[i]) and L[i] > 0:
             status = -1
-            message = "Invalid input for linprog with method = 'simplex'.  " \
-                      "Lower bound may not be +infinity"
+            message = ("Invalid input for linprog with method = 'simplex'.  "
+                      "Lower bound may not be +infinity")
 
         if np.isinf(U[i]) and U[i] < 0:
             status = -1
-            message = "Invalid input for linprog with method = 'simplex'.  " \
-                      "Upper bound may not be -infinity"
+            message = ("Invalid input for linprog with method = 'simplex'.  "
+                      "Upper bound may not be -infinity")
 
         if np.isfinite(L[i]) and L[i] > 0:
             # Add a new lower-bound (negative upper-bound) constraint
@@ -611,8 +611,8 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         if np.isinf(U[i]):
             if U[i] < 0:
                 status = -1
-                message = "Invalid input for linprog with method = 'simplex'.  " \
-                          "Upper bound may not be -inf."
+                message = ("Invalid input for linprog with "
+                          "method = 'simplex'.  Upper bound may not be -inf.")
 
     # The number of upper bound constraints (rows in A_ub and elements in b_ub)
     mub = len(bub)
@@ -642,26 +642,26 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     if Aeq_rows != meq:
         status = -1
-        message = "Invalid input for linprog with method = 'simplex'.  " \
-                  "The number of rows in A_eq must be equal " \
-                  "to the number of values in b_eq"
+        message = ("Invalid input for linprog with method = 'simplex'.  "
+                  "The number of rows in A_eq must be equal "
+                  "to the number of values in b_eq")
 
     if Aub_rows != mub:
         status = -1
-        message = "Invalid input for linprog with method = 'simplex'.  " \
-                  "The number of rows in A_ub must be equal " \
-                  "to the number of values in b_ub"
+        message = ("Invalid input for linprog with method = 'simplex'.  "
+                  "The number of rows in A_ub must be equal "
+                  "to the number of values in b_ub")
 
     if Aeq_cols > 0 and Aeq_cols != n:
         status = -1
-        message = "Invalid input for linprog with method = 'simplex'.  " \
-                  "Number of columns in A_eq must be equal " \
-                  "to the size of c"
+        message = ("Invalid input for linprog with method = 'simplex'.  "
+                  "Number of columns in A_eq must be equal "
+                  "to the size of c")
 
     if Aub_cols > 0 and Aub_cols != n:
         status = -1
-        message = "Invalid input for linprog with method = 'simplex'.  " \
-                  "Number of columns in A_ub must be equal to the size of c"
+        message = ("Invalid input for linprog with method = 'simplex'.  "
+                  "Number of columns in A_ub must be equal to the size of c")
 
     if status != 0:
         # Invalid inputs provided
