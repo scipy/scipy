@@ -744,6 +744,19 @@ class TestRegression(TestCase):
         assert_almost_equal(res[2], -1)  # perfect negative correlation case
         assert_(not np.isnan(res[4]))  # stderr should stay finite
 
+def test_theilslopes():
+    # Basic slope test.
+    slope, intercept, lower, upper = stats.theilslopes([0,1,1])
+    assert_almost_equal(slope, 0.5)
+    assert_almost_equal(intercept, 0.5)
+    
+    # Test of confidence intervals.
+    x = [1, 2, 3, 4, 10, 12, 18]
+    y = [9, 15, 19, 20, 45, 55, 78]
+    slope, intercept, lower, upper = stats.theilslopes(y, x, 0.07)
+    assert_almost_equal(slope, 4)
+    assert_almost_equal(upper, 4.38, decimal=2)
+    assert_almost_equal(lower, 3.71, decimal=2)
 
 class TestHistogram(TestCase):
     # Tests that histogram works as it should, and keeps old behaviour

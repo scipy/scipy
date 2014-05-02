@@ -112,6 +112,7 @@ Correlation Functions
    pointbiserialr
    kendalltau
    linregress
+   theilslopes
 
 Inferential Stats
 -----------------
@@ -187,25 +188,23 @@ from . import distributions
 
 from ._rank import rankdata, tiecorrect
 
-__all__ = ['find_repeats', 'gmean', 'hmean', 'mode',
-           'tmean', 'tvar', 'tmin', 'tmax', 'tstd', 'tsem',
-           'moment', 'variation', 'skew', 'kurtosis', 'describe',
-           'skewtest', 'kurtosistest', 'normaltest', 'jarque_bera',
-           'itemfreq', 'scoreatpercentile', 'percentileofscore',
-           'histogram', 'histogram2', 'cumfreq', 'relfreq',
-           'obrientransform', 'signaltonoise', 'sem', 'zmap', 'zscore',
-           'threshold', 'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
-           'f_oneway', 'pearsonr', 'fisher_exact',
-           'spearmanr', 'pointbiserialr', 'kendalltau', 'linregress',
-           'ttest_1samp', 'ttest_ind', 'ttest_rel', 'kstest',
-           'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
+__all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
+           'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
+           'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
+           'normaltest', 'jarque_bera', 'itemfreq',
+           'scoreatpercentile', 'percentileofscore', 'histogram',
+           'histogram2', 'cumfreq', 'relfreq', 'obrientransform',
+           'signaltonoise', 'sem', 'zmap', 'zscore', 'threshold',
+           'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
+           'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
+           'kendalltau', 'linregress', 'theilslopes', 'ttest_1samp',
+           'ttest_ind', 'ttest_rel', 'kstest', 'chisquare',
+           'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'zprob', 'chisqprob', 'ksprob', 'fprob', 'betai',
            'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
-           'ss', 'square_of_sums',
-           'fastsort', 'rankdata',
-           'nanmean', 'nanstd', 'nanmedian',
-           ]
+           'ss', 'square_of_sums', 'fastsort', 'rankdata', 'nanmean',
+           'nanstd', 'nanmedian', ]
 
 
 def _chk_asarray(a, axis):
@@ -3039,6 +3038,79 @@ def linregress(x, y=None):
     intercept = ymean - slope*xmean
     sterrest = np.sqrt((1-r*r)*ssym / ssxm / df)
     return slope, intercept, r, prob, sterrest
+
+
+def theilslopes(y, x=None, alpha=0.05):
+    """
+    Computes the Theil slope as the median of all slopes between paired values.
+
+    Parameters
+    ----------
+    y : array_like
+        Dependent variable.
+    x : {None, array_like}, optional
+        Independent variable. If None, use arange(len(y)) instead.
+    alpha : float
+        Confidence degree between 0 and 1. Default is 95% confidence.
+
+    Returns
+    -------
+    medslope : float
+        Theil slope
+    medintercept : float
+        Intercept of the Theil line, as median(y)-medslope*median(x)
+    lo_slope : float
+        Lower bound of the confidence interval on medslope
+    up_slope : float
+        Upper bound of the confidence interval on medslope
+    
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import numpy as np
+    >>> y = np.random.random(10)
+    
+    # Compute the slope, intercept and 90% confidence interval:
+    
+    >>> medslope, medintercept, lo_slope, up_slope = stats.theilslopes(y, 0.9)
+
+    References
+    ----------
+    Sen, P. (1968). Estimates of the regression coefficient based on 
+    Kendall's tau.
+    
+    """
+    y = np.asarray(y).flatten()
+    if x is None:
+        x = np.arange(len(y), dtype=float)
+    else:
+        x = np.asarray(x, dtype=float).flatten()
+        if len(x) != len(y):
+            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y),len(x)))
+    # Compute sorted slopes only when deltax > 0
+    deltax = x[:,np.newaxis] - x
+    deltay = y[:,np.newaxis] - y
+    slopes = deltay[deltax > 0] / deltax[deltax > 0]
+    slopes.sort()
+    medslope = np.median(slopes)
+    medinter = np.median(y) - medslope*np.median(x)
+    # Now compute confidence intervals
+    if alpha > 0.5:
+        alpha = 1.-alpha
+    z = distributions.norm.ppf(alpha/2.)
+    # this implements (2.6) from Sen (1968)
+    xreps, nreps = find_repeats(x)
+    nt = len(slopes)       # N in Sen (1968)
+    ny = len(y)            # n in Sen (1968)
+    sigsq = (1/18.) * (    # equation 2.6 in Sen (1968)
+        ny*(ny-1)*(2*ny+5)
+        - np.sum(k*(k-1)*(2*k+5) for k in nreps))
+    # find the confidence interval indices in `slopes`
+    sigma = np.sqrt(sigsq)
+    Ru = min(np.round((nt - z*sigma)/2.), len(slopes)-1)
+    Rl = max(np.round((nt + z*sigma)/2.) - 1, 0)
+    delta = slopes[[Rl,Ru]]
+    return medslope, medinter, delta[0], delta[1]
 
 
 #####################################
