@@ -6,7 +6,8 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 from numpy.testing import (assert_, assert_array_almost_equal, TestCase,
-        assert_allclose, run_module_suite, assert_almost_equal, assert_raises)
+        assert_allclose, run_module_suite, assert_almost_equal, assert_raises,
+        assert_equal)
 import numpy as np
 
 from scipy.optimize import linprog, OptimizeWarning
@@ -230,6 +231,26 @@ class TestLinprog(TestCase):
         assert_almost_equal(res.fun,-64.049494229,
                             err_msg="Test of linprog with 400 x 40 problem"
                                     "gave incorrect solution")
+
+    def test_network_flow(self):
+        # A network flow problem with supply and demand at nodes
+        # and with costs along directed edges.
+        # https://www.princeton.edu/~rvdb/542/lectures/lec10.pdf
+        c = np.array([2, 4, 9, 11, 4, 3, 8, 7, 0, 15, 16, 18], dtype=float)
+        n, p = -1, 1
+        A_eq = np.array([
+            [n, n, p, 0, p, 0, 0, 0, 0, p, 0, 0],
+            [p, 0, 0, p, 0, p, 0, 0, 0, 0, 0, 0],
+            [0, 0, n, n, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, p, p, 0, 0, p, 0],
+            [0, 0, 0, 0, n, n, n, 0, p, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, n, n, 0, 0, p],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, n, n, n],
+            ], dtype=float)
+        b_eq = np.array([0, 19, -16, 33, 0, 0, -36], dtype=float)
+        result = linprog(c=c, A_eq=A_eq, b_eq=b_eq)
+        assert_equal(result.status, 0)
+        assert_allclose(result.fun, 755)
 
     def test_callback(self):
         # Check that callback is as advertised
