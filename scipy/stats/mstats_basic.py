@@ -724,6 +724,7 @@ def theilslopes(y, x=None, alpha=0.05):
     # We now have unmasked arrays so can use `stats.theilslopes`
     return stats.theilslopes(y, x, alpha=alpha)
 
+
 def sen_seasonal_slopes(x):
     x = ma.array(x, subok=True, copy=False, ndmin=2)
     (n,_) = x.shape
