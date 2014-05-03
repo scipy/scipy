@@ -1451,7 +1451,8 @@ def test_regression_ticket_1421():
 
 
 def test_nan_arguments_gh_issue_1362():
-    assert_(np.isnan(stats.t.logcdf(1, np.nan)))
+    with np.errstate(invalid='ignore'):
+        assert_(np.isnan(stats.t.logcdf(1, np.nan)))
     assert_(np.isnan(stats.t.cdf(1, np.nan)))
     assert_(np.isnan(stats.t.logsf(1, np.nan)))
     assert_(np.isnan(stats.t.sf(1, np.nan)))

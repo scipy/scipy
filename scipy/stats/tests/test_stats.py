@@ -1706,7 +1706,8 @@ def test_chisquare_masked_arrays():
 
     # Empty arrays:
     # A data set with length 0 returns a masked scalar.
-    chisq, p = stats.chisquare(np.ma.array([]))
+    with np.errstate(invalid='ignore'):
+        chisq, p = stats.chisquare(np.ma.array([]))
     assert_(isinstance(chisq, np.ma.MaskedArray))
     assert_equal(chisq.shape, ())
     assert_(chisq.mask)
