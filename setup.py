@@ -195,7 +195,7 @@ def setup_package():
     try:
         import numpy
     except:
-        build_requires = ['numpy']
+        build_requires = ['numpy>=1.5.1']
 
     metadata = dict(
         name = 'scipy',
