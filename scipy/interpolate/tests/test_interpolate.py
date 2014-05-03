@@ -843,7 +843,8 @@ class TestPPoly(TestCase):
             for i in range(k):
                 res += c[i,None] * w**(k-1-i)
                 cres += abs(c[i,None] * w**(k-1-i))
-            res /= cres
+            with np.errstate(invalid='ignore'):
+                res /= cres
             res = res.ravel()
             res = res[~np.isnan(res)]
             assert_allclose(res, 0, atol=1e-10)
