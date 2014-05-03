@@ -718,6 +718,32 @@ class TestNorm(object):
         assert_equal(norm([1,0,3], 0), 2)
         assert_equal(norm([1,2,3], 0), 3)
 
+    def test_axis(self):
+        # These are from examples in the norm function docstring.
+        c = np.array([
+            [ 1, 2, 3],
+            [-1, 1, 4]])
+
+        # Vector norms.
+        assert_allclose(
+                norm(c, axis=0)
+                array([1.41421356, 2.23606798, 5.0]))
+        assert_allclose(
+                norm(c, axis=1)
+                array([3.74165739, 4.24264069]))
+        assert_allclose(
+                norm(c, ord=1, axis=1)
+                array([6, 6]))
+
+        # Matrix norms.
+        m = np.arange(8).reshape(2,2,2)
+        assert_allclose(
+                norm(m, axis=(1,2))
+                array([3.74165739, 11.22497216]))
+        assert_allclose(
+                (norm(m[0, :, :]), norm(m[1, :, :])),
+                (3.7416573867739413, 11.224972160321824))
+
 
 class TestOverwrite(object):
     def test_solve(self):
