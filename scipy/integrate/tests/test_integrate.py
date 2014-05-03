@@ -5,14 +5,14 @@ Tests for numerical integration.
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy import arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp, \
-                  allclose
+from numpy import (arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp,
+                   allclose)
 
 from scipy.lib.six import xrange
 
-from numpy.testing import assert_, TestCase, run_module_suite, \
-        assert_array_almost_equal, assert_raises, assert_allclose, \
-        assert_array_equal, assert_equal
+from numpy.testing import (
+    assert_, TestCase, run_module_suite, assert_array_almost_equal,
+    assert_raises, assert_allclose, assert_array_equal, assert_equal)
 from scipy.integrate import odeint, ode, complex_ode
 
 #------------------------------------------------------------------------------
@@ -370,21 +370,21 @@ class SimpleOscillator(ODE):
     m = 1.0
 
     def f(self, z, t):
-        tmp = zeros((2,2), float)
-        tmp[0,1] = 1.0
-        tmp[1,0] = -self.k / self.m
+        tmp = zeros((2, 2), float)
+        tmp[0, 1] = 1.0
+        tmp[1, 0] = -self.k / self.m
         return dot(tmp, z)
 
     def verify(self, zs, t):
         omega = sqrt(self.k / self.m)
-        u = self.z0[0]*cos(omega*t)+self.z0[1]*sin(omega*t)/omega
-        return allclose(u, zs[:,0], atol=self.atol, rtol=self.rtol)
+        u = self.z0[0]*cos(omega*t) + self.z0[1]*sin(omega*t)/omega
+        return allclose(u, zs[:, 0], atol=self.atol, rtol=self.rtol)
 
 
 class ComplexExp(ODE):
     r"""The equation :lm:`\dot u = i u`"""
     stop_t = 1.23*pi
-    z0 = exp([1j,2j,3j,4j,5j])
+    z0 = exp([1j, 2j, 3j, 4j, 5j])
     cmplx = True
 
     def f(self, z, t):
@@ -409,10 +409,8 @@ class Pi(ODE):
 
     def verify(self, zs, t):
         u = -2j * np.arctan(10)
-        return allclose(u, zs[-1,:], atol=self.atol, rtol=self.rtol)
+        return allclose(u, zs[-1, :], atol=self.atol, rtol=self.rtol)
 
-
-lmbd = [0.17, 0.23, 0.29] # fictious decay constants
 
 class CoupledDecay(ODE):
     r"""
@@ -426,7 +424,10 @@ class CoupledDecay(ODE):
     lband = 1
     uband = 0
 
+    lmbd = [0.17, 0.23, 0.29]  # fictious decay constants
+
     def f(self, z, t):
+        lmbd = self.lmbd
         return np.array([-lmbd[0]*z[0],
                          -lmbd[1]*z[1] + lmbd[0]*z[0],
                          -lmbd[2]*z[2] + lmbd[1]*z[1]])
@@ -444,42 +445,33 @@ class CoupledDecay(ODE):
         #    [-lmbd[0]  -lmbd[1]  -lmbd[2]]
         #    [ lmbd[0]   lmbd[1]      0   ]
 
+        lmbd = self.lmbd
         j = np.zeros((self.lband + self.uband + 1, 3), order='F')
+
         def set_j(ri, ci, val):
             j[self.uband + ri - ci, ci] = val
         set_j(0, 0, -lmbd[0])
-        set_j(1, 0,  lmbd[0])
+        set_j(1, 0, lmbd[0])
         set_j(1, 1, -lmbd[1])
-        set_j(2, 1,  lmbd[1])
+        set_j(2, 1, lmbd[1])
         set_j(2, 2, -lmbd[2])
         return j
 
     def verify(self, zs, t):
-         # Formulae derived by hand
+        # Formulae derived by hand
+        lmbd = np.array(self.lmbd)
+        d10 = lmbd[1] - lmbd[0]
+        d21 = lmbd[2] - lmbd[1]
+        d20 = lmbd[2] - lmbd[0]
+        e0 = np.exp(-lmbd[0] * t)
+        e1 = np.exp(-lmbd[1] * t)
+        e2 = np.exp(-lmbd[2] * t)
         u = np.vstack((
-            self.z0[0]*np.exp(-lmbd[0]*t),
-            self.z0[1]*np.exp(-lmbd[1] * t) +
-                self.z0[0] * lmbd[0] /
-                (lmbd[1] - lmbd[0]) *
-                (np.exp(-lmbd[0]*t) -
-                np.exp( - lmbd[1] * t)),
-            self.z0[2] * np.exp(-lmbd[2] * t) +
-                self.z0[1] * lmbd[1] /
-                (lmbd[2] - lmbd[1]) *
-                (np.exp(-lmbd[1]*t) -
-                 np.exp(-lmbd[2]*t)) +
-                lmbd[1] * lmbd[0] *
-                self.z0[0] / (lmbd[1] -
-                              lmbd[0]) *
-                (1 / (lmbd[2] -
-                      lmbd[0]) *
-                 (np.exp( - lmbd[0] * t) -
-                  np.exp( - lmbd[2] * t)) -
-                 1 / (lmbd[2] -
-                      lmbd[1]) *
-                 (np.exp( - lmbd[1] * t) -
-                  np.exp( - lmbd[2] * t)))
-        )).transpose()
+            self.z0[0] * e0,
+            self.z0[1] * e1 + self.z0[0] * lmbd[0] / d10 * (e0 - e1),
+            self.z0[2] * e2 + self.z0[1] * lmbd[1] / d21 * (e1 - e2) +
+            lmbd[1] * lmbd[0] * self.z0[0] / d10 *
+            (1 / d20 * (e0 - e2) - 1 / d21 * (e1 - e2)))).transpose()
         return allclose(u, zs, atol=self.atol, rtol=self.rtol)
 
 
