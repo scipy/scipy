@@ -9,8 +9,6 @@ bnorm.o\
 cdrv.o\
 cfode.o\
 cntnzu.o\
-ddassl.o\
-ddasrt.o\
 decbt.o\
 ewset.o\
 fnorm.o\

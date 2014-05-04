@@ -15,7 +15,6 @@ Library:
     CompiledLibrary: mach
         Sources:
             mach/d1mach.f,
-            mach/i1mach.f,
             mach/r1mach.f,
             mach/xerror.f
     CompiledLibrary: quadpack
