@@ -1795,9 +1795,6 @@ class _TestInplaceArithmetic:
             y *= b.T
             assert_array_equal(x, y)
 
-            # Matrix (non-elementwise) division is not defined
-            assert_raises(TypeError, operator.itruediv, x, b)
-
             # Matrix (non-elementwise) floor division is not defined
             assert_raises(TypeError, operator.ifloordiv, x, b)
 
@@ -1868,7 +1865,6 @@ class _TestInplaceArithmetic:
         bp = bp - a
         assert_allclose(b.A, bp.A)
 
-        assert_raises(TypeError, operator.itruediv, a, b)
         assert_raises(TypeError, operator.ifloordiv, a, b)
 
 
