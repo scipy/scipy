@@ -718,6 +718,22 @@ class TestNorm(object):
         assert_equal(norm([1,0,3], 0), 2)
         assert_equal(norm([1,2,3], 0), 3)
 
+    def test_syntax_smokeout(self):
+        c1 = np.array([-1, 1/2, 1])
+        c2 = np.array([
+            [1, 2, 3],
+            [-1, 1, 4]])
+        common_ords = (-np.Inf, -2, -1, 1, 2, np.Inf, None)
+        matrix_ords = common_ords + ('fro', 'f')
+        vector_ords = common_ords + (-3, 3, 1/4, 1/2)
+        for ord in vector_ords:
+            norm(c1, ord=ord)
+            for axis in (0, (1,)):
+                norm(c2, ord=ord, axis=axis)
+        for ord in matrix_ords:
+            for axis in (None, (0, 1)):
+                norm(c2, ord=ord, axis=axis)
+
     def test_axis(self):
         # These are from examples in the norm function docstring.
         c = np.array([

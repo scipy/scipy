@@ -51,7 +51,7 @@ if NumpyVersion(np.__version__) >= '1.8.0.dev':
     _norm = np.linalg.norm
 else:
 
-    from numpy import add, sqrt, dot, abs, amax, Inf, longdouble
+    from numpy import add, sqrt, dot, abs, amin, amax, Inf, longdouble
     from numpy import asarray, asfarray, rollaxis, iscomplexobj
     from numpy.linalg import svd
 
