@@ -84,7 +84,6 @@ else:
         result = op(svd(y, compute_uv=0), axis=-1)
         return result
 
-
     def _norm(x, ord=None, axis=None):
         """
         Matrix or vector norm.

@@ -721,7 +721,7 @@ class TestNorm(object):
     def test_axis(self):
         # These are from examples in the norm function docstring.
         c = np.array([
-            [ 1, 2, 3],
+            [1, 2, 3],
             [-1, 1, 4]])
 
         # Vector norms.
