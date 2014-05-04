@@ -3,10 +3,9 @@ Unit test for Linear Programming via Simplex Algorithm.
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import (assert_, assert_array_almost_equal, TestCase,
-        assert_allclose, run_module_suite, assert_almost_equal, assert_raises,
-        assert_equal)
 import numpy as np
+from numpy.testing import (assert_, assert_array_almost_equal, assert_allclose,
+        assert_almost_equal, assert_raises, assert_equal, TestCase)
 
 from scipy.optimize import linprog, OptimizeWarning
 from scipy.lib._numpy_compat import _assert_warns
@@ -39,12 +38,35 @@ def lpgen_2d(m,n):
     return A, b, c.ravel()
 
 
+def _assert_infeasible(res):
+    # res: linprog result object
+    assert_(not res.success, "incorrectly reported success")
+    assert_equal(res.status, 2, "failed to report infeasible status")
+
+
+def _assert_unbounded(res):
+    # res: linprog result object
+    assert_(not res.success, "incorrectly reported success")
+    assert_equal(res.status, 3, "failed to report unbounded status")
+
+
+def _assert_success(res, desired_fun=None, desired_x=None):
+    # res: linprog result object
+    # desired_fun: desired objective function value or None
+    # desired_x: desired solution or None
+    assert_(res.success)
+    assert_equal(res.status, 0)
+    if desired_fun is not None:
+        assert_allclose(res.fun, desired_fun,
+                        err_msg="converged to an unexpected objective value")
+    if desired_x is not None:
+        assert_allclose(res.x, desired_x,
+                        err_msg="converged to an unexpected solution")
+
+
 class TestLinprog(TestCase):
     """  Test the linprog routines using a variety of example problems.
     """
-    def setUp(self):
-        self.opts = {'disp': False}
-
     def test_linprog_upper_bound_constraints(self):
         # Maximize a linear function subject to only linear upper bound constraints.
         #  http://www.dam.brown.edu/people/huiwang/classes/am121/Archive/simplex_121_c.pdf
@@ -55,17 +77,7 @@ class TestLinprog(TestCase):
         b_ub = [10,8,4]
 
         res = (linprog(c,A_ub=A_ub,b_ub=b_ub))
-
-        assert_equal(res.status, 0,
-                err_msg="Test of linprog upper bound constraints failed.")
-
-        assert_array_almost_equal(res.x,np.array([2.0,6.0]),
-                                  err_msg="Test of linprog upper bound "
-                                          "constraints failed with incorrect "
-                                          "result.")
-
-        assert_almost_equal(-res.fun, 18, err_msg="Test of linprog upper bound "
-                "constraints converged with incorrect objective value.")
+        _assert_success(res, desired_fun=-18, desired_x=[2, 6])
 
     def test_linprog_mixed_constraints(self):
         # Minimize linear function subject to non-negative variables.
@@ -77,18 +89,7 @@ class TestLinprog(TestCase):
         b_ub = [2,-1,-1]
 
         res = linprog(c,A_ub=A_ub,b_ub=b_ub)
-
-        assert_equal(res.status, 0,
-                err_msg="Test of linprog with artificial variables failed.")
-
-        assert_array_almost_equal(res.x,[2/3,1/3],
-                                  err_msg="Test of linprog with artificial "
-                                          "variables failed with incorrect "
-                                          "result.")
-
-        assert_almost_equal(res.fun,5,err_msg="Test of linprog with artificial "
-                                              "variables failed with incorrect "
-                                              "objective value.")
+        _assert_success(res, desired_fun=5, desired_x=[2/3, 1/3])
 
     def test_linprog_cyclic_recovery(self):
         # Test linprogs recovery from cycling using the Klee-Minty problem
@@ -101,14 +102,7 @@ class TestLinprog(TestCase):
         b_ub = [1,100,10000]
 
         res = linprog(c,A_ub=A_ub,b_ub=b_ub)
-
-        assert_equal(res.status, 0,
-                err_msg="Test of linprog recovery from cycling failed.")
-
-        assert_array_almost_equal(res.x,[0,0,10000],
-                                  err_msg="Test of linprog recovery from "
-                                          "cycling failed with incorrect "
-                                          "result.")
+        _assert_success(res, desired_x=[0, 0, 10000])
 
     def test_linprog_cyclic_bland(self):
         # Test the effect of Bland's rule on a cycling problem
@@ -118,14 +112,12 @@ class TestLinprog(TestCase):
                          [1, 0, 0, 0]])
         b_ub = [0, 0, 1]
 
-        res = linprog(c, A_ub=A_ub, b_ub=b_ub,
-                      options=dict(maxiter=100))
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, options=dict(maxiter=100))
         assert_(not res.success)
 
         res = linprog(c, A_ub=A_ub, b_ub=b_ub,
                       options=dict(maxiter=100, bland=True,))
-        assert_(res.success)
-        assert_allclose(res.x, [1, 0, 1, 0])
+        _assert_success(res, desired_x=[1, 0, 1, 0])
 
     def test_linprog_unbounded(self):
         # Test linprog response to an unbounded problem
@@ -135,9 +127,7 @@ class TestLinprog(TestCase):
         b_ub = [-1,-2]
 
         res = linprog(c,A_ub=A_ub,b_ub=b_ub)
-
-        assert_equal(res.status, 3, err_msg="Test of linprog response to an "
-                "unbounded problem failed.")
+        _assert_unbounded(res)
 
     def test_linprog_infeasible(self):
         # Test linrpog response to an infeasible problem
@@ -149,12 +139,7 @@ class TestLinprog(TestCase):
         b_ub = [2,2,-5]
 
         res = linprog(c,A_ub=A_ub,b_ub=b_ub)
-
-        assert_(not res.success,"Test of linprog with an infeasible problem "
-                                "errantly ended with success")
-
-        assert_equal(res.status, 2, err_msg="Test of linprog with an "
-                "infeasible problem did not acknowledge its infeasibility")
+        _assert_infeasible(res)
 
     def test_nontrivial_problem(self):
         # Test linprog for a problem involving all constraint types,
@@ -171,18 +156,8 @@ class TestLinprog(TestCase):
         b_eq = [-4]
 
         res = linprog(c,A_ub=A_ub,b_ub=b_ub,A_eq=A_eq,b_eq=b_eq)
-
-        assert_equal(res.status, 0,
-                err_msg="Test of linprog with nontrivial problem failed.")
-
-        assert_almost_equal(res.fun, 7083/1391, 9,
-                err_msg="Test of linprog with nontrivial problem converged "
-                "but yielded unexpected result")
-
-        assert_array_almost_equal(res.x,[101/1391,1462/1391,0,752/1391],
-                                  err_msg="Test of linprog with nontrivial "
-                                          "problem converged but yielded "
-                                          "unexpected result.")
+        _assert_success(res, desired_fun=7083/1391,
+                        desired_x=[101/1391,1462/1391,0,752/1391])
 
     def test_negative_variable(self):
         # Test linprog with a problem with one unbounded variable and
@@ -198,31 +173,14 @@ class TestLinprog(TestCase):
         x1_bounds = (-3,np.inf)
 
         res = linprog(c,A_ub=A_ub,b_ub=b_ub,bounds=(x0_bounds,x1_bounds))
-
-        assert_equal(res.status, 0,
-                err_msg="Test of linprog with negative variable failed.")
-
-        assert_allclose(-res.fun,80/7,err_msg="Test of linprog with negative "
-                                              "variable converged but yielded "
-                                              "unexpected result.")
-
-        assert_array_almost_equal(res.x,[-8/7,18/7],
-                                  err_msg="Test of linprog with negative "
-                                          "variable converged but yielded "
-                                          "unexpected result")
+        _assert_success(res, desired_fun=-80/7, desired_x=[-8/7, 18/7])
 
     def test_large_problem(self):
         # Test linprog simplex with a rather large problem (400 variables,
         # 40 constraints) generated by https://gist.github.com/denis-bz/8647461
         A,b,c = lpgen_2d(20,20)
         res = linprog(c,A_ub=A,b_ub=b)
-
-        assert_equal(res.status, 0,
-                err_msg="Test of linprog with large problem failed.")
-
-        assert_almost_equal(res.fun,-64.049494229,
-                            err_msg="Test of linprog with 400 x 40 problem"
-                                    "gave incorrect solution")
+        _assert_success(res, desired_fun=-64.049494229)
 
     def test_network_flow(self):
         # A network flow problem with supply and demand at nodes
@@ -240,13 +198,7 @@ class TestLinprog(TestCase):
                 [0, 0, 0, 0, 0, 0, 0, 0, 0, n, n, n]]
         b_eq = [0, 19, -16, 33, 0, 0, -36]
         res = linprog(c=c, A_eq=A_eq, b_eq=b_eq)
-
-        assert_equal(res.status, 0,
-                err_msg="Test of linprog solution of network flow failed.")
-
-        assert_allclose(res.fun, 755,
-                err_msg="Test of linprog solution of network flow "
-                "converged but yielded unexpected total cost.")
+        _assert_success(res, desired_fun=755)
 
     def test_network_flow_limited_capacity(self):
         # A network flow problem with supply and demand at nodes
@@ -267,15 +219,7 @@ class TestLinprog(TestCase):
                 [0, 0, 0, p, p]]
         b_eq = [-4, 0, 0, 4]
         res = linprog(c=cost, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
-
-        assert_equal(res.status, 0,
-                err_msg="Test of linprog solution of network flow "
-                "with limited capacity failed.")
-
-        assert_allclose(res.fun, 14,
-                err_msg="Test of linprog solution of network flow "
-                "with limited capacity converged but yielded unexpected "
-                "total cost.")
+        _assert_success(res, desired_fun=14)
 
     def test_simplex_algorithm_wikipedia_example(self):
         # http://en.wikipedia.org/wiki/Simplex_algorithm#Example
@@ -285,13 +229,7 @@ class TestLinprog(TestCase):
                 [2, 5, 3]]
         b_ub = [10, 15]
         res = linprog(c=Z, A_ub=A_ub, b_ub=b_ub)
-
-        assert_equal(res.status, 0,
-                err_msg="Test of linprog solution of Wikipedia example failed.")
-
-        assert_allclose(res.fun, -20,
-                err_msg="Test of linprog solution of Wikipedia example "
-                "converged but yielded unexpected objective value.")
+        _assert_success(res, desired_fun=-20)
 
     def test_enzo_example(self):
         # http://projects.scipy.org/scipy/attachment/ticket/1252/lp2.py
@@ -308,17 +246,8 @@ class TestLinprog(TestCase):
                 [8, 10, 4, 0, 0, -1]]
         b_eq = [185, 155, 600]
         res = linprog(c=c, A_eq=A_eq, b_eq=b_eq)
-
-        assert_equal(res.status, 0,
-                err_msg="Test of linprog solution of Enzo's example failed.")
-
-        assert_allclose(res.fun, 317.5,
-                err_msg="Test of linprog solution of Enzo's example "
-                "converged but yielded unexpected objective value.")
-
-        assert_allclose(res.x, [66.25, 0, 17.5, 0, 183.75, 0],
-                err_msg="Test of linprog solution of Enzo's example "
-                "converged but yielded unexpected optimal solution.")
+        _assert_success(res, desired_fun=317.5,
+                        desired_x=[66.25, 0, 17.5, 0, 183.75, 0])
 
     def test_enzo_example_b(self):
         # rescued from https://github.com/scipy/scipy/pull/218
@@ -331,17 +260,8 @@ class TestLinprog(TestCase):
                 [0, 0, 1, 0, 0, 1]]
         b_eq = [-0.5, 0.4, 0.3, 0.3, 0.3]
         res = linprog(c=c, A_eq=A_eq, b_eq=b_eq)
-
-        assert_equal(res.status, 0,
-                err_msg="Test of linprog solution of Enzo's example b failed.")
-
-        assert_allclose(res.fun, -1.77,
-                err_msg="Test of linprog solution of Enzo's example b "
-                "converged but yielded unexpected objective value.")
-
-        assert_allclose(res.x, [0.3, 0.2, 0.0, 0.0, 0.1, 0.3],
-                err_msg="Test of linprog solution of Enzo's example "
-                "converged but yielded unexpected optimal solution.")
+        _assert_success(res, desired_fun=-1.77,
+                        desired_x=[0.3, 0.2, 0.0, 0.0, 0.1, 0.3])
 
     def test_enzo_example_c_with_degeneracy(self):
         # rescued from https://github.com/scipy/scipy/pull/218
@@ -351,20 +271,7 @@ class TestLinprog(TestCase):
         A_eq = np.vstack((np.cos(tmp)-1, np.sin(tmp)))
         b_eq = [0, 0]
         res = linprog(c=c, A_eq=A_eq, b_eq=b_eq)
-
-        assert_equal(res.status, 0,
-                err_msg="Test of linprog solution of Enzo's example c "
-                "with degeneracy failed.")
-
-        assert_allclose(res.fun, 0,
-                err_msg="Test of linprog solution of Enzo's example c "
-                "with degeneracy converged but yielded unexpected "
-                "objective value.")
-
-        assert_allclose(res.x, np.zeros(m),
-                err_msg="Test of linprog solution of Enzo's example c "
-                "with degeneracy converged but yielded unexpected "
-                "optimal solution.")
+        _assert_success(res, desired_fun=0, desired_x=np.zeros(m))
 
     def test_enzo_example_c_with_unboundedness(self):
         # rescued from https://github.com/scipy/scipy/pull/218
@@ -374,14 +281,7 @@ class TestLinprog(TestCase):
         A_eq = np.vstack((np.cos(tmp)-1, np.sin(tmp)))
         b_eq = [0, 0]
         res = linprog(c=c, A_eq=A_eq, b_eq=b_eq)
-
-        assert_(not res.success,"Test of linprog with an unbounded problem "
-                                "errantly ended with success")
-
-        assert_equal(res.status, 3,
-                err_msg="Test of linprog solution of Enzo's example c "
-                "with unboundedness returned a status that does not "
-                "indicate unboundedness.")
+        _assert_unbounded(res)
 
     def test_enzo_example_c_with_infeasibility(self):
         # rescued from https://github.com/scipy/scipy/pull/218
@@ -391,12 +291,7 @@ class TestLinprog(TestCase):
         A_eq = np.vstack((np.cos(tmp)-1, np.sin(tmp)))
         b_eq = [1, 1]
         res = linprog(c=c, A_eq=A_eq, b_eq=b_eq)
-
-        assert_(not res.success,"Test of linprog with an infeasible problem "
-                                "errantly ended with success")
-
-        assert_equal(res.status, 2, err_msg="Test of linprog with an "
-                "infeasible problem did not acknowledge its infeasibility")
+        _assert_infeasible(res)
 
     def test_callback(self):
         # Check that callback is as advertised
@@ -441,20 +336,21 @@ class TestLinprog(TestCase):
         b_ub = [10,8,4]
 
         _assert_warns(OptimizeWarning, linprog,
-                c, A_ub=A_ub, b_ub=b_ub, options=dict(spam='42'))
+                      c, A_ub=A_ub, b_ub=b_ub, options=dict(spam='42'))
 
         assert_raises(ValueError, linprog,
-                c, A_ub=A_ub, b_ub=b_ub, method='ekki-ekki-ekki')
+                      c, A_ub=A_ub, b_ub=b_ub, method='ekki-ekki-ekki')
 
     def test_no_constraints(self):
         res = linprog([-1, -2])
-        assert_allclose(res.x, [0, 0])
+        assert_equal(res.x, [0, 0])
+        _assert_unbounded(res)
 
     def test_simple_bounds(self):
         res = linprog([1, 2], bounds=(1, 2))
-        assert_allclose(res.x, [1, 1])
+        _assert_success(res, desired_x=[1, 1])
         res = linprog([1, 2], bounds=[(1, 2), (1, 2)])
-        assert_allclose(res.x, [1, 1])
+        _assert_success(res, desired_x=[1, 1])
 
     def test_invalid_inputs(self):
         for bad_bound in [[(5, 0), (1, 2), (3, 4)],
@@ -463,8 +359,7 @@ class TestLinprog(TestCase):
                           [(1, 2), (np.inf, np.inf), (3, 4)],
                           [(1, 2), (-np.inf, -np.inf), (3, 4)],
                           ]:
-            assert_raises(ValueError, linprog,
-                          [1, 2, 3], bounds=bad_bound)
+            assert_raises(ValueError, linprog, [1, 2, 3], bounds=bad_bound)
 
         assert_raises(ValueError, linprog, [1,2], A_ub=[[1,2]], b_ub=[1,2])
         assert_raises(ValueError, linprog, [1,2], A_ub=[[1]], b_ub=[1])
@@ -472,6 +367,3 @@ class TestLinprog(TestCase):
         assert_raises(ValueError, linprog, [1,2], A_eq=[[1]], b_eq=[1])
         assert_raises(ValueError, linprog, [1,2], A_eq=[1], b_eq=1)
         assert_raises(ValueError, linprog, [1,2], A_ub=np.zeros((1,1,3)), b_eq=1)
-
-if __name__ == "__main__":
-    run_module_suite()
