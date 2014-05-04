@@ -726,19 +726,19 @@ class TestNorm(object):
 
         # Vector norms.
         assert_allclose(
-                norm(c, axis=0)
+                norm(c, axis=0),
                 array([1.41421356, 2.23606798, 5.0]))
         assert_allclose(
-                norm(c, axis=1)
+                norm(c, axis=1),
                 array([3.74165739, 4.24264069]))
         assert_allclose(
-                norm(c, ord=1, axis=1)
+                norm(c, ord=1, axis=1),
                 array([6, 6]))
 
         # Matrix norms.
         m = np.arange(8).reshape(2,2,2)
         assert_allclose(
-                norm(m, axis=(1,2))
+                norm(m, axis=(1,2)),
                 array([3.74165739, 11.22497216]))
         assert_allclose(
                 (norm(m[0, :, :]), norm(m[1, :, :])),

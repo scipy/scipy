@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.linalg import LinAlgError
+from scipy.lib._numpy_compat import _norm
 from . import blas
 
 __all__ = ['LinAlgError', 'norm']
@@ -146,7 +147,7 @@ def norm(a, ord=None, axis=None):
         func_name = _nrm2_prefix.get(a.dtype.char, 'd') + 'nrm2'
         nrm2 = getattr(blas, func_name)
         return nrm2(a)
-    return np.linalg.norm(a, ord=ord, axis=axis)
+    return _norm(a, ord=ord, axis=axis)
 
 
 def _datacopied(arr, original):
