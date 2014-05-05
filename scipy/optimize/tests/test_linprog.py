@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (assert_, assert_array_almost_equal, assert_allclose,
-        assert_almost_equal, assert_raises, assert_equal)
+        assert_almost_equal, assert_raises, assert_equal, run_module_suite)
 
 from scipy.optimize import linprog, OptimizeWarning
 from scipy.lib._numpy_compat import _assert_warns
@@ -369,3 +369,7 @@ def test_invalid_inputs():
     assert_raises(ValueError, linprog, [1,2], A_eq=[[1]], b_eq=[1])
     assert_raises(ValueError, linprog, [1,2], A_eq=[1], b_eq=1)
     assert_raises(ValueError, linprog, [1,2], A_ub=np.zeros((1,1,3)), b_eq=1)
+
+
+if __name__ == '__main__':
+    run_module_suite()
