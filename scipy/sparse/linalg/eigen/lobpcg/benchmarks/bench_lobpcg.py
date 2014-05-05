@@ -1,14 +1,20 @@
 from __future__ import division, print_function, absolute_import
 
+from functools import partial
+import time
+
+import numpy as np
+from numpy.testing import assert_allclose
+
 from scipy import *
 from scipy.linalg import eigh, orth, cho_factor, cho_solve
 from scipy.sparse.linalg import lobpcg
-#from pylab import plot, show, legend, xlabel, ylabel
-set_printoptions(precision=3,linewidth=90)
-import time
+from scipy.sparse.linalg.interface import LinearOperator
 
 
 def _mikota_pair(n):
+    # Mikota pair acts as a nice test since the eigenvalues
+    # are the squares of the integers n, n=1,2,...
     x = arange(1,n+1)
     B = diag(1./x)
     y = arange(n-1,0,-1)
@@ -17,7 +23,7 @@ def _mikota_pair(n):
     return A,B
 
 
-def as2d(ar):
+def _as2d(ar):
     if ar.ndim == 2:
         return ar
     else:  # Assume 1!
@@ -26,46 +32,40 @@ def as2d(ar):
         return aux
 
 
-#def precond(x):
-    #y = cho_solve((LorU, lower),x)
-    #return as2d(y)
+def _precond(LorU, lower, x):
+    y = cho_solve((LorU, lower), x)
+    return _as2d(y)
 
-m = 10  # Blocksize
-N = array(([128,256,512,1024,2048]))  # Increasing matrix size
 
-data1 = []
-data2 = []
-
-for n in N:
-    print('******', n)
-    A, B = _mikota_pair(n)
-    X = rand(n,m)
-    X = orth(X)
-
-    tt = time.clock()
-    # For now skip the preconditioner until the general linear function
-    # interface is imporoved.
-    #(LorU, lower) = cho_factor(A, lower=0, overwrite_a=0)
-    precond = None
-    eigs, vecs = lobpcg(A, X, B, M=precond, tol=1e-4, maxiter=40)
-    elapsed = time.clock() - tt
-    data1.append(elapsed)
-    eigs = sort(eigs)
+def bench_lobpcg():
     print()
-    print('LOBPCG results:')
-    print(n, eigs, elapsed)
+    print('                 lobpcg using mikota pairs')
+    print('==============================================================')
+    print('      shape      | blocksize |    operation   |   time   ')
+    print('                                              | (seconds)')
+    print('--------------------------------------------------------------')
+    fmt = ' %15s |   %3d     |     %6s     | %6.2f '
 
-    tt = time.clock()
-    w = eigh(A, B, eigvals_only=True, eigvals=(0, m-1))
-    elapsed = time.clock() - tt
-    data2.append(elapsed)
-    print()
-    print('eigh results:')
-    print(n, w, elapsed)
+    m = 10
+    for n in 128, 256, 512, 1024, 2048:
+        shape = (n, n)
+        A, B = _mikota_pair(n)
+        desired_eigenvalues = np.square(np.arange(1, m+1))
 
-#xlabel(r'Size $n$')
-#ylabel(r'Elapsed time $t$')
-#plot(N,data1,label='LOBPCG')
-#plot(N,data2,label='SYMEIG')
-#legend()
-#show()
+        tt = time.clock()
+        X = rand(n, m)
+        X = orth(X)
+        LorU, lower = cho_factor(A, lower=0, overwrite_a=0)
+        M = LinearOperator(shape, matvec=partial(_precond, LorU, lower))
+        eigs, vecs = lobpcg(A, X, B, M, tol=1e-4, maxiter=40)
+        eigs = sort(eigs)
+        elapsed = time.clock() - tt
+        assert_allclose(eigs, desired_eigenvalues)
+        print(fmt % (shape, m, 'lobpcg', elapsed))
+
+        tt = time.clock()
+        w = eigh(A, B, eigvals_only=True, eigvals=(0, m-1))
+        elapsed = time.clock() - tt
+        assert_allclose(w, desired_eigenvalues)
+        print(fmt % (shape, m, 'eigh', elapsed))
+
