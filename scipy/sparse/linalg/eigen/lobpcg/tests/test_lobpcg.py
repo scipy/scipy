@@ -120,9 +120,9 @@ def _check_fiedler(n, p):
     _check_eigen(L, lobpcg_w, lobpcg_V)
     assert_allclose(np.sort(lobpcg_w), analytic_w[-p:])
 
-    # Look for the Fiedler vector using some legitimate preconditioning.
-    preconditioned_fiedler = np.concatenate((np.ones(n//2), -np.ones(n-n//2)))
-    X = np.vstack((np.ones(n), preconditioned_fiedler)).T
+    # Look for the Fiedler vector using good but not exactly correct guesses.
+    fiedler_guess = np.concatenate((np.ones(n//2), -np.ones(n-n//2)))
+    X = np.vstack((np.ones(n), fiedler_guess)).T
     lobpcg_w, lobpcg_V = lobpcg(L, X, largest=False)
     # Mathematically, the smaller eigenvalue should be zero
     # and the larger should be the algebraic connectivity.
