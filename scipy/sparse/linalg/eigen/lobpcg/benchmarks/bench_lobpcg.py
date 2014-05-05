@@ -56,7 +56,9 @@ def bench_lobpcg():
         X = rand(n, m)
         X = orth(X)
         LorU, lower = cho_factor(A, lower=0, overwrite_a=0)
-        M = LinearOperator(shape, matvec=partial(_precond, LorU, lower))
+        M = LinearOperator(shape,
+                matvec=partial(_precond, LorU, lower),
+                matmat=partial(_precond, LorU, lower))
         eigs, vecs = lobpcg(A, X, B, M, tol=1e-4, maxiter=40)
         eigs = sort(eigs)
         elapsed = time.clock() - tt
