@@ -1722,7 +1722,8 @@ def test_chisquare_masked_arrays():
 
     # empty3.T is an array containing 3 data sets, each with length 0,
     # so an array of size (3,) is returned, with all values masked.
-    chisq, p = stats.chisquare(empty3.T)
+    with np.errstate(invalid='ignore'):
+        chisq, p = stats.chisquare(empty3.T)
     assert_(isinstance(chisq, np.ma.MaskedArray))
     assert_equal(chisq.shape, (3,))
     assert_(np.all(chisq.mask))
