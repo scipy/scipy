@@ -2,7 +2,6 @@ from __future__ import division, print_function, absolute_import
 
 from functools import partial
 import time
-import warnings
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_
@@ -10,7 +9,6 @@ from numpy.testing import assert_allclose, assert_
 from scipy import *
 from scipy.linalg import eigh, orth, cho_factor, cho_solve
 import scipy.sparse
-from scipy.sparse import SparseEfficiencyWarning
 from scipy.sparse.linalg import lobpcg
 from scipy.sparse.linalg.interface import LinearOperator
 
