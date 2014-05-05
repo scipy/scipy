@@ -5,10 +5,11 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (run_module_suite, assert_almost_equal, assert_equal,
-        assert_allclose, assert_array_less)
+        assert_allclose, assert_array_less, assert_)
 
-from scipy import arange, ones, rand, r_, diag, linalg, eye
+from scipy import ones, rand, r_, diag, linalg, eye
 from scipy.linalg import eig, eigh, toeplitz
+import scipy.sparse
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg
 
 
@@ -29,10 +30,10 @@ def ElasticRod(n):
 def MikotaPair(n):
     # Mikota pair acts as a nice test since the eigenvalues
     # are the squares of the integers n, n=1,2,...
-    x = arange(1,n+1)
+    x = np.arange(1,n+1)
     B = diag(1./x)
-    y = arange(n-1,0,-1)
-    z = arange(2*n-1,0,-2)
+    y = np.arange(n-1,0,-1)
+    z = np.arange(2*n-1,0,-2)
     A = diag(z)-diag(y,-1)-diag(y,1)
     return A,B
 
@@ -78,8 +79,50 @@ def test_trivial():
     compare_solutions(A, None, n)
 
 
+def test_diagonal():
+    # This test was moved from '__main__' in lobpcg.py.
+    # Coincidentally or not, this is the same eigensystem
+    # required to reproduce arpack bug
+    # http://forge.scilab.org/index.php/p/arpack-ng/issues/1397/
+    # even using the same n=100.
+
+    np.random.seed(1234)
+
+    # The system of interest is of size n x n.
+    n = 100
+
+    # We care about only m eigenpairs.
+    m = 4
+
+    # Define the generalized eigenvalue problem Av = cBv
+    # where (c, v) is a generalized eigenpair,
+    # and where we choose A to be the diagonal matrix whose entries are 1..n
+    # and where B is chosen to be the identity matrix.
+    vals = np.arange(1, n+1, dtype=float)
+    A = scipy.sparse.diags([vals], [0], (n, n))
+    B = scipy.sparse.eye(n)
+
+    # Let the preconditioner M be the inverse of A.
+    M = scipy.sparse.diags([np.reciprocal(vals)], [0], (n, n))
+
+    # Pick random initial vectors.
+    X = np.random.rand(n, m)
+
+    # Require that the returned eigenvectors be in the orthogonal complement
+    # of the first few standard basis vectors.
+    m_excluded = 3
+    Y = np.eye(n, m_excluded)
+
+    eigs, vecs = lobpcg(A, X, B, M=M, Y=Y, tol=1e-4, maxiter=40, largest=False)
+
+    assert_allclose(eigs, np.arange(1+m_excluded, 1+m_excluded+m))
+    _check_eigen(A, eigs, vecs, rtol=1e-3, atol=1e-3)
+
+
 def _check_eigen(M, w, V, rtol=1e-8, atol=1e-14):
-    assert_allclose(np.multiply(w, V), np.dot(M, V), rtol=rtol, atol=atol)
+    mult_wV = np.multiply(w, V)
+    dot_MV = M.dot(V)
+    assert_allclose(mult_wV, dot_MV, rtol=rtol, atol=atol)
 
 
 def _check_fiedler(n, p):
