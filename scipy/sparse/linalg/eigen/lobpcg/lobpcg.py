@@ -97,8 +97,7 @@ def _applyConstraints(blockVectorV, factYBY, blockVectorBY, blockVectorY):
     blockVectorV -= np.dot(blockVectorY, tmp)
 
 
-def _b_orthonormalize(B, blockVectorV,
-                      blockVectorBV=None, retInvR=False):
+def _b_orthonormalize(B, blockVectorV, blockVectorBV=None, retInvR=False):
     if blockVectorBV is None:
         if B is not None:
             blockVectorBV = B(blockVectorV)
@@ -574,48 +573,3 @@ def lobpcg(A, X,
             return _lambda, blockVectorX, residualNormsHistory
         else:
             return _lambda, blockVectorX
-
-
-###########################################################################
-if __name__ == '__main__':
-    from scipy.sparse import spdiags, speye, issparse
-    import time
-
-##     def B( vec ):
-##         return vec
-
-    n = 100
-    vals = [np.arange(n, dtype=np.float64) + 1]
-    A = spdiags(vals, 0, n, n)
-    B = speye(n, n)
-#    B[0,0] = 0
-    B = np.eye(n, n)
-    Y = np.eye(n, 3)
-
-#    X = sp.rand( n, 3 )
-    xfile = {100: 'X.txt', 1000: 'X2.txt', 10000: 'X3.txt'}
-    X = np.fromfile(xfile[n], dtype=np.float64, sep=' ')
-    X.shape = (n, 3)
-
-    ivals = [1./vals[0]]
-
-    def precond(x):
-        invA = spdiags(ivals, 0, n, n)
-        y = invA * x
-        if issparse(y):
-            y = y.toarray()
-
-        return as2d(y)
-
-    precond = spdiags(ivals, 0, n, n)
-#    precond = None
-    tt = time.clock()
-#    B = None
-    eigs, vecs = lobpcg(X, A, B, blockVectorY=Y,
-                         M=precond,
-                         residualTolerance=1e-4, maxIterations=40,
-                         largest=False, verbosityLevel=1)
-    print('solution time:', time.clock() - tt)
-
-    print(vecs)
-    print(eigs)
