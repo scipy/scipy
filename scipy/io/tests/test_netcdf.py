@@ -207,6 +207,7 @@ def test_mmaps_closed():
         vars.append(f.variables['lat'])
         f.close()
 
+
 def test_zero_dimensional_var():
     io = BytesIO()
     with make_simple(io, 'w') as f:
