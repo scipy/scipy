@@ -381,11 +381,13 @@ class netcdf_file(object):
             self.fp.write(NC_VARIABLE)
             self._pack_int(len(self.variables))
 
-            # Sort variables non-recs first, then recs. We use a DSU
-            # since some people use pupynere with Python 2.3.x.
-            deco = [(v._shape and not v.isrec, k) for (k, v) in self.variables.items()]
-            deco.sort()
-            variables = [k for (unused, k) in deco][::-1]
+            # Sort variable names non-recs first, then recs.
+            def sortkey(n):
+                v = self.variables[n]
+                if v.isrec:
+                    return (-1,)
+                return v._shape
+            variables = sorted(self.variables, key=sortkey, reverse=True)
 
             # Set the metadata for all variables.
             for name in variables:
