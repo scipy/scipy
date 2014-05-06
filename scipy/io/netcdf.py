@@ -797,7 +797,7 @@ class netcdf_variable(object):
         `netcdf_variable`.
 
         """
-        return self.data.shape and not self._shape[0]
+        return bool(self.data.shape) and not self._shape[0]
     isrec = property(isrec)
 
     def shape(self):
