@@ -232,9 +232,10 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     """
 
-    def __init__(self, points, values, fill_value=np.nan, rescale=False):
+    def __init__(self, points, values, fill_value=np.nan, rescale=False,
+        need_contiguous=True):
         NDInterpolatorBase.__init__(self, points, values, fill_value=fill_value,
-                rescale=rescale)
+                rescale=rescale, need_contiguous=need_contiguous)
         if self.tri is None:
             self.tri = qhull.Delaunay(self.points)
 
