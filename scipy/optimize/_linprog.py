@@ -2,7 +2,7 @@
 A top-level linear programming interface. Currently this interface only
 solves linear programming problems via the Simplex Method.
 
-.. versionadded:: 0.14.0
+.. versionadded:: 0.15.0
 
 Functions
 ---------
@@ -18,7 +18,6 @@ Functions
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-import numpy.ma as ma
 
 from .optimize import OptimizeResult, _check_unknown_options
 
@@ -29,9 +28,9 @@ __docformat__ = "restructuredtext en"
 
 def linprog_verbose_callback(xk, **kwargs):
     """
-    This is a sample callback for use with linprog, demonstrating the callback interface.
-    This callback produces detailed output to sys.stdout before each iteration and after
-    the final iteration of the simplex algorithm.
+    A sample callback function demonstrating the linprog callback interface.
+    This callback produces detailed output to sys.stdout before each iteration
+    and after the final iteration of the simplex algorithm.
 
     Parameters
     ----------
@@ -41,21 +40,24 @@ def linprog_verbose_callback(xk, **kwargs):
         A dictionary containing the following parameters:
 
         tableau : array_like
-            The current tableau of the simplex algorithm.  Its structure is defined in _solve_simplex.
+            The current tableau of the simplex algorithm.
+            Its structure is defined in _solve_simplex.
         phase : int
             The current Phase of the simplex algorithm (1 or 2)
-        iter : int
+        nit : int
             The current iteration number.
         pivot : tuple(int, int)
-            The index of the tableau selected as the next pivot, or nan if no pivot exists
+            The index of the tableau selected as the next pivot,
+            or nan if no pivot exists
         basis : array(int)
-            A list of the current basic variables.  Each element contains the name of a basic variable and
-            its value.
+            A list of the current basic variables.
+            Each element contains the name of a basic variable and its value.
         complete : bool
-            True if the simplex algorithm has completed (and this is the final call to callback), otherwise False.
+            True if the simplex algorithm has completed
+            (and this is the final call to callback), otherwise False.
     """
     tableau = kwargs["tableau"]
-    iter = kwargs["iter"]
+    nit = kwargs["nit"]
     pivrow, pivcol = kwargs["pivot"]
     phase = kwargs["phase"]
     basis = kwargs["basis"]
@@ -67,14 +69,14 @@ def linprog_verbose_callback(xk, **kwargs):
     if complete:
         print("--------- Iteration Complete - Phase {:d} -------\n".format(phase))
         print("Tableau:")
-    elif iter == 0:
+    elif nit == 0:
         print("--------- Initial Tableau - Phase {:d} ----------\n".format(phase))
 
     else:
-        print("--------- Iteration {:d}  - Phase {:d} --------\n".format(iter, phase))
+        print("--------- Iteration {:d}  - Phase {:d} --------\n".format(nit, phase))
         print("Tableau:")
 
-    if iter >= 0:
+    if nit >= 0:
         print("" + str(tableau) + "\n")
         if not complete:
             print("Pivot Element: T[{:.0f}, {:.0f}]\n".format(pivrow, pivcol))
@@ -91,9 +93,9 @@ def linprog_verbose_callback(xk, **kwargs):
 
 def linprog_terse_callback(xk, **kwargs):
     """
-    This is a sample callback for use with linprog, demonstrating the callback interface.
-    This callback produces brief output to sys.stdout before each iteration and after
-    the final iteration of the simplex algorithm.
+    A sample callback function demonstrating the linprog callback interface.
+    This callback produces brief output to sys.stdout before each iteration
+    and after the final iteration of the simplex algorithm.
 
     Parameters
     ----------
@@ -103,28 +105,33 @@ def linprog_terse_callback(xk, **kwargs):
         A dictionary containing the following parameters:
 
         tableau : array_like
-            The current tableau of the simplex algorithm.  Its structure is defined in _solve_simplex.
+            The current tableau of the simplex algorithm.
+            Its structure is defined in _solve_simplex.
         vars : tuple(str, ...)
-            Column headers for each column in tableau. "x[i]" for actual variables,
-            "s[i]" for slack surplus variables, "a[i]" for artificial variables,
-            and "RHS" for the constraint RHS vector
+            Column headers for each column in tableau.
+            "x[i]" for actual variables, "s[i]" for slack surplus variables,
+            "a[i]" for artificial variables, and "RHS" for the constraint
+            RHS vector.
         phase : int
             The current Phase of the simplex algorithm (1 or 2)
         nit : int
             The current iteration number.
         pivot : tuple(int, int)
-            The index of the tableau selected as the next pivot, or nan if no pivot exists
+            The index of the tableau selected as the next pivot,
+            or nan if no pivot exists
         basics : list[tuple(int, float)]
-            A list of the current basic variables.  Each element contains the index of a basic variable and
+            A list of the current basic variables.
+            Each element contains the index of a basic variable and
             its value.
         complete : bool
-            True if the simplex algorithm has completed (and this is the final call to callback), otherwise False.
+            True if the simplex algorithm has completed
+            (and this is the final call to callback), otherwise False.
     """
-    iter = kwargs["iter"]
+    nit = kwargs["nit"]
 
-    if iter == 0:
+    if nit == 0:
         print("Iter:   X:")
-    print("{: <5d}   ".format(iter), end="")
+    print("{: <5d}   ".format(nit), end="")
     print(xk)
 
 
@@ -148,17 +155,18 @@ def _pivot_col(T, tol=1.0E-12, bland=False):
         cause a tolerance about zero to be necessary.
     bland : bool
         If True, use Bland's rule for selection of the column (select the
-        first column with a negative coefficient in the objective row, regardless
-        of magnitude).
+        first column with a negative coefficient in the objective row,
+        regardless of magnitude).
 
     Returns
     -------
     status: bool
-        True if a suitable pivot column was found, otherwise False.  A return
-        of False indicates that the linear programming simplex algorithm is complete.
+        True if a suitable pivot column was found, otherwise False.
+        A return of False indicates that the linear programming simplex
+        algorithm is complete.
     col: int
-        The index of the column of the pivot element.  If status is False, col
-        will be returned as nan.
+        The index of the column of the pivot element.
+        If status is False, col will be returned as nan.
     """
     ma = np.ma.masked_where(T[-1, :-1] >= -tol, T[-1, :-1], copy=False)
     if ma.count() == 0:
@@ -226,8 +234,8 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
     Parameters
     ----------
     T : array_like
-        A 2-D array representing the simplex T corresponding to the maximization problem.
-        It should have the form:
+        A 2-D array representing the simplex T corresponding to the
+        maximization problem.  It should have the form:
 
         [[A[0, 0], A[0, 1], ..., A[0, n_total], b[0]],
          [A[1, 0], A[1, 1], ..., A[1, n_total], b[1]],
@@ -332,7 +340,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
             solution[basis[:m]] = T[:m, -1]
             callback(solution[:n], **{"tableau": T,
                                       "phase":phase,
-                                      "iter":nit,
+                                      "nit":nit,
                                       "pivot":(pivrow, pivcol),
                                       "basis":basis,
                                       "complete": complete and phase == 2})
@@ -360,7 +368,8 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             bounds=None, maxiter=1000, disp=False, callback=None,
             tol=1.0E-12, bland=False, **unknown_options):
     """
-    Solve the following linear programming problem via a two-phase simplex algorithm.
+    Solve the following linear programming problem via a two-phase
+    simplex algorithm.
 
     maximize:     c^T * x
 
@@ -387,11 +396,13 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         The bounds for each independent variable in the solution, which can take
         one of three forms::
         None : The default bounds, all variables are non-negative.
-        (lb, ub) : If a 2-element sequence is provided, the same lower bound (lb)
-                  and upper bound (ub) will be applied to all variables.
-        [(lb_0, ub_0), (lb_1, ub_1), ...] : If an n x 2 sequence is provided, each
-                  variable x_i will be bounded by lb[i] and ub[i].
-        Infinite bounds are specified using -np.inf (negative) or np.inf (positive).
+        (lb, ub) : If a 2-element sequence is provided, the same
+                  lower bound (lb) and upper bound (ub) will be applied
+                  to all variables.
+        [(lb_0, ub_0), (lb_1, ub_1), ...] : If an n x 2 sequence is provided,
+                  each variable x_i will be bounded by lb[i] and ub[i].
+        Infinite bounds are specified using -np.inf (negative)
+        or np.inf (positive).
     maxiter : int
        The maximum number of iterations to perform.
     disp : bool
@@ -399,8 +410,8 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     callback : callable
         If a callback function is provide, it will be called within each
         iteration of the simplex algorithm. The callback must have the
-        signature `callback(xk, **kwargs)` where xk is the current solution vector
-        and kwargs is a dictionary containing the following::
+        signature `callback(xk, **kwargs)` where xk is the current solution
+        vector and kwargs is a dictionary containing the following::
         "tableau" : The current Simplex algorithm tableau
         "nit" : The current iteration.
         "pivot" : The pivot (row, column) used for the next iteration.
@@ -409,8 +420,8 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                basic variable and its current value.
     tol : float
         The tolerance which determines when a solution is "close enough" to zero
-         in Phase 1 to be considered a basic feasible solution or close enough
-         to positive to to serve as an optimal solution.
+        in Phase 1 to be considered a basic feasible solution or close enough
+        to positive to to serve as an optimal solution.
     bland : bool
         If True, use Bland's anti-cycling rule [3] to choose pivots to
         prevent cycling.  If False, choose pivots which should lead to a
@@ -528,20 +539,20 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     else:
         if len(bounds) != n:
             status = -1
-            message = "Invalid input for linprog with method = 'simplex'.  " \
-                      "Length of bounds is inconsistent with the length of c"
+            message = ("Invalid input for linprog with method = 'simplex'.  "
+                      "Length of bounds is inconsistent with the length of c")
         else:
             try:
                 for i in range(n):
                     if len(bounds[i]) != 2:
                         raise IndexError()
-                    L[i] = bounds[i][0] if not bounds[i][0] is None else -np.inf
-                    U[i] = bounds[i][1] if not bounds[i][1] is None else np.inf
+                    L[i] = bounds[i][0] if bounds[i][0] is not None else -np.inf
+                    U[i] = bounds[i][1] if bounds[i][1] is not None else np.inf
             except IndexError:
                 status = -1
-                message = "Invalid input for linprog with method = 'simplex'.  " \
-                          "bounds must be a n x 2 sequence/array where " \
-                          "n = len(c)."
+                message = ("Invalid input for linprog with "
+                           "method = 'simplex'.  bounds must be a n x 2 "
+                           "sequence/array where n = len(c).")
 
     if np.any(L == -np.inf):
         # If any lower-bound constraint is a free variable
@@ -561,18 +572,18 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     for i in range(n):
         if(L[i] > U[i]):
             status = -1
-            message = "Invalid input for linprog with method = 'simplex'.  " \
-                      "Lower bound %d is greater than upper bound %d" % (i, i)
+            message = ("Invalid input for linprog with method = 'simplex'.  "
+                       "Lower bound %d is greater than upper bound %d" % (i, i))
 
         if np.isinf(L[i]) and L[i] > 0:
             status = -1
-            message = "Invalid input for linprog with method = 'simplex'.  " \
-                      "Lower bound may not be +infinity"
+            message = ("Invalid input for linprog with method = 'simplex'.  "
+                       "Lower bound may not be +infinity")
 
         if np.isinf(U[i]) and U[i] < 0:
             status = -1
-            message = "Invalid input for linprog with method = 'simplex'.  " \
-                      "Upper bound may not be -infinity"
+            message = ("Invalid input for linprog with method = 'simplex'.  "
+                       "Upper bound may not be -infinity")
 
         if np.isfinite(L[i]) and L[i] > 0:
             # Add a new lower-bound (negative upper-bound) constraint
@@ -612,8 +623,8 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         if np.isinf(U[i]):
             if U[i] < 0:
                 status = -1
-                message = "Invalid input for linprog with method = 'simplex'.  " \
-                          "Upper bound may not be -inf."
+                message = ("Invalid input for linprog with "
+                           "method = 'simplex'.  Upper bound may not be -inf.")
 
     # The number of upper bound constraints (rows in A_ub and elements in b_ub)
     mub = len(bub)
@@ -643,26 +654,26 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     if Aeq_rows != meq:
         status = -1
-        message = "Invalid input for linprog with method = 'simplex'.  " \
-                  "The number of rows in A_eq must be equal " \
-                  "to the number of values in b_eq"
+        message = ("Invalid input for linprog with method = 'simplex'.  "
+                   "The number of rows in A_eq must be equal "
+                   "to the number of values in b_eq")
 
     if Aub_rows != mub:
         status = -1
-        message = "Invalid input for linprog with method = 'simplex'.  " \
-                  "The number of rows in A_ub must be equal " \
-                  "to the number of values in b_ub"
+        message = ("Invalid input for linprog with method = 'simplex'.  "
+                   "The number of rows in A_ub must be equal "
+                   "to the number of values in b_ub")
 
     if Aeq_cols > 0 and Aeq_cols != n:
         status = -1
-        message = "Invalid input for linprog with method = 'simplex'.  " \
-                  "Number of columns in A_eq must be equal " \
-                  "to the size of c"
+        message = ("Invalid input for linprog with method = 'simplex'.  "
+                   "Number of columns in A_eq must be equal "
+                   "to the size of c")
 
     if Aub_cols > 0 and Aub_cols != n:
         status = -1
-        message = "Invalid input for linprog with method = 'simplex'.  " \
-                  "Number of columns in A_ub must be equal to the size of c"
+        message = ("Invalid input for linprog with method = 'simplex'.  "
+                   "Number of columns in A_ub must be equal to the size of c")
 
     if status != 0:
         # Invalid inputs provided
@@ -752,7 +763,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     # For those variables with finite negative lower bounds,
     # reverse the change of variables
-    masked_L = ma.array(L, mask=np.isinf(L), fill_value=0.0).filled()
+    masked_L = np.ma.array(L, mask=np.isinf(L), fill_value=0.0).filled()
     x = x + masked_L
 
     # For those variables with infinite negative lower bounds,
@@ -794,7 +805,7 @@ def linprog(c, A_eq=None, b_eq=None, A_ub=None, b_ub=None,
     Subject to:   A_ub * x <= b_ub
                   A_eq * x == b_eq
 
-    .. versionadded:: 0.14.0
+    .. versionadded:: 0.15.0
 
     Parameters
     ----------
