@@ -21,6 +21,20 @@ This release requires Python 2.6, 2.7 or 3.2-3.3 and NumPy 1.5.1 or greater.
 New features
 ============
 
+``scipy.optimize`` improvements
+-------------------------------
+
+Linear Programming Interface
+````````````````````````````
+
+``scipy.optimize.linprog`` now provides a generic
+linear programming similar to the way `scipy.optimize.minimize`
+provides a generic interface to nonlinear programming optimizers. 
+Currently the only method supported is *simplex* which provides
+a two-phase, dense-matrix-based simplex algorithm. Callbacks 
+functions are supported,allowing the user to monitor the progress 
+of the algorithm.
+
 
 Deprecated features
 ===================
@@ -44,6 +58,7 @@ Other changes
 Authors
 =======
 
+* Rob Falck
 
 Issues closed
 -------------
@@ -51,4 +66,7 @@ Issues closed
 
 Pull requests
 -------------
+
+- `#3342 <https://github.com/scipy/scipy/pull/3342>`__: ENH: linprog function for linear programming
+
 
