@@ -93,11 +93,6 @@ def qmf(hk):
     return hk[::-1] * np.array(asgn)
 
 
-def wavedec(amn, hk):
-    gk = qmf(hk)
-    return NotImplemented
-
-
 def cascade(hk, J=7):
     """
     Return (x, phi, psi) at dyadic points ``K/2**J`` from filter coefficients.
