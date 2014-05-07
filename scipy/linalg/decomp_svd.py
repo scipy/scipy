@@ -198,7 +198,7 @@ def orth(A):
     svd : Singular value decomposition of a matrix
 
     """
-    u, s, vh = svd(A)
+    u, s, vh = svd(A, full_matrices=False)
     M, N = A.shape
     eps = numpy.finfo(float).eps
     tol = max(M,N) * numpy.amax(s) * eps
