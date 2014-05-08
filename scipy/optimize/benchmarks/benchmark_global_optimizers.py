@@ -8,8 +8,7 @@ import time
 from scipy.optimize import basinhopping, differential_evolution, OptimizeResult
 
 import test_functions as funcs
-import numpy.testing as npt
-from numpy.testing import Tester, TestCase
+from numpy.testing import Tester, TestCase, assert_array_almost_equal
 from collections import defaultdict
 
 NUMTRIALS = 10
@@ -80,7 +79,7 @@ class _BenchOptimizers(object):
 
     def found_target(self, res):
         try:
-            npt.assert_array_almost_equal(np.abs(res.x),
+            assert_array_almost_equal(np.abs(res.x),
                                           np.abs(self.function.solution),
                                           decimal=4)
             return True
