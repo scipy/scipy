@@ -61,6 +61,9 @@ better performance, especially for complex integrand functions.
 ----------------------------
 Added a Dirichlet distribution as multivariate distribution.
 
+The new function `scipy.stats.median_test` computes Mood's median test.
+
+
 Deprecated features
 ===================
 
