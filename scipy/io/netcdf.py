@@ -872,7 +872,7 @@ class netcdf_variable(object):
         return self._size
 
     def __getitem__(self, index):
-        return self.data[index]
+        return np.array(self.data[index], copy=True)
 
     def __setitem__(self, index, data):
         # Expand data for record vars?
