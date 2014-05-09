@@ -401,23 +401,38 @@ class TestSplu(object):
         assert_(not np.isnan(B).any())
 
     def test_lu_attr(self):
-        A = self.A
-        n = A.shape[0]
-        lu = splu(A)
 
-        # Check that the decomposition is as advertized
+        def check(dtype, complex_2=False):
+            A = self.A.astype(dtype)
 
-        Pc = np.zeros((n, n))
-        Pc[np.arange(n), lu.perm_c] = 1
+            if complex_2:
+                A = A + 1j*A.T
 
-        Pr = np.zeros((n, n))
-        Pr[lu.perm_r, np.arange(n)] = 1
+            n = A.shape[0]
+            lu = splu(A)
 
-        Ad = A.toarray()
-        lhs = Pr.dot(Ad).dot(Pc)
-        rhs = (lu.L * lu.U).toarray()
+            # Check that the decomposition is as advertized
 
-        assert_allclose(lhs, rhs, atol=1e-10)
+            Pc = np.zeros((n, n))
+            Pc[np.arange(n), lu.perm_c] = 1
+
+            Pr = np.zeros((n, n))
+            Pr[lu.perm_r, np.arange(n)] = 1
+
+            Ad = A.toarray()
+            lhs = Pr.dot(Ad).dot(Pc)
+            rhs = (lu.L * lu.U).toarray()
+
+            eps = np.finfo(dtype).eps
+
+            assert_allclose(lhs, rhs, atol=100*eps)
+
+        check(np.float32)
+        check(np.float64)
+        check(np.complex64)
+        check(np.complex128)
+        check(np.complex64, True)
+        check(np.complex128, True)
 
 
 if __name__ == "__main__":
