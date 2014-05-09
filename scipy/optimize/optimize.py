@@ -284,7 +284,7 @@ def wrap_function(function, args):
 
 
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
-         full_output=0, disp=1, retall=0, step=None, callback=None):
+         full_output=0, disp=1, retall=0, callback=None, step=None):
     """
     Minimize a function using the downhill simplex algorithm.
 
@@ -443,7 +443,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     zdelt = 0.00025
     for k in range(0, N):
         y = numpy.array(x0, copy=True)
-        if step != None and step[k]:
+        if step is not None and step[k]:
             y[k] += step[k]
         elif y[k] != 0:
             y[k] = (1 + nonzdelt)*y[k]
