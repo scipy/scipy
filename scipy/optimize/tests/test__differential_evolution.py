@@ -150,19 +150,6 @@ class TestDifferentialEvolutionSolver(TestCase):
                           self.bounds,
                           mutation=mutation)
 
-        mutation = (-1, 'a')
-
-        try:
-            DifferentialEvolutionSolver(func,
-                                        self.bounds,
-                                        mutation=mutation)
-            raise Exception("DifferentialEvolutionSolver should've raised "
-                             "some error with mutation=(-1, 'a')")
-        except Exception:
-            #np.isfinite will either raise TypeError or NotImplementedError
-            #for a string value
-            pass
-
         mutation = (0.1, np.nan)
         self.assertRaises(ValueError,
                           DifferentialEvolutionSolver,
