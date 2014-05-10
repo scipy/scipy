@@ -118,7 +118,7 @@ class BasinHoppingRunner(object):
         # accept the move based on self.accept_tests. If any test is false,
         # than reject the step.  If any test returns the special value, the
         # string 'force accept', accept the step regardless.  This can be used
-        # to forcefully escape from a local minima if normal basin hopping
+        # to forcefully escape from a local minimum if normal basin hopping
         # steps are not sufficient.
         accept = True
         for test in self.accept_tests:
@@ -350,9 +350,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         used, for example, to forcefully escape from a local minimum that
         ``basinhopping`` is trapped in.
     callback : callable, ``callback(x, f, accept)``, optional
-        A callback function which will be called for all minimum found.  ``x``
-        and ``f`` are the coordinates and function value of the trial minima,
-        and ``accept`` is whether or not that minima was accepted.  This can be
+        A callback function which will be called for all minima found.  ``x``
+        and ``f`` are the coordinates and function value of the trial minimum,
+        and ``accept`` is whether or not that minimum was accepted.  This can be
         used, for example, to save the lowest N minima found.  Also,
         ``callback`` can be used to specify a user defined stop criterion by
         optionally returning True to stop the ``basinhopping`` routine.
@@ -523,26 +523,26 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     value of every minimum found
 
     >>> def print_fun(x, f, accepted):
-    ...         print("at minima %.4f accepted %d" % (f, int(accepted)))
+    ...         print("at minimum %.4f accepted %d" % (f, int(accepted)))
 
     We'll run it for only 10 basinhopping steps this time.
 
     >>> np.random.seed(1)
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=10, callback=print_fun)
-    at minima 0.4159 accepted 1
-    at minima -0.9073 accepted 1
-    at minima -0.1021 accepted 1
-    at minima -0.1021 accepted 1
-    at minima 0.9102 accepted 1
-    at minima 0.9102 accepted 1
-    at minima 2.2945 accepted 0
-    at minima -0.1021 accepted 1
-    at minima -1.0109 accepted 1
-    at minima -1.0109 accepted 1
+    at minimum 0.4159 accepted 1
+    at minimum -0.9073 accepted 1
+    at minimum -0.1021 accepted 1
+    at minimum -0.1021 accepted 1
+    at minimum 0.9102 accepted 1
+    at minimum 0.9102 accepted 1
+    at minimum 2.2945 accepted 0
+    at minimum -0.1021 accepted 1
+    at minimum -1.0109 accepted 1
+    at minimum -1.0109 accepted 1
 
 
-    The minima at -1.0109 is actually the global minimum, found already on the
+    The minimum at -1.0109 is actually the global minimum, found already on the
     8th iteration.
 
     Now let's implement bounds on the problem using a custom ``accept_test``:
