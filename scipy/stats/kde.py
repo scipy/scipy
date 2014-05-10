@@ -93,6 +93,10 @@ class gaussian_kde(object):
         high_bounds.
     kde.integrate_kde(other_kde) : float
         Integrate two kernel density estimates multiplied together.
+    kde.pdf(points) : ndarray
+        Alias for ``kde.evaluate(points)``.
+    kde.logpdf(points) : ndarray
+        Equivalent to ``np.log(kde.evaluate(points))``.
     kde.resample(size=None) : ndarray
         Randomly sample a dataset from the estimated pdf.
     kde.set_bandwidth(bw_method='scott') : None
@@ -105,7 +109,6 @@ class gaussian_kde(object):
         The default is `scotts_factor`.  A subclass can overwrite this method
         to provide a different method, or set it through a call to
         `kde.set_bandwidth`.
-
 
     Notes
     -----
@@ -515,14 +518,23 @@ class gaussian_kde(object):
     def pdf(self, x):
         """
         Evaluate the estimated pdf on a provided set of points.
-        This is equivalent to evaluate method of gaussian kde class.
-        See evaluate docstring for more details.        
+
+        Notes
+        -----
+        This is an alias for `gaussian_kde.evaluate`.  See the ``evaluate``
+        docstring for more details.
+
         """
         return self.evaluate(x)
 
     def logpdf(self, x):
         """
-        Calculate the log of the estimated pdf on a provided set
-        of points.
+        Evaluate the log of the estimated pdf on a provided set of points.
+
+        Notes
+        -----
+        See `gaussian_kde.evaluate` for more details; this method simply
+        returns ``np.log(gaussian_kde.evaluate(x))``.
+
         """
         return np.log(self.evaluate(x))

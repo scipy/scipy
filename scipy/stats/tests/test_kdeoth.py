@@ -188,12 +188,12 @@ def test_pdf_logpdf():
     # Default
     gkde = stats.gaussian_kde(xn)
 
-    xs = np.linspace(-15,12,25)
+    xs = np.linspace(-15, 12, 25)
     pdf = gkde.evaluate(xs)
     pdf2 = gkde.pdf(xs)
     assert_almost_equal(pdf, pdf2, decimal=12)
 
-    logpdf = np.log(pdf) 
+    logpdf = np.log(pdf)
     logpdf2 = gkde.logpdf(xs)
     assert_almost_equal(logpdf, logpdf2, decimal=12)
 
