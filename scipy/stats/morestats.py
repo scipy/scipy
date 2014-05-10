@@ -1661,18 +1661,18 @@ def binom_test(x,n=None,p=0.5):
     return min(1.0,pval)
 
 
-def _apply_func(x,g,func):
+def _apply_func(x, g, func):
     # g is list of indices into x
     #  separating x into different groups
     #  func should be applied over the groups
-    g = unique(r_[0,g,len(x)])
+    g = unique(r_[0, g, len(x)])
     output = []
     for k in range(len(g)-1):
         output.append(func(x[g[k]:g[k+1]]))
     return asarray(output)
 
 
-def fligner(*args,**kwds):
+def fligner(*args, **kwds):
     """
     Perform Fligner's test for equal variances.
 
@@ -1684,11 +1684,10 @@ def fligner(*args,**kwds):
     Parameters
     ----------
     sample1, sample2, ... : array_like
-        arrays of sample data.  Need not be the same length
+        Arrays of sample data.  Need not be the same length.
     center : {'mean', 'median', 'trimmed'}, optional
-        keyword argument controlling which function of the data
-        is used in computing the test statistic.  The default
-        is 'median'.
+        Keyword argument controlling which function of the data is used in
+        computing the test statistic.  The default is 'median'.
     proportiontocut : float, optional
         When `center` is 'trimmed', this gives the proportion of data points
         to cut from each end. (See `scipy.stats.trim_mean`.)
@@ -1697,15 +1696,15 @@ def fligner(*args,**kwds):
     Returns
     -------
     Xsq : float
-        the test statistic
+        The test statistic.
     p-value : float
-        the p-value for the hypothesis test
+        The p-value for the hypothesis test.
 
     Notes
     -----
-    As with Levene's test there are three variants
-    of Fligner's test that differ by the measure of central
-    tendency used in the test.  See `levene` for more information.
+    As with Levene's test there are three variants of Fligner's test that
+    differ by the measure of central tendency used in the test.  See `levene`
+    for more information.
 
     References
     ----------
@@ -1721,7 +1720,8 @@ def fligner(*args,**kwds):
     proportiontocut = 0.05
     for kw, value in kwds.items():
         if kw not in ['center', 'proportiontocut']:
-            raise TypeError("fligner() got an unexpected keyword argument '%s'" % kw)
+            raise TypeError("fligner() got an unexpected keyword "
+                            "argument '%s'" % kw)
         if kw == 'center':
             center = value
         else:
@@ -1745,9 +1745,9 @@ def fligner(*args,**kwds):
 
     Ni = asarray([len(args[j]) for j in range(k)])
     Yci = asarray([func(args[j]) for j in range(k)])
-    Ntot = sum(Ni,axis=0)
+    Ntot = sum(Ni, axis=0)
     # compute Zij's
-    Zij = [abs(asarray(args[i])-Yci[i]) for i in range(k)]
+    Zij = [abs(asarray(args[i]) - Yci[i]) for i in range(k)]
     allZij = []
     g = [0]
     for i in range(k):
@@ -1755,14 +1755,14 @@ def fligner(*args,**kwds):
         g.append(len(allZij))
 
     ranks = stats.rankdata(allZij)
-    a = distributions.norm.ppf(ranks/(2*(Ntot+1.0)) + 0.5)
+    a = distributions.norm.ppf(ranks/(2*(Ntot + 1.0)) + 0.5)
 
     # compute Aibar
-    Aibar = _apply_func(a,g,sum) / Ni
+    Aibar = _apply_func(a, g, sum) / Ni
     anbar = np.mean(a, axis=0)
-    varsq = np.var(a,axis=0, ddof=1)
-    Xsq = sum(Ni*(asarray(Aibar)-anbar)**2.0,axis=0)/varsq
-    pval = distributions.chi2.sf(Xsq,k-1)  # 1 - cdf
+    varsq = np.var(a, axis=0, ddof=1)
+    Xsq = sum(Ni*(asarray(Aibar) - anbar)**2.0, axis=0)/varsq
+    pval = distributions.chi2.sf(Xsq, k - 1)  # 1 - cdf
     return Xsq, pval
 
 
@@ -1788,7 +1788,7 @@ def mood(x, y, axis=0):
     -------
     z : scalar or ndarray
         The z-score for the hypothesis test.  For 1-D inputs a scalar is
-        returned;
+        returned.
     p-value : scalar ndarray
         The p-value for the hypothesis test.
 
