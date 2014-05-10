@@ -1166,7 +1166,7 @@ class TestVariability(TestCase):
         # y = stats.sem(self.shoes[0])
         # assert_approx_equal(y,0.775177399)
         y = stats.sem(self.testcase)
-        assert_approx_equal(y,0.6454972244)
+        assert_approx_equal(y, 0.6454972244)
         n = len(self.testcase)
         assert_allclose(stats.sem(self.testcase, ddof=0) * np.sqrt(n/(n-2)),
                          stats.sem(self.testcase, ddof=2))

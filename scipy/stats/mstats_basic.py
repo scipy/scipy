@@ -1963,10 +1963,11 @@ def signaltonoise(data, axis=0):
     return m/sd
 
 
-def sem(a, axis=0, ddof=0):
+def sem(a, axis=0, ddof=1):
     """
-    Calculates the standard error of the mean (or standard error of
-    measurement) of the values in the input array.
+    Calculates the standard error of the mean of the input array.
+
+    Also sometimes called standard error of measurement.
 
     Parameters
     ----------
@@ -1979,7 +1980,7 @@ def sem(a, axis=0, ddof=0):
     ddof : int, optional
         Delta degrees-of-freedom. How many degrees of freedom to adjust
         for bias in limited samples relative to the population estimate
-        of variance. Defaults to 0.
+        of variance. Defaults to 1.
 
     Returns
     -------
@@ -1988,12 +1989,9 @@ def sem(a, axis=0, ddof=0):
 
     Notes
     -----
-    The default value for `ddof` is different to the default (0) used by other
-    ddof containing routines, such as np.std nd stats.nanstd.
-
-    The default for `ddof` is also different from the same function in stats.py
-    This is because an older version of this functions always used ddof=0. To
-    be backward compatible, ddof=0 is continued to be the default.
+    The default value for `ddof` changed in scipy 0.15.0 to be consistent with
+    `stats.sem` as well as with the most common definition used (like in the R
+    documentation).
 
     Examples
     --------
@@ -2012,7 +2010,6 @@ def sem(a, axis=0, ddof=0):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis=axis)
-    # TODO: check, does it need to be n-ddof in the denominator?
     s = a.std(axis=axis, ddof=ddof) / ma.sqrt(n)
     return s
 

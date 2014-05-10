@@ -1946,7 +1946,7 @@ def sem(a, axis=0, ddof=1):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    s = np.std(a,axis=axis, ddof=ddof) / np.sqrt(n)  # JP check normalization
+    s = np.std(a, axis=axis, ddof=ddof) / np.sqrt(n)
     return s
 
 
