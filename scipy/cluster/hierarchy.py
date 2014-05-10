@@ -2082,15 +2082,15 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         A dictionary of data structures computed to render the
         dendrogram. Its has the following keys:
 
-        ``'icoords'``
-          A list of lists ``[I1, I2, ..., Ip]`` where ``Ik`` is a list of 4
-          independent variable coordinates corresponding to the line that
-          represents the k'th link painted.
+        ``'color_list'``
+          A list of color names. The k'th element represents the color of the
+          k'th link.
 
-        ``'dcoords'``
-          A list of lists ``[I2, I2, ..., Ip]`` where ``Ik`` is a list of 4
-          independent variable coordinates corresponding to the line that
-          represents the k'th link painted.
+        ``'icoord'`` and ``'dcoord'``
+          Each of them is a list of lists. Let ``icoord = [I1, I2, ..., Ip]``
+          where ``Ik = [xk1, xk2, xk3, xk4]`` and ``dcoord = [D1, D2, ..., Dp]``
+          where ``Dk = [yk1, yk2, yk3, yk4]``, then the k'th link painted is
+          ``(xk1, yk1)`` - ``(xk2, yk2)`` - ``(xk3, yk3)`` - ``(xk4, yk4)``.
 
         ``'ivl'``
           A list of labels corresponding to the leaf nodes.

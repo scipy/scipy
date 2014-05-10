@@ -110,7 +110,7 @@ def whiten(obs):
         >>> obs = [[  1.,   1.,   1.],  #o0
         ...        [  2.,   2.,   2.],  #o1
         ...        [  3.,   3.,   3.],  #o2
-        ...        [  4.,   4.,   4.]]) #o3
+        ...        [  4.,   4.,   4.]]  #o3
 
     Returns
     -------
@@ -163,7 +163,7 @@ def vq(obs, code_book):
          >>> code_book = [
          ...             [  1.,   2.,   3.,   4.],  #c0
          ...             [  1.,   2.,   3.,   4.],  #c1
-         ...             [  1.,   2.,   3.,   4.]]) #c2
+         ...             [  1.,   2.,   3.,   4.]]  #c2
 
     Returns
     -------
@@ -172,11 +172,6 @@ def vq(obs, code_book):
     dist : ndarray
         The distortion (distance) between the observation and its nearest
         code.
-
-    Notes
-    -----
-    This currently forces 32-bit math precision for speed.  Anyone know
-    of a situation where this undermines the accuracy of the algorithm?
 
     Examples
     --------
@@ -196,9 +191,7 @@ def vq(obs, code_book):
         ct = common_type(obs, code_book)
         c_obs = obs.astype(ct)
         c_code_book = code_book.astype(ct)
-        if ct is single:
-            results = _vq.vq(c_obs, c_code_book)
-        elif ct is double:
+        if ct in (single, double):
             results = _vq.vq(c_obs, c_code_book)
         else:
             results = py_vq(obs, code_book)
@@ -365,8 +358,6 @@ def _kmeans(obs, guess, thresh=1e-5):
     See Also
     --------
     kmeans : wrapper around k-means
-
-    XXX should have an axis variable here.
 
     Examples
     --------
@@ -649,6 +640,13 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
         'matrix': interpret the k parameter as a k by M (or length k
         array for one-dimensional data) array of initial centroids.
+    missing : string
+        Method to deal with empty clusters. Available methods are
+        'warn' and 'raise':
+
+        'warn': give a warning and continue.
+
+        'raise': raise an ClusterError and terminate the algorithm.
 
     Returns
     -------
@@ -730,17 +728,3 @@ def _kmeans2(data, code, niter, nc, missing):
                 missing()
 
     return code, label
-
-if __name__ == '__main__':
-    pass
-    # import _vq
-    # a = np.random.randn(4, 2)
-    # b = np.random.randn(2, 2)
-
-    # print _vq.vq(a, b)
-    # print _vq.vq(np.array([[1], [2], [3], [4], [5], [6.]]),
-    #             np.array([[2.], [5.]]))
-    # print _vq.vq(np.array([1, 2, 3, 4, 5, 6.]), np.array([2., 5.]))
-    # _vq.vq(a.astype(np.float32), b.astype(np.float32))
-    # _vq.vq(a, b.astype(np.float32))
-    # _vq.vq([0], b)
