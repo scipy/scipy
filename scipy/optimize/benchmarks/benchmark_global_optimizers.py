@@ -15,7 +15,6 @@ NUMTRIALS = 10
 
 
 class _BenchOptimizers(object):
-
     """a framework for benchmarking the optimizer
 
     Parameters
@@ -203,11 +202,7 @@ class _BenchOptimizers(object):
 
 
 class BenchGlobalOptimizers(TestCase):
-
     """Benchmark the global optimizers"""
-
-#     def __init__(self, extra_argv):
-#         pass
 
     def bench_all(self):
         functions = ['Ackley', 'Levi', 'HolderTable', 'EggHolder',
