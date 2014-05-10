@@ -39,6 +39,11 @@ of the algorithm.
 Deprecated features
 ===================
 
+The ``scipy.weave`` module is deprecated.  It was the only module never ported
+to Python 3.x, and is not recommended to be used for new code - use Cython
+instead.  In order to support existing code, ``scipy.weave`` has been packaged
+separately: `https://github.com/scipy/weave`_.  It is a pure Python package, so
+can easily be installed with ``pip install weave``.
 
 Backwards incompatible changes
 ==============================
