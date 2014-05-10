@@ -132,12 +132,9 @@ class TestOptimize(object):
         func = lambda x: x
         fprime = lambda x: np.ones_like(x)
         x0 = [np.nan]
-        olderr = np.seterr(over='ignore')
-        try:
+        with np.errstate(over='ignore', invalid='ignore'):
             x = optimize.fmin_bfgs(func, x0, fprime, disp=False)
             assert_(np.isnan(func(x)))
-        finally:
-            np.seterr(**olderr)
 
     def test_bfgs_numerical_jacobian(self):
         """ BFGS with numerical jacobian and a vector epsilon parameter """
