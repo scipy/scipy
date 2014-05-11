@@ -322,10 +322,9 @@ class DifferentialEvolutionSolver(object):
         #Mutation constant should be in [0, 2). If specified as a sequence
         #then dithering is performed.
         self.scale = mutation
-        if (not np.all(np.isfinite(mutation))
-             or np.any(np.array(mutation) >= 2)
-             or np.any(np.array(mutation) < 0)):
-
+        if (not np.all(np.isfinite(mutation)) or
+                np.any(np.array(mutation) >= 2) or
+                np.any(np.array(mutation) < 0)):
             raise ValueError('The mutation constant must be a float in '
                              'U[0, 2), or specified as a tuple(min, max)'
                              ' where min < max and min, max are in U[0, 2).')
@@ -345,15 +344,14 @@ class DifferentialEvolutionSolver(object):
         #     -> [[low_0, ..., low_n], [high_0, ..., high_n]]
         self.limits = np.array(bounds, dtype='float').T
         if (np.size(self.limits, 0) != 2
-             or not np.all(np.isfinite(self.limits))):
+                or not np.all(np.isfinite(self.limits))):
             raise ValueError('bounds should be a sequence containing '
                              'real valued (min, max) pairs for each value'
                              ' in x')
 
         self.maxiter = maxiter or 1000
-        self.maxfun = (maxfun
-                       or ((self.maxiter + 1) * popsize
-                           * np.size(self.limits, 1)))
+        self.maxfun = (maxfun or ((self.maxiter + 1) * popsize *
+                                  np.size(self.limits, 1)))
 
         # population is scaled to between [0, 1].
         # We have to scale between parameter <-> population
@@ -515,8 +513,8 @@ class DifferentialEvolutionSolver(object):
                          self.population_energies[0]))
 
             if (self.callback and
-                self.callback(self._scale_parameters(self.population[0]),
-                             convergence=self.tol / convergence) is True):
+                    self.callback(self._scale_parameters(self.population[0]),
+                                  convergence=self.tol / convergence) is True):
 
                 warning_flag = True
                 status_message = ('callback function requested stop early '
