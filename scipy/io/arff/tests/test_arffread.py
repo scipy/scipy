@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
+import datetime
 import os
 import sys
 from os.path import join as pjoin
@@ -12,7 +13,7 @@ else:
 
 import numpy as np
 
-from numpy.testing import (TestCase, assert_array_almost_equal, assert_equal,
+from numpy.testing import (TestCase, assert_array_almost_equal, assert_array_equal, assert_equal,
         assert_, assert_raises, run_module_suite)
 
 from scipy.io.arff.arffread import loadarff
@@ -28,6 +29,7 @@ test3 = os.path.join(data_path, 'test3.arff')
 test4 = pjoin(data_path, 'test4.arff')
 test5 = pjoin(data_path, 'test5.arff')
 test6 = pjoin(data_path, 'test6.arff')
+test7 = pjoin(data_path, 'test7.arff')
 expect4_data = [(0.1, 0.2, 0.3, 0.4, 'class1'),
         (-0.1, -0.2, -0.3, -0.4, 'class2'),
         (1, 2, 3, 4, 'class3')]
@@ -120,6 +122,109 @@ class HeaderTest(TestCase):
         assert_(attrs[4][0] == 'class')
         assert_(attrs[4][1] == '{class0, class1, class2, class3}')
 
+    def test_dateheader(self):
+        ofile = open(test7)
+        rel, attrs = read_header(ofile)
+        ofile.close()
+
+        assert_(rel == 'test7')
+
+        assert_(len(attrs) == 6)
+
+        assert_(attrs[0][0] == 'attr_year')
+        assert_(attrs[0][1] == 'DATE yyyy')
+
+        assert_(attrs[1][0] == 'attr_month')
+        assert_(attrs[1][1] == 'DATE yyyy-MM')
+
+        assert_(attrs[2][0] == 'attr_date')
+        assert_(attrs[2][1] == 'DATE yyyy-MM-dd')
+
+        assert_(attrs[3][0] == 'attr_datetime_local')
+        assert_(attrs[3][1] == 'DATE "yyyy-MM-dd HH:mm"')
+
+        assert_(attrs[4][0] == 'attr_datetime_utc')
+        assert_(attrs[4][1] == 'DATE "yyyy-MM-dd HH:mm Z"')
+
+        assert_(attrs[5][0] == 'attr_datetime_full')
+        assert_(attrs[5][1] == 'DATE "yy-MM-dd HH:mm:ss z"')
+
+
+class DateAttributeTest(TestCase):
+    def setUp(self):
+        self.data, self.meta = loadarff(test7)
+
+    def test_year_attribute(self):
+        expected = np.array([
+            '1999',
+            '2004',
+            '1817',
+            '2100',
+            '2013',
+            '1631'
+        ], dtype='datetime64[Y]')
+
+        assert_array_equal(self.data["attr_year"], expected)
+
+    def test_month_attribute(self):
+        expected = np.array([
+            '1999-01',
+            '2004-12',
+            '1817-04',
+            '2100-09',
+            '2013-11',
+            '1631-10'
+        ], dtype='datetime64[M]')
+
+        assert_array_equal(self.data["attr_month"], expected)
+
+    def test_date_attribute(self):
+        expected = np.array([
+            '1999-01-31',
+            '2004-12-01',
+            '1817-04-28',
+            '2100-09-10',
+            '2013-11-30',
+            '1631-10-15'
+        ], dtype='datetime64[D]')
+
+        assert_array_equal(self.data["attr_date"], expected)
+
+    def test_datetime_local_attribute(self):
+        expected = np.array([
+            datetime.datetime(year=1999, month=1, day=31, hour=0, minute=1),
+            datetime.datetime(year=2004, month=12, day=1, hour=23, minute=59),
+            datetime.datetime(year=1817, month=4, day=28, hour=13, minute=0),
+            datetime.datetime(year=2100, month=9, day=10, hour=12, minute=0),
+            datetime.datetime(year=2013, month=11, day=30, hour=4, minute=55),
+            datetime.datetime(year=1631, month=10, day=15, hour=20, minute=4)
+        ], dtype='datetime64[m]')
+
+        assert_array_equal(self.data["attr_datetime_local"], expected)
+
+    def test_datetime_utc_attribute(self):
+        expected = np.array([
+            '1999-01-31T00:01Z',
+            '2004-12-01T23:59Z',
+            '1817-04-28T13:00Z',
+            '2100-09-10T12:00Z',
+            '2013-11-30T04:55Z',
+            '1631-10-15T20:04Z'
+        ], dtype='datetime64[m]')
+
+        assert_array_equal(self.data["attr_datetime_utc"], expected)
+
+    def test_datetime_full_attribute(self):
+        expected = np.array([
+            '1999-01-31T00:01:08+0430',
+            '2004-12-01T23:59:59-0800',
+            '2017-04-28T13:00:33+1000',
+            '2021-09-10T12:00:21-0300',
+            '2013-11-30T04:55:48-1100',
+            '2031-10-15T20:04:10+0000'
+        ], dtype='datetime64[s]')
+
+        assert_array_equal(self.data["attr_datetime_full"], expected)
 
 if __name__ == "__main__":
     run_module_suite()
