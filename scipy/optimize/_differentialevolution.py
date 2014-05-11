@@ -330,7 +330,7 @@ class DifferentialEvolutionSolver(object):
                              'U[0, 2), or specified as a tuple(min, max)'
                              ' where min < max and min, max are in U[0, 2).')
 
-        self.dither = False
+        self.dither = None
         if hasattr(mutation, '__iter__') and len(mutation) > 1:
             self.dither = [mutation[0], mutation[1]]
             self.dither.sort()
@@ -477,7 +477,7 @@ class DifferentialEvolutionSolver(object):
 
         # do the optimisation.
         for iteration in range(self.maxiter):
-            if self.dither:
+            if self.dither is not None:
                 self.scale = self.random_number_generator.rand(
                 ) * (self.dither[1] - self.dither[0]) + self.dither[0]
             for candidate in range(np.size(self.population, 0)):

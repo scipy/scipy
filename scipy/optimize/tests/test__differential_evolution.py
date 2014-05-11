@@ -132,7 +132,7 @@ class TestDifferentialEvolutionSolver(TestCase):
                                              self.bounds,
                                              mutation=mutation)
 
-        self.assertTrue(solver.dither)
+        self.assertEqual(solver.dither, list(mutation))
 
     def test_invalid_mutation_values_arent_accepted(self):
         func = rosen
@@ -162,7 +162,7 @@ class TestDifferentialEvolutionSolver(TestCase):
                                              self.bounds,
                                              mutation=mutation)
         assert_equal(0.5, solver.scale)
-        assert_equal(False, solver.dither)
+        assert_equal(None, solver.dither)
 
     def test__scale_parameters(self):
         trial = np.array([0.3])
