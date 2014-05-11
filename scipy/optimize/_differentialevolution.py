@@ -11,20 +11,6 @@ __all__ = ['differential_evolution']
 
 _MACHEPS = np.finfo(np.float64).eps
 
-#dict specifying whether mutation strategy binomial or exponential.
-#also holds mutation strategies.
-_binomial = {'best1bin': '_best1',
-            'randtobest1bin': '_randtobest1',
-            'best2bin': '_best2',
-            'rand2bin': '_rand2',
-            'rand1bin': '_rand1'}
-
-_exponential = {'best1exp': '_best1',
-               'rand1exp': '_rand1',
-               'randtobest1exp': '_randtobest1',
-               'best2exp': '_best2',
-               'rand2exp': '_rand2'}
-
 
 def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            maxiter=None, popsize=15, tol=0.01,
@@ -302,23 +288,32 @@ class DifferentialEvolutionSolver(object):
             - 'random'
     """
 
+    # Dispatch of mutation strategy method (binomial or exponential).
+    _binomial = {'best1bin': '_best1',
+                 'randtobest1bin': '_randtobest1',
+                 'best2bin': '_best2',
+                 'rand2bin': '_rand2',
+                 'rand1bin': '_rand1'}
+    _exponential = {'best1exp': '_best1',
+                    'rand1exp': '_rand1',
+                    'randtobest1exp': '_randtobest1',
+                    'best2exp': '_best2',
+                    'rand2exp': '_rand2'}
+
+
     def __init__(self, func, bounds, args=(),
-                 strategy=None, maxiter=None, popsize=15,
+                 strategy='best1bin', maxiter=None, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=None, callback=None, disp=False, polish=True,
                  init='latinhypercube'):
 
-        if strategy is None:
-            strategy = 'best1bin'
-
-        if strategy in _binomial:
-            self.strategy = strategy
-            self.mutation_func = getattr(self, _binomial[strategy])
-        elif strategy in _exponential:
-            self.strategy = strategy
-            self.mutation_func = getattr(self, _exponential[strategy])
+        if strategy in self._binomial:
+            self.mutation_func = getattr(self, self._binomial[strategy])
+        elif strategy in self._exponential:
+            self.mutation_func = getattr(self, self._exponential[strategy])
         else:
             raise ValueError("Please select a valid mutation strategy")
+        self.strategy = strategy
 
         self.callback = callback
         self.polish = polish
@@ -593,13 +588,13 @@ class DifferentialEvolutionSolver(object):
         fill_point = self.random_number_generator.randint(0, parameter_count)
 
         if (self.strategy == 'randtobest1exp'
-             or self.strategy == 'randtobest1bin'):
+                or self.strategy == 'randtobest1bin'):
             bprime = self.mutation_func(candidate,
                                         self._select_samples(candidate, 5))
         else:
             bprime = self.mutation_func(self._select_samples(candidate, 5))
 
-        if self.strategy in _binomial:
+        if self.strategy in self._binomial:
             crossovers = self.random_number_generator.rand(parameter_count)
             crossovers = crossovers < self.cross_over_probability
             # the last one is always from the bprime vector for binomial
@@ -610,7 +605,7 @@ class DifferentialEvolutionSolver(object):
             trial = np.where(crossovers, bprime, trial)
             return trial
 
-        elif self.strategy in _exponential:
+        elif self.strategy in self._exponential:
             i = 0
             while (i < parameter_count and
                    self.random_number_generator.rand() <
