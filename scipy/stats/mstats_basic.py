@@ -669,45 +669,7 @@ if stats.linregress.__doc__:
     linregress.__doc__ = stats.linregress.__doc__ + genmissingvaldoc
 
 
-def theilslopes(y, x=None, alpha=0.05):
-    """
-    Computes the Theil slope as the median of all slopes between paired values.
-
-    Parameters
-    ----------
-    y : array_like
-        Dependent variable.
-    x : {None, array_like}, optional
-        Independent variable. If None, use ``arange(len(y))`` instead.
-    alpha : float
-        Confidence degree between 0 and 1. Default is 95% confidence.
-
-    Returns
-    -------
-    medslope : float
-        Theil slope
-    medintercept : float
-        Intercept of the Theil line, as median(y)-medslope*median(x)
-    lo_slope : float
-        Lower bound of the confidence interval on medslope
-    up_slope : float
-        Upper bound of the confidence interval on medslope
-
-    Examples
-    --------
-    >>> from scipy.stats import mstats
-    >>> y = np.random.random(10)
-
-    # Compute the slope, intercept and 90% confidence interval:
-
-    >>> medslope, medintercept, lo_slope, up_slope = mstats.theilslopes(y, 0.9)
-
-    References
-    ----------
-    Sen, P. (1968). Estimates of the regression coefficient based on
-    Kendall's tau.
-
-    """
+def theilslopes(y, x=None, alpha=0.95):
     y = ma.asarray(y).flatten()
     if x is None:
         x = ma.arange(len(y), dtype=float)
@@ -715,6 +677,7 @@ def theilslopes(y, x=None, alpha=0.05):
         x = ma.asarray(x).flatten()
         if len(x) != len(y):
             raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y),len(x)))
+
     m = ma.mask_or(ma.getmask(x), ma.getmask(y))
     y._mask = x._mask = m
     # Disregard any masked elements of x or y
@@ -722,6 +685,7 @@ def theilslopes(y, x=None, alpha=0.05):
     x = x.compressed().astype(float)
     # We now have unmasked arrays so can use `stats.theilslopes`
     return stats.theilslopes(y, x, alpha=alpha)
+theilslopes.__doc__ = stats.theilslopes.__doc__
 
 
 def sen_seasonal_slopes(x):
