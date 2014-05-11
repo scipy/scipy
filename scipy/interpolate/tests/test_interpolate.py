@@ -86,7 +86,7 @@ class TestInterp2D(TestCase):
     def test_interp2d_bounds(self):
         x = np.linspace(0, 1, 5)
         y = np.linspace(0, 2, 7)
-        z = x[:,None]**2 + y[None,:]
+        z = x[None, :]**2 + y[:, None]
 
         ix = np.linspace(-1, 3, 31)
         iy = np.linspace(-1, 3, 33)
