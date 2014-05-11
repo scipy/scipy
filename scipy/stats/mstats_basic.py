@@ -678,7 +678,7 @@ def theilslopes(y, x=None, alpha=0.05):
     y : array_like
         Dependent variable.
     x : {None, array_like}, optional
-        Independent variable. If None, use arange(len(y)) instead.
+        Independent variable. If None, use ``arange(len(y))`` instead.
     alpha : float
         Confidence degree between 0 and 1. Default is 95% confidence.
 
@@ -692,22 +692,21 @@ def theilslopes(y, x=None, alpha=0.05):
         Lower bound of the confidence interval on medslope
     up_slope : float
         Upper bound of the confidence interval on medslope
-    
+
     Examples
     --------
     >>> from scipy.stats import mstats
-    >>> import numpy as np
     >>> y = np.random.random(10)
-    
+
     # Compute the slope, intercept and 90% confidence interval:
-    
+
     >>> medslope, medintercept, lo_slope, up_slope = mstats.theilslopes(y, 0.9)
-    
+
     References
     ----------
-    Sen, P. (1968). Estimates of the regression coefficient based on 
+    Sen, P. (1968). Estimates of the regression coefficient based on
     Kendall's tau.
-    
+
     """
     y = ma.asarray(y).flatten()
     if x is None:
