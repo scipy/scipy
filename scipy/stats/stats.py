@@ -3040,8 +3040,8 @@ def linregress(x, y=None):
     return slope, intercept, r, prob, sterrest
 
 
-def theilslopes(y, x=None, alpha=0.05):
-    """
+def theilslopes(y, x=None, alpha=0.95):
+    r"""
     Computes the Theil-Sen estimator for a set of points (x, y).
 
     `theilslopes` implements a method for robust linear regression.  It
@@ -3070,6 +3070,10 @@ def theilslopes(y, x=None, alpha=0.05):
     up_slope : float
         Upper bound of the confidence interval on `medslope`.
 
+    Notes
+    -----
+    The implementation of `theilslopes` follows [1]_.
+
     References
     ----------
     .. [1] P.K. Sen, "Estimates of the regression coefficient based on Kendall's tau",
@@ -3081,11 +3085,30 @@ def theilslopes(y, x=None, alpha=0.05):
     Examples
     --------
     >>> from scipy import stats
-    >>> y = np.random.random(10)
+    >>> import matplotlib.pyplot as plt
 
-    # Compute the slope, intercept and 90% confidence interval:
+    >>> x = np.linspace(0, 5, num=150)
+    >>> y = x + np.random.normal(size=x.size)
+    >>> y[11:15] += 10  # add outliers
+    >>> y[-5:] -= 7
 
-    >>> medslope, medintercept, lo_slope, up_slope = stats.theilslopes(y, 0.9)
+    Compute the slope, intercept and 90% confidence interval.  For comparison,
+    also compute the least-squares fit with `linregress`:
+
+    >>> res = stats.theilslopes(y, x, 0.90)
+    >>> lsq_res = stats.linregress(x, y)
+
+    Plot the results, with the Theil-Sen confidence interval (red dashes) and
+    the comparison with `linregress` (green):
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, y, 'b.')
+    >>> ax.plot(x, res[1] + res[0] * x, 'r-')
+    >>> ax.plot(x, res[1] + res[2] * x, 'r--')
+    >>> ax.plot(x, res[1] + res[3] * x, 'r--')
+    >>> ax.plot(x, lsq_res[1] + lsq_res[0] * x, 'g-')
+    >>> plt.show()
 
     """
     y = np.asarray(y).flatten()
