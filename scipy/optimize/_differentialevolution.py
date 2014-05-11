@@ -474,7 +474,7 @@ class DifferentialEvolutionSolver(object):
                            success=(warning_flag != True))
 
         # do the optimisation.
-        for iteration in range(self.maxiter):
+        for nit in range(1, self.maxiter + 1):
             if self.dither is not None:
                 self.scale = self.random_number_generator.rand(
                 ) * (self.dither[1] - self.dither[0]) + self.dither[0]
@@ -505,8 +505,6 @@ class DifferentialEvolutionSolver(object):
                            np.abs(np.mean(self.population_energies) +
                                   _MACHEPS))
 
-            nit = iteration + 1
-
             if self.disp:
                 print("differential_evolution step %d: f(x)= %g"
                       % (nit,
@@ -524,7 +522,7 @@ class DifferentialEvolutionSolver(object):
             if convergence < self.tol or warning_flag:
                 break
 
-        if nit == self.maxiter:
+        else:
             status_message = _status_message['maxiter']
             warning_flag = True
 
