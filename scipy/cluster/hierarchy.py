@@ -822,7 +822,7 @@ class ClusterNode:
 
         return preorder
 
-    def traversal_paths(self):
+    def traversal_paths(self, absolute=False):
         """
         Performs pre-order traversal without recursive function calls and record the 
         path for each leaf node.
@@ -830,6 +830,12 @@ class ClusterNode:
         When a leaf node is first encountered, the path of the traversal is recorded
         , and the path is appended to the list of paths. The order of paths is the same 
         with that of the leaves returned by pre_order function.
+
+        Parameters
+        ----------       
+        absolute: boolean
+            if absolute is true, the traversal paths are the full path (from root the leave);
+            otherwise, shortest relative paths will be returned
 
         Returns
         -------
@@ -872,14 +878,15 @@ class ClusterNode:
                 else:
                     path.pop()
                     k = k - 1
-        for path in preorder_paths:
-            if path[0] == rootid:
-                path_from_root = path[0:-1]
-            else:
-                idx = path_from_root.index(path[0])
-                for i in range(idx-1,-1,-1):
-                    path.insert(0, path_from_root[i])
-                path_from_root.extend(path[idx+1:-1])
+        if absolute:
+            for path in preorder_paths:
+                if path[0] == rootid:
+                    path_from_root = path[0:-1]
+                else:
+                    idx = path_from_root.index(path[0])
+                    for i in range(idx-1,-1,-1):
+                        path.insert(0, path_from_root[i])
+                    path_from_root.extend(path[idx+1:-1])
         return preorder_paths
 
 _cnode_bare = ClusterNode(0)
