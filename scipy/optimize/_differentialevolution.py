@@ -300,7 +300,6 @@ class DifferentialEvolutionSolver(object):
                     'best2exp': '_best2',
                     'rand2exp': '_rand2'}
 
-
     def __init__(self, func, bounds, args=(),
                  strategy='best1bin', maxiter=None, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
