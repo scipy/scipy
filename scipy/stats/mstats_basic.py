@@ -876,9 +876,6 @@ kruskal = kruskalwallis
 kruskalwallis.__doc__ = stats.kruskal.__doc__
 
 
-_kolmog2 = special.kolmogorov
-
-
 def ks_twosamp(data1, data2, alternative="two-sided"):
     """
     Computes the Kolmogorov-Smirnov test on two samples.
@@ -915,7 +912,7 @@ def ks_twosamp(data1, data2, alternative="two-sided"):
     alternative = str(alternative).lower()[0]
     if alternative == 't':
         d = ma.abs(csum).max()
-        prob = _kolmog2(np.sqrt(n)*d)
+        prob = special.kolmogorov(np.sqrt(n)*d)
     elif alternative == 'l':
         d = -csum.min()
         prob = np.exp(-2*n*d**2)
