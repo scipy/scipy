@@ -3,12 +3,11 @@ from __future__ import absolute_import, print_function
 import types
 
 from numpy import arange, float32, float64
-from numpy.testing import (TestCase, dec, assert_equal, assert_,
-                           run_module_suite)
+from numpy.testing import TestCase, assert_equal, assert_, run_module_suite
 
 from scipy.weave import ext_tools, c_spec
 from scipy.weave.standard_array_spec import array_converter
-from weave_test_utils import empty_temp_dir
+from weave_test_utils import empty_temp_dir, dec
 
 
 build_dir = empty_temp_dir()
