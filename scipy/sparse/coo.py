@@ -390,8 +390,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     def todok(self):
         from .dok import dok_matrix
 
+        self.sum_duplicates()
         dok = dok_matrix((self.shape), dtype=self.dtype)
-
         dok.update(izip(izip(self.row,self.col),self.data))
 
         return dok
@@ -408,6 +408,32 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         else:
             return coo_matrix((data, (self.row, self.col)),
                                    shape=self.shape, dtype=data.dtype)
+
+    def sum_duplicates(self):
+        """Eliminate duplicate matrix entries by adding them together
+
+        This is an *in place* operation
+        """
+        if len(self.data) == 0:
+            return
+        order = np.lexsort((self.row,self.col))
+        self.row = self.row[order]
+        self.col = self.col[order]
+        self.data = self.data[order]
+        prev_idx = 0
+        prev_inds = (self.row[0], self.col[0])
+        mask = np.ones_like(self.row, dtype=bool)
+        for idx, inds in enumerate(izip(self.row[1:], self.col[1:]), 1):
+            if inds == prev_inds:
+                mask[idx] = False
+                self.data[prev_idx] += self.data[idx]
+            else:
+                prev_inds = inds
+                prev_idx = idx
+        self.row = self.row[mask]
+        self.col = self.col[mask]
+        self.data = self.data[mask]
+
 
     ###########################
     # Multiplication handlers #
