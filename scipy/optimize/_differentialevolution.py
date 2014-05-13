@@ -64,12 +64,12 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
         ``popsize * len(x)`` individuals.
-    tol : float, optional:
+    tol : float, optional
         When the mean of the population energies, multiplied by tol,
         divided by the standard deviation of the population energies
         is greater than 1 the solving process terminates:
         ``convergence = mean(pop) * tol / stdev(pop) > 1``
-    mutation : float or tuple(float, float), optional:
+    mutation : float or tuple(float, float), optional
         The mutation constant.
         If specified as a float it should be in the range [0, 2].
         If specified as a tuple ``(min, max)`` dithering is employed. Dithering
@@ -78,18 +78,18 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``U[min, max)``. Dithering can help speed convergence significantly.
         Increasing the mutation constant increases the search radius, but will
         slow down convergence.
-    recombination : float, optional:
+    recombination : float, optional
         The recombination constant, should be in the range [0, 1]. Increasing
         this value allows a larger number of mutants to progress into the next
         generation, but at the risk of population stability.
-    seed : int or `np.random.RandomState`, optional:
+    seed : int or `np.random.RandomState`, optional
         If `seed` is not specified the `np.RandomState` singleton is used.
         If `seed` is an int, a new `np.random.RandomState` instance is used,
         seeded with seed.
         If `seed` is already a `np.random.RandomState instance`, then that
         `np.random.RandomState` instance is used.
         Specify `seed` for repeatable minimizations.
-    disp : bool, optional:
+    disp : bool, optional
         Display status messages
     callback : callable, `callback(xk, convergence=val)`, optional:
         A function to follow the progress of the minimization. ``xk`` is
@@ -241,12 +241,12 @@ class DifferentialEvolutionSolver(object):
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
         ``popsize * len(x)`` individuals.
-    tol : float, optional:
+    tol : float, optional
         When the mean of the population energies, multiplied by tol,
         divided by the standard deviation of the population energies
         is greater than 1 the solving process terminates:
         ``convergence = mean(pop) * tol / stdev(pop) > 1``
-    mutation : float or tuple(float, float), optional:
+    mutation : float or tuple(float, float), optional
         The mutation constant.
         If specified as a float it should be in the range [0, 2].
         If specified as a tuple ``(min, max)`` dithering is employed. Dithering
@@ -255,11 +255,11 @@ class DifferentialEvolutionSolver(object):
         U[min, max). Dithering can help speed convergence significantly.
         Increasing the mutation constant increases the search radius, but will
         slow down convergence.
-    recombination : float, optional:
+    recombination : float, optional
         The recombination constant, should be in the range [0, 1]. Increasing
         this value allows a larger number of mutants to progress into the next
         generation, but at the risk of population stability.
-    seed : int or `np.random.RandomState`, optional:
+    seed : int or `np.random.RandomState`, optional
         If `seed` is not specified the `np.random.RandomState` singleton is
         used.
         If `seed` is an int, a new `np.random.RandomState` instance is used,
@@ -267,9 +267,9 @@ class DifferentialEvolutionSolver(object):
         If `seed` is already a `np.random.RandomState` instance, then that
         `np.random.RandomState` instance is used.
         Specify `seed` for repeatable minimizations.
-    disp : bool, optional:
+    disp : bool, optional
         Display status messages
-    callback : callable, `callback(xk, convergence=val)`, optional:
+    callback : callable, `callback(xk, convergence=val)`, optional
         A function to follow the progress of the minimization. ``xk`` is
         the current value of ``x0``. ``val`` represents the fractional
         value of the population convergence.  When ``val`` is greater than one
