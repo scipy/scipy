@@ -163,7 +163,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     >>> from scipy.optimize import rosen, differential_evolution
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = differential_evolution(rosen, bounds)
-    >>> result
+    >>> result.x, result.fun
+    (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
 
     Next find the minimum of the Ackley function
     (http://en.wikipedia.org/wiki/Test_functions_for_optimization).
@@ -176,7 +177,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     ...     return -20. * np.exp(arg1) - np.exp(arg2) + 20. + np.e
     >>> bounds = [(-5, 5), (-5, 5)]
     >>> result = differential_evolution(ackley, bounds)
-    >>> result
+    >>> result.x, result.fun
+    (array([ 0.,  0.]), 4.4408920985006262e-16)
 
     References
     ----------
@@ -196,8 +198,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                          callback=callback,
                                          disp=disp,
                                          init=init)
-    result = solver.solve()
-    return result
+    return solver.solve()
 
 
 class DifferentialEvolutionSolver(object):
