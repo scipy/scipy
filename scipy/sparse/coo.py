@@ -124,6 +124,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 self.row = np.array([], dtype=idx_dtype)
                 self.col = np.array([], dtype=idx_dtype)
                 self.data = np.array([], getdtype(dtype, default=float))
+                self.has_canonical_format = True
             else:
                 try:
                     obj, ij = arg1
@@ -155,6 +156,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 idx_dtype = get_index_dtype(maxval=max(self.shape))
                 self.row = self.row.astype(idx_dtype)
                 self.col = self.col.astype(idx_dtype)
+                self.has_canonical_format = False
 
         elif arg1 is None:
             # Initialize an empty matrix.
@@ -167,6 +169,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             self.data = np.array([], getdtype(dtype, default=float))
             self.row = np.array([], dtype=idx_dtype)
             self.col = np.array([], dtype=idx_dtype)
+            self.has_canonical_format = True
         else:
             if isspmatrix(arg1):
                 if isspmatrix_coo(arg1) and copy:
@@ -180,6 +183,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                     self.col = coo.col
                     self.data = coo.data
                     self.shape = coo.shape
+                self.has_canonical_format = False
             else:
                 #dense argument
                 try:
@@ -194,6 +198,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
                 self.row, self.col = M.nonzero()
                 self.data = M[self.row, self.col]
+                self.has_canonical_format = True
 
         if dtype is not None:
             self.data = self.data.astype(dtype)
@@ -414,7 +419,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         This is an *in place* operation
         """
-        if len(self.data) == 0:
+        if self.has_canonical_format or len(self.data) == 0:
             return
         order = np.lexsort((self.row,self.col))
         self.row = self.row[order]
@@ -433,6 +438,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         self.row = self.row[mask]
         self.col = self.col[mask]
         self.data = self.data[mask]
+        self.has_canonical_format = True
 
 
     ###########################
