@@ -104,6 +104,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     init : string, optional
         Specify how the population initialization is performed. Should be
         one of:
+
             - 'latinhypercube'
             - 'random'
 
@@ -285,6 +286,7 @@ class DifferentialEvolutionSolver(object):
     init : string, optional
         Specify which type of population initialization is performed. Should be
         one of:
+
             - 'latinhypercube'
             - 'random'
     """
