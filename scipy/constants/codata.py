@@ -52,6 +52,9 @@ from __future__ import division, print_function, absolute_import
 
 
 import warnings
+import re
+from fnmatch import translate
+from difflib import get_close_matches
 from math import pi, sqrt
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
            'ConstantWarning']
@@ -954,6 +957,18 @@ def find(sub=None, disp=False):
     ----------
     sub : str, unicode
         Sub-string to search keys for.  By default, return all keys.
+
+        The sub-string may contain shell-style patterns:
+
+        ============   ============================
+        Character(s)   Role
+        ============   ============================
+        *              Matches everything
+        ?              Matches any single character
+        [seq]          Matches any character in seq
+        [!seq]         Matches any char not in seq
+        ============   ============================
+
     disp : bool
         If True, print the keys that are found, and return None.
         Otherwise, return the list of keys without printing anything.
@@ -970,16 +985,38 @@ def find(sub=None, disp=False):
         dictionary literal object, does not itself possess a docstring.
 
     """
+    keys = list(_current_constants)
     if sub is None:
-        result = list(_current_constants.keys())
+        result = keys
     else:
-        result = [key for key in _current_constants
-                 if sub.lower() in key.lower()]
+        re_sub = translate(sub).replace('\Z', '') # Not sure why translate adds \Z
+        matcher = re.compile(re_sub, re.IGNORECASE).search
+        result = filter(matcher, keys)
 
     result.sort()
     if disp:
-        for key in result:
-            print(key)
+        if result:
+            for key in result:
+                print(key)
+        else:
+            obsolete = filter(matcher, list(_obsolete_constants))
+            if obsolete:
+                print("No exact matches found in the current constants.")
+                if len(obsolete) == 1:
+                    print("Here is a match from the obsolete list:")
+                else:   
+                    print("Here are the matches from the obsolete list:")
+                for key in obsolete:
+                    print("    " + key)
+            else:
+                print("No exact matches found in the current or obsolete constants.")
+                close_matches = get_close_matches(sub, keys)
+                if len(close_matches) == 1:
+                    print("Here is a close match:")
+                elif len(close_matches) > 1:            
+                    print("Here are some close matches:")
+                for close_match in close_matches:
+                    print("    " + close_match)
         return
     else:
         return result

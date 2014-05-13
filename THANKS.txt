@@ -128,6 +128,7 @@ Joris Vankerschaver for multivariate Gaussian functionality.
 Rob Falck for the SLSQP interface and linprog.
 Jörg Dietrich for the k-sample Anderson Darling test.
 Blake Griffith for improvements to scipy.sparse.
+Kevin Davies for improvements to the codata find function.
 
 
 Institutions
