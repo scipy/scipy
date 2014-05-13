@@ -31,14 +31,14 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     ----------
     func : callable
         The objective function to be minimized.  Must be in the form
-        `f(x, *args)`, where `x` is the argument in the form of a 1-D array
-        and `args` is a  tuple of any additional fixed parameters needed to
+        ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
+        and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
-    bounds: sequence
-        Bounds for variables.  `(min, max)` pairs for each element in `x`,
+    bounds : sequence
+        Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
         defining the lower and upper bounds for the optimizing argument of
         `func`. It is required to have ``len(bounds) == len(x)``.
-        ``len(bounds)`` is used to determine the number of parameters in `x`.
+        ``len(bounds)`` is used to determine the number of parameters in ``x``.
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
@@ -57,7 +57,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             - 'rand1bin'
 
         The default is 'best1bin'.
-    maxiter: int, optional
+    maxiter : int, optional
         The maximum number of times the entire population is evolved.
         The maximum number of function evaluations is:
         ``maxiter * popsize * len(x)``
@@ -72,33 +72,33 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     mutation : float or tuple(float, float), optional:
         The mutation constant.
         If specified as a float it should be in the range [0, 2].
-        If specified as a tuple `(min, max)` dithering is employed. Dithering
+        If specified as a tuple ``(min, max)`` dithering is employed. Dithering
         randomly changes the mutation constant on a generation by generation
         basis. The mutation constant for that generation is taken from
-        U[min, max). Dithering can help speed convergence significantly.
+        ``U[min, max)``. Dithering can help speed convergence significantly.
         Increasing the mutation constant increases the search radius, but will
         slow down convergence.
     recombination : float, optional:
         The recombination constant, should be in the range [0, 1]. Increasing
         this value allows a larger number of mutants to progress into the next
         generation, but at the risk of population stability.
-    seed : int or np.random.RandomState, optional:
-        If seed is not specified the np.RandomState singleton is used.
-        If seed is an int, a new np.random.RandomState instance is used,
+    seed : int or `np.random.RandomState`, optional:
+        If `seed` is not specified the `np.RandomState` singleton is used.
+        If `seed` is an int, a new `np.random.RandomState` instance is used,
         seeded with seed.
-        If seed is already a np.random.RandomState instance, then that
-        np.random.RandomState instance is used.
-        Specify seed for repeatable minimizations.
+        If `seed` is already a `np.random.RandomState instance`, then that
+        `np.random.RandomState` instance is used.
+        Specify `seed` for repeatable minimizations.
     disp : bool, optional:
         Display status messages
     callback : callable, `callback(xk, convergence=val)`, optional:
-        A function to follow the progress of the minimization. `xk` is
-        the current value of `x0`. `val` represents the fractional
-        value of the population convergence.  When `val` is greater than one
+        A function to follow the progress of the minimization. ``xk`` is
+        the current value of ``x0``. ``val`` represents the fractional
+        value of the population convergence.  When ``val`` is greater than one
         the function halts. If callback returns `True`, then the minimization
         is halted (any polishing is still carried out).
     polish : bool, optional
-        If True (default), then scipy.optimize.minimize with the `L-BFGS-B`
+        If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
         can improve the minimization slightly.
     init : string, optional
@@ -116,9 +116,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     -------
     res : OptimizeResult
         The optimization result represented as a `OptimizeResult` object.
-        Important attributes are: `x` the solution array, `success` a
+        Important attributes are: ``x`` the solution array, ``success`` a
         Boolean flag indicating if the optimizer exited successfully and
-        `message` which describes the cause of the termination. See
+        ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes. If `polish`
         was employed, then OptimizeResult also contains the `jac` attribute.
 
@@ -207,14 +207,14 @@ class DifferentialEvolutionSolver(object):
     ----------
     func : callable
         The objective function to be minimized.  Must be in the form
-        `f(x, *args)`, where `x` is the argument in the form of a 1-D array
-        and `args` is a  tuple of any additional fixed parameters needed to
+        ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
+        and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
-    bounds: sequence
-        Bounds for variables.  `(min, max)` pairs for each element in `x`,
+    bounds : sequence
+        Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
         defining the lower and upper bounds for the optimizing argument of
         `func`. It is required to have ``len(bounds) == len(x)``.
-        ``len(bounds)`` is used to determine the number of parameters in `x`.
+        ``len(bounds)`` is used to determine the number of parameters in ``x``.
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
@@ -234,7 +234,7 @@ class DifferentialEvolutionSolver(object):
 
         The default is 'best1bin'
 
-    maxiter: int, optional
+    maxiter : int, optional
         The maximum number of times the entire population is evolved. The
         maximum number of function evaluations is:
         ``maxiter * popsize * len(x)``
@@ -249,7 +249,7 @@ class DifferentialEvolutionSolver(object):
     mutation : float or tuple(float, float), optional:
         The mutation constant.
         If specified as a float it should be in the range [0, 2].
-        If specified as a tuple `(min, max)` dithering is employed. Dithering
+        If specified as a tuple ``(min, max)`` dithering is employed. Dithering
         randomly changes the mutation constant on a generation by generation
         basis. The mutation constant for that generation is taken from
         U[min, max). Dithering can help speed convergence significantly.
@@ -259,23 +259,24 @@ class DifferentialEvolutionSolver(object):
         The recombination constant, should be in the range [0, 1]. Increasing
         this value allows a larger number of mutants to progress into the next
         generation, but at the risk of population stability.
-    seed : int or np.random.RandomState, optional:
-        If seed is not specified the np.random.RandomState singleton is used.
-        If seed is an int, a new np.random.RandomState instance is used,
-        seeded with seed.
-        If seed is already a np.random.RandomState instance, then that
-        np.random.RandomState instance is used.
-        Specify seed for repeatable minimizations.
+    seed : int or `np.random.RandomState`, optional:
+        If `seed` is not specified the `np.random.RandomState` singleton is
+        used.
+        If `seed` is an int, a new `np.random.RandomState` instance is used,
+        seeded with `seed`.
+        If `seed` is already a `np.random.RandomState` instance, then that
+        `np.random.RandomState` instance is used.
+        Specify `seed` for repeatable minimizations.
     disp : bool, optional:
         Display status messages
     callback : callable, `callback(xk, convergence=val)`, optional:
-        A function to follow the progress of the minimization. `xk` is
-        the current value of `x0`. `val` represents the fractional
-        value of the population convergence.  When `val` is greater than one
+        A function to follow the progress of the minimization. ``xk`` is
+        the current value of ``x0``. ``val`` represents the fractional
+        value of the population convergence.  When ``val`` is greater than one
         the function halts. If callback returns `True`, then the minimization
         is halted (any polishing is still carried out).
     polish : bool, optional
-        If True, then scipy.optimize.minimize with the `L-BFGS-B` method
+        If True, then `scipy.optimize.minimize` with the `L-BFGS-B` method
         is used to polish the best population member at the end. This requires
         a few more function evaluations.
     maxfun : int, optional
