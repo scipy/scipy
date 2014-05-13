@@ -4,9 +4,11 @@
 from __future__ import division, print_function, absolute_import
 
 import warnings
+import threading
 
 from . import sigtools
 from scipy.lib.six import callable
+from scipy.lib._version import NumpyVersion
 from scipy import linalg
 from scipy.fftpack import (fft, ifft, ifftshift, fft2, ifft2, fftn,
                            ifftn, fftfreq)
@@ -34,6 +36,11 @@ _modedict = {'valid': 0, 'same': 1, 'full': 2}
 
 _boundarydict = {'fill': 0, 'pad': 0, 'wrap': 2, 'circular': 2, 'symm': 1,
                  'symmetric': 1, 'reflect': 4}
+
+
+_rfft_mt_safe = (NumpyVersion(np.__version__) >= '1.9.0.dev-e24486e')
+
+_rfft_lock = threading.Lock()
 
 
 def _valfrommode(mode):
@@ -332,9 +339,25 @@ def fftconvolve(in1, in2, mode="full"):
     fshape = [_next_regular(int(d)) for d in shape]
     fslice = tuple([slice(0, int(sz)) for sz in shape])
     if not complex_result:
-        ret = irfftn(rfftn(in1, fshape) *
-                     rfftn(in2, fshape), fshape)[fslice].copy()
-        ret = ret.real
+        if _rfft_mt_safe:
+            ret = irfftn(rfftn(in1, fshape) *
+                         rfftn(in2, fshape), fshape)[fslice].copy()
+        else:
+            # Pre-1.9 NumPy FFT routines are not threadsafe.  Make sure we only
+            # call rfftn/irfftn from one thread at a time.
+            if _rfft_lock.acquire(False):
+                try:
+                    ret = irfftn(rfftn(in1, fshape) *
+                                 rfftn(in2, fshape), fshape)[fslice].copy()
+                finally:
+                    _rfft_lock.release()
+            else:
+                # We're in a parallel thread and rfftn is already in use.  Fall
+                # back to using the (threadsafe) SciPy complex-FFT for other
+                # threads.
+                ret = ifftn(fftn(in1, fshape) *
+                            fftn(in2, fshape))[fslice].copy()
+                ret = ret.real
     else:
         ret = ifftn(fftn(in1, fshape) * fftn(in2, fshape))[fslice].copy()
 
