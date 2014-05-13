@@ -427,7 +427,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         self.data = self.data[order]
         prev_idx = 0
         prev_inds = (self.row[0], self.col[0])
-        mask = np.ones_like(self.row, dtype=bool)
+        mask = np.ones(len(self.row), dtype=bool)
         for idx, inds in enumerate(izip(self.row[1:], self.col[1:]), 1):
             if inds == prev_inds:
                 mask[idx] = False
@@ -439,7 +439,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         self.col = self.col[mask]
         self.data = self.data[mask]
         self.has_canonical_format = True
-
 
     ###########################
     # Multiplication handlers #
