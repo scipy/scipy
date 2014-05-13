@@ -370,6 +370,10 @@ class TestConstructUtils(TestCase):
         assert_array_equal(x1.row, x2.row)
         assert_array_equal(x1.col, x2.col)
 
+        for density in [0.0, 0.1, 0.5, 1.0]:
+            x = sprand(5, 10, density=density)
+            assert_equal(x.nnz, int(density * np.prod(x.shape)))
+
         for fmt in ['coo', 'csc', 'csr', 'lil']:
             x = sprand(5, 10, format=fmt)
             assert_equal(x.format, fmt)

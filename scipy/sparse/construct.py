@@ -10,6 +10,8 @@ __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
 
 import numpy as np
 
+from scipy.lib.six import xrange
+
 from .sputils import upcast, get_index_dtype
 
 from .csr import csr_matrix
@@ -701,26 +703,25 @@ greater than %d - this is not supported on this machine
     # Number of non zero values
     k = int(density * m * n)
 
-    # Generate a few more values than k so that we can get unique values
-    # afterwards.
-    # XXX: one could be smarter here
-    mlow = 5
-    fac = 1.02
-    gk = min(k + mlow, fac * k)
-
     if random_state is None:
         random_state = np.random
     elif isinstance(random_state, (int, np.integer)):
         random_state = np.random.RandomState(random_state)
 
-    def _gen_unique_rand(rng, _gk):
-        ind = rng.rand(int(_gk))
-        return np.unique(np.floor(ind * mn))[:k]
-
-    ind = _gen_unique_rand(random_state, gk)
-    while ind.size < k:
-        gk *= 1.05
-        ind = _gen_unique_rand(random_state, gk)
+    # Use the algorithm from python's random.sample for k < mn/3.
+    if mn < 3*k:
+        # We should use this line, but choice is only available in numpy >= 1.7
+        # ind = random_state.choice(mn, size=k, replace=False)
+        ind = random_state.permutation(mn)[:k]
+    else:
+        ind = np.empty(k, dtype=tp)
+        selected = set()
+        for i in xrange(k):
+            j = random_state.randint(mn)
+            while j in selected:
+                j = random_state.randint(mn)
+            selected.add(j)
+            ind[i] = j
 
     j = np.floor(ind * 1. / m).astype(tp)
     i = (ind - j * m).astype(tp)
