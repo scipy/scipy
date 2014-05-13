@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.linalg import LinAlgError
+from scipy.lib._numpy_compat import _norm
 from . import blas
 
 __all__ = ['LinAlgError', 'norm']
@@ -9,7 +10,7 @@ __all__ = ['LinAlgError', 'norm']
 _nrm2_prefix = {'f': 's', 'F': 'sc', 'D': 'dz'}
 
 
-def norm(a, ord=None):
+def norm(a, ord=None, axis=None):
     """
     Matrix or vector norm.
 
@@ -24,11 +25,17 @@ def norm(a, ord=None):
     ord : {non-zero int, inf, -inf, 'fro'}, optional
         Order of the norm (see table under ``Notes``). inf means numpy's
         `inf` object.
+    axis : {int, 2-tuple of ints, None}, optional
+        If `axis` is an integer, it specifies the axis of `x` along which to
+        compute the vector norms.  If `axis` is a 2-tuple, it specifies the
+        axes that hold 2-D matrices, and the matrix norms of these matrices
+        are computed.  If `axis` is None then either a vector norm (when `x`
+        is 1-D) or a matrix norm (when `x` is 2-D) is returned.
 
     Returns
     -------
-    norm : float
-        Norm of the matrix or vector.
+    norm : float or ndarray
+        Norm of the matrix or vector(s).
 
     Notes
     -----
@@ -111,16 +118,36 @@ def norm(a, ord=None):
     >>> norm(a, -3)
     nan
 
+    Using the `axis` argument to compute vector norms:
+
+    >>> c = np.array([[ 1, 2, 3],
+    ...               [-1, 1, 4]])
+    >>> norm(c, axis=0)
+    array([ 1.41421356,  2.23606798,  5.        ])
+    >>> norm(c, axis=1)
+    array([ 3.74165739,  4.24264069])
+    >>> norm(c, ord=1, axis=1)
+    array([6, 6])
+
+    Using the `axis` argument to compute matrix norms:
+
+    >>> m = np.arange(8).reshape(2,2,2)
+    >>> norm(m, axis=(1,2))
+    array([  3.74165739,  11.22497216])
+    >>> norm(m[0, :, :]), norm(m[1, :, :])
+    (3.7416573867739413, 11.224972160321824)
+
     """
-    # Differs from numpy only in non-finite handling and the use of
-    # blas
+    # Differs from numpy only in non-finite handling and the use of blas.
     a = np.asarray_chkfinite(a)
-    if ord in (None, 2) and (a.ndim == 1) and (a.dtype.char in 'fdFD'):
-        # use blas for fast and stable euclidean norm
+
+    # Under simple conditions, use blas for fast and stable euclidean norm.
+    if (axis is None and ord in (None, 2) and
+            (a.ndim == 1) and (a.dtype.char in 'fdFD')):
         func_name = _nrm2_prefix.get(a.dtype.char, 'd') + 'nrm2'
         nrm2 = getattr(blas, func_name)
         return nrm2(a)
-    return np.linalg.norm(a, ord=ord)
+    return _norm(a, ord=ord, axis=axis)
 
 
 def _datacopied(arr, original):
