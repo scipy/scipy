@@ -338,28 +338,23 @@ def fftconvolve(in1, in2, mode="full"):
     # Speed up FFT by padding to optimal size for FFTPACK
     fshape = [_next_regular(int(d)) for d in shape]
     fslice = tuple([slice(0, int(sz)) for sz in shape])
-    if not complex_result:
-        if _rfft_mt_safe:
+    # Pre-1.9 NumPy FFT routines are not threadsafe.  For older NumPys, make
+    # sure we only call rfftn/irfftn from one thread at a time.
+    if not complex_result and (_rfft_mt_safe or _rfft_lock.acquire(False)):
+        try:
             ret = irfftn(rfftn(in1, fshape) *
                          rfftn(in2, fshape), fshape)[fslice].copy()
-        else:
-            # Pre-1.9 NumPy FFT routines are not threadsafe.  Make sure we only
-            # call rfftn/irfftn from one thread at a time.
-            if _rfft_lock.acquire(False):
-                try:
-                    ret = irfftn(rfftn(in1, fshape) *
-                                 rfftn(in2, fshape), fshape)[fslice].copy()
-                finally:
-                    _rfft_lock.release()
-            else:
-                # We're in a parallel thread and rfftn is already in use.  Fall
-                # back to using the (threadsafe) SciPy complex-FFT for other
-                # threads.
-                ret = ifftn(fftn(in1, fshape) *
-                            fftn(in2, fshape))[fslice].copy()
-                ret = ret.real
+        finally:
+            if not _rfft_mt_safe:
+                _rfft_lock.release()
     else:
+        # If we're here, it's either because we need a complex result, or we
+        # failed to acquire _rfft_lock (meaning rfftn isn't threadsafe and
+        # is already in use by another thread).  In either case, use the
+        # (threadsafe but slower) ScipPy complex-FFT routines instead.
         ret = ifftn(fftn(in1, fshape) * fftn(in2, fshape))[fslice].copy()
+        if not complex_result:
+            ret = ret.real
 
     if mode == "full":
         return ret
