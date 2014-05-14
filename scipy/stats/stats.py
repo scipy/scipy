@@ -3046,7 +3046,6 @@ def theilslopes(y, x=None, alpha=0.95):
 
     `theilslopes` implements a method for robust linear regression.  It
     computes the slope as the median of all slopes between paired values.
-    A confidence interval
 
     Parameters
     ----------
@@ -3072,7 +3071,12 @@ def theilslopes(y, x=None, alpha=0.95):
 
     Notes
     -----
-    The implementation of `theilslopes` follows [1]_.
+    The implementation of `theilslopes` follows [1]_. The intercept is
+    not defined in [1]_, and here it is defined as ``median(y) -
+    medslope*median(x)``, which is given in [3]_. Other definitions of
+    the intercept exist in the literature. A confidence interval for
+    the intercept is not given as this question is not addressed in
+    [1]_.
 
     References
     ----------
@@ -3081,13 +3085,15 @@ def theilslopes(y, x=None, alpha=0.95):
     .. [2] H. Theil, "A rank-invariant method of linear and polynomial
            regression analysis I, II and III",  Nederl. Akad. Wetensch., Proc.
            53:, pp. 386-392, pp. 521-525, pp. 1397-1412, 1950.
+    .. [3] W.L. Conover, "Practical nonparametric statistics", 2nd ed.,
+           John Wiley and Sons, New York, pp. 493.
 
     Examples
     --------
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
-    >>> x = np.linspace(0, 5, num=150)
+    >>> x = np.linspace(-5, 5, num=150)
     >>> y = x + np.random.normal(size=x.size)
     >>> y[11:15] += 10  # add outliers
     >>> y[-5:] -= 7
@@ -3098,8 +3104,7 @@ def theilslopes(y, x=None, alpha=0.95):
     >>> res = stats.theilslopes(y, x, 0.90)
     >>> lsq_res = stats.linregress(x, y)
 
-    Plot the results, with the Theil-Sen confidence interval (red dashes) and
-    the comparison with `linregress` (green):
+    Plot the results:
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
@@ -3109,6 +3114,12 @@ def theilslopes(y, x=None, alpha=0.95):
     >>> ax.plot(x, res[1] + res[3] * x, 'r--')
     >>> ax.plot(x, lsq_res[1] + lsq_res[0] * x, 'g-')
     >>> plt.show()
+
+    The Theil-Sen regression line is shown in red, with the dashed red
+    lines illustrating the confidence interval of the slope. Note that
+    this is not the confidence interval of the regression as the
+    confidence interval of the intercept is not included. The green
+    line shows the least-squares fit for comparison.
 
     """
     y = np.asarray(y).flatten()
