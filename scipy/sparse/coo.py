@@ -425,19 +425,13 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         self.row = self.row[order]
         self.col = self.col[order]
         self.data = self.data[order]
-        prev_idx = 0
-        prev_inds = (self.row[0], self.col[0])
-        mask = np.ones(len(self.row), dtype=bool)
-        for idx, inds in enumerate(izip(self.row[1:], self.col[1:]), 1):
-            if inds == prev_inds:
-                mask[idx] = False
-                self.data[prev_idx] += self.data[idx]
-            else:
-                prev_inds = inds
-                prev_idx = idx
-        self.row = self.row[mask]
-        self.col = self.col[mask]
-        self.data = self.data[mask]
+        unique_mask = ((self.row[1:] != self.row[:-1]) |
+                       (self.col[1:] != self.col[:-1]))
+        unique_mask = np.append(True, unique_mask)
+        self.row = self.row[unique_mask]
+        self.col = self.col[unique_mask]
+        unique_inds, = np.nonzero(unique_mask)
+        self.data = np.add.reduceat(self.data, unique_inds, dtype=self.dtype)
         self.has_canonical_format = True
 
     ###########################
