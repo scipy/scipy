@@ -3600,7 +3600,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     are uniform and given by the mean of the observed frequencies.  Here we
     perform a G-test (i.e. use the log-likelihood ratio statistic):
 
-    >>> power_divergence([16, 18, 16, 14, 12, 12], method='log-likelihood')
+    >>> power_divergence([16, 18, 16, 14, 12, 12], lambda_='log-likelihood')
     (2.006573162632538, 0.84823476779463769)
 
     The expected frequencies can be given with the `f_exp` argument:
