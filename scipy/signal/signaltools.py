@@ -351,7 +351,7 @@ def fftconvolve(in1, in2, mode="full"):
         # If we're here, it's either because we need a complex result, or we
         # failed to acquire _rfft_lock (meaning rfftn isn't threadsafe and
         # is already in use by another thread).  In either case, use the
-        # (threadsafe but slower) ScipPy complex-FFT routines instead.
+        # (threadsafe but slower) SciPy complex-FFT routines instead.
         ret = ifftn(fftn(in1, fshape) * fftn(in2, fshape))[fslice].copy()
         if not complex_result:
             ret = ret.real
