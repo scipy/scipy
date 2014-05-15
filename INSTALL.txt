@@ -16,7 +16,7 @@ you are not familiar with compiling software from sources.
 
 Recommended distributions are:
 
-  - EPD (http://www.enthought.com/products/epd.php)
+  - Enthought Canopy (https://www.enthought.com/products/canopy/)
   - Anaconda (https://store.continuum.io/cshop/anaconda)
   - Python(x,y) (http://code.google.com/p/pythonxy/)
   - WinPython (http://code.google.com/p/winpython/)
