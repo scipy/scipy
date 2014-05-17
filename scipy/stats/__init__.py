@@ -245,6 +245,7 @@ which work for masked arrays.
    pointbiserialr
    kendalltau
    linregress
+   theilslopes
 
 .. autosummary::
    :toctree: generated/
