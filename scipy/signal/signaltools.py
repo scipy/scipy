@@ -1891,25 +1891,25 @@ def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
     Apply the IIR filter defined by `(b,a)` to `x` twice, first forward
     then backward, using Gustafsson's initial conditions [1]_.
 
-    Let `y_fb` be the result of filtering first forward and then backward,
-    and let `y_bf` be the result of filtering first backward then forward.
+    Let ``y_fb`` be the result of filtering first forward and then backward,
+    and let ``y_bf`` be the result of filtering first backward then forward.
     Gustafsson's method is to compute initial conditions for the forward
-    pass and the backward pass such that `y_fb == y_bf`.
+    pass and the backward pass such that ``y_fb == y_bf``.
 
     Parameters
     ----------
-    b : scalar or 1-d ndarray
+    b : scalar or 1-D ndarray
         Numerator coefficients of the filter.
-    a : scalar or 1-d ndarray
+    a : scalar or 1-D ndarray
         Denominator coefficients of the filter.
     x : ndarray
         Data to be filtered.
-    axis : int
+    axis : int, optional
         Axis of `x` to be filtered.  Default is -1.
-    irlen : int or None
+    irlen : int or None, optional
         The length of the nonnegligible part of the impulse response.
         If `irlen` is None, or if the length of the signal is less than
-        `2*irlen`, then no part of the impulse response is ignored.
+        ``2 * irlen``, then no part of the impulse response is ignored.
 
     Returns
     -------
@@ -2092,8 +2092,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     b : (N,) array_like
         The numerator coefficient vector of the filter.
     a : (N,) array_like
-        The denominator coefficient vector of the filter.  If a[0]
-        is not 1, then both a and b are normalized by a[0].
+        The denominator coefficient vector of the filter.  If ``a[0]``
+        is not 1, then both `a` and `b` are normalized by ``a[0]``.
     x : array_like
         The array of data to be filtered.
     axis : int, optional
@@ -2106,16 +2106,16 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
         is 'odd'.
     padlen : int or None, optional
         The number of elements by which to extend `x` at both ends of
-        `axis` before applying the filter. This value must be less than
-        `x.shape[axis]-1`.  `padlen=0` implies no padding.
-        The default value is 3*max(len(a),len(b)).
-    method : str
+        `axis` before applying the filter.  This value must be less than
+        ``x.shape[axis] - 1``.  ``padlen=0`` implies no padding.
+        The default value is ``3 * max(len(a), len(b))``.
+    method : str, optional
         Determines the method for handling the edges of the signal, either
         "pad" or "gust".  When `method` is "pad", the signal is padded; the
         type of padding is determined by `padtype` and `padlen`, and `irlen`
         is ignored.  When `method` is "gust", Gustafsson's method is used,
         and `padtype` and `padlen` are ignored.
-    irlen : int or None
+    irlen : int or None, optional
         When `method` is "gust", `irlen` specifies the length of the
         impulse response of the filter.  If `irlen` is None, no part
         of the impulse response is ignored.  For a long signal, specifying
@@ -2137,14 +2137,16 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     References
     ----------
-    .. [1] F. Gustaffson. Determining the initial states in forward-backward
-           filtering. Transactions on Signal Processing, 46(4):988-992, 1996.
+    .. [1] F. Gustaffson, "Determining the initial states in forward-backward
+           filtering", Transactions on Signal Processing, Vol. 46, pp. 988-992,
+           1996.
 
     Examples
     --------
     The examples will use several functions from `scipy.signal`.
 
     >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
 
     First we create a one second signal that is the sum of two pure sine
     waves, with frequencies 5 Hz and 250 Hz, sampled at 2000 Hz.
@@ -2155,8 +2157,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     >>> x = xlow + xhigh
 
     Now create a lowpass Butterworth filter with a cutoff of 0.125 times
-    the Nyquist rate, or 125 Hz, and apply it to x with filtfilt.  The
-    result should be approximately xlow, with no phase shift.
+    the Nyquist rate, or 125 Hz, and apply it to ``x`` with `filtfilt`.
+    The result should be approximately ``xlow``, with no phase shift.
 
     >>> b, a = signal.butter(8, 0.125)
     >>> y = signal.filtfilt(b, a, x, padlen=150)
@@ -2169,7 +2171,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     is reached.  In general, transient effects at the edges are
     unavoidable.
 
-    The following example demonstrates the option `method="gust"`.
+    The following example demonstrates the option ``method="gust"``.
 
     First we create a filter.
 
@@ -2179,7 +2181,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     >>> np.random.seed(12345)
     >>> x = np.random.randn(400).cumsum()     # Signal to be filtered.
-    >>> y = filtfilt(b, a, x, method="gust")  # Apply the filter.
+    >>> y = signal.filtfilt(b, a, x, method="gust")  # Apply the filter.
     >>> plt.plot(x, 'k-')
     >>> plt.plot(y, 'r-', linewidth=3, alpha=0.5)
 
@@ -2196,7 +2198,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     The difference between `y` and `y2` is small.  For long signals, using
     `irlen` gives a significant performance improvement.
 
-    >>> y2 = filtfilt(b, a, x, method="gust", irlen=approx_impulse_len)
+    >>> y2 = signal.filtfilt(b, a, x, method="gust", irlen=approx_impulse_len)
     >>> np.max(np.abs(y - y2))
     1.9178905574790406e-08
 
