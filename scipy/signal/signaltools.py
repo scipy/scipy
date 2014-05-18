@@ -156,6 +156,12 @@ def correlate(in1, in2, mode='full'):
 
         z = sigtools._correlateND(in1, in2, out, val)
     else:
+        # _correlateND is far slower when in2.size > in1.size, so swap them
+        # and then undo the effect afterward
+        swapped_inputs = (mode == 'full') and (in2.size > in1.size)
+        if swapped_inputs:
+            in1, in2 = in2, in1
+
         ps = [i + j - 1 for i, j in zip(in1.shape, in2.shape)]
         # zero pad input
         in1zpadded = np.zeros(ps, in1.dtype)
@@ -168,6 +174,11 @@ def correlate(in1, in2, mode='full'):
             out = np.empty(in1.shape, in1.dtype)
 
         z = sigtools._correlateND(in1zpadded, in2, out, val)
+
+        # Reverse and conjugate to undo the effect of swapping inputs
+        if swapped_inputs:
+            slice_obj = [slice(None, None, -1)] * len(z.shape)
+            z = z[slice_obj].conj()
 
     return z
 
