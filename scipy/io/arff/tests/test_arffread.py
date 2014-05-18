@@ -164,6 +164,7 @@ class HeaderTest(TestCase):
 
 
 class DateAttributeTest(TestCase):
+    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0', "No np.datetime64 in Numpy < 1.7.0")
     def setUp(self):
         self.data, self.meta = loadarff(test7)
 
