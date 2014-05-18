@@ -200,10 +200,8 @@ def get_date_format(atrv):
         if "ss" in pattern:
             pattern = pattern.replace("ss", "%S")
             datetime_unit = "s"
-        if "Z" in pattern:
-            pattern = pattern.replace("Z", "%Z")
-        if "z" in pattern:
-            pattern = pattern.replace("z", "%z")
+        if "z" in pattern or "Z" in pattern:
+            raise ValueError("Date type attributes with time zone not supported, yet")
 
         if datetime_unit is None:
             raise ValueError("Invalid or unsupported date format")

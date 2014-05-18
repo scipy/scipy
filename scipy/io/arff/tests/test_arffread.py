@@ -30,6 +30,7 @@ test4 = pjoin(data_path, 'test4.arff')
 test5 = pjoin(data_path, 'test5.arff')
 test6 = pjoin(data_path, 'test6.arff')
 test7 = pjoin(data_path, 'test7.arff')
+test8 = pjoin(data_path, 'test8.arff')
 expect4_data = [(0.1, 0.2, 0.3, 0.4, 'class1'),
         (-0.1, -0.2, -0.3, -0.4, 'class2'),
         (1, 2, 3, 4, 'class3')]
@@ -129,7 +130,7 @@ class HeaderTest(TestCase):
 
         assert_(rel == 'test7')
 
-        assert_(len(attrs) == 6)
+        assert_(len(attrs) == 5)
 
         assert_(attrs[0][0] == 'attr_year')
         assert_(attrs[0][1] == 'DATE yyyy')
@@ -143,11 +144,22 @@ class HeaderTest(TestCase):
         assert_(attrs[3][0] == 'attr_datetime_local')
         assert_(attrs[3][1] == 'DATE "yyyy-MM-dd HH:mm"')
 
-        assert_(attrs[4][0] == 'attr_datetime_utc')
-        assert_(attrs[4][1] == 'DATE "yyyy-MM-dd HH:mm Z"')
+        assert_(attrs[4][0] == 'attr_datetime_missing')
+        assert_(attrs[4][1] == 'DATE "yyyy-MM-dd HH:mm"')
 
-        assert_(attrs[5][0] == 'attr_datetime_full')
-        assert_(attrs[5][1] == 'DATE "yy-MM-dd HH:mm:ss z"')
+    def test_dateheader_unsupported(self):
+        ofile = open(test8)
+        rel, attrs = read_header(ofile)
+        ofile.close()
+
+        assert_(rel == 'test8')
+
+        assert_(len(attrs) == 2)
+        assert_(attrs[0][0] == 'attr_datetime_utc')
+        assert_(attrs[0][1] == 'DATE "yyyy-MM-dd HH:mm Z"')
+
+        assert_(attrs[1][0] == 'attr_datetime_full')
+        assert_(attrs[1][1] == 'DATE "yy-MM-dd HH:mm:ss z"')
 
 
 class DateAttributeTest(TestCase):
@@ -202,29 +214,20 @@ class DateAttributeTest(TestCase):
 
         assert_array_equal(self.data["attr_datetime_local"], expected)
 
-    def test_datetime_utc_attribute(self):
+    def test_datetime_missing(self):
         expected = np.array([
-            '1999-01-31T00:01Z',
+            'nat',
             '2004-12-01T23:59Z',
-            '1817-04-28T13:00Z',
-            '2100-09-10T12:00Z',
+            'nat',
+            'nat',
             '2013-11-30T04:55Z',
             '1631-10-15T20:04Z'
         ], dtype='datetime64[m]')
 
-        assert_array_equal(self.data["attr_datetime_utc"], expected)
+        assert_array_equal(self.data["attr_datetime_missing"], expected)
 
-    def test_datetime_full_attribute(self):
-        expected = np.array([
-            '1999-01-31T00:01:08+0430',
-            '2004-12-01T23:59:59-0800',
-            '2017-04-28T13:00:33+1000',
-            '2021-09-10T12:00:21-0300',
-            '2013-11-30T04:55:48-1100',
-            '2031-10-15T20:04:10+0000'
-        ], dtype='datetime64[s]')
-
-        assert_array_equal(self.data["attr_datetime_full"], expected)
+    def test_datetime_timezone(self):
+        assert_raises(ValueError, loadarff, test8)
 
 if __name__ == "__main__":
     run_module_suite()
