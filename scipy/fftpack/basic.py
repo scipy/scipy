@@ -55,10 +55,14 @@ def _is_safe_size(n):
     Composite numbers of 2, 3, and 5 are accepted, as FFTPACK has those
     """
     n = int(n)
-    for c in (2, 3, 5):
+
+    # Divide by 3 until you can't, then by 5 until you can't
+    for c in (3, 5):
         while n % c == 0:
             n /= c
-    return (n <= 1)
+
+    # Return True if the remainder is a power of 2
+    return not n & (n-1)
 
 
 def _fake_crfft(x, n, *a, **kw):
