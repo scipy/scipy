@@ -1,0 +1,17 @@
+@relation 'Eurolex_dc_trts_test_cv_1: -C 4' 
+
+@attribute '7.30.10.x' {0,1} 
+@attribute '1.40.60.x' {0,1} 
+@attribute '8.50.x.x' {0,1} 
+@attribute '6.20.20.20' {0,1} 
+@attribute attribute1 numeric
+@attribute attribute2 numeric
+@attribute attribute3 numeric
+@attribute attribute4 numeric
+@attribute attribute5 numeric
+
+@data
+
+{1 1,3 1,4 0.488144,5 0.198068}
+{0 1,2 1,6 0.247897, 7 0.153404}
+{1 1,4 -0.0621701,5 0.184011,6 -0.19966,7 0.0513624,8 0.133107}
