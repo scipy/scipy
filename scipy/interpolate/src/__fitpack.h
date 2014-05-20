@@ -798,7 +798,8 @@ fitpack_insert(PyObject *dummy, PyObject*args)
     int iopt, n, nn, k, ier, m, nest;
     npy_intp dims[1];
     double x;
-    double *t, *c, *tt, *cc;
+    double *t, *c, *tt, *cc, *t_buf = NULL, *c_buf = NULL, *p;
+    double *t1, *t2, *c1, *c2;
     PyArrayObject *ap_t = NULL, *ap_c = NULL, *ap_tt = NULL, *ap_cc = NULL;
     PyObject *t_py = NULL, *c_py = NULL;
     PyObject *ret = NULL;
@@ -823,22 +824,65 @@ fitpack_insert(PyObject *dummy, PyObject*args)
     }
     tt = (double *)ap_tt->data;
     cc = (double *)ap_cc->data;
+
+    /*
+     * Input and output buffers
+     *
+     * There is an extra complication in that we need to ensure that input and
+     * output buffers given to INSERT routine never point to same memory, which
+     * is not allowed by Fortran.
+     */
+    t2 = t;
+    c2 = c;
+    t1 = tt;
+    c1 = cc;
+
     for ( ; n < nest; n++) {
-        INSERT(&iopt, t, &n, c, &k, &x, tt, &nn, cc, &nest, &ier);
+        /* Swap buffers */
+        p = t2; t2 = t1; t1 = p;
+        p = c2; c2 = c1; c1 = p;
+
+        /* Don't clobber input buffers */
+        if (t2 == t) {
+            if (t_buf == NULL) {
+                t_buf = calloc(nest, sizeof(double));
+                c_buf = calloc(nest, sizeof(double));
+                if (t_buf == NULL || c_buf == NULL) {
+                    PyErr_NoMemory();
+                    goto fail;
+                }
+            }
+            t2 = t_buf;
+            c2 = c_buf;
+        }
+
+        INSERT(&iopt, t1, &n, c1, &k, &x, t2, &nn, c2, &nest, &ier);
+
         if (ier) {
             break;
         }
-        t = tt;
-        c = cc;
     }
+
+    /* Ensure output ends up in output buffers */
+    if (t2 != tt) {
+        memcpy(tt, t2, nest * sizeof(double));
+        memcpy(cc, c2, nest * sizeof(double));
+    }
+
     Py_DECREF(ap_c);
     Py_DECREF(ap_t);
+    free(t_buf);
+    free(c_buf);
     ret = Py_BuildValue("NNi", PyArray_Return(ap_tt), PyArray_Return(ap_cc), ier);
     return ret;
 
 fail:
+    Py_XDECREF(ap_cc);
+    Py_XDECREF(ap_tt);
     Py_XDECREF(ap_c);
     Py_XDECREF(ap_t);
+    free(t_buf);
+    free(c_buf);
     return NULL;
 }
 
