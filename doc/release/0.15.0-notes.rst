@@ -29,12 +29,21 @@ Linear Programming Interface
 
 ``scipy.optimize.linprog`` now provides a generic
 linear programming similar to the way `scipy.optimize.minimize`
-provides a generic interface to nonlinear programming optimizers. 
+provides a generic interface to nonlinear programming optimizers.
 Currently the only method supported is *simplex* which provides
-a two-phase, dense-matrix-based simplex algorithm. Callbacks 
-functions are supported,allowing the user to monitor the progress 
+a two-phase, dense-matrix-based simplex algorithm. Callbacks
+functions are supported,allowing the user to monitor the progress
 of the algorithm.
 
+differential_evolution, a global optimization function
+``````````````````````````````````````````````````````
+
+The `differential_evolution` function is available from the ``scipy.optimize``
+module.  Differential Evolution is an algorithm used for finding the global
+minimum of multivariate functions. It is stochastic in nature (does not use
+gradient methods), and can search large areas of candidate space, but often
+requires larger numbers of function evaluations than conventional gradient
+based techniques.
 
 Deprecated features
 ===================
@@ -64,6 +73,7 @@ Authors
 =======
 
 * Rob Falck
+* Andrew Nelson
 
 Issues closed
 -------------
@@ -73,5 +83,6 @@ Pull requests
 -------------
 
 - `#3342 <https://github.com/scipy/scipy/pull/3342>`__: ENH: linprog function for linear programming
+- `#3446 <https://github.com/scipy/scipy/pull/3446>`__: ENH: scipy.optimize - adding differential_evolution
 
 
