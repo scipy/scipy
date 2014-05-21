@@ -95,8 +95,8 @@ class netcdf_file(object):
     ----------
     filename : string or file-like
         string -> filename
-    mode : {'r', 'w'}, optional
-        read-write mode, default is 'r'
+    mode : {'r', 'w', 'a'}, optional
+        read-write-append mode, default is 'r'
     mmap : None or bool, optional
         Whether to mmap `filename` when reading.  Default is True
         when `filename` is a file name, False when `filename` is a
@@ -185,8 +185,8 @@ class netcdf_file(object):
     """
     def __init__(self, filename, mode='r', mmap=None, version=1):
         """Initialize netcdf_file from fileobj (str or file-like)."""
-        if mode not in 'rw':
-            raise ValueError("Mode must be either 'r' or 'w'.")
+        if mode not in 'rwa':
+            raise ValueError("Mode must be either 'r', 'w' or 'a'.")
 
         if hasattr(filename, 'seek'):  # file-like
             self.fp = filename
@@ -197,7 +197,8 @@ class netcdf_file(object):
                 raise ValueError('Cannot use file object for mmap')
         else:  # maybe it's a string
             self.filename = filename
-            self.fp = open(self.filename, '%sb' % mode)
+            omode = 'r+' if mode == 'a' else mode
+            self.fp = open(self.filename, '%sb' % omode)
             if mmap is None:
                 mmap = True
 
@@ -224,7 +225,7 @@ class netcdf_file(object):
 
         self._attributes = {}
 
-        if mode == 'r':
+        if mode in 'ra':
             self._read()
 
     def __setattr__(self, attr, value):
@@ -330,7 +331,7 @@ class netcdf_file(object):
         sync : Identical function
 
         """
-        if hasattr(self, 'mode') and self.mode == 'w':
+        if hasattr(self, 'mode') and self.mode in 'wa':
             self._write()
     sync = flush
 
