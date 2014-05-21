@@ -485,9 +485,9 @@ class netcdf_file(object):
                 sample = values
             else:
                 try:
-                    sample = values[0] # subscriptable?
+                    sample = values[0]  # subscriptable?
                 except TypeError:
-                    sample = values    # scalar
+                    sample = values     # scalar
 
             for class_, nc_type in types:
                 if isinstance(sample, class_):
