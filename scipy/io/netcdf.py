@@ -41,7 +41,7 @@ from numpy import fromstring, ndarray, dtype, empty, array, asarray
 from numpy import little_endian as LITTLE_ENDIAN
 from functools import reduce
 
-from scipy.lib.six import integer_types
+from scipy.lib.six import integer_types, text_type, binary_type
 
 ABSENT = b'\x00\x00\x00\x00\x00\x00\x00\x00'
 ZERO = b'\x00\x00\x00\x00'
@@ -477,23 +477,25 @@ class netcdf_file(object):
             types = [(t, NC_INT) for t in integer_types]
             types += [
                     (float, NC_FLOAT),
-                    (str, NC_CHAR),
+                    (str, NC_CHAR)
                     ]
-            try:
-                sample = values[0]
-            except TypeError:
+            # bytes index into scalars in py3k.  Check for "string" types
+            if isinstance(values, text_type) or isinstance(values, binary_type):
                 sample = values
-            except IndexError:
-                if isinstance(values, basestring):
-                    sample = values
-                else:
-                    raise
+            else:
+                try:
+                    sample = values[0] # subscriptable?
+                except TypeError:
+                    sample = values    # scalar
+
             for class_, nc_type in types:
                 if isinstance(sample, class_):
                     break
 
         typecode, size = TYPEMAP[nc_type]
         dtype_ = '>%s' % typecode
+        # asarray() dies with bytes and '>c' in py3k.  Change to 'S'
+        dtype_ = 'S' if dtype_ == '>c' else dtype_
 
         values = asarray(values, dtype=dtype_)
 
