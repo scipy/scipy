@@ -111,6 +111,23 @@ class TestVq(TestCase):
             b = a.astype(float)
             assert_raises(ValueError, _vq.vq, a, b)
 
+    def test_vq_large_nfeat(self):
+        X = np.random.rand(20, 20)
+        code_book = np.random.rand(3, 20)
+
+        codes0, dis0 = _vq.vq(X, code_book)
+        codes1, dis1 = py_vq(X, code_book)
+        assert_allclose(dis0, dis1, 1e-5)
+        assert_array_equal(codes0, codes1)
+
+        X = X.astype(np.float32)
+        code_book = code_book.astype(np.float32)
+
+        codes0, dis0 = _vq.vq(X, code_book)
+        codes1, dis1 = py_vq(X, code_book)
+        assert_allclose(dis0, dis1, 1e-5)
+        assert_array_equal(codes0, codes1)
+
 
 class TestKMean(TestCase):
     def test_large_features(self):
