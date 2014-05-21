@@ -206,3 +206,19 @@ def test_mmaps_closed():
         f = netcdf_file(filename, mmap=True)
         vars.append(f.variables['lat'])
         f.close()
+
+def test_byte_gatts():
+    # Check that global "string" atts work like they did before py3k
+    # unicode and general bytes confusion
+    filename = pjoin(TEST_DATA_PATH, 'g_byte_atts.nc')
+    f = netcdf_file(filename, 'w')
+    f._attributes['holy'] = b'grail'
+    f._attributes['witch'] = 'floats'
+    f.close()
+
+    f = netcdf_file(filename, 'r')
+    assert_equal(f._attributes['holy'], b'grail')
+    assert_equal(f._attributes['witch'], b'floats')
+    f.close()
+
+    os.remove(filename)
