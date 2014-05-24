@@ -329,7 +329,7 @@ class multivariate_normal_gen(object):
         maha = np.sum(np.square(np.dot(dev, prec_U)), axis=-1)
         return -0.5 * (dim * _LOG_2PI + log_det_cov + maha)
 
-    def logpdf(self, x, mean, cov):
+    def logpdf(self, x, mean=None, cov=1):
         """
         Log of the multivariate normal probability density function.
 
@@ -355,7 +355,7 @@ class multivariate_normal_gen(object):
         out = self._logpdf(x, mean, prec_U, log_det_cov)
         return _squeeze_output(out)
 
-    def pdf(self, x, mean, cov):
+    def pdf(self, x, mean=None, cov=1):
         """
         Multivariate normal probability density function.
 
