@@ -30,7 +30,7 @@ __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'mathieu_b', 'mathieu_even_coef', 'mathieu_odd_coef', 'ndtri',
            'obl_cv_seq', 'pbdn_seq', 'pbdv_seq', 'pbvv_seq', 'perm',
            'polygamma', 'pro_cv_seq', 'psi', 'riccati_jn', 'riccati_yn',
-           'sinc', 'sph_harm', 'sph_in', 'sph_inkn',
+           'sinc', 'sph_in', 'sph_inkn',
            'sph_jn', 'sph_jnyn', 'sph_kn', 'sph_yn', 'y0_zeros', 'y1_zeros',
            'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta',
            'SpecialFunctionWarning']
@@ -402,50 +402,6 @@ def riccati_yn(n,x):
         n1 = n
     nm,jn,jnp = specfun.rcty(n1,x)
     return jn[:(n+1)],jnp[:(n+1)]
-
-
-def _sph_harmonic(m,n,theta,phi):
-    """Compute spherical harmonics.
-
-    This is a ufunc and may take scalar or array arguments like any
-    other ufunc.  The inputs will be broadcasted against each other.
-
-    Parameters
-    ----------
-    m : int
-       |m| <= n; the order of the harmonic.
-    n : int
-       where `n` >= 0; the degree of the harmonic.  This is often called
-       ``l`` (lower case L) in descriptions of spherical harmonics.
-    theta : float
-       [0, 2*pi]; the azimuthal (longitudinal) coordinate.
-    phi : float
-       [0, pi]; the polar (colatitudinal) coordinate.
-
-    Returns
-    -------
-    y_mn : complex float
-       The harmonic $Y^m_n$ sampled at `theta` and `phi`
-
-    Notes
-    -----
-    There are different conventions for the meaning of input arguments
-    `theta` and `phi`.  We take `theta` to be the azimuthal angle and
-    `phi` to be the polar angle.  It is common to see the opposite
-    convention - that is `theta` as the polar angle and `phi` as the
-    azimuthal angle.
-    """
-    x = cos(phi)
-    m,n = int(m), int(n)
-    Pmn,Pmn_deriv = lpmn(m,n,x)
-    # Legendre call generates all orders up to m and degrees up to n
-    val = Pmn[-1, -1]
-    val *= sqrt((2*n+1)/4.0/pi)
-    val *= exp(0.5*(gammaln(n-m+1)-gammaln(n+m+1)))
-    val *= exp(1j*m*theta)
-    return val
-
-sph_harm = vectorize(_sph_harmonic,'D')
 
 
 def erfinv(y):
