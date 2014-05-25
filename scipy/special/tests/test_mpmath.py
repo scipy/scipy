@@ -11,7 +11,7 @@ import time
 from distutils.version import LooseVersion
 
 import numpy as np
-from numpy.testing import dec
+from numpy.testing import dec, run_module_suite
 from numpy import pi
 
 import scipy.special as sc
@@ -1606,3 +1606,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             n=200,
                             dps=60,
                             rtol=1e-13)
+
+
+if __name__ == "__main__":
+    run_module_suite()
