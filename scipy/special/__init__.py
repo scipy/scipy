@@ -209,10 +209,15 @@ Raw Statistical Functions
    nbdtr      -- Sum of terms 0 through k of the negative binomial pdf.
    nbdtrc     -- Sum of terms k+1 to infinity under negative binomial pdf.
    nbdtri     -- Inverse of nbdtr
-   nctdtr     -- CDF of non-central t distribution.
-   nctdtridf  -- Find degrees of freedom of non-central t distribution.
-   nctdtrit   -- Inverse CDF of non-central t distribution.
-   nctdtrinc  -- Find noncentrality parameter of non-central t distribution.
+   ncfdtr     -- CDF of non-central t distribution.
+   ncfdtridfd -- Find degrees of freedom (denominator) of noncentral F distribution.
+   ncfdtridfn -- Find degrees of freedom (numerator) of noncentral F distribution.
+   ncfdtri    -- Inverse CDF of noncentral F distribution.
+   ncfdtrinc  -- Find noncentrality parameter of noncentral F distribution.
+   nctdtr     -- CDF of noncentral t distribution.
+   nctdtridf  -- Find degrees of freedom of noncentral t distribution.
+   nctdtrit   -- Inverse CDF of noncentral t distribution.
+   nctdtrinc  -- Find noncentrality parameter of noncentral t distribution.
    pdtr       -- Sum of terms 0 through k of the Poisson pdf.
    pdtrc      -- Sum of terms k+1 to infinity of the Poisson pdf.
    pdtri      -- Inverse of pdtr

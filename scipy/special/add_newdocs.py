@@ -1951,26 +1951,95 @@ add_newdoc("scipy.special", "nbdtrin",
 
 add_newdoc("scipy.special", "ncfdtr",
     """
+    ncfdtr(dfn, dfd, nc, f)
+
+    Cumulative distribution function of the non-central F distribution.
+
+    Parameters
+    ----------
+    dfn : array_like
+        Degrees of freedom of the numerator sum of squares.  Range (0, inf).
+    dfd : array_like
+        Degrees of freedom of the denominator sum of squares.  Range (0, inf).
+    nc : array_like
+        Noncentrality parameter.  Should be in range (0, 1e4).
+    f : array_like
+        Quantiles, i.e. the upper limit of integration.
+
+    Returns
+    -------
+    cdf : float or ndarray
+        The calculated CDF.  If all inputs are scalar, the return will be a
+        float.  Otherwise it will be an array.
+
+    See Also
+    --------
+    ncdfdtri : Inverse CDF (iCDF) of the non-central F distribution.
+    ncdfdtridfd : Calculate dfd, given CDF and iCDF values.
+    ncdfdtridfn : Calculate dfn, given CDF and iCDF values.
+    ncdfdtrinc : Calculate noncentrality parameter, given CDF, iCDF, dfn, dfd.
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    Plot the CDF of the non-central F distribution, for nc=0.  Compare with the
+    F-distribution from scipy.stats:
+
+    >>> x = np.linspace(-1, 8, num=500)
+    >>> dfn = 3
+    >>> dfd = 2
+    >>> ncf_stats = stats.f.cdf(x, dfn, dfd)
+    >>> ncf_special = special.ncfdtr(dfn, dfd, 0, x)
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, ncf_stats, 'b-', lw=3)
+    >>> ax.plot(x, ncf_special, 'r-')
+    >>> plt.show()
+
     """)
 
 add_newdoc("scipy.special", "ncfdtri",
     """
-    """)
+    ncfdtri(p, dfn, dfd, nc)
 
-add_newdoc("scipy.special", "ncfdtrifn",
-    """
+    Inverse cumulative distribution function of the non-central F distribution.
+
+    See `ncfdtr` for more details.
+
     """)
 
 add_newdoc("scipy.special", "ncfdtridfd",
     """
+    ncfdtridfd(p, f, dfn, nc)
+
+    Calculate degrees of freedom (denominator) for the noncentral F-distribution.
+
+    See `ncfdtr` for more details.
+
     """)
 
 add_newdoc("scipy.special", "ncfdtridfn",
     """
+    ncfdtridfn(p, f, dfd, nc)
+
+    Calculate degrees of freedom (numerator) for the noncentral F-distribution.
+
+    See `ncfdtr` for more details.
+
     """)
 
 add_newdoc("scipy.special", "ncfdtrinc",
     """
+    ncfdtrinc(p, f, dfn, dfd)
+
+    Calculate non-centrality parameter for non-central F distribution.
+
+    See `ncfdtr` for more details.
+
     """)
 
 add_newdoc("scipy.special", "nctdtr",
