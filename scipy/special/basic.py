@@ -189,7 +189,7 @@ def y1p_zeros(nt,complex=0):
     return specfun.cyzo(nt,kf,kc)
 
 
-def bessel_diff_formula(v, z, n, L, phase):
+def _bessel_diff_formula(v, z, n, L, phase):
     # from AMS55.
     # L(v,z) = J(v,z), Y(v,z), H1(v,z), H2(v,z), phase = -1
     # L(v,z) = I(v,z) or exp(v*pi*i)K(v,z), phase = 1
@@ -202,6 +202,10 @@ def bessel_diff_formula(v, z, n, L, phase):
     return s / (2.**n)
 
 
+bessel_diff_formula = np.deprecate(_bessel_diff_formula,
+    message="bessel_diff_formula is a private function, do not use it!")
+
+
 def jvp(v,z,n=1):
     """Return the nth derivative of Jv(z) with respect to z.
     """
@@ -210,7 +214,7 @@ def jvp(v,z,n=1):
     if n == 0:
         return jv(v,z)
     else:
-        return bessel_diff_formula(v, z, n, jv, -1)
+        return _bessel_diff_formula(v, z, n, jv, -1)
 #        return (jvp(v-1,z,n-1) - jvp(v+1,z,n-1))/2.0
 
 
@@ -222,7 +226,7 @@ def yvp(v,z,n=1):
     if n == 0:
         return yv(v,z)
     else:
-        return bessel_diff_formula(v, z, n, yv, -1)
+        return _bessel_diff_formula(v, z, n, yv, -1)
 #        return (yvp(v-1,z,n-1) - yvp(v+1,z,n-1))/2.0
 
 
@@ -234,7 +238,7 @@ def kvp(v,z,n=1):
     if n == 0:
         return kv(v,z)
     else:
-        return (-1)**n * bessel_diff_formula(v, z, n, kv, 1)
+        return (-1)**n * _bessel_diff_formula(v, z, n, kv, 1)
 
 
 def ivp(v,z,n=1):
@@ -245,7 +249,7 @@ def ivp(v,z,n=1):
     if n == 0:
         return iv(v,z)
     else:
-        return bessel_diff_formula(v, z, n, iv, 1)
+        return _bessel_diff_formula(v, z, n, iv, 1)
 
 
 def h1vp(v,z,n=1):
@@ -256,7 +260,7 @@ def h1vp(v,z,n=1):
     if n == 0:
         return hankel1(v,z)
     else:
-        return bessel_diff_formula(v, z, n, hankel1, -1)
+        return _bessel_diff_formula(v, z, n, hankel1, -1)
 #        return (h1vp(v-1,z,n-1) - h1vp(v+1,z,n-1))/2.0
 
 
@@ -268,7 +272,7 @@ def h2vp(v,z,n=1):
     if n == 0:
         return hankel2(v,z)
     else:
-        return bessel_diff_formula(v, z, n, hankel2, -1)
+        return _bessel_diff_formula(v, z, n, hankel2, -1)
 #        return (h2vp(v-1,z,n-1) - h2vp(v+1,z,n-1))/2.0
 
 
