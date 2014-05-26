@@ -5940,7 +5940,7 @@ cdef char ufunc_ive_types[12]
 cdef char *ufunc_ive_doc = (
     "ive(v,z)\n"
     "\n"
-    "Exponentially scaled modified Bessel function of the first kind \n"
+    "Exponentially scaled modified Bessel function of the first kind\n"
     "\n"
     "Defined as::\n"
     "\n"
@@ -7230,7 +7230,54 @@ cdef void *ufunc_ncfdtr_ptr[4]
 cdef void *ufunc_ncfdtr_data[2]
 cdef char ufunc_ncfdtr_types[10]
 cdef char *ufunc_ncfdtr_doc = (
-    "")
+    "ncfdtr(dfn, dfd, nc, f)\n"
+    "\n"
+    "Cumulative distribution function of the non-central F distribution.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "dfn : array_like\n"
+    "    Degrees of freedom of the numerator sum of squares.  Range (0, inf).\n"
+    "dfd : array_like\n"
+    "    Degrees of freedom of the denominator sum of squares.  Range (0, inf).\n"
+    "nc : array_like\n"
+    "    Noncentrality parameter.  Should be in range (0, 1e4).\n"
+    "f : array_like\n"
+    "    Quantiles, i.e. the upper limit of integration.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "cdf : float or ndarray\n"
+    "    The calculated CDF.  If all inputs are scalar, the return will be a\n"
+    "    float.  Otherwise it will be an array.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "ncdfdtri : Inverse CDF (iCDF) of the non-central F distribution.\n"
+    "ncdfdtridfd : Calculate dfd, given CDF and iCDF values.\n"
+    "ncdfdtridfn : Calculate dfn, given CDF and iCDF values.\n"
+    "ncdfdtrinc : Calculate noncentrality parameter, given CDF, iCDF, dfn, dfd.\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    ">>> from scipy import special\n"
+    ">>> from scipy import stats\n"
+    ">>> import matplotlib.pyplot as plt\n"
+    "\n"
+    "Plot the CDF of the non-central F distribution, for nc=0.  Compare with the\n"
+    "F-distribution from scipy.stats:\n"
+    "\n"
+    ">>> x = np.linspace(-1, 8, num=500)\n"
+    ">>> dfn = 3\n"
+    ">>> dfd = 2\n"
+    ">>> ncf_stats = stats.f.cdf(x, dfn, dfd)\n"
+    ">>> ncf_special = special.ncfdtr(dfn, dfd, 0, x)\n"
+    "\n"
+    ">>> fig = plt.figure()\n"
+    ">>> ax = fig.add_subplot(111)\n"
+    ">>> ax.plot(x, ncf_stats, 'b-', lw=3)\n"
+    ">>> ax.plot(x, ncf_special, 'r-')\n"
+    ">>> plt.show()")
 ufunc_ncfdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
 ufunc_ncfdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_dddd_d
 ufunc_ncfdtr_types[0] = <char>NPY_FLOAT
@@ -7256,7 +7303,11 @@ cdef void *ufunc_ncfdtri_ptr[4]
 cdef void *ufunc_ncfdtri_data[2]
 cdef char ufunc_ncfdtri_types[10]
 cdef char *ufunc_ncfdtri_doc = (
-    "")
+    "ncfdtri(p, dfn, dfd, nc)\n"
+    "\n"
+    "Inverse cumulative distribution function of the non-central F distribution.\n"
+    "\n"
+    "See `ncfdtr` for more details.")
 ufunc_ncfdtri_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
 ufunc_ncfdtri_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_dddd_d
 ufunc_ncfdtri_types[0] = <char>NPY_FLOAT
@@ -7282,7 +7333,11 @@ cdef void *ufunc_ncfdtridfd_ptr[4]
 cdef void *ufunc_ncfdtridfd_data[2]
 cdef char ufunc_ncfdtridfd_types[10]
 cdef char *ufunc_ncfdtridfd_doc = (
-    "")
+    "ncfdtridfd(p, f, dfn, nc)\n"
+    "\n"
+    "Calculate degrees of freedom (denominator) for the noncentral F-distribution.\n"
+    "\n"
+    "See `ncfdtr` for more details.")
 ufunc_ncfdtridfd_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
 ufunc_ncfdtridfd_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_dddd_d
 ufunc_ncfdtridfd_types[0] = <char>NPY_FLOAT
@@ -7308,7 +7363,11 @@ cdef void *ufunc_ncfdtridfn_ptr[4]
 cdef void *ufunc_ncfdtridfn_data[2]
 cdef char ufunc_ncfdtridfn_types[10]
 cdef char *ufunc_ncfdtridfn_doc = (
-    "")
+    "ncfdtridfn(p, f, dfd, nc)\n"
+    "\n"
+    "Calculate degrees of freedom (numerator) for the noncentral F-distribution.\n"
+    "\n"
+    "See `ncfdtr` for more details.")
 ufunc_ncfdtridfn_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
 ufunc_ncfdtridfn_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_dddd_d
 ufunc_ncfdtridfn_types[0] = <char>NPY_FLOAT
@@ -7334,7 +7393,11 @@ cdef void *ufunc_ncfdtrinc_ptr[4]
 cdef void *ufunc_ncfdtrinc_data[2]
 cdef char ufunc_ncfdtrinc_types[10]
 cdef char *ufunc_ncfdtrinc_doc = (
-    "")
+    "ncfdtrinc(p, f, dfn, dfd)\n"
+    "\n"
+    "Calculate non-centrality parameter for non-central F distribution.\n"
+    "\n"
+    "See `ncfdtr` for more details.")
 ufunc_ncfdtrinc_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
 ufunc_ncfdtrinc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_dddd_d
 ufunc_ncfdtrinc_types[0] = <char>NPY_FLOAT
@@ -7360,7 +7423,50 @@ cdef void *ufunc_nctdtr_ptr[4]
 cdef void *ufunc_nctdtr_data[2]
 cdef char ufunc_nctdtr_types[8]
 cdef char *ufunc_nctdtr_doc = (
-    "")
+    "nctdtr (df, nc, t)\n"
+    "\n"
+    "Cumulative distribution function of the non-central t distribution.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "df : array_like\n"
+    "    Degrees of freedom of the distribution.  Should be in range (0, inf).\n"
+    "nc : array_like\n"
+    "    Noncentrality parameter.  Should be in range (-1e6, 1e6).\n"
+    "t : array_like\n"
+    "    Quantiles, i.e. the upper limit of integration.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "cdf : float or ndarray\n"
+    "    The calculated CDF.  If all inputs are scalar, the return will be a\n"
+    "    float.  Otherwise it will be an array.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "nctdtrit : Inverse CDF (iCDF) of the non-central t distribution.\n"
+    "nctdtridf : Calculate degrees of freedom, given CDF and iCDF values.\n"
+    "nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    ">>> from scipy import special\n"
+    ">>> from scipy import stats\n"
+    ">>> import matplotlib.pyplot as plt\n"
+    "\n"
+    "Plot the CDF of the non-central t distribution, for nc=0.  Compare with the\n"
+    "t-distribution from scipy.stats:\n"
+    "\n"
+    ">>> x = np.linspace(-5, 5, num=500)\n"
+    ">>> df = 3\n"
+    ">>> nct_stats = stats.t.cdf(x, df)\n"
+    ">>> nct_special = special.nctdtr(df, 0, x)\n"
+    "\n"
+    ">>> fig = plt.figure()\n"
+    ">>> ax = fig.add_subplot(111)\n"
+    ">>> ax.plot(x, nct_stats, 'b-', lw=3)\n"
+    ">>> ax.plot(x, nct_special, 'r-')\n"
+    ">>> plt.show()")
 ufunc_nctdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_nctdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_nctdtr_types[0] = <char>NPY_FLOAT
@@ -7384,7 +7490,20 @@ cdef void *ufunc_nctdtridf_ptr[4]
 cdef void *ufunc_nctdtridf_data[2]
 cdef char ufunc_nctdtridf_types[8]
 cdef char *ufunc_nctdtridf_doc = (
-    "")
+    "nctdtridf (p, nc, t)\n"
+    "\n"
+    "Calculate degrees of freedom for non-central t distribution.\n"
+    "\n"
+    "See `nctdtr` for more details.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "p : array_like\n"
+    "    CDF values, in range (0, 1].\n"
+    "nc : array_like\n"
+    "    Noncentrality parameter.  Should be in range (-1e6, 1e6).\n"
+    "t : array_like\n"
+    "    Quantiles, i.e. the upper limit of integration.")
 ufunc_nctdtridf_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_nctdtridf_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_nctdtridf_types[0] = <char>NPY_FLOAT
@@ -7408,7 +7527,20 @@ cdef void *ufunc_nctdtrinc_ptr[4]
 cdef void *ufunc_nctdtrinc_data[2]
 cdef char ufunc_nctdtrinc_types[8]
 cdef char *ufunc_nctdtrinc_doc = (
-    "")
+    "nctdtrinc (df, p, t)\n"
+    "\n"
+    "Calculate non-centrality parameter for non-central t distribution.\n"
+    "\n"
+    "See `nctdtr` for more details.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "df : array_like\n"
+    "    Degrees of freedom of the distribution.  Should be in range (0, inf).\n"
+    "p : array_like\n"
+    "    CDF values, in range (0, 1].\n"
+    "t : array_like\n"
+    "    Quantiles, i.e. the upper limit of integration.")
 ufunc_nctdtrinc_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_nctdtrinc_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_nctdtrinc_types[0] = <char>NPY_FLOAT
@@ -7432,7 +7564,20 @@ cdef void *ufunc_nctdtrit_ptr[4]
 cdef void *ufunc_nctdtrit_data[2]
 cdef char ufunc_nctdtrit_types[8]
 cdef char *ufunc_nctdtrit_doc = (
-    "")
+    "nctdtrit (df, nc, p)\n"
+    "\n"
+    "Inverse cumulative distribution function of the non-central t distribution.\n"
+    "\n"
+    "See `nctdtr` for more details.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "df : array_like\n"
+    "    Degrees of freedom of the distribution.  Should be in range (0, inf).\n"
+    "nc : array_like\n"
+    "    Noncentrality parameter.  Should be in range (-1e6, 1e6).\n"
+    "p : array_like\n"
+    "    CDF values, in range (0, 1].")
 ufunc_nctdtrit_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_nctdtrit_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_nctdtrit_types[0] = <char>NPY_FLOAT
@@ -7509,7 +7654,27 @@ cdef void *ufunc_nrdtrimn_ptr[4]
 cdef void *ufunc_nrdtrimn_data[2]
 cdef char ufunc_nrdtrimn_types[8]
 cdef char *ufunc_nrdtrimn_doc = (
-    "")
+    "nrdtrimn(p, x, std)\n"
+    "\n"
+    "Calculate mean of normal distribution given other params.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "p : array_like\n"
+    "    CDF values, in range (0, 1].\n"
+    "x : array_like\n"
+    "    Quantiles, i.e. the upper limit of integration.\n"
+    "std : array_like\n"
+    "    Standard deviation.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "mn : float or ndarray\n"
+    "    The mean of the normal distribution.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "nrdtrimn, ndtr")
 ufunc_nrdtrimn_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_nrdtrimn_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_nrdtrimn_types[0] = <char>NPY_FLOAT
@@ -7533,7 +7698,27 @@ cdef void *ufunc_nrdtrisd_ptr[4]
 cdef void *ufunc_nrdtrisd_data[2]
 cdef char ufunc_nrdtrisd_types[8]
 cdef char *ufunc_nrdtrisd_doc = (
-    "")
+    "nrdtrisd(p, x, mn)\n"
+    "\n"
+    "Calculate standard deviation of normal distribution given other params.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "p : array_like\n"
+    "    CDF values, in range (0, 1].\n"
+    "x : array_like\n"
+    "    Quantiles, i.e. the upper limit of integration.\n"
+    "mn : float or ndarray\n"
+    "    The mean of the normal distribution.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "std : array_like\n"
+    "    Standard deviation.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "nrdtristd, ndtr")
 ufunc_nrdtrisd_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_nrdtrisd_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_nrdtrisd_types[0] = <char>NPY_FLOAT
