@@ -218,6 +218,8 @@ Raw Statistical Functions
    nctdtridf  -- Find degrees of freedom of noncentral t distribution.
    nctdtrit   -- Inverse CDF of noncentral t distribution.
    nctdtrinc  -- Find noncentrality parameter of noncentral t distribution.
+   nrdtrimn   -- Find mean of normal distribution from cdf and std.
+   nrdtrisd   -- Find std of normal distribution from cdf and mean.
    pdtr       -- Sum of terms 0 through k of the Poisson pdf.
    pdtrc      -- Sum of terms k+1 to infinity of the Poisson pdf.
    pdtri      -- Inverse of pdtr

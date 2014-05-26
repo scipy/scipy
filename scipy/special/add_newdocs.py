@@ -2163,10 +2163,54 @@ add_newdoc("scipy.special", "ndtr",
 
 add_newdoc("scipy.special", "nrdtrimn",
     """
+    nrdtrimn(p, x, std)
+
+    Calculate mean of normal distribution given other params.
+
+    Parameters
+    ----------
+    p : array_like
+        CDF values, in range (0, 1].
+    x : array_like
+        Quantiles, i.e. the upper limit of integration.
+    std : array_like
+        Standard deviation.
+
+    Returns
+    -------
+    mn : float or ndarray
+        The mean of the normal distribution.
+
+    See Also
+    --------
+    nrdtrimn, ndtr
+
     """)
 
 add_newdoc("scipy.special", "nrdtrisd",
     """
+    nrdtrisd(p, x, mn)
+
+    Calculate standard deviation of normal distribution given other params.
+
+    Parameters
+    ----------
+    p : array_like
+        CDF values, in range (0, 1].
+    x : array_like
+        Quantiles, i.e. the upper limit of integration.
+    mn : float or ndarray
+        The mean of the normal distribution.
+
+    Returns
+    -------
+    std : array_like
+        Standard deviation.
+
+    See Also
+    --------
+    nrdtristd, ndtr
+
     """)
 
 add_newdoc("scipy.special", "log_ndtr",
