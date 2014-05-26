@@ -61,7 +61,6 @@ Bessel Functions
 .. autosummary::
    :toctree: generated/
 
-   jn       -- Bessel function of integer order and real argument.
    jv       -- Bessel function of real-valued order and complex argument.
    jve      -- Exponentially scaled Bessel function.
    yn       -- Bessel function of second kind (integer order).

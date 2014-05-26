@@ -419,7 +419,7 @@ add_newdoc("scipy.special", "chndtr",
     chndtr(x, df, nc)
 
     Non-central chi square cumulative distribution function
-    
+
     """)
 
 add_newdoc("scipy.special", "chndtrix",
@@ -847,7 +847,7 @@ add_newdoc("scipy.special", "fdtr",
     fdtr(dfn, dfd, x)
 
     F cumulative distribution function
-    
+
     Returns the area from zero to x under the F density function (also
     known as Snedcor's density or the variance ratio density).  This
     is the density of X = (unum/dfn)/(uden/dfd), where unum and uden
@@ -919,7 +919,7 @@ add_newdoc("scipy.special", "gamma",
     gamma(z)
 
     Gamma function
-    
+
     The gamma function is often referred to as the generalized
     factorial since ``z*gamma(z) = gamma(z+1)`` and ``gamma(n+1) =
     n!`` for natural number *n*.
@@ -930,9 +930,9 @@ add_newdoc("scipy.special", "gammainc",
     gammainc(a, x)
 
     Incomplete gamma function
-    
+
     Defined as::
-    
+
         1 / gamma(a) * integral(exp(-t) * t**(a-1), t=0..x)
 
     `a` must be positive and `x` must be >= 0.
@@ -1388,7 +1388,7 @@ add_newdoc("scipy.special", "itairy",
     itairy(x)
 
     Integrals of Airy functios
-    
+
     Calculates the integral of Airy functions from 0 to x
 
     Returns
@@ -1419,7 +1419,7 @@ add_newdoc("scipy.special", "itj0y0",
     itj0y0(x)
 
     Integrals of Bessel functions of order 0
-    
+
     Returns simple integrals from 0 to x of the zeroth order Bessel
     functions j0 and y0.
 
@@ -1471,7 +1471,7 @@ add_newdoc("scipy.special", "ive",
     """
     ive(v,z)
 
-    Exponentially scaled modified Bessel function of the first kind 
+    Exponentially scaled modified Bessel function of the first kind
 
     Defined as::
 
@@ -1496,7 +1496,12 @@ add_newdoc("scipy.special", "jn",
     """
     jn(n, x)
 
-    Bessel function of the first kind of integer order n
+    Bessel function of the first kind of integer order n.
+
+    Notes
+    -----
+    `jn` is an alias of `jv`.
+
     """)
 
 add_newdoc("scipy.special", "jv",
@@ -1713,7 +1718,7 @@ add_newdoc("scipy.special", "mathieu_a",
     mathieu_a(m,q)
 
     Characteristic value of even Mathieu functions
-    
+
     Returns the characteristic value for the even solution,
     ``ce_m(z,q)``, of Mathieu's equation.
     """)
@@ -1897,7 +1902,7 @@ add_newdoc("scipy.special", "nbdtr",
     nbdtr(k, n, p)
 
     Negative binomial cumulative distribution function
-    
+
     Returns the sum of the terms 0 through k of the negative binomial
     distribution::
 
@@ -1989,7 +1994,7 @@ add_newdoc("scipy.special", "ndtr",
     ndtr(x)
 
     Gaussian cumulative distribution function
-    
+
     Returns the area under the standard Gaussian probability
     density function, integrated from minus infinity to x::
 
@@ -2171,7 +2176,7 @@ add_newdoc("scipy.special", "pbvv",
     pbvv(v,x)
 
     Parabolic cylinder function V
-    
+
     Returns the parabolic cylinder function Vv(x) in v and the
     derivative, Vv'(x) in vp.
 
@@ -2556,7 +2561,7 @@ add_newdoc("scipy.special", "wofz",
     wofz(z)
 
     Faddeeva function
-    
+
     Returns the value of the Faddeeva function for complex argument::
 
         exp(-z**2)*erfc(-i*z)
