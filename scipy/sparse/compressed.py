@@ -347,7 +347,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # Convert this matrix to a dense matrix and add them
             return self.todense() + other
         else:
-            raise NotImplementedError
+            return NotImplemented
 
     def __radd__(self,other):
         return self.__add__(other)
@@ -369,7 +369,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # Convert this matrix to a dense matrix and subtract them
             return self.todense() - other
         else:
-            raise NotImplementedError
+            return NotImplemented
 
     def __rsub__(self,other):  # other - self
         # note: this can't be replaced by other + (-self) for unsigned types
@@ -383,7 +383,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # Convert this matrix to a dense matrix and subtract them
             return other - self.todense()
         else:
-            raise NotImplementedError
+            return NotImplemented
 
     def multiply(self, other):
         """Point-wise multiplication by another matrix, vector, or

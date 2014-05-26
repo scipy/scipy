@@ -148,13 +148,25 @@ def todense(a):
     return a.todense()
 
 
-class MultipliesWithMatrix(object):
-    """Class that knows how to multiply with a sparse matrix."""
+class BinopTester(object):
+    # Custom type to test binary operations on sparse matrices.
 
-    def __mul__(self, other):
+    def __add__(self, mat):
         return "matrix on the right"
 
-    def __rmul__(self, other):
+    def __mul__(self, mat):
+        return "matrix on the right"
+
+    def __sub__(self, mat):
+        return "matrix on the right"
+
+    def __radd__(self, mat):
+        return "matrix on the left"
+
+    def __rmul__(self, mat):
+        return "matrix on the left"
+
+    def __rsub__(self, mat):
         return "matrix on the left"
 
 
@@ -1196,10 +1208,18 @@ class _TestCommon:
         assert_equal(A * array([1]), array([1,2,3]))
         assert_equal(A * array([[1]]), array([[1],[2],[3]]))
 
-    def test_multiply_custom(self):
+    def test_binop_custom_type(self):
+        # Non-regression test: previously, binary operations would raise
+        # NotImplementedError instead of returning NotImplemented
+        # (https://docs.python.org/library/constants.html#NotImplemented)
+        # so overloading Custom + matrix etc. didn't work.
         A = self.spmatrix([[1], [2], [3]])
-        B = MultipliesWithMatrix()
+        B = BinopTester()
+        assert_equal(A + B, "matrix on the left")
+        assert_equal(A - B, "matrix on the left")
         assert_equal(A * B, "matrix on the left")
+        assert_equal(B + A, "matrix on the right")
+        assert_equal(B - A, "matrix on the right")
         assert_equal(B * A, "matrix on the right")
 
     def test_matvec(self):
@@ -1775,9 +1795,6 @@ class _TestInplaceArithmetic:
             y *= b.T
             assert_array_equal(x, y)
 
-            # Matrix (non-elementwise) division is not defined
-            assert_raises(TypeError, operator.itruediv, x, b)
-
             # Matrix (non-elementwise) floor division is not defined
             assert_raises(TypeError, operator.ifloordiv, x, b)
 
@@ -1828,6 +1845,27 @@ class _TestInplaceArithmetic:
             # casting.
             if not np.can_cast(dtype, np.int_):
                 yield check, dtype
+
+    def test_inplace_success(self):
+        # Inplace ops should work even if a specialized version is not
+        # implemented, falling back to x = x <op> y
+        a = self.spmatrix(np.eye(5))
+        b = self.spmatrix(np.eye(5))
+        bp = self.spmatrix(np.eye(5))
+
+        b += a
+        bp = bp + a
+        assert_allclose(b.A, bp.A)
+
+        b *= a
+        bp = bp * a
+        assert_allclose(b.A, bp.A)
+
+        b -= a
+        bp = bp - a
+        assert_allclose(b.A, bp.A)
+
+        assert_raises(TypeError, operator.ifloordiv, a, b)
 
 
 class _TestGetSet:

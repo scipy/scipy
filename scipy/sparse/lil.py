@@ -168,14 +168,14 @@ class lil_matrix(spmatrix, IndexMixin):
             self[:,:] = self * other
             return self
         else:
-            raise NotImplementedError
+            return NotImplemented
 
     def __itruediv__(self,other):
         if isscalarlike(other):
             self[:,:] = self / other
             return self
         else:
-            raise NotImplementedError
+            return NotImplemented
 
     # Whenever the dimensions change, empty lists should be created for each
     # row
