@@ -551,7 +551,18 @@ def hyp0f1(v, z):
     return num / den
 
 
-def assoc_laguerre(x,n,k=0.0):
+def assoc_laguerre(x, n, k=0.0):
+    """Returns the n-th order generalized (associated) Laguerre polynomial.
+
+    The polynomial :math:`L^(alpha)_n(x)` is orthogonal over ``[0, inf)``,
+    with weighting function ``exp(-x) * x**alpha`` with ``alpha > -1``.
+
+    Notes
+    -----
+    `assoc_laguerre` is a simple wrapper around `eval_genlaguerre`, with
+    reversed argument order ``(x, n, k=0.0) --> (n, k, x)``.
+
+    """
     return orthogonal.eval_genlaguerre(n, k, x)
 
 digamma = psi

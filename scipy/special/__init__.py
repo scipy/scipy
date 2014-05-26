@@ -320,6 +320,7 @@ The following functions evaluate values of orthogonal polynomials:
 .. autosummary::
    :toctree: generated/
 
+   assoc_laguerre
    eval_legendre
    eval_chebyt
    eval_chebyu
