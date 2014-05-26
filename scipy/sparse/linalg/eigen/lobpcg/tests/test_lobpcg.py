@@ -79,6 +79,15 @@ def test_trivial():
     compare_solutions(A, None, n)
 
 
+def test_regression():
+    # http://mail.scipy.org/pipermail/scipy-user/2010-October/026944.html
+    n = 10
+    X = np.ones((n, 1))
+    A = np.identity(n)
+    w, V = lobpcg(A, X)
+    assert_allclose(w, [1])
+
+
 def test_diagonal():
     # This test was moved from '__main__' in lobpcg.py.
     # Coincidentally or not, this is the same eigensystem
