@@ -6,11 +6,12 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from scipy.lib.six import xrange
-from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \
-        where, mgrid, cos, sin, exp, place, seterr, issubdtype, extract, \
-        less, vectorize, inexact, nan, zeros, sometrue, atleast_1d, sinc
-from ._ufuncs import ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
-        hankel1, hankel2, yv, kv, gammaln, ndtri, errprint, poch, binom
+from numpy import (pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt,
+                   where, mgrid, cos, sin, exp, place, issubdtype, extract,
+                   less, vectorize, inexact, nan, zeros, atleast_1d, sinc)
+from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta,
+                      hankel1, hankel2, yv, kv, gammaln, ndtri, errprint, poch,
+                      binom)
 from . import _ufuncs
 import types
 from . import specfun
@@ -37,16 +38,31 @@ __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
 
 
 class SpecialFunctionWarning(Warning):
+    """Warning that can be issued with ``errprint(True)``"""
     pass
 warnings.simplefilter("always", category=SpecialFunctionWarning)
 
 
 def diric(x,n):
-    """Returns the periodic sinc function, also called the Dirichlet function:
+    """Returns the periodic sinc function, also called the Dirichlet function
 
-    diric(x) = sin(x *n / 2) / (n sin(x / 2))
+    The Dirichlet function is defined as::
+
+        diric(x) = sin(x * n/2) / (n * sin(x / 2)),
 
     where n is a positive integer.
+
+    Parameters
+    ----------
+    x : array_like
+        Input data
+    n : int
+        Integer defining the periodicity.
+
+    Returns
+    -------
+    diric : ndarray
+
     """
     x,n = asarray(x), asarray(n)
     n = asarray(n + (x-x))

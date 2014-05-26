@@ -26,6 +26,7 @@ Example:
    :toctree: generated/
 
    errprint
+   SpecialFunctionWarning -- Warning that can be issued with ``errprint(True)``
 
 Available functions
 ===================
@@ -208,6 +209,10 @@ Raw Statistical Functions
    nbdtr      -- Sum of terms 0 through k of the negative binomial pdf.
    nbdtrc     -- Sum of terms k+1 to infinity under negative binomial pdf.
    nbdtri     -- Inverse of nbdtr
+   nctdtr     -- CDF of non-central t distribution.
+   nctdtridf  -- Find degrees of freedom of non-central t distribution.
+   nctdtrit   -- Inverse CDF of non-central t distribution.
+   nctdtrinc  -- Find noncentrality parameter of non-central t distribution.
    pdtr       -- Sum of terms 0 through k of the Poisson pdf.
    pdtrc      -- Sum of terms k+1 to infinity of the Poisson pdf.
    pdtri      -- Inverse of pdtr
