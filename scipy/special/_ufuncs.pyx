@@ -7423,7 +7423,7 @@ cdef void *ufunc_nctdtr_ptr[4]
 cdef void *ufunc_nctdtr_data[2]
 cdef char ufunc_nctdtr_types[8]
 cdef char *ufunc_nctdtr_doc = (
-    "nctdtr (df, nc, t)\n"
+    "nctdtr(df, nc, t)\n"
     "\n"
     "Cumulative distribution function of the non-central t distribution.\n"
     "\n"
@@ -7490,7 +7490,7 @@ cdef void *ufunc_nctdtridf_ptr[4]
 cdef void *ufunc_nctdtridf_data[2]
 cdef char ufunc_nctdtridf_types[8]
 cdef char *ufunc_nctdtridf_doc = (
-    "nctdtridf (p, nc, t)\n"
+    "nctdtridf(p, nc, t)\n"
     "\n"
     "Calculate degrees of freedom for non-central t distribution.\n"
     "\n"
@@ -7527,7 +7527,7 @@ cdef void *ufunc_nctdtrinc_ptr[4]
 cdef void *ufunc_nctdtrinc_data[2]
 cdef char ufunc_nctdtrinc_types[8]
 cdef char *ufunc_nctdtrinc_doc = (
-    "nctdtrinc (df, p, t)\n"
+    "nctdtrinc(df, p, t)\n"
     "\n"
     "Calculate non-centrality parameter for non-central t distribution.\n"
     "\n"
@@ -7564,7 +7564,7 @@ cdef void *ufunc_nctdtrit_ptr[4]
 cdef void *ufunc_nctdtrit_data[2]
 cdef char ufunc_nctdtrit_types[8]
 cdef char *ufunc_nctdtrit_doc = (
-    "nctdtrit (df, nc, p)\n"
+    "nctdtrit(df, nc, p)\n"
     "\n"
     "Inverse cumulative distribution function of the non-central t distribution.\n"
     "\n"
@@ -8742,9 +8742,9 @@ cdef char *ufunc_shichi_doc = (
     "Returns\n"
     "-------\n"
     "shi\n"
-    "    ``integral(sinh(t)/t,t=0..x)``\n"
+    "    ``integral(sinh(t)/t, t=0..x)``\n"
     "chi\n"
-    "    ``eul + ln x + integral((cosh(t)-1)/t,t=0..x)``\n"
+    "    ``eul + ln x + integral((cosh(t)-1)/t, t=0..x)``\n"
     "    where ``eul`` is Euler's constant.")
 ufunc_shichi_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_f_ff
 ufunc_shichi_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_d_dd
@@ -8774,9 +8774,9 @@ cdef char *ufunc_sici_doc = (
     "Returns\n"
     "-------\n"
     "si\n"
-    "    ``integral(sin(t)/t,t=0..x)``\n"
+    "    ``integral(sin(t)/t, t=0..x)``\n"
     "ci\n"
-    "    ``eul + ln x + integral((cos(t) - 1)/t,t=0..x)``\n"
+    "    ``eul + ln x + integral((cos(t) - 1)/t, t=0..x)``\n"
     "    where ``eul`` is Euler's constant.")
 ufunc_sici_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_f_ff
 ufunc_sici_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_d_dd
@@ -8821,7 +8821,7 @@ cdef void *ufunc_smirnov_ptr[8]
 cdef void *ufunc_smirnov_data[4]
 cdef char ufunc_smirnov_types[12]
 cdef char *ufunc_smirnov_doc = (
-    "smirnov(n,e)\n"
+    "smirnov(n, e)\n"
     "\n"
     "Kolmogorov-Smirnov complementary cumulative distribution function\n"
     "\n"
@@ -8866,11 +8866,11 @@ cdef void *ufunc_smirnovi_ptr[8]
 cdef void *ufunc_smirnovi_data[4]
 cdef char ufunc_smirnovi_types[12]
 cdef char *ufunc_smirnovi_doc = (
-    "smirnovi(n,y)\n"
+    "smirnovi(n, y)\n"
     "\n"
     "Inverse to smirnov\n"
     "\n"
-    "Returns ``e`` such that ``smirnov(n,e) = y``.")
+    "Returns ``e`` such that ``smirnov(n, e) = y``.")
 ufunc_smirnovi_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_lf_f
 ufunc_smirnovi_loops[1] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
 ufunc_smirnovi_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
