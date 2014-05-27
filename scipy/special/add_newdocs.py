@@ -2044,7 +2044,7 @@ add_newdoc("scipy.special", "ncfdtrinc",
 
 add_newdoc("scipy.special", "nctdtr",
     """
-    nctdtr (df, nc, t)
+    nctdtr(df, nc, t)
 
     Cumulative distribution function of the non-central t distribution.
 
@@ -2093,7 +2093,7 @@ add_newdoc("scipy.special", "nctdtr",
 
 add_newdoc("scipy.special", "nctdtridf",
     """
-    nctdtridf (p, nc, t)
+    nctdtridf(p, nc, t)
 
     Calculate degrees of freedom for non-central t distribution.
 
@@ -2112,7 +2112,7 @@ add_newdoc("scipy.special", "nctdtridf",
 
 add_newdoc("scipy.special", "nctdtrinc",
     """
-    nctdtrinc (df, p, t)
+    nctdtrinc(df, p, t)
 
     Calculate non-centrality parameter for non-central t distribution.
 
@@ -2131,7 +2131,7 @@ add_newdoc("scipy.special", "nctdtrinc",
 
 add_newdoc("scipy.special", "nctdtrit",
     """
-    nctdtrit (df, nc, p)
+    nctdtrit(df, nc, p)
 
     Inverse cumulative distribution function of the non-central t distribution.
 
@@ -2640,9 +2640,9 @@ add_newdoc("scipy.special", "shichi",
     Returns
     -------
     shi
-        ``integral(sinh(t)/t,t=0..x)``
+        ``integral(sinh(t)/t, t=0..x)``
     chi
-        ``eul + ln x + integral((cosh(t)-1)/t,t=0..x)``
+        ``eul + ln x + integral((cosh(t)-1)/t, t=0..x)``
         where ``eul`` is Euler's constant.
     """)
 
@@ -2655,9 +2655,9 @@ add_newdoc("scipy.special", "sici",
     Returns
     -------
     si
-        ``integral(sin(t)/t,t=0..x)``
+        ``integral(sin(t)/t, t=0..x)``
     ci
-        ``eul + ln x + integral((cos(t) - 1)/t,t=0..x)``
+        ``eul + ln x + integral((cos(t) - 1)/t, t=0..x)``
         where ``eul`` is Euler's constant.
     """)
 
@@ -2670,7 +2670,7 @@ add_newdoc("scipy.special", "sindg",
 
 add_newdoc("scipy.special", "smirnov",
     """
-    smirnov(n,e)
+    smirnov(n, e)
 
     Kolmogorov-Smirnov complementary cumulative distribution function
 
@@ -2684,11 +2684,11 @@ add_newdoc("scipy.special", "smirnov",
 
 add_newdoc("scipy.special", "smirnovi",
     """
-    smirnovi(n,y)
+    smirnovi(n, y)
 
     Inverse to smirnov
 
-    Returns ``e`` such that ``smirnov(n,e) = y``.
+    Returns ``e`` such that ``smirnov(n, e) = y``.
     """)
 
 add_newdoc("scipy.special", "spence",
