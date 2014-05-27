@@ -54,6 +54,10 @@ instead.  In order to support existing code, ``scipy.weave`` has been packaged
 separately: `https://github.com/scipy/weave`_.  It is a pure Python package, so
 can easily be installed with ``pip install weave``.
 
+``scipy.special.bessel_diff_formula`` is deprecated.  It is a private function,
+and therefore will be removed from the public API in a following release.
+
+
 Backwards incompatible changes
 ==============================
 

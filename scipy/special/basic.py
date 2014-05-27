@@ -6,11 +6,12 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from scipy.lib.six import xrange
-from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \
-        where, mgrid, cos, sin, exp, place, seterr, issubdtype, extract, \
-        less, vectorize, inexact, nan, zeros, sometrue, atleast_1d, sinc
-from ._ufuncs import ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
-        hankel1, hankel2, yv, kv, gammaln, ndtri, errprint, poch, binom
+from numpy import (pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt,
+                   where, mgrid, cos, sin, exp, place, issubdtype, extract,
+                   less, vectorize, inexact, nan, zeros, atleast_1d, sinc)
+from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta,
+                      hankel1, hankel2, yv, kv, gammaln, ndtri, errprint, poch,
+                      binom)
 from . import _ufuncs
 import types
 from . import specfun
@@ -37,16 +38,31 @@ __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
 
 
 class SpecialFunctionWarning(Warning):
+    """Warning that can be issued with ``errprint(True)``"""
     pass
 warnings.simplefilter("always", category=SpecialFunctionWarning)
 
 
 def diric(x,n):
-    """Returns the periodic sinc function, also called the Dirichlet function:
+    """Returns the periodic sinc function, also called the Dirichlet function
 
-    diric(x) = sin(x *n / 2) / (n sin(x / 2))
+    The Dirichlet function is defined as::
+
+        diric(x) = sin(x * n/2) / (n * sin(x / 2)),
 
     where n is a positive integer.
+
+    Parameters
+    ----------
+    x : array_like
+        Input data
+    n : int
+        Integer defining the periodicity.
+
+    Returns
+    -------
+    diric : ndarray
+
     """
     x,n = asarray(x), asarray(n)
     n = asarray(n + (x-x))
@@ -173,7 +189,7 @@ def y1p_zeros(nt,complex=0):
     return specfun.cyzo(nt,kf,kc)
 
 
-def bessel_diff_formula(v, z, n, L, phase):
+def _bessel_diff_formula(v, z, n, L, phase):
     # from AMS55.
     # L(v,z) = J(v,z), Y(v,z), H1(v,z), H2(v,z), phase = -1
     # L(v,z) = I(v,z) or exp(v*pi*i)K(v,z), phase = 1
@@ -186,6 +202,10 @@ def bessel_diff_formula(v, z, n, L, phase):
     return s / (2.**n)
 
 
+bessel_diff_formula = np.deprecate(_bessel_diff_formula,
+    message="bessel_diff_formula is a private function, do not use it!")
+
+
 def jvp(v,z,n=1):
     """Return the nth derivative of Jv(z) with respect to z.
     """
@@ -194,7 +214,7 @@ def jvp(v,z,n=1):
     if n == 0:
         return jv(v,z)
     else:
-        return bessel_diff_formula(v, z, n, jv, -1)
+        return _bessel_diff_formula(v, z, n, jv, -1)
 #        return (jvp(v-1,z,n-1) - jvp(v+1,z,n-1))/2.0
 
 
@@ -206,7 +226,7 @@ def yvp(v,z,n=1):
     if n == 0:
         return yv(v,z)
     else:
-        return bessel_diff_formula(v, z, n, yv, -1)
+        return _bessel_diff_formula(v, z, n, yv, -1)
 #        return (yvp(v-1,z,n-1) - yvp(v+1,z,n-1))/2.0
 
 
@@ -218,7 +238,7 @@ def kvp(v,z,n=1):
     if n == 0:
         return kv(v,z)
     else:
-        return (-1)**n * bessel_diff_formula(v, z, n, kv, 1)
+        return (-1)**n * _bessel_diff_formula(v, z, n, kv, 1)
 
 
 def ivp(v,z,n=1):
@@ -229,7 +249,7 @@ def ivp(v,z,n=1):
     if n == 0:
         return iv(v,z)
     else:
-        return bessel_diff_formula(v, z, n, iv, 1)
+        return _bessel_diff_formula(v, z, n, iv, 1)
 
 
 def h1vp(v,z,n=1):
@@ -240,7 +260,7 @@ def h1vp(v,z,n=1):
     if n == 0:
         return hankel1(v,z)
     else:
-        return bessel_diff_formula(v, z, n, hankel1, -1)
+        return _bessel_diff_formula(v, z, n, hankel1, -1)
 #        return (h1vp(v-1,z,n-1) - h1vp(v+1,z,n-1))/2.0
 
 
@@ -252,7 +272,7 @@ def h2vp(v,z,n=1):
     if n == 0:
         return hankel2(v,z)
     else:
-        return bessel_diff_formula(v, z, n, hankel2, -1)
+        return _bessel_diff_formula(v, z, n, hankel2, -1)
 #        return (h2vp(v-1,z,n-1) - h2vp(v+1,z,n-1))/2.0
 
 
@@ -531,7 +551,18 @@ def hyp0f1(v, z):
     return num / den
 
 
-def assoc_laguerre(x,n,k=0.0):
+def assoc_laguerre(x, n, k=0.0):
+    """Returns the n-th order generalized (associated) Laguerre polynomial.
+
+    The polynomial :math:`L^(alpha)_n(x)` is orthogonal over ``[0, inf)``,
+    with weighting function ``exp(-x) * x**alpha`` with ``alpha > -1``.
+
+    Notes
+    -----
+    `assoc_laguerre` is a simple wrapper around `eval_genlaguerre`, with
+    reversed argument order ``(x, n, k=0.0) --> (n, k, x)``.
+
+    """
     return orthogonal.eval_genlaguerre(n, k, x)
 
 digamma = psi
