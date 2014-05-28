@@ -55,13 +55,13 @@ class TestUnivariateSpline(TestCase):
         x = [1,2,3]
         y = [0,2,4]
         rstl = [[-2, 6], [0, 0], None, [0, 4]]
-        for ext in range(4):
-            lut = UnivariateSpline(x,y,k=1,ext=ext)
-            try:
-                rst = lut([0, 4])
-                assert_array_almost_equal(rst, rstl[ext])
-            except ValueError:
-                assert_equal(ext, 2)
+        for ext in (0, 1, 3):
+            lut = UnivariateSpline(x, y, k=1, ext=ext)
+            rst = lut([0, 4])
+            assert_array_almost_equal(rst, rstl[ext])
+
+        lut = UnivariateSpline(x, y, k=1, ext=3)
+        assert_raises(ValueError, lut, [0, 4])
 
     def test_subclassing(self):
         # See #731
