@@ -19,6 +19,8 @@ Fast Fourier Transforms (FFTs)
    irfft - Inverse of rfft
    dct - Discrete cosine transform
    idct - Inverse discrete cosine transform
+   dst - Discrete sine transform
+   idst - Inverse discrete sine transform
 
 Differential and pseudo-differential operators
 ==============================================
@@ -48,6 +50,8 @@ Helper functions
    fftfreq - Return the Discrete Fourier Transform sample frequencies
    rfftfreq - DFT sample frequencies (for usage with rfft, irfft)
 
+Note that ``fftshift``, ``ifftshift`` and ``fftfreq`` are numpy functions
+exposed by ``fftpack``; importing them from ``numpy`` should be preferred.
 
 Convolutions (:mod:`scipy.fftpack.convolve`)
 ============================================
@@ -62,24 +66,17 @@ Convolutions (:mod:`scipy.fftpack.convolve`)
    init_convolution_kernel
    destroy_convolve_cache
 
-
-Other (:mod:`scipy.fftpack._fftpack`)
-=====================================
-
-.. module:: scipy.fftpack._fftpack
-
-.. autosummary::
-   :toctree: generated/
-
-   drfft
-   zfft
-   zrfft
-   zfftnd
-   destroy_drfft_cache
-   destroy_zfft_cache
-   destroy_zfftnd_cache
-
 """
+
+# List of possibly useful functions in scipy.fftpack._fftpack:
+#   drfft
+#   zfft
+#   zrfft
+#   zfftnd
+#   destroy_drfft_cache
+#   destroy_zfft_cache
+#   destroy_zfftnd_cache
+
 from __future__ import division, print_function, absolute_import
 
 
