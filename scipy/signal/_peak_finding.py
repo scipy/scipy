@@ -10,6 +10,8 @@ from scipy.signal.wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
 
+__all__ = ['argrelmin', 'argrelmax', 'argrelextrema', 'find_peaks_cwt']
+
 def _boolrelextrema(data, comparator,
                   axis=0, order=1, mode='clip'):
     """

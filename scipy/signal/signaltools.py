@@ -1106,7 +1106,21 @@ def hilbert2(x, N=None):
 
 
 def cmplx_sort(p):
-    "sort roots based on magnitude."
+    """Sort roots based on magnitude.
+
+    Parameters
+    ----------
+    p : array_like
+        The roots to sort, as a 1-D array.
+
+    Returns
+    -------
+    p_sorted : ndarray
+        Sorted roots.
+    indx : ndarray
+        Array of indices needed to sort the input `p`.
+
+    """
     p = asarray(p)
     if iscomplexobj(p):
         indx = argsort(abs(p))
@@ -1193,7 +1207,7 @@ def unique_roots(p, tol=1e-3, rtype='min'):
 
 def invres(r, p, k, tol=1e-3, rtype='avg'):
     """
-    Compute b(s) and a(s) from partial fraction expansion: r,p,k
+    Compute b(s) and a(s) from partial fraction expansion.
 
     If ``M = len(b)`` and ``N = len(a)``::
 
@@ -1411,7 +1425,7 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
 
 def invresz(r, p, k, tol=1e-3, rtype='avg'):
     """
-    Compute b(z) and a(z) from partial fraction expansion: r,p,k
+    Compute b(z) and a(z) from partial fraction expansion.
 
     If ``M = len(b)`` and ``N = len(a)``::
 
@@ -1432,7 +1446,7 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
 
     See Also
     --------
-    residuez, unique_roots
+    residuez, unique_roots, invres
 
     """
     extra = asarray(k)
