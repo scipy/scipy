@@ -1,0 +1,6 @@
+from bento.commands import hooks
+
+@hooks.pre_build
+def pre_build(context):
+    context.tweak_extension("_vq",
+                            use="LAPACK CLIB")
