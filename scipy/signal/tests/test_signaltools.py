@@ -7,7 +7,7 @@ from numpy.testing import (
     TestCase, run_module_suite, assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
     assert_raises, assert_allclose, assert_, dec)
-from numpy import array, arange
+from numpy import array, arange, sin, pi, spacing
 import numpy as np
 
 from scipy.optimize import fmin
@@ -15,7 +15,8 @@ from scipy import signal
 from scipy.signal import (
     correlate, convolve, convolve2d, fftconvolve,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, tf2zpk,
-    invres, vectorstrength, signaltools, lfiltic)
+    invres, vectorstrength, signaltools, lfiltic,
+    cplxreal, cplxpair, sosfilt)
 from scipy.signal.signaltools import _filtfilt_gust
 
 
@@ -1335,6 +1336,140 @@ class TestVectorstrength(TestCase):
         events = 1.
         period = -1
         assert_raises(ValueError, vectorstrength, events, period)
+
+
+class TestCplxPair(TestCase):
+
+    def test_trivial_input(self):
+        assert_equal(cplxpair([]).size, 0)
+        assert_equal(cplxpair(1), 1)
+
+    def test_output_order(self):
+        assert_allclose(cplxpair([1+1j, 1-1j]), [1-1j, 1+1j])
+
+        a = [1+1j, 1+1j, 1,    1-1j, 1-1j, 2]
+        b = [1-1j, 1+1j, 1-1j, 1+1j, 1,    2]
+        assert_allclose(cplxpair(a), b)
+
+        # "Purely real numbers are also sorted"
+        assert_array_equal(cplxpair([2, 0, 1]), [0, 1, 2])
+
+        # points spaced around the unit circle
+        z = np.exp(2j*pi*array([4, 3, 5, 2, 6, 1, 0])/7)
+        z1 = np.copy(z)
+        np.random.shuffle(z)
+        assert_allclose(cplxpair(z), z1)
+        np.random.shuffle(z)
+        assert_allclose(cplxpair(z), z1)
+        np.random.shuffle(z)
+        assert_allclose(cplxpair(z), z1)
+
+        # Should be able to pair up all the conjugates
+        x = np.random.rand(10000) + 1j * np.random.rand(10000)
+        y = x.conj()
+        z = np.random.rand(10000)
+        x = np.concatenate((x, y, z))
+        np.random.shuffle(x)
+        c = cplxpair(x)
+
+        # Every other element of head should be conjugates:
+        assert_allclose(c[0:20000:2], np.conj(c[1:20000:2]))
+        # Real parts of head should be in sorted order:
+        assert_allclose(c[0:20000:2].real, np.sort(c[0:20000:2].real))
+        # Tail should be sorted real numbers:
+        assert_allclose(c[20000:], np.sort(c[20000:]))
+
+    def test_tolerances(self):
+        assert_allclose(cplxpair([1j, -1j, 1+1j*spacing(1)],
+                                 tol=2*spacing(1)),
+                        [-1j, 1j, 1+1j*spacing(1)])
+
+        # sorting close to 0
+        assert_allclose(cplxpair([-spacing(1)+1j, +spacing(1)-1j]),
+                        [0-1j, 0+1j])
+        assert_allclose(cplxpair([+spacing(1)+1j, -spacing(1)-1j]),
+                        [0-1j, 0+1j])
+        assert_allclose(cplxpair([0+1j, 0-1j]), [0-1j, 0+1j])
+
+    def test_unmatched_conjugates(self):
+        # 1+2j is unmatched
+        # TODO: currently says "First mismatch is: (1+3j)" which is wrong
+        # Could use unittest.TestCase.assertRaisesRegexp to test the error?
+        assert_raises(ValueError, cplxpair, [1+3j, 1-3j, 1+2j])
+
+        # 1+2j and 1-3j are unmatched
+        assert_raises(ValueError, cplxpair, [1+3j, 1-3j, 1+2j, 1-3j])
+
+        # 1+3j is unmatched
+        assert_raises(ValueError, cplxpair, [1+3j, 1-3j, 1+3j])
+
+        # No pairs
+        assert_raises(ValueError, cplxpair, [1+3j])
+        assert_raises(ValueError, cplxpair, [1-3j])
+
+
+class TestCplxReal(TestCase):
+
+    def test_output_order(self):
+        zc, zr = cplxreal(np.roots(array([1, 0, 0, 1])))
+        assert_allclose(np.append(zc, zr), [1/2 + 1j*sin(pi/3), -1])
+
+        a = [1, 2, 3, 4, 5, 0+1j, 0-1j, 0+spacing(1)+1j, 0+spacing(1)-1j,
+             0-spacing(1)+1j, 0-spacing(1)-1j, 1+1j, 1+1j, 1+1j, 1-1j,
+             1-1j, 1-1j, 1+2j, 1-2j, 2+3j, 2-3j, 2+3j, 2-3j]
+        np.random.shuffle(a)
+        zc, zr = cplxreal(a)
+        assert_allclose(zc, [0+1j, 0+1j, 0+1j, 1+1j, 1+1j,
+                             1+1j, 1+2j, 2+3j, 2+3j])
+        assert_allclose(zr, [1, 2, 3, 4, 5])
+
+    def test_pair_averaging(self):
+        # TODO: make a test with poor tolerance and conflated values to test
+        # that the pair averaging is working
+        pass
+
+    def test_unmatched_conjugates(self):
+        # 1+2j is unmatched
+        # TODO: currently says "First mismatch is: (1+3j)" which is wrong
+        # Could use unittest.TestCase.assertRaisesRegexp to test the error?
+        assert_raises(ValueError, cplxreal, [1+3j, 1-3j, 1+2j])
+
+        # 1+2j and 1-3j are unmatched
+        assert_raises(ValueError, cplxreal, [1+3j, 1-3j, 1+2j, 1-3j])
+
+        # 1+3j is unmatched
+        assert_raises(ValueError, cplxreal, [1+3j, 1-3j, 1+3j])
+
+        # No pairs
+        assert_raises(ValueError, cplxreal, [1+3j])
+        assert_raises(ValueError, cplxreal, [1-3j])
+
+
+class TestSOSFilt(TestCase):
+
+    # TODO: make this run all the same tests as lfilter. should behave
+    # identically except for better numerical behavior at high orders
+
+    def test_simple(self):
+        b = [1, 1]
+        a = [1, 0]
+        x = np.ones(8)
+
+        # same as y = lfilter(b, a, x)
+        y = sosfilt(b, a, x)
+
+        assert_allclose(y, [1, 2, 2, 2, 2, 2, 2, 2])
+
+    def test_initial_conditions(self):
+        b, a = butter(4, 0.7, 'low')
+        zi = lfilter_zi(b, a)
+        x = np.ones(8)
+
+        # same as y, zf = lfilter(b, a, x, zi=zi)
+        y, zf = sosfilt(b, a, x, zi=zi)
+
+        assert_allclose(y, np.ones(8))
+        assert_allclose(zf, zi)
 
 
 if __name__ == "__main__":

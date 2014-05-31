@@ -8,11 +8,144 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_raises, assert_equal, assert_,
                            run_module_suite, assert_allclose)
 
-from scipy.signal import (tf2zpk, zpk2tf, BadCoefficients, freqz, normalize,
+from scipy.signal import (tf2zpk, zpk2tf, tf2sos, sos2tf, sos2zpk, zpk2sos,
+                          BadCoefficients, freqz, normalize,
                           buttord, cheby1, cheby2, ellip, cheb1ord, cheb2ord,
                           ellipord, butter, bessel, buttap, besselap,
                           cheb1ap, cheb2ap, ellipap, iirfilter, freqs,
-                          lp2lp, lp2hp, lp2bp, lp2bs, bilinear)
+                          lp2lp, lp2hp, lp2bp, lp2bs, bilinear, cplxreal,
+                          cplxpair)
+
+from numpy import array, spacing, sin, pi, sort
+
+
+class TestCplxPair(TestCase):
+
+    def test_trivial_input(self):
+        assert_equal(cplxpair([]).size, 0)
+        assert_equal(cplxpair(1), 1)
+
+    def test_output_order(self):
+        assert_allclose(cplxpair([1+1j, 1-1j]), [1-1j, 1+1j])
+
+        a = [1+1j, 1+1j, 1,    1-1j, 1-1j, 2]
+        b = [1-1j, 1+1j, 1-1j, 1+1j, 1,    2]
+        assert_allclose(cplxpair(a), b)
+
+        # points spaced around the unit circle
+        z = np.exp(2j*pi*array([4, 3, 5, 2, 6, 1, 0])/7)
+        z1 = np.copy(z)
+        np.random.shuffle(z)
+        assert_allclose(cplxpair(z), z1)
+        np.random.shuffle(z)
+        assert_allclose(cplxpair(z), z1)
+        np.random.shuffle(z)
+        assert_allclose(cplxpair(z), z1)
+
+        # Should be able to pair up all the conjugates
+        x = np.random.rand(10000) + 1j * np.random.rand(10000)
+        y = x.conj()
+        z = np.random.rand(10000)
+        x = np.concatenate((x, y, z))
+        np.random.shuffle(x)
+        c = cplxpair(x)
+
+        # Every other element of head should be conjugates:
+        assert_allclose(c[0:20000:2], np.conj(c[1:20000:2]))
+        # Real parts of head should be in sorted order:
+        assert_allclose(c[0:20000:2].real, np.sort(c[0:20000:2].real))
+        # Tail should be sorted real numbers:
+        assert_allclose(c[20000:], np.sort(c[20000:]))
+
+    def test_real_integer_input(self):
+        assert_array_equal(cplxpair([2, 0, 1]), [0, 1, 2])
+
+    def test_tolerances(self):
+        eps = spacing(1)
+        assert_allclose(cplxpair([1j, -1j, 1+1j*eps], tol=2*eps),
+                        [-1j, 1j, 1+1j*eps])
+
+        # sorting close to 0
+        assert_allclose(cplxpair([-eps+1j, +eps-1j]), [-1j, +1j])
+        assert_allclose(cplxpair([+eps+1j, -eps-1j]), [-1j, +1j])
+        assert_allclose(cplxpair([+1j, -1j]), [-1j, +1j])
+
+    def test_unmatched_conjugates(self):
+        # 1+2j is unmatched
+        # TODO: currently says "First mismatch is: (1+3j)" which is wrong
+        # Could use unittest.TestCase.assertRaisesRegexp to test the error?
+        assert_raises(ValueError, cplxpair, [1+3j, 1-3j, 1+2j])
+
+        # 1+2j and 1-3j are unmatched
+        assert_raises(ValueError, cplxpair, [1+3j, 1-3j, 1+2j, 1-3j])
+
+        # 1+3j is unmatched
+        assert_raises(ValueError, cplxpair, [1+3j, 1-3j, 1+3j])
+
+        # Not conjugates
+        assert_raises(ValueError, cplxpair, [4+5j, 4+5j])
+        assert_raises(ValueError, cplxpair, [1-7j, 1-7j])
+
+        # No pairs
+        assert_raises(ValueError, cplxpair, [1+3j])
+        assert_raises(ValueError, cplxpair, [1-3j])
+
+    # TODO: Test N-D
+
+
+class TestCplxReal(TestCase):
+
+    def test_trivial_input(self):
+        assert_equal(cplxreal([]), ([], []))
+        assert_equal(cplxreal(1), ([], [1]))
+
+    def test_output_order(self):
+        zc, zr = cplxreal(np.roots(array([1, 0, 0, 1])))
+        assert_allclose(np.append(zc, zr), [1/2 + 1j*sin(pi/3), -1])
+
+        eps = spacing(1)
+
+        a = [0+1j, 0-1j, eps + 1j, eps - 1j, -eps + 1j, -eps - 1j,
+             1, 4, 2, 3, 0, 0,
+             2+3j, 2-3j,
+             1-eps + 1j, 1+2j, 1-2j, 1+eps - 1j,  # sorts out of order
+             3+1j, 3+1j, 3+1j, 3-1j, 3-1j, 3-1j,
+             2-3j, 2+3j]
+        zc, zr = cplxreal(a)
+        assert_allclose(zc, [1j, 1j, 1j, 1+1j, 1+2j, 2+3j, 2+3j, 3+1j, 3+1j,
+                             3+1j])
+        assert_allclose(zr, [0, 0, 1, 2, 3, 4])
+
+        z = array([1-eps + 1j, 1+2j, 1-2j, 1+eps - 1j, 1+eps+3j, 1-2*eps-3j,
+                   0+1j, 0-1j, 2+4j, 2-4j, 2+3j, 2-3j, 3+7j, 3-7j, 4-eps+1j,
+                   4+eps-2j, 4-1j, 4-eps+2j])
+
+        zc, zr = cplxreal(z)
+        assert_allclose(zc, [1j, 1+1j, 1+2j, 1+3j, 2+3j, 2+4j, 3+7j, 4+1j,
+                             4+2j])
+        assert_equal(zr, [])
+
+    def test_unmatched_conjugates(self):
+        # 1+2j is unmatched
+        # TODO: currently says "First mismatch is: (1+3j)" which is wrong
+        # Could use unittest.TestCase.assertRaisesRegexp to test the
+        # error message?
+        assert_raises(ValueError, cplxreal, [1+3j, 1-3j, 1+2j])
+
+        # 1+2j and 1-3j are unmatched
+        assert_raises(ValueError, cplxreal, [1+3j, 1-3j, 1+2j, 1-3j])
+
+        # 1+3j is unmatched
+        assert_raises(ValueError, cplxreal, [1+3j, 1-3j, 1+3j])
+
+        # No pairs
+        assert_raises(ValueError, cplxreal, [1+3j])
+        assert_raises(ValueError, cplxreal, [1-3j])
+
+    def test_real_integer_input(self):
+        zc, zr = cplxreal([2, 0, 1, 4])
+        assert_array_equal(zc, [])
+        assert_array_equal(zr, [0, 1, 2, 4])
 
 
 class TestTf2zpk(TestCase):
@@ -60,6 +193,105 @@ class TestZpk2Tf(TestCase):
         assert_(isinstance(b, np.ndarray))
         assert_array_equal(a, a_r)
         assert_(isinstance(a, np.ndarray))
+
+
+class TestSos2Zpk(TestCase):
+
+    def test_basic(self):
+        sos = [[1, 0, 1, 1, 0, -0.81],
+               [1, 0, 0, 1, 0,  0.49]]
+        z, p, k = sos2zpk(sos)
+        z2 = [1j, -1j, 0, 0]
+        p2 = [0.9, -0.9, 0.7j, -0.7j]
+        k2 = 1
+        assert_array_almost_equal(sort(z), sort(z2), decimal=4)
+        assert_array_almost_equal(sort(p), sort(p2), decimal=4)
+        assert_array_almost_equal(k, k2)
+
+        sos = [[1.00000,  0.61803, 1.0000, 1.00000,  0.60515, 0.95873],
+               [1.00000, -1.61803, 1.0000, 1.00000, -1.58430, 0.95873],
+               [1.00000,  1.00000, 0.0000, 1.00000,  0.97915, 0.00000]]
+        z, p, k = sos2zpk(sos)
+        z2 = [-0.5000+0.8660j, -0.5000-0.8660j, 1.7808, -0.2808]
+        p2 = [-1.0000, 1.0000, -9.8990, -0.1010]
+        k2 = -2
+        assert_array_almost_equal(sort(z), sort(z2), decimal=4)
+        assert_array_almost_equal(sort(p), sort(p2), decimal=4)
+        assert_array_almost_equal(k, k2)
+
+        sos = array([[1, 2, 3, 1, 0.2, 0.3],
+                     [4, 5, 6, 1, 0.4, 0.5]])
+        z = array([-1 - 1.41421356237310j, -1 + 1.41421356237310j,
+                  -0.625 - 1.05326872164704j, -0.625 + 1.05326872164704j])
+        p = array([-0.2 - 0.678232998312527j, -0.2 + 0.678232998312527j,
+                  -0.1 - 0.538516480713450j, -0.1 + 0.538516480713450j])
+        k = 4
+        z2, p2, k2 = sos2zpk(sos, 1)
+        assert_allclose(cplxpair(z2), z)
+        assert_allclose(cplxpair(p2), p)
+        assert_allclose(k2, k)
+
+
+class TestSos2Tf(TestCase):
+
+    def test_basic(self):
+        sos = [[1, 1, 1, 1, 0, -1],
+               [-2, 3, 1, 1, 10, 1]]
+        b, a = sos2tf(sos)
+        assert_array_almost_equal(b, [-2, 1, 2, 4, 1])
+        assert_array_almost_equal(a, [1, 10, 0, -10, -1])
+
+
+class TestTf2Sos(TestCase):
+
+    def test_basic(self):
+        N = [1, -.5, -.315, -.0185]
+        D = [1, -.5, .5, -.25]
+        sos, k = tf2sos(N, D)
+        sos2 = [[1.0000,  0.3813, 0.0210, 1.0000,  0.0000, 0.5000],
+                [1.0000, -0.8813, 0.0000, 1.0000, -0.5000, 0.0000]]
+        k2 = 1
+        assert_array_almost_equal(sorted(sos), sorted(sos2), decimal=4)
+        assert_allclose(k2, k)
+
+        num = [2, 16, 44, 56, 32]
+        den = [3, 3, -15, 18, -12]
+        sos, k = tf2sos(num, den)
+        sos2 = [[0.6667, 4.0000, 5.3333, 1.0000,  2.0000, -4.0000],
+                [1.0000, 2.0000, 2.0000, 1.0000, -1.0000,  1.0000]]
+        assert_allclose(sorted(sos), sorted(sos2))
+
+        B = [1, 0, 0, 0, 0, 1]
+        A = [1, 0, 0, 0, 0, 0.9]
+        sos, g = tf2sos(B, A)
+        sos2 = [[1.00000,  0.61803,  1.00000, 1.00000,  0.60515,  0.95873],
+                [1.00000, -1.61803,  1.00000, 1.00000, -1.58430,  0.95873],
+                [1.00000,  1.00000, -0.00000, 1.00000,  0.97915, -0.00000]]
+        g2 = 1
+        assert_array_almost_equal(sorted(sos), sorted(sos2), decimal=5)
+        assert_array_almost_equal(g, g2)
+
+        b = [1, -3, 11, -27, 18]
+        a = [16, 12, 2, -4, -1]
+        sos, G = tf2sos(b, a)
+        G2 = 0.0625
+        sos2 = [[1.0000,  0.0000, 9.0000, 1.0000,  1.0000, 0.5000],
+                [1.0000, -3.0000, 2.0000, 1.0000, -.25000, -.12500]]
+        assert_array_almost_equal(sorted(sos), sorted(sos2))
+        assert_array_almost_equal(G, G2)
+
+
+class TestZpk2Sos(TestCase):
+
+    def test_basic(self):
+        z = [-1, -1]
+        p = [0.57149 + 0.29360j, 0.57149 - 0.29360j]
+        k = 1
+        sos, k = zpk2sos(z, p, k)
+        sos2 = [[1.00000, 2.00000, 1.00000, 1.00000, -1.14298, 0.41280]]
+        k2 = 1
+        assert_array_almost_equal(sos, sos2, decimal=5)
+        assert_array_almost_equal(k2, k)
 
 
 class TestFreqz(TestCase):

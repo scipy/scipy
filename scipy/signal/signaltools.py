@@ -2292,6 +2292,66 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     return y
 
 
+def sosfilt(sos, x, axis=-1, zi=None):
+    """
+    Filter data along one-dimension using cascaded second-order sections
+
+    TODO: "with an IIR or FIR filter"?  Pointless implementing FIR this way?
+
+    Filter a data sequence, `x`, using a digital filter defined by `sos`.
+    This is implemented by performing `lfilter` for each second-order
+    section.  See `lfilter` for details.
+
+    Parameters
+    ----------
+    sos : array_like
+        TODO: describe format
+    x : array_like
+        An N-dimensional input array.
+    axis : int
+        The axis of the input data array along which to apply the
+        linear filter. The filter is applied to each subarray along
+        this axis.  Default is -1.
+    zi : array_like, optional
+        Initial conditions for the filter delays.  It is a vector
+        (or array of vectors for an N-dimensional input) of length
+        ``max(len(a),len(b))-1``.  If `zi` is None or is not given then
+        initial rest is assumed.  See `lfiltic` for more information.
+
+    Returns
+    -------
+    y : array
+        The output of the digital filter.
+    zf : array, optional
+        If `zi` is None, this is not returned, otherwise, `zf` holds the
+        final filter delay values.
+
+    Notes
+    -----
+    TODO: The filter function is implemented as .... series of ...
+    a direct II transposed structure ...
+    """
+
+    sos = atleast_2d(sos)
+    if sos.ndim != 2:
+        raise ValueError('sos array must be 2D')
+
+    n, m = sos.shape
+    if m != 6:
+        raise ValueError('sos array must be shape ((N+1)//2, 6)')
+
+    if zi is None:
+        for stage in range(n):
+            B = sos[stage, :3]
+            A = sos[stage, 3:]
+            x = lfilter(B, A, x, axis)
+    else:
+        # TODO: Implement initial conditions
+        raise NotImplementedError
+
+    return x
+
+
 from scipy.signal.filter_design import cheby1
 from scipy.signal.fir_filter_design import firwin
 

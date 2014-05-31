@@ -8,8 +8,9 @@ import numpy
 from numpy import (atleast_1d, poly, polyval, roots, real, asarray, allclose,
                    resize, pi, absolute, logspace, r_, sqrt, tan, log10,
                    arctan, arcsinh, sin, exp, cosh, arccosh, ceil, conjugate,
-                   zeros, sinh, append, concatenate, prod, ones)
+                   zeros, sinh, append, concatenate, prod, ones, array)
 from numpy import mintypecode
+import numpy as np
 from scipy import special, optimize
 from scipy.special import comb
 
@@ -246,6 +247,175 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     return w, h
 
 
+def cplxreal(z, tol=None):
+    """
+    Split into complex and real parts, combining conjugate pairs.
+
+    The 1D input vector z is split up into its complex (`zc`) and real (`zr`)
+    elements.  Every complex element must be part of a complex-conjugate pair,
+    which are combined into a single number (with positive imaginary part) in
+    the output.  Two complex numbers are considered a conjugate pair if their
+    real and imaginary parts differ in magnitude by less than `tol * abs(z)`.
+
+    Parameters
+    ----------
+    z : array_like
+        Vector of complex numbers to be sorted and split
+    tol : float, optional
+        Relative tolerance for testing realness and conjugate equality.
+        Default is 100 * spacing(1) of z's data type (i.e. 2e-14 for float64)
+
+    Returns
+    -------
+    zc : ndarray
+        Complex elements of `z`, with each pair represented by a single value
+        having positive imaginary part, sorted first by real part, and then
+        by magnitude of imaginary part.  The pairs are averaged when combined
+        to reduce error.
+    zr : ndarray
+        Real elements of `z` (those having imaginary part less than
+        `tol` times their magnitude), sorted by value.
+
+    Raises
+    ------
+    ValueError
+        If there are any complex numbers in `z` for which a conjugate
+        cannot be found.
+
+    See Also
+    --------
+    cplxpair
+
+    Examples
+    --------
+    >>> a = [4, 3, 1, 2-2j, 2+2j, 2-1j, 2+1j, 2-1j, 2+1j, 1+1j, 1-1j]
+    >>> zc, zr = cplxreal(a)
+    >>> print zc
+    [ 1.+1.j  2.+1.j  2.+1.j  2.+2.j]
+    >>> print zr
+    [ 1.  3.  4.]
+    """
+
+    z = atleast_1d(z)
+    if z.size == 0:
+        return z, z
+    elif z.ndim != 1:
+        raise ValueError('cplxreal only accepts 1D input')
+
+    if tol is None:
+        # Get tolerance from dtype of input
+        tol = 100 * np.finfo((1.0 * z).dtype).eps
+
+    # Sort by real part, magnitude of imaginary part
+    z = z[np.lexsort((abs(z.imag), z.real))]
+
+    # Split reals from conjugate pairs
+    real_indices = abs(z.imag) <= tol * abs(z)
+    zr = z[real_indices].real
+
+    if len(zr) == len(z):
+        # Input is entirely real
+        return array([]), zr
+
+    # Split positive and negative halves of conjugates
+    z = z[~real_indices]
+    zp = z[z.imag > 0]
+    zn = z[z.imag < 0]
+
+    if len(zp) != len(zn):
+        raise ValueError('Array contains complex value with no matching '
+                         'conjugate.')
+
+    # Find runs of (approximately) the same real part
+    same_real = np.diff(zp.real) <= tol * abs(zp[:-1])
+    diffs = numpy.diff(concatenate(([0], same_real, [0])))
+    run_starts = numpy.where(diffs > 0)[0]
+    run_stops = numpy.where(diffs < 0)[0]
+
+    # Sort each run by their imaginary parts
+    for i in xrange(len(run_starts)):
+        start = run_starts[i]
+        stop = run_stops[i] + 1
+        for chunk in (zp[start:stop], zn[start:stop]):
+            chunk[...] = chunk[np.lexsort([abs(chunk.imag)])]
+
+    # Check that negatives match positives
+    if any(abs(zp - zn.conj()) > tol * abs(zn)):
+        raise ValueError('Array contains complex value with no matching '
+                         'conjugate.')
+
+    # Average out numerical inaccuracy in real vs imag parts of pairs
+    zc = (zp + zn.conj()) / 2
+
+    return zc, zr
+
+
+def cplxpair(z, tol=None, axis=-1):
+    """
+    Sort `z` into pairs of complex conjugates.
+
+    Currently this is for 1D arrays only.
+
+    Complex conjugates are sorted by increasing real part.  In each pair, the
+    number with negative imaginary part appears first.
+
+    If pairs have identical real parts, they are sorted by increasing
+    imaginary magnitude.
+
+    Two complex numbers are considered a conjugate pair if their real and
+    imaginary parts differ in magnitude by less than `tol * abs(z)`.  The
+    pairs are forced to be exact complex conjugates by averaging the positive
+    and negative values.
+
+    Purely real numbers are also sorted, but placed after the complex
+    conjugate pairs.  A number is considered real if its imaginary part is
+    smaller than `tol` times the magnitude of the number.
+
+    Parameters
+    ----------
+    z : array_like
+        Input array to be sorted
+    tol : float, optional
+        Relative tolerance for testing realness and conjugate equality.
+        Default is 100 * spacing(1) of z's data type (i.e. 2e-14 for float64)
+    axis : int, optional
+        The axis along which to sort the N-D array.  (Not implemented yet.)
+
+    Returns
+    -------
+    y : ndarray
+        Complex conjugate pairs followed by real numbers
+
+    Raises
+    ------
+    ValueError
+        If there are any complex numbers in `z` for which a conjugate
+        cannot be found.
+
+    See Also
+    --------
+    cplxreal: Splits the real and complex pair components of the input
+    """
+
+    z = atleast_1d(z)
+    if z.size == 0 or np.isrealobj(z):
+        return np.sort(z)
+
+    if axis != -1 or z.ndim > 1:
+        # TODO: Add a for loop, and an ND pre-sort if that makes it faster
+        # z = z[np.lexsort((abs(z.imag), z.real), axis)]
+        raise NotImplementedError
+
+    zc, zr = cplxreal(z, tol)
+
+    # Interleave complex values and their conjugates, with negative imaginary
+    # parts first in each pair
+    zc = np.dstack((zc.conj(), zc)).flatten()
+    z = np.append(zc, zr)
+
+    return z
+
+
 def tf2zpk(b, a):
     r"""Return zero, pole, gain (z,p,k) representation from a numerator,
     denominator representation of a linear filter.
@@ -374,6 +544,103 @@ def zpk2tf(z, p, k):
                 a = a.real.copy()
 
     return b, a
+
+
+def tf2sos(b, a):
+    """
+    Return second-order sections from transfer function representation
+
+    Parameters
+    ----------
+    b : array_like
+        Numerator polynomial.
+    a : array_like
+        Denominator polynomial.
+        TODO: "as described in tf2zpk"?
+
+    Returns
+    -------
+    sos : ndarray
+        b, a coefficients for a series of second-order sections
+    k : float
+        System gain.
+    """
+    return zpk2sos(*tf2zpk(b, a))
+
+
+def sos2tf(sos, k=1.0):
+    """
+    Return a single transfer function from a series of second-order sections
+
+    Parameters
+    ----------
+    sos : array_like
+        b, a coefficients for a series of second-order sections
+        TODO: description of format. Nth order filter has shape ((N+1)//2, 6)
+    k : float, optional
+        System gain, defaults to 1.0
+
+    Returns
+    -------
+    b : ndarray
+        Numerator polynomial.
+    a : ndarray
+        Denominator polynomial.
+
+    """
+    # TODO: Separate Bs and As, polymul all the Bs into a single B,
+    # all the As into a single A
+    raise NotImplementedError
+
+
+def sos2zpk(sos, k=1.0):
+    """
+    Return zeros, poles, and gain of a series of second-order sections
+
+    Parameters
+    ----------
+    sos : array_like
+        b, a coefficients for a series of second-order sections
+    k : float, optional
+        System gain, defaults to 1.0
+
+    Returns
+    -------
+    z : ndarray
+        Zeros of the transfer function.
+    p : ndarray
+        Poles of the transfer function.
+    k : float
+        System gain.
+    """
+    # TODO: Call tf2zpk for each stage, concatenate the z and p arrays
+    raise NotImplementedError
+
+
+def zpk2sos(z, p, k):
+    """
+    Return second-order sections from zeros, poles, and gain of a system
+
+    Parameters
+    ----------
+    z : array_like
+        Zeros of the transfer function.
+    p : array_like
+        Poles of the transfer function.
+    k : float
+        System gain.
+
+    Returns
+    -------
+    sos : ndarray
+        b, a coefficients for a series of second-order sections
+    k : float
+        System gain.
+    """
+    # TODO: call cplxreal on z, double up each complex pole, pair up every
+    # other real pole
+    # "two poles and one zero each, in general"
+    raise NotImplementedError
 
 
 def normalize(b, a):
