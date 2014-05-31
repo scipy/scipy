@@ -16,7 +16,7 @@ def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     config = Configuration('cluster', parent_package, top_path)
 
-    blas_opt = get_info('blas_opt')
+    blas_opt = get_info('lapack_opt')
 
     config.add_data_dir('tests')
 
