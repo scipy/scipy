@@ -51,7 +51,7 @@ The function ``max_len_seq`` was added, which computes a Maximum
 Length Sequence (MLS) signal.
 
 ``scipy.integrate`` improvements
------------------------------
+--------------------------------
 The interface between the scipy.integrate module and the QUADPACK library was 
 redesigned. It is now possible to use scipy.integrate to integrate 
 multivariate ctypes functions, thus avoiding callbacks to Python and providing 
