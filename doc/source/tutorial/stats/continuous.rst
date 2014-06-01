@@ -1744,6 +1744,49 @@ parameter description of general probability distributions.
 Also, note that if :math:`X` is a log-normally distributed random-variable with :math:`L=0` and :math:`S` and shape parameter :math:`\sigma.` Then, :math:`\log X` is normally distributed with variance :math:`\sigma^{2}` and mean :math:`\log S.`
 
 
+Maxwell
+=======
+
+This is a special case of the Chi distribution with :math:`L=0` and :math:`S=S=\frac{1}{\sqrt{a}}` and :math:`\nu=3.`
+
+
+
+.. math::
+   :nowrap:
+
+    \begin{eqnarray*} f\left(x\right) & = & \sqrt{\frac{2}{\pi}}x^{2}e^{-x^{2}/2}I_{\left(0,\infty\right)}\left(x\right)\\ F\left(x\right) & = & \Gamma\left(\frac{3}{2},\frac{x^{2}}{2}\right)\\ G\left(\alpha\right) & = & \sqrt{2\Gamma^{-1}\left(\frac{3}{2},\alpha\right)}\end{eqnarray*}
+
+
+
+
+
+.. math::
+   :nowrap:
+
+    \begin{eqnarray*} \mu & = & 2\sqrt{\frac{2}{\pi}}\\ \mu_{2} & = & 3-\frac{8}{\pi}\\ \gamma_{1} & = & \sqrt{2}\frac{32-10\pi}{\left(3\pi-8\right)^{3/2}}\\ \gamma_{2} & = & \frac{-12\pi^{2}+160\pi-384}{\left(3\pi-8\right)^{2}}\\ m_{d} & = & \sqrt{2}\\ m_{n} & = & \sqrt{2\Gamma^{-1}\left(\frac{3}{2},\frac{1}{2}\right)}\end{eqnarray*}
+
+
+
+.. math::
+
+     h\left[X\right]=\log\left(\sqrt{\frac{2\pi}{e}}\right)+\gamma.
+
+
+
+
+Mielke's Beta-Kappa
+===================
+
+A generalized F distribution. Two shape parameters :math:`\kappa` and :math:`\theta` , and :math:`x>0` . The :math:`\beta` in the DATAPLOT reference is a scale parameter.
+
+.. math::
+   :nowrap:
+
+    \begin{eqnarray*} f\left(x;\kappa,\theta\right) & = & \frac{\kappa x^{\kappa-1}}{\left(1+x^{\theta}\right)^{1+\frac{\kappa}{\theta}}}\\ F\left(x;\kappa,\theta\right) & = & \frac{x^{\kappa}}{\left(1+x^{\theta}\right)^{\kappa/\theta}}\\ G\left(q;\kappa,\theta\right) & = & \left(\frac{q^{\theta/\kappa}}{1-q^{\theta/\kappa}}\right)^{1/\theta}\end{eqnarray*}
+
+
+
+
 Nakagami
 ========
 
@@ -1864,49 +1907,6 @@ Normal
    :nowrap:
 
     \begin{eqnarray*} h\left[X\right] & = & \log\left(\sqrt{2\pi e}\right)\\  & \approx & 1.4189385332046727418\end{eqnarray*}
-
-
-
-
-Maxwell
-=======
-
-This is a special case of the Chi distribution with :math:`L=0` and :math:`S=S=\frac{1}{\sqrt{a}}` and :math:`\nu=3.`
-
-
-
-.. math::
-   :nowrap:
-
-    \begin{eqnarray*} f\left(x\right) & = & \sqrt{\frac{2}{\pi}}x^{2}e^{-x^{2}/2}I_{\left(0,\infty\right)}\left(x\right)\\ F\left(x\right) & = & \Gamma\left(\frac{3}{2},\frac{x^{2}}{2}\right)\\ G\left(\alpha\right) & = & \sqrt{2\Gamma^{-1}\left(\frac{3}{2},\alpha\right)}\end{eqnarray*}
-
-
-
-
-
-.. math::
-   :nowrap:
-
-    \begin{eqnarray*} \mu & = & 2\sqrt{\frac{2}{\pi}}\\ \mu_{2} & = & 3-\frac{8}{\pi}\\ \gamma_{1} & = & \sqrt{2}\frac{32-10\pi}{\left(3\pi-8\right)^{3/2}}\\ \gamma_{2} & = & \frac{-12\pi^{2}+160\pi-384}{\left(3\pi-8\right)^{2}}\\ m_{d} & = & \sqrt{2}\\ m_{n} & = & \sqrt{2\Gamma^{-1}\left(\frac{3}{2},\frac{1}{2}\right)}\end{eqnarray*}
-
-
-
-.. math::
-
-     h\left[X\right]=\log\left(\sqrt{\frac{2\pi}{e}}\right)+\gamma.
-
-
-
-
-Mielke's Beta-Kappa
-===================
-
-A generalized F distribution. Two shape parameters :math:`\kappa` and :math:`\theta` , and :math:`x>0` . The :math:`\beta` in the DATAPLOT reference is a scale parameter.
-
-.. math::
-   :nowrap:
-
-    \begin{eqnarray*} f\left(x;\kappa,\theta\right) & = & \frac{\kappa x^{\kappa-1}}{\left(1+x^{\theta}\right)^{1+\frac{\kappa}{\theta}}}\\ F\left(x;\kappa,\theta\right) & = & \frac{x^{\kappa}}{\left(1+x^{\theta}\right)^{\kappa/\theta}}\\ G\left(q;\kappa,\theta\right) & = & \left(\frac{q^{\theta/\kappa}}{1-q^{\theta/\kappa}}\right)^{1/\theta}\end{eqnarray*}
 
 
 
