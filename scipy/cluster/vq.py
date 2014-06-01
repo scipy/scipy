@@ -194,8 +194,20 @@ def vq(obs, code_book):
     try:
         from . import _vq
         ct = common_type(obs, code_book)
-        c_obs = obs.astype(ct)
-        c_code_book = code_book.astype(ct)
+
+        # avoid copying when dtype is the same
+        # should be replaced with c_obs = astype(ct, copy=False)
+        # when we get to numpy 1.7.0
+        if obs.dtype != ct:
+            c_obs = obs.astype(ct)
+        else:
+            c_obs = obs
+
+        if code_book.dtype != ct:
+            c_code_book = code_book.astype(ct)
+        else:
+            c_code_book = code_book
+
         if ct in (single, double):
             results = _vq.vq(c_obs, c_code_book)
         else:
