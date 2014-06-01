@@ -1433,6 +1433,10 @@ class TestDendrogram(TestCase):
         leaves = R["leaves"]
         self.assertEqual(leaves, [2, 5, 1, 0, 3, 4])
 
+    def test_valid_orientation(self):
+        Z = linkage(_ytdist, 'single')
+        assert_raises(ValueError, dendrogram, Z, orientation="foo")
+
     @dec.skipif(not have_matplotlib)
     def test_dendrogram_plot(self):
         # Tests dendrogram plotting.
