@@ -206,3 +206,24 @@ def test_mmaps_closed():
         f = netcdf_file(filename, mmap=True)
         vars.append(f.variables['lat'])
         f.close()
+
+
+def test_data_after_close():
+    # test that arrays returned are still valid after
+    # the handle is closed
+    cwd = os.getcwd()
+    try:
+        tmpdir = tempfile.mkdtemp()
+        os.chdir(tmpdir)
+        with make_simple('simple.nc', 'w') as f:
+            pass
+            
+        with netcdf_file('simple.nc', 'r', mmap=True) as f:
+            t = f.variables['time'][:]
+        
+        t.sum()
+    
+    finally:
+        os.chdir(cwd)
+        shutil.rmtree(tmpdir)
+    
