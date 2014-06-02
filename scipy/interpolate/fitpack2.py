@@ -749,7 +749,8 @@ class BivariateSpline(_BivariateSplineBase):
     def _from_tck(cls, tck):
         """Construct a spline object from given tck and degree"""
         self = cls.__new__(cls)
-        assert len(tck) == 5, "tck should be a 5 element tuple of tx, ty, c, kx, ky"
+        if len(tck) != 5:
+            raise ValueError("tck should be a 5 element tuple of tx, ty, c, kx, ky")
         self.tck = tck[:3]
         self.degrees = tck[3:]
         return self
