@@ -2114,6 +2114,10 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     #         pre-order traversal.
     Z = np.asarray(Z, order='c')
 
+    if orientation not in ["top", "left", "bottom", "right"]:
+        raise ValueError("orientation must be one of 'top', 'left', "
+                         "'bottom', or 'right'")
+
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
     n = Zs[0] + 1
