@@ -4,7 +4,8 @@ import os
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_allclose, assert_,
-    TestCase, assert_raises, run_module_suite, assert_almost_equal)
+    TestCase, assert_raises, run_module_suite, assert_almost_equal,
+    assert_raises, assert_array_almost_equal)
 from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
 from scipy import interpolate
 from scipy.interpolate.fitpack import (splrep, splev, bisplrep, bisplev,
@@ -265,6 +266,23 @@ class TestSplev(TestCase):
         assert_equal(z.shape, (1,))
         z = splev(1, tck)
         assert_equal(z.shape, ())
+
+    def test_extrapolation_modes(self):
+        """ test extrapolation modes
+            * if ext=0, return the extrapolated value.
+            * if ext=1, return 0
+            * if ext=2, raise a ValueError
+            * if ext=3, return the boundary value.
+        """
+        x = [1,2,3]
+        y = [0,2,4]
+        tck = splrep(x, y, k=1)
+
+        rstl = [[-2, 6], [0, 0], None, [0, 4]]
+        for ext in (0, 1, 3):
+            assert_array_almost_equal(splev([0, 4], tck, ext=ext), rstl[ext])
+
+        assert_raises(ValueError, splev, [0, 4], tck, ext=2)
 
 
 class TestSplder(object):
