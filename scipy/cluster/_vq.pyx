@@ -227,3 +227,99 @@ def vq(np.ndarray obs, np.ndarray codes):
 
     return outcodes, outdists
 
+
+cdef np.ndarray _update(vq_type *obs, int32_t *labels,
+                        vq_type *cb, int nobs, int nc, int nfeat):
+    cdef int obs_index, label_index, feat_index, cluster_size
+    cdef vq_type *obs_p
+    cdef vq_type *cb_p
+    cdef np.ndarray[int, ndim=1] obs_count
+
+    # Calculate the sums of obs in each cluster
+    obs_count = np.zeros(nc, np.int32)
+    obs_p = obs
+    for obs_index in range(nobs):
+        cb_p = cb + nfeat * labels[obs_index]
+
+        for feat_index in range(nfeat):
+            cb_p[feat_index] += obs_p[feat_index]
+
+        # Count the obs in each cluster
+        obs_count[labels[obs_index]] += 1
+        obs_p += nfeat
+
+    cb_p = cb
+    for label_index in range(nc):
+        cluster_size = obs_count[label_index]
+
+        if cluster_size > 0:
+            # Calculate the centroid of each cluster
+            for feat_index in range(nfeat):
+                cb_p[feat_index] /= cluster_size
+
+        cb_p += nfeat
+
+    # Return a boolean array indicating which clusters have members
+    return obs_count > 0
+
+
+def update(np.ndarray obs, np.ndarray labels, int nc):
+    """
+    The update-step of K-means. Calculate the mean of observations in each
+    cluster.
+
+    Parameters
+    ----------
+    obs : ndarray
+        The observation matrix. Each row is an observation.
+    labels : ndarray
+        The label of each observation. Must be an 1d array.
+    nc : int
+        The number of centroids.
+
+    Returns
+    -------
+    cb : ndarray
+        The new code book.
+    has_members : ndarray
+        A boolean array indicating which clusters have members.
+
+    Notes
+    -----
+    The empty clusters will be set to all zeros and the curresponding elements
+    in `has_members` will be `False`. The upper level function should decide
+    how to deal with them.
+    """
+    cdef np.ndarray _obs, _labels, has_members, cb
+    cdef int nfeat
+    cdef int flags = np.NPY_CONTIGUOUS | np.NPY_NOTSWAPPED | np.NPY_ALIGNED
+
+    # Ensure the arrays are contiguous
+    _obs = np.PyArray_FROM_OF(obs, flags)
+    _labels = np.PyArray_FROM_OF(labels, flags)
+
+    if _obs.dtype not in (np.float32, np.float64):
+        raise TypeError('type other than float or double not supported')
+    if _labels.dtype.type is not np.int32:
+        _labels = _labels.astype(np.int32)
+    if _labels.ndim != 1:
+        raise ValueError('labels must be an 1d array')
+
+    if _obs.ndim == 1:
+        nfeat = 1
+        cb = np.zeros(nc, dtype=_obs.dtype)
+    elif _obs.ndim == 2:
+        nfeat = _obs.shape[1]
+        cb = np.zeros((nc, nfeat), dtype=_obs.dtype)
+    else:
+        raise ValueError('ndim different than 1 or 2 are not supported')
+
+    if _obs.dtype.type is np.float32:
+        has_members = _update(<float32_t *>_obs.data, <int32_t *>_labels.data,
+                              <float32_t *>cb.data, _obs.shape[0], nc, nfeat)
+    elif _obs.dtype.type is np.float64:
+        has_members = _update(<float64_t *>_obs.data, <int32_t *>_labels.data,
+                              <float64_t *>cb.data, _obs.shape[0], nc, nfeat)
+
+    return cb, has_members
+

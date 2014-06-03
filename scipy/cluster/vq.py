@@ -82,8 +82,10 @@ import warnings
 
 from numpy.random import randint
 from numpy import (shape, zeros, sqrt, argmin, minimum, array, newaxis,
-    arange, compress, equal, common_type, single, double, take, std, mean)
+    common_type, single, double, take, std, mean)
 import numpy as np
+
+from . import _vq
 
 
 class ClusterError(Exception):
@@ -404,14 +406,8 @@ def _kmeans(obs, guess, thresh=1e-5):
         avg_dist.append(mean(distort, axis=-1))
         # recalc code_book as centroids of associated obs
         if(diff > thresh):
-            has_members = []
-            for i in arange(nc):
-                cell_members = compress(equal(obs_code, i), obs, 0)
-                if cell_members.shape[0] > 0:
-                    code_book[i] = mean(cell_members, 0)
-                    has_members.append(i)
-            # remove code_books that didn't have any members
-            code_book = take(code_book, has_members, 0)
+            code_book, has_members = _vq.update(obs, obs_code, nc)
+            code_book = code_book.compress(has_members, axis=0)
         if len(avg_dist) > 1:
             diff = avg_dist[-2] - avg_dist[-1]
     # print avg_dist
@@ -737,11 +733,11 @@ def _kmeans2(data, code, niter, nc, missing):
         # using the current code book
         label = vq(data, code)[0]
         # Update the code by computing centroids using the new code book
-        for j in range(nc):
-            mbs = np.where(label == j)
-            if mbs[0].size > 0:
-                code[j] = np.mean(data[mbs], axis=0)
-            else:
-                missing()
+        new_code, has_members = _vq.update(data, label, nc)
+        if not has_members.all():
+            missing()
+            # Set the empty clusters to their previous positions
+            new_code[~has_members] = code[~has_members]
+        code = new_code
 
     return code, label
