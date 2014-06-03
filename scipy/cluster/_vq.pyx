@@ -15,10 +15,6 @@ cdef extern from "math.h":
     float sqrtf(float num)
     double sqrt(double num)
 
-cdef extern from "numpy/npy_math.h":
-    cdef enum:
-        NPY_INFINITY
-
 ctypedef np.float64_t float64_t
 ctypedef np.float32_t float32_t
 ctypedef np.int32_t int32_t
@@ -215,8 +211,8 @@ def vq(np.ndarray obs, np.ndarray codes):
     # Initialize outdists and outcodes array.
     # Outdists should be initialized as INF.
     outdists = np.empty((nobs,), dtype=obs.dtype)
-    outdists.fill(NPY_INFINITY)
     outcodes = np.empty((nobs,), dtype=np.int32)
+    outdists.fill(np.inf)
 
     if obs.dtype.type is np.float32:
         _vq(<float32_t *>obs_a.data, <float32_t *>codes_a.data,

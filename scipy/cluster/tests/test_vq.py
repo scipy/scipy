@@ -133,6 +133,15 @@ class TestVq(TestCase):
         assert_allclose(dis0, dis1, 1e-5)
         assert_array_equal(codes0, codes1)
 
+    def test_vq_large_features(self):
+        X = np.random.rand(10, 5) * 1000000
+        code_book = np.random.rand(2, 5) * 1000000
+
+        codes0, dis0 = _vq.vq(X, code_book)
+        codes1, dis1 = py_vq(X, code_book)
+        assert_allclose(dis0, dis1, 1e-5)
+        assert_array_equal(codes0, codes1)
+
 
 class TestKMean(TestCase):
     def test_large_features(self):
