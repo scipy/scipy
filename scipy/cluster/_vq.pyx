@@ -191,6 +191,10 @@ def vq(np.ndarray obs, np.ndarray codes):
     obs_a = np.PyArray_FROM_OF(obs, flags)
     codes_a = np.PyArray_FROM_OF(codes, flags)
 
+    if obs.dtype != codes.dtype:
+        raise TypeError('observation and code should have same dtype')
+    if obs.dtype not in (np.float32, np.float64):
+        raise TypeError('type other than float or double not supported')
     if obs_a.ndim != codes_a.ndim:
         raise ValueError('observation and code should have same rank')
 
@@ -214,16 +218,14 @@ def vq(np.ndarray obs, np.ndarray codes):
     outdists.fill(NPY_INFINITY)
     outcodes = np.empty((nobs,), dtype=np.int32)
 
-    if obs.dtype == np.float32:
+    if obs.dtype.type is np.float32:
         _vq(<float32_t *>obs_a.data, <float32_t *>codes_a.data,
             ncodes, nfeat, nobs, <int32_t *>outcodes.data,
             <float32_t *>outdists.data)
-    elif obs.dtype == np.float64:
+    elif obs.dtype.type is np.float64:
         _vq(<float64_t *>obs_a.data, <float64_t *>codes_a.data,
             ncodes, nfeat, nobs, <int32_t *>outcodes.data,
             <float64_t *>outdists.data)
-    else:
-        raise ValueError('type other than float or double not supported')
 
     return outcodes, outdists
 

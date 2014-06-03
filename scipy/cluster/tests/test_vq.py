@@ -107,9 +107,14 @@ class TestVq(TestCase):
 
     def test__vq_sametype(self):
         if TESTC:
-            a = np.array([1, 2])
-            b = a.astype(float)
-            assert_raises(ValueError, _vq.vq, a, b)
+            a = np.array([1.0, 2.0], dtype=np.float64)
+            b = a.astype(np.float32)
+            assert_raises(TypeError, _vq.vq, a, b)
+
+    def test__vq_invalid_type(self):
+        if TESTC:
+            a = np.array([1, 2], dtype=np.int)
+            assert_raises(TypeError, _vq.vq, a, a)
 
     def test_vq_large_nfeat(self):
         X = np.random.rand(20, 20)
