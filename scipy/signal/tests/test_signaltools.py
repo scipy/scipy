@@ -866,7 +866,7 @@ class TestFiltFilt(TestCase):
         assert_array_equal(y0, np.swapaxes(y2, 0, 2))
 
 	def test_a_coeff(self):
-		# test for 'a' coefficient as single number
+        # test for 'a' coefficient as single number
         out = signal.filtfilt([.1, .5], 1, np.arange(10))
         assert_equal(out, arange(10))		
 
