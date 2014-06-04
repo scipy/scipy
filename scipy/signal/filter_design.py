@@ -19,7 +19,8 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'iirfilter', 'butter', 'cheby1', 'cheby2', 'ellip', 'bessel',
            'band_stop_obj', 'buttord', 'cheb1ord', 'cheb2ord', 'ellipord',
            'buttap', 'cheb1ap', 'cheb2ap', 'ellipap', 'besselap',
-           'filter_dict', 'band_dict', 'BadCoefficients']
+           'filter_dict', 'band_dict', 'BadCoefficients', 'cplxreal',
+           'cplxpair', 'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk']
 
 
 class BadCoefficients(UserWarning):
@@ -333,7 +334,7 @@ def cplxreal(z, tol=None):
     run_stops = numpy.where(diffs < 0)[0]
 
     # Sort each run by their imaginary parts
-    for i in xrange(len(run_starts)):
+    for i in range(len(run_starts)):
         start = run_starts[i]
         stop = run_stops[i] + 1
         for chunk in (zp[start:stop], zn[start:stop]):
@@ -350,9 +351,9 @@ def cplxreal(z, tol=None):
     return zc, zr
 
 
-def cplxpair(z, tol=None, axis=-1):
+def cplxpair(z, tol=None):
     """
-    Sort `z` into pairs of complex conjugates.
+    Sort ``z`` into pairs of complex conjugates.
 
     Currently this is for 1D arrays only.
 
@@ -374,37 +375,33 @@ def cplxpair(z, tol=None, axis=-1):
     Parameters
     ----------
     z : array_like
-        Input array to be sorted
+        1-dimensional input array to be sorted.
     tol : float, optional
         Relative tolerance for testing realness and conjugate equality.
         Default is 100 * spacing(1) of z's data type (i.e. 2e-14 for float64)
-    axis : int, optional
-        The axis along which to sort the N-D array.  (Not implemented yet.)
 
     Returns
     -------
     y : ndarray
-        Complex conjugate pairs followed by real numbers
+        Complex conjugate pairs followed by real numbers.
 
     Raises
     ------
     ValueError
-        If there are any complex numbers in `z` for which a conjugate
+        If there are any complex numbers in ``z`` for which a conjugate
         cannot be found.
 
     See Also
     --------
-    cplxreal: Splits the real and complex pair components of the input
+    cplxreal: Splits the real and complex pair components of the input.
     """
 
     z = atleast_1d(z)
     if z.size == 0 or np.isrealobj(z):
         return np.sort(z)
 
-    if axis != -1 or z.ndim > 1:
-        # TODO: Add a for loop, and an ND pre-sort if that makes it faster
-        # z = z[np.lexsort((abs(z.imag), z.real), axis)]
-        raise NotImplementedError
+    if z.ndim != 1:
+        raise ValueError('z must be 1D')
 
     zc, zr = cplxreal(z, tol)
 
@@ -412,7 +409,6 @@ def cplxpair(z, tol=None, axis=-1):
     # parts first in each pair
     zc = np.dstack((zc.conj(), zc)).flatten()
     z = np.append(zc, zr)
-
     return z
 
 
@@ -556,29 +552,24 @@ def tf2sos(b, a):
         Numerator polynomial.
     a : array_like
         Denominator polynomial.
-        TODO: "as described in tf2zpk"?
 
     Returns
     -------
-    sos : ndarray
-        b, a coefficients for a series of second-order sections
-    k : float
-        System gain.
+    sos : array_like
+        Array of second-order filter coefficients, shape ``(n_sections, 6)``.
     """
     return zpk2sos(*tf2zpk(b, a))
 
 
-def sos2tf(sos, k=1.0):
+def sos2tf(sos):
     """
     Return a single transfer function from a series of second-order sections
 
     Parameters
     ----------
     sos : array_like
-        b, a coefficients for a series of second-order sections
-        TODO: description of format. Nth order filter has shape ((N+1)//2, 6)
-    k : float, optional
-        System gain, defaults to 1.0
+        Array of second-order filter coefficients, must have shape
+        ``(n_sections, 6)``.
 
     Returns
     -------
@@ -588,21 +579,25 @@ def sos2tf(sos, k=1.0):
         Denominator polynomial.
 
     """
-    # TODO: Separate Bs and As, polymul all the Bs into a single B,
-    # all the As into a single A
-    raise NotImplementedError
+    sos = np.asarray(sos)
+    b = [1.]
+    a = [1.]
+    n_sections = sos.shape[0]
+    for section in range(n_sections):
+        b = np.polymul(b, sos[section, :3])
+        a = np.polymul(a, sos[section, 3:])
+    return b, a
 
 
-def sos2zpk(sos, k=1.0):
+def sos2zpk(sos):
     """
     Return zeros, poles, and gain of a series of second-order sections
 
     Parameters
     ----------
     sos : array_like
-        b, a coefficients for a series of second-order sections
-    k : float, optional
-        System gain, defaults to 1.0
+        Array of second-order filter coefficients, must have shape
+        ``(n_sections, 6)``.
 
     Returns
     -------
@@ -613,8 +608,17 @@ def sos2zpk(sos, k=1.0):
     k : float
         System gain.
     """
-    # TODO: Call tf2zpk for each stage, concatenate the z and p arrays
-    raise NotImplementedError
+    sos = np.asarray(sos)
+    n_sections = sos.shape[0]
+    z = np.empty(n_sections*2, np.complex128)
+    p = np.empty(n_sections*2, np.complex128)
+    k = 1.
+    for section in range(n_sections):
+        zpk = tf2zpk(sos[section, :3], sos[section, 3:])
+        z[2*section:2*(section+1)] = zpk[0]
+        p[2*section:2*(section+1)] = zpk[1]
+        k *= zpk[2]
+    return z, p, k
 
 
 def zpk2sos(z, p, k):
@@ -632,15 +636,118 @@ def zpk2sos(z, p, k):
 
     Returns
     -------
-    sos : ndarray
-        b, a coefficients for a series of second-order sections
-    k : float
-        System gain.
+    sos : array_like
+        Array of second-order filter coefficients, must have shape
+        ``(n_sections, 6)``.
     """
-    # TODO: call cplxreal on z, double up each complex pole, pair up every
-    # other real pole
-    # "two poles and one zero each, in general"
-    raise NotImplementedError
+    # make copies
+    p = np.array(p)
+    z = np.array(z)
+    if len(z) > len(p):
+        raise ValueError('Cannot have more zeros than poles')
+    if len(z) == len(p) == 0:
+        return array([[k, 0., 0., 1., 0., 0.]])
+    n_sections = (len(p) + 1) // 2
+    sos = zeros((n_sections, 6))
+
+    #
+    # Errors propagate through cascaded biquads, so principles to follow:
+    # 1. Minimize each biquad's peak gain
+    #    - Pair poles w/nearest zeros
+    #      (Begin pairing process w/the pole closest to the unit circle)
+    # 2. Poles near the unit circle have highest peaks, place them last
+    #
+
+    # Ensure we have complex conjugate pairs
+    # (cplxreal only gives us one element of each complex pair):
+    z = cplxpair(z)
+    p_unsorted = concatenate(cplxreal(p))
+
+    # Sort poles by proximity to the unit circle, but keep complex pairs
+    # together, and real pairs together in order to construct filters with
+    # resulting real b, a coefficients (while adding the complex conjs):
+    order = np.argsort(np.abs(1 - np.abs(p_unsorted)))
+    for ii in range(0, 2 * n_sections, 2):
+        if p_unsorted[order[0]].imag != 0:
+            # complex pair
+            p[ii] = p_unsorted[order[0]]
+            p[ii+1] = p[ii].conj()
+            dels = [0]
+        else:
+            # real, use it and the next-worst real
+            idx = np.where(p_unsorted[order].imag == 0)[0]
+            if len(idx) > 1:
+                idx = idx[[0, 1]]
+                p[ii:ii+2] = p_unsorted[order[idx]]
+            else:
+                idx = idx[[0]]
+                p[ii] = p_unsorted[order[idx[0]]]
+            dels = idx
+        order = np.delete(order, dels)
+    assert len(order) == 0
+
+    #
+    # order zeros according to proximity to poles, keeping conjugate pairs:
+    #
+    z_out = np.zeros(len(p), np.complex128)
+    p_c = np.where(np.imag(p) != 0)[0][::2]  # only track the first per pair
+    p_r = np.where(np.imag(p) == 0)[0]
+    z_c = np.where(np.imag(z) != 0)[0][::2]
+    z_r = np.where(np.imag(z) == 0)[0]
+    # first, pair complex zeros with complex poles if possible
+    z_r_start = 2*len(z_c)
+    for ii in range(0, 2*len(z_c), 2):
+        # find the complex zeros closest to our strongest (remaining) poles
+        if len(p_c) > 0:
+            # pair some complex zeros with the "worst" pair of complex poles
+            idx = np.argmin(np.abs(z[z_c] - p[p_c[0]]))
+            z_out[ii:ii+2] = z[z_c[idx]:z_c[idx]+2]
+            z_c = np.delete(z_c, idx)
+            p_c = np.delete(p_c, 0)
+        else:
+            # pair to two real poles
+            idx = np.argmin(np.abs(z[z_c] - p[p_r[0]]))
+            z_out[ii:ii+2] = z[z_c[idx]:z_c[idx]+2]
+            z_c = np.delete(z_c, idx)
+            p_r = np.delete(p_r, [0, 1])
+    assert len(z_c) == 0
+    # second, pair the real zeros
+    ii = z_r_start
+    while len(z_r) > 0:
+        if len(p_c) > 0:
+            # put two real zeros with a pair of poles
+            idx = np.argsort(np.abs(z[z_r] - p[p_c[0]]))[:2]
+            if len(idx) > 1:
+                z_out[ii:ii+2] = z[z_r[idx]]
+                z_r = np.delete(z_r, idx)
+            else:
+                z_out[ii] = z[z_r[idx[0]]]
+                z_r = np.delete(z_r, idx)
+                assert len(z_r) == 0
+            p_c = np.delete(p_c, 0)
+            ii += 2
+        else:
+            # put one real zero with one real pole
+            idx = np.argmin(np.abs(z[z_r] - p[p_r[0]]))
+            z_out[ii] = z[z_r[idx]]
+            z_r = np.delete(z_r, idx)
+            p_r = np.delete(p_r, 0)
+            ii += 1
+    z = z_out
+
+    # Construct the system, reversing order so the "worst" are last
+    if len(p) % 2:
+        # make the last section second-order, too
+        p = np.concatenate((p, [0.]))
+        z = np.concatenate((z, [0.]))
+    p = np.reshape(p[::-1], (n_sections, 2))
+    z = np.reshape(z[::-1], (n_sections, 2))
+    gains = np.ones(n_sections)
+    gains[0] = k
+    for section in range(n_sections):
+        sos[section, :3], sos[section, 3:] = zpk2tf(z[section], p[section],
+                                                    gains[section])
+    return sos
 
 
 def normalize(b, a):
@@ -882,9 +989,9 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
             - Cauer/elliptic: 'ellip'
             - Bessel/Thomson: 'bessel'
 
-    output : {'ba', 'zpk'}, optional
-        Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
-        Default is 'ba'.
+    output : {'ba', 'zpk', 'sos'}, optional
+        Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
+        second-order sections ('sos'). Default is 'ba'.
 
     Returns
     -------
@@ -894,6 +1001,9 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
     z, p, k : ndarray, ndarray, float
         Zeros, poles, and system gain of the IIR filter transfer
         function.  Only returned if ``output='zpk'``.
+    sos : ndarray
+        Second-order sections representation of the IIR filter.
+        Only returned if ``output=='sos'``.
 
     See Also
     --------
@@ -965,9 +1075,21 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
             - Cauer/elliptic: 'ellip'
             - Bessel/Thomson: 'bessel'
 
-    output : {'ba', 'zpk'}, optional
-        Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
-        Default is 'ba'.
+    output : {'ba', 'zpk', 'sos'}, optional
+        Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
+        second-order sections ('sos'). Default is 'ba'.
+
+    Returns
+    -------
+    b, a : ndarray, ndarray
+        Numerator (`b`) and denominator (`a`) polynomials of the IIR filter.
+        Only returned if ``output='ba'``.
+    z, p, k : ndarray, ndarray, float
+        Zeros, poles, and system gain of the IIR filter transfer
+        function.  Only returned if ``output='zpk'``.
+    sos : ndarray
+        Second-order sections representation of the IIR filter.
+        Only returned if ``output=='sos'``.
 
     See Also
     --------
@@ -1011,7 +1133,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     except KeyError:
         raise ValueError("'%s' is not a valid basic IIR filter." % ftype)
 
-    if output not in ['ba', 'zpk']:
+    if output not in ['ba', 'zpk', 'sos']:
         raise ValueError("'%s' is not a valid output form." % output)
 
     if rp is not None and rp < 0:
@@ -1083,6 +1205,8 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         return z, p, k
     elif output == 'ba':
         return zpk2tf(z, p, k)
+    elif output == 'sos':
+        return zpk2sos(z, p, k)
 
 
 def _relative_degree(z, p):
@@ -1430,9 +1554,9 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
-    output : {'ba', 'zpk'}, optional
-        Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
-        Default is 'ba'.
+    output : {'ba', 'zpk', 'sos'}, optional
+        Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
+        second-order sections ('sos'). Default is 'ba'.
 
     Returns
     -------
@@ -1442,6 +1566,9 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
     z, p, k : ndarray, ndarray, float
         Zeros, poles, and system gain of the IIR filter transfer
         function.  Only returned if ``output='zpk'``.
+    sos : ndarray
+        Second-order sections representation of the IIR filter.
+        Only returned if ``output=='sos'``.
 
     See also
     --------
@@ -1502,9 +1629,9 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
-    output : {'ba', 'zpk'}, optional
-        Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
-        Default is 'ba'.
+    output : {'ba', 'zpk', 'sos'}, optional
+        Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
+        second-order sections ('sos'). Default is 'ba'.
 
     Returns
     -------
@@ -1514,6 +1641,9 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
     z, p, k : ndarray, ndarray, float
         Zeros, poles, and system gain of the IIR filter transfer
         function.  Only returned if ``output='zpk'``.
+    sos : ndarray
+        Second-order sections representation of the IIR filter.
+        Only returned if ``output=='sos'``.
 
     See also
     --------
@@ -1583,9 +1713,9 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
-    output : {'ba', 'zpk'}, optional
-        Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
-        Default is 'ba'.
+    output : {'ba', 'zpk', 'sos'}, optional
+        Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
+        second-order sections ('sos'). Default is 'ba'.
 
     Returns
     -------
@@ -1595,6 +1725,9 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
     z, p, k : ndarray, ndarray, float
         Zeros, poles, and system gain of the IIR filter transfer
         function.  Only returned if ``output='zpk'``.
+    sos : ndarray
+        Second-order sections representation of the IIR filter.
+        Only returned if ``output=='sos'``.
 
     See also
     --------
@@ -1662,9 +1795,9 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
-    output : {'ba', 'zpk'}, optional
-        Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
-        Default is 'ba'.
+    output : {'ba', 'zpk', 'sos'}, optional
+        Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
+        second-order sections ('sos'). Default is 'ba'.
 
     Returns
     -------
@@ -1674,6 +1807,9 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
     z, p, k : ndarray, ndarray, float
         Zeros, poles, and system gain of the IIR filter transfer
         function.  Only returned if ``output='zpk'``.
+    sos : ndarray
+        Second-order sections representation of the IIR filter.
+        Only returned if ``output=='sos'``.
 
     See also
     --------
@@ -1744,9 +1880,9 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
-    output : {'ba', 'zpk'}, optional
-        Type of output:  numerator/denominator ('ba') or pole-zero ('zpk').
-        Default is 'ba'.
+    output : {'ba', 'zpk', 'sos'}, optional
+        Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
+        second-order sections ('sos'). Default is 'ba'.
 
     Returns
     -------
@@ -1756,6 +1892,9 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
     z, p, k : ndarray, ndarray, float
         Zeros, poles, and system gain of the IIR filter transfer
         function.  Only returned if ``output='zpk'``.
+    sos : ndarray
+        Second-order sections representation of the IIR filter.
+        Only returned if ``output=='sos'``.
 
     Notes
     -----

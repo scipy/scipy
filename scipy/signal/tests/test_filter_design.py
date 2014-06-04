@@ -28,8 +28,8 @@ class TestCplxPair(TestCase):
     def test_output_order(self):
         assert_allclose(cplxpair([1+1j, 1-1j]), [1-1j, 1+1j])
 
-        a = [1+1j, 1+1j, 1,    1-1j, 1-1j, 2]
-        b = [1-1j, 1+1j, 1-1j, 1+1j, 1,    2]
+        a = [1+1j, 1+1j, 1, 1-1j, 1-1j, 2]
+        b = [1-1j, 1+1j, 1-1j, 1+1j, 1, 2]
         assert_allclose(cplxpair(a), b)
 
         # points spaced around the unit circle
@@ -72,8 +72,6 @@ class TestCplxPair(TestCase):
 
     def test_unmatched_conjugates(self):
         # 1+2j is unmatched
-        # TODO: currently says "First mismatch is: (1+3j)" which is wrong
-        # Could use unittest.TestCase.assertRaisesRegexp to test the error?
         assert_raises(ValueError, cplxpair, [1+3j, 1-3j, 1+2j])
 
         # 1+2j and 1-3j are unmatched
@@ -89,8 +87,6 @@ class TestCplxPair(TestCase):
         # No pairs
         assert_raises(ValueError, cplxpair, [1+3j])
         assert_raises(ValueError, cplxpair, [1-3j])
-
-    # TODO: Test N-D
 
 
 class TestCplxReal(TestCase):
@@ -127,9 +123,6 @@ class TestCplxReal(TestCase):
 
     def test_unmatched_conjugates(self):
         # 1+2j is unmatched
-        # TODO: currently says "First mismatch is: (1+3j)" which is wrong
-        # Could use unittest.TestCase.assertRaisesRegexp to test the
-        # error message?
         assert_raises(ValueError, cplxreal, [1+3j, 1-3j, 1+2j])
 
         # 1+2j and 1-3j are unmatched
@@ -199,7 +192,7 @@ class TestSos2Zpk(TestCase):
 
     def test_basic(self):
         sos = [[1, 0, 1, 1, 0, -0.81],
-               [1, 0, 0, 1, 0,  0.49]]
+               [1, 0, 0, 1, 0, +0.49]]
         z, p, k = sos2zpk(sos)
         z2 = [1j, -1j, 0, 0]
         p2 = [0.9, -0.9, 0.7j, -0.7j]
@@ -208,16 +201,17 @@ class TestSos2Zpk(TestCase):
         assert_array_almost_equal(sort(p), sort(p2), decimal=4)
         assert_array_almost_equal(k, k2)
 
-        sos = [[1.00000,  0.61803, 1.0000, 1.00000,  0.60515, 0.95873],
+        sos = [[1.00000, +0.61803, 1.0000, 1.00000, +0.60515, 0.95873],
                [1.00000, -1.61803, 1.0000, 1.00000, -1.58430, 0.95873],
-               [1.00000,  1.00000, 0.0000, 1.00000,  0.97915, 0.00000]]
+               [1.00000, +1.00000, 0.0000, 1.00000, +0.97915, 0.00000]]
         z, p, k = sos2zpk(sos)
-        z2 = [-0.5000+0.8660j, -0.5000-0.8660j, 1.7808, -0.2808]
-        p2 = [-1.0000, 1.0000, -9.8990, -0.1010]
-        k2 = -2
+        z2 = [-0.3090 + 0.9511j, -0.3090 - 0.9511j, 0.8090 + 0.5878j,
+              0.8090 - 0.5878j, -1.0000 + 0.0000j, 0]
+        p2 = [-0.3026 + 0.9312j, -0.3026 - 0.9312j, 0.7922 + 0.5755j,
+              0.7922 - 0.5755j, -0.9791 + 0.0000j, 0]
+        k2 = 1
         assert_array_almost_equal(sort(z), sort(z2), decimal=4)
         assert_array_almost_equal(sort(p), sort(p2), decimal=4)
-        assert_array_almost_equal(k, k2)
 
         sos = array([[1, 2, 3, 1, 0.2, 0.3],
                      [4, 5, 6, 1, 0.4, 0.5]])
@@ -226,7 +220,7 @@ class TestSos2Zpk(TestCase):
         p = array([-0.2 - 0.678232998312527j, -0.2 + 0.678232998312527j,
                   -0.1 - 0.538516480713450j, -0.1 + 0.538516480713450j])
         k = 4
-        z2, p2, k2 = sos2zpk(sos, 1)
+        z2, p2, k2 = sos2zpk(sos)
         assert_allclose(cplxpair(z2), z)
         assert_allclose(cplxpair(p2), p)
         assert_allclose(k2, k)
@@ -245,40 +239,19 @@ class TestSos2Tf(TestCase):
 class TestTf2Sos(TestCase):
 
     def test_basic(self):
-        N = [1, -.5, -.315, -.0185]
-        D = [1, -.5, .5, -.25]
-        sos, k = tf2sos(N, D)
-        sos2 = [[1.0000,  0.3813, 0.0210, 1.0000,  0.0000, 0.5000],
-                [1.0000, -0.8813, 0.0000, 1.0000, -0.5000, 0.0000]]
-        k2 = 1
-        assert_array_almost_equal(sorted(sos), sorted(sos2), decimal=4)
-        assert_allclose(k2, k)
-
         num = [2, 16, 44, 56, 32]
         den = [3, 3, -15, 18, -12]
-        sos, k = tf2sos(num, den)
-        sos2 = [[0.6667, 4.0000, 5.3333, 1.0000,  2.0000, -4.0000],
-                [1.0000, 2.0000, 2.0000, 1.0000, -1.0000,  1.0000]]
-        assert_allclose(sorted(sos), sorted(sos2))
-
-        B = [1, 0, 0, 0, 0, 1]
-        A = [1, 0, 0, 0, 0, 0.9]
-        sos, g = tf2sos(B, A)
-        sos2 = [[1.00000,  0.61803,  1.00000, 1.00000,  0.60515,  0.95873],
-                [1.00000, -1.61803,  1.00000, 1.00000, -1.58430,  0.95873],
-                [1.00000,  1.00000, -0.00000, 1.00000,  0.97915, -0.00000]]
-        g2 = 1
-        assert_array_almost_equal(sorted(sos), sorted(sos2), decimal=5)
-        assert_array_almost_equal(g, g2)
+        sos = tf2sos(num, den)
+        sos2 = [[0.6667, 4.0000, 5.3333, 1.0000, +2.0000, -4.0000],
+                [1.0000, 2.0000, 2.0000, 1.0000, -1.0000, +1.0000]]
+        assert_array_almost_equal(sos, sos2, decimal=4)
 
         b = [1, -3, 11, -27, 18]
         a = [16, 12, 2, -4, -1]
-        sos, G = tf2sos(b, a)
-        G2 = 0.0625
-        sos2 = [[1.0000,  0.0000, 9.0000, 1.0000,  1.0000, 0.5000],
-                [1.0000, -3.0000, 2.0000, 1.0000, -.25000, -.12500]]
-        assert_array_almost_equal(sorted(sos), sorted(sos2))
-        assert_array_almost_equal(G, G2)
+        sos = tf2sos(b, a)
+        sos2 = [[0.0625, -0.1875, 0.1250, 1.0000, -0.2500, -0.1250],
+                [1.0000, +0.0000, 9.0000, 1.0000, +1.0000, +0.5000]]
+        assert_array_almost_equal(sos, sos2, decimal=4)
 
 
 class TestZpk2Sos(TestCase):
@@ -287,11 +260,38 @@ class TestZpk2Sos(TestCase):
         z = [-1, -1]
         p = [0.57149 + 0.29360j, 0.57149 - 0.29360j]
         k = 1
-        sos, k = zpk2sos(z, p, k)
+        sos = zpk2sos(z, p, k)
         sos2 = [[1.00000, 2.00000, 1.00000, 1.00000, -1.14298, 0.41280]]
-        k2 = 1
         assert_array_almost_equal(sos, sos2, decimal=5)
-        assert_array_almost_equal(k2, k)
+
+        z = [1j, -1j]
+        p = [0.9, -0.9, 0.7j, -0.7j]
+        k = 1
+        sos = zpk2sos(z, p, k)
+        sos2 = [[1, 0, 0, 1, 0, +0.49],
+                [1, 0, 1, 1, 0, -0.81]]
+        assert_array_almost_equal(sos, sos2, decimal=4)
+
+        z = [-0.3090 + 0.9511j, -0.3090 - 0.9511j, 0.8090 + 0.5878j,
+             +0.8090 - 0.5878j, -1.0000 + 0.0000j]
+        p = [-0.3026 + 0.9312j, -0.3026 - 0.9312j, 0.7922 + 0.5755j,
+             +0.7922 - 0.5755j, -0.9791 + 0.0000j]
+        k = 1
+        sos = zpk2sos(z, p, k)
+        sos2 = [[1.00000, +1.00000, 0.0000, 1.00000, +0.97915, 0.00000],
+                [1.00000, +0.61803, 1.0000, 1.00000, +0.60515, 0.95873],
+                [1.00000, -1.61803, 1.0000, 1.00000, -1.58430, 0.95873]]
+        assert_array_almost_equal(sos, sos2, decimal=4)
+
+        z = [-1 - 1.41421356237310j, -1 + 1.41421356237310j,
+             -0.625 - 1.05326872164704j, -0.625 + 1.05326872164704j]
+        p = [-0.2 - 0.678232998312527j, -0.2 + 0.678232998312527j,
+             -0.1 - 0.538516480713450j, -0.1 + 0.538516480713450j]
+        k = 4
+        sos = zpk2sos(z, p, k)
+        sos2 = [[4, 8, 12, 1, 0.2, 0.3],
+                [1, 1.25, 1.5, 1, 0.4, 0.5]]
+        assert_allclose(sos, sos2)
 
 
 class TestFreqz(TestCase):

@@ -18,7 +18,8 @@ from numpy import (allclose, angle, arange, argsort, array, asarray,
                    iscomplexobj, isscalar, mean, ndarray, newaxis, ones, pi,
                    poly, polyadd, polyder, polydiv, polymul, polysub, polyval,
                    prod, product, r_, ravel, real_if_close, reshape,
-                   roots, sort, sum, take, transpose, unique, where, zeros)
+                   roots, sort, sum, take, transpose, unique, where, zeros,
+                   zeros_like)
 import numpy as np
 from scipy.special import factorial
 from .windows import get_window
@@ -27,10 +28,10 @@ from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 
 __all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
            'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
-           'lfiltic', 'deconvolve', 'hilbert', 'hilbert2', 'cmplx_sort',
-           'unique_roots', 'invres', 'invresz', 'residue', 'residuez',
-           'resample', 'detrend', 'lfilter_zi', 'filtfilt', 'decimate',
-           'vectorstrength']
+           'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2',
+           'cmplx_sort', 'unique_roots', 'invres', 'invresz', 'residue',
+           'residuez', 'resample', 'detrend', 'lfilter_zi', 'sosfilt_zi',
+           'filtfilt', 'decimate', 'vectorstrength']
 
 
 _modedict = {'valid': 0, 'same': 1, 'full': 2}
@@ -1885,6 +1886,38 @@ def lfilter_zi(b, a):
     return zi
 
 
+def sosfilt_zi(sos):
+    """
+    Compute an initial state `zi` for the sosfilt function that corresponds
+    to the steady state of the step response.
+
+    A typical use of this function is to set the initial state so that the
+    output of the filter starts at the same value as the first element of
+    the signal to be filtered.
+
+    Parameters
+    ----------
+    sos : array_like
+        Array of second-order filter coefficients, must have shape
+        ``(n_sections, 6)``.
+
+    Returns
+    -------
+    zi : ndarray
+        Initial conditions suitable for use with ``sosfilt``, shape
+        ``(n_sections, 2)``.
+    """
+    sos = np.asarray(sos)
+    if sos.ndim != 2 or sos.shape[1] != 6:
+        raise ValueError('sos must be shape (n_sections, 6)')
+    n_sections = sos.shape[0]
+    zi = np.empty((n_sections, 2))
+    for section in range(n_sections):
+        zi[section] = lfilter_zi(sos[section, :3], sos[section, 3:])
+    return zi
+
+
+
 def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
     """Forward-backward IIR filter that uses Gustafsson's method.
 
@@ -2296,16 +2329,15 @@ def sosfilt(sos, x, axis=-1, zi=None):
     """
     Filter data along one-dimension using cascaded second-order sections
 
-    TODO: "with an IIR or FIR filter"?  Pointless implementing FIR this way?
-
-    Filter a data sequence, `x`, using a digital filter defined by `sos`.
-    This is implemented by performing `lfilter` for each second-order
-    section.  See `lfilter` for details.
+    Filter a data sequence, `x`, using a digital IIR filter defined by
+    ``sos``. This is implemented by performing `lfilter` for each
+    second-order section.  See `lfilter` for details.
 
     Parameters
     ----------
     sos : array_like
-        TODO: describe format
+        Array of second-order filter coefficients, must have shape
+        ``(n_sections, 6)``.
     x : array_like
         An N-dimensional input array.
     axis : int
@@ -2313,10 +2345,12 @@ def sosfilt(sos, x, axis=-1, zi=None):
         linear filter. The filter is applied to each subarray along
         this axis.  Default is -1.
     zi : array_like, optional
-        Initial conditions for the filter delays.  It is a vector
-        (or array of vectors for an N-dimensional input) of length
-        ``max(len(a),len(b))-1``.  If `zi` is None or is not given then
-        initial rest is assumed.  See `lfiltic` for more information.
+        Initial conditions for the cascaded filter delays.  It is a (at least
+        2D) vector of shape ``(n_sections, ..., 2)``, with middle dimensions
+        equal to those of the input shape (without the filtered axis).
+        If `zi` is None or is not given then initial rest is assumed. Note
+        that these initial conditions are *not* the same as the initial
+        conditions given by ``lfiltic``.
 
     Returns
     -------
@@ -2328,28 +2362,57 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
     Notes
     -----
-    TODO: The filter function is implemented as .... series of ...
-    a direct II transposed structure ...
+    The filter function is implemented as a series of second-order filters
+    with direct-form II transposed structure. It is designed to minimize
+    numerical precision errors for high-order filters.
+
+    Examples
+    --------
+
+    >>> [b, a] = butter(6, [0.10, 0.105], 'band', output='ba')
+    >>> sos = butter(6, [0.10, 0.105], 'band', output='sos')
+    >>> x = zeros(1500)
+    >>> x[0] = 1.
+    >>> y_tf = lfilter(b, a, x)
+    >>> y_sos = sosfilt(sos, x)
+    >>> plot(y_tf, 'r')
+    >>> plot(y_sos, 'k')
+
+    See also
+    --------
+    zpk2sos, sos2zpk
     """
 
     sos = atleast_2d(sos)
     if sos.ndim != 2:
         raise ValueError('sos array must be 2D')
 
-    n, m = sos.shape
+    n_sections, m = sos.shape
     if m != 6:
-        raise ValueError('sos array must be shape ((N+1)//2, 6)')
+        raise ValueError('sos array must be shape (n_sections, 6)')
 
-    if zi is None:
-        for stage in range(n):
-            B = sos[stage, :3]
-            A = sos[stage, 3:]
-            x = lfilter(B, A, x, axis)
+    if zi is not None:
+        use_zi = True
+        zi = np.array(zi)
+        x_zi_shape = np.delete(np.array(x.shape), axis)
+        proper_shape = (zi.ndim >= 2 and
+                        zi.shape[0] == n_sections and zi.shape[-1] == 2 and
+                        np.array_equal(zi.shape[1:-1], x_zi_shape))
+        if not proper_shape:
+            raise ValueError('sos initial states must be shape '
+                             '(n_sections, ..., 2)')
+        zf = zeros_like(zi)
     else:
-        # TODO: Implement initial conditions
-        raise NotImplementedError
+        use_zi = False
 
-    return x
+    for section in range(n_sections):
+        if use_zi:
+            x, zf[section] = lfilter(sos[section, :3], sos[section, 3:],
+                                     x, axis, zi=zi[section])
+        else:
+            x = lfilter(sos[section, :3], sos[section, 3:], x, axis)
+    out = (x, zf) if use_zi else x
+    return out
 
 
 from scipy.signal.filter_design import cheby1
