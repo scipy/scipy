@@ -15,10 +15,6 @@ cdef extern from "math.h":
     float sqrtf(float num)
     double sqrt(double num)
 
-cdef extern from "numpy/npy_math.h":
-    cdef enum:
-        NPY_INFINITY
-
 ctypedef np.float64_t float64_t
 ctypedef np.float32_t float32_t
 ctypedef np.int32_t int32_t
@@ -179,8 +175,9 @@ def vq(np.ndarray obs, np.ndarray codes):
 
     Notes
     -----
-    The observation matrix and code book matrix should have same rank and
-    same number of columns (features). Only rank 1 and rank 2 are supported.
+    The observation matrix and code book matrix should have same ndim and
+    same number of columns (features). Only 1-dimensional and 2-dimensional
+    arrays are supported.
     """
     cdef int nobs, ncodes, nfeat
     cdef np.ndarray obs_a, codes_a
@@ -191,8 +188,13 @@ def vq(np.ndarray obs, np.ndarray codes):
     obs_a = np.PyArray_FROM_OF(obs, flags)
     codes_a = np.PyArray_FROM_OF(codes, flags)
 
+    if obs.dtype != codes.dtype:
+        raise TypeError('observation and code should have same dtype')
+    if obs.dtype not in (np.float32, np.float64):
+        raise TypeError('type other than float or double not supported')
     if obs_a.ndim != codes_a.ndim:
-        raise ValueError('observation and code should have same rank')
+        raise ValueError(
+            'observation and code should have same number of dimensions')
 
     if obs_a.ndim == 1:
         nfeat = 1
@@ -206,24 +208,22 @@ def vq(np.ndarray obs, np.ndarray codes):
             raise ValueError('obs and code should have same number of '
                              'features (columns)')
     else:
-        raise ValueError('rank different than 1 or 2 are not supported')
+        raise ValueError('ndim different than 1 or 2 are not supported')
 
     # Initialize outdists and outcodes array.
     # Outdists should be initialized as INF.
     outdists = np.empty((nobs,), dtype=obs.dtype)
-    outdists.fill(NPY_INFINITY)
     outcodes = np.empty((nobs,), dtype=np.int32)
+    outdists.fill(np.inf)
 
-    if obs.dtype == np.float32:
+    if obs.dtype.type is np.float32:
         _vq(<float32_t *>obs_a.data, <float32_t *>codes_a.data,
             ncodes, nfeat, nobs, <int32_t *>outcodes.data,
             <float32_t *>outdists.data)
-    elif obs.dtype == np.float64:
+    elif obs.dtype.type is np.float64:
         _vq(<float64_t *>obs_a.data, <float64_t *>codes_a.data,
             ncodes, nfeat, nobs, <int32_t *>outcodes.data,
             <float64_t *>outdists.data)
-    else:
-        raise ValueError('type other than float or double not supported')
 
     return outcodes, outdists
 
