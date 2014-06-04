@@ -27,7 +27,7 @@ def _open_file(file_like, appendmat):
                 try:
                     return open(file_like, 'rb')
                 except IOError:
-                    pass # Rethrow the original exception.
+                    pass  # Rethrow the original exception.
             raise
     # not a string - maybe file-like object
     try:
