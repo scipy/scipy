@@ -11,7 +11,7 @@ import scipy.signal as signal
 from scipy.signal import (
     correlate, convolve, convolve2d, fftconvolve,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, tf2zpk,
-    invres, vectorstrength, signaltools)
+    invres, vectorstrength, signaltools, lfiltic)
 
 
 from numpy import array, arange
@@ -593,6 +593,13 @@ class _TestLinearFilter(TestCase):
         assert_array_almost_equal(y, x)
         self.assertTrue(zf.dtype == self.dt)
         self.assertTrue(zf.size == 0)
+
+    def test_bad_zi(self):
+        # Regression test for #3699: bad initial conditions
+        a = np.ones(1).astype(self.dt)
+        b = np.ones(1).astype(self.dt)
+        # "y" sets the datatype of zi, so it truncates if int
+        self.assertRaises(TypeError, lfiltic, b, a, [1, 0])
 
 
 class TestLinearFilterFloat32(_TestLinearFilter):
