@@ -10,16 +10,16 @@ import warnings
 
 import numpy as np
 
-from numpy.testing import assert_allclose, \
-        assert_array_almost_equal_nulp, TestCase, run_module_suite, dec, \
-        assert_raises, verbose, assert_equal
+from numpy.testing import (assert_allclose,
+        assert_array_almost_equal_nulp, TestCase, run_module_suite, dec,
+        assert_raises, verbose, assert_equal)
 
 from numpy import array, finfo, argsort, dot, round, conj, random
 from scipy.linalg import eig, eigh
 from scipy.sparse import csc_matrix, csr_matrix, lil_matrix, isspmatrix
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
-     ArpackNoConvergence
+from scipy.sparse.linalg.eigen.arpack import (eigs, eigsh, svds,
+     ArpackNoConvergence)
 
 from scipy.linalg import svd, hilbert
 
@@ -637,6 +637,22 @@ def test_svd_v0():
     u2, s2, vh2 = svds(x, 1, v0=u[:,0])
 
     assert_allclose(s, s2, atol=np.sqrt(1e-15))
+
+
+def test_n_k_validation():
+    # check that combinations of k and n are accepted or rejected as expected
+    for n in 3, 4:
+        for t in float, complex:
+            A = np.ones((n, n), dtype=t)
+            for f in eigs, eigsh:
+                for k in 0, n:
+                    for ev in False, True:
+                        kwargs = dict(k=k, return_eigenvectors=ev)
+                        assert_raises(ValueError, f, A, **kwargs)
+                for k in range(1, n):
+                    w = np.absolute(f(A, k=1, return_eigenvectors=0))
+                    assert_allclose(np.sum(w), n)
+                    assert_allclose(np.max(w), n)
 
 
 if __name__ == "__main__":

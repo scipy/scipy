@@ -48,8 +48,8 @@ import warnings
 from . import _arpack
 import numpy as np
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
-from scipy.sparse import eye, csc_matrix, csr_matrix, \
-    isspmatrix, isspmatrix_csr
+from scipy.sparse import (eye, csc_matrix, csr_matrix,
+        isspmatrix, isspmatrix_csr)
 from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse.sputils import isdense
 from scipy.sparse.linalg import gmres, splu
@@ -499,8 +499,10 @@ class _SymmetricArpackParams(_ArpackParams):
         if which not in _SEUPD_WHICH:
             raise ValueError("which must be one of %s"
                              % ' '.join(_SEUPD_WHICH))
-        if k >= n:
-            raise ValueError("k must be less than ndim(A), k=%d" % k)
+        if not (1 <= k < n):
+            raise ValueError('symmetric arpack params require 1 <= k < n '
+                    'where k=%d is the requested number of eigenvalues '
+                    'and n=%d is the order of the square input matrix' % (k, n))
 
         _ArpackParams.__init__(self, n, k, tp, mode, sigma,
                                ncv, v0, maxiter, which, tol)
@@ -681,8 +683,12 @@ class _UnsymmetricArpackParams(_ArpackParams):
         if which not in _NEUPD_WHICH:
             raise ValueError("Parameter which must be one of %s"
                              % ' '.join(_NEUPD_WHICH))
-        if k >= n - 1:
-            raise ValueError("k must be less than ndim(A)-1, k=%d" % k)
+
+        # require k < n-1 ???
+        if not (1 <= k < n):
+            raise ValueError('unsymmetric arpack params require 1 <= k < n '
+                    'where k=%d is the requested number of eigenvalues '
+                    'and n=%d is the order of the square input matrix' % (k, n))
 
         _ArpackParams.__init__(self, n, k, tp, mode, sigma,
                                ncv, v0, maxiter, which, tol)
@@ -1205,9 +1211,10 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
                           'This may adversely affect ARPACK convergence')
     n = A.shape[0]
 
-    if k <= 0 or k >= n:
-        raise ValueError("k=%d must be between 1 and ndim(A)-1=%d"
-                         % (k, n - 1))
+    if not (1 <= k < n):
+        raise ValueError('the eigs function requires 1 <= k < n '
+                'where k=%d is the requested number of eigenvalues '
+                'and n=%d is the order of the square matrix A' % (k, n))
 
     if sigma is None:
         matvec = _aslinearoperator_with_dtype(A).matvec
@@ -1483,8 +1490,10 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
                           'This may adversely affect ARPACK convergence')
     n = A.shape[0]
 
-    if k <= 0 or k >= n:
-        raise ValueError("k must be between 1 and ndim(A)-1")
+    if not (1 <= k < n):
+        raise ValueError('the eigsh function requires 1 <= k < n '
+                'where k=%d is the requested number of eigenvalues '
+                'and n=%d is the order of the square matrix A' % (k, n))
 
     if sigma is None:
         A = _aslinearoperator_with_dtype(A)
