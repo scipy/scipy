@@ -10,16 +10,16 @@ import warnings
 
 import numpy as np
 
-from numpy.testing import assert_allclose, \
-        assert_array_almost_equal_nulp, TestCase, run_module_suite, dec, \
-        assert_raises, verbose, assert_equal
+from numpy.testing import (assert_allclose,
+        assert_array_almost_equal_nulp, TestCase, run_module_suite, dec,
+        assert_raises, verbose, assert_equal)
 
 from numpy import array, finfo, argsort, dot, round, conj, random
 from scipy.linalg import eig, eigh
 from scipy.sparse import csc_matrix, csr_matrix, lil_matrix, isspmatrix
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
-     ArpackNoConvergence
+from scipy.sparse.linalg.eigen.arpack import (eigs, eigsh, svds,
+     ArpackNoConvergence)
 
 from scipy.linalg import svd, hilbert
 
@@ -637,6 +637,47 @@ def test_svd_v0():
     u2, s2, vh2 = svds(x, 1, v0=u[:,0])
 
     assert_allclose(s, s2, atol=np.sqrt(1e-15))
+
+
+def test_n_k_validation():
+    # check that combinations of k and n are accepted or rejected as expected
+    def _check_vals(w):
+        assert_allclose(w, 1)
+    for n in 3, 4:
+        # none of these functions work for extreme k
+        for t in float, complex:
+            A = np.identity(n, dtype=t)
+            for k in 0, n, n+1:
+                for return_vectors in False, True:
+                    assert_raises(ValueError, svds,
+                            A, k=k, return_singular_vectors=return_vectors)
+                    assert_raises(ValueError, eigs,
+                            A, k=k, return_eigenvectors=return_vectors)
+                    assert_raises(ValueError, eigsh,
+                            A, k=k, return_eigenvectors=return_vectors)
+        # eigsh and svds work for k == n-1 and real dtype
+        A = np.identity(n, dtype=float)
+        assert_raises(ValueError, eigs, A, k=n-1)
+        w = eigsh(A, k=n-1, return_eigenvectors=False)
+        _check_vals(w)
+        w = svds(A, k=n-1, return_singular_vectors=False)
+        _check_vals(w)
+        # for complex dtype all of these sparse functions fail
+        # because they ultimately fall back to eigs which requires k < n-1
+        A = np.identity(n, dtype=complex)
+        assert_raises(ValueError, eigs, A, k=n-1)
+        assert_raises(ValueError, eigsh, A, k=n-1)
+        assert_raises(ValueError, svds, A, k=n-1)
+        # all of the functions work for intermediate k
+        for t in float, complex:
+            A = np.identity(n, dtype=t)
+            for k in range(1, n-1):
+                w = svds(A, k=k, return_singular_vectors=False)
+                _check_vals(w)
+                w = eigs(A, k=k, return_eigenvectors=False)
+                _check_vals(w)
+                w = eigsh(A, k=k, return_eigenvectors=False)
+                _check_vals(w)
 
 
 if __name__ == "__main__":

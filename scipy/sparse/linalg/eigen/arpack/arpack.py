@@ -48,8 +48,8 @@ import warnings
 from . import _arpack
 import numpy as np
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
-from scipy.sparse import eye, csc_matrix, csr_matrix, \
-    isspmatrix, isspmatrix_csr
+from scipy.sparse import (eye, csc_matrix, csr_matrix,
+        isspmatrix, isspmatrix_csr)
 from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse.sputils import isdense
 from scipy.sparse.linalg import gmres, splu
@@ -499,8 +499,10 @@ class _SymmetricArpackParams(_ArpackParams):
         if which not in _SEUPD_WHICH:
             raise ValueError("which must be one of %s"
                              % ' '.join(_SEUPD_WHICH))
-        if k >= n:
-            raise ValueError("k must be less than ndim(A), k=%d" % k)
+        if not (1 <= k < n):
+            raise ValueError('symmetric arpack params require 1 <= k < n '
+                    'where k=%d is the requested number of eigenvalues '
+                    'and n=%d is the order of the square input matrix' % (k, n))
 
         _ArpackParams.__init__(self, n, k, tp, mode, sigma,
                                ncv, v0, maxiter, which, tol)
@@ -681,14 +683,18 @@ class _UnsymmetricArpackParams(_ArpackParams):
         if which not in _NEUPD_WHICH:
             raise ValueError("Parameter which must be one of %s"
                              % ' '.join(_NEUPD_WHICH))
-        if k >= n - 1:
-            raise ValueError("k must be less than ndim(A)-1, k=%d" % k)
+
+        if not (1 <= k < n-1):
+            raise ValueError('unsymmetric arpack params require 1 <= k < n-1 '
+                    'where k=%d is the requested number of eigenvalues '
+                    'and n=%d is the order of the square input matrix' % (k, n))
 
         _ArpackParams.__init__(self, n, k, tp, mode, sigma,
                                ncv, v0, maxiter, which, tol)
 
-        if self.ncv > n or self.ncv <= k + 1:
-            raise ValueError("ncv must be k+1<ncv<=n, ncv=%s" % self.ncv)
+        if not (k+1 < self.ncv <= n):
+            raise ValueError('unsymmetric arpack params require k+1 < ncv <= n '
+                    'where k=%d, ncv=%d, n=%d' % (k, self.ncv, n))
 
         self.workd = np.zeros(3 * n, self.tp)
         self.workl = np.zeros(3 * self.ncv * (self.ncv + 2), self.tp)
@@ -1205,9 +1211,10 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
                           'This may adversely affect ARPACK convergence')
     n = A.shape[0]
 
-    if k <= 0 or k >= n:
-        raise ValueError("k=%d must be between 1 and ndim(A)-1=%d"
-                         % (k, n - 1))
+    if not (1 <= k < n-1):
+        raise ValueError('the eigs function requires 1 <= k < n-1 '
+                'where k=%d is the requested number of eigenvalues '
+                'and n=%d is the order of the square matrix A' % (k, n))
 
     if sigma is None:
         matvec = _aslinearoperator_with_dtype(A).matvec
@@ -1483,8 +1490,10 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
                           'This may adversely affect ARPACK convergence')
     n = A.shape[0]
 
-    if k <= 0 or k >= n:
-        raise ValueError("k must be between 1 and ndim(A)-1")
+    if not (1 <= k < n):
+        raise ValueError('the eigsh function requires 1 <= k < n '
+                'where k=%d is the requested number of eigenvalues '
+                'and n=%d is the order of the square matrix A' % (k, n))
 
     if sigma is None:
         A = _aslinearoperator_with_dtype(A)
@@ -1628,10 +1637,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     if np.issubdtype(A.dtype, np.complexfloating):
         herm = lambda x: x.T.conjugate()
-        eigensolver = eigs
     else:
         herm = lambda x: x.T
-        eigensolver = eigsh
 
     if n > m:
         X = A
@@ -1647,14 +1654,20 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                           shape=(X.shape[1], X.shape[1]))
 
     if return_singular_vectors:
-        eigvals, eigvec = eigensolver(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
+        eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                                       ncv=ncv, which=which, v0=v0)
-        s = np.sqrt(eigvals)
     else:
-        eigvals = eigensolver(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
+        eigvals = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                               ncv=ncv, which=which, v0=v0,
                               return_eigenvectors=False)
-        s = np.sqrt(eigvals)
+
+    # We know that the input matrix is positive semidefinite
+    # according to its construction, so force the eigenvalues to
+    # be non-negative even if eigsh gives us tiny negative eigenvalues.
+    eigvals = np.maximum(eigvals, 0)
+    s = np.sqrt(eigvals)
+
+    if not return_singular_vectors:
         return s
 
     if n > m:
