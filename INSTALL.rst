@@ -38,7 +38,7 @@ __ http://www.numpy.org/
 
 3) If you want to build the documentation: Sphinx__ 1.1.0 or newer
 
-__ http://http://sphinx-doc.org/
+__ http://sphinx-doc.org/
 
 4) If you want to build SciPy master or other unreleased version from source
    (Cython-generated C sources are included in official releases):
@@ -76,15 +76,15 @@ Compilers
 ~~~~~~~~~
 
 It is recommended to use gcc. gcc is available for free when installing
-Xcode__, the developer toolsuite on Mac OS X. You also need a fortran compiler,
+`Xcode`_, the developer toolsuite on Mac OS X. You also need a fortran compiler,
 which is not included with Xcode: you should use gfortran from this page:
 
-__ http://r.research.att.com/tools/
+   http://r.research.att.com/tools/
 
-Please do NOT use gfortran from hpc.sourceforge.net, it is known to generate
+Please do NOT use gfortran from `hpc.sourceforge.net <http://hpc.sourceforge.net>`_, it is known to generate
 buggy scipy binaries.
 
-__Xcode: http://developer.apple.com/TOOLS/xcode
+.. _Xcode: http://developer.apple.com/TOOLS/xcode
 
 Blas/Lapack
 ~~~~~~~~~~~
