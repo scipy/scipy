@@ -1581,17 +1581,21 @@ def _augmented_orthonormal_cols(x, k):
         # sample a random initial vector
         v = np.random.randn(n)
         if np.iscomplexobj(x):
-            v += 1j*np.random.randn(n)
+            v = v + 1j*np.random.randn(n)
         # subtract projections onto the existing unit length vectors
         for j in range(m+i):
             u = y[:, j]
-            v -= (np.inner(u, v) / np.inner(u, u)) * u
+            v -= (np.dot(v, u.conj()) / np.dot(u, u.conj())) * u
         # normalize v
-        v /= np.linalg.norm(v)
+        v /= np.sqrt(np.dot(v, v.conj()))
         # add v into the output array
         y[:, m+i] = v
     # return the expanded array
     return y
+
+
+def _augmented_orthonormal_rows(x, k):
+    return _augmented_orthonormal_cols(x.T, k).T
 
 
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
@@ -1705,20 +1709,20 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         if n > m:
             vlarge = eigvec[:, above_cutoff]
             ularge = X.dot(vlarge) / slarge
-            v = _augmented_orthonormal_cols(vlarge, nsmall)
-            u = herm(_augmented_orthonormal_cols(herm(ularge), nsmall))
-            vh = herm(v)
+            vhlarge = herm(vlarge)
         else:
             ularge = eigvec[:, above_cutoff]
             vhlarge = herm(X.dot(ularge) / slarge)
-            u = _augmented_orthonormal_cols(ularge, nsmall)
-            vh = herm(_augmented_orthonormal_cols(herm(vhlarge), nsmall))
+
+        u = _augmented_orthonormal_cols(ularge, nsmall)
+        vh = _augmented_orthonormal_rows(vhlarge, nsmall)
 
     else:
 
         s = np.sqrt(eigvals)
         if not return_singular_vectors:
             return s
+
         if n > m:
             v = eigvec
             u = X.dot(v) / s
