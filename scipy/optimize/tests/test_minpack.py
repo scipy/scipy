@@ -389,7 +389,7 @@ class TestCurveFit(TestCase):
 class TestFixedPoint(TestCase):
 
     def test_scalar_trivial(self):
-        """f(x) = 2x; fixed point should be x=0"""
+        # f(x) = 2x; fixed point should be x=0
         def func(x):
             return 2.0*x
         x0 = 1.0
@@ -397,7 +397,7 @@ class TestFixedPoint(TestCase):
         assert_almost_equal(x, 0.0)
 
     def test_scalar_basic1(self):
-        """f(x) = x**2; x0=1.05; fixed point should be x=1"""
+        # f(x) = x**2; x0=1.05; fixed point should be x=1
         def func(x):
             return x**2
         x0 = 1.05
@@ -405,7 +405,7 @@ class TestFixedPoint(TestCase):
         assert_almost_equal(x, 1.0)
 
     def test_scalar_basic2(self):
-        """f(x) = x**0.5; x0=1.05; fixed point should be x=1"""
+        # f(x) = x**0.5; x0=1.05; fixed point should be x=1
         def func(x):
             return x**0.5
         x0 = 1.05
@@ -424,7 +424,7 @@ class TestFixedPoint(TestCase):
         assert_almost_equal(x, [0.0, 0.0])
 
     def test_array_basic1(self):
-        """f(x) = c * x**2; fixed point should be x=1/c"""
+        # f(x) = c * x**2; fixed point should be x=1/c
         def func(x, c):
             return c * x**2
         c = array([0.75, 1.0, 1.25])
@@ -437,7 +437,7 @@ class TestFixedPoint(TestCase):
         assert_almost_equal(x, 1.0/c)
 
     def test_array_basic2(self):
-        """f(x) = c * x**0.5; fixed point should be x=c**2"""
+        # f(x) = c * x**0.5; fixed point should be x=c**2
         def func(x, c):
             return c * x**0.5
         c = array([0.75, 1.0, 1.25])
