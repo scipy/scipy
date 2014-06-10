@@ -420,7 +420,7 @@ def nanmedian(x, axis=0):
 
     See Also
     --------
-    nanstd, nanmean
+    nanstd, nanmean, numpy.nanmedian
 
     Examples
     --------
@@ -451,6 +451,8 @@ def nanmedian(x, axis=0):
     x, axis = _chk_asarray(x, axis)
     if x.ndim == 0:
         return float(x.item())
+    if hasattr(np, 'nanmedian'):  # numpy 1.9 faster for some cases
+        return np.nanmedian(x, axis)
     x = np.apply_along_axis(_nanmedian, axis, x)
     if x.ndim == 0:
         x = float(x.item())
