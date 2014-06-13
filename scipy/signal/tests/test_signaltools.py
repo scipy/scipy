@@ -599,7 +599,9 @@ class _TestLinearFilter(TestCase):
         a = np.ones(1).astype(self.dt)
         b = np.ones(1).astype(self.dt)
         # "y" sets the datatype of zi, so it truncates if int
-        self.assertRaises(TypeError, lfiltic, b, a, [1, 0])
+        zi = lfiltic(b, a, [1, 0])
+        zi_2 = lfiltic(b, a, [1., 0])
+        assert_array_equal(zi, zi_2)
 
 
 class TestLinearFilterFloat32(_TestLinearFilter):

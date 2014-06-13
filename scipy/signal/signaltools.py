@@ -903,12 +903,12 @@ def lfiltic(b, a, y, x=None):
     M = np.size(b) - 1
     K = max(M, N)
     y = asarray(y)
-    # lfilter only supports these types:
-    if y.dtype.kind not in 'fcO':
-        raise TypeError('y must be float, complex, or object')
-    zi = zeros(K, y.dtype.char)
+    if y.dtype.kind == 'i':
+        # ensure calculations are floating point
+        y = y.astype(np.float64)
+    zi = zeros(K, y.dtype)
     if x is None:
-        x = zeros(M, y.dtype.char)
+        x = zeros(M, y.dtype)
     else:
         x = asarray(x)
         L = np.size(x)
