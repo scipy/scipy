@@ -4,6 +4,7 @@ from __future__ import division, print_function, absolute_import
 
 import re
 import itertools
+import datetime
 from functools import partial
 
 import numpy as np
@@ -83,6 +84,8 @@ def parse_type(attrtype):
         return 'string'
     elif uattribute[:len('relational')] == 'relational':
         return 'relational'
+    elif uattribute[:len('date')] == 'date':
+        return 'date'
     else:
         raise ParseArffError("unknown attribute %s" % uattribute)
 
@@ -167,6 +170,45 @@ def get_nom_val(atrv):
         return tuple(i.strip() for i in m.group(1).split(','))
     else:
         raise ValueError("This does not look like a nominal string")
+
+
+def get_date_format(atrv):
+    r_date = re.compile(r"[Dd][Aa][Tt][Ee]\s+[\"']?(.+?)[\"']?$")
+    m = r_date.match(atrv)
+    if m:
+        pattern = m.group(1).strip()
+        # convert time pattern from Java's SimpleDateFormat to C's format
+        datetime_unit = None
+        if "yyyy" in pattern:
+            pattern = pattern.replace("yyyy", "%Y")
+            datetime_unit = "Y"
+        elif "yy":
+            pattern = pattern.replace("yy", "%y")
+            datetime_unit = "Y"
+        if "MM" in pattern:
+            pattern = pattern.replace("MM", "%m")
+            datetime_unit = "M"
+        if "dd" in pattern:
+            pattern = pattern.replace("dd", "%d")
+            datetime_unit = "D"
+        if "HH" in pattern:
+            pattern = pattern.replace("HH", "%H")
+            datetime_unit = "h"
+        if "mm" in pattern:
+            pattern = pattern.replace("mm", "%M")
+            datetime_unit = "m"
+        if "ss" in pattern:
+            pattern = pattern.replace("ss", "%S")
+            datetime_unit = "s"
+        if "z" in pattern or "Z" in pattern:
+            raise ValueError("Date type attributes with time zone not supported, yet")
+
+        if datetime_unit is None:
+            raise ValueError("Invalid or unsupported date format")
+
+        return pattern, datetime_unit
+    else:
+        raise ValueError("Invalid or no date format")
 
 
 def go_data(ofile):
@@ -347,6 +389,15 @@ def safe_nominal(value, pvalue):
         raise ValueError("%s value not in %s" % (str(svalue), str(pvalue)))
 
 
+def safe_date(value, date_format, datetime_unit):
+    date_str = value.strip().strip("'").strip('"')
+    if date_str == '?':
+        return np.datetime64('NaT', datetime_unit)
+    else:
+        dt = datetime.datetime.strptime(date_str, date_format)
+        return np.datetime64(dt).astype("datetime64[%s]" % datetime_unit)
+
+
 def get_delim(line):
     """Given a string representing a line of data, check whether the
     delimiter is ',' or space.
@@ -413,6 +464,8 @@ class MetaData(object):
             self._attrnames.append(name)
             if tp == 'nominal':
                 self._attributes[name] = (tp, get_nom_val(value))
+            elif tp == 'date':
+                self._attributes[name] = (tp, get_date_format(value)[0])
             else:
                 self._attributes[name] = (tp, None)
 
@@ -530,7 +583,9 @@ def _loadarff(ofile):
         for name, value in attr:
             type = parse_type(value)
             if type == 'date':
-                raise ValueError("date type not supported yet, sorry")
+                date_format, datetime_unit = get_date_format(value)
+                descr.append((name, "datetime64[%s]" % datetime_unit))
+                convertors.append(partial(safe_date, date_format=date_format, datetime_unit=datetime_unit))
             elif type == 'nominal':
                 n = maxnomlen(value)
                 descr.append((name, 'S%d' % n))
