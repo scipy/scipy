@@ -3,13 +3,14 @@ Unit tests for optimization routines from minpack.py.
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_, assert_almost_equal, assert_array_equal, \
-        assert_array_almost_equal, TestCase, run_module_suite, assert_raises, \
-        assert_allclose
+from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
+        assert_array_almost_equal, TestCase, run_module_suite, assert_raises,
+        assert_allclose)
 import numpy as np
 from numpy import array, float64, matrix
 
 from scipy import optimize
+from scipy.special import lambertw
 from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
 
 
@@ -389,7 +390,7 @@ class TestCurveFit(TestCase):
 class TestFixedPoint(TestCase):
 
     def test_scalar_trivial(self):
-        """f(x) = 2x; fixed point should be x=0"""
+        # f(x) = 2x; fixed point should be x=0
         def func(x):
             return 2.0*x
         x0 = 1.0
@@ -397,7 +398,7 @@ class TestFixedPoint(TestCase):
         assert_almost_equal(x, 0.0)
 
     def test_scalar_basic1(self):
-        """f(x) = x**2; x0=1.05; fixed point should be x=1"""
+        # f(x) = x**2; x0=1.05; fixed point should be x=1
         def func(x):
             return x**2
         x0 = 1.05
@@ -405,7 +406,7 @@ class TestFixedPoint(TestCase):
         assert_almost_equal(x, 1.0)
 
     def test_scalar_basic2(self):
-        """f(x) = x**0.5; x0=1.05; fixed point should be x=1"""
+        # f(x) = x**0.5; x0=1.05; fixed point should be x=1
         def func(x):
             return x**0.5
         x0 = 1.05
@@ -424,7 +425,7 @@ class TestFixedPoint(TestCase):
         assert_almost_equal(x, [0.0, 0.0])
 
     def test_array_basic1(self):
-        """f(x) = c * x**2; fixed point should be x=1/c"""
+        # f(x) = c * x**2; fixed point should be x=1/c
         def func(x, c):
             return c * x**2
         c = array([0.75, 1.0, 1.25])
@@ -437,13 +438,20 @@ class TestFixedPoint(TestCase):
         assert_almost_equal(x, 1.0/c)
 
     def test_array_basic2(self):
-        """f(x) = c * x**0.5; fixed point should be x=c**2"""
+        # f(x) = c * x**0.5; fixed point should be x=c**2
         def func(x, c):
             return c * x**0.5
         c = array([0.75, 1.0, 1.25])
         x0 = [0.8, 1.1, 1.1]
         x = fixed_point(func, x0, args=(c,))
         assert_almost_equal(x, c**2)
+
+    def test_lambertw(self):
+        # python-list/2010-December/594592.html
+        xxroot = fixed_point(lambda xx: np.exp(-2.0*xx)/2.0, 1.0,
+                args=(), xtol=1e-12, maxiter=500)
+        assert_allclose(xxroot, np.exp(-2.0*xxroot)/2.0)
+        assert_allclose(xxroot, lambertw(1)/2)
 
 
 if __name__ == "__main__":
