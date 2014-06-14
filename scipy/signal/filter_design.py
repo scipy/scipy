@@ -2164,9 +2164,9 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
 
 
 def buttap(N):
-    """Return (z,p,k) zero, pole, gain for analog prototype of an Nth
-    order Butterworth filter with an angular (e.g. rad/s) cutoff frequency
-    of 1.
+    """Return (z,p,k) for analog prototype of Nth order Butterworth filter.
+
+    The filter will have an angular (e.g. rad/s) cutoff frequency of 1.
 
     """
     if abs(int(N)) != N:
@@ -2180,11 +2180,13 @@ def buttap(N):
 
 
 def cheb1ap(N, rp):
-    """Return (z,p,k) zero, pole, gain for Nth order Chebyshev type I lowpass
-    analog filter prototype with `rp` decibels of ripple in the passband.
+    """
+    Return (z,p,k) for Nth order Chebyshev type I analog lowpass filter.
+
+    The returned filter prototype has `rp` decibels of ripple in the passband.
 
     The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
-    defined as the point at which the gain first drops below -`rp`.
+    defined as the point at which the gain first drops below ``-rp``.
 
     """
     if abs(int(N)) != N:
@@ -2212,11 +2214,13 @@ def cheb1ap(N, rp):
 
 
 def cheb2ap(N, rs):
-    """Return (z,p,k) zero, pole, gain for Nth order Chebyshev type II lowpass
-    analog filter prototype with `rs` decibels of ripple in the stopband.
+    """
+    Return (z,p,k) for Nth order Chebyshev type I analog lowpass filter.
+
+    The returned filter prototype has `rs` decibels of ripple in the stopband.
 
     The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
-    defined as the point at which the gain first reaches -`rs`.
+    defined as the point at which the gain first reaches ``-rs``.
 
     """
     if abs(int(N)) != N:
@@ -2273,12 +2277,13 @@ def _kratio(m, k_ratio):
 
 
 def ellipap(N, rp, rs):
-    """Return (z,p,k) zeros, poles, and gain of an Nth order normalized
-    prototype elliptic analog lowpass filter with `rp` decibels of ripple in
-    the passband and a stopband `rs` decibels down.
+    """Return (z,p,k) of Nth order elliptic analog lowpass filter.
+
+    The filter is a normalized prototype that has `rp` decibels of ripple
+    in the passband and a stopband `rs` decibels down.
 
     The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
-    defined as the point at which the gain first drops below -`rp`.
+    defined as the point at which the gain first drops below ``-rp``.
 
     References
     ----------
@@ -2352,12 +2357,26 @@ def ellipap(N, rp, rs):
 
 
 def besselap(N):
-    """Return (z,p,k) zero, pole, gain for analog prototype of an Nth order
-    Bessel filter.
+    """Return (z,p,k) for analog prototype of an Nth order Bessel filter.
 
     The filter is normalized such that the filter asymptotes are the same as
     a Butterworth filter of the same order with an angular (e.g. rad/s)
     cutoff frequency of 1.
+
+    Parameters
+    ----------
+    N : int
+        The order of the Bessel filter to return zeros, poles and gain for.
+        Values in the range 0-25 are supported.
+
+    Returns
+    -------
+    z : ndarray
+        Zeros. Is always an empty array.
+    p : ndarray
+        Poles.
+    k : scalar
+        Gain. Always 1.
 
     """
     z = []
