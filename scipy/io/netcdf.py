@@ -41,7 +41,7 @@ from numpy import fromstring, ndarray, dtype, empty, array, asarray
 from numpy import little_endian as LITTLE_ENDIAN
 from functools import reduce
 
-from scipy.lib.six import integer_types
+from scipy.lib.six import integer_types, text_type, binary_type
 
 ABSENT = b'\x00\x00\x00\x00\x00\x00\x00\x00'
 ZERO = b'\x00\x00\x00\x00'
@@ -95,8 +95,8 @@ class netcdf_file(object):
     ----------
     filename : string or file-like
         string -> filename
-    mode : {'r', 'w'}, optional
-        read-write mode, default is 'r'
+    mode : {'r', 'w', 'a'}, optional
+        read-write-append mode, default is 'r'
     mmap : None or bool, optional
         Whether to mmap `filename` when reading.  Default is True
         when `filename` is a file name, False when `filename` is a
@@ -185,8 +185,8 @@ class netcdf_file(object):
     """
     def __init__(self, filename, mode='r', mmap=None, version=1):
         """Initialize netcdf_file from fileobj (str or file-like)."""
-        if mode not in 'rw':
-            raise ValueError("Mode must be either 'r' or 'w'.")
+        if mode not in 'rwa':
+            raise ValueError("Mode must be either 'r', 'w' or 'a'.")
 
         if hasattr(filename, 'seek'):  # file-like
             self.fp = filename
@@ -197,7 +197,8 @@ class netcdf_file(object):
                 raise ValueError('Cannot use file object for mmap')
         else:  # maybe it's a string
             self.filename = filename
-            self.fp = open(self.filename, '%sb' % mode)
+            omode = 'r+' if mode == 'a' else mode
+            self.fp = open(self.filename, '%sb' % omode)
             if mmap is None:
                 mmap = True
 
@@ -224,7 +225,7 @@ class netcdf_file(object):
 
         self._attributes = {}
 
-        if mode == 'r':
+        if mode in 'ra':
             self._read()
 
     def __setattr__(self, attr, value):
@@ -330,7 +331,7 @@ class netcdf_file(object):
         sync : Identical function
 
         """
-        if hasattr(self, 'mode') and self.mode == 'w':
+        if hasattr(self, 'mode') and self.mode in 'wa':
             self._write()
     sync = flush
 
@@ -477,23 +478,25 @@ class netcdf_file(object):
             types = [(t, NC_INT) for t in integer_types]
             types += [
                     (float, NC_FLOAT),
-                    (str, NC_CHAR),
+                    (str, NC_CHAR)
                     ]
-            try:
-                sample = values[0]
-            except TypeError:
+            # bytes index into scalars in py3k.  Check for "string" types
+            if isinstance(values, text_type) or isinstance(values, binary_type):
                 sample = values
-            except IndexError:
-                if isinstance(values, basestring):
-                    sample = values
-                else:
-                    raise
+            else:
+                try:
+                    sample = values[0]  # subscriptable?
+                except TypeError:
+                    sample = values     # scalar
+
             for class_, nc_type in types:
                 if isinstance(sample, class_):
                     break
 
         typecode, size = TYPEMAP[nc_type]
         dtype_ = '>%s' % typecode
+        # asarray() dies with bytes and '>c' in py3k.  Change to 'S'
+        dtype_ = 'S' if dtype_ == '>c' else dtype_
 
         values = asarray(values, dtype=dtype_)
 
