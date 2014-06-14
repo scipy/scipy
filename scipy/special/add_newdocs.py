@@ -19,6 +19,41 @@ def get(name):
 def add_newdoc(place, name, doc):
     docdict['.'.join((place, name))] = doc
 
+add_newdoc("scipy.special", "sph_harm",
+    """
+    sph_harm(m, n, theta, phi)
+
+    Compute spherical harmonics.
+
+    ::
+
+        y_mn = sqrt((2*n+1)/4/pi)*sqrt(gamma(n-m+1)/gamma(n+m+1))*exp(1j*m*theta)*pmv(m,n,cos(phi))
+
+    Parameters
+    ----------
+    m : int
+       ``|m| <= n``; the order of the harmonic.
+    n : int
+       where `n` >= 0; the degree of the harmonic.  This is often called
+       ``l`` (lower case L) in descriptions of spherical harmonics.
+    theta : float
+       [0, 2*pi]; the azimuthal (longitudinal) coordinate.
+    phi : float
+       [0, pi]; the polar (colatitudinal) coordinate.
+
+    Returns
+    -------
+    y_mn : complex float
+       The harmonic :math:`Y^m_n` sampled at `theta` and `phi`
+
+    Notes
+    -----
+    There are different conventions for the meaning of input arguments
+    `theta` and `phi`.  We take `theta` to be the azimuthal angle and
+    `phi` to be the polar angle.  It is common to see the opposite
+    convention - that is `theta` as the polar angle and `phi` as the
+    azimuthal angle.
+    """)
 
 add_newdoc("scipy.special", "_lambertw",
     """
