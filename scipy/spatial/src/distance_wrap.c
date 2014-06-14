@@ -34,13 +34,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <math.h>
-#include "distance.h"
-#include "Python.h"
+#include <Python.h>
 #include <numpy/arrayobject.h>
-#include <stdio.h>
 
-extern PyObject *cdist_euclidean_wrap(PyObject *self, PyObject *args) {
+#include "distance.h"
+
+static PyObject *cdist_euclidean_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -64,7 +63,7 @@ extern PyObject *cdist_euclidean_wrap(PyObject *self, PyObject *args) {
 }
 
 
-extern PyObject *cdist_sqeuclidean_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_sqeuclidean_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -88,7 +87,7 @@ extern PyObject *cdist_sqeuclidean_wrap(PyObject *self, PyObject *args) {
 }
 
 
-extern PyObject *cdist_canberra_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_canberra_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -111,7 +110,7 @@ extern PyObject *cdist_canberra_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *cdist_bray_curtis_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_bray_curtis_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -135,7 +134,7 @@ extern PyObject *cdist_bray_curtis_wrap(PyObject *self, PyObject *args) {
 }
 
 
-extern PyObject *cdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *covinv_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -162,7 +161,7 @@ extern PyObject *cdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
 }
 
 
-extern PyObject *cdist_chebyshev_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_chebyshev_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -186,7 +185,7 @@ extern PyObject *cdist_chebyshev_wrap(PyObject *self, PyObject *args) {
 }
 
 
-extern PyObject *cdist_cosine_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_cosine_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_, *normsA_, *normsB_;
   int mA, mB, n;
   double *dm;
@@ -213,7 +212,7 @@ extern PyObject *cdist_cosine_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *cdist_seuclidean_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_seuclidean_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_, *var_;
   int mA, mB, n;
   double *dm;
@@ -238,7 +237,7 @@ extern PyObject *cdist_seuclidean_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *cdist_city_block_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_city_block_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -261,7 +260,7 @@ extern PyObject *cdist_city_block_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *cdist_hamming_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_hamming_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -284,7 +283,7 @@ extern PyObject *cdist_hamming_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *cdist_hamming_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_hamming_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -307,7 +306,7 @@ extern PyObject *cdist_hamming_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *cdist_jaccard_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_jaccard_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -330,7 +329,7 @@ extern PyObject *cdist_jaccard_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *cdist_jaccard_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_jaccard_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -353,7 +352,7 @@ extern PyObject *cdist_jaccard_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *cdist_minkowski_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_minkowski_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -377,7 +376,7 @@ extern PyObject *cdist_minkowski_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *cdist_weighted_minkowski_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_weighted_minkowski_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_, *w_;
   int mA, mB, n;
   double *dm;
@@ -403,7 +402,7 @@ extern PyObject *cdist_weighted_minkowski_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *cdist_yule_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_yule_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -426,7 +425,7 @@ extern PyObject *cdist_yule_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("");
 }
 
-extern PyObject *cdist_matching_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_matching_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -449,7 +448,7 @@ extern PyObject *cdist_matching_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("");
 }
 
-extern PyObject *cdist_dice_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_dice_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -472,7 +471,7 @@ extern PyObject *cdist_dice_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("");
 }
 
-extern PyObject *cdist_rogerstanimoto_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_rogerstanimoto_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -495,7 +494,7 @@ extern PyObject *cdist_rogerstanimoto_bool_wrap(PyObject *self, PyObject *args) 
   return Py_BuildValue("");
 }
 
-extern PyObject *cdist_russellrao_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_russellrao_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -518,7 +517,7 @@ extern PyObject *cdist_russellrao_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("");
 }
 
-extern PyObject *cdist_kulsinski_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_kulsinski_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -541,7 +540,7 @@ extern PyObject *cdist_kulsinski_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("");
 }
 
-extern PyObject *cdist_sokalmichener_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_sokalmichener_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -564,7 +563,7 @@ extern PyObject *cdist_sokalmichener_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("");
 }
 
-extern PyObject *cdist_sokalsneath_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_sokalsneath_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
@@ -589,7 +588,7 @@ extern PyObject *cdist_sokalsneath_bool_wrap(PyObject *self, PyObject *args) {
 
 /***************************** pdist ***/
 
-extern PyObject *pdist_euclidean_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_euclidean_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -611,7 +610,7 @@ extern PyObject *pdist_euclidean_wrap(PyObject *self, PyObject *args) {
 }
 
 
-extern PyObject *pdist_sqeuclidean_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_sqeuclidean_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -633,7 +632,7 @@ extern PyObject *pdist_sqeuclidean_wrap(PyObject *self, PyObject *args) {
 }
 
 
-extern PyObject *pdist_canberra_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_canberra_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -654,7 +653,7 @@ extern PyObject *pdist_canberra_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *pdist_bray_curtis_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_bray_curtis_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -676,7 +675,7 @@ extern PyObject *pdist_bray_curtis_wrap(PyObject *self, PyObject *args) {
 }
 
 
-extern PyObject *pdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *covinv_, *dm_;
   int m, n;
   double *dm;
@@ -701,7 +700,7 @@ extern PyObject *pdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
 }
 
 
-extern PyObject *pdist_chebyshev_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_chebyshev_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -723,7 +722,7 @@ extern PyObject *pdist_chebyshev_wrap(PyObject *self, PyObject *args) {
 }
 
 
-extern PyObject *pdist_cosine_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_cosine_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_, *norms_;
   int m, n;
   double *dm;
@@ -746,7 +745,7 @@ extern PyObject *pdist_cosine_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *pdist_seuclidean_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_seuclidean_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_, *var_;
   int m, n;
   double *dm;
@@ -769,7 +768,7 @@ extern PyObject *pdist_seuclidean_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *pdist_city_block_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_city_block_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -790,7 +789,7 @@ extern PyObject *pdist_city_block_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *pdist_hamming_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_hamming_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -811,7 +810,7 @@ extern PyObject *pdist_hamming_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *pdist_hamming_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_hamming_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -832,7 +831,7 @@ extern PyObject *pdist_hamming_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *pdist_jaccard_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_jaccard_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -853,7 +852,7 @@ extern PyObject *pdist_jaccard_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *pdist_jaccard_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_jaccard_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -874,7 +873,7 @@ extern PyObject *pdist_jaccard_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *pdist_minkowski_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_minkowski_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm, *X;
@@ -896,7 +895,7 @@ extern PyObject *pdist_minkowski_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *pdist_weighted_minkowski_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_weighted_minkowski_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_, *w_;
   int m, n;
   double *dm, *X, *w;
@@ -921,7 +920,7 @@ extern PyObject *pdist_weighted_minkowski_wrap(PyObject *self, PyObject *args) {
 }
 
 
-extern PyObject *pdist_yule_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_yule_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -942,7 +941,7 @@ extern PyObject *pdist_yule_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("");
 }
 
-extern PyObject *pdist_matching_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_matching_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -963,7 +962,7 @@ extern PyObject *pdist_matching_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("");
 }
 
-extern PyObject *pdist_dice_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_dice_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -984,7 +983,7 @@ extern PyObject *pdist_dice_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("");
 }
 
-extern PyObject *pdist_rogerstanimoto_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_rogerstanimoto_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -1005,7 +1004,7 @@ extern PyObject *pdist_rogerstanimoto_bool_wrap(PyObject *self, PyObject *args) 
   return Py_BuildValue("");
 }
 
-extern PyObject *pdist_russellrao_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_russellrao_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -1026,7 +1025,7 @@ extern PyObject *pdist_russellrao_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("");
 }
 
-extern PyObject *pdist_kulsinski_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_kulsinski_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -1047,7 +1046,7 @@ extern PyObject *pdist_kulsinski_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("");
 }
 
-extern PyObject *pdist_sokalmichener_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_sokalmichener_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -1068,7 +1067,7 @@ extern PyObject *pdist_sokalmichener_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("");
 }
 
-extern PyObject *pdist_sokalsneath_bool_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_sokalsneath_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm;
@@ -1089,7 +1088,7 @@ extern PyObject *pdist_sokalsneath_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("");
 }
 
-extern PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args) {
+static PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *M_, *v_;
   int n;
   const double *v;
@@ -1108,7 +1107,7 @@ extern PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args) 
   return Py_BuildValue("d", 0.0);
 }
 
-extern PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args) {
+static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *M_, *v_;
   int n;
   double *v;
