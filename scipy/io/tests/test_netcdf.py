@@ -216,3 +216,4 @@ def test_zero_dimensional_var():
         # to 'assert not ...'
         assert v.isrec is False, v.isrec
         f.flush()
+
