@@ -88,6 +88,9 @@ class _Interpolator1D(object):
     def _prepare_x(self, x):
         """Reshape input x array to 1-D"""
         x = np.asarray(x)
+        if not np.issubdtype(x.dtype, np.inexact):
+            # Cast integers etc to floats
+            x = x.astype(float)
         x_shape = x.shape
         return x.ravel(), x_shape
 
@@ -317,7 +320,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
         p = np.zeros((len(x), self.r), dtype=self.dtype)
         p += self.c[0,np.newaxis,:]
         for k in range(1, self.n):
-            w = np.asarray(x, dtype=self.dtype) - self.xi[k-1]
+            w = x - self.xi[k-1]
             pi = w*pi
             p += pi[:,np.newaxis] * self.c[k]
         return p
