@@ -88,6 +88,9 @@ class _Interpolator1D(object):
     def _prepare_x(self, x):
         """Reshape input x array to 1-D"""
         x = np.asarray(x)
+        if not np.issubdtype(x.dtype, np.inexact):
+            # Cast integers etc to floats
+            x = x.astype(float)
         x_shape = x.shape
         return x.ravel(), x_shape
 
