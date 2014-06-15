@@ -798,47 +798,95 @@ fitpack_insert(PyObject *dummy, PyObject*args)
     int iopt, n, nn, k, ier, m, nest;
     npy_intp dims[1];
     double x;
-    double *t, *c, *tt, *cc;
-    PyArrayObject *ap_t = NULL, *ap_c = NULL, *ap_tt = NULL, *ap_cc = NULL;
+    double *t_in, *c_in, *t_out, *c_out, *t_buf = NULL, *c_buf = NULL, *p;
+    double *t1, *t2, *c1, *c2;
+    PyArrayObject *ap_t_in = NULL, *ap_c_in = NULL, *ap_t_out = NULL, *ap_c_out = NULL;
     PyObject *t_py = NULL, *c_py = NULL;
     PyObject *ret = NULL;
 
     if (!PyArg_ParseTuple(args, "iOOidi",&iopt,&t_py,&c_py,&k, &x, &m)) {
         return NULL;
     }
-    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, NPY_DOUBLE, 0, 1);
-    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, NPY_DOUBLE, 0, 1);
-    if (ap_t == NULL || ap_c == NULL) {
+    ap_t_in = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, NPY_DOUBLE, 0, 1);
+    ap_c_in = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, NPY_DOUBLE, 0, 1);
+    if (ap_t_in == NULL || ap_c_in == NULL) {
         goto fail;
     }
-    t = (double *)ap_t->data;
-    c = (double *)ap_c->data;
-    n = ap_t->dimensions[0];
+    t_in = (double *)ap_t_in->data;
+    c_in = (double *)ap_c_in->data;
+    n = ap_t_in->dimensions[0];
     nest = n + m;
     dims[0] = nest;
-    ap_tt = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
-    ap_cc = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
-    if (ap_tt == NULL || ap_cc == NULL) {
+    ap_t_out = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
+    ap_c_out = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
+    if (ap_t_out == NULL || ap_c_out == NULL) {
         goto fail;
     }
-    tt = (double *)ap_tt->data;
-    cc = (double *)ap_cc->data;
+    t_out = (double *)ap_t_out->data;
+    c_out = (double *)ap_c_out->data;
+
+    /*
+     * Call the INSERT routine m times to insert m-multiplicity knot, ie.:
+     *
+     *     for _ in range(n, nest):
+     *         t, c = INSERT(t, c)
+     *     return t, c
+     * 
+     * We need to ensure that input and output buffers given to INSERT routine
+     * do not point to same memory, which is not allowed by Fortran. For this,
+     * we use temporary storage, and cycle between it and the output buffers.
+     */
+    t2 = t_in;
+    c2 = c_in;
+    t1 = t_out;
+    c1 = c_out;
+
     for ( ; n < nest; n++) {
-        INSERT(&iopt, t, &n, c, &k, &x, tt, &nn, cc, &nest, &ier);
+        /* Swap buffers */
+        p = t2; t2 = t1; t1 = p;
+        p = c2; c2 = c1; c1 = p;
+
+        /* Allocate temporary buffer (needed for m > 1) */
+        if (t2 == t_in) {
+            if (t_buf == NULL) {
+                t_buf = calloc(nest, sizeof(double));
+                c_buf = calloc(nest, sizeof(double));
+                if (t_buf == NULL || c_buf == NULL) {
+                    PyErr_NoMemory();
+                    goto fail;
+                }
+            }
+            t2 = t_buf;
+            c2 = c_buf;
+        }
+
+        INSERT(&iopt, t1, &n, c1, &k, &x, t2, &nn, c2, &nest, &ier);
+
         if (ier) {
             break;
         }
-        t = tt;
-        c = cc;
     }
-    Py_DECREF(ap_c);
-    Py_DECREF(ap_t);
-    ret = Py_BuildValue("NNi", PyArray_Return(ap_tt), PyArray_Return(ap_cc), ier);
+
+    /* Ensure output ends up in output buffers */
+    if (t2 != t_out) {
+        memcpy(t_out, t2, nest * sizeof(double));
+        memcpy(c_out, c2, nest * sizeof(double));
+    }
+
+    Py_DECREF(ap_c_in);
+    Py_DECREF(ap_t_in);
+    free(t_buf);
+    free(c_buf);
+    ret = Py_BuildValue("NNi", PyArray_Return(ap_t_out), PyArray_Return(ap_c_out), ier);
     return ret;
 
 fail:
-    Py_XDECREF(ap_c);
-    Py_XDECREF(ap_t);
+    Py_XDECREF(ap_c_out);
+    Py_XDECREF(ap_t_out);
+    Py_XDECREF(ap_c_in);
+    Py_XDECREF(ap_t_in);
+    free(t_buf);
+    free(c_buf);
     return NULL;
 }
 
