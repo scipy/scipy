@@ -60,7 +60,12 @@ class PchipInterpolator(object):
     """
     def __init__(self, x, y, axis=0, extrapolate=None):
         x = np.asarray(x)
+        if not np.issubdtype(x.dtype, np.inexact):
+            x = x.astype(float)
+
         y = np.asarray(y)
+        if not np.issubdtype(y.dtype, np.inexact):
+            y = y.astype(float)
 
         axis = axis % y.ndim
         

@@ -464,5 +464,17 @@ class TestPCHIP(TestCase):
             yp = p(xp)
             assert_(((y2-y1) * (yp[1:] - yp[:1]) > 0).all())
 
+    def test_cast(self):
+        # regression test for integer input data, see gh-3453
+        data = np.array([[0, 4, 12, 27, 47, 60, 79, 87, 99, 100],
+                         [-33, -33, -19, -2, 12, 26, 38, 45, 53, 55]])
+        xx = np.arange(100)
+        curve = pchip(data[0], data[1])(xx)
+
+        data1 = data * 1.0
+        curve1 = pchip(data1[0], data1[1])(xx)
+
+        assert_allclose(curve, curve1, atol=1e-14, rtol=1e-14)
+
 if __name__ == '__main__':
     run_module_suite()
