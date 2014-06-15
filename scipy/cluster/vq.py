@@ -193,28 +193,24 @@ def vq(obs, code_book):
     (array([1, 1, 0],'i'), array([ 0.43588989,  0.73484692,  0.83066239]))
 
     """
-    try:
-        from . import _vq
-        ct = common_type(obs, code_book)
+    ct = common_type(obs, code_book)
 
-        # avoid copying when dtype is the same
-        # should be replaced with c_obs = astype(ct, copy=False)
-        # when we get to numpy 1.7.0
-        if obs.dtype != ct:
-            c_obs = obs.astype(ct)
-        else:
-            c_obs = obs
+    # avoid copying when dtype is the same
+    # should be replaced with c_obs = astype(ct, copy=False)
+    # when we get to numpy 1.7.0
+    if obs.dtype != ct:
+        c_obs = obs.astype(ct)
+    else:
+        c_obs = obs
 
-        if code_book.dtype != ct:
-            c_code_book = code_book.astype(ct)
-        else:
-            c_code_book = code_book
+    if code_book.dtype != ct:
+        c_code_book = code_book.astype(ct)
+    else:
+        c_code_book = code_book
 
-        if ct in (single, double):
-            results = _vq.vq(c_obs, c_code_book)
-        else:
-            results = py_vq(obs, code_book)
-    except ImportError:
+    if ct in (single, double):
+        results = _vq.vq(c_obs, c_code_book)
+    else:
         results = py_vq(obs, code_book)
     return results
 
