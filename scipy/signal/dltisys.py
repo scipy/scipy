@@ -13,6 +13,25 @@ from .ltisys import tf2ss, zpk2ss
 __all__ = ['dlsim', 'dstep', 'dimpulse']
 
 
+def _system_to_statespace(system):
+    """
+    Return a discrete state-space system from a 3, 4, or 5-tuple input
+    """
+    if len(system) == 3:
+        A, B, C, D = tf2ss(system[0], system[1])
+        dt = system[2]
+    elif len(system) == 4:
+        A, B, C, D = zpk2ss(system[0], system[1], system[2])
+        dt = system[3]
+    elif len(system) == 5:
+        A, B, C, D, dt = system
+    else:
+        raise ValueError("System argument should be a discrete transfer " +
+                         "function, zeros-poles-gain specification, or " +
+                         "state-space system")
+    return A, B, C, D, dt
+
+
 def dlsim(system, u, t=None, x0=None):
     """
     Simulate output of a discrete-time linear system.
@@ -67,18 +86,7 @@ def dlsim(system, u, t=None, x0=None):
     array([ 0.,  0.,  0.,  1.])
 
     """
-    if len(system) == 3:
-        a, b, c, d = tf2ss(system[0], system[1])
-        dt = system[2]
-    elif len(system) == 4:
-        a, b, c, d = zpk2ss(system[0], system[1], system[2])
-        dt = system[3]
-    elif len(system) == 5:
-        a, b, c, d, dt = system
-    else:
-        raise ValueError("System argument should be a discrete transfer " +
-                         "function, zeros-poles-gain specification, or " +
-                         "state-space system")
+    A, B, C, D, dt = _system_to_statespace(system)
 
     if t is None:
         out_samples = max(u.shape)
@@ -88,15 +96,15 @@ def dlsim(system, u, t=None, x0=None):
         out_samples = int(np.floor(stoptime / dt)) + 1
 
     # Pre-build output arrays
-    xout = np.zeros((out_samples, a.shape[0]))
-    yout = np.zeros((out_samples, c.shape[0]))
+    xout = np.zeros((out_samples, A.shape[0]))
+    yout = np.zeros((out_samples, C.shape[0]))
     tout = np.linspace(0.0, stoptime, num=out_samples)
 
     # Check initial condition
     if x0 is None:
-        xout[0,:] = np.zeros((a.shape[1],))
+        xout[0, :] = np.zeros((A.shape[1],))
     else:
-        xout[0,:] = np.asarray(x0)
+        xout[0, :] = np.asarray(x0)
 
     # Pre-interpolate inputs into the desired time steps
     if t is None:
@@ -110,12 +118,12 @@ def dlsim(system, u, t=None, x0=None):
 
     # Simulate the system
     for i in range(0, out_samples - 1):
-        xout[i+1,:] = np.dot(a, xout[i,:]) + np.dot(b, u_dt[i,:])
-        yout[i,:] = np.dot(c, xout[i,:]) + np.dot(d, u_dt[i,:])
+        xout[i+1, :] = np.dot(A, xout[i, :]) + np.dot(B, u_dt[i, :])
+        yout[i, :] = np.dot(C, xout[i, :]) + np.dot(D, u_dt[i, :])
 
     # Last point
-    yout[out_samples-1,:] = np.dot(c, xout[out_samples-1,:]) + \
-                            np.dot(d, u_dt[out_samples-1,:])
+    yout[out_samples-1, :] = (np.dot(C, xout[out_samples-1, :]) +
+                              np.dot(D, u_dt[out_samples-1, :]))
 
     if len(system) == 5:
         return tout, yout, xout
@@ -158,19 +166,8 @@ def dimpulse(system, x0=None, t=None, n=None):
 
     """
     # Determine the system type and set number of inputs and time steps
-    if len(system) == 3:
-        n_inputs = 1
-        dt = system[2]
-    elif len(system) == 4:
-        n_inputs = 1
-        dt = system[3]
-    elif len(system) == 5:
-        n_inputs = system[1].shape[1]
-        dt = system[4]
-    else:
-        raise ValueError("System argument should be a discrete transfer " +
-                         "function, zeros-poles-gain specification, or " +
-                         "state-space system")
+    A, B, C, D, dt = _system_to_statespace(system)
+    n_inputs = B.shape[1]
 
     # Default to 100 samples if unspecified
     if n is None:
@@ -185,9 +182,9 @@ def dimpulse(system, x0=None, t=None, n=None):
     yout = None
     for i in range(0, n_inputs):
         u = np.zeros((t.shape[0], n_inputs))
-        u[0,i] = 1.0
+        u[0, i] = 1.0
 
-        one_output = dlsim(system, u, t=t, x0=x0)
+        one_output = dlsim((A, B, C, D, dt), u, t=t, x0=x0)
 
         if yout is None:
             yout = (one_output[1],)
@@ -234,19 +231,8 @@ def dstep(system, x0=None, t=None, n=None):
 
     """
     # Determine the system type and set number of inputs and time steps
-    if len(system) == 3:
-        n_inputs = 1
-        dt = system[2]
-    elif len(system) == 4:
-        n_inputs = 1
-        dt = system[3]
-    elif len(system) == 5:
-        n_inputs = system[1].shape[1]
-        dt = system[4]
-    else:
-        raise ValueError("System argument should be a discrete transfer " +
-                         "function, zeros-poles-gain specification, or " +
-                         "state-space system")
+    A, B, C, D, dt = _system_to_statespace(system)
+    n_inputs = B.shape[1]
 
     # Default to 100 samples if unspecified
     if n is None:
@@ -261,9 +247,9 @@ def dstep(system, x0=None, t=None, n=None):
     yout = None
     for i in range(0, n_inputs):
         u = np.zeros((t.shape[0], n_inputs))
-        u[:,i] = np.ones((t.shape[0],))
+        u[:, i] = np.ones((t.shape[0],))
 
-        one_output = dlsim(system, u, t=t, x0=x0)
+        one_output = dlsim((A, B, C, D, dt), u, t=t, x0=x0)
 
         if yout is None:
             yout = (one_output[1],)
