@@ -19,8 +19,8 @@ def dlsim(system, u, t=None, x0=None):
 
     Parameters
     ----------
-    system : class instance or tuple
-        An instance of the LTI class, or a tuple describing the system.
+    system : tuple of array_like
+        A tuple describing the system.
         The following gives the number of elements in the tuple and
         the interpretation:
 
@@ -36,7 +36,7 @@ def dlsim(system, u, t=None, x0=None):
         The time steps at which the input is defined.  If `t` is given, the
         final value in `t` determines the number of steps returned in the
         output.
-    x0 : arry_like, optional
+    x0 : array_like, optional
         The initial conditions on the state vector (zero by default).
 
     Returns
@@ -128,7 +128,8 @@ def dimpulse(system, x0=None, t=None, n=None):
 
     Parameters
     ----------
-    system : tuple
+    system : tuple of array_like
+        A tuple describing the system.
         The following gives the number of elements in the tuple and
         the interpretation:
 
@@ -145,9 +146,9 @@ def dimpulse(system, x0=None, t=None, n=None):
 
     Returns
     -------
-    t : ndarray
-        A 1-D array of time points.
-    yout : tuple of array_like
+    tout : ndarray
+        Time values for the output, as a 1-D array.
+    yout : ndarray
         Impulse response of system.  Each element of the tuple represents
         the output of the system based on an impulse in each input.
 
@@ -203,7 +204,8 @@ def dstep(system, x0=None, t=None, n=None):
 
     Parameters
     ----------
-    system : a tuple describing the system.
+    system : tuple of array_like
+        A tuple describing the system.
         The following gives the number of elements in the tuple and
         the interpretation:
 
@@ -212,17 +214,17 @@ def dstep(system, x0=None, t=None, n=None):
           * 5: (A, B, C, D, dt)
 
     x0 : array_like, optional
-        Initial state-vector (default is zero).
+        Initial state-vector.  Defaults to zero.
     t : array_like, optional
-        Time points (computed if not given).
+        Time points.  Computed if not given.
     n : int, optional
-        Number of time points to compute if `t` is not given.
+        The number of time points to compute (if `t` is not given).
 
     Returns
     -------
-    t : ndarray
+    tout : ndarray
         Output time points, as a 1-D array.
-    yout : tuple of array_like
+    yout : ndarray
         Step response of system.  Each element of the tuple represents
         the output of the system based on a step response to each input.
 
