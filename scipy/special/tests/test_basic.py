@@ -31,7 +31,7 @@ from numpy import array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp, \
 from numpy.testing import assert_equal, assert_almost_equal, \
         assert_array_equal, assert_array_almost_equal, assert_approx_equal, \
         assert_, rand, dec, TestCase, run_module_suite, assert_allclose, \
-        assert_raises
+        assert_raises, assert_array_almost_equal_nulp
 
 from scipy import special
 import scipy.special._ufuncs as cephes
@@ -1247,6 +1247,22 @@ class TestEllip(TestCase):
         assert_almost_equal(elkinc,0.79398143,8)
         # From pg. 614 of A & S
 
+    def test_ellipkinc_2(self):
+        # Regression test for gh-3550
+        # ellipkinc(phi, mbad) was NaN and mvals[2:6] were twice the correct value
+        mbad = 0.68359375000000011
+        phi = 0.9272952180016123
+        m = np.nextafter(mbad, 0)
+        mvals = []
+        for j in range(10):
+            mvals.append(m)
+            m = np.nextafter(m, 1)
+        f = special.ellipkinc(phi, mvals)
+        assert_array_almost_equal_nulp(f, 1.0259330100195334 * np.ones_like(f), 1)
+        # this bug also appears at phi + n * pi for at least small n
+        f1 = special.ellipkinc(phi + pi, mvals)
+        assert_array_almost_equal_nulp(f1, 5.1296650500976675 * np.ones_like(f1), 2)
+
     def test_ellipe(self):
         ele = special.ellipe(.2)
         assert_almost_equal(ele,1.4890350580958529,8)
@@ -1260,6 +1276,22 @@ class TestEllip(TestCase):
         m = sin(alpha)**2
         eleinc = special.ellipeinc(phi,m)
         assert_almost_equal(eleinc, 0.58823065, 8)
+
+    def test_ellipeinc_2(self):
+        # Regression test for gh-3550
+        # ellipeinc(phi, mbad) was NaN and mvals[2:6] were twice the correct value
+        mbad = 0.68359375000000011
+        phi = 0.9272952180016123
+        m = np.nextafter(mbad, 0)
+        mvals = []
+        for j in range(10):
+            mvals.append(m)
+            m = np.nextafter(m, 1)
+        f = special.ellipeinc(phi, mvals)
+        assert_array_almost_equal_nulp(f, 0.84442884574781019 * np.ones_like(f), 2)
+        # this bug also appears at phi + n * pi for at least small n
+        f1 = special.ellipeinc(phi + pi, mvals)
+        assert_array_almost_equal_nulp(f1, 3.3471442287390509 * np.ones_like(f1), 4)
 
 
 class TestErf(TestCase):

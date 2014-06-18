@@ -61,7 +61,7 @@ double ellie(phi, m)
 double phi, m;
 {
     double a, b, c, e, temp;
-    double lphi, t, E;
+    double lphi, t, E, denom;
     int d, mod, npio2, sign;
 
     if (m == 0.0)
@@ -107,8 +107,15 @@ double phi, m;
     while (fabs(c / a) > MACHEP) {
 	temp = b / a;
 	lphi = lphi + atan(t * temp) + mod * NPY_PI;
-	mod = (lphi + NPY_PI_2) / NPY_PI;
-	t = t * (1.0 + temp) / (1.0 - temp * t * t);
+        denom = 1 - temp * t * t;
+        if (fabs(denom) > 10*MACHEP) {
+            t = t * (1.0 + temp) / denom;
+            mod = (lphi + NPY_PI_2) / NPY_PI;
+        }
+        else {
+            t = tan(lphi);
+            mod = (int)floor((lphi - atan(t))/NPY_PI);
+        }
 	c = (a - b) / 2.0;
 	temp = sqrt(a * b);
 	a = (a + b) / 2.0;
