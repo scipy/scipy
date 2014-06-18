@@ -181,6 +181,8 @@ def dimpulse(system, x0=None, t=None, n=None):
     # and system dt
     if t is None:
         t = np.linspace(0, n * dt, n, endpoint=False)
+    else:
+        t = np.asarray(t)
 
     # For each input, implement a step change
     yout = None
@@ -246,6 +248,8 @@ def dstep(system, x0=None, t=None, n=None):
     # and system dt
     if t is None:
         t = np.linspace(0, n * dt, n, endpoint=False)
+    else:
+        t = np.asarray(t)
 
     # For each input, implement a step change
     yout = None
