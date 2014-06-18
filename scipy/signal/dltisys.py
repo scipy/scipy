@@ -52,9 +52,9 @@ def dlsim(system, u, t=None, x0=None):
         assumed between given times).  If there are multiple inputs, then each
         column of the rank-2 array represents an input.
     t : array_like, optional
-        The time steps at which the input is defined.  If `t` is given, the
-        final value in `t` determines the number of steps returned in the
-        output.
+        The time steps at which the input is defined.  If `t` is given, it
+        must be the same length as `u`, and the final value in `t` determines
+        the number of steps returned in the output.
     x0 : array_like, optional
         The initial conditions on the state vector (zero by default).
 
