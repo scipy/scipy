@@ -38,6 +38,10 @@ class PchipInterpolator(object):
     __call__
     derivative
 
+    See Also
+    --------
+    Akima1DInterpolator
+
     Notes
     -----
     The first derivatives are guaranteed to be continuous, but the second
@@ -257,6 +261,10 @@ class Akima1DInterpolator(PPoly):
     Methods
     -------
     __call__
+
+    See Also
+    --------
+    PchipInterpolator
 
     Notes
     -----
