@@ -87,9 +87,13 @@ def dlsim(system, u, t=None, x0=None):
 
     """
     A, B, C, D, dt = _system_to_statespace(system)
+    u = np.asarray(u)
+
+    if u.ndim == 1:
+        u = np.atleast_2d(u).T
 
     if t is None:
-        out_samples = max(u.shape)
+        out_samples = len(u)
         stoptime = (out_samples - 1) * dt
     else:
         stoptime = t[-1]
