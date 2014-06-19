@@ -1940,8 +1940,9 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
     Raises
     ------
-    An exception is thrown if ``XA`` and ``XB`` do not have
-    the same number of columns.
+    ValueError
+        An exception is thrown if `XA` and `XB` do not have
+        the same number of columns.
 
     """
 
