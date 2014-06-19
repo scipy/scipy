@@ -3,6 +3,9 @@
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # February 24, 2012
 
+# Modified: Chad Fulton <ChadFulton@gmail.com>
+# June 19, 2014
+
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
@@ -112,7 +115,7 @@ def solve_lyapunov(a, q):
     return solve_sylvester(a, a.conj().transpose(), q)
 
 
-def solve_discrete_lyapunov(a, q):
+def _solve_discrete_lyapunov_direct(a, q):
     """
     Solves the Discrete Lyapunov Equation (A'XA-X=-Q) directly.
 
@@ -129,7 +132,7 @@ def solve_discrete_lyapunov(a, q):
     Returns
     -------
     x : ndarray
-        Solution to the continuous Lyapunov equation
+        Solution to the discrete Lyapunov equation
 
     Notes
     -----
@@ -145,6 +148,114 @@ def solve_discrete_lyapunov(a, q):
     x = solve(lhs, q.flatten())
 
     return np.reshape(x, q.shape)
+
+
+def _solve_discrete_lyapunov_bilinear(a, q):
+    """
+    Solves the Discrete Lyapunov Equation (A'XA-X=-Q) using a bilinear
+    transformation to a Continuous Lyapunov Equation (B'X+XB=-C) where
+    :math:`B=(A-I)(A+I)^{-1}` and :math:`C=2(A' + I)^{-1} Q (A + I)^{-1}`.
+
+    This 
+
+    .. versionadded:: 0.15.0
+
+    Parameters
+    ----------
+    a : (M, M) array_like
+        A square matrix
+
+    q : (M, M) array_like
+        Right-hand side square matrix
+
+    Returns
+    -------
+    x : ndarray
+        Solution to the discrete Lyapunov equation
+
+    See Also
+    --------
+    solve_lyapunov : computes the solution to the continuous Lyapunov equation
+
+    Notes
+    -----
+    This method uses a transformation to convert the problem to a continuous
+    Lyapunov equation which can be solved as a special case of a Sylvester
+    equation. It is much faster than the direct method as the dimension of the
+    matrices grow.
+
+    Algorithm is the bilinear transformation of Popov (1964) as described in:
+    Gajic, Z., and M.T.J. Qureshi. 2008.
+    Lyapunov Matrix Equation in System Stability and Control.
+    Dover Books on Engineering Series. Dover Publications.
+    """
+    eye = np.eye(a.shape[0])
+    aH = a.conj().transpose()
+    aHI_inv = inv(aH + eye)
+    b = np.dot(aH - eye, aHI_inv)
+    c = 2*np.dot(
+            np.dot(inv(a + eye), q),
+            aHI_inv
+    )
+    return solve_lyapunov(b.conj().transpose(), -c)
+
+def solve_discrete_lyapunov(a, q, method=None):
+    """
+    Solves the Discrete Lyapunov Equation (A'XA-X=-Q).
+
+    .. versionadded:: 0.11.0
+
+    Parameters
+    ----------
+    a : (M, M) array_like
+        A square matrix
+
+    q : (M, M) array_like
+        Right-hand side square matrix
+
+    method : {'direct', 'bilinear'}, optional
+        Type of solver.
+
+        If not given, chosen to be ``direct`` if ``M`` is less than 10 and
+        ``bilinear`` otherwise.
+
+    Returns
+    -------
+    x : ndarray
+        Solution to the discrete Lyapunov equation
+
+    Notes
+    -----
+    This section describes the available solvers that can be selected by the
+    'method' parameter. The default method is *direct* if ``M`` is less than 10
+    and ``bilinear`` otherwise.
+
+    Method *direct* uses a direct analytical solution to the discrete Lyapunov
+    equation. However it requires the linear solution of a system with
+    dimension ``M``^2 so that performance degrades rapidly for even moderately
+    sized matrices.
+
+    Method *bilinear* uses a bilinear transformation to convert the discrete
+    Lyapunov equation to a continuous Lyapunov equation. The continuous can be
+    efficiently solved since it is a special case of a Sylvester equation.
+    """
+    if method is None:
+        # Select automatically based on size of matrices
+        if a.shape[0] >= 10:
+            method = 'bilinear'
+        else:
+            method = 'direct'
+
+    meth = method.lower()
+
+    if meth == 'direct':
+        x = _solve_discrete_lyapunov_direct(a, q)
+    elif meth == 'bilinear':
+        x = _solve_discrete_lyapunov_bilinear(a, q)
+    else:
+        raise ValueError('Unknown solver %s' % method)
+
+    return x
 
 
 def solve_continuous_are(a, b, q, r):

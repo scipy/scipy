@@ -36,14 +36,16 @@ class TestSolveLyapunov(TestCase):
         x = solve_lyapunov(a, q)
         assert_array_almost_equal(np.dot(a, x) + np.dot(x, a.conj().transpose()), q)
 
-    def check_discrete_case(self, a, q):
-        x = solve_discrete_lyapunov(a, q)
+    def check_discrete_case(self, a, q, method=None):
+        x = solve_discrete_lyapunov(a, q, method=method)
         assert_array_almost_equal(np.dot(np.dot(a, x),a.conj().transpose()) - x, -1.0*q)
 
     def test_cases(self):
         for case in self.cases:
             self.check_continuous_case(case[0], case[1])
             self.check_discrete_case(case[0], case[1])
+            self.check_discrete_case(case[0], case[1], method='direct')
+            self.check_discrete_case(case[0], case[1], method='bilinear')
 
 
 class TestSolveContinuousARE(TestCase):
