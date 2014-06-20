@@ -3,6 +3,11 @@
 language: python
 matrix:
   include:
+    - python: 3.4
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - NUMPYSPEC=
     - python: 3.3
       env:
         - TESTMODE=fast
