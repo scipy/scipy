@@ -1840,48 +1840,48 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     14. ``Y = cdist(XA, XB, 'yule')``
 
        Computes the Yule distance between the boolean
-       vectors. (see yule function documentation)
+       vectors. (see `yule` function documentation)
 
     15. ``Y = cdist(XA, XB, 'matching')``
 
        Computes the matching distance between the boolean
-       vectors. (see matching function documentation)
+       vectors. (see `matching` function documentation)
 
     16. ``Y = cdist(XA, XB, 'dice')``
 
        Computes the Dice distance between the boolean vectors. (see
-       dice function documentation)
+       `dice` function documentation)
 
     17. ``Y = cdist(XA, XB, 'kulsinski')``
 
        Computes the Kulsinski distance between the boolean
-       vectors. (see kulsinski function documentation)
+       vectors. (see `kulsinski` function documentation)
 
     18. ``Y = cdist(XA, XB, 'rogerstanimoto')``
 
        Computes the Rogers-Tanimoto distance between the boolean
-       vectors. (see rogerstanimoto function documentation)
+       vectors. (see `rogerstanimoto` function documentation)
 
     19. ``Y = cdist(XA, XB, 'russellrao')``
 
        Computes the Russell-Rao distance between the boolean
-       vectors. (see russellrao function documentation)
+       vectors. (see `russellrao` function documentation)
 
     20. ``Y = cdist(XA, XB, 'sokalmichener')``
 
        Computes the Sokal-Michener distance between the boolean
-       vectors. (see sokalmichener function documentation)
+       vectors. (see `sokalmichener` function documentation)
 
     21. ``Y = cdist(XA, XB, 'sokalsneath')``
 
        Computes the Sokal-Sneath distance between the vectors. (see
-       sokalsneath function documentation)
+       `sokalsneath` function documentation)
 
 
     22. ``Y = cdist(XA, XB, 'wminkowski')``
 
        Computes the weighted Minkowski distance between the
-       vectors. (see wminkowski function documentation)
+       vectors. (see `wminkowski` function documentation)
 
     23. ``Y = cdist(XA, XB, f)``
 
@@ -1898,7 +1898,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
          dm = cdist(XA, XB, sokalsneath)
 
        would calculate the pair-wise distances between the vectors in
-       X using the Python function sokalsneath. This would result in
+       X using the Python function `sokalsneath`. This would result in
        sokalsneath being called :math:`{n \\choose 2}` times, which
        is inefficient. Instead, the optimized C version is more
        efficient, and we call it using the following syntax.::
@@ -1910,9 +1910,11 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     XA : ndarray
         An :math:`m_A` by :math:`n` array of :math:`m_A`
         original observations in an :math:`n`-dimensional space.
+        Inputs are converted to float type.
     XB : ndarray
         An :math:`m_B` by :math:`n` array of :math:`m_B`
         original observations in an :math:`n`-dimensional space.
+        Inputs are converted to float type.
     metric : string or function
         The distance metric to use. The distance function can
         be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
@@ -1943,6 +1945,43 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     ValueError
         An exception is thrown if `XA` and `XB` do not have
         the same number of columns.
+
+    Examples
+    --------
+    Find the Euclidean distances between 4 2D coordinates:
+
+    >>> coords = [(35.0456, -85.2672),
+    ...           (35.1174, -89.9711),
+    ...           (35.9728, -83.9422),
+    ...           (36.1667, -86.7833)]
+    >>> cdist(coords, coords, 'euclidean')
+    array([[ 0.    ,  4.7044,  1.6172,  1.8856],
+           [ 4.7044,  0.    ,  6.0893,  3.3561],
+           [ 1.6172,  6.0893,  0.    ,  2.8477],
+           [ 1.8856,  3.3561,  2.8477,  0.    ]])
+
+
+    Find the Manhattan distance from a 3D point to the corners of the unit
+    cube:
+
+    >>> a = array([[0, 0, 0],
+                   [0, 0, 1],
+                   [0, 1, 0],
+                   [0, 1, 1],
+                   [1, 0, 0],
+                   [1, 0, 1],
+                   [1, 1, 0],
+                   [1, 1, 1]])
+    >>> b = array([[ 0.1,  0.2,  0.4]])
+    >>> cdist(a, b, 'cityblock')
+    array([[ 0.7],
+           [ 0.9],
+           [ 1.3],
+           [ 1.5],
+           [ 1.5],
+           [ 1.7],
+           [ 2.1],
+           [ 2.3]])
 
     """
 
