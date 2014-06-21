@@ -15,7 +15,7 @@ def test_graph_symrcm():
                 [0, 0, 0, 1, 0, 0, 1, 0],
                 [0, 1, 0, 0, 0, 1, 0, 1]], dtype=np.int32)
     
-    graph=csr_matrix(A)
+    graph = csr_matrix(A)
     perm = symrcm(graph)
     correct_perm = np.array([6, 3, 7, 5, 1, 2, 4, 0])
     assert_equal((perm - correct_perm).all(), 0)
