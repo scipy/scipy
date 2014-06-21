@@ -1,5 +1,6 @@
 # Author: Paul Nation  -- <pnation@korea.ac.kr>
-# License: BSD, (C) 2014
+# Original Source: QuTiP: Quantum Toolbox in Python (qutip.org)
+# License: New BSD, (C) 2014
 
 import numpy as np
 cimport numpy as np
