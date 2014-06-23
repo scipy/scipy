@@ -1598,6 +1598,10 @@ def _augmented_orthonormal_rows(x, k):
     return _augmented_orthonormal_cols(x.T, k).T
 
 
+def _herm(x):
+    return x.T.conj()
+
+
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
          maxiter=None, return_singular_vectors=True):
     """Compute the largest k singular values/vectors for a sparse matrix.
@@ -1654,17 +1658,12 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     n, m = A.shape
 
-    if np.issubdtype(A.dtype, np.complexfloating):
-        herm = lambda x: x.T.conjugate()
-    else:
-        herm = lambda x: x.T
-
     if n > m:
         X = A
-        XH = herm(A)
+        XH = _herm(A)
     else:
         XH = A
-        X = herm(A)
+        X = _herm(A)
 
     def matvec_XH_X(x):
         return XH.dot(X.dot(x))
@@ -1684,15 +1683,10 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         # Gramian matrices have real non-negative eigenvalues.
         eigvals = np.maximum(eigvals.real, 0)
 
-        # Copy the sophisticated detection of small eigenvalues from pinvh.
-        cond = None
-        rcond = None
-        if rcond is not None:
-            cond = rcond
-        if cond in [None, -1]:
-            t = eigvec.dtype.char.lower()
-            factor = {'f': 1E3, 'd': 1E6}
-            cond = factor[t] * np.finfo(t).eps
+        # Use the sophisticated detection of small eigenvalues from pinvh.
+        t = eigvec.dtype.char.lower()
+        factor = {'f': 1E3, 'd': 1E6}
+        cond = factor[t] * np.finfo(t).eps
         cutoff = cond * np.max(eigvals)
 
         # Get a mask indicating which eigenpairs are not degenerately tiny,
@@ -1709,10 +1703,10 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         if n > m:
             vlarge = eigvec[:, above_cutoff]
             ularge = X.dot(vlarge) / slarge
-            vhlarge = herm(vlarge)
+            vhlarge = _herm(vlarge)
         else:
             ularge = eigvec[:, above_cutoff]
-            vhlarge = herm(X.dot(ularge) / slarge)
+            vhlarge = _herm(X.dot(ularge) / slarge)
 
         u = _augmented_orthonormal_cols(ularge, nsmall)
         vh = _augmented_orthonormal_rows(vhlarge, nsmall)
@@ -1726,9 +1720,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         if n > m:
             v = eigvec
             u = X.dot(v) / s
-            vh = herm(v)
+            vh = _herm(v)
         else:
             u = eigvec
-            vh = herm(X.dot(u) / s)
+            vh = _herm(X.dot(u) / s)
 
     return u, s, vh

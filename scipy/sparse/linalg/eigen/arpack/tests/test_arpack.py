@@ -643,23 +643,23 @@ def _check_svds(A, k, U, s, VH):
     n, m = A.shape
 
     # Check shapes.
-    yield assert_equal, U.shape, (n, k)
-    yield assert_equal, s.shape, (k,)
-    yield assert_equal, VH.shape, (k, m)
+    assert_equal(U.shape, (n, k))
+    assert_equal(s.shape, (k,))
+    assert_equal(VH.shape, (k, m))
 
     # Check that the original matrix can be reconstituted.
     A_rebuilt = (U*s).dot(VH)
-    yield assert_equal, A_rebuilt.shape, A.shape
-    yield assert_allclose, A_rebuilt, A
+    assert_equal(A_rebuilt.shape, A.shape)
+    assert_allclose(A_rebuilt, A)
 
     # Check that U is a semi-orthogonal matrix.
     UH_U = np.dot(U.T.conj(), U)
-    yield assert_equal, UH_U.shape, (k, k)
+    assert_equal(UH_U.shape, (k, k))
     assert_allclose(UH_U, np.identity(k), atol=1e-12)
 
     # Check that V is a semi-orthogonal matrix.
     VH_V = np.dot(VH, VH.T.conj())
-    yield assert_equal, VH_V.shape, (k, k)
+    assert_equal(VH_V.shape, (k, k))
     assert_allclose(VH_V, np.identity(k), atol=1e-12)
 
 
@@ -672,13 +672,12 @@ def test_svd_LM_ones_matrix():
             U, s, VH = svds(A, k)
 
             # Check some generic properties of svd.
-            for condition in _check_svds(A, k, U, s, VH):
-                yield condition
+            _check_svds(A, k, U, s, VH)
 
             # Check that the largest singular value is near sqrt(n*m)
             # and the other singular values have been forced to zero.
-            yield assert_allclose, np.max(s), np.sqrt(n*m)
-            yield assert_array_equal, sorted(s)[:-1], 0
+            assert_allclose(np.max(s), np.sqrt(n*m))
+            assert_array_equal(sorted(s)[:-1], 0)
 
 
 def test_svd_LM_zeros_matrix():
@@ -690,11 +689,10 @@ def test_svd_LM_zeros_matrix():
             U, s, VH = svds(A, k)
 
             # Check some generic properties of svd.
-            for condition in _check_svds(A, k, U, s, VH):
-                yield condition
+            _check_svds(A, k, U, s, VH)
 
             # Check that the singular values are zero.
-            yield assert_array_equal, s, 0
+            assert_array_equal(s, 0)
 
 
 def test_svd_LM_zeros_matrix_gh_3452():
@@ -706,11 +704,10 @@ def test_svd_LM_zeros_matrix_gh_3452():
     U, s, VH = svds(A, k)
 
     # Check some generic properties of svd.
-    for condition in _check_svds(A, k, U, s, VH):
-        yield condition
+    _check_svds(A, k, U, s, VH)
 
     # Check that the singular values are zero.
-    yield assert_array_equal, s, 0
+    assert_array_equal(s, 0)
 
 
 if __name__ == "__main__":
