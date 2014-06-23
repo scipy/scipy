@@ -11,13 +11,18 @@ import numpy
 import numpy as np
 
 import scipy.linalg
-import scipy.stats._multivariate
+from scipy.stats._multivariate import _PSD
 from scipy.stats import multivariate_normal
 from scipy.stats import norm
 
-from scipy.stats._multivariate import _psd_pinv_decomposed_log_pdet
-
 from scipy.integrate import romb
+
+
+def test_input_shape():
+    mu = np.arange(3)
+    cov = np.identity(2)
+    assert_raises(ValueError, multivariate_normal.pdf, (0, 1), mu, cov)
+    assert_raises(ValueError, multivariate_normal.pdf, (0, 1, 2), mu, cov)
 
 
 def test_scalar_values():
@@ -47,6 +52,64 @@ def test_logpdf():
     assert_allclose(d1, np.log(d2))
 
 
+def test_rank():
+    # Check that the rank is detected correctly.
+    np.random.seed(1234)
+    n = 4
+    mean = np.random.randn(n)
+    x = np.random.randn(n)
+    for expected_rank in range(1, n+1):
+        s = np.random.randn(n, expected_rank)
+        cov = np.dot(s, s.T)
+        distn = multivariate_normal(mean, cov, allow_singular=True)
+        assert_equal(distn.cov_info.rank, expected_rank)
+
+def _sample_orthonormal_matrix(n):
+    M = np.random.randn(n, n)
+    u, s, v = scipy.linalg.svd(M)
+    return u
+
+def test_degenerate_distributions():
+    for n in range(1, 5):
+        mu = np.zeros(n)
+        x = np.random.randn(n)
+        for k in range(1, n+1):
+
+            # Sample a small covariance matrix.
+            s = np.random.randn(k, k)
+            cov_kk = np.dot(s, s.T)
+
+            # Embed the small covariance matrix into a larger low rank matrix.
+            cov_nn = np.zeros((n, n))
+            cov_nn[:k, :k] = cov_kk
+
+            # Define a rotation of the larger low rank matrix.
+            u = _sample_orthonormal_matrix(n)
+            cov_rr = np.dot(u, np.dot(cov_nn, u.T))
+            y = np.dot(u, x)
+
+            # Check some identities.
+            distn_kk = multivariate_normal(np.zeros(k), cov_kk,
+                    allow_singular=True)
+            distn_nn = multivariate_normal(np.zeros(n), cov_nn,
+                    allow_singular=True)
+            distn_rr = multivariate_normal(np.zeros(n), cov_rr,
+                    allow_singular=True)
+            assert_equal(distn_kk.cov_info.rank, k)
+            assert_equal(distn_nn.cov_info.rank, k)
+            assert_equal(distn_rr.cov_info.rank, k)
+            pdf_kk = distn_kk.pdf(x[:k])
+            pdf_nn = distn_nn.pdf(x)
+            pdf_rr = distn_rr.pdf(y)
+            assert_allclose(pdf_kk, pdf_nn)
+            assert_allclose(pdf_kk, pdf_rr)
+            logpdf_kk = distn_kk.logpdf(x[:k])
+            logpdf_nn = distn_nn.logpdf(x)
+            logpdf_rr = distn_rr.logpdf(y)
+            assert_allclose(logpdf_kk, logpdf_nn)
+            assert_allclose(logpdf_kk, logpdf_rr)
+
+
 def test_large_pseudo_determinant():
     # Check that large pseudo-determinants are handled appropriately.
 
@@ -70,8 +133,8 @@ def test_large_pseudo_determinant():
     #assert_allclose(np.linalg.slogdet(cov[:npos, :npos]), (1, large_total_log))
 
     # Check the pseudo-determinant.
-    U, log_pdet = scipy.stats._multivariate._psd_pinv_decomposed_log_pdet(cov)
-    assert_allclose(log_pdet, large_total_log)
+    psd = _PSD(cov)
+    assert_allclose(psd.log_pdet, large_total_log)
 
 
 def test_broadcasting():
@@ -160,33 +223,42 @@ def test_pseudodet_pinv():
 
     # Set cond so that the lowest eigenvalue is below the cutoff
     cond = 1e-5
-    U, log_pdet = _psd_pinv_decomposed_log_pdet(cov, cond)
-    pinv = np.dot(U, U.T)
-    _, log_pdet_pinv = _psd_pinv_decomposed_log_pdet(pinv, cond)
+    psd = _PSD(cov, cond=cond)
+    psd_pinv = _PSD(psd.pinv, cond=cond)
 
     # Check that the log pseudo-determinant agrees with the sum
     # of the logs of all but the smallest eigenvalue
-    assert_allclose(log_pdet, np.sum(np.log(s[:-1])))
+    assert_allclose(psd.log_pdet, np.sum(np.log(s[:-1])))
     # Check that the pseudo-determinant of the pseudo-inverse
     # agrees with 1 / pseudo-determinant
-    assert_allclose(-log_pdet, log_pdet_pinv)
+    assert_allclose(-psd.log_pdet, psd_pinv.log_pdet)
 
 
 def test_exception_nonsquare_cov():
     cov = [[1, 2, 3], [4, 5, 6]]
-    assert_raises(ValueError, _psd_pinv_decomposed_log_pdet, cov)
+    assert_raises(ValueError, _PSD, cov)
 
 
 def test_exception_nonfinite_cov():
     cov_nan = [[1, 0], [0, np.nan]]
-    assert_raises(ValueError, _psd_pinv_decomposed_log_pdet, cov_nan)
+    assert_raises(ValueError, _PSD, cov_nan)
     cov_inf = [[1, 0], [0, np.inf]]
-    assert_raises(ValueError, _psd_pinv_decomposed_log_pdet, cov_inf)
+    assert_raises(ValueError, _PSD, cov_inf)
 
 
 def test_exception_non_psd_cov():
     cov = [[1, 0], [0, -1]]
-    assert_raises(ValueError, _psd_pinv_decomposed_log_pdet, cov)
+    assert_raises(ValueError, _PSD, cov)
+
+def test_exception_singular_cov():
+    np.random.seed(1234)
+    x = np.random.randn(5)
+    mean = np.random.randn(5)
+    cov = np.ones((5, 5))
+    e = np.linalg.LinAlgError
+    assert_raises(e, multivariate_normal, mean, cov)
+    assert_raises(e, multivariate_normal.pdf, x, mean, cov)
+    assert_raises(e, multivariate_normal.logpdf, x, mean, cov)
 
 
 def test_R_values():
