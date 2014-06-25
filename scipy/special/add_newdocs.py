@@ -57,6 +57,16 @@ add_newdoc("scipy.special", "sph_harm",
     .. [1] Digital Library of Mathematical Functions, 14.30. http://dlmf.nist.gov/14.30
     """)
 
+add_newdoc("scipy.special", "_ellip_harm",
+    """
+    Internal function, use `ellip_harm` instead.
+    """)
+
+add_newdoc("scipy.special", "_ellip_norm",
+    """
+    Internal function, use `ellip_norm` instead.
+    """)
+
 add_newdoc("scipy.special", "_lambertw",
     """
     Internal function, use `lambertw` instead.
