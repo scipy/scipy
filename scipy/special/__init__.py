@@ -562,6 +562,7 @@ from . import specfun
 from . import orthogonal
 from .orthogonal import *
 from .spfun_stats import multigammaln
+from .ellip_harm import ellip_harm
 from .lambertw import lambertw
 
 
