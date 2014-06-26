@@ -9,7 +9,8 @@ import warnings
 
 import numpy as np
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-    TestCase, run_module_suite, assert_raises, assert_allclose)
+    TestCase, run_module_suite, assert_raises, assert_allclose, assert_equal,
+    assert_)
 
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, py_vq2, vq, whiten,
     ClusterError)
@@ -61,7 +62,11 @@ class TestWhiten(TestCase):
         result = np.array([[0., 1.0, 2.86666544],
                            [0., 1.0, 1.32460034],
                            [0., 1.0, 3.74382172]])
-        assert_allclose(whiten(obs), result, rtol=1e-5)
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            assert_allclose(whiten(obs), result, rtol=1e-5)
+            assert_equal(len(w), 1)
+            assert_(issubclass(w[-1].category, RuntimeWarning))
 
 
 class TestVq(TestCase):
