@@ -1686,7 +1686,7 @@ def _get_tick_rotation(p):
 def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
                      no_labels, color_list, leaf_font_size=None,
                      leaf_rotation=None, contraction_marks=None,
-                     ax=None):
+                     ax=None, abv_threshold_color='b'):
     # Import matplotlib here so that it's not imported unless dendrograms
     # are plotted. Raise an informative error if importing fails.
     try:
@@ -1830,16 +1830,15 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
                                                      colors=(color,))
         colors_to_collections[color] = coll
 
-    # Add all the non-blue link groupings, i.e. those groupings below the
-    # color threshold.
+    # Add all the groupings below the color threshold.
 
     for color in colors_used:
-        if color != 'b':
+        if color != abv_threshold_color:
             ax.add_collection(colors_to_collections[color])
-    # If there is a blue grouping (i.e., links above the color threshold),
+    # If there is a grouping of links above the color threshold,
     # it should go last.
-    if 'b' in colors_to_collections:
-        ax.add_collection(colors_to_collections['b'])
+    if abv_threshold_color in colors_to_collections:
+        ax.add_collection(colors_to_collections[abv_threshold_color])
 
     if contraction_marks is not None:
         if orientation in ('left', 'right'):
@@ -1896,7 +1895,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                no_plot=False, no_labels=False, color_list=None,
                leaf_font_size=None, leaf_rotation=None, leaf_label_func=None,
                no_leaves=False, show_contracted=False,
-               link_color_func=None, ax=None):
+               link_color_func=None, ax=None, abv_threshold_color='b'):
     """
     Plots the hierarchical clustering as a dendrogram.
 
@@ -2075,6 +2074,9 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         on the current axes.  Otherwise if `no_plot` is not True the
         dendrogram will be plotted on the given ``Axes`` instance. This can be
         useful if the dendrogram is part of a more complex figure.
+    abv_threshold_color : str, optional
+        This matplotlib color string sets the color of the links above the
+        color_threshold. The default is 'b'.
 
     Returns
     -------
@@ -2182,13 +2184,16 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         leaf_label_func=leaf_label_func,
         contraction_marks=contraction_marks,
         link_color_func=link_color_func)
+
     if not no_plot:
         mh = max(Z[:, 2])
         _plot_dendrogram(icoord_list, dcoord_list, ivl, p, n, mh, orientation,
-                         no_labels, color_list, leaf_font_size=leaf_font_size,
+                         no_labels, color_list,
+                         leaf_font_size=leaf_font_size,
                          leaf_rotation=leaf_rotation,
                          contraction_marks=contraction_marks,
-                         ax=ax)
+                         ax=ax,
+                         abv_threshold_color=abv_threshold_color)
 
     return R
 
