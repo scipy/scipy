@@ -2267,7 +2267,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
                                leaf_label_func=None, level=0,
                                contraction_marks=None,
                                link_color_func=None,
-                               abv_threshold_color='k'):
+                               abv_threshold_color='b'):
     """
     Calculates the endpoints of the links as well as the labels for the
     the dendrogram rooted at the node with index i. iv is the independent
