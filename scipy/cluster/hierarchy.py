@@ -2183,7 +2183,8 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         currently_below_threshold=currently_below_threshold,
         leaf_label_func=leaf_label_func,
         contraction_marks=contraction_marks,
-        link_color_func=link_color_func)
+        link_color_func=link_color_func,
+        abv_threshold_color=abv_threshold_color)
 
     if not no_plot:
         mh = max(Z[:, 2])
@@ -2265,7 +2266,8 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
                                currently_below_threshold=[],
                                leaf_label_func=None, level=0,
                                contraction_marks=None,
-                               link_color_func=None):
+                               link_color_func=None,
+                               abv_threshold_color='k'):
     """
     Calculates the endpoints of the links as well as the labels for the
     the dendrogram rooted at the node with index i. iv is the independent
@@ -2436,11 +2438,12 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
             currently_below_threshold=currently_below_threshold,
             leaf_label_func=leaf_label_func,
             level=level + 1, contraction_marks=contraction_marks,
-            link_color_func=link_color_func)
+            link_color_func=link_color_func,
+            abv_threshold_color=abv_threshold_color)
 
     h = Z[i - n, 2]
     if h >= color_threshold or color_threshold <= 0:
-        c = 'b'
+        c = abv_threshold_color
 
         if currently_below_threshold[0]:
             current_color[0] = (current_color[0] + 1) % len(_link_line_colors)
@@ -2468,7 +2471,8 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
             currently_below_threshold=currently_below_threshold,
             leaf_label_func=leaf_label_func,
             level=level + 1, contraction_marks=contraction_marks,
-            link_color_func=link_color_func)
+            link_color_func=link_color_func,
+            abv_threshold_color=abv_threshold_color)
 
     max_dist = max(uamd, ubmd, h)
 
