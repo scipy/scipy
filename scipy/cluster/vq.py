@@ -402,7 +402,7 @@ def _kmeans(obs, guess, thresh=1e-5):
         avg_dist.append(mean(distort, axis=-1))
         # recalc code_book as centroids of associated obs
         if(diff > thresh):
-            code_book, has_members = _vq.update(obs, obs_code, nc)
+            code_book, has_members = _vq.update_cluster_means(obs, obs_code, nc)
             code_book = code_book.compress(has_members, axis=0)
         if len(avg_dist) > 1:
             diff = avg_dist[-2] - avg_dist[-1]
@@ -729,7 +729,7 @@ def _kmeans2(data, code, niter, nc, missing):
         # using the current code book
         label = vq(data, code)[0]
         # Update the code by computing centroids using the new code book
-        new_code, has_members = _vq.update(data, label, nc)
+        new_code, has_members = _vq.update_cluster_means(data, label, nc)
         if not has_members.all():
             missing()
             # Set the empty clusters to their previous positions
