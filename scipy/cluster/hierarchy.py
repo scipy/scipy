@@ -2238,15 +2238,15 @@ def _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,
 
 
 def _append_contraction_marks(Z, iv, i, n, contraction_marks):
-    _append_contraction_marks_sub(Z, iv, Z[i - n, 0], n, contraction_marks)
-    _append_contraction_marks_sub(Z, iv, Z[i - n, 1], n, contraction_marks)
+    _append_contraction_marks_sub(Z, iv, int(Z[i - n, 0]), n, contraction_marks)
+    _append_contraction_marks_sub(Z, iv, int(Z[i - n, 1]), n, contraction_marks)
 
 
 def _append_contraction_marks_sub(Z, iv, i, n, contraction_marks):
     if i >= n:
         contraction_marks.append((iv, Z[i - n, 2]))
-        _append_contraction_marks_sub(Z, iv, Z[i - n, 0], n, contraction_marks)
-        _append_contraction_marks_sub(Z, iv, Z[i - n, 1], n, contraction_marks)
+        _append_contraction_marks_sub(Z, iv, int(Z[i - n, 0]), n, contraction_marks)
+        _append_contraction_marks_sub(Z, iv, int(Z[i - n, 1]), n, contraction_marks)
 
 
 def _dendrogram_calculate_info(Z, p, truncate_mode,
