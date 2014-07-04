@@ -1848,8 +1848,8 @@ def lfilter_zi(b, a):
 
     if a[0] != 1.0:
         # Normalize the coefficients so a[0] == 1.
-        a = a / a[0]
         b = b / a[0]
+        a = a / a[0]
 
     n = max(len(a), len(b))
 
