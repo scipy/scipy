@@ -1901,7 +1901,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
        X using the Python function `sokalsneath`. This would result in
        sokalsneath being called :math:`{n \\choose 2}` times, which
        is inefficient. Instead, the optimized C version is more
-       efficient, and we call it using the following syntax.::
+       efficient, and we call it using the following syntax::
 
          dm = cdist(XA, XB, 'sokalsneath')
 
@@ -1915,21 +1915,20 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
         An :math:`m_B` by :math:`n` array of :math:`m_B`
         original observations in an :math:`n`-dimensional space.
         Inputs are converted to float type.
-    metric : string or function
-        The distance metric to use. The distance function can
-        be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
-        'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
-        'jaccard', 'kulsinski', 'mahalanobis', 'matching',
-        'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
-        'sokalmichener', 'sokalsneath', 'sqeuclidean', 'wminkowski',
-        'yule'.
-    w : ndarray
+    metric : str or callable, optional
+        The distance metric to use.  If a string, the distance function can be
+        'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation',
+        'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'kulsinski',
+        'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto', 'russellrao',
+        'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
+        'wminkowski', 'yule'.
+    w : ndarray, optional
         The weight vector (for weighted Minkowski).
-    p : double
+    p : scalar, optional
         The p-norm to apply (for Minkowski, weighted and unweighted)
-    V : ndarray
+    V : ndarray, optional
         The variance vector (for standardized Euclidean).
-    VI : ndarray
+    VI : ndarray, optional
         The inverse of the covariance matrix (for Mahalanobis).
 
     Returns
@@ -1948,32 +1947,33 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
     Examples
     --------
-    Find the Euclidean distances between 4 2D coordinates:
+    Find the Euclidean distances between four 2-D coordinates:
 
+    >>> from scipy.spatial import distance
     >>> coords = [(35.0456, -85.2672),
     ...           (35.1174, -89.9711),
     ...           (35.9728, -83.9422),
     ...           (36.1667, -86.7833)]
-    >>> cdist(coords, coords, 'euclidean')
+    >>> distance.cdist(coords, coords, 'euclidean')
     array([[ 0.    ,  4.7044,  1.6172,  1.8856],
            [ 4.7044,  0.    ,  6.0893,  3.3561],
            [ 1.6172,  6.0893,  0.    ,  2.8477],
            [ 1.8856,  3.3561,  2.8477,  0.    ]])
 
 
-    Find the Manhattan distance from a 3D point to the corners of the unit
+    Find the Manhattan distance from a 3-D point to the corners of the unit
     cube:
 
-    >>> a = array([[0, 0, 0],
-                   [0, 0, 1],
-                   [0, 1, 0],
-                   [0, 1, 1],
-                   [1, 0, 0],
-                   [1, 0, 1],
-                   [1, 1, 0],
-                   [1, 1, 1]])
-    >>> b = array([[ 0.1,  0.2,  0.4]])
-    >>> cdist(a, b, 'cityblock')
+    >>> a = np.array([[0, 0, 0],
+                      [0, 0, 1],
+                      [0, 1, 0],
+                      [0, 1, 1],
+                      [1, 0, 0],
+                      [1, 0, 1],
+                      [1, 1, 0],
+                      [1, 1, 1]])
+    >>> b = np.array([[ 0.1,  0.2,  0.4]])
+    >>> distance.cdist(a, b, 'cityblock')
     array([[ 0.7],
            [ 0.9],
            [ 1.3],
