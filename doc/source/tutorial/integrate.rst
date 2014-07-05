@@ -301,60 +301,63 @@ Faster integration using Ctypes
 -------------------------------
 
 A user desiring reduced integration times may pass a C function pointer through
-Ctypes to quad, dblquad, tplquad, or nquad and it will be integrated and return a
-result in Python.  The performance increase here arises from two factors.  The primary
-improvement is faster function evaluation, which is provided by compilation.
-This can also be achieved using a library like Cython or F2Py that compiles Python.
-Additionally we have a speedup provided by the removal of function calls between C
-and Python in :obj:`quad` - this cannot be achieved through Cython or F2Py.  This 
-method will provide a speed increase of ~2x for trivial functions such as sine
-but can produce a much more noticeable increase (10x+) for more complex functions.
-This feature then, is geared towards a user with numerically intensive integrations
-willing to write a little C to reduce computation time significantly.
+`ctypes` to `quad`, `dblquad`, `tplquad` or `nquad` and it will be integrated
+and return a result in Python.  The performance increase here arises from two
+factors.  The primary improvement is faster function evaluation, which is
+provided by compilation.  This can also be achieved using a library like Cython
+or F2Py that compiles Python.  Additionally we have a speedup provided by the
+removal of function calls between C and Python in :obj:`quad` - this cannot be
+achieved through Cython or F2Py.  This method will provide a speed increase of
+~2x for trivial functions such as sine but can produce a much more noticeable
+increase (10x+) for more complex functions.  This feature then, is geared
+towards a user with numerically intensive integrations willing to write a
+little C to reduce computation time significantly.
 
-Ctypes integration can be done in a few simple steps:
+`ctypes` integration can be done in a few simple steps:
 
 1.) Write an integrand function in C with the function signature 
-double f(int n, double args[n]), where args is an array containing the arguments 
-of the function f.  
+``double f(int n, double args[n])``, where ``args`` is an array containing the
+arguments of the function f.  
 
-.. highlight:: c
-//testlib.c
-double f(int n, double args[n]){
-    return args[0] - args[1] * args[2]; //corresponds to x0 - x1 * x2
-}
+.. code-block:: c
+
+   //testlib.c
+   double f(int n, double args[n]){
+       return args[0] - args[1] * args[2]; //corresponds to x0 - x1 * x2
+   }
 
 2.) Now compile this file to a shared/dynamic library (a quick search will help
-with this as it is dependent upon OS). The user must link any math libraries,
-etc. used.
+with this as it is OS-dependent). The user must link any math libraries,
+etc. used.  On linux this looks like::
 
-On linux this looks like: gcc -shared -o testlib.so -fPIC testlib.c
+    $ gcc -shared -o testlib.so -fPIC testlib.c
 
-The output library will be referred to as testlib.so, but it may have a 
+The output library will be referred to as ``testlib.so``, but it may have a 
 different file extension. A library has now been created that can be loaded
-into python with Ctypes.
+into Python with `ctypes`.
 
-3.) Load shared library into Python using Ctypes and set restypes and argtypes - 
-this allows Scipy to interpret the function correctly:
+3.) Load shared library into Python using `ctypes` and set ``restypes`` and
+``argtypes`` - this allows Scipy to interpret the function correctly:
 
->>> from scipy import integrate
 >>> import ctypes
+>>> from scipy import integrate
 >>> lib = ctypes.CDLL('/**/testlib.so') # Use absolute path to testlib
 >>> func = lib.f # Assign specific function to name func (for simplicity)
 >>> func.restype = ctypes.c_double
 >>> func.argtypes = (ctypes.c_int, ctypes.c_double)
 
-Note that the argtypes will always be (ctypes.c_int, ctypes.c_double) regardless
-of the number of parameters, and restype will always be ctypes.c_double.
+Note that the ``argtypes`` will always be ``(ctypes.c_int, ctypes.c_double)``
+regardless of the number of parameters, and ``restype`` will always be
+``ctypes.c_double``.
 
-4.) Now integrate the library function as normally, here using nquad:
+4.) Now integrate the library function as normally, here using `nquad`:
 
 >>> integrate.nquad(func, [[0,10],[-10,0],[-1,1]])
 (1000.0, 1.1102230246251565e-11)
 
 And the Python tuple is returned as expected in a reduced amount of time.  All 
-optional parameters can be used with this method including specifying singularities,
-infinite bounds, etc.
+optional parameters can be used with this method including specifying
+singularities, infinite bounds, etc.
 
 Ordinary differential equations (:func:`odeint`)
 ------------------------------------------------
