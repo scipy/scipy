@@ -16,6 +16,7 @@ def configuration(parent_package='',top_path=None):
     quadpack_src = [join('quadpack','*.f')]
     odepack_src = [join('odepack','*.f')]
     dop_src = [join('dop','*.f')]
+    quadpack_test_src = [join('tests','_test_multivariate.c')]
 
     config.add_library('linpack_lite', sources=linpack_lite_src)
     config.add_library('mach', sources=mach_src,
@@ -76,6 +77,8 @@ def configuration(parent_package='',top_path=None):
                          libraries=['dop'],
                          depends=dop_src)
 
+    config.add_extension('_test_multivariate',
+                         sources=quadpack_test_src)
     config.add_data_dir('tests')
     return config
 
