@@ -182,17 +182,15 @@ class csc_matrix(_cs_matrix, IndexMixin):
         """Returns a copy of row i of the matrix, as a (1 x n)
         CSR matrix (row vector).
         """
-        # transpose to use CSR code
         # we convert to CSR to maintain compatibility with old impl.
         # in spmatrix.getrow()
-        return self.T.getcol(i).T.tocsr()
+        return self._get_submatrix(i, slice(None)).tocsr()
 
     def getcol(self, i):
         """Returns a copy of column i of the matrix, as a (m x 1)
         CSC matrix (column vector).
         """
-        # transpose to use CSR code
-        return self.T.getrow(i).T
+        return self._get_submatrix(slice(None), i)
 
     # these functions are used by the parent class (_cs_matrix)
     # to remove redudancy between csc_matrix and csr_matrix
