@@ -1960,8 +1960,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
                          "be 'even', 'odd', 'constant', or None.") %
                          padtype)
 
-    b = np.asarray(b)
-    a = np.asarray(a)
+    b = np.atleast_1d(b)
+    a = np.atleast_1d(a)
     x = np.asarray(x)
 
     ntaps = max(len(a), len(b))
