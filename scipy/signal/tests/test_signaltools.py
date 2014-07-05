@@ -813,6 +813,15 @@ class TestLFilterZI(TestCase):
         zi = lfilter_zi(b, a)
         assert_array_almost_equal(zi, zi_expected)
 
+    def test_scale_invariance(self):
+        # Regression test.  There was a bug in which b was not correctly
+        # rescaled when a[0] was nonzero.
+        b = np.array([2, 8, 5])
+        a = np.array([1, 1, 8])
+        zi1 = lfilter_zi(b, a)
+        zi2 = lfilter_zi(2*b, 2*a)
+        assert_allclose(zi2, zi1, rtol=1e-12)
+
 
 class TestFiltFilt(TestCase):
 
