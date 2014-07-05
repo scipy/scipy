@@ -594,13 +594,15 @@ class _TestLinearFilter(TestCase):
         self.assertTrue(zf.dtype == self.dt)
         self.assertTrue(zf.size == 0)
 
-    def test_bad_zi(self):
+    def test_lfiltic_bad_zi(self):
         # Regression test for #3699: bad initial conditions
         a = np.ones(1).astype(self.dt)
         b = np.ones(1).astype(self.dt)
         # "y" sets the datatype of zi, so it truncates if int
-        zi = lfiltic(b, a, [1, 0])
-        zi_2 = lfiltic(b, a, [1., 0])
+        zi = lfiltic(b, a, [1., 0])
+        zi_1 = lfiltic(b, a, [1, 0])
+        zi_2 = lfiltic(b, a, [True, False])
+        assert_array_equal(zi, zi_1)
         assert_array_equal(zi, zi_2)
 
 

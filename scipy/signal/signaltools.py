@@ -903,7 +903,7 @@ def lfiltic(b, a, y, x=None):
     M = np.size(b) - 1
     K = max(M, N)
     y = asarray(y)
-    if y.dtype.kind == 'i':
+    if y.dtype.kind in 'bui':
         # ensure calculations are floating point
         y = y.astype(np.float64)
     zi = zeros(K, y.dtype)
