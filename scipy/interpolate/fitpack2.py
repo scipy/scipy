@@ -228,11 +228,28 @@ class UnivariateSpline(object):
         self._data = data
         self._reset_class()
 
-    def __call__(self, x, nu=0):
-        """ Evaluate spline (or its nu-th derivative) at positions x.
+    def __call__(self, x, nu=0, ext=0):
+        """ 
+        Evaluate spline (or its nu-th derivative) at positions x.
 
-        Note: x can be unordered but the evaluation is more efficient
-        if x is (partially) ordered.
+        Parameters
+        ----------
+        x : array_like
+            A 1-D array of points at which to return the value of the smoothed
+            spline or its derivatives. Note: x can be unordered but the 
+            evaluation is more efficient if x is (partially) ordered.
+        nu  : int
+            The order of derivative of the spline to compute.
+        ext : int
+            Controls the value returned for elements of ``x`` not in the
+            interval defined by the knot sequence.
+
+            * if ext=0, return the extrapolated value.
+            * if ext=1, return 0
+            * if ext=2, raise a ValueError
+
+            The default value is 0.
+
         """
         x = np.asarray(x)
         # empty input yields empty output
@@ -241,7 +258,7 @@ class UnivariateSpline(object):
 #        if nu is None:
 #            return dfitpack.splev(*(self._eval_args+(x,)))
 #        return dfitpack.splder(nu=nu,*(self._eval_args+(x,)))
-        return fitpack.splev(x, self._eval_args, der=nu)
+        return fitpack.splev(x, self._eval_args, der=nu, ext=ext)
 
     def get_knots(self):
         """ Return positions of (boundary and interior) knots of the spline.
