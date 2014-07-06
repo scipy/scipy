@@ -117,30 +117,10 @@ def solve_lyapunov(a, q):
 
 def _solve_discrete_lyapunov_direct(a, q):
     """
-    Solves the Discrete Lyapunov Equation (A'XA-X=-Q) directly.
+    Solves the discrete Lyapunov equation directly.
 
-    .. versionadded:: 0.11.0
-
-    Parameters
-    ----------
-    a : (M, M) array_like
-        A square matrix
-
-    q : (M, M) array_like
-        Right-hand side square matrix
-
-    Returns
-    -------
-    x : ndarray
-        Solution to the discrete Lyapunov equation
-
-    Notes
-    -----
-    Algorithm is based on a direct analytical solution from:
-    Hamilton, James D. Time Series Analysis, Princeton: Princeton University
-    Press, 1994.  265.  Print.
-    http://www.scribd.com/doc/20577138/Hamilton-1994-Time-Series-Analysis
-
+    This function is called by the `solve_discrete_lyapunov` function with
+    `method=direct`. It is not supposed to be called directly.
     """
 
     lhs = kron(a, a.conj())
@@ -152,56 +132,22 @@ def _solve_discrete_lyapunov_direct(a, q):
 
 def _solve_discrete_lyapunov_bilinear(a, q):
     """
-    Solves the Discrete Lyapunov Equation (A'XA-X=-Q) using a bilinear
-    transformation to a Continuous Lyapunov Equation (B'X+XB=-C) where
-    :math:`B=(A-I)(A+I)^{-1}` and :math:`C=2(A' + I)^{-1} Q (A + I)^{-1}`.
+    Solves the discrete Lyapunov equation using a bilinear transformation.
 
-    This 
-
-    .. versionadded:: 0.15.0
-
-    Parameters
-    ----------
-    a : (M, M) array_like
-        A square matrix
-
-    q : (M, M) array_like
-        Right-hand side square matrix
-
-    Returns
-    -------
-    x : ndarray
-        Solution to the discrete Lyapunov equation
-
-    See Also
-    --------
-    solve_lyapunov : computes the solution to the continuous Lyapunov equation
-
-    Notes
-    -----
-    This method uses a transformation to convert the problem to a continuous
-    Lyapunov equation which can be solved as a special case of a Sylvester
-    equation. It is much faster than the direct method as the dimension of the
-    matrices grow.
-
-    Algorithm is the bilinear transformation of Popov (1964) as described in:
-    Gajic, Z., and M.T.J. Qureshi. 2008.
-    Lyapunov Matrix Equation in System Stability and Control.
-    Dover Books on Engineering Series. Dover Publications.
+    This function is called by the `solve_discrete_lyapunov` function with
+    `method=bilinear`. It is not supposed to be called directly.
     """
     eye = np.eye(a.shape[0])
     aH = a.conj().transpose()
     aHI_inv = inv(aH + eye)
     b = np.dot(aH - eye, aHI_inv)
-    c = 2*np.dot(
-            np.dot(inv(a + eye), q),
-            aHI_inv
-    )
+    c = 2*np.dot(np.dot(inv(a + eye), q), aHI_inv)
     return solve_lyapunov(b.conj().transpose(), -c)
+
 
 def solve_discrete_lyapunov(a, q, method=None):
     """
-    Solves the Discrete Lyapunov Equation (A'XA-X=-Q).
+    Solves the discrete Lyapunov equation :math:`(A'XA-X=-Q)`.
 
     .. versionadded:: 0.11.0
 
@@ -224,6 +170,10 @@ def solve_discrete_lyapunov(a, q, method=None):
     x : ndarray
         Solution to the discrete Lyapunov equation
 
+    See Also
+    --------
+    solve_lyapunov : computes the solution to the continuous Lyapunov equation
+
     Notes
     -----
     This section describes the available solvers that can be selected by the
@@ -231,13 +181,25 @@ def solve_discrete_lyapunov(a, q, method=None):
     and ``bilinear`` otherwise.
 
     Method *direct* uses a direct analytical solution to the discrete Lyapunov
-    equation. However it requires the linear solution of a system with
-    dimension ``M``^2 so that performance degrades rapidly for even moderately
-    sized matrices.
+    equation. The algorithm is given in, for example, [1]_. However it requires
+    the linear solution of a system with dimension :math:`M^2` so that
+    performance degrades rapidly for even moderately sized matrices.
 
     Method *bilinear* uses a bilinear transformation to convert the discrete
-    Lyapunov equation to a continuous Lyapunov equation. The continuous can be
+    Lyapunov equation to a continuous Lyapunov equation :math:`(B'X+XB=-C)`
+    where :math:`B=(A-I)(A+I)^{-1}` and
+    :math:`C=2(A' + I)^{-1} Q (A + I)^{-1}`. The continuous equation can be
     efficiently solved since it is a special case of a Sylvester equation.
+    The transformation algorithm is from Popov (1964) as described in [2]_.
+
+    References
+    ----------
+    .. [1] Hamilton, James D. Time Series Analysis, Princeton: Princeton
+       University Press, 1994.  265.  Print.
+       http://www.scribd.com/doc/20577138/Hamilton-1994-Time-Series-Analysis
+    .. [2] Gajic, Z., and M.T.J. Qureshi. 2008.
+       Lyapunov Matrix Equation in System Stability and Control.
+       Dover Books on Engineering Series. Dover Publications.
     """
     if method is None:
         # Select automatically based on size of matrices
