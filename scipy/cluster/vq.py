@@ -82,8 +82,10 @@ import warnings
 
 from numpy.random import randint
 from numpy import (shape, zeros, sqrt, argmin, minimum, array, newaxis,
-    arange, compress, equal, common_type, single, double, take, std, mean)
+    common_type, single, double, take, std, mean)
 import numpy as np
+
+from . import _vq
 
 
 class ClusterError(Exception):
@@ -191,28 +193,24 @@ def vq(obs, code_book):
     (array([1, 1, 0],'i'), array([ 0.43588989,  0.73484692,  0.83066239]))
 
     """
-    try:
-        from . import _vq
-        ct = common_type(obs, code_book)
+    ct = common_type(obs, code_book)
 
-        # avoid copying when dtype is the same
-        # should be replaced with c_obs = astype(ct, copy=False)
-        # when we get to numpy 1.7.0
-        if obs.dtype != ct:
-            c_obs = obs.astype(ct)
-        else:
-            c_obs = obs
+    # avoid copying when dtype is the same
+    # should be replaced with c_obs = astype(ct, copy=False)
+    # when we get to numpy 1.7.0
+    if obs.dtype != ct:
+        c_obs = obs.astype(ct)
+    else:
+        c_obs = obs
 
-        if code_book.dtype != ct:
-            c_code_book = code_book.astype(ct)
-        else:
-            c_code_book = code_book
+    if code_book.dtype != ct:
+        c_code_book = code_book.astype(ct)
+    else:
+        c_code_book = code_book
 
-        if ct in (single, double):
-            results = _vq.vq(c_obs, c_code_book)
-        else:
-            results = py_vq(obs, code_book)
-    except ImportError:
+    if ct in (single, double):
+        results = _vq.vq(c_obs, c_code_book)
+    else:
         results = py_vq(obs, code_book)
     return results
 
@@ -404,14 +402,8 @@ def _kmeans(obs, guess, thresh=1e-5):
         avg_dist.append(mean(distort, axis=-1))
         # recalc code_book as centroids of associated obs
         if(diff > thresh):
-            has_members = []
-            for i in arange(nc):
-                cell_members = compress(equal(obs_code, i), obs, 0)
-                if cell_members.shape[0] > 0:
-                    code_book[i] = mean(cell_members, 0)
-                    has_members.append(i)
-            # remove code_books that didn't have any members
-            code_book = take(code_book, has_members, 0)
+            code_book, has_members = _vq.update_cluster_means(obs, obs_code, nc)
+            code_book = code_book.compress(has_members, axis=0)
         if len(avg_dist) > 1:
             diff = avg_dist[-2] - avg_dist[-1]
     # print avg_dist
@@ -737,11 +729,11 @@ def _kmeans2(data, code, niter, nc, missing):
         # using the current code book
         label = vq(data, code)[0]
         # Update the code by computing centroids using the new code book
-        for j in range(nc):
-            mbs = np.where(label == j)
-            if mbs[0].size > 0:
-                code[j] = np.mean(data[mbs], axis=0)
-            else:
-                missing()
+        new_code, has_members = _vq.update_cluster_means(data, label, nc)
+        if not has_members.all():
+            missing()
+            # Set the empty clusters to their previous positions
+            new_code[~has_members] = code[~has_members]
+        code = new_code
 
     return code, label

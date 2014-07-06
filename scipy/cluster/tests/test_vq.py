@@ -14,12 +14,7 @@ from numpy.testing import (assert_array_equal, assert_array_almost_equal,
 
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, py_vq2, vq, whiten,
     ClusterError)
-try:
-    from scipy.cluster import _vq
-    TESTC = True
-except ImportError:
-    print("== Error while importing _vq, not testing C imp of vq ==")
-    TESTC = False
+from scipy.cluster import _vq
 
 # Optional:
 # import modules that are located in the same directory as this file.
@@ -82,12 +77,9 @@ class TestVq(TestCase):
 
     def test_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        if TESTC:
-            label1, dist = _vq.vq(X, initc)
-            assert_array_equal(label1, LABEL1)
-            tlabel1, tdist = vq(X, initc)
-        else:
-            print("== not testing C imp of vq ==")
+        label1, dist = _vq.vq(X, initc)
+        assert_array_equal(label1, LABEL1)
+        tlabel1, tdist = vq(X, initc)
 
     # def test_py_vq_1d(self):
     #     """Test special rank 1 vq algo, python implementation."""
@@ -102,24 +94,19 @@ class TestVq(TestCase):
         """Test special rank 1 vq algo, python implementation."""
         data = X[:, 0]
         initc = data[:3]
-        if TESTC:
-            a, b = _vq.vq(data, initc)
-            ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
-            assert_array_equal(a, ta)
-            assert_array_equal(b, tb)
-        else:
-            print("== not testing C imp of vq (rank 1) ==")
+        a, b = _vq.vq(data, initc)
+        ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
+        assert_array_equal(a, ta)
+        assert_array_equal(b, tb)
 
     def test__vq_sametype(self):
-        if TESTC:
-            a = np.array([1.0, 2.0], dtype=np.float64)
-            b = a.astype(np.float32)
-            assert_raises(TypeError, _vq.vq, a, b)
+        a = np.array([1.0, 2.0], dtype=np.float64)
+        b = a.astype(np.float32)
+        assert_raises(TypeError, _vq.vq, a, b)
 
     def test__vq_invalid_type(self):
-        if TESTC:
-            a = np.array([1, 2], dtype=np.int)
-            assert_raises(TypeError, _vq.vq, a, a)
+        a = np.array([1, 2], dtype=np.int)
+        assert_raises(TypeError, _vq.vq, a, a)
 
     def test_vq_large_nfeat(self):
         X = np.random.rand(20, 20)
