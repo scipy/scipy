@@ -124,14 +124,15 @@ static void restore_ctypes_func(QStorage * store)
 
 static double *c_array_from_tuple(PyObject * tuple)
 {
+    Py_ssize_t n_args, i;
+    double *array;
+    PyObject *item = NULL;
     /* Accepts Python tuple and converts to double array in c for use in
      * multivariate ctypes */
     if (!PyTuple_CheckExact(tuple))
       	return NULL;		/*Ensure python tuple is passed in */
-    Py_ssize_t n_args = PyTuple_Size(tuple);
-    Py_ssize_t i = 0;
-    double *array = (double *) malloc(sizeof(double) * (n_args + 1));
-    PyObject *item = NULL;
+    n_args = PyTuple_Size(tuple);
+    array = (double *) malloc(sizeof(double) * (n_args + 1));
     array[0] = 0.0;
     for (i = 0; i < n_args; i++) {
       	item = PyTuple_GetItem(tuple, i);
@@ -153,6 +154,7 @@ init_c_multivariate(QStorage * store, PyObject * f, PyObject * args)
      * NPY_FAIL on failure 
      * NPY_SUCCEED on success
      */
+    int n_args_ref;
 
     /*Store current parameters */
     store->global0 = global_function;
@@ -170,7 +172,7 @@ init_c_multivariate(QStorage * store, PyObject * f, PyObject * args)
       			"Extra Arguments must be in a tuple");
       	return NPY_FAIL;
     }
-    int n_args_ref = PyTuple_Size(args);
+    n_args_ref = PyTuple_Size(args);
     global_n_args = &n_args_ref;
     return NPY_SUCCEED;
 }
