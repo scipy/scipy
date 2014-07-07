@@ -79,19 +79,15 @@ class TestUnivariateSpline(TestCase):
         assert_allclose(spl([0.1, 0.5, 0.9, 0.99]), desired, atol=5e-4)
 
     def test_out_of_range_regression(self):
-        """Regression test for #3557."""
-        x_in_range = [-3., -2.33333333, -1.66666667, -1., -0.33333333,
-                      0.33333333, 1., 1.66666667, 2.33333333, 3.]
-        x_out_of_range = [-3.66666667, -3., -2.33333333, -1.66666667, -1.,
-                          -0.33333333, 0.33333333, 1., 1.66666667, 2.33333333,
-                          3., 3.66666667]
-        y = [-0.03443365, 0.02969204, 0.16251805, 0.33279394, 1.07995049, 
-             0.88203547,  0.31274008, -0.10215527, -0.0274716, -0.06661292]
-        desired = array([0., -0.21332128, 0.16590419, 0.41822373, 0.55728419,
-                         0.59673238, 0.55021514, 0.43137928, 0.25387164, 
-                         0.03133904, -0.22257169, 0.])
-        spl = UnivariateSpline(x=x_in_range, y=y)
-        assert_allclose(spl(x_out_of_range, ext=1), desired, atol=5e-4)
+        # Test different extrapolation modes. See ticket 3557
+        x = np.arange(5, dtype=np.float)
+        y = x ** 3
+        spl = UnivariateSpline(x=x, y=y)
+        xp = linspace(-8, 13, 100)
+        xp_zeros = xp.copy()
+        xp_zeros[np.logical_or(xp_zeros < 0., xp_zeros > 4.)] = 0
+        assert_allclose(spl(xp, ext=0), xp**3, atol=1e-16)
+        assert_allclose(spl(xp, ext=1), xp_zeros**3, atol=1e-16)
 
     def test_derivative_and_antiderivative(self):
         # Thin wrappers to splder/splantider, so light smoke test only.

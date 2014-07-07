@@ -91,6 +91,15 @@ class UnivariateSpline(object):
         If None (default), s=len(w) which should be a good value if 1/w[i] is
         an estimate of the standard deviation of y[i].  If 0, spline will
         interpolate through all data points.
+    ext : int, optional
+        Controls the extrapolation mode for elements 
+        not in the interval defined by the knot sequence            
+           
+        * if ext=0, return the extrapolated value.
+        * if ext=1, return 0
+        * if ext=2, raise a ValueError
+
+        The default value is 0.
 
     See Also
     --------
@@ -124,7 +133,7 @@ class UnivariateSpline(object):
 
     """
 
-    def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None):
+    def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None, ext=0):
         """
         Input:
           x,y   - 1-d sequences of data points (x must be
@@ -142,8 +151,19 @@ class UnivariateSpline(object):
                        Default s=len(w) which should be a good value
                        if 1/w[i] is an estimate of the standard
                        deviation of y[i].
+          ext        - Controls the extrapolation mode for elements 
+                       not in the interval defined by the knot sequence            
+                       
+                       * if ext=0, return the extrapolated value.
+                       * if ext=1, return 0
+                       * if ext=2, raise a ValueError
+
+                       The default value is 0.
         """
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
+        self.ext = ext
+        if ext not in (0, 1, 2):
+            raise ValueError("unknown extrapolation mode")
         data = dfitpack.fpcurf0(x,y,k,w=w,
                                 xb=bbox[0],xe=bbox[1],s=s)
         if data[-1] == 1:
@@ -228,7 +248,7 @@ class UnivariateSpline(object):
         self._data = data
         self._reset_class()
 
-    def __call__(self, x, nu=0, ext=0):
+    def __call__(self, x, nu=0, ext=None):
         """ 
         Evaluate spline (or its nu-th derivative) at positions x.
 
@@ -248,8 +268,8 @@ class UnivariateSpline(object):
             * if ext=1, return 0
             * if ext=2, raise a ValueError
 
-            The default value is 0.
-
+            The default value is 0, passed from the initialization of 
+            UnivariateSpline.
         """
         x = np.asarray(x)
         # empty input yields empty output
@@ -258,6 +278,8 @@ class UnivariateSpline(object):
 #        if nu is None:
 #            return dfitpack.splev(*(self._eval_args+(x,)))
 #        return dfitpack.splder(nu=nu,*(self._eval_args+(x,)))
+        if ext is None:
+            ext = self.ext
         return fitpack.splev(x, self._eval_args, der=nu, ext=ext)
 
     def get_knots(self):
