@@ -14,14 +14,10 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
     Returns the permutation array that orders a sparse CSR or CSC matrix
     in Reverse-Cuthill McKee ordering.  
     
-    Since the input matrix must be 
-    symmetric, this routine works on the matrix A+Trans(A) if the 
-    symmetric_mode flag is set to False (default).
-
-    It is assumed by default, symmetric_mode=False, that the input matrix 
+    It is assumed by default, ``symmetric_mode=False``, that the input matrix 
     is not symmetric and works on the matrix ``A+A.T``. If you are 
     guaranteed that the matrix is symmetric in structure (values of matrix 
-    elements do not matter) then set symmetric_mode=True.
+    elements do not matter) then set ``symmetric_mode=True``.
     
     Parameters
     ----------
