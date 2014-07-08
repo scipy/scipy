@@ -26,8 +26,8 @@ def configuration(parent_package='', top_path=None):
          include_dirs=[numpy.get_include()])
     
     config.add_extension('_reordering',
-    sources=['_reordering.c'],
-    include_dirs=[numpy.get_include()])
+         sources=['_reordering.c'],
+         include_dirs=[numpy.get_include()])
 
     config.add_extension('_tools',
          sources=['_tools.c'],

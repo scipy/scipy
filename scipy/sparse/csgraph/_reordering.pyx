@@ -5,33 +5,34 @@
 import numpy as np
 cimport numpy as np
 
-from scipy.sparse import isspmatrix_csr, isspmatrix_csc
+from scipy.sparse import isspmatrix_csr, isspmatrix_csc, isspmatrix_coo
 
 include 'parameters.pxi'
 
-def symrcm(graph, symmetric_mode=False):
+def reverse_cuthill_mckee(graph, symmetric_mode=False):
     """
     Returns the permutation array that orders a sparse CSR or CSC matrix
-    in Reverse-Cuthill McKee ordering.  Since the input matrix must be 
+    in Reverse-Cuthill McKee ordering.  
+    
+    Since the input matrix must be 
     symmetric, this routine works on the matrix A+Trans(A) if the 
     symmetric_mode flag is set to False (default).
 
-    It is assumed by default that the input matrix is not symmetric.  
-    This is because it is faster to do A+Trans(A) than it is to check for 
-    symmetry for a generic matrix.  If you are guaranteed that the matrix 
-    is symmetric in structure (values of matrix element do not matter) then 
-    set symmetric_mode=True.
+    It is assumed by default, symmetric_mode=False, that the input matrix 
+    is not symmetric and works on the matrix ``A+A.T``. If you are 
+    guaranteed that the matrix is symmetric in structure (values of matrix 
+    elements do not matter) then set symmetric_mode=True.
     
     Parameters
     ----------
     graph : sparse matrix
-        Input sparse CSC or CSR sparse matrix format.
-    symmetric_mode : bool {False, True}
+        Input sparse in CSC or CSR sparse matrix format.
+    symmetric_mode : bool, optional
         Is input matrix guaranteed to be symmetric.
 
     Returns
     -------
-    perm : array_like
+    perm : ndarray
         Array of permuted row and column indices.
  
     References
@@ -46,7 +47,58 @@ def symrcm(graph, symmetric_mode=False):
     if not symmetric_mode:
         graph = graph+graph.transpose()
     return _reverse_cuthill_mckee(graph.indices, graph.indptr, nrows)
+
+
+def maximum_bipartite_matching(graph, perm_type='row'):
+    """
+    Returns an array of row or column permutations that makes
+    the diagonal of a nonsingular square CSC sparse matrix zero free.  
     
+    Such a permutation is always possible provided that the matrix 
+    is nonsingular. This function looks at the structure of the matrix 
+    only. The input matrix will be converted to CSC matrix format if
+    necessary.
+
+    Parameters
+    ----------
+    graph : sparse matrix
+        Input sparse in CSC format
+    perm_type : str, {'row', 'column'}
+        Type of permutation to generate.
+
+    Returns
+    -------
+    perm : ndarray
+        Array of row or column permutations.
+
+    Notes
+    -----
+    This function relies on a maximum cardinality bipartite matching 
+    algorithm based on a breadth-first search (BFS) of the underlying 
+    graph.
+
+    References
+    ----------
+    I. S. Duff, K. Kaya, and B. Ucar, "Design, Implementation, and 
+    Analysis of Maximum Transversal Algorithms", ACM Trans. Math. Softw.
+    38, no. 2, (2011).
+
+    """
+    nrows = graph.shape[0]
+    if graph.shape[0] != graph.shape[1]:
+        raise ValueError('Maximum bipartite matching requires a square matrix.')
+    if isspmatrix_csr(graph) or isspmatrix_coo(graph):
+        graph = graph.tocsc()
+    elif not isspmatrix_csc(graph):
+        raise TypeError("graph must be in CSC, CSR, or COO format.")
+    if perm_type == 'column':
+        graph = graph.transpose().tocsc()
+    perm = _maximum_bipartite_matching(graph.indices, graph.indptr, nrows)
+    if np.any(perm==-1):
+        raise Exception('Possibly singular input matrix.')
+    return perm
+
+
 
 def _node_degrees(
         np.ndarray[ITYPE_t, ndim=1, mode="c"] ind,
@@ -132,6 +184,57 @@ def _reverse_cuthill_mckee(np.ndarray[ITYPE_t, ndim=1, mode="c"] ind,
 
         if N == num_rows:
             break
+    # return reversed order for RCM ordering
+    return order[::-1]
 
-    # return reveresed order for RCM ordering
-    return order[::-1]  
+
+def _maximum_bipartite_matching(
+        np.ndarray[ITYPE_t, ndim=1, mode="c"] inds,
+        np.ndarray[ITYPE_t, ndim=1, mode="c"] ptrs,
+        int n):
+    """
+    Maximum bipartite matching of a graph in CSC format.
+    """
+    cdef np.ndarray[ITYPE_t] visited = np.zeros(n, dtype=ITYPE)
+    cdef np.ndarray[ITYPE_t] queue = np.zeros(n, dtype=ITYPE)
+    cdef np.ndarray[ITYPE_t] previous = np.zeros(n, dtype=ITYPE)
+    cdef np.ndarray[ITYPE_t] match = -1 * np.ones(n, dtype=ITYPE)
+    cdef np.ndarray[ITYPE_t] row_match = -1 * np.ones(n, dtype=ITYPE)
+    cdef int queue_ptr, queue_col, ptr, i, j, queue_size
+    cdef int row, col, temp, eptr, next_num = 1
+
+    for i in range(n):
+        if match[i] == -1 and (ptrs[i] != ptrs[i + 1]):
+            queue[0] = i
+            queue_ptr = 0
+            queue_size = 1
+            while (queue_size > queue_ptr):
+                queue_col = queue[queue_ptr]
+                queue_ptr += 1
+                eptr = ptrs[queue_col + 1]
+                for ptr in range(ptrs[queue_col], eptr):
+                    row = inds[ptr]
+                    temp = visited[row]
+                    if (temp != next_num and temp != -1):
+                        previous[row] = queue_col
+                        visited[row] = next_num
+                        col = row_match[row]
+                        if (col == -1):
+                            while (row != -1):
+                                col = previous[row]
+                                temp = match[col]
+                                match[col] = row
+                                row_match[row] = col
+                                row = temp
+                            next_num += 1
+                            queue_size = 0
+                            break
+                        else:
+                            queue[queue_size] = col
+                            queue_size += 1
+
+            if match[i] == -1:
+                for j in range(1, queue_size):
+                    visited[match[queue[j]]] = -1
+
+    return match
