@@ -2683,8 +2683,10 @@ def show_options(solver=None, method=None):
             define the limited memory matrix. (The limited memory BFGS
             method does not store the full hessian but uses this many terms
             in an approximation to it.)
-        maxiter : int
+        maxfun : int
             Maximum number of function evaluations.
+        maxiter : int
+            Maximum number of iterations.
 
     *TNC* options:
 
