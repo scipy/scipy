@@ -105,6 +105,7 @@ doc/source/generated
 ###################################
 scipy/__config__.py
 scipy/cluster/_vq.c
+scipy/cluster/_hierarchy.c
 scipy/fftpack/_fftpackmodule.c
 scipy/fftpack/convolvemodule.c
 scipy/fftpack/src/dct.c

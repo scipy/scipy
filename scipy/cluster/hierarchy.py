@@ -172,7 +172,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
-from . import _hierarchy_wrap
+from . import _hierarchy
 import scipy.spatial.distance as distance
 
 from scipy.lib.six import string_types
@@ -631,27 +631,36 @@ def linkage(y, method='single', metric='euclidean'):
         [y] = _copy_arrays_if_base_present([y])
 
         Z = np.zeros((d - 1, 4))
-        _hierarchy_wrap.linkage_wrap(y, Z, int(d),
-                                   int(_cpy_non_euclid_methods[method]))
+
+        if method == 'single':
+            _hierarchy.slink(y, Z, int(d))
+        else:
+            _hierarchy.linkage(y, Z, int(d),
+                               int(_cpy_non_euclid_methods[method]))
+
     elif len(s) == 2:
         X = y
         n = s[0]
-        m = s[1]
         if method not in _cpy_linkage_methods:
             raise ValueError('Invalid method: %s' % method)
         if method in _cpy_non_euclid_methods:
             dm = distance.pdist(X, metric)
             Z = np.zeros((n - 1, 4))
-            _hierarchy_wrap.linkage_wrap(dm, Z, n,
-                                       int(_cpy_non_euclid_methods[method]))
+
+            if method == 'single':
+                _hierarchy.slink(dm, Z, n)
+            else:
+                _hierarchy.linkage(dm, Z, n,
+                                   int(_cpy_non_euclid_methods[method]))
+
         elif method in _cpy_euclid_methods:
             if metric != 'euclidean':
                 raise ValueError(("Method '%s' requires the distance metric "
                                  "to be euclidean") % method)
             dm = distance.pdist(X, metric)
             Z = np.zeros((n - 1, 4))
-            _hierarchy_wrap.linkage_euclid_wrap(dm, Z, X, m, n,
-                                              int(_cpy_euclid_methods[method]))
+            _hierarchy.linkage(dm, Z, n,
+                               int(_cpy_euclid_methods[method]))
     return Z
 
 
@@ -968,7 +977,7 @@ def cophenet(Z, Y=None):
     # The dimensions are used instead.
     Z = _convert_to_double(Z)
 
-    _hierarchy_wrap.cophenetic_distances_wrap(Z, zz, int(n))
+    _hierarchy.cophenetic_distances(Z, zz, int(n))
     if Y is None:
         return zz
 
@@ -1033,7 +1042,7 @@ def inconsistent(Z, d=2):
     n = Zs[0] + 1
     R = np.zeros((n - 1, 4), dtype=np.double)
 
-    _hierarchy_wrap.inconsistent_wrap(Z, R, int(n), int(d))
+    _hierarchy.inconsistent(Z, R, int(n), int(d))
     return R
 
 
@@ -1084,7 +1093,7 @@ def from_mlab_linkage(Z):
         raise ValueError('The format of the indices is not 1..N')
     Zpart[:, 0:2] -= 1.0
     CS = np.zeros((Zs[0],), dtype=np.double)
-    _hierarchy_wrap.calculate_cluster_sizes_wrap(Zpart, CS, int(Zs[0]) + 1)
+    _hierarchy.calculate_cluster_sizes(Zpart, CS, int(Zs[0]) + 1)
     return np.hstack([Zpart, CS.reshape(Zs[0], 1)])
 
 
@@ -1529,18 +1538,17 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
             # Since the C code does not support striding using strides.
             # The dimensions are used instead.
             [R] = _copy_arrays_if_base_present([R])
-        _hierarchy_wrap.cluster_in_wrap(Z, R, T, float(t), int(n))
+        _hierarchy.cluster_in(Z, R, T, float(t), int(n))
     elif criterion == 'distance':
-        _hierarchy_wrap.cluster_dist_wrap(Z, T, float(t), int(n))
+        _hierarchy.cluster_dist(Z, T, float(t), int(n))
     elif criterion == 'maxclust':
-        _hierarchy_wrap.cluster_maxclust_dist_wrap(Z, T, int(n), int(t))
+        _hierarchy.cluster_maxclust_dist(Z, T, int(n), int(t))
     elif criterion == 'monocrit':
         [monocrit] = _copy_arrays_if_base_present([monocrit])
-        _hierarchy_wrap.cluster_monocrit_wrap(Z, monocrit, T, float(t), int(n))
+        _hierarchy.cluster_monocrit(Z, monocrit, T, float(t), int(n))
     elif criterion == 'maxclust_monocrit':
         [monocrit] = _copy_arrays_if_base_present([monocrit])
-        _hierarchy_wrap.cluster_maxclust_monocrit_wrap(Z, monocrit, T,
-                                                     int(n), int(t))
+        _hierarchy.cluster_maxclust_monocrit(Z, monocrit, T, int(n), int(t))
     else:
         raise ValueError('Invalid cluster formation criterion: %s'
                          % str(criterion))
@@ -1638,7 +1646,7 @@ def leaves_list(Z):
     n = Z.shape[0] + 1
     ML = np.zeros((n,), dtype='i')
     [Z] = _copy_arrays_if_base_present([Z])
-    _hierarchy_wrap.prelist_wrap(Z, ML, int(n))
+    _hierarchy.prelist(Z, ML, int(n))
     return ML
 
 
@@ -2552,7 +2560,7 @@ def maxdists(Z):
     n = Z.shape[0] + 1
     MD = np.zeros((n - 1,))
     [Z] = _copy_arrays_if_base_present([Z])
-    _hierarchy_wrap.get_max_dist_for_each_cluster_wrap(Z, MD, int(n))
+    _hierarchy.get_max_dist_for_each_cluster(Z, MD, int(n))
     return MD
 
 
@@ -2586,7 +2594,7 @@ def maxinconsts(Z, R):
                          "have a different number of rows.")
     MI = np.zeros((n - 1,))
     [Z, R] = _copy_arrays_if_base_present([Z, R])
-    _hierarchy_wrap.get_max_Rfield_for_each_cluster_wrap(Z, R, MI, int(n), 3)
+    _hierarchy.get_max_Rfield_for_each_cluster(Z, R, MI, int(n), 3)
     return MI
 
 
@@ -2631,7 +2639,7 @@ def maxRstat(Z, R, i):
     n = Z.shape[0] + 1
     MR = np.zeros((n - 1,))
     [Z, R] = _copy_arrays_if_base_present([Z, R])
-    _hierarchy_wrap.get_max_Rfield_for_each_cluster_wrap(Z, R, MR, int(n), i)
+    _hierarchy.get_max_Rfield_for_each_cluster(Z, R, MR, int(n), i)
     return MR
 
 
@@ -2700,7 +2708,7 @@ def leaders(Z, T):
     M = np.zeros((kk,), dtype='i')
     n = Z.shape[0] + 1
     [Z, T] = _copy_arrays_if_base_present([Z, T])
-    s = _hierarchy_wrap.leaders_wrap(Z, T, L, M, int(kk), int(n))
+    s = _hierarchy.leaders(Z, T, L, M, int(kk), int(n))
     if s >= 0:
         raise ValueError(('T is not a valid assignment vector. Error found '
                           'when examining linkage node %d (< 2n-1).') % s)
