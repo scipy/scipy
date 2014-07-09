@@ -139,12 +139,16 @@ class TestCephes(TestCase):
 
     def test_beta(self):
         assert_equal(cephes.beta(1,1),1.0)
+        assert_allclose(cephes.beta(-100.3, 1e-200), cephes.gamma(1e-200))
+        assert_allclose(cephes.beta(0.0342, 171), 24.070498359873497, rtol=1e-14, atol=0)
 
     def test_betainc(self):
         assert_equal(cephes.betainc(1,1,1),1.0)
 
     def test_betaln(self):
         assert_equal(cephes.betaln(1,1),0.0)
+        assert_allclose(cephes.betaln(-100.3, 1e-200), cephes.gammaln(1e-200))
+        assert_allclose(cephes.betaln(0.0342, 170), 3.1811881124242447, rtol=1e-14, atol=0)
 
     def test_betaincinv(self):
         assert_equal(cephes.betaincinv(1,1,1),1.0)
