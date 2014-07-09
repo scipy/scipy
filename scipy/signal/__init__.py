@@ -167,11 +167,15 @@ LTI Representations
    :toctree: generated/
 
    tf2zpk        -- transfer function to zero-pole-gain.
-   zpk2tf        -- zero-pole-gain to transfer function.
+   tf2sos        -- transfer function to second-order sections.
    tf2ss         -- transfer function to state-space.
-   ss2tf         -- state-pace to transfer function.
+   zpk2tf        -- zero-pole-gain to transfer function.
+   zpk2sos       -- zero-pole-gain to second-order sections.
    zpk2ss        -- zero-pole-gain to state-space.
+   ss2tf         -- state-pace to transfer function.
    ss2zpk        -- state-space to pole-zero-gain.
+   sos2zpk       -- second-order-sections to zero-pole-gain.
+   sos2tf        -- second-order-sections to transfer function.
    cont2discrete -- continuous-time to discrete-time LTI conversion.
 
 Waveforms

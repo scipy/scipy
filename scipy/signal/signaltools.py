@@ -1899,13 +1899,22 @@ def sosfilt_zi(sos):
     ----------
     sos : array_like
         Array of second-order filter coefficients, must have shape
-        ``(n_sections, 6)``.
+        ``(n_sections, 6)``. See `sosfilt` for the SOS filter format
+        specification.
 
     Returns
     -------
     zi : ndarray
         Initial conditions suitable for use with ``sosfilt``, shape
         ``(n_sections, 2)``.
+
+    Notes
+    -----
+    .. versionadded:: 0.15.0
+
+    See also
+    --------
+    sosfilt, zpk2sos
     """
     sos = np.asarray(sos)
     if sos.ndim != 2 or sos.shape[1] != 6:
@@ -2327,7 +2336,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
 def sosfilt(sos, x, axis=-1, zi=None):
     """
-    Filter data along one-dimension using cascaded second-order sections
+    Filter data along one dimension using cascaded second-order sections
 
     Filter a data sequence, `x`, using a digital IIR filter defined by
     `sos`. This is implemented by performing `lfilter` for each
@@ -2337,7 +2346,10 @@ def sosfilt(sos, x, axis=-1, zi=None):
     ----------
     sos : array_like
         Array of second-order filter coefficients, must have shape
-        ``(n_sections, 6)``.
+        ``(n_sections, 6)``. Each row corresponds to a second-order
+        section, with the first three columns providing the numerator
+        coefficients and the last three providing the denominator
+        coefficients.
     x : array_like
         An N-dimensional input array.
     axis : int
@@ -2366,6 +2378,8 @@ def sosfilt(sos, x, axis=-1, zi=None):
     with direct-form II transposed structure. It is designed to minimize
     numerical precision errors for high-order filters.
 
+    .. versionadded:: 0.15.0
+
     Examples
     --------
     Plot a 6th-order filter's impulse response using both `lfilter` and
@@ -2384,7 +2398,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
     See also
     --------
-    zpk2sos, sos2zpk
+    zpk2sos, sos2zpk, sosfilt_zi
     """
 
     sos = atleast_2d(sos)

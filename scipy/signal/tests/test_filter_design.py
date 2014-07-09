@@ -13,8 +13,8 @@ from scipy.signal import (tf2zpk, zpk2tf, tf2sos, sos2tf, sos2zpk, zpk2sos,
                           buttord, cheby1, cheby2, ellip, cheb1ord, cheb2ord,
                           ellipord, butter, bessel, buttap, besselap,
                           cheb1ap, cheb2ap, ellipap, iirfilter, freqs,
-                          lp2lp, lp2hp, lp2bp, lp2bs, bilinear, cplxreal,
-                          cplxpair)
+                          lp2lp, lp2hp, lp2bp, lp2bs, bilinear)
+from scipy.signal.filter_design import _cplxreal, _cplxpair
 
 from numpy import array, spacing, sin, pi, sort
 
@@ -22,25 +22,25 @@ from numpy import array, spacing, sin, pi, sort
 class TestCplxPair(TestCase):
 
     def test_trivial_input(self):
-        assert_equal(cplxpair([]).size, 0)
-        assert_equal(cplxpair(1), 1)
+        assert_equal(_cplxpair([]).size, 0)
+        assert_equal(_cplxpair(1), 1)
 
     def test_output_order(self):
-        assert_allclose(cplxpair([1+1j, 1-1j]), [1-1j, 1+1j])
+        assert_allclose(_cplxpair([1+1j, 1-1j]), [1-1j, 1+1j])
 
         a = [1+1j, 1+1j, 1, 1-1j, 1-1j, 2]
         b = [1-1j, 1+1j, 1-1j, 1+1j, 1, 2]
-        assert_allclose(cplxpair(a), b)
+        assert_allclose(_cplxpair(a), b)
 
         # points spaced around the unit circle
         z = np.exp(2j*pi*array([4, 3, 5, 2, 6, 1, 0])/7)
         z1 = np.copy(z)
         np.random.shuffle(z)
-        assert_allclose(cplxpair(z), z1)
+        assert_allclose(_cplxpair(z), z1)
         np.random.shuffle(z)
-        assert_allclose(cplxpair(z), z1)
+        assert_allclose(_cplxpair(z), z1)
         np.random.shuffle(z)
-        assert_allclose(cplxpair(z), z1)
+        assert_allclose(_cplxpair(z), z1)
 
         # Should be able to pair up all the conjugates
         x = np.random.rand(10000) + 1j * np.random.rand(10000)
@@ -48,7 +48,7 @@ class TestCplxPair(TestCase):
         z = np.random.rand(10000)
         x = np.concatenate((x, y, z))
         np.random.shuffle(x)
-        c = cplxpair(x)
+        c = _cplxpair(x)
 
         # Every other element of head should be conjugates:
         assert_allclose(c[0:20000:2], np.conj(c[1:20000:2]))
@@ -58,45 +58,45 @@ class TestCplxPair(TestCase):
         assert_allclose(c[20000:], np.sort(c[20000:]))
 
     def test_real_integer_input(self):
-        assert_array_equal(cplxpair([2, 0, 1]), [0, 1, 2])
+        assert_array_equal(_cplxpair([2, 0, 1]), [0, 1, 2])
 
     def test_tolerances(self):
         eps = spacing(1)
-        assert_allclose(cplxpair([1j, -1j, 1+1j*eps], tol=2*eps),
+        assert_allclose(_cplxpair([1j, -1j, 1+1j*eps], tol=2*eps),
                         [-1j, 1j, 1+1j*eps])
 
         # sorting close to 0
-        assert_allclose(cplxpair([-eps+1j, +eps-1j]), [-1j, +1j])
-        assert_allclose(cplxpair([+eps+1j, -eps-1j]), [-1j, +1j])
-        assert_allclose(cplxpair([+1j, -1j]), [-1j, +1j])
+        assert_allclose(_cplxpair([-eps+1j, +eps-1j]), [-1j, +1j])
+        assert_allclose(_cplxpair([+eps+1j, -eps-1j]), [-1j, +1j])
+        assert_allclose(_cplxpair([+1j, -1j]), [-1j, +1j])
 
     def test_unmatched_conjugates(self):
         # 1+2j is unmatched
-        assert_raises(ValueError, cplxpair, [1+3j, 1-3j, 1+2j])
+        assert_raises(ValueError, _cplxpair, [1+3j, 1-3j, 1+2j])
 
         # 1+2j and 1-3j are unmatched
-        assert_raises(ValueError, cplxpair, [1+3j, 1-3j, 1+2j, 1-3j])
+        assert_raises(ValueError, _cplxpair, [1+3j, 1-3j, 1+2j, 1-3j])
 
         # 1+3j is unmatched
-        assert_raises(ValueError, cplxpair, [1+3j, 1-3j, 1+3j])
+        assert_raises(ValueError, _cplxpair, [1+3j, 1-3j, 1+3j])
 
         # Not conjugates
-        assert_raises(ValueError, cplxpair, [4+5j, 4+5j])
-        assert_raises(ValueError, cplxpair, [1-7j, 1-7j])
+        assert_raises(ValueError, _cplxpair, [4+5j, 4+5j])
+        assert_raises(ValueError, _cplxpair, [1-7j, 1-7j])
 
         # No pairs
-        assert_raises(ValueError, cplxpair, [1+3j])
-        assert_raises(ValueError, cplxpair, [1-3j])
+        assert_raises(ValueError, _cplxpair, [1+3j])
+        assert_raises(ValueError, _cplxpair, [1-3j])
 
 
 class TestCplxReal(TestCase):
 
     def test_trivial_input(self):
-        assert_equal(cplxreal([]), ([], []))
-        assert_equal(cplxreal(1), ([], [1]))
+        assert_equal(_cplxreal([]), ([], []))
+        assert_equal(_cplxreal(1), ([], [1]))
 
     def test_output_order(self):
-        zc, zr = cplxreal(np.roots(array([1, 0, 0, 1])))
+        zc, zr = _cplxreal(np.roots(array([1, 0, 0, 1])))
         assert_allclose(np.append(zc, zr), [1/2 + 1j*sin(pi/3), -1])
 
         eps = spacing(1)
@@ -107,7 +107,7 @@ class TestCplxReal(TestCase):
              1-eps + 1j, 1+2j, 1-2j, 1+eps - 1j,  # sorts out of order
              3+1j, 3+1j, 3+1j, 3-1j, 3-1j, 3-1j,
              2-3j, 2+3j]
-        zc, zr = cplxreal(a)
+        zc, zr = _cplxreal(a)
         assert_allclose(zc, [1j, 1j, 1j, 1+1j, 1+2j, 2+3j, 2+3j, 3+1j, 3+1j,
                              3+1j])
         assert_allclose(zr, [0, 0, 1, 2, 3, 4])
@@ -116,27 +116,27 @@ class TestCplxReal(TestCase):
                    0+1j, 0-1j, 2+4j, 2-4j, 2+3j, 2-3j, 3+7j, 3-7j, 4-eps+1j,
                    4+eps-2j, 4-1j, 4-eps+2j])
 
-        zc, zr = cplxreal(z)
+        zc, zr = _cplxreal(z)
         assert_allclose(zc, [1j, 1+1j, 1+2j, 1+3j, 2+3j, 2+4j, 3+7j, 4+1j,
                              4+2j])
         assert_equal(zr, [])
 
     def test_unmatched_conjugates(self):
         # 1+2j is unmatched
-        assert_raises(ValueError, cplxreal, [1+3j, 1-3j, 1+2j])
+        assert_raises(ValueError, _cplxreal, [1+3j, 1-3j, 1+2j])
 
         # 1+2j and 1-3j are unmatched
-        assert_raises(ValueError, cplxreal, [1+3j, 1-3j, 1+2j, 1-3j])
+        assert_raises(ValueError, _cplxreal, [1+3j, 1-3j, 1+2j, 1-3j])
 
         # 1+3j is unmatched
-        assert_raises(ValueError, cplxreal, [1+3j, 1-3j, 1+3j])
+        assert_raises(ValueError, _cplxreal, [1+3j, 1-3j, 1+3j])
 
         # No pairs
-        assert_raises(ValueError, cplxreal, [1+3j])
-        assert_raises(ValueError, cplxreal, [1-3j])
+        assert_raises(ValueError, _cplxreal, [1+3j])
+        assert_raises(ValueError, _cplxreal, [1-3j])
 
     def test_real_integer_input(self):
-        zc, zr = cplxreal([2, 0, 1, 4])
+        zc, zr = _cplxreal([2, 0, 1, 4])
         assert_array_equal(zc, [])
         assert_array_equal(zr, [0, 1, 2, 4])
 
@@ -221,8 +221,8 @@ class TestSos2Zpk(TestCase):
                   -0.1 - 0.538516480713450j, -0.1 + 0.538516480713450j])
         k = 4
         z2, p2, k2 = sos2zpk(sos)
-        assert_allclose(cplxpair(z2), z)
-        assert_allclose(cplxpair(p2), p)
+        assert_allclose(_cplxpair(z2), z)
+        assert_allclose(_cplxpair(p2), p)
         assert_allclose(k2, k)
 
 
@@ -291,6 +291,22 @@ class TestZpk2Sos(TestCase):
         sos = zpk2sos(z, p, k)
         sos2 = [[4, 8, 12, 1, 0.2, 0.3],
                 [1, 1.25, 1.5, 1, 0.4, 0.5]]
+        assert_allclose(sos, sos2)
+
+        z = []
+        p = [0.2, -0.5+0.25j, -0.5-0.25j]
+        k = 1.
+        sos = zpk2sos(z, p, k)
+        sos2 = [[1., 0., 0., 1., -0.2, 0.],
+                [1., 0., 0., 1., 1., 0.3125]]
+        assert_allclose(sos, sos2)
+
+        z = []
+        p = [0.8, -0.5+0.25j, -0.5-0.25j]
+        k = 1.
+        sos = zpk2sos(z, p, k)
+        sos2 = [[1., 0., 0., 1., 1., 0.3125],
+                [1., 0., 0., 1., -0.8, 0.]]
         assert_allclose(sos, sos2)
 
 
