@@ -141,11 +141,11 @@ double aa, bb, xx;
 	t *= pow(x, a);
 	t /= a;
 	t *= w;
-	t *= Gamma(a + b) / (Gamma(a) * Gamma(b));
+	t *= 1.0 / beta(a, b);
 	goto done;
     }
     /* Resort to logarithms.  */
-    y += t + lgam(a + b) - lgam(a) - lgam(b);
+    y += t - lbeta(a,b);
     y += log(w / a);
     if (y < MINLOG)
 	t = 0.0;
@@ -366,11 +366,11 @@ double a, b, x;
 
     u = a * log(x);
     if ((a + b) < MAXGAM && fabs(u) < MAXLOG) {
-	t = Gamma(a + b) / (Gamma(a) * Gamma(b));
+        t = 1.0 / beta(a, b); 
 	s = s * t * pow(x, a);
     }
     else {
-	t = lgam(a + b) - lgam(a) - lgam(b) + u + log(s);
+	t = -lbeta(a,b) + u + log(s);
 	if (t < MINLOG)
 	    s = 0.0;
 	else

@@ -144,6 +144,7 @@ class TestCephes(TestCase):
 
     def test_betainc(self):
         assert_equal(cephes.betainc(1,1,1),1.0)
+        assert_allclose(cephes.betainc(0.0342, 171, 1e-10), 0.55269916901806648)
 
     def test_betaln(self):
         assert_equal(cephes.betaln(1,1),0.0)
@@ -152,6 +153,7 @@ class TestCephes(TestCase):
 
     def test_betaincinv(self):
         assert_equal(cephes.betaincinv(1,1,1),1.0)
+        assert_allclose(cephes.betaincinv(0.0342, 171, 0.25), 8.4231316935498957e-21, rtol=1e-12, atol=0)
 
     def test_beta_inf(self):
         assert_(np.isinf(special.beta(-1, 2)))
