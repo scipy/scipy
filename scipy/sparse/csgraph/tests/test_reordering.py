@@ -25,8 +25,8 @@ def test_graph_reverse_cuthill_mckee():
 
 def test_graph_maximum_bipartite_matching():
     A = diags(np.ones(25), offsets=0, format='csc')
-    rand_perm = np.random.permutation(25, dtype=np.int32)
-    rand_perm2 = np.random.permutation(25, dtype=np.int32)
+    rand_perm = np.random.permutation(25).astype('int32')
+    rand_perm2 = np.random.permutation(25).astype('int32')
 
     Rrow = np.arange(25, dtype=np.int32)
     Rcol = rand_perm
