@@ -2330,7 +2330,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     Filter data along one-dimension using cascaded second-order sections
 
     Filter a data sequence, `x`, using a digital IIR filter defined by
-    ``sos``. This is implemented by performing `lfilter` for each
+    `sos`. This is implemented by performing `lfilter` for each
     second-order section.  See `lfilter` for details.
 
     Parameters
@@ -2350,13 +2350,13 @@ def sosfilt(sos, x, axis=-1, zi=None):
         equal to those of the input shape (without the filtered axis).
         If `zi` is None or is not given then initial rest is assumed. Note
         that these initial conditions are *not* the same as the initial
-        conditions given by ``lfiltic``.
+        conditions given by `lfiltic` or `lfilter_zi`.
 
     Returns
     -------
-    y : array
+    y : ndarray
         The output of the digital filter.
-    zf : array, optional
+    zf : ndarray, optional
         If `zi` is None, this is not returned, otherwise, `zf` holds the
         final filter delay values.
 
@@ -2368,8 +2368,12 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
     Examples
     --------
+    Plot a 6th-order filter's impulse response using both `lfilter` and
+    `sosfilt`, showing the instability that results from trying to do a
+    6th-order filter in a single stage (the numerical error pushes some poles
+    outside of the unit circle):
 
-    >>> [b, a] = butter(6, [0.10, 0.105], 'band', output='ba')
+    >>> b, a = butter(6, [0.10, 0.105], 'band', output='ba')
     >>> sos = butter(6, [0.10, 0.105], 'band', output='sos')
     >>> x = zeros(1500)
     >>> x[0] = 1.

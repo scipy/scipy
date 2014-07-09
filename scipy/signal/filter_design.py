@@ -252,11 +252,11 @@ def cplxreal(z, tol=None):
     """
     Split into complex and real parts, combining conjugate pairs.
 
-    The 1D input vector z is split up into its complex (`zc`) and real (`zr`)
+    The 1D input vector `z` is split up into its complex (`zc`) and real (`zr`)
     elements.  Every complex element must be part of a complex-conjugate pair,
     which are combined into a single number (with positive imaginary part) in
     the output.  Two complex numbers are considered a conjugate pair if their
-    real and imaginary parts differ in magnitude by less than `tol * abs(z)`.
+    real and imaginary parts differ in magnitude by less than ``tol * abs(z)``.
 
     Parameters
     ----------
@@ -264,7 +264,8 @@ def cplxreal(z, tol=None):
         Vector of complex numbers to be sorted and split
     tol : float, optional
         Relative tolerance for testing realness and conjugate equality.
-        Default is 100 * spacing(1) of z's data type (i.e. 2e-14 for float64)
+        Default is ``100 * spacing(1)`` of `z`'s data type (i.e. 2e-14 for
+        float64)
 
     Returns
     -------
@@ -307,7 +308,7 @@ def cplxreal(z, tol=None):
         # Get tolerance from dtype of input
         tol = 100 * np.finfo((1.0 * z).dtype).eps
 
-    # Sort by real part, magnitude of imaginary part
+    # Sort by real part, magnitude of imaginary part (speed up further sorting)
     z = z[np.lexsort((abs(z.imag), z.real))]
 
     # Split reals from conjugate pairs
@@ -353,18 +354,16 @@ def cplxreal(z, tol=None):
 
 def cplxpair(z, tol=None):
     """
-    Sort ``z`` into pairs of complex conjugates.
+    Sort into pairs of complex conjugates.
 
-    Currently this is for 1D arrays only.
-
-    Complex conjugates are sorted by increasing real part.  In each pair, the
-    number with negative imaginary part appears first.
+    Complex conjugates in `z` are sorted by increasing real part.  In each
+    pair, the number with negative imaginary part appears first.
 
     If pairs have identical real parts, they are sorted by increasing
     imaginary magnitude.
 
     Two complex numbers are considered a conjugate pair if their real and
-    imaginary parts differ in magnitude by less than `tol * abs(z)`.  The
+    imaginary parts differ in magnitude by less than ``tol * abs(z)``.  The
     pairs are forced to be exact complex conjugates by averaging the positive
     and negative values.
 
@@ -378,7 +377,8 @@ def cplxpair(z, tol=None):
         1-dimensional input array to be sorted.
     tol : float, optional
         Relative tolerance for testing realness and conjugate equality.
-        Default is 100 * spacing(1) of z's data type (i.e. 2e-14 for float64)
+        Default is ``100 * spacing(1)`` of z's data type (i.e. 2e-14 for
+        float64)
 
     Returns
     -------
@@ -388,12 +388,20 @@ def cplxpair(z, tol=None):
     Raises
     ------
     ValueError
-        If there are any complex numbers in ``z`` for which a conjugate
+        If there are any complex numbers in `z` for which a conjugate
         cannot be found.
 
     See Also
     --------
     cplxreal: Splits the real and complex pair components of the input.
+
+    Examples
+    --------
+    >>> a = [4, 3, 1, 2-2j, 2+2j, 2-1j, 2+1j, 2-1j, 2+1j, 1+1j, 1-1j]
+    >>> z = cplxpair(a)
+    >>> print z
+    [ 1.-1.j  1.+1.j  2.-1.j  2.+1.j  2.-1.j  2.+1.j  2.-2.j  2.+2.j  1.+0.j
+      3.+0.j  4.+0.j]
     """
 
     z = atleast_1d(z)
@@ -401,7 +409,7 @@ def cplxpair(z, tol=None):
         return np.sort(z)
 
     if z.ndim != 1:
-        raise ValueError('z must be 1D')
+        raise ValueError('z must be 1-dimensional')
 
     zc, zr = cplxreal(z, tol)
 
@@ -413,15 +421,15 @@ def cplxpair(z, tol=None):
 
 
 def tf2zpk(b, a):
-    r"""Return zero, pole, gain (z,p,k) representation from a numerator,
+    r"""Return zero, pole, gain (z, p, k) representation from a numerator,
     denominator representation of a linear filter.
 
     Parameters
     ----------
-    b : ndarray
-        Numerator polynomial.
-    a : ndarray
-        Denominator polynomial.
+    b : array_like
+        Numerator polynomial coefficients.
+    a : array_like
+        Denominator polynomial coefficients.
 
     Returns
     -------
@@ -484,14 +492,14 @@ def tf2zpk(b, a):
 
 
 def zpk2tf(z, p, k):
-    """Return polynomial transfer function representation from zeros
-    and poles
+    """
+    Return polynomial transfer function representation from zeros and poles
 
     Parameters
     ----------
-    z : ndarray
+    z : array_like
         Zeros of the transfer function.
-    p : ndarray
+    p : array_like
         Poles of the transfer function.
     k : float
         System gain.
@@ -499,9 +507,9 @@ def zpk2tf(z, p, k):
     Returns
     -------
     b : ndarray
-        Numerator polynomial.
+        Numerator polynomial coefficients.
     a : ndarray
-        Denominator polynomial.
+        Denominator polynomial coefficients.
 
     """
     z = atleast_1d(z)
@@ -549,14 +557,15 @@ def tf2sos(b, a):
     Parameters
     ----------
     b : array_like
-        Numerator polynomial.
+        Numerator polynomial coefficients.
     a : array_like
-        Denominator polynomial.
+        Denominator polynomial coefficients.
 
     Returns
     -------
-    sos : array_like
-        Array of second-order filter coefficients, shape ``(n_sections, 6)``.
+    sos : ndarray
+        Array of second-order filter coefficients, with shape
+        ``(n_sections, 6)``.
     """
     return zpk2sos(*tf2zpk(b, a))
 
@@ -574,9 +583,9 @@ def sos2tf(sos):
     Returns
     -------
     b : ndarray
-        Numerator polynomial.
+        Numerator polynomial coefficients.
     a : ndarray
-        Denominator polynomial.
+        Denominator polynomial coefficients.
 
     """
     sos = np.asarray(sos)
@@ -636,8 +645,8 @@ def zpk2sos(z, p, k):
 
     Returns
     -------
-    sos : array_like
-        Array of second-order filter coefficients, must have shape
+    sos : ndarray
+        Array of second-order filter coefficients, with shape
         ``(n_sections, 6)``.
     """
     # make copies
