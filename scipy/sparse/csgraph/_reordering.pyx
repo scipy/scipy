@@ -195,7 +195,7 @@ def _maximum_bipartite_matching(
     cdef np.ndarray[int32_or_int64] visited = np.zeros(n, dtype=inds.dtype)
     cdef np.ndarray[ITYPE_t] queue = np.zeros(n, dtype=ITYPE)
     cdef np.ndarray[ITYPE_t] previous = np.zeros(n, dtype=ITYPE)
-    cdef np.ndarray[int32_or_int64] match = -1 * np.ones(n).astype(inds.dtype)
+    cdef np.ndarray[int32_or_int64] match = (-1 * np.ones(n)).astype(inds.dtype)
     cdef np.ndarray[ITYPE_t] row_match = -1 * np.ones(n, dtype=ITYPE)
     cdef int queue_ptr, queue_col, ptr, i, j, queue_size
     cdef int col, next_num = 1
