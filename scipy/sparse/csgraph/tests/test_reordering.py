@@ -25,16 +25,16 @@ def test_graph_reverse_cuthill_mckee():
 
 def test_graph_maximum_bipartite_matching():
     A = diags(np.ones(25), offsets=0, format='csc')
-    rand_perm = np.random.permutation(25)
-    rand_perm2 = np.random.permutation(25)
+    rand_perm = np.random.permutation(25, dtype=np.int32)
+    rand_perm2 = np.random.permutation(25, dtype=np.int32)
 
-    Rrow = np.arange(25)
+    Rrow = np.arange(25, dtype=np.int32)
     Rcol = rand_perm
     Rdata = np.ones(25,dtype=int)
     Rmat = coo_matrix((Rdata,(Rrow,Rcol))).tocsc()
 
     Crow = rand_perm2
-    Ccol = np.arange(25)
+    Ccol = np.arange(25, dtype=np.int32)
     Cdata = np.ones(25,dtype=int)
     Cmat = coo_matrix((Cdata,(Crow,Ccol))).tocsc()
     # Randomly permute identity matrix
@@ -42,7 +42,7 @@ def test_graph_maximum_bipartite_matching():
     
     # Row permute
     perm = maximum_bipartite_matching(B,perm_type='row')
-    Rrow = np.arange(25)
+    Rrow = np.arange(25, dtype=np.int32)
     Rcol = perm
     Rdata = np.ones(25,dtype=int)
     Rmat = coo_matrix((Rdata,(Rrow,Rcol))).tocsc()
@@ -51,7 +51,7 @@ def test_graph_maximum_bipartite_matching():
     # Column permute
     perm2 = maximum_bipartite_matching(B,perm_type='column')
     Crow = perm2
-    Ccol = np.arange(25)
+    Ccol = np.arange(25, dtype=np.int32)
     Cdata = np.ones(25,dtype=int)
     Cmat = coo_matrix((Cdata,(Crow,Ccol))).tocsc()
     C2 = B*Cmat
