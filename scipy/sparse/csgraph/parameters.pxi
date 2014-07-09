@@ -7,9 +7,9 @@ ITYPE = np.int32
 ctypedef np.int32_t ITYPE_t
 
 # Fused type for int and long
-ctypedef fused int_or_long:
-    cython.int
-    cython.long
+ctypedef fused int32_or_int64:
+    np.int32_t
+    np.int64_t
 
 # EPS is the precision of DTYPE
 cdef DTYPE_t DTYPE_EPS = 1E-15

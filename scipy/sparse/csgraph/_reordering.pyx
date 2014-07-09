@@ -97,15 +97,15 @@ def maximum_bipartite_matching(graph, perm_type='row'):
 
 
 def _node_degrees(
-        np.ndarray[int_or_long, ndim=1, mode="c"] ind,
-        np.ndarray[int_or_long, ndim=1, mode="c"] ptr,
+        np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
+        np.ndarray[int32_or_int64, ndim=1, mode="c"] ptr,
         int num_rows):
     """
     Find the degree of each node (matrix row) in a graph represented
     by a sparse CSR or CSC matrix.
     """
     cdef unsigned int ii, jj
-    cdef np.ndarray[ITYPE_t] degree = np.zeros(num_rows, dtype=ITYPE)
+    cdef np.ndarray[int32_or_int64] degree = np.zeros(num_rows, dtype=ind.dtype)
     
     for ii in range(num_rows):
         degree[ii] = ptr[ii + 1] - ptr[ii]
@@ -117,22 +117,23 @@ def _node_degrees(
     return degree
     
 
-def _reverse_cuthill_mckee(np.ndarray[int_or_long, ndim=1, mode="c"] ind,
-        np.ndarray[int_or_long, ndim=1, mode="c"] ptr,
+def _reverse_cuthill_mckee(np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
+        np.ndarray[int32_or_int64, ndim=1, mode="c"] ptr,
         int num_rows):
     """
     Reverse Cuthill-McKee ordering of a sparse symmetric CSR or CSC matrix.  
     We follow the original Cuthill-McKee paper and always start the routine
     at a node of lowest degree for each connected component.
     """
-    cdef unsigned int N = 0, N_old, seed, level_start, level_end, temp, temp2
-    cdef unsigned int zz, i, j, ii, jj, kk, ll
-    cdef np.ndarray[int_or_long] order = np.zeros(num_rows, dtype=ind.dtype)
-    cdef np.ndarray[ITYPE_t] degree = _node_degrees(ind, ptr, num_rows)
+    cdef unsigned int N = 0, N_old, level_start, level_end, temp
+    cdef unsigned int zz, ii, jj, kk, ll
+    cdef np.ndarray[int32_or_int64] order = np.zeros(num_rows, dtype=ind.dtype)
+    cdef np.ndarray[ITYPE_t] degree = _node_degrees(ind, ptr, num_rows).astype(ITYPE)
     cdef np.ndarray[ITYPE_t] inds = np.argsort(degree).astype(ITYPE)
     cdef np.ndarray[ITYPE_t] rev_inds = np.argsort(inds).astype(ITYPE)
     cdef np.ndarray[ITYPE_t] temp_degrees = np.zeros(num_rows, dtype=ITYPE)
-
+    cdef int32_or_int64 i, j, seed, temp2
+    
     # loop over zz takes into account possible disconnected graph.
     for zz in range(num_rows):
         if inds[zz] != -1:   # Do BFS with seed=inds[zz]
@@ -185,20 +186,21 @@ def _reverse_cuthill_mckee(np.ndarray[int_or_long, ndim=1, mode="c"] ind,
 
 
 def _maximum_bipartite_matching(
-        np.ndarray[int_or_long, ndim=1, mode="c"] inds,
-        np.ndarray[int_or_long, ndim=1, mode="c"] ptrs,
+        np.ndarray[int32_or_int64, ndim=1, mode="c"] inds,
+        np.ndarray[int32_or_int64, ndim=1, mode="c"] ptrs,
         int n):
     """
     Maximum bipartite matching of a graph in CSC format.
     """
-    cdef np.ndarray[ITYPE_t] visited = np.zeros(n, dtype=ITYPE)
+    cdef np.ndarray[int32_or_int64] visited = np.zeros(n, dtype=inds.dtype)
     cdef np.ndarray[ITYPE_t] queue = np.zeros(n, dtype=ITYPE)
     cdef np.ndarray[ITYPE_t] previous = np.zeros(n, dtype=ITYPE)
-    cdef np.ndarray[int_or_long] match = -1 * np.ones(n, dtype=inds.dtype)
+    cdef np.ndarray[int32_or_int64] match = -1 * np.ones(n, dtype=inds.dtype)
     cdef np.ndarray[ITYPE_t] row_match = -1 * np.ones(n, dtype=ITYPE)
     cdef int queue_ptr, queue_col, ptr, i, j, queue_size
-    cdef int row, col, temp, eptr, next_num = 1
-
+    cdef int col, next_num = 1
+    cdef int32_or_int64 row, temp, eptr
+    
     for i in range(n):
         if match[i] == -1 and (ptrs[i] != ptrs[i + 1]):
             queue[0] = i
