@@ -12,6 +12,7 @@ import numpy as np
 from numpy.testing import assert_raises, assert_equal, dec, run_module_suite, assert_
 from scipy.sparse import (_sparsetools, coo_matrix, csr_matrix, csc_matrix,
                           bsr_matrix, dia_matrix)
+from scipy.sparse.sputils import supported_dtypes
 from scipy.lib.decorator import decorator
 
 
@@ -60,6 +61,17 @@ def test_threads():
 
     for b in bres:
         assert_(np.all(b.toarray() == 2))
+
+
+def test_regression_std_vector_dtypes():
+    # Regression test for gh-3780, checking the std::vector typemaps
+    # in sparsetools.cxx are complete.
+    for dtype in supported_dtypes:
+        ad = np.matrix([[1, 2], [3, 4]]).astype(dtype)
+        a = csr_matrix(ad, dtype=dtype)
+
+        # getcol is one function using std::vector typemaps, and should not fail
+        assert_equal(a.getcol(0).todense(), ad[:,0])
 
 
 class TestInt32Overflow(object):
