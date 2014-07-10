@@ -539,7 +539,7 @@ def linkage(y, method='single', metric='euclidean'):
         for all points :math:`i` and :math:`j` where :math:`|u|`
         and :math:`|v|` are the cardinalities of clusters :math:`u`
         and :math:`v`, respectively. This is also called the UPGMA
-        algorithm. This is called UPGMA.
+        algorithm.
 
       * method='weighted' assigns
 
