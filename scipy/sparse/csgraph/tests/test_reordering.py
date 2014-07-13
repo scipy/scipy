@@ -25,7 +25,7 @@ def test_graph_reverse_cuthill_mckee():
     # Test int64 indices input
     graph.indices = graph.indices.astype('int64')
     graph.indptr = graph.indptr.astype('int64')
-    perm = reverse_cuthill_mckee(graph)
+    perm = reverse_cuthill_mckee(graph, True)
     assert_equal(perm, correct_perm)
 
 
