@@ -38,6 +38,10 @@ class PchipInterpolator(object):
     __call__
     derivative
 
+    See Also
+    --------
+    Akima1DInterpolator
+
     Notes
     -----
     The first derivatives are guaranteed to be continuous, but the second
@@ -258,6 +262,10 @@ class Akima1DInterpolator(PPoly):
     -------
     __call__
 
+    See Also
+    --------
+    PchipInterpolator
+
     Notes
     -----
     .. versionadded:: 0.14
@@ -327,3 +335,17 @@ class Akima1DInterpolator(PPoly):
     def extend(self):
         raise NotImplementedError("Extending a 1D Akima interpolator is not "
                 "yet implemented")
+
+    # These are inherited from PPoly, but they do not produce an Akima
+    # interpolor. Hence stub them out.
+    @classmethod    
+    def from_spline(cls, tck, extrapolate=None):
+        raise NotImplementedError("This method does not make sense for "
+                "an Akima interpolator.")
+
+    @classmethod
+    def from_bernstein_basis(cls, bp, extrapolate=None):
+        raise NotImplementedError("This method does not make sense for "
+                "an Akima interpolator.")
+
+    
