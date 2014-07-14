@@ -1648,15 +1648,48 @@ class genextreme_gen(rv_continuous):
     See Also
     --------
     gumbel_r
+    frechet_r
+    weibull_max
 
     Notes
     -----
-    For ``c=0``, `genextreme` is equal to `gumbel_r`.
-    The probability density function for `genextreme` is::
+    For the generalized extreme value (GEV) family of distributions,
+    the cumulative distribution function takes the form [Johnson-Kotz 1994]_:
 
-        genextreme.pdf(x, c) =
-            exp(-exp(-x))*exp(-x),                    for c==0
-            exp(-(1-c*x)**(1/c))*(1-c*x)**(1/c-1),    for x <= 1/c, c > 0
+       genextreme.cdf(x,c) = exp(-t(x)), where
+
+       t(x)=(1+c*(x-mu)/sigma)**(-1/c) for c not equal to zero, and
+            exp(-(x-mu)/sigma) for c=0.
+
+        
+    Note that mu and sigma are respectively the usual `loc` and `scale` parameters.
+
+    The GEV family nests three other types of distributions, depending on the
+    value of `c` (also called the "Extreme Value Index").  For:
+
+       c=0 : yields distributions in the Gumbel family (`gumbel_r`);
+       c>0 : yields distributions in the Frechet family, but location and scaling differ (see below);
+
+       c<0 : yields distributions in the Weibull family, but location and scaling differ (see below).
+
+    Differences in scaling
+    ^^^^^^^^^^^^^^^^^^^^^^
+    If c>0, then
+    >>> from scipy.stats import genextreme, frechet_r, weibull_max
+    >>> (mu,sigma)=(1,2)
+    >>> c=-1 # EVI parameter
+    >>> G=genextreme(c,loc=mu,scale=sigma).cdf
+    >>> F=frechet_r(1./c,loc=(sigma/abs(c)+mu),scale=sigma/abs(c)).cdf
+    >>> abs(G(0)-F(0))<1e-10
+    True
+    >>> abs(G(-1)-F(-1))<1e-10
+    True
+
+
+    If c<0, then
+    genextreme(c,loc=mu,scale=sigma) delivers the same frozen rv as weibull_max(1./abs(c),loc=(sigma/abs(c)+mu),scale=sigma/abs(c)).
+
+    [Johnson-Kotz 1994]   Norman L. Johnson and Samuel Kotz, Continuous Univariate Distributions, Volume 1. 1994.
 
     %(example)s
 
@@ -1664,14 +1697,14 @@ class genextreme_gen(rv_continuous):
     def _argcheck(self, c):
         min = np.minimum
         max = np.maximum
-        self.b = where(c > 0, 1.0 / max(c, _XMIN), inf)
-        self.a = where(c < 0, 1.0 / min(c, -_XMIN), -inf)
+        self.b = where(c >= 0, inf, 1.0 / max(c, _XMIN))
+        self.a = where(c <= 0, -inf, 1.0 / max(c, _XMIN))
         return where(abs(c) == inf, 0, 1)
 
     def _pdf(self, x, c):
         cx = c*x
-        logex2 = where((c == 0)*(x == x), 0.0, log1p(-cx))
-        logpex2 = where((c == 0)*(x == x), -x, logex2/c)
+        logex2 = where((c == 0)*(x == x), 0.0, log1p(cx))
+        logpex2 = where((c == 0)*(x == x), -x, logex2/-c)
         pex2 = exp(logpex2)
         # Handle special cases
         logpdf = where((cx == 1) | (cx == -inf), -inf, -pex2+logpex2-logex2)
@@ -1679,12 +1712,12 @@ class genextreme_gen(rv_continuous):
         return exp(logpdf)
 
     def _cdf(self, x, c):
-        loglogcdf = where((c == 0)*(x == x), -x, log1p(-c*x)/c)
+        loglogcdf = where((c == 0)*(x == x), -x, log1p(c*x)/-c)
         return exp(-exp(loglogcdf))
 
     def _ppf(self, q, c):
         x = -log(-log(q))
-        return where((c == 0)*(x == x), x, -expm1(-c*x)/c)
+        return where((c == 0)*(x == x), x, expm1(c*x)/c)
 
     def _stats(self, c):
         g = lambda n: gam(n*c+1)
@@ -1718,6 +1751,7 @@ class genextreme_gen(rv_continuous):
             comb(n, k) * (-1)**k * special.gamma(c*k + 1),
             axis=0)
         return where(c*n > -1, vals, inf)
+
 genextreme = genextreme_gen(name='genextreme')
 
 
