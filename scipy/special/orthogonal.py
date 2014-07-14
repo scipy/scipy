@@ -111,7 +111,7 @@ poch = cephes.poch
 
 
 class orthopoly1d(np.poly1d):
-    def __init__(self, roots, weights=None, hn=1.0, kn=1.0, wfunc=None, limits=None, monic=0,eval_func=None):
+    def __init__(self, roots, weights=None, hn=1.0, kn=1.0, wfunc=None, limits=None, monic=False, eval_func=None):
         np.poly1d.__init__(self, roots, r=1)
         equiv_weights = [weights[k] / wfunc(roots[k]) for k in range(len(roots))]
         self.__dict__['weights'] = np.array(list(zip(roots,weights,equiv_weights)))
@@ -210,7 +210,7 @@ def j_roots(n, alpha, beta, mu=0):
         return val
 
 
-def jacobi(n, alpha, beta, monic=0):
+def jacobi(n, alpha, beta, monic=False):
     """Returns the nth order Jacobi polynomial, P^(alpha,beta)_n(x)
     orthogonal over [-1,1] with weighting function
     (1-x)**alpha (1+x)**beta with alpha,beta > -1.
@@ -275,7 +275,7 @@ def js_roots(n, p1, q1, mu=0):
     #    return [(x+1)/2.0,w]
 
 
-def sh_jacobi(n, p, q, monic=0):
+def sh_jacobi(n, p, q, monic=False):
     """Returns the nth order Jacobi polynomial, G_n(p,q,x)
     orthogonal over [0,1] with weighting function
     (1-x)**(p-q) (x)**(q-1) with p>q-1 and q > 0.
@@ -323,7 +323,7 @@ def la_roots(n, alpha, mu=0):
         return val
 
 
-def genlaguerre(n, alpha, monic=0):
+def genlaguerre(n, alpha, monic=False):
     """Returns the nth order generalized (associated) Laguerre polynomial,
     L^(alpha)_n(x), orthogonal over [0,inf) with weighting function
     exp(-x) x**alpha with alpha > -1
@@ -360,7 +360,7 @@ def l_roots(n, mu=0):
     return la_roots(n,0.0,mu=mu)
 
 
-def laguerre(n, monic=0):
+def laguerre(n, monic=False):
     """Return the nth order Laguerre polynoimal, L_n(x), orthogonal over
     [0,inf) with weighting function exp(-x)
     """
@@ -424,7 +424,7 @@ def h_roots(n, mu=0):
     return _h_gen_roots_and_weights(n, mu, 2.0, cephes.eval_hermite)
 
 
-def hermite(n, monic=0):
+def hermite(n, monic=False):
     """Return the nth order Hermite polynomial, H_n(x), orthogonal over
     (-inf,inf) with weighting function exp(-x**2)
     """
@@ -458,7 +458,7 @@ def he_roots(n, mu=0):
     return _h_gen_roots_and_weights(n, mu, 1.0, cephes.eval_hermitenorm)
 
 
-def hermitenorm(n, monic=0):
+def hermitenorm(n, monic=False):
     """Return the nth order normalized Hermite polynomial, He_n(x), orthogonal
     over (-inf,inf) with weighting function exp(-(x/2)**2)
     """
@@ -494,7 +494,7 @@ def cg_roots(n, alpha, mu=0):
     return j_roots(n,alpha-0.5,alpha-0.5,mu=mu)
 
 
-def gegenbauer(n, alpha, monic=0):
+def gegenbauer(n, alpha, monic=False):
     """Return the nth order Gegenbauer (ultraspherical) polynomial,
     C^(alpha)_n(x), orthogonal over [-1,1] with weighting function
     (1-x**2)**(alpha-1/2) with alpha > -1/2
@@ -534,7 +534,7 @@ def t_roots(n, mu=0):
         return val
 
 
-def chebyt(n, monic=0):
+def chebyt(n, monic=False):
     """Return nth order Chebyshev polynomial of first kind, Tn(x).  Orthogonal
     over [-1,1] with weight function (1-x**2)**(-1/2).
     """
@@ -567,7 +567,7 @@ def u_roots(n, mu=0):
     return j_roots(n,0.5,0.5,mu=mu)
 
 
-def chebyu(n, monic=0):
+def chebyu(n, monic=False):
     """Return nth order Chebyshev polynomial of second kind, Un(x).  Orthogonal
     over [-1,1] with weight function (1-x**2)**(1/2).
     """
@@ -596,7 +596,7 @@ def c_roots(n, mu=0):
         return [x*2,w]
 
 
-def chebyc(n, monic=0):
+def chebyc(n, monic=False):
     """Return nth order Chebyshev polynomial of first kind, Cn(x).  Orthogonal
     over [-2,2] with weight function (1-(x/2)**2)**(-1/2).
     """
@@ -636,7 +636,7 @@ def s_roots(n, mu=0):
         return [x*2,w]
 
 
-def chebys(n, monic=0):
+def chebys(n, monic=False):
     """Return nth order Chebyshev polynomial of second kind, Sn(x).  Orthogonal
     over [-2,2] with weight function (1-(x/)**2)**(1/2).
     """
@@ -672,7 +672,7 @@ def ts_roots(n, mu=0):
     return js_roots(n,0.0,0.5,mu=mu)
 
 
-def sh_chebyt(n, monic=0):
+def sh_chebyt(n, monic=False):
     """Return nth order shifted Chebyshev polynomial of first kind, Tn(x).
     Orthogonal over [0,1] with weight function (x-x**2)**(-1/2).
     """
@@ -698,7 +698,7 @@ def us_roots(n, mu=0):
     return js_roots(n,2.0,1.5,mu=mu)
 
 
-def sh_chebyu(n, monic=0):
+def sh_chebyu(n, monic=False):
     """Return nth order shifted Chebyshev polynomial of second kind, Un(x).
     Orthogonal over [0,1] with weight function (x-x**2)**(1/2).
     """
@@ -722,7 +722,7 @@ def p_roots(n, mu=0):
     return j_roots(n,0.0,0.0,mu=mu)
 
 
-def legendre(n, monic=0):
+def legendre(n, monic=False):
     """Returns the nth order Legendre polynomial, P_n(x), orthogonal over
     [-1,1] with weight function 1.
     """
@@ -755,7 +755,7 @@ def ps_roots(n, mu=0):
     return js_roots(n,1.0,1.0,mu=mu)
 
 
-def sh_legendre(n, monic=0):
+def sh_legendre(n, monic=False):
     """Returns the nth order shifted Legendre polynomial, P^*_n(x), orthogonal
     over [0,1] with weighting function 1.
     """
