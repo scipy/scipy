@@ -231,6 +231,7 @@ which work for masked arrays.
 .. autosummary::
    :toctree: generated/
 
+   sigmaclip
    threshold
    trimboth
    trim1
@@ -244,6 +245,7 @@ which work for masked arrays.
    pointbiserialr
    kendalltau
    linregress
+   theilslopes
 
 .. autosummary::
    :toctree: generated/
@@ -271,6 +273,7 @@ which work for masked arrays.
    levene
    shapiro
    anderson
+   anderson_ksamp
    binom_test
    fligner
    mood
@@ -281,6 +284,8 @@ which work for masked arrays.
    boxcox
    boxcox_normmax
    boxcox_llf
+
+   entropy
 
 Contingency table functions
 ===========================

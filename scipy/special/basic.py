@@ -6,11 +6,12 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from scipy.lib.six import xrange
-from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \
-        where, mgrid, cos, sin, exp, place, seterr, issubdtype, extract, \
-        less, vectorize, inexact, nan, zeros, sometrue, atleast_1d, sinc
-from ._ufuncs import ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
-        hankel1, hankel2, yv, kv, gammaln, ndtri, errprint, poch, binom
+from numpy import (pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt,
+                   where, mgrid, cos, sin, exp, place, issubdtype, extract,
+                   less, vectorize, inexact, nan, zeros, atleast_1d, sinc)
+from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta,
+                      hankel1, hankel2, yv, kv, gammaln, ndtri, errprint, poch,
+                      binom)
 from . import _ufuncs
 import types
 from . import specfun
@@ -30,23 +31,38 @@ __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'mathieu_b', 'mathieu_even_coef', 'mathieu_odd_coef', 'ndtri',
            'obl_cv_seq', 'pbdn_seq', 'pbdv_seq', 'pbvv_seq', 'perm',
            'polygamma', 'pro_cv_seq', 'psi', 'riccati_jn', 'riccati_yn',
-           'sinc', 'sph_harm', 'sph_in', 'sph_inkn',
+           'sinc', 'sph_in', 'sph_inkn',
            'sph_jn', 'sph_jnyn', 'sph_kn', 'sph_yn', 'y0_zeros', 'y1_zeros',
            'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta',
            'SpecialFunctionWarning']
 
 
 class SpecialFunctionWarning(Warning):
+    """Warning that can be issued with ``errprint(True)``"""
     pass
 warnings.simplefilter("always", category=SpecialFunctionWarning)
 
 
 def diric(x,n):
-    """Returns the periodic sinc function, also called the Dirichlet function:
+    """Returns the periodic sinc function, also called the Dirichlet function
 
-    diric(x) = sin(x *n / 2) / (n sin(x / 2))
+    The Dirichlet function is defined as::
+
+        diric(x) = sin(x * n/2) / (n * sin(x / 2)),
 
     where n is a positive integer.
+
+    Parameters
+    ----------
+    x : array_like
+        Input data
+    n : int
+        Integer defining the periodicity.
+
+    Returns
+    -------
+    diric : ndarray
+
     """
     x,n = asarray(x), asarray(n)
     n = asarray(n + (x-x))
@@ -173,7 +189,7 @@ def y1p_zeros(nt,complex=0):
     return specfun.cyzo(nt,kf,kc)
 
 
-def bessel_diff_formula(v, z, n, L, phase):
+def _bessel_diff_formula(v, z, n, L, phase):
     # from AMS55.
     # L(v,z) = J(v,z), Y(v,z), H1(v,z), H2(v,z), phase = -1
     # L(v,z) = I(v,z) or exp(v*pi*i)K(v,z), phase = 1
@@ -186,6 +202,10 @@ def bessel_diff_formula(v, z, n, L, phase):
     return s / (2.**n)
 
 
+bessel_diff_formula = np.deprecate(_bessel_diff_formula,
+    message="bessel_diff_formula is a private function, do not use it!")
+
+
 def jvp(v,z,n=1):
     """Return the nth derivative of Jv(z) with respect to z.
     """
@@ -194,7 +214,7 @@ def jvp(v,z,n=1):
     if n == 0:
         return jv(v,z)
     else:
-        return bessel_diff_formula(v, z, n, jv, -1)
+        return _bessel_diff_formula(v, z, n, jv, -1)
 #        return (jvp(v-1,z,n-1) - jvp(v+1,z,n-1))/2.0
 
 
@@ -206,7 +226,7 @@ def yvp(v,z,n=1):
     if n == 0:
         return yv(v,z)
     else:
-        return bessel_diff_formula(v, z, n, yv, -1)
+        return _bessel_diff_formula(v, z, n, yv, -1)
 #        return (yvp(v-1,z,n-1) - yvp(v+1,z,n-1))/2.0
 
 
@@ -218,7 +238,7 @@ def kvp(v,z,n=1):
     if n == 0:
         return kv(v,z)
     else:
-        return (-1)**n * bessel_diff_formula(v, z, n, kv, 1)
+        return (-1)**n * _bessel_diff_formula(v, z, n, kv, 1)
 
 
 def ivp(v,z,n=1):
@@ -229,7 +249,7 @@ def ivp(v,z,n=1):
     if n == 0:
         return iv(v,z)
     else:
-        return bessel_diff_formula(v, z, n, iv, 1)
+        return _bessel_diff_formula(v, z, n, iv, 1)
 
 
 def h1vp(v,z,n=1):
@@ -240,7 +260,7 @@ def h1vp(v,z,n=1):
     if n == 0:
         return hankel1(v,z)
     else:
-        return bessel_diff_formula(v, z, n, hankel1, -1)
+        return _bessel_diff_formula(v, z, n, hankel1, -1)
 #        return (h1vp(v-1,z,n-1) - h1vp(v+1,z,n-1))/2.0
 
 
@@ -252,7 +272,7 @@ def h2vp(v,z,n=1):
     if n == 0:
         return hankel2(v,z)
     else:
-        return bessel_diff_formula(v, z, n, hankel2, -1)
+        return _bessel_diff_formula(v, z, n, hankel2, -1)
 #        return (h2vp(v-1,z,n-1) - h2vp(v+1,z,n-1))/2.0
 
 
@@ -404,56 +424,18 @@ def riccati_yn(n,x):
     return jn[:(n+1)],jnp[:(n+1)]
 
 
-def _sph_harmonic(m,n,theta,phi):
-    """Compute spherical harmonics.
-
-    This is a ufunc and may take scalar or array arguments like any
-    other ufunc.  The inputs will be broadcasted against each other.
-
-    Parameters
-    ----------
-    m : int
-       |m| <= n; the order of the harmonic.
-    n : int
-       where `n` >= 0; the degree of the harmonic.  This is often called
-       ``l`` (lower case L) in descriptions of spherical harmonics.
-    theta : float
-       [0, 2*pi]; the azimuthal (longitudinal) coordinate.
-    phi : float
-       [0, pi]; the polar (colatitudinal) coordinate.
-
-    Returns
-    -------
-    y_mn : complex float
-       The harmonic $Y^m_n$ sampled at `theta` and `phi`
-
-    Notes
-    -----
-    There are different conventions for the meaning of input arguments
-    `theta` and `phi`.  We take `theta` to be the azimuthal angle and
-    `phi` to be the polar angle.  It is common to see the opposite
-    convention - that is `theta` as the polar angle and `phi` as the
-    azimuthal angle.
-    """
-    x = cos(phi)
-    m,n = int(m), int(n)
-    Pmn,Pmn_deriv = lpmn(m,n,x)
-    # Legendre call generates all orders up to m and degrees up to n
-    val = Pmn[-1, -1]
-    val *= sqrt((2*n+1)/4.0/pi)
-    val *= exp(0.5*(gammaln(n-m+1)-gammaln(n+m+1)))
-    val *= exp(1j*m*theta)
-    return val
-
-sph_harm = vectorize(_sph_harmonic,'D')
-
-
 def erfinv(y):
+    """
+    Inverse function for erf
+    """
     return ndtri((y+1)/2.0)/sqrt(2)
 
 
 def erfcinv(y):
-    return ndtri((2-y)/2.0)/sqrt(2)
+    """
+    Inverse function for erfc
+    """
+    return -ndtri(0.5*y)/sqrt(2)
 
 
 def erf_zeros(nt):
@@ -525,7 +507,18 @@ def hyp0f1(v, z):
     return num / den
 
 
-def assoc_laguerre(x,n,k=0.0):
+def assoc_laguerre(x, n, k=0.0):
+    """Returns the n-th order generalized (associated) Laguerre polynomial.
+
+    The polynomial :math:`L^(alpha)_n(x)` is orthogonal over ``[0, inf)``,
+    with weighting function ``exp(-x) * x**alpha`` with ``alpha > -1``.
+
+    Notes
+    -----
+    `assoc_laguerre` is a simple wrapper around `eval_genlaguerre`, with
+    reversed argument order ``(x, n, k=0.0) --> (n, k, x)``.
+
+    """
     return orthogonal.eval_genlaguerre(n, k, x)
 
 digamma = psi
@@ -736,7 +729,7 @@ def clpmn(m,n,z,type=3):
     Notes
     -----
     By default, i.e. for ``type=3``, phase conventions are chosen according
-    to [1] such that the function is analytic. The cut lies on the interval
+    to [1]_ such that the function is analytic. The cut lies on the interval
     (-1, 1). Approaching the cut from above or below in general yields a phase
     factor with respect to Ferrer's function of the first kind
     (cf. `lpmn`).

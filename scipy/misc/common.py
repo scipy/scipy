@@ -5,28 +5,39 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 
 from __future__ import division, print_function, absolute_import
 
-from numpy import exp, log, asarray, arange, newaxis, hstack, product, array, \
-                  zeros, eye, poly1d, r_, rollaxis, sum, fromstring
+import numpy
+from numpy import (exp, log, asarray, arange, newaxis, hstack, product, array,
+                   zeros, eye, poly1d, r_, rollaxis, sum, fromstring, isfinite,
+                   squeeze, amax, reshape)
+
+from scipy.lib._version import NumpyVersion
 
 __all__ = ['logsumexp', 'central_diff_weights', 'derivative', 'pade', 'lena',
            'ascent', 'face']
 
-# XXX: the factorial functions could move to scipy.special, and the others
-# to numpy perhaps?
+
+_NUMPY_170 = (NumpyVersion(numpy.__version__) >= NumpyVersion('1.7.0'))
 
 
-def logsumexp(a, axis=None, b=None):
+def logsumexp(a, axis=None, b=None, keepdims=False):
     """Compute the log of the sum of exponentials of input elements.
 
     Parameters
     ----------
     a : array_like
         Input array.
-    axis : int, optional
-        Axis over which the sum is taken. By default `axis` is None,
-        and all elements are summed.
+    axis : None or int or tuple of ints, optional
+        Axis or axes over which the sum is taken. By default `axis` is None,
+        and all elements are summed. Tuple of ints is not accepted if NumPy 
+        version is lower than 1.7.0.
 
         .. versionadded:: 0.11.0
+    keepdims: bool, optional
+        If this is set to True, the axes which are reduced are left in the
+        result as dimensions with size one. With this option, the result
+        will broadcast correctly against the original array.
+
+        .. versionadded:: 0.15.0
     b : array-like, optional
         Scaling factor for exp(`a`) must be of the same shape as `a` or
         broadcastable to `a`.
@@ -69,21 +80,64 @@ def logsumexp(a, axis=None, b=None):
     9.9170178533034647
     """
     a = asarray(a)
-    if axis is None:
-        a = a.ravel()
-    else:
-        a = rollaxis(a, axis)
-    a_max = a.max(axis=0)
-    if b is not None:
-        b = asarray(b)
+
+    # keepdims is available in numpy.sum and numpy.amax since NumPy 1.7.0
+    #
+    # Because SciPy supports versions earlier than 1.7.0, we have to handle
+    # those old versions differently
+
+    if not _NUMPY_170:
+        # When support for Numpy < 1.7.0 is dropped, this implementation can be
+        # removed. This implementation is a bit hacky. Similarly to old NumPy's
+        # sum and amax functions, 'axis' must be an integer or None, tuples and
+        # lists are not supported. Although 'keepdims' is not supported by these
+        # old NumPy's functions, this function supports it.
+
+        # Solve the shape of the reduced array
         if axis is None:
-            b = b.ravel()
+            sh_keepdims = (1,) * a.ndim
         else:
-            b = rollaxis(b, axis)
-        out = log(sum(b * exp(a - a_max), axis=0))
+            sh_keepdims = list(a.shape)
+            sh_keepdims[axis] = 1
+
+        a_max = amax(a, axis=axis)
+
+        if a_max.ndim > 0:
+            a_max[~isfinite(a_max)] = 0
+        elif not isfinite(a_max):
+            a_max = 0
+
+        if b is not None:
+            b = asarray(b)
+            out = log(sum(b * exp(a - reshape(a_max, sh_keepdims)), axis=axis))
+        else:
+            out = log(sum(exp(a - reshape(a_max, sh_keepdims)), axis=axis))
+
+        out += a_max
+
+        if keepdims:
+            # Put back the reduced axes with size one
+            out = reshape(out, sh_keepdims)
     else:
-        out = log(sum(exp(a - a_max), axis=0))
-    out += a_max
+        # This is a more elegant implementation, requiring NumPy >= 1.7.0
+        a_max = amax(a, axis=axis, keepdims=True)
+
+        if a_max.ndim > 0:
+            a_max[~isfinite(a_max)] = 0
+        elif not isfinite(a_max):
+            a_max = 0
+
+        if b is not None:
+            b = asarray(b)
+            out = log(sum(b * exp(a - a_max), axis=axis, keepdims=keepdims))
+        else:
+            out = log(sum(exp(a - a_max), axis=axis, keepdims=keepdims))
+
+        if not keepdims:
+            a_max = squeeze(a_max, axis=axis)
+
+        out += a_max
+
     return out
 
 

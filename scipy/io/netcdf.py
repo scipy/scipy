@@ -33,7 +33,7 @@ __all__ = ['netcdf_file']
 
 
 from operator import mul
-from mmap import mmap, ACCESS_READ
+import mmap as mm
 
 import numpy as np
 from numpy.compat import asbytes, asstr
@@ -41,7 +41,7 @@ from numpy import fromstring, ndarray, dtype, empty, array, asarray
 from numpy import little_endian as LITTLE_ENDIAN
 from functools import reduce
 
-from scipy.lib.six import integer_types
+from scipy.lib.six import integer_types, text_type, binary_type
 
 ABSENT = b'\x00\x00\x00\x00\x00\x00\x00\x00'
 ZERO = b'\x00\x00\x00\x00'
@@ -95,8 +95,8 @@ class netcdf_file(object):
     ----------
     filename : string or file-like
         string -> filename
-    mode : {'r', 'w'}, optional
-        read-write mode, default is 'r'
+    mode : {'r', 'w', 'a'}, optional
+        read-write-append mode, default is 'r'
     mmap : None or bool, optional
         Whether to mmap `filename` when reading.  Default is True
         when `filename` is a file name, False when `filename` is a
@@ -185,6 +185,9 @@ class netcdf_file(object):
     """
     def __init__(self, filename, mode='r', mmap=None, version=1):
         """Initialize netcdf_file from fileobj (str or file-like)."""
+        if mode not in 'rwa':
+            raise ValueError("Mode must be either 'r', 'w' or 'a'.")
+
         if hasattr(filename, 'seek'):  # file-like
             self.fp = filename
             self.filename = 'None'
@@ -194,16 +197,18 @@ class netcdf_file(object):
                 raise ValueError('Cannot use file object for mmap')
         else:  # maybe it's a string
             self.filename = filename
-            self.fp = open(self.filename, '%sb' % mode)
+            omode = 'r+' if mode == 'a' else mode
+            self.fp = open(self.filename, '%sb' % omode)
             if mmap is None:
                 mmap = True
-        self.use_mmap = mmap
-        self._fds = []
-        self.version_byte = version
 
-        if not mode in 'rw':
-            raise ValueError("Mode must be either 'r' or 'w'.")
+        if mode != 'r':
+            # Cannot read write-only files
+            mmap = False
+
+        self.use_mmap = mmap
         self.mode = mode
+        self.version_byte = version
 
         self.dimensions = {}
         self.variables = {}
@@ -212,9 +217,15 @@ class netcdf_file(object):
         self._recs = 0
         self._recsize = 0
 
+        self._mm = None
+        self._mm_buf = None
+        if self.use_mmap:
+            self._mm = mm.mmap(self.fp.fileno(), 0, access=mm.ACCESS_READ)
+            self._mm_buf = np.frombuffer(self._mm, dtype=np.int8)
+
         self._attributes = {}
 
-        if mode == 'r':
+        if mode in 'ra':
             self._read()
 
     def __setattr__(self, attr, value):
@@ -231,9 +242,11 @@ class netcdf_file(object):
         if not self.fp.closed:
             try:
                 self.flush()
-                for mmap_fd in self._fds:
-                    mmap_fd.close()
             finally:
+                self._mm_buf = None
+                if self._mm is not None:
+                    self._mm.close()
+                self._mm = None
                 self.fp.close()
     __del__ = close
 
@@ -318,7 +331,7 @@ class netcdf_file(object):
         sync : Identical function
 
         """
-        if hasattr(self, 'mode') and self.mode is 'w':
+        if hasattr(self, 'mode') and self.mode in 'wa':
             self._write()
     sync = flush
 
@@ -369,11 +382,13 @@ class netcdf_file(object):
             self.fp.write(NC_VARIABLE)
             self._pack_int(len(self.variables))
 
-            # Sort variables non-recs first, then recs. We use a DSU
-            # since some people use pupynere with Python 2.3.x.
-            deco = [(v._shape and not v.isrec, k) for (k, v) in self.variables.items()]
-            deco.sort()
-            variables = [k for (unused, k) in deco][::-1]
+            # Sort variable names non-recs first, then recs.
+            def sortkey(n):
+                v = self.variables[n]
+                if v.isrec:
+                    return (-1,)
+                return v._shape
+            variables = sorted(self.variables, key=sortkey, reverse=True)
 
             # Set the metadata for all variables.
             for name in variables:
@@ -411,8 +426,8 @@ class netcdf_file(object):
                 vsize = var.data[0].size * var.data.itemsize
             except IndexError:
                 vsize = 0
-            rec_vars = len([var for var in self.variables.values()
-                    if var.isrec])
+            rec_vars = len([v for v in self.variables.values()
+                            if v.isrec])
             if rec_vars > 1:
                 vsize += -vsize % 4
         self.variables[name].__dict__['_vsize'] = vsize
@@ -465,18 +480,25 @@ class netcdf_file(object):
             types = [(t, NC_INT) for t in integer_types]
             types += [
                     (float, NC_FLOAT),
-                    (str, NC_CHAR),
+                    (str, NC_CHAR)
                     ]
-            try:
-                sample = values[0]
-            except TypeError:
+            # bytes index into scalars in py3k.  Check for "string" types
+            if isinstance(values, text_type) or isinstance(values, binary_type):
                 sample = values
+            else:
+                try:
+                    sample = values[0]  # subscriptable?
+                except TypeError:
+                    sample = values     # scalar
+
             for class_, nc_type in types:
                 if isinstance(sample, class_):
                     break
 
         typecode, size = TYPEMAP[nc_type]
         dtype_ = '>%s' % typecode
+        # asarray() dies with bytes and '>c' in py3k.  Change to 'S'
+        dtype_ = 'S' if dtype_ == '>c' else dtype_
 
         values = asarray(values, dtype=dtype_)
 
@@ -514,7 +536,7 @@ class netcdf_file(object):
 
     def _read_dim_array(self):
         header = self.fp.read(4)
-        if not header in [ZERO, NC_DIMENSION]:
+        if header not in [ZERO, NC_DIMENSION]:
             raise ValueError("Unexpected header.")
         count = self._unpack_int()
 
@@ -530,7 +552,7 @@ class netcdf_file(object):
 
     def _read_att_array(self):
         header = self.fp.read(4)
-        if not header in [ZERO, NC_ATTRIBUTE]:
+        if header not in [ZERO, NC_ATTRIBUTE]:
             raise ValueError("Unexpected header.")
         count = self._unpack_int()
 
@@ -542,7 +564,7 @@ class netcdf_file(object):
 
     def _read_var_array(self):
         header = self.fp.read(4)
-        if not header in [ZERO, NC_VARIABLE]:
+        if header not in [ZERO, NC_VARIABLE]:
             raise ValueError("Unexpected header.")
 
         begin = 0
@@ -590,10 +612,8 @@ class netcdf_file(object):
                 # Calculate size to avoid problems with vsize (above)
                 a_size = reduce(mul, shape, 1) * size
                 if self.use_mmap:
-                    mm = mmap(self.fp.fileno(), begin_+a_size, access=ACCESS_READ)
-                    data = ndarray.__new__(ndarray, shape, dtype=dtype_,
-                            buffer=mm, offset=begin_, order=0)
-                    self._fds.append(mm)
+                    data = self._mm_buf[begin_:begin_+a_size].view(dtype=dtype_)
+                    data.shape = shape
                 else:
                     pos = self.fp.tell()
                     self.fp.seek(begin_)
@@ -613,10 +633,8 @@ class netcdf_file(object):
 
             # Build rec array.
             if self.use_mmap:
-                mm = mmap(self.fp.fileno(), begin+self._recs*self._recsize, access=ACCESS_READ)
-                rec_array = ndarray.__new__(ndarray, (self._recs,), dtype=dtypes,
-                        buffer=mm, offset=begin, order=0)
-                self._fds.append(mm)
+                rec_array = self._mm_buf[begin:begin+self._recs*self._recsize].view(dtype=dtypes)
+                rec_array.shape = (self._recs,)
             else:
                 pos = self.fp.tell()
                 self.fp.seek(begin)
@@ -626,7 +644,6 @@ class netcdf_file(object):
 
             for var in rec_vars:
                 self.variables[var].__dict__['data'] = rec_array[var]
-
 
     def _read_var(self):
         name = asstr(self._unpack_string())
@@ -783,7 +800,7 @@ class netcdf_variable(object):
         `netcdf_variable`.
 
         """
-        return self.data.shape and not self._shape[0]
+        return bool(self.data.shape) and not self._shape[0]
     isrec = property(isrec)
 
     def shape(self):

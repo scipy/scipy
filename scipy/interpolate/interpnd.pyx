@@ -151,7 +151,7 @@ class NDInterpolatorBase(object):
             Points where to interpolate data at.
 
         """
-        xi = _ndim_coords_from_arrays(args)
+        xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
         xi = self._check_call_shape(xi)
         shape = xi.shape
         xi = xi.reshape(-1, shape[-1])
@@ -164,7 +164,7 @@ class NDInterpolatorBase(object):
 
         return np.asarray(r).reshape(shape[:-1] + self.values_shape)
 
-def _ndim_coords_from_arrays(points):
+def _ndim_coords_from_arrays(points, ndim=None):
     """
     Convert a tuple of coordinate arrays to a (..., ndim)-shaped array.
 
@@ -183,7 +183,10 @@ def _ndim_coords_from_arrays(points):
     else:
         points = np.asanyarray(points)
         if points.ndim == 1:
-            points = points.reshape(-1, 1)
+            if ndim is None:
+                points = points.reshape(-1, 1)
+            else:
+                points = points.reshape(-1, ndim)
     return points
 
 #------------------------------------------------------------------------------
@@ -197,6 +200,10 @@ class LinearNDInterpolator(NDInterpolatorBase):
     Piecewise linear interpolant in N dimensions.
 
     .. versionadded:: 0.9
+
+    Methods
+    -------
+    __call__
 
     Parameters
     ----------
@@ -341,7 +348,8 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
 
     """
     cdef double Q[2*2]
-    cdef double s[2], r[2]
+    cdef double s[2]
+    cdef double r[2]
     cdef int ipoint, iiter, k, ipoint2, jpoint2
     cdef double f1, f2, df2, ex, ey, L, L3, det, err, change
 
@@ -767,6 +775,10 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
 
     .. versionadded:: 0.9
+
+    Methods
+    -------
+    __call__
 
     Parameters
     ----------

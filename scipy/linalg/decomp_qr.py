@@ -231,7 +231,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     dormqr, zunmqr, dgeqp3, and zgeqp3.
 
     """
-    if not mode in ['left', 'right']:
+    if mode not in ['left', 'right']:
         raise ValueError("Mode argument should be one of ['left', 'right']")
     c = numpy.asarray_chkfinite(c)
     onedim = c.ndim == 1
@@ -351,7 +351,7 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
     ((6, 6), (6, 9))
 
     """
-    if not mode in ['full', 'r', 'economic']:
+    if mode not in ['full', 'r', 'economic']:
         raise ValueError(
                  "Mode argument should be one of ['full', 'r', 'economic']")
 

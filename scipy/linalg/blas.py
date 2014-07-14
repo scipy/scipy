@@ -16,105 +16,119 @@ Finding functions
 =================
 
 .. autosummary::
+   :toctree: generated/
 
    get_blas_funcs
    find_best_blas_type
 
-All functions
-=============
+BLAS Level 1 functions
+======================
 
 .. autosummary::
    :toctree: generated/
 
-   caxpy
-   ccopy
-   cdotc
-   cdotu
-   cgemm
-   cgemv
-   cgerc
-   cgeru
-   chemm
-   chemv
-   cherk
-   cher2k
-   crotg
-   cscal
-   csrot
-   csscal
-   csymm
-   csyrk
-   csyr2k
-   cswap
-   ctrmv
-   dasum
-   daxpy
-   dcopy
-   ddot
-   dgemm
-   dgemv
-   dger
-   dnrm2
-   drot
-   drotg
-   drotm
-   drotmg
-   dscal
-   dswap
-   dsymm
-   dsymv
-   dsyrk
-   dsyr2k
-   dtrmv
-   dzasum
-   dznrm2
-   icamax
-   idamax
-   isamax
-   izamax
-   sasum
-   saxpy
-   scasum
-   scnrm2
-   scopy
-   sdot
-   sgemm
-   sgemv
-   sger
-   snrm2
-   srot
-   srotg
-   srotm
-   srotmg
-   sscal
-   sswap
-   ssymm
-   ssymv
-   ssyrk
-   ssyr2k
-   strmv
-   zaxpy
-   zcopy
-   zdotc
-   zdotu
-   zdrot
-   zdscal
-   zgemm
-   zgemv
-   zgerc
-   zgeru
-   zhemm
-   zhemv
-   zherk
-   zher2k
-   zrotg
-   zscal
-   zsymm
-   zsyrk
-   zsyr2k
-   zswap
-   ztrmv
+    caxpy
+    ccopy
+    cdotc
+    cdotu
+    crotg
+    cscal
+    csrot
+    csscal
+    cswap
+    dasum
+    daxpy
+    dcopy
+    ddot
+    dnrm2
+    drot
+    drotg
+    drotm
+    drotmg
+    dscal
+    dswap
+    dzasum
+    dznrm2
+    icamax
+    idamax
+    isamax
+    izamax
+    sasum
+    saxpy
+    scasum
+    scnrm2
+    scopy
+    sdot
+    snrm2
+    srot
+    srotg
+    srotm
+    srotmg
+    sscal
+    sswap
+    zaxpy
+    zcopy
+    zdotc
+    zdotu
+    zdrot
+    zdscal
+    zrotg
+    zscal
+    zswap
 
+BLAS Level 2 functions
+======================
+
+.. autosummary::
+   :toctree: generated/
+
+    cgemv
+    cgerc
+    cgeru
+    chemv
+    ctrmv
+    dgemv
+    dger
+    dsymv
+    dtrmv
+    sgemv
+    sger
+    ssymv
+    strmv
+    zgemv
+    zgerc
+    zgeru
+    zhemv
+    ztrmv
+
+BLAS Level 3 functions
+======================
+
+.. autosummary::
+   :toctree: generated/
+
+    cgemm
+    chemm
+    cherk
+    cher2k
+    csymm
+    csyrk
+    csyr2k
+    dgemm
+    dsymm
+    dsyrk
+    dsyr2k
+    sgemm
+    ssymm
+    ssyrk
+    ssyr2k
+    zgemm
+    zhemm
+    zherk
+    zher2k
+    zsymm
+    zsyrk
+    zsyr2k
 
 """
 #
@@ -272,7 +286,7 @@ def get_blas_funcs(names, arrays=(), dtype=None):
 
     Notes
     -----
-    This routines automatically chooses between Fortran/C
+    This routine automatically chooses between Fortran/C
     interfaces. Fortran code is used whenever possible for arrays with
     column major order. In all other cases, C code is preferred.
 

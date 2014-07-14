@@ -370,7 +370,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     last_dx = dx
     first_dx = dx
     returnshape = 0
-    if not x is None:
+    if x is not None:
         x = asarray(x)
         if len(x.shape) == 1:
             shapex = ones(nd)
@@ -389,13 +389,13 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
         result = 0.0
         slice1 = (slice(None),)*nd
         slice2 = (slice(None),)*nd
-        if not even in ['avg', 'last', 'first']:
+        if even not in ['avg', 'last', 'first']:
             raise ValueError("Parameter 'even' must be 'avg', 'last', or 'first'.")
         # Compute using Simpson's rule on first intervals
         if even in ['avg', 'first']:
             slice1 = tupleset(slice1, axis, -1)
             slice2 = tupleset(slice2, axis, -2)
-            if not x is None:
+            if x is not None:
                 last_dx = x[slice1] - x[slice2]
             val += 0.5*last_dx*(y[slice1]+y[slice2])
             result = _basic_simps(y,0,N-3,x,dx,axis)
@@ -403,7 +403,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
         if even in ['avg', 'last']:
             slice1 = tupleset(slice1, axis, 0)
             slice2 = tupleset(slice2, axis, 1)
-            if not x is None:
+            if x is not None:
                 first_dx = x[tuple(slice2)] - x[tuple(slice1)]
             val += 0.5*first_dx*(y[slice2]+y[slice1])
             result += _basic_simps(y,1,N-2,x,dx,axis)
@@ -813,12 +813,11 @@ def newton_cotes(rn, equal=0):
     yi = rn / float(N)
     ti = 2.0*yi - 1
     nvec = np.arange(0,N+1)
-    C = np.mat(ti**nvec[:,np.newaxis])
-    Cinv = C.I
+    C = ti**nvec[:,np.newaxis]
+    Cinv = np.linalg.inv(C)
     # improve precision of result
-    Cinv = 2*Cinv - Cinv*C*Cinv
-    Cinv = 2*Cinv - Cinv*C*Cinv
-    Cinv = Cinv.A
+    for i in range(2):
+        Cinv = 2*Cinv - Cinv.dot(C).dot(Cinv)
     vec = 2.0 / (nvec[::2]+1)
     ai = np.dot(Cinv[:,::2],vec) * N/2
 

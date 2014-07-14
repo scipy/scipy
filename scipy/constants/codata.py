@@ -12,8 +12,8 @@ Physical Constants 2010.
 Object
 ------
 physical_constants : dict
-    A dictionary containing physical constants. Keys are the names of
-    physical constants, values are tuples (value, units, precision).
+    A dictionary containing physical constants. Keys are the names of physical 
+    constants, values are tuples (value, units, precision).
 
 Functions
 ---------
@@ -24,8 +24,7 @@ unit(key):
 precision(key):
     Returns the relative precision of the physical constant(key).
 find(sub):
-    Prints or returns list of keys containing the string sub, default is
-    all.
+    Prints or returns list of keys containing the string sub, default is all.
 
 Source
 ------
@@ -40,10 +39,10 @@ for an introduction to the constants for nonexperts.
 
 References
 ----------
-Theoretical and experimental publications relevant to the fundamental
-constants and closely related precision measurements published since the mid
-1980s, but also including many older papers of particular interest, some of
-which date back to the 1800s. To search bibliography visit
+Theoretical and experimental publications relevant to the fundamental constants
+and closely related precision measurements published since the mid 1980s, but 
+also including many older papers of particular interest, some of which date back 
+to the 1800s. To search bibliography visit
 
 http://physics.nist.gov/cuu/Constants/
 
@@ -59,14 +58,13 @@ __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
 """
 Source:  http://physics.nist.gov/cuu/Constants/index.html
 
-The values of the constants provided at the above site are recommended
-for international use by CODATA and are the latest available. Termed
-the "2006 CODATA recommended values", they are generally recognized
-worldwide for use in all fields of science and technology. The values
-became available in March 2007 and replaced the 2002 CODATA set. They
-are based on all of the data available through 31 December 2006. The
-2006 adjustment was carried out under the auspices of the CODATA Task
-Group on Fundamental Constants.
+The values of the constants provided at the above site are recommended for
+international use by CODATA and are the latest available. Termed the "2006 
+CODATA recommended values", they are generally recognized worldwide for use 
+in all fields of science and technology. The values became available in March 
+2007 and replaced the 2002 CODATA set. They are based on all of the data 
+available through 31 December 2006. The 2006 adjustment was carried out under 
+the auspices of the CODATA Task Group on Fundamental Constants.
 """
 
 #
@@ -993,7 +991,7 @@ exact_values = {
 'mag. constant': (mu0, 'N A^-2', 0.0),
 'electric constant': (epsilon0, 'F m^-1', 0.0),
 'characteristic impedance of vacuum': (sqrt(mu0/epsilon0), 'ohm', 0.0),
-'atomic unit of permittivity': (4*epsilon0*pi, 'F m^-1', 0.0),  # is that the definition?
+'atomic unit of permittivity': (4*epsilon0*pi, 'F m^-1', 0.0),
 'joule-kilogram relationship': (1/(c*c), 'kg', 0.0),
 'kilogram-joule relationship': (c*c, 'J', 0.0),
 'hertz-inverse meter relationship': (1/c, 'm^-1', 0.0)

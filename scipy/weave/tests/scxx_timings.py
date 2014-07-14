@@ -1,7 +1,9 @@
 from __future__ import absolute_import, print_function
 
-import weave
 import time
+
+from scipy import weave
+
 
 force = 0
 N = 1000000
@@ -95,11 +97,6 @@ def list_copy_c(a,b):
     weave.inline(code,['a','b'],force=force,compiler='gcc')
 
 
-def list_copy_py(a,b):
-    for item in a:
-        b[i] = item
-
-
 def time_list_copy(N):
     """ Compare the list append method from scxx to using the Python API
         directly.
@@ -134,6 +131,6 @@ def time_list_copy(N):
     t2 = time.time()
     print('python: ', t2 - t1)
 
+
 if __name__ == "__main__":
-    #time_list_append(N)
     time_list_copy(N)

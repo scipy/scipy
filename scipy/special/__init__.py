@@ -26,6 +26,7 @@ Example:
    :toctree: generated/
 
    errprint
+   SpecialFunctionWarning -- Warning that can be issued with ``errprint(True)``
 
 Available functions
 ===================
@@ -61,7 +62,6 @@ Bessel Functions
 .. autosummary::
    :toctree: generated/
 
-   jn       -- Bessel function of integer order and real argument.
    jv       -- Bessel function of real-valued order and complex argument.
    jve      -- Exponentially scaled Bessel function.
    yn       -- Bessel function of second kind (integer order).
@@ -209,6 +209,17 @@ Raw Statistical Functions
    nbdtr      -- Sum of terms 0 through k of the negative binomial pdf.
    nbdtrc     -- Sum of terms k+1 to infinity under negative binomial pdf.
    nbdtri     -- Inverse of nbdtr
+   ncfdtr     -- CDF of non-central t distribution.
+   ncfdtridfd -- Find degrees of freedom (denominator) of noncentral F distribution.
+   ncfdtridfn -- Find degrees of freedom (numerator) of noncentral F distribution.
+   ncfdtri    -- Inverse CDF of noncentral F distribution.
+   ncfdtrinc  -- Find noncentrality parameter of noncentral F distribution.
+   nctdtr     -- CDF of noncentral t distribution.
+   nctdtridf  -- Find degrees of freedom of noncentral t distribution.
+   nctdtrit   -- Inverse CDF of noncentral t distribution.
+   nctdtrinc  -- Find noncentrality parameter of noncentral t distribution.
+   nrdtrimn   -- Find mean of normal distribution from cdf and std.
+   nrdtrisd   -- Find std of normal distribution from cdf and mean.
    pdtr       -- Sum of terms 0 through k of the Poisson pdf.
    pdtrc      -- Sum of terms k+1 to infinity of the Poisson pdf.
    pdtri      -- Inverse of pdtr
@@ -309,6 +320,7 @@ The following functions evaluate values of orthogonal polynomials:
 .. autosummary::
    :toctree: generated/
 
+   assoc_laguerre
    eval_legendre
    eval_chebyt
    eval_chebyu
@@ -551,6 +563,7 @@ from . import orthogonal
 from .orthogonal import *
 from .spfun_stats import multigammaln
 from .lambertw import lambertw
+
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

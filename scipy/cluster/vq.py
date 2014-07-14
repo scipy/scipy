@@ -81,10 +81,11 @@ __all__ = ['whiten', 'vq', 'kmeans', 'kmeans2']
 import warnings
 
 from numpy.random import randint
-from numpy import shape, zeros, sqrt, argmin, minimum, array, \
-     newaxis, arange, compress, equal, common_type, single, double, take, \
-     std, mean
+from numpy import (shape, zeros, sqrt, argmin, minimum, array, newaxis,
+    common_type, single, double, take, std, mean)
 import numpy as np
+
+from . import _vq
 
 
 class ClusterError(Exception):
@@ -110,7 +111,7 @@ def whiten(obs):
         >>> obs = [[  1.,   1.,   1.],  #o0
         ...        [  2.,   2.,   2.],  #o1
         ...        [  3.,   3.,   3.],  #o2
-        ...        [  4.,   4.,   4.]]) #o3
+        ...        [  4.,   4.,   4.]]  #o3
 
     Returns
     -------
@@ -131,6 +132,12 @@ def whiten(obs):
 
     """
     std_dev = std(obs, axis=0)
+    zero_std_mask = std_dev == 0
+    if zero_std_mask.any():
+        std_dev[zero_std_mask] = 1.0
+        warnings.warn("Some columns have standard deviation zero. "
+                      "The values of these columns will not change.",
+                      RuntimeWarning)
     return obs / std_dev
 
 
@@ -151,7 +158,7 @@ def vq(obs, code_book):
     Parameters
     ----------
     obs : ndarray
-        Each row of the 'N' x 'M' array is an observation.  The columns are
+        Each row of the 'M' x 'N' array is an observation.  The columns are
         the "features" seen during each observation. The features must be
         whitened first using the whiten function or something equivalent.
     code_book : ndarray
@@ -163,20 +170,15 @@ def vq(obs, code_book):
          >>> code_book = [
          ...             [  1.,   2.,   3.,   4.],  #c0
          ...             [  1.,   2.,   3.,   4.],  #c1
-         ...             [  1.,   2.,   3.,   4.]]) #c2
+         ...             [  1.,   2.,   3.,   4.]]  #c2
 
     Returns
     -------
     code : ndarray
-        A length N array holding the code book index for each observation.
+        A length M array holding the code book index for each observation.
     dist : ndarray
         The distortion (distance) between the observation and its nearest
         code.
-
-    Notes
-    -----
-    This currently forces 32-bit math precision for speed.  Anyone know
-    of a situation where this undermines the accuracy of the algorithm?
 
     Examples
     --------
@@ -191,18 +193,24 @@ def vq(obs, code_book):
     (array([1, 1, 0],'i'), array([ 0.43588989,  0.73484692,  0.83066239]))
 
     """
-    try:
-        from . import _vq
-        ct = common_type(obs, code_book)
+    ct = common_type(obs, code_book)
+
+    # avoid copying when dtype is the same
+    # should be replaced with c_obs = astype(ct, copy=False)
+    # when we get to numpy 1.7.0
+    if obs.dtype != ct:
         c_obs = obs.astype(ct)
+    else:
+        c_obs = obs
+
+    if code_book.dtype != ct:
         c_code_book = code_book.astype(ct)
-        if ct is single:
-            results = _vq.vq(c_obs, c_code_book)
-        elif ct is double:
-            results = _vq.vq(c_obs, c_code_book)
-        else:
-            results = py_vq(obs, code_book)
-    except ImportError:
+    else:
+        c_code_book = code_book
+
+    if ct in (single, double):
+        results = _vq.vq(c_obs, c_code_book)
+    else:
         results = py_vq(obs, code_book)
     return results
 
@@ -344,10 +352,10 @@ def py_vq2(obs, code_book):
     diff = obs[newaxis, :, :] - code_book[:,newaxis,:]
     dist = sqrt(np.sum(diff * diff, -1))
     code = argmin(dist, 0)
-    min_dist = minimum.reduce(dist, 0)  # the next line I think is equivalent
-                                      #  - and should be faster
-    # min_dist = choose(code,dist) # but in practice, didn't seem to make
-                                  # much difference.
+    min_dist = minimum.reduce(dist, 0)
+    # The next line I think is equivalent and should be faster than the one
+    # above, but in practice didn't seem to make much difference:
+    # min_dist = choose(code,dist)
     return code, min_dist
 
 
@@ -365,8 +373,6 @@ def _kmeans(obs, guess, thresh=1e-5):
     See Also
     --------
     kmeans : wrapper around k-means
-
-    XXX should have an axis variable here.
 
     Examples
     --------
@@ -396,14 +402,8 @@ def _kmeans(obs, guess, thresh=1e-5):
         avg_dist.append(mean(distort, axis=-1))
         # recalc code_book as centroids of associated obs
         if(diff > thresh):
-            has_members = []
-            for i in arange(nc):
-                cell_members = compress(equal(obs_code, i), obs, 0)
-                if cell_members.shape[0] > 0:
-                    code_book[i] = mean(cell_members, 0)
-                    has_members.append(i)
-            # remove code_books that didn't have any members
-            code_book = take(code_book, has_members, 0)
+            code_book, has_members = _vq.update_cluster_means(obs, obs_code, nc)
+            code_book = code_book.compress(has_members, axis=0)
         if len(avg_dist) > 1:
             diff = avg_dist[-2] - avg_dist[-1]
     # print avg_dist
@@ -649,6 +649,13 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
         'matrix': interpret the k parameter as a k by M (or length k
         array for one-dimensional data) array of initial centroids.
+    missing : string
+        Method to deal with empty clusters. Available methods are
+        'warn' and 'raise':
+
+        'warn': give a warning and continue.
+
+        'raise': raise an ClusterError and terminate the algorithm.
 
     Returns
     -------
@@ -722,25 +729,11 @@ def _kmeans2(data, code, niter, nc, missing):
         # using the current code book
         label = vq(data, code)[0]
         # Update the code by computing centroids using the new code book
-        for j in range(nc):
-            mbs = np.where(label == j)
-            if mbs[0].size > 0:
-                code[j] = np.mean(data[mbs], axis=0)
-            else:
-                missing()
+        new_code, has_members = _vq.update_cluster_means(data, label, nc)
+        if not has_members.all():
+            missing()
+            # Set the empty clusters to their previous positions
+            new_code[~has_members] = code[~has_members]
+        code = new_code
 
     return code, label
-
-if __name__ == '__main__':
-    pass
-    # import _vq
-    # a = np.random.randn(4, 2)
-    # b = np.random.randn(2, 2)
-
-    # print _vq.vq(a, b)
-    # print _vq.vq(np.array([[1], [2], [3], [4], [5], [6.]]),
-    #             np.array([[2.], [5.]]))
-    # print _vq.vq(np.array([1, 2, 3, 4, 5, 6.]), np.array([2., 5.]))
-    # _vq.vq(a.astype(np.float32), b.astype(np.float32))
-    # _vq.vq(a, b.astype(np.float32))
-    # _vq.vq([0], b)

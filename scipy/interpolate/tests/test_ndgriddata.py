@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import assert_equal, assert_array_equal, assert_allclose, \
-        run_module_suite
+        run_module_suite, assert_raises
 
 from scipy.interpolate import griddata
 
@@ -101,7 +101,7 @@ class TestGriddata(object):
                             err_msg=method, atol=1e-10)
 
     def test_square_rescale_manual(self):
-        points  = np.array([(0,0), (0,100), (10,100), (10,0), (1, 5)], dtype=np.double)
+        points = np.array([(0,0), (0,100), (10,100), (10,0), (1, 5)], dtype=np.double)
         points_rescaled = np.array([(0,0), (0,1), (1,1), (1,0), (0.1, 0.05)], dtype=np.double)
         values = np.array([1., 2., -3., 5., 9.], dtype=np.double)
 
@@ -119,6 +119,28 @@ class TestGriddata(object):
                                    rescale=True)
             assert_allclose(zi, zi_rescaled, err_msg=msg,
                             atol=1e-12)
+
+    def test_xi_1d(self):
+        # Check that 1-D xi is interpreted as a coordinate
+        x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
+                     dtype=np.double)
+        y = np.arange(x.shape[0], dtype=np.double)
+        y = y - 2j*y[::-1]
+
+        xi = np.array([0.5, 0.5])
+
+        for method in ('nearest', 'linear', 'cubic'):
+            p1 = griddata(x, y, xi, method=method)
+            p2 = griddata(x, y, xi[None,:], method=method)
+            assert_allclose(p1, p2, err_msg=method)
+
+            xi1 = np.array([0.5])
+            xi3 = np.array([0.5, 0.5, 0.5])
+            assert_raises(ValueError, griddata, x, y, xi1,
+                          method=method)
+            assert_raises(ValueError, griddata, x, y, xi3,
+                          method=method)
+        
 
 if __name__ == "__main__":
     run_module_suite()

@@ -60,7 +60,7 @@ extern double MACHEP;
 double ellik(phi, m)
 double phi, m;
 {
-    double a, b, c, e, temp, t, K;
+    double a, b, c, e, temp, t, K, denom;
     int d, mod, sign, npio2;
 
     if (m == 0.0)
@@ -110,8 +110,15 @@ double phi, m;
     while (fabs(c / a) > MACHEP) {
 	temp = b / a;
 	phi = phi + atan(t * temp) + mod * NPY_PI;
-	mod = (phi + NPY_PI_2) / NPY_PI;
-	t = t * (1.0 + temp) / (1.0 - temp * t * t);
+        denom = 1.0 - temp * t * t;
+        if (fabs(denom) > 10*MACHEP) {
+	    t = t * (1.0 + temp) / denom;
+            mod = (phi + NPY_PI_2) / NPY_PI;
+        }
+        else {
+            t = tan(phi);
+            mod = (int)floor((phi - atan(t))/NPY_PI);
+        }
 	c = (a - b) / 2.0;
 	temp = sqrt(a * b);
 	a = (a + b) / 2.0;

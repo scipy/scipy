@@ -159,7 +159,8 @@ cdef class ZlibInputStream(GenericStream):
     cdef int read_into(self, void *buf, size_t n) except -1:
         """Read n bytes from stream into pre-allocated buffer `buf`
         """
-        cdef char *dstp, *srcp
+        cdef char *dstp
+        cdef char *srcp
         cdef size_t read_size, count, size
 
         dstp = <char*>buf

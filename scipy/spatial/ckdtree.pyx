@@ -203,7 +203,8 @@ cdef class coo_entries:
         np.intp_t n, n_max
         np.ndarray i, j
         np.ndarray v
-        np.intp_t  *i_data, *j_data
+        np.intp_t *i_data
+        np.intp_t *j_data
         np.float64_t *v_data
     
     def __init__(self):
@@ -1408,7 +1409,8 @@ cdef class cKDTree:
                                                     list results,
                                                     innernode* node1,
                                                     innernode* node2) except -1:
-        cdef leafnode *lnode1, *lnode2
+        cdef leafnode *lnode1
+        cdef leafnode *lnode2
         cdef list results_i
         cdef np.intp_t i, j
         
@@ -1441,7 +1443,8 @@ cdef class cKDTree:
                                                  innernode* node1,
                                                  innernode* node2,
                                                  RectRectDistanceTracker tracker) except -1:
-        cdef leafnode *lnode1, *lnode2
+        cdef leafnode *lnode1
+        cdef leafnode *lnode2
         cdef list results_i
         cdef np.float64_t d
         cdef np.intp_t i, j
@@ -1575,7 +1578,8 @@ cdef class cKDTree:
                                                 set results,
                                                 innernode* node1,
                                                 innernode* node2) except -1:
-        cdef leafnode *lnode1, *lnode2
+        cdef leafnode *lnode1
+        cdef leafnode *lnode2
         cdef list results_i
         cdef np.intp_t i, j, min_j
         
@@ -1621,7 +1625,8 @@ cdef class cKDTree:
                                              innernode* node1,
                                              innernode* node2,
                                              RectRectDistanceTracker tracker) except -1:
-        cdef leafnode *lnode1, *lnode2
+        cdef leafnode *lnode1
+        cdef leafnode *lnode2
         cdef list results_i
         cdef np.float64_t d
         cdef np.intp_t i, j, min_j
@@ -1762,7 +1767,8 @@ cdef class cKDTree:
                                         innernode* node1,
                                         innernode* node2,
                                         RectRectDistanceTracker tracker) except -1:
-        cdef leafnode *lnode1, *lnode2
+        cdef leafnode *lnode1
+        cdef leafnode *lnode2
         cdef np.float64_t d
         cdef np.intp_t *old_idx
         cdef np.intp_t old_n_queries, l, i, j
@@ -1946,7 +1952,8 @@ cdef class cKDTree:
                                                coo_entries results,
                                                innernode* node1, innernode* node2,
                                                RectRectDistanceTracker tracker) except -1:
-        cdef leafnode *lnode1, *lnode2
+        cdef leafnode *lnode1
+        cdef leafnode *lnode2
         cdef list results_i
         cdef np.float64_t d
         cdef np.intp_t i, j, min_j
@@ -2039,7 +2046,7 @@ cdef class cKDTree:
     def sparse_distance_matrix(cKDTree self, cKDTree other,
                                np.float64_t max_distance,
                                np.float64_t p=2.):
-        """sparse_distance_matrix(self, max_distance, p)
+        """sparse_distance_matrix(self, other, max_distance, p=2.0)
 
         Compute a sparse distance matrix
 
@@ -2051,6 +2058,9 @@ cdef class cKDTree:
         other : cKDTree
 
         max_distance : positive float
+        
+        p : float, 1<=p<=infinity
+            Which Minkowski p-norm to use. 
 
         Returns
         -------

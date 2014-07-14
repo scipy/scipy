@@ -2578,7 +2578,8 @@ def show_options(solver=None, method=None):
     Parameters
     ----------
     solver : str
-        Type of optimization solver. One of 'minimize', 'minimize_scalar', 'root'.
+        Type of optimization solver. One of 'minimize', 'minimize_scalar',
+        'root', or 'linprog'.
     method : str, optional
         If not given, shows all methods of the specified solver. Otherwise,
         show only the options for the specified method. Valid values
@@ -2675,13 +2676,17 @@ def show_options(solver=None, method=None):
             The iteration will stop when ``max{|proj g_i | i = 1, ..., n}
             <= gtol`` where ``pg_i`` is the i-th component of the
             projected gradient.
+        eps : float or ndarray
+            If `jac` is approximated, use this value for the step size.            
         maxcor : int
             The maximum number of variable metric corrections used to
             define the limited memory matrix. (The limited memory BFGS
             method does not store the full hessian but uses this many terms
             in an approximation to it.)
-        maxiter : int
+        maxfun : int
             Maximum number of function evaluations.
+        maxiter : int
+            Maximum number of iterations.
 
     *TNC* options:
 
@@ -3152,6 +3157,24 @@ def show_options(solver=None, method=None):
 
                 See `scipy.sparse.linalg.lgmres` for details.
 
+    **linprog options**
+
+    *simplex* options:
+
+        maxiter : int, optional
+            Maximum number of iterations to make.
+
+        tol : float, optional
+            The tolerance which determines when the Phase 1 objective is
+            sufficiently close to zero to be considered a basic feasible
+            solution or when the Phase 2 objective coefficients are close
+            enough to positive for the objective to be considered optimal.
+
+        bland : bool, optional
+            If True, choose pivots using Bland's rule.  In problems which
+            fail to converge due to cycling, using Bland's rule can provide
+            convergence at the expense of a less optimal path about the simplex.
+
     """
     import textwrap
 
@@ -3165,10 +3188,13 @@ def show_options(solver=None, method=None):
         print("\nroot")
         print("----\n")
         show_options('root')
+        print('\nlinprog')
+        print('-------\n')
+        show_options('linprog')
         return
 
     solver = solver.lower()
-    if solver not in ('minimize', 'minimize_scalar', 'root'):
+    if solver not in ('minimize', 'minimize_scalar', 'root', 'linprog'):
         raise ValueError('Unknown solver.')
 
     solvers_doc = [s.strip()

@@ -89,11 +89,12 @@ class TestExpmActionSimple(TestCase):
         nsamples = 10
         for i in range(nsamples):
             for t in (0.2, 1.0, 1.5):
-                A = scipy.linalg.inv(np.random.randn(n, n))
-                B = np.random.randn(n, k)
-                observed = _expm_multiply_simple(A, B, t=t)
-                expected = np.dot(scipy.linalg.expm(t*A), B)
-                assert_allclose(observed, expected)
+                with np.errstate(invalid='ignore'):
+                    A = scipy.linalg.inv(np.random.randn(n, n))
+                    B = np.random.randn(n, k)
+                    observed = _expm_multiply_simple(A, B, t=t)
+                    expected = np.dot(scipy.linalg.expm(t*A), B)
+                    assert_allclose(observed, expected)
 
     def test_scaled_expm_multiply_single_timepoint(self):
         np.random.seed(1234)

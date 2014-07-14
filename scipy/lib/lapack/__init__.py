@@ -183,9 +183,9 @@ def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
     is returned for column major storaged arrays with
     rowmajor argument set to False.
     """
-    force_clapack = 0  # XXX: Don't set it true! The feature is unreliable
-                     #     and may cause incorrect results.
-                     #     See test_basic.test_solve.check_20Feb04_bug.
+    # XXX: Don't set force_clapack to True! The feature is unreliable and may
+    # cause incorrect results.  See test_basic.test_solve.check_20Feb04_bug.
+    force_clapack = 0
 
     ordering = []
     for i in range(len(arrays)):
@@ -223,6 +223,7 @@ def get_lapack_funcs(names,arrays=(),debug=0,force_clapack=1):
                 func2 = getattr(m2,func_name,None)
                 if func2 is not None:
                     import new
+                    func_code = None   # defined in exec
                     exec(_colmajor_func_template % {'func_name':func_name})
                     func = new.function(func_code,{'clapack_func':func2},func_name)
                     func.module_name = m2_name

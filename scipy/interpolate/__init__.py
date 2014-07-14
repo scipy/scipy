@@ -28,6 +28,7 @@ Univariate interpolation
    krogh_interpolate
    piecewise_polynomial_interpolate
    pchip_interpolate
+   Akima1DInterpolator
    PPoly
    BPoly
 
@@ -50,10 +51,13 @@ Unstructured data:
 For data on a grid:
 
 .. autosummary::
+   :toctree: generated/
 
+   interpn
+   RegularGridInterpolator
    RectBivariateSpline
 
-.. seealso:: `scipy.ndimage.map_coordinates`
+.. seealso:: `scipy.ndimage.interpolation.map_coordinates`
 
 
 1-D Splines
@@ -138,8 +142,8 @@ Additional tools
 
 .. seealso::
 
-   `scipy.ndimage.map_coordinates`,
-   `scipy.ndimage.spline_filter`,
+   `scipy.ndimage.interpolation.map_coordinates`,
+   `scipy.ndimage.interpolation.spline_filter`,
    `scipy.signal.resample`,
    `scipy.signal.bspline`,
    `scipy.signal.gauss_spline`,
@@ -162,6 +166,8 @@ from .fitpack2 import *
 from .rbf import Rbf
 
 from .polyint import *
+
+from ._monotone import *
 
 from .ndgriddata import *
 

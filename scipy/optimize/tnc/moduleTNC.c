@@ -94,6 +94,7 @@ static int function(double x[], double *f, double g[], void *state)
   }
   memcpy(g, arr_grad->data, (py_state->n)*sizeof(double));
 
+  Py_DECREF(arr_grad);
   Py_DECREF(result);
 
   return 0;
@@ -242,12 +243,6 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
     goto failure;
   }
 
-  py_state.py_function = py_function;
-  py_state.n = n;
-  py_state.failed = 0;
-
-  Py_INCREF(py_function);
-
   if (py_callback != Py_None)
   {
       if (!PyCallable_Check(py_callback))
@@ -261,11 +256,18 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
       callback_function = callback;
   }
 
+  Py_INCREF(py_function);
+
+  py_state.py_function = py_function;
+  py_state.n = n;
+  py_state.failed = 0;
+
   rc = tnc(n, x, &f, NULL, function, &py_state, low, up, scale, offset, msg,
     maxCGit, maxnfeval, eta, stepmx, accuracy, fmin, ftol, xtol, pgtol, rescale,
     &nfeval, &niter, callback_function);
 
   Py_DECREF(py_function);
+
   if (py_callback != Py_None) Py_DECREF(py_callback);
 
   if (py_state.failed) goto failure;

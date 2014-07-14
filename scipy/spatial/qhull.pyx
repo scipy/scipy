@@ -848,8 +848,11 @@ cdef class _Qhull:
         See qhull/io.c:qh_printextremes_2d
 
         """
-        cdef facetT *facet, *startfacet, *nextfacet
-        cdef vertexT *vertexA, *vertexB
+        cdef facetT *facet
+        cdef facetT *startfacet
+        cdef facetT *nextfacet
+        cdef vertexT *vertexA
+        cdef vertexT *vertexB
         cdef int[:] extremes
         cdef int nextremes
 
@@ -990,7 +993,8 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef int i, j, n, nrhs, lda, ldb, info
     cdef int ipiv[NPY_MAXDIMS+1]
     cdef int ndim, nsimplex
-    cdef double centroid[NPY_MAXDIMS], c[NPY_MAXDIMS+1]
+    cdef double centroid[NPY_MAXDIMS]
+    cdef double c[NPY_MAXDIMS+1]
     cdef double *transform
     cdef double anorm, rcond
     cdef double nan, rcond_limit

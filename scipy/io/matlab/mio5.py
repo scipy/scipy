@@ -475,7 +475,7 @@ def to_writeable(source):
         values = []
         for field, value in source.items():
             if (isinstance(field, string_types) and
-                not field[0] in '_0123456789'):
+                    field[0] not in '_0123456789'):
                 dtype.append((field,object))
                 values.append(value)
         if dtype:
@@ -769,9 +769,8 @@ class VarWriter5(object):
         length = max([len(fieldname) for fieldname in fieldnames])+1
         max_length = (self.long_field_names and 64) or 32
         if length > max_length:
-            raise ValueError(
-                "Field names are restricted to %d characters"
-                 % (max_length-1))
+            raise ValueError("Field names are restricted to %d characters" %
+                             (max_length-1))
         self.write_element(np.array([length], dtype='i4'))
         self.write_element(
             np.array(fieldnames, dtype='S%d' % (length)),

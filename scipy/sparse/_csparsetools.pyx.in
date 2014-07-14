@@ -1,0 +1,453 @@
+# -*- cython -*-
+#
+# Tempita-templated Cython file
+#
+"""
+Fast snippets for sparse matrices.
+"""
+
+{{py:
+
+IDX_TYPES = {
+    "int32": "cnp.npy_int32",
+    "int64": "cnp.npy_int64",
+}
+
+VALUE_TYPES = {
+    "bool_": "cnp.npy_bool",
+    "int8": "cnp.npy_int8",
+    "uint8": "cnp.npy_uint8",
+    "int16": "cnp.npy_int16",
+    "uint16": "cnp.npy_uint16",
+    "int32": "cnp.npy_int32",
+    "uint32": "cnp.npy_uint32",
+    "int64": "cnp.npy_int64",
+    "uint64": "cnp.npy_uint64",
+    "float32": "cnp.npy_float32",
+    "float64": "cnp.npy_float64",
+    "longdouble": "long double",
+    "complex64": "float complex",
+    "complex128": "double complex",
+    "clongdouble": "long double complex",
+}
+
+def get_dispatch(types):
+    for pyname, cyname in types.items():
+        yield pyname, cyname
+
+def get_dispatch2(types, types2):
+    for pyname, cyname in types.items():
+        for pyname2, cyname2 in types2.items():
+            yield pyname, pyname2, cyname, cyname2
+
+def define_dispatch_map(map_name, prefix, types):
+    result = ["cdef dict %s = {\n" % map_name]
+    for pyname, cyname in types.items():
+        a = "np.dtype(np.%s)" % (pyname,)
+        b = prefix + "_" + pyname
+        result.append('%s: %s,' % (a, b))
+    result.append("}\n\n")
+    return "\n".join(result)
+
+def define_dispatch_map2(map_name, prefix, types, types2):
+    result = ["cdef dict %s = {\n" % map_name]
+    for pyname, cyname in types.items():
+        for pyname2, cyname2 in types2.items():
+            a = "(np.dtype(np.%s), np.dtype(np.%s))" % (pyname, pyname2)
+            b = prefix + "_" + pyname + "_" + pyname2
+            result.append('%s: %s,' % (a, b))
+    result.append("}\n\n")
+    return "\n".join(result)
+}}
+
+cimport cython
+cimport cpython.list
+cimport cpython.int
+cimport cpython
+cimport numpy as cnp
+import numpy as np
+
+
+def prepare_index_for_memoryview(cnp.ndarray i, cnp.ndarray j, cnp.ndarray x=None):
+    """
+    Convert index and data arrays to form suitable for passing to the
+    Cython fancy getset routines.
+
+    The conversions are necessary since to (i) ensure the integer
+    index arrays are in one of the accepted types, and (ii) to ensure
+    the arrays are writable so that Cython memoryview support doesn't
+    choke on them.
+
+    Parameters
+    ----------
+    i, j
+        Index arrays
+    x : optional
+        Data arrays
+
+    Returns
+    -------
+    i, j, x
+        Re-formatted arrays (x is omitted, if input was None)
+
+    """
+    if i.dtype > j.dtype:
+        j = j.astype(i.dtype)
+    elif i.dtype < j.dtype:
+        i = i.astype(j.dtype)
+
+    if not i.flags.writeable or not i.dtype in (np.int32, np.int64):
+        i = i.astype(np.intp)
+    if not j.flags.writeable or not j.dtype in (np.int32, np.int64):
+        j = j.astype(np.intp)
+
+    if x is not None:
+        if not x.flags.writeable:
+            x = x.copy()
+        return i, j, x
+    else:
+        return i, j
+
+
+cpdef lil_get1(cnp.npy_intp M, cnp.npy_intp N, object[:] rows, object[:] datas,
+               cnp.npy_intp i, cnp.npy_intp j):
+    """
+    Get a single item from LIL matrix.
+
+    Doesn't do output type conversion. Checks for bounds errors.
+
+    Parameters
+    ----------
+    M, N, rows, datas
+        Shape and data arrays for a LIL matrix
+    i, j : int
+        Indices at which to get
+
+    Returns
+    -------
+    x
+        Value at indices.
+
+    """
+    cdef list row, data
+
+    if i < -M or i >= M:
+        raise IndexError('row index (%d) out of bounds' % (i,))
+    if i < 0:
+        i += M
+
+    if j < -N or j >= N:
+        raise IndexError('column index (%d) out of bounds' % (j,))
+    if j < 0:
+        j += N
+
+    row = rows[i]
+    data = datas[i]
+    pos = bisect_left(row, j)
+
+    if pos != len(data) and row[pos] == j:
+        return data[pos]
+    else:
+        return 0
+
+
+def lil_insert(cnp.npy_intp M, cnp.npy_intp N, object[:] rows, object[:] datas,
+               cnp.npy_intp i, cnp.npy_intp j, object x, object dtype):
+    return _LIL_INSERT_DISPATCH[dtype](M, N, rows, datas, i, j, x)
+
+
+{{for NAME, VALUE_T in get_dispatch(VALUE_TYPES)}}
+cpdef _lil_insert_{{NAME}}(cnp.npy_intp M, cnp.npy_intp N, object[:] rows, object[:] datas,
+                           cnp.npy_intp i, cnp.npy_intp j, {{VALUE_T}} x):
+    """
+    Insert a single item to LIL matrix.
+
+    Checks for bounds errors and deletes item if x is zero.
+
+    Parameters
+    ----------
+    M, N, rows, datas
+        Shape and data arrays for a LIL matrix
+    i, j : int
+        Indices at which to get
+    x
+        Value to insert.
+
+    """
+    cdef list row, data
+    cdef int is_zero
+
+    if i < -M or i >= M:
+        raise IndexError('row index (%d) out of bounds' % (i,))
+    if i < 0:
+        i += M
+
+    if j < -N or j >= N:
+        raise IndexError('column index (%d) out of bounds' % (j,))
+    if j < 0:
+        j += N
+
+    row = rows[i]
+    data = datas[i]
+
+    if x == 0:
+        lil_deleteat_nocheck(rows[i], datas[i], j)
+    else:
+        lil_insertat_nocheck(rows[i], datas[i], j, x)
+{{endfor}}
+
+
+{{define_dispatch_map('_LIL_INSERT_DISPATCH', '_lil_insert', VALUE_TYPES)}}
+
+
+def lil_fancy_get(cnp.npy_intp M, cnp.npy_intp N,
+                  object[:] rows,
+                  object[:] datas,
+                  object[:] new_rows,
+                  object[:] new_datas,
+                  cnp.ndarray i_idx,
+                  cnp.ndarray j_idx):
+    """
+    Get multiple items at given indices in LIL matrix and store to
+    another LIL.
+
+    Parameters
+    ----------
+    M, N, rows, data
+        LIL matrix data, initially empty
+    new_rows, new_idx
+        Data for LIL matrix to insert to.
+        Must be preallocated to shape `i_idx.shape`!
+    i_idx, j_idx
+        Indices of elements to insert to the new LIL matrix.
+
+    """
+    return _LIL_FANCY_GET_DISPATCH[i_idx.dtype](M, N, rows, datas, new_rows, new_datas, i_idx, j_idx)
+
+
+{{for NAME, IDX_T in get_dispatch(IDX_TYPES)}}
+def _lil_fancy_get_{{NAME}}(cnp.npy_intp M, cnp.npy_intp N,
+                            object[:] rows,
+                            object[:] datas,
+                            object[:] new_rows,
+                            object[:] new_datas,
+                            {{IDX_T}}[:,:] i_idx,
+                            {{IDX_T}}[:,:] j_idx):
+    cdef cnp.npy_intp x, y
+    cdef cnp.npy_intp i, j
+    cdef object value
+    cdef list new_row
+    cdef list new_data
+
+    for x in range(i_idx.shape[0]):
+        new_row = []
+        new_data = []
+
+        for y in range(i_idx.shape[1]):
+            i = i_idx[x,y]
+            j = j_idx[x,y]
+
+            value = lil_get1(M, N, rows, datas, i, j)
+
+            if value is not 0:
+                # Object identity as shortcut
+                new_row.append(y)
+                new_data.append(value)
+
+        new_rows[x] = new_row
+        new_datas[x] = new_data
+{{endfor}}
+
+
+{{define_dispatch_map('_LIL_FANCY_GET_DISPATCH', '_lil_fancy_get', IDX_TYPES)}}
+
+
+def lil_fancy_set(cnp.npy_intp M, cnp.npy_intp N,
+                  object[:] rows,
+                  object[:] data,
+                  cnp.ndarray i_idx,
+                  cnp.ndarray j_idx,
+                  cnp.ndarray values):
+    """
+    Set multiple items to a LIL matrix.
+
+    Checks for zero elements and deletes them.
+
+    Parameters
+    ----------
+    M, N, rows, data
+        LIL matrix data
+    i_idx, j_idx
+        Indices of elements to insert to the new LIL matrix.
+    values
+        Values of items to set.
+
+    """
+    if values.dtype == np.bool_:
+        # Cython doesn't support np.bool_ as a memoryview type
+        return _lil_fancy_set_generic(M, N, rows, data, i_idx, j_idx, values)
+    else:
+        return _LIL_FANCY_SET_DISPATCH[i_idx.dtype, values.dtype](M, N, rows, data, i_idx, j_idx, values)
+
+
+{{for PYIDX, PYVALUE, IDX_T, VALUE_T in get_dispatch2(IDX_TYPES, VALUE_TYPES)}}
+cpdef _lil_fancy_set_{{PYIDX}}_{{PYVALUE}}(cnp.npy_intp M, cnp.npy_intp N,
+                                           object[:] rows,
+                                           object[:] data,
+                                           {{IDX_T}}[:,:] i_idx,
+                                           {{IDX_T}}[:,:] j_idx,
+                                           {{VALUE_T}}[:,:] values):
+    cdef cnp.npy_intp x, y
+    cdef cnp.npy_intp i, j
+
+    for x in range(i_idx.shape[0]):
+        for y in range(i_idx.shape[1]):
+            i = i_idx[x,y]
+            j = j_idx[x,y]
+            _lil_insert_{{PYVALUE}}(M, N, rows, data, i, j, values[x, y])
+{{endfor}}
+
+
+{{define_dispatch_map2('_LIL_FANCY_SET_DISPATCH', '_lil_fancy_set', IDX_TYPES, VALUE_TYPES)}}
+
+
+cpdef _lil_fancy_set_generic(cnp.npy_intp M, cnp.npy_intp N,
+                             object[:] rows,
+                             object[:] data,
+                             cnp.ndarray i_idx,
+                             cnp.ndarray j_idx,
+                             cnp.ndarray values):
+    cdef cnp.npy_intp x, y
+    cdef cnp.npy_intp i, j
+
+    for x in range(i_idx.shape[0]):
+        for y in range(i_idx.shape[1]):
+            i = i_idx[x,y]
+            j = j_idx[x,y]
+            _lil_insert_{{PYVALUE}}(M, N, rows, data, i, j, values[x, y])
+
+
+cdef lil_insertat_nocheck(list row, list data, cnp.npy_intp j, object x):
+    """
+    Insert a single item to LIL matrix.
+
+    Doesn't check for bounds errors. Doesn't check for zero x.
+
+    Parameters
+    ----------
+    M, N, rows, datas
+        Shape and data arrays for a LIL matrix
+    i, j : int
+        Indices at which to get
+    x
+        Value to insert.
+
+    """
+    cdef cnp.npy_intp pos
+
+    pos = bisect_left(row, j)
+    if pos == len(row):
+        row.append(j)
+        data.append(x)
+    elif row[pos] != j:
+        row.insert(pos, j)
+        data.insert(pos, x)
+    else:
+        data[pos] = x
+
+
+cdef lil_deleteat_nocheck(list row, list data, cnp.npy_intp j):
+    """
+    Delete a single item from a row in LIL matrix.
+
+    Doesn't check for bounds errors.
+
+    Parameters
+    ----------
+    row, data
+        Row data for LIL matrix.
+    j : int
+        Column index to delete at
+
+    """
+    cdef cnp.npy_intp pos
+    pos = bisect_left(row, j)
+    if pos < len(row) and row[pos] == j:
+        del row[pos]
+        del data[pos]
+
+
+@cython.cdivision(True)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef bisect_left(list a, cnp.npy_intp x):
+    """
+    Bisection search in a sorted list.
+
+    List is assumed to contain objects castable to integers.
+
+    Parameters
+    ----------
+    a
+        List to search in
+    x
+        Value to search for
+
+    Returns
+    -------
+    j : int
+        Index at value (if present), or at the point to which
+        it can be inserted maintaining order.
+
+    """
+    cdef cnp.npy_intp hi = len(a)
+    cdef cnp.npy_intp lo = 0
+    cdef cnp.npy_intp mid, v
+
+    while lo < hi:
+        mid = (lo + hi)//2
+        v = a[mid]
+        if v < x:
+            lo = mid + 1
+        else:
+            hi = mid
+    return lo
+
+
+def _fill_dtype_map(map, chars):
+    """
+    Fill in Numpy dtype chars for problematic types, working around
+    Numpy < 1.6 bugs.
+    """
+    for c in chars:
+        if c in "SUVO":
+            continue
+        dt = np.dtype(c)
+        if dt not in map:
+            for k, v in map.items():
+                if k.kind == dt.kind and k.itemsize == dt.itemsize:
+                    map[dt] = v
+                    break
+
+
+def _fill_dtype_map2(map):
+    """
+    Fill in Numpy dtype chars for problematic types, working around
+    Numpy < 1.6 bugs.
+    """
+    for c1 in np.typecodes['Integer']:
+        for c2 in np.typecodes['All']:
+            if c2 in "SUVO":
+                continue
+            dt1 = np.dtype(c1)
+            dt2 = np.dtype(c2)
+            if (dt1, dt2) not in map:
+                for k, v in map.items():
+                    if (k[0].kind == dt1.kind and k[0].itemsize == dt1.itemsize and
+                        k[1].kind == dt2.kind and k[1].itemsize == dt2.itemsize):
+                        map[(dt1, dt2)] = v
+                        break
+
+_fill_dtype_map(_LIL_INSERT_DISPATCH, np.typecodes['All'])
+_fill_dtype_map(_LIL_FANCY_GET_DISPATCH, np.typecodes['Integer'])
+_fill_dtype_map2(_LIL_FANCY_SET_DISPATCH)

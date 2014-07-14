@@ -5,7 +5,7 @@ from numpy.testing import TestCase, run_module_suite, assert_, assert_equal
 
 from scipy.sparse import spfuncs
 from scipy.sparse import csr_matrix, csc_matrix, bsr_matrix
-from scipy.sparse.sparsetools import csr_scale_rows, csr_scale_columns, \
+from scipy.sparse._sparsetools import csr_scale_rows, csr_scale_columns, \
         bsr_scale_rows, bsr_scale_columns
 
 

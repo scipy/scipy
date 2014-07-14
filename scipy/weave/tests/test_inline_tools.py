@@ -1,14 +1,16 @@
 from __future__ import absolute_import, print_function
 
-from numpy.testing import TestCase, dec, assert_
+from numpy.testing import TestCase, assert_, run_module_suite
 
 from scipy.weave import inline_tools
 
+from weave_test_utils import dec
+
 
 class TestInline(TestCase):
-    """ These are long running tests...
+    """These are long running tests...
 
-         I'd like to benchmark these things somehow.
+    Would be useful to benchmark these things somehow.
     """
     @dec.slow
     def test_exceptions(self):
@@ -22,6 +24,7 @@ class TestInline(TestCase):
                """
         result = inline_tools.inline(code,['a'])
         assert_(result == 4)
+
 
 ## Unfortunately, it is not always possible to catch distutils compiler
 ## errors, since SystemExit is used.  Until that is fixed, these tests
@@ -43,6 +46,6 @@ class TestInline(TestCase):
 ##             # ?CompileError is the error reported, but catching it doesn't work
 ##             pass
 
+
 if __name__ == "__main__":
-    import nose
-    nose.run(argv=['', __file__])
+    run_module_suite()

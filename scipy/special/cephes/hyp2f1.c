@@ -471,9 +471,9 @@ static double hys2f1(a, b, c, x, loss)
 double a, b, c, x;
 double *loss;			/* estimates loss of significance */
 {
-    double f, g, h, k, m, s, u, umax, t;
+    double f, g, h, k, m, s, u, umax;
     int i;
-    int ia, ib, intflag = 0;
+    int ib, intflag = 0;
 
     if (fabs(b) > fabs(a)) {
 	/* Ensure that |a| > |b| ... */
@@ -482,7 +482,6 @@ double *loss;			/* estimates loss of significance */
 	a = f;
     }
 
-    ia = round(a);
     ib = round(b);
 
     if (fabs(b - ib) < EPS && ib <= 0 && fabs(b) < fabs(a)) {
@@ -549,7 +548,7 @@ static double hyp2f1ra(double a, double b, double c, double x,
 		       double *loss)
 {
     double f2, f1, f0;
-    int n, m, da;
+    int n, da;
     double t, err;
 
     /* Don't cross c or zero */

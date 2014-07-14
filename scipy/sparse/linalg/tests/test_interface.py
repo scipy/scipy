@@ -28,8 +28,8 @@ class TestLinearOperator(TestCase):
             return [{
                         'shape': A.shape,
                         'matvec': lambda x: np.dot(A, x).reshape(A.shape[0]),
-                        'rmatvec':
-                            lambda x: np.dot(A.T.conj(), x).reshape(A.shape[1])
+                        'rmatvec': lambda x: np.dot(A.T.conj(),
+                                                    x).reshape(A.shape[1])
                     },
                     {
                         'shape': A.shape,

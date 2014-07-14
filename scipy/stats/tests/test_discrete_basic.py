@@ -9,26 +9,8 @@ from common_tests import (check_normalization, check_moment, check_mean_expect,
         check_var_expect, check_skew_expect, check_kurt_expect,
         check_entropy, check_private_entropy, check_edge_support,
         check_named_args)
+from scipy.stats._distr_params import distdiscrete
 knf = npt.dec.knownfailureif
-
-distdiscrete = [
-    ['bernoulli',(0.3,)],
-    ['binom', (5, 0.4)],
-    ['boltzmann',(1.4, 19)],
-    ['dlaplace', (0.8,)],  # 0.5
-    ['geom', (0.5,)],
-    ['hypergeom',(30, 12, 6)],
-    ['hypergeom',(21,3,12)],  # numpy.random (3,18,12) numpy ticket:921
-    ['hypergeom',(21,18,11)],  # numpy.random (18,3,11) numpy ticket:921
-    ['logser', (0.6,)],  # reenabled, numpy ticket:921
-    ['nbinom', (5, 0.5)],
-    ['nbinom', (0.4, 0.4)],  # from tickets: 583
-    ['planck', (0.51,)],   # 4.1
-    ['poisson', (0.6,)],
-    ['randint', (7, 31)],
-    ['skellam', (15, 8)],
-    ['zipf', (6.5,)]
-]
 
 
 def test_discrete_basic():

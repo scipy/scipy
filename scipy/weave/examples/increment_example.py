@@ -16,8 +16,8 @@ def build_increment_ext():
     """
     mod = ext_tools.ext_module('increment_ext')
 
-    a = 1  # effectively a type declaration for 'a' in the
-          # following functions.
+    # Effectively a type declaration for 'a' in the following functions.
+    a = 1
 
     ext_code = "return_val = PyInt_FromLong(a+1);"
     func = ext_tools.ext_function('increment',ext_code,['a'])

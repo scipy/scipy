@@ -539,7 +539,7 @@ def linkage(y, method='single', metric='euclidean'):
         for all points :math:`i` and :math:`j` where :math:`|u|`
         and :math:`|v|` are the cardinalities of clusters :math:`u`
         and :math:`v`, respectively. This is also called the UPGMA
-        algorithm. This is called UPGMA.
+        algorithm.
 
       * method='weighted' assigns
 
@@ -646,8 +646,8 @@ def linkage(y, method='single', metric='euclidean'):
                                        int(_cpy_non_euclid_methods[method]))
         elif method in _cpy_euclid_methods:
             if metric != 'euclidean':
-                raise ValueError(('Method %s requires the distance metric to '
-                                 'be euclidean') % s)
+                raise ValueError(("Method '%s' requires the distance metric "
+                                 "to be euclidean") % method)
             dm = distance.pdist(X, metric)
             Z = np.zeros((n - 1, 4))
             _hierarchy_wrap.linkage_euclid_wrap(dm, Z, X, m, n,
@@ -795,8 +795,8 @@ class ClusterNode:
         n = self.count
 
         curNode = [None] * (2 * n)
-        lvisited = np.zeros((2 * n,), dtype=bool)
-        rvisited = np.zeros((2 * n,), dtype=bool)
+        lvisited = set()
+        rvisited = set()
         curNode[0] = self
         k = 0
         preorder = []
@@ -807,13 +807,13 @@ class ClusterNode:
                 preorder.append(func(nd))
                 k = k - 1
             else:
-                if not lvisited[ndid]:
+                if ndid not in lvisited:
                     curNode[k + 1] = nd.left
-                    lvisited[ndid] = True
+                    lvisited.add(ndid)
                     k = k + 1
-                elif not rvisited[ndid]:
+                elif ndid not in rvisited:
                     curNode[k + 1] = nd.right
-                    rvisited[ndid] = True
+                    rvisited.add(ndid)
                     k = k + 1
                 # If we've visited the left and right of this non-leaf
                 # node already, go up in the tree.
@@ -908,7 +908,7 @@ def to_tree(Z, rd=False):
 
 def _convert_to_bool(X):
     if X.dtype != np.bool:
-        X = np.bool_(X)
+        X = X.astype(np.bool)
     if not X.flags.contiguous:
         X = X.copy()
     return X
@@ -916,7 +916,7 @@ def _convert_to_bool(X):
 
 def _convert_to_double(X):
     if X.dtype != np.double:
-        X = np.double(X)
+        X = X.astype(np.double)
     if not X.flags.contiguous:
         X = X.copy()
     return X
@@ -1311,8 +1311,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
                              'observations.')
         n = Z.shape[0]
         if n > 1:
-            if ((Z[:, 0] < 0).any() or
-                (Z[:, 1] < 0).any()):
+            if ((Z[:, 0] < 0).any() or (Z[:, 1] < 0).any()):
                 if name:
                     raise ValueError(('Linkage \'%s\' contains negative '
                                       'indices.') % name)
@@ -1848,7 +1847,7 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
                 e = matplotlib.patches.Ellipse((y, x),
                                                width=dvw / 100, height=1.0)
                 ax.add_artist(e)
-                e.set_clip_box(axis.bbox)
+                e.set_clip_box(ax.bbox)
                 e.set_alpha(0.5)
                 e.set_facecolor('k')
         if orientation in ('top', 'bottom'):
@@ -1856,7 +1855,7 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
                 e = matplotlib.patches.Ellipse((x, y),
                                              width=1.0, height=dvw / 100)
                 ax.add_artist(e)
-                e.set_clip_box(axis.bbox)
+                e.set_clip_box(ax.bbox)
                 e.set_alpha(0.5)
                 e.set_facecolor('k')
 
@@ -2083,15 +2082,15 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         A dictionary of data structures computed to render the
         dendrogram. Its has the following keys:
 
-        ``'icoords'``
-          A list of lists ``[I1, I2, ..., Ip]`` where ``Ik`` is a list of 4
-          independent variable coordinates corresponding to the line that
-          represents the k'th link painted.
+        ``'color_list'``
+          A list of color names. The k'th element represents the color of the
+          k'th link.
 
-        ``'dcoords'``
-          A list of lists ``[I2, I2, ..., Ip]`` where ``Ik`` is a list of 4
-          independent variable coordinates corresponding to the line that
-          represents the k'th link painted.
+        ``'icoord'`` and ``'dcoord'``
+          Each of them is a list of lists. Let ``icoord = [I1, I2, ..., Ip]``
+          where ``Ik = [xk1, xk2, xk3, xk4]`` and ``dcoord = [D1, D2, ..., Dp]``
+          where ``Dk = [yk1, yk2, yk3, yk4]``, then the k'th link painted is
+          ``(xk1, yk1)`` - ``(xk2, yk2)`` - ``(xk3, yk3)`` - ``(xk4, yk4)``.
 
         ``'ivl'``
           A list of labels corresponding to the leaf nodes.
@@ -2114,6 +2113,10 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     #         None orders leaf nodes based on the order they appear in the
     #         pre-order traversal.
     Z = np.asarray(Z, order='c')
+
+    if orientation not in ["top", "left", "bottom", "right"]:
+        raise ValueError("orientation must be one of 'top', 'left', "
+                         "'bottom', or 'right'")
 
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
@@ -2235,15 +2238,15 @@ def _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,
 
 
 def _append_contraction_marks(Z, iv, i, n, contraction_marks):
-    _append_contraction_marks_sub(Z, iv, Z[i - n, 0], n, contraction_marks)
-    _append_contraction_marks_sub(Z, iv, Z[i - n, 1], n, contraction_marks)
+    _append_contraction_marks_sub(Z, iv, int(Z[i - n, 0]), n, contraction_marks)
+    _append_contraction_marks_sub(Z, iv, int(Z[i - n, 1]), n, contraction_marks)
 
 
 def _append_contraction_marks_sub(Z, iv, i, n, contraction_marks):
     if i >= n:
         contraction_marks.append((iv, Z[i - n, 2]))
-        _append_contraction_marks_sub(Z, iv, Z[i - n, 0], n, contraction_marks)
-        _append_contraction_marks_sub(Z, iv, Z[i - n, 1], n, contraction_marks)
+        _append_contraction_marks_sub(Z, iv, int(Z[i - n, 0]), n, contraction_marks)
+        _append_contraction_marks_sub(Z, iv, int(Z[i - n, 1]), n, contraction_marks)
 
 
 def _dendrogram_calculate_info(Z, p, truncate_mode,

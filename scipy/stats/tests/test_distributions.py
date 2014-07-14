@@ -320,6 +320,10 @@ class TestHypergeom(TestCase):
         hgpmf = stats.hypergeom.pmf(2, tot, good, N)
         assert_almost_equal(hgpmf, 0.0010114963068932233, 11)
 
+    def test_cdf_above_one(self):
+        # for some values of parameters, hypergeom cdf was >1, see gh-2238
+        assert_(0 <= stats.hypergeom.cdf(30, 13397950, 4363, 12390) <= 1.0)
+
     def test_precision2(self):
         # Test hypergeom precision for large numbers.  See #1218.
         # Results compared with those from R.
@@ -361,9 +365,9 @@ class TestLoggamma(TestCase):
         # Chan (thesis, McMaster University, 1993).
         table = np.array([
                 # c,    mean,   var,    skew,    exc. kurt.
-                 0.5, -1.9635, 4.9348, -1.5351, 4.0000,
-                 1.0, -0.5772, 1.6449, -1.1395, 2.4000,
-                 12.0, 2.4427, 0.0869, -0.2946, 0.1735,
+                0.5, -1.9635, 4.9348, -1.5351, 4.0000,
+                1.0, -0.5772, 1.6449, -1.1395, 2.4000,
+                12.0, 2.4427, 0.0869, -0.2946, 0.1735,
             ]).reshape(-1, 5)
         for c, mean, var, skew, kurt in table:
             computed = stats.loggamma.stats(c, moments='msvk')
@@ -530,7 +534,6 @@ class TestDLaplace(TestCase):
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
         assert_(stats.dlaplace.rvs(0.8) is not None)
-
 
     def test_stats(self):
         # compare the explicit formulas w/ direct summation using pmf
@@ -1243,6 +1246,11 @@ class TestFrozen(TestCase):
         rv1 = stats.genpareto(c=0.1)
         assert_(rv1.dist is not rv.dist)
 
+    def test_rv_frozen_in_namespace(self):
+        # Regression test for gh-3522
+        assert_(hasattr(stats.distributions, 'rv_frozen'))
+
+
 class TestExpect(TestCase):
     # Test for expect method.
     #
@@ -1430,6 +1438,50 @@ class TestErlang(TestCase):
             assert_allclose(result_erlang, result_gamma, rtol=1e-3)
 
 
+class TestExponWeib(TestCase):
+
+    def test_pdf_logpdf(self):
+        # Regression test for gh-3508.
+        x = 0.1
+        a = 1.0
+        c = 100.0
+        p = stats.exponweib.pdf(x, a, c)
+        logp = stats.exponweib.logpdf(x, a, c)
+        # Expected values were computed with mpmath.
+        assert_allclose([p, logp],
+                        [1.0000000000000054e-97, -223.35075402042244])
+
+    def test_a_is_1(self):
+        # For issue gh-3508.
+        # Check that when a=1, the pdf and logpdf methods of exponweib are the
+        # same as those of weibull_min.
+        x = np.logspace(-4, -1, 4)
+        a = 1
+        c = 100
+
+        p = stats.exponweib.pdf(x, a, c)
+        expected = stats.weibull_min.pdf(x, c)
+        assert_allclose(p, expected)
+
+        logp = stats.exponweib.logpdf(x, a, c)
+        expected = stats.weibull_min.logpdf(x, c)
+        assert_allclose(logp, expected)
+
+    def test_a_is_1_c_is_1(self):
+        # When a = 1 and c = 1, the distribution is exponential.
+        x = np.logspace(-8, 1, 10)
+        a = 1
+        c = 1
+
+        p = stats.exponweib.pdf(x, a, c)
+        expected = stats.expon.pdf(x)
+        assert_allclose(p, expected)
+
+        logp = stats.exponweib.logpdf(x, a, c)
+        expected = stats.expon.logpdf(x)
+        assert_allclose(logp, expected)
+
+
 class TestRdist(TestCase):
     @dec.slow
     def test_rdist_cdf_gh1285(self):
@@ -1492,23 +1544,24 @@ def test_regression_ticket_1421():
 
 
 def test_nan_arguments_gh_issue_1362():
-    assert_(np.isnan(stats.t.logcdf(1, np.nan)))
-    assert_(np.isnan(stats.t.cdf(1, np.nan)))
-    assert_(np.isnan(stats.t.logsf(1, np.nan)))
-    assert_(np.isnan(stats.t.sf(1, np.nan)))
-    assert_(np.isnan(stats.t.pdf(1, np.nan)))
-    assert_(np.isnan(stats.t.logpdf(1, np.nan)))
-    assert_(np.isnan(stats.t.ppf(1, np.nan)))
-    assert_(np.isnan(stats.t.isf(1, np.nan)))
+    with np.errstate(invalid='ignore'):
+        assert_(np.isnan(stats.t.logcdf(1, np.nan)))
+        assert_(np.isnan(stats.t.cdf(1, np.nan)))
+        assert_(np.isnan(stats.t.logsf(1, np.nan)))
+        assert_(np.isnan(stats.t.sf(1, np.nan)))
+        assert_(np.isnan(stats.t.pdf(1, np.nan)))
+        assert_(np.isnan(stats.t.logpdf(1, np.nan)))
+        assert_(np.isnan(stats.t.ppf(1, np.nan)))
+        assert_(np.isnan(stats.t.isf(1, np.nan)))
 
-    assert_(np.isnan(stats.bernoulli.logcdf(np.nan, 0.5)))
-    assert_(np.isnan(stats.bernoulli.cdf(np.nan, 0.5)))
-    assert_(np.isnan(stats.bernoulli.logsf(np.nan, 0.5)))
-    assert_(np.isnan(stats.bernoulli.sf(np.nan, 0.5)))
-    assert_(np.isnan(stats.bernoulli.pmf(np.nan, 0.5)))
-    assert_(np.isnan(stats.bernoulli.logpmf(np.nan, 0.5)))
-    assert_(np.isnan(stats.bernoulli.ppf(np.nan, 0.5)))
-    assert_(np.isnan(stats.bernoulli.isf(np.nan, 0.5)))
+        assert_(np.isnan(stats.bernoulli.logcdf(np.nan, 0.5)))
+        assert_(np.isnan(stats.bernoulli.cdf(np.nan, 0.5)))
+        assert_(np.isnan(stats.bernoulli.logsf(np.nan, 0.5)))
+        assert_(np.isnan(stats.bernoulli.sf(np.nan, 0.5)))
+        assert_(np.isnan(stats.bernoulli.pmf(np.nan, 0.5)))
+        assert_(np.isnan(stats.bernoulli.logpmf(np.nan, 0.5)))
+        assert_(np.isnan(stats.bernoulli.ppf(np.nan, 0.5)))
+        assert_(np.isnan(stats.bernoulli.isf(np.nan, 0.5)))
 
 
 def test_frozen_fit_ticket_1536():
@@ -1656,6 +1709,30 @@ def test_norm_logcdf():
         assert_allclose(stats.norm().logcdf(x), expected, atol=1e-8)
     finally:
         np.seterr(**olderr)
+
+
+def test_levy_cdf_ppf():
+    # Test levy.cdf, including small arguments.
+    x = np.array([1000, 1.0, 0.5, 0.1, 0.01, 0.001])
+
+    # Expected values were calculated separately with mpmath.
+    # E.g.
+    # >>> mpmath.mp.dps = 100
+    # >>> x = mpmath.mp.mpf('0.01')
+    # >>> cdf = mpmath.erfc(mpmath.sqrt(1/(2*x)))
+    expected = np.array([0.9747728793699604,
+                         0.3173105078629141,
+                         0.1572992070502851,
+                         0.0015654022580025495,
+                         1.523970604832105e-23,
+                         1.795832784800726e-219])
+
+    y = stats.levy.cdf(x)
+    assert_allclose(y, expected, rtol=1e-10)
+
+    # ppf(expected) should get us back to x.
+    xx = stats.levy.ppf(expected)
+    assert_allclose(xx, x, rtol=1e-13)
 
 
 def test_hypergeom_interval_1802():

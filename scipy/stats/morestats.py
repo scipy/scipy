@@ -28,7 +28,7 @@ __all__ = ['mvsdist',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
            'fligner', 'mood', 'wilcoxon',
-           'pdf_fromgamma', 'circmean', 'circvar', 'circstd',
+           'pdf_fromgamma', 'circmean', 'circvar', 'circstd', 'anderson_ksamp'
            ]
 
 
@@ -831,7 +831,7 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
     methods = {'pearsonr': _pearsonr,
                'mle': _mle,
                'all': _all}
-    if not method in methods.keys():
+    if method not in methods.keys():
         raise ValueError("Method %s not recognized." % method)
 
     optimfunc = methods[method]
@@ -989,7 +989,7 @@ def shapiro(x, a=None, reta=False):
         init = 1
     y = sort(x)
     a, w, pw, ifault = statlib.swilk(y, a[:N//2], init)
-    if not ifault in [0,2]:
+    if ifault not in [0,2]:
         warnings.warn(str(ifault))
     if N > 5000:
         warnings.warn("p-value may not be accurate for N > 5000.")
@@ -1017,7 +1017,7 @@ def anderson(x,dist='norm'):
     Anderson-Darling test for data coming from a particular distribution
 
     The Anderson-Darling test is a modification of the Kolmogorov-
-    Smirnov test kstest_ for the null hypothesis that a sample is
+    Smirnov test `kstest` for the null hypothesis that a sample is
     drawn from a population that follows a particular distribution.
     For the Anderson-Darling test, the critical values depend on
     which distribution is being tested against.  This function works
@@ -1078,7 +1078,7 @@ def anderson(x,dist='norm'):
            pp. 591-595.
 
     """
-    if not dist in ['norm','expon','gumbel','extreme1','logistic']:
+    if dist not in ['norm','expon','gumbel','extreme1','logistic']:
         raise ValueError("Invalid distribution; dist must be 'norm', "
                             "'expon', 'gumbel', 'extreme1' or 'logistic'.")
     y = sort(x)
@@ -1111,14 +1111,14 @@ def anderson(x,dist='norm'):
         critical = around(_Avals_logistic / (1.0+0.25/N),3)
     else:  # (dist == 'gumbel') or (dist == 'extreme1'):
         # the following is incorrect, see ticket:1097
-##        def fixedsolve(th,xj,N):
-##            val = stats.sum(xj)*1.0/N
-##            tmp = exp(-xj/th)
-##            term = sum(xj*tmp,axis=0)
-##            term /= sum(tmp,axis=0)
-##            return val - term
-##        s = optimize.fixed_point(fixedsolve, 1.0, args=(x,N),xtol=1e-5)
-##        xbar = -s*log(sum(exp(-x/s),axis=0)*1.0/N)
+        #def fixedsolve(th,xj,N):
+        #    val = stats.sum(xj)*1.0/N
+        #    tmp = exp(-xj/th)
+        #    term = sum(xj*tmp,axis=0)
+        #    term /= sum(tmp,axis=0)
+        #    return val - term
+        #s = optimize.fixed_point(fixedsolve, 1.0, args=(x,N),xtol=1e-5)
+        #xbar = -s*log(sum(exp(-x/s),axis=0)*1.0/N)
         xbar, s = distributions.gumbel_l.fit(x)
         w = (y-xbar)/s
         z = distributions.gumbel_l.cdf(w)
@@ -1129,6 +1129,229 @@ def anderson(x,dist='norm'):
     S = sum((2*i-1.0)/N*(log(z)+log(1-z[::-1])),axis=0)
     A2 = -N-S
     return A2, critical, sig
+
+
+def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
+    """
+    Compute A2akN equation 7 of Scholz and Stephens.
+
+    Parameters
+    ----------
+    samples : sequence of 1-D array_like
+        Array of sample arrays.
+    Z : array_like
+        Sorted array of all observations.
+    Zstar : array_like
+        Sorted array of unique observations.
+    k : int
+        Number of samples.
+    n : array_like
+        Number of observations in each sample.
+    N : int
+        Total number of observations.
+
+    Returns
+    -------
+    A2aKN : float
+        The A2aKN statistics of Scholz and Stephens 1987.
+    """
+
+    A2akN = 0.
+    Z_ssorted_left = Z.searchsorted(Zstar, 'left')
+    if N == Zstar.size:
+        lj = 1.
+    else:
+        lj = Z.searchsorted(Zstar, 'right') - Z_ssorted_left
+    Bj = Z_ssorted_left + lj / 2.
+    for i in arange(0, k):
+        s = np.sort(samples[i])
+        s_ssorted_right = s.searchsorted(Zstar, side='right')
+        Mij = s_ssorted_right.astype(np.float)
+        fij = s_ssorted_right - s.searchsorted(Zstar, 'left')
+        Mij -= fij / 2.
+        inner = lj / float(N) * (N * Mij - Bj * n[i])**2 / \
+            (Bj * (N - Bj) - N * lj / 4.)
+        A2akN += inner.sum() / n[i]
+    A2akN *= (N - 1.) / N
+    return A2akN
+
+
+def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
+    """
+    Compute A2akN equation 6 of Scholz & Stephens.
+
+    Parameters
+    ----------
+    samples : sequence of 1-D array_like
+        Array of sample arrays.
+    Z : array_like
+        Sorted array of all observations.
+    Zstar : array_like
+        Sorted array of unique observations.
+    k : int
+        Number of samples.
+    n : array_like
+        Number of observations in each sample.
+    N : int
+        Total number of observations.
+
+    Returns
+    -------
+    A2KN : float
+        The A2KN statistics of Scholz and Stephens 1987.
+    """
+
+    A2kN = 0.
+    lj = Z.searchsorted(Zstar[:-1], 'right') - Z.searchsorted(Zstar[:-1],
+                                                              'left')
+    Bj = lj.cumsum()
+    for i in arange(0, k):
+        s = np.sort(samples[i])
+        Mij = s.searchsorted(Zstar[:-1], side='right')
+        inner = lj / float(N) * (N * Mij - Bj * n[i])**2 / (Bj * (N - Bj))
+        A2kN += inner.sum() / n[i]
+    return A2kN
+
+
+def anderson_ksamp(samples, midrank=True):
+    """The Anderson-Darling test for k-samples.
+
+    The k-sample Anderson-Darling test is a modification of the
+    one-sample Anderson-Darling test. It tests the null hypothesis
+    that k-samples are drawn from the same population without having
+    to specify the distribution function of that population. The
+    critical values depend on the number of samples.
+
+    Parameters
+    ----------
+    samples : sequence of 1-D array_like
+        Array of sample data in arrays.
+    midrank : bool, optional
+        Type of Anderson-Darling test which is computed. Default
+        (True) is the midrank test applicable to continuous and
+        discrete populations. If False, the right side empirical
+        distribution is used.
+
+    Returns
+    -------
+    A2 : float
+        Normalized k-sample Anderson-Darling test statistic.
+    critical : array
+        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%.
+    p : float
+        An approximate significance level at which the null hypothesis for the
+        provided samples can be rejected.
+
+    Raises
+    ------
+    ValueError
+        If less than 2 samples are provided, a sample is empty, or no
+        distinct observations are in the samples.
+
+    See Also
+    --------
+    ks_2samp : 2 sample Kolmogorov-Smirnov test
+    anderson : 1 sample Anderson-Darling test
+
+    Notes
+    -----
+    [1]_ Defines three versions of the k-sample Anderson-Darling test:
+    one for continuous distributions and two for discrete
+    distributions, in which ties between samples may occur. The
+    default of this routine is to compute the version based on the
+    midrank empirical distribution function. This test is applicable
+    to continuous and discrete data. If midrank is set to False, the
+    right side empirical distribution is used for a test for discrete
+    data. According to [1]_, the two discrete test statistics differ
+    only slightly if a few collisions due to round-off errors occur in
+    the test not adjusted for ties between samples.
+
+    .. versionadded:: 0.14.0
+
+    References
+    ----------
+    .. [1] Scholz, F. W and Stephens, M. A. (1987), K-Sample
+           Anderson-Darling Tests, Journal of the American Statistical
+           Association, Vol. 82, pp. 918-924.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> np.random.seed(314159)
+
+    The null hypothesis that the two random samples come from the same
+    distribution can be rejected at the 5% level because the returned
+    test value is greater than the critical value for 5% (1.961) but
+    not at the 2.5% level. The interpolation gives an approximate
+    significance level of 3.1%:
+
+    >>> stats.anderson_ksamp([np.random.normal(size=50),
+    ... np.random.normal(loc=0.5, size=30)])
+    (2.4615796189876105,
+      array([ 0.325,  1.226,  1.961,  2.718,  3.752]),
+      0.03134990135800783)
+
+
+    The null hypothesis cannot be rejected for three samples from an
+    identical distribution. The approximate p-value (87%) has to be
+    computed by extrapolation and may not be very accurate:
+
+    >>> stats.anderson_ksamp([np.random.normal(size=50),
+    ... np.random.normal(size=30), np.random.normal(size=20)])
+    (-0.73091722665244196,
+      array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856]),
+      0.8789283903979661)
+
+    """
+    k = len(samples)
+    if (k < 2):
+        raise ValueError("anderson_ksamp needs at least two samples")
+
+    samples = list(map(np.asarray, samples))
+    Z = np.sort(np.hstack(samples))
+    N = Z.size
+    Zstar = np.unique(Z)
+    if Zstar.size < 2:
+        raise ValueError("anderson_ksamp needs more than one distinct "
+                         "observation")
+
+    n = np.array([sample.size for sample in samples])
+    if any(n == 0):
+        raise ValueError("anderson_ksamp encountered sample without "
+                         "observations")
+
+    if midrank:
+        A2kN = _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N)
+    else:
+        A2kN = _anderson_ksamp_right(samples, Z, Zstar, k, n, N)
+
+    h = (1. / arange(1, N)).sum()
+    H = (1. / n).sum()
+    g = 0
+    for l in arange(1, N-1):
+        inner = np.array([1. / ((N - l) * m) for m in arange(l+1, N)])
+        g += inner.sum()
+
+    a = (4*g - 6) * (k - 1) + (10 - 6*g)*H
+    b = (2*g - 4)*k**2 + 8*h*k + (2*g - 14*h - 4)*H - 8*h + 4*g - 6
+    c = (6*h + 2*g - 2)*k**2 + (4*h - 4*g + 6)*k + (2*h - 6)*H + 4*h
+    d = (2*h + 6)*k**2 - 4*h*k
+    sigmasq = (a*N**3 + b*N**2 + c*N + d) / ((N - 1.) * (N - 2.) * (N - 3.))
+    m = k - 1
+    A2 = (A2kN - m) / math.sqrt(sigmasq)
+
+    # The b_i values are the interpolation coefficients from Table 2
+    # of Scholz and Stephens 1987
+    b0 = np.array([0.675, 1.281, 1.645, 1.96, 2.326])
+    b1 = np.array([-0.245, 0.25, 0.678, 1.149, 1.822])
+    b2 = np.array([-0.105, -0.305, -0.362, -0.391, -0.396])
+    critical = b0 + b1 / math.sqrt(m) + b2 / m
+    pf = np.polyfit(critical, log(np.array([0.25, 0.1, 0.05, 0.025, 0.01])), 2)
+    if A2 < critical.min() or A2 > critical.max():
+        warnings.warn("approximate p-value will be computed by extrapolation")
+
+    p = math.exp(np.polyval(pf, A2))
+    return A2, critical, p
 
 
 def ansari(x,y):
@@ -1332,7 +1555,7 @@ def levene(*args,**kwds):
     Ni = zeros(k)
     Yci = zeros(k,'d')
 
-    if not center in ['mean','median','trimmed']:
+    if center not in ['mean','median','trimmed']:
         raise ValueError("Keyword argument <center> must be 'mean', 'median'"
               + "or 'trimmed'.")
 
@@ -1438,18 +1661,18 @@ def binom_test(x,n=None,p=0.5):
     return min(1.0,pval)
 
 
-def _apply_func(x,g,func):
+def _apply_func(x, g, func):
     # g is list of indices into x
     #  separating x into different groups
     #  func should be applied over the groups
-    g = unique(r_[0,g,len(x)])
+    g = unique(r_[0, g, len(x)])
     output = []
     for k in range(len(g)-1):
         output.append(func(x[g[k]:g[k+1]]))
     return asarray(output)
 
 
-def fligner(*args,**kwds):
+def fligner(*args, **kwds):
     """
     Perform Fligner's test for equal variances.
 
@@ -1461,11 +1684,10 @@ def fligner(*args,**kwds):
     Parameters
     ----------
     sample1, sample2, ... : array_like
-        arrays of sample data.  Need not be the same length
+        Arrays of sample data.  Need not be the same length.
     center : {'mean', 'median', 'trimmed'}, optional
-        keyword argument controlling which function of the data
-        is used in computing the test statistic.  The default
-        is 'median'.
+        Keyword argument controlling which function of the data is used in
+        computing the test statistic.  The default is 'median'.
     proportiontocut : float, optional
         When `center` is 'trimmed', this gives the proportion of data points
         to cut from each end. (See `scipy.stats.trim_mean`.)
@@ -1474,15 +1696,15 @@ def fligner(*args,**kwds):
     Returns
     -------
     Xsq : float
-        the test statistic
+        The test statistic.
     p-value : float
-        the p-value for the hypothesis test
+        The p-value for the hypothesis test.
 
     Notes
     -----
-    As with Levene's test there are three variants
-    of Fligner's test that differ by the measure of central
-    tendency used in the test.  See `levene` for more information.
+    As with Levene's test there are three variants of Fligner's test that
+    differ by the measure of central tendency used in the test.  See `levene`
+    for more information.
 
     References
     ----------
@@ -1498,7 +1720,8 @@ def fligner(*args,**kwds):
     proportiontocut = 0.05
     for kw, value in kwds.items():
         if kw not in ['center', 'proportiontocut']:
-            raise TypeError("fligner() got an unexpected keyword argument '%s'" % kw)
+            raise TypeError("fligner() got an unexpected keyword "
+                            "argument '%s'" % kw)
         if kw == 'center':
             center = value
         else:
@@ -1508,7 +1731,7 @@ def fligner(*args,**kwds):
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
 
-    if not center in ['mean','median','trimmed']:
+    if center not in ['mean','median','trimmed']:
         raise ValueError("Keyword argument <center> must be 'mean', 'median'"
               + "or 'trimmed'.")
 
@@ -1522,9 +1745,9 @@ def fligner(*args,**kwds):
 
     Ni = asarray([len(args[j]) for j in range(k)])
     Yci = asarray([func(args[j]) for j in range(k)])
-    Ntot = sum(Ni,axis=0)
+    Ntot = sum(Ni, axis=0)
     # compute Zij's
-    Zij = [abs(asarray(args[i])-Yci[i]) for i in range(k)]
+    Zij = [abs(asarray(args[i]) - Yci[i]) for i in range(k)]
     allZij = []
     g = [0]
     for i in range(k):
@@ -1532,14 +1755,14 @@ def fligner(*args,**kwds):
         g.append(len(allZij))
 
     ranks = stats.rankdata(allZij)
-    a = distributions.norm.ppf(ranks/(2*(Ntot+1.0)) + 0.5)
+    a = distributions.norm.ppf(ranks/(2*(Ntot + 1.0)) + 0.5)
 
     # compute Aibar
-    Aibar = _apply_func(a,g,sum) / Ni
+    Aibar = _apply_func(a, g, sum) / Ni
     anbar = np.mean(a, axis=0)
-    varsq = np.var(a,axis=0, ddof=1)
-    Xsq = sum(Ni*(asarray(Aibar)-anbar)**2.0,axis=0)/varsq
-    pval = distributions.chi2.sf(Xsq,k-1)  # 1 - cdf
+    varsq = np.var(a, axis=0, ddof=1)
+    Xsq = sum(Ni*(asarray(Aibar) - anbar)**2.0, axis=0)/varsq
+    pval = distributions.chi2.sf(Xsq, k - 1)  # 1 - cdf
     return Xsq, pval
 
 
@@ -1565,7 +1788,7 @@ def mood(x, y, axis=0):
     -------
     z : scalar or ndarray
         The z-score for the hypothesis test.  For 1-D inputs a scalar is
-        returned;
+        returned.
     p-value : scalar ndarray
         The p-value for the hypothesis test.
 
@@ -1718,7 +1941,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
 
     """
 
-    if not zero_method in ["wilcox", "pratt", "zsplit"]:
+    if zero_method not in ["wilcox", "pratt", "zsplit"]:
         raise ValueError("Zero method should be either 'wilcox' \
                           or 'pratt' or 'zsplit'")
 

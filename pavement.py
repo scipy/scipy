@@ -112,10 +112,10 @@ finally:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/0.14.0-notes.rst'
+RELEASE = 'doc/release/0.15.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v0.13.0'
+LOG_START = 'v0.14.0'
 LOG_END = 'master'
 
 
@@ -296,6 +296,10 @@ def tarball_name(type='gztar'):
     root = 'scipy-%s' % FULLVERSION
     if type == 'gztar':
         return root + '.tar.gz'
+    elif type == 'xztar':
+        return root + '.tar.xz'
+    elif type == 'tar':
+        return root + '.tar'
     elif type == 'zip':
         return root + '.zip'
     raise ValueError("Unknown type %s" % type)
@@ -305,10 +309,22 @@ def sdist():
     # To be sure to bypass paver when building sdist... paver + scipy.distutils
     # do not play well together.
     sh('python setup.py sdist --formats=gztar,zip')
+    sh('python setup.py sdist --formats=tar')
+    if os.path.exists(os.path.join('dist', tarball_name("xztar"))):
+        os.unlink(os.path.join('dist', tarball_name("xztar")))
+    sh('xz %s' % os.path.join('dist', tarball_name("tar")), ignore_error=True)
 
     # Copy the superpack into installers dir
     if not os.path.exists(options.installers.installersdir):
         os.makedirs(options.installers.installersdir)
+
+    if not os.path.exists(os.path.join('dist', tarball_name("xztar"))):
+        warnings.warn("Could not create tar.xz! Do you have xz installed?")
+    else:
+        t = 'xztar'
+        source = os.path.join('dist', tarball_name(t))
+        target = os.path.join(options.installers.installersdir, tarball_name(t))
+        shutil.copy(source, target)
 
     for t in ['gztar', 'zip']:
         source = os.path.join('dist', tarball_name(t))
@@ -385,7 +401,15 @@ def bdist_superpack(options):
             os.remove(target)
         if not os.path.exists(os.path.dirname(target)):
             os.makedirs(os.path.dirname(target))
-        os.rename(source, target)
+
+        try:
+            os.rename(source, target)
+        except OSError:
+            # May be due to dev version having 'Unknown' in name, if git isn't
+            # found.  This can be the case when compiling under Wine.
+            ix = source.find('.dev-') + 5
+            source = source[:ix] + 'Unknown' + source[ix+7:]
+            os.rename(source, target)
 
     bdist_wininst_arch(pyver, 'nosse')
     copy_bdist("nosse")

@@ -9,6 +9,8 @@ Here, we define such unsafe wrappers manually.
 
 cimport sf_error
 
+from sph_harm cimport sph_harmonic
+
 cdef extern from "cephes.h":
     double bdtrc(int k, int n, double p) nogil
     double bdtr(int k, int n, double p) nogil 
@@ -40,6 +42,9 @@ cdef inline void _legacy_cast_check(char *func_name, double x, double y) nogil:
                                "floating point number truncated to an integer",
                                1)
 
+cdef inline double complex sph_harmonic_unsafe(double m, double n, double theta, double phi) nogil:
+    _legacy_cast_check("sph_harm", m, n)
+    return sph_harmonic(<int>m, <int> n, theta, phi)
 cdef inline double bdtrc_unsafe(double k, double n, double p) nogil:
     _legacy_cast_check("bdtrc", k, n)
     return bdtrc(<int>k, <int>n, p)

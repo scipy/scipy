@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import sys
-from numpy.testing import measure, rand, assert_, TestCase
+from numpy.testing import measure, rand, assert_, TestCase, run_module_suite
 import numpy.linalg as nl
 import scipy.linalg as sl
 

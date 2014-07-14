@@ -27,6 +27,10 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     .. versionadded:: 0.9
 
+    Methods
+    -------
+    __call__
+
     Parameters
     ----------
     points : (Npoints, Ndims) ndarray of floats
@@ -63,7 +67,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
             Points where to interpolate data at.
 
         """
-        xi = _ndim_coords_from_arrays(args)
+        xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
         xi = self._check_call_shape(xi)
         xi = self._scale_x(xi)
         dist, i = self.tree.query(xi)

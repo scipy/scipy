@@ -1,7 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import TestCase, assert_equal, assert_almost_equal
+from numpy.testing import (TestCase, assert_equal, assert_almost_equal,
+        assert_allclose)
 from scipy.lib._version import NumpyVersion
 from scipy.special import logit, expit
 
@@ -73,3 +74,12 @@ class TestExpit(TestCase):
                             0.79139147, 0.9022274,
                             0.95734875, 0.98201379])
         self.check_expit_out('f8', expected)
+
+    def test_large(self):
+        for dtype in (np.float32, np.float64, np.longdouble):
+            for n in (88, 89, 709, 710, 11356, 11357):
+                n = np.array(n, dtype=dtype)
+                assert_allclose(expit(n), 1.0, atol=1e-20)
+                assert_allclose(expit(-n), 0.0, atol=1e-20)
+                assert_equal(expit(n).dtype, dtype)
+                assert_equal(expit(-n).dtype, dtype)

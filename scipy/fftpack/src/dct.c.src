@@ -42,8 +42,8 @@ GEN_CACHE(@pref@dct2,(int n)
 
 void @pref@dct1(@type@ * inout, int n, int howmany, int normalize)
 {
-    int i, j;
-    @type@ *ptr = inout, n1, n2;
+    int i;
+    @type@ *ptr = inout;
     @type@ *wsave = NULL;
 
     wsave = caches_@pref@dct1[get_cache_id_@pref@dct1(n)].wsave;
@@ -57,16 +57,21 @@ void @pref@dct1(@type@ * inout, int n, int howmany, int normalize)
             break;
 #if 0
         case DCT_NORMALIZE_ORTHONORMAL:
+        {
+            @type@ n1, n2;
+
             ptr = inout;
             n1 = sqrt(0.5 / (n-1));
             n2 = sqrt(1. / (n-1));
             for (i = 0; i < howmany; ++i, ptr+=n) {
+                int j;
                 ptr[0] *= n1;
                 for (j = 1; j < n-1; ++j) {
                     ptr[j] *= n2;
                 }
             }
             break;
+        }
 #endif
         default:
             fprintf(stderr, "dct1: normalize not yet supported=%d\n",

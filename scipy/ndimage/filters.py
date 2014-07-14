@@ -135,8 +135,8 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     if not weights.flags.contiguous:
         weights = weights.copy()
     axis = _ni_support._check_axis(axis, input.ndim)
-    if ((len(weights) // 2 + origin < 0) or
-        (len(weights) // 2 + origin > len(weights))):
+    if (len(weights) // 2 + origin < 0) or (len(weights) // 2 +
+                                            origin > len(weights)):
         raise ValueError('invalid origin')
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.correlate1d(input, weights, axis, output, mode, cval,
@@ -1103,8 +1103,8 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     if filter_size < 1:
         raise RuntimeError('invalid filter size')
     axis = _ni_support._check_axis(axis, input.ndim)
-    if ((filter_size // 2 + origin < 0) or
-        (filter_size // 2 + origin >= filter_size)):
+    if (filter_size // 2 + origin < 0) or (filter_size // 2 + origin >=
+                                           filter_size):
         raise ValueError('invalid origin')
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.generic_filter1d(input, function, filter_size, axis, output,

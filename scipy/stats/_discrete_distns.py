@@ -66,7 +66,7 @@ class binom_gen(rv_discrete):
 
     def _ppf(self, q, n, p):
         vals = ceil(special.bdtrik(q, n, p))
-        vals1 = vals-1
+        vals1 = np.maximum(vals - 1, 0)
         temp = special.bdtr(vals1, n, p)
         return np.where(temp >= q, vals1, vals)
 
@@ -268,6 +268,7 @@ class hypergeom_gen(rv_discrete):
     Examples
     --------
     >>> from scipy.stats import hypergeom
+    >>> import matplotlib.pyplot as plt
 
     Suppose we have a collection of 20 animals, of which 7 are dogs.  Then if
     we want to know the probability of finding a given number of dogs if we
@@ -444,9 +445,9 @@ class poisson_gen(rv_discrete):
 
     def _ppf(self, q, mu):
         vals = ceil(special.pdtrik(q, mu))
-        vals1 = vals - 1
+        vals1 = np.maximum(vals - 1, 0)
         temp = special.pdtr(vals1, mu)
-        return np.where((temp >= q), vals1, vals)
+        return np.where(temp >= q, vals1, vals)
 
     def _stats(self, mu):
         var = mu

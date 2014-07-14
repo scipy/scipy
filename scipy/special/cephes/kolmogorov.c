@@ -27,9 +27,7 @@
 extern double MAXLOG;
 
 /* Exact Smirnov statistic, for one-sided test.  */
-double smirnov(n, e)
-int n;
-double e;
+double smirnov(int n, double e)
 {
     int v, nn;
     double evn, omevn, p, t, c, lgamnp1;

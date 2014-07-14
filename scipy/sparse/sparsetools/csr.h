@@ -952,6 +952,23 @@ void csr_minus_csr(const I n_row, const I n_col,
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
 }
 
+template <class I, class T>
+void csr_maximum_csr(const I n_row, const I n_col, 
+                     const I Ap[], const I Aj[], const T Ax[],
+                     const I Bp[], const I Bj[], const T Bx[],
+                           I Cp[],       I Cj[],       T Cx[])
+{
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,maximum<T>());
+}
+
+template <class I, class T>
+void csr_minimum_csr(const I n_row, const I n_col, 
+                     const I Ap[], const I Aj[], const T Ax[],
+                     const I Bp[], const I Bj[], const T Bx[],
+                           I Cp[],       I Cj[],       T Cx[])
+{
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,minimum<T>());
+}
 
 
 /*

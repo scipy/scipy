@@ -676,6 +676,25 @@ void bsr_minus_bsr(const I n_row, const I n_col, const I R, const I C,
 }
 
 
+template <class I, class T>
+void bsr_maximum_bsr(const I n_row, const I n_col, const I R, const I C, 
+                  const I Ap[], const I Aj[], const T Ax[],
+                  const I Bp[], const I Bj[], const T Bx[],
+                        I Cp[],       I Cj[],       T Cx[])
+{
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,maximum<T>());
+}
+
+template <class I, class T>
+void bsr_minimum_bsr(const I n_row, const I n_col, const I R, const I C, 
+                   const I Ap[], const I Aj[], const T Ax[],
+                   const I Bp[], const I Bj[], const T Bx[],
+                         I Cp[],       I Cj[],       T Cx[])
+{
+    bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,minimum<T>());
+}
+
+
 
 
 

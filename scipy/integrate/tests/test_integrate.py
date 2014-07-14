@@ -558,9 +558,9 @@ def test_odeint_banded_jacobian():
     def bjac_rows(y, t, c):
         return np.row_stack((np.r_[0, np.diag(c, 1)], np.diag(c)))
 
-    c = array([[-50,   75,     0],
-               [  0, -0.1,     1],
-               [  0,    0, -1e-4]])
+    c = array([[-50, 75, 0],
+               [0, -0.1, 1],
+               [0, 0, -1e-4]])
 
     y0 = arange(3)
     t = np.linspace(0, 50, 6)

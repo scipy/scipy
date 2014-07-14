@@ -11,7 +11,7 @@ from __future__ import division, print_function, absolute_import
 from numpy import zeros, transpose, newaxis, shape, float32, float64, \
                   complex64, complex128, arange, array, common_type, conjugate
 from numpy.testing import assert_equal, assert_array_almost_equal, \
-        run_module_suite, TestCase
+        run_module_suite, TestCase, assert_
 from scipy.lib.six import xrange
 from scipy.lib.blas import fblas
 

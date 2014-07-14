@@ -118,7 +118,7 @@ def test_boost():
         data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0j, 1),
 
         data(ellipk_, 'ellint_k_data_ipp-ellint_k_data', 0, 1),
-        data(ellipkm1, '-ellipkm1', 0, 1),
+        data(ellipkm1, 'ellipkm1', 0, 1),
         data(ellipe_, 'ellint_e_data_ipp-ellint_e_data', 0, 1),
         data(ellipeinc_, 'ellint_e2_data_ipp-ellint_e2_data', (0,1), 2, rtol=1e-14),
 
@@ -134,7 +134,7 @@ def test_boost():
 
         data(erfinv, 'erf_inv_data_ipp-erf_inv_data', 0, 1),
         data(erfcinv, 'erfc_inv_data_ipp-erfc_inv_data', 0, 1),
-        #data(erfcinv, 'erfc_inv_big_data_ipp-erfc_inv_big_data', 0, 1),
+        data(erfcinv, 'erfc_inv_big_data_ipp-erfc_inv_big_data2', 0, 1),
 
         data(exp1, 'expint_1_data_ipp-expint_1_data', 1, 2, rtol=1e-13),
         data(exp1, 'expint_1_data_ipp-expint_1_data', 1j, 2, rtol=5e-9),

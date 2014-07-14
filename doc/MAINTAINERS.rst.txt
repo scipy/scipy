@@ -410,15 +410,8 @@ Maintainers:
 Continuous Integration server
 `````````````````````````````
 
-Maintainers:
-
-    - Stefan van der Walt
-    - Chris Ball
-
-Status:
-
-This server is in the process of being set up.  After testing the setup is
-done, a request for build slaves will be sent to the scipy-dev mailing list.
+TravisCI is the only CI server used at the moment; it tests with all Python
+versions on Ubuntu.
 
 
 Build tools

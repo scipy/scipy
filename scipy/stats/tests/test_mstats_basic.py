@@ -1,5 +1,5 @@
 """
-Tests for the stats.mstats module (support for maskd arrays)
+Tests for the stats.mstats module (support for masked arrays)
 """
 from __future__ import division, print_function, absolute_import
 
@@ -13,6 +13,7 @@ from numpy.ma import masked, nomask
 import scipy.stats.mstats as mstats
 from scipy import stats
 from numpy.testing import TestCase, run_module_suite
+from numpy.testing.decorators import skipif
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
     assert_allclose, assert_raises)
@@ -44,7 +45,7 @@ class TestGMean(TestCase):
         a = (1,2,3,4)
         actual = mstats.gmean(a)
         desired = np.power(1*2*3*4,1./4.)
-        assert_almost_equal(actual, desired,decimal=14)
+        assert_almost_equal(actual, desired, decimal=14)
 
         desired1 = mstats.gmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
@@ -58,9 +59,17 @@ class TestGMean(TestCase):
         desired1 = mstats.gmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
 
+    @skipif(not hasattr(np, 'float96'), 'cannot find float96 so skipping')
+    def test_1D_float96(self):
+        a = ma.array((1,2,3,4), mask=(0,0,0,1))
+        actual_dt = mstats.gmean(a, dtype=np.float96)
+        desired_dt = np.power(1 * 2 * 3, 1. / 3.).astype(np.float96)
+        assert_almost_equal(actual_dt, desired_dt, decimal=14)
+        assert_(actual_dt.dtype == desired_dt.dtype)
+
     def test_2D(self):
-        a = ma.array(((1,2,3,4),(1,2,3,4),(1,2,3,4)),
-                     mask=((0,0,0,0),(1,0,0,1),(0,1,1,0)))
+        a = ma.array(((1, 2, 3, 4), (1, 2, 3, 4), (1, 2, 3, 4)),
+                     mask=((0, 0, 0, 0), (1, 0, 0, 1), (0, 1, 1, 0)))
         actual = mstats.gmean(a)
         desired = np.array((1,2,3,4))
         assert_array_almost_equal(actual, desired, decimal=14)
@@ -91,6 +100,15 @@ class TestHMean(TestCase):
         desired1 = mstats.hmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
 
+    @skipif(not hasattr(np, 'float96'), 'cannot find float96 so skipping')
+    def test_1D_float96(self):
+        a = ma.array((1,2,3,4), mask=(0,0,0,1))
+        actual_dt = mstats.hmean(a, dtype=np.float96)
+        desired_dt = np.asarray(3. / (1./1 + 1./2 + 1./3),
+                                dtype=np.float96)
+        assert_almost_equal(actual_dt, desired_dt, decimal=14)
+        assert_(actual_dt.dtype == desired_dt.dtype)
+
     def test_2D(self):
         a = ma.array(((1,2,3,4),(1,2,3,4),(1,2,3,4)),
                      mask=((0,0,0,0),(1,0,0,1),(0,1,1,0)))
@@ -107,27 +125,31 @@ class TestHMean(TestCase):
 
 
 class TestRanking(TestCase):
-
     def __init__(self, *args, **kwargs):
         TestCase.__init__(self, *args, **kwargs)
 
     def test_ranking(self):
         x = ma.array([0,1,1,1,2,3,4,5,5,6,])
-        assert_almost_equal(mstats.rankdata(x),[1,3,3,3,5,6,7,8.5,8.5,10])
+        assert_almost_equal(mstats.rankdata(x),
+                           [1,3,3,3,5,6,7,8.5,8.5,10])
         x[[3,4]] = masked
-        assert_almost_equal(mstats.rankdata(x),[1,2.5,2.5,0,0,4,5,6.5,6.5,8])
-        assert_almost_equal(mstats.rankdata(x,use_missing=True),
+        assert_almost_equal(mstats.rankdata(x),
+                           [1,2.5,2.5,0,0,4,5,6.5,6.5,8])
+        assert_almost_equal(mstats.rankdata(x, use_missing=True),
                             [1,2.5,2.5,4.5,4.5,4,5,6.5,6.5,8])
         x = ma.array([0,1,5,1,2,4,3,5,1,6,])
-        assert_almost_equal(mstats.rankdata(x),[1,3,8.5,3,5,7,6,8.5,3,10])
+        assert_almost_equal(mstats.rankdata(x),
+                           [1,3,8.5,3,5,7,6,8.5,3,10])
         x = ma.array([[0,1,1,1,2], [3,4,5,5,6,]])
-        assert_almost_equal(mstats.rankdata(x),[[1,3,3,3,5],[6,7,8.5,8.5,10]])
-        assert_almost_equal(mstats.rankdata(x,axis=1),[[1,3,3,3,5],[1,2,3.5,3.5,5]])
-        assert_almost_equal(mstats.rankdata(x,axis=0),[[1,1,1,1,1],[2,2,2,2,2,]])
+        assert_almost_equal(mstats.rankdata(x),
+                            [[1,3,3,3,5], [6,7,8.5,8.5,10]])
+        assert_almost_equal(mstats.rankdata(x, axis=1),
+                           [[1,3,3,3,5], [1,2,3.5,3.5,5]])
+        assert_almost_equal(mstats.rankdata(x,axis=0),
+                           [[1,1,1,1,1], [2,2,2,2,2,]])
 
 
 class TestCorr(TestCase):
-
     def test_pearsonr(self):
         # Tests some computations of Pearson's r
         x = ma.arange(10)
@@ -233,25 +255,28 @@ class TestTrimming(TestCase):
 
         a = ma.arange(12)
         a[[0,-1]] = a[5] = masked
-        assert_equal(mstats.trim(a,(2,8)),
-                     [None,None,2,3,4,None,6,7,8,None,None,None])
+        assert_equal(mstats.trim(a, (2,8)),
+                     [None, None, 2, 3, 4, None, 6, 7, 8, None, None, None])
 
-        x = ma.arange(100).reshape(10,10)
-        trimx = mstats.trim(x,(0.1,0.2),relative=True,axis=None)
-        assert_equal(trimx._mask.ravel(),[1]*10+[0]*70+[1]*20)
-        trimx = mstats.trim(x,(0.1,0.2),relative=True,axis=0)
-        assert_equal(trimx._mask.ravel(),[1]*10+[0]*70+[1]*20)
-        trimx = mstats.trim(x,(0.1,0.2),relative=True,axis=-1)
-        assert_equal(trimx._mask.T.ravel(),[1]*10+[0]*70+[1]*20)
+        x = ma.arange(100).reshape(10, 10)
+        expected = [1]*10 + [0]*70 + [1]*20
+        trimx = mstats.trim(x, (0.1,0.2), relative=True, axis=None)
+        assert_equal(trimx._mask.ravel(), expected)
+        trimx = mstats.trim(x, (0.1,0.2), relative=True, axis=0)
+        assert_equal(trimx._mask.ravel(), expected)
+        trimx = mstats.trim(x, (0.1,0.2), relative=True, axis=-1)
+        assert_equal(trimx._mask.T.ravel(), expected)
 
-        x = ma.arange(110).reshape(11,10)
+        # same as above, but with an extra masked row inserted
+        x = ma.arange(110).reshape(11, 10)
         x[1] = masked
-        trimx = mstats.trim(x,(0.1,0.2),relative=True,axis=None)
-        assert_equal(trimx._mask.ravel(),[1]*20+[0]*70+[1]*20)
-        trimx = mstats.trim(x,(0.1,0.2),relative=True,axis=0)
-        assert_equal(trimx._mask.ravel(),[1]*20+[0]*70+[1]*20)
-        trimx = mstats.trim(x.T,(0.1,0.2),relative=True,axis=-1)
-        assert_equal(trimx.T._mask.ravel(),[1]*20+[0]*70+[1]*20)
+        expected = [1]*20 + [0]*70 + [1]*20
+        trimx = mstats.trim(x, (0.1,0.2), relative=True, axis=None)
+        assert_equal(trimx._mask.ravel(), expected)
+        trimx = mstats.trim(x, (0.1,0.2), relative=True, axis=0)
+        assert_equal(trimx._mask.ravel(), expected)
+        trimx = mstats.trim(x.T, (0.1,0.2), relative=True, axis=-1)
+        assert_equal(trimx.T._mask.ravel(), expected)
 
     def test_trim_old(self):
         x = ma.arange(100)
@@ -427,7 +452,7 @@ class TestVariability(TestCase):
         # This is not in R, so used:
         #     mean(testcase, axis=0) / (sqrt(var(testcase)*3/4))
         y = mstats.signaltonoise(self.testcase)
-        assert_almost_equal(y,2.236067977)
+        assert_almost_equal(y, 2.236067977)
 
     def test_sem(self):
         # This is not in R, so used: sqrt(var(testcase)*3/4) / sqrt(3)
@@ -510,6 +535,27 @@ def test_regress_simple():
     assert_almost_equal(intercept, 10.211269918932341)
 
 
+def test_theilslopes():
+    # Test for basic slope and intercept.
+    slope, intercept, lower, upper = mstats.theilslopes([0,1,1])
+    assert_almost_equal(slope, 0.5)
+    assert_almost_equal(intercept, 0.5)
+
+    # Test for correct masking.
+    y = np.ma.array([0,1,100,1], mask=[False, False, True, False])
+    slope, intercept, lower, upper = mstats.theilslopes(y)
+    assert_almost_equal(slope, 1./3)
+    assert_almost_equal(intercept, 2./3)
+
+    # Test of confidence intervals from example in Sen (1968).
+    x = [1, 2, 3, 4, 10, 12, 18]
+    y = [9, 15, 19, 20, 45, 55, 78]
+    slope, intercept, lower, upper = mstats.theilslopes(y, x, 0.07)
+    assert_almost_equal(slope, 4)
+    assert_almost_equal(upper, 4.38, decimal=2)
+    assert_almost_equal(lower, 3.71, decimal=2)
+
+
 def test_plotting_positions():
     # Regression test for #1256
     pos = mstats.plotting_positions(np.arange(3), 0, 0)
@@ -520,8 +566,10 @@ class TestNormalitytests():
 
     def test_vs_nonmasked(self):
         x = np.array((-2,-1,0,1,2,3)*4)**2
-        assert_array_almost_equal(mstats.normaltest(x), stats.normaltest(x))
-        assert_array_almost_equal(mstats.skewtest(x), stats.skewtest(x))
+        assert_array_almost_equal(mstats.normaltest(x),
+                                  stats.normaltest(x))
+        assert_array_almost_equal(mstats.skewtest(x),
+                                  stats.skewtest(x))
         assert_array_almost_equal(mstats.kurtosistest(x),
                                   stats.kurtosistest(x))
 
@@ -561,7 +609,6 @@ class TestNormalitytests():
 
 #TODO: for all ttest functions, add tests with masked array inputs
 class TestTtest_rel():
-
     def test_vs_nonmasked(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
@@ -598,7 +645,6 @@ class TestTtest_rel():
 
 
 class TestTtest_ind():
-
     def test_vs_nonmasked(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
@@ -626,7 +672,6 @@ class TestTtest_ind():
 
 
 class TestTtest_1samp():
-
     def test_vs_nonmasked(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
@@ -651,6 +696,359 @@ class TestTtest_1samp():
     def test_empty(self):
         res1 = mstats.ttest_1samp([], 1)
         assert_(np.all(np.isnan(res1)))
+
+
+class TestCompareWithStats(TestCase):
+    """
+    Class to compare mstats results with stats results.
+
+    It is in general assumed that scipy.stats is at a more mature stage than
+    stats.mstats.  If a routine in mstats results in similar results like in
+    scipy.stats, this is considered also as a proper validation of scipy.mstats
+    routine.
+
+    Different sample sizes are used for testing, as some problems between stats
+    and mstats are dependent on sample size.
+
+    Author: Alexander Loew
+
+    NOTE that some tests fail. This might be caused by
+    a) actual differences or bugs between stats and mstats
+    b) numerical inaccuracies
+    c) different definitions of routine interfaces
+
+    These failures need to be checked. Current workaround is to have disabled these tests,
+    but issuing reports on scipy-dev
+
+    """
+    def get_n(self):
+        """ Returns list of sample sizes to be used for comparison. """
+        return [1000, 100, 10, 5]
+
+    def generate_xy_sample(self, n):
+        # This routine generates numpy arrays and corresponding masked arrays
+        # with the same data, but additional masked values
+        np.random.seed(1234567)
+        x = np.random.randn(n)
+        y = x + np.random.randn(n)
+        xm = np.ones(len(x) + 5) * 1e16
+        ym = np.ones(len(y) + 5) * 1e16
+        xm[0:len(x)] = x
+        ym[0:len(y)] = y
+        mask = xm > 9e15
+        xm = np.ma.array(xm, mask=mask)
+        ym = np.ma.array(ym, mask=mask)
+        return x, y, xm, ym
+
+    def generate_xy_sample2D(self, n, nx):
+        x = np.ones((n, nx)) * np.nan
+        y = np.ones((n, nx)) * np.nan
+        xm = np.ones((n+5, nx)) * np.nan
+        ym = np.ones((n+5, nx)) * np.nan
+
+        for i in range(nx):
+            x[:,i], y[:,i], dx, dy = self.generate_xy_sample(n)
+
+        xm[0:n, :] = x[0:n]
+        ym[0:n, :] = y[0:n]
+        xm = np.ma.array(xm, mask=np.isnan(xm))
+        ym = np.ma.array(ym, mask=np.isnan(ym))
+        return x, y, xm, ym
+
+    def test_linregress(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+            res1 = stats.linregress(x, y)
+            res2 = stats.mstats.linregress(xm, ym)
+            assert_allclose(np.asarray(res1), np.asarray(res2))
+
+    def test_pearsonr(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+            r, p = stats.pearsonr(x, y)
+            rm, pm = stats.mstats.pearsonr(xm, ym)
+
+            assert_almost_equal(r, rm, decimal=14)
+            assert_almost_equal(p, pm, decimal=14)
+
+    def test_spearmanr(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+            r, p = stats.spearmanr(x, y)
+            rm, pm = stats.mstats.spearmanr(xm, ym)
+            assert_almost_equal(r, rm, 14)
+            assert_almost_equal(p, pm, 14)
+
+    def test_gmean(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+            r = stats.gmean(abs(x))
+            rm = stats.mstats.gmean(abs(xm))
+            assert_allclose(r, rm, rtol=1e-13)
+
+            r = stats.gmean(abs(y))
+            rm = stats.mstats.gmean(abs(ym))
+            assert_allclose(r, rm, rtol=1e-13)
+
+    def test_hmean(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+
+            r = stats.hmean(abs(x))
+            rm = stats.mstats.hmean(abs(xm))
+            assert_almost_equal(r, rm, 10)
+
+            r = stats.hmean(abs(y))
+            rm = stats.mstats.hmean(abs(ym))
+            assert_almost_equal(r, rm, 10)
+
+    def test_skew(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+
+            r = stats.skew(x)
+            rm = stats.mstats.skew(xm)
+            assert_almost_equal(r, rm, 10)
+
+            r = stats.skew(y)
+            rm = stats.mstats.skew(ym)
+            assert_almost_equal(r, rm, 10)
+
+    def test_moment(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+
+            r = stats.moment(x)
+            rm = stats.mstats.moment(xm)
+            assert_almost_equal(r, rm, 10)
+
+            r = stats.moment(y)
+            rm = stats.mstats.moment(ym)
+            assert_almost_equal(r, rm, 10)
+
+    def test_signaltonoise(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+
+            r = stats.signaltonoise(x)
+            rm = stats.mstats.signaltonoise(xm)
+            assert_almost_equal(r, rm, 10)
+
+            r = stats.signaltonoise(y)
+            rm = stats.mstats.signaltonoise(ym)
+            assert_almost_equal(r, rm, 10)
+
+    def test_betai(self):
+        np.random.seed(12345)
+        for i in range(10):
+            a = np.random.rand() * 5.
+            b = np.random.rand() * 200.
+            assert_equal(stats.betai(a, b, 0.), 0.)
+            assert_equal(stats.betai(a, b, 1.), 1.)
+            assert_equal(stats.mstats.betai(a, b, 0.), 0.)
+            assert_equal(stats.mstats.betai(a, b, 1.), 1.)
+            x = np.random.rand()
+            assert_almost_equal(stats.betai(a, b, x),
+                                stats.mstats.betai(a, b, x), decimal=13)
+
+    def test_zscore(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+
+            #reference solution
+            zx = (x - x.mean()) / x.std()
+            zy = (y - y.mean()) / y.std()
+
+            #validate stats
+            assert_allclose(stats.zscore(x), zx, rtol=1e-10)
+            assert_allclose(stats.zscore(y), zy, rtol=1e-10)
+
+            #compare stats and mstats
+            assert_allclose(stats.zscore(x), stats.mstats.zscore(xm[0:len(x)]),
+                            rtol=1e-10)
+            assert_allclose(stats.zscore(y), stats.mstats.zscore(ym[0:len(y)]),
+                            rtol=1e-10)
+
+    def test_kurtosis(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+            r = stats.kurtosis(x)
+            rm = stats.mstats.kurtosis(xm)
+            assert_almost_equal(r, rm, 10)
+
+            r = stats.kurtosis(y)
+            rm = stats.mstats.kurtosis(ym)
+            assert_almost_equal(r, rm, 10)
+
+    def test_sem(self):
+        # example from stats.sem doc
+        a = np.arange(20).reshape(5,4)
+        am = np.ma.array(a)
+        r = stats.sem(a,ddof=1)
+        rm = stats.mstats.sem(am, ddof=1)
+
+        assert_allclose(r, 2.82842712, atol=1e-5)
+        assert_allclose(rm, 2.82842712, atol=1e-5)
+
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+            assert_almost_equal(stats.mstats.sem(xm, axis=None, ddof=0),
+                                stats.sem(x, axis=None, ddof=0), decimal=13)
+            assert_almost_equal(stats.mstats.sem(ym, axis=None, ddof=0),
+                                stats.sem(y, axis=None, ddof=0), decimal=13)
+            assert_almost_equal(stats.mstats.sem(xm, axis=None, ddof=1),
+                                stats.sem(x, axis=None, ddof=1), decimal=13)
+            assert_almost_equal(stats.mstats.sem(ym, axis=None, ddof=1),
+                                stats.sem(y, axis=None, ddof=1), decimal=13)
+
+    def test_describe(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+            r = stats.describe(x, ddof=1)
+            rm = stats.mstats.describe(xm, ddof=1)
+            for ii in range(6):
+                assert_almost_equal(np.asarray(r[ii]),
+                                    np.asarray(rm[ii]),
+                                    decimal=12)
+
+    def test_rankdata(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+            r = stats.rankdata(x)
+            rm = stats.mstats.rankdata(x)
+            assert_allclose(r, rm)
+
+    def test_tmean(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+            assert_almost_equal(stats.tmean(x),stats.mstats.tmean(xm), 14)
+            assert_almost_equal(stats.tmean(y),stats.mstats.tmean(ym), 14)
+
+    def test_tmax(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+            assert_almost_equal(stats.tmax(x,2.),
+                                stats.mstats.tmax(xm,2.), 10)
+            assert_almost_equal(stats.tmax(y,2.),
+                                stats.mstats.tmax(ym,2.), 10)
+
+    def test_tmin(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+            assert_equal(stats.tmin(x),stats.mstats.tmin(xm))
+            assert_equal(stats.tmin(y),stats.mstats.tmin(ym))
+
+            assert_almost_equal(stats.tmin(x,lowerlimit=-1.),
+                                stats.mstats.tmin(xm,lowerlimit=-1.), 10)
+            assert_almost_equal(stats.tmin(y,lowerlimit=-1.),
+                                stats.mstats.tmin(ym,lowerlimit=-1.), 10)
+
+    def test_zmap(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+            z = stats.zmap(x,y)
+            zm = stats.mstats.zmap(xm,ym)
+            assert_allclose(z, zm[0:len(z)], atol=1e-10)
+
+    def test_variation(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+            assert_almost_equal(stats.variation(x), stats.mstats.variation(xm),
+                                decimal=12)
+            assert_almost_equal(stats.variation(y), stats.mstats.variation(ym),
+                                decimal=12)
+
+    def test_tvar(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+            assert_almost_equal(stats.tvar(x), stats.mstats.tvar(xm),
+                                decimal=12)
+            assert_almost_equal(stats.tvar(y), stats.mstats.tvar(ym),
+                                decimal=12)
+
+    def test_trimboth(self):
+        a = np.arange(20)
+        b = stats.trimboth(a, 0.1)
+        bm = stats.mstats.trimboth(a, 0.1)
+        assert_allclose(b, bm.data[~bm.mask])
+
+    def test_tsem(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+            assert_almost_equal(stats.tsem(x),stats.mstats.tsem(xm), decimal=14)
+            assert_almost_equal(stats.tsem(y),stats.mstats.tsem(ym), decimal=14)
+            assert_almost_equal(stats.tsem(x,limits=(-2.,2.)),
+                                stats.mstats.tsem(xm,limits=(-2.,2.)),
+                                decimal=14)
+
+    def test_skewtest(self):
+        # this test is for 1D data
+        for n in self.get_n():
+            if n > 8:
+                x, y, xm, ym = self.generate_xy_sample(n)
+                r = stats.skewtest(x)
+                rm = stats.mstats.skewtest(xm)
+                assert_equal(r[0], rm[0])
+                # TODO this test is not performed as it is a known issue that
+                # mstats returns a slightly different p-value what is a bit
+                # strange is that other tests like test_maskedarray_input don't
+                # fail!
+                #~ assert_almost_equal(r[1], rm[1])
+
+    def test_skewtest_2D_notmasked(self):
+        # a normal ndarray is passed to the masked function
+        x = np.random.random((20, 2)) * 20.
+        r = stats.skewtest(x)
+        rm = stats.mstats.skewtest(x)
+        assert_allclose(np.asarray(r), np.asarray(rm))
+
+    def test_skewtest_2D_WithMask(self):
+        nx = 2
+        for n in self.get_n():
+            if n > 8:
+                x, y, xm, ym = self.generate_xy_sample2D(n, nx)
+                r = stats.skewtest(x)
+                rm = stats.mstats.skewtest(xm)
+
+                assert_equal(r[0][0],rm[0][0])
+                assert_equal(r[0][1],rm[0][1])
+
+    def test_normaltest(self):
+        np.seterr(over='raise')
+        for n in self.get_n():
+            if n > 8:
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('ignore', category=UserWarning)
+                    x, y, xm, ym = self.generate_xy_sample(n)
+                    r = stats.normaltest(x)
+                    rm = stats.mstats.normaltest(xm)
+                    assert_allclose(np.asarray(r), np.asarray(rm))
+
+    def test_find_repeats(self):
+        x = np.asarray([1,1,2,2,3,3,3,4,4,4,4]).astype('float')
+        tmp = np.asarray([1,1,2,2,3,3,3,4,4,4,4,5,5,5,5]).astype('float')
+        mask = (tmp == 5.)
+        xm = np.ma.array(tmp, mask=mask)
+
+        r = stats.find_repeats(x)
+        rm = stats.mstats.find_repeats(xm)
+
+        assert_equal(r,rm)
+
+    def test_kendalltau(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+            r = stats.kendalltau(x, y)
+            rm = stats.mstats.kendalltau(xm, ym)
+            assert_almost_equal(r[0], rm[0], decimal=10)
+            assert_almost_equal(r[1], rm[1], decimal=7)
+
+    def test_obrientransform(self):
+        for n in self.get_n():
+            x, y, xm, ym = self.generate_xy_sample(n)
+            r = stats.obrientransform(x)
+            rm = stats.mstats.obrientransform(xm)
+            assert_almost_equal(r.T, rm[0:len(x)])
 
 
 if __name__ == "__main__":

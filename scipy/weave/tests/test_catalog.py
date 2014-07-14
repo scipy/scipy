@@ -2,17 +2,21 @@ from __future__ import absolute_import, print_function
 
 import sys
 import os
+import re
+import glob
+import string
 import stat
 import tempfile
 
 from distutils.dir_util import remove_tree
 
-from numpy.testing import TestCase, assert_, dec
+from numpy.testing import TestCase, assert_, run_module_suite
 from numpy.testing.noseclasses import KnownFailureTest
 
 from scipy.weave import catalog
-from weave_test_utils import clear_temp_catalog, restore_temp_catalog, \
-        empty_temp_dir, cleanup_temp_dir
+from weave_test_utils import (clear_temp_catalog, restore_temp_catalog,
+                              empty_temp_dir, cleanup_temp_dir, dec)
+
 
 skip_on_windows = dec.skipif(sys.platform == 'win32',
                              "Test works only on posix")
@@ -32,7 +36,7 @@ class TestIntermediateDir(TestCase):
     new one should be created.
     """
     def dirs_are_valid(self, wrong_dir, tmpdir):
-        """ test if new dir is created and is consistent """
+        # Test if new dir is created and is consistent.
         new_im_dir = catalog.intermediate_dir(tmpdir)
         assert_(not samefile(new_im_dir, wrong_dir))
         new_im_dir2 = catalog.intermediate_dir(tmpdir)
@@ -40,7 +44,7 @@ class TestIntermediateDir(TestCase):
 
     @skip_on_windows
     def test_ownership(self):
-        """ test if intermediate dir is owned by correct user """
+        # Test if intermediate dir is owned by correct user.
         im_dir = catalog.intermediate_dir()
         im_dir_stat = os.stat(im_dir)
         proc_uid = os.getuid()
@@ -50,10 +54,8 @@ class TestIntermediateDir(TestCase):
 
     @skip_on_windows
     def test_incorrect_ownership(self):
-        """
-        test if new intermediate dir is created when there is only one
-        im dir owned by improper user
-        """
+        # Test if new intermediate dir is created when there is only one
+        # im dir owned by improper user.
         import pwd
         tmpdir = tempfile.mkdtemp()
         try:
@@ -72,7 +74,7 @@ class TestIntermediateDir(TestCase):
 
     @skip_on_windows
     def test_permissions(self):
-        """ im dir should have permissions 0700 """
+        # im dir should have permissions 0700
         im_dir = catalog.intermediate_dir()
         im_dir_stat = os.stat(im_dir)
         assert_(stat.S_IMODE(im_dir_stat.st_mode) == 0o0700)
@@ -81,10 +83,8 @@ class TestIntermediateDir(TestCase):
 
     @skip_on_windows
     def test_incorrect_permissions(self):
-        """
-        if permissions on existing im dir are not correct,
-        new one should be created
-        """
+        # If permissions on existing im dir are not correct,
+        # a new one should be created.
         tmpdir = tempfile.mkdtemp()
         try:
             im_dir = catalog.create_intermediate_dir(tmpdir)
@@ -100,13 +100,13 @@ class TestIntermediateDir(TestCase):
 
     @skip_on_windows
     def test_symlink(self):
-        """ im dir shouldn't be a symlink """
+        # im dir shouldn't be a symlink
         r_im_dir = os.path.dirname(catalog.intermediate_dir())
         assert_(os.path.islink(r_im_dir) is False)
 
     @skip_on_windows
     def test_symlink_raise(self):
-        """ if existing im dir is a symlink, new one should be created """
+        # If existing im dir is a symlink, new one should be created.
         tmpdir = tempfile.mkdtemp()
         try:
             im_dir = catalog.create_intermediate_dir(tmpdir)
@@ -267,12 +267,7 @@ class TestGetCatalog(TestCase):
 
     def get_test_dir(self,erase=0):
         # make sure tempdir catalog doesn't exist
-        import tempfile
-        import glob
-        #temp = tempfile.gettempdir()
-        pardir = tempfile.mktemp(suffix='cat_test')
-        if not os.path.exists(pardir):
-            os.mkdir(pardir)
+        pardir = tempfile.mkdtemp(suffix='cat_test')
         cat_glob = os.path.join(pardir,catalog.os_dependent_catalog_name()+'.*')
         cat_files = glob.glob(cat_glob)
         if erase:
@@ -339,31 +334,27 @@ class TestCatalog(TestCase):
         assert_(path == ['path1','path2','path3'])
 
     def test_build_search_order1(self):
-        """ MODULE in search path should be replaced by module_dir.
-        """
+        # MODULE in search path should be replaced by module_dir.
         q = catalog.catalog(['first','MODULE','third'])
         q.set_module_directory('second')
         order = q.build_search_order()
         assert_(order == ['first','second','third',catalog.default_dir()])
 
     def test_build_search_order2(self):
-        """ MODULE in search path should be removed if module_dir==None.
-        """
+        # MODULE in search path should be removed if module_dir==None.
         q = catalog.catalog(['first','MODULE','third'])
         order = q.build_search_order()
         assert_(order == ['first','third',catalog.default_dir()])
 
     def test_build_search_order3(self):
-        """ If MODULE is absent, module_dir shouldn't be in search path.
-        """
+        # If MODULE is absent, module_dir shouldn't be in search path.
         q = catalog.catalog(['first','second'])
         q.set_module_directory('third')
         order = q.build_search_order()
         assert_(order == ['first','second',catalog.default_dir()])
 
     def test_build_search_order4(self):
-        """ Make sure environment variable is getting used.
-        """
+        # Make sure environment variable is getting used.
         q = catalog.catalog(['first','second'])
         if sys.platform == 'win32':
             sep = ';'
@@ -375,46 +366,40 @@ class TestCatalog(TestCase):
         assert_(order == ['first','second','third','fourth','fifth',catalog.default_dir()])
 
     def test_catalog_files1(self):
-        """ Be sure we get at least one file even without specifying the path.
-        """
+        # Be sure we get at least one file even without specifying the path.
         q = catalog.catalog()
         files = q.get_catalog_files()
         assert_(len(files) == 1)
 
     def test_catalog_files2(self):
-        """ Ignore bad paths in the path.
-        """
+        # Ignore bad paths in the path.
         q = catalog.catalog()
         os.environ['PYTHONCOMPILED'] = '_some_bad_path_'
         files = q.get_catalog_files()
         assert_(len(files) == 1)
 
     def test_get_existing_files1(self):
-        """ Shouldn't get any files when temp doesn't exist and no path set.
-        """
-        clear_temp_catalog()
+        # Shouldn't get any files when temp doesn't exist and no path set.
+        backup_dir = clear_temp_catalog()
         q = catalog.catalog()
         files = q.get_existing_files()
-        restore_temp_catalog()
+        restore_temp_catalog(backup_dir)
         assert_(len(files) == 0)
 
     def test_get_existing_files2(self):
-        """ Shouldn't get a single file from the temp dir.
-        """
-        clear_temp_catalog()
+        # Shouldn't get a single file from the temp dir.
+        backup_dir = clear_temp_catalog()
         q = catalog.catalog()
         # create a dummy file
-        import os
         q.add_function('code', os.getpid)
         del q
         q = catalog.catalog()
         files = q.get_existing_files()
-        restore_temp_catalog()
+        restore_temp_catalog(backup_dir)
         assert_(len(files) == 1)
 
     def test_access_writable_file(self):
-        """ There should always be a writable file -- even if it is in temp
-        """
+        # There should always be a writable file -- even if it is in temp
         q = catalog.catalog()
         file = q.get_writable_file()
         try:
@@ -425,9 +410,8 @@ class TestCatalog(TestCase):
             os.remove(file)
 
     def test_writable_with_bad_path(self):
-        """ There should always be a writable file -- even if search paths contain
-            bad values.
-        """
+        # There should always be a writable file -- even if search paths
+        # contain bad values.
         if sys.platform == 'win32':
             sep = ';'
         else:
@@ -443,8 +427,7 @@ class TestCatalog(TestCase):
         os.remove(file)
 
     def test_writable_dir(self):
-        """ Check that we can create a file in the writable directory
-        """
+        # Check that we can create a file in the writable directory
         q = catalog.catalog()
         d = q.get_writable_dir()
         file = os.path.join(d,'some_silly_file')
@@ -456,8 +439,7 @@ class TestCatalog(TestCase):
             os.remove(file)
 
     def test_unique_module_name(self):
-        """ Check that we can create a file in the writable directory
-        """
+        # Check that we can create a file in the writable directory
         q = catalog.catalog()
         file = q.unique_module_name('bob')
         cfile1 = file+'.cpp'
@@ -475,25 +457,22 @@ class TestCatalog(TestCase):
         os.remove(cfile1)
 
     def test_add_function_persistent1(self):
-        """ Test persisting a function in the default catalog
-        """
-        clear_temp_catalog()
+        # Test persisting a function in the default catalog
+        backup_dir = clear_temp_catalog()
         q = catalog.catalog()
         # just use some already available functions
-        import string
         funcs = [string.upper, string.lower, string.find,string.replace]
         for i in funcs:
             q.add_function_persistent('code',i)
         pfuncs = q.get_cataloged_functions('code')
         # any way to clean modules???
-        restore_temp_catalog()
+        restore_temp_catalog(backup_dir)
         for i in funcs:
             assert_(i in pfuncs)
 
     def test_add_function_ordered(self):
-        clear_temp_catalog()
+        backup_dir = clear_temp_catalog()
         q = catalog.catalog()
-        import string
 
         q.add_function('f',string.upper)
         q.add_function('f',string.lower)
@@ -516,7 +495,6 @@ class TestCatalog(TestCase):
         # but different functions in a user specified directory
         user_dir = empty_temp_dir()
         s = catalog.catalog(user_dir)
-        import re
         s.add_function('fff',re.match)
         s.add_function('fff',re.purge)
         del s
@@ -528,7 +506,7 @@ class TestCatalog(TestCase):
         funcs1 = t.get_functions('f')
         funcs2 = t.get_functions('ff')
         funcs3 = t.get_functions('fff')
-        restore_temp_catalog()
+        restore_temp_catalog(backup_dir)
         # make sure everything is read back in the correct order
         # a little cheating... I'm ignoring any functions that might have
         # been read in from a prior catalog file (such as the defualt one).
@@ -547,5 +525,4 @@ class TestCatalog(TestCase):
 
 
 if __name__ == '__main__':
-    import nose
-    nose.run(argv=['', __file__])
+    run_module_suite()

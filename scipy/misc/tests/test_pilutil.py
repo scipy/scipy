@@ -1,10 +1,13 @@
 from __future__ import division, print_function, absolute_import
 
 import os.path
+import tempfile
+import shutil
 import numpy as np
 
 from numpy.testing import assert_, assert_equal, \
-        dec, decorate_methods, TestCase, run_module_suite
+        dec, decorate_methods, TestCase, run_module_suite, \
+        assert_allclose
 
 from scipy import misc
 
@@ -40,6 +43,21 @@ class TestPILUtil(TestCase):
         im2 = misc.imresize(im, (30,60), interp='nearest')
         assert_equal(im2.shape, (30,60))
 
+    def test_imresize4(self):
+        im = np.array([[1, 2],
+                       [3, 4]])
+        res = np.array([[1., 1., 1.5, 2.],
+                        [1., 1., 1.5, 2.],
+                        [2., 2., 2.5, 3.],
+                        [3., 3., 3.5, 4.]], dtype=np.float32)
+        # Check that resizing by target size, float and int are the same
+        im2 = misc.imresize(im, (4,4), mode='F')  # output size
+        im3 = misc.imresize(im, 2., mode='F')  # fraction
+        im4 = misc.imresize(im, 200, mode='F')  # percentage
+        assert_equal(im2, res)
+        assert_equal(im3, res)
+        assert_equal(im4, res)
+
     def test_bytescale(self):
         x = np.array([0,1,2], np.uint8)
         y = np.array([0,1,2])
@@ -54,6 +72,23 @@ class TestPILUtil(TestCase):
         assert_equal(res_cmincmax, [0, 0, 64, 149, 255, 255])
 
         assert_equal(misc.bytescale(np.array([3, 3, 3]), low=4), [4, 4, 4])
+
+    def test_imsave(self):
+        img = misc.imread(os.path.join(datapath, 'data', 'icon.png'))
+        tmpdir = tempfile.mkdtemp()
+        try:
+            fn1 = os.path.join(tmpdir, 'test.png')
+            fn2 = os.path.join(tmpdir, 'testimg')
+            misc.imsave(fn1, img)
+            misc.imsave(fn2, img, 'PNG')
+
+            data1 = misc.imread(fn1)
+            data2 = misc.imread(fn2)
+
+            assert_allclose(data1, img)
+            assert_allclose(data2, img)
+        finally:
+            shutil.rmtree(tmpdir)
 
 
 def tst_fromimage(filename, irange):

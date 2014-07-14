@@ -49,7 +49,7 @@ class _data_matrix(spmatrix):
             self.data *= other
             return self
         else:
-            raise NotImplementedError
+            return NotImplemented
 
     def __itruediv__(self, other):  # self /= other
         if isscalarlike(other):
@@ -57,7 +57,7 @@ class _data_matrix(spmatrix):
             self.data *= recip
             return self
         else:
-            raise NotImplementedError
+            return NotImplemented
 
     def astype(self, t):
         return self._with_data(self.data.astype(t))

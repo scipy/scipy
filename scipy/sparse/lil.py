@@ -18,13 +18,16 @@ from .sputils import getdtype, isshape, issequence, isscalarlike, ismatrix, \
 
 from warnings import warn
 from .base import SparseEfficiencyWarning
+from . import _csparsetools
 
 
 class lil_matrix(spmatrix, IndexMixin):
     """Row-based linked list sparse matrix
 
-    This is an efficient structure for constructing sparse
-    matrices incrementally.
+    This is a structure for constructing sparse matrices incrementally.
+    Note that inserting a single item can take linear time in the worst case;
+    to construct a matrix efficiently, make sure the items are pre-sorted by
+    index, per row.
 
     This can be instantiated in several ways:
         lil_matrix(D)
@@ -165,14 +168,14 @@ class lil_matrix(spmatrix, IndexMixin):
             self[:,:] = self * other
             return self
         else:
-            raise NotImplementedError
+            return NotImplemented
 
     def __itruediv__(self,other):
         if isscalarlike(other):
             self[:,:] = self / other
             return self
         else:
-            raise NotImplementedError
+            return NotImplemented
 
     # Whenever the dimensions change, empty lists should be created for each
     # row
@@ -224,80 +227,68 @@ class lil_matrix(spmatrix, IndexMixin):
         new.data[0] = self.data[i][:]
         return new
 
-    def _get1(self, i, j):
-
-        if i < 0:
-            i += self.shape[0]
-        if i < 0 or i >= self.shape[0]:
-            raise IndexError('row index out of bounds')
-
-        if j < 0:
-            j += self.shape[1]
-        if j < 0 or j >= self.shape[1]:
-            raise IndexError('column index out of bounds')
-
-        row = self.rows[i]
-        data = self.data[i]
-
-        pos = bisect_left(row, j)
-        if pos != len(data) and row[pos] == j:
-            return self.dtype.type(data[pos])
-        else:
-            return self.dtype.type(0)
-
     def __getitem__(self, index):
         """Return the element(s) index=(i, j), where j may be a slice.
         This always returns a copy for consistency, since slices into
         Python lists return copies.
         """
+
+        # Scalar fast path first
+        if isinstance(index, tuple) and len(index) == 2:
+            i, j = index
+            # Use isinstance checks for common index types; this is
+            # ~25-50% faster than isscalarlike. Other types are
+            # handled below.
+            if ((isinstance(i, int) or isinstance(i, np.integer)) and
+                    (isinstance(j, int) or isinstance(j, np.integer))):
+                v = _csparsetools.lil_get1(self.shape[0], self.shape[1],
+                                           self.rows, self.data,
+                                           i, j)
+                return self.dtype.type(v)
+
         # Utilities found in IndexMixin
         i, j = self._unpack_index(index)
 
+        # Proper check for other scalar index types
         if isscalarlike(i) and isscalarlike(j):
-            return self._get1(int(i), int(j))
+            v = _csparsetools.lil_get1(self.shape[0], self.shape[1],
+                                       self.rows, self.data,
+                                       i, j)
+            return self.dtype.type(v)
 
         i, j = self._index_to_arrays(i, j)
         if i.size == 0:
-            return lil_matrix((0,0), dtype=self.dtype)
+            return lil_matrix(i.shape, dtype=self.dtype)
 
-        return self.__class__([[self._get1(iii, jjj) for iii, jjj in
-                                zip(ii, jj)] for ii, jj in
-                               zip(i.tolist(), j.tolist())], dtype=self.dtype)
+        new = lil_matrix(i.shape, dtype=self.dtype)
 
-    def _insertat2(self, row, data, j, x):
-        """ helper for __setitem__: insert a value in the given row/data at
-        column j. """
-
-        if j < 0:  # handle negative column indices
-            j += self.shape[1]
-
-        if j < 0 or j >= self.shape[1]:
-            raise IndexError('column index out of bounds')
-
-        if not np.isscalar(x):
-            raise ValueError('setting an array element with a sequence')
-
-        try:
-            x = self.dtype.type(x)
-        except (ValueError, TypeError):
-            raise TypeError('Unable to convert value (%s) to dtype [%s]' % (x,self.dtype.name))
-
-        pos = bisect_left(row, j)
-        if x != 0:
-            if pos == len(row):
-                row.append(j)
-                data.append(x)
-            elif row[pos] != j:
-                row.insert(pos, j)
-                data.insert(pos, x)
-            else:
-                data[pos] = x
-        else:
-            if pos < len(row) and row[pos] == j:
-                del row[pos]
-                del data[pos]
+        i, j = _csparsetools.prepare_index_for_memoryview(i, j)
+        _csparsetools.lil_fancy_get(self.shape[0], self.shape[1],
+                                    self.rows, self.data,
+                                    new.rows, new.data,
+                                    i, j)
+        return new
 
     def __setitem__(self, index, x):
+        # Scalar fast path first
+        if isinstance(index, tuple) and len(index) == 2:
+            i, j = index
+            # Use isinstance checks for common index types; this is
+            # ~25-50% faster than isscalarlike. Scalar index
+            # assignment for other types is handled below together
+            # with fancy indexing.
+            if ((isinstance(i, int) or isinstance(i, np.integer)) and
+                    (isinstance(j, int) or isinstance(j, np.integer))):
+                x = self.dtype.type(x)
+                if x.size > 1:
+                    # Triggered if input was an ndarray
+                    raise ValueError("Trying to assign a sequence to an item")
+                _csparsetools.lil_insert(self.shape[0], self.shape[1],
+                                         self.rows, self.data,
+                                         i, j, x, self.dtype)
+                return
+
+        # General indexing
         i, j = self._unpack_index(index)
 
         # shortcut for common case of full matrix assign:
@@ -322,9 +313,10 @@ class lil_matrix(spmatrix, IndexMixin):
             raise ValueError("shape mismatch in assignment")
 
         # Set values
-        for ii, jj, xx in zip(i.tolist(), j.tolist(), x.tolist()):
-            for iii, jjj, xxx in zip(ii, jj, xx):
-                self._insertat2(self.rows[iii], self.data[iii], jjj, xxx)
+        i, j, x = _csparsetools.prepare_index_for_memoryview(i, j, x)
+        _csparsetools.lil_fancy_set(self.shape[0], self.shape[1],
+                                    self.rows, self.data,
+                                    i, j, x)
 
     def _mul_scalar(self, other):
         if other == 0:
@@ -336,16 +328,16 @@ class lil_matrix(spmatrix, IndexMixin):
             new = self.copy()
             new = new.astype(res_dtype)
             # Multiply this scalar by every element.
-            new.data[:] = [[val*other for val in rowvals] for
-                           rowvals in new.data]
+            for j, rowvals in enumerate(new.data):
+                new.data[j] = [val*other for val in rowvals]
         return new
 
     def __truediv__(self, other):           # self / other
         if isscalarlike(other):
             new = self.copy()
             # Divide every element by this scalar
-            new.data = [[val/other for val in rowvals] for
-                        rowvals in new.data]
+            for j, rowvals in enumerate(new.data):
+                new.data[j] = [val/other for val in rowvals]
             return new
         else:
             return self.tocsr() / other

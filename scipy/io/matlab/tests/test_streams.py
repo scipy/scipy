@@ -30,6 +30,12 @@ from scipy.io.matlab.streams import make_stream, \
     _read_into, _read_string
 
 
+fs = None
+gs = None
+cs = None
+fname = None
+
+
 def setup():
     val = b'a\x00string'
     global fs, gs, cs, fname

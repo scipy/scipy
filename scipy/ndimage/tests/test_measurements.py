@@ -111,11 +111,13 @@ class Test_measurements_select(TestCase):
             assert_(len(result) == 2)
             assert_array_equal(result[0], [0, 2])
             assert_array_equal(result[1], [0, 3])
+            assert_equal(result[1].dtype.kind, 'i')
             result = ndimage.measurements._select(x, labels=labels, index=index,
                                 find_max=True, find_max_positions=True)
             assert_(len(result) == 2)
             assert_array_equal(result[0], [1, 6])
             assert_array_equal(result[1], [1, 2])
+            assert_equal(result[1].dtype.kind, 'i')
 
 
 def test_label01():

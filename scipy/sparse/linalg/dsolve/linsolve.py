@@ -2,9 +2,10 @@ from __future__ import division, print_function, absolute_import
 
 from warnings import warn
 
+import numpy as np
 from numpy import asarray, empty, ravel, nonzero
-from scipy.sparse import isspmatrix_csc, isspmatrix_csr, isspmatrix, \
-        SparseEfficiencyWarning, csc_matrix
+from scipy.sparse import (isspmatrix_csc, isspmatrix_csr, isspmatrix,
+                          SparseEfficiencyWarning, csc_matrix)
 
 from . import _superlu
 
@@ -12,15 +13,16 @@ noScikit = False
 try:
     import scikits.umfpack as umfpack
 except ImportError:
-    from . import umfpack
     noScikit = True
 
-isUmfpack = hasattr(umfpack, 'UMFPACK_OK')
+useUmfpack = not noScikit
 
-useUmfpack = True
+__all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized',
+           'MatrixRankWarning']
 
 
-__all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized']
+class MatrixRankWarning(UserWarning):
+    pass
 
 
 def use_solver(**kwargs):
@@ -42,8 +44,7 @@ def use_solver(**kwargs):
     if 'useUmfpack' in kwargs:
         globals()['useUmfpack'] = kwargs['useUmfpack']
 
-    if isUmfpack:
-        umfpack.configure(**kwargs)
+    #TODO: pass other options to scikit
 
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
@@ -108,37 +109,45 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     use_umfpack = use_umfpack and useUmfpack
 
-    if b_is_vector:
+    if b_is_vector and use_umfpack:
         if b_is_sparse:
             b_vec = b.toarray()
         else:
             b_vec = b
         b_vec = asarray(b_vec, dtype=A.dtype).ravel()
 
-        if isUmfpack and use_umfpack:
-            if noScikit:
-                warn('scipy.sparse.linalg.dsolve.umfpack will be removed,'
-                        ' install scikits.umfpack instead', DeprecationWarning)
-            if A.dtype.char not in 'dD':
-                raise ValueError("convert matrix data to double, please, using"
-                      " .astype(), or set linsolve.useUmfpack = False")
+        if noScikit:
+            raise RuntimeError('Scikits.umfpack not installed.')
 
-            family = {'d': 'di', 'D': 'zi'}
-            umf = umfpack.UmfpackContext(family[A.dtype.char])
-            x = umf.linsolve(umfpack.UMFPACK_A, A, b_vec,
-                             autoTranspose=True)
+        if A.dtype.char not in 'dD':
+            raise ValueError("convert matrix data to double, please, using"
+                  " .astype(), or set linsolve.useUmfpack = False")
 
-        else:
+        family = {'d': 'di', 'D': 'zi'}
+        umf = umfpack.UmfpackContext(family[A.dtype.char])
+        x = umf.linsolve(umfpack.UMFPACK_A, A, b_vec,
+                         autoTranspose=True)
+    else:
+        if b_is_vector and b_is_sparse:
+            b = b.toarray()
+            b_is_sparse = False
+
+        if not b_is_sparse:
             if isspmatrix_csc(A):
                 flag = 1  # CSC format
             else:
                 flag = 0  # CSR format
+
             options = dict(ColPerm=permc_spec)
-            x = _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr, b_vec, flag,
-                              options=options)[0]
-    else:
-        # Cover the case where b is a matrix
-        if b_is_sparse:
+            x, info = _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr,
+                                    b, flag, options=options)
+            if info != 0:
+                warn("Matrix is exactly singular", MatrixRankWarning)
+                x.fill(np.nan)
+            if b_is_vector:
+                x = x.ravel()
+        else:
+            # b is sparse
             Afactsolve = factorized(A)
             tempj = empty(M, dtype=int)
             x = A.__class__(b.shape)
@@ -155,12 +164,6 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
                 tempj.fill(j)
                 x = x + A.__class__((xj[w], (w, tempj[:len(w)])),
                                     shape=b.shape, dtype=A.dtype)
-        else:
-            # Dense b
-            Afactsolve = factorized(A)
-            x = empty(b.shape, dtype=A.dtype)
-            for j in range(b.shape[1]):
-                x[:,j] = Afactsolve(b[:,j])
 
     return x
 
@@ -203,7 +206,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     Returns
     -------
-    invA : scipy.sparse.linalg.dsolve._superlu.SciPyLUType
+    invA : scipy.sparse.linalg.SuperLU
         Object, which has a ``solve`` method.
 
     See also
@@ -270,7 +273,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     Returns
     -------
-    invA_approx : scipy.sparse.linalg.dsolve._superlu.SciPyLUType
+    invA_approx : scipy.sparse.linalg.SuperLU
         Object, which has a ``solve`` method.
 
     See also
@@ -334,10 +337,9 @@ def factorized(A):
     array([ 1., -2., -2.])
 
     """
-    if isUmfpack and useUmfpack:
+    if useUmfpack:
         if noScikit:
-            warn('scipy.sparse.linalg.dsolve.umfpack will be removed,'
-                    ' install scikits.umfpack instead', DeprecationWarning)
+            raise RuntimeError('Scikits.umfpack not installed.')
 
         if not isspmatrix_csc(A):
             A = csc_matrix(A)

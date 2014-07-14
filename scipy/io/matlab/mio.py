@@ -13,8 +13,7 @@ from .miobase import get_matfile_version, docfiller
 from .mio4 import MatFile4Reader, MatFile4Writer
 from .mio5 import MatFile5Reader, MatFile5Writer
 
-__all__ = ['find_mat_file', 'mat_reader_factory', 'loadmat', 'savemat',
-           'whosmat']
+__all__ = ['mat_reader_factory', 'loadmat', 'savemat', 'whosmat']
 
 
 def _open_file(file_like, appendmat):
@@ -25,8 +24,11 @@ def _open_file(file_like, appendmat):
         except IOError as e:
             if appendmat and not file_like.endswith('.mat'):
                 file_like += '.mat'
-                return open(file_like, 'rb')
-            raise IOError(e)
+                try:
+                    return open(file_like, 'rb')
+                except IOError:
+                    pass  # Rethrow the original exception.
+            raise
     # not a string - maybe file-like object
     try:
         file_like.read(0)

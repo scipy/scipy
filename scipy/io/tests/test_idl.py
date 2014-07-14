@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 from os import path
-import warnings
+
 
 DATA_PATH = path.join(path.dirname(__file__), 'data')
 
@@ -116,9 +116,7 @@ class TestCompressed(TestScalars):
     # Test that compressed .sav files can be read in
 
     def test_compressed(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message="warning: empty strings")
-            s = readsav(path.join(DATA_PATH, 'various_compressed.sav'), verbose=False)
+        s = readsav(path.join(DATA_PATH, 'various_compressed.sav'), verbose=False)
 
         assert_identical(s.i8u, np.uint8(234))
         assert_identical(s.f32, np.float32(-3.1234567e+37))
@@ -380,12 +378,8 @@ class TestPointerStructures:
             assert_(np.all(vect_id(s.arrays_rep.h[i]) == id(s.arrays_rep.h[0][0])))
 
     def test_arrays_replicated_3d(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                    message="warning: multi-dimensional structures")
-            s = readsav(path.join(DATA_PATH,
-                                  'struct_pointer_arrays_replicated_3d.sav'),
-                        verbose=False)
+        pth = path.join(DATA_PATH, 'struct_pointer_arrays_replicated_3d.sav')
+        s = readsav(pth, verbose=False)
 
         # Check column types
         assert_(s.arrays_rep.g.dtype.type is np.object_)

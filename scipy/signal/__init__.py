@@ -33,7 +33,7 @@ B-splines
    cspline2d      -- Coefficients for 2-D cubic (3rd order) B-spline.
    qspline2d      -- Coefficients for 2-D quadratic (2nd order) B-spline.
    cspline1d_eval -- Evaluate a cubic spline at the given points.
-   cspline1d_eval -- Evaluate a quadratic spline at the given points.
+   qspline1d_eval -- Evaluate a quadratic spline at the given points.
    spline_filter  -- Smoothing spline (cubic) filtering of a rank-2 array.
 
 Filtering
@@ -58,7 +58,8 @@ Filtering
 
    deconvolve    -- 1-d deconvolution using lfilter.
 
-   hilbert       -- Compute the analytic signal of a 1-d signal.
+   hilbert       -- Compute 1-D analytic signal, using the Hilbert transform.
+   hilbert2      -- Compute 2-D analytic signal, using the Hilbert transform.
    get_window    -- Create FIR window.
 
    decimate      -- Downsample a signal.
@@ -73,6 +74,7 @@ Filter design
 
    bilinear      -- Digital filter from an analog filter using
                     -- the bilinear transform.
+   findfreqs     -- Find array of frequencies for computing filter response.
    firwin        -- Windowed FIR filter design, with frequency response
                     -- defined as pass and stop bands.
    firwin2       -- Windowed FIR filter design, with arbitrary frequency
@@ -95,7 +97,29 @@ Filter design
    unique_roots  -- Unique roots and their multiplicities.
    residue       -- Partial fraction expansion of b(s) / a(s).
    residuez      -- Partial fraction expansion of b(z) / a(z).
-   invres        -- Inverse partial fraction expansion.
+   invres        -- Inverse partial fraction expansion for analog filter.
+   invresz       -- Inverse partial fraction expansion for digital filter.
+
+Lower-level filter design functions:
+
+.. autosummary::
+   :toctree: generated/
+
+   abcd_normalize -- Check state-space matrices and ensure they are rank-2.
+   band_stop_obj  -- Band Stop Objective Function for order minimization.
+   besselap       -- Return (z,p,k) for analog prototype of Bessel filter.
+   buttap         -- Return (z,p,k) for analog prototype of Butterworth filter.
+   cheb1ap        -- Return (z,p,k) for type I Chebyshev filter.
+   cheb2ap        -- Return (z,p,k) for type II Chebyshev filter.
+   cmplx_sort     -- Sort roots based on magnitude.
+   ellipap        -- Return (z,p,k) for analog prototype of elliptic filter.
+   lp2bp          -- Transform a lowpass filter prototype to a bandpass filter.
+   lp2bs          -- Transform a lowpass filter prototype to a bandstop filter.
+   lp2hp          -- Transform a lowpass filter prototype to a highpass filter.
+   lp2lp          -- Transform a lowpass filter prototype to a lowpass filter.
+   normalize      -- Normalize polynomial representation of a transfer function.
+
+
 
 Matlab-style IIR filter design
 ==============================
@@ -161,6 +185,7 @@ Waveforms
 
    chirp       -- Frequency swept cosine signal, with several freq functions.
    gausspulse  -- Gaussian modulated sinusoid
+   max_len_seq -- Maximum length sequence
    sawtooth    -- Periodic sawtooth
    square      -- Square wave
    sweep_poly  -- Frequency swept cosine signal; freq is arbitrary polynomial
@@ -231,6 +256,7 @@ from __future__ import division, print_function, absolute_import
 
 from . import sigtools
 from .waveforms import *
+from ._max_len_seq import max_len_seq
 
 # The spline module (a C extension) provides:
 #     cspline2d, qspline2d, sepfir2d, symiirord1, symiirord2
@@ -252,3 +278,4 @@ from ._peak_finding import *
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
 test = Tester().test
+bench = Tester().bench

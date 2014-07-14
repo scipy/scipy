@@ -112,6 +112,7 @@ Correlation Functions
    pointbiserialr
    kendalltau
    linregress
+   theilslopes
 
 Inferential Stats
 -----------------
@@ -187,25 +188,23 @@ from . import distributions
 
 from ._rank import rankdata, tiecorrect
 
-__all__ = ['find_repeats', 'gmean', 'hmean', 'mode',
-           'tmean', 'tvar', 'tmin', 'tmax', 'tstd', 'tsem',
-           'moment', 'variation', 'skew', 'kurtosis', 'describe',
-           'skewtest', 'kurtosistest', 'normaltest', 'jarque_bera',
-           'itemfreq', 'scoreatpercentile', 'percentileofscore',
-           'histogram', 'histogram2', 'cumfreq', 'relfreq',
-           'obrientransform', 'signaltonoise', 'sem', 'zmap', 'zscore',
-           'threshold', 'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
-           'f_oneway', 'pearsonr', 'fisher_exact',
-           'spearmanr', 'pointbiserialr', 'kendalltau', 'linregress',
-           'ttest_1samp', 'ttest_ind', 'ttest_rel', 'kstest',
-           'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
+__all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
+           'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
+           'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
+           'normaltest', 'jarque_bera', 'itemfreq',
+           'scoreatpercentile', 'percentileofscore', 'histogram',
+           'histogram2', 'cumfreq', 'relfreq', 'obrientransform',
+           'signaltonoise', 'sem', 'zmap', 'zscore', 'threshold',
+           'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
+           'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
+           'kendalltau', 'linregress', 'theilslopes', 'ttest_1samp',
+           'ttest_ind', 'ttest_rel', 'kstest', 'chisquare',
+           'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'zprob', 'chisqprob', 'ksprob', 'fprob', 'betai',
            'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
-           'ss', 'square_of_sums',
-           'fastsort', 'rankdata',
-           'nanmean', 'nanstd', 'nanmedian',
-           ]
+           'ss', 'square_of_sums', 'fastsort', 'rankdata', 'nanmean',
+           'nanstd', 'nanmedian', ]
 
 
 def _chk_asarray(a, axis):
@@ -386,11 +385,20 @@ def _nanmedian(arr1d):  # This only works on 1d arrays
     m : float
         The median.
     """
-    cond = 1-np.isnan(arr1d)
-    x = np.sort(np.compress(cond,arr1d,axis=-1))
-    if x.size == 0:
+    x = arr1d.copy()
+    c = np.isnan(x)
+    s = np.where(c)[0]
+    if s.size == x.size:
+        warnings.warn("All-NaN slice encountered", RuntimeWarning)
         return np.nan
-    return np.median(x)
+    elif s.size != 0:
+        # select non-nans at end of array
+        enonan = x[-s.size:][~c[-s.size:]]
+        # fill nans in beginning of array with non-nans of end
+        x[s[:enonan.size]] = enonan
+        # slice nans away
+        x = x[:-s.size]
+    return np.median(x, overwrite_input=True)
 
 
 def nanmedian(x, axis=0):
@@ -412,7 +420,7 @@ def nanmedian(x, axis=0):
 
     See Also
     --------
-    nanstd, nanmean
+    nanstd, nanmean, numpy.nanmedian
 
     Examples
     --------
@@ -443,7 +451,8 @@ def nanmedian(x, axis=0):
     x, axis = _chk_asarray(x, axis)
     if x.ndim == 0:
         return float(x.item())
-    x = x.copy()
+    if hasattr(np, 'nanmedian'):  # numpy 1.9 faster for some cases
+        return np.nanmedian(x, axis)
     x = np.apply_along_axis(_nanmedian, axis, x)
     if x.ndim == 0:
         x = float(x.item())
@@ -1070,17 +1079,19 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals
 
 
-def describe(a, axis=0):
+def describe(a, axis=0, ddof=1):
     """
     Computes several descriptive statistics of the passed array.
 
     Parameters
     ----------
     a : array_like
-       data
-    axis : int or None
-       axis along which statistics are calculated. If axis is None, then data
-       array is raveled. The default axis is zero.
+       Input data.
+    axis : int, optional
+       Axis along which statistics are calculated.  If axis is None, then data
+       array is raveled.  The default axis is zero.
+    ddof : int, optional
+        Delta degrees of freedom.  Default is 1.
 
     Returns
     -------
@@ -1102,15 +1113,14 @@ def describe(a, axis=0):
 
     See Also
     --------
-    skew
-    kurtosis
+    skew, kurtosis
 
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
     mm = (np.min(a, axis=axis), np.max(a, axis=axis))
     m = np.mean(a, axis=axis)
-    v = np.var(a, axis=axis, ddof=1)
+    v = np.var(a, axis=axis, ddof=ddof)
     sk = skew(a, axis)
     kurt = kurtosis(a, axis)
     return n, mm, m, v, sk, kurt
@@ -1206,7 +1216,7 @@ def kurtosistest(a, axis=0):
             int(n))
     b2 = kurtosis(a, axis, fisher=False)
     E = 3.0*(n-1) / (n+1)
-    varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1)*(n+3)*(n+5))
+    varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1.)*(n+3)*(n+5))
     x = (b2-E)/np.sqrt(varb2)
     sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5)) /
                                                        (n*(n-2)*(n-3)))
@@ -1260,8 +1270,8 @@ def normaltest(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
-    s,p = skewtest(a,axis)
-    k,p = kurtosistest(a,axis)
+    s, _ = skewtest(a, axis)
+    k, _ = kurtosistest(a, axis)
     k2 = s*s + k*k
     return k2, chisqprob(k2,2)
 
@@ -1937,7 +1947,7 @@ def sem(a, axis=0, ddof=1):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    s = np.std(a,axis=axis, ddof=ddof) / np.sqrt(n)  # JP check normalization
+    s = np.std(a, axis=axis, ddof=ddof) / np.sqrt(n)
     return s
 
 
@@ -2371,14 +2381,15 @@ def f_oneway(*args):
     .. [2] Heiman, G.W.  Research Methods in Statistics. 2002.
 
     """
-    args = list(map(np.asarray, args))  # convert to an numpy array
-    na = len(args)              # ANOVA on 'na' groups, each in it's own array
+    args = [np.asarray(arg, dtype=float) for arg in args]
+    na = len(args)    # ANOVA on 'na' groups, each in it's own array
     alldata = np.concatenate(args)
     bign = len(alldata)
     sstot = ss(alldata) - (square_of_sums(alldata) / float(bign))
     ssbn = 0
     for a in args:
         ssbn += square_of_sums(a) / float(len(a))
+
     ssbn -= (square_of_sums(alldata) / float(bign))
     sswn = sstot - ssbn
     dfbn = na - 1
@@ -2580,7 +2591,7 @@ def fisher_exact(table, alternative='two-sided'):
         pmode = hypergeom.pmf(mode, n1 + n2, n1, n)
 
         epsilon = 1 - 1e-4
-        if float(np.abs(pexact - pmode)) / np.abs(np.max(pexact, pmode)) <= 1 - epsilon:
+        if np.abs(pexact - pmode) / np.maximum(pexact, pmode) <= 1 - epsilon:
             return oddsratio, 1.
 
         elif c[0,0] < mode:
@@ -2704,7 +2715,7 @@ def spearmanr(a, b=None, axis=0):
     ar = np.apply_along_axis(rankdata,axisout,a)
 
     br = None
-    if not b is None:
+    if b is not None:
         b, axisout = _chk_asarray(b, axis)
         br = np.apply_along_axis(rankdata,axisout,b)
     n = a.shape[axisout]
@@ -3029,6 +3040,126 @@ def linregress(x, y=None):
     intercept = ymean - slope*xmean
     sterrest = np.sqrt((1-r*r)*ssym / ssxm / df)
     return slope, intercept, r, prob, sterrest
+
+
+def theilslopes(y, x=None, alpha=0.95):
+    r"""
+    Computes the Theil-Sen estimator for a set of points (x, y).
+
+    `theilslopes` implements a method for robust linear regression.  It
+    computes the slope as the median of all slopes between paired values.
+
+    Parameters
+    ----------
+    y : array_like
+        Dependent variable.
+    x : {None, array_like}, optional
+        Independent variable. If None, use ``arange(len(y))`` instead.
+    alpha : float
+        Confidence degree between 0 and 1. Default is 95% confidence.
+        Note that `alpha` is symmetric around 0.5, i.e. both 0.1 and 0.9 are
+        interpreted as "find the 90% confidence interval".
+
+    Returns
+    -------
+    medslope : float
+        Theil slope.
+    medintercept : float
+        Intercept of the Theil line, as ``median(y) - medslope*median(x)``.
+    lo_slope : float
+        Lower bound of the confidence interval on `medslope`.
+    up_slope : float
+        Upper bound of the confidence interval on `medslope`.
+
+    Notes
+    -----
+    The implementation of `theilslopes` follows [1]_. The intercept is
+    not defined in [1]_, and here it is defined as ``median(y) -
+    medslope*median(x)``, which is given in [3]_. Other definitions of
+    the intercept exist in the literature. A confidence interval for
+    the intercept is not given as this question is not addressed in
+    [1]_.
+
+    References
+    ----------
+    .. [1] P.K. Sen, "Estimates of the regression coefficient based on Kendall's tau",
+           J. Am. Stat. Assoc., Vol. 63, pp. 1379-1389, 1968.
+    .. [2] H. Theil, "A rank-invariant method of linear and polynomial
+           regression analysis I, II and III",  Nederl. Akad. Wetensch., Proc.
+           53:, pp. 386-392, pp. 521-525, pp. 1397-1412, 1950.
+    .. [3] W.L. Conover, "Practical nonparametric statistics", 2nd ed.,
+           John Wiley and Sons, New York, pp. 493.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    >>> x = np.linspace(-5, 5, num=150)
+    >>> y = x + np.random.normal(size=x.size)
+    >>> y[11:15] += 10  # add outliers
+    >>> y[-5:] -= 7
+
+    Compute the slope, intercept and 90% confidence interval.  For comparison,
+    also compute the least-squares fit with `linregress`:
+
+    >>> res = stats.theilslopes(y, x, 0.90)
+    >>> lsq_res = stats.linregress(x, y)
+
+    Plot the results:
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, y, 'b.')
+    >>> ax.plot(x, res[1] + res[0] * x, 'r-')
+    >>> ax.plot(x, res[1] + res[2] * x, 'r--')
+    >>> ax.plot(x, res[1] + res[3] * x, 'r--')
+    >>> ax.plot(x, lsq_res[1] + lsq_res[0] * x, 'g-')
+    >>> plt.show()
+
+    The Theil-Sen regression line is shown in red, with the dashed red
+    lines illustrating the confidence interval of the slope (note that
+    the dashed red lines are not the confidence interval of the
+    regression as the confidence interval of the intercept is not
+    included). The green line shows the least-squares fit for
+    comparison.
+
+    """
+    y = np.asarray(y).flatten()
+    if x is None:
+        x = np.arange(len(y), dtype=float)
+    else:
+        x = np.asarray(x, dtype=float).flatten()
+        if len(x) != len(y):
+            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y),len(x)))
+
+    # Compute sorted slopes only when deltax > 0
+    deltax = x[:, np.newaxis] - x
+    deltay = y[:, np.newaxis] - y
+    slopes = deltay[deltax > 0] / deltax[deltax > 0]
+    slopes.sort()
+    medslope = np.median(slopes)
+    medinter = np.median(y) - medslope * np.median(x)
+    # Now compute confidence intervals
+    if alpha > 0.5:
+        alpha = 1. - alpha
+
+    z = distributions.norm.ppf(alpha / 2.)
+    # This implements (2.6) from Sen (1968)
+    _, nxreps = find_repeats(x)
+    _, nyreps = find_repeats(y)
+    nt = len(slopes)       # N in Sen (1968)
+    ny = len(y)            # n in Sen (1968)
+    # Equation 2.6 in Sen (1968):
+    sigsq = 1/18. * (ny * (ny-1) * (2*ny+5) -
+                     np.sum(k * (k-1) * (2*k + 5) for k in nxreps) -
+                     np.sum(k * (k-1) * (2*k + 5) for k in nyreps))
+    # Find the confidence interval indices in `slopes`
+    sigma = np.sqrt(sigsq)
+    Ru = min(int(np.round((nt - z*sigma)/2.)), len(slopes)-1)
+    Rl = max(int(np.round((nt + z*sigma)/2.)) - 1, 0)
+    delta = slopes[[Rl, Ru]]
+    return medslope, medinter, delta[0], delta[1]
 
 
 #####################################
@@ -3590,7 +3721,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     are uniform and given by the mean of the observed frequencies.  Here we
     perform a G-test (i.e. use the log-likelihood ratio statistic):
 
-    >>> power_divergence([16, 18, 16, 14, 12, 12], method='log-likelihood')
+    >>> power_divergence([16, 18, 16, 14, 12, 12], lambda_='log-likelihood')
     (2.006573162632538, 0.84823476779463769)
 
     The expected frequencies can be given with the `f_exp` argument:

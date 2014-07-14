@@ -31,7 +31,7 @@ from numpy import array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp, \
 from numpy.testing import assert_equal, assert_almost_equal, \
         assert_array_equal, assert_array_almost_equal, assert_approx_equal, \
         assert_, rand, dec, TestCase, run_module_suite, assert_allclose, \
-        assert_raises
+        assert_raises, assert_array_almost_equal_nulp
 
 from scipy import special
 import scipy.special._ufuncs as cephes
@@ -589,6 +589,15 @@ class TestCephes(TestCase):
 
     def test_nctdtr(self):
         assert_equal(cephes.nctdtr(1,0,0),0.5)
+        assert_equal(cephes.nctdtr(9, 65536, 45), 0.0)
+
+        assert_approx_equal(cephes.nctdtr(np.inf, 1., 1.), 0.5, 5)
+        assert_(np.isnan(cephes.nctdtr(2., np.inf, 10.)))
+        assert_approx_equal(cephes.nctdtr(2., 1., np.inf), 1.)
+
+        assert_(np.isnan(cephes.nctdtr(np.nan, 1., 1.)))
+        assert_(np.isnan(cephes.nctdtr(2., np.nan, 1.)))
+        assert_(np.isnan(cephes.nctdtr(2., 1., np.nan)))
 
     def __check_nctdtridf(self):
         cephes.nctdtridf(1,0.5,0)
@@ -646,10 +655,18 @@ class TestCephes(TestCase):
         cephes.pbwa(1,0)
 
     def test_pdtr(self):
-        cephes.pdtr(0,1)
+        val = cephes.pdtr(0, 1)
+        assert_almost_equal(val, np.exp(-1))
+        # Edge case: m = 0.
+        val = cephes.pdtr([0, 1, 2], 0.0)
+        assert_array_equal(val, [1, 1, 1])
 
     def test_pdtrc(self):
-        cephes.pdtrc(0,1)
+        val = cephes.pdtrc(0, 1)
+        assert_almost_equal(val, 1 - np.exp(-1))
+        # Edge case: m = 0.
+        val = cephes.pdtrc([0, 1, 2], 0.0)
+        assert_array_equal(val, [0, 0, 0])
 
     def test_pdtri(self):
         with warnings.catch_warnings():
@@ -657,7 +674,11 @@ class TestCephes(TestCase):
             cephes.pdtri(0.5,0.5)
 
     def test_pdtrik(self):
-        cephes.pdtrik(0.5,1)
+        k = cephes.pdtrik(0.5, 1)
+        assert_almost_equal(cephes.gammaincc(k + 1, 1), 0.5)
+        # Edge case: m = 0 or very small.
+        k = cephes.pdtrik([[0], [0.25], [0.95]], [0, 1e-20, 1e-6])
+        assert_array_equal(k, np.zeros((3, 3)))
 
     def test_pro_ang1(self):
         cephes.pro_ang1(1,1,1,0)
@@ -1226,6 +1247,22 @@ class TestEllip(TestCase):
         assert_almost_equal(elkinc,0.79398143,8)
         # From pg. 614 of A & S
 
+    def test_ellipkinc_2(self):
+        # Regression test for gh-3550
+        # ellipkinc(phi, mbad) was NaN and mvals[2:6] were twice the correct value
+        mbad = 0.68359375000000011
+        phi = 0.9272952180016123
+        m = np.nextafter(mbad, 0)
+        mvals = []
+        for j in range(10):
+            mvals.append(m)
+            m = np.nextafter(m, 1)
+        f = special.ellipkinc(phi, mvals)
+        assert_array_almost_equal_nulp(f, 1.0259330100195334 * np.ones_like(f), 1)
+        # this bug also appears at phi + n * pi for at least small n
+        f1 = special.ellipkinc(phi + pi, mvals)
+        assert_array_almost_equal_nulp(f1, 5.1296650500976675 * np.ones_like(f1), 2)
+
     def test_ellipe(self):
         ele = special.ellipe(.2)
         assert_almost_equal(ele,1.4890350580958529,8)
@@ -1239,6 +1276,22 @@ class TestEllip(TestCase):
         m = sin(alpha)**2
         eleinc = special.ellipeinc(phi,m)
         assert_almost_equal(eleinc, 0.58823065, 8)
+
+    def test_ellipeinc_2(self):
+        # Regression test for gh-3550
+        # ellipeinc(phi, mbad) was NaN and mvals[2:6] were twice the correct value
+        mbad = 0.68359375000000011
+        phi = 0.9272952180016123
+        m = np.nextafter(mbad, 0)
+        mvals = []
+        for j in range(10):
+            mvals.append(m)
+            m = np.nextafter(m, 1)
+        f = special.ellipeinc(phi, mvals)
+        assert_array_almost_equal_nulp(f, 0.84442884574781019 * np.ones_like(f), 2)
+        # this bug also appears at phi + n * pi for at least small n
+        f1 = special.ellipeinc(phi + pi, mvals)
+        assert_array_almost_equal_nulp(f1, 3.3471442287390509 * np.ones_like(f1), 4)
 
 
 class TestErf(TestCase):
@@ -1313,7 +1366,9 @@ class TestErf(TestCase):
 
     def test_erfcinv(self):
         i = special.erfcinv(1)
-        assert_equal(i,0)
+        # Use assert_array_equal instead of assert_equal, so the comparsion
+        # of -0.0 and 0.0 doesn't fail.
+        assert_array_equal(i, 0)
 
     def test_erfinv(self):
         i = special.erfinv(0)
@@ -2522,8 +2577,8 @@ class TestMathieu(TestCase):
         # Q not defined broken and cannot figure out proper reporting order
 
     def test_mathieu_odd_coef(self):
+        # same problem as above
         pass
-            # same problem as above
 
 
 class TestFresnelIntegral(TestCase):

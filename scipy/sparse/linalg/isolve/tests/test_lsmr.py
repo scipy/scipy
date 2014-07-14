@@ -18,8 +18,7 @@ Dept of MS&E, Stanford University.
 
 from __future__ import division, print_function, absolute_import
 
-from numpy import arange, concatenate, eye, zeros, ones, sqrt, \
-                  transpose, hstack
+from numpy import arange, eye, zeros, ones, sqrt, transpose, hstack
 from numpy.linalg import norm
 from numpy.testing import run_module_suite, assert_almost_equal
 
@@ -36,8 +35,8 @@ class TestLSMR:
     def assertCompatibleSystem(self, A, xtrue):
         Afun = aslinearoperator(A)
         b = Afun.matvec(xtrue)
-        x = lsmr(A,b)[0]
-        assert_almost_equal(norm(x - xtrue), 0, 6)
+        x = lsmr(A, b)[0]
+        assert_almost_equal(norm(x - xtrue), 0, decimal=5)
 
     def testIdentityACase1(self):
         A = eye(self.n)

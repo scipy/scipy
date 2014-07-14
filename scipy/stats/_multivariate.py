@@ -58,10 +58,12 @@ def _process_parameters(dim, mean, cov):
         cov = cov * np.eye(dim)
     elif cov.ndim == 1:
         cov = np.diag(cov)
-    else:
-        if cov.shape != (dim, dim):
-            raise ValueError("Array 'cov' must be at most two-dimensional,"
-                                 " but cov.ndim = %d" % cov.ndim)
+    elif cov.ndim == 2 and cov.shape != (dim, dim):
+        raise ValueError("Array 'cov' must be square if it is two dimensional, "
+                "but cov.shape = %s" % str(cov.shape))
+    elif cov.ndim > 2:
+        raise ValueError("Array 'cov' must be at most two-dimensional, "
+                "but cov.ndim = %d" % cov.ndim)
 
     return dim, mean, cov
 
@@ -117,80 +119,93 @@ def _pinv_1d(v, eps=1e-5):
     return np.array([0 if abs(x) < eps else 1/x for x in v], dtype=float)
 
 
-def _psd_pinv_decomposed_log_pdet(mat, cond=None, rcond=None,
-                                  lower=True, check_finite=True):
+class _PSD(object):
     """
-    Compute a decomposition of the pseudo-inverse and the logarithm of
-    the pseudo-determinant of a symmetric positive semi-definite
-    matrix.
+    Compute coordinated functions of a symmetric positive semidefinite matrix.
 
-    The pseudo-determinant of a matrix is defined as the product of
-    the non-zero eigenvalues, and coincides with the usual determinant
-    for a full matrix.
+    This class addresses two issues.  Firstly it allows the pseudoinverse,
+    the logarithm of the pseudo-determinant, and the rank of the matrix
+    to be computed using one call to eigh instead of three.
+    Secondly it allows these functions to be computed in a way
+    that gives mutually compatible results.
+    All of the functions are computed with a common understanding as to
+    which of the eigenvalues are to be considered negligibly small.
+    The functions are designed to coordinate with scipy.linalg.pinvh()
+    but not necessarily with np.linalg.det() or with np.linalg.matrix_rank().
 
     Parameters
     ----------
-    mat : array_like
-        Input array of shape (`m`, `n`)
-    cond, rcond : float or None
-        Cutoff for 'small' singular values.
-        Eigenvalues smaller than ``rcond*largest_eigenvalue``
-        are considered zero.
+    M : 2d array-like
+        Symmetric positive semidefinite matrix.
+    cond, rcond : float, optional
+        Cutoff for small eigenvalues.
+        Singular values smaller than rcond * largest_eigenvalue are
+        considered zero.
         If None or -1, suitable machine precision is used.
     lower : bool, optional
-        Whether the pertinent array data is taken from the lower or upper
-        triangle of `mat`. (Default: lower)
-    check_finite : boolean, optional
-        Whether to check that the input matrix contains only finite numbers.
-        Disabling may give a performance gain, but may result in problems
-        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Whether the pertinent array data is taken from the lower
+        or upper triangle of M. (Default: lower)
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite
+        numbers. Disabling may give a performance gain, but may result
+        in problems (crashes, non-termination) if the inputs do contain
+        infinities or NaNs.
+    allow_singular : bool, optional
+        Whether to allow a singular matrix.  (Default: True)
 
-    Returns
-    -------
-    M : array_like
-        The pseudo-inverse of the input matrix is np.dot(M, M.T).
-    log_pdet : float
-        Logarithm of the pseudo-determinant of the matrix.
+    Notes
+    -----
+    The arguments are similar to those of scipy.linalg.pinvh().
 
     """
-    # Compute the symmetric eigendecomposition.
-    # The input covariance matrix is required to be real symmetric
-    # and positive semidefinite which implies that its eigenvalues
-    # are all real and non-negative,
-    # but clip them anyway to avoid numerical issues.
+    def __init__(self, M, cond=None, rcond=None, lower=True,
+            check_finite=True, allow_singular=True):
+        # Compute the symmetric eigendecomposition.
+        # Note that eigh takes care of array conversion, chkfinite,
+        # and assertion that the matrix is square.
+        s, u = scipy.linalg.eigh(M, lower=lower, check_finite=check_finite)
 
-    # TODO: the code to set cond/rcond is identical to that in
-    # scipy.linalg.{pinvh, pinv2} and if/when this function is subsumed
-    # into scipy.linalg it should probably be shared between all of
-    # these routines.
+        # This looks redundant but its purpose is to keep the code
+        # compatible with the scipy.linalg.pinvh function
+        # so that it may be more easily reorganized later if desired.
+        if rcond is not None:
+            cond = rcond
+        if cond in [None, -1]:
+            t = u.dtype.char.lower()
+            factor = {'f': 1E3, 'd': 1E6}
+            cond = factor[t] * np.finfo(t).eps
 
-    # Note that eigh takes care of array conversion, chkfinite,
-    # and assertion that the matrix is square.
-    s, u = scipy.linalg.eigh(mat, lower=lower, check_finite=check_finite)
+        eps = cond * np.max(abs(s))
+        if np.min(s) < -eps:
+            raise ValueError('the input matrix must be positive semidefinite')
+        d = s[s > eps]
+        if len(d) < len(s) and not allow_singular:
+            raise np.linalg.LinAlgError('singular matrix')
+        s_pinv = _pinv_1d(s, eps)
+        U = np.multiply(u, np.sqrt(s_pinv))
 
-    if rcond is not None:
-        cond = rcond
-    if cond in [None, -1]:
-        t = u.dtype.char.lower()
-        factor = {'f': 1E3, 'd': 1E6}
-        cond = factor[t] * np.finfo(t).eps
-    eps = cond * np.max(abs(s))
+        # Initialize the eagerly precomputed attributes.
+        self.rank = len(d)
+        self.U = U
+        self.log_pdet = np.sum(np.log(d))
 
-    if np.min(s) < -eps:
-        raise ValueError('the covariance matrix must be positive semidefinite')
+        # Initialize an attribute to be lazily computed.
+        self._pinv = None
 
-    s_pinv = _pinv_1d(s, eps)
-    U = np.multiply(u, np.sqrt(s_pinv))
-    log_pdet = np.sum(np.log(s[s > eps]))
-
-    return U, log_pdet
+    @property
+    def pinv(self):
+        if self._pinv is None:
+            self._pinv = np.dot(self.U, self.U.T)
+        return self._pinv
 
 
-_doc_default_callparams = \
-"""mean : array_like, optional
+_doc_default_callparams = """\
+mean : array_like, optional
     Mean of the distribution (default zero)
 cov : array_like, optional
     Covariance matrix of the distribution (default one)
+allow_singular : bool, optional
+    Whether to allow a singular covariance matrix.  (Default: False)
 """
 
 _doc_callparams_note = \
@@ -228,11 +243,11 @@ class multivariate_normal_gen(object):
 
     Methods
     -------
-    pdf(x, mean=None, cov=1)
+    pdf(x, mean=None, cov=1, allow_singular=False)
         Probability density function.
-    logpdf(x, mean=None, cov=1)
+    logpdf(x, mean=None, cov=1, allow_singular=False)
         Log of the probability density function.
-    rvs(mean=None, cov=1)
+    rvs(mean=None, cov=1, allow_singular=False, size=1)
         Draw random samples from a multivariate normal distribution.
     entropy()
         Compute the differential entropy of the multivariate normal.
@@ -247,8 +262,8 @@ class multivariate_normal_gen(object):
     and covariance parameters, returning a "frozen" multivariate normal
     random variable:
 
-    rv = multivariate_normal(mean=None, scale=1)
-        - Frozen  object with the same methods but holding the given
+    rv = multivariate_normal(mean=None, cov=1, allow_singular=False)
+        - Frozen object with the same methods but holding the given
           mean and covariance fixed.
 
     Notes
@@ -294,16 +309,17 @@ class multivariate_normal_gen(object):
     def __init__(self):
         self.__doc__ = doccer.docformat(self.__doc__, docdict_params)
 
-    def __call__(self, mean=None, cov=1):
+    def __call__(self, mean=None, cov=1, allow_singular=False):
         """
         Create a frozen multivariate normal distribution.
 
         See `multivariate_normal_frozen` for more information.
 
         """
-        return multivariate_normal_frozen(mean, cov)
+        return multivariate_normal_frozen(mean, cov,
+                allow_singular=allow_singular)
 
-    def _logpdf(self, x, mean, prec_U, log_det_cov):
+    def _logpdf(self, x, mean, prec_U, log_det_cov, rank):
         """
         Parameters
         ----------
@@ -317,6 +333,8 @@ class multivariate_normal_gen(object):
             is the precision matrix, i.e. inverse of the covariance matrix.
         log_det_cov : float
             Logarithm of the determinant of the covariance matrix
+        rank : int
+            Rank of the covariance matrix.
 
         Notes
         -----
@@ -324,12 +342,11 @@ class multivariate_normal_gen(object):
         called directly; use 'logpdf' instead.
 
         """
-        dim = x.shape[-1]
         dev = x - mean
         maha = np.sum(np.square(np.dot(dev, prec_U)), axis=-1)
-        return -0.5 * (dim * _LOG_2PI + log_det_cov + maha)
+        return -0.5 * (rank * _LOG_2PI + log_det_cov + maha)
 
-    def logpdf(self, x, mean, cov):
+    def logpdf(self, x, mean, cov, allow_singular=False):
         """
         Log of the multivariate normal probability density function.
 
@@ -351,11 +368,11 @@ class multivariate_normal_gen(object):
         """
         dim, mean, cov = _process_parameters(None, mean, cov)
         x = _process_quantiles(x, dim)
-        prec_U, log_det_cov = _psd_pinv_decomposed_log_pdet(cov)
-        out = self._logpdf(x, mean, prec_U, log_det_cov)
+        psd = _PSD(cov, allow_singular=allow_singular)
+        out = self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank)
         return _squeeze_output(out)
 
-    def pdf(self, x, mean, cov):
+    def pdf(self, x, mean, cov, allow_singular=False):
         """
         Multivariate normal probability density function.
 
@@ -377,8 +394,8 @@ class multivariate_normal_gen(object):
         """
         dim, mean, cov = _process_parameters(None, mean, cov)
         x = _process_quantiles(x, dim)
-        prec_U, log_det_cov = _psd_pinv_decomposed_log_pdet(cov)
-        out = np.exp(self._logpdf(x, mean, prec_U, log_det_cov))
+        psd = _PSD(cov, allow_singular=allow_singular)
+        out = np.exp(self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank))
         return _squeeze_output(out)
 
     def rvs(self, mean=None, cov=1, size=1):
@@ -425,13 +442,13 @@ class multivariate_normal_gen(object):
 
         """
         dim, mean, cov = _process_parameters(None, mean, cov)
-        return 1/2 * np.log(np.linalg.det(2 * np.pi * np.e * cov))
+        return 0.5 * np.log(np.linalg.det(2 * np.pi * np.e * cov))
 
 multivariate_normal = multivariate_normal_gen()
 
 
 class multivariate_normal_frozen(object):
-    def __init__(self, mean=None, cov=1):
+    def __init__(self, mean=None, cov=1, allow_singular=False):
         """
         Create a frozen multivariate normal distribution.
 
@@ -441,6 +458,9 @@ class multivariate_normal_frozen(object):
             Mean of the distribution (default zero)
         cov : array_like, optional
             Covariance matrix of the distribution (default one)
+        allow_singular : bool, optional
+            If this flag is True then tolerate a singular
+            covariance matrix (default False).
 
         Examples
         --------
@@ -456,13 +476,13 @@ class multivariate_normal_frozen(object):
 
         """
         self.dim, self.mean, self.cov = _process_parameters(None, mean, cov)
-        self.prec_U, self._log_det_cov = _psd_pinv_decomposed_log_pdet(self.cov)
-
+        self.cov_info = _PSD(self.cov, allow_singular=allow_singular)
         self._mnorm = multivariate_normal_gen()
 
     def logpdf(self, x):
         x = _process_quantiles(x, self.dim)
-        out = self._mnorm._logpdf(x, self.mean, self.prec_U, self._log_det_cov)
+        out = self._mnorm._logpdf(x, self.mean,
+                self.cov_info.U, self.cov_info.log_pdet, self.cov_info.rank)
         return _squeeze_output(out)
 
     def pdf(self, x):
@@ -481,7 +501,9 @@ class multivariate_normal_frozen(object):
             Entropy of the multivariate normal distribution
 
         """
-        return 1/2 * (self.dim * (_LOG_2PI + 1) + self._log_det_cov)
+        log_pdet = self.cov_info.log_pdet
+        rank = self.cov_info.rank
+        return 0.5 * (rank * (_LOG_2PI + 1) + log_pdet)
 
 
 # Set frozen generator docstrings from corresponding docstrings in

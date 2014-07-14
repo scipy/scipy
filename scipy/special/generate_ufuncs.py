@@ -81,6 +81,7 @@ from __future__ import division, print_function, absolute_import
 
 # Ufuncs without C++
 UFUNCS = """
+sph_harm -- sph_harmonic: iidd->D, sph_harmonic_unsafe: dddd->D -- sph_harm.pxd, _legacy.pxd
 _lambertw -- lambertw_scalar: Dld->D                       -- lambertw.pxd
 logit -- logitf: f->f, logit: d->d, logitl: g->g           -- _logit.h
 expit -- expitf: f->f, expit: d->d, expitl: g->g           -- _logit.h
@@ -507,12 +508,10 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     body += "    cdef void *func = (<void**>data)[0]\n"
     body += "    cdef char *func_name = <char*>(<void**>data)[1]\n"
 
-    pointers = []
     for j in range(len(ufunc_inputs)):
-        pointers.append("*ip%d = args[%d]" % (j, j))
+        body += "    cdef char *ip%d = args[%d]\n" % (j, j)
     for j in range(len(ufunc_outputs)):
-        pointers.append("*op%d = args[%d]" % (j, j + len(ufunc_inputs)))
-    body += "    cdef char %s\n" % ", ".join(pointers)
+        body += "    cdef char *op%d = args[%d]\n" % (j, j + len(ufunc_inputs))
 
     ftypes = []
     fvars = []
@@ -789,7 +788,7 @@ class Ufunc(object):
         toplevel += "cdef char ufunc_%s_types[%d]\n" % (self.name, len(types))
         toplevel += 'cdef char *ufunc_%s_doc = (\n    "%s")\n' % (
             self.name,
-            self.doc.replace('"', '\\"').replace('\n', '\\n\"\n    "')
+            self.doc.replace("\\", "\\\\").replace('"', '\\"').replace('\n', '\\n\"\n    "')
             )
 
         for j, function in enumerate(loops):

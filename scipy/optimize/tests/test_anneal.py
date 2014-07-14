@@ -5,6 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 from numpy.testing import TestCase, run_module_suite, \
     assert_almost_equal, assert_, dec
+import warnings
 
 import numpy as np
 
@@ -21,8 +22,8 @@ class TestAnneal(TestCase):
         least.
         """
         self.fun = (lambda x: np.cos(14.5 * x - 0.3) + (x + 0.2) * x,
-                    lambda x: np.cos(14.5 * x[0] - 0.3) +
-                             (x[1] + 0.2) * x[1] + (x[0] + 0.2) * x[0])
+                    lambda x: (np.cos(14.5 * x[0] - 0.3) +
+                               (x[1] + 0.2) * x[1] + (x[0] + 0.2) * x[0]))
         self.x0 = (1.0, [1.0, 1.0])
         self.sol = (-0.195, np.array([-0.195, -0.1]))
         self.upper = (3., [3., 3.])
@@ -46,14 +47,18 @@ class TestAnneal(TestCase):
                     'maxiter': self.maxiter,
                     'schedule': schedule,
                     'disp': False}
-            res = minimize(self.fun[n], self.x0[n], method='anneal',
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                res = minimize(self.fun[n], self.x0[n], method='anneal',
                                options=opts)
             x, retval = res['x'], res['status']
         else:
-            x, retval = anneal(self.fun[n], self.x0[n], full_output=False,
-                               upper=self.upper[n], lower=self.lower[n],
-                               feps=1e-3, maxiter=self.maxiter,
-                               schedule=schedule, disp=False)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                x, retval = anneal(self.fun[n], self.x0[n], full_output=False,
+                                   upper=self.upper[n], lower=self.lower[n],
+                                   feps=1e-3, maxiter=self.maxiter,
+                                   schedule=schedule, disp=False)
 
         assert_almost_equal(x, self.sol[n], 2)
         return retval

@@ -138,6 +138,9 @@ class IterativeParams(object):
                                skip=sym_solvers+[cgs, qmr, bicg]))
 
 
+params = None
+
+
 def setup_module():
     global params
     params = IterativeParams()

@@ -16,7 +16,6 @@ static double is_nonpos_int(double x)
 
 double poch(double a, double m)
 {
-    double q;
     double r;
 
     r = 1.0;

@@ -292,10 +292,11 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         The maximum number of calls to the function. If zero, then 100*(N+1) is
         the maximum where N is the number of elements in x0.
     epsfcn : float
-        A suitable step length for the forward-difference approximation of the
-        Jacobian (for Dfun=None). If epsfcn is less than the machine precision,
-        it is assumed that the relative errors in the functions are of the
-        order of the machine precision.
+        A variable used in determining a suitable step length for the forward-
+        difference approximation of the Jacobian (for Dfun=None). 
+        Normally the actual step length will be sqrt(epsfcn)*x
+        If epsfcn is less than the machine precision, it is assumed that the 
+        relative errors are of the order of the machine precision.
     factor : float
         A parameter determining the initial step bound
         (``factor * || diag * x||``). Should be in interval ``(0.1, 100)``.

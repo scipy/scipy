@@ -54,7 +54,7 @@ class base_schedule(object):
             The starting parameters vector.
         """
 
-        assert(not self.dims is None)
+        assert(self.dims is not None)
         lrange = self.lower
         urange = self.upper
         fmax = _double_min

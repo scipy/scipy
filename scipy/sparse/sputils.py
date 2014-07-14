@@ -9,6 +9,8 @@ __all__ = ['upcast','getdtype','isscalarlike','isintlike',
 import warnings
 import numpy as np
 
+from scipy.lib._version import NumpyVersion
+
 # keep this list syncronized with sparsetools
 #supported_dtypes = ['bool', 'int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32',
 #        'int64', 'uint64', 'float32', 'float64',
@@ -77,6 +79,26 @@ def upcast_scalar(dtype, scalar):
     return (np.array([0], dtype=dtype) * scalar).dtype
 
 
+def downcast_intp_index(arr):
+    """
+    Down-cast index array to np.intp dtype if it is of a larger dtype.
+
+    Raise an error if the array contains a value that is too large for
+    intp.
+    """
+    if arr.dtype.itemsize > np.dtype(np.intp).itemsize:
+        if arr.size == 0:
+            return arr.astype(np.intp)
+        maxval = arr.max()
+        minval = arr.min()
+        if maxval > np.iinfo(np.intp).max or minval < np.iinfo(np.intp).min:
+            raise ValueError("Cannot deal with arrays with indices larger "
+                             "than the machine maximum address size "
+                             "(e.g. 64-bit indices on 32-bit machine).")
+        return arr.astype(np.intp)
+    return arr
+
+
 def to_native(A):
     return np.asarray(A,dtype=A.dtype.newbyteorder('native'))
 
@@ -106,10 +128,27 @@ def getdtype(dtype, a=None, default=None):
 
     return newdtype
 
-def get_index_dtype(arrays=(), maxval=None):
+
+def get_index_dtype(arrays=(), maxval=None, check_contents=False):
     """
     Based on input (integer) arrays `a`, determine a suitable index data
     type that can hold the data in the arrays.
+
+    Parameters
+    ----------
+    arrays : tuple of array_like
+        Input arrays whose types/contents to check
+    maxval : float, optional
+        Maximum value needed
+    check_contents : bool, optional
+        Whether to check the values in the arrays and not just their types.
+        Default: False (check only the types)
+
+    Returns
+    -------
+    dtype : dtype
+        Suitable index data type (int32 or int64)
+
     """
 
     int32max = np.iinfo(np.int32).max
@@ -118,11 +157,29 @@ def get_index_dtype(arrays=(), maxval=None):
     if maxval is not None:
         if maxval > int32max:
             dtype = np.int64
+
+    if isinstance(arrays, np.ndarray):
+        arrays = (arrays,)
+
     for arr in arrays:
         arr = np.asarray(arr)
         if arr.dtype > np.int32:
+            if check_contents:
+                if arr.size == 0:
+                    # a bigger type not needed
+                    continue
+                elif np.issubdtype(arr.dtype, np.integer):
+                    maxval = arr.max()
+                    minval = arr.min()
+                    if minval >= np.iinfo(np.int32).min and maxval <= np.iinfo(np.int32).max:
+                        # a bigger type not needed
+                        continue
+
             dtype = np.int64
+            break
+
     return dtype
+
 
 def isscalarlike(x):
     """Is x either a scalar, an array scalar, or a 0-dim array?"""
@@ -155,7 +212,7 @@ def isshape(x):
         return False
     else:
         if isintlike(M) and isintlike(N):
-            if np.rank(M) == 0 and np.rank(N) == 0:
+            if np.ndim(M) == 0 and np.ndim(N) == 0:
                 return True
         return False
 
@@ -308,3 +365,75 @@ class IndexMixin(object):
             raise IndexError("Index dimension must be <= 2")
 
         return i, j
+
+
+def _compat_unique_impl(ar, return_index=False, return_inverse=False):
+    """
+    Copy of numpy.unique() from Numpy 1.7.1.
+
+    Earlier versions have bugs in how return_index behaves.
+    """
+    try:
+        ar = ar.flatten()
+    except AttributeError:
+        if not return_inverse and not return_index:
+            items = sorted(set(ar))
+            return np.asarray(items)
+        else:
+            ar = np.asanyarray(ar).flatten()
+
+    if ar.size == 0:
+        if return_inverse and return_index:
+            return ar, np.empty(0, np.bool), np.empty(0, np.bool)
+        elif return_inverse or return_index:
+            return ar, np.empty(0, np.bool)
+        else:
+            return ar
+
+    if return_inverse or return_index:
+        if return_index:
+            perm = ar.argsort(kind='mergesort')
+        else:
+            perm = ar.argsort()
+        aux = ar[perm]
+        flag = np.concatenate(([True], aux[1:] != aux[:-1]))
+        if return_inverse:
+            iflag = np.cumsum(flag) - 1
+            iperm = perm.argsort()
+            if return_index:
+                return aux[flag], perm[flag], iflag[iperm]
+            else:
+                return aux[flag], iflag[iperm]
+        else:
+            return aux[flag], perm[flag]
+
+    else:
+        ar.sort()
+        flag = np.concatenate(([True], ar[1:] != ar[:-1]))
+        return ar[flag]
+
+
+if NumpyVersion(np.__version__) > '1.7.0-dev':
+    _compat_unique = np.unique
+else:
+    _compat_unique = _compat_unique_impl
+
+
+def _compat_bincount_impl(x, weights=None, minlength=None):
+    """
+    Bincount with minlength keyword added for Numpy 1.5.
+    """
+    if weights is None:
+        x = np.bincount(x)
+    else:
+        x = np.bincount(x, weights=weights)
+    if minlength is not None:
+        if x.shape[0] < minlength:
+            x = np.r_[x, np.zeros((minlength - x.shape[0],))]
+    return x
+
+
+if NumpyVersion(np.__version__) > '1.6.0-dev':
+    _compat_bincount = np.bincount
+else:
+    _compat_bincount = _compat_bincount_impl

@@ -15,7 +15,6 @@ Library:
     CompiledLibrary: mach
         Sources:
             mach/d1mach.f,
-            mach/i1mach.f,
             mach/r1mach.f,
             mach/xerror.f
     CompiledLibrary: quadpack
@@ -38,3 +37,6 @@ Library:
         Sources: lsoda.pyf
     Extension: _dop
         Sources: dop.pyf
+    Extension: _test_multivariate
+        Sources: tests/_test_multivariate.c
+

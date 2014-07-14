@@ -63,6 +63,7 @@
  * C     ..................................................................
  * C
  */
+#include <math.h>
 #include "protos.h"
 
 int gels(A, R, M, EPS, AUX)

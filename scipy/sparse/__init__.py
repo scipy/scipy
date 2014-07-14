@@ -120,13 +120,12 @@ array([ 1, -3, -1], dtype=int64)
 
 .. warning:: As of NumPy 1.7, `np.dot` is not aware of sparse matrices,
   therefore using it will result on unexpected results or errors.
-  The corresponding dense matrix should be obtained first instead:
+  The corresponding dense array should be obtained first instead:
 
-  >>> np.dot(A.todense(), v)
-  matrix([[ 1, -3, -1]], dtype=int64)
+  >>> np.dot(A.toarray(), v)
+  array([ 1, -3, -1], dtype=int64)
 
   but then all the performance advantages would be lost.
-  Notice that it returned a matrix, because `todense` returns a matrix.
 
 The CSR format is specially suitable for fast matrix vector products.
 
@@ -153,7 +152,7 @@ Now convert it to CSR format and solve A x = b for x:
 Convert it to a dense matrix and solve, and check that the result
 is the same:
 
->>> x_ = solve(A.todense(), b)
+>>> x_ = solve(A.toarray(), b)
 
 Now we can compute norm of the error with:
 

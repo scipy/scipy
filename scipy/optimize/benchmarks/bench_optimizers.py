@@ -11,7 +11,7 @@ import test_functions as funcs
 
 class _BenchOptimizers(object):
     """a framework for benchmarking the optimizer
-    
+
     Parameters
     ----------
     function_name : string
@@ -32,7 +32,7 @@ class _BenchOptimizers(object):
         self.minimizer_kwargs = minimizer_kwargs
         if "tol" not in minimizer_kwargs:
             minimizer_kwargs["tol"] = 1e-4
-            
+
         self.results = []
 
     def reset(self):
@@ -47,7 +47,7 @@ class _BenchOptimizers(object):
         if not hasattr(result, "nhev"):
             result.nhev = 0
         self.results.append(result)
-    
+
     def print_results(self):
         """print the current list of results"""
         results = self.average_results()
@@ -60,18 +60,18 @@ class _BenchOptimizers(object):
         print("  Optimizer    nfail   nfev    njev    nhev    time")
         print("---------------------------------------------------------")
         for res in results:
-            print("%11s  | %4d  | %4d  | %4d  | %4d  | %.6g" % 
+            print("%11s  | %4d  | %4d  | %4d  | %4d  | %.6g" %
                   (res.name, res.nfail, res.mean_nfev, res.mean_njev, res.mean_nhev, res.mean_time))
-    
+
     def average_results(self):
         """group the results by minimizer and average over the runs"""
         grouped_results = defaultdict(list)
         for res in self.results:
             grouped_results[res.name].append(res)
-        
+
         averaged_results = dict()
         for name, result_list in grouped_results.items():
-            newres = scipy.optimize.Result()
+            newres = scipy.optimize.OptimizeResult()
             newres.name = name
             newres.mean_nfev = np.mean([r.nfev for r in result_list])
             newres.mean_njev = np.mean([r.njev for r in result_list])
@@ -85,25 +85,24 @@ class _BenchOptimizers(object):
                 newres.ndim = 1
             averaged_results[name] = newres
         return averaged_results.values()
-    
+
     def bench_run(self, x0, **minimizer_kwargs):
         """do an optimization test starting at x0 for all the optimizers"""
         kwargs = self.minimizer_kwargs
-        
+
         fonly_methods = ["COBYLA", 'Powell']
         for method in fonly_methods:
             t0 = time.time()
-            res = scipy.optimize.minimize(self.fun, x0, method=method, 
+            res = scipy.optimize.minimize(self.fun, x0, method=method,
                                           **kwargs)
             t1 = time.time()
             self.add_result(res, t1-t0, method)
-        
-        
+
         gradient_methods = ['L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP']
         if self.der is not None:
             for method in gradient_methods:
                 t0 = time.time()
-                res = scipy.optimize.minimize(self.fun, x0, method=method, 
+                res = scipy.optimize.minimize(self.fun, x0, method=method,
                                               jac=self.der, **kwargs)
                 t1 = time.time()
                 self.add_result(res, t1-t0, method)
@@ -112,11 +111,12 @@ class _BenchOptimizers(object):
         if self.hess is not None:
             for method in hessian_methods:
                 t0 = time.time()
-                res = scipy.optimize.minimize(self.fun, x0, method=method, 
-                                              jac=self.der, hess=self.hess, 
+                res = scipy.optimize.minimize(self.fun, x0, method=method,
+                                              jac=self.der, hess=self.hess,
                                               **kwargs)
                 t1 = time.time()
                 self.add_result(res, t1-t0, method)
+
 
 class BenchSmoothUnbounded(TestCase):
     """Benchmark the optimizers with smooth, unbounded, functions"""
@@ -126,7 +126,7 @@ class BenchSmoothUnbounded(TestCase):
         for i in range(10):
             b.bench_run(np.random.uniform(-3,3,3))
         b.print_results()
-    
+
     def bench_rosenbrock_tight(self):
         b = _BenchOptimizers("Rosenbrock function",
                              fun=rosen, der=rosen_der, hess=rosen_hess,
@@ -134,7 +134,7 @@ class BenchSmoothUnbounded(TestCase):
         for i in range(10):
             b.bench_run(np.random.uniform(-3,3,3))
         b.print_results()
-    
+
     def bench_simple_quadratic(self):
         s = funcs.SimpleQuadratic()
     #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
@@ -143,7 +143,7 @@ class BenchSmoothUnbounded(TestCase):
         for i in range(10):
             b.bench_run(np.random.uniform(-2,2,3))
         b.print_results()
-    
+
     def bench_asymetric_quadratic(self):
         s = funcs.AsymmetricQuadratic()
     #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
@@ -152,7 +152,7 @@ class BenchSmoothUnbounded(TestCase):
         for i in range(10):
             b.bench_run(np.random.uniform(-2,2,3))
         b.print_results()
-    
+
     def bench_sin_1d(self):
         fun = lambda x: np.sin(x[0])
         der = lambda x: np.array([np.cos(x[0])])
@@ -161,7 +161,7 @@ class BenchSmoothUnbounded(TestCase):
         for i in range(10):
             b.bench_run(np.random.uniform(-2,2,1))
         b.print_results()
-    
+
     def bench_booth(self):
         s = funcs.Booth()
     #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
@@ -170,7 +170,7 @@ class BenchSmoothUnbounded(TestCase):
         for i in range(10):
             b.bench_run(np.random.uniform(0,10,2))
         b.print_results()
-    
+
     def bench_beale(self):
         s = funcs.Beale()
     #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
@@ -179,18 +179,18 @@ class BenchSmoothUnbounded(TestCase):
         for i in range(10):
             b.bench_run(np.random.uniform(0,10,2))
         b.print_results()
-    
+
     def bench_LJ(self):
         s = funcs.LJ()
     #    print "checking gradient", scipy.optimize.check_grad(s.get_energy, s.get_gradient, np.random.uniform(-2,2,3*4))
         natoms = 4
         b = _BenchOptimizers("%d atom Lennard Jones potential" % (natoms),
-                             fun=s.get_energy, der=s.get_gradient, hess=None)
+                             fun=s.fun, der=s.der, hess=None)
         for i in range(10):
             b.bench_run(np.random.uniform(-2,2,natoms*3))
         b.print_results()
-    
-    
+
+
 #def main():
 #    bench_rosenbrock()
 #    bench_simple_quadratic()

@@ -668,8 +668,13 @@ class GenericBroyden(Jacobian):
         self.last_x = x0
 
         if hasattr(self, 'alpha') and self.alpha is None:
-            # autoscale the initial Jacobian parameter
-            self.alpha = 0.5*max(norm(x0), 1) / norm(f0)
+            # Autoscale the initial Jacobian parameter
+            # unless we have already guessed the solution.
+            normf0 = norm(f0)
+            if normf0:
+                self.alpha = 0.5*max(norm(x0), 1) / normf0
+            else:
+                self.alpha = 1.0
 
     def _update(self, x, f, dx, df, dx_norm, df_norm):
         raise NotImplementedError

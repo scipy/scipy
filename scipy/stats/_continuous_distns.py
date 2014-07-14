@@ -1004,16 +1004,18 @@ class exponweib_gen(rv_continuous):
 
     """
     def _pdf(self, x, a, c):
-        exc = exp(-x**c)
-        return a*c*(1-exc)**asarray(a-1) * exc * x**(c-1)
+        return exp(self._logpdf(x, a, c))
 
     def _logpdf(self, x, a, c):
-        exc = exp(-x**c)
-        return log(a) + log(c) + (a-1.)*log(1-exc) - x**c + (c-1.0)*log(x)
+        negxc = -x**c
+        exm1c = -expm1(negxc)
+        logp = (log(a) + log(c) + special.xlogy(a - 1.0, exm1c) +
+                negxc + special.xlogy(c - 1.0, x))
+        return logp
 
     def _cdf(self, x, a, c):
         exm1c = -expm1(-x**c)
-        return (exm1c)**a
+        return exm1c**a
 
     def _ppf(self, q, a, c):
         return (-log1p(-q**(1.0/a)))**asarray(1.0/c)
@@ -2519,7 +2521,7 @@ class johnsonsb_gen(rv_continuous):
 
     def _ppf(self, q, a, b):
         return 1.0 / (1 + exp(-1.0 / b * (_norm_ppf(q) - a)))
-johnsonsb = johnsonsb_gen(a=0.0, b=1.0, name='johnsonb')
+johnsonsb = johnsonsb_gen(a=0.0, b=1.0, name='johnsonsb')
 
 
 class johnsonsu_gen(rv_continuous):
@@ -2619,10 +2621,12 @@ class levy_gen(rv_continuous):
         return 1 / sqrt(2*pi*x) / x * exp(-1/(2*x))
 
     def _cdf(self, x):
-        return 2 * (1 - _norm_cdf(1 / sqrt(x)))
+        # Equivalent to 2*norm.sf(sqrt(1/x))
+        return special.erfc(sqrt(0.5 / x))
 
     def _ppf(self, q):
-        val = _norm_ppf(1 - q / 2.0)
+        # Equivalent to 1.0/(norm.isf(q/2)**2) or 0.5/(erfcinv(q)**2)
+        val = -special.ndtri(q/2)
         return 1.0 / (val * val)
 
     def _stats(self):
@@ -3114,8 +3118,8 @@ class ncf_gen(rv_continuous):
         Px *= (n2+n1*x)**(-(n1+n2)/2)
         Px *= special.assoc_laguerre(-nc*n1*x/(2.0*(n2+n1*x)), n2/2, n1/2-1)
         Px /= special.beta(n1/2, n2/2)
-         # this function does not have a return
-         #   drop it for now, the generic function seems to work ok
+        # This function does not have a return.  Drop it for now, the generic
+        # function seems to work OK.
 
     def _cdf(self, x, dfn, dfd, nc):
         return special.ncfdtr(dfn, dfd, nc, x)
@@ -4103,7 +4107,7 @@ class wald_gen(invgauss_gen):
     -----
     The probability density function for `wald` is::
 
-        wald.pdf(x, a) = 1/sqrt(2*pi*x**3) * exp(-(x-1)**2/(2*x))
+        wald.pdf(x) = 1/sqrt(2*pi*x**3) * exp(-(x-1)**2/(2*x))
 
     for ``x > 0``.
 

@@ -38,21 +38,19 @@ import stat
 import pickle
 import socket
 import tempfile
+import warnings
 
 try:
+    # importing dbhash is necessary because this regularly fails on Python 2.x
+    # installs (due to known bsddb issues).  While importing shelve doesn't
+    # fail, it won't work correctly if dbhash import fails.  So in that case we
+    # want to use _dumb_shelve
     import dbhash
     import shelve
     dumb = 0
 except ImportError:
     from . import _dumb_shelve as shelve
     dumb = 1
-
-# For testing...
-# import scipy.io.dumb_shelve as shelve
-# dumb = 1
-
-# import shelve
-# dumb = 0
 
 
 def getmodule(object):
@@ -410,8 +408,8 @@ def default_temp_dir():
     if not os.path.exists(path):
         os.makedirs(path, mode=0o700)
     if not is_writable(path):
-        print('warning: default directory is not write accessible.')
-        print('default:', path)
+        warnings.warn('Default directory is not write accessible.\n'
+                      'default: %s' % path)
     return path
 
 
@@ -745,14 +743,13 @@ class catalog(object):
         try:
             writable_cat = get_catalog(catalog_path,'w')
         except:
-            print('warning: unable to repair catalog entry\n %s\n in\n %s' %
-                  (code,catalog_path))
+            warnings.warn('Unable to repair catalog entry\n %s\n in\n %s' %
+                          (code, catalog_path))
             # shelve doesn't guarantee flushing, so it's safest to explicitly
             # close the catalog
             writable_cat.close()
             return
         if code in writable_cat:
-            print('repairing catalog by removing key')
             del writable_cat[code]
 
         # it is possible that the path key doesn't exist (if the function
@@ -856,7 +853,7 @@ class catalog(object):
         if cat is None:
             cat_dir = default_dir()
             cat_file = catalog_path(cat_dir)
-            print('problems with default catalog -- removing')
+            warnings.warn('problems with default catalog -- removing')
             import glob
             files = glob.glob(cat_file+'*')
             for f in files:

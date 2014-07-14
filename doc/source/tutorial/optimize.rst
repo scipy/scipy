@@ -19,7 +19,7 @@ The module contains:
    functions (:func:`minimize`) using a variety of algorithms (e.g. BFGS,
    Nelder-Mead simplex, Newton Conjugate Gradient, COBYLA or SLSQP)
 
-2. Global (brute-force) optimization routines  (e.g., :func:`anneal`, :func:`basinhopping`)
+2. Global (brute-force) optimization routines  (e.g., :func:`anneal`, :func:`basinhopping`, :func:`differential_evolution`)
 
 3. Least-squares minimization (:func:`leastsq`) and curve fitting
    (:func:`curve_fit`) algorithms
@@ -518,6 +518,91 @@ For example, to find the minimum of :math:`J_{1}\left( x \right)` near
     >>> res = minimize_scalar(j1, bs=(4, 7), method='bounded')
     >>> print(res.x)
     5.33144184241
+
+
+Custom minimizers
+-----------------
+
+Sometimes, it may be useful to use a custom method as a (multivariate
+or univariate) minimizer, for example when using some library wrappers
+of :func:`minimize` (e.g. :func:`basinhopping`).
+
+We can achieve that by, instead of passing a method name, we pass
+a callable (either a function or an object implementing a `__call__`
+method) as the `method` parameter.
+
+Let us consider an (admittedly rather virtual) need to use a trivial
+custom multivariate minimization method that will just search the
+neighborhood in each dimension independently with a fixed step size::
+
+    >>> def custmin(fun, x0, args=(), maxfev=None, stepsize=0.1,
+    ...         maxiter=100, callback=None, **options):
+    ...     bestx = x0
+    ...     besty = fun(x0)
+    ...     funcalls = 1
+    ...     niter = 0
+    ...     improved = True
+    ...     stop = False
+    ...     
+    ...     while improved and not stop and niter < maxiter:
+    ...         improved = False
+    ...         niter += 1
+    ...         for dim in range(np.size(x0)):
+    ...             for s in [bestx[dim] - stepsize, bestx[dim] + stepsize]:
+    ...                 testx = np.copy(bestx)
+    ...                 testx[dim] = s
+    ...                 testy = fun(testx, *args)
+    ...                 funcalls += 1
+    ...                 if testy < besty:
+    ...                     besty = testy
+    ...                     bestx = testx
+    ...                     improved = True
+    ...             if callback is not None:
+    ...                 callback(bestx)
+    ...             if maxfev is not None and funcalls >= maxfev:
+    ...                 stop = True
+    ...                 break
+    ...     
+    ...     return OptimizeResult(fun=besty, x=bestx, nit=niter,
+    ...                           nfev=funcalls, success=(niter > 1))
+    >>> x0 = [1.35, 0.9, 0.8, 1.1, 1.2]
+    >>> res = minimize(rosen, x0, method=custmin, options=dict(stepsize=0.05))
+    >>> res.x
+    [ 1.  1.  1.  1.  1.]
+
+This will work just as well in case of univariate optimization::
+
+    >>> def custmin(fun, bracket, args=(), maxfev=None, stepsize=0.1,
+    ...         maxiter=100, callback=None, **options):
+    ...     bestx = (bracket[1] + bracket[0]) / 2.0
+    ...     besty = fun(bestx)
+    ...     funcalls = 1
+    ...     niter = 0
+    ...     improved = True
+    ...     stop = False
+    ...     
+    ...     while improved and not stop and niter < maxiter:
+    ...         improved = False
+    ...         niter += 1
+    ...         for testx in [bestx - stepsize, bestx + stepsize]:
+    ...             testy = fun(testx, *args)
+    ...             funcalls += 1
+    ...             if testy < besty:
+    ...                 besty = testy
+    ...                 bestx = testx
+    ...                 improved = True
+    ...         if callback is not None:
+    ...             callback(bestx)
+    ...         if maxfev is not None and funcalls >= maxfev:
+    ...             stop = True
+    ...             break
+    ...     
+    ...     return OptimizeResult(fun=besty, x=bestx, nit=niter,
+    ...                           nfev=funcalls, success=(niter > 1))
+    >>> res = minimize_scalar(f, bracket=(-3.5, 0), method=custmin,
+    ...                       options=dict(stepsize = 0.05))
+    >>> res.x
+    -2.0
 
 
 Root finding

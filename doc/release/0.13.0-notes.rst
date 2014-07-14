@@ -245,7 +245,7 @@ rather than giving the result::
             [ 0.,  1.,  2.]])
 
 Users relying on the previous behavior will need to revisit their code.
-The previous behavior is obtained by ``x[numpy.ix_([0,1,2],[0,1,2])] = ...`.
+The previous behavior is obtained by ``x[numpy.ix_([0,1,2],[0,1,2])] = ...``.
 
 
 Deprecated ``radon`` function removed

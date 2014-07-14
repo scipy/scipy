@@ -162,7 +162,7 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         raise ValueError("The 'sort' input of qz() has to be None (will "
                  " change when this functionality is made more robust).")
 
-    if not output in ['real','complex','r','c']:
+    if output not in ['real','complex','r','c']:
         raise ValueError("argument must be 'real', or 'complex'")
 
     if check_finite:
@@ -174,9 +174,7 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
 
     a_m, a_n = a1.shape
     b_m, b_n = b1.shape
-    try:
-        assert a_m == a_n == b_m == b_n
-    except AssertionError:
+    if not (a_m == a_n == b_m == b_n):
         raise ValueError("Array dimensions must be square and agree")
 
     typa = a1.dtype.char

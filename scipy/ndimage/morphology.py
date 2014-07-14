@@ -223,7 +223,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
         structure = numpy.asarray(structure)
         structure = structure.astype(bool)
     if structure.ndim != input.ndim:
-        raise RuntimeError('structure rank must equal input rank')
+        raise RuntimeError('structure and input must have same dimensionality')
     if not structure.flags.contiguous:
         structure = structure.copy()
     if numpy.product(structure.shape,axis=0) < 1:
@@ -1883,12 +1883,12 @@ def distance_transform_cdt(input, metric='chessboard',
     input : array_like
         Input
     metric : {'chessboard', 'taxicab'}, optional
-        The `metric` determines the type of chamfering that is done. If
-        the `metric` is equal to 'taxicab' a structure is generated
+        The `metric` determines the type of chamfering that is done. If the
+        `metric` is equal to 'taxicab' a structure is generated using
+        generate_binary_structure with a squared distance equal to 1. If
+        the `metric` is equal to 'chessboard', a `metric` is generated
         using generate_binary_structure with a squared distance equal to
-        1. If the `metric` is equal to 'chessboard', a `metric` is
-        generated using generate_binary_structure with a squared distance
-        equal to the rank of the array. These choices correspond to the
+        the dimensionality of the array. These choices correspond to the
         common interpretations of the 'taxicab' and the 'chessboard'
         distance metrics in two dimensions.
 
@@ -2079,7 +2079,7 @@ def distance_transform_edt(input, sampling=None,
 
     With arrays provided for inplace outputs:
 
-    >>> indices = np.zeros(((np.rank(a),) + a.shape), dtype=np.int32)
+    >>> indices = np.zeros(((np.ndim(a),) + a.shape), dtype=np.int32)
     >>> ndimage.distance_transform_edt(a, return_indices=True, indices=indices)
     array([[ 0.    ,  1.    ,  1.4142,  2.2361,  3.    ],
            [ 0.    ,  0.    ,  1.    ,  2.    ,  2.    ],

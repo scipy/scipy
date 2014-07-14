@@ -100,21 +100,21 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     return cast[uint8](bytedata) + cast[uint8](low)
 
 
-def imread(name,flatten=0):
+def imread(name, flatten=0):
     """
-    Read an image file from a filename.
+    Read an image from a file as an array.
 
     Parameters
     ----------
-    name : str
-        The file name to be read.
+    name : str or file object
+        The file name or file object to be read.
     flatten : bool, optional
         If True, flattens the color layers into a single gray-scale layer.
 
     Returns
     -------
     imread : ndarray
-        The array obtained by reading image from file `name`.
+        The array obtained by reading image from file `imfile`.
 
     Notes
     -----
@@ -127,19 +127,23 @@ def imread(name,flatten=0):
     return fromimage(im,flatten=flatten)
 
 
-def imsave(name, arr):
+def imsave(name, arr, format=None):
     """
     Save an array as an image.
 
     Parameters
     ----------
-    name : str
-        Output filename.
+    name : str or file object
+        Output file name or file object.
     arr : ndarray, MxN or MxNx3 or MxNx4
         Array containing image values.  If the shape is ``MxN``, the array
         represents a grey-level image.  Shape ``MxNx3`` stores the red, green
         and blue bands along the last dimension.  An alpha layer may be
         included, specified as the last colour band of an ``MxNx4`` array.
+    format : str
+        Image format. If omitted, the format to use is determined from the 
+        file name extension. If a file object was used instead of a file name,
+        this parameter should always be used.
 
     Examples
     --------
@@ -160,7 +164,10 @@ def imsave(name, arr):
 
     """
     im = toimage(arr)
-    im.save(name)
+    if format is None:
+        im.save(name)
+    else:
+        im.save(name, format)
     return
 
 
@@ -411,7 +418,8 @@ def imresize(arr, size, interp='bilinear', mode=None):
     im = toimage(arr, mode=mode)
     ts = type(size)
     if issubdtype(ts,int):
-        size = size / 100.0
+        percent = size / 100.0
+        size = (array(im.size)*percent).astype(int)
     elif issubdtype(type(size),float):
         size = (array(im.size)*size).astype(int)
     else:

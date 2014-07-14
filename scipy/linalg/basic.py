@@ -604,7 +604,7 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     if rcond is not None:
         cond = rcond
 
-    x, resids, rank, s = lstsq(a, b, cond=cond)
+    x, resids, rank, s = lstsq(a, b, cond=cond, check_finite=False)
 
     if return_rank:
         return x, rank
@@ -662,7 +662,7 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         a = np.asarray_chkfinite(a)
     else:
         a = np.asarray(a)
-    u, s, vh = decomp_svd.svd(a, full_matrices=False)
+    u, s, vh = decomp_svd.svd(a, full_matrices=False, check_finite=False)
 
     if rcond is not None:
         cond = rcond
@@ -740,7 +740,7 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
         a = np.asarray_chkfinite(a)
     else:
         a = np.asarray(a)
-    s, u = decomp.eigh(a, lower=lower)
+    s, u = decomp.eigh(a, lower=lower, check_finite=False)
 
     if rcond is not None:
         cond = rcond

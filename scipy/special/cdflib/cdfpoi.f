@@ -20,7 +20,7 @@ C     WHICH --> Integer indicating which  argument
 C               value is to be calculated from the others.
 C               Legal range: 1..3
 C               iwhich = 1 : Calculate P and Q from S and XLAM
-C               iwhich = 2 : Calculate A from P,Q and XLAM
+C               iwhich = 2 : Calculate S from P,Q and XLAM
 C               iwhich = 3 : Calculate XLAM from P,Q and S
 C                    INTEGER WHICH
 C
@@ -77,6 +77,7 @@ C     monotinicity of P with the other parameter.
 C
 C
 C**********************************************************************
+      IMPLICIT NONE
 C     .. Parameters ..
       DOUBLE PRECISION tol
       PARAMETER (tol=1.0D-8)
@@ -167,6 +168,12 @@ C     ..
           status = 0
 
       ELSE IF ((2).EQ. (which)) THEN
+          IF ((xlam .LT. 1.0D-2) .AND. (p .LT. 0.975D0)) THEN
+C             For sufficiently small xlam and p, the result is 0.0.
+              s = 0.0D0
+              status = 0
+              GO TO 260
+          END IF
           s = 5.0D0
           CALL dstinv(0.0D0,inf,0.5D0,0.5D0,5.0D0,atol,tol)
           status = 0

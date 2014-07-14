@@ -22,7 +22,7 @@ struct safe_divides {
 };
 
 #define OVERRIDE_safe_divides(typ) \
-    template<> typ safe_divides<typ>::operator()(const typ& x, const typ& y) const { return x/y; }
+    template<> inline typ safe_divides<typ>::operator()(const typ& x, const typ& y) const { return x/y; }
 
 OVERRIDE_safe_divides(float)
 OVERRIDE_safe_divides(double)
@@ -32,5 +32,19 @@ OVERRIDE_safe_divides(npy_cdouble_wrapper)
 OVERRIDE_safe_divides(npy_clongdouble_wrapper)
 
 #undef OVERRIDE_safe_divides
+
+template <class T>
+struct maximum {
+    T operator() (const T& x, const T& y) const {
+        return std::max(x, y);
+    }
+};
+
+template <class T>
+struct minimum {
+    T operator() (const T& x, const T& y) const {
+        return std::min(x, y);
+    }
+};
 
 #endif

@@ -10,7 +10,7 @@ __all__ = ['csr_matrix', 'isspmatrix_csr']
 import numpy as np
 from scipy.lib.six import xrange
 
-from .sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks, \
+from ._sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks, \
         get_csr_submatrix, csr_sample_values
 from .sputils import upcast, isintlike, IndexMixin, issequence, get_index_dtype
 
@@ -82,26 +82,45 @@ class csr_matrix(_cs_matrix, IndexMixin):
 
     >>> from scipy.sparse import *
     >>> from scipy import *
-    >>> csr_matrix( (3,4), dtype=int8 ).todense()
-    matrix([[0, 0, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0]], dtype=int8)
+    >>> csr_matrix((3, 4), dtype=int8).toarray()
+    array([[0, 0, 0, 0],
+           [0, 0, 0, 0],
+           [0, 0, 0, 0]], dtype=int8)
 
-    >>> row = array([0,0,1,2,2,2])
-    >>> col = array([0,2,2,0,1,2])
-    >>> data = array([1,2,3,4,5,6])
-    >>> csr_matrix( (data,(row,col)), shape=(3,3) ).todense()
-    matrix([[1, 0, 2],
-            [0, 0, 3],
-            [4, 5, 6]])
+    >>> row = array([0, 0, 1, 2, 2, 2])
+    >>> col = array([0, 2, 2, 0, 1, 2])
+    >>> data = array([1, 2, 3, 4, 5, 6])
+    >>> csr_matrix((data, (row, col)), shape=(3, 3)).toarray()
+    array([[1, 0, 2],
+           [0, 0, 3],
+           [4, 5, 6]])
 
-    >>> indptr = array([0,2,3,6])
-    >>> indices = array([0,2,2,0,1,2])
-    >>> data = array([1,2,3,4,5,6])
-    >>> csr_matrix( (data,indices,indptr), shape=(3,3) ).todense()
-    matrix([[1, 0, 2],
-            [0, 0, 3],
-            [4, 5, 6]])
+    >>> indptr = array([0, 2, 3, 6])
+    >>> indices = array([0, 2, 2, 0, 1, 2])
+    >>> data = array([1, 2, 3, 4, 5, 6])
+    >>> csr_matrix((data, indices, indptr), shape=(3, 3)).toarray()
+    array([[1, 0, 2],
+           [0, 0, 3],
+           [4, 5, 6]])
+
+    As an example of how to construct a CSR matrix incrementally,
+    the following snippet builds a term-document matrix from texts:
+
+    >>> docs = [["hello", "world", "hello"], ["goodbye", "cruel", "world"]]
+    >>> indptr = [0]
+    >>> indices = []
+    >>> data = []
+    >>> vocabulary = {}
+    >>> for d in docs:
+    ...     for term in d:
+    ...         index = vocabulary.setdefault(term, len(vocabulary))
+    ...         indices.append(index)
+    ...         data.append(1)
+    ...     indptr.append(len(indices))
+    ...
+    >>> csr_matrix((data, indices, indptr), dtype=int).toarray()
+    array([[2, 1, 0, 0],
+           [0, 1, 1, 1]])
 
     """
 
@@ -198,13 +217,20 @@ class csr_matrix(_cs_matrix, IndexMixin):
         def asindices(x):
             try:
                 x = np.asarray(x)
-                x = x.astype(get_index_dtype(x))
+
+                # Check index contents, to avoid creating 64-bit arrays needlessly
+                idx_dtype = get_index_dtype((x,), check_contents=True)
+                if idx_dtype != x.dtype:
+                    x = x.astype(idx_dtype)
             except:
                 raise IndexError('invalid index')
             else:
                 return x
 
-        def check_bounds(indices,N):
+        def check_bounds(indices, N):
+            if indices.size == 0:
+                return (0, 0)
+
             max_indx = indices.max()
             if max_indx >= N:
                 raise IndexError('index (%d) out of range' % max_indx)
@@ -278,7 +304,7 @@ class csr_matrix(_cs_matrix, IndexMixin):
 
         num_samples = np.size(row)
         if num_samples == 0:
-            return csr_matrix((0,0))
+            return csr_matrix(np.atleast_2d(row).shape, dtype=self.dtype)
         check_bounds(row, self.shape[0])
         check_bounds(col, self.shape[1])
 
@@ -290,33 +316,6 @@ class csr_matrix(_cs_matrix, IndexMixin):
             # row and col are 1d
             return np.asmatrix(val)
         return self.__class__(val.reshape(row.shape))
-
-    def _get_single_element(self,row,col):
-        """Returns the single element self[row, col]
-        """
-        M, N = self.shape
-        if (row < 0):
-            row += M
-        if (col < 0):
-            col += N
-        if not (0 <= row < M) or not (0 <= col < N):
-            raise IndexError("index out of bounds")
-
-        # TODO make use of sorted indices (if present)
-
-        start = self.indptr[row]
-        end = self.indptr[row+1]
-        indxs = np.where(col == self.indices[start:end])[0]
-
-        num_matches = len(indxs)
-
-        if num_matches == 0:
-            # entry does not appear in the matrix
-            return self.dtype.type(0)
-        elif num_matches == 1:
-            return self.data[start:end][indxs[0]]
-        else:
-            raise ValueError('nonzero entry (%d,%d) occurs more than once' % (row,col))
 
     def getrow(self, i):
         """Returns a copy of row i of the matrix, as a (1 x n)
@@ -405,8 +404,7 @@ class csr_matrix(_cs_matrix, IndexMixin):
             if not (0 <= i0 <= num) or not (0 <= i1 <= num) or not (i0 <= i1):
                 raise IndexError(
                       "index out of bounds: 0 <= %d <= %d, 0 <= %d <= %d,"
-                       " %d <= %d" %
-                      (i0, num, i1, num, i0, i1))
+                      " %d <= %d" % (i0, num, i1, num, i0, i1))
 
         i0, i1 = process_slice(row_slice, M)
         j0, j1 = process_slice(col_slice, N)

@@ -121,10 +121,9 @@ def test_read_numeric():
     str_io = cStringIO()
     r = _make_readerlike(str_io)
     # check simplest of tags
-    for base_dt, val, mdtype in (
-        ('u2', 30, mio5p.miUINT16),
-        ('i4', 1, mio5p.miINT32),
-        ('i2', -1, mio5p.miINT16)):
+    for base_dt, val, mdtype in (('u2', 30, mio5p.miUINT16),
+                                 ('i4', 1, mio5p.miINT32),
+                                 ('i2', -1, mio5p.miINT16)):
         for byte_code in ('<', '>'):
             r.byte_order = byte_code
             c_reader = m5u.VarReader5(r)

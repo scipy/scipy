@@ -431,20 +431,32 @@ class lti(object):
                                                           self.C, self.D)
 
     def impulse(self, X0=None, T=None, N=None):
+        """
+        Return the impulse response of a continuous-time system.
+        See `scipy.signal.impulse` for details.
+        """
         return impulse(self, X0=X0, T=T, N=N)
 
     def step(self, X0=None, T=None, N=None):
+        """
+        Return the step response of a continuous-time system.
+        See `scipy.signal.step` for details.
+        """
         return step(self, X0=X0, T=T, N=N)
 
     def output(self, U, T, X0=None):
+        """
+        Return the response of a continuous-time system to input `U`.
+        See `scipy.signal.lsim` for details.
+        """
         return lsim(self, U, T, X0=X0)
 
     def bode(self, w=None, n=100):
         """
-        Calculate Bode magnitude and phase data.
+        Calculate Bode magnitude and phase data of a continuous-time system.
 
         Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
-        [dB] and phase [deg]. See scipy.signal.bode for details.
+        [dB] and phase [deg]. See `scipy.signal.bode` for details.
 
         .. versionadded:: 0.11.0
 
@@ -466,11 +478,12 @@ class lti(object):
         return bode(self, w=w, n=n)
 
     def freqresp(self, w=None, n=10000):
-        """Calculate the frequency response of a continuous-time system.
+        """
+        Calculate the frequency response of a continuous-time system.
 
         Returns a 2-tuple containing arrays of frequencies [rad/s] and
         complex magnitude.
-        See scipy.signal.freqresp for details.
+        See `scipy.signal.freqresp` for details.
 
         """
         return freqresp(self, w=w, n=n)

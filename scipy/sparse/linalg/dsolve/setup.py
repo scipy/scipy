@@ -45,8 +45,6 @@ def configuration(parent_package='',top_path=None):
                          extra_info=lapack_opt,
                          )
 
-    config.add_subpackage('umfpack')
-
     return config
 
 if __name__ == '__main__':

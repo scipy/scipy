@@ -13,15 +13,15 @@ Run tests if linalg is not installed:
 """
 
 import numpy as np
-from numpy.testing import TestCase, assert_equal, assert_array_almost_equal, \
-        assert_array_equal, assert_raises, assert_, run_module_suite, dec
+from numpy.testing import (TestCase, assert_equal, assert_array_almost_equal,
+        assert_array_equal, assert_raises, assert_, assert_allclose,
+        run_module_suite, dec)
 
 from scipy.lib.six import xrange
 
-from scipy.linalg import eig, eigvals, lu, svd, svdvals, cholesky, qr, \
-     schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq, \
-     eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, LinAlgError, \
-     qz
+from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
+     schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq,
+     eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, qz, orth)
 from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
      dsbev, dsbevd, dsbevx, zhbevd, zhbevx
 from scipy.linalg.misc import norm
@@ -583,16 +583,16 @@ def test_eigh():
         for typ in v['dtype']:
             for overwrite in v['overwrite']:
                 for turbo in v['turbo']:
-                    for eigvals in v['eigvals']:
+                    for eigenvals in v['eigvals']:
                         for lower in v['lower']:
                             yield (eigenhproblem_standard,
                                    'ordinary',
                                    dim, typ, overwrite, lower,
-                                   turbo, eigvals)
+                                   turbo, eigenvals)
                             yield (eigenhproblem_general,
                                    'general ',
                                    dim, typ, overwrite, lower,
-                                   turbo, eigvals)
+                                   turbo, eigenvals)
 
 
 def _complex_symrand(dim, dtype):
@@ -1714,6 +1714,12 @@ class TestHessenberg(TestCase):
         h,q = hessenberg(a,calc_q=1)
         assert_array_almost_equal(dot(transp(q),dot(a,q)),h)
 
+    def test_simple3(self):
+        a = np.eye(3)
+        a[-1, 0] = 2
+        h, q = hessenberg(a, calc_q=1)
+        assert_array_almost_equal(dot(transp(q), dot(a, q)), h)
+
     def test_random(self):
         n = 20
         for k in range(2):
@@ -2093,6 +2099,35 @@ class TestOverwrite(object):
 
     def test_svdvals(self):
         assert_no_overwrite(svdvals, [(3,3)])
+
+
+def _check_orth(n):
+    X = np.ones((n, 2), dtype=float)
+    Y = orth(X)
+    assert_equal(Y.shape, (n, 1))
+    assert_allclose(Y, Y.mean())
+    Y = orth(X.T)
+    assert_equal(Y.shape, (2, 1))
+    assert_allclose(Y, Y.mean())
+
+
+@dec.slow
+def test_orth_memory_efficiency():
+    # Pick n so that 16*n bytes is reasonable but 8*n*n bytes is unreasonable.
+    # Keep in mind that @dec.slow tests are likely to be running
+    # under configurations that support 4Gb+ memory for tests related to
+    # 32 bit overflow.
+    n = 10*1000*1000
+    try:
+        _check_orth(n)
+    except MemoryError as e:
+        raise AssertionError('memory error perhaps caused by orth regression')
+
+
+def test_orth():
+    for n in 1, 2, 3, 10, 100:
+        _check_orth(n)
+
 
 if __name__ == "__main__":
     run_module_suite()

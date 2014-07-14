@@ -8,18 +8,15 @@ import os.path
 import warnings
 
 import numpy as np
-from numpy.testing import assert_array_equal, assert_array_almost_equal, \
-        TestCase, run_module_suite, assert_raises
+from numpy.testing import (assert_array_equal, assert_array_almost_equal,
+    TestCase, run_module_suite, assert_raises, assert_allclose, assert_equal,
+    assert_)
 
-from scipy.cluster.vq import kmeans, kmeans2, py_vq, py_vq2, vq, ClusterError
-try:
-    from scipy.cluster import _vq
-    TESTC = True
-except ImportError:
-    print("== Error while importing _vq, not testing C imp of vq ==")
-    TESTC = False
+from scipy.cluster.vq import (kmeans, kmeans2, py_vq, py_vq2, vq, whiten,
+    ClusterError)
+from scipy.cluster import _vq
 
-#Optional:
+# Optional:
 # import modules that are located in the same directory as this file.
 DATAFILE1 = os.path.join(os.path.dirname(__file__), "data.txt")
 
@@ -39,6 +36,34 @@ CODET2 = np.array([[11.0/3, 8.0/3],
 LABEL1 = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
 
+class TestWhiten(TestCase):
+    def test_whiten(self):
+        obs = np.array([[0.98744510, 0.82766775],
+                        [0.62093317, 0.19406729],
+                        [0.87545741, 0.00735733],
+                        [0.85124403, 0.26499712],
+                        [0.45067590, 0.45464607]])
+        result = np.array([[5.08738849, 2.97091878],
+                           [3.19909255, 0.69660580],
+                           [4.51041982, 0.02640918],
+                           [4.38567074, 0.95120889],
+                           [2.32191480, 1.63195503]])
+        assert_allclose(whiten(obs), result, rtol=1e-5)
+
+    def test_whiten_zero_std(self):
+        obs = np.array([[0., 1., 0.74109533],
+                        [0., 1., 0.34243798],
+                        [0., 1., 0.96785929]])
+        result = np.array([[0., 1.0, 2.86666544],
+                           [0., 1.0, 1.32460034],
+                           [0., 1.0, 3.74382172]])
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            assert_allclose(whiten(obs), result, rtol=1e-5)
+            assert_equal(len(w), 1)
+            assert_(issubclass(w[-1].category, RuntimeWarning))
+
+
 class TestVq(TestCase):
     def test_py_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
@@ -52,39 +77,62 @@ class TestVq(TestCase):
 
     def test_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        if TESTC:
-            label1, dist = _vq.vq(X, initc)
-            assert_array_equal(label1, LABEL1)
-            tlabel1, tdist = vq(X, initc)
-        else:
-            print("== not testing C imp of vq ==")
+        label1, dist = _vq.vq(X, initc)
+        assert_array_equal(label1, LABEL1)
+        tlabel1, tdist = vq(X, initc)
 
-    #def test_py_vq_1d(self):
-    #    """Test special rank 1 vq algo, python implementation."""
-    #    data = X[:, 0]
-    #    initc = data[:3]
-    #    a, b = _py_vq_1d(data, initc)
-    #    ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
-    #    assert_array_equal(a, ta)
-    #    assert_array_equal(b, tb)
+    # def test_py_vq_1d(self):
+    #     """Test special rank 1 vq algo, python implementation."""
+    #     data = X[:, 0]
+    #     initc = data[:3]
+    #     a, b = _py_vq_1d(data, initc)
+    #     ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
+    #     assert_array_equal(a, ta)
+    #     assert_array_equal(b, tb)
 
     def test_vq_1d(self):
         """Test special rank 1 vq algo, python implementation."""
         data = X[:, 0]
         initc = data[:3]
-        if TESTC:
-            a, b = _vq.vq(data, initc)
-            ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
-            assert_array_equal(a, ta)
-            assert_array_equal(b, tb)
-        else:
-            print("== not testing C imp of vq (rank 1) ==")
+        a, b = _vq.vq(data, initc)
+        ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
+        assert_array_equal(a, ta)
+        assert_array_equal(b, tb)
 
     def test__vq_sametype(self):
-        if TESTC:
-            a = np.array([1, 2])
-            b = a.astype(float)
-            assert_raises(ValueError, _vq.vq, a, b)
+        a = np.array([1.0, 2.0], dtype=np.float64)
+        b = a.astype(np.float32)
+        assert_raises(TypeError, _vq.vq, a, b)
+
+    def test__vq_invalid_type(self):
+        a = np.array([1, 2], dtype=np.int)
+        assert_raises(TypeError, _vq.vq, a, a)
+
+    def test_vq_large_nfeat(self):
+        X = np.random.rand(20, 20)
+        code_book = np.random.rand(3, 20)
+
+        codes0, dis0 = _vq.vq(X, code_book)
+        codes1, dis1 = py_vq(X, code_book)
+        assert_allclose(dis0, dis1, 1e-5)
+        assert_array_equal(codes0, codes1)
+
+        X = X.astype(np.float32)
+        code_book = code_book.astype(np.float32)
+
+        codes0, dis0 = _vq.vq(X, code_book)
+        codes1, dis1 = py_vq(X, code_book)
+        assert_allclose(dis0, dis1, 1e-5)
+        assert_array_equal(codes0, codes1)
+
+    def test_vq_large_features(self):
+        X = np.random.rand(10, 5) * 1000000
+        code_book = np.random.rand(2, 5) * 1000000
+
+        codes0, dis0 = _vq.vq(X, code_book)
+        codes1, dis1 = py_vq(X, code_book)
+        assert_allclose(dis0, dis1, 1e-5)
+        assert_array_equal(codes0, codes1)
 
 
 class TestKMean(TestCase):

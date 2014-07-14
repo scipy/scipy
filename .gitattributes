@@ -24,25 +24,6 @@ scipy/sparse/sparsetools/dia_wrap.cxx binary
 scipy/sparse/sparsetools/csgraph.py binary
 scipy/sparse/sparsetools/csgraph_wrap.cxx binary
 
-# Cython-generated files
-scipy/interpolate/interpnd.c binary
-scipy/io/matlab/mio_utils.c binary
-scipy/io/matlab/mio5_utils.c binary
-scipy/io/matlab/streams.c binary
-scipy/signal/_spectral.c binary
-scipy/sparse/csgraph/_min_spanning_tree.c binary
-scipy/sparse/csgraph/_shortest_path.c binary
-scipy/sparse/csgraph/_tools.c binary
-scipy/sparse/csgraph/_traversal.c binary
-scipy/spatial/ckdtree.c binary
-scipy/spatial/qhull.c binary
-scipy/special/_ufuncs.c binary
-scipy/special/_ufuncs_cxx.cxx binary
-scipy/special/_ufuncs_defs.h binary
-scipy/special/_ufuncs_cxx_defs.h binary
-scipy/stats/_rank.c binary
-scipy/stats/vonmises_cython.c binary
-
 # Numerical data files
 scipy/special/tests/data/*.txt binary
 scipy/special/tests/data/*/*.txt binary

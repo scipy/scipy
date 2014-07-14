@@ -119,6 +119,8 @@ def shortest_path(csgraph, method='auto',
     directed == False.  i.e., if csgraph[i,j] and csgraph[j,i] are non-equal
     edges, method='D' may yield an incorrect result.
     """
+    # validate here to catch errors early but don't store the result;
+    # we'll validate again later
     validate_graph(csgraph, directed, DTYPE)
 
     if method == 'auto':
@@ -130,8 +132,8 @@ def shortest_path(csgraph, method='auto',
             Nk = np.sum(csgraph > 0)
 
         if Nk < N * N / 4:
-            if ((isspmatrix(csgraph)
-                 and np.any(csgraph.data < 0)) or np.any(csgraph < 0)):
+            if ((isspmatrix(csgraph) and np.any(csgraph.data < 0))
+                      or (not isspmatrix(csgraph) and np.any(csgraph < 0))):
                 method = 'J'
             else:
                 method = 'D'
@@ -475,7 +477,8 @@ cdef _dijkstra_directed(
     cdef int return_pred = (pred.size > 0)
 
     cdef FibonacciHeap heap
-    cdef FibonacciNode *v, *current_node
+    cdef FibonacciNode *v
+    cdef FibonacciNode *current_node
     cdef FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                         sizeof(FibonacciNode))
 
@@ -538,7 +541,8 @@ cdef _dijkstra_undirected(
     cdef int return_pred = (pred.size > 0)
 
     cdef FibonacciHeap heap
-    cdef FibonacciNode *v, *current_node
+    cdef FibonacciNode *v
+    cdef FibonacciNode *current_node
     cdef FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                         sizeof(FibonacciNode))
 
@@ -1202,7 +1206,9 @@ cdef void link(FibonacciHeap* heap, FibonacciNode* node):
     #              - node is a valid pointer
     #              - node is already within heap
 
-    cdef FibonacciNode *linknode, *parent, *child
+    cdef FibonacciNode *linknode
+    cdef FibonacciNode *parent
+    cdef FibonacciNode *child
 
     if heap.roots_by_rank[node.rank] == NULL:
         heap.roots_by_rank[node.rank] = node
@@ -1223,7 +1229,9 @@ cdef void link(FibonacciHeap* heap, FibonacciNode* node):
 cdef FibonacciNode* remove_min(FibonacciHeap* heap):
     # Assumptions: - heap is a valid pointer
     #              - heap.min_node is a valid pointer
-    cdef FibonacciNode *temp, *temp_right, *out
+    cdef FibonacciNode *temp
+    cdef FibonacciNode *temp_right
+    cdef FibonacciNode *out
     cdef unsigned int i
 
     # make all min_node children into root nodes

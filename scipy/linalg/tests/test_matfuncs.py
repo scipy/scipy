@@ -5,7 +5,6 @@
 """ Test functions for linalg.matfuncs module
 
 """
-
 from __future__ import division, print_function, absolute_import
 
 import random
@@ -15,14 +14,15 @@ import functools
 import numpy as np
 from numpy import array, identity, dot, sqrt, double
 from numpy.testing import (TestCase, run_module_suite,
-        assert_array_equal, assert_array_less,
+        assert_array_equal, assert_array_less, assert_equal,
         assert_array_almost_equal, assert_array_almost_equal_nulp,
-        assert_allclose, assert_, assert_raises, decorators)
+        assert_allclose, assert_, decorators)
+
+from scipy.lib._numpy_compat import _assert_warns
 
 import scipy.linalg
-from scipy.linalg import norm
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
-        expm, expm_frechet, expm_cond)
+        expm, expm_frechet, expm_cond, norm)
 from scipy.linalg.matfuncs import expm2, expm3
 from scipy.linalg import _matfuncs_inv_ssq
 import scipy.linalg._expm_frechet
@@ -205,6 +205,22 @@ class TestLogM(TestCase):
             A = np.array(matrix_as_list, dtype=float)
             A_logm, info = logm(A, disp=False)
             assert_(A_logm.dtype.char in complex_dtype_chars)
+
+    def test_logm_exactly_singular(self):
+        A = np.array([[0, 0], [1j, 1j]])
+        B = np.asarray([[1, 1], [0, 0]])
+        for M in A, A.T, B, B.T:
+            expected_warning = _matfuncs_inv_ssq.LogmExactlySingularWarning
+            L, info = _assert_warns(expected_warning, logm, M, disp=False)
+            E = expm(L)
+            assert_allclose(E, M, atol=1e-14)
+
+    def test_logm_nearly_singular(self):
+        M = np.array([[1e-100]])
+        expected_warning = _matfuncs_inv_ssq.LogmNearlySingularWarning
+        L, info = _assert_warns(expected_warning, logm, M, disp=False)
+        E = expm(L)
+        assert_allclose(E, M, atol=1e-14)
 
 
 class TestSqrtM(TestCase):
@@ -681,16 +697,18 @@ def _help_expm_cond_search(A, A_norm, X, X_norm, eps, p):
     scaled_relative_error = norm(X_prime - X) / (X_norm * eps)
     return -scaled_relative_error
 
+
 def _normalized_like(A, B):
     return A * (scipy.linalg.norm(B) / scipy.linalg.norm(A))
+
 
 def _relative_error(f, A, perturbation):
     X = f(A)
     X_prime = f(A + perturbation)
     return norm(X_prime - X) / norm(X)
 
-class TestExpmConditionNumber(TestCase):
 
+class TestExpmConditionNumber(TestCase):
     def test_expm_cond_smoke(self):
         np.random.seed(1234)
         for n in range(1, 4):
@@ -700,9 +718,9 @@ class TestExpmConditionNumber(TestCase):
 
     def test_expm_bad_condition_number(self):
         A = np.array([
-            [-1.128679820,  9.614183771e4,  -4.524855739e9,  2.924969411e14],
-            [0, -1.201010529,  9.634696872e4, -4.681048289e9],
-            [0, 0,  -1.132893222,  9.532491830e4],
+            [-1.128679820, 9.614183771e4, -4.524855739e9, 2.924969411e14],
+            [0, -1.201010529, 9.634696872e4, -4.681048289e9],
+            [0, 0, -1.132893222, 9.532491830e4],
             [0, 0, 0, -1.179475332],
             ])
         kappa = expm_cond(A)

@@ -233,9 +233,7 @@ double a, b;
  */
 static double lbeta_asymp(double a, double b, int *sgn)
 {
-    double r, sum;
-
-    r = lgam(b);
+    double r = lgam(b);
     *sgn = sgngam;
     r -= b * log(a);
 

@@ -78,7 +78,7 @@ class BenchmarkSparse(TestCase):
         fmt = space+'   %3s  | %17s |  %7.1f  '
 
         for format in ['csr']:
-            vars = dict([(var,mat.asformat(format)) for (var,name,mat) in matrices])
+            vars = dict([(var, mat.asformat(format)) for (var, _, mat) in matrices])
             for X,Y in [('A','A'),('A','B'),('B','A'),('B','B')]:
                 x,y = vars[X],vars[Y]
                 for op in ['__add__','__sub__','multiply','__div__','__mul__']:
@@ -290,7 +290,6 @@ class BenchmarkSparse(TestCase):
                     output += '| %5.1fms ' % (1000*t)
             print(output)
 
-
     def _getset_bench(self, kernel, formats):
         print('==========================================================')
         print('      N | s.patt. |' + ''.join(' %7s |' % fmt for fmt in formats))
@@ -323,7 +322,7 @@ class BenchmarkSparse(TestCase):
                         continue
 
                     base = A.asformat(fmt)
-                    
+
                     m = base.copy()
                     if spat:
                         kernel(m, i, j, v)
@@ -363,7 +362,7 @@ class BenchmarkSparse(TestCase):
             A[i, j]
         print()
         print('           Sparse Matrix fancy __getitem__')
-        self._getset_bench(kernel,  ['csr', 'csc', 'lil'])
+        self._getset_bench(kernel, ['csr', 'csc', 'lil'])
 
 # class TestLarge(TestCase):
 #    def bench_large(self):

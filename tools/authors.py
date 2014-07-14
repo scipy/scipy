@@ -33,6 +33,7 @@ NAME_MAP = {
     u('87'): u('Han Genuit'),
     u('aarchiba'): u('Anne Archibald'),
     u('alex'): u('Alex Griffing'),
+    u('andbo'): u('Anders Bech Borchersen'),
     u('argriffing'): u('Alex Griffing'),
     u('arichar6'): u('Steve Richardson'),
     u('ArmstrongJ'): u('Jeff Armstrong'),
@@ -44,6 +45,7 @@ NAME_MAP = {
     u('Collin Stocks'): u('Collin RM Stocks'),
     u('cnovak'): u('Clemens Novak'),
     u('Daniel Smith'): u('Daniel B. Smith'),
+    u('Dapid'): u('David Menendez Hurtado'),
     u('dellsystem'): u('Wendy Liu'),
     u('Derek Homeir'): u('Derek Homeier'),
     u('Derek Homier'): u('Derek Homeier'),
@@ -55,13 +57,16 @@ NAME_MAP = {
     u('gotgenes'): u('Chris Lasher'),
     u('Han'): u('Han Genuit'),
     u('Jake Vanderplas'): u('Jacob Vanderplas'),
+    u('jamestwebber'): u('James T. Webber'),
     u('josef'): u('Josef Perktold'),
     u('josef-pktd'): u('Josef Perktold'),
     u('kat'): u('Kat Huang'),
     u('Mark'): u('Mark Wiebe'),
     u('mdroe'): u('Michael Droettboom'),
+    u('patricksnape'): u('Patrick Snape'),
     u('pbrod'): u('Per Brodtkorb'),
     u('pierregm'): u('Pierre GM'),
+    u('polyatail'): u('Andrew Sczesnak'),
     u('rgommers'): u('Ralf Gommers'),
     u('sebhaase'): u('Sebastian Haase'),
     u('SytseK'): u('Sytse Knypstra'),
@@ -159,9 +164,6 @@ def main():
 Authors
 =======
 
-This release contains work by the following people (contributed at least
-one patch to this release, names in alphabetical order):
-
 """)
 
     for author in authors:
@@ -173,6 +175,7 @@ one patch to this release, names in alphabetical order):
     stdout_b.write(("""
 A total of %(count)d people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
 
 """ % dict(count=len(authors))).encode('utf-8'))
 

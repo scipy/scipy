@@ -20,10 +20,7 @@ class TestSS2TF:
               np.zeros((r, q)), 0)
 
     def test_basic(self):
-        for p, q, r in [
-            (3, 3, 3),
-            (1, 3, 3),
-            (1, 1, 1)]:
+        for p, q, r in [(3, 3, 3), (1, 3, 3), (1, 1, 1)]:
             yield self.tst_matrix_shapes, p, q, r
 
 

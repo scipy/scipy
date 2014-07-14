@@ -21,12 +21,18 @@ static int elsizes[] = {sizeof(Bool),
                         sizeof(void *),
 			0,0,0,0};
 
-typedef void (OneMultAddFunction) (char *, char *, char *);
+typedef void (OneMultAddFunction) (char *, char *, intp, char **, intp);
 
 #define MAKE_ONEMULTADD(fname, type) \
-static void fname ## _onemultadd(char *sum, char *term1, char *term2) { \
-  (*((type *) sum)) += (*((type *) term1)) * \
-  (*((type *) term2)); return; }
+static void fname ## _onemultadd(char *sum, char *term1, intp str, char **pvals, intp n) { \
+        intp k; \
+        type dsum = *(type*)sum; \
+        for (k=0; k < n; k++) { \
+          type tmp = *(type*)(term1 + k * str); \
+          dsum += tmp * *(type*)pvals[k]; \
+        } \
+        *(type*)(sum) = dsum; \
+}
 
 MAKE_ONEMULTADD(UBYTE, ubyte)
 MAKE_ONEMULTADD(USHORT, ushort)
@@ -50,15 +56,26 @@ MAKE_ONEMULTADD(CDOUBLE, __complex__ double)
 MAKE_ONEMULTADD(CLONGDOUBLE, __complex__ long double)
 #else
 #define MAKE_C_ONEMULTADD(fname, type) \
-static void fname ## _onemultadd(char *sum, char *term1, char *term2) { \
+static void fname ## _onemultadd2(char *sum, char *term1, char *term2) { \
   ((type *) sum)[0] += ((type *) term1)[0] * ((type *) term2)[0] \
     - ((type *) term1)[1] * ((type *) term2)[1]; \
   ((type *) sum)[1] += ((type *) term1)[0] * ((type *) term2)[1] \
     + ((type *) term1)[1] * ((type *) term2)[0]; \
   return; }
+
+#define MAKE_C_ONEMULTADD2(fname, type) \
+static void fname ## _onemultadd(char *sum, char *term1, intp str, char **pvals, intp n) { \
+        intp k; \
+        for (k=0; k < n; k++) { \
+          fname ## _onemultadd2(sum, term1 + k * str, pvals[k]); \
+        } \
+}
 MAKE_C_ONEMULTADD(CFLOAT, float)
 MAKE_C_ONEMULTADD(CDOUBLE, double)
 MAKE_C_ONEMULTADD(CLONGDOUBLE, longdouble)
+MAKE_C_ONEMULTADD2(CFLOAT, float)
+MAKE_C_ONEMULTADD2(CDOUBLE, double)
+MAKE_C_ONEMULTADD2(CLONGDOUBLE, longdouble)
 #endif /* __GNUC__ */
 
 static OneMultAddFunction *OneMultAdd[]={NULL,
@@ -83,6 +100,7 @@ static OneMultAddFunction *OneMultAdd[]={NULL,
 
 /* This could definitely be more optimized... */
 
+
 int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
 		       intp   *instr,     /* Input strides */
 		       char  *out,       /* Output data */
@@ -95,11 +113,11 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
 		       char  *fillvalue) /* fill value */
 {
   int bounds_pad_flag = 0;
-  int m, n, j, k, ind0, ind1;
+  int m, n, j, ind0, ind1;
   int Os[2];
-  char *sum=NULL, *value=NULL;
   int new_m, new_n, ind0_memory=0;
   int boundary, outsize, convolve, type_num, type_size;
+  char ** indices;
   OneMultAddFunction *mult_and_add;
 
   boundary = flag & BOUNDARY_MASK;  /* flag can be fill, reflecting, circular */
@@ -114,8 +132,8 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
   if (type_num < 0 || type_num > MAXTYPES) return -4;  /* Invalid type */
   type_size = elsizes[type_num];
 
-  if ((sum = calloc(type_size,2))==NULL) return -3; /* No memory */
-  value = sum + type_size;
+  indices = malloc(Nwin[1] * sizeof(indices[0]));
+  if (indices == NULL) return -3; /* No memory */
 
   if (outsize == FULL) {Os[0] = Ns[0]+Nwin[0]-1; Os[1] = Ns[1]+Nwin[1]-1;}
   else if (outsize == SAME) {Os[0] = Ns[0]; Os[1] = Ns[1];}
@@ -135,6 +153,7 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
     else new_m = convolve ? (m+Nwin[0]-1) : m; /* VALID */
 
     for (n=0; n < Os[1]; n++) {  /* loop over columns */
+      char * sum = out+m*outstr[0]+n*outstr[1];
       memset(sum, 0, type_size); /* sum = 0.0; */
 
       if (outsize == FULL) new_n = convolve ? n : (n-Nwin[1]+1);
@@ -160,9 +179,15 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
 	
 	if (!bounds_pad_flag) ind0_memory = ind0*instr[0];
 
-	for (k=0; k < Nwin[1]; k++) {
-	  if (bounds_pad_flag) memcpy(value,fillvalue,type_size);
-	  else {
+        if (bounds_pad_flag) {
+          intp k;
+          for (k=0; k < Nwin[1]; k++) {
+              indices[k] = fillvalue;
+          }
+        }
+        else  {
+          intp k;
+	  for (k=0; k < Nwin[1]; k++) {
 	    ind1 = convolve ? (new_n-k) : (new_n+k);
 	    if (ind1 < 0) {
 	      if (boundary == REFLECT) ind1 = -1-ind1;
@@ -174,18 +199,21 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
 	      else if (boundary == CIRCULAR) ind1 = ind1 - Ns[1];
 	      else bounds_pad_flag = 1;
 	    }
-	   
-	    if (bounds_pad_flag) memcpy(value, fillvalue, type_size);
-	    else memcpy(value, in+ind0_memory+ind1*instr[1], type_size);
+
+	    if (bounds_pad_flag) {
+              indices[k] = fillvalue;
+            }
+	    else {
+              indices[k] = in+ind0_memory+ind1*instr[1];
+            }
 	    bounds_pad_flag = 0;
 	  }
-	  mult_and_add(sum, hvals+j*hstr[0]+k*hstr[1], value);
-	}
-	memcpy(out+m*outstr[0]+n*outstr[1], sum, type_size);
+        }
+        mult_and_add(sum, hvals+j*hstr[0], hstr[1], indices, Nwin[1]);
       }
     }
   }
-  free(sum);
+  free(indices);
   return 0;
 }
 

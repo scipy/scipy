@@ -141,7 +141,7 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
         k.update({names.pop(): a.pop()})
         v = [meth(x, *a, **k) for meth in meths]
         npt.assert_array_equal(vals, v)
-        if not 'n' in k.keys():
+        if 'n' not in k.keys():
             # `n` is first parameter of moment(), so can't be used as named arg
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
@@ -151,3 +151,4 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     # unknown arguments should not go through:
     k.update({'kaboom': 42})
     npt.assert_raises(TypeError, distfn.cdf, x, **k)
+

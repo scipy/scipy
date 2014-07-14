@@ -31,9 +31,7 @@
  */
 
 
-void mvmpy(r, c, A, V, Y)
-int r, c;
-double *A, *V, *Y;
+void mvmpy(int r, int c, double *A, double *V, double *Y)
 {
     register double s;
     double *pA, *pV, *pY;
