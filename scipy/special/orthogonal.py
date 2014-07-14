@@ -175,7 +175,7 @@ def gen_roots_and_weights(n, an_func, sqrt_bn_func, mu):
 # Jacobi Polynomials 1               P^(alpha,beta)_n(x)
 
 
-def j_roots(n, alpha, beta, mu=0):
+def j_roots(n, alpha, beta, mu=False):
     """[x,w] = j_roots(n,alpha,beta)
 
     Returns the roots (x) of the nth order Jacobi polynomial, P^(alpha,beta)_n(x)
@@ -222,7 +222,7 @@ def jacobi(n, alpha, beta, monic=False):
     if n == 0:
         return orthopoly1d([],[],1.0,1.0,wfunc,(-1,1),monic,
                            eval_func=np.ones_like)
-    x,w,mu = j_roots(n,alpha,beta,mu=1)
+    x,w,mu = j_roots(n,alpha,beta,mu=True)
     ab1 = alpha+beta+1.0
     hn = 2**ab1/(2*n+ab1)*_gam(n+alpha+1)
     hn *= _gam(n+beta+1.0) / _gam(n+1) / _gam(n+ab1)
@@ -235,7 +235,7 @@ def jacobi(n, alpha, beta, monic=False):
 # Jacobi Polynomials shifted         G_n(p,q,x)
 
 
-def js_roots(n, p1, q1, mu=0):
+def js_roots(n, p1, q1, mu=False):
     """[x,w] = js_roots(n,p,q)
 
     Returns the roots (x) of the nth order shifted Jacobi polynomial, G_n(p,q,x),
@@ -268,7 +268,7 @@ def js_roots(n, p1, q1, mu=0):
         return val
     # What code would look like using jacobi polynomial roots
     #if mu:
-    #    [x,w,mut] = j_roots(n,p-q,q-1,mu=1)
+    #    [x,w,mut] = j_roots(n,p-q,q-1,mu=True)
     #    return [(x+1)/2.0,w,mu0]
     #else:
     #    [x,w] = j_roots(n,p-q,q-1,mu=0)
@@ -288,7 +288,7 @@ def sh_jacobi(n, p, q, monic=False):
         return orthopoly1d([],[],1.0,1.0,wfunc,(-1,1),monic,
                            eval_func=np.ones_like)
     n1 = n
-    x,w,mu0 = js_roots(n1,p,q,mu=1)
+    x,w,mu0 = js_roots(n1,p,q,mu=True)
     hn = _gam(n+1)*_gam(n+q)*_gam(n+p)*_gam(n+p-q+1)
     hn /= (2*n+p)*(_gam(2*n+p)**2)
     # kn = 1.0 in standard form so monic is redundant.  Kept for compatibility.
@@ -300,7 +300,7 @@ def sh_jacobi(n, p, q, monic=False):
 # Generalized Laguerre               L^(alpha)_n(x)
 
 
-def la_roots(n, alpha, mu=0):
+def la_roots(n, alpha, mu=False):
     """[x,w] = la_roots(n,alpha)
 
     Returns the roots (x) of the nth order generalized (associated) Laguerre
@@ -337,7 +337,7 @@ def genlaguerre(n, alpha, monic=False):
         n1 = n+1
     else:
         n1 = n
-    x,w,mu0 = la_roots(n1,alpha,mu=1)
+    x,w,mu0 = la_roots(n1,alpha,mu=True)
     wfunc = lambda x: exp(-x) * x**alpha
     if n == 0:
         x,w = [],[]
@@ -350,7 +350,7 @@ def genlaguerre(n, alpha, monic=False):
 # Laguerre                      L_n(x)
 
 
-def l_roots(n, mu=0):
+def l_roots(n, mu=False):
     """[x,w] = l_roots(n)
 
     Returns the roots (x) of the nth order Laguerre polynomial, L_n(x),
@@ -371,7 +371,7 @@ def laguerre(n, monic=False):
         n1 = n+1
     else:
         n1 = n
-    x,w,mu0 = l_roots(n1,mu=1)
+    x,w,mu0 = l_roots(n1,mu=True)
     if n == 0:
         x,w = [],[]
     hn = 1.0
@@ -414,7 +414,7 @@ def _h_gen_roots_and_weights(n, mu, factor, func):
         return x, w
 
 
-def h_roots(n, mu=0):
+def h_roots(n, mu=False):
     """[x,w] = h_roots(n)
 
     Returns the roots (x) of the nth order Hermite polynomial,
@@ -435,7 +435,7 @@ def hermite(n, monic=False):
         n1 = n+1
     else:
         n1 = n
-    x,w,mu0 = h_roots(n1,mu=1)
+    x,w,mu0 = h_roots(n1,mu=True)
     wfunc = lambda x: exp(-x*x)
     if n == 0:
         x,w = [],[]
@@ -448,7 +448,7 @@ def hermite(n, monic=False):
 # Hermite  2                         He_n(x)
 
 
-def he_roots(n, mu=0):
+def he_roots(n, mu=False):
     """[x,w] = he_roots(n)
 
     Returns the roots (x) of the nth order Hermite polynomial,
@@ -469,7 +469,7 @@ def hermitenorm(n, monic=False):
         n1 = n+1
     else:
         n1 = n
-    x,w,mu0 = he_roots(n1,mu=1)
+    x,w,mu0 = he_roots(n1,mu=True)
     wfunc = lambda x: exp(-x*x/4.0)
     if n == 0:
         x,w = [],[]
@@ -484,7 +484,7 @@ def hermitenorm(n, monic=False):
 # Ultraspherical (Gegenbauer)        C^(alpha)_n(x)
 
 
-def cg_roots(n, alpha, mu=0):
+def cg_roots(n, alpha, mu=False):
     """[x,w] = cg_roots(n,alpha)
 
     Returns the roots (x) of the nth order Ultraspherical (Gegenbauer)
@@ -512,7 +512,7 @@ def gegenbauer(n, alpha, monic=False):
 #  Computed anew.
 
 
-def t_roots(n, mu=0):
+def t_roots(n, mu=False):
     """[x,w] = t_roots(n)
 
     Returns the roots (x) of the nth order Chebyshev (of the first kind)
@@ -546,7 +546,7 @@ def chebyt(n, monic=False):
         return orthopoly1d([],[],pi,1.0,wfunc,(-1,1),monic,
                            lambda x: eval_chebyt(n,x))
     n1 = n
-    x,w,mu = t_roots(n1,mu=1)
+    x,w,mu = t_roots(n1,mu=True)
     hn = pi/2
     kn = 2**(n-1)
     p = orthopoly1d(x,w,hn,kn,wfunc,(-1,1),monic,
@@ -557,7 +557,7 @@ def chebyt(n, monic=False):
 #    U_n(x) = (n+1)! sqrt(pi) / (2*_gam(n+3./2)) * P^(1/2,1/2)_n(x)
 
 
-def u_roots(n, mu=0):
+def u_roots(n, mu=False):
     """[x,w] = u_roots(n)
 
     Returns the roots (x) of the nth order Chebyshev (of the second kind)
@@ -581,7 +581,7 @@ def chebyu(n, monic=False):
 # Chebyshev of the first kind        C_n(x)
 
 
-def c_roots(n, mu=0):
+def c_roots(n, mu=False):
     """[x,w] = c_roots(n)
 
     Returns the roots (x) of the nth order Chebyshev (of the first kind)
@@ -589,10 +589,10 @@ def c_roots(n, mu=0):
     over [-2,2] with weighting function (1-(x/2)**2)**(-1/2).
     """
     if mu:
-        [x,w,mu0] = j_roots(n,-0.5,-0.5,mu=1)
+        [x,w,mu0] = j_roots(n,-0.5,-0.5,mu=True)
         return [x*2,w,mu0]
     else:
-        [x,w] = j_roots(n,-0.5,-0.5,mu=0)
+        [x,w] = j_roots(n,-0.5,-0.5,mu=False)
         return [x*2,w]
 
 
@@ -607,7 +607,7 @@ def chebyc(n, monic=False):
         n1 = n+1
     else:
         n1 = n
-    x,w,mu0 = c_roots(n1,mu=1)
+    x,w,mu0 = c_roots(n1,mu=True)
     if n == 0:
         x,w = [],[]
     hn = 4*pi * ((n == 0)+1)
@@ -621,7 +621,7 @@ def chebyc(n, monic=False):
 # Chebyshev of the second kind       S_n(x)
 
 
-def s_roots(n, mu=0):
+def s_roots(n, mu=False):
     """[x,w] = s_roots(n)
 
     Returns the roots (x) of the nth order Chebyshev (of the second kind)
@@ -629,10 +629,10 @@ def s_roots(n, mu=0):
     over [-2,2] with weighting function (1-(x/2)**2)**1/2.
     """
     if mu:
-        [x,w,mu0] = j_roots(n,0.5,0.5,mu=1)
+        [x,w,mu0] = j_roots(n,0.5,0.5,mu=True)
         return [x*2,w,mu0]
     else:
-        [x,w] = j_roots(n,0.5,0.5,mu=0)
+        [x,w] = j_roots(n,0.5,0.5,mu=False)
         return [x*2,w]
 
 
@@ -647,7 +647,7 @@ def chebys(n, monic=False):
         n1 = n+1
     else:
         n1 = n
-    x,w,mu0 = s_roots(n1,mu=1)
+    x,w,mu0 = s_roots(n1,mu=True)
     if n == 0:
         x,w = [],[]
     hn = pi
@@ -662,7 +662,7 @@ def chebys(n, monic=False):
 # Shifted Chebyshev of the first kind     T^*_n(x)
 
 
-def ts_roots(n, mu=0):
+def ts_roots(n, mu=False):
     """[x,w] = ts_roots(n)
 
     Returns the roots (x) of the nth order shifted Chebyshev (of the first kind)
@@ -688,7 +688,7 @@ def sh_chebyt(n, monic=False):
 
 
 # Shifted Chebyshev of the second kind    U^*_n(x)
-def us_roots(n, mu=0):
+def us_roots(n, mu=False):
     """[x,w] = us_roots(n)
 
     Returns the roots (x) of the nth order shifted Chebyshev (of the second kind)
@@ -712,7 +712,7 @@ def sh_chebyu(n, monic=False):
 # Legendre
 
 
-def p_roots(n, mu=0):
+def p_roots(n, mu=False):
     """[x,w] = p_roots(n)
 
     Returns the roots (x) of the nth order Legendre polynomial, P_n(x),
@@ -733,7 +733,7 @@ def legendre(n, monic=False):
         n1 = n+1
     else:
         n1 = n
-    x,w,mu0 = p_roots(n1,mu=1)
+    x,w,mu0 = p_roots(n1,mu=True)
     if n == 0:
         x,w = [],[]
     hn = 2.0/(2*n+1)
@@ -745,7 +745,7 @@ def legendre(n, monic=False):
 # Shifted Legendre              P^*_n(x)
 
 
-def ps_roots(n, mu=0):
+def ps_roots(n, mu=False):
     """[x,w] = ps_roots(n)
 
     Returns the roots (x) of the nth order shifted Legendre polynomial, P^*_n(x),
@@ -766,7 +766,7 @@ def sh_legendre(n, monic=False):
     if n == 0:
         return orthopoly1d([],[],1.0,1.0,wfunc,(0,1),monic,
                            lambda x: eval_sh_legendre(n,x))
-    x,w,mu0 = ps_roots(n,mu=1)
+    x,w,mu0 = ps_roots(n,mu=True)
     hn = 1.0/(2*n+1.0)
     kn = _gam(2*n+1)/_gam(n+1)**2
     p = orthopoly1d(x,w,hn,kn,wfunc,limits=(0,1),monic=monic,
