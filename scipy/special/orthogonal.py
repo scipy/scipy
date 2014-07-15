@@ -735,8 +735,32 @@ def p_roots(n, mu=False):
 
 
 def legendre(n, monic=False):
-    """Returns the nth order Legendre polynomial, P_n(x), orthogonal over
-    [-1,1] with weight function 1.
+    """
+    Legendre polynomial coefficients
+
+    Returns the nth-order Legendre polynomial, P_n(x), orthogonal over
+    [-1, 1] with weight function 1.
+
+    Parameters
+    ----------
+    n
+        Order of the polynomial
+    monic : bool, optional
+        If True, output is a monic polynomial (normalized so the leading
+        coefficient is 1).  Default is False.
+
+    Returns
+    -------
+    P : orthopoly1d
+        The Legendre polynomial object
+
+    Examples
+    --------
+    Generate the 3rd-order Legendre polynomial 1/2*(5x^3 + 0x^2 - 3x + 0):
+
+    >>> legendre(3)
+    poly1d([ 2.5,  0. , -1.5, -0. ])
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
