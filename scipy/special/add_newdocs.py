@@ -2279,7 +2279,7 @@ add_newdoc("scipy.special", "obl_ang1",
 
     Oblate spheroidal angular function of the first kind and its derivative
 
-    Computes the oblate sheroidal angular function of the first kind
+    Computes the oblate spheroidal angular function of the first kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``.
 
@@ -2295,9 +2295,9 @@ add_newdoc("scipy.special", "obl_ang1_cv",
     """
     obl_ang1_cv(m, n, c, cv, x)
 
-    Oblate sheroidal angular function obl_ang1 for precomputed characteristic value
+    Oblate spheroidal angular function obl_ang1 for precomputed characteristic value
 
-    Computes the oblate sheroidal angular function of the first kind
+    Computes the oblate spheroidal angular function of the first kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
@@ -2326,7 +2326,7 @@ add_newdoc("scipy.special", "obl_rad1",
 
     Oblate spheroidal radial function of the first kind and its derivative
 
-    Computes the oblate sheroidal radial function of the first kind
+    Computes the oblate spheroidal radial function of the first kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``.
 
@@ -2342,9 +2342,9 @@ add_newdoc("scipy.special", "obl_rad1_cv",
     """
     obl_rad1_cv(m,n,c,cv,x)
 
-    Oblate sheroidal radial function obl_rad1 for precomputed characteristic value
+    Oblate spheroidal radial function obl_rad1 for precomputed characteristic value
 
-    Computes the oblate sheroidal radial function of the first kind
+    Computes the oblate spheroidal radial function of the first kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
@@ -2363,7 +2363,7 @@ add_newdoc("scipy.special", "obl_rad2",
 
     Oblate spheroidal radial function of the second kind and its derivative.
 
-    Computes the oblate sheroidal radial function of the second kind
+    Computes the oblate spheroidal radial function of the second kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``.
 
@@ -2379,9 +2379,9 @@ add_newdoc("scipy.special", "obl_rad2_cv",
     """
     obl_rad2_cv(m,n,c,cv,x)
 
-    Oblate sheroidal radial function obl_rad2 for precomputed characteristic value
+    Oblate spheroidal radial function obl_rad2 for precomputed characteristic value
 
-    Computes the oblate sheroidal radial function of the second kind
+    Computes the oblate spheroidal radial function of the second kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
@@ -2513,7 +2513,7 @@ add_newdoc("scipy.special", "pro_ang1",
 
     Prolate spheroidal angular function of the first kind and its derivative
 
-    Computes the prolate sheroidal angular function of the first kind
+    Computes the prolate spheroidal angular function of the first kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``.
 
@@ -2529,9 +2529,9 @@ add_newdoc("scipy.special", "pro_ang1_cv",
     """
     pro_ang1_cv(m,n,c,cv,x)
 
-    Prolate sheroidal angular function pro_ang1 for precomputed characteristic value
+    Prolate spheroidal angular function pro_ang1 for precomputed characteristic value
 
-    Computes the prolate sheroidal angular function of the first kind
+    Computes the prolate spheroidal angular function of the first kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
@@ -2560,7 +2560,7 @@ add_newdoc("scipy.special", "pro_rad1",
 
     Prolate spheroidal radial function of the first kind and its derivative
 
-    Computes the prolate sheroidal radial function of the first kind
+    Computes the prolate spheroidal radial function of the first kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``.
 
@@ -2576,9 +2576,9 @@ add_newdoc("scipy.special", "pro_rad1_cv",
     """
     pro_rad1_cv(m,n,c,cv,x)
 
-    Prolate sheroidal radial function pro_rad1 for precomputed characteristic value
+    Prolate spheroidal radial function pro_rad1 for precomputed characteristic value
 
-    Computes the prolate sheroidal radial function of the first kind
+    Computes the prolate spheroidal radial function of the first kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
@@ -2597,7 +2597,7 @@ add_newdoc("scipy.special", "pro_rad2",
 
     Prolate spheroidal radial function of the secon kind and its derivative
 
-    Computes the prolate sheroidal radial function of the second kind
+    Computes the prolate spheroidal radial function of the second kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and |x|<1.0.
 
@@ -2613,9 +2613,9 @@ add_newdoc("scipy.special", "pro_rad2_cv",
     """
     pro_rad2_cv(m,n,c,cv,x)
 
-    Prolate sheroidal radial function pro_rad2 for precomputed characteristic value
+    Prolate spheroidal radial function pro_rad2 for precomputed characteristic value
 
-    Computes the prolate sheroidal radial function of the second kind
+    Computes the prolate spheroidal radial function of the second kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
