@@ -131,7 +131,7 @@ def _reverse_cuthill_mckee(np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
     cdef np.ndarray[ITYPE_t] degree = _node_degrees(ind, ptr, num_rows).astype(ITYPE)
     cdef np.ndarray[ITYPE_t] inds = np.argsort(degree).astype(ITYPE)
     cdef np.ndarray[ITYPE_t] rev_inds = np.argsort(inds).astype(ITYPE)
-    cdef np.ndarray[ITYPE_t] temp_degrees = np.zeros(max(degree), dtype=ITYPE)
+    cdef np.ndarray[ITYPE_t] temp_degrees = np.zeros(np.max(degree), dtype=ITYPE)
     cdef int32_or_int64 i, j, seed, temp2
     
     # loop over zz takes into account possible disconnected graph.
