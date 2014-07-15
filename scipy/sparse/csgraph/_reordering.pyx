@@ -126,12 +126,12 @@ def _reverse_cuthill_mckee(np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
     at a node of lowest degree for each connected component.
     """
     cdef unsigned int N = 0, N_old, level_start, level_end, temp
-    cdef unsigned int zz, ii, jj, kk, ll
+    cdef unsigned int zz, ii, jj, kk, ll, level_len
     cdef np.ndarray[int32_or_int64] order = np.zeros(num_rows, dtype=ind.dtype)
     cdef np.ndarray[ITYPE_t] degree = _node_degrees(ind, ptr, num_rows).astype(ITYPE)
     cdef np.ndarray[ITYPE_t] inds = np.argsort(degree).astype(ITYPE)
     cdef np.ndarray[ITYPE_t] rev_inds = np.argsort(inds).astype(ITYPE)
-    cdef np.ndarray[ITYPE_t] temp_degrees = np.zeros(num_rows, dtype=ITYPE)
+    cdef np.ndarray[ITYPE_t] temp_degrees = np.zeros(max(degree), dtype=ITYPE)
     cdef int32_or_int64 i, j, seed, temp2
     
     # loop over zz takes into account possible disconnected graph.
@@ -148,6 +148,7 @@ def _reverse_cuthill_mckee(np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
                 for ii in range(level_start, level_end):
                     i = order[ii]
                     N_old = N
+
                     # add unvisited neighbors
                     for jj in range(ptr[i], ptr[i + 1]):
                         # j is node number connected to i
@@ -158,29 +159,30 @@ def _reverse_cuthill_mckee(np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
                             N += 1
 
                     # Add values to temp_degrees array for insertion sort
-                    temp = 0
+                    level_len = 0
                     for kk in range(N_old, N):
-                        temp_degrees[temp] = degree[order[kk]]
-                        temp += 1
-
+                        temp_degrees[level_len] = degree[order[kk]]
+                        level_len += 1
+                
                     # Do insertion sort for nodes from lowest to highest degree
-                    for kk in range(N_old, N - 1):
-                        temp = temp_degrees[kk - N_old]
-                        temp2 = order[kk]
-                        ll = kk - 1
-                        while (ll >= N_old) and (temp_degrees[ll] > temp):
-                            temp_degrees[ll + 1 - N_old] = temp_degrees[ll - N_old]
-                            order[ll + 1] = order[ll]
+                    for kk in range(1,level_len):
+                        temp = temp_degrees[kk]
+                        temp2 = order[N_old+kk]
+                        ll = kk
+                        while (ll > 0) and (temp < temp_degrees[ll-1]):
+                            temp_degrees[ll] = temp_degrees[ll-1]
+                            order[N_old+ll] = order[N_old+ll-1]
                             ll -= 1
-                        temp_degrees[ll + 1 - N_old] = temp
-                        order[ll + 1] = temp2
-
+                        temp_degrees[ll] = temp
+                        order[N_old+ll] = temp2
+                
                 # set next level start and end ranges
                 level_start = level_end
                 level_end = N
 
         if N == num_rows:
             break
+
     # return reversed order for RCM ordering
     return order[::-1]
 
