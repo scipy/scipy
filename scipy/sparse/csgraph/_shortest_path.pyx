@@ -121,7 +121,9 @@ def shortest_path(csgraph, method='auto',
     """
     # validate here to catch errors early but don't store the result;
     # we'll validate again later
-    validate_graph(csgraph, directed, DTYPE)
+    validate_graph(csgraph, directed, DTYPE,
+                   copy_if_dense=(not overwrite),
+                   copy_if_sparse=(not overwrite))
 
     if method == 'auto':
         # guess fastest method based on number of nodes and edges
