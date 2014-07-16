@@ -760,7 +760,8 @@ skellam = skellam_gen(a=-np.inf, name="skellam", longname='A Skellam')
 # Collect names of classes and objects in this module.
 _distn_names = []
 _distn_gen_names = []
-for name, value in globals().items():
+pairs = list(globals().items())
+for name, value in pairs:
     if name.startswith('_'):
         continue
     if name.endswith('_gen') and issubclass(value, rv_discrete):

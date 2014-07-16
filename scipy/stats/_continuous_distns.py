@@ -4017,7 +4017,8 @@ wrapcauchy = wrapcauchy_gen(a=0.0, b=2*pi, name='wrapcauchy')
 # Collect names of classes and objects in this module.
 _distn_names = []
 _distn_gen_names = []
-for name, value in globals().items():
+pairs = list(globals().items())
+for name, value in pairs:
     if name.startswith('_'):
         continue
     if name.endswith('_gen') and issubclass(value, rv_continuous):
