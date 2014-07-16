@@ -26,31 +26,11 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 
 from ._distn_infrastructure import (
-        rv_continuous, valarray,
-        _skew, _kurtosis, _lazywhere,
-        _ncx2_log_pdf, _ncx2_pdf, _ncx2_cdf,
+        rv_continuous, valarray, _skew, _kurtosis, _lazywhere,
+        _ncx2_log_pdf, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
         )
 
 from ._constants import _XMIN, _EULER, _ZETA3
-
-__all__ = [
-    'ksone', 'kstwobign', 'norm', 'alpha', 'anglit', 'arcsine',
-    'beta', 'betaprime', 'bradford', 'burr', 'fisk', 'cauchy',
-    'chi', 'chi2', 'cosine', 'dgamma', 'dweibull', 'erlang',
-    'expon', 'exponweib', 'exponpow', 'fatiguelife', 'foldcauchy',
-    'f', 'foldnorm', 'frechet_r', 'weibull_min', 'frechet_l',
-    'weibull_max', 'genlogistic', 'genpareto', 'genexpon', 'genextreme',
-    'gamma', 'gengamma', 'genhalflogistic', 'gompertz', 'gumbel_r',
-    'gumbel_l', 'halfcauchy', 'halflogistic', 'halfnorm', 'hypsecant',
-    'gausshyper', 'invgamma', 'invgauss', 'invweibull',
-    'johnsonsb', 'johnsonsu', 'laplace', 'levy', 'levy_l',
-    'levy_stable', 'logistic', 'loggamma', 'loglaplace', 'lognorm',
-    'gilbrat', 'maxwell', 'mielke', 'nakagami', 'ncx2', 'ncf', 't',
-    'nct', 'pareto', 'lomax', 'pearson3', 'powerlaw', 'powerlognorm',
-    'powernorm', 'rdist', 'rayleigh', 'reciprocal', 'rice',
-    'recipinvgauss', 'semicircular', 'triang', 'truncexpon',
-    'truncnorm', 'tukeylambda', 'uniform', 'vonmises', 'vonmises_line',
-    'wald', 'wrapcauchy']
 
 
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
@@ -4027,3 +4007,10 @@ class wrapcauchy_gen(rv_continuous):
     def _entropy(self, c):
         return log(2*pi*(1-c*c))
 wrapcauchy = wrapcauchy_gen(a=0.0, b=2*pi, name='wrapcauchy')
+
+
+# Collect names of classes and objects in this module.
+pairs = list(globals().items())
+_distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
+
+__all__ = _distn_names + _distn_gen_names
