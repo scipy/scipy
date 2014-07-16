@@ -546,8 +546,8 @@ class dirichlet_gen(object):
     def __init__(self):
         pass
 
-    def __call__(self, a, x=None):
-        return dirichlet_frozen(a, x)
+    def __call__(self, a):
+        return dirichlet_frozen(a)
 
 
     def _B(self, a):
