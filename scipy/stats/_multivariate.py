@@ -513,3 +513,115 @@ for name in ['logpdf', 'pdf', 'rvs']:
     method_frozen = multivariate_normal_frozen.__dict__[name]
     method_frozen.__doc__ = doccer.docformat(method.__doc__, docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, docdict_params)
+
+
+def _dirichlet_check_parameters(a):
+    if min(a) <= 0:
+        raise ValueError("All parameters must be greater than 0")
+    elif a.ndim != 1:
+        raise ValueError("Parameter vector 'a' must be one dimensional, " +
+                         "but a.shape = %s." % str(a.shape))
+    return a
+
+
+def _dirichlet_check_input(a, x):
+
+    if x.shape != a.shape:
+        raise ValueError("Vector 'x' must have the same shape as" +
+                         " parameter vector 'a', but a.shape = %s and " +
+                         "x.shape = %s." % (a.shape, x.shape))
+    if min(x) < 0:
+        raise ValueError("Each entry in 'x' must be greater or equal zero.")
+
+    if max(x) > 1:
+        raise ValueError("Each entry in 'x' must be smaller or equal one.")
+
+    if np.sum(x) > 1:
+        raise ValueError("The input vector 'x' must lie within the normal simplex.")
+
+    return x
+
+
+class dirichlet_gen(object):
+    def __init__(self):
+        pass
+
+    def __call__(self, a, x=None):
+        return dirichlet_frozen(a, x)
+
+
+    def _B(self, a):
+        return np.sum(np.gammaln(a)) - np.gammaln(np.sum(a))
+
+    def _logpdf(self, x, a):
+        a = _dirichlet_check_parameters(a)
+        x = _dirichlet_check_input(a, x)
+
+        B = self._B(a)
+        out = - B + np.sum((a - 1) * np.log(x))
+        return _squeeze_output(out)
+
+    def _pdf(self, x, a):
+        a = _dirichlet_check_parameters(a)
+        x = _dirichlet_check_input(a, x)
+
+        return np.exp(self._logpdf(a, x))
+
+    def _mean(self, a):
+        a = _dirichlet_check_parameters(a)
+
+        out = a/(np.sum(a))
+        return _squeeze_output(out)
+
+    def _var(self, a):
+        a = _dirichlet_check_parameters(a)
+
+        a0 = np.sum(a)
+        out =  a * (a0 - 1)/((a0 * a0) * (a0 + 1))
+        return _squeeze_output(out)
+
+    def _entropy(self, a):
+        a = _dirichlet_check_parameters(a)
+
+        a0 = np.sum(a)
+        B = self._B(a)
+        K = a.shape[0]
+
+        out =  np.log(B) + (a0 - K) * np.psi(a0) - np.sum((a - 1) * np.psi(a))
+        return _squeeze_output(out)
+
+    def _rvs(self, a):
+        return np.random.dirichlet(a)
+
+
+dirichlet = dirichlet_gen()
+
+
+class dirichlet_frozen(object):
+    def __init__(self, a):
+        self.a = _dirichlet_check_parameters(a)
+        self._dirichlet = dirichlet_gen()
+
+    def logpdf(self, x):
+        return self._dirichlet._logpdf(x, self.a)
+
+    def pdf(self, x):
+        return self._dirichlet._pdf(x, self.a)
+
+    def mean(self):
+        return self._dirichlet._mean(self.a)
+
+    def var(self):
+        return self._dirichlet._var(self.a)
+
+    def entropy(self):
+        return self._dirichlet._entropy(self.a)
+
+    def rvs(self):
+        return self._dirichlet._rvs(self.a)
+
+
+
+
+
+
