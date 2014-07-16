@@ -591,6 +591,7 @@ class dirichlet_gen(object):
         return _squeeze_output(out)
 
     def _rvs(self, a):
+        a = _dirichlet_check_parameters(a)
         return np.random.dirichlet(a)
 
 
