@@ -515,6 +515,14 @@ class TestLombscargle:
         f = np.zeros(1)
         assert_raises(ZeroDivisionError, lombscargle, t, x, f)
 
+    def test_lombscargle_atan_vs_atan2(self):
+        # https://github.com/scipy/scipy/issues/3787
+        # This raised a ZeroDivisionError.
+        t = np.linspace(0, 10, 1000, endpoint=False)
+        x = np.sin(4*t)
+        f = np.linspace(0, 50, 500, endpoint=False) + 0.1
+        q = lombscargle(t, x, f*2*np.pi)
+
 
 if __name__ == "__main__":
     run_module_suite()
