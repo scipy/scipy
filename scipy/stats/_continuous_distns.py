@@ -26,9 +26,8 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 
 from ._distn_infrastructure import (
-        rv_continuous, valarray,
-        _skew, _kurtosis, _lazywhere,
-        _ncx2_log_pdf, _ncx2_pdf, _ncx2_cdf,
+        rv_continuous, valarray, _skew, _kurtosis, _lazywhere,
+        _ncx2_log_pdf, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
         )
 
 from ._constants import _XMIN, _EULER, _ZETA3
@@ -4015,15 +4014,7 @@ wrapcauchy = wrapcauchy_gen(a=0.0, b=2*pi, name='wrapcauchy')
 
 
 # Collect names of classes and objects in this module.
-_distn_names = []
-_distn_gen_names = []
 pairs = list(globals().items())
-for name, value in pairs:
-    if name.startswith('_'):
-        continue
-    if name.endswith('_gen') and issubclass(value, rv_continuous):
-        _distn_gen_names.append(name)
-    if isinstance(value, rv_continuous):
-        _distn_names.append(name)
+_distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
 
 __all__ = _distn_names + _distn_gen_names

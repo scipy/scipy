@@ -13,7 +13,7 @@ import numpy as np
 import numpy.random as mtrand
 
 from ._distn_infrastructure import (
-        rv_discrete, _lazywhere, _ncx2_pdf, _ncx2_cdf)
+        rv_discrete, _lazywhere, _ncx2_pdf, _ncx2_cdf, get_distribution_names)
 
 
 class binom_gen(rv_discrete):
@@ -758,15 +758,7 @@ skellam = skellam_gen(a=-np.inf, name="skellam", longname='A Skellam')
 
 
 # Collect names of classes and objects in this module.
-_distn_names = []
-_distn_gen_names = []
 pairs = list(globals().items())
-for name, value in pairs:
-    if name.startswith('_'):
-        continue
-    if name.endswith('_gen') and issubclass(value, rv_discrete):
-        _distn_gen_names.append(name)
-    if isinstance(value, rv_discrete):
-        _distn_names.append(name)
+_distn_names, _distn_gen_names = get_distribution_names(pairs, rv_discrete)
 
 __all__ = _distn_names + _distn_gen_names
