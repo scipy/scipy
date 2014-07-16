@@ -33,25 +33,6 @@ from ._distn_infrastructure import (
 
 from ._constants import _XMIN, _EULER, _ZETA3
 
-__all__ = [
-    'ksone', 'kstwobign', 'norm', 'alpha', 'anglit', 'arcsine',
-    'beta', 'betaprime', 'bradford', 'burr', 'fisk', 'cauchy',
-    'chi', 'chi2', 'cosine', 'dgamma', 'dweibull', 'erlang',
-    'expon', 'exponweib', 'exponpow', 'fatiguelife', 'foldcauchy',
-    'f', 'foldnorm', 'frechet_r', 'weibull_min', 'frechet_l',
-    'weibull_max', 'genlogistic', 'genpareto', 'genexpon', 'genextreme',
-    'gamma', 'gengamma', 'genhalflogistic', 'gompertz', 'gumbel_r',
-    'gumbel_l', 'halfcauchy', 'halflogistic', 'halfnorm', 'hypsecant',
-    'gausshyper', 'invgamma', 'invgauss', 'invweibull',
-    'johnsonsb', 'johnsonsu', 'laplace', 'levy', 'levy_l',
-    'levy_stable', 'logistic', 'loggamma', 'loglaplace', 'lognorm',
-    'gilbrat', 'maxwell', 'mielke', 'nakagami', 'ncx2', 'ncf', 't',
-    'nct', 'pareto', 'lomax', 'pearson3', 'powerlaw', 'powerlognorm',
-    'powernorm', 'rdist', 'rayleigh', 'reciprocal', 'rice',
-    'recipinvgauss', 'semicircular', 'triang', 'truncexpon',
-    'truncnorm', 'tukeylambda', 'uniform', 'vonmises', 'vonmises_line',
-    'wald', 'wrapcauchy']
-
 
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 class ksone_gen(rv_continuous):
@@ -4031,3 +4012,17 @@ class wrapcauchy_gen(rv_continuous):
     def _entropy(self, c):
         return log(2*pi*(1-c*c))
 wrapcauchy = wrapcauchy_gen(a=0.0, b=2*pi, name='wrapcauchy')
+
+
+# Collect names of classes and objects in this module.
+_distn_names = []
+_distn_gen_names = []
+for name, value in globals().items():
+    if name.startswith('_'):
+        continue
+    if name.endswith('_gen') and issubclass(value, rv_continuous):
+        _distn_gen_names.append(name)
+    if isinstance(value, rv_continuous):
+        _distn_names.append(name)
+
+__all__ = _distn_names + _distn_gen_names
