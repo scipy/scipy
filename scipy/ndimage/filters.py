@@ -35,6 +35,7 @@ import numpy
 from . import _ni_support
 from . import _nd_image
 from scipy.misc import doccer
+from scipy.lib._version import NumpyVersion
 
 __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'prewitt', 'sobel', 'generic_laplace', 'laplace',
@@ -478,7 +479,7 @@ def generic_gradient_magnitude(input, derivative, output=None,
             numpy.multiply(tmp, tmp, tmp)
             output += tmp
         # This allows the sqrt to work with a different default casting
-        if numpy.version.short_version > '1.6.1':
+        if NumpyVersion(numpy.__version__) > '1.6.1':
             numpy.sqrt(output, output, casting='unsafe')
         else:
             numpy.sqrt(output, output)
