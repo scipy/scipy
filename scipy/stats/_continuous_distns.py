@@ -17,6 +17,9 @@ from numpy import (where, arange, putmask, ravel, sum, shape,
                    log, sqrt, exp, arctanh, tan, sin, arcsin, arctan,
                    tanh, cos, cosh, sinh, log1p, expm1)
 
+# Scipy.special versions of these to be preferred to numpy equivalents, per github #3242?
+from scipy.special import (expm1 as ss_expm1, log1p as ss_log1p) 
+
 from numpy import polyval, place, extract, any, asarray, nan, inf, pi
 
 import numpy as np
@@ -38,7 +41,7 @@ __all__ = [
     'beta', 'betaprime', 'bradford', 'burr', 'fisk', 'cauchy',
     'chi', 'chi2', 'cosine', 'dgamma', 'dweibull', 'erlang',
     'expon', 'exponweib', 'exponpow', 'fatiguelife', 'foldcauchy',
-    'f', 'foldnorm', 'frechet_r', 'weibull_min', 'frechet_l',
+    'f', 'foldnorm', 'frechet', 'frechet_l', 'frechet_r', 'weibull_min',
     'weibull_max', 'genlogistic', 'genpareto', 'genexpon', 'genextreme',
     'gamma', 'gengamma', 'genhalflogistic', 'gompertz', 'gumbel_r',
     'gumbel_l', 'halfcauchy', 'halflogistic', 'halfnorm', 'hypsecant',
@@ -1277,81 +1280,136 @@ class foldnorm_gen(rv_continuous):
 foldnorm = foldnorm_gen(a=0.0, name='foldnorm')
 
 
-## Extreme Value Type II or Frechet
-## (defined in Regress+ documentation as Extreme LB) as
-##   a limiting value distribution.
-##
-class frechet_r_gen(rv_continuous):
-    """A Frechet right (or Weibull minimum) continuous random variable.
+class weibull_min_gen(rv_continuous):
+    """A Weibull continuous random variable.
 
     %(before_notes)s
 
     See Also
     --------
-    weibull_min : The same distribution as `frechet_r`.
-    frechet_l, weibull_max
+    genextreme, frechet
 
     Notes
     -----
-    The probability density function for `frechet_r` is::
+    The probability density function for `weibull_min` is::
 
-        frechet_r.pdf(x, c) = c * x**(c-1) * exp(-x**c)
+        weibull_min.pdf(x, c) = c * x**(c-1) * exp(-x**c)
 
-    for ``x > 0``, ``c > 0``.
+    for ``x >= 0``, ``c > 0``.
+
+    Under certain conditions [1], the Weibull distribution is the limiting
+    distribution of the minima of a collection of random variables; hence the
+    name `weibull_min` used here.
+
+    More usually called simply the "Weibull" distribution [1]_, [2]_,
+    [3]_.  Though [1]_ reports that historically this was also
+    referred to as the Frechet distribution, this usage is no longer
+    current, and poses a name conflict with the (related) Frechet
+    distribution as implemented in scipy.stats (`frechet`).
+
+    The distribution `weibull_min` is mean to be functionally
+    equivalent to Mathematica's WeibullDistribution [4]_.
+
+
+    References
+    ----------
+    .. [1] Johnson, N.; Kotz, S.; and Balakrishnan, N. Continuous Univariate Distributions,
+           Vol. 2, 2nd ed. New York: Wiley, 1995.
+
+    .. [2] Weisstein, Eric W. "Weibull Distribution." From MathWorld--A Wolfram Web Resource.
+           http://mathworld.wolfram.com/WeibullDistribution.html
+
+    .. [3] http://en.wikipedia.org/wiki/Weibull_distribution
+
+    .. [4] http://reference.wolfram.com/mathematica/ref/WeibullDistribution.html
 
     %(example)s
 
     """
     def _pdf(self, x, c):
-        return c*pow(x, c-1)*exp(-pow(x, c))
+        return exp(self._logpdf(x,c))
 
     def _logpdf(self, x, c):
-        return log(c) + (c-1)*log(x) - pow(x, c)
+        return log(c) + (c-1)*log(x) - np.power(x, c)
 
     def _cdf(self, x, c):
-        return -expm1(-pow(x, c))
+        return -ss_expm1(-np.power(x, c))
 
     def _ppf(self, q, c):
-        return pow(-log1p(-q), 1.0/c)
+        return np.power(-ss_log1p(-q), 1.0/c)
+
+    def _isf(self, q, c):
+        return np.power(-log(q), 1./c)
 
     def _munp(self, n, c):
         return special.gamma(1.0+n*1.0/c)
 
     def _entropy(self, c):
         return -_EULER / c - log(c) + _EULER + 1
-frechet_r = frechet_r_gen(a=0.0, name='frechet_r')
-weibull_min = frechet_r_gen(a=0.0, name='weibull_min')
+weibull_min = weibull_min_gen(a=0.0, name='weibull_min')
 
 
-class frechet_l_gen(rv_continuous):
-    """A Frechet left (or Weibull maximum) continuous random variable.
+class weibull_max_gen(rv_continuous):
+    """A  Weibull maximum continuous random variable.
 
     %(before_notes)s
 
     See Also
     --------
-    weibull_max : The same distribution as `frechet_l`.
-    frechet_r, weibull_min
+    weibull_min, genextreme
 
     Notes
     -----
-    The probability density function for `frechet_l` is::
+    The probability density function for `weibull_max` is::
 
-        frechet_l.pdf(x, c) = c * (-x)**(c-1) * exp(-(-x)**c)
+        weibull_max.pdf(x, c) = c * (-x)**(c-1) * exp(-(-x)**c)
 
-    for ``x < 0``, ``c > 0``.
+    for ``x <= 0``, ``c > 0``.
+
+    Under certain conditions ([1]_, [2]_), the `weibull_max`
+    distribution is the limiting distribution of the maxima of a
+    collection of random variables; hence the name used here.
+
+    This distribution may also be referred to as the "reversed Weibull"
+    distribution [3]_, and plays a special role in the study of the
+    distribution of extreme values, where by the
+    Fisher-Tippett-Gnedenko theorem [4]_ it is one of three possible
+    limiting distributions for the maxima of a collection of random
+    variables.  In this context it is also sometimes known as the Type
+    III extreme value distribution.
+
+    The family of (reversed) Weibull distributions is a special case of the
+    larger family of Generalized Extreme Value distribution
+    (`genextreme`), corresponding to the case in which the shape
+    parameter (or "extreme value index") is negative [3]_.
+
+    References
+    ----------
+    .. [1] Johnson, N.; Kotz, S.; and Balakrishnan, N. Continuous Univariate Distributions,
+           Vol. 2, 2nd ed. New York: Wiley, 1995.
+
+    .. [2] Weisstein, Eric W. "Weibull Distribution." From MathWorld--A Wolfram Web Resource.
+           http://mathworld.wolfram.com/WeibullDistribution.html
+
+    .. [3] http://en.wikipedia.org/wiki/Generalized_extreme_value_distribution#Link_to_Fr.C3.A9chet.2C_Weibull_and_Gumbel_families
+
+    .. [4] http://en.wikipedia.org/wiki/Fisher-Tippett-Gnedenko_theorem
+
 
     %(example)s
 
     """
     def _pdf(self, x, c):
-        return c*pow(-x, c-1)*exp(-pow(-x, c))
+        return exp(self._logpdf(x,c))
+
+    def _logpdf(self, x, c):
+        return log(c)+(c-1)*log(-x) - np.power(-x, c)
 
     def _cdf(self, x, c):
-        return exp(-pow(-x, c))
+        return exp(-np.power(-x, c))
 
     def _ppf(self, q, c):
-        return -pow(-log(q), 1.0/c)
+        return -np.power(-log(q), 1.0/c)
 
     def _munp(self, n, c):
         val = special.gamma(1.0+n*1.0/c)
@@ -1363,9 +1421,96 @@ class frechet_l_gen(rv_continuous):
 
     def _entropy(self, c):
         return -_EULER / c - log(c) + _EULER + 1
-frechet_l = frechet_l_gen(b=0.0, name='frechet_l')
-weibull_max = frechet_l_gen(b=0.0, name='weibull_max')
+weibull_max = weibull_max_gen(b=0.0, name='weibull_max')
 
+class frechet_gen(rv_continuous):
+    """A Frechet continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    genextreme, weibull_min, invweibull
+
+    Notes
+    -----
+    The probability density function for `frechet` is::
+
+        frechet.pdf(x, c) = c * x**(-c-1) * exp(-x**-c)
+
+    for ``x > 0``, ``c > 0``.
+
+    The Frechet distribution is a sort of inverse to the Weibull
+    (`weibull_min`) distribution, in the sense that if $X~Frechet$,
+    then $1/X~Weibull$ (though the location and scale parameters will
+    differ).  Accordingly, the Frechet distribution is also sometimes
+    called the "generalized inverse Weibull" [1]_.
+
+    The Frechet distribution may also be known as the Frechet-Pareto
+    distribution [2]_, and plays a special role in the study of the
+    distribution of extreme values, where by the
+    Fisher-Tippett-Gnedenko theorem [3]_ it is one of three possible
+    limiting distributions for the maxima of a collection of random
+    variables.  In this context it is also sometimes known as the Type
+    II extreme value distribution.  Historically the term "Frechet
+    distribution" may also have been used to refer to the Weibull
+    distribution, but this usage is no longer current.
+
+    The family of Frechet distributions is a special case of the
+    larger family of Generalized Extreme Value distribution
+    (`genextreme`), corresponding to the case in which the shape
+    parameter (or "extreme value index") is positive [2]_.
+
+    The distribution `frechet` is mean to be functionally
+    equivalent to Mathematica's FrechetDistribution [5]_.
+
+    References
+    ----------
+    .. [1] F.R.S. de Gusmao, E.M.M Ortega and G.M. Cordeiro, "The generalized inverse
+           Weibull distribution", Stat. Papers, vol. 52, pp. 591-619, 2011.
+
+    .. [2] Beirlant, Jan et al, _Statistics of extremes: theory and applications_, Wiley, 2006.
+
+    .. [3] http://en.wikipedia.org/wiki/Generalized_extreme_value_distribution#Link_to_Fr.C3.A9chet.2C_Weibull_and_Gumbel_families
+
+    .. [4] http://en.wikipedia.org/wiki/Fisher-Tippett-Gnedenko_theorem
+
+    .. [5] http://reference.wolfram.com/mathematica/ref/FrechetDistribution.html
+
+    %(example)s
+
+    """
+    def _pdf(self, x, c):
+        return exp(self._logpdf(x,c))
+
+    def _logpdf(self, x, c):
+        return log(c) + (-c-1)*log(x) - np.power(x, -c)
+
+    def _cdf(self, x, c):
+        return exp(-np.power(x, -c))
+
+    def _ppf(self, q, c):
+        return np.power(-log(q), -1./c)
+
+    def _munp(self, n, c):
+        return special.gamma(1.0 - n*1./c)
+
+    def _entropy(self, c):
+        return 1 + _EULER*(1 + 1./c) - log(c)
+
+frechet = frechet_gen(a=0.0, name='frechet')
+
+frechet_r = weibull_min_gen(a=0.0, name='frechet_r')
+frechet_r = np.deprecate(frechet_r, old_name='frechet_r', new_name='weibull_min',
+                         message="""
+The distribution frechet_r is a synonym for weibull_min; this historical usage is deprecated
+because of possible confusion with the (quite different) Frechet distribution.""")
+
+frechet_l = weibull_max_gen(b=0.0, name='frechet_l')
+frechet_l = np.deprecate(frechet_l, old_name='frechet_l', new_name='weibull_max',
+                         message="""
+The distribution frechet_l is a synonym for weibull_max; this historical usage is deprecated
+because of possible confusion with the (quite different) Frechet distribution.""")
 
 class genlogistic_gen(rv_continuous):
     """A generalized logistic continuous random variable.
@@ -1503,15 +1648,48 @@ class genextreme_gen(rv_continuous):
     See Also
     --------
     gumbel_r
+    frechet_r
+    weibull_max
 
     Notes
     -----
-    For ``c=0``, `genextreme` is equal to `gumbel_r`.
-    The probability density function for `genextreme` is::
+    For the generalized extreme value (GEV) family of distributions,
+    the cumulative distribution function takes the form [Johnson-Kotz 1994]_:
 
-        genextreme.pdf(x, c) =
-            exp(-exp(-x))*exp(-x),                    for c==0
-            exp(-(1-c*x)**(1/c))*(1-c*x)**(1/c-1),    for x <= 1/c, c > 0
+       genextreme.cdf(x,c) = exp(-t(x)), where
+
+       t(x)=(1+c*(x-mu)/sigma)**(-1/c) for c not equal to zero, and
+            exp(-(x-mu)/sigma) for c=0.
+
+        
+    Note that mu and sigma are respectively the usual `loc` and `scale` parameters.
+
+    The GEV family nests three other types of distributions, depending on the
+    value of `c` (also called the "Extreme Value Index").  For:
+
+       c=0 : yields distributions in the Gumbel family (`gumbel_r`);
+       c>0 : yields distributions in the Frechet family, but location and scaling differ (see below);
+
+       c<0 : yields distributions in the Weibull family, but location and scaling differ (see below).
+
+    Differences in scaling
+    ^^^^^^^^^^^^^^^^^^^^^^
+    If c>0, then
+    >>> from scipy.stats import genextreme, frechet_r, weibull_max
+    >>> (mu,sigma)=(1,2)
+    >>> c=-1 # EVI parameter
+    >>> G=genextreme(c,loc=mu,scale=sigma).cdf
+    >>> F=frechet_r(1./c,loc=(sigma/abs(c)+mu),scale=sigma/abs(c)).cdf
+    >>> abs(G(0)-F(0))<1e-10
+    True
+    >>> abs(G(-1)-F(-1))<1e-10
+    True
+
+
+    If c<0, then
+    genextreme(c,loc=mu,scale=sigma) delivers the same frozen rv as weibull_max(1./abs(c),loc=(sigma/abs(c)+mu),scale=sigma/abs(c)).
+
+    [Johnson-Kotz 1994]   Norman L. Johnson and Samuel Kotz, Continuous Univariate Distributions, Volume 1. 1994.
 
     %(example)s
 
@@ -1519,14 +1697,14 @@ class genextreme_gen(rv_continuous):
     def _argcheck(self, c):
         min = np.minimum
         max = np.maximum
-        self.b = where(c > 0, 1.0 / max(c, _XMIN), inf)
-        self.a = where(c < 0, 1.0 / min(c, -_XMIN), -inf)
+        self.b = where(c >= 0, inf, 1.0 / max(c, _XMIN))
+        self.a = where(c <= 0, -inf, 1.0 / max(c, _XMIN))
         return where(abs(c) == inf, 0, 1)
 
     def _pdf(self, x, c):
         cx = c*x
-        logex2 = where((c == 0)*(x == x), 0.0, log1p(-cx))
-        logpex2 = where((c == 0)*(x == x), -x, logex2/c)
+        logex2 = where((c == 0)*(x == x), 0.0, log1p(cx))
+        logpex2 = where((c == 0)*(x == x), -x, logex2/-c)
         pex2 = exp(logpex2)
         # Handle special cases
         logpdf = where((cx == 1) | (cx == -inf), -inf, -pex2+logpex2-logex2)
@@ -1534,12 +1712,12 @@ class genextreme_gen(rv_continuous):
         return exp(logpdf)
 
     def _cdf(self, x, c):
-        loglogcdf = where((c == 0)*(x == x), -x, log1p(-c*x)/c)
+        loglogcdf = where((c == 0)*(x == x), -x, log1p(c*x)/-c)
         return exp(-exp(loglogcdf))
 
     def _ppf(self, q, c):
         x = -log(-log(q))
-        return where((c == 0)*(x == x), x, -expm1(-c*x)/c)
+        return where((c == 0)*(x == x), x, expm1(c*x)/c)
 
     def _stats(self, c):
         g = lambda n: gam(n*c+1)
@@ -1573,6 +1751,7 @@ class genextreme_gen(rv_continuous):
             comb(n, k) * (-1)**k * special.gamma(c*k + 1),
             axis=0)
         return where(c*n > -1, vals, inf)
+
 genextreme = genextreme_gen(name='genextreme')
 
 
@@ -1945,6 +2124,13 @@ class gumbel_r_gen(rv_continuous):
     The Gumbel distribution is sometimes referred to as a type I Fisher-Tippett
     distribution.  It is also related to the extreme value distribution,
     log-Weibull and Gompertz distributions.
+
+    The distribution `gumbel_r` is mean to be functionally equivalent
+    to Mathematica's GumbelDistribution [1]_.
+
+    References
+    ----------
+    .. [1] http://reference.wolfram.com/mathematica/ref/GumbelDistribution.html
 
     %(example)s
 
