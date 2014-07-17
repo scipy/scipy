@@ -28,7 +28,8 @@ from scipy.special import xlogy
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 
 
-# generate test cases to test cdf and distribution consistency
+# Generate test cases to test cdf and distribution consistency.
+# Note that this list does not include all distributions.
 dists = ['uniform','norm','lognorm','expon','beta',
          'powerlaw','bradford','burr','fisk','cauchy','halfcauchy',
          'foldcauchy','gamma','gengamma','loggamma',

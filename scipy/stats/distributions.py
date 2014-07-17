@@ -20,6 +20,6 @@ from ._discrete_distns import *
 __all__ = ['entropy', 'rv_discrete', 'rv_continuous']
 
 # Add only the distribution names, not the *_gen names.
-__all__ += _discrete_distns._distn_names
 __all__ += _continuous_distns._distn_names
+__all__ += _discrete_distns._distn_names
 
