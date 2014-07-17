@@ -8,7 +8,7 @@ from functools import wraps
 import numpy as np
 import scipy.linalg
 
-__all__ = ['multivariate_normal']
+__all__ = ['multivariate_normal', 'dirichlet']
 
 
 _LOG_2PI = np.log(2 * np.pi)
@@ -514,22 +514,40 @@ for name in ['logpdf', 'pdf', 'rvs']:
     method_frozen.__doc__ = doccer.docformat(method.__doc__, docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, docdict_params)
 
+_dirichlet_doc_default_callparams = """\
+alpha : array_like
+    The concentration parameters. The number of entries determines the
+    dimensionality of the distribution.
+"""
+_dirichlet_doc_frozen_callparams = ""
 
-def _dirichlet_check_parameters(a):
-    if min(a) <= 0:
+_dirichlet_doc_frozen_callparams_note = \
+"""See class definition for a detailed description of parameters."""
+
+dirichlet_docdict_params = {
+    '_dirichlet_doc_default_callparams': _dirichlet_doc_default_callparams,
+}
+
+dirichlet_docdict_noparams = {
+    '_dirichlet_doc_default_callparams': _dirichlet_doc_frozen_callparams,
+}
+
+def _dirichlet_check_parameters(alpha):
+    alpha = np.array(alpha)
+    if min(alpha) <= 0:
         raise ValueError("All parameters must be greater than 0")
-    elif a.ndim != 1:
+    elif alpha.ndim != 1:
         raise ValueError("Parameter vector 'a' must be one dimensional, " +
-                         "but a.shape = %s." % str(a.shape))
-    return a
+                         "but a.shape = %s." % str(alpha.shape))
+    return alpha
 
 
-def _dirichlet_check_input(a, x):
-
-    if x.shape != a.shape:
+def _dirichlet_check_input(alpha, x):
+    x = np.array(x)
+    if x.shape != alpha.shape:
         raise ValueError("Vector 'x' must have the same shape as" +
                          " parameter vector 'a', but a.shape = %s and " +
-                         "x.shape = %s." % (a.shape, x.shape))
+                         "x.shape = %s." % (alpha.shape, x.shape))
     if min(x) < 0:
         raise ValueError("Each entry in 'x' must be greater or equal zero.")
 
@@ -543,86 +561,268 @@ def _dirichlet_check_input(a, x):
 
 
 class dirichlet_gen(object):
+    r"""
+    A dirichlet random variable.
+
+    The `alpha` keyword specifies the concentration parameters of the distribution.
+
+    .. versionadded:: 0.15.0
+
+    Methods
+    -------
+    pdf(x, alpha)
+        Probability density function.
+    logpdf(x, alpha)
+        Log of the probability density function.
+    rvs(alpha, size=1)
+        Draw random samples from a dirichlet distribution.
+    mean(alpha)
+        The mean of the dirichlet distribution
+    var(alpha)
+        The variance of the dirichlet distribution
+    entropy(alpha)
+        Compute the differential entropy of the multivariate normal.
+
+    Parameters
+    ----------
+    x : array_like
+        Quantiles, with the last axis of `x` denoting the components.
+    %(_dirichlet_doc_default_callparams)s
+
+    Alternatively, the object may be called (as a function) to fix
+    concentration parameters, returning a "frozen" dirichlet
+    random variable:
+
+    rv = dirichlet(alpha)
+        - Frozen object with the same methods but holding the given
+          concentration parameters fixed.
+
+    Notes
+    -----
+    Each :math:`\alpha` entry must be postitive. The distribution has only
+    support on the simplex defined by
+    .. math::
+        \sum_{i=1}^{K} x_i \le 1
+
+
+    The probability density function for `dirichlet` is
+
+    .. math::
+
+        f(x) = \frac{1}{\mathrm{B}(\boldsymbol\alpha)} \prod_{i=1}^K x_i^{\alpha_i - 1}
+
+    where
+
+    .. math::
+        \mathrm{B}(\boldsymbol\alpha) = \frac{\prod_{i=1}^K \Gamma(\alpha_i)}{\Gamma\bigl(\sum_{i=1}^K \alpha_i\bigr)}
+
+    and :math:`\boldsymbol\alpha=(\alpha_1,\ldots,\alpha_K)`, the
+    concentration parameters and :math:`K` is the dimension of the space
+    where :math:`x` takes values.
+
+    """
     def __init__(self):
-        pass
+        self.__doc__ = doccer.docformat(self.__doc__, dirichlet_docdict_params)
 
-    def __call__(self, a):
-        return dirichlet_frozen(a)
+    def __call__(self, alpha):
+        return dirichlet_frozen(alpha)
 
 
-    def _B(self, a):
-        return np.sum(np.gammaln(a)) - np.gammaln(np.sum(a))
+    def _lnB(self, alpha):
+        """
+        Internal helper function to compute the log of the useful quotient
+        .. math::
+            B(\alpha) = \frac{\prod_{i=1}{K}\Gamma(\alpha_i)}{\Gamma\left(\sum_{i=1}^{K}\alpha_i\right)}
 
-    def _logpdf(self, x, a):
-        a = _dirichlet_check_parameters(a)
-        x = _dirichlet_check_input(a, x)
+        Parameters
+        ----------
+        %(_dirichlet_doc_default_callparams)s
 
-        B = self._B(a)
-        out = - B + np.sum((a - 1) * np.log(x))
+        Returns
+        -------
+        B : scalar
+            Helper quotient, internal use only
+
+        """
+        return np.sum(scipy.special.gammaln(alpha)) - scipy.special.gammaln(np.sum(alpha))
+
+    def _logpdf(self, x, alpha):
+        """
+        Parameters
+        ----------
+        x : ndarray
+            Points at which to evaluate the log of the probability
+            density function
+        %(_dirichlet_doc_default_callparams)s
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'logpdf' instead.
+
+        """
+        lnB = self._lnB(a)
+        return - lnB + np.sum((a - 1) * np.log(x))
+
+    def logpdf(self, x, alpha):
+        """
+        Log of the Dirichlet probability density function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+        %(_dirichlet_doc_default_callparams)s
+
+        Returns
+        -------
+        pdf : ndarray
+            Log of the probability density function evaluated at `x`
+        """
+        alpha = _dirichlet_check_parameters(alpha)
+        x = _dirichlet_check_input(alpha, x)
+
+        out = self._logpdf(x, alpha)
         return _squeeze_output(out)
 
-    def _pdf(self, x, a):
-        a = _dirichlet_check_parameters(a)
-        x = _dirichlet_check_input(a, x)
+    def pdf(self, x, alpha):
+        """
+        The Dirichlet probability density function.
 
-        return np.exp(self._logpdf(a, x))
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+        %(_dirichlet_doc_default_callparams)s
 
-    def _mean(self, a):
-        a = _dirichlet_check_parameters(a)
+        Returns
+        -------
+        pdf : ndarray
+            The probability density function evaluated at `x`
+        """
+        alpha = _dirichlet_check_parameters(alpha)
+        x = _dirichlet_check_input(alpha, x)
 
-        out = a/(np.sum(a))
+        out = np.exp(self._logpdf(alpha, x))
         return _squeeze_output(out)
 
-    def _var(self, a):
-        a = _dirichlet_check_parameters(a)
+    def mean(self, alpha):
+        """
+        Compute the mean of the dirichlet distribution.
 
-        a0 = np.sum(a)
-        out =  a * (a0 - 1)/((a0 * a0) * (a0 + 1))
+        Parameters
+        ----------
+        %(_dirichlet_doc_default_callparams)s
+
+        Returns
+        -------
+        mu : scalar
+            Mean of the dirichlet distribution
+
+        """
+        alpha = _dirichlet_check_parameters(alpha)
+
+        out = alpha/(np.sum(alpha))
         return _squeeze_output(out)
 
-    def _entropy(self, a):
-        a = _dirichlet_check_parameters(a)
+    def var(self, alpha):
+        """
+        Compute the variance of the dirichlet distribution.
 
-        a0 = np.sum(a)
-        B = self._B(a)
-        K = a.shape[0]
+        Parameters
+        ----------
+        %(_dirichlet_doc_default_callparams)s
 
-        out =  np.log(B) + (a0 - K) * np.psi(a0) - np.sum((a - 1) * np.psi(a))
+        Returns
+        -------
+        v : scalar
+            Variance of the dirichlet distribution
+
+        """
+
+        alpha = _dirichlet_check_parameters(alpha)
+
+        alpha0 = np.sum(alpha)
+        out =  alpha * (alpha0 - 1)/((alpha0 * alpha0) * (alpha0 + 1))
         return _squeeze_output(out)
 
-    def _rvs(self, a):
-        a = _dirichlet_check_parameters(a)
-        return np.random.dirichlet(a)
+    def entropy(self, alpha):
+        """
+        Compute the differential entropy of the dirichlet distribution.
+
+        Parameters
+        ----------
+        %(_dirichlet_doc_default_callparams)s
+
+        Returns
+        -------
+        h : scalar
+            Entropy of the dirichlet distribution
+
+        """
+
+        alpha = _dirichlet_check_parameters(alpha)
+
+        alpha0 = np.sum(alpha)
+        lnB = self._lnB(alpha)
+        K = alpha.shape[0]
+
+        out = lnB + (alpha0 - K) * scipy.special.psi(alpha0) - np.sum(
+            (alpha - 1) * scipy.special.psi(alpha))
+        return _squeeze_output(out)
+
+    def rvs(self, alpha, size=1):
+        """
+        Draw random samples from a dirichlet distribution.
+
+        Parameters
+        ----------
+        %(_dirichlet_doc_default_callparams)s
+        size : integer, optional
+            Number of samples to draw (default 1).
+
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random variates of size (`size`, `N`), where `N` is the
+            dimension of the random variable.
+
+        """
+        a = _dirichlet_check_parameters(alpha)
+        return np.random.dirichlet(alpha, size=size)
 
 
 dirichlet = dirichlet_gen()
 
-
 class dirichlet_frozen(object):
-    def __init__(self, a):
-        self.a = _dirichlet_check_parameters(a)
+    def __init__(self, alpha):
+        self.alpha = _dirichlet_check_parameters(alpha)
         self._dirichlet = dirichlet_gen()
 
     def logpdf(self, x):
-        return self._dirichlet._logpdf(x, self.a)
+        return self._dirichlet.logpdf(x, self.alpha)
 
     def pdf(self, x):
-        return self._dirichlet._pdf(x, self.a)
+        return self._dirichlet.pdf(x, self.alpha)
 
     def mean(self):
-        return self._dirichlet._mean(self.a)
+        return self._dirichlet.mean(self.alpha)
 
     def var(self):
-        return self._dirichlet._var(self.a)
+        return self._dirichlet.var(self.alpha)
 
     def entropy(self):
-        return self._dirichlet._entropy(self.a)
+        return self._dirichlet.entropy(self.alpha)
 
-    def rvs(self):
-        return self._dirichlet._rvs(self.a)
-
-
+    def rvs(self, size=1):
+        return self._dirichlet.rvs(self.alpha, size)
 
 
-
-
+# Set frozen generator docstrings from corresponding docstrings in
+# multivariate_normal_gen and fill in default strings in class docstrings
+for name in ['logpdf', 'pdf', 'rvs', 'mean', 'var', 'entropy']:
+    method = dirichlet_gen.__dict__[name]
+    method_frozen = dirichlet_frozen.__dict__[name]
+    method_frozen.__doc__ = doccer.docformat(method.__doc__, dirichlet_docdict_noparams)
+    method.__doc__ = doccer.docformat(method.__doc__, dirichlet_docdict_params)
