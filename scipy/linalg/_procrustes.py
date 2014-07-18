@@ -45,8 +45,8 @@ def orthogonal_procrustes(A, B, check_finite=True):
         A = np.asarray_chkfinite(A)
         B = np.asarray_chkfinite(B)
     else:
-        A = np.asarray(A)
-        B = np.asarray(B)
+        A = np.ascontiguousarray(A)
+        B = np.asfortranarray(B)
     if A.ndim != 2:
         raise ValueError('expected ndim to be 2, but observed %s' % A.ndim)
     if A.shape != B.shape:
