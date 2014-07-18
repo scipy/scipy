@@ -1,4 +1,4 @@
-from itertools import permutations
+from itertools import product, permutations
 
 import numpy as np
 from numpy.testing import assert_array_less, assert_allclose, assert_raises
@@ -28,6 +28,36 @@ def test_orthogonal_procrustes_shape_mismatch():
         A = np.random.randn(*a)
         B = np.random.randn(*b)
         assert_raises(ValueError, orthogonal_procrustes, A, B)
+
+
+def test_orthogonal_procrustes_checkfinite_exception():
+    np.random.seed(1234)
+    m, n = 2, 3
+    A_good = np.random.randn(m, n)
+    B_good = np.random.randn(m, n)
+    for bad_value in np.inf, -np.inf, np.nan:
+        A_bad = A_good.copy()
+        A_bad[1, 2] = bad_value
+        B_bad = B_good.copy()
+        B_bad[1, 2] = bad_value
+        for A, B in ((A_good, B_bad), (A_bad, B_good), (A_bad, B_bad)):
+            assert_raises(ValueError, orthogonal_procrustes, A, B)
+
+
+def test_orthogonal_procrustes_array_conversion():
+    np.random.seed(1234)
+    for m, n in ((6, 4), (4, 4), (4, 6)):
+        A_arr = np.random.randn(m, n)
+        B_arr = np.random.randn(m, n)
+        As = (A_arr, A_arr.tolist(), np.matrix(A_arr))
+        Bs = (B_arr, B_arr.tolist(), np.matrix(B_arr))
+        kwarg_dicts = ({}, dict(check_finite=True), dict(check_finite=False))
+        R_arr = orthogonal_procrustes(A_arr, B_arr)
+        AR_arr = A_arr.dot(R_arr)
+        for A, B, kwargs in product(As, Bs, kwarg_dicts):
+            R = orthogonal_procrustes(A, B, **kwargs)
+            AR = A_arr.dot(R)
+            assert_allclose(AR, AR_arr)
 
 
 def test_orthogonal_procrustes():
