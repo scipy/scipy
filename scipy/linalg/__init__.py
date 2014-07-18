@@ -35,6 +35,7 @@ Basics
    kron - Kronecker product of two arrays
    tril - Construct a lower-triangular matrix from a given matrix
    triu - Construct an upper-triangular matrix from a given matrix
+   orthogonal_procrustes - Solve an orthogonal Procrustes problem
 
 Eigenvalue Problems
 ===================
@@ -171,6 +172,7 @@ from .blas import *
 from .lapack import *
 from .special_matrices import *
 from ._solvers import *
+from ._procrustes import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
