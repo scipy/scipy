@@ -45,13 +45,14 @@ def orthogonal_procrustes(A, B, check_finite=True):
         A = np.asarray_chkfinite(A)
         B = np.asarray_chkfinite(B)
     else:
-        A = np.ascontiguousarray(A)
-        B = np.asfortranarray(B)
+        A = np.asanyarray(A)
+        B = np.asanyarray(B)
     if A.ndim != 2:
         raise ValueError('expected ndim to be 2, but observed %s' % A.ndim)
     if A.shape != B.shape:
         raise ValueError('the shapes of A and B differ (%s vs %s)' % (
             A.shape, B.shape))
-    u, w, vt = svd(A.T.dot(B))
+    # Be clever with transposes, with the intention to save memory.
+    u, w, vt = svd(B.T.dot(A).T)
     return u.dot(vt)
 
