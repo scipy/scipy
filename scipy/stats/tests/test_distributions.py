@@ -19,6 +19,8 @@ from scipy.lib._version import NumpyVersion
 from scipy import special
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
+import scipy.stats.distributions
+
 from scipy.special import xlogy
 
 
@@ -26,7 +28,8 @@ from scipy.special import xlogy
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 
 
-# generate test cases to test cdf and distribution consistency
+# Generate test cases to test cdf and distribution consistency.
+# Note that this list does not include all distributions.
 dists = ['uniform','norm','lognorm','expon','beta',
          'powerlaw','bradford','burr','fisk','cauchy','halfcauchy',
          'foldcauchy','gamma','gengamma','loggamma',
@@ -39,6 +42,18 @@ dists = ['uniform','norm','lognorm','expon','beta',
          'genlogistic', 'logistic','gumbel_l','gumbel_r','gompertz',
          'hypsecant', 'laplace', 'reciprocal','triang','tukeylambda',
          'vonmises', 'vonmises_line', 'pearson3']
+
+
+def _assert_hasattr(a, b, msg=None):
+    if msg is None:
+        msg = '%s does not have attribute %s' % (a, b)
+    assert_(hasattr(a, b), msg=msg)
+
+
+def test_api_regression():
+    # https://github.com/scipy/scipy/issues/3802
+    _assert_hasattr(scipy.stats.distributions, 'f_gen')
+
 
 # check function for test generator
 
