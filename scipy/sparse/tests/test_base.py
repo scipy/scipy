@@ -323,31 +323,25 @@ class _TestCommon:
             assert_array_equal((-1 < datsp).todense(), -1 < dat)
             assert_array_equal((-2 < datsp).todense(), -2 < dat)
 
-        def check_fail(dtype):
-            # data
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
-            dat2 = dat.copy()
-            dat2[:,0] = 0
-            datsp2 = self.spmatrix(dat2)
+            if NumpyVersion(np.__version__) >= '1.8.0':
+                # data
+                dat = self.dat_dtypes[dtype]
+                datsp = self.datsp_dtypes[dtype]
+                dat2 = dat.copy()
+                dat2[:,0] = 0
+                datsp2 = self.spmatrix(dat2)
 
-            # dense rhs fails
-            assert_array_equal(dat < datsp2, datsp < dat2)
+                # dense rhs
+                assert_array_equal(dat < datsp2, datsp < dat2)
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
         fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
         for dtype in self.checked_dtypes:
             with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=np.ComplexWarning)
-                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-                yield dec.skipif(fails, msg)(check), dtype
-
-        msg = "Dense rhs is not supported for inequalities."
-        for dtype in self.checked_dtypes:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=np.ComplexWarning)
-                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-                yield dec.knownfailureif(True, msg)(check_fail), dtype
+                with np.errstate(invalid='ignore'):
+                    warnings.simplefilter("ignore", category=np.ComplexWarning)
+                    warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                    yield dec.skipif(fails, msg)(check), dtype
 
     def test_gt(self):
         def check(dtype):
@@ -393,16 +387,16 @@ class _TestCommon:
             assert_array_equal((-1 > datsp).todense(), -1 > dat)
             assert_array_equal((-2 > datsp).todense(), -2 > dat)
 
-        def check_fail(dtype):
-            # data
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
-            dat2 = dat.copy()
-            dat2[:,0] = 0
-            datsp2 = self.spmatrix(dat2)
+            if NumpyVersion(np.__version__) >= '1.8.0':
+                # data
+                dat = self.dat_dtypes[dtype]
+                datsp = self.datsp_dtypes[dtype]
+                dat2 = dat.copy()
+                dat2[:,0] = 0
+                datsp2 = self.spmatrix(dat2)
 
-            # dense rhs fails
-            assert_array_equal(dat > datsp2, datsp > dat2)
+                # dense rhs
+                assert_array_equal(dat > datsp2, datsp > dat2)
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
         fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
@@ -411,13 +405,6 @@ class _TestCommon:
                 warnings.simplefilter("ignore", category=np.ComplexWarning)
                 warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
                 yield dec.skipif(fails, msg)(check), dtype
-
-        msg = "Dense rhs is not supported for inequalities."
-        for dtype in self.checked_dtypes:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=np.ComplexWarning)
-                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-                yield dec.knownfailureif(True, msg)(check_fail), dtype
 
     def test_le(self):
         def check(dtype):
@@ -461,16 +448,16 @@ class _TestCommon:
             assert_array_equal((-1 <= datsp).todense(), -1 <= dat)
             assert_array_equal((-2 <= datsp).todense(), -2 <= dat)
 
-        def check_fail(dtype):
-            # data
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
-            dat2 = dat.copy()
-            dat2[:,0] = 0
-            datsp2 = self.spmatrix(dat2)
+            if NumpyVersion(np.__version__) >= '1.8.0':
+                # data
+                dat = self.dat_dtypes[dtype]
+                datsp = self.datsp_dtypes[dtype]
+                dat2 = dat.copy()
+                dat2[:,0] = 0
+                datsp2 = self.spmatrix(dat2)
 
-            # dense rhs fails
-            assert_array_equal(dat <= datsp2, datsp <= dat2)
+                # dense rhs
+                assert_array_equal(dat <= datsp2, datsp <= dat2)
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
         fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
@@ -479,13 +466,6 @@ class _TestCommon:
                 warnings.simplefilter("ignore", category=np.ComplexWarning)
                 warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
                 yield dec.skipif(fails, msg)(check), dtype
-
-        msg = "Dense rhs is not supported for inequalities."
-        for dtype in self.checked_dtypes:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=np.ComplexWarning)
-                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-                yield dec.knownfailureif(True, msg)(check_fail), dtype
 
     def test_ge(self):
         def check(dtype):
@@ -530,16 +510,16 @@ class _TestCommon:
             assert_array_equal((-1 >= datsp).todense(), -1 >= dat)
             assert_array_equal((-2 >= datsp).todense(), -2 >= dat)
 
-        def check_fail(dtype):
-            # data
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
-            dat2 = dat.copy()
-            dat2[:,0] = 0
-            datsp2 = self.spmatrix(dat2)
+            if NumpyVersion(np.__version__) >= '1.8.0':
+                # dense data
+                dat = self.dat_dtypes[dtype]
+                datsp = self.datsp_dtypes[dtype]
+                dat2 = dat.copy()
+                dat2[:,0] = 0
+                datsp2 = self.spmatrix(dat2)
 
-            # dense rhs fails
-            assert_array_equal(dat >= datsp2, datsp >= dat2)
+                # dense rhs
+                assert_array_equal(dat >= datsp2, datsp >= dat2)
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
         fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
@@ -548,13 +528,6 @@ class _TestCommon:
                 warnings.simplefilter("ignore", category=np.ComplexWarning)
                 warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
                 yield dec.skipif(fails, msg)(check), dtype
-
-        msg = "Dense rhs is not supported for inequalities."
-        for dtype in self.checked_dtypes:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=np.ComplexWarning)
-                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-                yield dec.knownfailureif(True, msg)(check_fail), dtype
 
     def test_empty(self):
         # create empty matrices
