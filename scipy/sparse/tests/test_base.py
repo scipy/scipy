@@ -234,6 +234,7 @@ class _TestCommon:
             # sparse/scalar
             assert_array_equal(dat == 0, (datsp == 0).todense())
             assert_array_equal(dat == 1, (datsp == 1).todense())
+            assert_array_equal(dat == np.nan, (datsp == np.nan).todense())
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
         fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
@@ -269,6 +270,7 @@ class _TestCommon:
             assert_array_equal(dat != 1, (datsp != 1).todense())
             assert_array_equal(0 != dat, (0 != datsp).todense())
             assert_array_equal(1 != dat, (1 != datsp).todense())
+            assert_array_equal(dat != np.nan, (datsp != np.nan).todense())
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
         fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
@@ -316,6 +318,7 @@ class _TestCommon:
             assert_array_equal((datsp < 0).todense(), dat < 0)
             assert_array_equal((datsp < -1).todense(), dat < -1)
             assert_array_equal((datsp < -2).todense(), dat < -2)
+            assert_array_equal((datsp < np.nan).todense(), dat < np.nan)
 
             assert_array_equal((2 < datsp).todense(), 2 < dat)
             assert_array_equal((1 < datsp).todense(), 1 < dat)
@@ -380,6 +383,7 @@ class _TestCommon:
             assert_array_equal((datsp > 0).todense(), dat > 0)
             assert_array_equal((datsp > -1).todense(), dat > -1)
             assert_array_equal((datsp > -2).todense(), dat > -2)
+            assert_array_equal((datsp > np.nan).todense(), dat > np.nan)
 
             assert_array_equal((2 > datsp).todense(), 2 > dat)
             assert_array_equal((1 > datsp).todense(), 1 > dat)

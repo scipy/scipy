@@ -213,6 +213,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def __eq__(self, other):
         # Scalar other.
         if isscalarlike(other):
+            if np.isnan(other):
+                return self.__class__(self.shape, dtype=np.bool_)
+
             other_arr = self._copy_with_const(other)
             res = self._binopt(other_arr,'_ne_')
             if other == 0:
@@ -221,8 +224,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
                 return all_true - res
             else:
-                self_as_bool = self.astype(bool)
-                return self_as_bool - res
+                sparsity_pattern = self._copy_with_const(True)
+                return sparsity_pattern - res
         # Dense other.
         elif isdense(other):
             return self.todense() == other
@@ -244,7 +247,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def __ne__(self, other):
         # Scalar other.
         if isscalarlike(other):
-            if other != 0:
+            if np.isnan(other):
+                warn("Comparing a sparse matrix with nan using != is inefficient",
+                     SparseEfficiencyWarning)
+                all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
+                return all_true
+            elif other != 0:
                 warn("Comparing a sparse matrix with a nonzero scalar using !="
                      " is inefficient, try using == instead.", SparseEfficiencyWarning)
                 all_true = self.__class__(np.ones(self.shape), dtype=np.bool_)
