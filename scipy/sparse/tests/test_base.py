@@ -2796,7 +2796,8 @@ class _TestArithmetic:
                 D1 = A * B.T
                 S1 = Asp * Bsp.T
 
-                assert_allclose(S1.todense(),D1)
+                assert_allclose(S1.todense(), D1,
+                                atol=1e-14*abs(D1).max())
                 assert_equal(S1.dtype,D1.dtype)
 
 
@@ -3763,9 +3764,20 @@ def _same_sum_duplicate(data, *inds, **kwargs):
         else:
             return (data,) + inds + (indptr,)
 
+    zeros_pos = (data == 0).nonzero()
+
+    # duplicate data
     data = data.repeat(2, axis=0)
     data[::2] -= 1
     data[1::2] = 1
+
+    # don't spoil all explicit zeros
+    if zeros_pos[0].size > 0:
+        pos = tuple(p[0] for p in zeros_pos)
+        pos1 = (2*pos[0],) + pos[1:]
+        pos2 = (2*pos[0]+1,) + pos[1:]
+        data[pos1] = 0
+        data[pos2] = 0
 
     inds = tuple(indices.repeat(2) for indices in inds)
 
@@ -3777,14 +3789,31 @@ def _same_sum_duplicate(data, *inds, **kwargs):
 
 class _NonCanonicalMixin(object):
     def spmatrix(self, D, **kwargs):
-        """Replace D with a non-canonical equivalent"""
+        """Replace D with a non-canonical equivalent: containing
+        duplicate elements and explicit zeros"""
         construct = super(_NonCanonicalMixin, self).spmatrix
         M = construct(D, **kwargs)
+
+        zero_pos = (M.A == 0).nonzero()
+        has_zeros = (zero_pos[0].size > 0)
+        if has_zeros:
+            k = zero_pos[0].size//2
+            M = self._insert_explicit_zero(M,
+                                           zero_pos[0][k],
+                                           zero_pos[1][k])
+
         arg1 = self._arg1_for_noncanonical(M)
         if 'shape' not in kwargs:
             kwargs['shape'] = M.shape
         NC = construct(arg1, **kwargs)
-        assert_allclose(M.A, NC.A)
+
+        # check that result is valid
+        assert_allclose(NC.A, M.A)
+
+        # check that at least one explicit zero
+        if has_zeros:
+            assert_((NC.data == 0).any())
+
         return NC
 
     @dec.knownfailureif(True, 'abs broken with non-canonical matrix')
@@ -3827,6 +3856,10 @@ class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
             data[start:stop] = data[start:stop][::-1].copy()
         return data, indices, indptr
 
+    def _insert_explicit_zero(self, M, i, j):
+        M[i,j] = 0
+        return M
+
 
 class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
     @dec.knownfailureif(True, '__getitem__ with non-canonical matrix broken for sparse boolean index due to __gt__')
@@ -3847,14 +3880,27 @@ class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
 
 
 class TestCSRNonCanonical(_NonCanonicalCSMixin, TestCSR):
-    pass
+    @dec.knownfailureif(True, 'nnz counts explicit zeros')
+    def test_empty(self):
+        pass
 
 
 class TestCSCNonCanonical(_NonCanonicalCSMixin, TestCSC):
-    pass
+    @dec.knownfailureif(True, 'nnz counts explicit zeros')
+    def test_empty(self):
+        pass
+
+    @dec.knownfailureif(True, 'nonzero reports explicit zeros')
+    def test_nonzero(self):
+        pass
 
 
 class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
+    def _insert_explicit_zero(self, M, i, j):
+        x = M.tocsr()
+        x[i,j] = 0
+        return x.tobsr(blocksize=M.blocksize)
+
     @dec.knownfailureif(True, 'unary ufunc overrides broken with non-canonical BSR')
     def test_diagonal(self):
         pass
@@ -3891,12 +3937,26 @@ class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
     def test_maximum_minimum(self):
         pass
 
+    @dec.knownfailureif(True, 'nnz counts explicit zeros')
+    def test_empty(self):
+        pass
+
 
 class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
     def _arg1_for_noncanonical(self, M):
         """Return non-canonical constructor arg1 equivalent to M"""
         data, row, col = _same_sum_duplicate(M.data, M.row, M.col)
         return data, (row, col)
+
+    def _insert_explicit_zero(self, M, i, j):
+        M.data = np.r_[M.data.dtype.type(0), M.data]
+        M.row = np.r_[M.row.dtype.type(i), M.row]
+        M.col = np.r_[M.col.dtype.type(j), M.col]
+        return M
+
+    @dec.knownfailureif(True, 'nnz counts explicit zeros')
+    def test_empty(self):
+        pass
 
 
 class Test64Bit(object):
