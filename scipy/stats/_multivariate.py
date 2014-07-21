@@ -595,7 +595,7 @@ def _lnB(alpha):
 
 class dirichlet_gen(object):
     r"""
-    A dirichlet random variable.
+    A Dirichlet random variable.
 
     The `alpha` keyword specifies the concentration parameters of the distribution.
 
@@ -608,11 +608,11 @@ class dirichlet_gen(object):
     logpdf(x, alpha)
         Log of the probability density function.
     rvs(alpha, size=1)
-        Draw random samples from a dirichlet distribution.
+        Draw random samples from a Dirichlet distribution.
     mean(alpha)
-        The mean of the dirichlet distribution
+        The mean of the Dirichlet distribution
     var(alpha)
-        The variance of the dirichlet distribution
+        The variance of the Dirichlet distribution
     entropy(alpha)
         Compute the differential entropy of the multivariate normal.
 
@@ -623,7 +623,7 @@ class dirichlet_gen(object):
     %(_dirichlet_doc_default_callparams)s
 
     Alternatively, the object may be called (as a function) to fix
-    concentration parameters, returning a "frozen" dirichlet
+    concentration parameters, returning a "frozen" Dirichlet
     random variable:
 
     rv = dirichlet(alpha)
@@ -733,7 +733,7 @@ class dirichlet_gen(object):
         Returns
         -------
         mu : scalar
-            Mean of the dirichlet distribution
+            Mean of the Dirichlet distribution
 
         """
         alpha = _dirichlet_check_parameters(alpha)
@@ -752,7 +752,7 @@ class dirichlet_gen(object):
         Returns
         -------
         v : scalar
-            Variance of the dirichlet distribution
+            Variance of the Dirichlet distribution
 
         """
 
@@ -773,7 +773,7 @@ class dirichlet_gen(object):
         Returns
         -------
         h : scalar
-            Entropy of the dirichlet distribution
+            Entropy of the Dirichlet distribution
 
         """
 
@@ -789,7 +789,7 @@ class dirichlet_gen(object):
 
     def rvs(self, alpha, size=1):
         """
-        Draw random samples from a dirichlet distribution.
+        Draw random samples from a Dirichlet distribution.
 
         Parameters
         ----------
