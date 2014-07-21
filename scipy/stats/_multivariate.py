@@ -10,7 +10,6 @@ import scipy.linalg
 
 __all__ = ['multivariate_normal', 'dirichlet']
 
-
 _LOG_2PI = np.log(2 * np.pi)
 
 
@@ -60,10 +59,10 @@ def _process_parameters(dim, mean, cov):
         cov = np.diag(cov)
     elif cov.ndim == 2 and cov.shape != (dim, dim):
         raise ValueError("Array 'cov' must be square if it is two dimensional, "
-                "but cov.shape = %s" % str(cov.shape))
+                         "but cov.shape = %s" % str(cov.shape))
     elif cov.ndim > 2:
         raise ValueError("Array 'cov' must be at most two-dimensional, "
-                "but cov.ndim = %d" % cov.ndim)
+                         "but cov.ndim = %d" % cov.ndim)
 
     return dim, mean, cov
 
@@ -116,7 +115,7 @@ def _pinv_1d(v, eps=1e-5):
         A vector of pseudo-inverted numbers.
 
     """
-    return np.array([0 if abs(x) < eps else 1/x for x in v], dtype=float)
+    return np.array([0 if abs(x) < eps else 1 / x for x in v], dtype=float)
 
 
 class _PSD(object):
@@ -158,8 +157,9 @@ class _PSD(object):
     The arguments are similar to those of scipy.linalg.pinvh().
 
     """
+
     def __init__(self, M, cond=None, rcond=None, lower=True,
-            check_finite=True, allow_singular=True):
+                 check_finite=True, allow_singular=True):
         # Compute the symmetric eigendecomposition.
         # Note that eigh takes care of array conversion, chkfinite,
         # and assertion that the matrix is square.
@@ -209,17 +209,17 @@ allow_singular : bool, optional
 """
 
 _doc_callparams_note = \
-"""Setting the parameter `mean` to `None` is equivalent to having `mean`
-be the zero-vector. The parameter `cov` can be a scalar, in which case
-the covariance matrix is the identity times that value, a vector of
-diagonal entries for the covariance matrix, or a two-dimensional
-array_like.
-"""
+    """Setting the parameter `mean` to `None` is equivalent to having `mean`
+    be the zero-vector. The parameter `cov` can be a scalar, in which case
+    the covariance matrix is the identity times that value, a vector of
+    diagonal entries for the covariance matrix, or a two-dimensional
+    array_like.
+    """
 
 _doc_frozen_callparams = ""
 
 _doc_frozen_callparams_note = \
-"""See class definition for a detailed description of parameters."""
+    """See class definition for a detailed description of parameters."""
 
 docdict_params = {
     '_doc_default_callparams': _doc_default_callparams,
@@ -317,7 +317,7 @@ class multivariate_normal_gen(object):
 
         """
         return multivariate_normal_frozen(mean, cov,
-                allow_singular=allow_singular)
+                                          allow_singular=allow_singular)
 
     def _logpdf(self, x, mean, prec_U, log_det_cov, rank):
         """
@@ -444,6 +444,7 @@ class multivariate_normal_gen(object):
         dim, mean, cov = _process_parameters(None, mean, cov)
         return 0.5 * np.log(np.linalg.det(2 * np.pi * np.e * cov))
 
+
 multivariate_normal = multivariate_normal_gen()
 
 
@@ -482,7 +483,7 @@ class multivariate_normal_frozen(object):
     def logpdf(self, x):
         x = _process_quantiles(x, self.dim)
         out = self._mnorm._logpdf(x, self.mean,
-                self.cov_info.U, self.cov_info.log_pdet, self.cov_info.rank)
+                                  self.cov_info.U, self.cov_info.log_pdet, self.cov_info.rank)
         return _squeeze_output(out)
 
     def pdf(self, x):
@@ -522,7 +523,7 @@ alpha : array_like
 _dirichlet_doc_frozen_callparams = ""
 
 _dirichlet_doc_frozen_callparams_note = \
-"""See class definition for a detailed description of parameters."""
+    """See class definition for a detailed description of parameters."""
 
 dirichlet_docdict_params = {
     '_dirichlet_doc_default_callparams': _dirichlet_doc_default_callparams,
@@ -531,6 +532,7 @@ dirichlet_docdict_params = {
 dirichlet_docdict_noparams = {
     '_dirichlet_doc_default_callparams': _dirichlet_doc_frozen_callparams,
 }
+
 
 def _dirichlet_check_parameters(alpha):
     alpha = np.array(alpha)
@@ -546,7 +548,7 @@ def _dirichlet_check_input(alpha, x):
     x = np.array(x)
 
     # if x.ndim != 1:
-    #     raise ValueError("Vector 'x' must be one dimensional, " +
+    # raise ValueError("Vector 'x' must be one dimensional, " +
     #                      "but x.shape = %s." % str(x.shape))
 
     if x.shape[0] + 1 != alpha.shape[0] and x.shape[0] != alpha.shape[0]:
@@ -556,7 +558,7 @@ def _dirichlet_check_input(alpha, x):
                          "x.shape = %s." % x.shape)
 
     if x.shape[0] != alpha.shape[0]:
-        xk = np.array([1-np.sum(x, 0)])
+        xk = np.array([1 - np.sum(x, 0)])
         if xk.ndim == 1:
             x = np.append(x, xk)
         elif xk.ndim == 2:
@@ -572,8 +574,8 @@ def _dirichlet_check_input(alpha, x):
         raise ValueError("The input vector 'x' must lie within the normal " +
                          "simplex. but sum(x)=%f." % np.sum(x))
 
-
     return x
+
 
 def _lnB(alpha):
     """
@@ -592,6 +594,7 @@ def _lnB(alpha):
 
     """
     return np.sum(scipy.special.gammaln(alpha)) - scipy.special.gammaln(np.sum(alpha))
+
 
 class dirichlet_gen(object):
     r"""
@@ -654,13 +657,12 @@ class dirichlet_gen(object):
     where :math:`x` takes values.
 
     """
+
     def __init__(self):
         self.__doc__ = doccer.docformat(self.__doc__, dirichlet_docdict_params)
 
     def __call__(self, alpha):
         return dirichlet_frozen(alpha)
-
-
 
     def _logpdf(self, x, alpha):
         """
@@ -678,7 +680,7 @@ class dirichlet_gen(object):
 
         """
         lnB = _lnB(alpha)
-        return - lnB + np.sum( (np.log(x.T) * (alpha - 1)).T, 0)
+        return - lnB + np.sum((np.log(x.T) * (alpha - 1)).T, 0)
 
     def logpdf(self, x, alpha):
         """
@@ -738,7 +740,7 @@ class dirichlet_gen(object):
         """
         alpha = _dirichlet_check_parameters(alpha)
 
-        out = alpha/(np.sum(alpha))
+        out = alpha / (np.sum(alpha))
         return _squeeze_output(out)
 
     def var(self, alpha):
@@ -759,7 +761,7 @@ class dirichlet_gen(object):
         alpha = _dirichlet_check_parameters(alpha)
 
         alpha0 = np.sum(alpha)
-        out = (alpha * (alpha0 - alpha))/((alpha0 * alpha0) * (alpha0 + 1))
+        out = (alpha * (alpha0 - alpha)) / ((alpha0 * alpha0) * (alpha0 + 1))
         return out
 
     def entropy(self, alpha):
@@ -810,6 +812,7 @@ class dirichlet_gen(object):
 
 
 dirichlet = dirichlet_gen()
+
 
 class dirichlet_frozen(object):
     def __init__(self, alpha):
