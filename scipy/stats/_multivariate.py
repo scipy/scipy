@@ -566,7 +566,7 @@ def _dirichlet_check_input(alpha, x):
     if np.max(x) > 1:
         raise ValueError("Each entry in 'x' must be smaller or equal one.")
 
-    if (np.abs(np.sum(x, 0) - 1.0) > 10e-10).all():
+    if (np.abs(np.sum(x, 0) - 1.0) > 10e-10).any():
         raise ValueError("The input vector 'x' must lie within the normal " +
                          "simplex. but sum(x)=%f." % np.sum(x))
 
