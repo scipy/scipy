@@ -564,18 +564,18 @@ def _dirichlet_check_input(alpha, x):
         raise ValueError("Each entry in 'x' must be greater or equal zero.")
 
     if np.max(x) > 1:
-        raise ValueError("Each entry in 'x' must be smaller or equal one.")
+        raise ValueError("Each entry in 'x' must be smaller or eq331ual one.")
 
     if (np.abs(np.sum(x, 0) - 1.0) > 10e-10).any():
         raise ValueError("The input vector 'x' must lie within the normal " +
-                         "simplex. but sum(x)=%f." % np.sum(x))
+                         "simplex. but sum(x)=%f." % np.sum(x, 0))
 
     return x
 
 
 def _lnB(alpha):
     """
-    Internal helper function to compute the log of the useful quotient
+    Internal helper function to compute the log of the useful
     .. math::
         B(\alpha) = \frac{\prod_{i=1}{K}\Gamma(\alpha_i)}{\Gamma\left(\sum_{i=1}^{K}\alpha_i\right)}
 
