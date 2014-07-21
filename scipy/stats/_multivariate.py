@@ -559,6 +559,9 @@ def _dirichlet_check_input(alpha, x):
             x = np.append(x, xk)
         elif xk.ndim == 2:
             x = np.vstack((x, xk))
+        else:
+            raise ValueError("The input must be one dimensional or a two "
+                             "dimensional matrix containing the entries.")
 
     if np.min(x) < 0:
         raise ValueError("Each entry in 'x' must be greater or equal zero.")
