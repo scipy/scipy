@@ -535,7 +535,7 @@ dirichlet_docdict_noparams = {
 
 
 def _dirichlet_check_parameters(alpha):
-    alpha = np.array(alpha)
+    alpha = np.asarray(alpha)
     if np.min(alpha) <= 0:
         raise ValueError("All parameters must be greater than 0")
     elif alpha.ndim != 1:
@@ -545,7 +545,7 @@ def _dirichlet_check_parameters(alpha):
 
 
 def _dirichlet_check_input(alpha, x):
-    x = np.array(x)
+    x = np.asarray(x)
 
     if x.shape[0] + 1 != alpha.shape[0] and x.shape[0] != alpha.shape[0]:
         raise ValueError("Vector 'x' must have one entry less then the" +
