@@ -574,7 +574,7 @@ def _dirichlet_check_input(alpha, x):
 
 
 def _lnB(alpha):
-    """
+    r"""
     Internal helper function to compute the log of the useful
 
     .. math::
@@ -634,7 +634,7 @@ class dirichlet_gen(object):
     -----
     Each :math:`\alpha` entry must be positive. The distribution has only
     support on the simplex defined by
-    
+
     .. math::
         \sum_{i=1}^{K} x_i \le 1
 
