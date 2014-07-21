@@ -544,21 +544,54 @@ def _dirichlet_check_parameters(alpha):
 
 def _dirichlet_check_input(alpha, x):
     x = np.array(x)
-    if x.shape != alpha.shape:
-        raise ValueError("Vector 'x' must have the same shape as" +
-                         " parameter vector 'a', but a.shape = %s and " +
-                         "x.shape = %s." % (alpha.shape, x.shape))
-    if min(x) < 0:
+
+    # if x.ndim != 1:
+    #     raise ValueError("Vector 'x' must be one dimensional, " +
+    #                      "but x.shape = %s." % str(x.shape))
+
+    if x.shape[0] + 1 != alpha.shape[0] and x.shape[0] != alpha.shape[0]:
+        raise ValueError("Vector 'x' must have one entry less then the" +
+                         " parameter vector 'a', but alpha.shape = " +
+                         "%s and " % alpha.shape +
+                         "x.shape = %s." % x.shape)
+
+    if x.shape[0] != alpha.shape[0]:
+        xk = np.array([1-np.sum(x, 0)])
+        if xk.ndim == 1:
+            x = np.append(x, xk)
+        elif xk.ndim == 2:
+            x = np.vstack((x, xk))
+
+    if np.min(x) < 0:
         raise ValueError("Each entry in 'x' must be greater or equal zero.")
 
-    if max(x) > 1:
+    if np.max(x) > 1:
         raise ValueError("Each entry in 'x' must be smaller or equal one.")
 
-    if np.sum(x) > 1:
-        raise ValueError("The input vector 'x' must lie within the normal simplex.")
+    if (np.abs(np.sum(x, 0) - 1.0) > 10e-10).all():
+        raise ValueError("The input vector 'x' must lie within the normal " +
+                         "simplex. but sum(x)=%f." % np.sum(x))
+
 
     return x
 
+def _lnB(alpha):
+    """
+    Internal helper function to compute the log of the useful quotient
+    .. math::
+        B(\alpha) = \frac{\prod_{i=1}{K}\Gamma(\alpha_i)}{\Gamma\left(\sum_{i=1}^{K}\alpha_i\right)}
+
+    Parameters
+    ----------
+    %(_dirichlet_doc_default_callparams)s
+
+    Returns
+    -------
+    B : scalar
+        Helper quotient, internal use only
+
+    """
+    return np.sum(scipy.special.gammaln(alpha)) - scipy.special.gammaln(np.sum(alpha))
 
 class dirichlet_gen(object):
     r"""
@@ -628,23 +661,6 @@ class dirichlet_gen(object):
         return dirichlet_frozen(alpha)
 
 
-    def _lnB(self, alpha):
-        """
-        Internal helper function to compute the log of the useful quotient
-        .. math::
-            B(\alpha) = \frac{\prod_{i=1}{K}\Gamma(\alpha_i)}{\Gamma\left(\sum_{i=1}^{K}\alpha_i\right)}
-
-        Parameters
-        ----------
-        %(_dirichlet_doc_default_callparams)s
-
-        Returns
-        -------
-        B : scalar
-            Helper quotient, internal use only
-
-        """
-        return np.sum(scipy.special.gammaln(alpha)) - scipy.special.gammaln(np.sum(alpha))
 
     def _logpdf(self, x, alpha):
         """
@@ -661,8 +677,8 @@ class dirichlet_gen(object):
         called directly; use 'logpdf' instead.
 
         """
-        lnB = self._lnB(a)
-        return - lnB + np.sum((a - 1) * np.log(x))
+        lnB = _lnB(alpha)
+        return - lnB + np.sum( (np.log(x.T) * (alpha - 1)).T, 0)
 
     def logpdf(self, x, alpha):
         """
@@ -703,7 +719,7 @@ class dirichlet_gen(object):
         alpha = _dirichlet_check_parameters(alpha)
         x = _dirichlet_check_input(alpha, x)
 
-        out = np.exp(self._logpdf(alpha, x))
+        out = np.exp(self._logpdf(x, alpha))
         return _squeeze_output(out)
 
     def mean(self, alpha):
@@ -743,8 +759,8 @@ class dirichlet_gen(object):
         alpha = _dirichlet_check_parameters(alpha)
 
         alpha0 = np.sum(alpha)
-        out =  alpha * (alpha0 - 1)/((alpha0 * alpha0) * (alpha0 + 1))
-        return _squeeze_output(out)
+        out = (alpha * (alpha0 - alpha))/((alpha0 * alpha0) * (alpha0 + 1))
+        return out
 
     def entropy(self, alpha):
         """
@@ -764,7 +780,7 @@ class dirichlet_gen(object):
         alpha = _dirichlet_check_parameters(alpha)
 
         alpha0 = np.sum(alpha)
-        lnB = self._lnB(alpha)
+        lnB = _lnB(alpha)
         K = alpha.shape[0]
 
         out = lnB + (alpha0 - K) * scipy.special.psi(alpha0) - np.sum(
