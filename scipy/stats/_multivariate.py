@@ -576,6 +576,7 @@ def _dirichlet_check_input(alpha, x):
 def _lnB(alpha):
     """
     Internal helper function to compute the log of the useful
+
     .. math::
         B(\alpha) = \frac{\prod_{i=1}{K}\Gamma(\alpha_i)}{\Gamma\left(\sum_{i=1}^{K}\alpha_i\right)}
 
@@ -633,6 +634,7 @@ class dirichlet_gen(object):
     -----
     Each :math:`\alpha` entry must be positive. The distribution has only
     support on the simplex defined by
+    
     .. math::
         \sum_{i=1}^{K} x_i \le 1
 
