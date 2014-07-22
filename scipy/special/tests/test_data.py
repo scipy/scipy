@@ -5,7 +5,7 @@ import os
 import numpy as np
 from numpy import arccosh, arcsinh, arctanh
 from scipy.special import (
-    erf, erfc, log1p, expm1,
+    erf, erfc, log1p, expm1, ellip_harm, ellip_harm_2,
     jn, jv, yn, yv, iv, kv, kn, gamma, gammaln, digamma, beta, cbrt,
     ellipe, ellipeinc, ellipk, ellipkinc, ellipkm1, ellipj, erfinv, erfcinv,
     exp1, expi, expn, zeta, gammaincinv, lpmv, mathieu_a, mathieu_b,
@@ -119,7 +119,8 @@ def test_boost():
         data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0j, 1, rtol=1e-11),
         data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0, 1),
         data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0j, 1),
-
+        data(ellip_harm_2, 'ellip',(0, 1, 2, 3, 4), 6, rtol=1e-10, atol=1e-13),
+        data(ellip_harm, 'ellip',(0, 1, 2, 3, 4), 5, rtol=1e-10, atol=1e-13),
         data(ellipk_, 'ellint_k_data_ipp-ellint_k_data', 0, 1),
         data(ellipkinc_, 'ellint_f_data_ipp-ellint_f_data', (0,1), 2, rtol=1e-14),
         data(ellipkinc, 'ellipkinc_neg_m', (0, 1), 2),

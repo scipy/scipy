@@ -4,10 +4,13 @@ from _complexstuff cimport *
 from libc.math cimport sqrt, fabs
 import scipy.integrate
 
+# The access to global variables is protected by  
+# is protected by _ellip_lock in _ellip_harm.py
+
 cdef double _global_h2, _global_k2
 cdef int _global_n, _global_p
 
-from .ellip_harm cimport ellip_harmonic
+from ._ellip_harm cimport ellip_harmonic
 
 cdef double _F_integrand(double t) nogil:
     cdef double h2, k2, t2, i, a
@@ -118,8 +121,8 @@ def _ellipsoid(double h2, double k2, int n, int p, double s):
 
     res, err = scipy.integrate.quad(_F_integrand_ctypes, 0, 1/s,
                                     epsabs=1e-08, epsrel=1e-15)
-    if abs(err) > 1e-10 * abs(res):
-        return nan
+#    if abs(err) > 1e-10 * abs(res):
+ #       return nan
     res = res*(2*n + 1)*ellip_harmonic( h2, k2, n, p, s, 1, 1)
     return res
 

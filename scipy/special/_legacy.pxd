@@ -9,7 +9,7 @@ Here, we define such unsafe wrappers manually.
 
 cimport sf_error
 
-from ellip_harm cimport ellip_harmonic
+from _ellip_harm cimport ellip_harmonic
 
 from sph_harm cimport sph_harmonic
 
