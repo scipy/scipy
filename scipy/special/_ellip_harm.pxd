@@ -43,49 +43,26 @@ cdef extern from "lapack_defs.h":
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef inline double ellip_harmonic(double h2, double k2, int n, int p, double s, double signm, double signn) nogil:
+cdef inline double* lame_coefficients(double h2, double k2, int n, int p, void **bufferp) nogil:
    
     cdef double s2, alpha, beta, gamma, lamba_romain, pp, psi, t1, tol, vl, vu
     cdef int r, tp, j, size, i, info, lwork, liwork, c, iu
     cdef char t
 
-    signm = signm/fabs(signm)
-    signn = signn/fabs(signn)
     r = n/2
-    s2 = s*s
     alpha = h2
     beta = k2 - h2
     gamma = alpha - beta
 
-    if p < 1 or p > 2*n + 1:
-        sf_error.error("ellip_harm", sf_error.ARG, "invalid value for p")
-        return nan
-
-    if fabs(signm) != 1 or fabs(signn) != 1:
-        sf_error.error("ellip_harm", sf_error.ARG, "invalid signm or signn")
-        return nan
-
     if p - 1 < r + 1:
-        t, tp = 'K', p
+        t, tp, size = 'K', p, r + 1
     elif p - 1 < (n - r) + (r + 1):
-        t, tp = 'L', p - (r + 1)
+        t, tp, size = 'L', p - (r + 1), n - r
     elif p - 1 < (n - r) + (n - r) + (r + 1):
-        t, tp = 'M', p - (n - r) - (r + 1)
+        t, tp, size = 'M', p - (n - r) - (r + 1), n - r
     elif p - 1 < 2*n + 1:
-        t, tp = 'N', p - (n - r) - (n - r) - (r + 1)
+        t, tp, size = 'N', p - (n - r) - (n - r) - (r + 1), r
     
-    if t == 'K':
-        size = r + 1
-        psi = pow(s, n - 2*r)	
-    elif t == 'L': 
-        size = n - r
-        psi = pow(s, 1 - n + 2*r)*signm*sqrt(fabs(s2 - h2))
-    elif t == 'M':
-        size = n - r	
-        psi = pow(s, 1 - n + 2*r)*signn*sqrt(fabs(s2 - k2))
-    if t == 'N':
-        size = r	
-        psi = pow(s,  n - 2*r)*signm*signn*sqrt(fabs((s2 - h2)*(s2 - k2)))
 
     lwork = 60*size
     liwork = 30*size
@@ -94,8 +71,10 @@ cdef inline double ellip_harmonic(double h2, double k2, int n, int p, double s, 
     vu = 0
 
     cdef void *buffer =  malloc((sizeof(double)*(7*size + lwork)) + (sizeof(int)*(2*size + liwork)))
+    bufferp[0] = buffer
     if not buffer:
-       return nan 
+        sf_error.error("ellip_harm", sf_error.NO_RESULT, "failed to allocate memory")
+        return NULL 
 
     cdef double *g = <double *>buffer
     cdef double *d = g + size
@@ -127,7 +106,7 @@ cdef inline double ellip_harmonic(double h2, double k2, int n, int p, double s, 
                f[j] = (-alpha*(2*(r- (j + 1)) + 2)*(2*((j + 1) + r) + 1))
                d[j] = (2*r + 1)*(2*r + 2)*alpha - (2*j + 1)*(2*j + 1)*gamma
            else:
-               f[j] = (-alpha*(2*(r - (j + 1)))*(2*(r*(j + 1)) + 1))
+               f[j] = (-alpha*(2*(r - (j + 1)))*(2*(r+(j + 1)) + 1))
                d[j] = (2*r*(2*r + 1) - (2*j + 1)*(2*j + 1))*alpha + (2*j + 2)*(2*j + 2)*beta
 		
     elif t == 'M':
@@ -137,17 +116,17 @@ cdef inline double ellip_harmonic(double h2, double k2, int n, int p, double s, 
                f[j] = (-alpha*(2*(r - (j + 1)) + 2)*(2*((j + 1) + r) + 1))
                d[j] = ((2*r + 1)*(2*r + 2) - (2*j + 1)*(2*j + 1))*alpha + 4*j*j*beta
            else:
-               f[j] = (-alpha*(2*(r - (j + 1)))*(2*(r*(j + 1)) + 1))
-               d[j] = 2*r*(2*r + 1)*(2*r + 2) - (2*j + 1)*(2*j + 1)*gamma	
+               f[j] = (-alpha*(2*(r - (j + 1)))*(2*(r+(j + 1)) + 1))
+               d[j] = 2*r*(2*r + 1)*alpha - (2*j + 1)*(2*j + 1)*gamma	
 
     elif t == 'N':
         for j in range(0, r):
            g[j] = (-(2*j + 2)*(2*j + 3)*beta) 
            if n%2:
-               f[j] = (-alpha*(2*(r- (j + 1)) + 2)*(2*((j + 1) + r) + 3))
+               f[j] = (-alpha*(2*(r- (j + 1)))*(2*((j + 1) + r) + 3))
                d[j] = (2*r + 1)*(2*r + 2)*alpha - (2*j + 2)*(2*j + 2)*gamma	
            else:
-               f[j] = (-alpha*(2*(r - (j + 1)))*(2*(r*(j + 1)) + 1))   
+               f[j] = (-alpha*(2*(r - (j + 1)))*(2*(r+(j + 1)) + 1))   
                d[j] = 2*r*(2*r + 1)*alpha - (2*j + 2)*(2*j +2)*alpha + (2*j + 1)*(2*j + 1)*beta
     
 
@@ -160,26 +139,62 @@ cdef inline double ellip_harmonic(double h2, double k2, int n, int p, double s, 
     for i in range(0, size-1):
         dd[i] = g[i]*ss[i]/ss[i+1]
 
+#    return f
+
     c_dstevr("V", "I", &size, <double *>d, <double *>dd, &vl, &vu, &tp, &tp, &tol, &c, <double *>w, <double *>eigv, &size, <int *>isuppz, <double *>work, &lwork, <int *>iwork, &liwork, &info)
               	 
     if info != 0: 
-        sf_error.error("ellip_harm", sf_error.ARG, "illegal")
-        free(buffer)
-        return nan   
- 
-    lambda_romain = 1.0 - <double>s2/<double>h2
+        sf_error.error("ellip_harm", sf_error.NO_RESULT, "failed to allocate memory")
+        return NULL   
 
     for i in range(0, size):
         eigv[i] /= ss[i]
 
     for i in range(0, size):
         eigv[i] = eigv[i]/(eigv[size - 1]/pow(-h2, size - 1))
+    return eigv
+    return d
 
+cdef inline double ellip_harmonic(double h2, double k2, int n, int p, double s, double signm, double signn) nogil:
+    cdef int size, tp, r, j
+    cdef double s2, pp, lambda_romain, psi
+    signm = signm/fabs(signm)
+    signn = signn/fabs(signn)
+
+    if p < 1 or p > 2*n + 1:
+        sf_error.error("ellip_harm", sf_error.ARG, "invalid value for p")
+        return nan
+
+    if fabs(signm) != 1 or fabs(signn) != 1:
+        sf_error.error("ellip_harm", sf_error.ARG, "invalid signm or signn")
+        return nan
+
+    s2 = s*s
+    r = n/2
+    if p - 1 < r + 1:
+        size, psi = r + 1, pow(s, n - 2*r) 
+    elif p - 1 < (n - r) + (r + 1):
+        size, psi = n - r, pow(s, 1 - n + 2*r)*signm*sqrt(fabs(s2 - h2))
+    elif p - 1 < (n - r) + (n - r) + (r + 1):
+        size, psi = n - r, pow(s, 1 - n + 2*r)*signn*sqrt(fabs(s2 - k2))
+    elif p - 1 < 2*n + 1:
+        size, psi = r, pow(s,  n - 2*r)*signm*signn*sqrt(fabs((s2 - h2)*(s2 - k2)))
+    
+
+    cdef double *eigv
+    cdef void *bufferp
+    eigv = lame_coefficients(h2, k2, n, p, &bufferp)
+#    return eigv[1]
+    if not eigv:
+        free(bufferp)
+        return nan
+    lambda_romain = 1.0 - <double>s2/<double>h2
     pp = eigv[size - 1]
 
     for j in range(size - 2, -1, -1):
         pp = pp*lambda_romain + eigv[j]
-    
- #   free(buffer)
-    return psi*pp 
- 
+    pp = pp*psi
+    free(bufferp)
+    return pp 
+
+

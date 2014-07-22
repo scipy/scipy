@@ -1442,7 +1442,7 @@ cdef void loop_d_ld__As_ld_d(char **args, np.npy_intp *dims, np.npy_intp *steps,
         op0 += steps[2]
     sf_error.check_fpe(func_name)
 
-from ellip_harm cimport ellip_harmonic as _func_ellip_harmonic
+from _ellip_harm cimport ellip_harmonic as _func_ellip_harmonic
 ctypedef double _proto_ellip_harmonic_t(double, double, int, int, double, double, double) nogil
 cdef _proto_ellip_harmonic_t *_proto_ellip_harmonic_t_var = &_func_ellip_harmonic
 from _legacy cimport ellip_harmonic_unsafe as _func_ellip_harmonic_unsafe
