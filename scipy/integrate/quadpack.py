@@ -583,7 +583,7 @@ def nquad(func, ranges, args=None, opts=None):
         ``func(x0, x1, ..., xn, t0, t1, ..., tm)``.  Integration is carried out
         in order.  That is, integration over ``x0`` is the innermost integral,
         and ``xn`` is the outermost.
-        If speed is desired, this function may be a ctypes function of
+        If performance is a concern, this function may be a ctypes function of
         the form::
 
             f(int n, double args[n])
@@ -594,6 +594,9 @@ def nquad(func, ranges, args=None, opts=None):
         ``ctypes``, setting the function's argtypes to ``(c_int, c_double)``,
         and the function's restype to ``(c_double)``.  Its pointer may then be
         passed into `nquad` normally.
+        This allows the underlying Fortran library to evaluate the function in
+        the innermost integration calls without callbacks to Python, and also 
+        speeds up the evaluation of the function itself.
     ranges : iterable object
         Each element of ranges may be either a sequence  of 2 numbers, or else
         a callable that returns such a sequence.  ``ranges[0]`` corresponds to
