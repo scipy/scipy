@@ -391,11 +391,12 @@ class gaussian_kde(object):
             large = other
 
         sum_cov = small.covariance + large.covariance
+        sum_cov_chol = linalg.cho_factor(sum_cov)
         result = 0.0
         for i in range(small.n):
             mean = small.dataset[:, i, newaxis]
             diff = large.dataset - mean
-            tdiff = dot(linalg.inv(sum_cov), diff)
+            tdiff = linalg.cho_solve(sum_cov_chol, diff)
 
             energies = sum(diff * tdiff, axis=0) / 2.0
             result += sum(exp(-energies), axis=0)
