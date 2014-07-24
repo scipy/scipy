@@ -14,8 +14,8 @@ from scipy.lib.six import zip as izip
 from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
 from .base import isspmatrix
 from .data import _data_matrix, _minmax_mixin
-from .sputils import upcast, upcast_char, to_native, isshape, getdtype, isintlike, \
-     get_index_dtype, downcast_intp_index, _compat_bincount
+from .sputils import (upcast, upcast_char, to_native, isshape, getdtype,
+        isintlike, get_index_dtype, downcast_intp_index, _compat_bincount)
 
 
 class coo_matrix(_data_matrix, _minmax_mixin):
@@ -395,6 +395,38 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         dok.update(izip(izip(self.row,self.col),self.data))
 
         return dok
+
+    def diagonal(self):
+        # Could be rewritten without the python loop.
+        # Data entries at the same (row, col) are summed.
+        n = min(self.shape)
+        ndata = self.data.shape[0]
+        d = np.zeros(n, dtype=self.dtype)
+        for i in range(ndata):
+            r = self.row[i]
+            if r == self.col[i]:
+                d[r] += self.data[i]
+        return d
+    diagonal.__doc__ = _data_matrix.diagonal.__doc__
+
+    def setdiag(self, values, k=0):
+        M, N = self.shape
+        if k <= -M or k >= N:
+            raise ValueError('k exceeds matrix dimensions')
+        values = np.asarray(values, dtype=self.dtype)
+        # For now let the base class deal with complicated calls.
+        if M != N or k != 0 or values.ndim != 1:
+            _data_matrix.setdiag(self, values, k)
+            return
+        # Define indices corresponding to off-diagonal entries.
+        offdiag = self.row != self.col
+        # Append the diagonal entries.
+        # Diagonal values of zero are not treated specially.
+        diag_indices = np.arange(M, dtype=self.row.dtype)
+        self.row = np.concatenate((self.row[offdiag], diag_indices))
+        self.col = np.concatenate((self.col[offdiag], diag_indices))
+        self.data = np.concatenate((self.data[offdiag], values))
+    setdiag.__doc__ = _data_matrix.setdiag.__doc__
 
     # needed by _data_matrix
     def _with_data(self,data,copy=True):
