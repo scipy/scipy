@@ -208,15 +208,6 @@ class TestInt32Overflow(object):
         m2 = bsr_matrix(np.ones((2, n), dtype=np.int8), blocksize=(2, m.blocksize[0]))
         m2.dot(m) # shouldn't SIGSEGV
 
-    @dec.slow
-    def test_csr_matmat(self):
-        n = self.n
-
-        # cf. gh-3212
-        a = csr_matrix(np.ones((n, 1), dtype=np.int8))
-        b = csr_matrix(np.ones((1, n), dtype=np.int8))
-        assert_raises(RuntimeError, a.dot, b)
-
 
 @dec.skipif(True, "64-bit indices in sparse matrices not available")
 def test_csr_matmat_int64_overflow():
