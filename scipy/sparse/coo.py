@@ -9,7 +9,7 @@ from warnings import warn
 
 import numpy as np
 
-from scipy.lib.six import zip as izip
+from scipy.lib.six import xrange, zip as izip
 
 from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
 from .base import isspmatrix
@@ -402,7 +402,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         n = min(self.shape)
         ndata = self.data.shape[0]
         d = np.zeros(n, dtype=self.dtype)
-        for i in range(ndata):
+        for i in xrange(ndata):
             r = self.row[i]
             if r == self.col[i]:
                 d[r] += self.data[i]
@@ -414,18 +414,39 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         if k <= -M or k >= N:
             raise ValueError('k exceeds matrix dimensions')
         values = np.asarray(values, dtype=self.dtype)
-        # For now let the base class deal with complicated calls.
-        if M != N or k != 0 or values.ndim != 1:
-            _data_matrix.setdiag(self, values, k)
+        if values.ndim and not len(values):
             return
-        # Define indices corresponding to off-diagonal entries.
-        offdiag = self.row != self.col
-        # Append the diagonal entries.
-        # Diagonal values of zero are not treated specially.
-        diag_indices = np.arange(M, dtype=self.row.dtype)
-        self.row = np.concatenate((self.row[offdiag], diag_indices))
-        self.col = np.concatenate((self.col[offdiag], diag_indices))
-        self.data = np.concatenate((self.data[offdiag], values))
+        idx_dtype = self.row.dtype
+
+        # Determine which triples to keep and where to put the new ones.
+        full_keep = self.col - self.row != k
+        if k < 0:
+            max_index = min(M+k, N)
+            if values.ndim:
+                max_index = min(max_index, len(values))
+            keep = np.logical_or(full_keep, self.col >= max_index)
+            new_row = np.arange(-k, -k + max_index, dtype=idx_dtype)
+            new_col = np.arange(max_index, dtype=idx_dtype)
+        else:
+            max_index = min(M, N-k)
+            if values.ndim:
+                max_index = min(max_index, len(values))
+            keep = np.logical_or(full_keep, self.row >= max_index)
+            new_row = np.arange(max_index, dtype=idx_dtype)
+            new_col = np.arange(k, k + max_index, dtype=idx_dtype)
+
+        # Define the array of data consisting of the entries to be added.
+        if values.ndim:
+            new_data = values[:max_index]
+        else:
+            new_data = np.empty(max_index, dtype=self.dtype)
+            new_data[:] = values
+
+        # Update the internal structure.
+        self.row = np.concatenate((self.row[keep], new_row))
+        self.col = np.concatenate((self.col[keep], new_col))
+        self.data = np.concatenate((self.data[keep], new_data))
+
     setdiag.__doc__ = _data_matrix.setdiag.__doc__
 
     # needed by _data_matrix
