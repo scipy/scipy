@@ -10,7 +10,7 @@
       GO TO 103
   102 NTRY = NTRYH(J)
       GO TO 104
-  103 NTRY = NTRY+2
+  103 NTRY = NTRYH(4)+2*(J-4)
   104 NQ = NL/NTRY
       NR = NL-NTRY*NQ
       IF (NR.eq.0) GO TO 105
