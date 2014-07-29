@@ -4,7 +4,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import run_module_suite
+from numpy.testing import (run_module_suite, assert_allclose,
+        assert_array_almost_equal)
 from scipy import sparse
 
 from scipy.sparse import csgraph
@@ -38,16 +39,12 @@ def _check_graph_laplacian(mat, normed):
     laplacian = csgraph.laplacian(mat, normed=normed)
     n_nodes = mat.shape[0]
     if not normed:
-        np.testing.assert_array_almost_equal(laplacian.sum(axis=0),
-                                             np.zeros(n_nodes))
-    np.testing.assert_array_almost_equal(laplacian.T,
-                                         laplacian)
-    np.testing.assert_array_almost_equal(
-        laplacian,
+        assert_array_almost_equal(laplacian.sum(axis=0), np.zeros(n_nodes))
+    assert_array_almost_equal(laplacian.T, laplacian)
+    assert_array_almost_equal(laplacian,
         csgraph.laplacian(sp_mat, normed=normed).todense())
 
-    np.testing.assert_array_almost_equal(
-        laplacian,
+    assert_array_almost_equal(laplacian,
         _explicit_laplacian(mat, normed=normed))
 
 
@@ -64,6 +61,45 @@ def test_graph_laplacian():
     for mat_str in mats:
         for normed in (True, False):
             yield _check_graph_laplacian, mat_str, normed
+
+
+def _assert_allclose_sparse(a, b, **kwargs):
+    # helper function that can deal with sparse matrices
+    if sparse.issparse(a):
+        a = a.toarray()
+    if sparse.issparse(b):
+        b = a.toarray()
+    assert_allclose(a, b, **kwargs)
+
+
+def test_asymmetric_laplacian():
+    # adjacency matrix, laplacian, normalized laplacian
+    A = [[0, 1, 0],
+         [4, 2, 0],
+         [0, 0, 0]]
+    L = [[1, -1, 0],
+         [-4, 4, 0],
+         [0, 0, 0]]
+    Ld = [1, 4, 0]
+    M = [[1, -0.5, 0],
+         [-2, 1, 0],
+         [0, 0, 0]]
+    Md = [1, 2, 1]
+    for arr_type in np.array, sparse.csr_matrix, sparse.coo_matrix:
+        for t in int, float, complex:
+            adj = arr_type(A, dtype=t)
+            # check laplacian
+            m = csgraph.laplacian(adj, normed=False, return_diag=False)
+            _assert_allclose_sparse(m, L, atol=1e-12)
+            m, d = csgraph.laplacian(adj, normed=False, return_diag=True)
+            _assert_allclose_sparse(m, L, atol=1e-12)
+            _assert_allclose_sparse(d, Ld, atol=1e-12)
+            # check normalized laplacian
+            m = csgraph.laplacian(adj, normed=True, return_diag=False)
+            _assert_allclose_sparse(m, M, atol=1e-12)
+            m, d = csgraph.laplacian(adj, normed=True, return_diag=True)
+            _assert_allclose_sparse(m, M, atol=1e-12)
+            _assert_allclose_sparse(d, Md, atol=1e-12)
 
 
 if __name__ == '__main__':
