@@ -26,7 +26,7 @@ def _explicit_laplacian(x, normed=False):
     return y
 
 
-def _check_graph_laplacian(mat, normed):
+def _check_symmetric_graph_laplacian(mat, normed):
     if not hasattr(mat, 'shape'):
         mat = eval(mat, dict(np=np, sparse=sparse))
 
@@ -48,8 +48,8 @@ def _check_graph_laplacian(mat, normed):
         _explicit_laplacian(mat, normed=normed))
 
 
-def test_graph_laplacian():
-    mats = ('np.arange(10) * np.arange(10)[:, np.newaxis]',
+def test_symmetric_graph_laplacian():
+    symmetric_mats = ('np.arange(10) * np.arange(10)[:, np.newaxis]',
             'np.ones((7, 7))',
             'np.eye(19)',
             'sparse.diags([1, 1], [-1, 1], shape=(4,4))',
@@ -58,9 +58,9 @@ def test_graph_laplacian():
             'np.vander(np.arange(4)) + np.vander(np.arange(4)).T',
             )
 
-    for mat_str in mats:
-        for normed in (True, False):
-            yield _check_graph_laplacian, mat_str, normed
+    for mat_str in symmetric_mats:
+        for normed in True, False:
+            yield _check_symmetric_graph_laplacian, mat_str, normed
 
 
 def _assert_allclose_sparse(a, b, **kwargs):
@@ -72,34 +72,52 @@ def _assert_allclose_sparse(a, b, **kwargs):
     assert_allclose(a, b, **kwargs)
 
 
-def test_asymmetric_laplacian():
-    # adjacency matrix, laplacian, normalized laplacian
-    A = [[0, 1, 0],
-         [4, 2, 0],
-         [0, 0, 0]]
-    L = [[1, -1, 0],
-         [-4, 4, 0],
-         [0, 0, 0]]
-    Ld = [1, 4, 0]
-    M = [[1, -0.5, 0],
-         [-2, 1, 0],
-         [0, 0, 0]]
-    Md = [1, 2, 1]
+def _check_laplacian(A, desired_L, desired_d, normed, use_out_degree):
     for arr_type in np.array, sparse.csr_matrix, sparse.coo_matrix:
         for t in int, float, complex:
             adj = arr_type(A, dtype=t)
-            # check laplacian
-            m = csgraph.laplacian(adj, normed=False, return_diag=False)
-            _assert_allclose_sparse(m, L, atol=1e-12)
-            m, d = csgraph.laplacian(adj, normed=False, return_diag=True)
-            _assert_allclose_sparse(m, L, atol=1e-12)
-            _assert_allclose_sparse(d, Ld, atol=1e-12)
-            # check normalized laplacian
-            m = csgraph.laplacian(adj, normed=True, return_diag=False)
-            _assert_allclose_sparse(m, M, atol=1e-12)
-            m, d = csgraph.laplacian(adj, normed=True, return_diag=True)
-            _assert_allclose_sparse(m, M, atol=1e-12)
-            _assert_allclose_sparse(d, Md, atol=1e-12)
+            L = csgraph.laplacian(adj, normed=normed, return_diag=False,
+                                  use_out_degree=use_out_degree)
+            _assert_allclose_sparse(L, desired_L, atol=1e-12)
+            L, d = csgraph.laplacian(adj, normed=normed, return_diag=True,
+                                  use_out_degree=use_out_degree)
+            _assert_allclose_sparse(L, desired_L, atol=1e-12)
+            _assert_allclose_sparse(d, desired_d, atol=1e-12)
+
+
+def test_asymmetric_laplacian():
+    # adjacency matrix
+    A = [[0, 1, 0],
+         [4, 2, 0],
+         [0, 0, 0]]
+
+    # Laplacian matrix using out-degree
+    L = [[1, -1, 0],
+         [-4, 4, 0],
+         [0, 0, 0]]
+    d = [1, 4, 0]
+    _check_laplacian(A, L, d, normed=False, use_out_degree=True)
+
+    # normalized Laplacian matrix using out-degree
+    L = [[1, -0.5, 0],
+         [-2, 1, 0],
+         [0, 0, 0]]
+    d = [1, 2, 1]
+    _check_laplacian(A, L, d, normed=True, use_out_degree=True)
+
+    # Laplacian matrix using in-degree
+    L = [[4, -1, 0],
+         [-4, 1, 0],
+         [0, 0, 0]]
+    d = [4, 1, 0]
+    _check_laplacian(A, L, d, normed=False, use_out_degree=False)
+
+    # normalized Laplacian matrix using in-degree
+    L = [[1, -0.5, 0],
+         [-2, 1, 0],
+         [0, 0, 0]]
+    d = [2, 1, 1]
+    _check_laplacian(A, L, d, normed=True, use_out_degree=False)
 
 
 if __name__ == '__main__':

@@ -15,10 +15,9 @@ from scipy.sparse import isspmatrix, coo_matrix
 
 ###############################################################################
 # Graph laplacian
-def laplacian(csgraph, normed=False, return_diag=False):
-    """ Return the Laplacian matrix of a directed graph.
-
-    For non-symmetric graphs the out-degree is used in the computation.
+def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
+    """
+    Return the Laplacian matrix of a directed graph.
 
     Parameters
     ----------
@@ -27,7 +26,11 @@ def laplacian(csgraph, normed=False, return_diag=False):
     normed : bool, optional
         If True, then compute normalized Laplacian.
     return_diag : bool, optional
-        If True, then also return an array related to vertex out-degrees.
+        If True, then also return an array related to vertex degrees.
+    use_out_degree : bool, optional
+        If True, then use out-degree instead of in-degree.
+        This distinction matters only if the graph is asymmetric.
+        Default: False.
 
     Returns
     -------
@@ -36,7 +39,7 @@ def laplacian(csgraph, normed=False, return_diag=False):
     diag : ndarray, optional
         The length-N diagonal of the Laplacian matrix.
         For the normalized Laplacian, this is the array of square roots
-        of vertex out-degrees or 1 if the out-degree is zero.
+        of vertex degrees or 1 if the degree is zero.
 
     Notes
     -----
@@ -44,9 +47,6 @@ def laplacian(csgraph, normed=False, return_diag=False):
     "Kirchoff matrix" or the "admittance matrix", and is useful in many
     parts of spectral graph theory.  In particular, the eigen-decomposition
     of the laplacian matrix can give insight into many properties of the graph.
-
-    For non-symmetric directed graphs, the laplacian is computed using the
-    out-degree of each node.
 
     Examples
     --------
@@ -72,25 +72,25 @@ def laplacian(csgraph, normed=False, return_diag=False):
                    or np.issubdtype(csgraph.dtype, np.uint)):
         csgraph = csgraph.astype(np.float)
 
-    if isspmatrix(csgraph):
-        return _laplacian_sparse(csgraph, normed=normed,
-                                 return_diag=return_diag)
-    else:
-        return _laplacian_dense(csgraph, normed=normed,
-                                return_diag=return_diag)
+    create_lap = _laplacian_sparse if isspmatrix(csgraph) else _laplacian_dense
+    degree_axis = 1 if use_out_degree else 0
+    lap, d = create_lap(csgraph, normed=normed, axis=degree_axis)
+    if return_diag:
+        return lap, d
+    return lap
 
 
 def _setdiag_dense(A, d):
     A.flat[::len(d)+1] = d
 
 
-def _laplacian_sparse(graph, normed=False, return_diag=False):
+def _laplacian_sparse(graph, normed=False, axis=0):
     n = graph.shape[0]
     if graph.format == 'coo':
         m = graph.copy()
     else:
         m = graph.tocoo()
-    w = m.dot(np.ones(n)) - m.diagonal()
+    w = m.sum(axis=axis).getA1() - m.diagonal()
     if normed:
         w = np.sqrt(w)
         isolated_node_mask = (w == 0)
@@ -102,16 +102,14 @@ def _laplacian_sparse(graph, normed=False, return_diag=False):
     else:
         m.data *= -1
         m.setdiag(w)
-    if return_diag:
-        return m, w
-    return m
+    return m, w
 
 
-def _laplacian_dense(graph, normed=False, return_diag=False):
+def _laplacian_dense(graph, normed=False, axis=0):
     n = graph.shape[0]
     m = np.array(graph)
     np.fill_diagonal(m, 0)
-    w = m.sum(axis=1)
+    w = m.sum(axis=axis)
     if normed:
         w = np.sqrt(w)
         isolated_node_mask = (w == 0)
@@ -123,6 +121,4 @@ def _laplacian_dense(graph, normed=False, return_diag=False):
     else:
         m *= -1
         _setdiag_dense(m, w)
-    if return_diag:
-        return m, w
-    return m
+    return m, w
