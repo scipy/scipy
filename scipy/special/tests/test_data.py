@@ -20,6 +20,9 @@ DATASETS_BOOST = np.load(os.path.join(os.path.dirname(__file__),
 DATASETS_GSL = np.load(os.path.join(os.path.dirname(__file__),
                                     "data", "gsl.npz"))
 
+DATASETS_MISC = np.load(os.path.join(os.path.dirname(__file__),
+                                    "data", "misc.npz"))
+
 
 def data(func, dataname, *a, **kw):
     kw.setdefault('dataname', dataname)
@@ -30,6 +33,9 @@ def data_gsl(func, dataname, *a, **kw):
     kw.setdefault('dataname', dataname)
     return FuncData(func, DATASETS_GSL[dataname], *a, **kw)
 
+def data_misc(func, dataname, *a, **kw):
+    kw.setdefault('dataname', dataname)
+    return FuncData(func, DATASETS_MISC[dataname], *a, **kw)
 
 def ellipk_(k):
     return ellipk(k*k)
@@ -116,8 +122,7 @@ def test_boost():
         data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0j, 1, rtol=1e-11),
         data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0, 1),
         data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0j, 1),
-        data(ellip_harm_2, 'ellip',(0, 1, 2, 3, 4), 6, rtol=1e-10, atol=1e-13),
-        data(ellip_harm, 'ellip',(0, 1, 2, 3, 4), 5, rtol=1e-10, atol=1e-13),
+
         data(ellipk_, 'ellint_k_data_ipp-ellint_k_data', 0, 1),
         data(ellipkm1, 'ellipkm1', 0, 1),
         data(ellipe_, 'ellint_e_data_ipp-ellint_e_data', 0, 1),
@@ -282,6 +287,14 @@ def test_gsl():
     for test in TESTS:
         yield _test_factory, test
 
+def test_misc():
+    TESTS = [
+        data_misc(ellip_harm_2, 'ellip',(0, 1, 2, 3, 4), 6, rtol=1e-10, atol=1e-13),
+        data_misc(ellip_harm, 'ellip',(0, 1, 2, 3, 4), 5, rtol=1e-10, atol=1e-13),
+    ]
+
+    for test in TESTS:
+        yield _test_factory, test
 
 def _test_factory(test, dtype=np.double):
     """Boost test"""

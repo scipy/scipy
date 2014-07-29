@@ -26,9 +26,9 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     p : int
        order, can range between [1,2n+1]
     signm : double, optional
-           determines the sign of prefactor of functions. See Notes 
+           determines the sign of prefactor of functions. Can be :math:`\pm` 1. See Notes 
     signn : double, optional
-           determines the sign of prefactor of functions. See Notes
+           determines the sign of prefactor of functions. Can be :math:`\pm` 1. See Notes 
     
     Returns
     -------
@@ -117,7 +117,8 @@ def ellip_harm_2(h2, k2, n, p, s):
 
     """
     with _ellip_lock:
-        return _ellip_harm_2_vec(h2, k2, n, p, s)
+        with np.errstate(all='ignore'):
+            return _ellip_harm_2_vec(h2, k2, n, p, s)
 
 def _ellip_normal_vec(h2, k2, n, p):
     return _ellipsoid_norm(h2, k2, n, p)
@@ -161,4 +162,5 @@ def ellip_normal(h2, k2, n, p):
 
     """
     with _ellip_lock:
-        return _ellip_normal_vec(h2, k2, n, p)
+        with np.errstate(all='ignore'):
+            return _ellip_normal_vec(h2, k2, n, p)

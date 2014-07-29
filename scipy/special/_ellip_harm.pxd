@@ -43,8 +43,20 @@ cdef extern from "lapack_defs.h":
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef inline double* lame_coefficients(double h2, double k2, int n, int p, void **bufferp) nogil:
-   
+cdef inline double* lame_coefficients(double h2, double k2, int n, int p, void **bufferp, double signm, double signn) nogil:
+
+    if n < 0:
+        sf_error.error("ellip_harm", sf_error.ARG, "invalid value for n")
+        return NULL
+
+    if p < 1 or p > 2*n + 1:
+        sf_error.error("ellip_harm", sf_error.ARG, "invalid value for p")
+        return NULL
+
+    if fabs(signm) != 1 or fabs(signn) != 1:
+        sf_error.error("ellip_harm", sf_error.ARG, "invalid signm or signn")
+        return NULL
+
     cdef double s2, alpha, beta, gamma, lamba_romain, pp, psi, t1, tol, vl, vu
     cdef int r, tp, j, size, i, info, lwork, liwork, c, iu
     cdef char t
@@ -139,8 +151,6 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p, void *
     for i in range(0, size-1):
         dd[i] = g[i]*ss[i]/ss[i+1]
 
-#    return f
-
     c_dstevr("V", "I", &size, <double *>d, <double *>dd, &vl, &vu, &tp, &tp, &tol, &c, <double *>w, <double *>eigv, &size, <int *>isuppz, <double *>work, &lwork, <int *>iwork, &liwork, &info)
               	 
     if info != 0: 
@@ -153,22 +163,10 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p, void *
     for i in range(0, size):
         eigv[i] = eigv[i]/(eigv[size - 1]/pow(-h2, size - 1))
     return eigv
-    return d
 
-cdef inline double ellip_harmonic(double h2, double k2, int n, int p, double s, double signm, double signn) nogil:
+cdef inline double ellip_harm_eval(double h2, double k2, int n, int p, double s, double * eigv, double signm, double signn) nogil:
     cdef int size, tp, r, j
     cdef double s2, pp, lambda_romain, psi
-    signm = signm/fabs(signm)
-    signn = signn/fabs(signn)
-
-    if p < 1 or p > 2*n + 1:
-        sf_error.error("ellip_harm", sf_error.ARG, "invalid value for p")
-        return nan
-
-    if fabs(signm) != 1 or fabs(signn) != 1:
-        sf_error.error("ellip_harm", sf_error.ARG, "invalid signm or signn")
-        return nan
-
     s2 = s*s
     r = n/2
     if p - 1 < r + 1:
@@ -179,22 +177,25 @@ cdef inline double ellip_harmonic(double h2, double k2, int n, int p, double s, 
         size, psi = n - r, pow(s, 1 - n + 2*r)*signn*sqrt(fabs(s2 - k2))
     elif p - 1 < 2*n + 1:
         size, psi = r, pow(s,  n - 2*r)*signm*signn*sqrt(fabs((s2 - h2)*(s2 - k2)))
-    
-
-    cdef double *eigv
-    cdef void *bufferp
-    eigv = lame_coefficients(h2, k2, n, p, &bufferp)
-#    return eigv[1]
-    if not eigv:
-        free(bufferp)
-        return nan
     lambda_romain = 1.0 - <double>s2/<double>h2
     pp = eigv[size - 1]
 
     for j in range(size - 2, -1, -1):
         pp = pp*lambda_romain + eigv[j]
     pp = pp*psi
+    return pp
+
+
+cdef inline double ellip_harmonic(double h2, double k2, int n, int p, double s, double signm, double signn) nogil:
+    cdef double result
+    cdef double *eigv
+    cdef void *bufferp
+    eigv = lame_coefficients(h2, k2, n, p, &bufferp, signm, signn)
+    if not eigv:
+        free(bufferp)
+        return nan
+    result = ellip_harm_eval(h2, k2, n, p, s, eigv, signm, signn) 
     free(bufferp)
-    return pp 
+    return result
 
 
