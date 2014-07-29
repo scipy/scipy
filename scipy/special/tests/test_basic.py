@@ -1288,6 +1288,21 @@ class TestEllip(TestCase):
         f1 = special.ellipkinc(phi + pi, mvals)
         assert_array_almost_equal_nulp(f1, 5.1296650500976675 * np.ones_like(f1), 2)
 
+    def test_ellipkinc_singular(self):
+        # ellipkinc(phi, 1) has closed form and is finite only for phi in (-pi/2, pi/2)
+        xlog = np.logspace(-300, -17, 25)
+        xlin = np.linspace(1e-17, 0.1, 25)
+        xlin2 = np.linspace(0.1, pi/2, 25, endpoint=False)
+
+        assert_allclose(special.ellipkinc(xlog, 1), np.arcsinh(np.tan(xlog)), rtol=1e14)
+        assert_allclose(special.ellipkinc(xlin, 1), np.arcsinh(np.tan(xlin)), rtol=1e14)
+        assert_allclose(special.ellipkinc(xlin2, 1), np.arcsinh(np.tan(xlin2)), rtol=1e14)
+        assert_equal(special.ellipkinc(np.pi/2, 1), np.inf)
+        assert_allclose(special.ellipkinc(-xlog, 1), np.arcsinh(np.tan(-xlog)), rtol=1e14)
+        assert_allclose(special.ellipkinc(-xlin, 1), np.arcsinh(np.tan(-xlin)), rtol=1e14)
+        assert_allclose(special.ellipkinc(-xlin2, 1), np.arcsinh(np.tan(-xlin2)), rtol=1e14)
+        assert_equal(special.ellipkinc(-np.pi/2, 1), np.inf)
+
     def test_ellipe(self):
         ele = special.ellipe(.2)
         assert_almost_equal(ele,1.4890350580958529,8)

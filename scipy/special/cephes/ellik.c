@@ -86,7 +86,8 @@ double ellik(double phi,  double m)
 	    mtherr("ellik", SING);
 	    return (NPY_INFINITY);
 	}
-	return (log(tan((NPY_PI_2 + phi) / 2.0)));
+        /* DLMF 19.6.8, and 4.23.42 */
+       return asinh(tan(phi));
     }
     npio2 = floor(phi / NPY_PI_2);
     if (npio2 & 1)
