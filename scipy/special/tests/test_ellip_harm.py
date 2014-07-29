@@ -6,7 +6,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_equal, assert_almost_equal, assert_allclose
+from numpy.testing import assert_equal, assert_almost_equal, assert_allclose,\
+ assert_
 from scipy.special._testutils import assert_func_equal
 from scipy.special import ellip_harm, ellip_harm_2, ellip_normal
 from scipy.integrate import quad
@@ -14,37 +15,49 @@ from numpy import array, sqrt, pi
 from scipy.special._testutils import FuncData
 
     
-def test_ellip_norm1():
+def test_ellip_potential():
     def change_coefficient(lambda1, mu, nu, h2, k2):
-        coeff = []
         x = sqrt(lambda1**2*mu**2*nu**2/(h2*k2))
-        coeff.append(x)
         y = sqrt((lambda1**2 - h2)*(mu**2 - h2)*(h2 - nu**2)/(h2*(k2 - h2)))
-        coeff.append(y)
         z = sqrt((lambda1**2 - k2)*(k2 - mu**2)*(k2 - nu**2)/(k2*(k2 - h2)))
-        coeff.append(z)
-        return coeff
+        return x, y, z
 
     def solid_int_ellip(lambda1, mu, nu, n, p, h2, k2):
-        return ellip_harm(h2, k2, n, p, lambda1)*ellip_harm(h2, k2, n, p, mu)*ellip_harm(h2, k2, n, p, nu)
+        return (ellip_harm(h2, k2, n, p, lambda1)*ellip_harm(h2, k2, n, p, mu)
+               * ellip_harm(h2, k2, n, p, nu))
 
     def solid_int_ellip2(lambda1, mu, nu, n, p, h2, k2):
-        return ellip_harm_2(h2, k2, n, p, lambda1)*ellip_harm(h2, k2, n, p, mu)*ellip_harm(h2, k2, n, p, nu)
+        return (ellip_harm_2(h2, k2, n, p, lambda1)
+                * ellip_harm(h2, k2, n, p, mu)*ellip_harm(h2, k2, n, p, nu))
 
-    def recursion(lambda1, mu1, nu1, lambda2, mu2, nu2, h2, k2):
+    def summation(lambda1, mu1, nu1, lambda2, mu2, nu2, h2, k2):
+        tol = 1e-8
         sum1 = 0
         for n in range(20):
+            xsum = 0
             for p in range(1, 2*n+2):
-                sum1 += 4*pi*(solid_int_ellip(lambda2, mu2, nu2, n, p, h2, k2)*solid_int_ellip2(lambda1, mu1, nu1, n, p, h2, k2))/(ellip_normal(h2, k2, n, p)*(2*n + 1))
-        return sum1
+                xsum += (4*pi*(solid_int_ellip(lambda2, mu2, nu2, n, p, h2, k2)
+                    * solid_int_ellip2(lambda1, mu1, nu1, n, p, h2, k2)) /
+                    (ellip_normal(h2, k2, n, p)*(2*n + 1)))
+            if abs(xsum) < 0.1*tol*abs(sum1):
+                break
+            sum1 += xsum
+        return sum1, xsum
 
     def potential(lambda1, mu1, nu1, lambda2, mu2, nu2, h2, k2):
         x1, y1, z1 = change_coefficient(lambda1, mu1, nu1, h2, k2)
         x2, y2, z2 = change_coefficient(lambda2, mu2, nu2, h2, k2)
         res = sqrt((x2 - x1)**2 + (y2 - y1)**2 + (z2 - z1)**2)
         return 1/res
-    assert_almost_equal(recursion(100, 5, 2, 41, 5, 2, 15, 25), potential(100, 5, 2, 41, 5, 2, 15, 25)) 
-    assert_almost_equal(recursion(120, sqrt(19), 2, 41, sqrt(17), 2, 15, 25), potential(120, sqrt(19), 2, 41, sqrt(17), 2, 15, 25))
+
+    assert_allclose(summation(120, sqrt(19), 2, 41, sqrt(17), 2, 15, 25)[0],
+    potential(120, sqrt(19), 2, 41, sqrt(17), 2, 15, 25), atol=0, rtol=1e-08)
+
+    exact = potential(120, sqrt(19), 2, 41, sqrt(17), 2, 15, 25)
+    result, last_term = summation(120, sqrt(19), 2, 41, sqrt(17), 2, 15, 25)
+    assert_(abs(result - exact) < 10*abs(last_term))
+
+
 def test_ellip_norm():
 
     def G01(h2, k2):
@@ -60,13 +73,13 @@ def test_ellip_norm():
         return 4*pi*k2*(k2 - h2)/3
 
     def G22(h2, k2):
-        res = 2*(h2**4 + k2**4) - 4*h2*k2*(h2**2 + k2**2) + 6*h2**2*k2**2 +\
-        sqrt(h2**2 + k2**2 - h2*k2)*(-2*(h2**3 + k2**3) + 3*h2*k2*(h2 + k2))
+        res = (2*(h2**4 + k2**4) - 4*h2*k2*(h2**2 + k2**2) + 6*h2**2*k2**2 +
+        sqrt(h2**2 + k2**2 - h2*k2)*(-2*(h2**3 + k2**3) + 3*h2*k2*(h2 + k2)))
         return 16*pi/405*res
 
     def G21(h2, k2):
-        res = 2*(h2**4 + k2**4) - 4*h2*k2*(h2**2 + k2**2) + 6*h2**2*k2**2 +\
-        sqrt(h2**2 + k2**2 - h2*k2)*(2*(h2**3 + k2**3) - 3*h2*k2*(h2 + k2))
+        res = (2*(h2**4 + k2**4) - 4*h2*k2*(h2**2 + k2**2) + 6*h2**2*k2**2
+        + sqrt(h2**2 + k2**2 - h2*k2)*(2*(h2**3 + k2**3) - 3*h2*k2*(h2 + k2)))
         return 16*pi/405*res
 
     def G23(h2, k2):
@@ -79,39 +92,39 @@ def test_ellip_norm():
         return 4*pi*h2*k2*(k2 - h2)**2/15
 
     def G32(h2, k2):
-        res = 16*(h2**4 + k2**4) - 36*h2*k2*(h2**2 + k2**2) + 46*h2**2*k2**2\
+        res = (16*(h2**4 + k2**4) - 36*h2*k2*(h2**2 + k2**2) + 46*h2**2*k2**2
         + sqrt(4*(h2**2 + k2**2) - 7*h2*k2)*(-8*(h2**3 + k2**3) +
-        11*h2*k2*(h2 + k2))
+        11*h2*k2*(h2 + k2)))
         return 16*pi/13125*k2*h2*res
 
     def G31(h2, k2):
-        res = 16*(h2**4 + k2**4) - 36*h2*k2*(h2**2 + k2**2) + 46*h2**2*k2**2\
+        res = (16*(h2**4 + k2**4) - 36*h2*k2*(h2**2 + k2**2) + 46*h2**2*k2**2
         + sqrt(4*(h2**2 + k2**2) - 7*h2*k2)*(8*(h2**3 + k2**3) -
-        11*h2*k2*(h2 + k2))
+        11*h2*k2*(h2 + k2)))
         return 16*pi/13125*h2*k2*res
 
     def G34(h2, k2):
-        res = 6*h2**4 + 16*k2**4 - 12*h2**3*k2 - 28*h2*k2**3 + 34*h2**2*k2**2\
+        res = (6*h2**4 + 16*k2**4 - 12*h2**3*k2 - 28*h2*k2**3 + 34*h2**2*k2**2
         + sqrt(h2**2 + 4*k2**2 - h2*k2)*(-6*h2**3 - 8*k2**3 + 9*h2**2*k2 +
-                                            13*h2*k2**2)
+                                            13*h2*k2**2))
         return 16*pi/13125*h2*(k2 - h2)*res
 
     def G33(h2, k2):
-        res = 6*h2**4 + 16*k2**4 - 12*h2**3*k2 - 28*h2*k2**3 + 34*h2**2*k2**2\
+        res = (6*h2**4 + 16*k2**4 - 12*h2**3*k2 - 28*h2*k2**3 + 34*h2**2*k2**2
         + sqrt(h2**2 + 4*k2**2 - h2*k2)*(6*h2**3 + 8*k2**3 - 9*h2**2*k2 -
-        13*h2*k2**2)
+        13*h2*k2**2))
         return 16*pi/13125*h2*(k2 - h2)*res
 
     def G36(h2, k2):
-        res = 16*h2**4 + 6*k2**4 - 28*h2**3*k2 - 12*h2*k2**3 + 34*h2**2*k2**2\
+        res = (16*h2**4 + 6*k2**4 - 28*h2**3*k2 - 12*h2*k2**3 + 34*h2**2*k2**2
         + sqrt(4*h2**2 + k2**2 - h2*k2)*(-8*h2**3 - 6*k2**3 + 13*h2**2*k2 +
-        9*h2*k2**2)
+        9*h2*k2**2))
         return 16*pi/13125*k2*(k2 - h2)*res
 
     def G35(h2, k2):
-        res = 16*h2**4 + 6*k2**4 - 28*h2**3*k2 - 12*h2*k2**3 + 34*h2**2*k2**2\
+        res = (16*h2**4 + 6*k2**4 - 28*h2**3*k2 - 12*h2*k2**3 + 34*h2**2*k2**2
         + sqrt(4*h2**2 + k2**2 - h2*k2)*(8*h2**3 + 6*k2**3 - 13*h2**2*k2 -
-        9*h2*k2**2)
+        9*h2*k2**2))
         return 16*pi/13125*k2*(k2 - h2)*res
 
     def G37(h2, k2):
@@ -130,7 +143,7 @@ def test_ellip_norm():
     def ellip_normal_known(h2, k2, n, p):
         return _ellip_norm(n, p, h2, k2)
 
-# generate both large and small h2 < k2 pairs
+    # generate both large and small h2 < k2 pairs
     np.random.seed(1234)
     h2 = np.random.pareto(0.5, size=1)
     k2 = h2 * (1 + np.random.pareto(0.5, size=h2.size))
@@ -145,18 +158,19 @@ def test_ellip_norm():
 def test_ellip_harm_2():
 
     def I1(h2, k2, s):
-        res = ellip_harm_2(h2, k2, 1, 1, s)/(3 * ellip_harm(h2, k2, 1, 1, s))\
-        + ellip_harm_2(h2, k2, 1, 2, s)/(3 * ellip_harm(h2, k2, 1, 2, s)) +\
-        ellip_harm_2(h2, k2, 1, 3, s)/(3 * ellip_harm(h2, k2, 1, 3, s))
+        res = (ellip_harm_2(h2, k2, 1, 1, s)/(3 * ellip_harm(h2, k2, 1, 1, s))
+        + ellip_harm_2(h2, k2, 1, 2, s)/(3 * ellip_harm(h2, k2, 1, 2, s)) +
+        ellip_harm_2(h2, k2, 1, 3, s)/(3 * ellip_harm(h2, k2, 1, 3, s)))
         return res
 
     assert_almost_equal(I1(5, 8, 10), 1/(10*sqrt((100-5)*(100-8))))
+
+    # Values produced by code from arXiv:1204.0267
     assert_almost_equal(ellip_harm_2(5, 8, 2, 1, 10), 0.00108056853382)
     assert_almost_equal(ellip_harm_2(5, 8, 2, 2, 10), 0.00105820513809)
     assert_almost_equal(ellip_harm_2(5, 8, 2, 3, 10), 0.00106058384743)
     assert_almost_equal(ellip_harm_2(5, 8, 2, 4, 10), 0.00106774492306)
     assert_almost_equal(ellip_harm_2(5, 8, 2, 5, 10), 0.00107976356454)
-
 
 def test_ellip_harm():
 
