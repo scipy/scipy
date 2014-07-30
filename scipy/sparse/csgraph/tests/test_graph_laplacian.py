@@ -65,9 +65,7 @@ def test_symmetric_graph_laplacian():
             'sparse.diags([1, 1], [-1, 1], shape=(4,4))',
             'sparse.diags([1, 1], [-1, 1], shape=(4,4)).todense()',
             'np.asarray(sparse.diags([1, 1], [-1, 1], shape=(4,4)).todense())',
-            'np.vander(np.arange(4)) + np.vander(np.arange(4)).T',
-            )
-
+            'np.vander(np.arange(4)) + np.vander(np.arange(4)).T')
     for mat_str in symmetric_mats:
         for normed in True, False:
             yield _check_symmetric_graph_laplacian, mat_str, normed
