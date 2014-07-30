@@ -42,10 +42,10 @@ def _check_symmetric_graph_laplacian(mat, normed):
         assert_array_almost_equal(laplacian.sum(axis=0), np.zeros(n_nodes))
     assert_array_almost_equal(laplacian.T, laplacian)
     assert_array_almost_equal(laplacian,
-        csgraph.laplacian(sp_mat, normed=normed).todense())
+            csgraph.laplacian(sp_mat, normed=normed).todense())
 
     assert_array_almost_equal(laplacian,
-        _explicit_laplacian(mat, normed=normed))
+            _explicit_laplacian(mat, normed=normed))
 
 
 def test_laplacian_value_error():
