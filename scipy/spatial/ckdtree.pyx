@@ -242,19 +242,37 @@ cdef class coo_entries:
         self.j_data = <np.intp_t *>np.PyArray_DATA(self.j)
         self.v_data = <np.float64_t*>np.PyArray_DATA(self.v)
         self.n_max = self.n
-        return scipy.sparse.coo_matrix((self.v, (self.i, self.j)),
-                                       shape=shape)
+        return scipy.sparse.coo_matrix((self.v, (self.i, self.j)), shape=shape)
 
 
-#FIXME this is horrible copy paste from coo_entries.
-# Utility for building an array of pairs incrementally
-cdef class results_pairs_accumulator:
+# Classes derived from this base class are intended to efficiently accumulate
+# or summarize np.intp_t pairs, for example point indices in the kdtree.
+cdef class pair_accumulator:
+    cdef void add_pair(self, np.intp_t i, np.intp_t j):
+        pass
+
+
+cdef class pair_counter(pair_accumulator):
+    cdef np.intp_t _n
+
+    def __init__(self):
+        self._n = 0
+
+    cdef void add_pair(self, np.intp_t i, np.intp_t j):
+        self._n += 1
+
+    property n:
+        def __get__(self):
+            return self._n
+
+
+cdef class pair_array_accumulator(pair_accumulator):
     cdef:
         np.intp_t n, capacity
         np.ndarray i, j
         np.intp_t *i_data
         np.intp_t *j_data
-    
+
     def __init__(self):
         self.n = 0
         self.capacity = 10
@@ -263,8 +281,7 @@ cdef class results_pairs_accumulator:
         self.i_data = <np.intp_t *>np.PyArray_DATA(self.i)
         self.j_data = <np.intp_t *>np.PyArray_DATA(self.j)
 
-    cdef void accumulate_ordered_pair(results_pairs_accumulator self,
-            np.intp_t i, np.intp_t j):
+    cdef void add_pair(pair_array_accumulator self, np.intp_t i, np.intp_t j):
         cdef np.intp_t k
         cdef np.intp_t tmp
         if self.n == self.capacity:
@@ -282,7 +299,7 @@ cdef class results_pairs_accumulator:
             self.j_data[k] = i
         self.n += 1
 
-    def toarray(results_pairs_accumulator self):
+    def toarray(pair_array_accumulator self):
         # Shrink arrays to size
         self.i.resize(self.n)
         self.j.resize(self.n)
@@ -290,6 +307,21 @@ cdef class results_pairs_accumulator:
         self.j_data = <np.intp_t *>np.PyArray_DATA(self.j)
         self.capacity = self.n
         return np.vstack((self.i, self.j)).T
+
+
+cdef class pair_set_accumulator(pair_accumulator):
+    cdef set _pairs
+
+    def __cinit__(self):
+        self._pairs = set()
+
+    cdef void add_pair(pair_set_accumulator self, np.intp_t i, np.intp_t j):
+        set_add_ordered_pair(self._pairs, i, j)
+
+    property pairs:
+        def __get__(self):
+            return self._pairs
+
 
 
 # Measuring distances
@@ -1621,59 +1653,11 @@ cdef class cKDTree:
     # query_pairs
     # -----------
     cdef int __query_pairs_traverse_no_checking(cKDTree self,
-                                                set results,
-                                                innernode* node1,
-                                                innernode* node2) except -1:
-        cdef leafnode *lnode1
-        cdef leafnode *lnode2
-        cdef list results_i
-        cdef np.intp_t i, j, min_j
-        
-        if node1.split_dim == -1:  # leaf node
-            lnode1 = <leafnode*>node1
-            
-            if node2.split_dim == -1:  # leaf node
-                lnode2 = <leafnode*>node2
-
-                for i in range(lnode1.start_idx, lnode1.end_idx):
-                    # Special care here to avoid duplicate pairs
-                    if node1 == node2:
-                        min_j = i + 1
-                    else:
-                        min_j = lnode2.start_idx
-                        
-                    for j in range(min_j, lnode2.end_idx):
-                        set_add_ordered_pair(results,
-                                             self.raw_indices[i],
-                                             self.raw_indices[j])
-                            
-            else:
-                self.__query_pairs_traverse_no_checking(results, node1, node2.less)
-                self.__query_pairs_traverse_no_checking(results, node1, node2.greater)
-        else:
-            if node1 == node2:
-                # Avoid traversing (node1.less, node2.greater) and
-                # (node1.greater, node2.less) (it's the same node pair twice
-                # over, which is the source of the complication in the
-                # original KDTree.query_pairs)
-                self.__query_pairs_traverse_no_checking(results, node1.less, node2.less)
-                self.__query_pairs_traverse_no_checking(results, node1.less, node2.greater)
-                self.__query_pairs_traverse_no_checking(results, node1.greater, node2.greater)
-            else:
-                self.__query_pairs_traverse_no_checking(results, node1.less, node2)
-                self.__query_pairs_traverse_no_checking(results, node1.greater, node2)
-
-        return 0
-
-
-    #FIXME massive copypaste from __query_pairs_traverse_no_checking.
-    cdef int __query_pairs_traverse_no_checking_array(cKDTree self,
-            results_pairs_accumulator results,
+            pair_accumulator results,
             innernode* node1,
             innernode* node2) except -1:
         cdef leafnode *lnode1
         cdef leafnode *lnode2
-        cdef list results_i
         cdef np.intp_t i, j, min_j
         
         if node1.split_dim == -1:  # leaf node
@@ -1690,13 +1674,13 @@ cdef class cKDTree:
                         min_j = lnode2.start_idx
                         
                     for j in range(min_j, lnode2.end_idx):
-                        results.accumulate_ordered_pair(
+                        results.add_pair(
                                 self.raw_indices[i], self.raw_indices[j])
                             
             else:
-                self.__query_pairs_traverse_no_checking_array(results,
+                self.__query_pairs_traverse_no_checking(results,
                         node1, node2.less)
-                self.__query_pairs_traverse_no_checking_array(results,
+                self.__query_pairs_traverse_no_checking(results,
                         node1, node2.greater)
         else:
             if node1 == node2:
@@ -1704,29 +1688,29 @@ cdef class cKDTree:
                 # (node1.greater, node2.less) (it's the same node pair twice
                 # over, which is the source of the complication in the
                 # original KDTree.query_pairs)
-                self.__query_pairs_traverse_no_checking_array(results,
+                self.__query_pairs_traverse_no_checking(results,
                         node1.less, node2.less)
-                self.__query_pairs_traverse_no_checking_array(results,
+                self.__query_pairs_traverse_no_checking(results,
                         node1.less, node2.greater)
-                self.__query_pairs_traverse_no_checking_array(results,
+                self.__query_pairs_traverse_no_checking(results,
                         node1.greater, node2.greater)
             else:
-                self.__query_pairs_traverse_no_checking_array(results,
+                self.__query_pairs_traverse_no_checking(results,
                         node1.less, node2)
-                self.__query_pairs_traverse_no_checking_array(results,
+                self.__query_pairs_traverse_no_checking(results,
                         node1.greater, node2)
 
         return 0
 
+
     @cython.cdivision(True)
     cdef int __query_pairs_traverse_checking(cKDTree self,
-                                             set results,
-                                             innernode* node1,
-                                             innernode* node2,
-                                             RectRectDistanceTracker tracker) except -1:
+            pair_accumulator results,
+            innernode* node1,
+            innernode* node2,
+            RectRectDistanceTracker tracker) except -1:
         cdef leafnode *lnode1
         cdef leafnode *lnode2
-        cdef list results_i
         cdef np.float64_t d
         cdef np.intp_t i, j, min_j
 
@@ -1755,9 +1739,8 @@ cdef class cKDTree:
                             self.raw_data + self.raw_indices[j] * self.m,
                             tracker.p, self.m, tracker.upper_bound)
                         if d <= tracker.upper_bound:
-                            set_add_ordered_pair(results,
-                                                 self.raw_indices[i],
-                                                 self.raw_indices[j])
+                            results.add_pair(
+                                    self.raw_indices[i], self.raw_indices[j])
                             
             else:  # 1 is a leaf node, 2 is inner node
                 tracker.push_less_of(2, node2)
@@ -1814,102 +1797,6 @@ cdef class cKDTree:
                 
         return 0
 
-    #FIXME massive copypaste from __query_pairs_traverse_checking.
-    @cython.cdivision(True)
-    cdef int __query_pairs_traverse_checking_array(cKDTree self,
-            results_pairs_accumulator results,
-            innernode* node1,
-            innernode* node2,
-            RectRectDistanceTracker tracker) except -1:
-        cdef leafnode *lnode1
-        cdef leafnode *lnode2
-        cdef np.float64_t d
-        cdef np.intp_t i, j, min_j
-
-        if tracker.min_distance > tracker.upper_bound * tracker.epsfac:
-            return 0
-        elif tracker.max_distance < tracker.upper_bound / tracker.epsfac:
-            self.__query_pairs_traverse_no_checking_array(results, node1, node2)
-        elif node1.split_dim == -1:  # 1 is leaf node
-            lnode1 = <leafnode*>node1
-            
-            if node2.split_dim == -1:  # 1 & 2 are leaves
-                lnode2 = <leafnode*>node2
-                
-                # brute-force
-                for i in range(lnode1.start_idx, lnode1.end_idx):
-                    
-                    # Special care here to avoid duplicate pairs
-                    if node1 == node2:
-                        min_j = i + 1
-                    else:
-                        min_j = lnode2.start_idx
-                        
-                    for j in range(min_j, lnode2.end_idx):
-                        d = _distance_p(
-                            self.raw_data + self.raw_indices[i] * self.m,
-                            self.raw_data + self.raw_indices[j] * self.m,
-                            tracker.p, self.m, tracker.upper_bound)
-                        if d <= tracker.upper_bound:
-                            results.accumulate_ordered_pair(
-                                    self.raw_indices[i], self.raw_indices[j])
-                            
-            else:  # 1 is a leaf node, 2 is inner node
-                tracker.push_less_of(2, node2)
-                self.__query_pairs_traverse_checking_array(
-                    results, node1, node2.less, tracker)
-                tracker.pop()
-                    
-                tracker.push_greater_of(2, node2)
-                self.__query_pairs_traverse_checking_array(
-                    results, node1, node2.greater, tracker)
-                tracker.pop()
-                
-        else:  # 1 is an inner node
-            if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
-                tracker.push_less_of(1, node1)
-                self.__query_pairs_traverse_checking_array(
-                    results, node1.less, node2, tracker)
-                tracker.pop()
-                
-                tracker.push_greater_of(1, node1)
-                self.__query_pairs_traverse_checking_array(
-                    results, node1.greater, node2, tracker)
-                tracker.pop()
-                
-            else: # 1 and 2 are inner nodes
-                tracker.push_less_of(1, node1)
-                tracker.push_less_of(2, node2)
-                self.__query_pairs_traverse_checking_array(
-                    results, node1.less, node2.less, tracker)
-                tracker.pop()
-                    
-                tracker.push_greater_of(2, node2)
-                self.__query_pairs_traverse_checking_array(
-                    results, node1.less, node2.greater, tracker)
-                tracker.pop()
-                tracker.pop()
-                    
-                tracker.push_greater_of(1, node1)
-                if node1 != node2:
-                    # Avoid traversing (node1.less, node2.greater) and
-                    # (node1.greater, node2.less) (it's the same node pair
-                    # twice over, which is the source of the complication in
-                    # the original KDTree.query_pairs)
-                    tracker.push_less_of(2, node2)
-                    self.__query_pairs_traverse_checking_array(
-                        results, node1.greater, node2.less, tracker)
-                    tracker.pop()
-                    
-                tracker.push_greater_of(2, node2)
-                self.__query_pairs_traverse_checking_array(
-                    results, node1.greater, node2.greater, tracker)
-                tracker.pop()
-                tracker.pop()
-                
-        return 0
-            
-
     def query_pairs(cKDTree self, np.float64_t r, np.float64_t p=2.,
                     np.float64_t eps=0):
         """query_pairs(self, r, p, eps)
@@ -1936,33 +1823,36 @@ cdef class cKDTree:
             positions are close.
 
         """
-        
-        tracker = RectRectDistanceTracker(
-            Rectangle(self.mins, self.maxes),
-            Rectangle(self.mins, self.maxes),
-            p, eps, r)
-        
-        results = set()
-        self.__query_pairs_traverse_checking(
-            results, self.tree, self.tree, tracker)
-        
-        return results
+        return self.query_pairs_set(r, p, eps)
 
-
-    #FIXME horrible copypaste from query_pairs
-    def query_pairs_array(cKDTree self,
+    def _query_pairs(cKDTree self, pair_accumulator accum,
             np.float64_t r, np.float64_t p=2., np.float64_t eps=0):
-        #TODO add docstring here
         tracker = RectRectDistanceTracker(
             Rectangle(self.mins, self.maxes),
             Rectangle(self.mins, self.maxes),
             p, eps, r)
-        
-        results = results_pairs_accumulator()
-        self.__query_pairs_traverse_checking_array(
-            results, self.tree, self.tree, tracker)
-        
-        return results.toarray()
+        self.__query_pairs_traverse_checking(
+            accum, self.tree, self.tree, tracker)
+
+    # The following three methods could be simplified?
+
+    def query_pairs_count(cKDTree self, np.float64_t r, np.float64_t p=2.,
+                    np.float64_t eps=0):
+        accum = pair_counter()
+        self._query_pairs(accum, r, p, eps)
+        return accum.n
+
+    def query_pairs_array(cKDTree self, np.float64_t r, np.float64_t p=2.,
+                    np.float64_t eps=0):
+        accum = pair_array_accumulator()
+        self._query_pairs(accum, r, p, eps)
+        return accum.toarray()
+
+    def query_pairs_set(cKDTree self, np.float64_t r, np.float64_t p=2.,
+                    np.float64_t eps=0):
+        accum = pair_set_accumulator()
+        self._query_pairs(accum, r, p, eps)
+        return accum.pairs
 
 
     # ---------------
