@@ -99,6 +99,41 @@ def _squeeze_output(out):
     return out
 
 
+def _eigvalsh_to_eps(spectrum, cond=None, rcond=None):
+    """
+    Determine which eigenvalues are "small" given the spectrum.
+
+    This is for compatibility across various linear algebra functions
+    that should agree about whether or not a Hermitian matrix is numerically
+    singular and what is its numerical matrix rank.
+    This is designed to be compatible with scipy.linalg.pinvh.
+
+    Parameters
+    ----------
+    spectrum : 1d ndarray
+        Array of eigenvalues of a Hermitian matrix.
+    cond, rcond : float, optional
+        Cutoff for small eigenvalues.
+        Singular values smaller than rcond * largest_eigenvalue are
+        considered zero.
+        If None or -1, suitable machine precision is used.
+
+    Returns
+    -------
+    eps : float
+        Magnitude cutoff for numerical negligibility.
+
+    """
+    if rcond is not None:
+        cond = rcond
+    if cond in [None, -1]:
+        t = spectrum.dtype.char.lower()
+        factor = {'f': 1E3, 'd': 1E6}
+        cond = factor[t] * np.finfo(t).eps
+    eps = cond * np.max(abs(spectrum))
+    return eps
+
+
 def _pinv_1d(v, eps=1e-5):
     """
     A helper function for computing the pseudoinverse.
@@ -108,7 +143,7 @@ def _pinv_1d(v, eps=1e-5):
     v : iterable of numbers
         This may be thought of as a vector of eigenvalues or singular values.
     eps : float
-        Elements of v smaller than eps are considered negligible.
+        Values with magnitude no greater than eps are considered negligible.
 
     Returns
     -------
@@ -116,7 +151,7 @@ def _pinv_1d(v, eps=1e-5):
         A vector of pseudo-inverted numbers.
 
     """
-    return np.array([0 if abs(x) < eps else 1/x for x in v], dtype=float)
+    return np.array([0 if abs(x) <= eps else 1/x for x in v], dtype=float)
 
 
 class _PSD(object):
@@ -165,17 +200,7 @@ class _PSD(object):
         # and assertion that the matrix is square.
         s, u = scipy.linalg.eigh(M, lower=lower, check_finite=check_finite)
 
-        # This looks redundant but its purpose is to keep the code
-        # compatible with the scipy.linalg.pinvh function
-        # so that it may be more easily reorganized later if desired.
-        if rcond is not None:
-            cond = rcond
-        if cond in [None, -1]:
-            t = u.dtype.char.lower()
-            factor = {'f': 1E3, 'd': 1E6}
-            cond = factor[t] * np.finfo(t).eps
-
-        eps = cond * np.max(abs(s))
+        eps = _eigvalsh_to_eps(s, cond, rcond)
         if np.min(s) < -eps:
             raise ValueError('the input matrix must be positive semidefinite')
         d = s[s > eps]
