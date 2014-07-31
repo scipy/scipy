@@ -214,12 +214,20 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
     Returns
     -------
-    alpha0 : float
+    alpha : float
         Alpha for which ``x_new = x0 + alpha * pk``.
     fc : int
         Number of function evaluations made.
     gc : int
         Number of gradient evaluations made.
+    new_fval : float
+        New function value ``f(x_new)=f(x0+alpha*pk)``.
+    old_fval : float
+        Old function value ``f(x0)``.
+    new_slope : float
+        The local slope along the search direction at the
+        new value ``<myfprime(x_new), pk>``.
+    
 
     Notes
     -----
@@ -255,7 +263,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
             return np.dot(gval[0], pk)
 
     if gfk is None:
-        gfk = fprime(xk)
+        gfk = fprime(xk, *args)
     derphi0 = np.dot(gfk, pk)
 
     alpha_star, phi_star, old_fval, derphi_star = \
