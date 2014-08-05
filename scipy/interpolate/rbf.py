@@ -226,6 +226,6 @@ class Rbf(object):
         if not all([x.shape == y.shape for x in args for y in args]):
             raise ValueError("Array lengths must be equal")
         shp = args[0].shape
-        self.xa = asarray([a.flatten() for a in args], dtype=float_)
-        r = self._call_norm(self.xa, self.xi)
+        xa = asarray([a.flatten() for a in args], dtype=float_)
+        r = self._call_norm(xa, self.xi)
         return dot(self._function(r), self.nodes).reshape(shp)
