@@ -131,6 +131,7 @@ Blake Griffith for improvements to scipy.sparse.
 Andrew Nelson for scipy.optimize.differential_evolution.
 Brian Newsom for work on ctypes multivariate integration.
 Nathan Woods for advising on multivariate integration and building unit tests.
+Brianna Laugher for bug fixes.
 
 
 Institutions

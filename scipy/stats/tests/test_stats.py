@@ -1160,6 +1160,66 @@ class TestMode(TestCase):
         assert_almost_equal(vals[0][0],6)
         assert_almost_equal(vals[1][0],3)
 
+    def test_axes(self):
+        data1 = [10,10,30,40]
+        data2 = [10,10,10,10]
+        data3 = [20,10,20,20]
+        data4 = [30,30,30,30]
+        data5 = [40,30,30,30]
+        arr = np.array([data1, data2, data3, data4, data5])
+
+        vals = stats.mode(arr, axis=None)
+        assert_almost_equal(vals[0],np.array([30]))
+        assert_almost_equal(vals[1],np.array([8]))
+        
+        vals = stats.mode(arr, axis=0)
+        assert_almost_equal(vals[0],np.array([[10,10,30,30]]))
+        assert_almost_equal(vals[1],np.array([[2,3,3,2]]))
+
+        vals = stats.mode(arr, axis=1)
+        assert_almost_equal(vals[0],np.array([[10],[10],[20],[30],[30]]))
+        assert_almost_equal(vals[1],np.array([[2],[4],[3],[4],[3]]))
+
+    def test_strings(self):
+        data1 = ['rain', 'showers', 'showers']
+        vals = stats.mode(data1)
+        expected = ['showers']
+        assert_equal(vals[0][0], 'showers')
+        assert_equal(vals[1][0], 2)
+
+    def test_mixed_objects(self):
+        objects = [10, True, np.nan, 'hello', 10]
+        arr = np.empty((5,), dtype=object)
+        arr[:] = objects
+        vals = stats.mode(arr)
+        assert_equal(vals[0][0], 10)
+        assert_equal(vals[1][0], 2)
+
+    def test_objects(self):
+        """Python objects must be sortable (le + eq) and have ne defined
+        for np.unique to work. hash is for set.
+        """
+        class Point(object):
+            def __init__(self, x):
+                self.x = x
+            def __eq__(self, other):
+                return self.x == other.x
+            def __ne__(self, other):
+                return self.x != other.x
+            def __lt__(self, other):
+                return self.x < other.x
+            def __hash__(self):
+                return hash(self.x)
+
+        points = [Point(x) for x in [1,2,3,4,3,2,2,2]]
+        arr = np.empty((8,), dtype=object)
+        arr[:] = points
+        assert len(set(points)) == 4
+        assert_equal(np.unique(arr).shape, (4,))
+        vals = stats.mode(arr)
+        assert_equal(vals[0][0], Point(2))
+        assert_equal(vals[1][0], 4)
+
 
 class TestVariability(TestCase):
 
