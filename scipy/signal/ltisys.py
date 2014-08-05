@@ -194,11 +194,8 @@ def ss2tf(A, B, C, D, input=0):
         raise ValueError("System does not have the input specified.")
 
     # make MOSI from possibly MOMI system.
-    if B.shape[-1] != 0:
-        B = B[:, input]
-    B.shape = (B.shape[0], 1)
-    if D.shape[-1] != 0:
-        D = D[:, input]
+    B = B[:, input:input + 1]
+    D = D[:, input:input + 1]
 
     try:
         den = poly(A)

@@ -3,25 +3,83 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal, run_module_suite, \
-    assert_raises
-
-from scipy.signal.ltisys import ss2tf, lsim2, impulse2, step2, lti, bode, \
-    freqresp, impulse, step, abcd_normalize
+from numpy.testing import (assert_almost_equal, assert_equal,
+                           assert_allclose, assert_raises,
+                           run_module_suite)
+from scipy.signal.ltisys import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
+                                 bode, freqresp, impulse, step,
+                                 abcd_normalize)
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
 
 
 class TestSS2TF:
+
     def tst_matrix_shapes(self, p, q, r):
         ss2tf(np.zeros((p, p)),
               np.zeros((p, q)),
               np.zeros((r, p)),
               np.zeros((r, q)), 0)
 
-    def test_basic(self):
+    def test_shapes(self):
+        # Each tuple holds:
+        #   number of states, number of inputs, number of outputs
         for p, q, r in [(3, 3, 3), (1, 3, 3), (1, 1, 1)]:
             yield self.tst_matrix_shapes, p, q, r
+
+    def test_basic(self):
+        # Test a round trip through tf2ss and sst2f.
+        b = np.array([1.0, 3.0, 5.0])
+        a = np.array([1.0, 2.0, 3.0])
+
+        A, B, C, D = tf2ss(b, a)
+        assert_allclose(A, [[-2, -3], [1, 0]], rtol=1e-13)
+        assert_allclose(B, [[1], [0]], rtol=1e-13)
+        assert_allclose(C, [[1, 2]], rtol=1e-13)
+        # N.b. the shape of D returned by tf2ss is (1,), not (1, 1). Sigh.
+        assert_allclose(D, [1], rtol=1e-14)
+
+        bb, aa = ss2tf(A, B, C, D)
+        assert_allclose(bb[0], b, rtol=1e-13)
+        assert_allclose(aa, a, rtol=1e-13)
+
+    def test_multioutput(self):
+        # Regression test for gh-2669.
+
+        # 4 states
+        A = np.array([[-1.0, 0.0, 1.0, 0.0],
+                      [-1.0, 0.0, 2.0, 0.0],
+                      [-4.0, 0.0, 3.0, 0.0],
+                      [-8.0, 8.0, 0.0, 4.0]])
+
+        # 1 input
+        B = np.array([[0.3],
+                      [0.0],
+                      [7.0],
+                      [0.0]])
+
+        # 3 outputs
+        C = np.array([[0.0, 1.0, 0.0, 0.0],
+                      [0.0, 0.0, 0.0, 1.0],
+                      [8.0, 8.0, 0.0, 0.0]])
+
+        D = np.array([[0.0],
+                      [0.0],
+                      [1.0]])
+
+        # Get the transfer functions for all the outputs in one call.
+        b_all, a = ss2tf(A, B, C, D)
+
+        # Get the transfer functions for each output separately.
+        b0, a0 = ss2tf(A, B, C[0], D[0])
+        b1, a1 = ss2tf(A, B, C[1], D[1])
+        b2, a2 = ss2tf(A, B, C[2], D[2])
+
+        # Check that we got the same results.
+        assert_allclose(a0, a, rtol=1e-13)
+        assert_allclose(a1, a, rtol=1e-13)
+        assert_allclose(a2, a, rtol=1e-13)
+        assert_allclose(b_all, np.vstack((b0, b1, b2)), rtol=1e-13)
 
 
 class Test_lsim2(object):
