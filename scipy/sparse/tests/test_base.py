@@ -1749,7 +1749,7 @@ class _TestInplaceArithmetic:
         b = self.spmatrix(a)
 
         with warnings.catch_warnings():
-            if NumpyVersion(np.__version__) < '1.9.0.dev-0':
+            if NumpyVersion(np.__version__) < '1.10.0.dev-0':
                 warnings.simplefilter("ignore", DeprecationWarning)
 
             x = a.copy()
