@@ -1533,13 +1533,13 @@ class _TestCommon:
 
     def test_unary_ufunc_overrides(self):
         def check(name):
-            if NumpyVersion(np.__version__) < '1.9.0.dev-0':
+            if NumpyVersion(np.__version__) < '1.10.0.dev-0':
                 if name == "sign":
                     raise nose.SkipTest("sign conflicts with comparison op "
-                                        "support on Numpy < 1.9")
+                                        "support on Numpy < 1.10")
                 if self.spmatrix in (dok_matrix, lil_matrix):
                     raise nose.SkipTest("Unary ops not implemented for dok/lil "
-                                        "with Numpy < 1.9")
+                                        "with Numpy < 1.10")
             ufunc = getattr(np, name)
 
             X = self.spmatrix(np.arange(20).reshape(4, 5) / 20.)
@@ -1548,8 +1548,8 @@ class _TestCommon:
             X2 = ufunc(X)
             assert_array_equal(X2.toarray(), X0)
 
-            if not (NumpyVersion(np.__version__) < '1.9.0.dev-0'):
-                # the out argument doesn't work on Numpy < 1.9
+            if not (NumpyVersion(np.__version__) < '1.10.0.dev-0'):
+                # the out argument doesn't work on Numpy < 1.10
                 out = np.zeros_like(X0)
                 X3 = ufunc(X, out=out)
                 assert_(X3 is out)
@@ -1585,8 +1585,8 @@ class _TestCommon:
         a_items = dict(dense=a, scalar=c, cplx_scalar=d, int_scalar=e, sparse=asp)
         b_items = dict(dense=b, scalar=c, cplx_scalar=d, int_scalar=e, sparse=bsp)
 
-        @dec.skipif(NumpyVersion(np.__version__) < '1.9.0.dev-0',
-                    "feature requires Numpy 1.9")
+        @dec.skipif(NumpyVersion(np.__version__) < '1.10.0.dev-0',
+                    "feature requires Numpy 1.10")
         def check(i, j, dtype):
             ax = a_items[i]
             bx = b_items[j]
@@ -1688,8 +1688,8 @@ class _TestCommon:
                         yield check, i, j, dtype
 
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.9.0.dev-0',
-                "feature requires Numpy 1.9")
+    @dec.skipif(NumpyVersion(np.__version__) < '1.10.0.dev-0',
+                "feature requires Numpy 1.10")
     def test_ufunc_object_array(self):
         # This tests compatibility with previous Numpy object array
         # ufunc behavior. See gh-3345.
