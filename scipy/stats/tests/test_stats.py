@@ -8,6 +8,7 @@
 """
 from __future__ import division, print_function, absolute_import
 
+import sys
 import warnings
 from collections import namedtuple
 
@@ -1187,6 +1188,7 @@ class TestMode(TestCase):
         assert_equal(vals[0][0], 'showers')
         assert_equal(vals[1][0], 2)
 
+    @dec.knownfailureif(sys.version_info > (3,), 'numpy github issue 641')
     def test_mixed_objects(self):
         objects = [10, True, np.nan, 'hello', 10]
         arr = np.empty((5,), dtype=object)
@@ -1202,12 +1204,16 @@ class TestMode(TestCase):
         class Point(object):
             def __init__(self, x):
                 self.x = x
+
             def __eq__(self, other):
                 return self.x == other.x
+
             def __ne__(self, other):
                 return self.x != other.x
+
             def __lt__(self, other):
                 return self.x < other.x
+
             def __hash__(self):
                 return hash(self.x)
 
