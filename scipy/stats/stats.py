@@ -616,7 +616,7 @@ def mode(a, axis=0):
     scores = np.unique(np.ravel(a))       # get ALL unique values
     testshape = list(a.shape)
     testshape[axis] = 1
-    oldmostfreq = np.zeros(testshape)
+    oldmostfreq = np.zeros(testshape, dtype=a.dtype)
     oldcounts = np.zeros(testshape)
     for score in scores:
         template = (a == score)
