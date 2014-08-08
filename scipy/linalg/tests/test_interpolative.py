@@ -217,7 +217,7 @@ class TestInterpolativeDecomposition(object):
             ML = aslinearoperator(M)
 
             rank_tol = 1e-9
-            rank_np = np.linalg.matrix_rank(M, norm(M)*rank_tol)
+            rank_np = np.linalg.matrix_rank(M, norm(M, 2)*rank_tol)
             rank_est = pymatrixid.estimate_rank(M, rank_tol)
             rank_est_2 = pymatrixid.estimate_rank(ML, rank_tol)
 
