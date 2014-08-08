@@ -33,6 +33,8 @@ matrix:
         - PYFLAKES_NODOCTEST=1 pyflakes scipy | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused' > test.out; cat test.out; test \! -s test.out
         - pep8 scipy
 before_install:
+  # Automated travis-ci wheel builds
+  - WHEELHOUSE=https://8167b5c3a2af93a0a9fb-13c6eee0d707a05fa610c311eec04c66.ssl.cf2.rackcdn.com/
   - uname -a
   - free -m
   - df -h
@@ -51,8 +53,9 @@ before_install:
   # End install gmpy2 dependencies
   - mkdir builds
   - pushd builds
-  - pip install --upgrade pip setuptools  # Upgrade pip and setuptools to get ones with `wheel` support
-  - pip install --find-links http://wheels.astropy.org/ --find-links http://wheels2.astropy.org/ --use-wheel --use-mirrors nose numpy$NUMPYSPEC Cython mpmath argparse
+  # Slow installs, force binary wheels
+  - pip install --find-links $WHEELHOUSE --no-index Cython numpy$NUMPYSPEC
+  - pip install nose mpmath argparse
   - pip install gmpy2  # speeds up mpmath (scipy.special tests)
   - if [ "${TESTMODE}" == "full" ]; then pip install coverage coveralls; fi
   - python -V
