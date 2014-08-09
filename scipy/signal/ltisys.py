@@ -118,7 +118,7 @@ def _restore(M, shape):
 
 
 def abcd_normalize(A=None, B=None, C=None, D=None):
-    """Check state-space matrices and ensure they are rank-2.
+    """Check state-space matrices and ensure they are two-dimensional.
 
     If enough information on the system is provided, that is, enough
     properly-shaped arrays are passed to the function, the missing ones
