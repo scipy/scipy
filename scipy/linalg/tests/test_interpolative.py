@@ -224,8 +224,8 @@ class TestInterpolativeDecomposition(object):
             assert_(rank_est >= rank_np)
             assert_(rank_est <= rank_np + 10)
 
-            assert_(rank_est_2 >= rank_np)
-            assert_(rank_est_2 <= rank_np + 10)
+            assert_(rank_est_2 >= rank_np - 4)
+            assert_(rank_est_2 <= rank_np + 4)
 
     def test_rand(self):
         pymatrixid.seed('default')
