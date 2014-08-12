@@ -128,7 +128,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         The eigenvalues, each repeated according to its multiplicity.
     vl : (M, M) double or complex ndarray
         The normalized left eigenvector corresponding to the eigenvalue
-        ``w[i]`` is the column v[:,i]. Only returned if ``left=True``.
+        ``w[i]`` is the column vl[:,i]. Only returned if ``left=True``.
     vr : (M, M) double or complex ndarray
         The normalized right eigenvector corresponding to the eigenvalue
         ``w[i]`` is the column ``vr[:,i]``.  Only returned if ``right=True``.
