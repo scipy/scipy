@@ -3,8 +3,6 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 
-from os.path import join
-
 if sys.version_info[0] >= 3:
     DEFINE_MACROS = [("SCIPY_PY3K", None)]
 else:
@@ -25,10 +23,9 @@ def configuration(parent_package='', top_path=None):
         include_dirs=[get_numpy_include_dirs()],
         extra_info=blas_opt)
 
-    config.add_extension('_hierarchy_wrap',
-        sources=[join('src', 'hierarchy_wrap.c'), join('src', 'hierarchy.c')],
-        include_dirs=[get_numpy_include_dirs()],
-        define_macros=DEFINE_MACROS)
+    config.add_extension('_hierarchy',
+        sources=[('_hierarchy.c')],
+        include_dirs=[get_numpy_include_dirs()])
 
     return config
 

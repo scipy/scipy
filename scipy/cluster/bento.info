@@ -1,9 +1,9 @@
 HookFile: bscript
 
 Library:
-    Extension: _hierarchy_wrap
+    Extension: _hierarchy
         Sources:
-             src/hierarchy_wrap.c, src/hierarchy.c
+             _hierarchy.c
     Extension: _vq
         Sources:
              _vq.c
