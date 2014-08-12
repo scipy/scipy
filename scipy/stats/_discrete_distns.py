@@ -64,12 +64,15 @@ class binom_gen(rv_discrete):
         temp = special.bdtr(vals1, n, p)
         return np.where(temp >= q, vals1, vals)
 
-    def _stats(self, n, p):
-        q = 1.0-p
+    def _stats(self, n, p, moments='mv'):
+        q = 1.0 - p
         mu = n * p
         var = n * p * q
-        g1 = (q-p) / sqrt(n*p*q)
-        g2 = (1.0-6*p*q)/(n*p*q)
+        g1, g2 = None, None
+        if 's' in moments:
+            g1 = (q - p) / sqrt(var)
+        if 'k' in moments:
+            g2 = (1.0 - 6*p*q) / var
         return mu, var, g1, g2
 
     def _entropy(self, n, p):

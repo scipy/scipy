@@ -186,6 +186,13 @@ class TestBinom(TestCase):
         h = b.entropy()
         assert_equal(h, 0.0)
 
+    def test_warns_p0(self):
+        # no spurious warnigns are generated for p=0; gh-3817
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            assert_equal(stats.binom(n=2, p=0).mean(), 0)
+            assert_equal(stats.binom(n=2, p=0).std(), 0)
+
 
 class TestBernoulli(TestCase):
     def test_rvs(self):
