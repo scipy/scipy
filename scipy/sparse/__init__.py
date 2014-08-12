@@ -46,6 +46,13 @@ Building sparse matrices:
    vstack - Stack sparse matrices vertically (row wise)
    rand - Random values in a given shape
 
+Sparse matrix tools:
+
+.. autosummary::
+   :toctree: generated/
+
+   find
+
 Identifying sparse matrices:
 
 .. autosummary::
