@@ -14,7 +14,6 @@ import numpy as np
 from .flinalg import get_flinalg_funcs
 from .lapack import get_lapack_funcs
 from .misc import LinAlgError, _datacopied
-from scipy.linalg import calc_lwork
 from . import decomp, decomp_svd
 
 
@@ -366,11 +365,14 @@ def inv(a, overwrite_a=False, check_finite=True):
 ##         if info>0: raise LinAlgError, "singular matrix"
 ##         if info<0: raise ValueError,\
 ##            'illegal value in %d-th argument of internal inv.getrf|getri'%(-info)
-    getrf, getri = get_lapack_funcs(('getrf','getri'), (a1,))
+    getrf, getri, getri_lwork = get_lapack_funcs(('getrf','getri', 'getri_lwork'), (a1,))
     lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
     if info == 0:
-        lwork = calc_lwork.getri(getri.typecode, a1.shape[0])
-        lwork = lwork[1]
+        lwork, info = getri_lwork(a1.shape[0])
+        if info != 0:
+            raise ValueError('internal getri work space query failed: %d' % (info,))
+        lwork = int(lwork.real)
+
         # XXX: the following line fixes curious SEGFAULT when
         # benchmarking 500x500 matrix inverse. This seems to
         # be a bug in LAPACK ?getri routine because if lwork is

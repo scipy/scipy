@@ -450,6 +450,20 @@ interface
 
    end subroutine <prefix>getri
 
+   subroutine <prefix>getri_lwork(n,lu,piv,work,lwork,info)
+   ! *GETRI LWORK query
+     fortranname <prefix>getri
+     callstatement (*f2py_func)(&n,&lu,&n,&piv,&work,&lwork,&info)
+     callprotoargument int*,<ctype>*,int*,int*,<ctype>*,int*,int*
+
+     integer intent(in):: n
+     <ftype> intent(hide) :: lu
+     integer intent(hide) :: piv
+     integer intent(out):: info
+     integer intent(hide) :: lwork=-1
+     <ftype> intent(out) :: work
+   end subroutine <prefix>getri_lwork
+
    subroutine <prefix2>gesdd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,lwork,iwork,info)
 
    ! u,s,vt,info = gesdd(a,compute_uv=1,lwork=..,overwrite_a=0)
