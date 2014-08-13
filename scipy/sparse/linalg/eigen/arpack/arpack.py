@@ -319,6 +319,7 @@ class _ArpackParams(object):
             self.resid = np.array(v0, copy=True)
             info = 1
         else:
+            # ARPACK will use a random initial vector.
             self.resid = np.zeros(n, tp)
             info = 0
 
@@ -1111,9 +1112,11 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     v0 : ndarray, optional
         Starting vector for iteration.
+        Default: random
     ncv : int, optional
         The number of Lanczos vectors generated
         `ncv` must be greater than `k`; it is recommended that ``ncv > 2*k``.
+        Default: ``min(n, 2*k + 1)``
     which : str, ['LM' | 'SM' | 'LR' | 'SR' | 'LI' | 'SI'], optional
         Which `k` eigenvectors and eigenvalues to find:
 
@@ -1135,6 +1138,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         desired, consider using shift-invert mode for better performance.
     maxiter : int, optional
         Maximum number of Arnoldi update iterations allowed
+        Default: ``n*10``
     tol : float, optional
         Relative accuracy for eigenvalues (stopping criterion)
         The default value of 0 implies machine precision.
@@ -1295,7 +1299,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     A : An N x N matrix, array, sparse matrix, or LinearOperator representing
         the operation A * x, where A is a real symmetric matrix
         For buckling mode (see below) A must additionally be positive-definite
-    k : integer
+    k : int
         The number of eigenvalues and eigenvectors desired.
         `k` must be smaller than N. It is not possible to compute all
         eigenvectors of a matrix.
@@ -1349,11 +1353,13 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             if mode == 'buckling', ``w'[i] = w[i] / (w[i] - sigma)``.
 
         (see further discussion in 'mode' below)
-    v0 : ndarray
+    v0 : ndarray, optional
         Starting vector for iteration.
-    ncv : int
+        Default: random
+    ncv : int, optional
         The number of Lanczos vectors generated ncv must be greater than k and
         smaller than n; it is recommended that ``ncv > 2*k``.
+        Default: ``min(n, 2*k + 1)``
     which : str ['LM' | 'SM' | 'LA' | 'SA' | 'BE']
         If A is a complex hermitian matrix, 'BE' is invalid.
         Which `k` eigenvectors and eigenvalues to find:
@@ -1373,8 +1379,9 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         (see discussion in 'sigma', above).  ARPACK is generally better
         at finding large values than small values.  If small eigenvalues are
         desired, consider using shift-invert mode for better performance.
-    maxiter : int
+    maxiter : int, optional
         Maximum number of Arnoldi update iterations allowed
+        Default: ``n*10``
     tol : float
         Relative accuracy for eigenvalues (stopping criterion).
         The default value of 0 implies machine precision.
@@ -1580,10 +1587,11 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Array to compute the SVD on, of shape (M, N)
     k : int, optional
         Number of singular values and vectors to compute.
-    ncv : integer, optional
+    ncv : int, optional
         The number of Lanczos vectors generated
         ncv must be greater than k+1 and smaller than n;
         it is recommended that ncv > 2*k
+        Default: ``min(n, 2*k + 1)``
     tol : float, optional
         Tolerance for singular values. Zero (default) means machine precision.
     which : str, ['LM' | 'SM'], optional
@@ -1597,9 +1605,10 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Starting vector for iteration, of length min(A.shape). Should be an
         (approximate) right singular vector if N > M and a right singular vector
         otherwise.
+        Default: random
 
         .. versionadded:: 0.12.0
-    maxiter: integer, optional
+    maxiter: int, optional
         Maximum number of iterations.
 
         .. versionadded:: 0.12.0
