@@ -77,7 +77,7 @@ def process_pyx(fromfile, tofile):
                                  'setuptools_main as main; sys.exit(main())'] + flags +
                                  ["-o", tofile, fromfile])
             if r != 0:
-                raise Exception('Cython failed')
+                raise Exception("Cython either isn't installed or it failed.")
     except OSError:
         raise OSError('Cython needs to be installed')
 
