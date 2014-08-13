@@ -26,6 +26,7 @@ Basics
    solve_banded - Solve a banded linear system
    solveh_banded - Solve a Hermitian or symmetric banded system
    solve_triangular - Solve a triangular matrix
+   solve_toeplitz - Solve a Toeplitz matrix
    det - Find the determinant of a square matrix
    norm - Matrix and vector norm
    lstsq - Solve a linear least-squares problem
@@ -171,6 +172,7 @@ from .blas import *
 from .lapack import *
 from .special_matrices import *
 from ._solvers import *
+from ._levinson_durbin import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
