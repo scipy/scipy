@@ -3,7 +3,6 @@ from __future__ import division, print_function, absolute_import
 
 import numpy
 from numpy import asarray_chkfinite, asarray, zeros, r_, diag
-from scipy.linalg import calc_lwork
 
 # Local imports.
 from .misc import LinAlgError, _datacopied
@@ -93,10 +92,17 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         raise ValueError('expected matrix')
     m,n = a1.shape
     overwrite_a = overwrite_a or (_datacopied(a1, a))
-    gesdd, = get_lapack_funcs(('gesdd',), (a1,))
 
-    lwork = calc_lwork.gesdd(gesdd.typecode, m, n, compute_uv)[1]
-    u,s,v,info = gesdd(a1,compute_uv=compute_uv, lwork=lwork,
+    gesdd, gesdd_lwork = get_lapack_funcs(('gesdd', 'gesdd_lwork'), (a1,))
+
+    # compute optimal lwork
+    lwork, info = gesdd_lwork(a1.shape[0], a1.shape[1], compute_uv=compute_uv, full_matrices=full_matrices)
+    if info != 0:
+        raise ValueError('work array size computation for internal gesdd failed: %d' % info)
+    lwork = int(lwork.real)
+
+    # perform decomposition
+    u,s,v,info = gesdd(a1, compute_uv=compute_uv, lwork=lwork,
                        full_matrices=full_matrices, overwrite_a=overwrite_a)
 
     if info > 0:

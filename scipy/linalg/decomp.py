@@ -22,7 +22,6 @@ from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, \
         isfinite, inexact, nonzero, iscomplexobj, cast, flatnonzero, conj
 # Local imports
 from scipy.lib.six import xrange
-from scipy.linalg import calc_lwork
 from .misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs
 from .blas import get_blas_funcs
@@ -161,16 +160,22 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         if b1.shape != a1.shape:
             raise ValueError('a and b must have the same shape')
         return _geneig(a1, b1, left, right, overwrite_a, overwrite_b)
-    geev, = get_lapack_funcs(('geev',), (a1,))
+
+    geev, geev_lwork = get_lapack_funcs(('geev', 'geev_lwork'), (a1,))
     compute_vl, compute_vr = left, right
 
-    lwork = calc_lwork.geev(geev.typecode, a1.shape[0],
-                                compute_vl, compute_vr)[1]
+    lwork, info = geev_lwork(a1.shape[0],
+                             compute_vl=compute_vl,
+                             compute_vr=compute_vr)
+    if info != 0:
+        raise LinAlgError("internal *geev work array calculation failed: %d" % (info,))
+    lwork = int(lwork.real)
+
     if geev.typecode in 'cz':
         w, vl, vr, info = geev(a1, lwork=lwork,
-                                    compute_vl=compute_vl,
-                                    compute_vr=compute_vr,
-                                    overwrite_a=overwrite_a)
+                               compute_vl=compute_vl,
+                               compute_vr=compute_vr,
+                               overwrite_a=overwrite_a)
     else:
         wr, wi, vl, vr, info = geev(a1, lwork=lwork,
                                     compute_vl=compute_vl,
@@ -819,13 +824,18 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or (_datacopied(a1, a))
-    gehrd,gebal = get_lapack_funcs(('gehrd','gebal'), (a1,))
+    gehrd, gebal, gehrd_lwork = get_lapack_funcs(('gehrd','gebal', 'gehrd_lwork'), (a1,))
     ba, lo, hi, pivscale, info = gebal(a1, permute=0, overwrite_a=overwrite_a)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gebal '
                                                     '(hessenberg)' % -info)
     n = len(a1)
-    lwork = calc_lwork.gehrd(gehrd.typecode, n, lo, hi)
+
+    lwork, info = gehrd_lwork(ba.shape[0], lo=lo, hi=hi)
+    if info != 0:
+        raise ValueError('failed to compute internal gehrd work array size' % info)
+    lwork = int(lwork.real)
+
     hq, tau, info = gehrd(ba, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gehrd '
