@@ -63,12 +63,6 @@ def configuration(parent_package='',top_path=None):
                          extra_info=lapack_opt
                          )
 
-    # calc_lwork:
-    config.add_extension('calc_lwork',
-                         [join('src','calc_lwork.f')],
-                         extra_info=lapack_opt
-                         )
-
     # _interpolative:
     routines_to_split = [
         'dfftb1',

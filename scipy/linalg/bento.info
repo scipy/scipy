@@ -16,9 +16,6 @@ Library:
     Extension: _flinalg
         Sources:
             src/det.f, src/lu.f
-    Extension: calc_lwork
-        Sources:
-            src/calc_lwork.f
     Extension: _interpolative
         Sources:
              interpolative.pyf,

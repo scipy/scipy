@@ -332,6 +332,21 @@ interface
 
    end subroutine <prefix>gehrd
 
+   subroutine <prefix>gehrd_lwork(n,lo,hi,a,tau,work,lwork,info)
+     ! LWORK computation for GEHRD
+     fortranname <prefix>gehrd
+     callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,&a,&n,&tau,&work,&lwork,&info); }
+     callprotoargument int*,int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+     integer intent(in) :: n
+     <ftype> intent(hide) :: a
+     integer intent(in),optional :: lo = 0
+     integer intent(in),optional,depend(n) :: hi = n-1
+     <ftype> intent(hide) :: tau
+     <ftype> intent(out) :: work
+     integer intent(hide) :: lwork = -1
+     integer intent(out) :: info
+   end subroutine <prefix>gehrd_lwork
+
    subroutine <prefix>gbsv(n,kl,ku,nrhs,ab,piv,b,info)
    ! 
    ! lub,piv,x,info = gbsv(kl,ku,ab,b,overwrite_ab=0,overwrite_b=0)
@@ -435,6 +450,20 @@ interface
 
    end subroutine <prefix>getri
 
+   subroutine <prefix>getri_lwork(n,lu,piv,work,lwork,info)
+   ! *GETRI LWORK query
+     fortranname <prefix>getri
+     callstatement (*f2py_func)(&n,&lu,&n,&piv,&work,&lwork,&info)
+     callprotoargument int*,<ctype>*,int*,int*,<ctype>*,int*,int*
+
+     integer intent(in):: n
+     <ftype> intent(hide) :: lu
+     integer intent(hide) :: piv
+     integer intent(out):: info
+     integer intent(hide) :: lwork=-1
+     <ftype> intent(out) :: work
+   end subroutine <prefix>getri_lwork
+
    subroutine <prefix2>gesdd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,lwork,iwork,info)
 
    ! u,s,vt,info = gesdd(a,compute_uv=1,lwork=..,overwrite_a=0)
@@ -465,12 +494,37 @@ interface
    <ftype2> dimension(lwork),intent(hide,cache),depend(lwork) :: work
    integer optional,intent(in),depend(minmn,compute_uv) &
         :: lwork = (compute_uv?4*minmn*minmn+MAX(m,n)+9*minmn:MAX(14*minmn+4,10*minmn+2+25*(25+8))+MAX(m,n))
-   ! gesdd docs are mess: optimal turns out to be less than minimal in docs
-   ! check(lwork>=(compute_uv?3*minmn*minmn+MAX(MAX(m,n),4*minmn*(minmn+1)):MAX(14*minmn+4,10*minmn+2+25*(25+8))+MAX(m,n))) :: lwork
    integer intent(hide,cache),dimension(8*minmn),depend(minmn) :: iwork
    integer intent(out)::info
 
    end subroutine <prefix2>gesdd
+
+   subroutine <prefix2>gesdd_lwork(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,lwork,iwork,info)
+   ! LWORK computation for <S/D>GESDD
+
+   fortranname <prefix2>gesdd
+   callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&iwork,&info)
+   callprotoargument char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
+
+   integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
+   integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
+   integer intent(in) :: m
+   integer intent(in) :: n
+   integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+   integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
+   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: u1 = (compute_uv?(full_matrices?m:minmn):1)
+   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
+   integer intent(hide),depend(compute_uv,minmn) :: vt1 = (compute_uv?n:1)
+   <ftype2> intent(hide) :: a
+   <ftype2> intent(hide) :: s
+   <ftype2> intent(hide) :: u
+   <ftype2> intent(hide) :: vt
+   <ftype2> intent(out) :: work
+   integer intent(hide) :: lwork = -1
+   integer intent(hide) :: iwork
+   integer intent(out) :: info
+
+   end subroutine <prefix2>gesdd_lwork
 
    subroutine <prefix2c>gesdd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,iwork,info)
 
@@ -503,11 +557,37 @@ interface
    <ftype2> dimension((compute_uv?minmn*MAX(5*minmn+7, 2*MAX(m,n)+2*minmn+1):7*minmn)),intent(hide,cache),depend(minmn,compute_uv) :: rwork
    integer optional,intent(in),depend(minmn,compute_uv) &
         :: lwork = (compute_uv?2*minmn*minmn+MAX(m,n)+2*minmn:2*minmn+MAX(m,n))
-   check(lwork>=(compute_uv?2*minmn*minmn+MAX(m,n)+2*minmn:2*minmn+MAX(m,n))) :: lwork
    integer intent(hide,cache),dimension(8*minmn),depend(minmn) :: iwork
    integer intent(out)::info
 
    end subroutine <prefix2c>gesdd
+
+   subroutine <prefix2c>gesdd_lwork(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,iwork,info)
+   ! <C/Z>GESDD call with LWORK=-1 -- copypaste of above gesdd with dummy arrays
+
+   fortranname <prefix2c>gesdd
+   callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&rwork,&iwork,&info)
+   callprotoargument char*,int*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*,int*
+
+   integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
+   integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
+   integer intent(in),depend(a):: m
+   integer intent(in),depend(a):: n
+   integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+   integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
+   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: u1 = (compute_uv?(full_matrices?m:minmn):1)
+   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
+   integer intent(hide),depend(compute_uv,minmn) :: vt1 = (compute_uv?n:1)
+   <ftype2c> intent(hide) :: a
+   <ftype2> intent(hide) :: s
+   <ftype2c> intent(hide) :: u
+   <ftype2c> intent(hide) :: vt
+   <ftype2c> intent(out) :: work
+   <ftype2> intent(hide) :: rwork
+   integer intent(hide) :: lwork = -1
+   integer intent(hide) :: iwork
+   integer intent(out) :: info
+   end subroutine <prefix2c>gesdd_lwork
 
    subroutine <prefix2>gelss(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,info)
 
@@ -829,6 +909,36 @@ interface
      integer intent(out):: info
    end subroutine <prefix2>geev
 
+   subroutine <prefix2>geev_lwork(compute_vl,compute_vr,n,a,wr,wi,vl,ldvl,vr,ldvr,work,lwork,info)
+     ! LWORK=-1 call for <S/D>GEEV --- keep in sync with above <S/D>GEEV definition
+
+     fortranname <prefix2>geev
+     callstatement {(*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,&a,&n,&wr,&wi,&vl,&ldvl,&vr,&ldvr,&work,&lwork,&info);}
+     callprotoargument char*,char*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+
+     integer optional,intent(in):: compute_vl = 1
+     check(compute_vl==1||compute_vl==0) compute_vl
+     integer optional,intent(in):: compute_vr = 1
+     check(compute_vr==1||compute_vr==0) compute_vr
+
+     integer intent(in) :: n
+     <ftype2> intent(hide) :: a
+
+     <ftype2> intent(hide) :: wr
+     <ftype2> intent(hide) :: wi
+
+     <ftype2> intent(hide) :: vl
+     integer intent(hide),depend(n,compute_vl) :: ldvl=(compute_vl?n:1)
+
+     <ftype2> intent(hide) :: vr
+     integer intent(hide),depend(n,compute_vr) :: ldvr=(compute_vr?n:1)
+
+     integer intent(hide) :: lwork = -1
+     <ftype2> intent(out) :: work
+
+     integer intent(out):: info
+   end subroutine <prefix2>geev_lwork
+
    subroutine <prefix2c>geev(compute_vl,compute_vr,n,a,w,vl,ldvl,vr,ldvr,work,lwork,rwork,info)
 
      ! w,vl,vr,info = geev(a,compute_vl=1,compute_vr=1,lwork=2*n,overwrite_a=0)
@@ -860,6 +970,36 @@ interface
 
      integer intent(out):: info
    end subroutine <prefix2c>geev
+
+   subroutine <prefix2c>geev_lwork(compute_vl,compute_vr,n,a,w,vl,ldvl,vr,ldvr,work,lwork,rwork,info)
+     ! LWORK=-1 call for <C/Z>GEEV --- keep in sync with above <C/Z>GEEV definition
+
+     fortranname <prefix2c>geev
+     callstatement (*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,&a,&n,&w,&vl,&ldvl,&vr,&ldvr,&work,&lwork,&rwork,&info)
+     callprotoargument char*,char*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+
+     integer optional,intent(in):: compute_vl = 1
+     check(compute_vl==1||compute_vl==0) compute_vl
+     integer optional,intent(in):: compute_vr = 1
+     check(compute_vr==1||compute_vr==0) compute_vr
+
+     integer intent(in) :: n
+     <ftype2c> intent(hide) :: a
+
+     <ftype2c> intent(hide) :: w
+
+     <ftype2c> intent(hide) :: vl
+     integer intent(hide),depend(compute_vl,n) :: ldvl=(compute_vl?n:1)
+
+     <ftype2c> intent(hide) :: vr
+     integer intent(hide),depend(compute_vr,n) :: ldvr=(compute_vr?n:1)
+
+     integer intent(hide) :: lwork = -1
+     <ftype2c> intent(out) :: work
+     <ftype2> intent(hide) :: rwork
+
+     integer intent(out):: info
+   end subroutine <prefix2c>geev_lwork
 
    subroutine <prefix2>gegv(compute_vl,compute_vr,n,a,b,alphar,alphai,beta,vl,ldvl,vr,ldvr,work,lwork,info)
      ! Compute the generalized eigenvalues (alphar +/- alphai*i, beta)
