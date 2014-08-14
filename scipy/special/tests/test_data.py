@@ -7,9 +7,10 @@ from numpy import arccosh, arcsinh, arctanh
 from scipy.special import (
     erf, erfc, log1p, expm1,
     jn, jv, yn, yv, iv, kv, kn, gamma, gammaln, digamma, beta, cbrt,
-    ellipe, ellipeinc, ellipk, ellipkm1, ellipj, erfinv, erfcinv, exp1, expi,
-    expn, zeta, gammaincinv, lpmv, mathieu_a, mathieu_b, mathieu_cem, mathieu_sem,
-    mathieu_modcem1, mathieu_modsem1, mathieu_modcem2, mathieu_modsem2,
+    ellipe, ellipeinc, ellipk, ellipkinc, ellipkm1, ellipj, erfinv, erfcinv,
+    exp1, expi, expn, zeta, gammaincinv, lpmv, mathieu_a, mathieu_b,
+    mathieu_cem, mathieu_sem, mathieu_modcem1, mathieu_modsem1, mathieu_modcem2,
+    mathieu_modsem2,
 )
 
 from scipy.special._testutils import FuncData
@@ -34,6 +35,8 @@ def data_gsl(func, dataname, *a, **kw):
 def ellipk_(k):
     return ellipk(k*k)
 
+def ellipkinc_(f, k):
+    return ellipkinc(f, k*k)
 
 def ellipe_(k):
     return ellipe(k*k)
@@ -118,6 +121,7 @@ def test_boost():
         data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0j, 1),
 
         data(ellipk_, 'ellint_k_data_ipp-ellint_k_data', 0, 1),
+        data(ellipkinc_, 'ellint_f_data_ipp-ellint_f_data', (0,1), 2, rtol=1e-14),
         data(ellipkm1, 'ellipkm1', 0, 1),
         data(ellipe_, 'ellint_e_data_ipp-ellint_e_data', 0, 1),
         data(ellipeinc_, 'ellint_e2_data_ipp-ellint_e2_data', (0,1), 2, rtol=1e-14),
@@ -212,7 +216,6 @@ def test_boost():
         # binomial_data.txt
         # binomial_large_data.txt
         # binomial_quantile_data.txt
-        # ellint_f_data.txt
         # ellint_pi2_data.txt
         # ellint_pi3_data.txt
         # ellint_pi3_large_data.txt
