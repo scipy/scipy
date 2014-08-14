@@ -34,8 +34,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from __future__ import division, print_function, absolute_import
 
-import os.path
-
 import numpy as np
 from numpy.testing import (TestCase, run_module_suite, dec, assert_raises,
                            assert_allclose, assert_equal, assert_)
@@ -45,12 +43,13 @@ from scipy.lib.six import u
 
 import scipy.cluster.hierarchy
 from scipy.cluster.hierarchy import (
-    linkage, from_mlab_linkage, to_mlab_linkage,
-    num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster,
-    is_isomorphic, single, complete, weighted, centroid, leaders,
+    linkage, from_mlab_linkage, to_mlab_linkage, num_obs_linkage, inconsistent,
+    cophenet, fclusterdata, fcluster, is_isomorphic, single, leaders,
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram)
-from scipy.spatial.distance import squareform, pdist
+from scipy.spatial.distance import pdist
+
+import hierarchy_test_data
 
 
 # Matplotlib is not a scipy dependency but is optionally used in dendrogram, so
@@ -67,76 +66,6 @@ except:
     have_matplotlib = False
 
 
-_tdist = np.array([[0, 662, 877, 255, 412, 996],
-                   [662, 0, 295, 468, 268, 400],
-                   [877, 295, 0, 754, 564, 138],
-                   [255, 468, 754, 0, 219, 869],
-                   [412, 268, 564, 219, 0, 669],
-                   [996, 400, 138, 869, 669, 0]], dtype='double')
-
-_ytdist = squareform(_tdist)
-
-
-eo = {}
-
-_filenames = ["iris.txt",
-              "Q-X.txt",
-              "fclusterdata-distance-1.txt",
-              "fclusterdata-distance-2.txt",
-              "fclusterdata-inconsistent-1.txt",
-              "fclusterdata-maxclust-2.txt",
-              "fclusterdata-maxclust-3.txt",
-              "fclusterdata-maxclust-4.txt",
-              "fcluster-maxclust_monocrit-1.txt",
-              "fcluster-maxclust_monocrit-2.txt",
-              "fcluster-maxclust_monocrit-3.txt",
-              "fcluster-monocrit-0.txt",
-              "fcluster-monocrit-1.txt",
-              "fcluster-monocrit-2.txt",
-              "linkage-single-tdist.txt",
-              "linkage-complete-tdist.txt",
-              "linkage-average-tdist.txt",
-              "linkage-weighted-tdist.txt",
-              "inconsistent-Q-single-1.txt",
-              "inconsistent-Q-single-2.txt",
-              "inconsistent-Q-single-3.txt",
-              "inconsistent-Q-single-4.txt",
-              "inconsistent-Q-single-5.txt",
-              "inconsistent-Q-single-6.txt",
-              "inconsistent-complete-tdist-depth-1.txt",
-              "inconsistent-complete-tdist-depth-2.txt",
-              "inconsistent-complete-tdist-depth-3.txt",
-              "inconsistent-complete-tdist-depth-4.txt",
-              "inconsistent-single-tdist-depth-0.txt",
-              "inconsistent-single-tdist-depth-1.txt",
-              "inconsistent-single-tdist-depth-2.txt",
-              "inconsistent-single-tdist-depth-3.txt",
-              "inconsistent-single-tdist-depth-4.txt",
-              "inconsistent-single-tdist-depth-5.txt",
-              "inconsistent-single-tdist.txt",
-              "inconsistent-weighted-tdist-depth-1.txt",
-              "inconsistent-weighted-tdist-depth-2.txt",
-              "inconsistent-weighted-tdist-depth-3.txt",
-              "inconsistent-weighted-tdist-depth-4.txt",
-              "linkage-Q-average.txt",
-              "linkage-Q-complete.txt",
-              "linkage-Q-single.txt",
-              "linkage-Q-weighted.txt",
-              "linkage-Q-centroid.txt",
-              "linkage-Q-median.txt",
-              "linkage-Q-ward.txt"
-              ]
-
-
-def load_testing_files():
-    for fn in _filenames:
-        name = fn.replace(".txt", "").replace("-ml", "")
-        fqfn = os.path.join(os.path.dirname(__file__), fn)
-        eo[name] = np.loadtxt(fqfn)
-
-load_testing_files()
-
-
 class TestLinkage(object):
     def test_linkage_empty_distance_matrix(self):
         # Tests linkage(Y) where Y is a 0x4 linkage matrix. Exception expected.
@@ -150,48 +79,31 @@ class TestLinkage(object):
 
     def check_linkage_tdist(self, method):
         # Tests linkage(Y, method) on the tdist data set.
-        Z = linkage(_ytdist, method)
-        Zmlab = eo['linkage-%s-tdist' % method]
-        expectedZ = from_mlab_linkage(Zmlab)
+        Z = linkage(hierarchy_test_data.ytdist, method)
+        expectedZ = getattr(hierarchy_test_data, 'linkage_ytdist_' + method)
         assert_allclose(Z, expectedZ, atol=1e-10)
 
     ################### linkage on Q
-    def test_linkage_q(self):
-        for method in ['single', 'complete', 'average', 'weighted', 'centroid',
-                       'median', 'ward']:
+    def test_linkage_X(self):
+        for method in ['centroid', 'median', 'ward']:
             yield self.check_linkage_q, method
 
     def check_linkage_q(self, method):
         # Tests linkage(Y, method) on the Q data set.
-        Z = linkage(eo['Q-X'], method)
-        Zmlab = eo['linkage-Q-%s' % method]
-        expectedZ = from_mlab_linkage(Zmlab)
+        Z = linkage(hierarchy_test_data.X, method)
+        expectedZ = getattr(hierarchy_test_data, 'linkage_X_' + method)
         assert_allclose(Z, expectedZ, atol=1e-06)
 
 
 class TestInconsistent(object):
     def test_inconsistent_tdist(self):
-        for depth, atol in [(1, 1e-15), (2, 1e-05), (3, 1e-05), (4, 1e-05)]:
-            for method in ['single', 'complete', 'weighted']:
-                yield self.check_inconsistent_tdist, method, depth, atol
+        for depth in hierarchy_test_data.inconsistent_ytdist:
+            yield self.check_inconsistent_tdist, depth
 
-    def check_inconsistent_tdist(self, method, depth, atol):
-        Y = squareform(_tdist)
-        Z = linkage(Y, method)
-        R = inconsistent(Z, depth)
-        Rright = eo['inconsistent-%s-tdist-depth-%d' % (method, depth)]
-        assert_allclose(R, Rright, atol=atol)
-
-    def test_inconsistent_q_single(self):
-        for depth in range(1, 7):
-            yield self.check_inconsistent_q_single, depth
-
-    def check_inconsistent_q_single(self, depth):
-        X = eo['Q-X']
-        Z = linkage(X, 'single', 'euclidean')
-        R = inconsistent(Z, depth)
-        Rright = eo['inconsistent-Q-single-%d' % depth]
-        assert_allclose(R, Rright, atol=1e-05)
+    def check_inconsistent_tdist(self, depth):
+        Z = hierarchy_test_data.linkage_ytdist_single
+        assert_allclose(inconsistent(Z, depth),
+                        hierarchy_test_data.inconsistent_ytdist[depth])
 
 
 class TestCopheneticDistance(object):
@@ -199,14 +111,14 @@ class TestCopheneticDistance(object):
         # Tests cophenet(Z) on tdist data set.
         expectedM = np.array([268, 295, 255, 255, 295, 295, 268, 268, 295, 295,
                               295, 138, 219, 295, 295])
-        Z = linkage(_ytdist, 'single')
+        Z = hierarchy_test_data.linkage_ytdist_single
         M = cophenet(Z)
         assert_allclose(M, expectedM, atol=1e-10)
 
     def test_linkage_cophenet_tdist_Z_Y(self):
         # Tests cophenet(Z, Y) on tdist data set.
-        Z = linkage(_ytdist, 'single')
-        (c, M) = cophenet(Z, _ytdist)
+        Z = hierarchy_test_data.linkage_ytdist_single
+        (c, M) = cophenet(Z, hierarchy_test_data.ytdist)
         expectedM = np.array([268, 295, 255, 255, 295, 295, 268, 268, 295, 295,
                               295, 138, 219, 295, 295])
         expectedc = 0.639931296433393415057366837573
@@ -244,56 +156,58 @@ class TestMLabLinkageConversion(object):
 
 class TestFcluster(object):
     def test_fclusterdata(self):
-        yield self.check_fclusterdata, 1, 'inconsistent'
-        for t in [1, 2]:
+        for t in hierarchy_test_data.fcluster_inconsistent:
+            yield self.check_fclusterdata, t, 'inconsistent'
+        for t in hierarchy_test_data.fcluster_distance:
             yield self.check_fclusterdata, t, 'distance'
-        for t in [2, 3, 4]:
+        for t in hierarchy_test_data.fcluster_maxclust:
             yield self.check_fclusterdata, t, 'maxclust'
 
     def check_fclusterdata(self, t, criterion):
         # Tests fclusterdata(X, criterion=criterion, t=t) on a random 3-cluster data set.
-        expectedT = np.int_(eo['fclusterdata-%s-%d' % (criterion, t)])
-        X = eo['Q-X']
+        expectedT = getattr(hierarchy_test_data, 'fcluster_' + criterion)[t]
+        X = hierarchy_test_data.Q_X
         T = fclusterdata(X, criterion=criterion, t=t)
         assert_(is_isomorphic(T, expectedT))
 
     def test_fcluster(self):
-        yield self.check_fcluster, 1, 'inconsistent'
-        for t in [1, 2]:
+        for t in hierarchy_test_data.fcluster_inconsistent:
+            yield self.check_fcluster, t, 'inconsistent'
+        for t in hierarchy_test_data.fcluster_distance:
             yield self.check_fcluster, t, 'distance'
-        for t in [2, 3, 4]:
+        for t in hierarchy_test_data.fcluster_maxclust:
             yield self.check_fcluster, t, 'maxclust'
 
     def check_fcluster(self, t, criterion):
         # Tests fcluster(Z, criterion=criterion, t=t) on a random 3-cluster data set.
-        expectedT = np.int_(eo['fclusterdata-%s-%d' % (criterion, t)])
-        X = eo['Q-X']
-        Y = pdist(X)
-        Z = linkage(Y)
+        expectedT = getattr(hierarchy_test_data, 'fcluster_' + criterion)[t]
+        Z = single(hierarchy_test_data.Q_X)
         T = fcluster(Z, criterion=criterion, t=t)
         assert_(is_isomorphic(T, expectedT))
 
     def test_fcluster_monocrit(self):
-        for i in [0, 1, 2]:
-            yield self.check_fcluster_monocrit, i, 'monocrit'
-        for i in [1, 2, 3]:
-            yield self.check_fcluster_monocrit, i, 'maxclust_monocrit'
+        for t in hierarchy_test_data.fcluster_distance:
+            yield self.check_fcluster_monocrit, t
+        for t in hierarchy_test_data.fcluster_maxclust:
+            yield self.check_fcluster_maxclust_monocrit, t
 
-    def check_fcluster_monocrit(self, t, criterion):
-        # Tests fcluster(Z, criterion='monocrit'/'maxclust_monocrit', t=t,
-        # monicrit=maxdists(Z)) on a random 3-cluster data set.
-        expectedT = np.int_(eo['fcluster-%s-%d' % (criterion, t)])
-        X = eo['Q-X']
-        Y = pdist(X)
-        Z = linkage(Y)
-        T = fcluster(Z, criterion=criterion, t=t, monocrit=maxdists(Z))
+    def check_fcluster_monocrit(self, t):
+        expectedT = hierarchy_test_data.fcluster_distance[t]
+        Z = single(hierarchy_test_data.Q_X)
+        T = fcluster(Z, t, criterion='monocrit', monocrit=maxdists(Z))
+        assert_(is_isomorphic(T, expectedT))
+
+    def check_fcluster_maxclust_monocrit(self, t):
+        expectedT = hierarchy_test_data.fcluster_maxclust[t]
+        Z = single(hierarchy_test_data.Q_X)
+        T = fcluster(Z, t, criterion='maxclust_monocrit', monocrit=maxdists(Z))
         assert_(is_isomorphic(T, expectedT))
 
 
 class TestLeaders(object):
     def test_leaders_single(self):
         # Tests leaders using a flat clustering generated by single linkage.
-        X = eo['Q-X']
+        X = hierarchy_test_data.Q_X
         Y = pdist(X)
         Z = linkage(Y)
         T = fcluster(Z, criterion='maxclust', t=3)
@@ -550,33 +464,31 @@ class TestLeavesList(object):
     def test_leaves_list_1x4(self):
         # Tests leaves_list(Z) on a 1x4 linkage.
         Z = np.asarray([[0, 1, 3.0, 2]], dtype=np.double)
-        node = to_tree(Z)
+        to_tree(Z)
         assert_equal(leaves_list(Z), [0, 1])
 
     def test_leaves_list_2x4(self):
         # Tests leaves_list(Z) on a 2x4 linkage.
         Z = np.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=np.double)
-        node = to_tree(Z)
+        to_tree(Z)
         assert_equal(leaves_list(Z), [0, 1, 2])
 
-    def test_leaves_list_iris(self):
+    def test_leaves_list_Q(self):
         for method in ['single', 'complete', 'average', 'weighted', 'centroid',
                        'median', 'ward']:
-            yield self.check_leaves_list_iris, method
+            yield self.check_leaves_list_Q, method
 
-    def check_leaves_list_iris(self, method):
-        # Tests leaves_list(Z) on the Iris data set
-        X = eo['iris']
-        Y = pdist(X)
+    def check_leaves_list_Q(self, method):
+        # Tests leaves_list(Z) on the Q data set
+        X = hierarchy_test_data.Q_X
         Z = linkage(X, method)
         node = to_tree(Z)
         assert_equal(node.pre_order(), leaves_list(Z))
 
-    def test_iris_subtree_pre_order(self):
+    def test_Q_subtree_pre_order(self):
         # Tests that pre_order() works when called on sub-trees.
-        X = eo['iris']
-        Y = pdist(X)
+        X = hierarchy_test_data.Q_X
         Z = linkage(X, 'single')
         node = to_tree(Z)
         assert_equal(node.pre_order(), (node.get_left().pre_order()
@@ -689,21 +601,20 @@ class TestIsMonotonic(TestCase):
     def test_is_monotonic_tdist_linkage1(self):
         # Tests is_monotonic(Z) on clustering generated by single linkage on
         # tdist data set. Expecting True.
-        Z = linkage(_ytdist, 'single')
+        Z = linkage(hierarchy_test_data.ytdist, 'single')
         self.assertTrue(is_monotonic(Z) == True)
 
     def test_is_monotonic_tdist_linkage2(self):
         # Tests is_monotonic(Z) on clustering generated by single linkage on
         # tdist data set. Perturbing. Expecting False.
-        Z = linkage(_ytdist, 'single')
+        Z = linkage(hierarchy_test_data.ytdist, 'single')
         Z[2,2] = 0.0
         self.assertTrue(is_monotonic(Z) == False)
 
-    def test_is_monotonic_iris_linkage(self):
+    def test_is_monotonic_Q_linkage(self):
         # Tests is_monotonic(Z) on clustering generated by single linkage on
-        # Iris data set. Expecting True.
-        X = eo['iris']
-        Y = pdist(X)
+        # Q data set. Expecting True.
+        X = hierarchy_test_data.Q_X
         Z = linkage(X, 'single')
         self.assertTrue(is_monotonic(Z) == True)
 
@@ -727,8 +638,7 @@ class TestMaxDists(object):
 
     def check_maxdists_Q_linkage(self, method):
         # Tests maxdists(Z) on the Q data set
-        X = eo['Q-X']
-        Y = pdist(X)
+        X = hierarchy_test_data.Q_X
         Z = linkage(X, method)
         MD = maxdists(Z)
         expectedMD = calculate_maximum_distances(Z)
@@ -763,8 +673,7 @@ class TestMaxInconsts(object):
 
     def check_maxinconsts_Q_linkage(self, method):
         # Tests maxinconsts(Z, R) on the Q data set
-        X = eo['Q-X']
-        Y = pdist(X)
+        X = hierarchy_test_data.Q_X
         Z = linkage(X, method)
         R = inconsistent(Z)
         MD = maxinconsts(Z, R)
@@ -826,8 +735,7 @@ class TestMaxRStat(object):
 
     def check_maxRstat_Q_linkage(self, method, i):
         # Tests maxRstat(Z, R, i) on the Q data set
-        X = eo['Q-X']
-        Y = pdist(X)
+        X = hierarchy_test_data.Q_X
         Z = linkage(X, method)
         R = inconsistent(Z)
         MD = maxRstat(Z, R, 1)
@@ -838,13 +746,13 @@ class TestMaxRStat(object):
 class TestDendrogram(object):
     def test_dendrogram_single_linkage_tdist(self):
         # Tests dendrogram calculation on single linkage of the tdist data set.
-        Z = linkage(_ytdist, 'single')
+        Z = linkage(hierarchy_test_data.ytdist, 'single')
         R = dendrogram(Z, no_plot=True)
         leaves = R["leaves"]
         assert_equal(leaves, [2, 5, 1, 0, 3, 4])
 
     def test_valid_orientation(self):
-        Z = linkage(_ytdist, 'single')
+        Z = linkage(hierarchy_test_data.ytdist, 'single')
         assert_raises(ValueError, dendrogram, Z, orientation="foo")
 
     @dec.skipif(not have_matplotlib)
@@ -854,7 +762,7 @@ class TestDendrogram(object):
 
     def check_dendrogram_plot(self, orientation):
         # Tests dendrogram plotting.
-        Z = linkage(_ytdist, 'single')
+        Z = linkage(hierarchy_test_data.ytdist, 'single')
         expected = {'color_list': ['g', 'b', 'b', 'b', 'b'],
                     'dcoord': [[0.0, 138.0, 138.0, 0.0],
                                [0.0, 219.0, 219.0, 0.0],
@@ -884,7 +792,7 @@ class TestDendrogram(object):
 
     @dec.skipif(not have_matplotlib)
     def test_dendrogram_truncate_mode(self):
-        Z = linkage(_ytdist, 'single')
+        Z = linkage(hierarchy_test_data.ytdist, 'single')
 
         R = dendrogram(Z, 2, 'lastp', show_contracted=True)
         plt.close()
