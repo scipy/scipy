@@ -805,8 +805,6 @@ def linprog(c, A_eq=None, b_eq=None, A_ub=None, b_ub=None,
     Subject to:   A_ub * x <= b_ub
                   A_eq * x == b_eq
 
-    .. versionadded:: 0.15.0
-
     Parameters
     ----------
     c : array_like
@@ -948,6 +946,7 @@ def linprog(c, A_eq=None, b_eq=None, A_ub=None, b_ub=None,
     Programming, NOT the Nelder-Mead Simplex) [1]_, [2]_. This algorithm
     should be reasonably reliable and fast.
 
+    .. versionadded:: 0.15.0
 
     """
     meth = method.lower()

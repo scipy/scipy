@@ -217,8 +217,6 @@ def whosmat(file_name, appendmat=True, **kwargs):
     """
     List variables inside a MATLAB file
 
-    .. versionadded:: 0.12.0
-
     Parameters
     ----------
     %(file_arg)s
@@ -242,6 +240,8 @@ def whosmat(file_name, appendmat=True, **kwargs):
     You will need an HDF5 python library to read matlab 7.3 format mat
     files.  Because scipy does not supply one, we do not implement the
     HDF5 / 7.3 interface here.
+
+    .. versionadded:: 0.12.0
 
     """
     ML = mat_reader_factory(file_name, **kwargs)

@@ -64,8 +64,6 @@ def diags(diagonals, offsets, shape=None, format=None, dtype=None):
     """
     Construct a sparse matrix from diagonals.
 
-    .. versionadded:: 0.11
-
     Parameters
     ----------
     diagonals : sequence of array_like
@@ -102,6 +100,8 @@ def diags(diagonals, offsets, shape=None, format=None, dtype=None):
         + np.diag(diagonals[k], offsets[k])
 
     Repeated diagonal offsets are disallowed.
+
+    .. versionadded:: 0.11
 
     Examples
     --------
@@ -613,8 +613,6 @@ def block_diag(mats, format=None, dtype=None):
     """
     Build a block diagonal sparse matrix from provided matrices.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     A, B, ... : sequence of matrices
@@ -629,6 +627,11 @@ def block_diag(mats, format=None, dtype=None):
     Returns
     -------
     res : sparse matrix
+
+    Notes
+    -----
+
+    .. versionadded:: 0.11.0
 
     See Also
     --------

@@ -314,8 +314,6 @@ add_newdoc("scipy.special", "boxcox",
     Returns `nan` if ``x < 0``.
     Returns `-inf` if ``x == 0`` and ``lmbda < 0``.
 
-    .. versionadded:: 0.14.0
-
     Parameters
     ----------
     x : array_like
@@ -327,6 +325,11 @@ add_newdoc("scipy.special", "boxcox",
     -------
     y : array
         Transformed data.
+
+    Notes
+    -----
+
+    .. versionadded:: 0.14.0
 
     Examples
     --------
@@ -350,8 +353,6 @@ add_newdoc("scipy.special", "boxcox1p",
     Returns `nan` if ``x < -1``.
     Returns `-inf` if ``x == -1`` and ``lmbda < 0``.
 
-    .. versionadded:: 0.14.0
-
     Parameters
     ----------
     x : array_like
@@ -363,6 +364,11 @@ add_newdoc("scipy.special", "boxcox1p",
     -------
     y : array
         Transformed data.
+
+    Notes
+    -----
+
+    .. versionadded:: 0.14.0
 
     Examples
     --------
@@ -662,6 +668,9 @@ add_newdoc("scipy.special", "erfi",
 
     Imaginary error function, -i erf(i z).
 
+    Notes
+    -----
+
     .. versionadded:: 0.12.0
 
     References
@@ -676,6 +685,9 @@ add_newdoc("scipy.special", "erfcx",
     erfcx(x)
 
     Scaled complementary error function, exp(x^2) erfc(x).
+
+    Notes
+    -----
 
     .. versionadded:: 0.12.0
 
@@ -841,8 +853,6 @@ add_newdoc('scipy.special', 'expit',
     The expit function, also known as the logistic function, is defined as
     expit(x) = 1/(1+exp(-x)). It is the inverse of the logit function.
 
-    .. versionadded:: 0.10.0
-
     Parameters
     ----------
     x : ndarray
@@ -859,6 +869,9 @@ add_newdoc('scipy.special', 'expit',
     As a ufunc logit takes a number of optional
     keyword arguments. For more information
     see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
+
+    .. versionadded:: 0.10.0
+
     """)
 
 add_newdoc("scipy.special", "expm1",
@@ -1713,8 +1726,6 @@ add_newdoc('scipy.special', 'logit',
     Note that logit(0) = -inf, logit(1) = inf, and logit(p)
     for p<0 or p>1 yields nan.
 
-    .. versionadded:: 0.10.0
-
     Parameters
     ----------
     x : ndarray
@@ -1731,6 +1742,9 @@ add_newdoc('scipy.special', 'logit',
     As a ufunc logit takes a number of optional
     keyword arguments. For more information
     see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
+
+    .. versionadded:: 0.10.0
+
     """)
 
 add_newdoc("scipy.special", "lpmv",
@@ -2818,8 +2832,6 @@ add_newdoc("scipy.special", "xlogy",
 
     Compute ``x*log(y)`` so that the result is 0 if `x = 0`.
 
-    .. versionadded:: 0.13.0
-
     Parameters
     ----------
     x : array_like
@@ -2832,6 +2844,11 @@ add_newdoc("scipy.special", "xlogy",
     z : array_like
         Computed x*log(y)
 
+    Notes
+    -----
+
+    .. versionadded:: 0.13.0
+
     """)
 
 add_newdoc("scipy.special", "xlog1py",
@@ -2839,8 +2856,6 @@ add_newdoc("scipy.special", "xlog1py",
     xlog1py(x, y)
 
     Compute ``x*log1p(y)`` so that the result is 0 if `x = 0`.
-
-    .. versionadded:: 0.13.0
 
     Parameters
     ----------
@@ -2853,6 +2868,11 @@ add_newdoc("scipy.special", "xlog1py",
     -------
     z : array_like
         Computed x*log1p(y)
+
+    Notes
+    -----
+
+    .. versionadded:: 0.13.0
 
     """)
 

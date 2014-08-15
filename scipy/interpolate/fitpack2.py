@@ -292,8 +292,6 @@ class UnivariateSpline(object):
         """
         Construct a new spline representing the derivative of this spline.
 
-        .. versionadded:: 0.13.0
-
         Parameters
         ----------
         n : int, optional
@@ -308,6 +306,11 @@ class UnivariateSpline(object):
         See Also
         --------
         splder, antiderivative
+        
+        Notes
+        -----
+
+        .. versionadded:: 0.13.0
 
         Examples
         --------
@@ -335,8 +338,6 @@ class UnivariateSpline(object):
         """
         Construct a new spline representing the antiderivative of this spline.
 
-        .. versionadded:: 0.13.0
-
         Parameters
         ----------
         n : int, optional
@@ -347,6 +348,11 @@ class UnivariateSpline(object):
         spline : UnivariateSpline
             Spline of order k2=k+n representing the antiderivative of this
             spline.
+
+        Notes
+        -----
+
+        .. versionadded:: 0.13.0
 
         See Also
         --------

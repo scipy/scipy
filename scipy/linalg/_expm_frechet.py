@@ -11,8 +11,6 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
     """
     Frechet derivative of the matrix exponential of A in the direction E.
 
-    .. versionadded:: 0.13.0
-
     Parameters
     ----------
     A : (N, N) array_like
@@ -57,6 +55,8 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
     It is a sophisticated implementation which should take
     only about 3/8 as much time as the naive implementation.
     The asymptotics are the same.
+
+    .. versionadded:: 0.13.0
 
     References
     ----------
@@ -354,8 +354,6 @@ def expm_cond(A, check_finite=True):
     """
     Relative condition number of the matrix exponential in the Frobenius norm.
 
-    .. versionadded:: 0.14.0
-
     Parameters
     ----------
     A : 2d array-like
@@ -375,6 +373,8 @@ def expm_cond(A, check_finite=True):
     -----
     A faster estimate for the condition number in the 1-norm
     has been published but is not yet implemented in scipy.
+
+    .. versionadded:: 0.14.0
 
     See also
     --------

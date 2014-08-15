@@ -76,8 +76,6 @@ def argrelmin(data, axis=0, order=1, mode='clip'):
     """
     Calculate the relative minima of `data`.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     data : ndarray
@@ -108,6 +106,8 @@ def argrelmin(data, axis=0, order=1, mode='clip'):
     -----
     This function uses `argrelextrema` with np.less as comparator.
 
+    .. versionadded:: 0.11.0
+
     Examples
     --------
     >>> x = np.array([2, 1, 2, 3, 2, 0, 1, 0])
@@ -127,8 +127,6 @@ def argrelmin(data, axis=0, order=1, mode='clip'):
 def argrelmax(data, axis=0, order=1, mode='clip'):
     """
     Calculate the relative maxima of `data`.
-
-    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -160,6 +158,8 @@ def argrelmax(data, axis=0, order=1, mode='clip'):
     -----
     This function uses `argrelextrema` with np.greater as comparator.
 
+    .. versionadded:: 0.11.0
+
     Examples
     --------
     >>> x = np.array([2, 1, 2, 3, 2, 0, 1, 0])
@@ -178,8 +178,6 @@ def argrelmax(data, axis=0, order=1, mode='clip'):
 def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
     """
     Calculate the relative extrema of `data`.
-
-    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -208,6 +206,11 @@ def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
     See Also
     --------
     argrelmin, argrelmax
+
+    Notes
+    -----
+
+    .. versionadded:: 0.11.0
 
     Examples
     --------
@@ -422,8 +425,6 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None, gap_thresh=
     appear at enough length scales, and with sufficiently high SNR, are
     accepted.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     vector : ndarray
@@ -474,6 +475,8 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None, gap_thresh=
      2. Identify "ridge lines" in the cwt matrix. These are relative maxima
         at each row, connected across adjacent rows. See identify_ridge_lines
      3. Filter the ridge_lines using filter_ridge_lines.
+
+    .. versionadded:: 0.11.0
 
     References
     ----------

@@ -40,8 +40,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     """
     Minimization of scalar function of one or more variables.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     fun : callable
@@ -228,6 +226,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     arbitrary parameters; the set of parameters accepted by `minimize` may
     expand in future versions and then these parameters will be passed to
     the method.  You can find an example in the scipy.optimize tutorial.
+
+    .. versionadded:: 0.11.0
 
     References
     ----------
@@ -445,8 +445,6 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     """
     Minimization of scalar function of one variable.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     fun : callable
@@ -530,6 +528,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     arbitrary parameters; the set of parameters accepted by `minimize` may
     expand in future versions and then these parameters will be passed to
     the method.  You can find an example in the scipy.optimize tutorial.
+
+    .. versionadded:: 0.11.0
 
     Examples
     --------

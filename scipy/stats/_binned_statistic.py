@@ -16,8 +16,6 @@ def binned_statistic(x, values, statistic='mean',
     each bin.  This function allows the computation of the sum, mean, median,
     or other statistic of the values within each bin.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     x : array_like
@@ -78,6 +76,8 @@ def binned_statistic(x, values, statistic='mean',
     second ``[2, 3)``.  The last bin, however, is ``[3, 4]``, which *includes*
     4.
 
+    .. versionadded:: 0.11.0
+
     Examples
     --------
     >>> stats.binned_statistic([1, 2, 1, 2, 4], np.arange(5), statistic='mean',
@@ -115,8 +115,6 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     the space into bins, and returns the count of the number of points in
     each bin.  This function allows the computation of the sum, mean, median,
     or other statistic of the values within each bin.
-
-    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -175,6 +173,11 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     --------
     numpy.histogram2d, binned_statistic, binned_statistic_dd
 
+    Notes
+    -----
+
+    .. versionadded:: 0.11.0
+
     """
 
     # This code is based on np.histogram2d
@@ -202,8 +205,6 @@ def binned_statistic_dd(sample, values, statistic='mean',
     the space into bins, and returns the count of the number of points in
     each bin.  This function allows the computation of the sum, mean, median,
     or other statistic of the values within each bin.
-
-    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -257,6 +258,11 @@ def binned_statistic_dd(sample, values, statistic='mean',
     See Also
     --------
     np.histogramdd, binned_statistic, binned_statistic_2d
+
+    Notes
+    -----
+
+    .. versionadded:: 0.11.0
 
     """
     if type(statistic) == str:

@@ -1431,8 +1431,6 @@ class RegularGridInterpolator(object):
     setting up the interpolator object, the interpolation method (*linear* or
     *nearest*) may be chosen at each evaluation.
 
-    .. versionadded:: 0.14
-
     Parameters
     ----------
     points : tuple of ndarray of float, with shapes (m1, ), ..., (mn, )
@@ -1465,6 +1463,8 @@ class RegularGridInterpolator(object):
     Contrary to LinearNDInterpolator and NearestNDInterpolator, this class
     avoids expensive triangulation of the input data by taking advantage of the
     regular grid structure.
+
+    .. versionadded:: 0.14
 
     See also
     --------
@@ -1625,8 +1625,6 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     """
     Multidimensional interpolation on regular grids.
 
-    .. versionadded:: 0.14
-
     Parameters
     ----------
     points : tuple of ndarray of float, with shapes (m1, ), ..., (mn, )
@@ -1658,6 +1656,11 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     -------
     values_x : ndarray, shape xi.shape[:-1] + values.shape[ndim:]
         Interpolated values at input coordinates.
+
+    Notes
+    -----
+
+    .. versionadded:: 0.14
 
     See also
     --------

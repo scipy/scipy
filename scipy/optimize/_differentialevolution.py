@@ -26,8 +26,6 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     The algorithm is due to Storn and Price [1]_.
 
-    .. versionadded:: 0.15.0
-
     Parameters
     ----------
     func : callable
@@ -155,6 +153,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     values, with higher `mutation` and (dithering), but lower `recombination`
     values. This has the effect of widening the search radius, but slowing
     convergence.
+
+    .. versionadded:: 0.15.0
 
     Examples
     --------

@@ -239,8 +239,6 @@ class multivariate_normal_gen(object):
     The `mean` keyword specifies the mean. The `cov` keyword specifies the
     covariance matrix.
 
-    .. versionadded:: 0.14.0
-
     Methods
     -------
     pdf(x, mean=None, cov=1, allow_singular=False)
@@ -283,6 +281,8 @@ class multivariate_normal_gen(object):
 
     where :math:`\mu` is the mean, :math:`\Sigma` the covariance matrix,
     and :math:`k` is the dimension of the space where :math:`x` takes values.
+
+    .. versionadded:: 0.14.0
 
     Examples
     --------
