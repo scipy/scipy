@@ -11,6 +11,8 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
                   use="conv"):
     """Compute the coefficients for a 1-d Savitzky-Golay FIR filter.
 
+    .. versionadded:: 0.14.0
+
     Parameters
     ----------
     window_length : int
@@ -225,6 +227,8 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
 
     This is a 1-d filter.  If `x`  has dimension greater than 1, `axis`
     determines the axis along which the filter is applied.
+
+    .. versionadded:: 0.14.0
 
     Parameters
     ----------

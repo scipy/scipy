@@ -96,6 +96,9 @@ format internally instead of using transformations to numerator/denominator
 format.  The accuracy of the produced filters, especially high-order ones, is
 improved significantly as a result.
 
+``scipy.signal.savgol_filter`` and other functions related to
+the 1-d Savitzky-Golay finite impulse response (FIR) filter.
+
 The new function `scipy.signal.vectorstrength` computes the vector strength,
 a measure of phase synchrony, of a set of events.
 
