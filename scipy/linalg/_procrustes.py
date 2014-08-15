@@ -44,6 +44,14 @@ def orthogonal_procrustes(A, B, compute_scale=False, check_finite=True):
         The sum of singular values of an intermediate matrix.
         This value is not returned unless specifically requested.
 
+    Raises
+    ------
+    ValueError
+        If the input arrays are incompatibly shaped.
+        This may also be raised if matrix A or B contains an inf or nan
+        and check_finite is True, or if the matrix product AB contains
+        an inf or nan.
+
     References
     ----------
     .. [1] Peter H. Schonemann, "A generalized solution of the orthogonal
