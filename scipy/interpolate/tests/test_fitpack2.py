@@ -6,7 +6,8 @@ import warnings
 
 import numpy as np
 from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
-        assert_array_almost_equal, assert_allclose, TestCase, run_module_suite
+        assert_array_almost_equal, assert_allclose, TestCase, run_module_suite, \
+        assert_raises
 from numpy import array, diff, linspace, meshgrid, ones, pi, shape
 from scipy.interpolate.fitpack import bisplrep, bisplev
 from scipy.interpolate.fitpack2 import UnivariateSpline, \
@@ -44,6 +45,24 @@ class TestUnivariateSpline(TestCase):
         assert_array_almost_equal(lut.get_coeffs(),[0,4])
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2]),[0,1,2])
+
+    def test_extrapolation_modes(self):
+        """ test extrapolation modes
+            * if ext=0, return the extrapolated value.
+            * if ext=1, return 0
+            * if ext=2, raise a ValueError
+            * if ext=3, return the boundary value.
+        """
+        x = [1,2,3]
+        y = [0,2,4]
+        rstl = [[-2, 6], [0, 0], None, [0, 4]]
+        for ext in (0, 1, 3):
+            lut = UnivariateSpline(x, y, k=1, ext=ext)
+            rst = lut([0, 4])
+            assert_array_almost_equal(rst, rstl[ext])
+
+        lut = UnivariateSpline(x, y, k=1, ext=2)
+        assert_raises(ValueError, lut, [0, 4])
 
     def test_subclassing(self):
         # See #731

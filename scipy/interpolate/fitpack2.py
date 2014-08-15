@@ -124,7 +124,7 @@ class UnivariateSpline(object):
 
     """
 
-    def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None):
+    def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None, ext=0):
         """
         Input:
           x,y   - 1-d sequences of data points (x must be
@@ -142,6 +142,11 @@ class UnivariateSpline(object):
                        Default s=len(w) which should be a good value
                        if 1/w[i] is an estimate of the standard
                        deviation of y[i].
+          ext=0      - controls the default behavior of extrapolation
+                       * if ext=0, return the extrapolated value.
+                       * if ext=1, return 0
+                       * if ext=2, raise a ValueError
+                       * if ext=3, return the boundary value.
         """
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         data = dfitpack.fpcurf0(x,y,k,w=w,
@@ -151,9 +156,10 @@ class UnivariateSpline(object):
             data = self._reset_nest(data)
         self._data = data
         self._reset_class()
+        self.ext = ext
 
     @classmethod
-    def _from_tck(cls, tck):
+    def _from_tck(cls, tck, ext=0):
         """Construct a spline object from given tck"""
         self = cls.__new__(cls)
         t, c, k = tck
@@ -161,6 +167,7 @@ class UnivariateSpline(object):
         #_data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         self._data = (None,None,None,None,None,k,None,len(t),t,
                       c,None,None,None,None)
+        self.ext = ext
         return self
 
     def _reset_class(self):
@@ -228,7 +235,7 @@ class UnivariateSpline(object):
         self._data = data
         self._reset_class()
 
-    def __call__(self, x, nu=0):
+    def __call__(self, x, nu=0, ext=None):
         """ Evaluate spline (or its nu-th derivative) at positions x.
 
         Note: x can be unordered but the evaluation is more efficient
@@ -241,7 +248,9 @@ class UnivariateSpline(object):
 #        if nu is None:
 #            return dfitpack.splev(*(self._eval_args+(x,)))
 #        return dfitpack.splder(nu=nu,*(self._eval_args+(x,)))
-        return fitpack.splev(x, self._eval_args, der=nu)
+        if ext is None:
+            ext = self.ext
+        return fitpack.splev(x, self._eval_args, der=nu, ext=ext)
 
     def get_knots(self):
         """ Return positions of (boundary and interior) knots of the spline.
@@ -735,6 +744,16 @@ class BivariateSpline(_BivariateSplineBase):
     bisplev : older wrapping of FITPACK
 
     """
+
+    @classmethod
+    def _from_tck(cls, tck):
+        """Construct a spline object from given tck and degree"""
+        self = cls.__new__(cls)
+        if len(tck) != 5:
+            raise ValueError("tck should be a 5 element tuple of tx, ty, c, kx, ky")
+        self.tck = tck[:3]
+        self.degrees = tck[3:]
+        return self
 
     def ev(self, xi, yi, dx=0, dy=0):
         """

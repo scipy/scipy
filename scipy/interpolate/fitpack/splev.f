@@ -16,8 +16,9 @@ c    m    : integer, giving the number of points where s(x) must be
 c           evaluated.
 c    e    : integer, if 0 the spline is extrapolated from the end
 c           spans for points not in the support, if 1 the spline
-c           evaluates to zero for those points, and if 2 ier is set to
-c           1 and the subroutine returns.
+c           evaluates to zero for those points, if 2 ier is set to
+c           1 and the subroutine returns, and if 3 the spline evaluates
+c           to the value of the nearest boundary point.
 c
 c  output parameter:
 c    y    : array,length m, giving the value of s(x) at the different
@@ -102,6 +103,12 @@ c  check if arg is in the support
             else if (e .eq. 2) then
                 ier = 1
                 goto 100
+            else if (e .eq. 3) then
+                if (arg .lt. tb) then
+                    arg = tb
+                else
+                    arg = te
+                endif
             endif
         endif
 c  search for knot interval t(l) <= arg < t(l+1)

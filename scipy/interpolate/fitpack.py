@@ -546,6 +546,7 @@ def splev(x, tck, der=0, ext=0):
         * if ext=0, return the extrapolated value.
         * if ext=1, return 0
         * if ext=2, raise a ValueError
+        * if ext=3, return the boundary value.
 
         The default value is 0.
 
@@ -582,8 +583,8 @@ def splev(x, tck, der=0, ext=0):
     else:
         if not (0 <= der <= k):
             raise ValueError("0<=der=%d<=k=%d must hold" % (der,k))
-        if ext not in (0,1,2):
-            raise ValueError("ext not in (0, 1, 2)")
+        if ext not in (0,1,2,3):
+            raise ValueError("ext not in (0, 1, 2, 3)")
 
         x = asarray(x)
         shape = x.shape
