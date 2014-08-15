@@ -8,10 +8,11 @@ __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
 
 import itertools
 
-from numpy import shape, sometrue, array, transpose, searchsorted, \
-                  ones, logical_or, atleast_1d, atleast_2d, ravel, \
-                  dot, poly1d, asarray, intp
+from numpy import (shape, sometrue, array, transpose, searchsorted,
+                   ones, logical_or, atleast_1d, atleast_2d, ravel,
+                   dot, poly1d, asarray, intp)
 import numpy as np
+import scipy.linalg
 import scipy.special as spec
 from scipy.misc import comb
 import math
@@ -1821,14 +1822,14 @@ def _find_smoothest(xk, yk, order, conds=None, B=None):
     if B is None:
         B = _fitpack._bsplmat(order, xk)
     J = _fitpack._bspldismat(order, xk)
-    u, s, vh = np.dual.svd(B)
+    u, s, vh = scipy.linalg.svd(B)
     ind = K-1
     V2 = vh[-ind:,:].T
     V1 = vh[:-ind,:].T
     A = dot(J.T,J)
     tmp = dot(V2.T,A)
     Q = dot(tmp,V2)
-    p = np.dual.solve(Q,tmp)
+    p = scipy.linalg.solve(Q, tmp)
     tmp = dot(V2,p)
     tmp = np.eye(N+K) - tmp
     tmp = dot(tmp,V1)
@@ -2032,7 +2033,7 @@ def _find_user(xk, yk, order, conds, B):
     elif (M < N):
         return _find_smoothest(xk, yk, order, None, B)
     else:
-        return np.dual.solve(B, w)
+        return scipy.linalg.solve(B, w)
 
 # If conds is None, then use the not_a_knot condition
 #  at K-1 farthest separated points in the interval
