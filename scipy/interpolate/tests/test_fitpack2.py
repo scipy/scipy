@@ -91,9 +91,14 @@ class TestUnivariateSpline(TestCase):
 
         for cls in [UnivariateSpline, InterpolatedUnivariateSpline]:
             spl = cls(x=x, y=y)
-            assert_allclose(spl(xp, ext=0), xp**3, atol=1e-16)
-            assert_allclose(spl(xp, ext=1), xp_zeros**3, atol=1e-16)
-            assert_raises(ValueError, spl, xp, **dict(ext=2))
+            for ext in [0, 'extrapolate']:
+                assert_allclose(spl(xp, ext=ext), xp**3, atol=1e-16)
+                assert_allclose(cls(x, y, ext=ext)(xp), xp**3, atol=1e-16)
+            for ext in [1, 'zeros']:
+                assert_allclose(spl(xp, ext=ext), xp_zeros**3, atol=1e-16)
+                assert_allclose(cls(x, y, ext=ext)(xp), xp_zeros**3, atol=1e-16)
+            for ext in [2, 'raise']:
+                assert_raises(ValueError, spl, xp, **dict(ext=ext))
 
         # also test LSQUnivariateSpline [which needs explicit knots]
         t = spl.get_knots()[3:4]  # interior knots w/ default k=3
@@ -102,6 +107,12 @@ class TestUnivariateSpline(TestCase):
         assert_allclose(spl(xp, ext=1), xp_zeros**3, atol=1e-16)
         assert_raises(ValueError, spl, xp, **dict(ext=2))
 
+        # also make sure that unknown values for `ext` are caught early
+        for ext in [-1, 'unknown']:
+            spl = UnivariateSpline(x, y)
+            assert_raises(ValueError, spl, xp, **dict(ext=ext))
+            assert_raises(ValueError, UnivariateSpline,
+                    **dict(x=x, y=y, ext=ext))
 
     def test_derivative_and_antiderivative(self):
         # Thin wrappers to splder/splantider, so light smoke test only.
