@@ -734,9 +734,9 @@ cdef double_or_complex evaluate_bpoly1(double_or_complex s,
                                        double_or_complex[:,:,::1] c,
                                        int ci, int cj) nogil:
     """
-    Evaluate polynomial in the Berstein basis in a single interval.
+    Evaluate polynomial in the Bernstein basis in a single interval.
 
-    A Berstein polynomial is defined as
+    A Bernstein polynomial is defined as
 
         .. math:: b_{j, k} = comb(k, j) x^{j} (1-x)^{k-j}
 
@@ -787,10 +787,10 @@ cdef double_or_complex evaluate_bpoly1_deriv(double_or_complex s,
                                              int nu,
                                              double_or_complex[:,:,::1] wrk) nogil:
     """
-    Evaluate the derivative of a polynomial in the Berstein basis 
+    Evaluate the derivative of a polynomial in the Bernstein basis 
     in a single interval.
 
-    A Berstein polynomial is defined as
+    A Bernstein polynomial is defined as
 
         .. math:: b_{j, k} = comb(k, j) x^{j} (1-x)^{k-j}
 
