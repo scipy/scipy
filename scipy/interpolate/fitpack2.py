@@ -173,7 +173,7 @@ class UnivariateSpline(object):
         self._reset_class()
 
     @classmethod
-    def _from_tck(cls, tck, ext):
+    def _from_tck(cls, tck, ext=0):
         """Construct a spline object from given tck"""
         self = cls.__new__(cls)
         t, c, k = tck
