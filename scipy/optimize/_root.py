@@ -25,8 +25,6 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     """
     Find a root of a vector function.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     fun : callable
@@ -113,6 +111,8 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         *linearmixing* and *excitingmixing* may be useful for specific
         problems, but whether they will work may depend strongly on the
         problem.
+
+    .. versionadded:: 0.11.0
 
     References
     ----------

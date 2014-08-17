@@ -37,8 +37,6 @@ def inv(A):
     """
     Compute the inverse of a sparse matrix
 
-    .. versionadded:: 0.12.0
-
     Parameters
     ----------
     A : (M,M) ndarray or sparse matrix
@@ -54,6 +52,8 @@ def inv(A):
     This computes the sparse inverse of `A`.  If the inverse of `A` is expected
     to be non-sparse, it will likely be faster to convert `A` to dense and use
     scipy.linalg.inv.
+
+    .. versionadded:: 0.12.0
 
     """
     I = speye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
@@ -552,8 +552,6 @@ def expm(A):
     """
     Compute the matrix exponential using Pade approximation.
 
-    .. versionadded:: 0.12.0
-
     Parameters
     ----------
     A : (M,M) array_like or sparse matrix
@@ -567,6 +565,8 @@ def expm(A):
     Notes
     -----
     This is algorithm (6.1) which is a simplification of algorithm (5.1).
+
+    .. versionadded:: 0.12.0
 
     References
     ----------

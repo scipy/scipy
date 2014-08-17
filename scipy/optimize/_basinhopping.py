@@ -305,8 +305,6 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     """
     Find the global minimum of a function using the basin-hopping algorithm
 
-    .. versionadded:: 0.12.0
-
     Parameters
     ----------
     func : callable ``f(x, *args)``
@@ -436,6 +434,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     So, for best results, ``T`` should to be comparable to the typical
     difference in function values between local minima.
+
+    .. versionadded:: 0.12.0
 
     References
     ----------

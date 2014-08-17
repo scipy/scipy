@@ -21,8 +21,6 @@ def solve_sylvester(a,b,q):
     """
     Computes a solution (X) to the Sylvester equation (AX + XB = Q).
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     a : (M, M) array_like
@@ -51,6 +49,8 @@ def solve_sylvester(a,b,q):
     matrices are in quasi-triangular form (or, when R, S or F are complex,
     triangular form).  The simplified equation is then solved using
     ``*TRSYL`` from LAPACK directly.
+
+    .. versionadded:: 0.11.0
 
     """
 
@@ -82,8 +82,6 @@ def solve_lyapunov(a, q):
     Solves the continuous Lyapunov equation (AX + XA^H = Q) given the values
     of A and Q using the Bartels-Stewart algorithm.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     a : array_like
@@ -107,6 +105,8 @@ def solve_lyapunov(a, q):
     Sylvester equation, this solver relies entirely on solve_sylvester for a
     solution.
 
+    .. versionadded:: 0.11.0
+
     """
 
     return solve_sylvester(a, a.conj().transpose(), q)
@@ -115,8 +115,6 @@ def solve_lyapunov(a, q):
 def solve_discrete_lyapunov(a, q):
     """
     Solves the Discrete Lyapunov Equation (A'XA-X=-Q) directly.
-
-    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -138,6 +136,8 @@ def solve_discrete_lyapunov(a, q):
     Press, 1994.  265.  Print.
     http://www.scribd.com/doc/20577138/Hamilton-1994-Time-Series-Analysis
 
+    .. versionadded:: 0.11.0
+
     """
 
     lhs = kron(a, a.conj())
@@ -152,8 +152,6 @@ def solve_continuous_are(a, b, q, r):
     Solves the continuous algebraic Riccati equation, or CARE, defined
     as (A'X + XA - XBR^-1B'X+Q=0) directly using a Schur decomposition
     method.
-
-    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -182,6 +180,8 @@ def solve_continuous_are(a, b, q, r):
     U.S. Energy Research and Development Agency under contract
     ERDA-E(49-18)-2087.
     http://dspace.mit.edu/bitstream/handle/1721.1/1301/R-0859-05666488.pdf
+
+    .. versionadded:: 0.11.0
 
     """
 
@@ -218,8 +218,6 @@ def solve_discrete_are(a, b, q, r):
     (X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q), directly using a Schur decomposition
     method.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     a : (M, M) array_like
@@ -247,6 +245,8 @@ def solve_discrete_are(a, b, q, r):
     U.S. Energy Research and Development Agency under contract
     ERDA-E(49-18)-2087.
     http://dspace.mit.edu/bitstream/handle/1721.1/1301/R-0859-05666488.pdf
+
+    .. versionadded:: 0.11.0
 
     """
 

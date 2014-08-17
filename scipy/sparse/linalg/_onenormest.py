@@ -16,8 +16,6 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     """
     Compute a lower bound of the 1-norm of a sparse matrix.
 
-    .. versionadded:: 0.13.0
-
     Parameters
     ----------
     A : ndarray or other linear operator
@@ -57,6 +55,8 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     about 4t matrix-vector products and almost invariably
     produces a norm estimate (which is, in fact, a lower
     bound on the norm) correct to within a factor 3."
+
+    .. versionadded:: 0.13.0
 
     References
     ----------

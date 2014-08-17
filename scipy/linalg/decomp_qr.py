@@ -182,8 +182,6 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     Calculate the decomposition ``A = Q R`` where Q is unitary/orthogonal
     and R upper triangular. Multiply Q with a vector or a matrix c.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     a : ndarray, shape (M, N)
@@ -229,6 +227,8 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     -----
     This is an interface to the LAPACK routines dgeqrf, zgeqrf,
     dormqr, zunmqr, dgeqp3, and zgeqp3.
+
+    .. versionadded:: 0.11.0
 
     """
     if mode not in ['left', 'right']:

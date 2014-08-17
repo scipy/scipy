@@ -83,8 +83,6 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
     """
     Interpolate unstructured D-dimensional data.
 
-    .. versionadded:: 0.9
-
     Parameters
     ----------
     points : ndarray of floats, shape (n, D)
@@ -128,6 +126,10 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
 
         .. versionadded:: 0.14.0
 
+    Notes
+    -----
+
+    .. versionadded:: 0.9
 
     Examples
     --------

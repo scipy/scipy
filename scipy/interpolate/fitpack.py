@@ -1130,8 +1130,6 @@ def splder(tck, n=1):
     """
     Compute the spline representation of the derivative of a given spline
 
-    .. versionadded:: 0.13.0
-
     Parameters
     ----------
     tck : tuple of (t, c, k)
@@ -1144,6 +1142,11 @@ def splder(tck, n=1):
     tck_der : tuple of (t2, c2, k2)
         Spline of order k2=k-n representing the derivative
         of the input spline.
+
+    Notes
+    -----
+
+    .. versionadded:: 0.13.0
 
     See Also
     --------
@@ -1204,8 +1207,6 @@ def splantider(tck, n=1):
     """
     Compute the spline for the antiderivative (integral) of a given spline.
 
-    .. versionadded:: 0.13.0
-
     Parameters
     ----------
     tck : tuple of (t, c, k)
@@ -1228,6 +1229,8 @@ def splantider(tck, n=1):
     The `splder` function is the inverse operation of this function.
     Namely, ``splder(splantider(tck))`` is identical to `tck`, modulo
     rounding error.
+
+    .. versionadded:: 0.13.0
 
     Examples
     --------

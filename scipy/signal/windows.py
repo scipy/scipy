@@ -1327,8 +1327,6 @@ def slepian(M, width, sym=True):
 def cosine(M, sym=True):
     """Return a window with a simple cosine shape.
 
-    .. versionadded:: 0.13.0
-
     Parameters
     ----------
     M : int
@@ -1344,6 +1342,11 @@ def cosine(M, sym=True):
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if `M` is even and `sym` is True).
+    
+    Notes
+    -----
+
+    .. versionadded:: 0.13.0
 
     Examples
     --------
