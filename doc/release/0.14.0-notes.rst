@@ -96,6 +96,9 @@ format internally instead of using transformations to numerator/denominator
 format.  The accuracy of the produced filters, especially high-order ones, is
 improved significantly as a result.
 
+The Savitzky-Golay filter was added with the new functions
+`scipy.signal.savgol_filter` and `scipy.signal.savgol_coeffs`.
+
 The new function `scipy.signal.vectorstrength` computes the vector strength,
 a measure of phase synchrony, of a set of events.
 
