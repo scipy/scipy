@@ -1401,7 +1401,7 @@ class BPoly(_PPolyBase):
 
         Notes
         -----
-        This uses the fact that a Berstein polynomial `b_{a, k}` can be
+        This uses the fact that a Bernstein polynomial `b_{a, k}` can be
         identically represented as a linear combination of polynomials of
         a higher degree `k+d`:
 

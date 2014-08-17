@@ -1493,6 +1493,9 @@ class genextreme_gen(rv_continuous):
             exp(-exp(-x))*exp(-x),                    for c==0
             exp(-(1-c*x)**(1/c))*(1-c*x)**(1/c-1),    for x <= 1/c, c > 0
 
+    Note that several sources and software packages use the opposite 
+    convention for the sign of the shape parameter ``c``. 
+
     %(example)s
 
     """
