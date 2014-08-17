@@ -5,14 +5,16 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
-from numpy.testing import assert_equal, assert_almost_equal, assert_array_equal, \
-        assert_array_almost_equal, assert_allclose, TestCase, run_module_suite
+from numpy.testing import (assert_equal, assert_almost_equal, assert_array_equal,
+        assert_array_almost_equal, assert_allclose, assert_raises, TestCase,
+        run_module_suite)
 from numpy import array, diff, linspace, meshgrid, ones, pi, shape
 from scipy.interpolate.fitpack import bisplrep, bisplev
-from scipy.interpolate.fitpack2 import UnivariateSpline, \
-    LSQBivariateSpline, SmoothBivariateSpline, RectBivariateSpline, \
-    LSQSphereBivariateSpline, SmoothSphereBivariateSpline, \
-    RectSphereBivariateSpline
+from scipy.interpolate.fitpack2 import (UnivariateSpline,
+        LSQUnivariateSpline, InterpolatedUnivariateSpline,
+        LSQBivariateSpline, SmoothBivariateSpline, RectBivariateSpline,
+        LSQSphereBivariateSpline, SmoothSphereBivariateSpline,
+        RectSphereBivariateSpline)
 
 
 class TestUnivariateSpline(TestCase):
@@ -77,6 +79,40 @@ class TestUnivariateSpline(TestCase):
         spl = UnivariateSpline(x=x, y=y, w=w, s=None)
         desired = array([0.35100374, 0.51715855, 0.87789547, 0.98719344])
         assert_allclose(spl([0.1, 0.5, 0.9, 0.99]), desired, atol=5e-4)
+
+    def test_out_of_range_regression(self):
+        # Test different extrapolation modes. See ticket 3557
+        x = np.arange(5, dtype=np.float)
+        y = x**3
+
+        xp = linspace(-8, 13, 100)
+        xp_zeros = xp.copy()
+        xp_zeros[np.logical_or(xp_zeros < 0., xp_zeros > 4.)] = 0
+
+        for cls in [UnivariateSpline, InterpolatedUnivariateSpline]:
+            spl = cls(x=x, y=y)
+            for ext in [0, 'extrapolate']:
+                assert_allclose(spl(xp, ext=ext), xp**3, atol=1e-16)
+                assert_allclose(cls(x, y, ext=ext)(xp), xp**3, atol=1e-16)
+            for ext in [1, 'zeros']:
+                assert_allclose(spl(xp, ext=ext), xp_zeros**3, atol=1e-16)
+                assert_allclose(cls(x, y, ext=ext)(xp), xp_zeros**3, atol=1e-16)
+            for ext in [2, 'raise']:
+                assert_raises(ValueError, spl, xp, **dict(ext=ext))
+
+        # also test LSQUnivariateSpline [which needs explicit knots]
+        t = spl.get_knots()[3:4]  # interior knots w/ default k=3
+        spl = LSQUnivariateSpline(x, y, t)
+        assert_allclose(spl(xp, ext=0), xp**3, atol=1e-16)
+        assert_allclose(spl(xp, ext=1), xp_zeros**3, atol=1e-16)
+        assert_raises(ValueError, spl, xp, **dict(ext=2))
+
+        # also make sure that unknown values for `ext` are caught early
+        for ext in [-1, 'unknown']:
+            spl = UnivariateSpline(x, y)
+            assert_raises(ValueError, spl, xp, **dict(ext=ext))
+            assert_raises(ValueError, UnivariateSpline,
+                    **dict(x=x, y=y, ext=ext))
 
     def test_derivative_and_antiderivative(self):
         # Thin wrappers to splder/splantider, so light smoke test only.

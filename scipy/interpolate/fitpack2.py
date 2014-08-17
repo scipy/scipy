@@ -61,6 +61,12 @@ if iopt=-1:
                     }
 
 
+# UnivariateSpline, ext parameter can be an int or a string
+_extrap_modes = {0: 0, 'extrapolate': 0,
+                 1: 1, 'zeros': 1,
+                 2: 2, 'raise': 2}
+
+
 class UnivariateSpline(object):
     """
     One-dimensional smoothing spline fit to a given set of data points.
@@ -91,6 +97,15 @@ class UnivariateSpline(object):
         If None (default), s=len(w) which should be a good value if 1/w[i] is
         an estimate of the standard deviation of y[i].  If 0, spline will
         interpolate through all data points.
+    ext : int or str, optional
+        Controls the extrapolation mode for elements
+        not in the interval defined by the knot sequence.
+
+        * if ext=0 or 'extrapolate', return the extrapolated value.
+        * if ext=1 or 'zeros', return 0
+        * if ext=2 or 'raise', raise a ValueError
+
+        The default value is 0.
 
     See Also
     --------
@@ -124,7 +139,7 @@ class UnivariateSpline(object):
 
     """
 
-    def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None):
+    def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None, ext=0):
         """
         Input:
           x,y   - 1-d sequences of data points (x must be
@@ -142,8 +157,21 @@ class UnivariateSpline(object):
                        Default s=len(w) which should be a good value
                        if 1/w[i] is an estimate of the standard
                        deviation of y[i].
+          ext        - Controls the extrapolation mode for elements 
+                       not in the interval defined by the knot sequence.
+
+                       * if ext=0 or 'extrapolate', return the extrapolated value.
+                       * if ext=1 or 'zeros', return 0
+                       * if ext=2 or 'raise', raise a ValueError
+
+                       The default value is 0.
         """
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
+        try:
+            self.ext = _extrap_modes[ext]
+        except KeyError:
+            raise ValueError("Unknown extrapolation mode %s." % ext)
+
         data = dfitpack.fpcurf0(x,y,k,w=w,
                                 xb=bbox[0],xe=bbox[1],s=s)
         if data[-1] == 1:
@@ -153,7 +181,7 @@ class UnivariateSpline(object):
         self._reset_class()
 
     @classmethod
-    def _from_tck(cls, tck):
+    def _from_tck(cls, tck, ext=0):
         """Construct a spline object from given tck"""
         self = cls.__new__(cls)
         t, c, k = tck
@@ -161,6 +189,7 @@ class UnivariateSpline(object):
         #_data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         self._data = (None,None,None,None,None,k,None,len(t),t,
                       c,None,None,None,None)
+        self.ext = ext
         return self
 
     def _reset_class(self):
@@ -228,11 +257,28 @@ class UnivariateSpline(object):
         self._data = data
         self._reset_class()
 
-    def __call__(self, x, nu=0):
-        """ Evaluate spline (or its nu-th derivative) at positions x.
+    def __call__(self, x, nu=0, ext=None):
+        """ 
+        Evaluate spline (or its nu-th derivative) at positions x.
 
-        Note: x can be unordered but the evaluation is more efficient
-        if x is (partially) ordered.
+        Parameters
+        ----------
+        x : array_like
+            A 1-D array of points at which to return the value of the smoothed
+            spline or its derivatives. Note: x can be unordered but the 
+            evaluation is more efficient if x is (partially) ordered.
+        nu  : int
+            The order of derivative of the spline to compute.
+        ext : int
+            Controls the value returned for elements of ``x`` not in the
+            interval defined by the knot sequence.
+
+            * if ext=0 or 'extrapolate', return the extrapolated value.
+            * if ext=1 or 'zeros', return 0
+            * if ext=2 or 'raise', raise a ValueError
+
+            The default value is 0, passed from the initialization of 
+            UnivariateSpline.
         """
         x = np.asarray(x)
         # empty input yields empty output
@@ -241,7 +287,14 @@ class UnivariateSpline(object):
 #        if nu is None:
 #            return dfitpack.splev(*(self._eval_args+(x,)))
 #        return dfitpack.splder(nu=nu,*(self._eval_args+(x,)))
-        return fitpack.splev(x, self._eval_args, der=nu)
+        if ext is None:
+            ext = self.ext
+        else:
+            try:
+                ext = _extrap_modes[ext]
+            except KeyError:
+                raise ValueError("Unknown extrapolation mode %s." % ext)
+        return fitpack.splev(x, self._eval_args, der=nu, ext=ext)
 
     def get_knots(self):
         """ Return positions of (boundary and interior) knots of the spline.
@@ -332,7 +385,7 @@ class UnivariateSpline(object):
 
         """
         tck = fitpack.splder(self._eval_args, n)
-        return UnivariateSpline._from_tck(tck)
+        return UnivariateSpline._from_tck(tck, self.ext)
 
     def antiderivative(self, n=1):
         """
@@ -386,7 +439,7 @@ class UnivariateSpline(object):
 
         """
         tck = fitpack.splantider(self._eval_args, n)
-        return UnivariateSpline._from_tck(tck)
+        return UnivariateSpline._from_tck(tck, self.ext)
 
 
 class InterpolatedUnivariateSpline(UnivariateSpline):
@@ -411,6 +464,15 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
         None (default), bbox=[x[0],x[-1]].
     k : int, optional
         Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
+    ext : int or str, optional
+        Controls the extrapolation mode for elements 
+        not in the interval defined by the knot sequence.
+
+        * if ext=0 or 'extrapolate', return the extrapolated value.
+        * if ext=1 or 'zeros', return 0
+        * if ext=2 or 'raise', raise a ValueError
+
+        The default value is 0.
 
     See Also
     --------
@@ -444,7 +506,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
 
     """
 
-    def __init__(self, x, y, w=None, bbox=[None]*2, k=3):
+    def __init__(self, x, y, w=None, bbox=[None]*2, k=3, ext=0):
         """
         Input:
           x,y   - 1-d sequences of data points (x must be
@@ -456,11 +518,24 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
                        the approximation interval.
                        By default, bbox=[x[0],x[-1]]
           k=3        - degree of the univariate spline.
+          ext        - Controls the extrapolation mode for elements 
+                       not in the interval defined by the knot sequence.
+
+                       * if ext=0 or 'extrapolate', return the extrapolated value.
+                       * if ext=1 or 'zeros', return 0
+                       * if ext=2 or 'raise', raise a ValueError
+
+                       The default value is 0.
         """
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         self._data = dfitpack.fpcurf0(x,y,k,w=w,
                                       xb=bbox[0],xe=bbox[1],s=0)
         self._reset_class()
+
+        try:
+            self.ext = _extrap_modes[ext]
+        except KeyError:
+            raise ValueError("Unknown extrapolation mode %s." % ext)
 
 
 class LSQUnivariateSpline(UnivariateSpline):
@@ -487,6 +562,15 @@ class LSQUnivariateSpline(UnivariateSpline):
         None (default), bbox=[x[0],x[-1]].
     k : int, optional
         Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
+    ext : int or str, optional
+        Controls the extrapolation mode for elements 
+        not in the interval defined by the knot sequence.
+
+        * if ext=0 or 'extrapolate', return the extrapolated value.
+        * if ext=1 or 'zeros', return 0
+        * if ext=2 or 'raise', raise a ValueError
+
+        The default value is 0.
 
     Raises
     ------
@@ -527,7 +611,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     """
 
-    def __init__(self, x, y, t, w=None, bbox=[None]*2, k=3):
+    def __init__(self, x, y, t, w=None, bbox=[None]*2, k=3, ext=0):
         """
         Input:
           x,y   - 1-d sequences of data points (x must be
@@ -542,6 +626,14 @@ class LSQUnivariateSpline(UnivariateSpline):
                        the approximation interval.
                        By default, bbox=[x[0],x[-1]]
           k=3        - degree of the univariate spline.
+          ext        - Controls the extrapolation mode for elements 
+                       not in the interval defined by the knot sequence.
+
+                       * if ext=0 or 'extrapolate', return the extrapolated value.
+                       * if ext=1 or 'zeros', return 0
+                       * if ext=2 or 'raise', raise a ValueError.
+
+                       The default value is 0.
         """
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         xb = bbox[0]
@@ -558,6 +650,11 @@ class LSQUnivariateSpline(UnivariateSpline):
         data = dfitpack.fpcurfm1(x,y,k,t,w=w,xb=xb,xe=xe)
         self._data = data[:-3] + (None,None,data[-1])
         self._reset_class()
+
+        try:
+            self.ext = _extrap_modes[ext]
+        except KeyError:
+            raise ValueError("Unknown extrapolation mode %s." % ext)
 
 
 ################ Bivariate spline ####################
