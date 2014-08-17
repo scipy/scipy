@@ -85,8 +85,9 @@ if _os.name == 'nt':
         _thread.interrupt_main()
         return 1
 
-    # load numpy  fortran compiler library (but do not import numpy)
+    # load numpy  math and fortran libraries (but do not import numpy)
     basepath = _imp.find_module('numpy')[1]
+    _ctypes.CDLL(_os.path.join(basepath, 'core', 'libmmd.dll'))
     _ctypes.CDLL(_os.path.join(basepath, 'core', 'libifcoremd.dll'))
     # install handler
     routine = _ctypes.WINFUNCTYPE(_ctypes.c_int, _ctypes.c_uint)(handler)
