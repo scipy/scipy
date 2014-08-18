@@ -50,10 +50,10 @@ def test_orthogonal_procrustes_scale_invariance():
     for i in range(3):
         A_orig = np.random.randn(m, n)
         B_orig = np.random.randn(m, n)
-        R_orig = orthogonal_procrustes(A_orig, B_orig)
+        R_orig, s = orthogonal_procrustes(A_orig, B_orig)
         for A_scale in np.square(np.random.randn(3)):
             for B_scale in np.square(np.random.randn(3)):
-                R = orthogonal_procrustes(A_orig * A_scale, B_orig * B_scale)
+                R, s = orthogonal_procrustes(A_orig * A_scale, B_orig * B_scale)
                 assert_allclose(R, R_orig)
 
 
@@ -64,11 +64,10 @@ def test_orthogonal_procrustes_array_conversion():
         B_arr = np.random.randn(m, n)
         As = (A_arr, A_arr.tolist(), np.matrix(A_arr))
         Bs = (B_arr, B_arr.tolist(), np.matrix(B_arr))
-        kwarg_dicts = ({}, dict(check_finite=True), dict(check_finite=False))
-        R_arr = orthogonal_procrustes(A_arr, B_arr)
+        R_arr, s = orthogonal_procrustes(A_arr, B_arr)
         AR_arr = A_arr.dot(R_arr)
-        for A, B, kwargs in product(As, Bs, kwarg_dicts):
-            R = orthogonal_procrustes(A, B, **kwargs)
+        for A, B in product(As, Bs):
+            R, s = orthogonal_procrustes(A, B)
             AR = A_arr.dot(R)
             assert_allclose(AR, AR_arr)
 
@@ -86,7 +85,7 @@ def test_orthogonal_procrustes():
         # Compute a matrix with a known orthogonal transformation that gives B.
         A = np.dot(B, V.T)
         # Check that an orthogonal transformation from A to B can be recovered.
-        R = orthogonal_procrustes(A, B)
+        R, s = orthogonal_procrustes(A, B)
         assert_allclose(inv(R), R.T)
         assert_allclose(A.dot(R), B)
         # Create a perturbed input matrix.
@@ -94,7 +93,7 @@ def test_orthogonal_procrustes():
         # Check that the orthogonal procrustes function can find an orthogonal
         # transformation that is better than the orthogonal transformation
         # computed from the original input matrix.
-        R_prime = orthogonal_procrustes(A_perturbed, B)
+        R_prime, s = orthogonal_procrustes(A_perturbed, B)
         assert_allclose(inv(R_prime), R_prime.T)
         # Compute the naive and optimal transformations of the perturbed input.
         naive_approx = A_perturbed.dot(R)
@@ -129,7 +128,7 @@ def test_orthogonal_procrustes_exact_example():
     B_orig = np.array([[3, 2], [1, 0], [3, -2], [5, 0]], dtype=float)
     A, A_mu = _centered(A_orig)
     B, B_mu = _centered(B_orig)
-    R, s = orthogonal_procrustes(A, B, compute_scale=True)
+    R, s = orthogonal_procrustes(A, B)
     scale = s / np.square(norm(A))
     B_approx = scale * np.dot(A, R) + B_mu
     assert_allclose(B_approx, B_orig, atol=1e-8)
@@ -141,7 +140,7 @@ def test_orthogonal_procrustes_stretched_example():
     B_orig = np.array([[3, 40], [1, 0], [3, -40], [5, 0]], dtype=float)
     A, A_mu = _centered(A_orig)
     B, B_mu = _centered(B_orig)
-    R, s = orthogonal_procrustes(A, B, compute_scale=True)
+    R, s = orthogonal_procrustes(A, B)
     scale = s / np.square(norm(A))
     B_approx = scale * np.dot(A, R) + B_mu
     expected = np.array([[3, 21], [-18, 0], [3, -21], [24, 0]], dtype=float)
@@ -150,7 +149,7 @@ def test_orthogonal_procrustes_stretched_example():
     expected_disparity = 0.4501246882793018
     AB_disparity = np.square(norm(B_approx - B_orig) / norm(B))
     assert_allclose(AB_disparity, expected_disparity)
-    R, s = orthogonal_procrustes(B, A, compute_scale=True)
+    R, s = orthogonal_procrustes(B, A)
     scale = s / np.square(norm(B))
     A_approx = scale * np.dot(B, R) + A_mu
     BA_disparity = np.square(norm(A_approx - A_orig) / norm(A))
@@ -183,7 +182,7 @@ def test_orthogonal_procrustes_skbio_example():
         [0.40089186, -0.40089186]])
     A, A_mu = _centered(A_orig)
     B, B_mu = _centered(B_orig)
-    R, s = orthogonal_procrustes(A, B, compute_scale=True)
+    R, s = orthogonal_procrustes(A, B)
     scale = s / np.square(norm(A))
     B_approx = scale * np.dot(A, R) + B_mu
     assert_allclose(B_approx, B_orig)

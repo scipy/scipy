@@ -11,7 +11,7 @@ from .decomp_svd import svd
 __all__ = ['orthogonal_procrustes']
 
 
-def orthogonal_procrustes(A, B, compute_scale=False, check_finite=True):
+def orthogonal_procrustes(A, B, check_finite=True):
     """
     Compute the matrix solution of the orthogonal Procrustes problem.
 
@@ -27,8 +27,6 @@ def orthogonal_procrustes(A, B, compute_scale=False, check_finite=True):
         Matrix to be mapped.
     B : (M, N) array_like
         Target matrix.
-    compute_scale : bool, optional
-        True to return the sum of singular values of an intermediate matrix.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -40,7 +38,7 @@ def orthogonal_procrustes(A, B, compute_scale=False, check_finite=True):
         The matrix solution of the orthogonal Procrustes problem.
         Minimizes the Frobenius norm of dot(A, R) - B, subject to
         dot(R.T, R) == I.
-    scale : float, optional
+    scale : float
         The sum of singular values of an intermediate matrix.
         This value is not returned unless specifically requested.
 
@@ -72,10 +70,5 @@ def orthogonal_procrustes(A, B, compute_scale=False, check_finite=True):
     # Be clever with transposes, with the intention to save memory.
     u, w, vt = svd(B.T.dot(A).T)
     R = u.dot(vt)
-    # Always return R, and maybe return a scaling factor.
-    if compute_scale:
-        scale = w.sum()
-        return R, scale
-    else:
-        return R
-
+    scale = w.sum()
+    return R, scale
