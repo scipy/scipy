@@ -633,6 +633,9 @@ def test_kendalltau():
     assert_(np.all(np.isnan(stats.kendalltau([2,0,2], [2,2,2]))))
     assert_(np.all(np.isnan(stats.kendalltau([2,2,2], [2,0,2]))))
 
+    # empty arrays provided as input
+    assert_(np.all(np.isnan(stats.kendalltau([], []))))
+
     # check two different sort methods
     assert_approx_equal(stats.kendalltau(x1, x2, initial_lexsort=False)[1],
                         stats.kendalltau(x1, x2, initial_lexsort=True)[1])
@@ -751,7 +754,7 @@ def test_theilslopes():
     slope, intercept, lower, upper = stats.theilslopes([0,1,1])
     assert_almost_equal(slope, 0.5)
     assert_almost_equal(intercept, 0.5)
-    
+
     # Test of confidence intervals.
     x = [1, 2, 3, 4, 10, 12, 18]
     y = [9, 15, 19, 20, 45, 55, 78]
@@ -1172,7 +1175,7 @@ class TestMode(TestCase):
         vals = stats.mode(arr, axis=None)
         assert_almost_equal(vals[0],np.array([30]))
         assert_almost_equal(vals[1],np.array([8]))
-        
+
         vals = stats.mode(arr, axis=0)
         assert_almost_equal(vals[0],np.array([[10,10,30,30]]))
         assert_almost_equal(vals[1],np.array([[2,3,3,2]]))
