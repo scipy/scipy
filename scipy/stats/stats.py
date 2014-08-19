@@ -2861,6 +2861,10 @@ def kendalltau(x, y, initial_lexsort=True):
 
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
+
+    if not x.size or not y.size:
+        return (np.nan, np.nan)  # Return NaN if arrays are empty
+
     n = np.int64(len(x))
     temp = list(range(n))  # support structure used by mergesort
     # this closure recursively sorts sections of perm[] by comparing
