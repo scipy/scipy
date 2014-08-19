@@ -629,12 +629,12 @@ def test_kendalltau():
     assert_approx_equal(res[1], expected[1])
 
     # with only ties in one or both inputs
-    assert_(np.all(np.isnan(stats.kendalltau([2,2,2], [2,2,2]))))
-    assert_(np.all(np.isnan(stats.kendalltau([2,0,2], [2,2,2]))))
-    assert_(np.all(np.isnan(stats.kendalltau([2,2,2], [2,0,2]))))
+    assert_equal(stats.kendalltau([2,2,2], [2,2,2]), (np.nan, np.nan))
+    assert_equal(stats.kendalltau([2,0,2], [2,2,2]), (np.nan, np.nan))
+    assert_equal(stats.kendalltau([2,2,2], [2,0,2]), (np.nan, np.nan))
 
     # empty arrays provided as input
-    assert_(np.all(np.isnan(stats.kendalltau([], []))))
+    assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
 
     # check two different sort methods
     assert_approx_equal(stats.kendalltau(x1, x2, initial_lexsort=False)[1],
