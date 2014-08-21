@@ -741,11 +741,11 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         # Remove the artificial variable columns from the tableau
         T = np.delete(T, np.s_[n+n_slack:n+n_slack+n_artificial], 1)
     else:
+        # Failure to find a feasible starting point
         status = 2
-        message = messages[2]
 
     if status != 0:
-        # Failure to find a feasible starting point
+        message = messages[status]
         if disp:
             print(message)
         return OptimizeResult(x=np.nan, fun=-T[-1, -1], nit=nit1, status=status,
