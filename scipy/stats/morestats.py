@@ -1452,7 +1452,7 @@ def bartlett(*args):
     Bartlett's test tests the null hypothesis that all input samples
     are from populations with equal variances.  For samples
     from significantly non-normal populations, Levene's test
-    `levene`_ is more robust.
+    `levene` is more robust.
 
     Parameters
     ----------
