@@ -1753,7 +1753,7 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
         The lower and upper values for the range of the histogram.
         If no value is given, a range slightly larger then the range of the
         values in a is used. Specifically ``(a.min() - s, a.max() + s)``,
-            where ``s = (1/2)(a.max() - a.min()) / (numbins - 1)``.
+        where ``s = (1/2)(a.max() - a.min()) / (numbins - 1)``.
     weights : array_like, optional
         The weights for each value in `a`. Default is None, which gives each
         value a weight of 1.0
