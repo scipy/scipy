@@ -249,8 +249,8 @@ def lobpcg(A, X,
         For this specific problem, a good simple preconditioner function would
         be a linear solve for A, which is easy to code since A is tridiagonal.
 
-    Acknowledgements
-    ----------------
+    *Acknowledgements*
+
     lobpcg.py code was written by Robert Cimrman.
     Many thanks belong to Andrew Knyazev, the author of the algorithm,
     for lots of advice and support.
