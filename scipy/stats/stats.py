@@ -130,8 +130,7 @@ Inferential Stats
    wilcoxon
    kruskal
    friedmanchisquare
-   stouffers_method
-   fishers_method
+   combine_pvalues
 
 Probability Calculations
 ------------------------
@@ -206,7 +205,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'zprob', 'chisqprob', 'ksprob', 'fprob', 'betai',
            'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
            'ss', 'square_of_sums', 'fastsort', 'rankdata', 'nanmean',
-           'nanstd', 'nanmedian', 'stouffers_method', 'fishers_method', ]
+           'nanstd', 'nanmedian', 'combine_pvalues', ]
 
 
 def _chk_asarray(a, axis):
@@ -4258,66 +4257,84 @@ def friedmanchisquare(*args):
     return chisq, chisqprob(chisq,k-1)
 
 
-def fishers_method(p):
+def combine_pvalues(pvalues, method='fisher', weights=None):
     """
-    Fisher's method (aka Fisher's combined probability test)
-    of combining the results (p-values) from several independent
-    tests bearing upon the same overall hypothesis (H0).
+    Methods for combining the p-values of independent tests bearing upon the
+    same hypothesis.
 
     Parameters
     ----------
-    p : array_like of p-values
+    p: array_like, 1-D
+        Array of p-values assumed to come from independent tests.
+    method: str
+        Name of method to use to combine p-values. The following methods are
+        available:
+        - "fisher": Fisher's method (Fisher's combined probability test)
+        - "stouffer": Stouffer's Z-score method
+    weights: array_like, 1-D, optional
+        Optional array of weights used only for Stouffer's Z-score method.
 
     Returns
     -------
-    Xsq : float
-        chi2 value
-    p-value : float
-        p-value
+    statistic: float
+        The statistic calculated by the specified method:
+        - "fisher": The chi-squared statistic
+        - "stouffer": The Z-score
+    pval: float
+        The combined p-value.
+
+    Notes
+    -----
+    Fisher's method (also known as Fisher's combined probability test) [1]_ uses
+    a chi-squared statistic to compute a combined p-value. The closely related
+    Stouffer's Z-score method [2]_ uses Z-scores rather than p-values. The
+    advantage of Stouffer's method is that it is straightforward to introduce
+    weights, which can make Stouffer's method more powerful than Fisher's
+    method when the p-values are from studies of different size [3]_ [4]_.
+
+    Fisher's method may be extended to combine p-values from dependent tests
+    [5]_. Extensions such as Brown's method and Kost's method are not currently
+    implemented.
 
     References
     ----------
-    http://en.wikipedia.org/wiki/Fisher's_method
+    .. [1] https://en.wikipedia.org/wiki/Fisher%27s_method
+    .. [2] http://en.wikipedia.org/wiki/Fisher's_method#Relation_to_Stouffer.27s_Z-score_method
+    .. [3] Whitlock, M. C. "Combining probability from independent tests: the
+           weighted Z-method is superior to Fisher's approach." Journal of
+           Evolutionary Biology 18, no. 5 (2005): 1368-1373.
+    .. [4] Zaykin, Dmitri V. "Optimally weighted Z-test is a powerful method
+           for combining probabilities in meta-analysis." Journal of
+           Evolutionary Biology 24, no. 8 (2011): 1836-1841.
+    .. [5] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
+
     """
-    Xsq = -2 * np.sum(np.log(p))
-    pval = 1 - distributions.chi2.cdf(Xsq, 2 * len(p))
+    pvalues = np.asarray(pvalues)
+    if pvalues.ndim != 1:
+        raise ValueError("pvalues is not 1-D")
 
-    return (Xsq, pval)
+    if method == 'fisher':
+        Xsq = -2 * np.sum(np.log(pvalues))
+        pval = distributions.chi2.sf(Xsq, 2 * len(pvalues))
+        return (Xsq, pval)
+    elif method == 'stouffer':
+        if weights is None:
+            weights = np.ones_like(pvalues)
+        elif len(weights) != len(pvalues):
+            raise ValueError("pvalues and weights must be of the same size.")
 
+        weights = np.asarray(weights)
+        if weights.ndim != 1:
+            raise ValueError("weights is not 1-D")
 
-def stouffers_method(p, w=None):
-    """
-    Stouffer's Z-score method of combining the results (p-values)
-    from several independent tests bearing upon the same
-    overall hypothesis (H0).
+        Zi = distributions.norm.isf(pvalues)
+        Z = np.dot(weights, Zi) / np.linalg.norm(weights)
+        pval = distributions.norm.sf(Z)
 
-    Parameters
-    ----------
-    p : array_like of p-values
-    w : array_like of weights (optional)
-
-    Returns
-    -------
-    Z : float
-        Z-score
-    p-value : float
-        p-value
-
-    References
-    ----------
-    http://en.wikipedia.org/wiki/Fisher's_method#Relation_to_Stouffer.27s_Z-score_method
-    """
-    if w is None:
-        w = np.ones(len(p)) / len(p)
-    elif len(w) != len(p):
-        raise ValueError("Length of p and w must equal!")
-
-    Zi = distributions.norm.isf(p)
-    Z = np.sum(w * Zi) / ((np.sum(w ** 2)) ** 0.5)
-    p = 1 - distributions.norm.cdf(Z)
-
-    return (Z, p)
-
+        return (Z, pval)
+    else:
+        raise ValueError(
+            "Invalid method '%s'. Options are 'fisher' or 'stouffer'", method)
 
 #####################################
 ####  PROBABILITY CALCULATIONS  ####

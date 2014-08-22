@@ -265,8 +265,7 @@ which work for masked arrays.
    wilcoxon
    kruskal
    friedmanchisquare
-   stouffers_method
-   fishers_method
+   combine_pvalues
 
 .. autosummary::
    :toctree: generated/

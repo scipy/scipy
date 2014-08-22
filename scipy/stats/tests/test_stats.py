@@ -2826,19 +2826,30 @@ class TestKruskal(TestCase):
         assert_approx_equal(p, stats.chisqprob(h, 2))
 
 
-class TestFisher(TestCase):
+class TestCombinePvalues(TestCase):
 
     def test_fisher(self):
-        xsq, p = stats.fishers_method(np.array((.01, .2, .3)))
-        assert_approx_equal(p, 0.022, significant=2)
+        # Example taken from http://en.wikipedia.org/wiki/Fisher's_exact_test#Example
+        xsq, p = stats.combine_pvalues([.01, .2, .3], method='fisher')
+        assert_approx_equal(p, 0.02156, significant=4)
 
     def test_stouffer(self):
-        Z, p = stats.stouffers_method(np.array((.01, .2, .3)))
-        assert_approx_equal(p, 0.017, significant=2)
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='stouffer')
+        assert_approx_equal(p, 0.01651, significant=4)
 
     def test_stouffer2(self):
-        Z, p = stats.stouffers_method(np.array((.5, .5, .5)))
+        Z, p = stats.combine_pvalues([.5, .5, .5], method='stouffer')
         assert_approx_equal(p, 0.5, significant=4)
+
+    def test_weighted_stouffer(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='stouffer',
+                                     weights=np.ones(3))
+        assert_approx_equal(p, 0.01651, significant=4)
+
+    def test_weighted_stouffer2(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='stouffer',
+                                     weights=np.array((1, 4, 9)))
+        assert_approx_equal(p, 0.1464, significant=4)
 
 if __name__ == "__main__":
     run_module_suite()
