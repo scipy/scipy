@@ -1577,6 +1577,38 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     return params.extract(return_eigenvectors)
 
 
+def _augmented_orthonormal_cols(x, k):
+    # extract the shape of the x array
+    n, m = x.shape
+    # create the expanded array and copy x into it
+    y = np.empty((n, m+k), dtype=x.dtype)
+    y[:, :m] = x
+    # do some modified gram schmidt to add k random orthonormal vectors
+    for i in range(k):
+        # sample a random initial vector
+        v = np.random.randn(n)
+        if np.iscomplexobj(x):
+            v = v + 1j*np.random.randn(n)
+        # subtract projections onto the existing unit length vectors
+        for j in range(m+i):
+            u = y[:, j]
+            v -= (np.dot(v, u.conj()) / np.dot(u, u.conj())) * u
+        # normalize v
+        v /= np.sqrt(np.dot(v, v.conj()))
+        # add v into the output array
+        y[:, m+i] = v
+    # return the expanded array
+    return y
+
+
+def _augmented_orthonormal_rows(x, k):
+    return _augmented_orthonormal_cols(x.T, k).T
+
+
+def _herm(x):
+    return x.T.conj()
+
+
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
          maxiter=None, return_singular_vectors=True):
     """Compute the largest k singular values/vectors for a sparse matrix.
@@ -1635,19 +1667,12 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     n, m = A.shape
 
-    if np.issubdtype(A.dtype, np.complexfloating):
-        herm = lambda x: x.T.conjugate()
-        eigensolver = eigs
-    else:
-        herm = lambda x: x.T
-        eigensolver = eigsh
-
     if n > m:
         X = A
-        XH = herm(A)
+        XH = _herm(A)
     else:
         XH = A
-        X = herm(A)
+        X = _herm(A)
 
     def matvec_XH_X(x):
         return XH.dot(X.dot(x))
@@ -1655,23 +1680,58 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     XH_X = LinearOperator(matvec=matvec_XH_X, dtype=X.dtype,
                           shape=(X.shape[1], X.shape[1]))
 
-    if return_singular_vectors:
-        eigvals, eigvec = eigensolver(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
-                                      ncv=ncv, which=which, v0=v0)
-        s = np.sqrt(eigvals)
-    else:
-        eigvals = eigensolver(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
-                              ncv=ncv, which=which, v0=v0,
-                              return_eigenvectors=False)
-        s = np.sqrt(eigvals)
-        return s
+    # Get a low rank approximation of the implicitly defined gramian matrix.
+    # This is not a stable way to approach the problem.
+    eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
+                                  ncv=ncv, which=which, v0=v0)
 
-    if n > m:
-        v = eigvec
-        u = X.dot(v) / s
-        vh = herm(v)
+    # In 'LM' mode try to be clever about small eigenvalues.
+    # Otherwise in 'SM' mode do not try to be clever.
+    if which == 'LM':
+
+        # Gramian matrices have real non-negative eigenvalues.
+        eigvals = np.maximum(eigvals.real, 0)
+
+        # Use the sophisticated detection of small eigenvalues from pinvh.
+        t = eigvec.dtype.char.lower()
+        factor = {'f': 1E3, 'd': 1E6}
+        cond = factor[t] * np.finfo(t).eps
+        cutoff = cond * np.max(eigvals)
+
+        # Get a mask indicating which eigenpairs are not degenerately tiny,
+        # and create the re-ordered array of thresholded singular values.
+        above_cutoff = (eigvals > cutoff)
+        nlarge = above_cutoff.sum()
+        nsmall = k - nlarge
+        slarge = np.sqrt(eigvals[above_cutoff])
+        s = np.zeros_like(eigvals)
+        s[:nlarge] = slarge
+        if not return_singular_vectors:
+            return s
+
+        if n > m:
+            vlarge = eigvec[:, above_cutoff]
+            ularge = X.dot(vlarge) / slarge
+            vhlarge = _herm(vlarge)
+        else:
+            ularge = eigvec[:, above_cutoff]
+            vhlarge = _herm(X.dot(ularge) / slarge)
+
+        u = _augmented_orthonormal_cols(ularge, nsmall)
+        vh = _augmented_orthonormal_rows(vhlarge, nsmall)
+
     else:
-        u = eigvec
-        vh = herm(X.dot(u) / s)
+
+        s = np.sqrt(eigvals)
+        if not return_singular_vectors:
+            return s
+
+        if n > m:
+            v = eigvec
+            u = X.dot(v) / s
+            vh = _herm(v)
+        else:
+            u = eigvec
+            vh = _herm(X.dot(u) / s)
 
     return u, s, vh
