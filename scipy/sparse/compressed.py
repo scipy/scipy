@@ -775,6 +775,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         if do_sort:
             # TODO: only sort where necessary
+            self.has_sorted_indices = False
             self.sort_indices()
 
         self.check_format(full_check=False)

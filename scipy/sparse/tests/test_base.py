@@ -21,6 +21,7 @@ Run tests if sparse is not installed:
 
 import warnings
 import operator
+import contextlib
 
 import numpy as np
 from scipy.lib.six import xrange, zip as izip
@@ -2454,6 +2455,21 @@ class _TestFancyIndexing:
         assert_equal(todense(A[J,K]), B[J,K])
 
 
+@contextlib.contextmanager
+def check_remains_sorted(X):
+    """Checks that sorted indices property is retained through an operation
+    """
+    if not hasattr(X, 'has_sorted_indices') or not X.has_sorted_indices:
+        yield
+        return
+    yield
+    indices = X.indices.copy()
+    X.has_sorted_indices = False
+    X.sort_indices()
+    assert_array_equal(indices, X.indices,
+                       'Expected sorted indices, found unsorted')
+
+
 class _TestFancyIndexingAssign:
     def test_bad_index_assign(self):
         with warnings.catch_warnings():
@@ -2467,7 +2483,8 @@ class _TestFancyIndexingAssign:
 
         def _test_set_slice(i, j):
             A = self.spmatrix((n, m))
-            A[i, j] = 1
+            with check_remains_sorted(A):
+                A[i, j] = 1
             B = asmatrix(np.zeros((n, m)))
             B[i, j] = 1
             assert_array_almost_equal(A.todense(), B)
@@ -2504,31 +2521,36 @@ class _TestFancyIndexingAssign:
             i1 = (0,1,2)
             i2 = array(i0)
 
-            A[0,i0] = B[i0,0].T
-            A[1,i1] = B[i1,1].T
-            A[2,i2] = B[i2,2].T
+            with check_remains_sorted(A):
+                A[0,i0] = B[i0,0].T
+                A[1,i1] = B[i1,1].T
+                A[2,i2] = B[i2,2].T
             assert_array_equal(A.todense(),B.T.todense())
 
             # column slice
             A = self.spmatrix((2,3))
-            A[1,1:3] = [10,20]
+            with check_remains_sorted(A):
+                A[1,1:3] = [10,20]
             assert_array_equal(A.todense(), [[0,0,0],[0,10,20]])
 
             # row slice
             A = self.spmatrix((3,2))
-            A[1:3,1] = [[10],[20]]
+            with check_remains_sorted(A):
+                A[1:3,1] = [[10],[20]]
             assert_array_equal(A.todense(), [[0,0],[0,10],[0,20]])
 
             # both slices
             A = self.spmatrix((3,3))
             B = asmatrix(np.zeros((3,3)))
-            for C in [A, B]:
-                C[[0,1,2], [0,1,2]] = [4,5,6]
+            with check_remains_sorted(A):
+                for C in [A, B]:
+                    C[[0,1,2], [0,1,2]] = [4,5,6]
             assert_array_equal(A.toarray(), B)
 
             # both slices (2)
             A = self.spmatrix((4, 3))
-            A[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
+            with check_remains_sorted(A):
+                A[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
             assert_almost_equal(A.sum(), 6)
             B = asmatrix(np.zeros((4, 3)))
             B[(1, 2, 3), (0, 1, 2)] = [1, 2, 3]
@@ -2604,7 +2626,8 @@ class _TestFancyMultidimAssign:
         I = np.array([[1, 2, 3], [3, 4, 2]])
         J = np.array([[5, 6, 3], [2, 3, 1]])
 
-        S[I,J] = X
+        with check_remains_sorted(S):
+            S[I,J] = X
         D[I,J] = X
         assert_equal(S.todense(), D)
 
@@ -2613,11 +2636,13 @@ class _TestFancyMultidimAssign:
 
         C = [1, 2, 3]
 
-        S[I,J] = C
+        with check_remains_sorted(S):
+            S[I,J] = C
         D[I,J] = C
         assert_equal(S.todense(), D)
 
-        S[I,J] = 3
+        with check_remains_sorted(S):
+            S[I,J] = 3
         D[I,J] = 3
         assert_equal(S.todense(), D)
 
@@ -2629,7 +2654,8 @@ class _TestFancyMultidimAssign:
 
         def _test_set_slice(i, j):
             A = self.spmatrix((n, m))
-            A[i, j] = 1
+            with check_remains_sorted(A):
+                A[i, j] = 1
             B = asmatrix(np.zeros((n, m)))
             B[i, j] = 1
             assert_array_almost_equal(A.todense(), B)
