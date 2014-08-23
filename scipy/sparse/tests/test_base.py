@@ -3636,6 +3636,24 @@ class TestCOO(sparse_test_class(getset=False,
     def test_setdiag(self):
         pass
 
+    def test_sum_duplicates(self):
+        coo = coo_matrix((4,3))
+        coo.sum_duplicates()
+        coo = coo_matrix(([1,2], ([1,0], [1,0])))
+        coo.sum_duplicates()
+        assert_array_equal(coo.A, [[2,0],[0,1]])
+        coo = coo_matrix(([1,2], ([1,1], [1,1])))
+        coo.sum_duplicates()
+        assert_array_equal(coo.A, [[0,0],[0,3]])
+        assert_array_equal(coo.row, [1])
+        assert_array_equal(coo.col, [1])
+        assert_array_equal(coo.data, [3])
+
+    def test_todok_duplicates(self):
+        coo = coo_matrix(([1,1,1,1], ([0,2,2,0], [0,1,1,0])))
+        dok = coo.todok()
+        assert_array_equal(dok.A, coo.A)
+
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False,

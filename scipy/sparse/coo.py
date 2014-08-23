@@ -124,6 +124,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 self.row = np.array([], dtype=idx_dtype)
                 self.col = np.array([], dtype=idx_dtype)
                 self.data = np.array([], getdtype(dtype, default=float))
+                self.has_canonical_format = True
             else:
                 try:
                     obj, ij = arg1
@@ -155,6 +156,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 idx_dtype = get_index_dtype(maxval=max(self.shape))
                 self.row = self.row.astype(idx_dtype)
                 self.col = self.col.astype(idx_dtype)
+                self.has_canonical_format = False
 
         elif arg1 is None:
             # Initialize an empty matrix.
@@ -167,6 +169,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             self.data = np.array([], getdtype(dtype, default=float))
             self.row = np.array([], dtype=idx_dtype)
             self.col = np.array([], dtype=idx_dtype)
+            self.has_canonical_format = True
         else:
             if isspmatrix(arg1):
                 if isspmatrix_coo(arg1) and copy:
@@ -180,6 +183,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                     self.col = coo.col
                     self.data = coo.data
                     self.shape = coo.shape
+                self.has_canonical_format = False
             else:
                 #dense argument
                 try:
@@ -194,6 +198,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
                 self.row, self.col = M.nonzero()
                 self.data = M[self.row, self.col]
+                self.has_canonical_format = True
 
         if dtype is not None:
             self.data = self.data.astype(dtype)
@@ -390,8 +395,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     def todok(self):
         from .dok import dok_matrix
 
+        self.sum_duplicates()
         dok = dok_matrix((self.shape), dtype=self.dtype)
-
         dok.update(izip(izip(self.row,self.col),self.data))
 
         return dok
@@ -408,6 +413,26 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         else:
             return coo_matrix((data, (self.row, self.col)),
                                    shape=self.shape, dtype=data.dtype)
+
+    def sum_duplicates(self):
+        """Eliminate duplicate matrix entries by adding them together
+
+        This is an *in place* operation
+        """
+        if self.has_canonical_format or len(self.data) == 0:
+            return
+        order = np.lexsort((self.row,self.col))
+        self.row = self.row[order]
+        self.col = self.col[order]
+        self.data = self.data[order]
+        unique_mask = ((self.row[1:] != self.row[:-1]) |
+                       (self.col[1:] != self.col[:-1]))
+        unique_mask = np.append(True, unique_mask)
+        self.row = self.row[unique_mask]
+        self.col = self.col[unique_mask]
+        unique_inds, = np.nonzero(unique_mask)
+        self.data = np.add.reduceat(self.data, unique_inds, dtype=self.dtype)
+        self.has_canonical_format = True
 
     ###########################
     # Multiplication handlers #
