@@ -2925,12 +2925,12 @@ class ncf_gen(rv_continuous):
     -----
     The probability density function for `ncf` is::
 
-    ncf.pdf(x, df1, df2, nc) = exp(nc/2 + nc*df1*x/(2*(df1*x+df2)))
-                    * df1**(df1/2) * df2**(df2/2) * x**(df1/2-1)
-                    * (df2+df1*x)**(-(df1+df2)/2)
-                    * gamma(df1/2)*gamma(1+df2/2)
-                    * L^{v1/2-1}^{v2/2}(-nc*v1*x/(2*(v1*x+v2)))
-                    / (B(v1/2, v2/2) * gamma((v1+v2)/2))
+        ncf.pdf(x, df1, df2, nc) = exp(nc/2 + nc*df1*x/(2*(df1*x+df2))) *
+                    df1**(df1/2) * df2**(df2/2) * x**(df1/2-1) *
+                    (df2+df1*x)**(-(df1+df2)/2) *
+                    gamma(df1/2)*gamma(1+df2/2) *
+                    L^{v1/2-1}^{v2/2}(-nc*v1*x/(2*(v1*x+v2))) /
+                    (B(v1/2, v2/2) * gamma((v1+v2)/2))
 
     for ``df1, df2, nc > 0``.
 

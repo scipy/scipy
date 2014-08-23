@@ -170,7 +170,8 @@ size : int or tuple of ints, optional
 moments : str, optional
     composed of letters ['mvsk'] specifying which moments to compute where
     'm' = mean, 'v' = variance, 's' = (Fisher's) skew and
-    'k' = (Fisher's) kurtosis. (default='mv')
+    'k' = (Fisher's) kurtosis.
+    Default is 'mv'.
 """
 _doc_default_longsummary = """\
 Continuous random variables are defined from a standard form and may
