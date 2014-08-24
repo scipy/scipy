@@ -1493,7 +1493,7 @@ def bartlett(*args):
     return T, pval
 
 
-def levene(*args,**kwds):
+def levene(*args, **kwds):
     """
     Perform Levene test for equal variances.
 
@@ -1545,7 +1545,8 @@ def levene(*args,**kwds):
     proportiontocut = 0.05
     for kw, value in kwds.items():
         if kw not in ['center', 'proportiontocut']:
-            raise TypeError("levene() got an unexpected keyword argument '%s'" % kw)
+            raise TypeError("levene() got an unexpected keyword "
+                            "argument '%s'" % kw)
         if kw == 'center':
             center = value
         else:
@@ -1555,9 +1556,9 @@ def levene(*args,**kwds):
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
     Ni = zeros(k)
-    Yci = zeros(k,'d')
+    Yci = zeros(k, 'd')
 
-    if center not in ['mean','median','trimmed']:
+    if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("Keyword argument <center> must be 'mean', 'median'"
               + "or 'trimmed'.")
 
@@ -1566,42 +1567,43 @@ def levene(*args,**kwds):
     elif center == 'mean':
         func = lambda x: np.mean(x, axis=0)
     else:  # center == 'trimmed'
-        args = tuple(stats.trimboth(np.sort(arg), proportiontocut) for arg in args)
+        args = tuple(stats.trimboth(np.sort(arg), proportiontocut)
+                     for arg in args)
         func = lambda x: np.mean(x, axis=0)
 
     for j in range(k):
         Ni[j] = len(args[j])
         Yci[j] = func(args[j])
-    Ntot = sum(Ni,axis=0)
+    Ntot = sum(Ni, axis=0)
 
     # compute Zij's
     Zij = [None]*k
     for i in range(k):
         Zij[i] = abs(asarray(args[i])-Yci[i])
     # compute Zbari
-    Zbari = zeros(k,'d')
+    Zbari = zeros(k, 'd')
     Zbar = 0.0
     for i in range(k):
         Zbari[i] = np.mean(Zij[i], axis=0)
         Zbar += Zbari[i]*Ni[i]
     Zbar /= Ntot
 
-    numer = (Ntot-k)*sum(Ni*(Zbari-Zbar)**2,axis=0)
+    numer = (Ntot-k) * sum(Ni*(Zbari-Zbar)**2, axis=0)
 
     # compute denom_variance
     dvar = 0.0
     for i in range(k):
-        dvar += sum((Zij[i]-Zbari[i])**2,axis=0)
+        dvar += sum((Zij[i]-Zbari[i])**2, axis=0)
 
     denom = (k-1.0)*dvar
 
     W = numer / denom
-    pval = distributions.f.sf(W,k-1,Ntot-k)  # 1 - cdf
+    pval = distributions.f.sf(W, k-1, Ntot-k)  # 1 - cdf
     return W, pval
 
 
 @setastest(False)
-def binom_test(x,n=None,p=0.5):
+def binom_test(x, n=None, p=0.5):
     """
     Perform a test that the probability of success is p.
 
@@ -1646,21 +1648,23 @@ def binom_test(x,n=None,p=0.5):
     if (p > 1.0) or (p < 0.0):
         raise ValueError("p must be in range [0,1]")
 
-    d = distributions.binom.pmf(x,n,p)
+    d = distributions.binom.pmf(x, n, p)
     rerr = 1+1e-7
     if (x == p*n):
         # special case as shortcut, would also be handled by `else` below
         pval = 1.
     elif (x < p*n):
-        i = np.arange(np.ceil(p*n),n+1)
-        y = np.sum(distributions.binom.pmf(i,n,p) <= d*rerr,axis=0)
-        pval = distributions.binom.cdf(x,n,p) + distributions.binom.sf(n-y,n,p)
+        i = np.arange(np.ceil(p*n), n+1)
+        y = np.sum(distributions.binom.pmf(i, n, p) <= d*rerr, axis=0)
+        pval = (distributions.binom.cdf(x, n, p) +
+                distributions.binom.sf(n-y, n, p))
     else:
         i = np.arange(np.floor(p*n) + 1)
-        y = np.sum(distributions.binom.pmf(i,n,p) <= d*rerr,axis=0)
-        pval = distributions.binom.cdf(y-1,n,p) + distributions.binom.sf(x-1,n,p)
+        y = np.sum(distributions.binom.pmf(i, n, p) <= d*rerr, axis=0)
+        pval = (distributions.binom.cdf(y-1, n, p) +
+                distributions.binom.sf(x-1, n, p))
 
-    return min(1.0,pval)
+    return min(1.0, pval)
 
 
 def _apply_func(x, g, func):
@@ -2207,7 +2211,7 @@ def _hermnorm(N):
     return plist
 
 
-def pdf_fromgamma(g1,g2,g3=0.0,g4=None):
+def pdf_fromgamma(g1, g2, g3=0.0, g4=None):
     if g4 is None:
         g4 = 3*g2*g2
     sigsq = 1.0/g2
