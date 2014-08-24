@@ -2553,7 +2553,6 @@ class TestLegendreFunctions(TestCase):
 
     def test_lqmn(self):
         lqmnf = special.lqmn(0,2,.5)
-        lqmnf = special.lqmn(0,2,.5)
         lqf = special.lqn(2,.5)
         assert_array_almost_equal(lqmnf[0][0],lqf[0],4)
         assert_array_almost_equal(lqmnf[1][0],lqf[1],4)
