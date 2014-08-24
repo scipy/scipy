@@ -3,13 +3,13 @@ python module specfun ! in
     interface  ! in :specfun
         ! cpdsa
         ! cfs
-        subroutine clqmn(mm,m,n,z,cqm,cqd) ! in :specfun:specfun.f
-            callstatement (*f2py_func)(&mm,&m,&n,&(z.r),&(z.i),cqm,cqd)
-            callprotoargument int*,int*,int*,double*,double*,complex_double*,complex_double*
+        subroutine clqmn(mm,m,n,x,y,ntype,cqm,cqd) ! in :specfun:specfun.f
             integer intent(hide),depend(m) :: mm=m
             integer intent(in), check(m>=1) :: m
             integer intent(in), check(n>=1) :: n
-            complex*16 intent(in) :: z
+            double precision intent(in) :: x
+            double precision intent(in) :: y
+            integer intent(in), check(ntype==2||ntype==3) :: ntype
             complex*16 intent(out),dimension(0:mm,0:n),depend(mm,n) :: cqm
             complex*16 intent(out),dimension(0:mm,0:n),depend(mm,n) :: cqd
         end subroutine clqmn
