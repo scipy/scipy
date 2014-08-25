@@ -99,6 +99,19 @@ double ellie(double phi, double m)
         goto done;
     }
  
+    if (lphi < 0.135) {
+        double m11= (((((-7.0/2816.0)*m + (5.0/1056.0))*m - (7.0/2640.0))*m
+                    + (17.0/41580.0))*m - (1.0/155925.0))*m;
+        double m9 = ((((-5.0/1152.0)*m + (1.0/144.0))*m - (1.0/360.0))*m
+                    + (1.0/5670.0))*m;
+        double m7 = ((-m/112.0 + (1.0/84.0))*m - (1.0/315.0))*m;
+        double m5 = (-m/40.0 + (1.0/30))*m;
+        double m3 = -m/6.0;
+        double p2 = lphi * lphi;
+
+        temp = ((((m11*p2 + m9)*p2 + m7)*p2 + m5)*p2 + m3)*p2*lphi + lphi;
+        goto done;
+    }
     t = tan(lphi);
     b = sqrt(a);
     /* Thanks to Brian Fitzgerald <fitzgb@mml0.meche.rpi.edu>
