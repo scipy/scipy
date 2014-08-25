@@ -121,7 +121,7 @@ double x;
 	p = floor(q);
 	if (p == q) {
 	    mtherr("psi", SING);
-	    return (NPY_INFINITY);
+	    return (-NPY_INFINITY);
 	}
 	/* Remove the zeros of tan(NPY_PI x)
 	 * by subtracting the nearest integer from x
