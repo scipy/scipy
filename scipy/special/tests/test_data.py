@@ -122,9 +122,11 @@ def test_boost():
 
         data(ellipk_, 'ellint_k_data_ipp-ellint_k_data', 0, 1),
         data(ellipkinc_, 'ellint_f_data_ipp-ellint_f_data', (0,1), 2, rtol=1e-14),
+        data(ellipkinc, 'ellipkinc_neg_m', (0, 1), 2),
         data(ellipkm1, 'ellipkm1', 0, 1),
         data(ellipe_, 'ellint_e_data_ipp-ellint_e_data', 0, 1),
         data(ellipeinc_, 'ellint_e2_data_ipp-ellint_e2_data', (0,1), 2, rtol=1e-14),
+        data(ellipeinc, 'ellipeinc_neg_m', (0, 1), 2),
 
         data(erf, 'erf_data_ipp-erf_data', 0, 1),
         data(erf, 'erf_data_ipp-erf_data', 0j, 1, rtol=1e-13),
