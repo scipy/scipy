@@ -63,8 +63,8 @@ static double ellie_neg_m(double phi, double m);
 double ellie(double phi, double m)
 {
     double a, b, c, e, temp;
-    double lphi, t, E, denom;
-    int d, mod, npio2, sign;
+    double lphi, t, E, denom, npio2;
+    int d, mod, sign;
 
     if (isnan(phi) || isnan(m))
         return NPY_NAN;
@@ -78,7 +78,7 @@ double ellie(double phi, double m)
 	return (phi);
     lphi = phi;
     npio2 = floor(lphi / NPY_PI_2);
-    if (npio2 & 1)
+    if (fmod(fabs(npio2), 2.0) == 1.0)
 	npio2 += 1;
     lphi = lphi - npio2 * NPY_PI_2;
     if (lphi < 0.0) {

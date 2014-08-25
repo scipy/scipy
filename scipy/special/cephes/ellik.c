@@ -62,8 +62,8 @@ static double ellik_neg_m(double phi, double m);
 
 double ellik(double phi,  double m)
 {
-    double a, b, c, e, temp, t, K, denom;
-    int d, mod, sign, npio2;
+    double a, b, c, e, temp, t, K, denom, npio2;
+    int d, mod, sign;
 
     if (isnan(phi) || isnan(m))
         return NPY_NAN;
@@ -90,9 +90,9 @@ double ellik(double phi,  double m)
        return asinh(tan(phi));
     }
     npio2 = floor(phi / NPY_PI_2);
-    if (npio2 & 1)
+    if (fmod(fabs(npio2), 2.0) == 1.0)
 	npio2 += 1;
-    if (npio2) {
+    if (npio2 != 0.0) {
 	K = ellpk(a);
 	phi = phi - npio2 * NPY_PI_2;
     }

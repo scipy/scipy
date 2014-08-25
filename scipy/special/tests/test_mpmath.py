@@ -986,7 +986,6 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.ellipe,
                             [Arg(-1e3, 1e3), Arg(b=1.0)])
 
-    @knownfailure_overridable("insufficient accuracy from Cephes at large |phi|")
     def test_ellipeinc_largephi(self):
         assert_mpmath_equal(sc.ellipeinc,
                             mpmath.ellipe,
@@ -997,7 +996,6 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.ellipf,
                             [Arg(-1e3, 1e3), Arg()])
 
-    @knownfailure_overridable("insufficient accuracy from Cephes at large |phi|")
     def test_ellipf_largephi(self):
         assert_mpmath_equal(sc.ellipkinc,
                             mpmath.ellipf,
@@ -1019,7 +1017,6 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             ellipkinc,
                             [Arg(-1e3, 1e3), Arg(b=1.0)])
 
-    @knownfailure_overridable("insufficient accuracy from Cephes at large |phi|")
     def test_ellipkinc_largephi(self):
         def ellipkinc(phi, m):
             return mpmath.ellippi(0, phi, m)
