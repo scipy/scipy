@@ -12190,6 +12190,9 @@ C
         ZQ=CDSQRT(LS*(1.0D0-Z*Z))
         ZS=LS*(1.0D0-Z*Z)
         CQ0=0.5D0*CDLOG(LS*(1.0D0+Z)/(1.0D0-Z))
+C       For |z|>1.0001 and NTYPE=3, backward recursion is needed.
+C       For 1<|z|<1.0001 and for NTYPE=2 for all 1<|z|, we can
+C       proceed as for |z|<1.
         IF ((XC.LT.1.0001D0).OR.(NTYPE.EQ.2)) THEN
            CQM(0,0)=CQ0
            CQM(0,1)=Z*CQ0-1.0D0
