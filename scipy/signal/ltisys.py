@@ -118,7 +118,7 @@ def _restore(M, shape):
 
 
 def abcd_normalize(A=None, B=None, C=None, D=None):
-    """Check state-space matrices and ensure they are rank-2.
+    """Check state-space matrices and ensure they are two-dimensional.
 
     If enough information on the system is provided, that is, enough
     properly-shaped arrays are passed to the function, the missing ones
@@ -194,11 +194,8 @@ def ss2tf(A, B, C, D, input=0):
         raise ValueError("System does not have the input specified.")
 
     # make MOSI from possibly MOMI system.
-    if B.shape[-1] != 0:
-        B = B[:, input]
-    B.shape = (B.shape[0], 1)
-    if D.shape[-1] != 0:
-        D = D[:, input]
+    B = B[:, input:input + 1]
+    D = D[:, input:input + 1]
 
     try:
         den = poly(A)
