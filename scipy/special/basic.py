@@ -1086,7 +1086,7 @@ def obl_cv_seq(m,n,c):
 
 def ellipk(m):
     """
-    Computes the complete elliptic integral of the first kind.
+    Complete elliptic integral of the first kind
 
     This function is defined as
 
@@ -1105,6 +1105,14 @@ def ellipk(m):
     Notes
     -----
     For more precision around point m = 1, use `ellipkm1`.
+
+    See Also
+    --------
+    ellipkm1 : Complete elliptic integral of the first kind around m = 1
+    ellipkinc : Incomplete elliptic integral of the first kind
+    ellipe : Complete elliptic integral of the second kind
+    ellipeinc : Incomplete elliptic integral of the second kind
+ 
 
     """
     return ellipkm1(1 - asarray(m))

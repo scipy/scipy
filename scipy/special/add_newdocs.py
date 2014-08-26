@@ -523,20 +523,57 @@ add_newdoc("scipy.special", "ellipe",
 
     Complete elliptic integral of the second kind
 
-    ::
+    This function is defined as
 
-        integral(sqrt(1-m*sin(t)**2),t=0..pi/2)
+    .. math:: E(m) = \\int_0^{\\pi/2} [1 - m \\sin(t)^2]^{1/2} dt
+
+    Parameters
+    ----------
+    m : array_like
+        Defines the parameter of the elliptic integral.
+
+    Returns
+    -------
+    E : ndarray
+        Value of the elliptic integral.
+
+    See Also
+    --------
+    ellipkm1 : Complete elliptic integral of the first kind, near  m = 1
+    ellipk : Complete elliptic integral of the first kind
+    ellipkinc : Incomplete elliptic integral of the first kind
+    ellipeinc : Incomplete elliptic integral of the second kind
     """)
 
 add_newdoc("scipy.special", "ellipeinc",
     """
-    ellipeinc(phi,m)
+    ellipeinc(phi, m)
 
     Incomplete elliptic integral of the second kind
 
-    ::
+    This function is defined as
 
-        integral(sqrt(1-m*sin(t)**2),t=0..phi)
+    .. math:: E(\\phi, m) = \\int_0^{\\phi} [1 - m \\sin(t)^2]^{1/2} dt
+
+    Parameters
+    ----------
+    phi : array_like
+        amplitude of the elliptic integral.
+
+    m : array_like
+        parameter of the elliptic integral.
+
+    Returns
+    -------
+    E : ndarray
+        Value of the elliptic integral.
+
+    See Also
+    --------
+    ellipkm1 : Complete elliptic integral of the first kind, near m = 1
+    ellipk : Complete elliptic integral of the first kind
+    ellipkinc : Incomplete elliptic integral of the first kind
+    ellipe : Complete elliptic integral of the second kind
     """)
 
 add_newdoc("scipy.special", "ellipj",
@@ -569,7 +606,7 @@ add_newdoc("scipy.special", "ellipkm1",
     """
     ellipkm1(p)
 
-    The complete elliptic integral of the first kind around m=1.
+    Complete elliptic integral of the first kind around m = 1
 
     This function is defined as
 
@@ -584,13 +621,15 @@ add_newdoc("scipy.special", "ellipkm1",
 
     Returns
     -------
-    K : array_like
+    K : ndarray
         Value of the elliptic integral.
 
     See Also
     --------
-    ellipk
-
+    ellipk : Complete elliptic integral of the first kind
+    ellipkinc : Incomplete elliptic integral of the first kind
+    ellipe : Complete elliptic integral of the second kind
+    ellipeinc : Incomplete elliptic integral of the second kind
     """)
 
 add_newdoc("scipy.special", "ellipkinc",
@@ -599,9 +638,34 @@ add_newdoc("scipy.special", "ellipkinc",
 
     Incomplete elliptic integral of the first kind
 
-    ::
+    This function is defined as
 
-        integral(1/sqrt(1-m*sin(t)**2),t=0..phi)
+    .. math:: K(\\phi, m) = \\int_0^{\\phi} [1 - m \\sin(t)^2]^{-1/2} dt
+
+    Parameters
+    ----------
+    phi : array_like
+        amplitude of the elliptic integral
+
+    m : array_like
+        parameter of the elliptic integral
+
+    Returns
+    -------
+    K : ndarray
+        Value of the elliptic integral
+
+    Notes
+    -----
+    This function is also called ``F(phi, m)``.
+
+    See Also
+    --------
+    ellipkm1 : Complete elliptic integral of the first kind, near  m = 1
+    ellipk : Complete elliptic integral of the first kind
+    ellipe : Complete elliptic integral of the second kind
+    ellipeinc : Incomplete elliptic integral of the second kind
+
     """)
 
 add_newdoc("scipy.special", "erf",
