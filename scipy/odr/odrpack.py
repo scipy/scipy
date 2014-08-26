@@ -282,7 +282,7 @@ class RealData(Data):
     sx, sy : array_like, optional
         Standard deviations of `x`.
         `sx` are standard deviations of `x` and are converted to weights by
-         dividing 1.0 by their squares.
+        dividing 1.0 by their squares.
     sy : array_like, optional
         Standard deviations of `y`.
         `sy` are standard deviations of `y` and are converted to weights by

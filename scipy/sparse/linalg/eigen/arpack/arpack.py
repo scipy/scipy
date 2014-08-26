@@ -1072,7 +1072,9 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     M : ndarray, sparse matrix or LinearOperator, optional
         An array, sparse matrix, or LinearOperator representing
         the operation M*x for the generalized eigenvalue problem
-          ``A * x = w * M * x``.
+
+            A * x = w * M * x.
+
         M must represent a real, symmetric matrix if A is real, and must
         represent a complex, hermitian matrix if A is complex. For best
         results, the data type of M should be the same as that of A.
@@ -1316,7 +1318,9 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     ----------------
     M : An N x N matrix, array, sparse matrix, or linear operator representing
         the operation M * x for the generalized eigenvalue problem
-          ``A * x = w * M * x``.
+
+            A * x = w * M * x.
+
         M must represent a real, symmetric matrix if A is real, and must
         represent a complex, hermitian matrix if A is complex. For best
         results, the data type of M should be the same as that of A.
