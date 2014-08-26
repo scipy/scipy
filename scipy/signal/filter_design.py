@@ -49,6 +49,7 @@ def findfreqs(num, den, N):
     --------
     Find a set of nine frequencies that span the "interesting part" of the
     frequency response for the filter with the transfer function
+
         H(s) = s / (s^2 + 8s + 25)
 
     >>> findfreqs([1, 0], [1, 8, 25], N=9)

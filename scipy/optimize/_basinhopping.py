@@ -325,6 +325,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     minimizer_kwargs : dict, optional
         Extra keyword arguments to be passed to the minimizer
         ``scipy.optimize.minimize()`` Some important options could be:
+
             method : str
                 The minimization method (e.g. ``"L-BFGS-B"``)
             args : tuple
