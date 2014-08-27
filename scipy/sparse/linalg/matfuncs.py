@@ -18,6 +18,7 @@ from numpy import asarray, dot, eye, ceil, log2
 import numpy as np
 
 import scipy.misc
+from scipy.lib._numpy_compat import count_nonzero as _np_count_nonzero
 from scipy.linalg.misc import norm
 from scipy.linalg.basic import solve, solve_triangular, inv
 
@@ -120,7 +121,7 @@ def _count_nonzero(A):
     if isspmatrix(A):
         return np.sum(A.toarray() != 0)
     else:
-        return np.sum(A != 0)
+        return _np_count_nonzero(A)
 
 
 def _is_upper_triangular(A):
