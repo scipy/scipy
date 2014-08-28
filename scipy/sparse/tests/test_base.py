@@ -333,7 +333,8 @@ class _TestCommon:
             assert_array_equal((datsp < 0).todense(), dat < 0)
             assert_array_equal((datsp < -1).todense(), dat < -1)
             assert_array_equal((datsp < -2).todense(), dat < -2)
-            assert_array_equal((datsp < np.nan).todense(), dat < np.nan)
+            with np.errstate(invalid='ignore'):
+                assert_array_equal((datsp < np.nan).todense(), dat < np.nan)
 
             assert_array_equal((2 < datsp).todense(), 2 < dat)
             assert_array_equal((1 < datsp).todense(), 1 < dat)
@@ -398,7 +399,8 @@ class _TestCommon:
             assert_array_equal((datsp > 0).todense(), dat > 0)
             assert_array_equal((datsp > -1).todense(), dat > -1)
             assert_array_equal((datsp > -2).todense(), dat > -2)
-            assert_array_equal((datsp > np.nan).todense(), dat > np.nan)
+            with np.errstate(invalid='ignore'):
+                assert_array_equal((datsp > np.nan).todense(), dat > np.nan)
 
             assert_array_equal((2 > datsp).todense(), 2 > dat)
             assert_array_equal((1 > datsp).todense(), 1 > dat)
