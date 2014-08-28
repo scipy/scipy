@@ -29,7 +29,7 @@ useful in multiple scientific domains and it fits in the scope of existing
 scipy submodules.  In principle new submodules can be added too, but this is
 far less common.  For code that is specific to a single application, there may
 be an existing project that can use the code.  Some scikits (`scikit-learn`_,
-`scikits-image`_, `statsmodels`_, etc.) are good examples here; they have a
+`scikit-image`_, `statsmodels`_, etc.) are good examples here; they have a
 narrower focus and because of that more domain-specific code than SciPy.
 
 Now if you have code that you would like to see included in SciPy, how do you
@@ -412,7 +412,7 @@ suite.
 
 .. _scikit-learn: http://scikit-learn.org
 
-.. _scikits-image: http://scikits-image.org/
+.. _scikit-image: http://scikit-image.org/
 
 .. _statsmodels: http://statsmodels.sourceforge.net/
 
