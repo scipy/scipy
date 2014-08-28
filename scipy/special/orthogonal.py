@@ -86,7 +86,6 @@ from __future__ import division, print_function, absolute_import
 # Scipy imports.
 import numpy as np
 from numpy import all, any, exp, inf, pi, sqrt
-from numpy.dual import eig
 from scipy import linalg
 
 # Local imports.
@@ -150,7 +149,7 @@ class orthopoly1d(np.poly1d):
         self.__dict__['normcoef'] *= p
 
 
-def gen_roots_and_weights(n, an_func, sqrt_bn_func, mu):
+def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
     """[x,w] = gen_roots_and_weights(n,an_func,sqrt_bn_func,mu)
 
     Returns the roots (x) of an nth order orthogonal polynomial,
@@ -165,55 +164,98 @@ def gen_roots_and_weights(n, an_func, sqrt_bn_func, mu):
     mu ( = h_0 )        is the integral of the weight over the orthogonal
                         interval
     """
-    nn = np.arange(1.0, n)
-    sqrt_bn = sqrt_bn_func(nn)
-    an = an_func(np.concatenate(([0], nn)))
-    x, v = eig((np.diagflat(an) +
-                np.diagflat(sqrt_bn, 1) +
-                np.diagflat(sqrt_bn, -1)))
-    answer = []
-    sortind = x.real.argsort()
-    answer.append(x[sortind])
-    answer.append((mu * v[0]**2)[sortind])
-    return answer
+    k = np.arange(n, dtype='d')
+    c = np.zeros((2, n))
+    c[0,1:] = bn_func(k[1:])
+    c[1,:] = an_func(k)
+    x = linalg.eigvals_banded(c, overwrite_a_band=True)
+
+    # improve roots by one application of Newton's method
+    y = f(n, x)
+    dy = df(n, x)
+    x -= y/dy
+
+    fm = f(n-1, x) 
+    fm /= np.abs(fm).max()
+    dy /= np.abs(dy).max()
+    w = 1.0 / (fm * dy)
+
+    if symmetrize:
+        w = (w + w[::-1]) / 2
+        x = (x - x[::-1]) / 2
+
+    w *= mu0 / w.sum()
+
+    if mu:
+        return x, w, mu0
+    else:
+        return x, w
 
 # Jacobi Polynomials 1               P^(alpha,beta)_n(x)
 
 
 def j_roots(n, alpha, beta, mu=False):
-    """[x,w] = j_roots(n,alpha,beta)
+    """Gauss-Jacobi quadrature
 
-    Returns the roots (x) of the nth order Jacobi polynomial,
-    P^(alpha,beta)_n(x) and weights (w) to use in Gaussian Quadrature over
-    [-1,1] with weighting function (1-x)**alpha (1+x)**beta with
-    alpha, beta > -1.
+    Computes the sample points and weights for Gauss-Jacobi quadrature. The
+    sample points are the roots of the `n`th degree Jacobi polynomial,
+    :math:`P^{\\alpha, \\beta}_n(x)`.  These sample points and weights
+    correctly integrate polynomials of degree :math:`2*n - 1` or less over the
+    interval :math:`[-1, 1]` with weight function
+    :math:`f(x) = (1 - x)^{\\alpha} (1 + x)^{\\beta}`.
+
+    Parameters
+    ----------
+    n : int
+        quadrature order 
+    alpha : float
+        alpha must be > -1
+    beta : float
+        beta must be > 0
+    mu : boolean
+        If True, return the sum of the weights, optional.
+
+    Returns
+    -------
+    x : ndarray
+        Sample points
+    w : ndarray
+        Weights
+    mu : float
+        Sum of the weights
+
+    See Also
+    --------
+    integrate.quadrature
+    integrate.fixed_quad
     """
-    if any(alpha <= -1) or any(beta <= -1):
+    m = int(n)
+    if n < 1 or n != m:
+        raise ValueError("n must be a positive integer.")
+    if alpha <= -1 or beta <= -1:
         raise ValueError("alpha and beta must be greater than -1.")
-    if n < 1:
-        raise ValueError("n must be positive.")
 
-    olderr = np.seterr(all='ignore')
-    try:
-        (p, q) = (alpha, beta)
-        # from recurrence relations
-        sbn_J = lambda k: 2.0/(2.0*k+p+q)*sqrt((k+p)*(k+q)/(2*k+q+p+1)) * \
-                    (np.where(k == 1, 1.0, sqrt(k*(k+p+q)/(2.0*k+p+q-1))))
-        if any(p == q):  # XXX any or all???
-            an_J = lambda k: 0.0 * k
-        else:
-            an_J = lambda k: np.where(k == 0, (q - p) / (p + q + 2.0),
-                                   (q*q - p*p)/((2.0*k+p+q)*(2.0*k+p+q+2)))
-        g = cephes.gamma
-        mu0 = 2.0**(p + q + 1) * g(p + 1) * g(q + 1) / (g(p + q + 2))
-        val = gen_roots_and_weights(n, an_J, sbn_J, mu0)
-    finally:
-        np.seterr(**olderr)
+    if alpha == 0.0 and beta == 0.0:
+        return p_roots(m, mu)
+    if alpha == beta:
+        return cg_roots(m, alpha+0.5, mu)
 
-    if mu:
-        return val + [mu0]
+    mu0 = 2.0**(alpha+beta+1)*cephes.beta(alpha+1, beta+1)
+    a = alpha
+    b = beta
+    if a + b == 0.0:
+        an_func = lambda k: np.where(k == 0, (b-a)/(2+a+b), 0.0)
     else:
-        return val
+        an_func = lambda k: np.where(k == 0, (b-a)/(2+a+b),
+                  (b*b - a*a) / ((2.0*k+a+b)*(2.0*k+a+b+2)))
+
+    bn_func = lambda k: 2.0 / (2.0*k+a+b)*np.sqrt((k+a)*(k+b) / (2*k+a+b+1)) \
+              * np.where(k == 1, 1.0, np.sqrt(k*(k+a+b) / (2.0*k+a+b-1)))
+
+    f = lambda n, x: cephes.eval_jacobi(n, a, b, x)
+    df = lambda n, x: 0.5 * (n + a + b + 1) \
+                      * cephes.eval_jacobi(n-1, a+1, b+1, x)
+    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, False, mu)
 
 
 def jacobi(n, alpha, beta, monic=False):
@@ -242,43 +284,44 @@ def jacobi(n, alpha, beta, monic=False):
 
 
 def js_roots(n, p1, q1, mu=False):
-    """[x,w] = js_roots(n,p,q)
+    """Gauss-Jacobi (shifted) quadrature
 
-    Returns the roots (x) of the nth order shifted Jacobi polynomial,
-    G_n(p,q,x), and weights (w) to use in Gaussian Quadrature over [0,1] with
-    weighting function (1-x)**(p-q) x**(q-1) with p-q > -1 and q > 0.
+    Computes the sample points and weights for Gauss-Jacobi (shifted)
+    quadrature. The sample points are the roots of the `n`th degree shifted
+    Jacobi polynomial, :math:`G^{p,q}_n(x)`.  These sample points and weights
+    correctly integrate polynomials of degree :math:`2*n - 1` or less over the
+    interval :math:`[0, 1]` with weight function
+    :math:`f(x) = (1 - x)^{p-q} x^{q-1}`
+
+    Parameters
+    ----------
+    n : int
+        quadrature order 
+    p1 : float
+        (p1 - q1) must be > -1
+    q1 : float
+        q1 must be > 0
+    mu : boolean
+        If True, return the sum of the weights, optional.
+
+    Returns
+    -------
+    x : ndarray
+        Sample points
+    w : ndarray
+        Weights
+    mu : float
+        Sum of the weights
+        
+    See Also
+    --------
+    integrate.quadrature
+    integrate.fixed_quad
     """
-    # from recurrence relation
-    if not (any((p1 - q1) > -1) and any(q1 > 0)):
-        raise ValueError("(p - q) > -1 and q > 0 please.")
-    if n <= 0:
-        raise ValueError("n must be positive.")
-
-    p, q = p1, q1
-
-    sbn_Js = lambda k: sqrt(np.where(k == 1, q * (p - q + 1.0) / (p + 2.0),
-                                  k*(k+q-1.0)*(k+p-1.0)*(k+p-q)
-                                  / ((2.0*k+p-2) * (2.0*k+p))))/(2*k+p-1.0)
-    an_Js = lambda k: np.where(k == 0, q/(p+1.0), (2.0*k*(k+p)+q*(p-1.0)) / ((2.0*k+p+1.0)*(2*k+p-1.0)))
-
-    # could also use definition
-    #  Gn(p,q,x) = constant_n * P^(p-q,q-1)_n(2x-1)
-    #  so roots of Gn(p,q,x) are (roots of P^(p-q,q-1)_n + 1) / 2.0
-    g = _gam
-    # integral of weight over interval
-    mu0 = g(q) * g(p - q + 1) / g(p + 1)
-    val = gen_roots_and_weights(n, an_Js, sbn_Js, mu0)
-    if mu:
-        return val + [mu0]
-    else:
-        return val
-    # What code would look like using jacobi polynomial roots
-    #if mu:
-    #    [x,w,mut] = j_roots(n,p-q,q-1,mu=True)
-    #    return [(x+1)/2.0,w,mu0]
-    #else:
-    #    [x,w] = j_roots(n,p-q,q-1,mu=0)
-    #    return [(x+1)/2.0,w]
+    if (p1-q1) <= -1 or q1 <= 0:
+        raise ValueError("(p - q) must be greater than -1, and q must be greater than 0.")
+    xw = j_roots(n, p1-q1, q1-1, mu)
+    return ((xw[0] + 1) / 2,) + xw[1:]
 
 
 def sh_jacobi(n, p, q, monic=False):
@@ -307,26 +350,60 @@ def sh_jacobi(n, p, q, monic=False):
 
 
 def la_roots(n, alpha, mu=False):
-    """[x,w] = la_roots(n,alpha)
+    """Gauss-generalized Laguerre quadrature
 
-    Returns the roots (x) of the nth order generalized (associated) Laguerre
-    polynomial, L^(alpha)_n(x), and weights (w) to use in Gaussian quadrature
-    over [0,inf] with weighting function exp(-x) x**alpha with alpha > -1.
+    Computes the sample points and weights for Gauss-generalized Laguerre
+    quadrature. The sample points are the roots of the `n`th degree generalized
+    Laguerre polynomial, :math:`L^{\\alpha}_n(x)`.  These sample points and
+    weights correctly integrate polynomials of degree :math:`2*n - 1` or less
+    over the interval :math:`[0, inf]` with weight function
+    :math:`f(x) = x^{\\alpha} e^{-x}`.
+
+    Parameters
+    ----------
+    n : int
+        quadrature order 
+    alpha : float
+        alpha must be > -1
+    mu : boolean
+        If True, return the sum of the weights, optional.
+
+    Returns
+    -------
+    x : ndarray
+        Sample points
+    w : ndarray
+        Weights
+    mu : float
+        Sum of the weights
+        
+    See Also
+    --------
+    integrate.quadrature
+    integrate.fixed_quad
     """
-    if not all(alpha > -1):
-        raise ValueError("alpha > -1")
-    if n < 1:
-        raise ValueError("n must be positive.")
+    m = int(n)
+    if n < 1 or n != m:
+        raise ValueError("n must be a positive integer.")
+    if alpha < -1:
+        raise ValueError("alpha must be greater than -1.")
 
-    (p, q) = (alpha, 0.0)
-    sbn_La = lambda k: -sqrt(k * (k + p))  # from recurrence relation
-    an_La = lambda k: 2 * k + p + 1
-    mu0 = cephes.gamma(alpha + 1)           # integral of weight over interval
-    val = gen_roots_and_weights(n, an_La, sbn_La, mu0)
-    if mu:
-        return val + [mu0]
-    else:
-        return val
+    mu0 = cephes.gamma(alpha + 1)
+
+    if m == 1:
+        x = np.array([alpha+1.0], 'd')
+        w = np.array([mu0], 'd')
+        if mu:
+            return x, w, mu0
+        else:
+            return x, w
+
+    an_func = lambda k: 2 * k + alpha + 1
+    bn_func = lambda k: -np.sqrt(k * (k + alpha))
+    f = lambda n, x: cephes.eval_genlaguerre(n, alpha, x)
+    df = lambda n, x: (n*cephes.eval_genlaguerre(n, alpha, x)
+                     - (n + alpha)*cephes.eval_genlaguerre(n-1, alpha, x))/x
+    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, False, mu)
 
 
 def genlaguerre(n, alpha, monic=False):
@@ -357,11 +434,35 @@ def genlaguerre(n, alpha, monic=False):
 
 
 def l_roots(n, mu=False):
-    """[x,w] = l_roots(n)
+    """Gauss-Laguerre quadrature
 
-    Returns the roots (x) of the nth order Laguerre polynomial, L_n(x),
-    and weights (w) to use in Gaussian Quadrature over [0,inf] with weighting
-    function exp(-x).
+    Computes the sample points and weights for Gauss-Laguerre quadrature.
+    The sample points are the roots of the `n`th degree Laguerre polynomial,
+    :math:`L_n(x)`.  These sample points and weights correctly integrate
+    polynomials of degree :math:`2*n - 1` or less over the interval
+    :math:`[0, inf]` with weight function :math:`f(x) = e^{-x}`.
+
+    Parameters
+    ----------
+    n : int
+        quadrature order 
+    mu : boolean
+        If True, return the sum of the weights, optional.
+
+    Returns
+    -------
+    x : ndarray
+        Sample points
+    w : ndarray
+        Weights
+    mu : float
+        Sum of the weights
+
+    See Also
+    --------
+    integrate.quadrature
+    integrate.fixed_quad
+    numpy.polynomial.laguerre.laggauss
     """
     return la_roots(n, 0.0, mu=mu)
 
@@ -388,46 +489,48 @@ def laguerre(n, monic=False):
 
 
 # Hermite  1                         H_n(x)
-def _h_gen_roots_and_weights(n, mu, factor, func):
-    """Compute the roots and weights for Gaussian-Hermite quadrature.
-    Internal function.
-    """
-    if n < 1:
-        raise ValueError("n must be positive.")
-
-    bn = np.sqrt(np.arange(1, n, dtype=np.float64) / factor)
-    c = np.diag(bn, -1)
-    x = linalg.eigvalsh(c, overwrite_a=True)
-
-    # improve roots by one application of Newton's method
-    dy = func(n, x)
-    df = factor * n * func(n - 1, x)
-    x -= dy / df
-
-    df /= df.max()
-    w = 1 / (df * df)
-
-    # symmetrize
-    w = (w + w[::-1]) / 2
-    x = (x - x[::-1]) / 2
-
-    # scale w correctly
-    w *= np.sqrt(2.0 * np.pi / factor) / w.sum()
-
-    if mu:
-        return [x, w, mu]
-    else:
-        return x, w
-
 
 def h_roots(n, mu=False):
-    """[x,w] = h_roots(n)
+    """Gauss-Hermite (physicst's) quadrature
 
-    Returns the roots (x) of the nth order Hermite polynomial,
-    H_n(x), and weights (w) to use in Gaussian Quadrature over
-    [-inf,inf] with weighting function exp(-x**2).
+    Computes the sample points and weights for Gauss-Hermite quadrature.
+    The sample points are the roots of the `n`th degree Hermite polynomial,
+    :math:`H_n(x)`.  These sample points and weights correctly integrate
+    polynomials of degree :math:`2*n - 1` or less over the interval
+    :math:`[-inf, inf]` with weight function :math:`f(x) = e^{-x^2}`.
+
+    Parameters
+    ----------
+    n : int
+        quadrature order 
+    mu : boolean
+        If True, return the sum of the weights, optional.
+
+    Returns
+    -------
+    x : ndarray
+        Sample points
+    w : ndarray
+        Weights
+    mu : float
+        Sum of the weights
+        
+    See Also
+    --------
+    integrate.quadrature
+    integrate.fixed_quad
+    numpy.polynomial.hermite.hermgauss
     """
-    return _h_gen_roots_and_weights(n, mu, 2.0, cephes.eval_hermite)
+    m = int(n)
+    if n < 1 or n != m:
+        raise ValueError("n must be a positive integer.")
+
+    mu0 = np.sqrt(np.pi)
+    an_func = lambda k: 0.0*k
+    bn_func = lambda k: np.sqrt(k/2.0)
+    f = cephes.eval_hermite
+    df = lambda n, x: 2.0 * n * cephes.eval_hermite(n-1, x)
+    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
 
 
 def hermite(n, monic=False):
@@ -455,13 +558,46 @@ def hermite(n, monic=False):
 
 
 def he_roots(n, mu=False):
-    """[x,w] = he_roots(n)
+    """Gauss-Hermite (statistician's) quadrature
 
-    Returns the roots (x) of the nth order Hermite polynomial,
-    He_n(x), and weights (w) to use in Gaussian Quadrature over
-    [-inf,inf] with weighting function exp(-(x/2)**2).
+    Computes the sample points and weights for Gauss-Hermite quadrature.
+    The sample points are the roots of the `n`th degree Hermite polynomial,
+    :math:`He_n(x)`.  These sample points and weights correctly integrate
+    polynomials of degree :math:`2*n - 1` or less over the interval
+    :math:`[-inf, inf]` with weight function :math:`f(x) = e^{-(x/2)^2}`.
+
+    Parameters
+    ----------
+    n : int
+        quadrature order 
+    mu : boolean
+        If True, return the sum of the weights, optional.
+
+    Returns
+    -------
+    x : ndarray
+        Sample points
+    w : ndarray
+        Weights
+    mu : float
+        Sum of the weights
+        
+    See Also
+    --------
+    integrate.quadrature
+    integrate.fixed_quad
+    numpy.polynomial.hermite_e.hermegauss
     """
-    return _h_gen_roots_and_weights(n, mu, 1.0, cephes.eval_hermitenorm)
+    m = int(n)
+    if n < 1 or n != m:
+        raise ValueError("n must be a positive integer.")
+
+    mu0 = np.sqrt(np.pi/2.0)
+    an_func = lambda k: 0.0*k
+    bn_func = lambda k: np.sqrt(k)
+    f = cephes.eval_hermitenorm
+    df = lambda n, x: n * cephes.eval_hermitenorm(n-1, x)
+    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
 
 
 def hermitenorm(n, monic=False):
@@ -491,13 +627,57 @@ def hermitenorm(n, monic=False):
 
 
 def cg_roots(n, alpha, mu=False):
-    """[x,w] = cg_roots(n,alpha)
+    """Gauss-Gegenbauer quadrature
 
-    Returns the roots (x) of the nth order Ultraspherical (Gegenbauer)
-    polynomial, C^(alpha)_n(x), and weights (w) to use in Gaussian Quadrature
-    over [-1,1] with weighting function (1-x**2)**(alpha-1/2) with alpha>-1/2.
+    Computes the sample points and weights for Gauss-Gegenbauer quadrature.
+    The sample points are the roots of the `n`th degree Gegenbauer polynomial,
+    :math:`C^{\\alpha}_n(x)`.  These sample points and weights correctly
+    integrate polynomials of degree :math:`2*n - 1` or less over the interval
+    :math:`[-1, 1]` with weight function :math:`f(x) = (1-x^2)^{\\alpha-1/2}`.
+
+    Parameters
+    ----------
+    n : int
+        quadrature order 
+    alpha : float
+        alpha must be > -0.5
+    mu : boolean
+        If True, return the sum of the weights, optional.
+
+    Returns
+    -------
+    x : ndarray
+        Sample points
+    w : ndarray
+        Weights
+    mu : float
+        Sum of the weights
+        
+    See Also
+    --------
+    integrate.quadrature
+    integrate.fixed_quad
     """
-    return j_roots(n, alpha - 0.5, alpha - 0.5, mu=mu)
+    m = int(n)
+    if n < 1 or n != m:
+        raise ValueError("n must be a positive integer.")
+    if alpha < -0.5:
+        raise ValueError("alpha must be greater than -0.5.")
+    elif alpha == 0.0:
+        # C(n,0,x) == 0 uniformly, however, as alpha->0, C(n,alpha,x)->T(n,x)
+        # strictly, we should just error out here, since the roots are not
+        # really defined, but we used to return something useful, so let's 
+        # keep doing so.
+        return t_roots(n, mu)
+
+    mu0 = np.sqrt(np.pi) * cephes.gamma(alpha + 0.5) / cephes.gamma(alpha + 1)
+    an_func = lambda k: 0.0 * k
+    bn_func = lambda k: np.sqrt(k * (k + 2 * alpha - 1)
+                        / (4 * (k + alpha) * (k + alpha - 1)))
+    f = lambda n, x: cephes.eval_gegenbauer(n, alpha, x)
+    df = lambda n, x: (-n*x*cephes.eval_gegenbauer(n, alpha, x)
+         + (n + 2*alpha - 1)*cephes.eval_gegenbauer(n-1, alpha, x))/(1-x**2)
+    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
 
 
 def gegenbauer(n, alpha, monic=False):
@@ -521,25 +701,46 @@ def gegenbauer(n, alpha, monic=False):
 
 
 def t_roots(n, mu=False):
-    """[x,w] = t_roots(n)
+    """Gauss-Chebyshev (first kind) quadrature
 
-    Returns the roots (x) of the nth order Chebyshev (of the first kind)
-    polynomial, T_n(x), and weights (w) to use in Gaussian Quadrature
-    over [-1,1] with weighting function (1-x**2)**(-1/2).
+    Computes the sample points and weights for Gauss-Chebyshev quadrature.
+    The sample points are the roots of the `n`th degree Chebyshev polynomial of
+    the first kind, :math:`T_n(x)`.  These sample points and weights correctly
+    integrate polynomials of degree :math:`2*n - 1` or less over the interval
+    :math:`[-1, 1]` with weight function :math:`f(x) = 1/\sqrt{1 - x^2}`.
+
+    Parameters
+    ----------
+    n : int
+        quadrature order 
+    mu : boolean
+        If True, return the sum of the weights, optional.
+
+    Returns
+    -------
+    x : ndarray
+        Sample points
+    w : ndarray
+        Weights
+    mu : float
+        Sum of the weights
+        
+    See Also
+    --------
+    integrate.quadrature
+    integrate.fixed_quad
+    numpy.polynomial.chebyshev.chebgauss
     """
-    if n < 1:
-        raise ValueError("n must be positive.")
-
-    # from recurrence relation
-    sbn_J = lambda k: np.where(k == 1, sqrt(2) / 2.0, 0.5)
-    an_J = lambda k: 0.0 * k
-    g = cephes.gamma
-    mu0 = pi
-    val = gen_roots_and_weights(n, an_J, sbn_J, mu0)
+    m = int(n)
+    if n < 1 or n != m:
+        raise ValueError('n must be a positive integer.')
+    x = np.cos(np.arange(2 * m - 1, 0, -2) * pi / (2 * m))
+    w = np.empty_like(x)
+    w.fill(pi/m)
     if mu:
-        return val + [mu0]
+        return x, w, pi
     else:
-        return val
+        return x, w
 
 
 def chebyt(n, monic=False):
@@ -566,13 +767,45 @@ def chebyt(n, monic=False):
 
 
 def u_roots(n, mu=False):
-    """[x,w] = u_roots(n)
+    """Gauss-Chebyshev (second kind) quadrature
 
-    Returns the roots (x) of the nth order Chebyshev (of the second kind)
-    polynomial, U_n(x), and weights (w) to use in Gaussian Quadrature
-    over [-1,1] with weighting function (1-x**2)**1/2.
+    Computes the sample points and weights for Gauss-Chebyshev quadrature.
+    The sample points are the roots of the `n`th degree Chebyshev polynomial of
+    the second kind, :math:`U_n(x)`.  These sample points and weights correctly
+    integrate polynomials of degree :math:`2*n - 1` or less over the interval
+    :math:`[-1, 1]` with weight function :math:`f(x) = \sqrt{1 - x^2}`.
+
+    Parameters
+    ----------
+    n : int
+        quadrature order 
+    mu : boolean
+        If True, return the sum of the weights, optional.
+
+    Returns
+    -------
+    x : ndarray
+        Sample points 
+    w : ndarray
+        Weights
+    mu : float
+        Sum of the weights
+
+    See Also
+    --------
+    integrate.quadrature
+    integrate.fixed_quad
     """
-    return j_roots(n, 0.5, 0.5, mu=mu)
+    m = int(n)
+    if n < 1 or n != m:
+        raise ValueError('n must be a positive integer.')
+    t = np.arange(m, 0, -1) * pi / (m + 1)
+    x = np.cos(t)
+    w = pi * np.sin(t)**2 / (m + 1)
+    if mu:
+        return x, w, pi / 2
+    else:
+        return x, w
 
 
 def chebyu(n, monic=False):
@@ -590,18 +823,37 @@ def chebyu(n, monic=False):
 
 
 def c_roots(n, mu=False):
-    """[x,w] = c_roots(n)
+    """Gauss-Chebyshev (first kind) quadrature
 
-    Returns the roots (x) of the nth order Chebyshev (of the first kind)
-    polynomial, C_n(x), and weights (w) to use in Gaussian Quadrature
-    over [-2,2] with weighting function (1-(x/2)**2)**(-1/2).
+    Computes the sample points and weights for Gauss-Chebyshev quadrature.
+    The sample points are the roots of the `n`th degree Chebyshev polynomial of
+    the first kind, :math:`C_n(x)`.  These sample points and weights correctly
+    integrate polynomials of degree :math:`2*n - 1` or less over the interval
+    :math:`[-2, 2]` with weight function :math:`f(x) = 1/\sqrt{1 - (x/2)^2}`.
+
+    Parameters
+    ----------
+    n : int
+        quadrature order 
+    mu : boolean
+        If True, return the sum of the weights, optional.
+
+    Returns
+    -------
+    x : ndarray
+        Sample points 
+    w : ndarray
+        Weights
+    mu : float
+        Sum of the weights
+
+    See Also
+    --------
+    integrate.quadrature
+    integrate.fixed_quad
     """
-    if mu:
-        [x, w, mu0] = j_roots(n, -0.5, -0.5, mu=True)
-        return [x * 2, w, mu0]
-    else:
-        [x, w] = j_roots(n, -0.5, -0.5, mu=False)
-        return [x * 2, w]
+    xw = t_roots(n, mu)
+    return (2 * xw[0],) + xw[1:]
 
 
 def chebyc(n, monic=False):
@@ -632,18 +884,37 @@ def chebyc(n, monic=False):
 
 
 def s_roots(n, mu=False):
-    """[x,w] = s_roots(n)
+    """Gauss-Chebyshev (second kind) quadrature
 
-    Returns the roots (x) of the nth order Chebyshev (of the second kind)
-    polynomial, S_n(x), and weights (w) to use in Gaussian Quadrature
-    over [-2,2] with weighting function (1-(x/2)**2)**1/2.
+    Computes the sample points and weights for Gauss-Chebyshev quadrature.
+    The sample points are the roots of the `n`th degree Chebyshev polynomial of
+    the second kind, :math:`S_n(x)`.  These sample points and weights correctly
+    integrate polynomials of degree :math:`2*n - 1` or less over the interval
+    :math:`[-2, 2]` with weight function :math:`f(x) = \sqrt{1 - (x/2)^2}`.
+
+    Parameters
+    ----------
+    n : int
+        quadrature order 
+    mu : boolean
+        If True, return the sum of the weights, optional.
+
+    Returns
+    -------
+    x : ndarray
+        Sample points 
+    w : ndarray
+        Weights
+    mu : float
+        Sum of the weights
+
+    See Also
+    --------
+    integrate.quadrature
+    integrate.fixed_quad
     """
-    if mu:
-        [x, w, mu0] = j_roots(n, 0.5, 0.5, mu=True)
-        return [x * 2, w, mu0]
-    else:
-        [x, w] = j_roots(n, 0.5, 0.5, mu=False)
-        return [x * 2, w]
+    xw = u_roots(n, mu)
+    return (2 * xw[0],) + xw[1:]
 
 
 def chebys(n, monic=False):
@@ -675,13 +946,38 @@ def chebys(n, monic=False):
 
 
 def ts_roots(n, mu=False):
-    """[x,w] = ts_roots(n)
+    """Gauss-Chebyshev (first kind, shifted) quadrature
 
-    Returns the roots (x) of the nth order shifted Chebyshev (of the first
-    kind) polynomial, T^*_n(x), and weights (w) to use in Gaussian Quadrature
-    over [0,1] with weighting function (x-x**2)**(-1/2).
+    Computes the sample points and weights for Gauss-Chebyshev quadrature.
+    The sample points are the roots of the `n`th degree shifted Chebyshev
+    polynomial of the first kind, :math:`T_n(x)`.  These sample points and
+    weights correctly integrate polynomials of degree :math:`2*n - 1` or less
+    over the interval :math:`[0, 1]` with weight function
+    :math:`f(x) = 1/\sqrt{x - x^2}`.
+
+    Parameters
+    ----------
+    n : int
+        quadrature order 
+    mu : boolean
+        If True, return the sum of the weights, optional.
+
+    Returns
+    -------
+    x : ndarray
+        Sample points 
+    w : ndarray
+        Weights
+    mu : float
+        Sum of the weights
+
+    See Also
+    --------
+    integrate.quadrature
+    integrate.fixed_quad
     """
-    return js_roots(n, 0.0, 0.5, mu=mu)
+    xw = t_roots(n, mu)
+    return ((xw[0] + 1) / 2,) + xw[1:]
 
 
 def sh_chebyt(n, monic=False):
@@ -701,13 +997,38 @@ def sh_chebyt(n, monic=False):
 
 # Shifted Chebyshev of the second kind    U^*_n(x)
 def us_roots(n, mu=False):
-    """[x,w] = us_roots(n)
+    """Gauss-Chebyshev (second kind, shifted) quadrature
 
-    Returns the roots (x) of the nth order shifted Chebyshev (of the second
-    kind) polynomial, U^*_n(x), and weights (w) to use in Gaussian Quadrature
-    over [0,1] with weighting function (x-x**2)**1/2.
+    Computes the sample points and weights for Gauss-Chebyshev quadrature.
+    The sample points are the roots of the `n`th degree shifted Chebyshev
+    polynomial of the second kind, :math:`U_n(x)`.  These sample points and
+    weights correctly integrate polynomials of degree :math:`2*n - 1` or less
+    over the interval :math:`[0, 1]` with weight function
+    :math:`f(x) = \sqrt{x - x^2}`.
+
+    Parameters
+    ----------
+    n : int
+        quadrature order 
+    mu : boolean
+        If True, return the sum of the weights, optional.
+
+    Returns
+    -------
+    x : ndarray
+        Sample points 
+    w : ndarray
+        Weights
+    mu : float
+        Sum of the weights
+
+    See Also
+    --------
+    integrate.quadrature
+    integrate.fixed_quad
     """
-    return js_roots(n, 2.0, 1.5, mu=mu)
+    xw = u_roots(n, mu)
+    return ((xw[0] + 1) / 2,) + xw[1:]
 
 
 def sh_chebyu(n, monic=False):
@@ -725,13 +1046,47 @@ def sh_chebyu(n, monic=False):
 
 
 def p_roots(n, mu=False):
-    """[x,w] = p_roots(n)
+    """Gauss-Legendre quadrature
 
-    Returns the roots (x) of the nth order Legendre polynomial, P_n(x),
-    and weights (w) to use in Gaussian Quadrature over [-1,1] with weighting
-    function 1.
+    Computes the sample points and weights for Gauss-Legendre quadrature.
+    The sample points are the roots of the `n`th degree Legendre polynomial
+    :math:`P_n(x)`.  These sample points and weights correctly integrate
+    polynomials of degree :math:`2*n - 1` or less over the interval
+    :math:`[-1, 1]` with weight function :math:`f(x) = 1.0`.
+
+    Parameters
+    ----------
+    n : int
+        quadrature order 
+    mu : boolean
+        If True, return the sum of the weights, optional.
+
+    Returns
+    -------
+    x : ndarray
+        Sample points
+    w : ndarray
+        Weights
+    mu : float
+        Sum of the weights
+        
+    See Also
+    --------
+    integrate.quadrature
+    integrate.fixed_quad
+    numpy.polynomial.legendre.leggauss
     """
-    return j_roots(n, 0.0, 0.0, mu=mu)
+    m = int(n)
+    if n < 1 or n != m:
+        raise ValueError("n must be a positive integer.")
+
+    mu0 = 2.0
+    an_func = lambda k: 0.0 * k
+    bn_func = lambda k: k * np.sqrt(1.0 / (4 * k * k - 1))
+    f = cephes.eval_legendre
+    df = lambda n, x: (-n*x*cephes.eval_legendre(n, x)
+                     + n*cephes.eval_legendre(n-1, x))/(1-x**2)
+    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
 
 
 def legendre(n, monic=False):
@@ -782,13 +1137,37 @@ def legendre(n, monic=False):
 
 
 def ps_roots(n, mu=False):
-    """[x,w] = ps_roots(n)
+    """Gauss-Legendre (shifted) quadrature
 
-    Returns the roots (x) of the nth order shifted Legendre polynomial,
-    P^*_n(x), and weights (w) to use in Gaussian Quadrature over [0,1] with
-    weighting function 1.
+    Computes the sample points and weights for Gauss-Legendre quadrature.
+    The sample points are the roots of the `n`th degree shifted Legendre
+    polynomial :math:`P^*_n(x)`.  These sample points and weights correctly
+    integrate polynomials of degree :math:`2*n - 1` or less over the interval
+    :math:`[0, 1]` with weight function :math:`f(x) = 1.0`.
+
+    Parameters
+    ----------
+    n : int
+        quadrature order 
+    mu : boolean
+        If True, return the sum of the weights, optional.
+
+    Returns
+    -------
+    x : ndarray
+        Sample points
+    w : ndarray
+        Weights
+    mu : float
+        Sum of the weights
+
+    See Also
+    --------
+    integrate.quadrature
+    integrate.fixed_quad
     """
-    return js_roots(n, 1.0, 1.0, mu=mu)
+    xw = p_roots(n, mu)
+    return ((xw[0] + 1) / 2,) + xw[1:]
 
 
 def sh_legendre(n, monic=False):
