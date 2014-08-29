@@ -10,6 +10,7 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('integrate', parent_package, top_path)
 
     blas_opt = get_info('blas_opt',notfound_action=2)
+    lapack_opt = get_info('lapack_opt',notfound_action=2)
 
     linpack_lite_src = [join('linpack_lite','*.f')]
     mach_src = [join('mach','*.f')]
@@ -42,11 +43,13 @@ def configuration(parent_package='',top_path=None):
     # Remove libraries key from blas_opt
     if 'libraries' in blas_opt:    # key doesn't exist on OS X ...
         libs.extend(blas_opt['libraries'])
+    libs.extend(lapack_opt['libraries'])
     newblas = {}
     for key in blas_opt:
         if key == 'libraries':
             continue
         newblas[key] = blas_opt[key]
+    # TODO add LAPACK stuff to newblas
     config.add_extension('_odepack',
                          sources=['_odepackmodule.c'],
                          libraries=libs,
