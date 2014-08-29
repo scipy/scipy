@@ -3,15 +3,15 @@ from bento.commands import hooks
 @hooks.pre_build
 def pre_build(context):
     context.tweak_extension("_quadpack",
-                            use="quadpack linpack_lite mach BLAS CLIB")
+                            use="quadpack mach BLAS LAPACK CLIB")
     context.tweak_extension("_odepack",
-                            use="odepack linpack_lite mach BLAS CLIB")
+                            use="odepack mach BLAS LAPACK CLIB")
     context.tweak_extension("vode",
                             features="c cshlib pyext bento f2py",
-                            use="odepack linpack_lite mach BLAS CLIB")
+                            use="odepack mach BLAS LAPACK CLIB")
     context.tweak_extension("lsoda",
                             features="c cshlib pyext bento f2py",
-                            use="odepack linpack_lite mach BLAS CLIB")
+                            use="odepack mach BLAS LAPACK CLIB")
     context.tweak_extension("_dop",
                             features="c fc cshlib pyext bento f2py",
                             use="dop BLAS CLIB")
