@@ -9,8 +9,11 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info
     config = Configuration('integrate', parent_package, top_path)
 
-    blas_opt = get_info('blas_opt',notfound_action=2)
-    lapack_opt = get_info('lapack_opt',notfound_action=2)
+    # Get a local copy of lapack_opt_info
+    lapack_opt = dict(get_info('lapack_opt',notfound_action=2))
+    # Pop off the libraries list so it can be combined with
+    # additional required libraries
+    lapack_libs = lapack_opt.pop('libraries', [])
 
     mach_src = [join('mach','*.f')]
     quadpack_src = [join('quadpack','*.f')]
@@ -28,47 +31,37 @@ def configuration(parent_package='',top_path=None):
     # quadpack:
     config.add_extension('_quadpack',
                          sources=['_quadpackmodule.c'],
-                         libraries=(['quadpack', 'mach'] +
-                                    lapack_opt['libraries']),
+                         libraries=(['quadpack', 'mach'] + lapack_libs),
                          depends=(['quadpack.h','__quadpack.h']
-                                  + quadpack_src + mach_src))
+                                  + quadpack_src + mach_src),
+                         **lapack_opt)
 
     # odepack
-    libs = ['odepack','mach']
-
-    # Remove libraries key from blas_opt
-    if 'libraries' in blas_opt:    # key doesn't exist on OS X ...
-        libs.extend(blas_opt['libraries'])
-    libs.extend(lapack_opt['libraries'])
-    newblas = {}
-    for key in blas_opt:
-        if key == 'libraries':
-            continue
-        newblas[key] = blas_opt[key]
-    # TODO add LAPACK stuff to newblas
+    odepack_libs = ['odepack','mach'] + lapack_libs
+    
     config.add_extension('_odepack',
                          sources=['_odepackmodule.c'],
-                         libraries=libs,
+                         libraries=odepack_libs,
                          depends=(['__odepack.h','multipack.h']
                                   + odepack_src
                                   + mach_src),
-                         **newblas)
+                         **lapack_opt)
 
     # vode
     config.add_extension('vode',
                          sources=['vode.pyf'],
-                         libraries=libs,
+                         libraries=odepack_libs,
                          depends=(odepack_src
                                   + mach_src),
-                         **newblas)
+                         **lapack_opt)
 
     # lsoda
     config.add_extension('lsoda',
                          sources=['lsoda.pyf'],
-                         libraries=libs,
+                         libraries=odepack_libs,
                          depends=(odepack_src
                                   + mach_src),
-                         **newblas)
+                         **lapack_opt)
 
     # dop
     config.add_extension('_dop',
