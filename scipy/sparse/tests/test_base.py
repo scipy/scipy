@@ -3973,6 +3973,13 @@ class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
         M.col = np.r_[M.col.dtype.type(j), M.col]
         return M
 
+    def test_setdiag_noncanonical(self):
+        m = self.spmatrix(np.eye(3))
+        m.sum_duplicates()
+        m.setdiag([3, 2], k=1)
+        m.sum_duplicates()
+        assert_(np.all(np.diff(m.col) >= 0))
+
     @dec.knownfailureif(True, 'nnz counts explicit zeros')
     def test_empty(self):
         pass

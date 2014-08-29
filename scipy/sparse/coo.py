@@ -451,6 +451,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         self.row = np.concatenate((self.row[keep], new_row))
         self.col = np.concatenate((self.col[keep], new_col))
         self.data = np.concatenate((self.data[keep], new_data))
+        self.has_canonical_format = False
 
     setdiag.__doc__ = _data_matrix.setdiag.__doc__
 
