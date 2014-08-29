@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (assert_array_almost_equal, assert_raises, dec,
-    run_module_suite)
+    run_module_suite, assert_array_equal)
 from scipy.lib._version import NumpyVersion
 from scipy.sparse.csgraph import (shortest_path, dijkstra, johnson,
     bellman_ford, construct_dist_matrix, NegativeCycleError)
@@ -198,6 +198,17 @@ def test_masked_input():
 
     for method in methods:
         yield check, method
+
+
+def test_overwrite():
+    G = np.array([[0, 3, 3, 1, 2],
+                  [3, 0, 0, 2, 4],
+                  [3, 0, 0, 0, 0],
+                  [1, 2, 0, 0, 2],
+                  [2, 4, 0, 2, 0]], dtype=float)
+    foo = G.copy()
+    shortest_path(foo, overwrite=False)
+    assert_array_equal(foo, G)
 
 
 if __name__ == '__main__':
