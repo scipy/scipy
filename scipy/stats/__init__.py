@@ -149,6 +149,7 @@ Multivariate distributions
    :toctree: generated/
 
    multivariate_normal   -- Multivariate normal distribution
+   dirichlet             -- Dirichlet
 
 Discrete distributions
 ======================
