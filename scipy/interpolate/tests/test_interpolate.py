@@ -758,7 +758,7 @@ class TestPPoly(TestCase):
         pp = PPoly.from_spline(spl)
 
         r = pp.roots()
-        r = r[(r >= 0) & (r <= 1)]
+        r = r[(r >= 0 - 1e-15) & (r <= 1 + 1e-15)]
         assert_allclose(r, sproot(spl), atol=1e-15)
 
     def test_roots_idzero(self):
