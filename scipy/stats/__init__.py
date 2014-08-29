@@ -277,6 +277,7 @@ which work for masked arrays.
    anderson_ksamp
    binom_test
    fligner
+   median_test
    mood
 
 .. autosummary::
