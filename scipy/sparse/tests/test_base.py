@@ -3634,10 +3634,6 @@ class TestCOO(sparse_test_class(getset=False,
         dia = coo_matrix(zeros).todia()
         assert_array_equal(dia.A, zeros)
 
-    @dec.knownfailureif(True, "known deficiency in COO")
-    def test_setdiag(self):
-        pass
-
     def test_sum_duplicates(self):
         coo = coo_matrix((4,3))
         coo.sum_duplicates()
