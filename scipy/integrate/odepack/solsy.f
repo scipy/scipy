@@ -21,7 +21,7 @@ c a chord iteration.  it is called if miter .ne. 0.
 c if miter is 1 or 2, it calls dgetrs to accomplish this.
 c if miter = 3 it updates the coefficient h*el0 in the diagonal
 c matrix, and then computes the solution.
-c if miter is 4 or 5, it calls dgbsl.
+c if miter is 4 or 5, it calls dgbtrs.
 c communication with solsy uses the following variables..
 c wm    = real work space containing the inverse diagonal matrix if
 c         miter = 3 and the lu decomposition of the matrix otherwise.
@@ -64,7 +64,9 @@ c
  400  ml = iwm(1)
       mu = iwm(2)
       meband = 2*ml + mu + 1
-      call dgbsl (wm(3), meband, n, ml, mu, iwm(21), x, 0)
+c     Replaced LINPACK dgbsl with LAPACK dgbtrs
+c      call dgbsl (wm(3), meband, n, ml, mu, iwm(21), x, 0)
+      call dgbtrs ('N', n, ml, mu, 1, wm(3), meband, iwm(21), x, n, ier)
       return
 c----------------------- end of subroutine solsy -----------------------
       end

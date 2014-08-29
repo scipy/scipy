@@ -1019,7 +1019,7 @@ C            the contents of the internal COMMON blocks.
 C  DACOPY    is a routine to copy one two-dimensional array to another.
 C  DGETRF and DGETRS   are routines from LAPACK for solving full
 C            systems of linear algebraic equations.
-C  DGBTRF and DGBSL   are routines from LAPACK for solving banded
+C  DGBTRF and DGBTRS   are routines from LAPACK for solving banded
 C            linear systems.
 C  DAXPY, DSCAL, and DCOPY are basic linear algebra modules (BLAS).
 C  D1MACH    sets the unit roundoff of the machine.
@@ -3283,7 +3283,7 @@ C Call sequence output -- X, IERSL
 C COMMON block variables accessed..
 C     /DVOD01/ -- H, RL1, MITER, N
 C
-C Subroutines called by DVSOL.. DGETRS, DGBSL
+C Subroutines called by DVSOL.. DGETRS, DGBTRS
 C Function routines called by DVSOL.. None
 C-----------------------------------------------------------------------
 C This routine manages the solution of the linear system arising from
@@ -3291,7 +3291,7 @@ C a chord iteration.  It is called if MITER .ne. 0.
 C If MITER is 1 or 2, it calls DGETRS to accomplish this.
 C If MITER = 3 it updates the coefficient H*RL1 in the diagonal
 C matrix, and then computes the solution.
-C If MITER is 4 or 5, it calls DGBSL.
+C If MITER is 4 or 5, it calls DGBTRS.
 C Communication with DVSOL uses the following variables..
 C WM    = Real work space containing the inverse diagonal matrix if
 C         MITER = 3 and the LU decomposition of the matrix otherwise.
@@ -3366,7 +3366,9 @@ C
  400  ML = IWM(1)
       MU = IWM(2)
       MEBAND = 2*ML + MU + 1
-      CALL DGBSL (WM(3), MEBAND, N, ML, MU, IWM(31), X, 0)
+c     Replaced LINPACK dgbsl with LAPACK dgbtrs
+c      CALL DGBSL (WM(3), MEBAND, N, ML, MU, IWM(31), X, 0)
+      CALL DGBTRS ('N', N, ML, MU, 1, WM(3), MEBAND, IWM(21), X, N, IER)
       RETURN
 C----------------------- End of Subroutine DVSOL -----------------------
       END
