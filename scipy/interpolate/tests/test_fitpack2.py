@@ -47,24 +47,6 @@ class TestUnivariateSpline(TestCase):
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2]),[0,1,2])
 
-    def test_extrapolation_modes(self):
-        """ test extrapolation modes
-            * if ext=0, return the extrapolated value.
-            * if ext=1, return 0
-            * if ext=2, raise a ValueError
-            * if ext=3, return the boundary value.
-        """
-        x = [1,2,3]
-        y = [0,2,4]
-        rstl = [[-2, 6], [0, 0], None, [0, 4]]
-        for ext in (0, 1, 3):
-            lut = UnivariateSpline(x, y, k=1, ext=ext)
-            rst = lut([0, 4])
-            assert_array_almost_equal(rst, rstl[ext])
-
-        lut = UnivariateSpline(x, y, k=1, ext=2)
-        assert_raises(ValueError, lut, [0, 4])
-
     def test_subclassing(self):
         # See #731
 
@@ -106,6 +88,9 @@ class TestUnivariateSpline(TestCase):
         xp = linspace(-8, 13, 100)
         xp_zeros = xp.copy()
         xp_zeros[np.logical_or(xp_zeros < 0., xp_zeros > 4.)] = 0
+        xp_clip = xp.copy()
+        xp_clip[xp_clip < x[0]] = x[0]
+        xp_clip[xp_clip > x[-1]] = x[-1]
 
         for cls in [UnivariateSpline, InterpolatedUnivariateSpline]:
             spl = cls(x=x, y=y)
@@ -117,6 +102,9 @@ class TestUnivariateSpline(TestCase):
                 assert_allclose(cls(x, y, ext=ext)(xp), xp_zeros**3, atol=1e-16)
             for ext in [2, 'raise']:
                 assert_raises(ValueError, spl, xp, **dict(ext=ext))
+            for ext in [3, 'const']:
+                assert_allclose(spl(xp, ext=ext), xp_clip**3, atol=1e-16)
+                assert_allclose(cls(x, y, ext=ext)(xp), xp_clip**3, atol=1e-16)
 
         # also test LSQUnivariateSpline [which needs explicit knots]
         t = spl.get_knots()[3:4]  # interior knots w/ default k=3
@@ -124,6 +112,7 @@ class TestUnivariateSpline(TestCase):
         assert_allclose(spl(xp, ext=0), xp**3, atol=1e-16)
         assert_allclose(spl(xp, ext=1), xp_zeros**3, atol=1e-16)
         assert_raises(ValueError, spl, xp, **dict(ext=2))
+        assert_allclose(spl(xp, ext=3), xp_clip**3, atol=1e-16)
 
         # also make sure that unknown values for `ext` are caught early
         for ext in [-1, 'unknown']:
