@@ -902,5 +902,108 @@ def test_wilcoxon_tie():
     assert_allclose(p, expected_p, rtol=1e-6)
 
 
+class TestMedianTest(TestCase):
+
+    def test_bad_n_samples(self):
+        # median_test requires at least two samples.
+        assert_raises(ValueError, stats.median_test, [1, 2, 3])
+
+    def test_empty_sample(self):
+        # Each sample must contain at least one value.
+        assert_raises(ValueError, stats.median_test, [], [1, 2, 3])
+
+    def test_empty_when_ties_ignored(self):
+        # The grand median is 1, and all values in the first argument are
+        # equal to the grand median.  With ties="ignore", those values are
+        # ignored, which results in the first sample being (in effect) empty.
+        # This should raise a ValueError.
+        assert_raises(ValueError, stats.median_test,
+                      [1, 1, 1, 1], [2, 0, 1], [2, 0], ties="ignore")
+
+    def test_empty_contingency_row(self):
+        # The grand median is 1, and with the default ties="below", all the
+        # values in the samples are counted as being below the grand median.
+        # This would result a row of zeros in the contingency table, which is
+        # an error.
+        assert_raises(ValueError, stats.median_test, [1, 1, 1], [1, 1, 1])
+
+        # With ties="above", all the values are counted as above the
+        # grand median.
+        assert_raises(ValueError, stats.median_test, [1, 1, 1], [1, 1, 1],
+                      ties="above")
+
+    def test_bad_ties(self):
+        assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5], ties="foo")
+
+    def test_bad_keyword(self):
+        assert_raises(TypeError, stats.median_test, [1, 2, 3], [4, 5], foo="foo")
+
+    def test_simple(self):
+        x = [1, 2, 3]
+        y = [1, 2, 3]
+        stat, p, med, tbl = stats.median_test(x, y)
+
+        # The median is floating point, but this equality test should be safe.
+        assert_equal(med, 2.0)
+
+        assert_array_equal(tbl, [[1, 1], [2, 2]])
+
+        # The expected values of the contingency table equal the contingency table,
+        # so the statistic should be 0 and the p-value should be 1.
+        assert_equal(stat, 0)
+        assert_equal(p, 1)
+
+    def test_ties_options(self):
+        # Test the contingency table calculation.
+        x = [1, 2, 3, 4]
+        y = [5, 6]
+        z = [7, 8, 9]
+        # grand median is 5.
+
+        # Default 'ties' option is "below".
+        stat, p, m, tbl = stats.median_test(x, y, z)
+        assert_equal(m, 5)
+        assert_equal(tbl, [[0, 1, 3], [4, 1, 0]])
+
+        stat, p, m, tbl = stats.median_test(x, y, z, ties="ignore")
+        assert_equal(m, 5)
+        assert_equal(tbl, [[0, 1, 3], [4, 0, 0]])
+
+        stat, p, m, tbl = stats.median_test(x, y, z, ties="above")
+        assert_equal(m, 5)
+        assert_equal(tbl, [[0, 2, 3], [4, 0, 0]])
+
+    def test_basic(self):
+        # median_test calls chi2_contingency to compute the test statistic
+        # and p-value.  Make sure it hasn't screwed up the call...
+
+        x = [1, 2, 3, 4, 5]
+        y = [2, 4, 6, 8]
+
+        stat, p, m, tbl = stats.median_test(x, y)
+        assert_equal(m, 4)
+        assert_equal(tbl, [[1, 2], [4, 2]])
+
+        exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl)
+        assert_allclose(stat, exp_stat)
+        assert_allclose(p, exp_p)
+
+        stat, p, m, tbl = stats.median_test(x, y, lambda_=0)
+        assert_equal(m, 4)
+        assert_equal(tbl, [[1, 2], [4, 2]])
+
+        exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, lambda_=0)
+        assert_allclose(stat, exp_stat)
+        assert_allclose(p, exp_p)
+
+        stat, p, m, tbl = stats.median_test(x, y, correction=False)
+        assert_equal(m, 4)
+        assert_equal(tbl, [[1, 2], [4, 2]])
+
+        exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, correction=False)
+        assert_allclose(stat, exp_stat)
+        assert_allclose(p, exp_p)
+
+
 if __name__ == "__main__":
     run_module_suite()
