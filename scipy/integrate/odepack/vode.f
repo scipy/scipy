@@ -1017,9 +1017,9 @@ C  DVNORM    computes the weighted r.m.s. norm of a vector.
 C  DVSRCO    is a user-callable routine to save and restore
 C            the contents of the internal COMMON blocks.
 C  DACOPY    is a routine to copy one two-dimensional array to another.
-C  DGEFA and DGESL   are routines from LINPACK for solving full
+C  DGETRF and DGESL   are routines from LAPACK for solving full
 C            systems of linear algebraic equations.
-C  DGBFA and DGBSL   are routines from LINPACK for solving banded
+C  DGBTRF and DGBSL   are routines from LAPACK for solving banded
 C            linear systems.
 C  DAXPY, DSCAL, and DCOPY are basic linear algebra modules (BLAS).
 C  D1MACH    sets the unit roundoff of the machine.
@@ -2981,7 +2981,7 @@ C     /DVOD01/  CCMXJ, DRC, H, RL1, TN, UROUND, ICF, JCUR, LOCJS,
 C               MITER, MSBJ, N, NSLJ
 C     /DVOD02/  NFE, NST, NJE, NLU
 C
-C Subroutines called by DVJAC.. F, JAC, DACOPY, DCOPY, DGBFA, DGEFA,
+C Subroutines called by DVJAC.. F, JAC, DACOPY, DCOPY, DGBTRF, DGETRF,
 C                              DSCAL
 C Function routines called by DVJAC.. DVNORM
 C-----------------------------------------------------------------------
@@ -2996,7 +2996,7 @@ C considered acceptable, then P is constructed from the saved J.
 C J is stored in wm and replaced by P.  If MITER .ne. 3, P is then
 C subjected to LU decomposition in preparation for later solution
 C of linear systems with P as coefficient matrix. This is done
-C by DGEFA if MITER = 1 or 2, and by DGBFA if MITER = 4 or 5.
+C by DGETRF if MITER = 1 or 2, and by DGBTRF if MITER = 4 or 5.
 C
 C Communication with DVJAC is done with the following variables.  (For
 C more details, please see the comments in the driver subroutine.)
@@ -3138,7 +3138,9 @@ C Multiply Jacobian by scalar, add identity, and do LU decomposition. --
         WM(J) = WM(J) + ONE
  250    J = J + NP1
       NLU = NLU + 1
-      CALL DGEFA (WM(3), N, N, IWM(31), IER)
+c     Replaced LINPACK dgefa with LAPACK dgetrf
+c      CALL DGEFA (WM(3), N, N, IWM(31), IER)
+      CALL DGETRF (N, N, WM(3), N, IWM(31), IER)
       IF (IER .NE. 0) IERPJ = 1
       RETURN
       ENDIF
@@ -3235,7 +3237,9 @@ C Multiply Jacobian by scalar, add identity, and do LU decomposition.
         WM(II) = WM(II) + ONE
  580    II = II + MEBAND
       NLU = NLU + 1
-      CALL DGBFA (WM(3), MEBAND, N, ML, MU, IWM(31), IER)
+c     Replaced LINPACK dgbfa with LAPACK dgbtrf
+c      CALL DGBFA (WM(3), MEBAND, N, ML, MU, IWM(31), IER)
+      CALL DGBTRF (N, N, ML, MU, WM(3), MEBAND, IWM(31), IER)
       IF (IER .NE. 0) IERPJ = 1
       RETURN
 C End of code block for MITER = 4 or 5. --------------------------------
