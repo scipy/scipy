@@ -18,7 +18,7 @@ Functions
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-
+from scipy.lib._numpy_compat import count_nonzero as _count_nonzero
 from .optimize import OptimizeResult, _check_unknown_options
 
 __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']
@@ -133,11 +133,6 @@ def linprog_terse_callback(xk, **kwargs):
         print("Iter:   X:")
     print("{: <5d}   ".format(nit), end="")
     print(xk)
-
-
-def _count_nonzero(x):
-    """_count_nonzero not available in numpy 1.5.x"""
-    return np.sum(x != 0)
 
 
 def _pivot_col(T, tol=1.0E-12, bland=False):
