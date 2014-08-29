@@ -1029,7 +1029,7 @@ C            the contents of the internal COMMON blocks.
 C  ZACOPY    is a routine to copy one two-dimensional array to another.
 C  ZGETRF and ZGETRS   are routines from LAPACK for solving full
 C            systems of linear algebraic equations.
-C  ZGBFA and ZGBSL   are routines from LINPACK for solving banded
+C  ZGBTRF and ZGBTRS   are routines from LAPACK for solving banded
 C            linear systems.
 C  DZSCAL    scales a double complex array by a double prec. scalar.
 C  DZAXPY    adds a D.P. scalar times one complex vector to another.
@@ -3004,7 +3004,7 @@ C     /ZVOD01/  CCMXJ, DRC, H, HRL1, RL1, SRUR, TN, UROUND, ICF, JCUR,
 C               LOCJS, MITER, MSBJ, N, NSLJ
 C     /ZVOD02/  NFE, NST, NJE, NLU
 C
-C Subroutines called by ZVJAC: F, JAC, ZACOPY, ZCOPY, ZGBFA, ZGETRF,
+C Subroutines called by ZVJAC: F, JAC, ZACOPY, ZCOPY, ZGBTRF, ZGETRF,
 C                              DZSCAL
 C Function routines called by ZVJAC: ZVNORM
 C-----------------------------------------------------------------------
@@ -3019,7 +3019,7 @@ C considered acceptable, then P is constructed from the saved J.
 C J is stored in wm and replaced by P.  If MITER .ne. 3, P is then
 C subjected to LU decomposition in preparation for later solution
 C of linear systems with P as coefficient matrix. This is done
-C by ZGETRF if MITER = 1 or 2, and by ZGBFA if MITER = 4 or 5.
+C by ZGETRF if MITER = 1 or 2, and by ZGBTRF if MITER = 4 or 5.
 C
 C Communication with ZVJAC is done with the following variables.  (For
 C more details, please see the comments in the driver subroutine.)
@@ -3253,7 +3253,9 @@ C Multiply Jacobian by scalar, add identity, and do LU decomposition.
         WM(II) = WM(II) + ONE
  580    II = II + MEBAND
       NLU = NLU + 1
-      CALL ZGBFA (WM, MEBAND, N, ML, MU, IWM(31), IER)
+c     Replaced LINPACK zgbfa with LAPACK zgbtrf
+c      CALL ZGBFA (WM, MEBAND, N, ML, MU, IWM(31), IER)
+      CALL ZGBTRF (N, N, ML, MU, WM, MEBAND, IWM(31), IER)
       IF (IER .NE. 0) IERPJ = 1
       RETURN
 C End of code block for MITER = 4 or 5. --------------------------------
@@ -3297,7 +3299,7 @@ C Call sequence output -- X, IERSL
 C COMMON block variables accessed:
 C     /ZVOD01/ -- H, HRL1, RL1, MITER, N
 C
-C Subroutines called by ZVSOL: ZGETRS, ZGBSL
+C Subroutines called by ZVSOL: ZGETRS, ZGBTRS
 C Function routines called by ZVSOL: None
 C-----------------------------------------------------------------------
 C This routine manages the solution of the linear system arising from
@@ -3305,7 +3307,7 @@ C a chord iteration.  It is called if MITER .ne. 0.
 C If MITER is 1 or 2, it calls ZGETRS to accomplish this.
 C If MITER = 3 it updates the coefficient H*RL1 in the diagonal
 C matrix, and then computes the solution.
-C If MITER is 4 or 5, it calls ZGBSL.
+C If MITER is 4 or 5, it calls ZGBTRS.
 C Communication with ZVSOL uses the following variables:
 C WM    = Real work space containing the inverse diagonal matrix if
 C         MITER = 3 and the LU decomposition of the matrix otherwise.
@@ -3353,7 +3355,7 @@ C
 C
       IERSL = 0
       GO TO (100, 100, 300, 400, 400), MITER
-c     Replaced LINPACK dgesl with LAPACK dgetrs
+c     Replaced LINPACK zgesl with LAPACK zgetrs
 c 100  CALL ZGESL (WM, N, N, IWM(31), X, 0)
  100  CALL ZGETRS ('N', N, 1, WM, N, IWM(31), X, N, IER)
       RETURN
@@ -3376,7 +3378,9 @@ C
  400  ML = IWM(1)
       MU = IWM(2)
       MEBAND = 2*ML + MU + 1
-      CALL ZGBSL (WM, MEBAND, N, ML, MU, IWM(31), X, 0)
+c     Replaced LINPACK zgbsl with LAPACK zgbtrs
+c      CALL ZGBSL (WM, MEBAND, N, ML, MU, IWM(31), X, 0)
+      CALL ZGBTRS ('N', N, ML, MU, 1, WM, MEBAND, IWM(31), X, N, IER)
       RETURN
 C----------------------- End of Subroutine ZVSOL -----------------------
       END
