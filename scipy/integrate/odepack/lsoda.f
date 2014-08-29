@@ -946,7 +946,7 @@ c  bnorm    computes the norm of a band matrix consistent with the
 c           weighted max-norm on vectors.
 c  srcma    is a user-callable routine to save and restore
 c           the contents of the internal common blocks.
-c  dgetrf and dgesl   are routines from lapack for solving full
+c  dgetrf and dgetrs   are routines from lapack for solving full
 c           systems of linear algebraic equations.
 c  dgbtrf and dgbsl   are routines from lapack for solving banded
 c           linear systems.
