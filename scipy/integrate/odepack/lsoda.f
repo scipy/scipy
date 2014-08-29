@@ -948,7 +948,7 @@ c  srcma    is a user-callable routine to save and restore
 c           the contents of the internal common blocks.
 c  dgetrf and dgetrs   are routines from lapack for solving full
 c           systems of linear algebraic equations.
-c  dgbtrf and dgbsl   are routines from lapack for solving banded
+c  dgbtrf and dgbtrs   are routines from lapack for solving banded
 c           linear systems.
 c  daxpy, dscal, idamax, and ddot   are basic linear algebra modules
 c           (blas) used by the above linpack routines.
