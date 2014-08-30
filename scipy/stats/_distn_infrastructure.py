@@ -16,7 +16,8 @@ import warnings
 from scipy.misc import doccer
 from ._distr_params import distcont, distdiscrete
 
-from scipy.special import comb, xlogy, chndtr, gammaln, hyp0f1
+from scipy.special import (comb, xlogy, chndtr, gammaln, hyp0f1,
+                           entr, rel_entr, kl_div)
 
 # for root finding for discrete distribution ppf, and max likelihood estimation
 from scipy import optimize
@@ -2096,15 +2097,15 @@ class rv_continuous(rv_generic):
     def _entropy(self, *args):
         def integ(x):
             val = self._pdf(x, *args)
-            return xlogy(val, val)
+            return entr(val)
 
         # upper limit is often inf, so suppress warnings when integrating
         olderr = np.seterr(over='ignore')
-        entr = -integrate.quad(integ, self.a, self.b)[0]
+        h = integrate.quad(integ, self.a, self.b)[0]
         np.seterr(**olderr)
 
-        if not np.isnan(entr):
-            return entr
+        if not np.isnan(h):
+            return h
         else:
             # try with different limits if integration problems
             low, upp = self.ppf([1e-10, 1. - 1e-10], *args)
@@ -2116,7 +2117,7 @@ class rv_continuous(rv_generic):
                 lower = low
             else:
                 lower = self.a
-            return -integrate.quad(integ, lower, upper)[0]
+            return integrate.quad(integ, lower, upper)[0]
 
     def entropy(self, *args, **kwds):
         """
@@ -2350,8 +2351,7 @@ def entropy(pk, qk=None, base=None):
     If only probabilities `pk` are given, the entropy is calculated as
     ``S = -sum(pk * log(pk), axis=0)``.
 
-    If `qk` is not None, then compute a relative entropy (also known as
-    Kullback-Leibler divergence or Kullback-Leibler distance)
+    If `qk` is not None, then compute the Kullback-Leibler divergence
     ``S = sum(pk * log(pk / qk), axis=0)``.
 
     This routine will normalize `pk` and `qk` if they don't sum to 1.
@@ -2376,21 +2376,14 @@ def entropy(pk, qk=None, base=None):
     pk = asarray(pk)
     pk = 1.0*pk / sum(pk, axis=0)
     if qk is None:
-        vec = xlogy(pk, pk)
+        vec = entr(pk)
     else:
         qk = asarray(qk)
         if len(qk) != len(pk):
             raise ValueError("qk and pk must have same length.")
         qk = 1.0*qk / sum(qk, axis=0)
-        # If qk is zero anywhere, then unless pk is zero at those places
-        #   too, the relative entropy is infinite.
-        mask = qk == 0.0
-        qk[mask] = 1.0  # Avoid the divide-by-zero warning
-        quotient = pk / qk
-        vec = -xlogy(pk, quotient)
-        vec[mask & (pk != 0.0)] = -inf
-        vec[mask & (pk == 0.0)] = 0.0
-    S = -sum(vec, axis=0)
+        vec = kl_div(pk, qk)
+    S = sum(vec, axis=0)
     if base is not None:
         S /= log(base)
     return S
@@ -3045,14 +3038,14 @@ class rv_discrete(rv_generic):
         else:
             mu = int(self.stats(*args, **{'moments': 'm'}))
             val = self.pmf(mu, *args)
-            ent = -xlogy(val, val)
+            ent = entr(val)
             k = 1
             term = 1.0
             while (abs(term) > _EPS):
                 val = self.pmf(mu+k, *args)
-                term = -xlogy(val, val)
+                term = entr(val)
                 val = self.pmf(mu-k, *args)
-                term -= xlogy(val, val)
+                term += entr(val)
                 k += 1
                 ent += term
             return ent

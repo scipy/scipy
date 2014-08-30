@@ -22,6 +22,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import itertools
 import warnings
 
 import numpy as np
@@ -2929,6 +2930,57 @@ def test_xlog1py():
                      (1, 1e-30)], dtype=float)
     w1 = np.vectorize(xfunc)(z1[:,0], z1[:,1])
     assert_func_equal(special.xlog1py, w1, z1, rtol=1e-13, atol=1e-13)
+
+
+def test_entr():
+    def xfunc(x):
+        if x < 0:
+            return -np.inf
+        else:
+            return -special.xlogy(x, x)
+    values = (0, 0.5, 1.0, np.inf)
+    signs = [1]
+    arr = []
+    for sgn, v in itertools.product(signs, values):
+        arr.append(sgn * v)
+    z = np.array(arr, dtype=float)
+    w = np.vectorize(xfunc, otypes=[np.float64])(z)
+    assert_func_equal(special.entr, w, z, rtol=1e-13, atol=1e-13)
+
+
+def test_kl_div():
+    def xfunc(x, y):
+        if x < 0 or y < 0 or (y == 0 and x != 0):
+            # extension of natural domain to preserve convexity
+            return np.inf
+        elif np.isposinf(x) or np.isposinf(y):
+            # limits within the natural domain
+            return np.inf
+        elif x == 0:
+            return y
+        else:
+            return special.xlogy(x, x) - special.xlogy(x, y) - x + y
+    values = (0, 0.5, 1.0)
+    signs = [1]
+    arr = []
+    for sgna, va, sgnb, vb in itertools.product(signs, values, signs, values):
+        arr.append((sgna*va, sgnb*vb))
+    z = np.array(arr, dtype=float)
+    w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
+    assert_func_equal(special.kl_div, w, z, rtol=1e-13, atol=1e-13)
+
+
+def test_rel_entr():
+    def xfunc(x, y):
+        return special.xlogy(x, x) - special.xlogy(x, y)
+    values = (0, 0.5, 1.0)
+    signs = [1]
+    arr = []
+    for sgna, va, sgnb, vb in itertools.product(signs, values, signs, values):
+        arr.append((sgna*va, sgnb*vb))
+    z = np.array(arr, dtype=float)
+    w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
+    assert_func_equal(special.rel_entr, w, z, rtol=1e-13, atol=1e-13)
 
 
 if __name__ == "__main__":
