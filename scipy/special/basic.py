@@ -20,8 +20,8 @@ import warnings
 
 __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'ber_zeros', 'bernoulli', 'berp_zeros', 'bessel_diff_formula',
-           'bi_zeros', 'clpmn', 'comb', 'digamma', 'diric', 'ellipk', 'erf_zeros',
-           'erfcinv', 'erfinv', 'errprint', 'euler', 'factorial',
+           'bi_zeros', 'clpmn', 'clqmn', 'comb', 'digamma', 'diric', 'ellipk',
+           'erf_zeros', 'erfcinv', 'erfinv', 'errprint', 'euler', 'factorial',
            'factorialk', 'factorial2', 'fresnel_zeros',
            'fresnelc_zeros', 'fresnels_zeros', 'gamma', 'gammaln', 'h1vp',
            'h2vp', 'hankel1', 'hankel2', 'hyp0f1', 'iv', 'ivp', 'jn_zeros',
@@ -772,12 +772,53 @@ def clpmn(m,n,z,type=3):
 
 
 def lqmn(m,n,z):
-    """Associated Legendre functions of the second kind, Qmn(z) and its
-    derivative, ``Qmn'(z)`` of order m and degree n.  Returns two
-    arrays of size ``(m+1, n+1)`` containing ``Qmn(z)`` and ``Qmn'(z)`` for
-    all orders from ``0..m`` and degrees from ``0..n``.
+    """Associated Legendre function of the second kind, Qmn(z)
 
-    z can be complex.
+    Computes the associated Legendre function of the second kind
+    of order m and degree n,::
+
+        Qmn(z) = Q_n^m(z)
+
+    and its derivative, ``Qmn'(z)``.  Returns two arrays of size
+    ``(m+1, n+1)`` containing ``Qmn(z)`` and ``Qmn'(z)`` for all
+    orders from ``0..m`` and degrees from ``0..n``.
+
+    This function takes a real argument ``z``. For complex arguments ``z``
+    use clqmn instead.
+
+    Parameters
+    ----------
+    m : int
+       the order of the Legendre function.
+    n : int
+       where ``n >= 0``; the degree of the Legendre function.  Often
+       called ``l`` (lower case L) in descriptions of the associated
+       Legendre function
+    z : float
+        Input value.
+
+    Returns
+    -------
+    Pmn_z : (m+1, n+1) array
+       Values for all orders 0..m and degrees 0..n
+    Pmn_d_z : (m+1, n+1) array
+       Derivatives for all orders 0..m and degrees 0..n
+
+    See Also
+    --------
+    clqmn: associated Legendre functions of the second kind for complex z
+
+    Notes
+    -----
+    In the interval (-1, 1), Ferrer's function of the second kind is
+    returned. The phase convention used for the intervals (1, inf)
+    and (-inf, -1) is such that the result is always real.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           http://dlmf.nist.gov/14.3
+
     """
     if not isscalar(m) or (m < 0):
         raise ValueError("m must be a non-negative integer.")
@@ -793,9 +834,81 @@ def lqmn(m,n,z):
     nn = max(1,n)
 
     if iscomplex(z):
-        q,qd = specfun.clqmn(mm,nn,z)
+        raise ValueError("Argument must be real. Use clqmn instead.")
     else:
         q,qd = specfun.lqmn(mm,nn,z)
+    return q[:(m+1),:(n+1)],qd[:(m+1),:(n+1)]
+
+
+def clqmn(m,n,z,type=3):
+    """Associated Legendre function of the second kind, Qmn(z)
+
+    Computes the (associated) Legendre function of the second kind
+    of order m and degree n,::
+
+        Qmn(z) = Q_n^m(z)
+
+    and its derivative, ``Qmn'(z)``.  Returns two arrays of size
+    ``(m+1, n+1)`` containing ``Qmn(z)`` and ``Qmn'(z)`` for all
+    orders from ``0..m`` and degrees from ``0..n``.
+
+    Parameters
+    ----------
+    m : int
+    n : int
+       where ``n >= 0``; the degree of the Legendre function.  Often
+       called ``l`` (lower case L) in descriptions of the associated
+       Legendre function
+    z : float or complex
+        Input value.
+    type : int
+       takes values 2 or 3
+       2: cut on the real axis |x|>1
+       3: cut on the real axis -1<x<1 (default)
+
+    Returns
+    -------
+    Qmn_z : (m+1, n+1) array
+       Values for all orders 0..m and degrees 0..n
+    Qmn_d_z : (m+1, n+1) array
+       Derivatives for all orders 0..m and degrees 0..n
+
+    See Also
+    --------
+    lqmn: associated Legendre functions of the second kind for real z
+
+    Notes
+    -----
+    By default, i.e. for ``type=3``, phase conventions are chosen according
+    to [1]_ such that the function is analytic. The cut lies on the interval
+    (-1, 1). Approaching the cut from above or below in general yields a phase
+    factor with respect to Ferrer's function of the second kind
+    (cf. `lqmn`).
+
+    For ``type=2`` a cut at |x|>1 is chosen. Approaching the real values
+    on the interval (-1, 1) in the complex plane yields Ferrer's function
+    of the first kind.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           http://dlmf.nist.gov/14.21
+
+    """
+    if not isscalar(m) or (m < 0):
+        raise ValueError("m must be a non-negative integer.")
+    if not isscalar(n) or (n < 0):
+        raise ValueError("n must be a non-negative integer.")
+    if not isscalar(z):
+        raise ValueError("z must be scalar.")
+    if not(type == 2 or type == 3):
+        raise ValueError("type must be either 2 or 3.")
+
+    # Ensure neither m nor n == 0
+    mm = max(1,m)
+    nn = max(1,n)
+
+    q,qd = specfun.clqmn(mm,nn,real(z),imag(z),type)
     return q[:(m+1),:(n+1)],qd[:(m+1),:(n+1)]
 
 

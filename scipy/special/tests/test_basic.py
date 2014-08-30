@@ -2559,6 +2559,88 @@ class TestLegendreFunctions(TestCase):
         assert_array_almost_equal(lqmnf[0][0],lqf[0],4)
         assert_array_almost_equal(lqmnf[1][0],lqf[1],4)
 
+    def test_clqmn_2(self):
+        z = 0.5+0.3j
+        clq = special.clqmn(2, 2, z, 2)
+        q0 = 0.5*np.log((1+z)/(1-z))
+        q10 = -1/np.sqrt(1-z*z)
+        q10p = -z/(1-z*z)**1.5
+        assert_array_almost_equal(clq,
+                   (array([[q0, z*q0-1, 0.5*(3*z*z-1)*q0-1.5*z],
+                           [q10, q10*(z+(1-z*z)*q0), 3*q10*((1-z*z)*(z*q0-1)+1/3)],
+                           [2*z/(1-z*z), 2/(1-z*z), 3*(1-z*z)*q0+3*z+2*z/(1-z*z)]]),
+                    array([[1/(1-z*z), q0+z/(1-z*z), 3*z*q0+1/(1-z*z)-3],
+                           [q10p, (z*z-2)/(1-z*z)**1.5-z*q10*q0,
+                            -1.5/(1-z*z)**1.5*((1-z*z)*(1-2*z*z)*2*q0-4*z**3+14*z/3)],
+                           [2*(1+z*z)/(1-z*z)**2, 4*z/(1-z*z)**2,
+                            -6*z*q0+6+2*(1+z*z)/(1-z*z)**2]])),
+                    7)
+
+    def test_clqmn_3(self):
+        z = 0.5+0.3j
+        clq = special.clqmn(2, 2, z, 3)
+        q0 = 0.5*np.log((z+1)/(z-1))
+        q10 = -1/np.sqrt(z*z-1)
+        q10p = z/(z*z-1)**1.5
+        assert_array_almost_equal(clq,
+                   (array([[q0, z*q0-1, 0.5*(3*z*z-1)*q0-1.5*z],
+                           [q10, q10*(z+(1-z*z)*q0), 3*q10*((1-z*z)*(z*q0-1)+1/3)],
+                           [2*z/(z*z-1), 2/(z*z-1), 3*(z*z-1)*q0-3*z+2*z/(z*z-1)]]),
+                    array([[1/(1-z*z), q0+z/(1-z*z), 3*z*q0+1/(1-z*z)-3],
+                           [q10p, (2-z*z)/(z*z-1)**1.5-z*q10*q0,
+                            1.5/(z*z-1)**1.5*((z*z-1)*(2*z*z-1)*2*q0-4*z**3+14*z/3)],
+                           [-2*(z*z+1)/(z*z-1)**2, -4*z/(z*z-1)**2,
+                            6*z*q0-6-2*(z*z+1)/(z*z-1)**2]])),
+                    7)
+
+    def test_clqmn_close_to_real_2(self):
+        eps = 1e-10
+        m = 1
+        n = 3
+        x = 0.5
+        clq_plus = special.clqmn(m, n, x+1j*eps, 2)[0][m, n]
+        clq_minus = special.clqmn(m, n, x-1j*eps, 2)[0][m, n]
+        assert_array_almost_equal(array([clq_plus, clq_minus]),
+                                  array([special.lqmn(m, n, x)[0][m, n],
+                                         special.lqmn(m, n, x)[0][m, n]]),
+                                  7)
+ 
+    def test_clqmn_close_to_real_3(self):
+        eps = 1e-10
+        m = 1
+        n = 3
+        x = 1.5
+        clq_plus = special.clqmn(m, n, x+1j*eps, 3)[0][m, n]
+        clq_minus = special.clqmn(m, n, x-1j*eps, 3)[0][m, n]
+        assert_array_almost_equal(array([clq_plus, clq_minus]),
+                                  array([special.lqmn(m, n, x)[0][m, n],
+                                         special.lqmn(m, n, x)[0][m, n]]),
+                                  7)
+
+    def test_clqmn_across_unit_circle(self):
+        eps = 1e-7
+        m = 1
+        n = 1
+        x = 1j
+        for type in [2, 3]:
+            assert_almost_equal(special.clqmn(m, n, x+1j*eps, type)[0][m, n],
+                            special.clqmn(m, n, x-1j*eps, type)[0][m, n], 6)
+
+    def test_deriv_clqmn(self):
+        # data inside and outside of the unit circle
+        zvals = [0.5+0.5j, -0.5+0.5j, -0.5-0.5j, 0.5-0.5j,
+                 1+1j, -1+1j, -1-1j, 1-1j]
+        m = 2
+        n = 3
+        for type in [2, 3]:
+            for z in zvals:
+                for h in [1e-3, 1e-3j]:
+                    approx_derivative = (special.clqmn(m, n, z+0.5*h, type)[0]
+                                         - special.clqmn(m, n, z-0.5*h, type)[0])/h
+                    assert_allclose(special.clqmn(m, n, z, type)[1],
+                                    approx_derivative,
+                                    rtol=1e-4)
+
     def test_lqmn_shape(self):
         a, b = special.lqmn(4, 4, 1.1)
         assert_equal(a.shape, (5, 5))
