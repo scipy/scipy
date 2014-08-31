@@ -268,12 +268,11 @@ class TestSplev(TestCase):
         assert_equal(z.shape, ())
 
     def test_extrapolation_modes(self):
-        """ test extrapolation modes
-            * if ext=0, return the extrapolated value.
-            * if ext=1, return 0
-            * if ext=2, raise a ValueError
-            * if ext=3, return the boundary value.
-        """
+        # test extrapolation modes
+        #    * if ext=0, return the extrapolated value.
+        #    * if ext=1, return 0
+        #    * if ext=2, raise a ValueError
+        #    * if ext=3, return the boundary value.
         x = [1,2,3]
         y = [0,2,4]
         tck = splrep(x, y, k=1)
