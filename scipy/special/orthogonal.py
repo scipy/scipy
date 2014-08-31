@@ -731,15 +731,8 @@ def p_roots(n, mu=False):
     and weights (w) to use in Gaussian Quadrature over [-1,1] with weighting
     function 1.
     """
-    if mu is False:
-        if n in p_roots.cache:
-            return p_roots.cache[n]
+    return j_roots(n, 0.0, 0.0, mu=mu)
 
-        p_roots.cache[n] = j_roots(n, 0.0, 0.0, mu=False)
-        return p_roots.cache[n]
-
-    return j_roots(n, 0.0, 0.0, mu=True)
-p_roots.cache = dict()
 
 def legendre(n, monic=False):
     """
