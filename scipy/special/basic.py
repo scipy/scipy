@@ -902,6 +902,8 @@ def clqmn(m,n,z,type=3):
         raise ValueError("z must be scalar.")
     if not(type == 2 or type == 3):
         raise ValueError("type must be either 2 or 3.")
+    m = int(m)
+    n = int(n)
 
     # Ensure neither m nor n == 0
     mm = max(1,m)

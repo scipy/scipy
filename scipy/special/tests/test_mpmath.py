@@ -1458,25 +1458,42 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             rtol=1e-6,
                             n=500)
 
-    @knownfailure_overridable("apparently picks wrong function at |z| > 1")
     def test_legenq(self):
         def lqnm(n, m, z):
-            return sc.lqmn(m, n, z)[0][-1,-1]
+            try:
+                v = sc.lqmn(m, n, z)[0][-1,-1]
+            except ValueError:
+                return np.nan
+            if abs(v) > 1e306:
+                # harmonize overflow to inf
+                v = np.inf * np.sign(v.real)
+            return v
 
         def legenq(n, m, z):
             if abs(z) < 1e-15:
                 # mpmath has bad performance here
                 return np.nan
-            return _exception_to_nan(mpmath.legenq)(n, m, z, type=2)
+
+            typ = 2 if abs(z) < 1 else 3
+            v = _exception_to_nan(mpmath.legenq)(n, m, z, type=typ)
+
+            if abs(v) > 1e306:
+                # harmonize overflow to inf
+                v = mpmath.inf * mpmath.sign(v.real)
+
+            return v
 
         assert_mpmath_equal(lqnm,
                             legenq,
-                            [IntArg(0, 100), IntArg(0, 100), Arg()])
+                            [IntArg(-100, 100), IntArg(-100, 100), Arg()],
+                            dps=50)
 
-    @nonfunctional_tooslow
-    def test_legenq_complex(self):
-        def lqnm(n, m, z):
-            return sc.lqmn(int(m.real), int(n.real), z)[0][-1,-1]
+    def test_legenq_complex_2(self):
+        def clqnm(n, m, z):
+            try:
+                return sc.clqmn(m.real, n.real, z, type=2)[0][-1,-1]
+            except ValueError:
+                return np.nan
 
         def legenq(n, m, z):
             if abs(z) < 1e-15:
@@ -1484,10 +1501,42 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                 return np.nan
             return _exception_to_nan(mpmath.legenq)(int(n.real), int(m.real), z, type=2)
 
-        assert_mpmath_equal(lqnm,
+        # mpmath is quite slow here
+        x = np.array([-2, -0.99, -0.5, 0, 1e-5, 0.5, 0.99, 20, 2e3])
+        y = np.array([-1e3, -0.5, 0.5, 1.3])
+        z = (x[:,None] + 1j*y[None,:]).ravel()
+
+        assert_mpmath_equal(clqnm,
                             legenq,
-                            [IntArg(0, 100), IntArg(0, 100), ComplexArg()],
-                            n=100)
+                            [FixedArg([-2, -1, 0, 1, 2, 10]), FixedArg([-2, -1, 0, 1, 2, 10]), FixedArg(z)],
+                            rtol=1e-6,
+                            n=500,
+                            dps=30)
+
+    def test_legenq_complex_3(self):
+        def clqnm(n, m, z):
+            try:
+                return sc.clqmn(m.real, n.real, z, type=3)[0][-1,-1]
+            except ValueError:
+                return np.nan
+
+        def legenq(n, m, z):
+            if abs(z) < 1e-15:
+                # mpmath has bad performance here
+                return np.nan
+            return _exception_to_nan(mpmath.legenq)(int(n.real), int(m.real), z, type=3)
+
+        # mpmath is quite slow here
+        x = np.array([-2, -0.99, -0.5, 0, 1e-5, 0.5, 0.99, 20, 2e3])
+        y = np.array([-1e3, -0.5, 0.5, 1.3])
+        z = (x[:,None] + 1j*y[None,:]).ravel()
+
+        assert_mpmath_equal(clqnm,
+                            legenq,
+                            [FixedArg([-2, -1, 0, 1, 2, 10]), FixedArg([-2, -1, 0, 1, 2, 10]), FixedArg(z)],
+                            rtol=1e-6,
+                            n=500,
+                            dps=30)
 
     @knownfailure_overridable()
     def test_pcfd(self):
