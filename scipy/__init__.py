@@ -67,34 +67,12 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['test']
 
+# prevent interference with KeyboardInterrupt on Windows
+# due to MKL Fortran libraries
 import os as _os
-
 if _os.name == 'nt':
-    # prevent interference with KeyboardInterrupt on Windows
-    # due to Fortran libraries
-    # See stackoverflow for explanation:
-    # http://stackoverflow.com/questions/15457786/ctrl-c-crashes-python-after-importing-scipy-stats
-    import imp as _imp
-    import ctypes as _ctypes
-
-    def handler(sig):
-        try:
-            import _thread
-        except ImportError:
-            import thread as _thread
-        _thread.interrupt_main()
-        return 1
-
-    # load numpy  math and fortran libraries (but do not import numpy)
-    basepath = _imp.find_module('numpy')[1]
-    _ctypes.CDLL(_os.path.join(basepath, 'core', 'libmmd.dll'))
-    _ctypes.CDLL(_os.path.join(basepath, 'core', 'libifcoremd.dll'))
-    # install handler
-    routine = _ctypes.WINFUNCTYPE(_ctypes.c_int, _ctypes.c_uint)(handler)
-    _ctypes.windll.kernel32.SetConsoleCtrlHandler(routine, 1)
-
-    del _imp, _ctypes
-
+    from scipy import _fortran_fix
+    del _fortran_fix
 del _os
 
 from numpy import show_config as show_numpy_config
