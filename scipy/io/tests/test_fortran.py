@@ -6,7 +6,7 @@ from os import path
 from glob import iglob
 import re
 
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_allclose
 import numpy as np
 
 from scipy.io import FortranFile
@@ -32,6 +32,16 @@ def test_fortranfiles_read():
                 for i in range(dims[0]):
                     assert_equal(counter, data[i,j,k])
                     counter += 1
+
+
+def test_fortranfiles_mixed_record():
+    filename = path.join(DATA_PATH, "fortran-mixed.dat")
+    f = FortranFile(filename, 'r', '<u4')
+    record = f.read_record('<i4,<f4,<i8,(2)<f8')
+    assert_equal(record['f0'][0], 1)
+    assert_allclose(record['f1'][0], 2.3)
+    assert_equal(record['f2'][0], 4)
+    assert_allclose(record['f3'][0], [5.6, 7.8])
 
 
 def test_fortranfiles_write():
