@@ -135,6 +135,8 @@ __all__ = ['cs_graph_components',
            'breadth_first_tree',
            'depth_first_tree',
            'minimum_spanning_tree',
+           'reverse_cuthill_mckee',
+           'maximum_bipartite_matching',
            'construct_dist_matrix',
            'reconstruct_path',
            'csgraph_from_dense',
@@ -150,6 +152,7 @@ from ._shortest_path import shortest_path, floyd_warshall, dijkstra,\
 from ._traversal import breadth_first_order, depth_first_order, \
     breadth_first_tree, depth_first_tree, connected_components
 from ._min_spanning_tree import minimum_spanning_tree
+from ._reordering import reverse_cuthill_mckee, maximum_bipartite_matching
 from ._tools import construct_dist_matrix, reconstruct_path,\
     csgraph_from_dense, csgraph_to_dense, csgraph_masked_from_dense,\
     csgraph_from_masked

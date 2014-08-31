@@ -24,6 +24,10 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_min_spanning_tree',
          sources=['_min_spanning_tree.c'],
          include_dirs=[numpy.get_include()])
+    
+    config.add_extension('_reordering',
+         sources=['_reordering.c'],
+         include_dirs=[numpy.get_include()])
 
     config.add_extension('_tools',
          sources=['_tools.c'],
