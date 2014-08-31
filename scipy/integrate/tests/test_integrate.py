@@ -582,12 +582,11 @@ def test_odeint_banded_jacobian():
     assert_allclose(sol0, sol2)
 
     # Verify that the number of jacobian evaluations was the same
-    # for all three calls of odeint.  This is a regression test--there
-    # was a bug in the handling of banded jacobians that resulted in
-    # an incorrect jacobian matrix being passed to the LSODA code.
+    # for the calls of odeint with banded jacobian.  This is a regression
+    # test--there was a bug in the handling of banded jacobians that resulted
+    # in an incorrect jacobian matrix being passed to the LSODA code.
     # That would cause errors or excessive jacobian evaluations.
-    assert_array_equal(info0['nje'], info1['nje'])
-    assert_array_equal(info0['nje'], info2['nje'])
+    assert_array_equal(info1['nje'], info2['nje'])
 
 
 if __name__ == "__main__":
