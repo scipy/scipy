@@ -328,6 +328,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     """
 
+    if not isinstance(args, tuple):
+        args = (args,)
+
     if method is None:
         # Select automatically
         if constraints:
