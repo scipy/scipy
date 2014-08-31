@@ -596,11 +596,7 @@ class TestOptimize(object):
 
         c = np.array([3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5])
         xinit = np.random.randn(len(c))
-
-        try:
-            optimize.minimize(Y, xinit, jac=dY_dx, args=(c), method="BFGS")
-        except TypeError:
-            self.fail('minimize did not coerce args into tuple.')
+        optimize.minimize(Y, xinit, jac=dY_dx, args=(c), method="BFGS")
 
 
 class TestLBFGSBBounds(TestCase):
