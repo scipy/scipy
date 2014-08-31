@@ -868,6 +868,30 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         message : str
             A string descriptor of the exit status of the optimization.
 
+    See also
+    --------
+    show_options : Additional options accepted by the solvers
+
+    Notes
+    -----
+    This section describes the available solvers that can be selected by the
+    'method' parameter. The default method is *Simplex*.
+
+    Method *Simplex* uses the Simplex algorithm (as it relates to Linear
+    Programming, NOT the Nelder-Mead Simplex) [1]_, [2]_. This algorithm
+    should be reasonably reliable and fast.
+
+    .. versionadded:: 0.15.0
+
+    References
+    ----------
+    .. [1] Dantzig, George B., Linear programming and extensions. Rand
+           Corporation Research Study Princeton Univ. Press, Princeton, NJ, 1963
+    .. [2] Hillier, S.H. and Lieberman, G.J. (1995), "Introduction to
+           Mathematical Programming", McGraw-Hill, Chapter 4.
+    .. [3] Bland, Robert G. New finite pivoting rules for the simplex method.
+           Mathematics of Operations Research (2), 1977: pp. 103-107.
+
     Examples
     --------
     Consider the following problem:
@@ -909,39 +933,6 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     Note the actual objective value is 11.428571.  In this case we minimized
     the negative of the objective function.
-
-    References
-    ----------
-    .. [1] Dantzig, George B., Linear programming and extensions. Rand
-           Corporation Research Study Princeton Univ. Press, Princeton, NJ, 1963
-    .. [2] Hillier, S.H. and Lieberman, G.J. (1995), "Introduction to
-           Mathematical Programming", McGraw-Hill, Chapter 4.
-    .. [3] Bland, Robert G. New finite pivoting rules for the simplex method.
-           Mathematics of Operations Research (2), 1977: pp. 103-107.
-
-    Returns
-    -------
-    res : OptimizeResult
-        The optimization result represented as a ``OptimizeResult`` object.
-        Important attributes are: ``x`` the solution array, ``success`` a
-        Boolean flag indicating if the optimizer exited successfully and
-        ``message`` which describes the cause of the termination. See
-        `OptimizeResult` for a description of other attributes.
-
-    See also
-    --------
-    show_options : Additional options accepted by the solvers
-
-    Notes
-    -----
-    This section describes the available solvers that can be selected by the
-    'method' parameter. The default method is *Simplex*.
-
-    Method *Simplex* uses the Simplex algorithm (as it relates to Linear
-    Programming, NOT the Nelder-Mead Simplex) [1]_, [2]_. This algorithm
-    should be reasonably reliable and fast.
-
-    .. versionadded:: 0.15.0
 
     """
     meth = method.lower()
