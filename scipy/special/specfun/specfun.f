@@ -169,6 +169,9 @@ C
         IF (DABS(X).GT.1.0D0) LS=-1
         XS=LS*(1.0D0-X*X)
         XQ=DSQRT(XS)
+        IF (X.LT.0D0) THEN
+           XQ=LS*XQ
+        END IF
         Q0=0.5D0*DLOG(DABS((X+1.0D0)/(X-1.0D0)))
         IF (DABS(X).LT.1.0001D0) THEN
            QM(0,0)=Q0
