@@ -16,8 +16,8 @@ import warnings
 from scipy.misc import doccer
 from ._distr_params import distcont, distdiscrete
 
-from scipy.special import (comb, xlogy, chndtr, gammaln, hyp0f1,
-                           entr, rel_entr, kl_div)
+from scipy.special import (comb, chndtr, gammaln, hyp0f1,
+                           entr, kl_div)
 
 # for root finding for discrete distribution ppf, and max likelihood estimation
 from scipy import optimize
@@ -616,7 +616,8 @@ class rv_generic(object):
         self._stats_has_moments = ((sign[2] is not None) or
                                    ('moments' in sign[0]))
 
-    def _construct_argparser(self, meths_to_inspect, locscale_in, locscale_out):
+    def _construct_argparser(
+            self, meths_to_inspect, locscale_in, locscale_out):
         """Construct the parser for the shape arguments.
 
         Generates the argument-parsing functions dynamically and attaches
@@ -1403,9 +1404,10 @@ class rv_continuous(rv_generic):
         super(rv_continuous, self).__init__()
 
         # save the ctor parameters, cf generic freeze
-        self._ctor_param = dict(momtype=momtype, a=a, b=b, xtol=xtol,
-                badvalue=badvalue, name=name, longname=longname,
-                shapes=shapes, extradoc=extradoc)
+        self._ctor_param = dict(
+            momtype=momtype, a=a, b=b, xtol=xtol,
+            badvalue=badvalue, name=name, longname=longname,
+            shapes=shapes, extradoc=extradoc)
 
         if badvalue is None:
             badvalue = nan
@@ -1953,7 +1955,8 @@ class rv_continuous(rv_generic):
             restore = None
         else:
             if len(fixedn) == len(index):
-                raise ValueError("All parameters fixed. There is nothing to optimize.")
+                raise ValueError(
+                    "All parameters fixed. There is nothing to optimize.")
 
             def restore(args, theta):
                 # Replace with theta for all numbers not in fixedn
@@ -2241,12 +2244,12 @@ def _drv_nonzero(self, k, *args):
 
 def _drv_moment(self, n, *args):
     n = asarray(n)
-    return sum(self.xk**n[np.newaxis,...] * self.pk, axis=0)
+    return sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
 
 
 def _drv_moment_gen(self, t, *args):
     t = asarray(t)
-    return sum(exp(self.xk * t[np.newaxis,...]) * self.pk, axis=0)
+    return sum(exp(self.xk * t[np.newaxis, ...]) * self.pk, axis=0)
 
 
 def _drv2_moment(self, n, *args):
@@ -2562,9 +2565,10 @@ class rv_discrete(rv_generic):
         super(rv_discrete, self).__init__()
 
         # cf generic freeze
-        self._ctor_param = dict(a=a, b=b, name=name, badvalue=badvalue,
-                 moment_tol=moment_tol, values=values, inc=inc,
-                 longname=longname, shapes=shapes, extradoc=extradoc)
+        self._ctor_param = dict(
+            a=a, b=b, name=name, badvalue=badvalue,
+            moment_tol=moment_tol, values=values, inc=inc,
+            longname=longname, shapes=shapes, extradoc=extradoc)
 
         if badvalue is None:
             badvalue = nan
