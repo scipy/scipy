@@ -16,8 +16,8 @@ import warnings
 from scipy.misc import doccer
 from ._distr_params import distcont, distdiscrete
 
-from scipy.special import (comb, xlogy, chndtr, gammaln, hyp0f1,
-                           entr, rel_entr, kl_div)
+from scipy.special import (comb, chndtr, gammaln, hyp0f1,
+                           entr, kl_div)
 
 # for root finding for discrete distribution ppf, and max likelihood estimation
 from scipy import optimize
@@ -57,91 +57,91 @@ docheaders = {'methods': """\nMethods\n-------\n""",
               'examples': """\nExamples\n--------\n"""}
 
 _doc_rvs = """\
-rvs(%(shapes)s, loc=0, scale=1, size=1)
+``rvs(%(shapes)s, loc=0, scale=1, size=1)``
     Random variates.
 """
 _doc_pdf = """\
-pdf(x, %(shapes)s, loc=0, scale=1)
+``pdf(x, %(shapes)s, loc=0, scale=1)``
     Probability density function.
 """
 _doc_logpdf = """\
-logpdf(x, %(shapes)s, loc=0, scale=1)
+``logpdf(x, %(shapes)s, loc=0, scale=1)``
     Log of the probability density function.
 """
 _doc_pmf = """\
-pmf(x, %(shapes)s, loc=0, scale=1)
+``pmf(x, %(shapes)s, loc=0, scale=1)``
     Probability mass function.
 """
 _doc_logpmf = """\
-logpmf(x, %(shapes)s, loc=0, scale=1)
+``logpmf(x, %(shapes)s, loc=0, scale=1)``
     Log of the probability mass function.
 """
 _doc_cdf = """\
-cdf(x, %(shapes)s, loc=0, scale=1)
+``cdf(x, %(shapes)s, loc=0, scale=1)``
     Cumulative density function.
 """
 _doc_logcdf = """\
-logcdf(x, %(shapes)s, loc=0, scale=1)
+``logcdf(x, %(shapes)s, loc=0, scale=1)``
     Log of the cumulative density function.
 """
 _doc_sf = """\
-sf(x, %(shapes)s, loc=0, scale=1)
+``sf(x, %(shapes)s, loc=0, scale=1)``
     Survival function (1-cdf --- sometimes more accurate).
 """
 _doc_logsf = """\
-logsf(x, %(shapes)s, loc=0, scale=1)
+``logsf(x, %(shapes)s, loc=0, scale=1)``
     Log of the survival function.
 """
 _doc_ppf = """\
-ppf(q, %(shapes)s, loc=0, scale=1)
+``ppf(q, %(shapes)s, loc=0, scale=1)``
     Percent point function (inverse of cdf --- percentiles).
 """
 _doc_isf = """\
-isf(q, %(shapes)s, loc=0, scale=1)
+``isf(q, %(shapes)s, loc=0, scale=1)``
     Inverse survival function (inverse of sf).
 """
 _doc_moment = """\
-moment(n, %(shapes)s, loc=0, scale=1)
+``moment(n, %(shapes)s, loc=0, scale=1)``
     Non-central moment of order n
 """
 _doc_stats = """\
-stats(%(shapes)s, loc=0, scale=1, moments='mv')
+``stats(%(shapes)s, loc=0, scale=1, moments='mv')``
     Mean('m'), variance('v'), skew('s'), and/or kurtosis('k').
 """
 _doc_entropy = """\
-entropy(%(shapes)s, loc=0, scale=1)
+``entropy(%(shapes)s, loc=0, scale=1)``
     (Differential) entropy of the RV.
 """
 _doc_fit = """\
-fit(data, %(shapes)s, loc=0, scale=1)
+``fit(data, %(shapes)s, loc=0, scale=1)``
     Parameter estimates for generic data.
 """
 _doc_expect = """\
-expect(func, %(shapes)s, loc=0, scale=1, lb=None, ub=None, conditional=False, **kwds)
+``expect(func, %(shapes)s, loc=0, scale=1, lb=None, ub=None, conditional=False, **kwds)``
     Expected value of a function (of one argument) with respect to the distribution.
 """
 _doc_expect_discrete = """\
-expect(func, %(shapes)s, loc=0, lb=None, ub=None, conditional=False)
+``expect(func, %(shapes)s, loc=0, lb=None, ub=None, conditional=False)``
     Expected value of a function (of one argument) with respect to the distribution.
 """
 _doc_median = """\
-median(%(shapes)s, loc=0, scale=1)
+``median(%(shapes)s, loc=0, scale=1)``
     Median of the distribution.
 """
 _doc_mean = """\
-mean(%(shapes)s, loc=0, scale=1)
+``mean(%(shapes)s, loc=0, scale=1)``
     Mean of the distribution.
 """
 _doc_var = """\
-var(%(shapes)s, loc=0, scale=1)
+``var(%(shapes)s, loc=0, scale=1)``
     Variance of the distribution.
 """
 _doc_std = """\
-std(%(shapes)s, loc=0, scale=1)
+``std(%(shapes)s, loc=0, scale=1)``
     Standard deviation of the distribution.
 """
 _doc_interval = """\
-interval(alpha, %(shapes)s, loc=0, scale=1)
+``interval(alpha, %(shapes)s, loc=0, scale=1)``
     Endpoints of the range that contains alpha percent of the distribution
 """
 _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
@@ -616,7 +616,8 @@ class rv_generic(object):
         self._stats_has_moments = ((sign[2] is not None) or
                                    ('moments' in sign[0]))
 
-    def _construct_argparser(self, meths_to_inspect, locscale_in, locscale_out):
+    def _construct_argparser(
+            self, meths_to_inspect, locscale_in, locscale_out):
         """Construct the parser for the shape arguments.
 
         Generates the argument-parsing functions dynamically and attaches
@@ -1230,68 +1231,68 @@ class rv_continuous(rv_generic):
 
     Methods
     -------
-    rvs(<shape(s)>, loc=0, scale=1, size=1)
+    ``rvs(<shape(s)>, loc=0, scale=1, size=1)``
         random variates
 
-    pdf(x, <shape(s)>, loc=0, scale=1)
+    ``pdf(x, <shape(s)>, loc=0, scale=1)``
         probability density function
 
-    logpdf(x, <shape(s)>, loc=0, scale=1)
+    ``logpdf(x, <shape(s)>, loc=0, scale=1)``
         log of the probability density function
 
-    cdf(x, <shape(s)>, loc=0, scale=1)
+    ``cdf(x, <shape(s)>, loc=0, scale=1)``
         cumulative density function
 
-    logcdf(x, <shape(s)>, loc=0, scale=1)
+    ``logcdf(x, <shape(s)>, loc=0, scale=1)``
         log of the cumulative density function
 
-    sf(x, <shape(s)>, loc=0, scale=1)
+    ``sf(x, <shape(s)>, loc=0, scale=1)``
         survival function (1-cdf --- sometimes more accurate)
 
-    logsf(x, <shape(s)>, loc=0, scale=1)
+    ``logsf(x, <shape(s)>, loc=0, scale=1)``
         log of the survival function
 
-    ppf(q, <shape(s)>, loc=0, scale=1)
+    ``ppf(q, <shape(s)>, loc=0, scale=1)``
       percent point function (inverse of cdf --- quantiles)
 
-    isf(q, <shape(s)>, loc=0, scale=1)
+    ``isf(q, <shape(s)>, loc=0, scale=1)``
         inverse survival function (inverse of sf)
 
-    moment(n, <shape(s)>, loc=0, scale=1)
+    ``moment(n, <shape(s)>, loc=0, scale=1)``
         non-central n-th moment of the distribution.  May not work for array
         arguments.
 
-    stats(<shape(s)>, loc=0, scale=1, moments='mv')
+    ``stats(<shape(s)>, loc=0, scale=1, moments='mv')``
         mean('m'), variance('v'), skew('s'), and/or kurtosis('k')
 
-    entropy(<shape(s)>, loc=0, scale=1)
+    ``entropy(<shape(s)>, loc=0, scale=1)``
         (differential) entropy of the RV.
 
-    fit(data, <shape(s)>, loc=0, scale=1)
+    ``fit(data, <shape(s)>, loc=0, scale=1)``
         Parameter estimates for generic data
 
-    expect(func=None, args=(), loc=0, scale=1, lb=None, ub=None,
-             conditional=False, **kwds)
+    ``expect(func=None, args=(), loc=0, scale=1, lb=None, ub=None,
+             conditional=False, **kwds)``
         Expected value of a function with respect to the distribution.
         Additional kwd arguments passed to integrate.quad
 
-    median(<shape(s)>, loc=0, scale=1)
+    ``median(<shape(s)>, loc=0, scale=1)``
         Median of the distribution.
 
-    mean(<shape(s)>, loc=0, scale=1)
+    ``mean(<shape(s)>, loc=0, scale=1)``
         Mean of the distribution.
 
-    std(<shape(s)>, loc=0, scale=1)
+    ``std(<shape(s)>, loc=0, scale=1)``
         Standard deviation of the distribution.
 
-    var(<shape(s)>, loc=0, scale=1)
+    ``var(<shape(s)>, loc=0, scale=1)``
         Variance of the distribution.
 
-    interval(alpha, <shape(s)>, loc=0, scale=1)
+    ``interval(alpha, <shape(s)>, loc=0, scale=1)``
         Interval that with `alpha` percent probability contains a random
         realization of this distribution.
 
-    __call__(<shape(s)>, loc=0, scale=1)
+    ``__call__(<shape(s)>, loc=0, scale=1)``
         Calling a distribution instance creates a frozen RV object with the
         same methods but holding the given shape, location, and scale fixed.
         See Notes section.
@@ -1403,9 +1404,10 @@ class rv_continuous(rv_generic):
         super(rv_continuous, self).__init__()
 
         # save the ctor parameters, cf generic freeze
-        self._ctor_param = dict(momtype=momtype, a=a, b=b, xtol=xtol,
-                badvalue=badvalue, name=name, longname=longname,
-                shapes=shapes, extradoc=extradoc)
+        self._ctor_param = dict(
+            momtype=momtype, a=a, b=b, xtol=xtol,
+            badvalue=badvalue, name=name, longname=longname,
+            shapes=shapes, extradoc=extradoc)
 
         if badvalue is None:
             badvalue = nan
@@ -1953,7 +1955,8 @@ class rv_continuous(rv_generic):
             restore = None
         else:
             if len(fixedn) == len(index):
-                raise ValueError("All parameters fixed. There is nothing to optimize.")
+                raise ValueError(
+                    "All parameters fixed. There is nothing to optimize.")
 
             def restore(args, theta):
                 # Replace with theta for all numbers not in fixedn
@@ -2241,12 +2244,12 @@ def _drv_nonzero(self, k, *args):
 
 def _drv_moment(self, n, *args):
     n = asarray(n)
-    return sum(self.xk**n[np.newaxis,...] * self.pk, axis=0)
+    return sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
 
 
 def _drv_moment_gen(self, t, *args):
     t = asarray(t)
-    return sum(exp(self.xk * t[np.newaxis,...]) * self.pk, axis=0)
+    return sum(exp(self.xk * t[np.newaxis, ...]) * self.pk, axis=0)
 
 
 def _drv2_moment(self, n, *args):
@@ -2436,65 +2439,65 @@ class rv_discrete(rv_generic):
 
     Methods
     -------
-    generic.rvs(<shape(s)>, loc=0, size=1)
+    ``generic.rvs(<shape(s)>, loc=0, size=1)``
         random variates
 
-    generic.pmf(x, <shape(s)>, loc=0)
+    ``generic.pmf(x, <shape(s)>, loc=0)``
         probability mass function
 
-    logpmf(x, <shape(s)>, loc=0)
+    ``logpmf(x, <shape(s)>, loc=0)``
         log of the probability density function
 
-    generic.cdf(x, <shape(s)>, loc=0)
+    ``generic.cdf(x, <shape(s)>, loc=0)``
         cumulative density function
 
-    generic.logcdf(x, <shape(s)>, loc=0)
+    ``generic.logcdf(x, <shape(s)>, loc=0)``
         log of the cumulative density function
 
-    generic.sf(x, <shape(s)>, loc=0)
+    ``generic.sf(x, <shape(s)>, loc=0)``
         survival function (1-cdf --- sometimes more accurate)
 
-    generic.logsf(x, <shape(s)>, loc=0, scale=1)
+    ``generic.logsf(x, <shape(s)>, loc=0, scale=1)``
         log of the survival function
 
-    generic.ppf(q, <shape(s)>, loc=0)
+    ``generic.ppf(q, <shape(s)>, loc=0)``
         percent point function (inverse of cdf --- percentiles)
 
-    generic.isf(q, <shape(s)>, loc=0)
+    ``generic.isf(q, <shape(s)>, loc=0)``
         inverse survival function (inverse of sf)
 
-    generic.moment(n, <shape(s)>, loc=0)
+    ``generic.moment(n, <shape(s)>, loc=0)``
         non-central n-th moment of the distribution.  May not work for array
         arguments.
 
-    generic.stats(<shape(s)>, loc=0, moments='mv')
+    ``generic.stats(<shape(s)>, loc=0, moments='mv')``
         mean('m', axis=0), variance('v'), skew('s'), and/or kurtosis('k')
 
-    generic.entropy(<shape(s)>, loc=0)
+    ``generic.entropy(<shape(s)>, loc=0)``
         entropy of the RV
 
-    generic.expect(func=None, args=(), loc=0, lb=None, ub=None,
-            conditional=False)
+    ``generic.expect(func=None, args=(), loc=0, lb=None, ub=None,
+            conditional=False)``
         Expected value of a function with respect to the distribution.
         Additional kwd arguments passed to integrate.quad
 
-    generic.median(<shape(s)>, loc=0)
+    ``generic.median(<shape(s)>, loc=0)``
         Median of the distribution.
 
-    generic.mean(<shape(s)>, loc=0)
+    ``generic.mean(<shape(s)>, loc=0)``
         Mean of the distribution.
 
-    generic.std(<shape(s)>, loc=0)
+    ``generic.std(<shape(s)>, loc=0)``
         Standard deviation of the distribution.
 
-    generic.var(<shape(s)>, loc=0)
+    ``generic.var(<shape(s)>, loc=0)``
         Variance of the distribution.
 
-    generic.interval(alpha, <shape(s)>, loc=0)
+    ``generic.interval(alpha, <shape(s)>, loc=0)``
         Interval that with `alpha` percent probability contains a random
         realization of this distribution.
 
-    generic(<shape(s)>, loc=0)
+    ``generic(<shape(s)>, loc=0)``
         calling a distribution instance returns a frozen distribution
 
     Notes
@@ -2562,9 +2565,10 @@ class rv_discrete(rv_generic):
         super(rv_discrete, self).__init__()
 
         # cf generic freeze
-        self._ctor_param = dict(a=a, b=b, name=name, badvalue=badvalue,
-                 moment_tol=moment_tol, values=values, inc=inc,
-                 longname=longname, shapes=shapes, extradoc=extradoc)
+        self._ctor_param = dict(
+            a=a, b=b, name=name, badvalue=badvalue,
+            moment_tol=moment_tol, values=values, inc=inc,
+            longname=longname, shapes=shapes, extradoc=extradoc)
 
         if badvalue is None:
             badvalue = nan
