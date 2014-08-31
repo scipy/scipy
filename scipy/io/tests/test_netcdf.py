@@ -5,12 +5,13 @@ import os
 from os.path import join as pjoin, dirname
 import shutil
 import tempfile
+import warnings
 from io import BytesIO
 from glob import glob
 from contextlib import contextmanager
 
 import numpy as np
-from numpy.testing import assert_, assert_allclose
+from numpy.testing import assert_, assert_allclose, assert_warns
 
 from scipy.io.netcdf import netcdf_file
 
@@ -232,8 +233,32 @@ def test_mmaps_closed():
     vars = []
     for i in range(1100):
         f = netcdf_file(filename, mmap=True)
-        vars.append(f.variables['lat'])
+        vars.append(f.variables['lat'][:].copy())
         f.close()
+
+
+def test_mmaps_segfault():
+    filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        with netcdf_file(filename, mmap=True) as f:
+            x = f.variables['lat'][:]
+            # should not raise warnings
+            del x
+
+    def doit():
+        with netcdf_file(filename, mmap=True) as f:
+            return f.variables['lat'][:]
+
+    # should raise a warning
+    assert_warns(RuntimeWarning, doit)
+
+    # should not crash
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        x = doit()
+        x.sum()
 
 
 def test_zero_dimensional_var():

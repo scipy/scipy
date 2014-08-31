@@ -32,6 +32,8 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['netcdf_file']
 
 
+import warnings
+import weakref
 from operator import mul
 import mmap as mm
 
@@ -243,9 +245,23 @@ class netcdf_file(object):
             try:
                 self.flush()
             finally:
-                self._mm_buf = None
-                if self._mm is not None:
-                    self._mm.close()
+                self.variables = {}
+                if self._mm_buf is not None:
+                    ref = weakref.ref(self._mm_buf)
+                    self._mm_buf = None
+                    if ref() is None:
+                        # self._mm_buf is gc'd, and we can close the mmap
+                        self._mm.close()
+                    else:
+                        # we cannot close self._mm, since self._mm_buf is
+                        # alive and there may still be arrays referring to it
+                        warnings.warn((
+                            "Cannot close a netcdf_file opened with mmap=True, when "
+                            "netcdf_variables or arrays referring to its data still exist. "
+                            "All data arrays obtained from such files refer directly to "
+                            "data on disk, and must be copied before the file can be cleanly "
+                            "closed. (See netcdf_file docstring for more information on mmap.)"
+                        ), category=RuntimeWarning)
                 self._mm = None
                 self.fp.close()
     __del__ = close
