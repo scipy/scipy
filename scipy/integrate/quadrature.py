@@ -472,21 +472,21 @@ def romb(y, dx=1.0, axis=-1, show=False):
     slice0 = tupleset(all, axis, 0)
     slicem1 = tupleset(all, axis, -1)
     h = Ninterv*asarray(dx)*1.0
-    R[(1,1)] = (y[slice0] + y[slicem1])/2.0*h
+    R[(0,0)] = (y[slice0] + y[slicem1])/2.0*h
     slice_R = all
     start = stop = step = Ninterv
-    for i in range(2,k+1):
+    for i in range(1,k+1):
         start >>= 1
         slice_R = tupleset(slice_R, axis, slice(start,stop,step))
         step >>= 1
-        R[(i,1)] = 0.5*(R[(i-1,1)] + h*add.reduce(y[slice_R],axis))
-        for j in range(2,i+1):
+        R[(i,0)] = 0.5*(R[(i-1,0)] + h*add.reduce(y[slice_R],axis))
+        for j in range(1,i+1):
             R[(i,j)] = R[(i,j-1)] + \
-                       (R[(i,j-1)]-R[(i-1,j-1)]) / ((1 << (2*(j-1)))-1)
+                       (R[(i,j-1)]-R[(i-1,j-1)]) / ((1 << (2*j))-1)
         h = h / 2.0
 
     if show:
-        if not isscalar(R[(1,1)]):
+        if not isscalar(R[(0,0)]):
             print("*** Printing table only supported for integrals" +
                   " of a single data set.")
         else:
@@ -502,8 +502,8 @@ def romb(y, dx=1.0, axis=-1, show=False):
 
             print("\n       Richardson Extrapolation Table for Romberg Integration       ")
             print("====================================================================")
-            for i in range(1,k+1):
-                for j in range(1,i+1):
+            for i in range(0,k+1):
+                for j in range(0,i+1):
                     print(formstr % R[(i,j)], end=' ')
                 print()
             print("====================================================================\n")

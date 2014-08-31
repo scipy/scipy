@@ -1,11 +1,13 @@
 from __future__ import division, print_function, absolute_import
 
+import warnings
 import numpy as np
 from numpy import cos, sin, pi
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_almost_equal, assert_allclose, assert_
 
-from scipy.integrate import quadrature, romberg, romb, newton_cotes, cumtrapz
+from scipy.integrate import quadrature, romberg, romb, newton_cotes, cumtrapz, quad
+from scipy.integrate.quadrature import AccuracyWarning
 
 
 class TestQuadrature(TestCase):
@@ -62,6 +64,21 @@ class TestQuadrature(TestCase):
 
     def test_romb(self):
         assert_equal(romb(np.arange(17)),128)
+
+    def test_romb_gh_3731(self):
+        # Check that romb makes maximal use of data points
+        x = np.arange(2**4+1)
+        y = np.cos(0.2*x)
+        val = romb(y)
+        val2, err = quad(lambda x: np.cos(0.2*x), x.min(), x.max())
+        assert_allclose(val, val2, rtol=1e-8, atol=0)
+
+        # should be equal to romb with 2**k+1 samples
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=AccuracyWarning)
+            val3 = romberg(lambda x: np.cos(0.2*x), x.min(), x.max(),
+                           divmax=4)
+        assert_allclose(val, val3, rtol=1e-12, atol=0)
 
     def test_non_dtype(self):
         # Check that we work fine with functions returning float
