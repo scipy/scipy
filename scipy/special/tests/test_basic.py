@@ -2699,6 +2699,15 @@ class TestLegendreFunctions(TestCase):
             assert_almost_equal(special.clqmn(m, n, x+1j*eps, type)[0][m, n],
                             special.clqmn(m, n, x-1j*eps, type)[0][m, n], 6)
 
+    def test_clqmn_across_imaginary_axis(self):
+        eps = 1e-7
+        m = 1
+        n = 1
+        x = 1j
+        for type in [2, 3]:
+            assert_almost_equal(special.clqmn(m, n, x+eps, type)[0][m, n],
+                            special.clqmn(m, n, x-eps, type)[0][m, n], 6)
+
     def test_deriv_clqmn(self):
         # data inside and outside of the unit circle
         zvals = [0.5+0.5j, -0.5+0.5j, -0.5-0.5j, 0.5-0.5j,
