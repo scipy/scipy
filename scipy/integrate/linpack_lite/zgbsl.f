@@ -67,10 +67,6 @@ c     internal variables
 c
       complex*16 zdotc,t
       integer k,kb,l,la,lb,lm,m,nm1
-      double precision dreal,dimag
-      complex*16 zdumr,zdumi
-      dreal(zdumr) = zdumr
-      dimag(zdumi) = (0.0d0,-1.0d0)*zdumi
 c
       m = mu + ml + 1
       nm1 = n - 1

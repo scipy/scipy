@@ -51,14 +51,6 @@ c
       complex*16 t
       integer izamax,j,k,kp1,l,nm1
 c
-      complex*16 zdum
-      double precision cabs1
-      double precision dreal,dimag
-      complex*16 zdumr,zdumi
-      dreal(zdumr) = zdumr
-      dimag(zdumi) = (0.0d0,-1.0d0)*zdumi
-      cabs1(zdum) = dabs(dreal(zdum)) + dabs(dimag(zdum))
-c
 c     gaussian elimination with partial pivoting
 c
       info = 0
@@ -74,7 +66,7 @@ c
 c
 c        zero pivot implies this column already triangularized
 c
-         if (cabs1(a(l,k)) .eq. 0.0d0) go to 40
+         if (a(l,k) .eq. (0.0d0, 0.0d0)) go to 40
 c
 c           interchange if necessary
 c
@@ -106,6 +98,6 @@ c
    60 continue
    70 continue
       ipvt(n) = n
-      if (cabs1(a(n,n)) .eq. 0.0d0) info = n
+      if (a(n,n) .eq. (0.0d0, 0.0d0)) info = n
       return
       end

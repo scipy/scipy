@@ -61,10 +61,6 @@ c     internal variables
 c
       complex*16 zdotc,t
       integer k,kb,l,nm1
-      double precision dreal,dimag
-      complex*16 zdumr,zdumi
-      dreal(zdumr) = zdumr
-      dimag(zdumi) = (0.0d0,-1.0d0)*zdumi
 c
       nm1 = n - 1
       if (job .ne. 0) go to 50

@@ -87,14 +87,6 @@ c
       complex*16 t
       integer i,izamax,i0,j,ju,jz,j0,j1,k,kp1,l,lm,m,mm,nm1
 c
-      complex*16 zdum
-      double precision cabs1
-      double precision dreal,dimag
-      complex*16 zdumr,zdumi
-      dreal(zdumr) = zdumr
-      dimag(zdumi) = (0.0d0,-1.0d0)*zdumi
-      cabs1(zdum) = dabs(dreal(zdum)) + dabs(dimag(zdum))
-c
       m = ml + mu + 1
       info = 0
 c
@@ -138,7 +130,7 @@ c
 c
 c        zero pivot implies this column already triangularized
 c
-         if (cabs1(abd(l,k)) .eq. 0.0d0) go to 100
+         if (abd(l,k) .eq. (0.0d0, 0.0d0)) go to 100
 c
 c           interchange if necessary
 c
@@ -176,6 +168,6 @@ c
   120 continue
   130 continue
       ipvt(n) = n
-      if (cabs1(abd(m,n)) .eq. 0.0d0) info = n
+      if (abd(m,n) .eq. (0.0d0, 0.0d0)) info = n
       return
       end
