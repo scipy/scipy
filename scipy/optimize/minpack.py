@@ -499,6 +499,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False, **kw):
         How the `sigma` parameter affects the estimated covariance
         depends on `absolute_sigma` argument, as described above.
 
+    Raises
+    ------
+    ValueError
+        if ydata and xdata contain NaNs.
+
     See Also
     --------
     leastsq
@@ -538,11 +543,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False, **kw):
     if isscalar(p0):
         p0 = array([p0])
 
-    ydata = np.asanyarray(ydata)
-    if isinstance(xdata, (list, tuple)):
+    # NaNs can not be handled
+    ydata = np.asarray_chkfinite(ydata)
+    if isinstance(xdata, (list, tuple, np.ndarray)):
         # `xdata` is passed straight to the user-defined `f`, so allow
         # non-array_like `xdata`.
-        xdata = np.asarray(xdata)
+        xdata = np.asarray_chkfinite(xdata)
 
     args = (xdata, ydata, f)
     if sigma is None:
