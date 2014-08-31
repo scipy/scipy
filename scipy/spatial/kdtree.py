@@ -421,11 +421,12 @@ class KDTree(object):
         d : array of floats
             The distances to the nearest neighbors.
             If x has shape tuple+(self.m,), then d has shape tuple if
-            k is one, or tuple+(k,) if k is larger than one. If k > n,
-            missing neighbors are indicated with infinite distances.  If
-            k is None, then d is an object array of shape tuple,
-            containing lists of distances. In either case the hits are
-            sorted by distance (nearest first).
+            k is one, or tuple+(k,) if k is larger than one. Missing
+            neighbors (e.g. when k > n or distance_upper_bound is
+            given) are indicated with infinite distances.  If k is None,
+            then d is an object array of shape tuple, containing lists
+            of distances. In either case the hits are sorted by distance
+            (nearest first).
         i : array of integers
             The locations of the neighbors in self.data. i is the same
             shape as d.
