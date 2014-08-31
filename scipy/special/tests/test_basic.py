@@ -2732,6 +2732,16 @@ class TestLegendreFunctions(TestCase):
         assert_equal(a.shape, (5, 1))
         assert_equal(b.shape, (5, 1))
 
+    def test_lqmn_clqmn(self):
+        m = 3
+        n = 3
+        for x in (-0.5, 0.5):
+            assert_allclose(special.lqmn(m, n, x),
+                            special.clqmn(m, n, x, 2))
+        for x in (-2, 2):
+            assert_allclose(special.lqmn(m, n, x),
+                            special.clqmn(m, n, x, 3))
+
     def test_lqn(self):
         lqf = special.lqn(2,.5)
         assert_array_almost_equal(lqf,(array([0.5493, -0.7253, -0.8187]),
