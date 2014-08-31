@@ -407,9 +407,13 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     See splev for evaluation of the spline and its derivatives. Uses the
     FORTRAN routine curfit from FITPACK.
 
+    If provided, knots `t` must satisfy the Schoenberg-Whitney conditions,
+    i.e., there must be a subset of data points ``x[j]`` such that
+    ``t[j] < x[j] < t[j+k+1]``, for ``j=0, 1,...,n-k-2``.
+
     References
     ----------
-    Based on algorithms described in [1], [2], [3], and [4]:
+    Based on algorithms described in [1]_, [2]_, [3]_, and [4]_:
 
     .. [1] P. Dierckx, "An algorithm for smoothing, differentiation and
        integration of experimental data using spline functions",
