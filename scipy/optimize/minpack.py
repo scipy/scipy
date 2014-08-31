@@ -8,7 +8,7 @@ from numpy import (atleast_1d, dot, take, triu, shape, eye,
                    transpose, zeros, product, greater, array,
                    all, where, isscalar, asarray, inf, abs,
                    finfo, inexact, issubdtype, dtype)
-from .optimize import OptimizeResult, _check_unknown_options
+from .optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 
 error = _minpack.error
 
@@ -563,16 +563,22 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False, **kw):
         msg = "Optimal parameters not found: " + errmsg
         raise RuntimeError(msg)
 
+    warn_cov = False
     if pcov is None:
         # indeterminate covariance
         pcov = zeros((len(popt), len(popt)), dtype=float)
         pcov.fill(inf)
+        warn_cov = True
     elif not absolute_sigma:
         if len(ydata) > len(p0):
             s_sq = (asarray(func(popt, *args))**2).sum() / (len(ydata) - len(p0))
             pcov = pcov * s_sq
         else:
             pcov.fill(inf)
+            warn_cov = True
+
+    if warn_cov:
+        warnings.warn('Covariance of the parameters could not be estimated', category=OptimizeWarning)
 
     if return_full:
         return popt, pcov, infodict, errmsg, ier
