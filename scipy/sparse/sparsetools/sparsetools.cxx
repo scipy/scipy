@@ -106,6 +106,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
     int T_typenum = -1;
     int VW_count = 0;
     int I_in_arglist = 0;
+    int J_in_arglist = 0;
     int T_in_arglist = 0;
     int next_is_output = 0;
     int j, k, arg_j;
