@@ -738,7 +738,7 @@ def p_roots(n, mu=False):
         p_roots.cache[n] = j_roots(n, 0.0, 0.0, mu=False)
         return p_roots.cache[n]
 
-    return j_roots(n, 0.0, 0.0, mu=mu)
+    return j_roots(n, 0.0, 0.0, mu=True)
 p_roots.cache = dict()
 
 def legendre(n, monic=False):
