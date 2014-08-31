@@ -56,6 +56,9 @@ def _is_safe_size(n):
     """
     n = int(n)
 
+    if n == 0:
+        return True
+
     # Divide by 3 until you can't, then by 5 until you can't
     for c in (3, 5):
         while n % c == 0:
