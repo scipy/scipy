@@ -909,7 +909,13 @@ def clqmn(m,n,z,type=3):
     mm = max(1,m)
     nn = max(1,n)
 
-    q,qd = specfun.clqmn(mm,nn,real(z),imag(z),type)
+    q,qd = specfun.clqmn(mm,nn,real(z),imag(z),3)
+    # DLMF 14.23.6
+    if type==2:
+        p,pd = specfun.clpmn(mm,nn,real(z),imag(z),3)
+        phase = 1j**(-mm)
+        q = phase*(q-0.5j*pi*p)
+        qd = phase*(qd-0.5j*pi*pd)
     return q[:(m+1),:(n+1)],qd[:(m+1),:(n+1)]
 
 
