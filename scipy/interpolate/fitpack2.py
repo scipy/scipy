@@ -538,6 +538,21 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
             raise ValueError("Unknown extrapolation mode %s." % ext)
 
 
+_fpchec_error_string = """The input parameters have been rejected by fpchec. \
+This means that at least one of the following conditions is violated:
+
+1) k+1 <= n-k-1 <= m
+2) t(1) <= t(2) <= ... <= t(k+1)
+   t(n-k) <= t(n-k+1) <= ... <= t(n)
+3) t(k+1) < t(k+2) < ... < t(n-k)
+4) t(k+1) <= x(i) <= t(n-k)
+5) the conditions specified by schoenberg and whitney must hold
+   for at least one subset of data points, i.e. there must be a
+   subset of data points y(j) such that
+       t(j) < y(j) < t(j+k+1), j=1,2,...,n-k-1
+"""
+
+
 class LSQUnivariateSpline(UnivariateSpline):
     """
     One-dimensional spline with explicit internal knots.
@@ -647,6 +662,8 @@ class LSQUnivariateSpline(UnivariateSpline):
         if not alltrue(t[k+1:n-k]-t[k:n-k-1] > 0,axis=0):
             raise ValueError('Interior knots t must satisfy '
                             'Schoenberg-Whitney conditions')
+        if not dfitpack.fpchec(x,t,k) == 0:
+            raise ValueError(_fpchec_error_string)
         data = dfitpack.fpcurfm1(x,y,k,t,w=w,xb=xb,xe=xe)
         self._data = data[:-3] + (None,None,data[-1])
         self._reset_class()
