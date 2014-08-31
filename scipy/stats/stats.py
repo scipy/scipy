@@ -295,6 +295,8 @@ def nanmean(x, axis=0):
     1.0
 
     """
+    warnings.warn("sp.stats.nanmean is deprecated in favour of numpy.nanmean",
+                  DeprecationWarning)
     x, axis = _chk_asarray(x, axis)
     x = x.copy()
     Norig = x.shape[axis]
@@ -344,6 +346,9 @@ def nanstd(x, axis=0, bias=False):
     2.9154759474226504
 
     """
+    warnings.warn("sp.stats.nanstd is deprecated in favour of numpy.nanstd\n" +
+                  "Note that numpy.nanstd has a different signature",
+                  DeprecationWarning)
     x, axis = _chk_asarray(x, axis)
     x = x.copy()
     Norig = x.shape[axis]
@@ -448,6 +453,8 @@ def nanmedian(x, axis=0):
     array([  2. ,   9. ,  15. ,  20.5,  26. ])
 
     """
+    warnings.warn("sp.stats.nanmedian is deprecated in favour of np.nanmedian",
+                  DeprecationWarning)
     x, axis = _chk_asarray(x, axis)
     if x.ndim == 0:
         return float(x.item())
