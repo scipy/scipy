@@ -1,12 +1,10 @@
 from __future__ import division, print_function, absolute_import
 
-import unittest
-
 import warnings
 import numpy as np
 from numpy import array
 from numpy.testing import (assert_array_almost_equal, assert_array_equal,
-                           run_module_suite)
+                           run_module_suite, assert_raises)
 from scipy import signal
 
 
@@ -101,7 +99,7 @@ class TestChebWin(object):
         assert_array_almost_equal(cheb_even, cheb_even_low_at_true, decimal=4)
 
 
-class TestGetWindow(unittest.TestCase):
+class TestGetWindow(object):
 
     def test_boxcar(self):
         w = signal.get_window('boxcar', 12)
@@ -125,8 +123,7 @@ class TestGetWindow(unittest.TestCase):
         sig = np.arange(128)
 
         win = signal.get_window(('kaiser', 8.0), osfactor // 2)
-        with self.assertRaises(ValueError):
-            sig = signal.resample(sig, len(sig) * osfactor, window=win)
+        assert_raises(ValueError, signal.resample, (sig, len(sig) * osfactor), {'window': win})
 
 
 def test_windowfunc_basics():
