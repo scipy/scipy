@@ -613,7 +613,7 @@ def approx_fprime(xk, f, epsilon, *args):
     return grad
 
 
-def check_grad(func, grad, x0, *args):
+def check_grad(func, grad, x0, step=_epsilon, *args):
     """Check the correctness of a gradient function by comparing it against a
     (forward) finite-difference approximation of the gradient.
 
@@ -626,6 +626,9 @@ def check_grad(func, grad, x0, *args):
     x0 : ndarray
         Points to check `grad` against forward difference approximation of grad
         using `func`.
+    step : float, optional
+        Step size for the finite difference approximation. Defaults to
+        `sqrt(numpy.finfo(float).eps)`, which is approximately 1.49e-08.
     args : \*args, optional
         Extra arguments passed to `func` and `grad`.
 
@@ -640,11 +643,6 @@ def check_grad(func, grad, x0, *args):
     --------
     approx_fprime
 
-    Notes
-    -----
-    The step size used for the finite difference approximation is
-    `sqrt(numpy.finfo(float).eps)`, which is approximately 1.49e-08.
-
     Examples
     --------
     >>> def func(x): return x[0]**2 - 0.5 * x[1]**3
@@ -654,7 +652,7 @@ def check_grad(func, grad, x0, *args):
 
     """
     return sqrt(sum((grad(x0, *args) -
-                     approx_fprime(x0, func, _epsilon, *args))**2))
+                     approx_fprime(x0, func, step, *args))**2))
 
 
 def approx_fhess_p(x0, p, fprime, epsilon, *args):
