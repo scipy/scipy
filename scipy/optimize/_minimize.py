@@ -556,6 +556,9 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     -2.0000002026
 
     """
+    if not isinstance(args, tuple):
+        args = (args,)
+
     if callable(method):
         meth = "_custom"
     else:

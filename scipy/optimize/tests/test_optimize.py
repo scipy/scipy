@@ -780,6 +780,10 @@ class TestOptimizeScalar(TestCase):
                                        options=dict(stepsize=0.05))
         assert_allclose(res.x, self.solution, atol=1e-6)
 
+    def test_minimize_scalar_coerce_args_param(self):
+        # github issue #3503
+        optimize.minimize_scalar(self.fun, args=1.5)
+
 
 class TestNewtonCg(object):
     def test_rosenbrock(self):
