@@ -12188,6 +12188,9 @@ C
            LS=-1
         END IF
         ZQ=CDSQRT(LS*(1.0D0-Z*Z))
+        IF (X.LT.0D0) THEN
+           ZQ=LS*ZQ
+        END IF
         ZS=LS*(1.0D0-Z*Z)
         CQ0=0.5D0*CDLOG(LS*(1.0D0+Z)/(1.0D0-Z))
 C       For |z|>1.0001 and NTYPE=3, backward recursion is needed.
