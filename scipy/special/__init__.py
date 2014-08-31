@@ -321,7 +321,7 @@ These are not universal functions:
    :toctree: generated/
 
    clpmn    -- [+]Associated Legendre Function of the first kind for complex arguments.
-   clpmn    -- [+]Associated Legendre Function of the second kind for complex arguments.
+   clqmn    -- [+]Associated Legendre Function of the second kind for complex arguments.
    lpn      -- [+]Legendre Functions (polynomials) of the first kind
    lqn      -- [+]Legendre Functions of the second kind.
    lpmn     -- [+]Associated Legendre Function of the first kind for real arguments.
