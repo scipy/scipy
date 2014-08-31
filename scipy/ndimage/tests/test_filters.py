@@ -1,9 +1,11 @@
 ''' Some tests for filters '''
 from __future__ import division, print_function, absolute_import
 
+import sys
 import numpy as np
 
-from numpy.testing import assert_equal, assert_raises
+from numpy.testing import (assert_equal, assert_raises,
+                           assert_array_equal, TestCase, run_module_suite)
 
 import scipy.ndimage as sndi
 
@@ -94,3 +96,63 @@ def test_gaussian_truncate():
     nonzero_indices = np.where(y != 0)[0]
     n = nonzero_indices.ptp() + 1
     assert_equal(n, 15)
+
+
+class TestThreading(TestCase):
+    def check_func_thread(self, n, fun, args, out):
+        from threading import Thread
+        thrds = [Thread(target=fun, args=args, kwargs={'output': out[x]}) for x in range(n)]
+        [t.start() for t in thrds]
+        [t.join() for t in thrds]
+
+    def check_func_serial(self, n, fun, args, out):
+        for i in range(n):
+            fun(*args, output=out[i])
+
+    def test_correlate1d(self):
+        d = np.random.randn(5000)
+        os = np.empty((4, d.size))
+        ot = np.empty_like(os)
+        self.check_func_serial(4, sndi.correlate1d, (d, np.arange(5)), os)
+        self.check_func_thread(4, sndi.correlate1d, (d, np.arange(5)), ot)
+        assert_array_equal(os, ot)
+
+    def test_correlate(self):
+        d = np.random.randn(500, 500)
+        k = np.random.randn(10, 10)
+        os = np.empty([4] + list(d.shape))
+        ot = np.empty_like(os)
+        self.check_func_serial(4, sndi.correlate, (d, k), os)
+        self.check_func_thread(4, sndi.correlate, (d, k), ot)
+        assert_array_equal(os, ot)
+
+    def test_median_filter(self):
+        d = np.random.randn(500, 500)
+        os = np.empty([4] + list(d.shape))
+        ot = np.empty_like(os)
+        self.check_func_serial(4, sndi.median_filter, (d, 3), os)
+        self.check_func_thread(4, sndi.median_filter, (d, 3), ot)
+        assert_array_equal(os, ot)
+
+    def test_uniform_filter1d(self):
+        d = np.random.randn(5000)
+        os = np.empty((4, d.size))
+        ot = np.empty_like(os)
+        self.check_func_serial(4, sndi.uniform_filter1d, (d, 5), os)
+        self.check_func_thread(4, sndi.uniform_filter1d, (d, 5), ot)
+        assert_array_equal(os, ot)
+
+    def test_minmax_filter(self):
+        d = np.random.randn(500, 500)
+        os = np.empty([4] + list(d.shape))
+        ot = np.empty_like(os)
+        self.check_func_serial(4, sndi.maximum_filter, (d, 3), os)
+        self.check_func_thread(4, sndi.maximum_filter, (d, 3), ot)
+        assert_array_equal(os, ot)
+        self.check_func_serial(4, sndi.minimum_filter, (d, 3), os)
+        self.check_func_thread(4, sndi.minimum_filter, (d, 3), ot)
+        assert_array_equal(os, ot)
+
+
+if __name__ == "__main__":
+    run_module_suite(argv=sys.argv)
