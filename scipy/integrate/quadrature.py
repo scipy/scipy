@@ -426,7 +426,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     ----------
     y : array_like
         A vector of ``2**k + 1`` equally-spaced samples of a function.
-    dx : array_like, optional
+    dx : int, optional
         The sample spacing. Default is 1.
     axis : int, optional
         The axis along which to integrate. Default is -1 (last axis).
