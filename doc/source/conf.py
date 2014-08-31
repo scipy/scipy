@@ -262,7 +262,6 @@ coverage_ignore_c_items = {}
 #------------------------------------------------------------------------------
 plot_pre_code = """
 import numpy as np
-import scipy as sp
 np.random.seed(123)
 """
 plot_include_source = True

@@ -104,7 +104,8 @@ def lombscargle(np.ndarray[np.float64_t, ndim=1] x,
      
     Calculate Lomb-Scargle periodogram:
 
-    >>> pgram = sp.signal.lombscargle(x, y, f)
+    >>> import scipy.signal as signal
+    >>> pgram = signal.lombscargle(x, y, f)
 
     Now make a plot of the input data:
 

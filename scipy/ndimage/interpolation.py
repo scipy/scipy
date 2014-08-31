@@ -178,11 +178,12 @@ def geometric_transform(input, mapping, output_shape=None,
 
     Examples
     --------
+    >>> from scipy import ndimage
     >>> a = np.arange(12.).reshape((4, 3))
     >>> def shift_func(output_coords):
     ...     return (output_coords[0] - 0.5, output_coords[1] - 0.5)
     ...
-    >>> sp.ndimage.geometric_transform(a, shift_func)
+    >>> ndimage.geometric_transform(a, shift_func)
     array([[ 0.   ,  0.   ,  0.   ],
            [ 0.   ,  1.362,  2.738],
            [ 0.   ,  4.812,  6.187],
