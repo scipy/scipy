@@ -88,6 +88,9 @@ class TestUnivariateSpline(TestCase):
         xp = linspace(-8, 13, 100)
         xp_zeros = xp.copy()
         xp_zeros[np.logical_or(xp_zeros < 0., xp_zeros > 4.)] = 0
+        xp_clip = xp.copy()
+        xp_clip[xp_clip < x[0]] = x[0]
+        xp_clip[xp_clip > x[-1]] = x[-1]
 
         for cls in [UnivariateSpline, InterpolatedUnivariateSpline]:
             spl = cls(x=x, y=y)
@@ -99,6 +102,9 @@ class TestUnivariateSpline(TestCase):
                 assert_allclose(cls(x, y, ext=ext)(xp), xp_zeros**3, atol=1e-16)
             for ext in [2, 'raise']:
                 assert_raises(ValueError, spl, xp, **dict(ext=ext))
+            for ext in [3, 'const']:
+                assert_allclose(spl(xp, ext=ext), xp_clip**3, atol=1e-16)
+                assert_allclose(cls(x, y, ext=ext)(xp), xp_clip**3, atol=1e-16)
 
         # also test LSQUnivariateSpline [which needs explicit knots]
         t = spl.get_knots()[3:4]  # interior knots w/ default k=3
@@ -106,6 +112,7 @@ class TestUnivariateSpline(TestCase):
         assert_allclose(spl(xp, ext=0), xp**3, atol=1e-16)
         assert_allclose(spl(xp, ext=1), xp_zeros**3, atol=1e-16)
         assert_raises(ValueError, spl, xp, **dict(ext=2))
+        assert_allclose(spl(xp, ext=3), xp_clip**3, atol=1e-16)
 
         # also make sure that unknown values for `ext` are caught early
         for ext in [-1, 'unknown']:
