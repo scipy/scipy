@@ -578,7 +578,7 @@ class LSQUnivariateSpline(UnivariateSpline):
     k : int, optional
         Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
     ext : int or str, optional
-        Controls the extrapolation mode for elements 
+        Controls the extrapolation mode for elements
         not in the interval defined by the knot sequence.
 
         * if ext=0 or 'extrapolate', return the extrapolated value.
@@ -641,10 +641,11 @@ class LSQUnivariateSpline(UnivariateSpline):
                        the approximation interval.
                        By default, bbox=[x[0],x[-1]]
           k=3        - degree of the univariate spline.
-          ext        - Controls the extrapolation mode for elements 
+          ext        - Controls the extrapolation mode for elements
                        not in the interval defined by the knot sequence.
 
-                       * if ext=0 or 'extrapolate', return the extrapolated value.
+                       * if ext=0 or 'extrapolate', return the extrapolated
+                         value.
                        * if ext=1 or 'zeros', return 0
                        * if ext=2 or 'raise', raise a ValueError.
 
@@ -657,15 +658,15 @@ class LSQUnivariateSpline(UnivariateSpline):
             xb = x[0]
         if xe is None:
             xe = x[-1]
-        t = concatenate(([xb]*(k+1),t,[xe]*(k+1)))
+        t = concatenate(([xb]*(k+1), t, [xe]*(k+1)))
         n = len(t)
-        if not alltrue(t[k+1:n-k]-t[k:n-k-1] > 0,axis=0):
+        if not alltrue(t[k+1:n-k]-t[k:n-k-1] > 0, axis=0):
             raise ValueError('Interior knots t must satisfy '
-                            'Schoenberg-Whitney conditions')
-        if not dfitpack.fpchec(x,t,k) == 0:
+                             'Schoenberg-Whitney conditions')
+        if not dfitpack.fpchec(x, t, k) == 0:
             raise ValueError(_fpchec_error_string)
-        data = dfitpack.fpcurfm1(x,y,k,t,w=w,xb=xb,xe=xe)
-        self._data = data[:-3] + (None,None,data[-1])
+        data = dfitpack.fpcurfm1(x, y, k, t, w=w, xb=xb, xe=xe)
+        self._data = data[:-3] + (None, None, data[-1])
         self._reset_class()
 
         try:
