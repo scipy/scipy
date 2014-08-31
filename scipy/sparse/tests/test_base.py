@@ -2887,7 +2887,7 @@ class _TestMinMax(object):
         X = -X
         assert_equal(X.max(), -1)
 
-        # and a fully sparse matrix`
+        # and a fully sparse matrix
         Z = self.spmatrix(np.zeros(1))
         assert_equal(Z.min(), 0)
         assert_equal(Z.max(), 0)
