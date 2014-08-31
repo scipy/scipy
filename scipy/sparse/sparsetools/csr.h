@@ -970,6 +970,53 @@ void csr_minimum_csr(const I n_row, const I n_col,
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,minimum<T>());
 }
 
+template <class I, class T>
+  void csr_land_csr(const I n_row, const I n_col, 
+		      const I Ap[], const I Aj[], const T Ax[],
+		      const I Bp[], const I Bj[], const T Bx[],
+		      I Cp[],       I Cj[],       T Cx[])
+{
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::logical_and<T>());
+}
+
+
+template <class I, class T>
+  void csr_lor_csr(const I n_row, const I n_col, 
+		     const I Ap[], const I Aj[], const T Ax[],
+		     const I Bp[], const I Bj[], const T Bx[],
+		     I Cp[],       I Cj[],       T Cx[])
+{
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::logical_or<T>());
+}
+
+template <class I, class T>
+  void csr_band_csr(const I n_row, const I n_col, 
+		      const I Ap[], const I Aj[], const T Ax[],
+		      const I Bp[], const I Bj[], const T Bx[],
+		      I Cp[],       I Cj[],       T Cx[])
+{
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::bit_and<T>());
+}
+
+
+template <class I, class T>
+  void csr_bor_csr(const I n_row, const I n_col, 
+		     const I Ap[], const I Aj[], const T Ax[],
+		     const I Bp[], const I Bj[], const T Bx[],
+		     I Cp[],       I Cj[],       T Cx[])
+{
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::bit_or<T>());
+}
+
+template <class I, class T>
+  void csr_bxor_csr(const I n_row, const I n_col, 
+		     const I Ap[], const I Aj[], const T Ax[],
+		     const I Bp[], const I Bj[], const T Bx[],
+		     I Cp[],       I Cj[],       T Cx[])
+{
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::bit_xor<T>());
+}
+
 
 /*
  * Sum together duplicate column entries in each row of CSR matrix A

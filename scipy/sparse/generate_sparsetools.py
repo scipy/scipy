@@ -24,6 +24,7 @@ from distutils.dep_util import newer
 # List of all routines and their argument types.
 #
 # The first code indicates the return value, the rest the arguments.
+# Constraints are listed last (bitwise constrains code generation to only bitwise compatible)
 #
 
 # bsr.h
@@ -85,6 +86,11 @@ csr_plus_csr        v iiIITIIT*I*I*T
 csr_minus_csr       v iiIITIIT*I*I*T
 csr_maximum_csr     v iiIITIIT*I*I*T
 csr_minimum_csr     v iiIITIIT*I*I*T
+csr_land_csr        v iiIITIIT*I*I*T 
+csr_lor_csr         v iiIITIIT*I*I*T 
+csr_band_csr        v iiIITIIT*I*I*T bitwise
+csr_bor_csr         v iiIITIIT*I*I*T bitwise
+csr_bxor_csr         v iiIITIIT*I*I*T bitwise
 csr_ne_csr          v iiIITIIT*I*I*B
 csr_lt_csr          v iiIITIIT*I*I*B
 csr_gt_csr          v iiIITIIT*I*I*B
@@ -113,6 +119,7 @@ coo_matvec          v iIITT*T
 dia_matvec          v iiiiITT*T
 cs_graph_components i iII*I
 """
+CONSTRAINTS = ['bitwise']
 
 # List of compilation units
 COMPILATION_UNITS = [
@@ -153,6 +160,19 @@ T_TYPES = [
     ('NPY_CLONGDOUBLE', 'npy_clongdouble_wrapper'),
 ]
 
+# Integer types
+BITWISE_NPY_TYPES = set((
+    'NPY_BOOL',
+    'NPY_BYTE',
+    'NPY_UBYTE',
+    'NPY_SHORT',
+    'NPY_USHORT',
+    'NPY_INT', 
+    'NPY_UINT',
+    'NPY_LONG',
+    'NPY_ULONG',
+    'NPY_LONGLONG',
+    'NPY_ULONGLONG'))
 #
 # Code templates
 #
@@ -233,7 +253,7 @@ def get_thunk_type_set():
     return i_types, it_types, GET_THUNK_CASE_TEMPLATE % dict(content=getter_code)
 
 
-def parse_routine(name, args, types):
+def parse_routine(name, args, types, bitwise=False):
     """
     Generate thunk and method code for a given routine.
 
@@ -290,6 +310,9 @@ def parse_routine(name, args, types):
     thunk_content = """int j = get_thunk_case(I_typenum, T_typenum);
     switch (j) {"""
     for j, I_typenum, T_typenum, I_type, T_type in types:
+        
+        if bitwise and T_typenum not in BITWISE_NPY_TYPES:
+            continue
         arglist = get_arglist(I_type, T_type)
         if T_type is None:
             dispatch = "%s" % (I_type,)
@@ -353,12 +376,16 @@ def main():
                 name, args = line.split(None, 1)
             except ValueError:
                 raise ValueError("Malformed line: %r" % (line,))
+            
+            bitwise = args.endswith("bitwise")
+            if bitwise:
+                args = args.rsplit(None, 1)[0]
 
             args = "".join(args.split())
             if 't' in args or 'T' in args:
-                thunk, method = parse_routine(name, args, it_types)
+                thunk, method = parse_routine(name, args, it_types, bitwise=bitwise)
             else:
-                thunk, method = parse_routine(name, args, i_types)
+                thunk, method = parse_routine(name, args, i_types, bitwise=bitwise)
 
             if name in names:
                 raise ValueError("Duplicate routine %r" % (name,))
