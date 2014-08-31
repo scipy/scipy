@@ -586,6 +586,22 @@ class TestOptimize(object):
         assert_allclose(sol_3.x, 5, atol=1e-8)
         assert_allclose(sol_4.x, 2, atol=1e-8)
 
+    def test_minimize_coerce_args_param(self):
+        # github issue #3503
+        def Y(x, c):
+            return np.sum((x-c)**2)
+
+        def dY_dx(x, c=None):
+            return 2*(x-c)
+
+        c = np.array([3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5])
+        xinit = np.random.randn(len(c))
+
+        try:
+            optimize.minimize(Y, xinit, jac=dY_dx, args=(c), method="BFGS")
+        except TypeError:
+            self.fail('minimize did not coerce args into tuple.')
+
 
 class TestLBFGSBBounds(TestCase):
     """ Tests for L-BFGS-B with bounds """
