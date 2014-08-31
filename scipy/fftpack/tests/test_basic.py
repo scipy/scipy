@@ -18,6 +18,7 @@ from numpy.testing import assert_, assert_equal, assert_array_almost_equal, \
         TestCase, dec
 from scipy.fftpack import ifft,fft,fftn,ifftn,rfft,irfft, fft2
 from scipy.fftpack import _fftpack as fftpack
+from scipy.fftpack.basic import _is_safe_size
 
 from numpy import arange, add, array, asarray, zeros, dot, exp, pi,\
      swapaxes, double, cdouble
@@ -171,6 +172,13 @@ class _TestFFTBase(TestCase):
     def test_invalid_sizes(self):
         assert_raises(ValueError, fft, [])
         assert_raises(ValueError, fft, [[1,1],[2,2]], -5)
+
+    def test__is_safe_size(self):
+        vals = [(0, True), (1, True), (2, True), (3, True), (4, True), (5, True), (6, True), (7, False),
+                (15, True), (16, True), (17, False), (18, True), (21, False), (25, True), (50, True),
+                (120, True), (210, False)]
+        for n, is_safe in vals:
+            assert_equal(_is_safe_size(n), is_safe)
 
 
 class TestDoubleFFT(_TestFFTBase):
