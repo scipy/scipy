@@ -712,9 +712,9 @@ class chi_gen(rv_continuous):
 
     Special cases of `chi` are:
 
-        - ``chi(1, loc, scale) = `halfnormal`
-        - ``chi(2, 0, scale) = `rayleigh`
-        - ``chi(3, 0, scale) : `maxwell`
+        - ``chi(1, loc, scale)`` is equivalent to `halfnorm`
+        - ``chi(2, 0, scale)`` is equivalent to `rayleigh`
+        - ``chi(3, 0, scale)`` is equivalent to `maxwell`
 
     %(example)s
 
