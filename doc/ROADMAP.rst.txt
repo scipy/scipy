@@ -118,7 +118,9 @@ Needed for ODE solvers:
   - figure out if/how to integrate scikits.odes (Sundials wrapper)
   - figure out what to deprecate 
 
-The numerical integration functions are in good shape, not much to do here.
+The numerical integration functions are in good shape.  Support for integrating
+complex-valued functions and integrating multiple intervals (see gh-3325) could
+be added, but is not required for Scipy 1.0.
 
 
 interpolate
@@ -185,6 +187,18 @@ all interpolation code to ensure that boundary values, transformations, etc.
 are correctly computed.  Addressing this issue will close several issues,
 including #1323, #1903, #2045 and #2640.
 
+The morphology interface needs to be standardized:
+
+  - binary dilation/erosion/opening/closing take a "structure" argument,
+    whereas their grey equivalent take size (has to be a tuple, not a scalar),
+    footprint, or structure.
+  - a scalar should be acceptable for size, equivalent to providing that same
+    value for each axis.
+  - for binary dilation/erosion/opening/closing, the structuring element is
+    optional, whereas it's mandatory for grey.  Grey morphology operations
+    should get the same default.
+  - other filters should also take that default value where possible.
+
 
 odr
 ---
@@ -237,9 +251,11 @@ reimplement parts in Cython?
 
     - Small matrices are slower than PySparse, needs fixing
 
-There are a lot of formats.  These should all be kept, but
+There are a lot of formats.  These should be kept, but
 improvements/optimizations should go into CSR/CSC, which are the preferred
-formats.
+formats.  LIL may be the exception, it's inherently inefficient.  It could be
+dropped if DOK is extended to support all the operations LIL currently
+provides.
 
 Don't emulate np.matrix behavior, drop 2-D?
 
