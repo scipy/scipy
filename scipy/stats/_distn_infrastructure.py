@@ -1271,8 +1271,7 @@ class rv_continuous(rv_generic):
     ``fit(data, <shape(s)>, loc=0, scale=1)``
         Parameter estimates for generic data
 
-    ``expect(func=None, args=(), loc=0, scale=1, lb=None, ub=None,
-             conditional=False, **kwds)``
+    ``expect(func=None, args=(), loc=0, scale=1, lb=None, ub=None, conditional=False, **kwds)``
         Expected value of a function with respect to the distribution.
         Additional kwd arguments passed to integrate.quad
 
@@ -2476,8 +2475,7 @@ class rv_discrete(rv_generic):
     ``generic.entropy(<shape(s)>, loc=0)``
         entropy of the RV
 
-    ``generic.expect(func=None, args=(), loc=0, lb=None, ub=None,
-            conditional=False)``
+    ``generic.expect(func=None, args=(), loc=0, lb=None, ub=None, conditional=False)``
         Expected value of a function with respect to the distribution.
         Additional kwd arguments passed to integrate.quad
 
