@@ -85,11 +85,8 @@ Modules
 
 cluster
 ```````
-Most of the cluster module is a candidate for a Cython rewrite; this will speed
-up the code and it will be more maintainable than the current C code.  The code
-should remain (or become) simple and easy to understand.  Support for the
-arbitrary distance metrics in ``scipy.spatial`` is probably best left to
-scikit-learn or other more specialized libraries.
+This module is in good shape, after having been rewritten in Cython during a
+GSoC'14 project.
 
 
 constants
@@ -296,13 +293,7 @@ over the past few releases, but more cleanup and rewriting of functions is
 needed.  The Statistics Review milestone on Github gives a reasonable overview
 of which functions need checking, documentation and tests. 
 
-``stats.distributions`` : 
-
-  - skew/kurtosis of a number of distributions needs fixing
-  - fix generic docstring examples, they should be valid Python and make sense
-    for each distributions
-  - document subclassing of distributions even better, make issues with state
-    of instances clear.
+``stats.distributions`` is in good shape.
 
 All hypothesis tests should get a keyword 'alternative' where applicable (see
 ``stats.kstest`` for an example).
@@ -319,7 +310,8 @@ updated so that the two sets of functions are consistent.
 
 weave
 `````
-This is the only module that was not ported to Python 3.  Effectively it's
-deprecated (not recommended to use for new code).  In the future it should be
-removed from scipy (can be made into a separate module). 
+This module is deprecated and will be removed for Scipy 1.0.  It has been
+packaged as a separate package "weave", which users that still rely on the
+functionality provided by ``scipy.weave`` should use.
 
+Also note that this is the only module that was not ported to Python 3.
