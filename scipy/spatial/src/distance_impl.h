@@ -322,14 +322,15 @@ void compute_mean_vector(double *res, const double *X, npy_intp m, npy_intp n) {
   }
 }
 
-void pdist_mahalanobis(const double *X, const double *covinv,
+void pdist_mahalanobis(const double *X, const double *covinv, double *dimbuf,
 		       double *dm, npy_intp m, npy_intp n) {
   npy_intp i, j;
   const double *u, *v;
   double *it = dm;
-  double *dimbuf1, *dimbuf2;
-  dimbuf1 = (double*)malloc(sizeof(double) * 2 * n);
-  dimbuf2 = dimbuf1 + n;
+
+  double *dimbuf1 = dimbuf;
+  double *dimbuf2 = dimbuf + n;
+
   for (i = 0; i < m; i++) {
     for (j = i + 1; j < m; j++, it++) {
       u = X + (n * i);
@@ -338,7 +339,6 @@ void pdist_mahalanobis(const double *X, const double *covinv,
     }
   }
   dimbuf2 = 0;
-  free(dimbuf1);
 }
 
 void pdist_cosine(const double *X, double *dm, npy_intp m, npy_intp n, const double *norms) {
@@ -423,16 +423,16 @@ void dist_to_vector_from_squareform(const double *M, double *v, npy_intp n) {
 
 /** cdist */
 
-void cdist_mahalanobis(const double *XA,
-		       const double *XB,
-		       const double *covinv,
-		       double *dm, npy_intp mA, npy_intp mB, npy_intp n) {
+void cdist_mahalanobis(const double *XA, const double *XB,
+                       const double *covinv, double *dimbuf,
+                       double *dm, npy_intp mA, npy_intp mB, npy_intp n) {
   npy_intp i, j;
   const double *u, *v;
   double *it = dm;
-  double *dimbuf1, *dimbuf2;
-  dimbuf1 = (double*)malloc(sizeof(double) * 2 * n);
-  dimbuf2 = dimbuf1 + n;
+
+  double *dimbuf1 = dimbuf;
+  double *dimbuf2 = dimbuf + n;
+
   for (i = 0; i < mA; i++) {
     for (j = 0; j < mB; j++, it++) {
       u = XA + (n * i);
@@ -441,7 +441,6 @@ void cdist_mahalanobis(const double *XA,
     }
   }
   dimbuf2 = 0;
-  free(dimbuf1);
 }
 
 void cdist_cosine(const double *XA,

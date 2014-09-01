@@ -76,10 +76,22 @@ DEFINE_WRAP_CDIST(sqeuclidean, double)
 DEFINE_WRAP_CDIST(yule_bool, char)
 
 
+static NPY_INLINE double *mahalanobis_dimbuf(Py_ssize_t n)
+{
+    double *dimbuf;
+    dimbuf = calloc(n, 2 * sizeof(double));
+    if (!dimbuf) {
+        PyErr_Format(PyExc_MemoryError, "could not allocate %zd * %zd bytes",
+                     n, 2 * sizeof(double));
+    }
+    return dimbuf;
+}
+
+
 static PyObject *cdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *covinv_, *dm_;
   int mA, mB, n;
-  double *dm;
+  double *dm, *dimbuf;
   const double *XA, *XB;
   const double *covinv;
   if (!PyArg_ParseTuple(args, "O!O!O!O!",
@@ -97,7 +109,12 @@ static PyObject *cdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
     mB = XB_->dimensions[0];
     n = XA_->dimensions[1];
 
-    cdist_mahalanobis(XA, XB, covinv, dm, mA, mB, n);
+    dimbuf = mahalanobis_dimbuf(n);
+    if (!dimbuf) {
+      return NULL;
+    }
+    cdist_mahalanobis(XA, XB, covinv, dimbuf, dm, mA, mB, n);
+    free(dimbuf);
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -448,7 +465,7 @@ DEFINE_WRAP_PDIST_DOUBLE(sqeuclidean)
 static PyObject *pdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *covinv_, *dm_;
   int m, n;
-  double *dm;
+  double *dimbuf, *dm;
   const double *X;
   const double *covinv;
   if (!PyArg_ParseTuple(args, "O!O!O!",
@@ -464,7 +481,13 @@ static PyObject *pdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
-    pdist_mahalanobis(X, covinv, dm, m, n);
+    dimbuf = mahalanobis_dimbuf(n);
+    if (!dimbuf) {
+        return NULL;
+    }
+
+    pdist_mahalanobis(X, covinv, dimbuf, dm, m, n);
+    free(dimbuf);
   }
   return Py_BuildValue("d", 0.0);
 }
