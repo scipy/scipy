@@ -981,10 +981,7 @@ class _TestCommon:
             assert_array_equal(17.3*dat,(17.3*datsp).todense())
 
         for dtype in self.checked_dtypes:
-            fails = ((dtype == np.typeDict['int']) and
-                     isinstance(self, (TestLIL, TestDOK)))
-            msg = "LIL and DOK type's __rmul__ method has problems with int data."
-            yield dec.knownfailureif(fails, msg)(check), dtype
+            yield check, dtype
 
     def test_add(self):
         def check(dtype):
