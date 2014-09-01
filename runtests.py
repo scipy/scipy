@@ -226,7 +226,7 @@ def main(argv):
                           verbose=args.verbose,
                           extra_argv=extra_argv)
         else:
-            subprocess.call("python tools/time_testsuite.py")
+            result = subprocess.call(["python", "time_testsuite.py"])
 #            result = test(args.mode,
 #                          verbose=args.verbose,
 #                          extra_argv=extra_argv,
@@ -235,7 +235,7 @@ def main(argv):
     finally:
         os.chdir(cwd)
 
-    if isinstance(result, bool):
+    if isinstance(result, (bool, int)):
         sys.exit(0 if result else 1)
     elif result.wasSuccessful():
         sys.exit(0)
