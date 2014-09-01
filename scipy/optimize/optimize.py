@@ -628,7 +628,7 @@ def check_grad(func, grad, x0, step=_epsilon, *args):
         using `func`.
     step : float, optional
         Step size for the finite difference approximation. Defaults to
-        ``sqrt(numpy.finfo(float).eps)``, which is approximately 1.49e-08.
+        `sqrt(numpy.finfo(float).eps)`, which is approximately 1.49e-08.
     args : \*args, optional
         Extra arguments passed to `func` and `grad`.
 
