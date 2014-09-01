@@ -154,5 +154,34 @@ class TestThreading(TestCase):
         assert_array_equal(os, ot)
 
 
+def test_minmaximum_filter1d():
+    # Regression gh-3898
+    in_ = np.arange(10)
+    out = sndi.minimum_filter1d(in_, 1)
+    assert_equal(in_, out)
+    out = sndi.maximum_filter1d(in_, 1)
+    assert_equal(in_, out)
+    # Test reflect
+    out = sndi.minimum_filter1d(in_, 5, mode='reflect')
+    assert_equal([0, 0, 0, 1, 2, 3, 4, 5, 6, 7], out)
+    out = sndi.maximum_filter1d(in_, 5, mode='reflect')
+    assert_equal([2, 3, 4, 5, 6, 7, 8, 9, 9, 9], out)
+    #Test constant
+    out = sndi.minimum_filter1d(in_, 5, mode='constant', cval=-1)
+    assert_equal([-1, -1, 0, 1, 2, 3, 4, 5, -1, -1], out)
+    out = sndi.maximum_filter1d(in_, 5, mode='constant', cval=10)
+    assert_equal([10, 10, 4, 5, 6, 7, 8, 9, 10, 10], out)
+    # Test nearest
+    out = sndi.minimum_filter1d(in_, 5, mode='nearest')
+    assert_equal([0, 0, 0, 1, 2, 3, 4, 5, 6, 7], out)
+    out = sndi.maximum_filter1d(in_, 5, mode='nearest')
+    assert_equal([2, 3, 4, 5, 6, 7, 8, 9, 9, 9], out)
+    # Test wrap
+    out = sndi.minimum_filter1d(in_, 5, mode='wrap')
+    assert_equal([0, 0, 0, 1, 2, 3, 4, 5, 0, 0], out)
+    out = sndi.maximum_filter1d(in_, 5, mode='wrap')
+    assert_equal([9, 9, 4, 5, 6, 7, 8, 9, 9, 9], out)
+
+
 if __name__ == "__main__":
     run_module_suite(argv=sys.argv)
