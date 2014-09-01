@@ -3114,7 +3114,11 @@ def theilslopes(y, x=None, alpha=0.95):
     >>> res = stats.theilslopes(y, x, 0.90)
     >>> lsq_res = stats.linregress(x, y)
 
-    Plot the results:
+    Plot the results. The Theil-Sen regression line is shown in red, with the
+    dashed red lines illustrating the confidence interval of the slope (note
+    that the dashed red lines are not the confidence interval of the regression
+    as the confidence interval of the intercept is not included). The green
+    line shows the least-squares fit for comparison.
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
@@ -3124,13 +3128,6 @@ def theilslopes(y, x=None, alpha=0.95):
     >>> ax.plot(x, res[1] + res[3] * x, 'r--')
     >>> ax.plot(x, lsq_res[1] + lsq_res[0] * x, 'g-')
     >>> plt.show()
-
-    The Theil-Sen regression line is shown in red, with the dashed red
-    lines illustrating the confidence interval of the slope (note that
-    the dashed red lines are not the confidence interval of the
-    regression as the confidence interval of the intercept is not
-    included). The green line shows the least-squares fit for
-    comparison.
 
     """
     y = np.asarray(y).flatten()
