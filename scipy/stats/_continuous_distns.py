@@ -346,10 +346,12 @@ class beta_gen(rv_continuous):
     -----
     The probability density function for `beta` is::
 
-        beta.pdf(x, a, b) = gamma(a+b)/(gamma(a)*gamma(b)) * x**(a-1) *
-        (1-x)**(b-1),
+                            gamma(a+b) * x**(a-1) * (1-x)**(b-1)
+        beta.pdf(x, a, b) = ------------------------------------
+                                     gamma(a)*gamma(b)
 
-    for ``0 < x < 1``, ``a > 0``, ``b > 0``.
+    for ``0 < x < 1``, ``a > 0``, ``b > 0``, where ``gamma(z)`` is the gamma
+    function (`scipy.special.gamma`).
 
     %(example)s
 
