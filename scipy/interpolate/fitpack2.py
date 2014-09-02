@@ -96,8 +96,8 @@ class UnivariateSpline(object):
 
             sum((w[i] * (y[i]-spl(x[i])))**2, axis=0) <= s
 
-        If None (default), ``s = len(w)`` which should be a good value if 
-        ``1/w[i]`` is an estimate of the standard deviation of ``y[i]``.  
+        If None (default), ``s = len(w)`` which should be a good value if
+        ``1/w[i]`` is an estimate of the standard deviation of ``y[i]``.
         If 0, spline will interpolate through all data points.
     ext : int or str, optional
         Controls the extrapolation mode for elements
@@ -109,6 +109,13 @@ class UnivariateSpline(object):
         * if ext=3 of 'const', return the boundary value.
 
         The default value is 0.
+
+    check_finite : bool, optional
+        Whether to check that the input arrays contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination or non-sensical results) if the inputs
+        do contain infinities or NaNs.
+        Default is False.
 
     See Also
     --------
@@ -128,7 +135,7 @@ class UnivariateSpline(object):
     with ``nan`` . A workaround is to use zero weights for not-a-number
     data points:
 
-    >>> w = np.isnan(y) 
+    >>> w = np.isnan(y)
     >>> y[w] = 0.
     >>> spl = UnivariateSpline(x, y, w=~w)
 
@@ -151,12 +158,18 @@ class UnivariateSpline(object):
 
     Manually change the amount of smoothing:
 
-    >>> spl.set_smoothing_factor(0.5) 
+    >>> spl.set_smoothing_factor(0.5)
     >>> plt.plot(xs, spl(xs), 'b', lw=3)
     >>> plt.show()
 
     """
-    def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None, ext=0):
+    def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None,
+                 ext=0, check_finite=False):
+
+        if check_finite:
+            if not np.isfinite(x).all() or not np.isfinite(y).all():
+                raise ValueError("x and y array must not contain NaNs or infs.")
+
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         try:
             self.ext = _extrap_modes[ext]
@@ -251,14 +264,14 @@ class UnivariateSpline(object):
         self._reset_class()
 
     def __call__(self, x, nu=0, ext=None):
-        """ 
+        """
         Evaluate spline (or its nu-th derivative) at positions x.
 
         Parameters
         ----------
         x : array_like
             A 1-D array of points at which to return the value of the smoothed
-            spline or its derivatives. Note: x can be unordered but the 
+            spline or its derivatives. Note: x can be unordered but the
             evaluation is more efficient if x is (partially) ordered.
         nu  : int
             The order of derivative of the spline to compute.
@@ -271,7 +284,7 @@ class UnivariateSpline(object):
             * if ext=2 or 'raise', raise a ValueError
             * if ext=3 or 'const', return the boundary value.
 
-            The default value is 0, passed from the initialization of 
+            The default value is 0, passed from the initialization of
             UnivariateSpline.
 
         """
@@ -354,7 +367,7 @@ class UnivariateSpline(object):
         See Also
         --------
         splder, antiderivative
-        
+
         Notes
         -----
 
@@ -460,7 +473,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     k : int, optional
         Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
     ext : int or str, optional
-        Controls the extrapolation mode for elements 
+        Controls the extrapolation mode for elements
         not in the interval defined by the knot sequence.
 
         * if ext=0 or 'extrapolate', return the extrapolated value.
@@ -469,6 +482,13 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
         * if ext=3 of 'const', return the boundary value.
 
         The default value is 0.
+
+    check_finite : bool, optional
+        Whether to check that the input arrays contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination or non-sensical results) if the inputs
+        do contain infinities or NaNs.
+        Default is False.
 
     See Also
     --------
@@ -501,7 +521,14 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     0.0
 
     """
-    def __init__(self, x, y, w=None, bbox=[None]*2, k=3, ext=0):
+    def __init__(self, x, y, w=None, bbox=[None]*2, k=3,
+                 ext=0, check_finite=False):
+
+        if check_finite:
+            if (not np.isfinite(x).all() or not np.isfinite(y).all() or
+                    not np.isfinite(w).all()):
+                raise ValueError("Input must not contain NaNs or infs.")
+
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         self._data = dfitpack.fpcurf0(x,y,k,w=w,
                                       xb=bbox[0],xe=bbox[1],s=0)
@@ -566,6 +593,13 @@ class LSQUnivariateSpline(UnivariateSpline):
 
         The default value is 0.
 
+    check_finite : bool, optional
+        Whether to check that the input arrays contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination or non-sensical results) if the inputs
+        do contain infinities or NaNs.
+        Default is False.
+
     Raises
     ------
     ValueError
@@ -612,7 +646,14 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     """
 
-    def __init__(self, x, y, t, w=None, bbox=[None]*2, k=3, ext=0):
+    def __init__(self, x, y, t, w=None, bbox=[None]*2, k=3,
+                 ext=0, check_finite=False):
+
+        if check_finite:
+            if (not np.isfinite(x).all() or not np.isfinite(y).all() or
+                    not np.isfinite(w).all() or not np.isfinite(t).all()):
+                raise ValueError("Input(s) must not contain NaNs or infs.")
+
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         xb = bbox[0]
         xe = bbox[1]
