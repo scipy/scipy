@@ -18,6 +18,18 @@ class AccuracyWarning(Warning):
     pass
 
 
+def _cached_p_roots(n):
+    """
+    Cache p_roots results for speeding up multiple calls of the fixed_quad function.
+    """
+    if n in _cached_p_roots.cache:
+        return _cached_p_roots.cache[n]
+
+    _cached_p_roots.cache[n] = p_roots(n)
+    return _cached_p_roots.cache[n]
+_cached_p_roots.cache = dict()
+
+
 def fixed_quad(func,a,b,args=(),n=5):
     """
     Compute a definite integral using fixed-order Gaussian quadrature.
@@ -57,7 +69,7 @@ def fixed_quad(func,a,b,args=(),n=5):
     odeint : ODE integrator
 
     """
-    [x,w] = p_roots(n)
+    [x,w] = _cached_p_roots(n)
     x = real(x)
     ainf, binf = map(isinf,(a,b))
     if ainf or binf:
