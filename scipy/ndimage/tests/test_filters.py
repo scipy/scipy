@@ -94,3 +94,8 @@ def test_gaussian_truncate():
     nonzero_indices = np.where(y != 0)[0]
     n = nonzero_indices.ptp() + 1
     assert_equal(n, 15)
+
+def test_minimum_filter1d():
+    # Regression gh-3898
+    out = sndi.minimum_filter1d(np.arange(10), 1)
+    assert_equal(np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), out)
