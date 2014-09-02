@@ -8,7 +8,7 @@ Statistical functions (:mod:`scipy.stats`)
 This module contains a large number of probability distributions as
 well as a growing library of statistical functions.
 
-Each included distribution is an instance of the class rv_continous:
+Each included distribution is an instance of the class rv_continuous:
 For each given name the following methods are available:
 
 .. autosummary::
@@ -77,7 +77,7 @@ Continuous distributions
    exponweib         -- Exponentiated Weibull
    exponpow          -- Exponential Power
    f                 -- F (Snecdor F)
-   fatiguelife       -- Fatigue Life (Birnbaum-Sanders)
+   fatiguelife       -- Fatigue Life (Birnbaum-Saunders)
    fisk              -- Fisk
    foldcauchy        -- Folded Cauchy
    foldnorm          -- Folded Normal

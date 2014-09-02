@@ -2991,7 +2991,7 @@ class rv_discrete(rv_generic):
 
     def isf(self, q, *args, **kwds):
         """
-        Inverse survival function (1-sf) at q of the given RV.
+        Inverse survival function (inverse of `sf`) at q of the given RV.
 
         Parameters
         ----------
