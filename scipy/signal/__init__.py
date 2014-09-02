@@ -60,7 +60,6 @@ Filtering
 
    hilbert       -- Compute 1-D analytic signal, using the Hilbert transform.
    hilbert2      -- Compute 2-D analytic signal, using the Hilbert transform.
-   get_window    -- Create FIR window.
 
    decimate      -- Downsample a signal.
    detrend       -- Remove linear and/or constant trends from data.
