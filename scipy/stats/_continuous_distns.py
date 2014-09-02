@@ -1045,7 +1045,7 @@ exponpow = exponpow_gen(a=0.0, name='exponpow')
 
 
 class fatiguelife_gen(rv_continuous):
-    """A fatigue-life (Birnbaum-Sanders) continuous random variable.
+    """A fatigue-life (Birnbaum-Saunders) continuous random variable.
 
     %(before_notes)s
 
@@ -1057,6 +1057,11 @@ class fatiguelife_gen(rv_continuous):
             (x+1) / (2*c*sqrt(2*pi*x**3)) * exp(-(x-1)**2/(2*x*c**2))
 
     for ``x > 0``.
+
+    References
+    ----------
+    .. [1] "Birnbaum-Saunders distribution",
+           http://en.wikipedia.org/wiki/Birnbaum-Saunders_distribution
 
     %(example)s
 

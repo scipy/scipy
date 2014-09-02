@@ -77,7 +77,7 @@ Continuous distributions
    exponweib         -- Exponentiated Weibull
    exponpow          -- Exponential Power
    f                 -- F (Snecdor F)
-   fatiguelife       -- Fatigue Life (Birnbaum-Sanders)
+   fatiguelife       -- Fatigue Life (Birnbaum-Saunders)
    fisk              -- Fisk
    foldcauchy        -- Folded Cauchy
    foldnorm          -- Folded Normal
