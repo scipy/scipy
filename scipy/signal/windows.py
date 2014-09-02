@@ -1343,7 +1343,7 @@ def cosine(M, sym=True):
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if `M` is even and `sym` is True).
-    
+
     Notes
     -----
 
@@ -1465,6 +1465,8 @@ def get_window(window, Nx, fftbins=True):
                                     "more parameters  -- pass a tuple.")
             else:
                 winstr = window
+        else:
+            raise ValueError("%s as window type is not supported." % str(type(window)))
 
         if winstr in ['blackman', 'black', 'blk']:
             winfunc = blackman
