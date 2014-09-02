@@ -628,11 +628,9 @@ def check_grad(func, grad, x0, *args, **kwargs):
         using `func`.
     args : \*args, optional
         Extra arguments passed to `func` and `grad`.
-    kwargs : \*\*kwargs, optional
-        The step size used for the finite difference approximation can be
-        specified by passing the keyword argument `epsilon`. Otherwise,
-        it defaults to ``sqrt(numpy.finfo(float).eps)``, which is approximately
-        1.49e-08.
+    epsilon : float, optional
+        Step size used for the finite difference approximation. It defaults to
+        ``sqrt(numpy.finfo(float).eps)``, which is approximately 1.49e-08.
 
     Returns
     -------
@@ -653,7 +651,10 @@ def check_grad(func, grad, x0, *args, **kwargs):
     2.9802322387695312e-08
 
     """
-    step = kwargs.get('epsilon', _epsilon)
+    step = kwargs.pop('epsilon', _epsilon)
+    if kwargs:
+        raise ValueError("Unknown keyword arguments: %r" %
+                         (list(kwargs.keys()),))
     return sqrt(sum((grad(x0, *args) -
                      approx_fprime(x0, func, step, *args))**2))
 
