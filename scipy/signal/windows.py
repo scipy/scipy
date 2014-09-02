@@ -6,6 +6,7 @@ import warnings
 import numpy as np
 from scipy import special, linalg
 from scipy.fftpack import fft
+from scipy.lib.six import string_types
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
@@ -1454,7 +1455,7 @@ def get_window(window, Nx, fftbins=True):
             winstr = window[0]
             if len(window) > 1:
                 args = window[1:]
-        elif isinstance(window, str):
+        elif isinstance(window, string_types):
             if window in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
                         'general gaussian', 'general_gaussian',
                         'general gauss', 'general_gauss', 'ggs',
