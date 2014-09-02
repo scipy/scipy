@@ -3360,7 +3360,7 @@ class powerlaw_gen(rv_continuous):
 
     for ``0 <= x <= 1``, ``a > 0``.
 
-    `powerlaw` is a special case of `beta` with ``d == 1``.
+    `powerlaw` is a special case of `beta` with ``b == 1``.
 
     %(example)s
 
