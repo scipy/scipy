@@ -102,7 +102,9 @@ class netcdf_file(object):
     mmap : None or bool, optional
         Whether to mmap `filename` when reading.  Default is True
         when `filename` is a file name, False when `filename` is a
-        file-like object
+        file-like object. Note that when mmap is in use, data arrays
+        returned refer directly to the mmapped data on disk, and the
+        file cannot be closed as long as references to it exist.
     version : {1, 2}, optional
         version of netcdf to read / write, where 1 means *Classic
         format* and 2 means *64-bit offset format*.  Default is 1.  See
@@ -146,6 +148,13 @@ class netcdf_file(object):
     unnecessary data into memory. It uses the ``mmap`` module to create
     Numpy arrays mapped to the data on disk, for the same purpose.
 
+    Note that when `netcdf_file` is used to open a file with mmap=True
+    (default for read-only), arrays returned by it refer to data
+    directly on the disk. The file should not be closed, and cannot be cleanly
+    closed when asked, if such arrays are alive. You may want to explicitly copy
+    data arrays obtained from mmapped Netcdf file, if they are to be processed after
+    the file is closed.
+
     Examples
     --------
     To create a NetCDF file:
@@ -184,6 +193,7 @@ class netcdf_file(object):
         >>> with netcdf.netcdf_file('simple.nc', 'r') as f:
         >>>     print(f.history)
         Created for a test
+
     """
     def __init__(self, filename, mode='r', mmap=None, version=1):
         """Initialize netcdf_file from fileobj (str or file-like)."""
