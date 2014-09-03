@@ -47,6 +47,18 @@ from scipy.lib.decorator import decorator
 
 import nose
 
+# Check for __numpy_ufunc__
+class _UFuncCheck(object):
+    def __array__(self):
+        return np.array([1])
+
+    def __numpy_ufunc__(self, *a, **kwargs):
+        global HAS_NUMPY_UFUNC
+        HAS_NUMPY_UFUNC = True
+
+HAS_NUMPY_UFUNC = False
+np.add(_UFuncCheck(), np.array([1]))
+
 
 warnings.simplefilter('ignore', SparseEfficiencyWarning)
 warnings.simplefilter('ignore', ComplexWarning)
@@ -1533,13 +1545,13 @@ class _TestCommon:
 
     def test_unary_ufunc_overrides(self):
         def check(name):
-            if NumpyVersion(np.__version__) < '1.10.0.dev-0':
+            if not HAS_NUMPY_UFUNC:
                 if name == "sign":
                     raise nose.SkipTest("sign conflicts with comparison op "
-                                        "support on Numpy < 1.10")
+                                        "support on Numpy without __numpy_ufunc__")
                 if self.spmatrix in (dok_matrix, lil_matrix):
                     raise nose.SkipTest("Unary ops not implemented for dok/lil "
-                                        "with Numpy < 1.10")
+                                        "with Numpy without __numpy_ufunc__")
             ufunc = getattr(np, name)
 
             X = self.spmatrix(np.arange(20).reshape(4, 5) / 20.)
@@ -1548,8 +1560,8 @@ class _TestCommon:
             X2 = ufunc(X)
             assert_array_equal(X2.toarray(), X0)
 
-            if not (NumpyVersion(np.__version__) < '1.10.0.dev-0'):
-                # the out argument doesn't work on Numpy < 1.10
+            if HAS_NUMPY_UFUNC:
+                # the out argument doesn't work on Numpy without __numpy_ufunc__
                 out = np.zeros_like(X0)
                 X3 = ufunc(X, out=out)
                 assert_(X3 is out)
@@ -1585,8 +1597,7 @@ class _TestCommon:
         a_items = dict(dense=a, scalar=c, cplx_scalar=d, int_scalar=e, sparse=asp)
         b_items = dict(dense=b, scalar=c, cplx_scalar=d, int_scalar=e, sparse=bsp)
 
-        @dec.skipif(NumpyVersion(np.__version__) < '1.10.0.dev-0',
-                    "feature requires Numpy 1.10")
+        @dec.skipif(not HAS_NUMPY_UFUNC, "feature requires Numpy with __numpy_ufunc__")
         def check(i, j, dtype):
             ax = a_items[i]
             bx = b_items[j]
@@ -1688,8 +1699,7 @@ class _TestCommon:
                         yield check, i, j, dtype
 
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.10.0.dev-0',
-                "feature requires Numpy 1.10")
+    @dec.skipif(not HAS_NUMPY_UFUNC, "feature requires Numpy with __numpy_ufunc__")
     def test_ufunc_object_array(self):
         # This tests compatibility with previous Numpy object array
         # ufunc behavior. See gh-3345.
@@ -1728,7 +1738,7 @@ class _TestInplaceArithmetic:
         b = self.spmatrix(a)
 
         with warnings.catch_warnings():
-            if NumpyVersion(np.__version__) < '1.10.0.dev-0':
+            if not HAS_NUMPY_UFUNC:
                 warnings.simplefilter("ignore", DeprecationWarning)
 
             x = a.copy()
