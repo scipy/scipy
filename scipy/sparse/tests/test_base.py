@@ -620,6 +620,12 @@ class _TestCommon:
         for m in mats:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
 
+    def test_reshape(self):
+        x = self.spmatrix([[1, 0, 7], [0, 0, 0], [0, 3, 0], [0, 0, 5]])
+        for s in [(12,1),(1,12)]:
+            assert_array_equal(x.reshape(s).todense(),
+                               x.todense().reshape(s))
+
     @dec.slow
     def test_setdiag(self):
         def dense_setdiag(a, v, k):

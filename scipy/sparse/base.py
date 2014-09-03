@@ -95,8 +95,9 @@ class spmatrix(object):
 
     shape = property(fget=get_shape, fset=set_shape)
 
-    def reshape(self,shape):
-        raise NotImplementedError
+    def reshape(self, shape):
+        """Returns a coo_matrix with shape `shape`."""
+        return self.tocoo().reshape(shape)
 
     def astype(self, t):
         return self.tocsr().astype(t).asformat(self.format)
