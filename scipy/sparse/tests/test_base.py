@@ -632,6 +632,7 @@ class _TestCommon:
         x = self.spmatrix([[0, 10, 0, 0], [0, 0, 0, 0], [0, 20, 30, 40]])
         y = x.reshape((2, 6))
         desired = [[0, 10, 0, 0, 0, 0], [0, 0, 0, 20, 30, 40]]
+        assert_equal(y.format, x.format)
         assert_array_equal(y.A, desired)
 
     @dec.slow
