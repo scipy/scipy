@@ -10,7 +10,7 @@ __all__ = ['lil_matrix','isspmatrix_lil']
 from bisect import bisect_left
 
 import numpy as np
-from scipy.lib.six import xrange
+from scipy.lib.six import xrange, zip
 
 from .base import spmatrix, isspmatrix
 from .sputils import getdtype, isshape, issequence, isscalarlike, ismatrix, \
@@ -130,30 +130,6 @@ class lil_matrix(spmatrix, IndexMixin):
                 self.dtype = A.dtype
                 self.rows = A.rows
                 self.data = A.data
-
-    def set_shape(self,shape):
-        shape = tuple(shape)
-
-        if len(shape) != 2:
-            raise ValueError("Only two-dimensional sparse arrays "
-                                     "are supported.")
-        try:
-            shape = int(shape[0]),int(shape[1])  # floats, other weirdness
-        except:
-            raise TypeError('invalid shape')
-
-        if not (shape[0] >= 0 and shape[1] >= 0):
-            raise ValueError('invalid shape')
-
-        if (self._shape != shape) and (self._shape is not None):
-            try:
-                self = self.reshape(shape)
-            except NotImplementedError:
-                raise NotImplementedError("Reshaping not implemented for %s." %
-                                          self.__class__.__name__)
-        self._shape = shape
-
-    shape = property(fget=spmatrix.get_shape, fset=set_shape)
 
     def __iadd__(self,other):
         self[:,:] = self + other
@@ -357,6 +333,41 @@ class lil_matrix(spmatrix, IndexMixin):
                 new_r,new_c = np.unravel_index(i*j_max + j,shape)
                 new[new_r,new_c] = self[i,j]
         return new
+
+    def resize(self, shape):
+        """Resize the matrix in-place to dimensions given by ``shape``
+
+        Any elements that lie within the new shape will remain at the same
+        indices, while non-zero elements lying outside the new shape are
+        removed.
+
+        Parameters
+        ----------
+        shape : (int, int)
+            number of rows and columns in the new matrix
+        """
+        if not isshape(shape, nonneg=True):
+            raise TypeError("shape must be a 2-tuple of positive integers")
+        new_M, new_N = shape
+        M, N = self.shape
+
+        if new_M < M:
+            self.rows = self.rows[:new_M]
+            self.data = self.data[:new_M]
+        elif new_M > M:
+            self.rows = np.resize(self.rows, new_M)
+            self.data = np.resize(self.data, new_M)
+            for i in range(M, new_M):
+                self.rows[i] = []
+                self.data[i] = []
+
+        if new_N < N:
+            for row, data in zip(self.rows, self.data):
+                trunc = bisect_left(row, new_N)
+                del row[trunc:]
+                del data[trunc:]
+
+        self._shape = shape
 
     def toarray(self, order=None, out=None):
         """See the docstring for `spmatrix.toarray`."""

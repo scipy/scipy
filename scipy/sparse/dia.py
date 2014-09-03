@@ -267,6 +267,24 @@ class dia_matrix(_data_matrix):
         else:
             return dia_matrix((data,self.offsets), shape=self.shape)
 
+    def resize(self, shape):
+        """Resize the matrix in-place to dimensions given by ``shape``
+
+        Any elements that lie within the new shape will remain at the same
+        indices, while non-zero elements lying outside the new shape are
+        removed.
+
+        Parameters
+        ----------
+        shape : (int, int)
+            number of rows and columns in the new matrix
+        """
+        if not isshape(shape, nonneg=True):
+            raise TypeError("shape must be a 2-tuple of positive integers")
+        new_M, new_N = shape
+        M, N = self.shape
+        raise NotImplementedError
+
 
 def isspmatrix_dia(x):
     return isinstance(x, dia_matrix)

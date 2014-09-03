@@ -475,13 +475,19 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         return self.tocoo().toarray(order=order, out=out)
 
     def resize(self, shape):
-        """ Resize the matrix in-place to dimensions given by 'shape'.
+        """Resize the matrix in-place to dimensions given by ``shape``
 
-        Any non-zero elements that lie outside the new shape are removed.
+        Any elements that lie within the new shape will remain at the same
+        indices, while non-zero elements lying outside the new shape are
+        removed.
+
+        Parameters
+        ----------
+        shape : (int, int)
+            number of rows and columns in the new matrix
         """
-        if not isshape(shape):
-            raise TypeError("dimensions must be a 2-tuple of positive"
-                             " integers")
+        if not isshape(shape, nonneg=True):
+            raise TypeError("shape must be a 2-tuple of positive integers")
         newM, newN = shape
         M, N = self.shape
         if newM < M or newN < N:

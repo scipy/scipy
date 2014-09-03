@@ -1742,6 +1742,37 @@ class _TestCommon:
         assert_(isinstance(d, sparse.spmatrix))
         assert_allclose(d.A, (b - c).A)
 
+    def test_resize(self):
+        # resize(shape) resizes the matrix in-place
+        D = np.array([[1, 0, 3, 4],
+                      [2, 0, 0, 0],
+                      [3, 0, 0, 0]])
+        S = self.spmatrix(D)
+        assert_(S.resize((3, 2)) is None)
+        assert_array_equal(S.A, [[1, 0],
+                                 [2, 0],
+                                 [3, 0]])
+        # .shape = is equivalent to .resize()
+        S.shape = (2, 2)
+        assert_array_equal(S.A, [[1, 0],
+                                 [2, 0]])
+        S.resize((3, 2))
+        assert_array_equal(S.A, [[1, 0],
+                                 [2, 0],
+                                 [0, 0]])
+        S.resize((3, 3))
+        assert_array_equal(S.A, [[1, 0, 0],
+                                 [2, 0, 0],
+                                 [0, 0, 0]])
+        # test no-op
+        S.resize((3, 3))
+        assert_array_equal(S.A, [[1, 0, 0],
+                                 [2, 0, 0],
+                                 [0, 0, 0]])
+        for bad_shape in [1, (-1, 2), (2, -1), (1, 2, 3)]:
+            assert_raises(Exception, S.resize, bad_shape)
+            assert_raises(Exception, setattr, S, 'shape', bad_shape)
+
 
 class _TestInplaceArithmetic:
     def test_inplace_dense(self):
@@ -3388,19 +3419,6 @@ class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
         assert_equal(da.dtype, np.float32)
         assert_array_equal(da, data)
 
-    def test_resize(self):
-        # A couple basic tests of the resize() method.
-        #
-        # resize(shape) resizes the array in-place.
-        a = dok_matrix((5,5))
-        a[:,0] = 1
-        a.resize((2,2))
-        expected1 = array([[1,0],[1,0]])
-        assert_array_equal(a.todense(), expected1)
-        a.resize((3,2))
-        expected2 = array([[1,0],[1,0],[0,0]])
-        assert_array_equal(a.todense(), expected2)
-
     def test_ticket1160(self):
         # Regression test for ticket #1160.
         a = dok_matrix((3,3))
@@ -3681,6 +3699,10 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         m.setdiag((3,), k=3)
         assert_equal(m.offsets.dtype, np.int64)
 
+    @dec.knownfailureif(True, "known deficiency in DIA")
+    def test_resize(self):
+        pass
+
 
 class TestBSR(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
@@ -3764,6 +3786,29 @@ class TestBSR(sparse_test_class(getset=False,
     @dec.knownfailureif(True, "known deficiency in BSR")
     def test_setdiag(self):
         pass
+
+    def test_resize_blocked(self):
+        # test resize() with non-(1,1) blocksize
+        D = np.array([[1, 0, 3, 4],
+                      [2, 0, 0, 0],
+                      [3, 0, 0, 0]])
+        S = self.spmatrix(D, blocksize=(1, 2))
+        assert_(S.resize((3, 2)) is None)
+        assert_array_equal(S.A, [[1, 0],
+                                 [2, 0],
+                                 [3, 0]])
+        S.resize((2, 2))
+        assert_array_equal(S.A, [[1, 0],
+                                 [2, 0]])
+        S.resize((3, 2))
+        assert_array_equal(S.A, [[1, 0],
+                                 [2, 0],
+                                 [0, 0]])
+        S.resize((3, 4))
+        assert_array_equal(S.A, [[1, 0, 0, 0],
+                                 [2, 0, 0, 0],
+                                 [0, 0, 0, 0]])
+        assert_raises(ValueError, S.resize, (2, 3))
 
 
 #------------------------------------------------------------------------------

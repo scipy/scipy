@@ -582,7 +582,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         else:
             return spmatrix.sum(self, axis)
 
-    def _minor_reduce(self, ufunc):
+    def _minor_reduce(self, ufunc, data=None):
         """Reduce nonzeros with a ufunc over the minor axis when non-empty
 
         Warning: this does not call sum_duplicates()
@@ -595,12 +595,14 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         value : array of self.dtype
             Reduce result for nonzeros in each major_index
         """
+        if data is None:
+            data = self.data
         major_index = np.flatnonzero(np.diff(self.indptr))
         if self.data.size == 0 and major_index.size == 0:
             # Numpy < 1.8.0 don't handle empty arrays in reduceat
-            value = np.zeros_like(self.data)
+            value = np.zeros_like(data)
         else:
-            value = ufunc.reduceat(self.data,
+            value = ufunc.reduceat(data,
                                    downcast_intp_index(self.indptr[major_index]))
         return major_index, value
 
@@ -873,6 +875,53 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         shape = self._swap((i1 - i0, j1 - j0))
 
         return self.__class__((data, indices, indptr), shape=shape)
+
+    def resize(self, shape):
+        """Resize the matrix in-place to dimensions given by ``shape``
+
+        Any elements that lie within the new shape will remain at the same
+        indices, while non-zero elements lying outside the new shape are
+        removed.
+
+        Parameters
+        ----------
+        shape : (int, int)
+            number of rows and columns in the new matrix
+        """
+        if not isshape(shape, nonneg=True):
+            raise TypeError("shape must be a 2-tuple of positive integers")
+        if hasattr(self, 'blocksize'):
+            bm, bn = self.blocksize
+            new_M, rm = divmod(shape[0], bm)
+            new_N, rn = divmod(shape[1], bn)
+            if rm or rn:
+                raise ValueError("shape must be divisible into %s blocks. "
+                                 "Got %s" % (self.blocksize, shape))
+            M, N = self.shape[0] // bm, self.shape[1] // bn
+        else:
+            new_M, new_N = self._swap(shape)
+            M, N = self._swap(self.shape)
+
+        if new_M < M:
+            self.indices = self.indices[:self.indptr[new_M]]
+            self.data = self.data[:self.indptr[new_M]]
+            self.indptr = self.indptr[:new_M + 1]
+        elif new_M > M:
+            self.indptr = np.resize(self.indptr, new_M + 1)
+            self.indptr[M + 1:].fill(self.indptr[M])
+
+        if new_N < N:
+            mask = self.indices < new_N
+            if not np.all(mask):
+                self.indices = self.indices[mask]
+                self.data = self.data[mask]
+                int_mask = mask.astype(self.indptr.dtype)
+                major_index, val = self._minor_reduce(np.add, int_mask)
+                self.indptr.fill(0)
+                self.indptr[1:][major_index] = val
+                np.cumsum(self.indptr, out=self.indptr)
+
+        self._shape = shape
 
     ######################
     # Conversion methods #

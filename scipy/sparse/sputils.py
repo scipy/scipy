@@ -202,8 +202,10 @@ def isintlike(x):
             return False
 
 
-def isshape(x):
+def isshape(x, nonneg=False):
     """Is x a valid 2-tuple of dimensions?
+
+    If nonneg, also checks that the dimensions are non-negative.
     """
     try:
         # Assume it's a tuple of matrix dimensions (M, N)
@@ -213,7 +215,8 @@ def isshape(x):
     else:
         if isintlike(M) and isintlike(N):
             if np.ndim(M) == 0 and np.ndim(N) == 0:
-                return True
+                if not nonneg or (M >= 0 and N >= 0):
+                    return True
         return False
 
 

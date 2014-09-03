@@ -84,9 +84,9 @@ class spmatrix(object):
 
         if (self._shape != shape) and (self._shape is not None):
             try:
-                self = self.reshape(shape)
+                self.resize(shape)
             except NotImplementedError:
-                raise NotImplementedError("Reshaping not implemented for %s." %
+                raise NotImplementedError("Resizing not implemented for %s." %
                                           self.__class__.__name__)
         self._shape = shape
 

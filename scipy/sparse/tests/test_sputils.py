@@ -53,6 +53,10 @@ class TestSparseUtils(TestCase):
         assert_equal(sputils.isshape((1.5,2)),False)
         assert_equal(sputils.isshape((2,2,2)),False)
         assert_equal(sputils.isshape(([2],2)),False)
+        assert_equal(sputils.isshape((-1, 2), nonneg=False),True)
+        assert_equal(sputils.isshape((2, -1), nonneg=False),True)
+        assert_equal(sputils.isshape((-1, 2), nonneg=True),False)
+        assert_equal(sputils.isshape((2, -1), nonneg=True),False)
 
     def test_issequence(self):
         assert_equal(sputils.issequence((1,)),True)

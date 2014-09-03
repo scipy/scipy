@@ -269,6 +269,31 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         M,N = self.shape
         return coo_matrix((self.data, (self.col, self.row)), shape=(N,M), copy=copy)
 
+    def resize(self, shape):
+        """Resize the matrix in-place to dimensions given by ``shape``
+
+        Any elements that lie within the new shape will remain at the same
+        indices, while non-zero elements lying outside the new shape are
+        removed.
+
+        Parameters
+        ----------
+        shape : (int, int)
+            number of rows and columns in the new matrix
+        """
+        if not isshape(shape, nonneg=True):
+            raise TypeError("shape must be a 2-tuple of positive integers")
+        new_M, new_N = shape
+        M, N = self.shape
+
+        if new_M < M or new_N < N:
+            mask = np.logical_and(self.row < new_M, self.col < new_N)
+            self.row = self.row[mask]
+            self.col = self.col[mask]
+            self.data = self.data[mask]
+
+        self._shape = shape
+
     def toarray(self, order=None, out=None):
         """See the docstring for `spmatrix.toarray`."""
         B = self._process_toarray_args(order, out)
