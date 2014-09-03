@@ -3500,17 +3500,6 @@ class TestLIL(sparse_test_class(minmax=False)):
         x = x*0
         assert_equal(x[0,0],0)
 
-    def test_reshape(self):
-        x = lil_matrix((4,3))
-        x[0,0] = 1
-        x[2,1] = 3
-        x[3,2] = 5
-        x[0,2] = 7
-
-        for s in [(12,1),(1,12)]:
-            assert_array_equal(x.reshape(s).todense(),
-                               x.todense().reshape(s))
-
     def test_inplace_ops(self):
         A = lil_matrix([[0,2,3],[4,0,6]])
         B = lil_matrix([[0,1,0],[0,2,3]])

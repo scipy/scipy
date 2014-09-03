@@ -349,15 +349,6 @@ class lil_matrix(spmatrix, IndexMixin):
         new.rows = deepcopy(self.rows)
         return new
 
-    def reshape(self,shape):
-        new = lil_matrix(shape, dtype=self.dtype)
-        j_max = self.shape[1]
-        for i,row in enumerate(self.rows):
-            for col,j in enumerate(row):
-                new_r,new_c = np.unravel_index(i*j_max + j,shape)
-                new[new_r,new_c] = self[i,j]
-        return new
-
     def toarray(self, order=None, out=None):
         """See the docstring for `spmatrix.toarray`."""
         d = self._process_toarray_args(order, out)
