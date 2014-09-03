@@ -20,8 +20,11 @@ from scipy.sparse import csc_matrix, csr_matrix, lil_matrix, isspmatrix
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
      ArpackNoConvergence
+from scipy.sparse.linalg.eigen import arpack
 
 from scipy.linalg import svd, hilbert
+
+from scipy.lib._gcutils import assert_deallocated
 
 
 # eigs() and eigsh() are called many times, so apply a filter for the warnings
@@ -708,6 +711,29 @@ def test_svd_LM_zeros_matrix_gh_3452():
 
     # Check that the singular values are zero.
     assert_array_equal(s, 0)
+
+
+def test_linearoperator_deallocation():
+    # Check that the linear operators used by the Arpack wrappers are
+    # deallocatable by reference counting -- they are big objects, so
+    # Python's cyclic GC may not collect them fast enough before
+    # running out of memory if eigs/eigsh are called in a tight loop.
+
+    M_d = np.eye(10)
+    M_s = csc_matrix(M_d)
+    M_o = aslinearoperator(M_d)
+    v = np.ones(10)
+
+    with assert_deallocated(lambda: arpack.SpLuInv(M_s)):
+        pass
+    with assert_deallocated(lambda: arpack.LuInv(M_d)):
+        pass
+    with assert_deallocated(lambda: arpack.IterInv(M_s)):
+        pass
+    with assert_deallocated(lambda: arpack.IterOpInv(M_o, None, 0.3)):
+        pass
+    with assert_deallocated(lambda: arpack.IterOpInv(M_o, M_o, 0.3)):
+        pass
 
 
 if __name__ == "__main__":

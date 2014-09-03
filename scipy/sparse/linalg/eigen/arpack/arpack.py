@@ -897,12 +897,13 @@ class SpLuInv(LinearOperator):
     """
     def __init__(self, M):
         self.M_lu = splu(M)
-        LinearOperator.__init__(self, M.shape, self._matvec, dtype=M.dtype)
+        LinearOperator.__init__(self, M.shape, None, dtype=M.dtype)
         self.isreal = not np.issubdtype(self.dtype, np.complexfloating)
 
-    def _matvec(self, x):
+    def matvec(self, x):
         # careful here: splu.solve will throw away imaginary
         # part of x if M is real
+        x = np.asarray(x)
         if self.isreal and np.issubdtype(x.dtype, np.complexfloating):
             return (self.M_lu.solve(np.real(x).astype(self.dtype))
                     + 1j * self.M_lu.solve(np.imag(x).astype(self.dtype)))
@@ -918,9 +919,9 @@ class LuInv(LinearOperator):
     """
     def __init__(self, M):
         self.M_lu = lu_factor(M)
-        LinearOperator.__init__(self, M.shape, self._matvec, dtype=M.dtype)
+        LinearOperator.__init__(self, M.shape, None, dtype=M.dtype)
 
-    def _matvec(self, x):
+    def matvec(self, x):
         return lu_solve(self.M_lu, x)
 
 
@@ -943,9 +944,9 @@ class IterInv(LinearOperator):
         else:
             x = np.zeros(M.shape[1])
             dtype = (M * x).dtype
-        LinearOperator.__init__(self, M.shape, self._matvec, dtype=dtype)
+        LinearOperator.__init__(self, M.shape, None, dtype=dtype)
 
-    def _matvec(self, x):
+    def matvec(self, x):
         b, info = self.ifunc(self.M, x, tol=self.tol)
         if info != 0:
             raise ValueError("Error in inverting M: function "
@@ -971,26 +972,26 @@ class IterOpInv(LinearOperator):
         self.ifunc = ifunc
         self.tol = tol
 
+        def mult_func(x):
+            return A.matvec(x) - sigma * M.matvec(x)
+
+        def mult_func_M_None(x):
+            return A.matvec(x) - sigma * x
+
         x = np.zeros(A.shape[1])
         if M is None:
-            dtype = self.mult_func_M_None(x).dtype
+            dtype = mult_func_M_None(x).dtype
             self.OP = LinearOperator(self.A.shape,
-                                     self.mult_func_M_None,
+                                     mult_func_M_None,
                                      dtype=dtype)
         else:
-            dtype = self.mult_func(x).dtype
+            dtype = mult_func(x).dtype
             self.OP = LinearOperator(self.A.shape,
-                                     self.mult_func,
+                                     mult_func,
                                      dtype=dtype)
-        LinearOperator.__init__(self, A.shape, self._matvec, dtype=dtype)
+        LinearOperator.__init__(self, A.shape, None, dtype=dtype)
 
-    def mult_func(self, x):
-        return self.A.matvec(x) - self.sigma * self.M.matvec(x)
-
-    def mult_func_M_None(self, x):
-        return self.A.matvec(x) - self.sigma * x
-
-    def _matvec(self, x):
+    def matvec(self, x):
         b, info = self.ifunc(self.OP, x, tol=self.tol)
         if info != 0:
             raise ValueError("Error in inverting [A-sigma*M]: function "
