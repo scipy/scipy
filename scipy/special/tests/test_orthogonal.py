@@ -1,7 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_array_almost_equal, assert_almost_equal, \
-        rand, TestCase
+from numpy.testing import (rand, TestCase, assert_array_almost_equal, 
+        assert_almost_equal, assert_allclose, assert_raises)
+
 from scipy.lib.six import xrange
 import numpy as np
 from numpy import array, sqrt
@@ -133,20 +134,6 @@ class TestHermite(TestCase):
         assert_array_almost_equal(H3.c,he3.c,13)
         assert_array_almost_equal(H4.c,he4.c,13)
         assert_array_almost_equal(H5.c,he5.c,13)
-
-    def test_h_roots(self):
-        # this test is copied from numpy's TestGauss in test_hermite.py
-        x, w = orth.h_roots(100)
-
-        n = np.arange(100)
-        v = eval_hermite(n[:, np.newaxis], x[np.newaxis,:])
-        vv = np.dot(v*w, v.T)
-        vd = 1 / np.sqrt(vv.diagonal())
-        vv = vd[:, np.newaxis] * vv * vd
-        assert_almost_equal(vv, np.eye(100))
-
-        # check that the integral of 1 is correct
-        assert_almost_equal(w.sum(), np.sqrt(np.pi))
 
 
 class _test_sh_legendre(TestCase):
@@ -283,3 +270,332 @@ class TestCall(object):
                 assert_almost_equal(p(0.315), np.poly1d(p)(0.315), err_msg=pstr)
         finally:
             np.seterr(**olderr)
+
+def verify_gauss_quad(root_func, eval_func, N, rtol=1e-15, atol=1e-14):
+        # this test is copied from numpy's TestGauss in test_hermite.py
+        x, w, mu = root_func(N, True)
+
+        n = np.arange(N)
+        v = eval_func(n[:,np.newaxis], x)
+        vv = np.dot(v*w, v.T)
+        vd = 1 / np.sqrt(vv.diagonal())
+        vv = vd[:, np.newaxis] * vv * vd
+        assert_allclose(vv, np.eye(N), rtol, atol)
+
+        # check that the integral of 1 is correct
+        assert_allclose(w.sum(), mu, rtol, atol)
+
+def test_j_roots():
+    roots = lambda a, b: lambda n, mu: orth.j_roots(n, a, b, mu)
+    evalf = lambda a, b: lambda n, x: orth.eval_jacobi(n, a, b, x)
+
+    verify_gauss_quad(roots(-0.5, -0.75), evalf(-0.5, -0.75), 5)
+    verify_gauss_quad(roots(-0.5, -0.75), evalf(-0.5, -0.75), 25, atol=1e-12)
+    verify_gauss_quad(roots(-0.5, -0.75), evalf(-0.5, -0.75), 100, atol=1e-11)
+
+    verify_gauss_quad(roots(0.5, -0.5), evalf(0.5, -0.5), 5)
+    verify_gauss_quad(roots(0.5, -0.5), evalf(0.5, -0.5), 25, atol=1e-13)
+    verify_gauss_quad(roots(0.5, -0.5), evalf(0.5, -0.5), 100, atol=1e-12)
+
+    verify_gauss_quad(roots(1, 0.5), evalf(1, 0.5), 5)
+    verify_gauss_quad(roots(1, 0.5), evalf(1, 0.5), 25, atol=1e-13)
+    verify_gauss_quad(roots(1, 0.5), evalf(1, 0.5), 100, atol=1e-12)
+
+    verify_gauss_quad(roots(0.9, 2), evalf(0.9, 2), 5)
+    verify_gauss_quad(roots(0.9, 2), evalf(0.9, 2), 25, atol=1e-13)
+    verify_gauss_quad(roots(0.9, 2), evalf(0.9, 2), 100, atol=1e-13)
+
+    verify_gauss_quad(roots(18.24, 27.3), evalf(18.24, 27.3), 5)
+    verify_gauss_quad(roots(18.24, 27.3), evalf(18.24, 27.3), 25)
+    verify_gauss_quad(roots(18.24, 27.3), evalf(18.24, 27.3), 100, atol=1e-13)
+
+    verify_gauss_quad(roots(47.1, -0.2), evalf(47.1, -0.2), 5, atol=1e-13)
+    verify_gauss_quad(roots(47.1, -0.2), evalf(47.1, -0.2), 25, atol=1e-13)
+    verify_gauss_quad(roots(47.1, -0.2), evalf(47.1, -0.2), 100, atol=1e-11)
+
+    verify_gauss_quad(roots(2.25, 68.9), evalf(2.25, 68.9), 5)
+    verify_gauss_quad(roots(2.25, 68.9), evalf(2.25, 68.9), 25, atol=1e-13)
+    verify_gauss_quad(roots(2.25, 68.9), evalf(2.25, 68.9), 100, atol=1e-13)
+
+    # when alpha == beta == 0, P_n^{a,b}(x) == P_n(x)
+    xj, wj = orth.j_roots(6, 0.0, 0.0)
+    xl, wl = orth.p_roots(6)
+    assert_allclose(xj, xl, 1e-14, 1e-14)
+    assert_allclose(wj, wl, 1e-14, 1e-14)
+
+    # when alpha == beta != 0, P_n^{a,b}(x) == C_n^{alpha+0.5}(x)
+    xj, wj = orth.j_roots(6, 4.0, 4.0)
+    xc, wc = orth.cg_roots(6, 4.5)
+    assert_allclose(xj, xc, 1e-14, 1e-14)
+    assert_allclose(wj, wc, 1e-14, 1e-14)
+
+    x, w = orth.j_roots(5, 2, 3, False)
+    y, v, m = orth.j_roots(5, 2, 3, True)
+    assert_allclose(x, y, 1e-14, 1e-14)
+    assert_allclose(w, v, 1e-14, 1e-14)
+
+    assert_raises(ValueError, orth.j_roots, 0, 1, 1)
+    assert_raises(ValueError, orth.j_roots, 3.3, 1, 1)
+    assert_raises(ValueError, orth.j_roots, 3, -2, 1)
+    assert_raises(ValueError, orth.j_roots, 3, 1, -2)
+    assert_raises(ValueError, orth.j_roots, 3, -2, -2)
+
+def test_js_roots():
+    roots = lambda a, b: lambda n, mu: orth.js_roots(n, a, b, mu)
+    evalf = lambda a, b: lambda n, x: orth.eval_sh_jacobi(n, a, b, x)
+
+    verify_gauss_quad(roots(-0.5, 0.25), evalf(-0.5, 0.25), 5)
+    verify_gauss_quad(roots(-0.5, 0.25), evalf(-0.5, 0.25), 25, atol=1e-12)
+    verify_gauss_quad(roots(-0.5, 0.25), evalf(-0.5, 0.25), 100, atol=1e-11)
+
+    verify_gauss_quad(roots(0.5, 0.5), evalf(0.5, 0.5), 5)
+    verify_gauss_quad(roots(0.5, 0.5), evalf(0.5, 0.5), 25, atol=1e-13)
+    verify_gauss_quad(roots(0.5, 0.5), evalf(0.5, 0.5), 100, atol=1e-12)
+
+    verify_gauss_quad(roots(1, 0.5), evalf(1, 0.5), 5)
+    verify_gauss_quad(roots(1, 0.5), evalf(1, 0.5), 25, atol=1e-13)
+    verify_gauss_quad(roots(1, 0.5), evalf(1, 0.5), 100, atol=1e-12)
+
+    verify_gauss_quad(roots(2, 0.9), evalf(2, 0.9), 5)
+    verify_gauss_quad(roots(2, 0.9), evalf(2, 0.9), 25, atol=1e-13)
+    verify_gauss_quad(roots(2, 0.9), evalf(2, 0.9), 100, atol=1e-12)
+
+    verify_gauss_quad(roots(27.3, 18.24), evalf(27.3, 18.24), 5)
+    verify_gauss_quad(roots(27.3, 18.24), evalf(27.3, 18.24), 25)
+    verify_gauss_quad(roots(27.3, 18.24), evalf(27.3, 18.24), 100, atol=1e-13)
+
+    verify_gauss_quad(roots(47.1, 0.2), evalf(47.1, 0.2), 5, atol=1e-12)
+    verify_gauss_quad(roots(47.1, 0.2), evalf(47.1, 0.2), 25, atol=1e-11)
+    verify_gauss_quad(roots(47.1, 0.2), evalf(47.1, 0.2), 100, atol=1e-10)
+
+    verify_gauss_quad(roots(68.9, 2.25), evalf(68.9, 2.25), 5)
+    verify_gauss_quad(roots(68.9, 2.25), evalf(68.9, 2.25), 25, atol=1e-13)
+    verify_gauss_quad(roots(68.9, 2.25), evalf(68.9, 2.25), 100, atol=1e-12)
+
+    x, w = orth.js_roots(5, 3, 2, False)
+    y, v, m = orth.js_roots(5, 3, 2, True)
+    assert_allclose(x, y, 1e-14, 1e-14)
+    assert_allclose(w, v, 1e-14, 1e-14)
+
+    assert_raises(ValueError, orth.js_roots, 0, 1, 1)
+    assert_raises(ValueError, orth.js_roots, 3.3, 1, 1)
+    assert_raises(ValueError, orth.js_roots, 3, 1, 2)    # p - q <= -1
+    assert_raises(ValueError, orth.js_roots, 3, 2, -1)   # q <= 0
+    assert_raises(ValueError, orth.js_roots, 3, -2, -1)  # both
+
+def test_h_roots():
+    verify_gauss_quad(orth.h_roots, orth.eval_hermite, 5)
+    verify_gauss_quad(orth.h_roots, orth.eval_hermite, 25, atol=1e-13)
+    verify_gauss_quad(orth.h_roots, orth.eval_hermite, 100, atol=1e-12)
+
+    x, w = orth.h_roots(5, False)
+    y, v, m = orth.h_roots(5, True)
+    assert_allclose(x, y, 1e-14, 1e-14)
+    assert_allclose(w, v, 1e-14, 1e-14)
+
+    assert_raises(ValueError, orth.h_roots, 0)
+    assert_raises(ValueError, orth.h_roots, 3.3)
+
+def test_he_roots():
+    verify_gauss_quad(orth.he_roots, orth.eval_hermitenorm, 5)
+    verify_gauss_quad(orth.he_roots, orth.eval_hermitenorm, 25, atol=1e-13)
+    verify_gauss_quad(orth.he_roots, orth.eval_hermitenorm, 100, atol=1e-12)
+
+    x, w = orth.he_roots(5, False)
+    y, v, m = orth.he_roots(5, True)
+    assert_allclose(x, y, 1e-14, 1e-14)
+    assert_allclose(w, v, 1e-14, 1e-14)
+
+    assert_raises(ValueError, orth.he_roots, 0)
+    assert_raises(ValueError, orth.he_roots, 3.3)
+
+def test_cg_roots():
+    root_func = lambda a: lambda n, mu: orth.cg_roots(n, a, mu)
+    eval_func = lambda a: lambda n, x: orth.eval_gegenbauer(n, a, x)
+
+    verify_gauss_quad(root_func(-0.25), eval_func(-0.25), 5)
+    verify_gauss_quad(root_func(-0.25), eval_func(-0.25), 25, atol=1e-12)
+    verify_gauss_quad(root_func(-0.25), eval_func(-0.25), 100, atol=1e-11)
+
+    verify_gauss_quad(root_func(0.1), eval_func(0.1), 5)
+    verify_gauss_quad(root_func(0.1), eval_func(0.1), 25, atol=1e-13)
+    verify_gauss_quad(root_func(0.1), eval_func(0.1), 100, atol=1e-12)
+
+    verify_gauss_quad(root_func(1), eval_func(1), 5)
+    verify_gauss_quad(root_func(1), eval_func(1), 25, atol=1e-13)
+    verify_gauss_quad(root_func(1), eval_func(1), 100, atol=1e-12)
+
+    verify_gauss_quad(root_func(10), eval_func(10), 5)
+    verify_gauss_quad(root_func(10), eval_func(10), 25, atol=1e-13)
+    verify_gauss_quad(root_func(10), eval_func(10), 100, atol=1e-12)
+
+    verify_gauss_quad(root_func(50), eval_func(50), 5, atol=1e-13)
+    verify_gauss_quad(root_func(50), eval_func(50), 25, atol=1e-12)
+    verify_gauss_quad(root_func(50), eval_func(50), 100, atol=1e-11)
+
+    # this is a special case that the old code supported. 
+    # when alpha = 0, the gegenbauer polynomial is uniformly 0. but it goes
+    # to a scaled down copy of T_n(x) there.
+    verify_gauss_quad(root_func(0), orth.eval_chebyt, 5)
+    verify_gauss_quad(root_func(0), orth.eval_chebyt, 25)
+    verify_gauss_quad(root_func(0), orth.eval_chebyt, 100)
+
+    x, w = orth.cg_roots(5, 2, False)
+    y, v, m = orth.cg_roots(5, 2, True)
+    assert_allclose(x, y, 1e-14, 1e-14)
+    assert_allclose(w, v, 1e-14, 1e-14)
+
+    assert_raises(ValueError, orth.cg_roots, 0, 2)
+    assert_raises(ValueError, orth.cg_roots, 3.3, 2)
+    assert_raises(ValueError, orth.cg_roots, 3, -.75)
+
+def test_t_roots():
+    verify_gauss_quad(orth.t_roots, orth.eval_chebyt, 5)
+    verify_gauss_quad(orth.t_roots, orth.eval_chebyt, 25)
+    verify_gauss_quad(orth.t_roots, orth.eval_chebyt, 100)
+
+    x, w = orth.t_roots(5, False)
+    y, v, m = orth.t_roots(5, True)
+    assert_allclose(x, y, 1e-14, 1e-14)
+    assert_allclose(w, v, 1e-14, 1e-14)
+
+    assert_raises(ValueError, orth.t_roots, 0)
+    assert_raises(ValueError, orth.t_roots, 3.3)
+
+def test_u_roots():
+    verify_gauss_quad(orth.u_roots, orth.eval_chebyu, 5)
+    verify_gauss_quad(orth.u_roots, orth.eval_chebyu, 25)
+    verify_gauss_quad(orth.u_roots, orth.eval_chebyu, 100)
+
+    x, w = orth.u_roots(5, False)
+    y, v, m = orth.u_roots(5, True)
+    assert_allclose(x, y, 1e-14, 1e-14)
+    assert_allclose(w, v, 1e-14, 1e-14)
+
+    assert_raises(ValueError, orth.u_roots, 0)
+    assert_raises(ValueError, orth.u_roots, 3.3)
+
+def test_c_roots():
+    verify_gauss_quad(orth.c_roots, orth.eval_chebyc, 5)
+    verify_gauss_quad(orth.c_roots, orth.eval_chebyc, 25)
+    verify_gauss_quad(orth.c_roots, orth.eval_chebyc, 100)
+
+    x, w = orth.c_roots(5, False)
+    y, v, m = orth.c_roots(5, True)
+    assert_allclose(x, y, 1e-14, 1e-14)
+    assert_allclose(w, v, 1e-14, 1e-14)
+
+    assert_raises(ValueError, orth.c_roots, 0)
+    assert_raises(ValueError, orth.c_roots, 3.3)
+
+def test_s_roots():
+    verify_gauss_quad(orth.s_roots, orth.eval_chebys, 5)
+    verify_gauss_quad(orth.s_roots, orth.eval_chebys, 25)
+    verify_gauss_quad(orth.s_roots, orth.eval_chebys, 100)
+
+    x, w = orth.s_roots(5, False)
+    y, v, m = orth.s_roots(5, True)
+    assert_allclose(x, y, 1e-14, 1e-14)
+    assert_allclose(w, v, 1e-14, 1e-14)
+
+    assert_raises(ValueError, orth.s_roots, 0)
+    assert_raises(ValueError, orth.s_roots, 3.3)
+
+def test_ts_roots():
+    verify_gauss_quad(orth.ts_roots, orth.eval_sh_chebyt, 5)
+    verify_gauss_quad(orth.ts_roots, orth.eval_sh_chebyt, 25)
+    verify_gauss_quad(orth.ts_roots, orth.eval_sh_chebyt, 100, atol=1e-13)
+
+    x, w = orth.ts_roots(5, False)
+    y, v, m = orth.ts_roots(5, True)
+    assert_allclose(x, y, 1e-14, 1e-14)
+    assert_allclose(w, v, 1e-14, 1e-14)
+
+    assert_raises(ValueError, orth.ts_roots, 0)
+    assert_raises(ValueError, orth.ts_roots, 3.3)
+
+def test_us_roots():
+    verify_gauss_quad(orth.us_roots, orth.eval_sh_chebyu, 5)
+    verify_gauss_quad(orth.us_roots, orth.eval_sh_chebyu, 25)
+    verify_gauss_quad(orth.us_roots, orth.eval_sh_chebyu, 100, atol=1e-13)
+
+    x, w = orth.us_roots(5, False)
+    y, v, m = orth.us_roots(5, True)
+    assert_allclose(x, y, 1e-14, 1e-14)
+    assert_allclose(w, v, 1e-14, 1e-14)
+
+    assert_raises(ValueError, orth.us_roots, 0)
+    assert_raises(ValueError, orth.us_roots, 3.3)
+
+def test_p_roots():
+    verify_gauss_quad(orth.p_roots, orth.eval_legendre, 5)
+    verify_gauss_quad(orth.p_roots, orth.eval_legendre, 25, atol=1e-13)
+    verify_gauss_quad(orth.p_roots, orth.eval_legendre, 100, atol=1e-12)
+
+    x, w = orth.p_roots(5, False)
+    y, v, m = orth.p_roots(5, True)
+    assert_allclose(x, y, 1e-14, 1e-14)
+    assert_allclose(w, v, 1e-14, 1e-14)
+
+    assert_raises(ValueError, orth.p_roots, 0)
+    assert_raises(ValueError, orth.p_roots, 3.3)
+
+def test_ps_roots():
+    verify_gauss_quad(orth.ps_roots, orth.eval_sh_legendre, 5)
+    verify_gauss_quad(orth.ps_roots, orth.eval_sh_legendre, 25, atol=1e-13)
+    verify_gauss_quad(orth.ps_roots, orth.eval_sh_legendre, 100, atol=1e-12)
+
+    x, w = orth.ps_roots(5, False)
+    y, v, m = orth.ps_roots(5, True)
+    assert_allclose(x, y, 1e-14, 1e-14)
+    assert_allclose(w, v, 1e-14, 1e-14)
+
+    assert_raises(ValueError, orth.ps_roots, 0)
+    assert_raises(ValueError, orth.ps_roots, 3.3)
+
+def test_l_roots():
+    verify_gauss_quad(orth.l_roots, orth.eval_laguerre, 5)
+    verify_gauss_quad(orth.l_roots, orth.eval_laguerre, 25, atol=1e-13)
+    verify_gauss_quad(orth.l_roots, orth.eval_laguerre, 100, atol=1e-12)
+
+    x, w = orth.l_roots(5, False)
+    y, v, m = orth.l_roots(5, True)
+    assert_allclose(x, y, 1e-14, 1e-14)
+    assert_allclose(w, v, 1e-14, 1e-14)
+
+    assert_raises(ValueError, orth.l_roots, 0)
+    assert_raises(ValueError, orth.l_roots, 3.3)
+
+def test_la_roots():
+    root_func = lambda a: lambda n, mu: orth.la_roots(n, a, mu)
+    eval_func = lambda a: lambda n, x: orth.eval_genlaguerre(n, a, x)
+
+    verify_gauss_quad(root_func(-0.5), eval_func(-0.5), 5)
+    verify_gauss_quad(root_func(-0.5), eval_func(-0.5), 25, atol=1e-13)
+    verify_gauss_quad(root_func(-0.5), eval_func(-0.5), 100, atol=1e-12)
+
+    verify_gauss_quad(root_func(0.1), eval_func(0.1), 5)
+    verify_gauss_quad(root_func(0.1), eval_func(0.1), 25, atol=1e-13)
+    verify_gauss_quad(root_func(0.1), eval_func(0.1), 100, atol=1e-13)
+
+    verify_gauss_quad(root_func(1), eval_func(1), 5)
+    verify_gauss_quad(root_func(1), eval_func(1), 25, atol=1e-13)
+    verify_gauss_quad(root_func(1), eval_func(1), 100, atol=1e-13)
+
+    verify_gauss_quad(root_func(10), eval_func(10), 5)
+    verify_gauss_quad(root_func(10), eval_func(10), 25, atol=1e-13)
+    verify_gauss_quad(root_func(10), eval_func(10), 100, atol=1e-12)
+
+    verify_gauss_quad(root_func(50), eval_func(50), 5)
+    verify_gauss_quad(root_func(50), eval_func(50), 25, atol=1e-13)
+    verify_gauss_quad(root_func(50), eval_func(50), 100, atol=1e-13)
+
+    x, w = orth.la_roots(5, 2, False)
+    y, v, m = orth.la_roots(5, 2, True)
+    assert_allclose(x, y, 1e-14, 1e-14)
+    assert_allclose(w, v, 1e-14, 1e-14)
+
+    assert_raises(ValueError, orth.la_roots, 0, 2)
+    assert_raises(ValueError, orth.la_roots, 3.3, 2)
+    assert_raises(ValueError, orth.la_roots, 3, -1.1)
+
