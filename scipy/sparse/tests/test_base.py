@@ -3420,43 +3420,11 @@ class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
     ##
 
     @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_slice_scalar_assign(self):
-        pass
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_slice_assign_2(self):
-        pass
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
     def test_fancy_indexing(self):
         pass
 
     @dec.knownfailureif(True, "known deficiency in DOK")
     def test_add_sub(self):
-        pass
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_scalar_assign_2(self):
-        pass
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_fancy_assign_ndarray(self):
-        pass
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_fancy_indexing_set(self):
-        pass
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_fancy_assign_list(self):
-        pass
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_fancy_assign_slice(self):
-        pass
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_fancy_indexing_multidim_set(self):
         pass
 
 
