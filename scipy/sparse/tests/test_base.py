@@ -621,10 +621,18 @@ class _TestCommon:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))
 
     def test_reshape(self):
+        # This first example is taken from the lil_matrix reshaping test.
         x = self.spmatrix([[1, 0, 7], [0, 0, 0], [0, 3, 0], [0, 0, 5]])
         for s in [(12,1),(1,12)]:
             assert_array_equal(x.reshape(s).todense(),
                                x.todense().reshape(s))
+
+        # This example is taken from the stackoverflow answer at
+        # http://stackoverflow.com/questions/16511879
+        x = self.spmatrix([[0, 10, 0, 0], [0, 0, 0, 0], [0, 20, 30, 40]])
+        y = x.reshape((2, 6))
+        desired = [[0, 10, 0, 0, 0, 0], [0, 0, 0, 20, 30, 40]]
+        assert_array_equal(y.A, desired)
 
     @dec.slow
     def test_setdiag(self):
