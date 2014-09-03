@@ -213,7 +213,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         nrows, ncols = self.shape
         size = nrows * ncols
 
-        new_size =  shape[0] * shape[1]
+        new_size = shape[0] * shape[1]
         if new_size != size:
             raise ValueError('total size of new array must be unchanged')
 
