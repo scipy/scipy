@@ -459,22 +459,27 @@ class MMFile (object):
                 # fallback - fromfile fails for some file-like objects
                 flat_data = fromstring(stream.read(), sep=' ')
 
-                # TODO use iterator (e.g. xreadlines) to avoid reading
-                # the whole file into memory
+            # Note we have used the default dtype=float in
+            # from(file|string) above
+            total_length = flat_data.shape[0]
+            local_float_size = flat_data.strides[0]
 
             if is_pattern:
-                flat_data = flat_data.reshape(-1,2)
+                flat_data.shape = (total_length / 2, 2)
+                flat_data.strides = (2 * local_float_size, local_float_size)
                 I = ascontiguousarray(flat_data[:,0], dtype='intc')
                 J = ascontiguousarray(flat_data[:,1], dtype='intc')
                 V = ones(len(I), dtype='int8')  # filler
             elif is_complex:
-                flat_data = flat_data.reshape(-1,4)
+                flat_data.shape = (total_length / 4, 4)
+                flat_data.strides = (4 * local_float_size, local_float_size)
                 I = ascontiguousarray(flat_data[:,0], dtype='intc')
                 J = ascontiguousarray(flat_data[:,1], dtype='intc')
                 V = ascontiguousarray(flat_data[:,2], dtype='complex')
                 V.imag = flat_data[:,3]
             else:
-                flat_data = flat_data.reshape(-1,3)
+                flat_data.shape = (total_length / 3, 3)
+                flat_data.strides = (3 * local_float_size, local_float_size)
                 I = ascontiguousarray(flat_data[:,0], dtype='intc')
                 J = ascontiguousarray(flat_data[:,1], dtype='intc')
                 V = ascontiguousarray(flat_data[:,2], dtype='float')
