@@ -83,7 +83,11 @@ class spmatrix(object):
             raise ValueError('invalid shape')
 
         if (self._shape != shape) and (self._shape is not None):
-            raise NotImplementedError('sparse matrix shape setting magic is broken')
+            raise NotImplementedError(
+                    'Changing the shape of a sparse matrix by directly '
+                    'modifying its .shape property is not currently '
+                    'supported.  Please consider using the .reshape() '
+                    'member function instead!')
             try:
                 self = self.reshape(shape)
             except NotImplementedError:
