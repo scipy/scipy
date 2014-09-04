@@ -226,17 +226,6 @@ def test_ticket_1720():
         assert_allclose(float_var[:], items)
 
 
-def test_mmaps_closed():
-    # Regression test for gh-1550.  Will fail with "Too many open files"
-    # error if not all mmaps aren't closed by ``f.close()``.
-    filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
-    vars = []
-    for i in range(1100):
-        f = netcdf_file(filename, mmap=True)
-        vars.append(f.variables['lat'][:].copy())
-        f.close()
-
-
 def test_mmaps_segfault():
     filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
 
