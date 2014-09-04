@@ -19,8 +19,7 @@ from scipy.linalg import eig, eigh
 from scipy.sparse import csc_matrix, csr_matrix, lil_matrix, isspmatrix
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
-     ArpackNoConvergence
-from scipy.sparse.linalg.eigen import arpack
+     ArpackNoConvergence, arpack
 
 from scipy.linalg import svd, hilbert
 
