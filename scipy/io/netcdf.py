@@ -151,9 +151,9 @@ class netcdf_file(object):
     Note that when `netcdf_file` is used to open a file with mmap=True
     (default for read-only), arrays returned by it refer to data
     directly on the disk. The file should not be closed, and cannot be cleanly
-    closed when asked, if such arrays are alive. You may want to explicitly copy
-    data arrays obtained from mmapped Netcdf file, if they are to be processed after
-    the file is closed.
+    closed when asked, if such arrays are alive. You may want to copy data arrays
+    obtained from mmapped Netcdf file if they are to be processed after the file
+    is closed, see the example below.
 
     Examples
     --------
@@ -185,7 +185,20 @@ class netcdf_file(object):
         (10,)
         >>> print(time[-1])
         9
+
+    NetCDF files, when opened read-only, return arrays that refer
+    directly to memory-mapped data on disk:
+
+        >>> data = time[:]
+        >>> data.base.base
+        <mmap.mmap object at 0x7fe753763180>
+
+    If the data is to be processed after the file is closed, it needs
+    to be copied to main memory:
+
+        >>> data = time[:].copy()
         >>> f.close()
+        >>> data.mean()
 
     A NetCDF file can also be used as context manager:
 
