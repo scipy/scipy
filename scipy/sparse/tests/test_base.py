@@ -3653,6 +3653,20 @@ class TestCOO(sparse_test_class(getset=False,
         dok = coo.todok()
         assert_array_equal(dok.A, coo.A)
 
+    def test_reshape_copy(self):
+        arr = [[0, 10, 0, 0], [0, 0, 0, 0], [0, 20, 30, 40]]
+        new_shape = (2, 6)
+        x = coo_matrix(arr)
+
+        y = x.reshape(new_shape)
+        assert_(y.data is not x.data)
+
+        y = x.reshape(new_shape, copy=True)
+        assert_(y.data is not x.data)
+
+        y = x.reshape(new_shape, copy=False)
+        assert_(y.data is x.data)
+
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False,

@@ -205,7 +205,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         self._check()
 
-    def reshape(self, shape):
+    def reshape(self, shape, copy=True):
         """Returns a coo_matrix with shape `shape`."""
         if not hasattr(shape, '__len__') or len(shape) != 2:
             raise ValueError('`shape` must be a sequence of two integers')
@@ -220,7 +220,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         flat_indices = ncols * self.row + self.col
         new_row, new_col = divmod(flat_indices, shape[1])
 
-        return coo_matrix((self.data, (new_row, new_col)), shape=shape)
+        return coo_matrix((self.data, (new_row, new_col)),
+                          shape=shape, copy=copy)
 
     def getnnz(self, axis=None):
         """Get the count of explicitly-stored values (nonzeros)
