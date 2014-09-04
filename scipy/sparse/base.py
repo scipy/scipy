@@ -657,7 +657,7 @@ class spmatrix(object):
         return self.tocsr().tobsr(blocksize=blocksize)
 
     def copy(self):
-        return self.__class__(self,copy=True)
+        return self.__class__(self, copy=True)
 
     def sum(self, axis=None):
         """Sum the matrix over the given axis.  If the axis is None, sum

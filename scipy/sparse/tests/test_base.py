@@ -3659,13 +3659,13 @@ class TestCOO(sparse_test_class(getset=False,
         x = coo_matrix(arr)
 
         y = x.reshape(new_shape)
-        assert_(not np.may_share_memory(y.data, x.data))
-
-        y = x.reshape(new_shape, copy=True)
-        assert_(not np.may_share_memory(y.data, x.data))
+        assert_(y.data is x.data)
 
         y = x.reshape(new_shape, copy=False)
         assert_(y.data is x.data)
+
+        y = x.reshape(new_shape, copy=True)
+        assert_(not np.may_share_memory(y.data, x.data))
 
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,

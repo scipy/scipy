@@ -205,7 +205,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         self._check()
 
-    def reshape(self, shape, copy=True):
+    def reshape(self, shape, copy=False):
         """Returns a coo_matrix with shape `shape`."""
         if not isshape(shape):
             raise ValueError('`shape` must be a sequence of two integers')
