@@ -157,12 +157,16 @@ def test_read_example_data():
 def test_itemset_no_segfault_on_readonly():
     # Regression test for ticket #1202.
     # Open the test file in read-only mode.
-    filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
-    with netcdf_file(filename, 'r') as f:
-        time_var = f.variables['time']
 
-    # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!
-    assert_raises(RuntimeError, time_var.assignValue, 42)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
+        with netcdf_file(filename, 'r') as f:
+            time_var = f.variables['time']
+
+        # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!
+        assert_raises(RuntimeError, time_var.assignValue, 42)
 
 
 def test_write_invalid_dtype():
@@ -239,9 +243,6 @@ def test_mmaps_segfault():
     def doit():
         with netcdf_file(filename, mmap=True) as f:
             return f.variables['lat'][:]
-
-    # should raise a warning
-    assert_warns(RuntimeWarning, doit)
 
     # should not crash
     with warnings.catch_warnings():
