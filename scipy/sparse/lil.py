@@ -371,33 +371,6 @@ class lil_matrix(spmatrix, IndexMixin):
         else:
             return self
 
-    def _concatenated_data(self):
-        """ Helper function for format conversions. """
-        data = []
-        for x in self.data:
-            data.extend(x)
-        return np.asarray(data, dtype=self.dtype)
-
-    def _concatenated_indices(self, idx_dtype):
-        """ Helper function for format conversions. """
-        indices = []
-        for x in self.rows:
-            indices.extend(x)
-        return np.asarray(indices, dtype=idx_dtype)
-
-    def tocoo(self):
-        """ Return a COO formatted sparse matrix.
-        """
-        lst = [len(x) for x in self.rows]
-        idx_dtype = get_index_dtype(maxval=max(self.shape[1], sum(lst)))
-
-        rows = np.repeat(np.arange(len(lst), dtype=idx_dtype), lst)
-        cols = self._concatenated_indices(idx_dtype)
-        data = self._concatenated_data()
-
-        from .coo import coo_matrix
-        return coo_matrix((data, (rows, cols)), shape=self.shape)
-
     def tocsr(self):
         """ Return Compressed Sparse Row format arrays for this matrix.
         """
@@ -405,8 +378,8 @@ class lil_matrix(spmatrix, IndexMixin):
         idx_dtype = get_index_dtype(maxval=max(self.shape[1], sum(lst)))
 
         indptr = np.cumsum([0] + lst, dtype=idx_dtype)
-        indices = self._concatenated_indices(idx_dtype)
-        data = self._concatenated_data()
+        indices = np.array([x for y in self.rows for x in y], dtype=idx_dtype)
+        data = np.array([x for y in self.data for x in y], dtype=self.dtype)
 
         from .csr import csr_matrix
         return csr_matrix((data, indices, indptr), shape=self.shape)
