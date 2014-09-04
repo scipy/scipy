@@ -1752,8 +1752,7 @@ class _TestCommon:
         assert_array_equal(S.A, [[1, 0],
                                  [2, 0],
                                  [3, 0]])
-        # .shape = is equivalent to .resize()
-        S.shape = (2, 2)
+        S.resize((2, 2))
         assert_array_equal(S.A, [[1, 0],
                                  [2, 0]])
         S.resize((3, 2))
