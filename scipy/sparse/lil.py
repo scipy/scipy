@@ -146,6 +146,7 @@ class lil_matrix(spmatrix, IndexMixin):
             raise ValueError('invalid shape')
 
         if (self._shape != shape) and (self._shape is not None):
+            raise NotImplementedError('sparse matrix shape setting magic is broken')
             try:
                 self = self.reshape(shape)
             except NotImplementedError:
