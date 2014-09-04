@@ -160,7 +160,7 @@ class _state(object):
 
 # Simulated annealing
 
-@deprecate(message='Deprecated in scipy 0.14.0, use basinhopping instead')
+@deprecate(message='    Deprecated in scipy 0.14.0, use basinhopping instead')
 def anneal(func, x0, args=(), schedule='fast', full_output=0,
            T0=None, Tf=1e-12, maxeval=None, maxaccept=None, maxiter=400,
            boltzmann=1.0, learn_rate=0.5, feps=1e-6, quench=1.0, m=1.0, n=1.0,
