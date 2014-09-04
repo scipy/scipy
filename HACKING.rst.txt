@@ -410,6 +410,47 @@ the environment variable ``SCIPY_XSLOW=1`` before running the test
 suite.
 
 
+*How do I write tests with test generators?*
+
+The Nose_ test framework supports so-called test generators, which can come
+useful if you need to have multiple tests where just a parameter changes.
+Using test generators so that they are more useful than harmful is tricky, and
+we recommend the following pattern::
+
+    def test_something():
+	some_array = (...)
+
+	def check(some_param):
+	    c = compute_result(some_array, some_param)
+	    known_result = (...)
+	    assert_allclose(c, known_result)
+
+	for some_param in ['a', 'b', 'c']:
+	    yield check, some_param
+
+We require the following:
+
+- All asserts and all computation that is tested must only be reached after a
+  yield. (Rationale: the generator body is part of no test, and a failure in it
+  will show neither the test name nor for what parameters the test failed.)
+
+- Arrays must not be passed as yield parameters. Either use variables from
+  outer scope (eg. with some index passed to yield), or capsulate test data to
+  a class with a sensible ``__repr__``. (Rationale: Nose truncates the printed
+  form of arrays in test output, and this makes it impossible to know for what
+  parameters a test failed. Arrays are big, and clutter test output
+  unnecessarily.)
+
+- Test generators cannot be used in test classes inheriting from
+  unittest.TestCase; either use object as base class, or use standalone test
+  functions.  (Rationale: Nose does not run test generators in
+  TestCase-inheriting classes.)
+
+If in doubt, do not use test generators. You can track for what parameter
+things failed also by passing ``err_msg=repr((param1, param2, ...))`` to the
+various assert functions.
+
+
 .. _scikit-learn: http://scikit-learn.org
 
 .. _scikit-image: http://scikit-image.org/
@@ -457,3 +498,5 @@ suite.
 .. _virtualenvwrapper: http://www.doughellmann.com/projects/virtualenvwrapper/
 
 .. _bsd pitch: http://nipy.sourceforge.net/nipy/stable/faq/johns_bsd_pitch.html
+
+.. _Nose: http://nose.readthedocs.org/en/latest/
