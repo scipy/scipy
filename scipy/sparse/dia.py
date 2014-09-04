@@ -281,9 +281,13 @@ class dia_matrix(_data_matrix):
         """
         if not isshape(shape, nonneg=True):
             raise TypeError("shape must be a 2-tuple of positive integers")
-        new_M, new_N = shape
-        M, N = self.shape
-        raise NotImplementedError
+        # TODO: perform without conversion to coo
+        A = self.tocoo()
+        A.resize(shape)
+        A = A.todia()
+        self.data = A.data
+        self.offsets = A.offsets
+        self._shape = shape
 
 
 def isspmatrix_dia(x):

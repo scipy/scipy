@@ -3698,10 +3698,6 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         m.setdiag((3,), k=3)
         assert_equal(m.offsets.dtype, np.int64)
 
-    @dec.knownfailureif(True, "known deficiency in DIA")
-    def test_resize(self):
-        pass
-
 
 class TestBSR(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
