@@ -915,10 +915,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if not np.all(mask):
                 self.indices = self.indices[mask]
                 self.data = self.data[mask]
-                int_mask = mask.astype(self.indptr.dtype)
+                int_mask = mask
                 major_index, val = self._minor_reduce(np.add, int_mask)
                 self.indptr.fill(0)
-                self.indptr[1:][major_index] = val
+                # astype required for numpy <= 1.6
+                self.indptr[1:][major_index] = val.astype(self.indptr.dtype)
                 np.cumsum(self.indptr, out=self.indptr)
 
         self._shape = shape
