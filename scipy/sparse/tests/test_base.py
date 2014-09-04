@@ -3659,10 +3659,10 @@ class TestCOO(sparse_test_class(getset=False,
         x = coo_matrix(arr)
 
         y = x.reshape(new_shape)
-        assert_(y.data is not x.data)
+        assert_(not np.may_share_memory(y.data, x.data))
 
         y = x.reshape(new_shape, copy=True)
-        assert_(y.data is not x.data)
+        assert_(not np.may_share_memory(y.data, x.data))
 
         y = x.reshape(new_shape, copy=False)
         assert_(y.data is x.data)
