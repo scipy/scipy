@@ -3368,7 +3368,7 @@ C
       MEBAND = 2*ML + MU + 1
 c     Replaced LINPACK dgbsl with LAPACK dgbtrs
 c      CALL DGBSL (WM(3), MEBAND, N, ML, MU, IWM(31), X, 0)
-      CALL DGBTRS ('N', N, ML, MU, 1, WM(3), MEBAND, IWM(21), X, N, IER)
+      CALL DGBTRS ('N', N, ML, MU, 1, WM(3), MEBAND, IWM(31), X, N, IER)
       RETURN
 C----------------------- End of Subroutine DVSOL -----------------------
       END
