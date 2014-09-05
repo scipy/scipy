@@ -346,10 +346,12 @@ class beta_gen(rv_continuous):
     -----
     The probability density function for `beta` is::
 
-        beta.pdf(x, a, b) = gamma(a+b)/(gamma(a)*gamma(b)) * x**(a-1) *
-        (1-x)**(b-1),
+                            gamma(a+b) * x**(a-1) * (1-x)**(b-1)
+        beta.pdf(x, a, b) = ------------------------------------
+                                     gamma(a)*gamma(b)
 
-    for ``0 < x < 1``, ``a > 0``, ``b > 0``.
+    for ``0 < x < 1``, ``a > 0``, ``b > 0``, where ``gamma(z)`` is the gamma
+    function (`scipy.special.gamma`).
 
     %(example)s
 
@@ -712,9 +714,9 @@ class chi_gen(rv_continuous):
 
     Special cases of `chi` are:
 
-        - ``chi(1, loc, scale) = `halfnormal`
-        - ``chi(2, 0, scale) = `rayleigh`
-        - ``chi(3, 0, scale) : `maxwell`
+        - ``chi(1, loc, scale)`` is equivalent to `halfnorm`
+        - ``chi(2, 0, scale)`` is equivalent to `rayleigh`
+        - ``chi(3, 0, scale)`` is equivalent to `maxwell`
 
     %(example)s
 
@@ -1045,7 +1047,7 @@ exponpow = exponpow_gen(a=0.0, name='exponpow')
 
 
 class fatiguelife_gen(rv_continuous):
-    """A fatigue-life (Birnbaum-Sanders) continuous random variable.
+    """A fatigue-life (Birnbaum-Saunders) continuous random variable.
 
     %(before_notes)s
 
@@ -1057,6 +1059,11 @@ class fatiguelife_gen(rv_continuous):
             (x+1) / (2*c*sqrt(2*pi*x**3)) * exp(-(x-1)**2/(2*x*c**2))
 
     for ``x > 0``.
+
+    References
+    ----------
+    .. [1] "Birnbaum-Saunders distribution",
+           http://en.wikipedia.org/wiki/Birnbaum-Saunders_distribution
 
     %(example)s
 
@@ -3353,7 +3360,7 @@ class powerlaw_gen(rv_continuous):
 
     for ``0 <= x <= 1``, ``a > 0``.
 
-    `powerlaw` is a special case of `beta` with ``d == 1``.
+    `powerlaw` is a special case of `beta` with ``b == 1``.
 
     %(example)s
 

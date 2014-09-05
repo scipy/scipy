@@ -241,6 +241,18 @@ Raw Statistical Functions
    boxcox     -- Compute the Box-Cox transformation.
    boxcox1p   -- Compute the Box-Cox transformation.
 
+
+Information Theory Functions
+----------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   entr       -- entr(x) = -x*log(x)
+   rel_entr   -- rel_entr(x, y) = x*log(x/y)
+   kl_div     -- kl_div(x, y) = x*log(x/y) - x + y
+
+
 Gamma and Related Functions
 ---------------------------
 

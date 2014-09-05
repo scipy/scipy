@@ -18,7 +18,7 @@ Functions
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-
+from scipy.lib._numpy_compat import count_nonzero as _count_nonzero
 from .optimize import OptimizeResult, _check_unknown_options
 
 __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']
@@ -133,11 +133,6 @@ def linprog_terse_callback(xk, **kwargs):
         print("Iter:   X:")
     print("{: <5d}   ".format(nit), end="")
     print(xk)
-
-
-def _count_nonzero(x):
-    """_count_nonzero not available in numpy 1.5.x"""
-    return np.sum(x != 0)
 
 
 def _pivot_col(T, tol=1.0E-12, bland=False):
@@ -474,6 +469,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     dot(A_ub, x) <= b_ub
 
     The input for this problem is as follows:
+
     >>> c = [-1, 4]
     >>> A = [[-3, 1], [1, 2]]
     >>> b = [6, 4]
@@ -835,23 +831,28 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         iteration of the simplex algorithm. The callback must have the signature
         `callback(xk, **kwargs)` where xk is the current solution vector
         and kwargs is a dictionary containing the following::
-        "tableau" : The current Simplex algorithm tableau
-        "nit" : The current iteration.
-        "pivot" : The pivot (row, column) used for the next iteration.
-        "phase" : Whether the algorithm is in Phase 1 or Phase 2.
-        "basis" : The indices of the columns of the basic variables.
+
+            "tableau" : The current Simplex algorithm tableau
+            "nit" : The current iteration.
+            "pivot" : The pivot (row, column) used for the next iteration.
+            "phase" : Whether the algorithm is in Phase 1 or Phase 2.
+            "basis" : The indices of the columns of the basic variables.
+
     options : dict, optional
         A dictionary of solver options. All methods accept the following
         generic options:
+
             maxiter : int
                 Maximum number of iterations to perform.
             disp : bool
                 Set to True to print convergence messages.
-        For method-specific options, see :func:`show_options('linprog')`.
+
+        For method-specific options, see `show_options('linprog')`.
 
     Returns
     -------
-    A scipy.optimize.OptimizeResult consisting of the following fields::
+    A `scipy.optimize.OptimizeResult` consisting of the following fields:
+
         x : ndarray
             The independent variable vector which optimizes the linear
             programming problem.
@@ -864,14 +865,40 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             solution.
         status : int
             An integer representing the exit status of the optimization::
-             0 : Optimization terminated successfully
-             1 : Iteration limit reached
-             2 : Problem appears to be infeasible
-             3 : Problem appears to be unbounded
+
+                 0 : Optimization terminated successfully
+                 1 : Iteration limit reached
+                 2 : Problem appears to be infeasible
+                 3 : Problem appears to be unbounded
+
         nit : int
             The number of iterations performed.
         message : str
             A string descriptor of the exit status of the optimization.
+
+    See Also
+    --------
+    show_options : Additional options accepted by the solvers
+
+    Notes
+    -----
+    This section describes the available solvers that can be selected by the
+    'method' parameter. The default method is *Simplex*.
+
+    Method *Simplex* uses the Simplex algorithm (as it relates to Linear
+    Programming, NOT the Nelder-Mead Simplex) [1]_, [2]_. This algorithm
+    should be reasonably reliable and fast.
+
+    .. versionadded:: 0.15.0
+
+    References
+    ----------
+    .. [1] Dantzig, George B., Linear programming and extensions. Rand
+           Corporation Research Study Princeton Univ. Press, Princeton, NJ, 1963
+    .. [2] Hillier, S.H. and Lieberman, G.J. (1995), "Introduction to
+           Mathematical Programming", McGraw-Hill, Chapter 4.
+    .. [3] Bland, Robert G. New finite pivoting rules for the simplex method.
+           Mathematics of Operations Research (2), 1977: pp. 103-107.
 
     Examples
     --------
@@ -895,12 +922,14 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     dot(A_ub, x) <= b_ub
 
     The input for this problem is as follows:
+
     >>> c = [-1, 4]
     >>> A = [[-3, 1], [1, 2]]
     >>> b = [6, 4]
     >>> x0_bounds = (None, None)
     >>> x1_bounds = (-3, None)
-    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=(x0_bounds, x1_bounds), options={"disp":True})
+    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=(x0_bounds, x1_bounds),
+    ...               options={"disp": True})
     >>> print(res)
     Optimization terminated successfully.
          Current function value: -11.428571
@@ -914,39 +943,6 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     Note the actual objective value is 11.428571.  In this case we minimized
     the negative of the objective function.
-
-    References
-    ----------
-    .. [1] Dantzig, George B., Linear programming and extensions. Rand
-           Corporation Research Study Princeton Univ. Press, Princeton, NJ, 1963
-    .. [2] Hillier, S.H. and Lieberman, G.J. (1995), "Introduction to
-           Mathematical Programming", McGraw-Hill, Chapter 4.
-    .. [3] Bland, Robert G. New finite pivoting rules for the simplex method.
-           Mathematics of Operations Research (2), 1977: pp. 103-107.
-
-    Returns
-    -------
-    res : OptimizeResult
-        The optimization result represented as a ``OptimizeResult`` object.
-        Important attributes are: ``x`` the solution array, ``success`` a
-        Boolean flag indicating if the optimizer exited successfully and
-        ``message`` which describes the cause of the termination. See
-        `OptimizeResult` for a description of other attributes.
-
-    See also
-    --------
-    show_options : Additional options accepted by the solvers
-
-    Notes
-    -----
-    This section describes the available solvers that can be selected by the
-    'method' parameter. The default method is *Simplex*.
-
-    Method *Simplex* uses the Simplex algorithm (as it relates to Linear
-    Programming, NOT the Nelder-Mead Simplex) [1]_, [2]_. This algorithm
-    should be reasonably reliable and fast.
-
-    .. versionadded:: 0.15.0
 
     """
     meth = method.lower()

@@ -407,9 +407,13 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     See splev for evaluation of the spline and its derivatives. Uses the
     FORTRAN routine curfit from FITPACK.
 
+    If provided, knots `t` must satisfy the Schoenberg-Whitney conditions,
+    i.e., there must be a subset of data points ``x[j]`` such that
+    ``t[j] < x[j] < t[j+k+1]``, for ``j=0, 1,...,n-k-2``.
+
     References
     ----------
-    Based on algorithms described in [1], [2], [3], and [4]:
+    Based on algorithms described in [1]_, [2]_, [3]_, and [4]_:
 
     .. [1] P. Dierckx, "An algorithm for smoothing, differentiation and
        integration of experimental data using spline functions",
@@ -546,6 +550,7 @@ def splev(x, tck, der=0, ext=0):
         * if ext=0, return the extrapolated value.
         * if ext=1, return 0
         * if ext=2, raise a ValueError
+        * if ext=3, return the boundary value.
 
         The default value is 0.
 
@@ -582,8 +587,8 @@ def splev(x, tck, der=0, ext=0):
     else:
         if not (0 <= der <= k):
             raise ValueError("0<=der=%d<=k=%d must hold" % (der,k))
-        if ext not in (0,1,2):
-            raise ValueError("ext not in (0, 1, 2)")
+        if ext not in (0, 1, 2, 3):
+            raise ValueError("ext = %s not in (0, 1, 2, 3) " % ext)
 
         x = asarray(x)
         shape = x.shape

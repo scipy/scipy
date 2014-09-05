@@ -196,7 +196,7 @@ int NI_InitLineBuffer(PyArrayObject *array, int axis, npy_intp size1,
 
 /* Extend a line in memory to implement boundary conditions: */
 int NI_ExtendLine(double *line, npy_intp length, npy_intp size1,
-                  npy_intp size2, NI_ExtendMode mode, double constant_value)
+                  npy_intp size2, NI_ExtendMode mode, double constant_value, char * errmsg)
 {
     npy_intp ii, jj, length1, nextend, rextend;
     double *l1, *l2, *l3, val;
@@ -312,7 +312,7 @@ int NI_ExtendLine(double *line, npy_intp length, npy_intp size1,
             *l1++ = constant_value;
         break;
     default:
-        PyErr_SetString(PyExc_RuntimeError, "mode not supported");
+        PyOS_snprintf(errmsg, NI_MAX_ERR_MSG, "mode not supported");
         return 0;
     }
     return 1;
@@ -333,7 +333,8 @@ break
 
 /* Copy a line from an array to a buffer: */
 int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
-                         npy_intp *number_of_lines, int *more)
+                         npy_intp *number_of_lines, int *more,
+                         char * errmsg)
 {
     double *pb = buffer->buffer_data;
     char *pa;
@@ -362,8 +363,8 @@ int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
             CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Float32);
             CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Float64);
         default:
-            PyErr_Format(PyExc_RuntimeError, "array type %d not supported",
-                         buffer->array_type);
+            PyOS_snprintf(errmsg, NI_MAX_ERR_MSG, "array type %d not supported",
+                          buffer->array_type);
             return 0;
         }
         /* goto next line in the array: */
@@ -372,7 +373,8 @@ int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
         if (buffer->size1 + buffer->size2 > 0)
             if (!NI_ExtendLine(pb - buffer->size1, length, buffer->size1,
                                                  buffer->size2, buffer->extend_mode,
-                                                 buffer->extend_value))
+                                                 buffer->extend_value,
+                                                 errmsg))
                 return 0;
         /* The number of the array lines copied: */
         ++(buffer->next_line);
@@ -397,7 +399,7 @@ case t ## _type:                                                  \
 break
 
 /* Copy a line from a buffer to an array: */
-int NI_LineBufferToArray(NI_LineBuffer *buffer)
+int NI_LineBufferToArray(NI_LineBuffer *buffer, char * errmsg)
 {
     double *pb = buffer->buffer_data;
     char *pa;
@@ -425,7 +427,7 @@ int NI_LineBufferToArray(NI_LineBuffer *buffer)
             CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Float32);
             CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Float64);
         default:
-            PyErr_SetString(PyExc_RuntimeError, "array type not supported");
+            PyOS_snprintf(errmsg, NI_MAX_ERR_MSG, "array type not supported");
             return 0;
         }
         /* move to the next line in the array: */

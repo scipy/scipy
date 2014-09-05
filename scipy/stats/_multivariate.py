@@ -8,8 +8,7 @@ from functools import wraps
 import numpy as np
 import scipy.linalg
 
-__all__ = ['multivariate_normal']
-
+__all__ = ['multivariate_normal', 'dirichlet']
 
 _LOG_2PI = np.log(2 * np.pi)
 
@@ -60,10 +59,10 @@ def _process_parameters(dim, mean, cov):
         cov = np.diag(cov)
     elif cov.ndim == 2 and cov.shape != (dim, dim):
         raise ValueError("Array 'cov' must be square if it is two dimensional, "
-                "but cov.shape = %s" % str(cov.shape))
+                         "but cov.shape = %s" % str(cov.shape))
     elif cov.ndim > 2:
         raise ValueError("Array 'cov' must be at most two-dimensional, "
-                "but cov.ndim = %d" % cov.ndim)
+                         "but cov.ndim = %d" % cov.ndim)
 
     return dim, mean, cov
 
@@ -99,6 +98,41 @@ def _squeeze_output(out):
     return out
 
 
+def _eigvalsh_to_eps(spectrum, cond=None, rcond=None):
+    """
+    Determine which eigenvalues are "small" given the spectrum.
+
+    This is for compatibility across various linear algebra functions
+    that should agree about whether or not a Hermitian matrix is numerically
+    singular and what is its numerical matrix rank.
+    This is designed to be compatible with scipy.linalg.pinvh.
+
+    Parameters
+    ----------
+    spectrum : 1d ndarray
+        Array of eigenvalues of a Hermitian matrix.
+    cond, rcond : float, optional
+        Cutoff for small eigenvalues.
+        Singular values smaller than rcond * largest_eigenvalue are
+        considered zero.
+        If None or -1, suitable machine precision is used.
+
+    Returns
+    -------
+    eps : float
+        Magnitude cutoff for numerical negligibility.
+
+    """
+    if rcond is not None:
+        cond = rcond
+    if cond in [None, -1]:
+        t = spectrum.dtype.char.lower()
+        factor = {'f': 1E3, 'd': 1E6}
+        cond = factor[t] * np.finfo(t).eps
+    eps = cond * np.max(abs(spectrum))
+    return eps
+
+
 def _pinv_1d(v, eps=1e-5):
     """
     A helper function for computing the pseudoinverse.
@@ -108,7 +142,7 @@ def _pinv_1d(v, eps=1e-5):
     v : iterable of numbers
         This may be thought of as a vector of eigenvalues or singular values.
     eps : float
-        Elements of v smaller than eps are considered negligible.
+        Values with magnitude no greater than eps are considered negligible.
 
     Returns
     -------
@@ -116,7 +150,7 @@ def _pinv_1d(v, eps=1e-5):
         A vector of pseudo-inverted numbers.
 
     """
-    return np.array([0 if abs(x) < eps else 1/x for x in v], dtype=float)
+    return np.array([0 if abs(x) <= eps else 1/x for x in v], dtype=float)
 
 
 class _PSD(object):
@@ -158,24 +192,15 @@ class _PSD(object):
     The arguments are similar to those of scipy.linalg.pinvh().
 
     """
+
     def __init__(self, M, cond=None, rcond=None, lower=True,
-            check_finite=True, allow_singular=True):
+                 check_finite=True, allow_singular=True):
         # Compute the symmetric eigendecomposition.
         # Note that eigh takes care of array conversion, chkfinite,
         # and assertion that the matrix is square.
         s, u = scipy.linalg.eigh(M, lower=lower, check_finite=check_finite)
 
-        # This looks redundant but its purpose is to keep the code
-        # compatible with the scipy.linalg.pinvh function
-        # so that it may be more easily reorganized later if desired.
-        if rcond is not None:
-            cond = rcond
-        if cond in [None, -1]:
-            t = u.dtype.char.lower()
-            factor = {'f': 1E3, 'd': 1E6}
-            cond = factor[t] * np.finfo(t).eps
-
-        eps = cond * np.max(abs(s))
+        eps = _eigvalsh_to_eps(s, cond, rcond)
         if np.min(s) < -eps:
             raise ValueError('the input matrix must be positive semidefinite')
         d = s[s > eps]
@@ -209,17 +234,17 @@ allow_singular : bool, optional
 """
 
 _doc_callparams_note = \
-"""Setting the parameter `mean` to `None` is equivalent to having `mean`
-be the zero-vector. The parameter `cov` can be a scalar, in which case
-the covariance matrix is the identity times that value, a vector of
-diagonal entries for the covariance matrix, or a two-dimensional
-array_like.
-"""
+    """Setting the parameter `mean` to `None` is equivalent to having `mean`
+    be the zero-vector. The parameter `cov` can be a scalar, in which case
+    the covariance matrix is the identity times that value, a vector of
+    diagonal entries for the covariance matrix, or a two-dimensional
+    array_like.
+    """
 
 _doc_frozen_callparams = ""
 
 _doc_frozen_callparams_note = \
-"""See class definition for a detailed description of parameters."""
+    """See class definition for a detailed description of parameters."""
 
 docdict_params = {
     '_doc_default_callparams': _doc_default_callparams,
@@ -317,7 +342,7 @@ class multivariate_normal_gen(object):
 
         """
         return multivariate_normal_frozen(mean, cov,
-                allow_singular=allow_singular)
+                                          allow_singular=allow_singular)
 
     def _logpdf(self, x, mean, prec_U, log_det_cov, rank):
         """
@@ -444,6 +469,7 @@ class multivariate_normal_gen(object):
         dim, mean, cov = _process_parameters(None, mean, cov)
         return 0.5 * np.log(np.linalg.det(2 * np.pi * np.e * cov))
 
+
 multivariate_normal = multivariate_normal_gen()
 
 
@@ -482,7 +508,7 @@ class multivariate_normal_frozen(object):
     def logpdf(self, x):
         x = _process_quantiles(x, self.dim)
         out = self._mnorm._logpdf(x, self.mean,
-                self.cov_info.U, self.cov_info.log_pdet, self.cov_info.rank)
+                                  self.cov_info.U, self.cov_info.log_pdet, self.cov_info.rank)
         return _squeeze_output(out)
 
     def pdf(self, x):
@@ -513,3 +539,335 @@ for name in ['logpdf', 'pdf', 'rvs']:
     method_frozen = multivariate_normal_frozen.__dict__[name]
     method_frozen.__doc__ = doccer.docformat(method.__doc__, docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, docdict_params)
+
+_dirichlet_doc_default_callparams = """\
+alpha : array_like
+    The concentration parameters. The number of entries determines the
+    dimensionality of the distribution.
+"""
+_dirichlet_doc_frozen_callparams = ""
+
+_dirichlet_doc_frozen_callparams_note = \
+    """See class definition for a detailed description of parameters."""
+
+dirichlet_docdict_params = {
+    '_dirichlet_doc_default_callparams': _dirichlet_doc_default_callparams,
+}
+
+dirichlet_docdict_noparams = {
+    '_dirichlet_doc_default_callparams': _dirichlet_doc_frozen_callparams,
+}
+
+
+def _dirichlet_check_parameters(alpha):
+    alpha = np.asarray(alpha)
+    if np.min(alpha) <= 0:
+        raise ValueError("All parameters must be greater than 0")
+    elif alpha.ndim != 1:
+        raise ValueError("Parameter vector 'a' must be one dimensional, " +
+                         "but a.shape = %s." % str(alpha.shape))
+    return alpha
+
+
+def _dirichlet_check_input(alpha, x):
+    x = np.asarray(x)
+
+    if x.shape[0] + 1 != alpha.shape[0] and x.shape[0] != alpha.shape[0]:
+        raise ValueError("Vector 'x' must have one entry less then the" +
+                         " parameter vector 'a', but alpha.shape = " +
+                         "%s and " % alpha.shape +
+                         "x.shape = %s." % x.shape)
+
+    if x.shape[0] != alpha.shape[0]:
+        xk = np.array([1 - np.sum(x, 0)])
+        if xk.ndim == 1:
+            x = np.append(x, xk)
+        elif xk.ndim == 2:
+            x = np.vstack((x, xk))
+        else:
+            raise ValueError("The input must be one dimensional or a two "
+                             "dimensional matrix containing the entries.")
+
+    if np.min(x) < 0:
+        raise ValueError("Each entry in 'x' must be greater or equal zero.")
+
+    if np.max(x) > 1:
+        raise ValueError("Each entry in 'x' must be smaller or equal one.")
+
+    if (np.abs(np.sum(x, 0) - 1.0) > 10e-10).any():
+        raise ValueError("The input vector 'x' must lie within the normal " +
+                         "simplex. but sum(x)=%f." % np.sum(x, 0))
+
+    return x
+
+
+def _lnB(alpha):
+    r"""
+    Internal helper function to compute the log of the useful quotient
+
+    .. math::
+        B(\alpha) = \frac{\prod_{i=1}{K}\Gamma(\alpha_i)}{\Gamma\left(\sum_{i=1}^{K}\alpha_i\right)}
+
+    Parameters
+    ----------
+    %(_dirichlet_doc_default_callparams)s
+
+    Returns
+    -------
+    B : scalar
+        Helper quotient, internal use only
+
+    """
+    return np.sum(scipy.special.gammaln(alpha)) - scipy.special.gammaln(np.sum(alpha))
+
+
+class dirichlet_gen(object):
+    r"""
+    A Dirichlet random variable.
+
+    The `alpha` keyword specifies the concentration parameters of the distribution.
+
+    .. versionadded:: 0.15.0
+
+    Methods
+    -------
+    pdf(x, alpha)
+        Probability density function.
+    logpdf(x, alpha)
+        Log of the probability density function.
+    rvs(alpha, size=1)
+        Draw random samples from a Dirichlet distribution.
+    mean(alpha)
+        The mean of the Dirichlet distribution
+    var(alpha)
+        The variance of the Dirichlet distribution
+    entropy(alpha)
+        Compute the differential entropy of the multivariate normal.
+
+    Parameters
+    ----------
+    x : array_like
+        Quantiles, with the last axis of `x` denoting the components.
+    %(_dirichlet_doc_default_callparams)s
+
+    Alternatively, the object may be called (as a function) to fix
+    concentration parameters, returning a "frozen" Dirichlet
+    random variable:
+
+    rv = dirichlet(alpha)
+        - Frozen object with the same methods but holding the given
+          concentration parameters fixed.
+
+    Notes
+    -----
+    Each :math:`\alpha` entry must be positive. The distribution has only
+    support on the simplex defined by
+
+    .. math::
+        \sum_{i=1}^{K} x_i \le 1
+
+
+    The probability density function for `dirichlet` is
+
+    .. math::
+
+        f(x) = \frac{1}{\mathrm{B}(\boldsymbol\alpha)} \prod_{i=1}^K x_i^{\alpha_i - 1}
+
+    where
+
+    .. math::
+        \mathrm{B}(\boldsymbol\alpha) = \frac{\prod_{i=1}^K \Gamma(\alpha_i)}{\Gamma\bigl(\sum_{i=1}^K \alpha_i\bigr)}
+
+    and :math:`\boldsymbol\alpha=(\alpha_1,\ldots,\alpha_K)`, the
+    concentration parameters and :math:`K` is the dimension of the space
+    where :math:`x` takes values.
+
+    """
+
+    def __init__(self):
+        self.__doc__ = doccer.docformat(self.__doc__, dirichlet_docdict_params)
+
+    def __call__(self, alpha):
+        return dirichlet_frozen(alpha)
+
+    def _logpdf(self, x, alpha):
+        """
+        Parameters
+        ----------
+        x : ndarray
+            Points at which to evaluate the log of the probability
+            density function
+        %(_dirichlet_doc_default_callparams)s
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'logpdf' instead.
+
+        """
+        lnB = _lnB(alpha)
+        return - lnB + np.sum((np.log(x.T) * (alpha - 1)).T, 0)
+
+    def logpdf(self, x, alpha):
+        """
+        Log of the Dirichlet probability density function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+        %(_dirichlet_doc_default_callparams)s
+
+        Returns
+        -------
+        pdf : ndarray
+            Log of the probability density function evaluated at `x`
+        """
+        alpha = _dirichlet_check_parameters(alpha)
+        x = _dirichlet_check_input(alpha, x)
+
+        out = self._logpdf(x, alpha)
+        return _squeeze_output(out)
+
+    def pdf(self, x, alpha):
+        """
+        The Dirichlet probability density function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+        %(_dirichlet_doc_default_callparams)s
+
+        Returns
+        -------
+        pdf : ndarray
+            The probability density function evaluated at `x`
+        """
+        alpha = _dirichlet_check_parameters(alpha)
+        x = _dirichlet_check_input(alpha, x)
+
+        out = np.exp(self._logpdf(x, alpha))
+        return _squeeze_output(out)
+
+    def mean(self, alpha):
+        """
+        Compute the mean of the dirichlet distribution.
+
+        Parameters
+        ----------
+        %(_dirichlet_doc_default_callparams)s
+
+        Returns
+        -------
+        mu : scalar
+            Mean of the Dirichlet distribution
+
+        """
+        alpha = _dirichlet_check_parameters(alpha)
+
+        out = alpha / (np.sum(alpha))
+        return _squeeze_output(out)
+
+    def var(self, alpha):
+        """
+        Compute the variance of the dirichlet distribution.
+
+        Parameters
+        ----------
+        %(_dirichlet_doc_default_callparams)s
+
+        Returns
+        -------
+        v : scalar
+            Variance of the Dirichlet distribution
+
+        """
+
+        alpha = _dirichlet_check_parameters(alpha)
+
+        alpha0 = np.sum(alpha)
+        out = (alpha * (alpha0 - alpha)) / ((alpha0 * alpha0) * (alpha0 + 1))
+        return out
+
+    def entropy(self, alpha):
+        """
+        Compute the differential entropy of the dirichlet distribution.
+
+        Parameters
+        ----------
+        %(_dirichlet_doc_default_callparams)s
+
+        Returns
+        -------
+        h : scalar
+            Entropy of the Dirichlet distribution
+
+        """
+
+        alpha = _dirichlet_check_parameters(alpha)
+
+        alpha0 = np.sum(alpha)
+        lnB = _lnB(alpha)
+        K = alpha.shape[0]
+
+        out = lnB + (alpha0 - K) * scipy.special.psi(alpha0) - np.sum(
+            (alpha - 1) * scipy.special.psi(alpha))
+        return _squeeze_output(out)
+
+    def rvs(self, alpha, size=1):
+        """
+        Draw random samples from a Dirichlet distribution.
+
+        Parameters
+        ----------
+        %(_dirichlet_doc_default_callparams)s
+        size : integer, optional
+            Number of samples to draw (default 1).
+
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random variates of size (`size`, `N`), where `N` is the
+            dimension of the random variable.
+
+        """
+        a = _dirichlet_check_parameters(alpha)
+        return np.random.dirichlet(alpha, size=size)
+
+
+dirichlet = dirichlet_gen()
+
+
+class dirichlet_frozen(object):
+    def __init__(self, alpha):
+        self.alpha = _dirichlet_check_parameters(alpha)
+        self._dirichlet = dirichlet_gen()
+
+    def logpdf(self, x):
+        return self._dirichlet.logpdf(x, self.alpha)
+
+    def pdf(self, x):
+        return self._dirichlet.pdf(x, self.alpha)
+
+    def mean(self):
+        return self._dirichlet.mean(self.alpha)
+
+    def var(self):
+        return self._dirichlet.var(self.alpha)
+
+    def entropy(self):
+        return self._dirichlet.entropy(self.alpha)
+
+    def rvs(self, size=1):
+        return self._dirichlet.rvs(self.alpha, size)
+
+
+# Set frozen generator docstrings from corresponding docstrings in
+# multivariate_normal_gen and fill in default strings in class docstrings
+for name in ['logpdf', 'pdf', 'rvs', 'mean', 'var', 'entropy']:
+    method = dirichlet_gen.__dict__[name]
+    method_frozen = dirichlet_frozen.__dict__[name]
+    method_frozen.__doc__ = doccer.docformat(method.__doc__, dirichlet_docdict_noparams)
+    method.__doc__ = doccer.docformat(method.__doc__, dirichlet_docdict_params)

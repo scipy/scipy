@@ -6,6 +6,7 @@ import warnings
 import numpy as np
 from scipy import special, linalg
 from scipy.fftpack import fft
+from scipy.lib.six import string_types
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
@@ -1342,7 +1343,7 @@ def cosine(M, sym=True):
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if `M` is even and `sym` is True).
-    
+
     Notes
     -----
 
@@ -1454,7 +1455,7 @@ def get_window(window, Nx, fftbins=True):
             winstr = window[0]
             if len(window) > 1:
                 args = window[1:]
-        elif isinstance(window, str):
+        elif isinstance(window, string_types):
             if window in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
                         'general gaussian', 'general_gaussian',
                         'general gauss', 'general_gauss', 'ggs',
@@ -1464,6 +1465,8 @@ def get_window(window, Nx, fftbins=True):
                                     "more parameters  -- pass a tuple.")
             else:
                 winstr = window
+        else:
+            raise ValueError("%s as window type is not supported." % str(type(window)))
 
         if winstr in ['blackman', 'black', 'blk']:
             winfunc = blackman

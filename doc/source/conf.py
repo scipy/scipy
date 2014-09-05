@@ -18,7 +18,7 @@ needs_sphinx = '1.1'
 
 sys.path.insert(0, os.path.abspath('../sphinxext'))
 
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.pngmath', 'numpydoc',
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'numpydoc',
               'sphinx.ext.intersphinx', 'sphinx.ext.coverage',
               'sphinx.ext.autosummary']
 
@@ -262,7 +262,6 @@ coverage_ignore_c_items = {}
 #------------------------------------------------------------------------------
 plot_pre_code = """
 import numpy as np
-import scipy as sp
 np.random.seed(123)
 """
 plot_include_source = True

@@ -18,6 +18,18 @@ class AccuracyWarning(Warning):
     pass
 
 
+def _cached_p_roots(n):
+    """
+    Cache p_roots results for speeding up multiple calls of the fixed_quad function.
+    """
+    if n in _cached_p_roots.cache:
+        return _cached_p_roots.cache[n]
+
+    _cached_p_roots.cache[n] = p_roots(n)
+    return _cached_p_roots.cache[n]
+_cached_p_roots.cache = dict()
+
+
 def fixed_quad(func,a,b,args=(),n=5):
     """
     Compute a definite integral using fixed-order Gaussian quadrature.
@@ -57,7 +69,7 @@ def fixed_quad(func,a,b,args=(),n=5):
     odeint : ODE integrator
 
     """
-    [x,w] = p_roots(n)
+    [x,w] = _cached_p_roots(n)
     x = real(x)
     ainf, binf = map(isinf,(a,b))
     if ainf or binf:
@@ -426,7 +438,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     ----------
     y : array_like
         A vector of ``2**k + 1`` equally-spaced samples of a function.
-    dx : array_like, optional
+    dx : float, optional
         The sample spacing. Default is 1.
     axis : int, optional
         The axis along which to integrate. Default is -1 (last axis).
@@ -472,21 +484,21 @@ def romb(y, dx=1.0, axis=-1, show=False):
     slice0 = tupleset(all, axis, 0)
     slicem1 = tupleset(all, axis, -1)
     h = Ninterv*asarray(dx)*1.0
-    R[(1,1)] = (y[slice0] + y[slicem1])/2.0*h
+    R[(0,0)] = (y[slice0] + y[slicem1])/2.0*h
     slice_R = all
     start = stop = step = Ninterv
-    for i in range(2,k+1):
+    for i in range(1,k+1):
         start >>= 1
         slice_R = tupleset(slice_R, axis, slice(start,stop,step))
         step >>= 1
-        R[(i,1)] = 0.5*(R[(i-1,1)] + h*add.reduce(y[slice_R],axis))
-        for j in range(2,i+1):
+        R[(i,0)] = 0.5*(R[(i-1,0)] + h*add.reduce(y[slice_R],axis))
+        for j in range(1,i+1):
             R[(i,j)] = R[(i,j-1)] + \
-                       (R[(i,j-1)]-R[(i-1,j-1)]) / ((1 << (2*(j-1)))-1)
+                       (R[(i,j-1)]-R[(i-1,j-1)]) / ((1 << (2*j))-1)
         h = h / 2.0
 
     if show:
-        if not isscalar(R[(1,1)]):
+        if not isscalar(R[(0,0)]):
             print("*** Printing table only supported for integrals" +
                   " of a single data set.")
         else:
@@ -502,8 +514,8 @@ def romb(y, dx=1.0, axis=-1, show=False):
 
             print("\n       Richardson Extrapolation Table for Romberg Integration       ")
             print("====================================================================")
-            for i in range(1,k+1):
-                for j in range(1,i+1):
+            for i in range(0,k+1):
+                for j in range(0,i+1):
                     print(formstr % R[(i,j)], end=' ')
                 print()
             print("====================================================================\n")

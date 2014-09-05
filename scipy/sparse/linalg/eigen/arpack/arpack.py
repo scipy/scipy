@@ -1191,8 +1191,9 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     --------
     Find 6 eigenvectors of the identity matrix:
 
+    >>> import scipy.sparse as sparse
     >>> id = np.eye(13)
-    >>> vals, vecs = sp.sparse.linalg.eigs(id, k=6)
+    >>> vals, vecs = sparse.linalg.eigs(id, k=6)
     >>> vals
     array([ 1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j])
     >>> vecs.shape
@@ -1453,8 +1454,9 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     Examples
     --------
+    >>> import scipy.sparse as sparse
     >>> id = np.eye(13)
-    >>> vals, vecs = sp.sparse.linalg.eigsh(id, k=6)
+    >>> vals, vecs = sparse.linalg.eigsh(id, k=6)
     >>> vals
     array([ 1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j])
     >>> vecs.shape
@@ -1495,7 +1497,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     n = A.shape[0]
 
     if k <= 0 or k >= n:
-        raise ValueError("k must be between 1 and ndim(A)-1")
+        raise ValueError("k must be between 1 and the order of the "
+                         "square input matrix.")
 
     if sigma is None:
         A = _aslinearoperator_with_dtype(A)

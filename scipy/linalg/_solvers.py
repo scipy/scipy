@@ -3,6 +3,9 @@
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # February 24, 2012
 
+# Modified: Chad Fulton <ChadFulton@gmail.com>
+# June 19, 2014
+
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
@@ -112,9 +115,39 @@ def solve_lyapunov(a, q):
     return solve_sylvester(a, a.conj().transpose(), q)
 
 
-def solve_discrete_lyapunov(a, q):
+def _solve_discrete_lyapunov_direct(a, q):
     """
-    Solves the Discrete Lyapunov Equation (A'XA-X=-Q) directly.
+    Solves the discrete Lyapunov equation directly.
+
+    This function is called by the `solve_discrete_lyapunov` function with
+    `method=direct`. It is not supposed to be called directly.
+    """
+
+    lhs = kron(a, a.conj())
+    lhs = np.eye(lhs.shape[0]) - lhs
+    x = solve(lhs, q.flatten())
+
+    return np.reshape(x, q.shape)
+
+
+def _solve_discrete_lyapunov_bilinear(a, q):
+    """
+    Solves the discrete Lyapunov equation using a bilinear transformation.
+
+    This function is called by the `solve_discrete_lyapunov` function with
+    `method=bilinear`. It is not supposed to be called directly.
+    """
+    eye = np.eye(a.shape[0])
+    aH = a.conj().transpose()
+    aHI_inv = inv(aH + eye)
+    b = np.dot(aH - eye, aHI_inv)
+    c = 2*np.dot(np.dot(inv(a + eye), q), aHI_inv)
+    return solve_lyapunov(b.conj().transpose(), -c)
+
+
+def solve_discrete_lyapunov(a, q, method=None):
+    """
+    Solves the discrete Lyapunov equation :math:`(A'XA-X=-Q)`.
 
     Parameters
     ----------
@@ -124,27 +157,68 @@ def solve_discrete_lyapunov(a, q):
     q : (M, M) array_like
         Right-hand side square matrix
 
+    method : {'direct', 'bilinear'}, optional
+        Type of solver.
+
+        If not given, chosen to be ``direct`` if ``M`` is less than 10 and
+        ``bilinear`` otherwise.
+
     Returns
     -------
     x : ndarray
-        Solution to the continuous Lyapunov equation
+        Solution to the discrete Lyapunov equation
+
+    See Also
+    --------
+    solve_lyapunov : computes the solution to the continuous Lyapunov equation
 
     Notes
     -----
-    Algorithm is based on a direct analytical solution from:
-    Hamilton, James D. Time Series Analysis, Princeton: Princeton University
-    Press, 1994.  265.  Print.
-    http://www.scribd.com/doc/20577138/Hamilton-1994-Time-Series-Analysis
+    This section describes the available solvers that can be selected by the
+    'method' parameter. The default method is *direct* if ``M`` is less than 10
+    and ``bilinear`` otherwise.
+
+    Method *direct* uses a direct analytical solution to the discrete Lyapunov
+    equation. The algorithm is given in, for example, [1]_. However it requires
+    the linear solution of a system with dimension :math:`M^2` so that
+    performance degrades rapidly for even moderately sized matrices.
+
+    Method *bilinear* uses a bilinear transformation to convert the discrete
+    Lyapunov equation to a continuous Lyapunov equation :math:`(B'X+XB=-C)`
+    where :math:`B=(A-I)(A+I)^{-1}` and
+    :math:`C=2(A' + I)^{-1} Q (A + I)^{-1}`. The continuous equation can be
+    efficiently solved since it is a special case of a Sylvester equation.
+    The transformation algorithm is from Popov (1964) as described in [2]_.
 
     .. versionadded:: 0.11.0
 
+    References
+    ----------
+    .. [1] Hamilton, James D. Time Series Analysis, Princeton: Princeton
+       University Press, 1994.  265.  Print.
+       http://www.scribd.com/doc/20577138/Hamilton-1994-Time-Series-Analysis
+    .. [2] Gajic, Z., and M.T.J. Qureshi. 2008.
+       Lyapunov Matrix Equation in System Stability and Control.
+       Dover Books on Engineering Series. Dover Publications.
+
     """
+    if method is None:
+        # Select automatically based on size of matrices
+        if a.shape[0] >= 10:
+            method = 'bilinear'
+        else:
+            method = 'direct'
 
-    lhs = kron(a, a.conj())
-    lhs = np.eye(lhs.shape[0]) - lhs
-    x = solve(lhs, q.flatten())
+    meth = method.lower()
 
-    return np.reshape(x, q.shape)
+    if meth == 'direct':
+        x = _solve_discrete_lyapunov_direct(a, q)
+    elif meth == 'bilinear':
+        x = _solve_discrete_lyapunov_bilinear(a, q)
+    else:
+        raise ValueError('Unknown solver %s' % method)
+
+    return x
 
 
 def solve_continuous_are(a, b, q, r):

@@ -144,6 +144,9 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     >>> sol.x
     array([ 0.8411639,  0.1588361])
     """
+    if not isinstance(args, tuple):
+        args = (args,)
+
     meth = method.lower()
     if options is None:
         options = {}

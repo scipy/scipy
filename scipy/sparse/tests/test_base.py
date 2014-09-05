@@ -48,6 +48,18 @@ from scipy.lib.decorator import decorator
 
 import nose
 
+# Check for __numpy_ufunc__
+class _UFuncCheck(object):
+    def __array__(self):
+        return np.array([1])
+
+    def __numpy_ufunc__(self, *a, **kwargs):
+        global HAS_NUMPY_UFUNC
+        HAS_NUMPY_UFUNC = True
+
+HAS_NUMPY_UFUNC = False
+np.add(_UFuncCheck(), np.array([1]))
+
 
 warnings.simplefilter('ignore', SparseEfficiencyWarning)
 warnings.simplefilter('ignore', ComplexWarning)
@@ -333,7 +345,8 @@ class _TestCommon:
             assert_array_equal((datsp < 0).todense(), dat < 0)
             assert_array_equal((datsp < -1).todense(), dat < -1)
             assert_array_equal((datsp < -2).todense(), dat < -2)
-            assert_array_equal((datsp < np.nan).todense(), dat < np.nan)
+            with np.errstate(invalid='ignore'):
+                assert_array_equal((datsp < np.nan).todense(), dat < np.nan)
 
             assert_array_equal((2 < datsp).todense(), 2 < dat)
             assert_array_equal((1 < datsp).todense(), 1 < dat)
@@ -398,7 +411,8 @@ class _TestCommon:
             assert_array_equal((datsp > 0).todense(), dat > 0)
             assert_array_equal((datsp > -1).todense(), dat > -1)
             assert_array_equal((datsp > -2).todense(), dat > -2)
-            assert_array_equal((datsp > np.nan).todense(), dat > np.nan)
+            with np.errstate(invalid='ignore'):
+                assert_array_equal((datsp > np.nan).todense(), dat > np.nan)
 
             assert_array_equal((2 > datsp).todense(), 2 > dat)
             assert_array_equal((1 > datsp).todense(), 1 > dat)
@@ -979,10 +993,7 @@ class _TestCommon:
             assert_array_equal(17.3*dat,(17.3*datsp).todense())
 
         for dtype in self.checked_dtypes:
-            fails = ((dtype == np.typeDict['int']) and
-                     isinstance(self, (TestLIL, TestDOK)))
-            msg = "LIL and DOK type's __rmul__ method has problems with int data."
-            yield dec.knownfailureif(fails, msg)(check), dtype
+            yield check, dtype
 
     def test_add(self):
         def check(dtype):
@@ -1555,13 +1566,13 @@ class _TestCommon:
 
     def test_unary_ufunc_overrides(self):
         def check(name):
-            if NumpyVersion(np.__version__) < '1.10.0.dev-0':
+            if not HAS_NUMPY_UFUNC:
                 if name == "sign":
                     raise nose.SkipTest("sign conflicts with comparison op "
-                                        "support on Numpy < 1.10")
+                                        "support on Numpy without __numpy_ufunc__")
                 if self.spmatrix in (dok_matrix, lil_matrix):
                     raise nose.SkipTest("Unary ops not implemented for dok/lil "
-                                        "with Numpy < 1.10")
+                                        "with Numpy without __numpy_ufunc__")
             ufunc = getattr(np, name)
 
             X = self.spmatrix(np.arange(20).reshape(4, 5) / 20.)
@@ -1570,8 +1581,8 @@ class _TestCommon:
             X2 = ufunc(X)
             assert_array_equal(X2.toarray(), X0)
 
-            if not (NumpyVersion(np.__version__) < '1.10.0.dev-0'):
-                # the out argument doesn't work on Numpy < 1.10
+            if HAS_NUMPY_UFUNC:
+                # the out argument doesn't work on Numpy without __numpy_ufunc__
                 out = np.zeros_like(X0)
                 X3 = ufunc(X, out=out)
                 assert_(X3 is out)
@@ -1607,8 +1618,7 @@ class _TestCommon:
         a_items = dict(dense=a, scalar=c, cplx_scalar=d, int_scalar=e, sparse=asp)
         b_items = dict(dense=b, scalar=c, cplx_scalar=d, int_scalar=e, sparse=bsp)
 
-        @dec.skipif(NumpyVersion(np.__version__) < '1.10.0.dev-0',
-                    "feature requires Numpy 1.10")
+        @dec.skipif(not HAS_NUMPY_UFUNC, "feature requires Numpy with __numpy_ufunc__")
         def check(i, j, dtype):
             ax = a_items[i]
             bx = b_items[j]
@@ -1709,8 +1719,7 @@ class _TestCommon:
                     if i == 'sparse' or j == 'sparse':
                         yield check, i, j, dtype
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.10.0.dev-0',
-                "feature requires Numpy 1.10")
+    @dec.skipif(not HAS_NUMPY_UFUNC, "feature requires Numpy with __numpy_ufunc__")
     def test_ufunc_object_array(self):
         # This tests compatibility with previous Numpy object array
         # ufunc behavior. See gh-3345.
@@ -1750,7 +1759,7 @@ class _TestInplaceArithmetic:
         b = self.spmatrix(a)
 
         with warnings.catch_warnings():
-            if NumpyVersion(np.__version__) < '1.10.0.dev-0':
+            if not HAS_NUMPY_UFUNC:
                 warnings.simplefilter("ignore", DeprecationWarning)
 
             x = a.copy()
@@ -3421,43 +3430,11 @@ class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
     ##
 
     @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_slice_scalar_assign(self):
-        pass
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_slice_assign_2(self):
-        pass
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
     def test_fancy_indexing(self):
         pass
 
     @dec.knownfailureif(True, "known deficiency in DOK")
     def test_add_sub(self):
-        pass
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_scalar_assign_2(self):
-        pass
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_fancy_assign_ndarray(self):
-        pass
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_fancy_indexing_set(self):
-        pass
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_fancy_assign_list(self):
-        pass
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_fancy_assign_slice(self):
-        pass
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_fancy_indexing_multidim_set(self):
         pass
 
 
@@ -3631,10 +3608,6 @@ class TestCOO(sparse_test_class(getset=False,
         zeros = [[0, 0]]
         dia = coo_matrix(zeros).todia()
         assert_array_equal(dia.A, zeros)
-
-    @dec.knownfailureif(True, "known deficiency in COO")
-    def test_setdiag(self):
-        pass
 
     def test_sum_duplicates(self):
         coo = coo_matrix((4,3))
@@ -3974,6 +3947,13 @@ class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
         M.row = np.r_[M.row.dtype.type(i), M.row]
         M.col = np.r_[M.col.dtype.type(j), M.col]
         return M
+
+    def test_setdiag_noncanonical(self):
+        m = self.spmatrix(np.eye(3))
+        m.sum_duplicates()
+        m.setdiag([3, 2], k=1)
+        m.sum_duplicates()
+        assert_(np.all(np.diff(m.col) >= 0))
 
     @dec.knownfailureif(True, 'nnz counts explicit zeros')
     def test_empty(self):

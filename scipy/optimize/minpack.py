@@ -268,7 +268,8 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     ----------
     func : callable
         should take at least one (possibly length N vector) argument and
-        returns M floating point numbers.
+        returns M floating point numbers. It must not return NaNs or
+        fitting might fail.
     x0 : ndarray
         The starting estimate for the minimization.
     args : tuple
@@ -473,8 +474,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False, **kw):
         can be determined using introspection, otherwise a ValueError
         is raised).
     sigma : None or M-length sequence, optional
-        If not None, these values are used as weights in the
-        least-squares problem.
+        If not None, the uncertainties in the ydata array. These are used as
+        weights in the least-squares problem
+        i.e. minimising ``np.sum( ((f(xdata, *popt) - ydata) / sigma)**2 )``
+        If None, the uncertainties are assumed to be 1.
     absolute_sigma : bool, optional
         If False, `sigma` denotes relative weights of the data points.
         The returned covariance matrix `pcov` is based on *estimated*

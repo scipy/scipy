@@ -1,11 +1,10 @@
 from __future__ import division, print_function, absolute_import
 
-
 import warnings
 import numpy as np
 from numpy import array
 from numpy.testing import (assert_array_almost_equal, assert_array_equal,
-                           run_module_suite)
+                           run_module_suite, assert_raises)
 from scipy import signal
 
 
@@ -117,6 +116,14 @@ class TestGetWindow(object):
             warnings.simplefilter("ignore", UserWarning)
             w = signal.get_window(('chebwin', -40), 54, fftbins=False)
         assert_array_almost_equal(w, cheb_even_true, decimal=4)
+
+    def test_array_as_window(self):
+        # github issue 3603
+        osfactor = 128
+        sig = np.arange(128)
+
+        win = signal.get_window(('kaiser', 8.0), osfactor // 2)
+        assert_raises(ValueError, signal.resample, (sig, len(sig) * osfactor), {'window': win})
 
 
 def test_windowfunc_basics():

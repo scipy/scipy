@@ -158,6 +158,7 @@ scipy/sparse/csgraph/_min_spanning_tree.c
 scipy/sparse/csgraph/_shortest_path.c
 scipy/sparse/csgraph/_tools.c
 scipy/sparse/csgraph/_traversal.c
+scipy/sparse/csgraph/_reordering.c
 scipy/sparse/linalg/dsolve/umfpack/_umfpack.py
 scipy/sparse/linalg/dsolve/umfpack/_umfpack_wrap.c
 scipy/sparse/linalg/eigen/arpack/_arpack-f2pywrappers.f

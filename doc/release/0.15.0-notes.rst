@@ -57,6 +57,13 @@ redesigned. It is now possible to use scipy.integrate to integrate
 multivariate ctypes functions, thus avoiding callbacks to Python and providing 
 better performance, especially for complex integrand functions.
 
+``scipy.stats`` improvements
+----------------------------
+Added a Dirichlet distribution as multivariate distribution.
+
+The new function `scipy.stats.median_test` computes Mood's median test.
+
+
 Deprecated features
 ===================
 

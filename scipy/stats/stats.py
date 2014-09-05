@@ -248,11 +248,12 @@ def find_repeats(arr):
 
     Examples
     --------
-        >>> sp.stats.find_repeats([2, 1, 2, 3, 2, 2, 5])
-        (array([ 2. ]), array([ 4 ], dtype=int32)
+    >>> import scipy.stats as stats
+    >>> stats.find_repeats([2, 1, 2, 3, 2, 2, 5])
+    (array([ 2. ]), array([ 4 ], dtype=int32)
 
-        >>> sp.stats.find_repeats([[10, 20, 1, 2], [5, 5, 4, 4]])
-        (array([ 4., 5.]), array([2, 2], dtype=int32))
+    >>> stats.find_repeats([[10, 20, 1, 2], [5, 5, 4, 4]])
+    (array([ 4., 5.]), array([2, 2], dtype=int32))
 
     """
     v1,v2, n = futil.dfreps(arr)
@@ -1722,12 +1723,13 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
     Examples
     --------
+    >>> import scipy.stats as stats
     >>> x = [1, 4, 2, 1, 3, 1]
-    >>> cumfreqs, lowlim, binsize, extrapoints = sp.stats.cumfreq(x, numbins=4)
+    >>> cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4)
     >>> cumfreqs
     array([ 3.,  4.,  5.,  6.])
     >>> cumfreqs, lowlim, binsize, extrapoints = \
-    ...     sp.stats.cumfreq(x, numbins=4, defaultreallimits=(1.5, 5))
+    ...     stats.cumfreq(x, numbins=4, defaultreallimits=(1.5, 5))
     >>> cumfreqs
     array([ 1.,  2.,  3.,  3.])
     >>> extrapoints
@@ -1771,8 +1773,9 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
     Examples
     --------
+    >>> import scipy.stats as stats
     >>> a = np.array([1, 4, 2, 1, 3, 1])
-    >>> relfreqs, lowlim, binsize, extrapoints = sp.stats.relfreq(a, numbins=4)
+    >>> relfreqs, lowlim, binsize, extrapoints = stats.relfreq(a, numbins=4)
     >>> relfreqs
     array([ 0.5       ,  0.16666667,  0.16666667,  0.16666667])
     >>> np.sum(relfreqs)  # relative frequencies should add up to 1
@@ -2849,9 +2852,10 @@ def kendalltau(x, y, initial_lexsort=True):
 
     Examples
     --------
+    >>> import scipy.stats as stats
     >>> x1 = [12, 2, 1, 12, 2]
     >>> x2 = [1, 4, 7, 1, 0]
-    >>> tau, p_value = sp.stats.kendalltau(x1, x2)
+    >>> tau, p_value = stats.kendalltau(x1, x2)
     >>> tau
     -0.47140452079103173
     >>> p_value
@@ -3110,7 +3114,11 @@ def theilslopes(y, x=None, alpha=0.95):
     >>> res = stats.theilslopes(y, x, 0.90)
     >>> lsq_res = stats.linregress(x, y)
 
-    Plot the results:
+    Plot the results. The Theil-Sen regression line is shown in red, with the
+    dashed red lines illustrating the confidence interval of the slope (note
+    that the dashed red lines are not the confidence interval of the regression
+    as the confidence interval of the intercept is not included). The green
+    line shows the least-squares fit for comparison.
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
@@ -3120,13 +3128,6 @@ def theilslopes(y, x=None, alpha=0.95):
     >>> ax.plot(x, res[1] + res[3] * x, 'r--')
     >>> ax.plot(x, lsq_res[1] + lsq_res[0] * x, 'g-')
     >>> plt.show()
-
-    The Theil-Sen regression line is shown in red, with the dashed red
-    lines illustrating the confidence interval of the slope (note that
-    the dashed red lines are not the confidence interval of the
-    regression as the confidence interval of the intercept is not
-    included). The green line shows the least-squares fit for
-    comparison.
 
     """
     y = np.asarray(y).flatten()

@@ -15,6 +15,7 @@ from scipy.linalg import svdvals, solve_triangular
 from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse.linalg import onenormest
 import scipy.special
+from scipy.lib._numpy_compat import count_nonzero as _count_nonzero
 
 
 class LogmRankWarning(UserWarning):
@@ -35,11 +36,6 @@ class LogmError(np.linalg.LinAlgError):
 
 class FractionalMatrixPowerError(np.linalg.LinAlgError):
     pass
-
-
-def _count_nonzero(x):
-    """np.count_nonzero not available in numpy 1.5.x"""
-    return np.sum(x != 0)
 
 
 #TODO renovate or move this class when scipy operators are more mature

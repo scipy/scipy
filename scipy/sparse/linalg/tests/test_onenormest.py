@@ -6,14 +6,10 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal, assert_,
         decorators, TestCase, run_module_suite)
+from scipy.lib._numpy_compat import count_nonzero as _count_nonzero
 import scipy.linalg
 import scipy.sparse.linalg
 from scipy.sparse.linalg._onenormest import _onenormest_core, _algorithm_2_2
-
-
-def _count_nonzero(x):
-    """np.count_nonzero not available in numpy 1.5.x"""
-    return np.sum(x != 0)
 
 
 class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):

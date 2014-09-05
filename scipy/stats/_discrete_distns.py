@@ -5,7 +5,7 @@
 from __future__ import division, print_function, absolute_import
 
 from scipy import special
-from scipy.special import gammaln as gamln
+from scipy.special import entr, gammaln as gamln
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
@@ -78,8 +78,7 @@ class binom_gen(rv_discrete):
     def _entropy(self, n, p):
         k = np.r_[0:n + 1]
         vals = self._pmf(k, n, p)
-        h = -np.sum(special.xlogy(vals, vals), axis=0)
-        return h
+        return np.sum(entr(vals), axis=0)
 binom = binom_gen(name='binom')
 
 
@@ -127,8 +126,7 @@ class bernoulli_gen(binom_gen):
         return binom._stats(1, p)
 
     def _entropy(self, p):
-        h = -special.xlogy(p, p) - special.xlogy(1 - p, 1 - p)
-        return h
+        return entr(p) + entr(1-p)
 bernoulli = bernoulli_gen(b=1, name='bernoulli')
 
 
@@ -338,8 +336,7 @@ class hypergeom_gen(rv_discrete):
     def _entropy(self, M, n, N):
         k = np.r_[N - (M - n):min(n, N) + 1]
         vals = self.pmf(k, M, n, N)
-        h = -np.sum(special.xlogy(vals, vals), axis=0)
-        return h
+        return np.sum(entr(vals), axis=0)
 
     def _sf(self, k, M, n, N):
         """More precise calculation, 1 - cdf doesn't cut it."""

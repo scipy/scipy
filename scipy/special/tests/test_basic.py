@@ -22,6 +22,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import itertools
 import warnings
 
 import numpy as np
@@ -2553,10 +2554,20 @@ class TestLegendreFunctions(TestCase):
 
     def test_lqmn(self):
         lqmnf = special.lqmn(0,2,.5)
-        lqmnf = special.lqmn(0,2,.5)
         lqf = special.lqn(2,.5)
         assert_array_almost_equal(lqmnf[0][0],lqf[0],4)
         assert_array_almost_equal(lqmnf[1][0],lqf[1],4)
+
+    def test_lqmn_gt1(self):
+        """algorithm for real arguments changes at 1.0001
+           test against analytical result for m=2, n=1
+        """
+        x0 = 1.0001
+        delta = 0.00002
+        for x in (x0-delta, x0+delta):
+            lq = special.lqmn(2, 1, x)[0][-1, -1]
+            expected = 2/(x*x-1)
+            assert_almost_equal(lq, expected)
 
     def test_lqmn_shape(self):
         a, b = special.lqmn(4, 4, 1.1)
@@ -2929,6 +2940,57 @@ def test_xlog1py():
                      (1, 1e-30)], dtype=float)
     w1 = np.vectorize(xfunc)(z1[:,0], z1[:,1])
     assert_func_equal(special.xlog1py, w1, z1, rtol=1e-13, atol=1e-13)
+
+
+def test_entr():
+    def xfunc(x):
+        if x < 0:
+            return -np.inf
+        else:
+            return -special.xlogy(x, x)
+    values = (0, 0.5, 1.0, np.inf)
+    signs = [1]
+    arr = []
+    for sgn, v in itertools.product(signs, values):
+        arr.append(sgn * v)
+    z = np.array(arr, dtype=float)
+    w = np.vectorize(xfunc, otypes=[np.float64])(z)
+    assert_func_equal(special.entr, w, z, rtol=1e-13, atol=1e-13)
+
+
+def test_kl_div():
+    def xfunc(x, y):
+        if x < 0 or y < 0 or (y == 0 and x != 0):
+            # extension of natural domain to preserve convexity
+            return np.inf
+        elif np.isposinf(x) or np.isposinf(y):
+            # limits within the natural domain
+            return np.inf
+        elif x == 0:
+            return y
+        else:
+            return special.xlogy(x, x) - special.xlogy(x, y) - x + y
+    values = (0, 0.5, 1.0)
+    signs = [1]
+    arr = []
+    for sgna, va, sgnb, vb in itertools.product(signs, values, signs, values):
+        arr.append((sgna*va, sgnb*vb))
+    z = np.array(arr, dtype=float)
+    w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
+    assert_func_equal(special.kl_div, w, z, rtol=1e-13, atol=1e-13)
+
+
+def test_rel_entr():
+    def xfunc(x, y):
+        return special.xlogy(x, x) - special.xlogy(x, y)
+    values = (0, 0.5, 1.0)
+    signs = [1]
+    arr = []
+    for sgna, va, sgnb, vb in itertools.product(signs, values, signs, values):
+        arr.append((sgna*va, sgnb*vb))
+    z = np.array(arr, dtype=float)
+    w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
+    assert_func_equal(special.rel_entr, w, z, rtol=1e-13, atol=1e-13)
 
 
 if __name__ == "__main__":
