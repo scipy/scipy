@@ -9,67 +9,59 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info
     config = Configuration('integrate', parent_package, top_path)
 
-    blas_opt = get_info('blas_opt',notfound_action=2)
+    # Get a local copy of lapack_opt_info
+    lapack_opt = dict(get_info('lapack_opt',notfound_action=2))
+    # Pop off the libraries list so it can be combined with
+    # additional required libraries
+    lapack_libs = lapack_opt.pop('libraries', [])
 
-    linpack_lite_src = [join('linpack_lite','*.f')]
     mach_src = [join('mach','*.f')]
     quadpack_src = [join('quadpack','*.f')]
     odepack_src = [join('odepack','*.f')]
     dop_src = [join('dop','*.f')]
     quadpack_test_src = [join('tests','_test_multivariate.c')]
 
-    config.add_library('linpack_lite', sources=linpack_lite_src)
     config.add_library('mach', sources=mach_src,
                        config_fc={'noopt':(__file__,1)})
     config.add_library('quadpack', sources=quadpack_src)
     config.add_library('odepack', sources=odepack_src)
     config.add_library('dop', sources=dop_src)
-    # should we try to weed through files and replace with calls to
-    # LAPACK routines?
-    # Yes, someday...
 
     # Extensions
     # quadpack:
-
     config.add_extension('_quadpack',
                          sources=['_quadpackmodule.c'],
-                         libraries=['quadpack', 'linpack_lite', 'mach'],
+                         libraries=(['quadpack', 'mach'] + lapack_libs),
                          depends=(['quadpack.h','__quadpack.h']
-                                  + quadpack_src + linpack_lite_src + mach_src))
-    # odepack
-    libs = ['odepack','linpack_lite','mach']
+                                  + quadpack_src + mach_src),
+                         **lapack_opt)
 
-    # Remove libraries key from blas_opt
-    if 'libraries' in blas_opt:    # key doesn't exist on OS X ...
-        libs.extend(blas_opt['libraries'])
-    newblas = {}
-    for key in blas_opt:
-        if key == 'libraries':
-            continue
-        newblas[key] = blas_opt[key]
+    # odepack
+    odepack_libs = ['odepack','mach'] + lapack_libs
+    
     config.add_extension('_odepack',
                          sources=['_odepackmodule.c'],
-                         libraries=libs,
+                         libraries=odepack_libs,
                          depends=(['__odepack.h','multipack.h']
-                                  + odepack_src + linpack_lite_src
+                                  + odepack_src
                                   + mach_src),
-                         **newblas)
+                         **lapack_opt)
 
     # vode
     config.add_extension('vode',
                          sources=['vode.pyf'],
-                         libraries=libs,
-                         depends=(odepack_src + linpack_lite_src
+                         libraries=odepack_libs,
+                         depends=(odepack_src
                                   + mach_src),
-                         **newblas)
+                         **lapack_opt)
 
     # lsoda
     config.add_extension('lsoda',
                          sources=['lsoda.pyf'],
-                         libraries=libs,
-                         depends=(odepack_src + linpack_lite_src
+                         libraries=odepack_libs,
+                         depends=(odepack_src
                                   + mach_src),
-                         **newblas)
+                         **lapack_opt)
 
     # dop
     config.add_extension('_dop',
