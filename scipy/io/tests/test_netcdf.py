@@ -5,12 +5,14 @@ import os
 from os.path import join as pjoin, dirname
 import shutil
 import tempfile
+import time
+import sys
 from io import BytesIO
 from glob import glob
 from contextlib import contextmanager
 
 import numpy as np
-from numpy.testing import assert_, assert_allclose
+from numpy.testing import dec, assert_, assert_allclose
 
 from scipy.io.netcdf import netcdf_file
 
@@ -196,14 +198,3 @@ def test_ticket_1720():
         assert_equal(float_var.units, b'metres')
         assert_equal(float_var.shape, (10,))
         assert_allclose(float_var[:], items)
-
-
-def test_mmaps_closed():
-    # Regression test for gh-1550.  Will fail with "Too many open files"
-    # error if not all mmaps aren't closed by ``f.close()``.
-    filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
-    vars = []
-    for i in range(1100):
-        f = netcdf_file(filename, mmap=True)
-        vars.append(f.variables['lat'])
-        f.close()
