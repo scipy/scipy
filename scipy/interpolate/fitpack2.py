@@ -544,6 +544,21 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
             raise ValueError("Unknown extrapolation mode %s." % ext)
 
 
+_fpchec_error_string = """The input parameters have been rejected by fpchec. \
+This means that at least one of the following conditions is violated:
+
+1) k+1 <= n-k-1 <= m
+2) t(1) <= t(2) <= ... <= t(k+1)
+   t(n-k) <= t(n-k+1) <= ... <= t(n)
+3) t(k+1) < t(k+2) < ... < t(n-k)
+4) t(k+1) <= x(i) <= t(n-k)
+5) The conditions specified by Schoenberg and Whitney must hold
+   for at least one subset of data points, i.e., there must be a
+   subset of data points y(j) such that
+       t(j) < y(j) < t(j+k+1), j=1,2,...,n-k-1
+"""
+
+
 class LSQUnivariateSpline(UnivariateSpline):
     """
     One-dimensional spline with explicit internal knots.
@@ -569,7 +584,7 @@ class LSQUnivariateSpline(UnivariateSpline):
     k : int, optional
         Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
     ext : int or str, optional
-        Controls the extrapolation mode for elements 
+        Controls the extrapolation mode for elements
         not in the interval defined by the knot sequence.
 
         * if ext=0 or 'extrapolate', return the extrapolated value.
@@ -632,10 +647,11 @@ class LSQUnivariateSpline(UnivariateSpline):
                        the approximation interval.
                        By default, bbox=[x[0],x[-1]]
           k=3        - degree of the univariate spline.
-          ext        - Controls the extrapolation mode for elements 
+          ext        - Controls the extrapolation mode for elements
                        not in the interval defined by the knot sequence.
 
-                       * if ext=0 or 'extrapolate', return the extrapolated value.
+                       * if ext=0 or 'extrapolate', return the extrapolated
+                         value.
                        * if ext=1 or 'zeros', return 0
                        * if ext=2 or 'raise', raise a ValueError.
 
@@ -648,13 +664,15 @@ class LSQUnivariateSpline(UnivariateSpline):
             xb = x[0]
         if xe is None:
             xe = x[-1]
-        t = concatenate(([xb]*(k+1),t,[xe]*(k+1)))
+        t = concatenate(([xb]*(k+1), t, [xe]*(k+1)))
         n = len(t)
-        if not alltrue(t[k+1:n-k]-t[k:n-k-1] > 0,axis=0):
+        if not alltrue(t[k+1:n-k]-t[k:n-k-1] > 0, axis=0):
             raise ValueError('Interior knots t must satisfy '
-                            'Schoenberg-Whitney conditions')
-        data = dfitpack.fpcurfm1(x,y,k,t,w=w,xb=xb,xe=xe)
-        self._data = data[:-3] + (None,None,data[-1])
+                             'Schoenberg-Whitney conditions')
+        if not dfitpack.fpchec(x, t, k) == 0:
+            raise ValueError(_fpchec_error_string)
+        data = dfitpack.fpcurfm1(x, y, k, t, w=w, xb=xb, xe=xe)
+        self._data = data[:-3] + (None, None, data[-1])
         self._reset_class()
 
         try:

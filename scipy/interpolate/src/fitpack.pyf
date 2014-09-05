@@ -84,6 +84,15 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
 
   interface
 
+     subroutine fpchec(x,m,t,n,k,ier)
+       real*8 dimension(m),intent(in) :: x
+       integer intent(hide),depend(x) :: m=len(x)
+       real*8 dimension(n),intent(in) :: t
+       integer intent(hide),depend(t) :: n=len(t)
+       integer :: k
+       integer intent(out) :: ier
+     end subroutine fpchec
+
      !!!!!!!!!! Univariate spline !!!!!!!!!!!
 
      subroutine splev(t,n,c,k,x,y,m,e,ier)
