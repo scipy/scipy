@@ -115,12 +115,13 @@ class TestUnivariateSpline(TestCase):
                     **dict(x=x, y=y, ext=ext))
 
     def test_lsq_fpchec(self):
-       xs=np.arange(100)*1.
-       ys=np.arange(100)*1.
-       knots=np.linspace(0,99,10)
-       bbox=(-1,101)
-       assert_raises(ValueError, LSQUnivariateSpline, xs, ys, knots, bbox=bbox)
-        
+        xs = np.arange(100) * 1.
+        ys = np.arange(100) * 1.
+        knots = np.linspace(0, 99, 10)
+        bbox = (-1, 101)
+        assert_raises(ValueError, LSQUnivariateSpline, xs, ys, knots,
+                      bbox=bbox)
+
     def test_derivative_and_antiderivative(self):
         # Thin wrappers to splder/splantider, so light smoke test only.
         x = np.linspace(0, 1, 70)**3

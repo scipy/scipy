@@ -546,8 +546,8 @@ This means that at least one of the following conditions is violated:
    t(n-k) <= t(n-k+1) <= ... <= t(n)
 3) t(k+1) < t(k+2) < ... < t(n-k)
 4) t(k+1) <= x(i) <= t(n-k)
-5) the conditions specified by schoenberg and whitney must hold
-   for at least one subset of data points, i.e. there must be a
+5) The conditions specified by Schoenberg and Whitney must hold
+   for at least one subset of data points, i.e., there must be a
    subset of data points y(j) such that
        t(j) < y(j) < t(j+k+1), j=1,2,...,n-k-1
 """
