@@ -1210,8 +1210,8 @@ cdef class cKDTree:
         cdef np.intp_t c, n, i, j
         x = np.asarray(x).astype(np.float64)
         if np.shape(x)[-1] != self.m:
-            raise ValueError("x must consist of vectors of length %d but has"
-                             "shape %s" % (int(self.m), np.shape(x)))
+            raise ValueError("x must consist of vectors of length %d but "
+                             "has shape %s" % (int(self.m), np.shape(x)))
         if p < 1:
             raise ValueError("Only p-norms with 1<=p<=infinity permitted")
         if len(x.shape)==1:
