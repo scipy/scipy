@@ -171,6 +171,7 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import math
+from collections import namedtuple
 
 from scipy.lib.six import xrange
 
@@ -1087,6 +1088,11 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals
 
 
+_DescribeResult = namedtuple('DescribeResult', ('n', 'minmax', 'mean',
+                                                'variance', 'skewness',
+                                                'exc_kurtosis'))
+
+
 def describe(a, axis=0, ddof=1):
     """
     Computes several descriptive statistics of the passed array.
@@ -1103,21 +1109,22 @@ def describe(a, axis=0, ddof=1):
 
     Returns
     -------
-    size of the data : int
+    n : int
        length of data along axis
-    (min, max): tuple of ndarrays or floats
+    minmax: tuple of ndarrays or floats
        minimum and maximum value of data array
-    arithmetic mean : ndarray or float
-       mean of data along axis
-    unbiased variance : ndarray or float
-       variance of the data along axis, denominator is number of observations
-       minus one.
-    biased skewness : ndarray or float
-       skewness, based on moment calculations with denominator equal to the
-       number of observations, i.e. no degrees of freedom correction
-    biased kurtosis : ndarray or float
-       kurtosis (Fisher), the kurtosis is normalized so that it is zero for the
-       normal distribution. No degrees of freedom or bias correction is used.
+    mean : ndarray or float
+       arithmetic mean of data along axis
+    variance : ndarray or float
+       unbiased variance of the data along axis, denominator is number of
+       observations minus one.
+    skewness : ndarray or float
+       biased skewness, based on moment calculations with denominator equal to
+       the number of observations, i.e. no degrees of freedom correction
+    exc_kurtosis : ndarray or float
+       biased kurtosis (Fisher), the kurtosis is normalized so that it is
+       zero for the normal distribution. No degrees of freedom or bias
+       correction is used.
 
     See Also
     --------
@@ -1131,7 +1138,9 @@ def describe(a, axis=0, ddof=1):
     v = np.var(a, axis=axis, ddof=ddof)
     sk = skew(a, axis)
     kurt = kurtosis(a, axis)
-    return n, mm, m, v, sk, kurt
+
+    # Return namedtuple for clarity
+    return _DescribeResult(n, mm, m, v, sk, kurt)
 
 #####################################
 ########  NORMALITY TESTS  ##########
