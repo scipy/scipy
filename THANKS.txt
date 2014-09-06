@@ -134,6 +134,7 @@ Nathan Woods for advising on multivariate integration and building unit tests.
 Brianna Laugher for bug fixes.
 Johannes Kulick for the Dirichlet distribution.
 Bastian Venthur for bug fixes.
+Clark Fitzgerald for namedtuple outputs.
 
 Institutions
 ------------
