@@ -284,7 +284,7 @@ def wrap_function(function, args):
 
 
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
-         full_output=0, disp=1, retall=0, callback=None, ini_deltas=None, adaptive=0):
+         full_output=0, disp=1, retall=0, callback=None):
     """
     Minimize a function using the downhill simplex algorithm.
 
@@ -316,11 +316,6 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         Set to True to print convergence messages.
     retall : bool, optional
         Set to True to return list of solutions at each iteration.
-    ini_deltas : ndarray, optional
-        Initial steps sizes for dimensions of initial simplex.
-        Initial simplex will be [[x0], [x0 + ini_deltas*e0], ...].
-    adaptive: bool, optional
-        Set to True to use adaptive parameter algorithm in [3].
 
     Returns
     -------
@@ -367,10 +362,6 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
            Griffiths and G.A. Watson (Eds.), Addison Wesley Longman,
            Harlow, UK, pp. 191-208.
 
-    .. [3] Gao, F. and Han, L. (2010), "Implementing the Nelder-Mean simplex
-           algorithm with adaptive parameters", Computational Optimization
-           and Applications, 51(1), pp. 259-277.
-
     """
     opts = {'xtol': xtol,
             'ftol': ftol,
@@ -394,7 +385,6 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
 def _minimize_neldermead(func, x0, args=(), callback=None,
                          xtol=1e-4, ftol=1e-4, maxiter=None, maxfev=None,
-                         ini_deltas=None, adaptive=0,
                          disp=False, return_all=False,
                          **unknown_options):
     """
@@ -412,11 +402,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             Maximum number of iterations to perform.
         maxfev : int
             Maximum number of function evaluations to make.
-        ini_deltas : ndarray, optional
-            Initial steps sizes for dimensions of initial simplex.
-            Initial simplex will be [[x0], [x0 + ini_deltas*e0], ...].
-        adaptive: bool, optional
-            Set to True to use adaptive parameter algorithm.
 
     This function is called by the `minimize` function with
     `method=Nelder-Mead`. It is not supposed to be called directly.
@@ -436,17 +421,10 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     if maxfun is None:
         maxfun = N * 200
 
-    if adaptive:
-        rho = 1
-        chi = 1 + 2 / N
-        psi = .75 - 1 / (2 * N)
-        sigma = 1 - 1 / N
-    else:
-        rho = 1
-        chi = 2
-        psi = 0.5
-        sigma = 0.5
-
+    rho = 1
+    chi = 2
+    psi = 0.5
+    sigma = 0.5
     one2np1 = list(range(1, N + 1))
 
     if rank == 0:
@@ -458,29 +436,18 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     if retall:
         allvecs = [sim[0]]
     fsim[0] = func(x0)
-    if ini_deltas is None:
-        nonzdelt = 0.05
-        zdelt = 0.00025
-        for k in range(0, N):
-            y = numpy.array(x0, copy=True)
-            if y[k] != 0:
-                y[k] = (1 + nonzdelt)*y[k]
-            else:
-                y[k] = zdelt
+    nonzdelt = 0.05
+    zdelt = 0.00025
+    for k in range(0, N):
+        y = numpy.array(x0, copy=True)
+        if y[k] != 0:
+            y[k] = (1 + nonzdelt)*y[k]
+        else:
+            y[k] = zdelt
 
-            sim[k + 1] = y
-            f = func(y)
-            fsim[k + 1] = f
-    else:
-        if ini_deltas.shape != x0.shape:
-            raise ValueError("Shape of simplex deltas and x0 must be the same.")
-        for k in range(0, N):
-            y = numpy.array(x0, copy=True)
-            y[k] = ini_deltas[k] + y[k]
-
-            sim[k + 1] = y
-            f = func(y)
-            fsim[k + 1] = f
+        sim[k + 1] = y
+        f = func(y)
+        fsim[k + 1] = f
 
     ind = numpy.argsort(fsim)
     fsim = numpy.take(fsim, ind, 0)
@@ -2412,6 +2379,12 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     at each point of a multidimensional grid of points, to find the global
     minimum of the function.
 
+    The function is evaluated everywhere in the range with the datatype of the
+    first call to the function, as enforced by the ``vectorize`` NumPy
+    function.  The value and type of the function evaluation returned when
+    ``full_output=True`` are affected in addition by the ``finish`` argument
+    (see Notes).
+
     Parameters
     ----------
     func : callable
@@ -2611,7 +2584,8 @@ def show_options(solver=None, method=None):
     Parameters
     ----------
     solver : str
-        Type of optimization solver. One of 'minimize', 'minimize_scalar', 'root'.
+        Type of optimization solver. One of 'minimize', 'minimize_scalar',
+        'root', or 'linprog'.
     method : str, optional
         If not given, shows all methods of the specified solver. Otherwise,
         show only the options for the specified method. Valid values
@@ -2641,11 +2615,6 @@ def show_options(solver=None, method=None):
             Relative error in ``fun(xopt)`` acceptable for convergence.
         maxfev : int
             Maximum number of function evaluations to make.
-        ini_deltas : ndarray, optional
-            Initial steps sizes for dimensions of initial simplex.
-            Initial simplex will be [[x0], [x0 + ini_deltas*e0], ...].
-        adaptive: bool, optional
-            Set to True to use adaptive parameter algorithm.
 
     *Newton-CG* options:
 
@@ -2713,13 +2682,17 @@ def show_options(solver=None, method=None):
             The iteration will stop when ``max{|proj g_i | i = 1, ..., n}
             <= gtol`` where ``pg_i`` is the i-th component of the
             projected gradient.
+        eps : float or ndarray
+            If `jac` is approximated, use this value for the step size.            
         maxcor : int
             The maximum number of variable metric corrections used to
             define the limited memory matrix. (The limited memory BFGS
             method does not store the full hessian but uses this many terms
             in an approximation to it.)
-        maxiter : int
+        maxfun : int
             Maximum number of function evaluations.
+        maxiter : int
+            Maximum number of iterations.
 
     *TNC* options:
 
@@ -3190,6 +3163,24 @@ def show_options(solver=None, method=None):
 
                 See `scipy.sparse.linalg.lgmres` for details.
 
+    **linprog options**
+
+    *simplex* options:
+
+        maxiter : int, optional
+            Maximum number of iterations to make.
+
+        tol : float, optional
+            The tolerance which determines when the Phase 1 objective is
+            sufficiently close to zero to be considered a basic feasible
+            solution or when the Phase 2 objective coefficients are close
+            enough to positive for the objective to be considered optimal.
+
+        bland : bool, optional
+            If True, choose pivots using Bland's rule.  In problems which
+            fail to converge due to cycling, using Bland's rule can provide
+            convergence at the expense of a less optimal path about the simplex.
+
     """
     import textwrap
 
@@ -3203,10 +3194,13 @@ def show_options(solver=None, method=None):
         print("\nroot")
         print("----\n")
         show_options('root')
+        print('\nlinprog')
+        print('-------\n')
+        show_options('linprog')
         return
 
     solver = solver.lower()
-    if solver not in ('minimize', 'minimize_scalar', 'root'):
+    if solver not in ('minimize', 'minimize_scalar', 'root', 'linprog'):
         raise ValueError('Unknown solver.')
 
     solvers_doc = [s.strip()
