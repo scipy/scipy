@@ -284,7 +284,7 @@ def wrap_function(function, args):
 
 
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
-         full_output=0, disp=1, retall=0, callback=None):
+         full_output=0, disp=1, retall=0, callback=None, ini_deltas=None, adaptive=0):
     """
     Minimize a function using the downhill simplex algorithm.
 
@@ -316,6 +316,11 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         Set to True to print convergence messages.
     retall : bool, optional
         Set to True to return list of solutions at each iteration.
+    ini_deltas : ndarray, optional
+        Initial steps sizes for dimensions of initial simplex.
+        Initial simplex will be [[x0], [x0 + ini_deltas*e0], ...].
+    adaptive: bool, optional
+        Set to True to use adaptive parameter algorithm in [3].
 
     Returns
     -------
@@ -362,6 +367,10 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
            Griffiths and G.A. Watson (Eds.), Addison Wesley Longman,
            Harlow, UK, pp. 191-208.
 
+    .. [3] Gao, F. and Han, L. (2010), "Implementing the Nelder-Mean simplex
+           algorithm with adaptive parameters", Computational Optimization
+           and Applications, 51(1), pp. 259-277.
+
     """
     opts = {'xtol': xtol,
             'ftol': ftol,
@@ -385,6 +394,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
 def _minimize_neldermead(func, x0, args=(), callback=None,
                          xtol=1e-4, ftol=1e-4, maxiter=None, maxfev=None,
+                         ini_deltas=None, adaptive=0,
                          disp=False, return_all=False,
                          **unknown_options):
     """
@@ -402,6 +412,11 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             Maximum number of iterations to perform.
         maxfev : int
             Maximum number of function evaluations to make.
+        ini_deltas : ndarray, optional
+            Initial steps sizes for dimensions of initial simplex.
+            Initial simplex will be [[x0], [x0 + ini_deltas*e0], ...].
+        adaptive: bool, optional
+            Set to True to use adaptive parameter algorithm.
 
     This function is called by the `minimize` function with
     `method=Nelder-Mead`. It is not supposed to be called directly.
@@ -421,10 +436,17 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     if maxfun is None:
         maxfun = N * 200
 
-    rho = 1
-    chi = 2
-    psi = 0.5
-    sigma = 0.5
+    if adaptive:
+        rho = 1
+        chi = 1 + 2 / N
+        psi = .75 - 1 / (2 * N)
+        sigma = 1 - 1 / N
+    else:
+        rho = 1
+        chi = 2
+        psi = 0.5
+        sigma = 0.5
+
     one2np1 = list(range(1, N + 1))
 
     if rank == 0:
@@ -436,18 +458,29 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     if retall:
         allvecs = [sim[0]]
     fsim[0] = func(x0)
-    nonzdelt = 0.05
-    zdelt = 0.00025
-    for k in range(0, N):
-        y = numpy.array(x0, copy=True)
-        if y[k] != 0:
-            y[k] = (1 + nonzdelt)*y[k]
-        else:
-            y[k] = zdelt
+    if ini_deltas is None:
+        nonzdelt = 0.05
+        zdelt = 0.00025
+        for k in range(0, N):
+            y = numpy.array(x0, copy=True)
+            if y[k] != 0:
+                y[k] = (1 + nonzdelt)*y[k]
+            else:
+                y[k] = zdelt
 
-        sim[k + 1] = y
-        f = func(y)
-        fsim[k + 1] = f
+            sim[k + 1] = y
+            f = func(y)
+            fsim[k + 1] = f
+    else:
+        if ini_deltas.shape != x0.shape:
+            raise ValueError("Shape of simplex deltas and x0 must be the same.")
+        for k in range(0, N):
+            y = numpy.array(x0, copy=True)
+            y[k] = ini_deltas[k] + y[k]
+
+            sim[k + 1] = y
+            f = func(y)
+            fsim[k + 1] = f
 
     ind = numpy.argsort(fsim)
     fsim = numpy.take(fsim, ind, 0)
@@ -2615,6 +2648,11 @@ def show_options(solver=None, method=None):
             Relative error in ``fun(xopt)`` acceptable for convergence.
         maxfev : int
             Maximum number of function evaluations to make.
+        ini_deltas : ndarray, optional
+            Initial steps sizes for dimensions of initial simplex.
+            Initial simplex will be [[x0], [x0 + ini_deltas*e0], ...].
+        adaptive: bool, optional
+            Set to True to use adaptive parameter algorithm.
 
     *Newton-CG* options:
 
@@ -2683,7 +2721,7 @@ def show_options(solver=None, method=None):
             <= gtol`` where ``pg_i`` is the i-th component of the
             projected gradient.
         eps : float or ndarray
-            If `jac` is approximated, use this value for the step size.            
+            If `jac` is approximated, use this value for the step size.
         maxcor : int
             The maximum number of variable metric corrections used to
             define the limited memory matrix. (The limited memory BFGS
