@@ -2379,6 +2379,12 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     at each point of a multidimensional grid of points, to find the global
     minimum of the function.
 
+    The function is evaluated everywhere in the range with the datatype of the
+    first call to the function, as enforced by the ``vectorize`` NumPy
+    function.  The value and type of the function evaluation returned when
+    ``full_output=True`` are affected in addition by the ``finish`` argument
+    (see Notes).
+
     Parameters
     ----------
     func : callable
