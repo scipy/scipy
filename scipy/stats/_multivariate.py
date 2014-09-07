@@ -53,14 +53,21 @@ def _process_parameters(dim, mean, cov):
         cov.shape = (1, 1)
 
     if mean.ndim != 1 or mean.shape[0] != dim:
-        raise ValueError("Array 'mean' must be vector of length %d." % dim)
+        raise ValueError("Array 'mean' must be a vector of length %d." % dim)
     if cov.ndim == 0:
         cov = cov * np.eye(dim)
     elif cov.ndim == 1:
         cov = np.diag(cov)
     elif cov.ndim == 2 and cov.shape != (dim, dim):
-        raise ValueError("Array 'cov' must be square if it is two dimensional,"
-                         " but cov.shape = %s" % str(cov.shape))
+        rows, cols = cov.shape
+        if rows != cols:
+            msg = ("Array 'cov' must be square if it is two dimensional,"
+                   " but cov.shape = %s." % str(cov.shape))
+        else:
+            msg = ("Dimension mismatch: array 'cov' is of shape %s,"
+                   " but 'mean' is a vector of length %d.")
+            msg = msg % (str(cov.shape), len(mean))
+        raise ValueError(msg)
     elif cov.ndim > 2:
         raise ValueError("Array 'cov' must be at most two-dimensional,"
                          " but cov.ndim = %d" % cov.ndim)
