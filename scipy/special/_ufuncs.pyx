@@ -3254,9 +3254,26 @@ cdef char *ufunc_ellipe_doc = (
     "\n"
     "Complete elliptic integral of the second kind\n"
     "\n"
-    "::\n"
+    "This function is defined as\n"
     "\n"
-    "    integral(sqrt(1-m*sin(t)**2),t=0..pi/2)")
+    ".. math:: E(m) = \\int_0^{\\pi/2} [1 - m \\sin(t)^2]^{1/2} dt\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "m : array_like\n"
+    "    Defines the parameter of the elliptic integral.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "E : ndarray\n"
+    "    Value of the elliptic integral.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "ellipkm1 : Complete elliptic integral of the first kind, near  m = 1\n"
+    "ellipk : Complete elliptic integral of the first kind\n"
+    "ellipkinc : Incomplete elliptic integral of the first kind\n"
+    "ellipeinc : Incomplete elliptic integral of the second kind")
 ufunc_ellipe_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_ellipe_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_ellipe_types[0] = <char>NPY_FLOAT
@@ -3276,13 +3293,33 @@ cdef void *ufunc_ellipeinc_ptr[4]
 cdef void *ufunc_ellipeinc_data[2]
 cdef char ufunc_ellipeinc_types[6]
 cdef char *ufunc_ellipeinc_doc = (
-    "ellipeinc(phi,m)\n"
+    "ellipeinc(phi, m)\n"
     "\n"
     "Incomplete elliptic integral of the second kind\n"
     "\n"
-    "::\n"
+    "This function is defined as\n"
     "\n"
-    "    integral(sqrt(1-m*sin(t)**2),t=0..phi)")
+    ".. math:: E(\\phi, m) = \\int_0^{\\phi} [1 - m \\sin(t)^2]^{1/2} dt\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "phi : array_like\n"
+    "    amplitude of the elliptic integral.\n"
+    "\n"
+    "m : array_like\n"
+    "    parameter of the elliptic integral.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "E : ndarray\n"
+    "    Value of the elliptic integral.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "ellipkm1 : Complete elliptic integral of the first kind, near m = 1\n"
+    "ellipk : Complete elliptic integral of the first kind\n"
+    "ellipkinc : Incomplete elliptic integral of the first kind\n"
+    "ellipe : Complete elliptic integral of the second kind")
 ufunc_ellipeinc_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_ellipeinc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_ellipeinc_types[0] = <char>NPY_FLOAT
@@ -3356,9 +3393,33 @@ cdef char *ufunc_ellipkinc_doc = (
     "\n"
     "Incomplete elliptic integral of the first kind\n"
     "\n"
-    "::\n"
+    "This function is defined as\n"
     "\n"
-    "    integral(1/sqrt(1-m*sin(t)**2),t=0..phi)")
+    ".. math:: K(\\phi, m) = \\int_0^{\\phi} [1 - m \\sin(t)^2]^{-1/2} dt\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "phi : array_like\n"
+    "    amplitude of the elliptic integral\n"
+    "\n"
+    "m : array_like\n"
+    "    parameter of the elliptic integral\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "K : ndarray\n"
+    "    Value of the elliptic integral\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "This function is also called ``F(phi, m)``.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "ellipkm1 : Complete elliptic integral of the first kind, near  m = 1\n"
+    "ellipk : Complete elliptic integral of the first kind\n"
+    "ellipe : Complete elliptic integral of the second kind\n"
+    "ellipeinc : Incomplete elliptic integral of the second kind")
 ufunc_ellipkinc_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_ellipkinc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_ellipkinc_types[0] = <char>NPY_FLOAT
@@ -3382,7 +3443,7 @@ cdef char ufunc_ellipkm1_types[4]
 cdef char *ufunc_ellipkm1_doc = (
     "ellipkm1(p)\n"
     "\n"
-    "The complete elliptic integral of the first kind around m=1.\n"
+    "Complete elliptic integral of the first kind around m = 1\n"
     "\n"
     "This function is defined as\n"
     "\n"
@@ -3397,12 +3458,15 @@ cdef char *ufunc_ellipkm1_doc = (
     "\n"
     "Returns\n"
     "-------\n"
-    "K : array_like\n"
+    "K : ndarray\n"
     "    Value of the elliptic integral.\n"
     "\n"
     "See Also\n"
     "--------\n"
-    "ellipk")
+    "ellipk : Complete elliptic integral of the first kind\n"
+    "ellipkinc : Incomplete elliptic integral of the first kind\n"
+    "ellipe : Complete elliptic integral of the second kind\n"
+    "ellipeinc : Incomplete elliptic integral of the second kind")
 ufunc_ellipkm1_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_ellipkm1_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_ellipkm1_types[0] = <char>NPY_FLOAT

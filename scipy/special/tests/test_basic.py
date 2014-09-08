@@ -1243,6 +1243,13 @@ class TestEllip(TestCase):
         elk = special.ellipk(.2)
         assert_almost_equal(elk,1.659623598610528,11)
 
+        assert_equal(special.ellipkm1(0.0), np.inf)
+        assert_equal(special.ellipkm1(1.0), pi/2)
+        assert_equal(special.ellipkm1(np.inf), 0.0)
+        assert_equal(special.ellipkm1(np.nan), np.nan)
+        assert_equal(special.ellipkm1(-1), np.nan)
+        assert_allclose(special.ellipk(-10), 0.7908718902387385)
+
     def test_ellipkinc(self):
         elkinc = special.ellipkinc(pi/2,.2)
         elk = special.ellipk(0.2)
@@ -1253,6 +1260,24 @@ class TestEllip(TestCase):
         elkinc = special.ellipkinc(phi,m)
         assert_almost_equal(elkinc,0.79398143,8)
         # From pg. 614 of A & S
+        
+        assert_equal(special.ellipkinc(pi/2, 0.0), pi/2)
+        assert_equal(special.ellipkinc(pi/2, 1.0), np.inf)
+        assert_equal(special.ellipkinc(pi/2, -np.inf), 0.0)
+        assert_equal(special.ellipkinc(pi/2, np.nan), np.nan)
+        assert_equal(special.ellipkinc(pi/2, 2), np.nan)
+        assert_equal(special.ellipkinc(0, 0.5), 0.0)
+        assert_equal(special.ellipkinc(np.inf, 0.5), np.inf)
+        assert_equal(special.ellipkinc(-np.inf, 0.5), -np.inf)
+        assert_equal(special.ellipkinc(np.inf, np.inf), np.nan)
+        assert_equal(special.ellipkinc(np.inf, -np.inf), np.nan)
+        assert_equal(special.ellipkinc(-np.inf, -np.inf), np.nan)
+        assert_equal(special.ellipkinc(-np.inf, np.inf), np.nan)
+        assert_equal(special.ellipkinc(np.nan, 0.5), np.nan)
+        assert_equal(special.ellipkinc(np.nan, np.nan), np.nan)
+    
+        assert_allclose(special.ellipkinc(0.38974112035318718, 1), 0.4, rtol=1e-14)
+        assert_allclose(special.ellipkinc(1.5707, -10), 0.79084284661724946)
 
     def test_ellipkinc_2(self):
         # Regression test for gh-3550
@@ -1270,9 +1295,31 @@ class TestEllip(TestCase):
         f1 = special.ellipkinc(phi + pi, mvals)
         assert_array_almost_equal_nulp(f1, 5.1296650500976675 * np.ones_like(f1), 2)
 
+    def test_ellipkinc_singular(self):
+        # ellipkinc(phi, 1) has closed form and is finite only for phi in (-pi/2, pi/2)
+        xlog = np.logspace(-300, -17, 25)
+        xlin = np.linspace(1e-17, 0.1, 25)
+        xlin2 = np.linspace(0.1, pi/2, 25, endpoint=False)
+
+        assert_allclose(special.ellipkinc(xlog, 1), np.arcsinh(np.tan(xlog)), rtol=1e14)
+        assert_allclose(special.ellipkinc(xlin, 1), np.arcsinh(np.tan(xlin)), rtol=1e14)
+        assert_allclose(special.ellipkinc(xlin2, 1), np.arcsinh(np.tan(xlin2)), rtol=1e14)
+        assert_equal(special.ellipkinc(np.pi/2, 1), np.inf)
+        assert_allclose(special.ellipkinc(-xlog, 1), np.arcsinh(np.tan(-xlog)), rtol=1e14)
+        assert_allclose(special.ellipkinc(-xlin, 1), np.arcsinh(np.tan(-xlin)), rtol=1e14)
+        assert_allclose(special.ellipkinc(-xlin2, 1), np.arcsinh(np.tan(-xlin2)), rtol=1e14)
+        assert_equal(special.ellipkinc(-np.pi/2, 1), np.inf)
+
     def test_ellipe(self):
         ele = special.ellipe(.2)
         assert_almost_equal(ele,1.4890350580958529,8)
+
+        assert_equal(special.ellipe(0.0), pi/2)
+        assert_equal(special.ellipe(1.0), 1.0)
+        assert_equal(special.ellipe(-np.inf), np.inf)
+        assert_equal(special.ellipe(np.nan), np.nan)
+        assert_equal(special.ellipe(2), np.nan)
+        assert_allclose(special.ellipe(-10), 3.6391380384177689)
 
     def test_ellipeinc(self):
         eleinc = special.ellipeinc(pi/2,.2)
@@ -1284,6 +1331,22 @@ class TestEllip(TestCase):
         eleinc = special.ellipeinc(phi,m)
         assert_almost_equal(eleinc, 0.58823065, 8)
 
+        assert_equal(special.ellipeinc(pi/2, 0.0), pi/2)
+        assert_equal(special.ellipeinc(pi/2, 1.0), 1.0)
+        assert_equal(special.ellipeinc(pi/2, -np.inf), np.inf)
+        assert_equal(special.ellipeinc(pi/2, np.nan), np.nan)
+        assert_equal(special.ellipeinc(pi/2, 2), np.nan)
+        assert_equal(special.ellipeinc(0, 0.5), 0.0)
+        assert_equal(special.ellipeinc(np.inf, 0.5), np.inf)
+        assert_equal(special.ellipeinc(-np.inf, 0.5), -np.inf)
+        assert_equal(special.ellipeinc(np.inf, -np.inf), np.inf)
+        assert_equal(special.ellipeinc(-np.inf, -np.inf), -np.inf)
+        assert_equal(special.ellipeinc(np.inf, np.inf), np.nan)
+        assert_equal(special.ellipeinc(-np.inf, np.inf), np.nan)
+        assert_equal(special.ellipeinc(np.nan, 0.5), np.nan)
+        assert_equal(special.ellipeinc(np.nan, np.nan), np.nan)
+        assert_allclose(special.ellipeinc(1.5707, -10), 3.6388185585822876)
+        
     def test_ellipeinc_2(self):
         # Regression test for gh-3550
         # ellipeinc(phi, mbad) was NaN and mvals[2:6] were twice the correct value
