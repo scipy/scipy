@@ -4,8 +4,14 @@ Test functions for multivariate normal distributions.
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import (assert_almost_equal, assert_array_almost_equal,
-                           run_module_suite, assert_allclose, assert_equal, assert_raises)
+from numpy.testing import (
+    assert_allclose,
+    assert_almost_equal,
+    assert_array_almost_equal,
+    assert_equal,
+    assert_raises,
+    run_module_suite,
+)
 
 import numpy
 import numpy as np
@@ -58,7 +64,6 @@ def test_rank():
     np.random.seed(1234)
     n = 4
     mean = np.random.randn(n)
-    x = np.random.randn(n)
     for expected_rank in range(1, n + 1):
         s = np.random.randn(n, expected_rank)
         cov = np.dot(s, s.T)
@@ -74,7 +79,6 @@ def _sample_orthonormal_matrix(n):
 
 def test_degenerate_distributions():
     for n in range(1, 5):
-        mu = np.zeros(n)
         x = np.random.randn(n)
         for k in range(1, n + 1):
             # Sample a small covariance matrix.
@@ -132,7 +136,8 @@ def test_large_pseudo_determinant():
 
     # np.linalg.slogdet is only available in numpy 1.6+
     # but scipy currently supports numpy 1.5.1.
-    # assert_allclose(np.linalg.slogdet(cov[:npos, :npos]), (1, large_total_log))
+    # assert_allclose(np.linalg.slogdet(cov[:npos, :npos]),
+    #                 (1, large_total_log))
 
     # Check the pseudo-determinant.
     psd = _PSD(cov)
@@ -454,6 +459,26 @@ def test_2D_dirichlet_is_beta():
 
     assert_almost_equal(b.mean(), d.mean()[0])
     assert_almost_equal(b.var(), d.var()[0])
+
+
+def test_dimensions_mismatch():
+    # Regression test for GH #3493. Check that setting up a PDF with a mean of
+    # length M and a covariance matrix of size (N, N), where M != N, raises a
+    # ValueError with an informative error message.
+
+    mu = np.array([0.0, 0.0])
+    sigma = np.array([[1.0]])
+
+    assert_raises(ValueError, multivariate_normal, mu, sigma)
+
+    # A simple check that the right error message was passed along. Checking
+    # that the entire message is there, word for word, would be somewhat
+    # fragile, so we just check for the leading part.
+    try:
+        multivariate_normal(mu, sigma)
+    except ValueError as e:
+        msg = "Dimension mismatch"
+        assert_equal(str(e)[:len(msg)], msg)
 
 
 if __name__ == "__main__":

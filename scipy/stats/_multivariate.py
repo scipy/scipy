@@ -3,10 +3,11 @@
 #
 from __future__ import division, print_function, absolute_import
 
-from scipy.misc import doccer
-from functools import wraps
 import numpy as np
 import scipy.linalg
+from scipy.misc import doccer
+from scipy.special import gammaln
+
 
 __all__ = ['multivariate_normal', 'dirichlet']
 
@@ -52,17 +53,24 @@ def _process_parameters(dim, mean, cov):
         cov.shape = (1, 1)
 
     if mean.ndim != 1 or mean.shape[0] != dim:
-        raise ValueError("Array 'mean' must be vector of length %d." % dim)
+        raise ValueError("Array 'mean' must be a vector of length %d." % dim)
     if cov.ndim == 0:
         cov = cov * np.eye(dim)
     elif cov.ndim == 1:
         cov = np.diag(cov)
     elif cov.ndim == 2 and cov.shape != (dim, dim):
-        raise ValueError("Array 'cov' must be square if it is two dimensional, "
-                         "but cov.shape = %s" % str(cov.shape))
+        rows, cols = cov.shape
+        if rows != cols:
+            msg = ("Array 'cov' must be square if it is two dimensional,"
+                   " but cov.shape = %s." % str(cov.shape))
+        else:
+            msg = ("Dimension mismatch: array 'cov' is of shape %s,"
+                   " but 'mean' is a vector of length %d.")
+            msg = msg % (str(cov.shape), len(mean))
+        raise ValueError(msg)
     elif cov.ndim > 2:
-        raise ValueError("Array 'cov' must be at most two-dimensional, "
-                         "but cov.ndim = %d" % cov.ndim)
+        raise ValueError("Array 'cov' must be at most two-dimensional,"
+                         " but cov.ndim = %d" % cov.ndim)
 
     return dim, mean, cov
 
@@ -311,6 +319,7 @@ class multivariate_normal_gen(object):
 
     Examples
     --------
+    >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import multivariate_normal
     >>> x = np.linspace(0, 5, 10, endpoint=False)
     >>> y = multivariate_normal.pdf(x, mean=2.5, cov=0.5); y
@@ -507,8 +516,8 @@ class multivariate_normal_frozen(object):
 
     def logpdf(self, x):
         x = _process_quantiles(x, self.dim)
-        out = self._mnorm._logpdf(x, self.mean,
-                                  self.cov_info.U, self.cov_info.log_pdet, self.cov_info.rank)
+        out = self._mnorm._logpdf(x, self.mean, self.cov_info.U,
+                                  self.cov_info.log_pdet, self.cov_info.rank)
         return _squeeze_output(out)
 
     def pdf(self, x):
@@ -618,14 +627,15 @@ def _lnB(alpha):
         Helper quotient, internal use only
 
     """
-    return np.sum(scipy.special.gammaln(alpha)) - scipy.special.gammaln(np.sum(alpha))
+    return np.sum(gammaln(alpha)) - gammaln(np.sum(alpha))
 
 
 class dirichlet_gen(object):
     r"""
     A Dirichlet random variable.
 
-    The `alpha` keyword specifies the concentration parameters of the distribution.
+    The `alpha` keyword specifies the concentration parameters of the
+    distribution.
 
     .. versionadded:: 0.15.0
 
@@ -833,7 +843,7 @@ class dirichlet_gen(object):
             dimension of the random variable.
 
         """
-        a = _dirichlet_check_parameters(alpha)
+        alpha = _dirichlet_check_parameters(alpha)
         return np.random.dirichlet(alpha, size=size)
 
 
@@ -869,5 +879,6 @@ class dirichlet_frozen(object):
 for name in ['logpdf', 'pdf', 'rvs', 'mean', 'var', 'entropy']:
     method = dirichlet_gen.__dict__[name]
     method_frozen = dirichlet_frozen.__dict__[name]
-    method_frozen.__doc__ = doccer.docformat(method.__doc__, dirichlet_docdict_noparams)
+    method_frozen.__doc__ = doccer.docformat(
+        method.__doc__, dirichlet_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, dirichlet_docdict_params)
