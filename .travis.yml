@@ -17,6 +17,9 @@ matrix:
       env:
         - TESTMODE=full
         - COVERAGE=--coverage
+    - python: 2.7
+      env:
+        - USE_BENTO=1
     - python: 2.6
       env:
         - TESTMODE=fast
