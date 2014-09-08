@@ -87,19 +87,25 @@ BLAS Level 2 functions
     cgeru
     chemv
     ctrmv
+    csyr
+    cher
     dgemv
     dger
     dsymv
     dtrmv
+    dsyr
     sgemv
     sger
     ssymv
     strmv
+    ssyr
     zgemv
     zgerc
     zgeru
     zhemv
     ztrmv
+    zsyr
+    zher
 
 BLAS Level 3 functions
 ======================
