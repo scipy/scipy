@@ -196,10 +196,9 @@ double ellie_neg_m(double phi, double m)
     double mpp = (m*phi)*phi;
    
     if (-mpp < 1e-6 && phi < -m) {
-    /*    return phi - phi*mpp/6.0 - 3.0*mpp*mpp*phi/120.0 + 4.0*mpp*phi*phi*phi/120.0;*/
         return phi + (mpp*phi*phi/30.0 - mpp*mpp/40.0 - mpp/6.0)*phi;
     }
-    /* need to double check these signs. */ 
+
     if (-mpp > 1e6) {
         double sm = sqrt(-m);
         double sp = sin(phi);

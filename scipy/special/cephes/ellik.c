@@ -182,8 +182,7 @@ double ellik_neg_m(double phi, double m)
     int n = 0;
     double mpp = (m*phi)*phi;
 
-    if (-mpp < 1e-6 && phi < m) {
-    /*    return phi + phi*mpp/6.0 + 9.0*mpp*mpp*phi/120.0 - 4.0*mpp*phi*phi*phi/120.0; */
+    if (-mpp < 1e-6 && phi < -m) {
         return phi + (-mpp*phi*phi/30.0  + 3.0*mpp*mpp/40.0 + mpp/6.0)*phi;
     }
 
