@@ -123,6 +123,18 @@ class UnivariateSpline(object):
     -----
     The number of data points must be larger than the spline degree `k`.
 
+    **NaN handling**: If the input arrays contain ``nan`` values, the result
+    is not useful, since the underlying spline fitting routines cannot deal
+    with ``nan`` . A workaround is to use zero weights for not-a-number
+    data points:
+
+    >>> w = np.isnan(y) 
+    >>> y[w] = 0.
+    >>> s = UnivariateSpline(x, y, w=~w)
+
+    Notice the need to replace a ``nan`` by a numerical value (precise value
+    does not matter as long as the corresponding weight is zero.)
+
     Examples
     --------
     >>> import matplotlib.pyplot as plt
