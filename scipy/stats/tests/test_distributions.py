@@ -472,6 +472,103 @@ class TestPareto(TestCase):
             assert_allclose(k, 6*(4.5**3 + 4.5**2 - 6*4.5 - 2)/(4.5*1.5*0.5))
 
 
+class TestGenpareto(TestCase):
+    def test_ab(self):
+        # c >= 0: a, b = [0, inf]
+        for c in [1., 0.]:
+            c = np.asarray(c)
+            stats.genpareto._argcheck(c)  # ugh
+            assert_equal(stats.genpareto.a, 0.)
+            assert_(np.isposinf(stats.genpareto.b))
+
+        # c < 0: a=0, b=1/|c|
+        c = np.asarray(-2.)
+        stats.genpareto._argcheck(c)
+        assert_allclose([stats.genpareto.a, stats.genpareto.b], [0., 0.5])
+
+    def test_c0(self):
+        # with c=0, genpareto reduces to the exponential distribution
+        rv = stats.genpareto(c=0.)
+        x = np.linspace(0, 10., 30)
+        assert_allclose(rv.pdf(x), stats.expon.pdf(x))
+        assert_allclose(rv.cdf(x), stats.expon.cdf(x))
+        assert_allclose(rv.sf(x), stats.expon.sf(x))
+
+        q = np.linspace(0., 1., 10)
+        assert_allclose(rv.ppf(q), stats.expon.ppf(q))
+
+    def test_cm1(self):
+        # with c=-1, genpareto reduces to the uniform distr on [0, 1]
+        rv = stats.genpareto(c=-1.)
+        x = np.linspace(0, 10., 30)
+        assert_allclose(rv.pdf(x), stats.uniform.pdf(x))
+        assert_allclose(rv.cdf(x), stats.uniform.cdf(x))
+        assert_allclose(rv.sf(x), stats.uniform.sf(x))
+
+        q = np.linspace(0., 1., 10)
+        assert_allclose(rv.ppf(q), stats.uniform.ppf(q))
+
+        # logpdf(1., c=-1) should be zero
+        assert_allclose(rv.logpdf(1), 0)
+
+    def test_x_inf(self):
+        # make sure x=inf is handled gracefully 
+        rv = stats.genpareto(c=0.1)
+        assert_allclose([rv.pdf(np.inf), rv.cdf(np.inf)], [0., 1.])
+        assert_(np.isneginf(rv.logpdf(np.inf)))
+
+        rv = stats.genpareto(c=0.)
+        assert_allclose([rv.pdf(np.inf), rv.cdf(np.inf)], [0., 1.])
+        assert_(np.isneginf(rv.logpdf(np.inf)))
+
+        rv = stats.genpareto(c=-1.)
+        assert_allclose([rv.pdf(np.inf), rv.cdf(np.inf)], [0., 1.])
+        assert_(np.isneginf(rv.logpdf(np.inf)))
+
+    def test_c_continuity(self):
+        # pdf is continuous at c=0, -1
+        x = np.linspace(0, 10, 30)
+        for c in [0, -1]:
+            pdf0 = stats.genpareto.pdf(x, c)
+            for dc in [1e-14, -1e-14]:
+                pdfc = stats.genpareto.pdf(x, c + dc)
+                assert_allclose(pdf0, pdfc, atol=1e-12)
+
+            cdf0 = stats.genpareto.cdf(x, c)
+            for dc in [1e-14, 1e-14]:
+                cdfc = stats.genpareto.cdf(x, c + dc)
+                assert_allclose(cdf0, cdfc, atol=1e-12)
+
+    def test_c_continuity_ppf(self):
+        q = np.r_[np.logspace(1e-12, 0.01, base=0.1),
+                  np.linspace(0.01, 1, 30, endpoint=False),
+                  1. - np.logspace(1e-12, 0.01, base=0.1)]
+        for c in [0., -1.]:
+            ppf0 = stats.genpareto.ppf(q, c)
+            for dc in [1e-14, -1e-14]:
+                ppfc = stats.genpareto.ppf(q, c + dc)
+                assert_allclose(ppf0, ppfc, atol=1e-12)
+
+    def test_c_continuity_isf(self):
+        q = np.r_[np.logspace(1e-12, 0.01, base=0.1),
+                  np.linspace(0.01, 1, 30, endpoint=False),
+                  1. - np.logspace(1e-12, 0.01, base=0.1)]
+        for c in [0., -1.]:
+            isf0 = stats.genpareto.isf(q, c)
+            for dc in [1e-14, -1e-14]:
+                isfc = stats.genpareto.isf(q, c + dc)
+                assert_allclose(isf0, isfc, atol=1e-12)
+
+    def test_cdf_ppf_roundtrip(self):
+        # this should pass with machine precision. hat tip @pbrod
+        q = np.r_[np.logspace(1e-12, 0.01, base=0.1),
+                  np.linspace(0.01, 1, 30, endpoint=False),
+                  1. - np.logspace(1e-12, 0.01, base=0.1)]
+        for c in [1e-8, -1e-18, 1e-15, -1e-15]:
+            assert_allclose(stats.genpareto.cdf(stats.genpareto.ppf(q, c), c),
+                    q, atol=1e-15)
+
+
 class TestPearson3(TestCase):
     def test_rvs(self):
         vals = stats.pearson3.rvs(0.1, size=(2, 50))
