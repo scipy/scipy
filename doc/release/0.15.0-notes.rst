@@ -91,6 +91,12 @@ positions as ints instead of floats.
 Other changes
 =============
 
+scipy.integrate
+---------------
+
+The OPTPACK and QUADPACK code has been changed to use the LAPACK matrix
+solvers rather than the bundled LINPACK code. This means that there is no
+longer any need for the bundled LINPACK routines, so they have been removed.
 
 Authors
 =======
