@@ -142,34 +142,6 @@ class UnivariateSpline(object):
     """
 
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None, ext=0):
-        """
-        Input:
-          x,y   - 1-d sequences of data points (x must be
-                  in strictly ascending order)
-
-        Optional input:
-          w          - positive 1-d sequence of weights
-          bbox       - 2-sequence specifying the boundary of
-                       the approximation interval.
-                       By default, bbox=[x[0],x[-1]]
-          k=3        - degree of the univariate spline.
-          s          - positive smoothing factor defined for
-                       estimation condition:
-                         sum((w[i]*(y[i]-s(x[i])))**2,axis=0) <= s
-                       Default s=len(w) which should be a good value
-                       if 1/w[i] is an estimate of the standard
-                       deviation of y[i].
-          ext        - Controls the extrapolation mode for elements 
-                       not in the interval defined by the knot sequence.
-
-                       * if ext=0 or 'extrapolate', return the extrapolated value.
-                       * if ext=1 or 'zeros', return 0
-                       * if ext=2 or 'raise', raise a ValueError
-                       * if ext=3 or 'const', return the boundary value.
-
-                       The default value is 0.
-
-        """
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         try:
             self.ext = _extrap_modes[ext]
@@ -511,28 +483,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     xs,ys is now a smoothed, super-sampled version of the noisy gaussian x,y
 
     """
-
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3, ext=0):
-        """
-        Input:
-          x,y   - 1-d sequences of data points (x must be
-                  in strictly ascending order)
-
-        Optional input:
-          w          - positive 1-d sequence of weights
-          bbox       - 2-sequence specifying the boundary of
-                       the approximation interval.
-                       By default, bbox=[x[0],x[-1]]
-          k=3        - degree of the univariate spline.
-          ext        - Controls the extrapolation mode for elements 
-                       not in the interval defined by the knot sequence.
-
-                       * if ext=0 or 'extrapolate', return the extrapolated value.
-                       * if ext=1 or 'zeros', return 0
-                       * if ext=2 or 'raise', raise a ValueError
-
-                       The default value is 0.
-        """
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         self._data = dfitpack.fpcurf0(x,y,k,w=w,
                                       xb=bbox[0],xe=bbox[1],s=0)
@@ -633,30 +584,6 @@ class LSQUnivariateSpline(UnivariateSpline):
     """
 
     def __init__(self, x, y, t, w=None, bbox=[None]*2, k=3, ext=0):
-        """
-        Input:
-          x,y   - 1-d sequences of data points (x must be
-                  in strictly ascending order)
-          t     - 1-d sequence of the positions of user-defined
-                  interior knots of the spline (t must be in strictly
-                  ascending order and bbox[0]<t[0]<...<t[-1]<bbox[-1])
-
-        Optional input:
-          w          - positive 1-d sequence of weights
-          bbox       - 2-sequence specifying the boundary of
-                       the approximation interval.
-                       By default, bbox=[x[0],x[-1]]
-          k=3        - degree of the univariate spline.
-          ext        - Controls the extrapolation mode for elements
-                       not in the interval defined by the knot sequence.
-
-                       * if ext=0 or 'extrapolate', return the extrapolated
-                         value.
-                       * if ext=1 or 'zeros', return 0
-                       * if ext=2 or 'raise', raise a ValueError.
-
-                       The default value is 0.
-        """
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         xb = bbox[0]
         xe = bbox[1]
