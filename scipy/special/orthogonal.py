@@ -85,7 +85,7 @@ from __future__ import division, print_function, absolute_import
 
 # Scipy imports.
 import numpy as np
-from numpy import all, any, exp, inf, pi, sqrt
+from numpy import any, exp, inf, pi, sqrt
 from scipy import linalg
 
 # Local imports.
@@ -213,7 +213,7 @@ def j_roots(n, alpha, beta, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order 
+        quadrature order
     alpha : float
         alpha must be > -1
     beta : float
@@ -302,7 +302,7 @@ def js_roots(n, p1, q1, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order 
+        quadrature order
     p1 : float
         (p1 - q1) must be > -1
     q1 : float
@@ -318,7 +318,7 @@ def js_roots(n, p1, q1, mu=False):
         Weights
     mu : float
         Sum of the weights
-        
+
     See Also
     --------
     integrate.quadrature
@@ -368,7 +368,7 @@ def la_roots(n, alpha, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order 
+        quadrature order
     alpha : float
         alpha must be > -1
     mu : boolean
@@ -382,7 +382,7 @@ def la_roots(n, alpha, mu=False):
         Weights
     mu : float
         Sum of the weights
-        
+
     See Also
     --------
     integrate.quadrature
@@ -451,7 +451,7 @@ def l_roots(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order 
+        quadrature order
     mu : boolean
         If True, return the sum of the weights, optional.
 
@@ -508,7 +508,7 @@ def h_roots(n, mu=False, formula=True):
     Parameters
     ----------
     n : int
-        quadrature order 
+        quadrature order
     mu : boolean
         If True, return the sum of the weights, optional.
 
@@ -520,7 +520,7 @@ def h_roots(n, mu=False, formula=True):
         Weights
     mu : float
         Sum of the weights
-        
+
     See Also
     --------
     integrate.quadrature
@@ -575,7 +575,7 @@ def he_roots(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order 
+        quadrature order
     mu : boolean
         If True, return the sum of the weights, optional.
 
@@ -587,7 +587,7 @@ def he_roots(n, mu=False):
         Weights
     mu : float
         Sum of the weights
-        
+
     See Also
     --------
     integrate.quadrature
@@ -644,7 +644,7 @@ def cg_roots(n, alpha, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order 
+        quadrature order
     alpha : float
         alpha must be > -0.5
     mu : boolean
@@ -658,7 +658,7 @@ def cg_roots(n, alpha, mu=False):
         Weights
     mu : float
         Sum of the weights
-        
+
     See Also
     --------
     integrate.quadrature
@@ -672,7 +672,7 @@ def cg_roots(n, alpha, mu=False):
     elif alpha == 0.0:
         # C(n,0,x) == 0 uniformly, however, as alpha->0, C(n,alpha,x)->T(n,x)
         # strictly, we should just error out here, since the roots are not
-        # really defined, but we used to return something useful, so let's 
+        # really defined, but we used to return something useful, so let's
         # keep doing so.
         return t_roots(n, mu)
 
@@ -718,7 +718,7 @@ def t_roots(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order 
+        quadrature order
     mu : boolean
         If True, return the sum of the weights, optional.
 
@@ -730,7 +730,7 @@ def t_roots(n, mu=False):
         Weights
     mu : float
         Sum of the weights
-        
+
     See Also
     --------
     integrate.quadrature
@@ -784,14 +784,14 @@ def u_roots(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order 
+        quadrature order
     mu : boolean
         If True, return the sum of the weights, optional.
 
     Returns
     -------
     x : ndarray
-        Sample points 
+        Sample points
     w : ndarray
         Weights
     mu : float
@@ -840,14 +840,14 @@ def c_roots(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order 
+        quadrature order
     mu : boolean
         If True, return the sum of the weights, optional.
 
     Returns
     -------
     x : ndarray
-        Sample points 
+        Sample points
     w : ndarray
         Weights
     mu : float
@@ -901,14 +901,14 @@ def s_roots(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order 
+        quadrature order
     mu : boolean
         If True, return the sum of the weights, optional.
 
     Returns
     -------
     x : ndarray
-        Sample points 
+        Sample points
     w : ndarray
         Weights
     mu : float
@@ -964,14 +964,14 @@ def ts_roots(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order 
+        quadrature order
     mu : boolean
         If True, return the sum of the weights, optional.
 
     Returns
     -------
     x : ndarray
-        Sample points 
+        Sample points
     w : ndarray
         Weights
     mu : float
@@ -1015,14 +1015,14 @@ def us_roots(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order 
+        quadrature order
     mu : boolean
         If True, return the sum of the weights, optional.
 
     Returns
     -------
     x : ndarray
-        Sample points 
+        Sample points
     w : ndarray
         Weights
     mu : float
@@ -1063,7 +1063,7 @@ def p_roots(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order 
+        quadrature order
     mu : boolean
         If True, return the sum of the weights, optional.
 
@@ -1075,7 +1075,7 @@ def p_roots(n, mu=False):
         Weights
     mu : float
         Sum of the weights
-        
+
     See Also
     --------
     integrate.quadrature
@@ -1154,7 +1154,7 @@ def ps_roots(n, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order 
+        quadrature order
     mu : boolean
         If True, return the sum of the weights, optional.
 
