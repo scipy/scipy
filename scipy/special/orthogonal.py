@@ -149,7 +149,7 @@ class orthopoly1d(np.poly1d):
         self.__dict__['normcoef'] *= p
 
 
-def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
+def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, weights_formula, symmetrize, mu):
     """[x,w] = gen_roots_and_weights(n,an_func,sqrt_bn_func,mu)
 
     Returns the roots (x) of an nth order orthogonal polynomial,
@@ -168,22 +168,28 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
     c = np.zeros((2, n))
     c[0,1:] = bn_func(k[1:])
     c[1,:] = an_func(k)
-    x = linalg.eigvals_banded(c, overwrite_a_band=True)
 
-    # improve roots by one application of Newton's method
-    y = f(n, x)
-    dy = df(n, x)
-    x -= y/dy
-
-    fm = f(n-1, x) 
-    fm /= np.abs(fm).max()
-    dy /= np.abs(dy).max()
-    w = 1.0 / (fm * dy)
+    if weights_formula:
+        x = linalg.eigvals_banded(c, overwrite_a_band=True)
+        # improve roots by one application of Newton's method
+        y = f(n, x)
+        dy = df(n, x)
+        x -= y/dy
+        fm = f(n-1, x)
+        fm /= np.abs(fm).max()
+        dy /= np.abs(dy).max()
+        w = 1.0 / (fm * dy)
+    else:
+        # Computing weights via explicit formula can fail for large n
+        # because of the division by a polynomial of high degree.
+        x, ev = linalg.eig_banded(c, overwrite_a_band=True)
+        w = ev[0,:]**2
 
     if symmetrize:
         w = (w + w[::-1]) / 2
         x = (x - x[::-1]) / 2
 
+    # scale w correctly
     w *= mu0 / w.sum()
 
     if mu:
@@ -255,7 +261,7 @@ def j_roots(n, alpha, beta, mu=False):
     f = lambda n, x: cephes.eval_jacobi(n, a, b, x)
     df = lambda n, x: 0.5 * (n + a + b + 1) \
                       * cephes.eval_jacobi(n-1, a+1, b+1, x)
-    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, False, mu)
+    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, False, mu)
 
 
 def jacobi(n, alpha, beta, monic=False):
@@ -403,7 +409,7 @@ def la_roots(n, alpha, mu=False):
     f = lambda n, x: cephes.eval_genlaguerre(n, alpha, x)
     df = lambda n, x: (n*cephes.eval_genlaguerre(n, alpha, x)
                      - (n + alpha)*cephes.eval_genlaguerre(n-1, alpha, x))/x
-    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, False, mu)
+    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, False, mu)
 
 
 def genlaguerre(n, alpha, monic=False):
@@ -490,7 +496,7 @@ def laguerre(n, monic=False):
 
 # Hermite  1                         H_n(x)
 
-def h_roots(n, mu=False):
+def h_roots(n, mu=False, formula=True):
     """Gauss-Hermite (physicst's) quadrature
 
     Computes the sample points and weights for Gauss-Hermite quadrature.
@@ -530,7 +536,7 @@ def h_roots(n, mu=False):
     bn_func = lambda k: np.sqrt(k/2.0)
     f = cephes.eval_hermite
     df = lambda n, x: 2.0 * n * cephes.eval_hermite(n-1, x)
-    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
+    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, formula, True, mu)
 
 
 def hermite(n, monic=False):
@@ -597,7 +603,7 @@ def he_roots(n, mu=False):
     bn_func = lambda k: np.sqrt(k)
     f = cephes.eval_hermitenorm
     df = lambda n, x: n * cephes.eval_hermitenorm(n-1, x)
-    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
+    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, True, mu)
 
 
 def hermitenorm(n, monic=False):
@@ -677,7 +683,7 @@ def cg_roots(n, alpha, mu=False):
     f = lambda n, x: cephes.eval_gegenbauer(n, alpha, x)
     df = lambda n, x: (-n*x*cephes.eval_gegenbauer(n, alpha, x)
          + (n + 2*alpha - 1)*cephes.eval_gegenbauer(n-1, alpha, x))/(1-x**2)
-    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
+    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, True, mu)
 
 
 def gegenbauer(n, alpha, monic=False):
@@ -1086,7 +1092,7 @@ def p_roots(n, mu=False):
     f = cephes.eval_legendre
     df = lambda n, x: (-n*x*cephes.eval_legendre(n, x)
                      + n*cephes.eval_legendre(n-1, x))/(1-x**2)
-    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
+    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, True, mu)
 
 
 def legendre(n, monic=False):
