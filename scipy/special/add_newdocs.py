@@ -678,9 +678,9 @@ add_newdoc("scipy.special", "entr",
     r"""
     entr(x)
 
-    Elementwise entropy function.
+    Elementwise function for computing entropy.
 
-    .. math:: \text{kl_div}(x) = \begin{cases} x \log(x / y) - x + y & x > 0, y > 0 \\ y & x = 0, y > 0 \\ 0 & x = 0, y = 0 \\ \infty & \text{otherwise} \end{cases}
+    .. math:: \text{entr}(x) = \begin{cases} - x \log(x) & x > 0  \\ 0 & x = 0 \\ -\infty & \text{otherwise} \end{cases}
 
     Parameters
     ----------
@@ -1753,9 +1753,9 @@ add_newdoc("scipy.special", "kl_div",
     r"""
     kl_div(x, y)
 
-    Kullback-Leibler distance.
+    Elementwise function for computing Kullback-Leibler divergence.
 
-    .. math:: \text{kl_div}(x) = \begin{cases} x \log(x / y) - x + y & x > 0, y > 0 \\ 0 & x = 0, y \ge 0 \\ \infty & \text{otherwise} \end{cases}
+    .. math:: \text{kl_div}(x, y) = \begin{cases} x \log(x / y) - x + y & x > 0, y > 0 \\ y & x = 0, y > 0 \\ 0 & x = 0, y = 0 \\ \infty & \text{otherwise} \end{cases}
 
     Parameters
     ----------
@@ -2792,9 +2792,9 @@ add_newdoc("scipy.special", "rel_entr",
     r"""
     rel_entr(x, y)
 
-    Relative entropy.
+    Elementwise function for computing relative entropy.
 
-    .. math:: \text{rel_entr}(x) = \begin{cases} x \log(x / y) & x > 0, y > 0 \\ 0 & x = 0, y \ge 0 \\ \infty & \text{otherwise} \end{cases}
+    .. math:: \text{rel_entr}(x, y) = \begin{cases} x \log(x / y) & x > 0, y > 0 \\ 0 & x = 0, y \ge 0 \\ \infty & \text{otherwise} \end{cases}
 
     Parameters
     ----------
