@@ -674,6 +674,36 @@ add_newdoc("scipy.special", "ellipkinc",
 
     """)
 
+add_newdoc("scipy.special", "entr",
+    r"""
+    entr(x)
+
+    Elementwise entropy function.
+
+    .. math:: \text{kl_div}(x) = \begin{cases} x \log(x / y) - x + y & x > 0, y > 0 \\ y & x = 0, y > 0 \\ 0 & x = 0, y = 0 \\ \infty & \text{otherwise} \end{cases}
+
+    Parameters
+    ----------
+    x : ndarray
+        Input array.
+
+    Returns
+    -------
+    res : ndarray
+        The value of the elementwise entropy function at the given points x.
+
+    See Also
+    --------
+    kl_div, rel_entr
+
+    Notes
+    -----
+    This function is concave.
+
+    .. versionadded:: 0.14.0
+
+    """)
+
 add_newdoc("scipy.special", "erf",
     """
     erf(z)
@@ -1719,6 +1749,38 @@ add_newdoc("scipy.special", "kerp",
     Derivative of the Kelvin function ker
     """)
 
+add_newdoc("scipy.special", "kl_div",
+    r"""
+    kl_div(x, y)
+
+    Kullback-Leibler distance.
+
+    .. math:: \text{kl_div}(x) = \begin{cases} x \log(x / y) - x + y & x > 0, y > 0 \\ 0 & x = 0, y \ge 0 \\ \infty & \text{otherwise} \end{cases}
+
+    Parameters
+    ----------
+    x : ndarray
+        First input array.
+    y : ndarray
+        Second input array.
+
+    Returns
+    -------
+    res : ndarray
+        Output array.
+
+    See Also
+    --------
+    entr, rel_entr
+
+    Notes
+    -----
+    This function is non-negative and is jointly convex in x and y.
+
+    .. versionadded:: 0.14.0
+
+    """)
+
 add_newdoc("scipy.special", "kn",
     """
     kn(n, x)
@@ -2724,6 +2786,38 @@ add_newdoc("scipy.special", "radian",
 
     Returns the angle given in (d)egrees, (m)inutes, and (s)econds in
     radians.
+    """)
+
+add_newdoc("scipy.special", "rel_entr",
+    r"""
+    rel_entr(x, y)
+
+    Relative entropy.
+
+    .. math:: \text{rel_entr}(x) = \begin{cases} x \log(x / y) & x > 0, y > 0 \\ 0 & x = 0, y \ge 0 \\ \infty & \text{otherwise} \end{cases}
+
+    Parameters
+    ----------
+    x : ndarray
+        First input array.
+    y : ndarray
+        Second input array.
+
+    Returns
+    -------
+    res : ndarray
+        Output array.
+
+    See Also
+    --------
+    entr, kl_div
+
+    Notes
+    -----
+    This function is jointly convex in x and y.
+
+    .. versionadded:: 0.14.0
+
     """)
 
 add_newdoc("scipy.special", "rgamma",

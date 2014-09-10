@@ -34,7 +34,6 @@ __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'sinc', 'sph_in', 'sph_inkn',
            'sph_jn', 'sph_jnyn', 'sph_kn', 'sph_yn', 'y0_zeros', 'y1_zeros',
            'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta',
-           'entr', 'rel_entr', 'kl_div',
            'SpecialFunctionWarning']
 
 
@@ -1400,47 +1399,3 @@ def factorialk(n,k,exact=True):
         return val
     else:
         raise NotImplementedError
-
-
-def entr(x):
-    """
-    entr(x) = -x*log(x)
-
-    Elementwise function for computing entropy.
-
-    Notes
-    -----
-    This function is concave.
-
-    """
-    return -xlogy(x, x)
-
-
-def rel_entr(x, y):
-    """
-    rel_entr(x, y) = x*log(x/y)
-
-    Elementwise function for computing relative entropy.
-
-    Notes
-    -----
-    This function is jointly convex in (x, y).
-
-    """
-    return xlogy(x, x) - xlogy(x, y)
-
-
-def kl_div(x, y):
-    """
-    kl_div(x, y) = x*log(x/y) - x + y
-
-    Elementwise function for computing Kullback-Leibler divergence.
-
-    Notes
-    -----
-    This function is non-negative and is jointly convex in (x, y).
-    It is zero exactly when x==y.
-
-    """
-    return xlogy(x, x) - xlogy(x, y) - x + y
-
