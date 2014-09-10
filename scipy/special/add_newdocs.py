@@ -1755,7 +1755,7 @@ add_newdoc("scipy.special", "kl_div",
 
     Elementwise function for computing Kullback-Leibler divergence.
 
-    .. math:: \text{kl_div}(x, y) = \begin{cases} x \log(x / y) - x + y & x > 0, y > 0 \\ y & x = 0, y > 0 \\ 0 & x = 0, y = 0 \\ \infty & \text{otherwise} \end{cases}
+    .. math:: \text{kl_div}(x, y) = \begin{cases} x \log(x / y) - x + y & x > 0, y > 0 \\ y & x = 0, y \ge 0 \\ \infty & \text{otherwise} \end{cases}
 
     Parameters
     ----------

@@ -6555,7 +6555,7 @@ cdef char *ufunc_kl_div_doc = (
     "\n"
     "Elementwise function for computing Kullback-Leibler divergence.\n"
     "\n"
-    ".. math:: \\text{kl_div}(x, y) = \\begin{cases} x \\log(x / y) - x + y & x > 0, y > 0 \\\\ y & x = 0, y > 0 \\\\ 0 & x = 0, y = 0 \\\\ \\infty & \\text{otherwise} \\end{cases}\n"
+    ".. math:: \\text{kl_div}(x, y) = \\begin{cases} x \\log(x / y) - x + y & x > 0, y > 0 \\\\ y & x = 0, y \\ge 0 \\\\ \\infty & \\text{otherwise} \\end{cases}\n"
     "\n"
     "Parameters\n"
     "----------\n"
