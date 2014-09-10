@@ -1435,7 +1435,7 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_ellik "ellik"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_ellpk "ellpk"(double) nogil
-from _entr cimport entr as _func_entr
+from _convex_analysis cimport entr as _func_entr
 ctypedef double _proto_entr_t(double) nogil
 cdef _proto_entr_t *_proto_entr_t_var = &_func_entr
 cdef extern from "_ufuncs_defs.h":
@@ -1719,7 +1719,7 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_ker_wrap "ker_wrap"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_kerp_wrap "kerp_wrap"(double) nogil
-from _kl_div cimport kl_div as _func_kl_div
+from _convex_analysis cimport kl_div as _func_kl_div
 ctypedef double _proto_kl_div_t(double, double) nogil
 cdef _proto_kl_div_t *_proto_kl_div_t_var = &_func_kl_div
 cdef extern from "_ufuncs_defs.h":
@@ -1877,7 +1877,7 @@ cdef extern from "_ufuncs_defs.h":
     cdef double complex _func_cpsi_wrap "cpsi_wrap"(double complex) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_radian "radian"(double, double, double) nogil
-from _rel_entr cimport rel_entr as _func_rel_entr
+from _convex_analysis cimport rel_entr as _func_rel_entr
 ctypedef double _proto_rel_entr_t(double, double) nogil
 cdef _proto_rel_entr_t *_proto_rel_entr_t_var = &_func_rel_entr
 cdef extern from "_ufuncs_defs.h":
