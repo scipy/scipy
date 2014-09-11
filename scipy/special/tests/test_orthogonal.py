@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import (rand, TestCase, assert_array_almost_equal, 
-        assert_almost_equal, assert_allclose, assert_raises)
+from numpy.testing import (rand, TestCase, assert_array_almost_equal,
+        assert_almost_equal, assert_allclose, assert_raises, assert_)
 
 from scipy.lib.six import xrange
 import numpy as np
@@ -397,7 +397,7 @@ def test_h_roots():
     assert_raises(ValueError, orth.h_roots, 3.3)
 
     x, w = orth.h_roots(210, formula=False)
-    assert not np.any(np.isnan(w))
+    assert_(not np.any(np.isnan(w)))
 
 def test_he_roots():
     verify_gauss_quad(orth.he_roots, orth.eval_hermitenorm, 5)
