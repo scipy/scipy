@@ -22,9 +22,8 @@ from scipy import optimize
 
 
 def test_check_grad():
-    """ Verify if check_grad is able to estimate the derivative of the
-    logistic function.
-    """
+    # Verify if check_grad is able to estimate the derivative of the
+    # logistic function.
 
     def logit(x):
         return 1 / (1 + np.exp(-x))
@@ -42,7 +41,7 @@ def test_check_grad():
 
     # Check if the epsilon parameter is being considered.
     r = abs(optimize.check_grad(logit, der_logit, x0, epsilon=1e-1) - 0)
-    assert r > 1e-7
+    assert_(r > 1e-7)
 
 
 class TestOptimize(object):
