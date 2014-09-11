@@ -396,6 +396,9 @@ def test_h_roots():
     assert_raises(ValueError, orth.h_roots, 0)
     assert_raises(ValueError, orth.h_roots, 3.3)
 
+    x, w = orth.h_roots(210, formula=False)
+    assert not np.any(np.isnan(w))
+
 def test_he_roots():
     verify_gauss_quad(orth.he_roots, orth.eval_hermitenorm, 5)
     verify_gauss_quad(orth.he_roots, orth.eval_hermitenorm, 25, atol=1e-13)
