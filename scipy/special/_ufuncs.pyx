@@ -1638,6 +1638,9 @@ cdef extern from "_ufuncs_defs.h":
     cdef double complex _func_cbesh_wrap2 "cbesh_wrap2"(double, double complex) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double complex _func_cbesh_wrap2_e "cbesh_wrap2_e"(double, double complex) nogil
+from _convex_analysis cimport huber as _func_huber
+ctypedef double _proto_huber_t(double, double) nogil
+cdef _proto_huber_t *_proto_huber_t_var = &_func_huber
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_hyp1f1_wrap "hyp1f1_wrap"(double, double, double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -5524,6 +5527,50 @@ ufunc_hankel2e_ptr[2*1+1] = <void*>(<char*>"hankel2e")
 ufunc_hankel2e_data[0] = &ufunc_hankel2e_ptr[2*0]
 ufunc_hankel2e_data[1] = &ufunc_hankel2e_ptr[2*1]
 hankel2e = np.PyUFunc_FromFuncAndData(ufunc_hankel2e_loops, ufunc_hankel2e_data, ufunc_hankel2e_types, 2, 2, 1, 0, "hankel2e", ufunc_hankel2e_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_huber_loops[2]
+cdef void *ufunc_huber_ptr[4]
+cdef void *ufunc_huber_data[2]
+cdef char ufunc_huber_types[6]
+cdef char *ufunc_huber_doc = (
+    "huber(delta, r)\n"
+    "\n"
+    "Huber loss function.\n"
+    "\n"
+    ".. math:: \\text{huber}(\\delta, r) = \\begin{cases} \\infty & \\delta < 0  \\\\ \\frac{1}{2}r^2 & 0 \\le \\delta, | r | \\le \\delta \\\\ \\delta ( |r| - \\frac{1}{2}\\delta ) & \\text{otherwise} \\end{cases}\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "delta : ndarray\n"
+    "    Input array, indicating the quadratic vs. linear loss changepoint.\n"
+    "r : ndarray\n"
+    "    Input array, possibly representing residuals.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "res : ndarray\n"
+    "    The computed Huber loss function values.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "This function is convex in r.\n"
+    "\n"
+    ".. versionadded:: 0.15.0")
+ufunc_huber_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_huber_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_huber_types[0] = <char>NPY_FLOAT
+ufunc_huber_types[1] = <char>NPY_FLOAT
+ufunc_huber_types[2] = <char>NPY_FLOAT
+ufunc_huber_types[3] = <char>NPY_DOUBLE
+ufunc_huber_types[4] = <char>NPY_DOUBLE
+ufunc_huber_types[5] = <char>NPY_DOUBLE
+ufunc_huber_ptr[2*0] = <void*>_func_huber
+ufunc_huber_ptr[2*0+1] = <void*>(<char*>"huber")
+ufunc_huber_ptr[2*1] = <void*>_func_huber
+ufunc_huber_ptr[2*1+1] = <void*>(<char*>"huber")
+ufunc_huber_data[0] = &ufunc_huber_ptr[2*0]
+ufunc_huber_data[1] = &ufunc_huber_ptr[2*1]
+huber = np.PyUFunc_FromFuncAndData(ufunc_huber_loops, ufunc_huber_data, ufunc_huber_types, 2, 2, 1, 0, "huber", ufunc_huber_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_hyp1f1_loops[4]
 cdef void *ufunc_hyp1f1_ptr[8]

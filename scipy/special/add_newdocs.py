@@ -1385,6 +1385,34 @@ add_newdoc("scipy.special", "hankel2e",
         Argument
     """)
 
+add_newdoc("scipy.special", "huber",
+    r"""
+    huber(delta, r)
+
+    Huber loss function.
+
+    .. math:: \text{huber}(\delta, r) = \begin{cases} \infty & \delta < 0  \\ \frac{1}{2}r^2 & 0 \le \delta, | r | \le \delta \\ \delta ( |r| - \frac{1}{2}\delta ) & \text{otherwise} \end{cases}
+
+    Parameters
+    ----------
+    delta : ndarray
+        Input array, indicating the quadratic vs. linear loss changepoint.
+    r : ndarray
+        Input array, possibly representing residuals.
+
+    Returns
+    -------
+    res : ndarray
+        The computed Huber loss function values.
+
+    Notes
+    -----
+    This function is convex in r.
+
+    .. versionadded:: 0.15.0
+
+    """)
+
 add_newdoc("scipy.special", "hyp1f1",
     """
     hyp1f1(a, b, x)
