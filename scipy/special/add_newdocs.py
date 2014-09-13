@@ -2796,6 +2796,34 @@ add_newdoc("scipy.special", "pro_rad2_cv",
         Value of the derivative vs x
     """)
 
+add_newdoc("scipy.special", "pseudo_huber",
+    r"""
+    pseudo_huber(delta, r)
+
+    Pseudo-Huber loss function.
+
+    .. math:: \text{pseudo_huber}(\delta, r) = \delta^2 \left( \sqrt{ 1 + \left( \frac{r}{\delta} \right)^2 } - 1 \right)
+
+    Parameters
+    ----------
+    delta : ndarray
+        Input array, indicating the soft quadratic vs. linear loss changepoint.
+    r : ndarray
+        Input array, possibly representing residuals.
+
+    Returns
+    -------
+    res : ndarray
+        The computed Pseudo-Huber loss function values.
+
+    Notes
+    -----
+    This function is convex in r.
+
+    .. versionadded:: 0.15.0
+
+    """)
+
 add_newdoc("scipy.special", "psi",
     """
     psi(z)

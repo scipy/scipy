@@ -1,7 +1,7 @@
 cdef extern from "numpy/npy_math.h":
     double inf "NPY_INFINITY"
 
-from libc.math cimport log, fabs
+from libc.math cimport log, sqrt, fabs
 
 cdef inline double entr(double x) nogil:
     if x > 0:
@@ -34,3 +34,14 @@ cdef inline double huber(double delta, double r) nogil:
         return 0.5 * r * r;
     else:
         return delta * (fabs(r) - 0.5 * delta);
+
+cdef inline double pseudo_huber(double delta, double r) nogil:
+    cdef double u, v
+    if delta < 0:
+        return inf
+    elif delta == 0 or r == 0:
+        return 0
+    else:
+        u = delta
+        v = r / delta
+        return u*u*(sqrt(1 + v*v) - 1)

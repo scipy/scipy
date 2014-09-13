@@ -1874,6 +1874,9 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_prolate_radial2_nocv_wrap "prolate_radial2_nocv_wrap"(double, double, double, double, double *) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef int _func_prolate_radial2_wrap "prolate_radial2_wrap"(double, double, double, double, double, double *, double *) nogil
+from _convex_analysis cimport pseudo_huber as _func_pseudo_huber
+ctypedef double _proto_pseudo_huber_t(double, double) nogil
+cdef _proto_pseudo_huber_t *_proto_pseudo_huber_t_var = &_func_pseudo_huber
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_psi "psi"(double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -8919,6 +8922,50 @@ ufunc_pro_rad2_cv_ptr[2*1+1] = <void*>(<char*>"pro_rad2_cv")
 ufunc_pro_rad2_cv_data[0] = &ufunc_pro_rad2_cv_ptr[2*0]
 ufunc_pro_rad2_cv_data[1] = &ufunc_pro_rad2_cv_ptr[2*1]
 pro_rad2_cv = np.PyUFunc_FromFuncAndData(ufunc_pro_rad2_cv_loops, ufunc_pro_rad2_cv_data, ufunc_pro_rad2_cv_types, 2, 5, 2, 0, "pro_rad2_cv", ufunc_pro_rad2_cv_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_pseudo_huber_loops[2]
+cdef void *ufunc_pseudo_huber_ptr[4]
+cdef void *ufunc_pseudo_huber_data[2]
+cdef char ufunc_pseudo_huber_types[6]
+cdef char *ufunc_pseudo_huber_doc = (
+    "pseudo_huber(delta, r)\n"
+    "\n"
+    "Pseudo-Huber loss function.\n"
+    "\n"
+    ".. math:: \\text{pseudo_huber}(\\delta, r) = \\delta^2 \\left( \\sqrt{ 1 + \\left( \\frac{r}{\\delta} \\right)^2 } - 1 \\right)\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "delta : ndarray\n"
+    "    Input array, indicating the soft quadratic vs. linear loss changepoint.\n"
+    "r : ndarray\n"
+    "    Input array, possibly representing residuals.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "res : ndarray\n"
+    "    The computed Pseudo-Huber loss function values.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "This function is convex in r.\n"
+    "\n"
+    ".. versionadded:: 0.15.0")
+ufunc_pseudo_huber_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_pseudo_huber_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_pseudo_huber_types[0] = <char>NPY_FLOAT
+ufunc_pseudo_huber_types[1] = <char>NPY_FLOAT
+ufunc_pseudo_huber_types[2] = <char>NPY_FLOAT
+ufunc_pseudo_huber_types[3] = <char>NPY_DOUBLE
+ufunc_pseudo_huber_types[4] = <char>NPY_DOUBLE
+ufunc_pseudo_huber_types[5] = <char>NPY_DOUBLE
+ufunc_pseudo_huber_ptr[2*0] = <void*>_func_pseudo_huber
+ufunc_pseudo_huber_ptr[2*0+1] = <void*>(<char*>"pseudo_huber")
+ufunc_pseudo_huber_ptr[2*1] = <void*>_func_pseudo_huber
+ufunc_pseudo_huber_ptr[2*1+1] = <void*>(<char*>"pseudo_huber")
+ufunc_pseudo_huber_data[0] = &ufunc_pseudo_huber_ptr[2*0]
+ufunc_pseudo_huber_data[1] = &ufunc_pseudo_huber_ptr[2*1]
+pseudo_huber = np.PyUFunc_FromFuncAndData(ufunc_pseudo_huber_loops, ufunc_pseudo_huber_data, ufunc_pseudo_huber_types, 2, 2, 1, 0, "pseudo_huber", ufunc_pseudo_huber_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_psi_loops[4]
 cdef void *ufunc_psi_ptr[8]

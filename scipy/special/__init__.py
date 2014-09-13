@@ -248,10 +248,11 @@ Information Theory Functions
 .. autosummary::
    :toctree: generated/
 
-   entr       -- entr(x) = -x*log(x)
-   rel_entr   -- rel_entr(x, y) = x*log(x/y)
-   kl_div     -- kl_div(x, y) = x*log(x/y) - x + y
-   huber      -- Huber loss function.
+   entr         -- entr(x) = -x*log(x)
+   rel_entr     -- rel_entr(x, y) = x*log(x/y)
+   kl_div       -- kl_div(x, y) = x*log(x/y) - x + y
+   huber        -- Huber loss function.
+   pseudo_huber -- Pseudo-Huber loss function.
 
 
 Gamma and Related Functions
