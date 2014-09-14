@@ -12157,7 +12157,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE CLQMN(MM,M,N,X,Y,NTYPE,CQM,CQD)
+        SUBROUTINE CLQMN(MM,M,N,X,Y,CQM,CQD)
 C
 C       =======================================================
 C       Purpose: Compute the associated Legendre functions of
@@ -12185,21 +12185,16 @@ C
            RETURN
         ENDIF
         XC=CDABS(Z)
-        IF (NTYPE.EQ.2) THEN
-           LS=1
-        ELSE
-           LS=-1
-        END IF
+        LS=-1
         ZQ=CDSQRT(LS*(1.0D0-Z*Z))
         IF (X.LT.0D0) THEN
            ZQ=LS*ZQ
         END IF
         ZS=LS*(1.0D0-Z*Z)
         CQ0=0.5D0*CDLOG(LS*(1.0D0+Z)/(1.0D0-Z))
-C       For |z|>1.0001 and NTYPE=3, backward recursion is needed.
-C       For 1<|z|<1.0001 and for NTYPE=2 for all 1<|z|, we can
-C       proceed as for |z|<1.
-        IF ((XC.LT.1.0001D0).OR.(NTYPE.EQ.2)) THEN
+C       For |z|>1.0001, backward recursion is needed.
+C       For 1<|z|<1.0001, we can proceed as for |z|<1.
+        IF (XC.LT.1.0001D0) THEN
            CQM(0,0)=CQ0
            CQM(0,1)=Z*CQ0-1.0D0
            CQM(1,0)=-1.0D0/ZQ
@@ -12210,8 +12205,7 @@ C       DLMF 14.10.3 applied to Q
               CQM(I,J)=((2.0D0*J-1.0D0)*Z*CQM(I,J-1)
      &                -(J+I-1.0D0)*CQM(I,J-2))/(J-I)
 15         CONTINUE
-C       NTYPE=2: DLMF 14.10.1 applied to Q
-C       NTYPE=3: DLMF 14.10.6 applied to Q
+C       DLMF 14.10.6 applied to Q
            DO 20 J=0,N
            DO 20 I=2,M
               CQM(I,J)=-2.0D0*(I-1.0D0)*Z/ZQ*CQM(I-1,J)-LS*
@@ -12248,8 +12242,7 @@ C       backward recursion with DLMF 14.10.3 applied to Q with mu=1
               DO 45 J=0,N
                  CQ0=CQM(0,J)
                  CQ1=CQM(1,J)
-C       NTYPE=2: DLMF 14.10.1 applied to Q
-C       NTYPE=3: DLMF 14.10.6 applied to Q
+C       DLMF 14.10.6 applied to Q
                  DO 45 I=0,M-2
                     CQF=-2.0D0*(I+1)*Z/ZQ*CQ1-LS*(J-I)*(J+I+1.0D0)*CQ0
                     CQM(I+2,J)=CQF
@@ -12262,10 +12255,8 @@ C       NTYPE=3: DLMF 14.10.6 applied to Q
 C       DLMF 14.10.5 applied to Q with mu=0
         DO 50 J=1,N
 50         CQD(0,J)=LS*J*(CQM(0,J-1)-Z*CQM(0,J))/ZS
-C       NTYPE=2: derivative of DLMF 14.7.9
-C                and DLMF 14.10.1 applied to Q
-C       NTYPE=3: derivative of LDMF 14.7.12
-C                and DLMF 14.10.6 applied to Q
+C       derivative of LDMF 14.7.12
+C       and DLMF 14.10.6 applied to Q
         DO 55 J=0,N
         DO 55 I=1,M
            CQD(I,J)=LS*I*Z/ZS*CQM(I,J)+(I+J)*(J-I+1.0D0)
