@@ -740,7 +740,7 @@ def pascal(n, kind='symmetric', exact=True):
         Default is 'symmetric'.
     exact : bool, optional
         If `exact` is True, the result is either an array of type
-        numpy.uint64 (if n <= 35) or an object array of Python long integers.
+        numpy.uint64 (if n < 35) or an object array of Python long integers.
         If `exact` is False, the coefficients in the matrix are computed using
         `scipy.special.comb` with `exact=False`.  The result will be a floating
         point array, and the values in the array will not be the exact
@@ -784,7 +784,7 @@ def pascal(n, kind='symmetric', exact=True):
         raise ValueError("kind must be 'symmetric', 'lower', or 'upper'")
 
     if exact:
-        if n > 35:
+        if n >= 35:
             L_n = np.empty((n, n), dtype=object)
             L_n.fill(0)
         else:
