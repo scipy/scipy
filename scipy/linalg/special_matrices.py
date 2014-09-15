@@ -730,8 +730,6 @@ def pascal(n, kind='symmetric', exact=True):
     The Pascal matrix is a matrix containing the binomial coefficients as
     its elements.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     n : int
@@ -757,6 +755,8 @@ def pascal(n, kind='symmetric', exact=True):
     -----
     See http://en.wikipedia.org/wiki/Pascal_matrix for more information
     about Pascal matrices.
+
+    .. versionadded:: 0.11.0
 
     Examples
     --------
