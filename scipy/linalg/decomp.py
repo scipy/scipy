@@ -66,7 +66,10 @@ def _asarray_validated(a, check_finite=True,
     if not sparse_ok:
         import scipy.sparse
         if scipy.sparse.issparse(a):
-            raise ValueError('sparse matrices are not supported')
+            msg = ('Sparse matrices are not supported by this function. '
+                   'Perhaps one of the scipy.linalg.sparse functions '
+                   'would work instead.')
+            raise ValueError(msg)
     if not mask_ok:
         if np.ma.isMaskedArray(a):
             raise ValueError('masked arrays are not supported')
