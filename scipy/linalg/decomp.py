@@ -31,7 +31,8 @@ from .blas import get_blas_funcs
 _I = cast['F'](1j)
 
 
-def _asarray_validated(a, check_finite=True, sparse_ok=False, objects_ok=False):
+def _asarray_validated(a, check_finite=True,
+                       sparse_ok=False, objects_ok=False, mask_ok=False):
     """
     Helper function for scipy argument validation.
 
@@ -53,6 +54,8 @@ def _asarray_validated(a, check_finite=True, sparse_ok=False, objects_ok=False):
         True if scipy sparse matrices are allowed.
     objects_ok : bool, optional
         True if arrays with dype('O') are allowed.
+    mask_ok : bool, optional
+        True if masked arrays are allowed.
 
     Returns
     -------
@@ -64,6 +67,9 @@ def _asarray_validated(a, check_finite=True, sparse_ok=False, objects_ok=False):
         import scipy.sparse
         if scipy.sparse.issparse(a):
             raise ValueError('sparse matrices are not supported')
+    if not mask_ok:
+        if np.ma.isMaskedArray(a):
+            raise ValueError('masked arrays are not supported')
     if check_finite:
         a = np.asarray_chkfinite(a)
     else:
