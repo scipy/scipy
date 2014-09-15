@@ -14,12 +14,15 @@ import numpy as np
 from .flinalg import get_flinalg_funcs
 from .lapack import get_lapack_funcs
 from .misc import LinAlgError, _datacopied
+from .decomp import _asarray_validated
 from . import decomp, decomp_svd
 
 
+
+
 # Linear equations
-def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False,
-          debug=False, check_finite=True):
+def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
+          overwrite_b=False, debug=False, check_finite=True):
     """
     Solve the equation ``a x = b`` for ``x``.
 
@@ -69,10 +72,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
     array([ True,  True,  True], dtype=bool)
 
     """
-    if check_finite:
-        a1, b1 = map(np.asarray_chkfinite,(a,b))
-    else:
-        a1, b1 = map(np.asarray, (a,b))
+    a1 = _asarray_validated(a, check_finite=check_finite)
+    b1 = _asarray_validated(b, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
@@ -149,11 +150,8 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     .. versionadded:: 0.9.0
 
     """
-
-    if check_finite:
-        a1, b1 = map(np.asarray_chkfinite,(a,b))
-    else:
-        a1, b1 = map(np.asarray, (a,b))
+    a1 = _asarray_validated(a, check_finite=check_finite)
+    b1 = _asarray_validated(b, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
@@ -214,14 +212,12 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
         shape of `b`.
 
     """
-    (l, u) = l_and_u
-    if check_finite:
-        a1, b1 = map(np.asarray_chkfinite, (ab, b))
-    else:
-        a1, b1 = map(np.asarray, (ab,b))
+    a1 = _asarray_validated(ab, check_finite=check_finite)
+    b1 = _asarray_validated(b, check_finite=check_finite)
     # Validate shapes.
     if a1.shape[-1] != b1.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
+    (l, u) = l_and_u
     if l + u + 1 != a1.shape[0]:
         raise ValueError("invalid values for the number of lower and upper diagonals:"
                 " l+u+1 (%d) does not equal ab.shape[0] (%d)" % (l+u+1, ab.shape[0]))
@@ -289,11 +285,8 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
         of `b`.
 
     """
-
-    if check_finite:
-        ab, b = map(np.asarray_chkfinite, (ab, b))
-    else:
-        ab, b = map(np.asarray, (ab,b))
+    ab = _asarray_validated(ab, check_finite=check_finite)
+    b = _asarray_validated(b, check_finite=check_finite)
     # Validate shapes.
     if ab.shape[-1] != b.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
@@ -348,11 +341,7 @@ def inv(a, overwrite_a=False, check_finite=True):
            [ 0.,  1.]])
 
     """
-
-    if check_finite:
-        a1 = np.asarray_chkfinite(a)
-    else:
-        a1 = np.asarray(a)
+    a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or _datacopied(a1, a)
@@ -436,10 +425,7 @@ def det(a, overwrite_a=False, check_finite=True):
     3.0
 
     """
-    if check_finite:
-        a1 = np.asarray_chkfinite(a)
-    else:
-        a1 = np.asarray(a)
+    a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or _datacopied(a1, a)
@@ -504,11 +490,8 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     optimize.nnls : linear least squares with non-negativity constraint
 
     """
-
-    if check_finite:
-        a1,b1 = map(np.asarray_chkfinite, (a,b))
-    else:
-        a1,b1 = map(np.asarray, (a,b))
+    a1 = _asarray_validated(a, check_finite=check_finite)
+    b1 = _asarray_validated(b, check_finite=check_finite)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     m, n = a1.shape
@@ -598,10 +581,7 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     True
 
     """
-    if check_finite:
-        a = np.asarray_chkfinite(a)
-    else:
-        a = np.asarray(a)
+    a = _asarray_validated(a, check_finite=check_finite)
     b = np.identity(a.shape[0], dtype=a.dtype)
     if rcond is not None:
         cond = rcond
@@ -660,10 +640,7 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     True
 
     """
-    if check_finite:
-        a = np.asarray_chkfinite(a)
-    else:
-        a = np.asarray(a)
+    a = _asarray_validated(a, check_finite=check_finite)
     u, s, vh = decomp_svd.svd(a, full_matrices=False, check_finite=False)
 
     if rcond is not None:
@@ -738,10 +715,7 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
     True
 
     """
-    if check_finite:
-        a = np.asarray_chkfinite(a)
-    else:
-        a = np.asarray(a)
+    a = _asarray_validated(a, check_finite=check_finite)
     s, u = decomp.eigh(a, lower=lower, check_finite=False)
 
     if rcond is not None:
