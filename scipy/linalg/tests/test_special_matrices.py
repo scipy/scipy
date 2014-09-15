@@ -488,6 +488,16 @@ class TestPascal(TestCase):
         p = pascal(50)
         assert_equal(p[-1, -1], comb(98, 49, exact=True))
 
+    def test_threshold(self):
+        # Regression test.  An early version of `pascal` returned an
+        # array of type np.uint64 for n=35, but that data type is too small
+        # to hold p[-1, -1].  The second assert_equal below would fail
+        # because p[-1, -1] overflowed.
+        p = pascal(34)
+        assert_equal(2*p.item(-1, -2), p.item(-1, -1), err_msg="n = 34")
+        p = pascal(35)
+        assert_equal(2*p.item(-1, -2), p.item(-1, -1), err_msg="n = 35")
+
 
 def test_dft():
     m = dft(2)
