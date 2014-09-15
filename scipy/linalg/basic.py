@@ -18,8 +18,6 @@ from .decomp import _asarray_validated
 from . import decomp, decomp_svd
 
 
-
-
 # Linear equations
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
           overwrite_b=False, debug=False, check_finite=True):
