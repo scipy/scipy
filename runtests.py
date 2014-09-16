@@ -226,15 +226,16 @@ def main(argv):
                           verbose=args.verbose,
                           extra_argv=extra_argv)
         else:
-            result = test(args.mode,
-                          verbose=args.verbose,
-                          extra_argv=extra_argv,
-                          doctests=args.doctests,
-                          coverage=args.coverage)
+            result = subprocess.call(["python", "time_testsuite.py"])
+#            result = test(args.mode,
+#                          verbose=args.verbose,
+#                          extra_argv=extra_argv,
+#                          doctests=args.doctests,
+#                          coverage=args.coverage)
     finally:
         os.chdir(cwd)
 
-    if isinstance(result, bool):
+    if isinstance(result, (bool, int)):
         sys.exit(0 if result else 1)
     elif result.wasSuccessful():
         sys.exit(0)
@@ -362,8 +363,8 @@ def lcov_generate():
                      '--output-file', LCOV_OUTPUT_FILE])
 
     print("Generating lcov HTML output...")
-    ret = subprocess.call(['genhtml', '-q', LCOV_OUTPUT_FILE, 
-                           '--output-directory', LCOV_HTML_DIR, 
+    ret = subprocess.call(['genhtml', '-q', LCOV_OUTPUT_FILE,
+                           '--output-directory', LCOV_HTML_DIR,
                            '--legend', '--highlight'])
     if ret != 0:
         print("genhtml failed!")
