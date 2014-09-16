@@ -1536,6 +1536,10 @@ def percentileofscore(a, score, kind='rank'):
     pcos : float
         Percentile-position of score (0-100) relative to `a`.
 
+    See Also
+    --------
+    numpy.percentile
+
     Examples
     --------
     Three-quarters of the given values lie below a given score:
