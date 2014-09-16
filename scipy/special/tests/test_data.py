@@ -78,10 +78,10 @@ def legendre_p_via_assoc_(nu, x):
     return lpmv(0, nu, x)
 
 def lpn_(n, x):
-    return lpn(n, x)[0][-1]
+    return lpn(n.astype('l'), x)[0][-1]
 
 def lqn_(n, x):
-    return lqn(n, x)[0][-1]
+    return lqn(n.astype('l'), x)[0][-1]
 
 def legendre_p_via_lpmn(n, x):
     return lpmn(0, n, x)[0][0,-1]
@@ -178,10 +178,10 @@ def poch_minus(z, m):
     return 1.0 / poch(z, -m)
 
 def sph_jn_(n, x):
-    return sph_jn(n, x)[0][-1]
+    return sph_jn(n.astype('l'), x)[0][-1]
 
 def sph_yn_(n, x):
-    return sph_yn(n, x)[0][-1]
+    return sph_yn(n.astype('l'), x)[0][-1]
 
 def sph_harm_(m, n, theta, phi):
     y = sph_harm(m, n, theta, phi)
@@ -267,11 +267,8 @@ def test_boost():
 
         data(ellipk_, 'ellint_k_data_ipp-ellint_k_data', 0, 1),
         data(ellipkinc_, 'ellint_f_data_ipp-ellint_f_data', (0,1), 2, rtol=1e-14),
-        data(ellipkinc, 'ellipkinc_neg_m', (0, 1), 2),
-        data(ellipkm1, 'ellipkm1', 0, 1),
         data(ellipe_, 'ellint_e_data_ipp-ellint_e_data', 0, 1),
         data(ellipeinc_, 'ellint_e2_data_ipp-ellint_e2_data', (0,1), 2, rtol=1e-14),
-        data(ellipeinc, 'ellipeinc_neg_m', (0, 1), 2),
 
         data(erf, 'erf_data_ipp-erf_data', 0, 1),
         data(erf, 'erf_data_ipp-erf_data', 0j, 1, rtol=1e-13),
@@ -454,6 +451,15 @@ def test_gsl():
     for test in TESTS:
         yield _test_factory, test
 
+def test_local():
+    TESTS = [
+        data_local(ellipkinc, 'ellipkinc_neg_m', (0, 1), 2),
+        data_local(ellipkm1, 'ellipkm1', 0, 1),
+        data_local(ellipeinc, 'ellipeinc_neg_m', (0, 1), 2),
+    ]
+
+    for test in TESTS:
+        yield _test_factory, test
 
 def test_local():
     TESTS = [
