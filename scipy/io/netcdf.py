@@ -32,6 +32,8 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['netcdf_file']
 
 
+import warnings
+import weakref
 from operator import mul
 import mmap as mm
 
@@ -100,7 +102,9 @@ class netcdf_file(object):
     mmap : None or bool, optional
         Whether to mmap `filename` when reading.  Default is True
         when `filename` is a file name, False when `filename` is a
-        file-like object
+        file-like object. Note that when mmap is in use, data arrays
+        returned refer directly to the mmapped data on disk, and the
+        file cannot be closed as long as references to it exist.
     version : {1, 2}, optional
         version of netcdf to read / write, where 1 means *Classic
         format* and 2 means *64-bit offset format*.  Default is 1.  See
@@ -144,6 +148,13 @@ class netcdf_file(object):
     unnecessary data into memory. It uses the ``mmap`` module to create
     Numpy arrays mapped to the data on disk, for the same purpose.
 
+    Note that when `netcdf_file` is used to open a file with mmap=True
+    (default for read-only), arrays returned by it refer to data
+    directly on the disk. The file should not be closed, and cannot be cleanly
+    closed when asked, if such arrays are alive. You may want to copy data arrays
+    obtained from mmapped Netcdf file if they are to be processed after the file
+    is closed, see the example below.
+
     Examples
     --------
     To create a NetCDF file:
@@ -174,7 +185,20 @@ class netcdf_file(object):
         (10,)
         >>> print(time[-1])
         9
+
+    NetCDF files, when opened read-only, return arrays that refer
+    directly to memory-mapped data on disk:
+
+        >>> data = time[:]
+        >>> data.base.base
+        <mmap.mmap object at 0x7fe753763180>
+
+    If the data is to be processed after the file is closed, it needs
+    to be copied to main memory:
+
+        >>> data = time[:].copy()
         >>> f.close()
+        >>> data.mean()
 
     A NetCDF file can also be used as context manager:
 
@@ -182,6 +206,7 @@ class netcdf_file(object):
         >>> with netcdf.netcdf_file('simple.nc', 'r') as f:
         >>>     print(f.history)
         Created for a test
+
     """
     def __init__(self, filename, mode='r', mmap=None, version=1):
         """Initialize netcdf_file from fileobj (str or file-like)."""
@@ -243,9 +268,23 @@ class netcdf_file(object):
             try:
                 self.flush()
             finally:
-                self._mm_buf = None
-                if self._mm is not None:
-                    self._mm.close()
+                self.variables = {}
+                if self._mm_buf is not None:
+                    ref = weakref.ref(self._mm_buf)
+                    self._mm_buf = None
+                    if ref() is None:
+                        # self._mm_buf is gc'd, and we can close the mmap
+                        self._mm.close()
+                    else:
+                        # we cannot close self._mm, since self._mm_buf is
+                        # alive and there may still be arrays referring to it
+                        warnings.warn((
+                            "Cannot close a netcdf_file opened with mmap=True, when "
+                            "netcdf_variables or arrays referring to its data still exist. "
+                            "All data arrays obtained from such files refer directly to "
+                            "data on disk, and must be copied before the file can be cleanly "
+                            "closed. (See netcdf_file docstring for more information on mmap.)"
+                        ), category=RuntimeWarning)
                 self._mm = None
                 self.fp.close()
     __del__ = close

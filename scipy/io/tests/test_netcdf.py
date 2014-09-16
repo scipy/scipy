@@ -5,12 +5,13 @@ import os
 from os.path import join as pjoin, dirname
 import shutil
 import tempfile
+import warnings
 from io import BytesIO
 from glob import glob
 from contextlib import contextmanager
 
 import numpy as np
-from numpy.testing import assert_, assert_allclose
+from numpy.testing import assert_, assert_allclose, assert_warns
 
 from scipy.io.netcdf import netcdf_file
 
@@ -156,12 +157,16 @@ def test_read_example_data():
 def test_itemset_no_segfault_on_readonly():
     # Regression test for ticket #1202.
     # Open the test file in read-only mode.
-    filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
-    with netcdf_file(filename, 'r') as f:
-        time_var = f.variables['time']
 
-    # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!
-    assert_raises(RuntimeError, time_var.assignValue, 42)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
+        with netcdf_file(filename, 'r') as f:
+            time_var = f.variables['time']
+
+        # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!
+        assert_raises(RuntimeError, time_var.assignValue, 42)
 
 
 def test_write_invalid_dtype():
@@ -225,15 +230,25 @@ def test_ticket_1720():
         assert_allclose(float_var[:], items)
 
 
-def test_mmaps_closed():
-    # Regression test for gh-1550.  Will fail with "Too many open files"
-    # error if not all mmaps aren't closed by ``f.close()``.
+def test_mmaps_segfault():
     filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
-    vars = []
-    for i in range(1100):
-        f = netcdf_file(filename, mmap=True)
-        vars.append(f.variables['lat'])
-        f.close()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        with netcdf_file(filename, mmap=True) as f:
+            x = f.variables['lat'][:]
+            # should not raise warnings
+            del x
+
+    def doit():
+        with netcdf_file(filename, mmap=True) as f:
+            return f.variables['lat'][:]
+
+    # should not crash
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        x = doit()
+        x.sum()
 
 
 def test_zero_dimensional_var():
