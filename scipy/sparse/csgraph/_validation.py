@@ -27,7 +27,7 @@ def validate_graph(csgraph, directed, dtype=DTYPE,
             csgraph = csr_matrix(csgraph, dtype=DTYPE, copy=copy_if_sparse)
         else:
             csgraph = csgraph_to_dense(csgraph, null_value=null_value_out)
-    elif np.ma.is_masked(csgraph):
+    elif np.ma.isMaskedArray(csgraph):
         if dense_output:
             mask = csgraph.mask
             csgraph = np.array(csgraph.data, dtype=DTYPE, copy=copy_if_dense)
