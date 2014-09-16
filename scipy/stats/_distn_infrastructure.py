@@ -770,6 +770,20 @@ class rv_generic(object):
         # correct for empty shapes
         self.__doc__ = self.__doc__.replace('(, ', '(').replace(', )', ')')
 
+    def _construct_default_doc(self, longname=None, extradoc=None,
+                docdict=None, discrete='continuous'):
+        """Construct instance docstring from the default template."""
+        if longname is None:
+            longname = 'A'
+        if extradoc is None:
+            extradoc = ''
+        if extradoc.startswith('\n\n'):
+            extradoc = extradoc[2:]
+        self.__doc__ = ''.join(['%s %s random variable.' % (longname, discrete),
+                                '\n\n%(before_notes)s\n', docheaders['notes'],
+                                extradoc, '\n%(example)s'])
+        self._construct_doc(docdict)
+
     def freeze(self, *args, **kwds):
         """Freeze the distribution for the given arguments.
 
@@ -1490,23 +1504,12 @@ class rv_continuous(rv_generic):
             # Skip adding docstrings if interpreter is run with -OO
             if self.__doc__ is None:
                 self._construct_default_doc(longname=longname,
-                                            extradoc=extradoc)
+                                            extradoc=extradoc,
+                                            docdict=docdict,
+                                            discrete='continuous')
             else:
                 dct = dict(distcont)
                 self._construct_doc(docdict, dct.get(self.name))
-
-    def _construct_default_doc(self, longname=None, extradoc=None):
-        """Construct instance docstring from the default template."""
-        if longname is None:
-            longname = 'A'
-        if extradoc is None:
-            extradoc = ''
-        if extradoc.startswith('\n\n'):
-            extradoc = extradoc[2:]
-        self.__doc__ = ''.join(['%s continuous random variable.' % longname,
-                                '\n\n%(before_notes)s\n', docheaders['notes'],
-                                extradoc, '\n%(example)s'])
-        self._construct_doc(docdict)
 
     def _ppf_to_solve(self, x, q, *args):
         return self.cdf(*(x, )+args)-q
@@ -2654,7 +2657,9 @@ class rv_discrete(rv_generic):
             # Skip adding docstrings if interpreter is run with -OO
             if self.__doc__ is None:
                 self._construct_default_doc(longname=longname,
-                                            extradoc=extradoc)
+                                            extradoc=extradoc,
+                                            docdict=docdict_discrete,
+                                            discrete='discrete')
             else:
                 dct = dict(distdiscrete)
                 self._construct_doc(docdict_discrete, dct.get(self.name))
@@ -2663,17 +2668,6 @@ class rv_discrete(rv_generic):
             self.__doc__ = self.__doc__.replace(
                 '\n    scale : array_like, '
                 'optional\n        scale parameter (default=1)', '')
-
-    def _construct_default_doc(self, longname=None, extradoc=None):
-        """Construct instance docstring from the rv_discrete template."""
-        if extradoc is None:
-            extradoc = ''
-        if extradoc.startswith('\n\n'):
-            extradoc = extradoc[2:]
-        self.__doc__ = ''.join(['%s discrete random variable.' % longname,
-                                '\n\n%(before_notes)s\n', docheaders['notes'],
-                                extradoc, '\n%(example)s'])
-        self._construct_doc(docdict_discrete)
 
     def _nonzero(self, k, *args):
         return floor(k) == k
