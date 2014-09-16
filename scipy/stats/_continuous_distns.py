@@ -3394,7 +3394,7 @@ class powerlaw_gen(rv_continuous):
         return a*x**(a-1.0)
 
     def _logpdf(self, x, a):
-        return log(a) + (a-1)*log(x)
+        return log(a) + special.xlogy(a - 1, x)
 
     def _cdf(self, x, a):
         return x**(a*1.0)

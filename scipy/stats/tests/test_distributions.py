@@ -1692,6 +1692,12 @@ def test_powerlaw_stats():
         assert_array_almost_equal(mvsk, exact_mvsk)
 
 
+def test_powerlaw_edge():
+    # Regression test for gh-3986.
+    p = stats.powerlaw.logpdf(0, 1)
+    assert_equal(p, 0.0)
+
+
 def test_ksone_fit_freeze():
     # Regression test for ticket #1638.
     d = np.array(
