@@ -1844,7 +1844,10 @@ class gengamma_gen(rv_continuous):
         return (a > 0) & (c != 0)
 
     def _pdf(self, x, a, c):
-        return abs(c) * exp((c*a-1)*log(x)-x**c - gamln(a))
+        return exp(self._logpdf(x, a, c))
+
+    def _logpdf(self, x, a, c):
+        return log(abs(c)) + special.xlogy(c*a - 1, x) - x**c - gamln(a)
 
     def _cdf(self, x, a, c):
         val = special.gammainc(a, x**c)
