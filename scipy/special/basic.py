@@ -71,22 +71,34 @@ def diric(x,n):
         ytype = x.dtype
     else:
         ytype = float
-    y = zeros(x.shape,ytype)
+    y = zeros(x.shape, ytype)
+	
+	#empirical minval for 32, 64 or 128 bit float computations
+	#where sin(x/2)<minval, result is fixed at +1 or -1
+    if np.finfo(ytype).eps < 1e-18:
+        minval = 1e-11
+    elif np.finfo(ytype).eps < 1e-15:
+        minval = 1e-7
+    else:
+        minval = 1e-3
 
     mask1 = (n <= 0) | (n != floor(n))
     place(y,mask1,nan)
-
-    z = asarray(x / 2.0 / pi)
-    mask2 = (1-mask1) & (z == floor(z))
-    zsub = extract(mask2,z)
-    nsub = extract(mask2,n)
-    place(y,mask2,pow(-1,zsub*(nsub-1)))
-
+    
+    x /= 2.0
+    denom = sin(x)
+    mask2 = (1-mask1) & (abs(denom) < minval)
+    xsub = extract(mask2, x)
+    nsub = extract(mask2, n)
+    zsub = xsub / pi
+    place(y, mask2, pow(-1, np.round(zsub)*(nsub-1)))    
+   
     mask = (1-mask1) & (1-mask2)
-    xsub = extract(mask,x)
-    nsub = extract(mask,n)
-    place(y,mask,sin(nsub*xsub/2.0)/(nsub*sin(xsub/2.0)))
-    return y
+    xsub = extract(mask, x)
+    nsub = extract(mask, n)
+    dsub = extract(mask, denom)
+    place(y, mask, sin(nsub*xsub)/(nsub*dsub))
+    return y        
 
 
 def jnjnp_zeros(nt):
