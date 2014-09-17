@@ -790,6 +790,17 @@ def minimum_filter1d(input, size, axis=-1, output=None,
     %(mode)s
     %(cval)s
     %(origin)s
+
+    Notes
+    -----
+    This function implements the MINLIST algorithm [1]_, as described by
+    Richard Harter [2]_, and has a guaranteed O(n) performance, `n` being
+    the `input` length, regardless of filter size.
+
+    References
+    ----------
+    .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.2777
+    .. [2] http://www.richardhartersworld.com/cri/2001/slidingmin.html
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
@@ -830,6 +841,17 @@ def maximum_filter1d(input, size, axis=-1, output=None,
     maximum1d : ndarray, None
         Maximum-filtered array with same shape as input.
         None if `output` is not None
+
+    Notes
+    -----
+    This function implements the MAXLIST algorithm [1]_, as described by
+    Richard Harter [2]_, and has a guaranteed O(n) performance, `n` being
+    the `input` length, regardless of filter size.
+
+    References
+    ----------
+    .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.2777
+    .. [2] http://www.richardhartersworld.com/cri/2001/slidingmin.html
 
     """
     input = numpy.asarray(input)

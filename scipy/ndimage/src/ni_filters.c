@@ -359,104 +359,61 @@ NI_UniformFilter1D(PyArrayObject *input, npy_intp filter_size,
     return PyErr_Occurred() ? 0 : 1;
 }
 
-#define WINDOW_MIN(ptr, win_size, min, min_off) \
-    do { \
-        npy_intp j_; \
-        min = *ptr++; \
-        min_off = 0; \
-        for (j_ = 1; j_ < win_size; j_++) { \
-            double val = *ptr++; \
-            if (val <= min) { \
-                min = val; \
-                min_off = 0; \
-            } \
-            else { \
-                min_off++; \
-            } \
-        } \
-    } while (0)
+#define INCREASE_RING_PTR(ptr) \
+    (ptr)++;\
+    if ((ptr) >= end) { \
+        (ptr) = ring; \
+    }
 
-#define UPDATE_WINDOW_MIN(ptr, win_size, min, min_off) \
-    do { \
-        double val = *ptr++; \
-        if (val <= min) { \
-            min = val; \
-            min_off = 0; \
-        } \
-        else { \
-            min_off++; \
-            if (min_off >= win_size) { \
-                double *tmp = ptr - win_size; \
-                WINDOW_MIN(tmp, win_size, min, min_off); \
-            } \
-        } \
-    } while (0)
-
-#define WINDOW_MAX(ptr, win_size, max, max_off) \
-    do { \
-        npy_intp j_; \
-        max = *ptr++; \
-        max_off = 0; \
-        for (j_ = 1; j_ < win_size; j_++) { \
-            double val = *ptr++; \
-            if (val >= max) { \
-                max = val; \
-                max_off = 0; \
-            } \
-            else { \
-                max_off++; \
-            } \
-        } \
-    } while (0)
-
-#define UPDATE_WINDOW_MAX(ptr, win_size, max, max_off) \
-    do { \
-        double val = *ptr++; \
-        if (val >= max) { \
-            max = val; \
-            max_off = 0; \
-        } \
-        else { \
-            max_off++; \
-            if (max_off >= win_size) { \
-                double *tmp = ptr - win_size; \
-                WINDOW_MAX(tmp, win_size, max, max_off); \
-            } \
-        } \
-    } while (0)
+#define DECREASE_RING_PTR(ptr) \
+    if ((ptr) == ring) { \
+        (ptr) = end; \
+    } \
+    (ptr)--;
 
 int
 NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
-                                        int axis, PyArrayObject *output, NI_ExtendMode mode,
+                    int axis, PyArrayObject *output, NI_ExtendMode mode,
                     double cval, npy_intp origin, int minimum)
 {
-    npy_intp lines, kk, jj, ll, length, size1, size2;
+    npy_intp lines, kk, ll, length, size1, size2;
     int more;
     double *ibuffer = NULL, *obuffer = NULL;
     NI_LineBuffer iline_buffer, oline_buffer;
     char errmsg[NI_MAX_ERR_MSG];
     NPY_BEGIN_THREADS_DEF;
     errmsg[0] = 0;
+    struct pairs {
+        double value;
+        npy_intp death;
+    } *ring = NULL, *minpair, *end, *last;
 
     size1 = filter_size / 2;
     size2 = filter_size - size1 - 1;
     /* allocate and initialize the line buffers: */
     lines = -1;
     if (!NI_AllocateLineBuffer(input, axis, size1 + origin, size2 - origin,
-                                                         &lines, BUFFER_SIZE, &ibuffer))
+                                            &lines, BUFFER_SIZE, &ibuffer))
         goto exit;
     if (!NI_AllocateLineBuffer(output, axis, 0, 0, &lines, BUFFER_SIZE,
-                                                         &obuffer))
+                                                                &obuffer))
         goto exit;
     if (!NI_InitLineBuffer(input, axis, size1 + origin, size2 - origin,
-                                                             lines, ibuffer, mode, cval, &iline_buffer))
+                                lines, ibuffer, mode, cval, &iline_buffer))
         goto exit;
     if (!NI_InitLineBuffer(output, axis, 0, 0, lines, obuffer, mode, 0.0,
-                                                 &oline_buffer))
+                                                            &oline_buffer))
         goto exit;
 
     NPY_BEGIN_THREADS;
     length = input->nd > 0 ? input->dimensions[axis] : 1;
+
+    /* ring is a dequeue of pairs implemented as a circular array */
+    ring = malloc(filter_size * sizeof(struct pairs));
+    if (!ring) {
+        goto exit;
+    }
+    end = ring + filter_size;
 
     /* iterate over all the array lines: */
     do {
@@ -468,21 +425,44 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
             /* get lines: */
             double *iline = NI_GET_LINE(iline_buffer, kk);
             double *oline = NI_GET_LINE(oline_buffer, kk);
-            double minmax;
-            npy_intp minmax_off;
 
-            if (minimum) {
-                WINDOW_MIN(iline, filter_size - 1, minmax, minmax_off);
-                for (ll = 0; ll < length; ll++) {
-                    UPDATE_WINDOW_MIN(iline, filter_size, minmax, minmax_off);
-                    *oline++ = minmax;
-                }
+            /* This check could be moved out to the Python wrapper */
+            if (filter_size == 1) {
+                memcpy(oline, iline, sizeof(double) * length);
             }
             else {
-                WINDOW_MAX(iline, filter_size - 1, minmax, minmax_off);
-                for (ll = 0; ll < length; ll++) {
-                    UPDATE_WINDOW_MAX(iline, filter_size, minmax, minmax_off);
-                    *oline++ = minmax;
+                /*
+                 * Original code by Richard Harter, adapted from:
+                 * http://www.richardhartersworld.com/cri/2001/slidingmin.html
+                 */
+                minpair = ring;
+                minpair->value = *iline++;
+                minpair->death = filter_size;
+                last = ring;
+
+                for (ll = 1; ll < filter_size + length - 1; ll++) {
+                    double val = *iline++;
+                    if (minpair->death == ll) {
+                        INCREASE_RING_PTR(minpair)
+                    }
+                    if ((minimum && val <= minpair->value) ||
+                        (!minimum && val >= minpair->value)) {
+                        minpair->value = val;
+                        minpair->death = ll + filter_size;
+                        last = minpair;
+                    }
+                    else {
+                        while ((minimum && last->value >= val) ||
+                               (!minimum && last->value <= val)) {
+                            DECREASE_RING_PTR(last)
+                        }
+                        INCREASE_RING_PTR(last)
+                        last->value = val;
+                        last->death = ll + filter_size;
+                    }
+                    if (ll >= filter_size - 1) {
+                        *oline++ = minpair->value;
+                    }
                 }
             }
         }
@@ -498,13 +478,12 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
     }
     if (ibuffer) free(ibuffer);
     if (obuffer) free(obuffer);
+    if (ring) free(ring);
     return PyErr_Occurred() ? 0 : 1;
 }
 
-#undef UPDATE_WINDOW_MAX
-#undef WINDOW_MAX
-#undef UPDATE_WINDOW_MIN
-#undef WINDOW_MIN
+#undef DECREASE_RING_PTR
+#undef INCREASE_RING_PTR
 
 
 #define CASE_MIN_OR_MAX_POINT(_pi, _offsets, _filter_size, _cval, \
