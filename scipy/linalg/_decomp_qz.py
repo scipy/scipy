@@ -54,7 +54,7 @@ def _select_function(sort, typ):
 def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
        overwrite_b=False, check_finite=True):
     """
-    QZ decompostion for generalized eigenvalues of a pair of matrices.
+    QZ decomposition for generalized eigenvalues of a pair of matrices.
 
     The QZ, or generalized Schur, decomposition for a pair of N x N
     nonsymmetric matrices (A,B) is::

@@ -549,7 +549,7 @@ eigenvalues can then be found.
 Singular value decomposition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Singular Value Decompostion (SVD) can be thought of as an extension of
+Singular Value Decomposition (SVD) can be thought of as an extension of
 the eigenvalue problem to matrices that are not square. Let
 :math:`\mathbf{A}` be an :math:`M\times N` matrix with :math:`M` and
 :math:`N` arbitrary. The matrices :math:`\mathbf{A}^{H}\mathbf{A}` and
@@ -616,7 +616,8 @@ singular values. To obtain the matrix :math:`\mathbf{\Sigma}` use
 LU decomposition
 ^^^^^^^^^^^^^^^^
 
-The LU decompostion finds a representation for the :math:`M\times N` matrix :math:`\mathbf{A}` as
+The LU decomposition finds a representation for the :math:`M\times N`
+matrix :math:`\mathbf{A}` as
 
 .. math::
    :nowrap:
