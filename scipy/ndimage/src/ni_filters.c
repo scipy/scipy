@@ -380,13 +380,15 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
     int more;
     double *ibuffer = NULL, *obuffer = NULL;
     NI_LineBuffer iline_buffer, oline_buffer;
-    char errmsg[NI_MAX_ERR_MSG];
-    NPY_BEGIN_THREADS_DEF;
-    errmsg[0] = 0;
+
     struct pairs {
         double value;
         npy_intp death;
     } *ring = NULL, *minpair, *end, *last;
+
+    char errmsg[NI_MAX_ERR_MSG];
+    NPY_BEGIN_THREADS_DEF;
+    errmsg[0] = 0;
 
     size1 = filter_size / 2;
     size2 = filter_size - size1 - 1;
