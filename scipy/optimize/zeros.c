@@ -191,7 +191,7 @@ static struct PyModuleDef moduledef = {
 
 PyObject *PyInit__zeros(void)
 {
-    PyObject *m, *d, *s;
+    PyObject *m;
 
     m = PyModule_Create(&moduledef);
 
