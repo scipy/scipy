@@ -20,11 +20,11 @@ solved.
 .. math::
    :nowrap:
 
-    \[ M\left(t\right)=\frac{1-e^{-\lambda}}{1-e^{t-\lambda}}\]
+    M\left(t\right)=\frac{1-e^{-\lambda}}{1-e^{t-\lambda}}
 
 .. math::
    :nowrap:
 
-    \[ h\left[X\right]=\frac{\lambda e^{-\lambda}}{1-e^{-\lambda}}-\log\left(1-e^{-\lambda}\right)\]
+    h\left[X\right]=\frac{\lambda e^{-\lambda}}{1-e^{-\lambda}}-\log\left(1-e^{-\lambda}\right)
 
 Implementation: `scipy.stats.planck`

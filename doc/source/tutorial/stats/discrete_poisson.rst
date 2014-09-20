@@ -16,6 +16,6 @@ in the interval :math:`\left[0,t\right]` for a process satisfying certain "spars
 .. math::
    :nowrap:
 
-    \[ M\left(t\right)=\exp\left[\lambda\left(e^{t}-1\right)\right].\]
+    M\left(t\right)=\exp\left[\lambda\left(e^{t}-1\right)\right].
 
 Implementation: `scipy.stats.poisson`

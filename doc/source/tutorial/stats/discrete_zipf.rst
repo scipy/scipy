@@ -17,7 +17,7 @@ where
 .. math::
    :nowrap:
 
-    \[ \zeta\left(\alpha\right)=\sum_{n=1}^{\infty}\frac{1}{n^{\alpha}}\]
+    \zeta\left(\alpha\right)=\sum_{n=1}^{\infty}\frac{1}{n^{\alpha}}
 
 is the Riemann zeta function. Other functions of this distribution are
 
@@ -36,11 +36,11 @@ where :math:`\zeta_{i}=\zeta\left(\alpha-i\right)` and :math:`\textrm{Li}_{n}\le
 .. math::
    :nowrap:
 
-    \[ \textrm{Li}_{n}\left(z\right)\equiv\sum_{k=1}^{\infty}\frac{z^{k}}{k^{n}}\]
+    \textrm{Li}_{n}\left(z\right)\equiv\sum_{k=1}^{\infty}\frac{z^{k}}{k^{n}}
 
 .. math::
    :nowrap:
 
-    \[ \mu_{n}^{\prime}=\left.M^{\left(n\right)}\left(t\right)\right|_{t=0}=\left.\frac{\textrm{Li}_{\alpha-n}\left(e^{t}\right)}{\zeta\left(a\right)}\right|_{t=0}=\frac{\zeta\left(\alpha-n\right)}{\zeta\left(\alpha\right)}\]
+    \mu_{n}^{\prime}=\left.M^{\left(n\right)}\left(t\right)\right|_{t=0}=\left.\frac{\textrm{Li}_{\alpha-n}\left(e^{t}\right)}{\zeta\left(a\right)}\right|_{t=0}=\frac{\zeta\left(\alpha-n\right)}{\zeta\left(\alpha\right)}
 
 Implementation: `scipy.stats.zipf`

@@ -21,13 +21,13 @@ Thus,
 .. math::
    :nowrap:
 
-    \[ \mu_{n}^{\prime}=M^{\left(n\right)}\left(0\right)=\left[1+\left(-1\right)^{n}\right]\textrm{Li}_{-n}\left(e^{-a}\right)\]
+    \mu_{n}^{\prime}=M^{\left(n\right)}\left(0\right)=\left[1+\left(-1\right)^{n}\right]\textrm{Li}_{-n}\left(e^{-a}\right)
 
 where :math:`\textrm{Li}_{-n}\left(z\right)` is the polylogarithm function of order :math:`-n` evaluated at :math:`z.`
 
 .. math::
    :nowrap:
 
-    \[ h\left[X\right]=-\log\left(\tanh\left(\frac{a}{2}\right)\right)+\frac{a}{\sinh a}\]
+    h\left[X\right]=-\log\left(\tanh\left(\frac{a}{2}\right)\right)+\frac{a}{\sinh a}
 
 Implementation: `scipy.stats.dlaplace`

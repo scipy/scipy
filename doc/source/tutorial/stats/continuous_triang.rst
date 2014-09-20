@@ -12,7 +12,26 @@ portion. In standard form we have :math:`x\in\left[0,1\right].`
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} f\left(x;c\right) & = & \left\{ \begin{array}{ccc} 2\frac{x}{c} &  & x<c\\ 2\frac{1-x}{1-c} &  & x\geq c\end{array}\right.\\ F\left(x;c\right) & = & \left\{ \begin{array}{ccc} \frac{x^{2}}{c} &  & x<c\\ \frac{x^{2}-2x+c}{c-1} &  & x\geq c\end{array}\right.\\ G\left(q;c\right) & = & \left\{ \begin{array}{ccc} \sqrt{cq} &  & q<c\\ 1-\sqrt{\left(1-c\right)\left(1-q\right)} &  & q\geq c\end{array}\right.\end{eqnarray*}
+    \begin{eqnarray*}
+        f\left(x;c\right) & = & \left\{
+                                    \begin{array}{ccc}
+                                        2\frac{x}{c} &  & x < c \\
+                                        2\frac{1-x}{1-c} &  & x \geq c
+                                    \end{array}
+                                \right.\\
+        F\left(x;c\right) & = & \left\{
+                                    \begin{array}{ccc}
+                                        \frac{x^{2}}{c} &  & x < c \\
+                                        \frac{x^{2}-2x+c}{c-1} &  & x \geq c
+                                    \end{array}
+                                \right.\\
+        G\left(q;c\right) & = & \left\{
+                                    \begin{array}{ccc}
+                                        \sqrt{cq} &  & q < c \\
+                                        1-\sqrt{\left(1-c\right)\left(1-q\right)} &  & q \geq c
+                                    \end{array}
+                                \right.
+    \end{eqnarray*}
 
 .. math::
    :nowrap:

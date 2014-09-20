@@ -19,6 +19,6 @@ Define :math:`z=e^{-\lambda}`
 .. math::
    :nowrap:
 
-    \[ M\left(t\right)=\frac{1-e^{N\left(t-\lambda\right)}}{1-e^{t-\lambda}}\frac{1-e^{-\lambda}}{1-e^{-\lambda N}}\]
+    M\left(t\right)=\frac{1-e^{N\left(t-\lambda\right)}}{1-e^{t-\lambda}}\frac{1-e^{-\lambda}}{1-e^{-\lambda N}}
 
 Implementation: `scipy.stats.boltzmann`

@@ -9,21 +9,28 @@ A Bernoulli random variable of parameter :math:`p` takes one of only two values 
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} p\left(k;p\right) & = & \begin{cases} 1-p & k=0\\ p & k=1\end{cases}\\ F\left(x;p\right) & = & \begin{cases} 0 & x<0\\ 1-p & 0\le x<1\\ 1 & 1\leq x\end{cases}\\ G\left(q;p\right) & = & \begin{cases} 0 & 0\leq q<1-p\\ 1 & 1-p\leq q\leq1\end{cases}\\ \mu & = & p\\ \mu_{2} & = & p\left(1-p\right)\\ \gamma_{3} & = & \frac{1-2p}{\sqrt{p\left(1-p\right)}}\\ \gamma_{4} & = & \frac{1-6p\left(1-p\right)}{p\left(1-p\right)}\end{eqnarray*}
+    \begin{eqnarray*}
+        p\left(k;p\right) & = & \begin{cases} 1-p & k=0\\ p & k=1\end{cases}\\
+        F\left(x;p\right) & = & \begin{cases} 0 & x<0\\ 1-p & 0\le x<1\\ 1 & 1\leq x\end{cases}\\
+        G\left(q;p\right) & = & \begin{cases} 0 & 0\leq q<1-p\\ 1 & 1-p\leq q\leq1\end{cases}\\
+        \mu & = & p\\ \mu_{2} & = & p\left(1-p\right)\\
+        \gamma_{3} & = & \frac{1-2p}{\sqrt{p\left(1-p\right)}}\\
+        \gamma_{4} & = & \frac{1-6p\left(1-p\right)}{p\left(1-p\right)}
+    \end{eqnarray*}
 
 .. math::
    :nowrap:
 
-    \[ M\left(t\right)=1-p\left(1-e^{t}\right)\]
+    M\left(t\right) = 1-p\left(1-e^{t}\right)
 
 .. math::
    :nowrap:
 
-    \[ \mu_{m}^{\prime}=p\]
+    \mu_{m}^{\prime}=p
 
 .. math::
    :nowrap:
 
-    \[ h\left[X\right]=p\log p+\left(1-p\right)\log\left(1-p\right)\]
+    h\left[X\right]=p\log p+\left(1-p\right)\log\left(1-p\right)
 
 Implementation: `scipy.stats.bernoulli`
