@@ -51,12 +51,9 @@ although technically
 
 is the probability density function for a discrete distribution [#]_ .
 
-
-
 .. [#]
     XXX: Unknown layout Plain Layout: Note that we will be using :math:`p` to represent the probability mass function and a parameter (a
     XXX: probability). The usage should be obvious from context.
-
 
 
 Cumulative Distribution Function (CDF)
@@ -75,8 +72,6 @@ and is also useful to be able to compute. Note that
    :nowrap:
 
     \[ F\left(x_{k}\right)-F\left(x_{k-1}\right)=p\left(x_{k}\right)\]
-
-
 
 
 Survival Function
@@ -140,8 +135,6 @@ and
    :nowrap:
 
     \[ H\left(x\right)=\sum_{x_{k}\leq x}h\left(x_{k}\right)=\sum_{x_{k}\leq x}\frac{F\left(x_{k}\right)-F\left(x_{k-1}\right)}{1-F\left(x_{k}\right)}.\]
-
-
 
 
 Moments
@@ -237,8 +230,6 @@ Where
     \begin{eqnarray*} l_{\mathbf{k}}\left(\boldsymbol{\theta}\right) & = & -\sum_{i=1}^{N}\log f\left(k_{i};\boldsymbol{\theta}\right)\\  & = & -N\overline{\log f\left(k_{i};\boldsymbol{\theta}\right)}\end{eqnarray*}
 
 
-
-
 Standard notation for mean
 --------------------------
 
@@ -289,34 +280,22 @@ A Bernoulli random variable of parameter :math:`p` takes one of only two values 
 
     \begin{eqnarray*} p\left(k;p\right) & = & \begin{cases} 1-p & k=0\\ p & k=1\end{cases}\\ F\left(x;p\right) & = & \begin{cases} 0 & x<0\\ 1-p & 0\le x<1\\ 1 & 1\leq x\end{cases}\\ G\left(q;p\right) & = & \begin{cases} 0 & 0\leq q<1-p\\ 1 & 1-p\leq q\leq1\end{cases}\\ \mu & = & p\\ \mu_{2} & = & p\left(1-p\right)\\ \gamma_{3} & = & \frac{1-2p}{\sqrt{p\left(1-p\right)}}\\ \gamma_{4} & = & \frac{1-6p\left(1-p\right)}{p\left(1-p\right)}\end{eqnarray*}
 
-
-
-
-
 .. math::
    :nowrap:
 
     \[ M\left(t\right)=1-p\left(1-e^{t}\right)\]
-
-
-
-
 
 .. math::
    :nowrap:
 
     \[ \mu_{m}^{\prime}=p\]
 
-
-
-
-
 .. math::
    :nowrap:
 
     \[ h\left[X\right]=p\log p+\left(1-p\right)\log\left(1-p\right)\]
 
-
+Implementation: `scipy.stats.bernoulli`
 
 
 Binomial
@@ -351,20 +330,16 @@ Now
 
     \begin{eqnarray*} \mu & = & np\\ \mu_{2} & = & np\left(1-p\right)\\ \gamma_{1} & = & \frac{1-2p}{\sqrt{np\left(1-p\right)}}\\ \gamma_{2} & = & \frac{1-6p\left(1-p\right)}{np\left(1-p\right)}.\end{eqnarray*}
 
-
-
 .. math::
    :nowrap:
 
     \[ M\left(t\right)=\left[1-p\left(1-e^{t}\right)\right]^{n}\]
 
-
+Implementation: `scipy.stats.binom`
 
 
 Boltzmann (truncated Planck)
 ============================
-
-
 
 .. math::
    :nowrap:
@@ -378,14 +353,12 @@ Define :math:`z=e^{-\lambda}`
 
     \begin{eqnarray*} \mu & = & \frac{z}{1-z}-\frac{Nz^{N}}{1-z^{N}}\\ \mu_{2} & = & \frac{z}{\left(1-z\right)^{2}}-\frac{N^{2}z^{N}}{\left(1-z^{N}\right)^{2}}\\ \gamma_{1} & = & \frac{z\left(1+z\right)\left(\frac{1-z^{N}}{1-z}\right)^{3}-N^{3}z^{N}\left(1+z^{N}\right)}{\left[z\left(\frac{1-z^{N}}{1-z}\right)^{2}-N^{2}z^{N}\right]^{3/2}}\\ \gamma_{2} & = & \frac{z\left(1+4z+z^{2}\right)\left(\frac{1-z^{N}}{1-z}\right)^{4}-N^{4}z^{N}\left(1+4z^{N}+z^{2N}\right)}{\left[z\left(\frac{1-z^{N}}{1-z}\right)^{2}-N^{2}z^{N}\right]^{2}}\end{eqnarray*}
 
-
-
 .. math::
    :nowrap:
 
     \[ M\left(t\right)=\frac{1-e^{N\left(t-\lambda\right)}}{1-e^{t-\lambda}}\frac{1-e^{-\lambda}}{1-e^{-\lambda N}}\]
 
-
+Implementation: `scipy.stats.boltzmann`
 
 
 Planck (discrete exponential)
@@ -394,37 +367,27 @@ Planck (discrete exponential)
 Named Planck because of its relationship to the black-body problem he
 solved.
 
-
-
 .. math::
    :nowrap:
 
     \begin{eqnarray*} p\left(k;\lambda\right) & = & \left(1-e^{-\lambda}\right)e^{-\lambda k}\quad k\lambda\geq0\\ F\left(x;\lambda\right) & = & 1-e^{-\lambda\left(\left\lfloor x\right\rfloor +1\right)}\quad x\lambda\geq0\\ G\left(q;\lambda\right) & = & \left\lceil -\frac{1}{\lambda}\log\left[1-q\right]-1\right\rceil .\end{eqnarray*}
-
-
 
 .. math::
    :nowrap:
 
     \begin{eqnarray*} \mu & = & \frac{1}{e^{\lambda}-1}\\ \mu_{2} & = & \frac{e^{-\lambda}}{\left(1-e^{-\lambda}\right)^{2}}\\ \gamma_{1} & = & 2\cosh\left(\frac{\lambda}{2}\right)\\ \gamma_{2} & = & 4+2\cosh\left(\lambda\right)\end{eqnarray*}
 
-
-
-
-
 .. math::
    :nowrap:
 
     \[ M\left(t\right)=\frac{1-e^{-\lambda}}{1-e^{t-\lambda}}\]
-
-
 
 .. math::
    :nowrap:
 
     \[ h\left[X\right]=\frac{\lambda e^{-\lambda}}{1-e^{-\lambda}}-\log\left(1-e^{-\lambda}\right)\]
 
-
+Implementation: `scipy.stats.planck`
 
 
 Poisson
@@ -439,16 +402,12 @@ in the interval :math:`\left[0,t\right]` for a process satisfying certain "spars
 
     \begin{eqnarray*} p\left(k;\lambda\right) & = & e^{-\lambda}\frac{\lambda^{k}}{k!}\quad k\geq0,\\ F\left(x;\lambda\right) & = & \sum_{n=0}^{\left\lfloor x\right\rfloor }e^{-\lambda}\frac{\lambda^{n}}{n!}=\frac{1}{\Gamma\left(\left\lfloor x\right\rfloor +1\right)}\int_{\lambda}^{\infty}t^{\left\lfloor x\right\rfloor }e^{-t}dt,\\ \mu & = & \lambda\\ \mu_{2} & = & \lambda\\ \gamma_{1} & = & \frac{1}{\sqrt{\lambda}}\\ \gamma_{2} & = & \frac{1}{\lambda}.\end{eqnarray*}
 
-
-
-
-
 .. math::
    :nowrap:
 
     \[ M\left(t\right)=\exp\left[\lambda\left(e^{t}-1\right)\right].\]
 
-
+Implementation: `scipy.stats.poisson`
 
 
 Geometric
@@ -462,16 +421,12 @@ where the probability of success on each trial is :math:`p` . Thus,
 
     \begin{eqnarray*} p\left(k;p\right) & = & \left(1-p\right)^{k-1}p\quad k\geq1\\ F\left(x;p\right) & = & 1-\left(1-p\right)^{\left\lfloor x\right\rfloor }\quad x\geq1\\ G\left(q;p\right) & = & \left\lceil \frac{\log\left(1-q\right)}{\log\left(1-p\right)}\right\rceil \\ \mu & = & \frac{1}{p}\\ \mu_{2} & = & \frac{1-p}{p^{2}}\\ \gamma_{1} & = & \frac{2-p}{\sqrt{1-p}}\\ \gamma_{2} & = & \frac{p^{2}-6p+6}{1-p}.\end{eqnarray*}
 
-
-
-
-
 .. math::
    :nowrap:
 
     \begin{eqnarray*} M\left(t\right) & = & \frac{p}{e^{-t}-\left(1-p\right)}\end{eqnarray*}
 
-
+Implementation: `scipy.stats.geom`
 
 
 Negative Binomial
@@ -487,6 +442,8 @@ with probability :math:`p.` Thus,
     \begin{eqnarray*} p\left(k;n,p\right) & = & \left(\begin{array}{c} k+n-1\\ n-1\end{array}\right)p^{n}\left(1-p\right)^{k}\quad k\geq0\\ F\left(x;n,p\right) & = & \sum_{i=0}^{\left\lfloor x\right\rfloor }\left(\begin{array}{c} i+n-1\\ i\end{array}\right)p^{n}\left(1-p\right)^{i}\quad x\geq0\\  & = & I_{p}\left(n,\left\lfloor x\right\rfloor +1\right)\quad x\geq0\\ \mu & = & n\frac{1-p}{p}\\ \mu_{2} & = & n\frac{1-p}{p^{2}}\\ \gamma_{1} & = & \frac{2-p}{\sqrt{n\left(1-p\right)}}\\ \gamma_{2} & = & \frac{p^{2}+6\left(1-p\right)}{n\left(1-p\right)}.\end{eqnarray*}
 
 Recall that :math:`I_{p}\left(a,b\right)` is the incomplete beta integral.
+
+Implementation: `scipy.stats.nbinom`
 
 
 Hypergeometric
@@ -506,7 +463,7 @@ where (defining :math:`m=M-n` )
 
     \begin{eqnarray*} g\left(N,n,M\right) & = & m^{3}-m^{5}+3m^{2}n-6m^{3}n+m^{4}n+3mn^{2}\\  &  & -12m^{2}n^{2}+8m^{3}n^{2}+n^{3}-6mn^{3}+8m^{2}n^{3}\\  &  & +mn^{4}-n^{5}-6m^{3}N+6m^{4}N+18m^{2}nN\\  &  & -6m^{3}nN+18mn^{2}N-24m^{2}n^{2}N-6n^{3}N\\  &  & -6mn^{3}N+6n^{4}N+6m^{2}N^{2}-6m^{3}N^{2}-24mnN^{2}\\  &  & +12m^{2}nN^{2}+6n^{2}N^{2}+12mn^{2}N^{2}-6n^{3}N^{2}.\end{eqnarray*}
 
-
+Implementation: `scipy.stats.hypergeom`
 
 
 Zipf (Zeta)
@@ -534,10 +491,6 @@ is the Riemann zeta function. Other functions of this distribution are
 
     \begin{eqnarray*} F\left(x;\alpha\right) & = & \frac{1}{\zeta\left(\alpha\right)}\sum_{k=1}^{\left\lfloor x\right\rfloor }\frac{1}{k^{\alpha}}\\ \mu & = & \frac{\zeta_{1}}{\zeta_{0}}\quad\alpha>2\\ \mu_{2} & = & \frac{\zeta_{2}\zeta_{0}-\zeta_{1}^{2}}{\zeta_{0}^{2}}\quad\alpha>3\\ \gamma_{1} & = & \frac{\zeta_{3}\zeta_{0}^{2}-3\zeta_{0}\zeta_{1}\zeta_{2}+2\zeta_{1}^{3}}{\left[\zeta_{2}\zeta_{0}-\zeta_{1}^{2}\right]^{3/2}}\quad\alpha>4\\ \gamma_{2} & = & \frac{\zeta_{4}\zeta_{0}^{3}-4\zeta_{3}\zeta_{1}\zeta_{0}^{2}+12\zeta_{2}\zeta_{1}^{2}\zeta_{0}-6\zeta_{1}^{4}-3\zeta_{2}^{2}\zeta_{0}^{2}}{\left(\zeta_{2}\zeta_{0}-\zeta_{1}^{2}\right)^{2}}.\end{eqnarray*}
 
-
-
-
-
 .. math::
    :nowrap:
 
@@ -550,14 +503,12 @@ where :math:`\zeta_{i}=\zeta\left(\alpha-i\right)` and :math:`\textrm{Li}_{n}\le
 
     \[ \textrm{Li}_{n}\left(z\right)\equiv\sum_{k=1}^{\infty}\frac{z^{k}}{k^{n}}\]
 
-
-
 .. math::
    :nowrap:
 
     \[ \mu_{n}^{\prime}=\left.M^{\left(n\right)}\left(t\right)\right|_{t=0}=\left.\frac{\textrm{Li}_{\alpha-n}\left(e^{t}\right)}{\zeta\left(a\right)}\right|_{t=0}=\frac{\zeta\left(\alpha-n\right)}{\zeta\left(\alpha\right)}\]
 
-
+Implementation: `scipy.stats.zipf`
 
 
 Logarithmic (Log-Series, Series)
@@ -585,8 +536,6 @@ is the Lerch Transcendent. Also define :math:`r=\log\left(1-p\right)`
 
     \begin{eqnarray*} \mu & = & -\frac{p}{\left(1-p\right)r}\\ \mu_{2} & = & -\frac{p\left[p+r\right]}{\left(1-p\right)^{2}r^{2}}\\ \gamma_{1} & = & -\frac{2p^{2}+3pr+\left(1+p\right)r^{2}}{r\left(p+r\right)\sqrt{-p\left(p+r\right)}}r\\ \gamma_{2} & = & -\frac{6p^{3}+12p^{2}r+p\left(4p+7\right)r^{2}+\left(p^{2}+4p+1\right)r^{3}}{p\left(p+r\right)^{2}}.\end{eqnarray*}
 
-
-
 .. math::
    :nowrap:
 
@@ -599,7 +548,7 @@ Thus,
 
     \[ \mu_{n}^{\prime}=\left.M^{\left(n\right)}\left(t\right)\right|_{t=0}=\left.\frac{\textrm{Li}_{1-n}\left(pe^{t}\right)}{\log\left(1-p\right)}\right|_{t=0}=-\frac{\textrm{Li}_{1-n}\left(p\right)}{\log\left(1-p\right)}.\]
 
-
+Implementation: `scipy.stats.logser`
 
 
 Discrete Uniform (randint)
@@ -613,16 +562,12 @@ any one of the integers in the half-open range :math:`[a,b).` If :math:`a` is no
 
     \begin{eqnarray*} p\left(k;a,b\right) & = & \frac{1}{b-a}\quad a\leq k<b\\ F\left(x;a,b\right) & = & \frac{\left\lfloor x\right\rfloor -a}{b-a}\quad a\leq x\leq b\\ G\left(q;a,b\right) & = & \left\lceil q\left(b-a\right)+a\right\rceil \\ \mu & = & \frac{b+a-1}{2}\\ \mu_{2} & = & \frac{\left(b-a-1\right)\left(b-a+1\right)}{12}\\ \gamma_{1} & = & 0\\ \gamma_{2} & = & -\frac{6}{5}\frac{\left(b-a\right)^{2}+1}{\left(b-a-1\right)\left(b-a+1\right)}.\end{eqnarray*}
 
-
-
-
-
 .. math::
    :nowrap:
 
     \begin{eqnarray*} M\left(t\right) & = & \frac{1}{b-a}\sum_{k=a}^{b-1}e^{tk}\\  & = & \frac{e^{bt}-e^{at}}{\left(b-a\right)\left(e^{t}-1\right)}\end{eqnarray*}
 
-
+Implementation: `scipy.stats.randint`
 
 
 Discrete Laplacian
@@ -634,8 +579,6 @@ Defined over all integers for :math:`a>0`
    :nowrap:
 
     \begin{eqnarray*} p\left(k\right) & = & \tanh\left(\frac{a}{2}\right)e^{-a\left|k\right|},\\ F\left(x\right) & = & \left\{ \begin{array}{cc} \frac{e^{a\left(\left\lfloor x\right\rfloor +1\right)}}{e^{a}+1} & \left\lfloor x\right\rfloor <0,\\ 1-\frac{e^{-a\left\lfloor x\right\rfloor }}{e^{a}+1} & \left\lfloor x\right\rfloor \geq0.\end{array}\right.\\ G\left(q\right) & = & \left\{ \begin{array}{cc} \left\lceil \frac{1}{a}\log\left[q\left(e^{a}+1\right)\right]-1\right\rceil  & q<\frac{1}{1+e^{-a}},\\ \left\lceil -\frac{1}{a}\log\left[\left(1-q\right)\left(1+e^{a}\right)\right]\right\rceil  & q\geq\frac{1}{1+e^{-a}}.\end{array}\right.\end{eqnarray*}
-
-
 
 .. math::
    :nowrap:
@@ -656,36 +599,4 @@ where :math:`\textrm{Li}_{-n}\left(z\right)` is the polylogarithm function of or
 
     \[ h\left[X\right]=-\log\left(\tanh\left(\frac{a}{2}\right)\right)+\frac{a}{\sinh a}\]
 
-
-
-
-Discrete Gaussian*
-==================
-
-Defined for all :math:`\mu` and :math:`\lambda>0` and :math:`k`
-
-.. math::
-   :nowrap:
-
-    \[ p\left(k;\mu,\lambda\right)=\frac{1}{Z\left(\lambda\right)}\exp\left[-\lambda\left(k-\mu\right)^{2}\right]\]
-
-where
-
-.. math::
-   :nowrap:
-
-    \[ Z\left(\lambda\right)=\sum_{k=-\infty}^{\infty}\exp\left[-\lambda k^{2}\right]\]
-
-
-
-.. math::
-   :nowrap:
-
-    \begin{eqnarray*} \mu & = & \mu\\ \mu_{2} & = & -\frac{\partial}{\partial\lambda}\log Z\left(\lambda\right)\\  & = & G\left(\lambda\right)e^{-\lambda}\end{eqnarray*}
-
-where :math:`G\left(0\right)\rightarrow\infty` and :math:`G\left(\infty\right)\rightarrow2` with a minimum less than 2 near :math:`\lambda=1`
-
-.. math::
-   :nowrap:
-
-    \[ G\left(\lambda\right)=\frac{1}{Z\left(\lambda\right)}\sum_{k=-\infty}^{\infty}k^{2}\exp\left[-\lambda\left(k+1\right)\left(k-1\right)\right]\]
+Implementation: `scipy.stats.dlaplace`
