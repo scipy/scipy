@@ -14,7 +14,7 @@ parameter: :math:`L.` The relationship between the general distribution
 .. math::
    :nowrap:
 
-    \[ p\left(x\right)=p_{0}\left(x-L\right)\]
+    p\left(x\right) = p_{0}\left(x-L\right)
 
 which allows for shifting of the input. When a distribution generator
 is initialized, the discrete distribution can either specify the
@@ -23,7 +23,7 @@ beginning and ending (integer) values :math:`a` and :math:`b` which must be such
 .. math::
    :nowrap:
 
-    \[ p_{0}\left(x\right)=0\quad x<a\textrm{ or }x>b\]
+    p_{0}\left(x\right) = 0\quad x < a \textrm{ or } x > b
 
 in which case, it is assumed that the pdf function is specified on the
 integers :math:`a+mk\leq b` where :math:`k` is a non-negative integer ( :math:`0,1,2,\ldots` ) and :math:`m` is a positive integer multiplier. Alternatively, the two lists :math:`x_{k}` and :math:`p\left(x_{k}\right)` can be provided directly in which case a dictionary is set up
@@ -39,7 +39,7 @@ probability that the random variable takes on a particular value.
 .. math::
    :nowrap:
 
-    \[ p\left(x_{k}\right)=P\left[X=x_{k}\right]\]
+    p\left(x_{k}\right)=P\left[X=x_{k}\right]
 
 This is also sometimes called the probability density function,
 although technically
@@ -47,7 +47,7 @@ although technically
 .. math::
    :nowrap:
 
-    \[ f\left(x\right)=\sum_{k}p\left(x_{k}\right)\delta\left(x-x_{k}\right)\]
+    f\left(x\right)=\sum_{k}p\left(x_{k}\right)\delta\left(x-x_{k}\right)
 
 is the probability density function for a discrete distribution [#]_ .
 
@@ -64,14 +64,14 @@ The cumulative distribution function is
 .. math::
    :nowrap:
 
-    \[ F\left(x\right)=P\left[X\leq x\right]=\sum_{x_{k}\leq x}p\left(x_{k}\right)\]
+    F\left(x\right)=P\left[X\leq x\right]=\sum_{x_{k}\leq x}p\left(x_{k}\right)
 
 and is also useful to be able to compute. Note that
 
 .. math::
    :nowrap:
 
-    \[ F\left(x_{k}\right)-F\left(x_{k-1}\right)=p\left(x_{k}\right)\]
+    F\left(x_{k}\right)-F\left(x_{k-1}\right)=p\left(x_{k}\right)
 
 
 Survival Function
@@ -82,7 +82,7 @@ The survival function is just
 .. math::
    :nowrap:
 
-    \[ S\left(x\right)=1-F\left(x\right)=P\left[X>k\right]\]
+    S\left(x\right)=1-F\left(x\right)=P\left[X>k\right]
 
 the probability that the random variable is strictly larger than :math:`k` .
 
@@ -97,7 +97,7 @@ distribution function and is
 .. math::
    :nowrap:
 
-    \[ G\left(q\right)=F^{-1}\left(q\right)\]
+    G\left(q\right)=F^{-1}\left(q\right)
 
 for discrete distributions, this must be modified for cases where
 there is no :math:`x_{k}` such that :math:`F\left(x_{k}\right)=q.` In these cases we choose :math:`G\left(q\right)` to be the smallest value :math:`x_{k}=G\left(q\right)` for which :math:`F\left(x_{k}\right)\geq q` . If :math:`q=0` then we define :math:`G\left(0\right)=a-1` . This definition allows random variates to be defined in the same way
@@ -113,7 +113,7 @@ The inverse survival function is the inverse of the survival function
 .. math::
    :nowrap:
 
-    \[ Z\left(\alpha\right)=S^{-1}\left(\alpha\right)=G\left(1-\alpha\right)\]
+    Z\left(\alpha\right)=S^{-1}\left(\alpha\right)=G\left(1-\alpha\right)
 
 and is thus the smallest non-negative integer :math:`k` for which :math:`F\left(k\right)\geq1-\alpha` or the smallest non-negative integer :math:`k` for which :math:`S\left(k\right)\leq\alpha.`
 
@@ -127,14 +127,14 @@ could be defined as
 .. math::
    :nowrap:
 
-    \[ h\left(x_{k}\right)=\frac{p\left(x_{k}\right)}{1-F\left(x_{k}\right)}\]
+    h\left(x_{k}\right)=\frac{p\left(x_{k}\right)}{1-F\left(x_{k}\right)}
 
 and
 
 .. math::
    :nowrap:
 
-    \[ H\left(x\right)=\sum_{x_{k}\leq x}h\left(x_{k}\right)=\sum_{x_{k}\leq x}\frac{F\left(x_{k}\right)-F\left(x_{k-1}\right)}{1-F\left(x_{k}\right)}.\]
+    H\left(x\right)=\sum_{x_{k}\leq x}h\left(x_{k}\right)=\sum_{x_{k}\leq x}\frac{F\left(x_{k}\right)-F\left(x_{k-1}\right)}{1-F\left(x_{k}\right)}.
 
 
 Moments
@@ -145,7 +145,7 @@ Non-central moments are defined using the PDF
 .. math::
    :nowrap:
 
-    \[ \mu_{m}^{\prime}=E\left[X^{m}\right]=\sum_{k}x_{k}^{m}p\left(x_{k}\right).\]
+    \mu_{m}^{\prime}=E\left[X^{m}\right]=\sum_{k}x_{k}^{m}p\left(x_{k}\right).
 
 Central moments are computed similarly :math:`\mu=\mu_{1}^{\prime}`
 
@@ -159,28 +159,28 @@ The mean is the first moment
 .. math::
    :nowrap:
 
-    \[ \mu=\mu_{1}^{\prime}=E\left[X\right]=\sum_{k}x_{k}p\left(x_{k}\right)\]
+    \mu=\mu_{1}^{\prime}=E\left[X\right]=\sum_{k}x_{k}p\left(x_{k}\right)
 
 the variance is the second central moment
 
 .. math::
    :nowrap:
 
-    \[ \mu_{2}=E\left[\left(X-\mu\right)^{2}\right]=\sum_{x_{k}}x_{k}^{2}p\left(x_{k}\right)-\mu^{2}.\]
+    \mu_{2}=E\left[\left(X-\mu\right)^{2}\right]=\sum_{x_{k}}x_{k}^{2}p\left(x_{k}\right)-\mu^{2}.
 
 Skewness is defined as
 
 .. math::
    :nowrap:
 
-    \[ \gamma_{1}=\frac{\mu_{3}}{\mu_{2}^{3/2}}\]
+    \gamma_{1}=\frac{\mu_{3}}{\mu_{2}^{3/2}}
 
 while (Fisher) kurtosis is
 
 .. math::
    :nowrap:
 
-    \[ \gamma_{2}=\frac{\mu_{4}}{\mu_{2}^{2}}-3,\]
+    \gamma_{2}=\frac{\mu_{4}}{\mu_{2}^{2}}-3,
 
 so that a normal distribution has a kurtosis of zero.
 
@@ -193,7 +193,7 @@ The moment generating function is defined as
 .. math::
    :nowrap:
 
-    \[ M_{X}\left(t\right)=E\left[e^{Xt}\right]=\sum_{x_{k}}e^{x_{k}t}p\left(x_{k}\right)\]
+    M_{X}\left(t\right)=E\left[e^{Xt}\right]=\sum_{x_{k}}e^{x_{k}t}p\left(x_{k}\right)
 
 Moments are found as the derivatives of the moment generating function
 evaluated at :math:`0.`
@@ -213,7 +213,7 @@ random vector :math:`\mathbf{k}` is
 .. math::
    :nowrap:
 
-    \[ f\left(\mathbf{k};\boldsymbol{\theta}\right)=\prod_{i=1}^{N}f_{i}\left(k_{i};\boldsymbol{\theta}\right).\]
+    f\left(\mathbf{k};\boldsymbol{\theta}\right)=\prod_{i=1}^{N}f_{i}\left(k_{i};\boldsymbol{\theta}\right).
 
 The maximum likelihood estimate of the parameters :math:`\boldsymbol{\theta}` are the parameters which maximize this function with :math:`\mathbf{x}` fixed and given by the data:
 
@@ -238,7 +238,7 @@ We will use
 .. math::
    :nowrap:
 
-    \[ \overline{y\left(\mathbf{x}\right)}=\frac{1}{N}\sum_{i=1}^{N}y\left(x_{i}\right)\]
+    \overline{y\left(\mathbf{x}\right)}=\frac{1}{N}\sum_{i=1}^{N}y\left(x_{i}\right)
 
 where :math:`N` should be clear from context.
 
@@ -251,7 +251,7 @@ Note that
 .. math::
    :nowrap:
 
-    \[ k!=k\cdot\left(k-1\right)\cdot\left(k-2\right)\cdot\cdots\cdot1=\Gamma\left(k+1\right)\]
+    k!=k\cdot\left(k-1\right)\cdot\left(k-2\right)\cdot\cdots\cdot1=\Gamma\left(k+1\right)
 
 and has special cases of
 
@@ -265,7 +265,7 @@ and
 .. math::
    :nowrap:
 
-    \[ \left(\begin{array}{c} n\\ k\end{array}\right)=\frac{n!}{\left(n-k\right)!k!}.\]
+    \left(\begin{array}{c} n\\ k\end{array}\right)=\frac{n!}{\left(n-k\right)!k!}.
 
 If :math:`n<0` or :math:`k<0` or :math:`k>n` we define :math:`\left(\begin{array}{c} n\\ k\end{array}\right)=0`
 
