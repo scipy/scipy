@@ -116,7 +116,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False):
 
         # suppress warnings about log of zero
         with np.errstate(divide='ignore'):
-            out = log(sum(tmp), axis=axis)
+            out = log(sum(tmp, axis=axis))
 
         out += a_max
 
