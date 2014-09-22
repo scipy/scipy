@@ -21,6 +21,10 @@ This release requires Python 2.6, 2.7 or 3.2-3.3 and NumPy 1.5.1 or greater.
 New features
 ============
 
+`scipy.linalg` improvements
+---------------------------
+
+The function `scipy.linalg.invpascal` computes the inverse of a Pascal matrix.
 
 Deprecated features
 ===================
