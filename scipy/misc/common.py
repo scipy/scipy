@@ -6,6 +6,7 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 from __future__ import division, print_function, absolute_import
 
 import numpy
+import numpy as np
 from numpy import (exp, log, asarray, arange, newaxis, hstack, product, array,
                    zeros, eye, poly1d, r_, rollaxis, sum, fromstring, isfinite,
                    squeeze, amax, reshape)
@@ -109,9 +110,13 @@ def logsumexp(a, axis=None, b=None, keepdims=False):
 
         if b is not None:
             b = asarray(b)
-            out = log(sum(b * exp(a - reshape(a_max, sh_keepdims)), axis=axis))
+            tmp = b * exp(a - reshape(a_max, sh_keepdims))
         else:
-            out = log(sum(exp(a - reshape(a_max, sh_keepdims)), axis=axis))
+            tmp = exp(a - reshape(a_max, sh_keepdims))
+
+        # suppress warnings about log of zero
+        with np.errstate(divide='ignore'):
+            out = log(sum(tmp), axis=axis)
 
         out += a_max
 
@@ -129,9 +134,13 @@ def logsumexp(a, axis=None, b=None, keepdims=False):
 
         if b is not None:
             b = asarray(b)
-            out = log(sum(b * exp(a - a_max), axis=axis, keepdims=keepdims))
+            tmp = b * exp(a - a_max)
         else:
-            out = log(sum(exp(a - a_max), axis=axis, keepdims=keepdims))
+            tmp = exp(a - a_max)
+
+        # suppress warnings about log of zero
+        with np.errstate(divide='ignore'):
+            out = log(sum(tmp, axis=axis, keepdims=keepdims))
 
         if not keepdims:
             a_max = squeeze(a_max, axis=axis)
