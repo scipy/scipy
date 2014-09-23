@@ -674,6 +674,36 @@ add_newdoc("scipy.special", "ellipkinc",
 
     """)
 
+add_newdoc("scipy.special", "entr",
+    r"""
+    entr(x)
+
+    Elementwise function for computing entropy.
+
+    .. math:: \text{entr}(x) = \begin{cases} - x \log(x) & x > 0  \\ 0 & x = 0 \\ -\infty & \text{otherwise} \end{cases}
+
+    Parameters
+    ----------
+    x : ndarray
+        Input array.
+
+    Returns
+    -------
+    res : ndarray
+        The value of the elementwise entropy function at the given points x.
+
+    See Also
+    --------
+    kl_div, rel_entr
+
+    Notes
+    -----
+    This function is concave.
+
+    .. versionadded:: 0.14.0
+
+    """)
+
 add_newdoc("scipy.special", "erf",
     """
     erf(z)
@@ -1355,6 +1385,34 @@ add_newdoc("scipy.special", "hankel2e",
         Argument
     """)
 
+add_newdoc("scipy.special", "huber",
+    r"""
+    huber(delta, r)
+
+    Huber loss function.
+
+    .. math:: \text{huber}(\delta, r) = \begin{cases} \infty & \delta < 0  \\ \frac{1}{2}r^2 & 0 \le \delta, | r | \le \delta \\ \delta ( |r| - \frac{1}{2}\delta ) & \text{otherwise} \end{cases}
+
+    Parameters
+    ----------
+    delta : ndarray
+        Input array, indicating the quadratic vs. linear loss changepoint.
+    r : ndarray
+        Input array, possibly representing residuals.
+
+    Returns
+    -------
+    res : ndarray
+        The computed Huber loss function values.
+
+    Notes
+    -----
+    This function is convex in r.
+
+    .. versionadded:: 0.15.0
+
+    """)
+
 add_newdoc("scipy.special", "hyp1f1",
     """
     hyp1f1(a, b, x)
@@ -1717,6 +1775,38 @@ add_newdoc("scipy.special", "kerp",
     kerp(x)
 
     Derivative of the Kelvin function ker
+    """)
+
+add_newdoc("scipy.special", "kl_div",
+    r"""
+    kl_div(x, y)
+
+    Elementwise function for computing Kullback-Leibler divergence.
+
+    .. math:: \text{kl_div}(x, y) = \begin{cases} x \log(x / y) - x + y & x > 0, y > 0 \\ y & x = 0, y \ge 0 \\ \infty & \text{otherwise} \end{cases}
+
+    Parameters
+    ----------
+    x : ndarray
+        First input array.
+    y : ndarray
+        Second input array.
+
+    Returns
+    -------
+    res : ndarray
+        Output array.
+
+    See Also
+    --------
+    entr, rel_entr
+
+    Notes
+    -----
+    This function is non-negative and is jointly convex in x and y.
+
+    .. versionadded:: 0.14.0
+
     """)
 
 add_newdoc("scipy.special", "kn",
@@ -2706,6 +2796,34 @@ add_newdoc("scipy.special", "pro_rad2_cv",
         Value of the derivative vs x
     """)
 
+add_newdoc("scipy.special", "pseudo_huber",
+    r"""
+    pseudo_huber(delta, r)
+
+    Pseudo-Huber loss function.
+
+    .. math:: \text{pseudo_huber}(\delta, r) = \delta^2 \left( \sqrt{ 1 + \left( \frac{r}{\delta} \right)^2 } - 1 \right)
+
+    Parameters
+    ----------
+    delta : ndarray
+        Input array, indicating the soft quadratic vs. linear loss changepoint.
+    r : ndarray
+        Input array, possibly representing residuals.
+
+    Returns
+    -------
+    res : ndarray
+        The computed Pseudo-Huber loss function values.
+
+    Notes
+    -----
+    This function is convex in r.
+
+    .. versionadded:: 0.15.0
+
+    """)
+
 add_newdoc("scipy.special", "psi",
     """
     psi(z)
@@ -2724,6 +2842,38 @@ add_newdoc("scipy.special", "radian",
 
     Returns the angle given in (d)egrees, (m)inutes, and (s)econds in
     radians.
+    """)
+
+add_newdoc("scipy.special", "rel_entr",
+    r"""
+    rel_entr(x, y)
+
+    Elementwise function for computing relative entropy.
+
+    .. math:: \text{rel_entr}(x, y) = \begin{cases} x \log(x / y) & x > 0, y > 0 \\ 0 & x = 0, y \ge 0 \\ \infty & \text{otherwise} \end{cases}
+
+    Parameters
+    ----------
+    x : ndarray
+        First input array.
+    y : ndarray
+        Second input array.
+
+    Returns
+    -------
+    res : ndarray
+        Output array.
+
+    See Also
+    --------
+    entr, kl_div
+
+    Notes
+    -----
+    This function is jointly convex in x and y.
+
+    .. versionadded:: 0.14.0
+
     """)
 
 add_newdoc("scipy.special", "rgamma",

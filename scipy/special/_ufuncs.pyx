@@ -1435,6 +1435,9 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_ellik "ellik"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_ellpk "ellpk"(double) nogil
+from _convex_analysis cimport entr as _func_entr
+ctypedef double _proto_entr_t(double) nogil
+cdef _proto_entr_t *_proto_entr_t_var = &_func_entr
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_erf "erf"(double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -1635,6 +1638,9 @@ cdef extern from "_ufuncs_defs.h":
     cdef double complex _func_cbesh_wrap2 "cbesh_wrap2"(double, double complex) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double complex _func_cbesh_wrap2_e "cbesh_wrap2_e"(double, double complex) nogil
+from _convex_analysis cimport huber as _func_huber
+ctypedef double _proto_huber_t(double, double) nogil
+cdef _proto_huber_t *_proto_huber_t_var = &_func_huber
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_hyp1f1_wrap "hyp1f1_wrap"(double, double, double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -1716,6 +1722,9 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_ker_wrap "ker_wrap"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_kerp_wrap "kerp_wrap"(double) nogil
+from _convex_analysis cimport kl_div as _func_kl_div
+ctypedef double _proto_kl_div_t(double, double) nogil
+cdef _proto_kl_div_t *_proto_kl_div_t_var = &_func_kl_div
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_cbesk_wrap_real_int "cbesk_wrap_real_int"(int, double) nogil
 from _legacy cimport kn_unsafe as _func_kn_unsafe
@@ -1865,12 +1874,18 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_prolate_radial2_nocv_wrap "prolate_radial2_nocv_wrap"(double, double, double, double, double *) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef int _func_prolate_radial2_wrap "prolate_radial2_wrap"(double, double, double, double, double, double *, double *) nogil
+from _convex_analysis cimport pseudo_huber as _func_pseudo_huber
+ctypedef double _proto_pseudo_huber_t(double, double) nogil
+cdef _proto_pseudo_huber_t *_proto_pseudo_huber_t_var = &_func_pseudo_huber
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_psi "psi"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double complex _func_cpsi_wrap "cpsi_wrap"(double complex) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_radian "radian"(double, double, double) nogil
+from _convex_analysis cimport rel_entr as _func_rel_entr
+ctypedef double _proto_rel_entr_t(double, double) nogil
+cdef _proto_rel_entr_t *_proto_rel_entr_t_var = &_func_rel_entr
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_rgamma "rgamma"(double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -2691,8 +2706,6 @@ cdef char *ufunc_boxcox_doc = (
     "Returns `nan` if ``x < 0``.\n"
     "Returns `-inf` if ``x == 0`` and ``lmbda < 0``.\n"
     "\n"
-    ".. versionadded:: 0.14.0\n"
-    "\n"
     "Parameters\n"
     "----------\n"
     "x : array_like\n"
@@ -2704,6 +2717,11 @@ cdef char *ufunc_boxcox_doc = (
     "-------\n"
     "y : array\n"
     "    Transformed data.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "\n"
+    ".. versionadded:: 0.14.0\n"
     "\n"
     "Examples\n"
     "--------\n"
@@ -2744,8 +2762,6 @@ cdef char *ufunc_boxcox1p_doc = (
     "Returns `nan` if ``x < -1``.\n"
     "Returns `-inf` if ``x == -1`` and ``lmbda < 0``.\n"
     "\n"
-    ".. versionadded:: 0.14.0\n"
-    "\n"
     "Parameters\n"
     "----------\n"
     "x : array_like\n"
@@ -2757,6 +2773,11 @@ cdef char *ufunc_boxcox1p_doc = (
     "-------\n"
     "y : array\n"
     "    Transformed data.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "\n"
+    ".. versionadded:: 0.14.0\n"
     "\n"
     "Examples\n"
     "--------\n"
@@ -3481,6 +3502,50 @@ ufunc_ellipkm1_data[0] = &ufunc_ellipkm1_ptr[2*0]
 ufunc_ellipkm1_data[1] = &ufunc_ellipkm1_ptr[2*1]
 ellipkm1 = np.PyUFunc_FromFuncAndData(ufunc_ellipkm1_loops, ufunc_ellipkm1_data, ufunc_ellipkm1_types, 2, 1, 1, 0, "ellipkm1", ufunc_ellipkm1_doc, 0)
 
+cdef np.PyUFuncGenericFunction ufunc_entr_loops[2]
+cdef void *ufunc_entr_ptr[4]
+cdef void *ufunc_entr_data[2]
+cdef char ufunc_entr_types[4]
+cdef char *ufunc_entr_doc = (
+    "entr(x)\n"
+    "\n"
+    "Elementwise function for computing entropy.\n"
+    "\n"
+    ".. math:: \\text{entr}(x) = \\begin{cases} - x \\log(x) & x > 0  \\\\ 0 & x = 0 \\\\ -\\infty & \\text{otherwise} \\end{cases}\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : ndarray\n"
+    "    Input array.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "res : ndarray\n"
+    "    The value of the elementwise entropy function at the given points x.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "kl_div, rel_entr\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "This function is concave.\n"
+    "\n"
+    ".. versionadded:: 0.14.0")
+ufunc_entr_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_entr_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_entr_types[0] = <char>NPY_FLOAT
+ufunc_entr_types[1] = <char>NPY_FLOAT
+ufunc_entr_types[2] = <char>NPY_DOUBLE
+ufunc_entr_types[3] = <char>NPY_DOUBLE
+ufunc_entr_ptr[2*0] = <void*>_func_entr
+ufunc_entr_ptr[2*0+1] = <void*>(<char*>"entr")
+ufunc_entr_ptr[2*1] = <void*>_func_entr
+ufunc_entr_ptr[2*1+1] = <void*>(<char*>"entr")
+ufunc_entr_data[0] = &ufunc_entr_ptr[2*0]
+ufunc_entr_data[1] = &ufunc_entr_ptr[2*1]
+entr = np.PyUFunc_FromFuncAndData(ufunc_entr_loops, ufunc_entr_data, ufunc_entr_types, 2, 1, 1, 0, "entr", ufunc_entr_doc, 0)
+
 cdef np.PyUFuncGenericFunction ufunc_erf_loops[4]
 cdef void *ufunc_erf_ptr[8]
 cdef void *ufunc_erf_data[4]
@@ -3594,6 +3659,9 @@ cdef char *ufunc_erfcx_doc = (
     "\n"
     "Scaled complementary error function, exp(x^2) erfc(x).\n"
     "\n"
+    "Notes\n"
+    "-----\n"
+    "\n"
     ".. versionadded:: 0.12.0\n"
     "\n"
     "References\n"
@@ -3634,6 +3702,9 @@ cdef char *ufunc_erfi_doc = (
     "erfi(z)\n"
     "\n"
     "Imaginary error function, -i erf(i z).\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
     "\n"
     ".. versionadded:: 0.12.0\n"
     "\n"
@@ -4564,8 +4635,6 @@ cdef char *ufunc_expit_doc = (
     "The expit function, also known as the logistic function, is defined as\n"
     "expit(x) = 1/(1+exp(-x)). It is the inverse of the logit function.\n"
     "\n"
-    ".. versionadded:: 0.10.0\n"
-    "\n"
     "Parameters\n"
     "----------\n"
     "x : ndarray\n"
@@ -4581,7 +4650,9 @@ cdef char *ufunc_expit_doc = (
     "-----\n"
     "As a ufunc logit takes a number of optional\n"
     "keyword arguments. For more information\n"
-    "see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_")
+    "see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_\n"
+    "\n"
+    ".. versionadded:: 0.10.0")
 ufunc_expit_loops[0] = <np.PyUFuncGenericFunction>loop_f_f__As_f_f
 ufunc_expit_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_expit_loops[2] = <np.PyUFuncGenericFunction>loop_g_g__As_g_g
@@ -5459,6 +5530,50 @@ ufunc_hankel2e_ptr[2*1+1] = <void*>(<char*>"hankel2e")
 ufunc_hankel2e_data[0] = &ufunc_hankel2e_ptr[2*0]
 ufunc_hankel2e_data[1] = &ufunc_hankel2e_ptr[2*1]
 hankel2e = np.PyUFunc_FromFuncAndData(ufunc_hankel2e_loops, ufunc_hankel2e_data, ufunc_hankel2e_types, 2, 2, 1, 0, "hankel2e", ufunc_hankel2e_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_huber_loops[2]
+cdef void *ufunc_huber_ptr[4]
+cdef void *ufunc_huber_data[2]
+cdef char ufunc_huber_types[6]
+cdef char *ufunc_huber_doc = (
+    "huber(delta, r)\n"
+    "\n"
+    "Huber loss function.\n"
+    "\n"
+    ".. math:: \\text{huber}(\\delta, r) = \\begin{cases} \\infty & \\delta < 0  \\\\ \\frac{1}{2}r^2 & 0 \\le \\delta, | r | \\le \\delta \\\\ \\delta ( |r| - \\frac{1}{2}\\delta ) & \\text{otherwise} \\end{cases}\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "delta : ndarray\n"
+    "    Input array, indicating the quadratic vs. linear loss changepoint.\n"
+    "r : ndarray\n"
+    "    Input array, possibly representing residuals.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "res : ndarray\n"
+    "    The computed Huber loss function values.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "This function is convex in r.\n"
+    "\n"
+    ".. versionadded:: 0.15.0")
+ufunc_huber_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_huber_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_huber_types[0] = <char>NPY_FLOAT
+ufunc_huber_types[1] = <char>NPY_FLOAT
+ufunc_huber_types[2] = <char>NPY_FLOAT
+ufunc_huber_types[3] = <char>NPY_DOUBLE
+ufunc_huber_types[4] = <char>NPY_DOUBLE
+ufunc_huber_types[5] = <char>NPY_DOUBLE
+ufunc_huber_ptr[2*0] = <void*>_func_huber
+ufunc_huber_ptr[2*0+1] = <void*>(<char*>"huber")
+ufunc_huber_ptr[2*1] = <void*>_func_huber
+ufunc_huber_ptr[2*1+1] = <void*>(<char*>"huber")
+ufunc_huber_data[0] = &ufunc_huber_ptr[2*0]
+ufunc_huber_data[1] = &ufunc_huber_ptr[2*1]
+huber = np.PyUFunc_FromFuncAndData(ufunc_huber_loops, ufunc_huber_data, ufunc_huber_types, 2, 2, 1, 0, "huber", ufunc_huber_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_hyp1f1_loops[4]
 cdef void *ufunc_hyp1f1_ptr[8]
@@ -6481,6 +6596,54 @@ ufunc_kerp_data[0] = &ufunc_kerp_ptr[2*0]
 ufunc_kerp_data[1] = &ufunc_kerp_ptr[2*1]
 kerp = np.PyUFunc_FromFuncAndData(ufunc_kerp_loops, ufunc_kerp_data, ufunc_kerp_types, 2, 1, 1, 0, "kerp", ufunc_kerp_doc, 0)
 
+cdef np.PyUFuncGenericFunction ufunc_kl_div_loops[2]
+cdef void *ufunc_kl_div_ptr[4]
+cdef void *ufunc_kl_div_data[2]
+cdef char ufunc_kl_div_types[6]
+cdef char *ufunc_kl_div_doc = (
+    "kl_div(x, y)\n"
+    "\n"
+    "Elementwise function for computing Kullback-Leibler divergence.\n"
+    "\n"
+    ".. math:: \\text{kl_div}(x, y) = \\begin{cases} x \\log(x / y) - x + y & x > 0, y > 0 \\\\ y & x = 0, y \\ge 0 \\\\ \\infty & \\text{otherwise} \\end{cases}\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : ndarray\n"
+    "    First input array.\n"
+    "y : ndarray\n"
+    "    Second input array.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "res : ndarray\n"
+    "    Output array.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "entr, rel_entr\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "This function is non-negative and is jointly convex in x and y.\n"
+    "\n"
+    ".. versionadded:: 0.14.0")
+ufunc_kl_div_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_kl_div_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_kl_div_types[0] = <char>NPY_FLOAT
+ufunc_kl_div_types[1] = <char>NPY_FLOAT
+ufunc_kl_div_types[2] = <char>NPY_FLOAT
+ufunc_kl_div_types[3] = <char>NPY_DOUBLE
+ufunc_kl_div_types[4] = <char>NPY_DOUBLE
+ufunc_kl_div_types[5] = <char>NPY_DOUBLE
+ufunc_kl_div_ptr[2*0] = <void*>_func_kl_div
+ufunc_kl_div_ptr[2*0+1] = <void*>(<char*>"kl_div")
+ufunc_kl_div_ptr[2*1] = <void*>_func_kl_div
+ufunc_kl_div_ptr[2*1+1] = <void*>(<char*>"kl_div")
+ufunc_kl_div_data[0] = &ufunc_kl_div_ptr[2*0]
+ufunc_kl_div_data[1] = &ufunc_kl_div_ptr[2*1]
+kl_div = np.PyUFunc_FromFuncAndData(ufunc_kl_div_loops, ufunc_kl_div_data, ufunc_kl_div_types, 2, 2, 1, 0, "kl_div", ufunc_kl_div_doc, 0)
+
 cdef np.PyUFuncGenericFunction ufunc_kn_loops[4]
 cdef void *ufunc_kn_ptr[8]
 cdef void *ufunc_kn_data[4]
@@ -6720,8 +6883,6 @@ cdef char *ufunc_logit_doc = (
     "Note that logit(0) = -inf, logit(1) = inf, and logit(p)\n"
     "for p<0 or p>1 yields nan.\n"
     "\n"
-    ".. versionadded:: 0.10.0\n"
-    "\n"
     "Parameters\n"
     "----------\n"
     "x : ndarray\n"
@@ -6737,7 +6898,9 @@ cdef char *ufunc_logit_doc = (
     "-----\n"
     "As a ufunc logit takes a number of optional\n"
     "keyword arguments. For more information\n"
-    "see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_")
+    "see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_\n"
+    "\n"
+    ".. versionadded:: 0.10.0")
 ufunc_logit_loops[0] = <np.PyUFuncGenericFunction>loop_f_f__As_f_f
 ufunc_logit_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_logit_loops[2] = <np.PyUFuncGenericFunction>loop_g_g__As_g_g
@@ -7904,7 +8067,7 @@ cdef char *ufunc_obl_ang1_doc = (
     "\n"
     "Oblate spheroidal angular function of the first kind and its derivative\n"
     "\n"
-    "Computes the oblate sheroidal angular function of the first kind\n"
+    "Computes the oblate spheroidal angular function of the first kind\n"
     "and its derivative (with respect to x) for mode parameters m>=0\n"
     "and n>=m, spheroidal parameter c and ``|x| < 1.0``.\n"
     "\n"
@@ -7943,9 +8106,9 @@ cdef char ufunc_obl_ang1_cv_types[14]
 cdef char *ufunc_obl_ang1_cv_doc = (
     "obl_ang1_cv(m, n, c, cv, x)\n"
     "\n"
-    "Oblate sheroidal angular function obl_ang1 for precomputed characteristic value\n"
+    "Oblate spheroidal angular function obl_ang1 for precomputed characteristic value\n"
     "\n"
-    "Computes the oblate sheroidal angular function of the first kind\n"
+    "Computes the oblate spheroidal angular function of the first kind\n"
     "and its derivative (with respect to x) for mode parameters m>=0\n"
     "and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires\n"
     "pre-computed characteristic value.\n"
@@ -8018,7 +8181,7 @@ cdef char *ufunc_obl_rad1_doc = (
     "\n"
     "Oblate spheroidal radial function of the first kind and its derivative\n"
     "\n"
-    "Computes the oblate sheroidal radial function of the first kind\n"
+    "Computes the oblate spheroidal radial function of the first kind\n"
     "and its derivative (with respect to x) for mode parameters m>=0\n"
     "and n>=m, spheroidal parameter c and ``|x| < 1.0``.\n"
     "\n"
@@ -8057,9 +8220,9 @@ cdef char ufunc_obl_rad1_cv_types[14]
 cdef char *ufunc_obl_rad1_cv_doc = (
     "obl_rad1_cv(m,n,c,cv,x)\n"
     "\n"
-    "Oblate sheroidal radial function obl_rad1 for precomputed characteristic value\n"
+    "Oblate spheroidal radial function obl_rad1 for precomputed characteristic value\n"
     "\n"
-    "Computes the oblate sheroidal radial function of the first kind\n"
+    "Computes the oblate spheroidal radial function of the first kind\n"
     "and its derivative (with respect to x) for mode parameters m>=0\n"
     "and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires\n"
     "pre-computed characteristic value.\n"
@@ -8103,7 +8266,7 @@ cdef char *ufunc_obl_rad2_doc = (
     "\n"
     "Oblate spheroidal radial function of the second kind and its derivative.\n"
     "\n"
-    "Computes the oblate sheroidal radial function of the second kind\n"
+    "Computes the oblate spheroidal radial function of the second kind\n"
     "and its derivative (with respect to x) for mode parameters m>=0\n"
     "and n>=m, spheroidal parameter c and ``|x| < 1.0``.\n"
     "\n"
@@ -8142,9 +8305,9 @@ cdef char ufunc_obl_rad2_cv_types[14]
 cdef char *ufunc_obl_rad2_cv_doc = (
     "obl_rad2_cv(m,n,c,cv,x)\n"
     "\n"
-    "Oblate sheroidal radial function obl_rad2 for precomputed characteristic value\n"
+    "Oblate spheroidal radial function obl_rad2 for precomputed characteristic value\n"
     "\n"
-    "Computes the oblate sheroidal radial function of the second kind\n"
+    "Computes the oblate spheroidal radial function of the second kind\n"
     "and its derivative (with respect to x) for mode parameters m>=0\n"
     "and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires\n"
     "pre-computed characteristic value.\n"
@@ -8485,7 +8648,7 @@ cdef char *ufunc_pro_ang1_doc = (
     "\n"
     "Prolate spheroidal angular function of the first kind and its derivative\n"
     "\n"
-    "Computes the prolate sheroidal angular function of the first kind\n"
+    "Computes the prolate spheroidal angular function of the first kind\n"
     "and its derivative (with respect to x) for mode parameters m>=0\n"
     "and n>=m, spheroidal parameter c and ``|x| < 1.0``.\n"
     "\n"
@@ -8524,9 +8687,9 @@ cdef char ufunc_pro_ang1_cv_types[14]
 cdef char *ufunc_pro_ang1_cv_doc = (
     "pro_ang1_cv(m,n,c,cv,x)\n"
     "\n"
-    "Prolate sheroidal angular function pro_ang1 for precomputed characteristic value\n"
+    "Prolate spheroidal angular function pro_ang1 for precomputed characteristic value\n"
     "\n"
-    "Computes the prolate sheroidal angular function of the first kind\n"
+    "Computes the prolate spheroidal angular function of the first kind\n"
     "and its derivative (with respect to x) for mode parameters m>=0\n"
     "and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires\n"
     "pre-computed characteristic value.\n"
@@ -8599,7 +8762,7 @@ cdef char *ufunc_pro_rad1_doc = (
     "\n"
     "Prolate spheroidal radial function of the first kind and its derivative\n"
     "\n"
-    "Computes the prolate sheroidal radial function of the first kind\n"
+    "Computes the prolate spheroidal radial function of the first kind\n"
     "and its derivative (with respect to x) for mode parameters m>=0\n"
     "and n>=m, spheroidal parameter c and ``|x| < 1.0``.\n"
     "\n"
@@ -8638,9 +8801,9 @@ cdef char ufunc_pro_rad1_cv_types[14]
 cdef char *ufunc_pro_rad1_cv_doc = (
     "pro_rad1_cv(m,n,c,cv,x)\n"
     "\n"
-    "Prolate sheroidal radial function pro_rad1 for precomputed characteristic value\n"
+    "Prolate spheroidal radial function pro_rad1 for precomputed characteristic value\n"
     "\n"
-    "Computes the prolate sheroidal radial function of the first kind\n"
+    "Computes the prolate spheroidal radial function of the first kind\n"
     "and its derivative (with respect to x) for mode parameters m>=0\n"
     "and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires\n"
     "pre-computed characteristic value.\n"
@@ -8684,7 +8847,7 @@ cdef char *ufunc_pro_rad2_doc = (
     "\n"
     "Prolate spheroidal radial function of the secon kind and its derivative\n"
     "\n"
-    "Computes the prolate sheroidal radial function of the second kind\n"
+    "Computes the prolate spheroidal radial function of the second kind\n"
     "and its derivative (with respect to x) for mode parameters m>=0\n"
     "and n>=m, spheroidal parameter c and |x|<1.0.\n"
     "\n"
@@ -8723,9 +8886,9 @@ cdef char ufunc_pro_rad2_cv_types[14]
 cdef char *ufunc_pro_rad2_cv_doc = (
     "pro_rad2_cv(m,n,c,cv,x)\n"
     "\n"
-    "Prolate sheroidal radial function pro_rad2 for precomputed characteristic value\n"
+    "Prolate spheroidal radial function pro_rad2 for precomputed characteristic value\n"
     "\n"
-    "Computes the prolate sheroidal radial function of the second kind\n"
+    "Computes the prolate spheroidal radial function of the second kind\n"
     "and its derivative (with respect to x) for mode parameters m>=0\n"
     "and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires\n"
     "pre-computed characteristic value.\n"
@@ -8759,6 +8922,50 @@ ufunc_pro_rad2_cv_ptr[2*1+1] = <void*>(<char*>"pro_rad2_cv")
 ufunc_pro_rad2_cv_data[0] = &ufunc_pro_rad2_cv_ptr[2*0]
 ufunc_pro_rad2_cv_data[1] = &ufunc_pro_rad2_cv_ptr[2*1]
 pro_rad2_cv = np.PyUFunc_FromFuncAndData(ufunc_pro_rad2_cv_loops, ufunc_pro_rad2_cv_data, ufunc_pro_rad2_cv_types, 2, 5, 2, 0, "pro_rad2_cv", ufunc_pro_rad2_cv_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_pseudo_huber_loops[2]
+cdef void *ufunc_pseudo_huber_ptr[4]
+cdef void *ufunc_pseudo_huber_data[2]
+cdef char ufunc_pseudo_huber_types[6]
+cdef char *ufunc_pseudo_huber_doc = (
+    "pseudo_huber(delta, r)\n"
+    "\n"
+    "Pseudo-Huber loss function.\n"
+    "\n"
+    ".. math:: \\text{pseudo_huber}(\\delta, r) = \\delta^2 \\left( \\sqrt{ 1 + \\left( \\frac{r}{\\delta} \\right)^2 } - 1 \\right)\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "delta : ndarray\n"
+    "    Input array, indicating the soft quadratic vs. linear loss changepoint.\n"
+    "r : ndarray\n"
+    "    Input array, possibly representing residuals.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "res : ndarray\n"
+    "    The computed Pseudo-Huber loss function values.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "This function is convex in r.\n"
+    "\n"
+    ".. versionadded:: 0.15.0")
+ufunc_pseudo_huber_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_pseudo_huber_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_pseudo_huber_types[0] = <char>NPY_FLOAT
+ufunc_pseudo_huber_types[1] = <char>NPY_FLOAT
+ufunc_pseudo_huber_types[2] = <char>NPY_FLOAT
+ufunc_pseudo_huber_types[3] = <char>NPY_DOUBLE
+ufunc_pseudo_huber_types[4] = <char>NPY_DOUBLE
+ufunc_pseudo_huber_types[5] = <char>NPY_DOUBLE
+ufunc_pseudo_huber_ptr[2*0] = <void*>_func_pseudo_huber
+ufunc_pseudo_huber_ptr[2*0+1] = <void*>(<char*>"pseudo_huber")
+ufunc_pseudo_huber_ptr[2*1] = <void*>_func_pseudo_huber
+ufunc_pseudo_huber_ptr[2*1+1] = <void*>(<char*>"pseudo_huber")
+ufunc_pseudo_huber_data[0] = &ufunc_pseudo_huber_ptr[2*0]
+ufunc_pseudo_huber_data[1] = &ufunc_pseudo_huber_ptr[2*1]
+pseudo_huber = np.PyUFunc_FromFuncAndData(ufunc_pseudo_huber_loops, ufunc_pseudo_huber_data, ufunc_pseudo_huber_types, 2, 2, 1, 0, "pseudo_huber", ufunc_pseudo_huber_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_psi_loops[4]
 cdef void *ufunc_psi_ptr[8]
@@ -8825,6 +9032,54 @@ ufunc_radian_ptr[2*1+1] = <void*>(<char*>"radian")
 ufunc_radian_data[0] = &ufunc_radian_ptr[2*0]
 ufunc_radian_data[1] = &ufunc_radian_ptr[2*1]
 radian = np.PyUFunc_FromFuncAndData(ufunc_radian_loops, ufunc_radian_data, ufunc_radian_types, 2, 3, 1, 0, "radian", ufunc_radian_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_rel_entr_loops[2]
+cdef void *ufunc_rel_entr_ptr[4]
+cdef void *ufunc_rel_entr_data[2]
+cdef char ufunc_rel_entr_types[6]
+cdef char *ufunc_rel_entr_doc = (
+    "rel_entr(x, y)\n"
+    "\n"
+    "Elementwise function for computing relative entropy.\n"
+    "\n"
+    ".. math:: \\text{rel_entr}(x, y) = \\begin{cases} x \\log(x / y) & x > 0, y > 0 \\\\ 0 & x = 0, y \\ge 0 \\\\ \\infty & \\text{otherwise} \\end{cases}\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : ndarray\n"
+    "    First input array.\n"
+    "y : ndarray\n"
+    "    Second input array.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "res : ndarray\n"
+    "    Output array.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "entr, kl_div\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "This function is jointly convex in x and y.\n"
+    "\n"
+    ".. versionadded:: 0.14.0")
+ufunc_rel_entr_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_rel_entr_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_rel_entr_types[0] = <char>NPY_FLOAT
+ufunc_rel_entr_types[1] = <char>NPY_FLOAT
+ufunc_rel_entr_types[2] = <char>NPY_FLOAT
+ufunc_rel_entr_types[3] = <char>NPY_DOUBLE
+ufunc_rel_entr_types[4] = <char>NPY_DOUBLE
+ufunc_rel_entr_types[5] = <char>NPY_DOUBLE
+ufunc_rel_entr_ptr[2*0] = <void*>_func_rel_entr
+ufunc_rel_entr_ptr[2*0+1] = <void*>(<char*>"rel_entr")
+ufunc_rel_entr_ptr[2*1] = <void*>_func_rel_entr
+ufunc_rel_entr_ptr[2*1+1] = <void*>(<char*>"rel_entr")
+ufunc_rel_entr_data[0] = &ufunc_rel_entr_ptr[2*0]
+ufunc_rel_entr_data[1] = &ufunc_rel_entr_ptr[2*1]
+rel_entr = np.PyUFunc_FromFuncAndData(ufunc_rel_entr_loops, ufunc_rel_entr_data, ufunc_rel_entr_types, 2, 2, 1, 0, "rel_entr", ufunc_rel_entr_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_rgamma_loops[4]
 cdef void *ufunc_rgamma_ptr[8]
@@ -9357,8 +9612,6 @@ cdef char *ufunc_xlog1py_doc = (
     "\n"
     "Compute ``x*log1p(y)`` so that the result is 0 if `x = 0`.\n"
     "\n"
-    ".. versionadded:: 0.13.0\n"
-    "\n"
     "Parameters\n"
     "----------\n"
     "x : array_like\n"
@@ -9369,7 +9622,12 @@ cdef char *ufunc_xlog1py_doc = (
     "Returns\n"
     "-------\n"
     "z : array_like\n"
-    "    Computed x*log1p(y)")
+    "    Computed x*log1p(y)\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "\n"
+    ".. versionadded:: 0.13.0")
 ufunc_xlog1py_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_xlog1py_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_xlog1py_types[0] = <char>NPY_FLOAT
@@ -9395,8 +9653,6 @@ cdef char *ufunc_xlogy_doc = (
     "\n"
     "Compute ``x*log(y)`` so that the result is 0 if `x = 0`.\n"
     "\n"
-    ".. versionadded:: 0.13.0\n"
-    "\n"
     "Parameters\n"
     "----------\n"
     "x : array_like\n"
@@ -9407,7 +9663,12 @@ cdef char *ufunc_xlogy_doc = (
     "Returns\n"
     "-------\n"
     "z : array_like\n"
-    "    Computed x*log(y)")
+    "    Computed x*log(y)\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "\n"
+    ".. versionadded:: 0.13.0")
 ufunc_xlogy_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_xlogy_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_xlogy_loops[2] = <np.PyUFuncGenericFunction>loop_D_DD__As_FF_F

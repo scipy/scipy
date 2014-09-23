@@ -293,6 +293,11 @@ xlog1py -- xlog1py: dd->d                                  -- _xlogy.pxd
 poch -- poch: dd->d                                        -- c_misc/misc.h
 boxcox -- boxcox: dd->d                                    -- _boxcox.pxd
 boxcox1p -- boxcox1p: dd->d                                -- _boxcox.pxd
+entr -- entr: d->d                                         -- _convex_analysis.pxd
+kl_div -- kl_div: dd->d                                    -- _convex_analysis.pxd
+rel_entr -- rel_entr: dd->d                                -- _convex_analysis.pxd
+huber -- huber: dd->d                                      -- _convex_analysis.pxd
+pseudo_huber -- pseudo_huber: dd->d                        -- _convex_analysis.pxd
 """
 
 #---------------------------------------------------------------------------------

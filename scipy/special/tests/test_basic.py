@@ -3012,7 +3012,7 @@ def test_entr():
         else:
             return -special.xlogy(x, x)
     values = (0, 0.5, 1.0, np.inf)
-    signs = [1]
+    signs = [-1, 1]
     arr = []
     for sgn, v in itertools.product(signs, values):
         arr.append(sgn * v)
@@ -3032,9 +3032,9 @@ def test_kl_div():
         elif x == 0:
             return y
         else:
-            return special.xlogy(x, x) - special.xlogy(x, y) - x + y
+            return special.xlogy(x, x/y) - x + y
     values = (0, 0.5, 1.0)
-    signs = [1]
+    signs = [-1, 1]
     arr = []
     for sgna, va, sgnb, vb in itertools.product(signs, values, signs, values):
         arr.append((sgna*va, sgnb*vb))
@@ -3045,15 +3045,52 @@ def test_kl_div():
 
 def test_rel_entr():
     def xfunc(x, y):
-        return special.xlogy(x, x) - special.xlogy(x, y)
+        if x > 0 and y > 0:
+            return special.xlogy(x, x/y)
+        elif x == 0 and y >= 0:
+            return 0
+        else:
+            return np.inf
     values = (0, 0.5, 1.0)
-    signs = [1]
+    signs = [-1, 1]
     arr = []
     for sgna, va, sgnb, vb in itertools.product(signs, values, signs, values):
         arr.append((sgna*va, sgnb*vb))
     z = np.array(arr, dtype=float)
     w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
     assert_func_equal(special.rel_entr, w, z, rtol=1e-13, atol=1e-13)
+
+
+def test_huber():
+    assert_equal(special.huber(-1, 1.5), np.inf)
+    assert_allclose(special.huber(2, 1.5), 0.5 * np.square(1.5))
+    assert_allclose(special.huber(2, 2.5), 2 * (2.5 - 0.5 * 2))
+
+    def xfunc(delta, r):
+        if delta < 0:
+            return np.inf
+        elif np.abs(r) < delta:
+            return 0.5 * np.square(r)
+        else:
+            return delta * (np.abs(r) - 0.5 * delta)
+
+    z = np.random.randn(10, 2)
+    w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
+    assert_func_equal(special.huber, w, z, rtol=1e-13, atol=1e-13)
+
+
+def test_pseudo_huber():
+    def xfunc(delta, r):
+        if delta < 0:
+            return np.inf
+        elif (not delta) or (not r):
+            return 0
+        else:
+            return delta**2 * (np.sqrt(1 + (r/delta)**2) - 1)
+
+    z = np.array(np.random.randn(10, 2).tolist() + [[0, 0.5], [0.5, 0]])
+    w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
+    assert_func_equal(special.pseudo_huber, w, z, rtol=1e-13, atol=1e-13)
 
 
 if __name__ == "__main__":
