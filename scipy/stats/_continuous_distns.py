@@ -1024,13 +1024,12 @@ class exponpow_gen(rv_continuous):
 
     """
     def _pdf(self, x, b):
-        xbm1 = x**(b-1.0)
-        xb = xbm1 * x
-        return exp(1)*b*xbm1 * exp(xb - exp(xb))
+        return exp(self._logpdf(x, b))
 
     def _logpdf(self, x, b):
-        xb = x**(b-1.0)*x
-        return 1 + log(b) + (b-1.0)*log(x) + xb - exp(xb)
+        xb = x**b
+        f = 1 + log(b) + special.xlogy(b - 1.0, x) + xb - exp(xb)
+        return f
 
     def _cdf(self, x, b):
         return -special.expm1(-special.expm1(x**b))
@@ -1845,7 +1844,10 @@ class gengamma_gen(rv_continuous):
         return (a > 0) & (c != 0)
 
     def _pdf(self, x, a, c):
-        return abs(c) * exp((c*a-1)*log(x)-x**c - gamln(a))
+        return exp(self._logpdf(x, a, c))
+
+    def _logpdf(self, x, a, c):
+        return log(abs(c)) + special.xlogy(c*a - 1, x) - x**c - gamln(a)
 
     def _cdf(self, x, a, c):
         val = special.gammainc(a, x**c)
@@ -3394,7 +3396,7 @@ class powerlaw_gen(rv_continuous):
         return a*x**(a-1.0)
 
     def _logpdf(self, x, a):
-        return log(a) + (a-1)*log(x)
+        return log(a) + special.xlogy(a - 1, x)
 
     def _cdf(self, x, a):
         return x**(a*1.0)
