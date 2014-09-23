@@ -266,7 +266,8 @@ class arcsine_gen(rv_continuous):
     The probability density function for `arcsine` is::
 
         arcsine.pdf(x) = 1/(pi*sqrt(x*(1-x)))
-        for 0 < x < 1.
+
+    for ``0 < x < 1``.
 
     %(example)s
 
@@ -1406,8 +1407,8 @@ class genpareto_gen(rv_continuous):
 
         genpareto.pdf(x, c) = (1 + c * x)**(-1 - 1/c)
 
-    for ``c >= 0`` ``x >= 0``, and
-    for ``c < 0`` ``0 <= x <= -1/c``
+    defined for ``x >= 0`` if ``c >=0``, and for 
+    ``0 <= x <= -1/c`` if ``c < 0``.
 
     For ``c == 0``, `genpareto` reduces to the exponential
     distribution, `expon`::
@@ -2674,8 +2675,8 @@ class loglaplace_gen(rv_continuous):
     -----
     The probability density function for `loglaplace` is::
 
-    loglaplace.pdf(x, c) = c / 2 * x**(c-1),   for 0 < x < 1
-                         = c / 2 * x**(-c-1),  for x >= 1
+        loglaplace.pdf(x, c) = c / 2 * x**(c-1),   for 0 < x < 1
+                             = c / 2 * x**(-c-1),  for x >= 1
 
     for ``c > 0``.
 
