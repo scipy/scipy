@@ -265,6 +265,8 @@ def find_repeats(arr):
 ########
 
 
+@np.deprecate(message="scipy.stats.nanmean is deprecated in scipy 0.15.0 "
+                   "in favour of numpy.nanmean.")
 def nanmean(x, axis=0):
     """
     Compute the mean over the given axis ignoring nans.
@@ -297,8 +299,6 @@ def nanmean(x, axis=0):
     1.0
 
     """
-    warnings.warn("sp.stats.nanmean is deprecated in favour of numpy.nanmean",
-                  DeprecationWarning)
     x, axis = _chk_asarray(x, axis)
     x = x.copy()
     Norig = x.shape[axis]
@@ -309,6 +309,9 @@ def nanmean(x, axis=0):
     return np.mean(x, axis) / factor
 
 
+@np.deprecate(message="scipy.stats.nanstd is deprecated in scipy 0.15 "
+                      "in favour of numpy.nanstd.\nNote that numpy.nanstd "
+                      "has a different signature.")
 def nanstd(x, axis=0, bias=False):
     """
     Compute the standard deviation over the given axis, ignoring nans.
@@ -348,9 +351,6 @@ def nanstd(x, axis=0, bias=False):
     2.9154759474226504
 
     """
-    warnings.warn("sp.stats.nanstd is deprecated in favour of numpy.nanstd\n" +
-                  "Note that numpy.nanstd has a different signature",
-                  DeprecationWarning)
     x, axis = _chk_asarray(x, axis)
     x = x.copy()
     Norig = x.shape[axis]
@@ -407,7 +407,8 @@ def _nanmedian(arr1d):  # This only works on 1d arrays
         x = x[:-s.size]
     return np.median(x, overwrite_input=True)
 
-
+@np.deprecate(message="scipy.stats.nanmedian is deprecated in scipy 0.15 "
+                      "in favour of numpy.nanmedian.")
 def nanmedian(x, axis=0):
     """
     Compute the median along the given axis ignoring nan values.
@@ -455,8 +456,6 @@ def nanmedian(x, axis=0):
     array([  2. ,   9. ,  15. ,  20.5,  26. ])
 
     """
-    warnings.warn("sp.stats.nanmedian is deprecated in favour of np.nanmedian",
-                  DeprecationWarning)
     x, axis = _chk_asarray(x, axis)
     if x.ndim == 0:
         return float(x.item())

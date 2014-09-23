@@ -123,40 +123,46 @@ class TestNanFunc(TestCase):
 
     def test_nanmean_none(self):
         # Check nanmean when no values are nan.
-        m = stats.nanmean(X)
-        assert_approx_equal(m, X[4])
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            m = stats.nanmean(X)
+            assert_approx_equal(m, X[4])
 
     def test_nanmean_some(self):
         # Check nanmean when some values only are nan.
-        m = stats.nanmean(self.Xsome)
-        assert_approx_equal(m, 5.5)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            m = stats.nanmean(self.Xsome)
+            assert_approx_equal(m, 5.5)
 
     def test_nanmean_all(self):
         # Check nanmean when all values are nan.
-        olderr = np.seterr(all='ignore')
-        try:
+        with warnings.catch_warnings():
+            warns = (DeprecationWarning, RuntimeWarning)
+            warnings.simplefilter('ignore', warns)
             m = stats.nanmean(self.Xall)
-        finally:
-            np.seterr(**olderr)
         assert_(np.isnan(m))
 
     def test_nanstd_none(self):
         # Check nanstd when no values are nan.
-        s = stats.nanstd(self.X)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            s = stats.nanstd(self.X)
         assert_approx_equal(s, np.std(self.X, ddof=1))
 
     def test_nanstd_some(self):
         # Check nanstd when some values only are nan.
-        s = stats.nanstd(self.Xsome)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            s = stats.nanstd(self.Xsome)
         assert_approx_equal(s, np.std(self.Xsomet, ddof=1))
 
     def test_nanstd_all(self):
         # Check nanstd when all values are nan.
-        olderr = np.seterr(all='ignore')
-        try:
+        with warnings.catch_warnings():
+            warns = (DeprecationWarning, RuntimeWarning)
+            warnings.simplefilter('ignore', warns)
             s = stats.nanstd(self.Xall)
-        finally:
-            np.seterr(**olderr)
         assert_(np.isnan(s))
 
     def test_nanstd_bias_kw(self):
@@ -165,24 +171,31 @@ class TestNanFunc(TestCase):
 
     def test_nanstd_negative_axis(self):
         x = np.array([1, 2, 3])
-        assert_equal(stats.nanstd(x, -1), 1)
+        res = stats.nanstd(x, -1)
+        assert_equal(res, 1)
 
     def test_nanmedian_none(self):
         # Check nanmedian when no values are nan.
-        m = stats.nanmedian(self.X)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            m = stats.nanmedian(self.X)
         assert_approx_equal(m, np.median(self.X))
 
     def test_nanmedian_axis(self):
         # Check nanmedian with axis
         X = self.X.reshape(3,3)
-        m = stats.nanmedian(X, axis=0)
-        assert_equal(m, np.median(X, axis=0))
-        m = stats.nanmedian(X, axis=1)
-        assert_equal(m, np.median(X, axis=1))
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            m = stats.nanmedian(X, axis=0)
+            assert_equal(m, np.median(X, axis=0))
+            m = stats.nanmedian(X, axis=1)
+            assert_equal(m, np.median(X, axis=1))
 
     def test_nanmedian_some(self):
         # Check nanmedian when some values only are nan.
-        m = stats.nanmedian(self.Xsome)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            m = stats.nanmedian(self.Xsome)
         assert_approx_equal(m, np.median(self.Xsomet))
 
     def test_nanmedian_all(self):
@@ -191,8 +204,8 @@ class TestNanFunc(TestCase):
             warnings.simplefilter('always')
             m = stats.nanmedian(self.Xall)
             assert_(np.isnan(m))
-            assert_equal(len(w), 1)
-            assert_(issubclass(w[0].category, RuntimeWarning))
+            assert_equal(len(w), 2)  # Deprecation & RuntimeWarning
+            assert_(issubclass(w[1].category, RuntimeWarning))
 
     def test_nanmedian_all_axis(self):
         # Check nanmedian when all values are nan.
@@ -200,8 +213,8 @@ class TestNanFunc(TestCase):
             warnings.simplefilter('always')
             m = stats.nanmedian(self.Xall.reshape(3,3), axis=1)
             assert_(np.isnan(m).all())
-            assert_equal(len(w), 3)
-            assert_(issubclass(w[0].category, RuntimeWarning))
+            assert_equal(len(w), 4)
+            assert_(issubclass(w[-1].category, RuntimeWarning))
 
     def test_nanmedian_scalars(self):
         # Check nanmedian for scalar inputs. See ticket #1098.
