@@ -181,6 +181,8 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
        returned.  Values of ``y[m-1]`` and ``w[m-1]`` are not used.
     quiet : int, optional
          Non-zero to suppress messages.
+         This parameter is deprecated; use standard Python warning filters
+         instead.
 
     Returns
     -------
@@ -376,6 +378,8 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
         y[m-1] and w[m-1] are not used.
     quiet : bool
         Non-zero to suppress messages.
+        This parameter is deprecated; use standard Python warning filters
+        instead.
 
     Returns
     -------
@@ -845,6 +849,8 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
         ``nyest = max(ky+sqrt(m/2),2*ky+3)``.
     quiet : int, optional
         Non-zero to suppress printing of messages.
+        This parameter is deprecated; use standard Python warning filters
+        instead.
 
     Returns
     -------
