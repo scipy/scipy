@@ -27,6 +27,7 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
     'bisplrep', 'bisplev', 'insert', 'splder', 'splantider']
 
+import warnings
 import numpy as np
 from . import _fitpack
 from numpy import atleast_1d, array, ones, zeros, sqrt, ravel, transpose, \
@@ -180,6 +181,8 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
        returned.  Values of ``y[m-1]`` and ``w[m-1]`` are not used.
     quiet : int, optional
          Non-zero to suppress messages.
+         This parameter is deprecated; use standard Python warning filters
+         instead.
 
     Returns
     -------
@@ -229,7 +232,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
         for i in range(idim):
             if x[i][0] != x[i][-1]:
                 if quiet < 2:
-                    print('Warning: Setting x[%d][%d]=x[%d][0]' % (i,m,i))
+                    warnings.warn(RuntimeWarning('Setting x[%d][%d]=x[%d][0]' % (i,m,i)))
                 x[i][-1] = x[i][0]
     if not 0 < idim < 11:
         raise TypeError('0 < idim < 11 must hold')
@@ -295,11 +298,12 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     c.shape = idim,n-k-1
     tcku = [t,list(c),k],u
     if ier <= 0 and not quiet:
-        print(_iermess[ier][0])
-        print("\tk=%d n=%d m=%d fp=%f s=%f" % (k,len(t),m,fp,s))
+        warnings.warn(RuntimeWarning(_iermess[ier][0] +
+                                     "\tk=%d n=%d m=%d fp=%f s=%f" %
+                                     (k, len(t), m, fp, s)))
     if ier > 0 and not full_output:
         if ier in [1,2,3]:
-            print("Warning: "+_iermess[ier][0])
+            warnings.warn(RuntimeWarning(_iermess[ier][0]))
         else:
             try:
                 raise _iermess[ier][1](_iermess[ier][0])
@@ -374,6 +378,8 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
         y[m-1] and w[m-1] are not used.
     quiet : bool
         Non-zero to suppress messages.
+        This parameter is deprecated; use standard Python warning filters
+        instead.
 
     Returns
     -------
@@ -498,11 +504,12 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
         n,c,fp,ier = dfitpack.percur(task, x, y, w, t, wrk, iwrk, k, s)
     tck = (t[:n],c[:n],k)
     if ier <= 0 and not quiet:
-        print(_iermess[ier][0])
-        print("\tk=%d n=%d m=%d fp=%f s=%f" % (k,len(t),m,fp,s))
+        warnings.warn(RuntimeWarning(_iermess[ier][0]) +
+                               "\tk=%d n=%d m=%d fp=%f s=%f" %
+                               (k, len(t), m, fp, s))
     if ier > 0 and not full_output:
         if ier in [1,2,3]:
-            print("Warning: "+_iermess[ier][0])
+            warnings.warn(RuntimeWarning(+_iermess[ier][0]))
         else:
             try:
                 raise _iermess[ier][1](_iermess[ier][0])
@@ -723,7 +730,7 @@ def sproot(tck,mest=10):
         if ier == 0:
             return z
         if ier == 1:
-            print("Warning: the number of zeros exceeds mest")
+            warnings.warn(RuntimeWarning("The number of zeros exceeds mest"))
             return z
         raise TypeError("Unknown error")
 
@@ -842,6 +849,8 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
         ``nyest = max(ky+sqrt(m/2),2*ky+3)``.
     quiet : int, optional
         Non-zero to suppress printing of messages.
+        This parameter is deprecated; use standard Python warning filters
+        instead.
 
     Returns
     -------
@@ -951,14 +960,14 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
 
     ierm = min(11,max(-3,ier))
     if ierm <= 0 and not quiet:
-        print(_iermess2[ierm][0])
-        print("\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f" % (kx,ky,len(tx),
-                                                           len(ty),m,fp,s))
+        warnings.warn(RuntimeWarning(_iermess2[ierm][0]) +
+                                 "\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f" %
+                                 (kx, ky, len(tx), len(ty), m, fp, s))
     if ierm > 0 and not full_output:
         if ier in [1,2,3,4,5]:
-            print("Warning: "+_iermess2[ierm][0])
-            print("\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f" % (kx,ky,len(tx),
-                                                           len(ty),m,fp,s))
+            _mess = "\n\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f" % (kx,ky,len(tx),
+                                                                     len(ty),m,fp,s)
+            warnings.warn(RuntimeWarning(_iermess2[ierm][0] + _mess))
         else:
             try:
                 raise _iermess2[ierm][1](_iermess2[ierm][0])
