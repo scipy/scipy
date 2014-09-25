@@ -21,7 +21,7 @@ TODO: Make interfaces to the following fitpack functions:
     For univariate splines: cocosp, concon, fourco, insert
     For bivariate splines: profil, regrid, parsur, surev
 """
-from __future__ import division, absolute_import
+from __future__ import division, print_function, absolute_import
 
 
 __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
