@@ -2030,9 +2030,9 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     no_labels : bool, optional
         When True, no labels appear next to the leaf nodes in the
         rendering of the dendrogram.
-    leaf_label_rotation : double, optional
+    leaf_rotation : double, optional
         Specifies the angle (in degrees) to rotate the leaf
-        labels. When unspecified, the rotation based on the number of
+        labels. When unspecified, the rotation is based on the number of
         nodes in the dendrogram (default is 0).
     leaf_font_size : int, optional
         Specifies the font size (in points) of the leaf labels. When
