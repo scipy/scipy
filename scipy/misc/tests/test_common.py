@@ -63,11 +63,10 @@ def test_logsumexp():
     assert_array_almost_equal(np.exp(logsumexp(logX, axis=1)), X.sum(axis=1))
 
     # Handling special values properly
-    with np.errstate(divide='ignore'):
-        assert_equal(logsumexp(np.inf), np.inf)
-        assert_equal(logsumexp(-np.inf), -np.inf)
-        assert_equal(logsumexp(np.nan), np.nan)
-        assert_equal(logsumexp([-np.inf, -np.inf]), -np.inf)
+    assert_equal(logsumexp(np.inf), np.inf)
+    assert_equal(logsumexp(-np.inf), -np.inf)
+    assert_equal(logsumexp(np.nan), np.nan)
+    assert_equal(logsumexp([-np.inf, -np.inf]), -np.inf)
 
     # Handling an array with different magnitudes on the axes
     assert_array_almost_equal(logsumexp([[1e10, 1e-10],
