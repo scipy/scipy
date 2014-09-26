@@ -4,6 +4,8 @@ import warnings
 
 import numpy as np
 import numpy.testing as npt
+from scipy.lib._util import setup_xslow
+from nose import with_setup
 
 from scipy import integrate
 from scipy import stats
@@ -196,7 +198,7 @@ def test_cont_basic_slow():
             yield check_edge_support, distfn, arg
 
 
-@npt.dec.slow
+@with_setup(setup_xslow)
 def test_moments():
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', category=integrate.IntegrationWarning)
