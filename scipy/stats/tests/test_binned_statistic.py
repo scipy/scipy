@@ -130,6 +130,18 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(binx1, binx2)
         assert_array_almost_equal(biny1, biny2)
 
+    def test_2d_mean_unicode(self):
+        x = self.x
+        y = self.y
+        v = self.v
+
+        stat1, binx1, biny1, bc = binned_statistic_2d(x, y, v, u'mean', bins=5)
+        stat2, binx2, biny2, bc = binned_statistic_2d(x, y, v, np.mean, bins=5)
+
+        assert_array_almost_equal(stat1, stat2)
+        assert_array_almost_equal(binx1, binx2)
+        assert_array_almost_equal(biny1, biny2)
+
     def test_2d_std(self):
         x = self.x
         y = self.y

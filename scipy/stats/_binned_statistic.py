@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
-from scipy.lib.six import callable
+from scipy.lib.six import callable, string_types
 
 
 def binned_statistic(x, values, statistic='mean',
@@ -265,7 +265,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     .. versionadded:: 0.11.0
 
     """
-    if type(statistic) == str:
+    if isinstance(statistic, string_types):
         if statistic not in ['mean', 'median', 'count', 'sum', 'std']:
             raise ValueError('unrecognized statistic "%s"' % statistic)
     elif callable(statistic):
