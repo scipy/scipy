@@ -1109,14 +1109,15 @@ def describe(a, axis=0, ddof=1):
     mean : ndarray or float
        arithmetic mean of data along axis
     variance : ndarray or float
-       unbiased variance of the data along axis, denominator is number of observations
-       minus one.
+       unbiased variance of the data along axis, denominator is number of
+       observations minus one.
     skewness : ndarray or float
-       biased skewness, based on moment calculations with denominator equal to the
-       number of observations, i.e. no degrees of freedom correction
+       biased skewness, based on moment calculations with denominator equal to
+       the number of observations, i.e. no degrees of freedom correction
     exc_kurtosis : ndarray or float
-       biased kurtosis (Fisher), the kurtosis is normalized so that it is zero for the
-       normal distribution. No degrees of freedom or bias correction is used.
+       biased kurtosis (Fisher), the kurtosis is normalized so that it is
+       zero for the normal distribution. No degrees of freedom or bias
+       correction is used.
 
     See Also
     --------

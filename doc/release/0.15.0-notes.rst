@@ -63,8 +63,8 @@ Added a Dirichlet distribution as multivariate distribution.
 
 The new function `scipy.stats.median_test` computes Mood's median test.
 
-`describe` returns a namedtuple rather than a tuple, allowing users to access
-results by index or by name.
+`scipy.stats.describe` returns a namedtuple rather than a tuple, allowing
+users to access results by index or by name.
 
 
 Deprecated features

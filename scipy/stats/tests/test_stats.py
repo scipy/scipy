@@ -2186,14 +2186,16 @@ class test_describe(TestCase):
         assert_equal(mm, mmc)
         assert_equal(m, mc)
         assert_equal(v, vc)
-        assert_array_almost_equal(sk, skc, decimal=13)  # not sure about precision
+        # not sure about precision with sk, skc
+        assert_array_almost_equal(sk, skc, decimal=13)
         assert_array_almost_equal(kurt, kurtc, decimal=13)
         n, mm, m, v, sk, kurt = stats.describe(x.T, axis=1)
         assert_equal(n, nc)
         assert_equal(mm, mmc)
         assert_equal(m, mc)
         assert_equal(v, vc)
-        assert_array_almost_equal(sk, skc, decimal=13)  # not sure about precision
+        # not sure about precision with sk, skc
+        assert_array_almost_equal(sk, skc, decimal=13)
         assert_array_almost_equal(kurt, kurtc, decimal=13)
 
     def test_describe_result_attributes(self):
