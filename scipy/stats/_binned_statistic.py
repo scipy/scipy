@@ -60,6 +60,10 @@ def binned_statistic(x, values, statistic='mean',
     binnumber : 1-D ndarray of ints
         This assigns to each observation an integer that represents the bin
         in which this observation falls. Array has the same length as values.
+        Each index ``i`` returned is such that ``bins[i-1] <= x < bins[i]`` if
+        `bins` is monotonically increasing, or ``bins[i-1] > x >= bins[i]`` if
+        `bins` is monotonically decreasing. If values in `x` are beyond the
+        bounds of `bins`, 0 or ``len(bins)`` is returned as appropriate. 
 
     See Also
     --------
@@ -168,6 +172,13 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     binnumber : 1-D ndarray of ints
         This assigns to each observation an integer that represents the bin
         in which this observation falls. Array has the same length as `values`.
+        
+        To understand which integer belongs to which bin, imagine an (nx + 2, 
+        ny + 2) ndarray. If values in `x` or `y` are beyond the bounds of 
+        `bins`, they are sorted into the appropriate bin at the edge of that
+        array (first or last column or row). The inner [1:nx + 1,1:ny + 1] of
+        that array corresponds to valid bins. `binnumber` returns the index for
+        a flattened version of this array.
 
     See Also
     --------
@@ -254,6 +265,14 @@ def binned_statistic_dd(sample, values, statistic='mean',
     binnumber : 1-D ndarray of ints
         This assigns to each observation an integer that represents the bin
         in which this observation falls. Array has the same length as values.
+
+        To understand which integer belongs to which bin, imagine an (nx + 2, 
+        ny + 2, ...) ndarray. If values in `sample` are beyond the bounds of 
+        `bins`, they are sorted into the appropriate bin at the edge of that
+        array (first or last column or row). The inner [1:nx + 1,1:ny + 1, ...]
+        of that array corresponds to valid bins. `binnumber` returns the index
+        for a flattened version of this array.
+
 
     See Also
     --------
