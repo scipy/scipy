@@ -39,7 +39,7 @@ class binom_gen(rv_discrete):
 
     def _argcheck(self, n, p):
         self.b = n
-        return (n > 0) & (p >= 0) & (p <= 1)
+        return (n >= 0) & (p >= 0) & (p <= 1)
 
     def _logpmf(self, x, n, p):
         combiln = (gamln(n+x) - gamln(x+1) - gamln(n))
