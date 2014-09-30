@@ -419,9 +419,9 @@ def imresize(arr, size, interp='bilinear', mode=None):
     ts = type(size)
     if issubdtype(ts,int):
         percent = size / 100.0
-        size = (array(im.size)*percent).astype(int)
+        size = tuple((array(im.size)*percent).astype(int))
     elif issubdtype(type(size),float):
-        size = (array(im.size)*size).astype(int)
+        size = tuple((array(im.size)*size).astype(int))
     else:
         size = (size[1],size[0])
     func = {'nearest':0,'bilinear':2,'bicubic':3,'cubic':3}
