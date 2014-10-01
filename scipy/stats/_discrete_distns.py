@@ -42,8 +42,9 @@ class binom_gen(rv_discrete):
         return (n >= 0) & (p >= 0) & (p <= 1)
 
     def _logpmf(self, x, n, p):
-        combiln = (gamln(n+x) - gamln(x+1) - gamln(n))
-        return combiln + n*log(p) + special.xlog1py(x, -p)
+        k = floor(x)
+        combiln = (gamln(n+1) - (gamln(k+1) + gamln(n-k+1)))
+        return combiln + special.xlogy(k, p) + special.xlog1py(n-k, -p)
 
     def _pmf(self, x, n, p):
         return exp(self._logpmf(x, n, p))
@@ -151,14 +152,14 @@ class nbinom_gen(rv_discrete):
         return mtrand.negative_binomial(n, p, self._size)
 
     def _argcheck(self, n, p):
-        return (n >= 0) & (p >= 0) & (p <= 1)
+        return (n > 0) & (p >= 0) & (p <= 1)
 
     def _pmf(self, x, n, p):
         return exp(self._logpmf(x, n, p))
 
     def _logpmf(self, x, n, p):
         coeff = gamln(n+x) - gamln(x+1) - gamln(n)
-        return coeff + n*log(p) + x*log(1-p)
+        return coeff + n*log(p) + special.xlog1py(x, -p)
 
     def _cdf(self, x, n, p):
         k = floor(x)
