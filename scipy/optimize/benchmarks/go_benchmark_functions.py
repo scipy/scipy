@@ -14,12 +14,12 @@ This module provides a set of benchmark problems for global optimization.
 .. moduleauthor:: Andrea Gavana <andrea.gavana@gmail.com>
 
 """
-
+from __future__ import division
 import os
 
-import numpy
+import numpy as np
 
-from numpy import abs, arange, arctan2, asarray, atleast_1d, cos, exp, floor, inf, log, ones, log10
+from numpy import abs, arange, arctan2, asarray, atleast_1d, cos, exp, floor, inf, log, ones, log10, arange
 from numpy import pi, prod, roll, seterr, sign, sin, sqrt, sum, where, zeros, zeros_like, tan, tanh
 from numpy import linspace, meshgrid, dot
 
@@ -145,7 +145,7 @@ class Benchmark(object):
             min_index = Z.argmin()
             cmap = matplotlib.cm.jet
 
-            if numpy.any(numpy.isnan(Z)):
+            if np.any(numpy.isnan(Z)):
                 Z = numpy.ma.array(Z, mask=numpy.isnan(Z))
                 lev = linspace(Z.min(), Z.max(), self.spacing)
                 norml = colors.BoundaryNorm(lev, 256)
@@ -264,14 +264,10 @@ class Adjiman(Benchmark):
 
         self.global_optimum = [2.0, 0.10578]
         self.fglob = -2.02180678
-        self.change_dimensionality = False
 
     def evaluator(self, x, *args):
-
         self.fun_evals += 1
-        x1, x2 = x
-
-        return cos(x1)*sin(x2) - x1/(x2**2.0 + 1)
+        return cos(x[0]) * sin(x[1]) - x[0] / (x[1]**2 + 1)
 
 # -------------------------------------------------------------------------------- #
 
@@ -310,7 +306,7 @@ class Alpine01(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return sum(abs(x*sin(x) + 0.1*x))
+        return sum(abs(x * sin(x) + 0.1 * x))
 
 # -------------------------------------------------------------------------------- #
 
@@ -349,7 +345,7 @@ class Alpine02(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return prod(sqrt(x)*sin(x))
+        return prod(sqrt(x) * sin(x))
 
 # -------------------------------------------------------------------------------- #
 
@@ -434,11 +430,10 @@ class BartelsConn(Benchmark):
         self.fglob = 1.0
 
     def evaluator(self, x, *args):
-
         self.fun_evals += 1
 
-        x1, x2 = x
-        return abs(x1**2.0 + x2**2.0 + x1*x2) + abs(sin(x1)) + abs(cos(x2))
+        return (abs(x[0]**2.0 + x[1]**2.0 + x[0] * x[1]) + abs(sin(x[1]))
+                + abs(cos(x[1])))
 
 # -------------------------------------------------------------------------------- #
 
@@ -562,7 +557,9 @@ class Bohachevsky(Benchmark):
 
         x0 = x[:-1]
         x1 = roll(x,-1)[:-1]
-        return sum(x0**2 + 2*x1**2 - 0.3 * cos(3*pi*x0) - 0.4 * cos(4*pi*x1) + 0.7)
+
+        return sum(x0**2 + 2 * x1**2 - 0.3 * cos(3 * pi * x0)
+                   - 0.4 * cos(4 * pi * x1) + 0.7)
 
 # -------------------------------------------------------------------------------- #
 
@@ -1230,12 +1227,12 @@ class CosineMixture(Benchmark):
         self.bounds = zip([-1.0] * self.dimensions, [1.0] * self.dimensions)
 
         self.global_optimum = [0 for _ in range(self.dimensions)]
-        self.fglob = -0.1*self.dimensions
+        self.fglob = -0.1 * self.dimensions
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return -0.1*sum(cos(5.0*pi*x)) - sum(x**2.0)
+        return -0.1 * sum(cos(5.0 * pi * x)) - sum(x**2.0)
 
 # -------------------------------------------------------------------------------- #
 
@@ -1310,7 +1307,7 @@ class CrossLegTable(Benchmark):
 
         self.bounds = zip([-10.0] * self.dimensions, [10.0] * self.dimensions)
 
-        self.global_optimum = []
+        self.global_optimum = [0., 0.]
         self.fglob = -1.0
 
     def evaluator(self, x, *args):
@@ -1476,13 +1473,12 @@ class Damavandi(Benchmark):
 
         self.fun_evals += 1
 
-        x1, x2 = x
-        numerator = sin(pi*(x1 - 2.0))*sin(pi*(x2 - 2.0))
-        denumerator = (pi**2)*(x1 - 2.0)*(x2 - 2.0)
-        factor1 = 1.0 - (abs(numerator / denumerator))**5.0
-        factor2 = 2 + (x1 - 7.0)**2.0 + 2*(x2 - 7.0)**2.0
+        num = sin(pi * (x[0] - 2.0)) * sin(pi * (x[1] - 2.0))
+        den = (pi**2) * (x[0] - 2.0) * (x[1] - 2.0)
+        factor1 = 1.0 - (abs(num / den))**5.0
+        factor2 = 2 + (x[0] - 7.0)**2.0 + 2 * (x[1] - 7.0)**2.0
 
-        return factor1*factor2
+        return factor1 * factor2
 
 # -------------------------------------------------------------------------------- #
 
@@ -1658,7 +1654,7 @@ class Deceptive(Benchmark):
         self.bounds = zip([0.0] * self.dimensions, [1.0] * self.dimensions)
 
         n = self.dimensions
-        alpha = numpy.arange(1.0, n + 1.0)/(n + 1.0)
+        alpha = arange(1.0, n + 1.0)/(n + 1.0)
 
         self.global_optimum = alpha
         self.fglob = -1.0
@@ -1669,7 +1665,7 @@ class Deceptive(Benchmark):
         self.fun_evals += 1
 
         n = self.dimensions
-        alpha = numpy.arange(1.0, n + 1.0)/(n + 1.0)
+        alpha = arange(1.0, n + 1.0)/(n + 1.0)
         beta = 2.0
 
         g = zeros((n, ))
@@ -1712,7 +1708,7 @@ class DeckkersAarts(Benchmark):
 
         **Two-dimensional Deckkers-Aarts function**
 
-    *Global optimum*: :math:`f(x_i) = -24777` for :math:`\\mathbf{x} = [0, \\pm 15]`
+    *Global optimum*: :math:`f(x_i) = -24776.518242168` for :math:`\\mathbf{x} = [0, \\pm 14.9451209]`
 
     """
 
@@ -1722,15 +1718,13 @@ class DeckkersAarts(Benchmark):
         self.bounds = zip([-20.0] * self.dimensions, [20.0] * self.dimensions)
         self.custom_bounds = ([-1, 1], [14, 16])
 
-        self.global_optimum = [0.0, 15.0]
-        self.fglob = -24776.0
+        self.global_optimum = [0.0, 14.9451209]
+        self.fglob = -24776.518342168
 
     def evaluator(self, x, *args):
-
         self.fun_evals += 1
-        x1, x2 = x
-
-        return 1e5*x1**2.0 + x2**2.0 - (x1**2.0 + x2**2.0)**2.0 + 1e-5*(x1**2.0 + x2**2.0)**4.0
+        return (1.e5 * x[0]**2 + x[1]**2 - (x[0]**2 + x[1]**2)**2
+                + 1.e-5 * (x[0]**2 + x[1]**2)**4)
 
 # -------------------------------------------------------------------------------- #
 
@@ -1812,11 +1806,10 @@ class DeVilliersGlasser01(Benchmark):
 
         self.fun_evals += 1
 
-        t_i = 0.1*numpy.arange(24)
-        y_i = 60.137*(1.371**t_i)*sin(3.112*t_i + 1.761)
+        t_i = 0.1 * arange(24)
+        y_i = 60.137 * (1.371**t_i) * sin(3.112 * t_i + 1.761)
 
-        x1, x2, x3, x4 = x
-        return sum((x1*(x2**t_i)*sin(x3*t_i + x4) - y_i)**2.0)
+        return sum((x[0] * (x[1]**t_i) * sin(x[2] * t_i + x[3]) - y_i)**2.0)
 
 # -------------------------------------------------------------------------------- #
 
@@ -1852,11 +1845,12 @@ class DeVilliersGlasser02(Benchmark):
 
         self.fun_evals += 1
 
-        t_i = 0.1*numpy.arange(16)
-        y_i = 53.81*1.27**t_i*tanh(3.012*t_i + sin(2.13*t_i))*cos(exp(0.507)*t_i)
+        t_i = 0.1 * arange(16)
+        y_i = (53.81 * 1.27**t_i * tanh(3.012 * t_i + sin(2.13 * t_i))
+               * cos(exp(0.507) * t_i))
 
-        x1, x2, x3, x4, x5 = x
-        return sum((x1*(x2**t_i)*tanh(x3*t_i + sin(x4*t_i))*cos(t_i*exp(x5)) - y_i)**2.0)
+        return sum((x[0] * (x[1]**t_i) * tanh(x[2] * t_i + sin(x[3] * t_i))
+                   * cos(t_i * exp(x[4])) - y_i)**2.0)
 
 # -------------------------------------------------------------------------------- #
 
@@ -1937,8 +1931,7 @@ class Dolan(Benchmark):
 
         self.fun_evals += 1
 
-        x1, x2, x3, x4, x5 = x
-        return abs((x1 + 1.7*x2)*sin(x1) - 1.5*x3 - 0.1*x4*cos(x4 + x5 - x1) + 0.2*x5**2.0 - x2 - 1.0)
+        return abs((x[0] + 1.7 * x[1]) * sin(x[0]) - 1.5 * x[2] - 0.1 * x[3] * cos(x[3] + x[4] - x[0]) + 0.2 * x[4]**2.0 - x[1] - 1.0)
 
 # -------------------------------------------------------------------------------- #
 
@@ -2448,7 +2441,7 @@ class Gulf(Benchmark):
 
     .. math::
 
-        f_{\\text{Gulf}}(\\mathbf{x}) = \\sum_{i=1}^m \\left( e^{-\\frac{\\lvert y_i - x_2 \\rvert^{x_3}}{x_1}    }  - t_i \\right)
+        f_{\\text{Gulf}}(\\mathbf{x}) = \\sum_{i=1}^99 \\left( e^{-\\frac{\\lvert y_i - x_2 \\rvert^{x_3}}{x_1}    }  - t_i \\right)
 
     Where, in this exercise:
 
@@ -2458,7 +2451,7 @@ class Gulf(Benchmark):
        y_i = 25 + [-50 \\log(t_i)]^{2/3}
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 60]` for :math:`i=1,2,3`.
+    Here, :math:`x_i \\in [0, 60]` for :math:`i=1,2,3`.
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [50, 25, 1.5]`
 
@@ -2473,31 +2466,13 @@ class Gulf(Benchmark):
         self.fglob = 0.0
 
     def evaluator(self, x, *args):
-
         self.fun_evals += 1
 
-        zero = 0.0
-        one = 1.0
-        point1 = 0.01
-        twnty5 = 25.0
-        fifty = 50.0
-
-        x1, x2, x3 = x
-
-        x1inv = one/x1
-        two3rd = 2.0/3.0
-
-        m = 30
-        y = 0.0
-
-        for i in range(m):
-            ti = (i)*point1;
-            yi = twnty5 + (-fifty*log(ti))**two3rd
-            ai = yi - x2
-
-            y += (exp(-((abs(ai)**x3)/x1)) - ti)**2.0
-
-        return y
+        m = 99.
+        i = arange(1., m + 1)
+        y = 25 + (-50 * log(i / 100.))**(2/3.)
+        vec = (exp(-((abs(y - x[1]))**x[2] / x[0])) - i / 100.)
+        return sum(vec**2)
 
 # -------------------------------------------------------------------------------- #
 
@@ -2521,7 +2496,7 @@ class Hansen(Benchmark):
         **Two-dimensional Hansen function**
 
 
-    *Global optimum*: :math:`f(x_i) = -2.3458` for :math:`\\mathbf{x} = [-7.58989583, -7.70831466]`.
+    *Global optimum*: :math:`f(x_i) = -176.54179` for :math:`\\mathbf{x} = [-7.58989583, -7.70831466]`.
 
     """
 
@@ -2531,7 +2506,7 @@ class Hansen(Benchmark):
         self.bounds = zip([-10.0] * self.dimensions, [10.0] * self.dimensions)
 
         self.global_optimum = [-7.58989583, -7.70831466]
-        self.fglob = -176.54
+        self.fglob = -176.54179
 
     def evaluator(self, x, *args):
 
@@ -2565,17 +2540,17 @@ class Hartmann3(Benchmark):
         \\hline
         i & & a_{ij}&  & c_i & & p_{ij} &  \\\\
         \\hline
-        1 & 3.0 & 10.0 & 30.0 & 1.0 & 0.689  & 0.1170 & 0.2673 \\\\
+        1 & 3.0 & 10.0 & 30.0 & 1.0 & 0.3689  & 0.1170 & 0.2673 \\\\
         2 & 0.1 & 10.0 & 35.0 & 1.2 & 0.4699 & 0.4387 & 0.7470 \\\\
         3 & 3.0 & 10.0 & 30.0 & 3.0 & 0.1091 & 0.8732 & 0.5547 \\\\
-        4 & 0.1 & 10.0 & 35.0 & 3.2 & 0.0381 & 0.5743 & 0.8828 \\\\
+        4 & 0.1 & 10.0 & 35.0 & 3.2 & 0.03815 & 0.5743 & 0.8828 \\\\
         \\hline
         \\end{array}
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 1]` for :math:`i=1,2,3`.
 
-    *Global optimum*: :math:`f(x_i) = -3.86278214782076` for :math:`\\mathbf{x} = [0.1, 0.55592003, 0.85218259]`
+    *Global optimum*: :math:`f(x_i) = -3.8627821478` for :math:`\\mathbf{x} = [0.11461292,  0.55564907,  0.85254697]`
 
     """
 
@@ -2584,8 +2559,8 @@ class Hartmann3(Benchmark):
 
         self.bounds = zip([0.0] * self.dimensions, [1.0] * self.dimensions)
 
-        self.global_optimum = [0.1, 0.55592003, 0.85218259]
-        self.fglob = -3.86278214782076
+        self.global_optimum = [0.11461292,  0.55564907,  0.85254697]
+        self.fglob = -3.8627821478
 
     def evaluator(self, x, *args):
 
@@ -2601,9 +2576,9 @@ class Hartmann3(Benchmark):
         d = zeros_like(c)
 
         for i in range(4):
-            d[i] = sum(a[:, i]*(x - p[:, i])**2)
+            d[i] = sum(a[:, i] * (x - p[:, i])**2)
 
-        return -sum(c*exp(-d))
+        return -sum(c * exp(-d))
 
 # -------------------------------------------------------------------------------- #
 
@@ -2749,7 +2724,7 @@ class HimmelBlau(Benchmark):
 
         **Two-dimensional HimmelBlau function**
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [0, 0]`
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [3, 2]`
 
     """
 
@@ -2758,13 +2733,13 @@ class HimmelBlau(Benchmark):
 
         self.bounds = zip([-6] * self.dimensions, [6] * self.dimensions)
 
-        self.global_optimum = [0.0, 0.0]
+        self.global_optimum = [3.0, 2.0]
         self.fglob = 0.0
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return (x[0] * x[0] + x[1] - 11)**2 + (x[0] + x[1] * x[1] - 7)**2
+        return (x[0]**2 + x[1] - 11)**2 + (x[0] + x[1]**2 - 7)**2
 
 # -------------------------------------------------------------------------------- #
 
@@ -2819,13 +2794,13 @@ class Holzman(Benchmark):
 
     .. math::
 
-        f_{\\text{Holzman}}(\\mathbf{x}) = \\sum_{i=0}^{99} \\left [ e^{\\frac{1}{x_1} (u_i-x_2)^{x_3}} -0.1(i+1) \\right ]
+        f_{\\text{Holzman}}(\\mathbf{x}) = \\sum_{i=1}^{100} \\left [ e^{\\frac{1}{x_1} (u_i-x_2)^{x_3}} -0.01(i) \\right ]
 
     Where, in this exercise:
 
     .. math::
 
-        u_i = 25 + (-50 \\log{[0.01(i+1)]})^{2/3}
+        u_i = 25 + (-50 \\log{[0.01i]})^{2/3}
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_1 \\in [0, 100], x_2 \\in [0, 25.6], x_3 \\in [0, 5]`.
@@ -2846,13 +2821,13 @@ class Holzman(Benchmark):
 
         self.fun_evals += 1
 
-        y = 0.0
-
-        for i in range(100):
-            ui = 25.0 + (-50.0*log(0.01*(i+1)))**(2.0/3.0)
-            y += -0.1*(i+1) + exp(1.0/x[0]*(ui-x[1])**x[2])
-
-        return y
+        val = 0
+        i = arange(1, 101)
+        t = 2 / 3.
+        u = 25 + (-50 * log(0.01 * i ))**t
+        v = (u - x[1])**x[2]
+        w = exp(-v / x[0])
+        return sum(-0.01 * i + w)
 
 # -------------------------------------------------------------------------------- #
 
@@ -2974,7 +2949,7 @@ class JennrichSampson(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        rng = numpy.arange(1.0, 11.0)
+        rng = arange(1.0, 11.0)
         return sum((2.0 + 2.0*rng - (exp(rng*x1) + exp(rng*x2)))**2.0)
 
 # -------------------------------------------------------------------------------- #
@@ -3224,11 +3199,12 @@ class Langermann(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        a = [3,5,2,1,7]
-        b = [5,2,1,4,9]
-        c = [1,2,5,2,3]
+        a = [3, 5, 2, 1, 7]
+        b = [5, 2, 1, 4, 9]
+        c = [1, 2, 5, 2, 3]
 
-        return -sum(c*exp(-(1/pi)*((x[0]-a)**2 + (x[1]-b)**2))*cos(pi*((x[0]-a)**2 + (x[1]-b)**2)))
+        return -sum(c * exp(-(1 / pi) * ((x[0] - a)**2 +
+                    (x[1] - b)**2)) * cos(pi * ((x[0] - a)**2 + (x[1] - b)**2)))
 
 # -------------------------------------------------------------------------------- #
 
@@ -3429,7 +3405,7 @@ class Levy05(Benchmark):
         **Two-dimensional Levy 5 function**
 
 
-    *Global optimum*: :math:`f(x_i) = -176.1375` for :math:`\\mathbf{x} = [-1.3068, -1.4248]`.
+    *Global optimum*: :math:`f(x_i) = -176.1375779` for :math:`\\mathbf{x} = [-1.30685, -1.42485]`.
 
     """
 
@@ -3440,15 +3416,16 @@ class Levy05(Benchmark):
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
         self.global_optimum = [-1.30685, -1.42485]
-        self.fglob = -176.1375
+        self.fglob = -176.1375779
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        x1, x2 = x
+        i = arange(1, 6)
+        a = i * cos((i - 1) * x[0] + i)
+        b = i * cos((i + 1) * x[1] + i)
 
-        rng = numpy.arange(1.0, 6.0)
-        return sum(rng*cos((rng-1.0)*x1 + rng))*sum(rng*cos((rng+1.0)*x2 + rng)) + (x1 + 1.42513)**2.0 + (x2 + 0.80032)**2.0
+        return sum(a) * sum(b) + (x[0] + 1.42513)**2 + (x[1] + 0.80032)**2
 
 # -------------------------------------------------------------------------------- #
 
@@ -3605,7 +3582,7 @@ class Michalewicz(Benchmark):
 
         self.bounds = zip([0.0] * self.dimensions, [pi] * self.dimensions)
 
-        self.global_optimum = [0 for _ in range(self.dimensions)]
+        self.global_optimum = [2.20290555, 1.570796]
         self.fglob = -1.8013
 
     def evaluator(self, x, *args):
@@ -3613,9 +3590,8 @@ class Michalewicz(Benchmark):
         self.fun_evals += 1
 
         m = 10.0
-
-        i = arange(1, self.dimensions+1)
-        return -sum(sin(x) * (sin(i*x**2/pi))**(2*m))
+        i = arange(1, self.dimensions + 1)
+        return -sum(sin(x) * sin(i * x**2 / pi)**(2*m))
 
 # -------------------------------------------------------------------------------- #
 
@@ -3763,7 +3739,7 @@ class Mishra03(Benchmark):
         **Two-dimensional Mishra 3 function**
 
 
-    *Global optimum*: :math:`f(x_i) = -0.18467` for :math:`x_i = -10` for :math:`i=1,2`
+    *Global optimum*: :math:`f(x_i) = -0.1999` for :math:`x_i = {-9.99378322, -9.99918927}`
 
     """
 
@@ -3772,15 +3748,14 @@ class Mishra03(Benchmark):
 
         self.bounds = zip([-10.0] * self.dimensions, [10.0] * self.dimensions)
 
-        self.global_optimum = [-10.0, -10.0]
-        self.fglob = -0.18467
+        self.global_optimum = [-9.99378322, -9.99918927]
+        self.fglob = -0.19990562
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-
-        x1, x2 = x
-        return sqrt(abs(cos(sqrt(abs(x1**2.0 + x2**2.0))))) + 0.01*(x1 + x2)
+        return ((0.01 * (x[0] + x[1])
+                + sqrt(abs(cos(sqrt(abs(x[0]**2 + x[1]**2)))))))
 
 # -------------------------------------------------------------------------------- #
 
@@ -3805,7 +3780,7 @@ class Mishra04(Benchmark):
         **Two-dimensional Mishra 4 function**
 
 
-    *Global optimum*: :math:`f(x_i) = -0.199409` for :math:`x_i = -10` for :math:`i=1,2`
+    *Global optimum*: :math:`f(x_i) = -0.17767` for :math:`x_i = {-8.71499636, -9.0533148}`
 
     """
 
@@ -3814,15 +3789,14 @@ class Mishra04(Benchmark):
 
         self.bounds = zip([-10.0] * self.dimensions, [10.0] * self.dimensions)
 
-        self.global_optimum = [-10.0, -10.0]
-        self.fglob = -0.199409
+        self.global_optimum = [-8.71499636, -9.0533148]
+        self.fglob = -0.17767
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-
-        x1, x2 = x
-        return sqrt(abs(sin(sqrt(abs(x1**2.0 + x2**2.0))))) + 0.01*(x1 + x2)
+        return ((0.01 * (x[0] + x[1])
+                + sqrt(abs(sin(sqrt(abs(x[0]**2 + x[1]**2)))))))
 
 # -------------------------------------------------------------------------------- #
 
@@ -4202,7 +4176,7 @@ class NeedleEye(Benchmark):
 
         self.bounds = zip([-10.0] * self.dimensions, [10.0] * self.dimensions)
 
-        self.global_optimum = []
+        self.global_optimum = [-1.0 for _ in range(self.dimensions)]
         self.fglob = 1.0
         self.change_dimensionality = True
 
@@ -4247,7 +4221,7 @@ class NewFunction01(Benchmark):
         **Two-dimensional NewFunction01 function**
 
 
-    *Global optimum*: :math:`f(x_i) = -0.17894509347721144` for :math:`\\mathbf{x} = [-8.4666, -9.9988]`
+    *Global optimum*: :math:`f(x_i) = -0.184642678` for :math:`\\mathbf{x} = [-8.46669057, -9.99982177]`
 
     """
 
@@ -4256,13 +4230,13 @@ class NewFunction01(Benchmark):
 
         self.bounds = zip([-10.0] * self.dimensions, [10.0] * self.dimensions)
 
-        self.global_optimum = [-8.4666, -9.9988]
-        self.fglob = -0.17894509347721144
+        self.global_optimum = [-8.46669057, -9.99982177]
+        self.fglob = -0.184642678
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return abs(cos(sqrt(abs(x[0]**2 + x[1]))))**0.5 + 0.01*x[0] + 0.01*x[1]
+        return (abs(cos(sqrt(abs(x[0]**2 + x[1])))))**0.5 + 0.01 * (x[0] + x[1])
 
 # -------------------------------------------------------------------------------- #
 
@@ -4287,7 +4261,7 @@ class NewFunction02(Benchmark):
         **Two-dimensional NewFunction02 function**
 
 
-    *Global optimum*: :math:`f(x_i) = -0.1971881059905` for :math:`\\mathbf{x} = [-9.94112, -9.99952]`
+    *Global optimum*: :math:`f(x_i) = -0.19937167` for :math:`\\mathbf{x} = [-9.94103375, -9.99771235]`
 
     """
 
@@ -4296,13 +4270,13 @@ class NewFunction02(Benchmark):
 
         self.bounds = zip([-10.0] * self.dimensions, [10.0] * self.dimensions)
 
-        self.global_optimum = [-9.94112, -9.99952]
-        self.fglob = -0.1971881059905
+        self.global_optimum = [-9.94103375, -9.99771235]
+        self.fglob = -0.19937167547710213
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return abs(sin(sqrt(abs(x[0]**2 + x[1]))))**0.5 + 0.01*x[0] + 0.01*x[1]
+        return (abs(sin(sqrt(abs(x[0]**2 + x[1])))))**0.5 + 0.01 * (x[0] + x[1])
 
 # -------------------------------------------------------------------------------- #
 
@@ -4464,7 +4438,7 @@ class Pathological(Benchmark):
 
     .. math::
 
-       f_{\\text{Pathological}}(\\mathbf{x}) = \\sum_{i=1}^{n -1} \\frac{\\sin^{2}\\left(\\sqrt{100 x_{i+1}^{2} + x_{i}^{2}}\\right) -0.5}{0.001 \\left(x_{i} - x_{i+1}\\right)^{4} + 0.50}
+       f_{\\text{Pathological}}(\\mathbf{x}) = \\sum_{i=1}^{n -1} \\frac{\\sin^{2}\\left(\\sqrt{100 x_{i+1}^{2} + x_{i}^{2}}\\right) -0.5}{0.001 \\left(x_{i}^{2} - 2x_{i}x_{i+1} + x_{i+1}^{2}\\right)^{2} + 0.50}
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
@@ -4476,7 +4450,7 @@ class Pathological(Benchmark):
         **Two-dimensional Pathological function**
 
 
-    *Global optimum*: :math:`f(x_i) = -1.99600798403` for :math:`x_i = 0` for :math:`i=1,2`
+    *Global optimum*: :math:`f(x_i) = 0.` for :math:`x_i = 0` for :math:`i=1,2`
 
     """
 
@@ -4486,14 +4460,16 @@ class Pathological(Benchmark):
         self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
 
         self.global_optimum = [0 for _ in range(self.dimensions)]
-        self.fglob = -1.99600798403
+        self.fglob = 0.
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
 
-        x_ = roll(x, -1)
-        return sum((sin(sqrt(x_**2 + 100*x**2))**2 - 0.5) / (0.001 * ((x_ - x)**4 + 1.0) + 0.5))
+        vec = (0.5 + (sin(sqrt(100 * x[: -1]**2 + x[1:]**2))**2 - 0.5) /
+                      (1. + 0.001 * (x[: -1]**2 - 2 * x[: -1] * x[1:]
+                       + x[1:]**2)**2))
+        return sum(vec)
 
 # -------------------------------------------------------------------------------- #
 
@@ -4716,7 +4692,7 @@ class PermFunction01(Benchmark):
 
         self.bounds = zip([-self.dimensions] * self.dimensions, [self.dimensions+1] * self.dimensions)
 
-        self.global_optimum = range(1, self.dimensions+1)
+        self.global_optimum = range(1, self.dimensions + 1)
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -4726,12 +4702,10 @@ class PermFunction01(Benchmark):
 
         b = 0.5
         s_out = 0.0
-        for k in range(1, self.dimensions+1):
-            s_in = 0.0
-            for j in range(1, self.dimensions+1):
-                s_in += (j**k + b)*((x[j-1]/j)**k - 1)
-
-            s_out += s_in**2
+        for k in range(1, self.dimensions + 1):
+            j = arange(1, self.dimensions + 1)
+            s_in = (j**k + b) * ((x[j - 1] / j)**k - 1)
+            s_out += sum(s_in**2)
 
         return s_out
 
@@ -4746,7 +4720,7 @@ class PermFunction02(Benchmark):
 
     .. math::
 
-       f_{\\text{PermFunction02}}(\\mathbf{x}) = \\sum_{k=1}^n \\left\\{ \\sum_{j=1}^n (j + \\beta) \\left[ \\left(x_j^k - \\frac{1}{j} \\right ) \\right] \\right\\}^2
+       f_{\\text{PermFunction02}}(\\mathbf{x}) = \\sum_{k=1}^n \\left\\{ \\sum_{j=1}^n (j + \\beta) \\left[ \\left(x_j^k - {\\frac{1}{j}}^{k} \\right ) \\right] \\right\\}^2
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-n, n+1]` for :math:`i=1,...,n`.
@@ -4768,25 +4742,19 @@ class PermFunction02(Benchmark):
         self.bounds = zip([-self.dimensions] * self.dimensions, [self.dimensions+1] * self.dimensions)
         self.custom_bounds = ([0, 1.5], [0, 1.0])
 
-        self.global_optimum = range(1, self.dimensions+1)
+        self.global_optimum = 1. / arange(1, self.dimensions+1)
         self.fglob = 0.0
         self.change_dimensionality = True
 
     def evaluator(self, x, *args):
-
         self.fun_evals += 1
-
-        b = 10.0
-        s_out = 0.0
-        for k in range(1, self.dimensions+1):
-            s_in = 0.0
-            for j in range(1, self.dimensions+1):
-                s_in += (j + b)*(x[j-1]**k - (1.0/j)**k)
-
-            s_out += s_in**2
-
-        return s_out
-
+        b = 10
+        outer = 0
+        j = arange(1, self.dimensions + 1)
+        for k in range(1, self.dimensions + 1):
+            inner = (j + b) * (x[j - 1]**k - (1. / j)**k)
+            outer += sum(inner**2)
+        return outer
 # -------------------------------------------------------------------------------- #
 
 class Pinter(Benchmark):
@@ -5100,11 +5068,9 @@ class Price03(Benchmark):
         self.fglob = 0.0
 
     def evaluator(self, x, *args):
-
         self.fun_evals += 1
-
-        x1, x2 = x
-        return 100.0*(x2 - x1**2.0)**2.0 + (6.4*(x2 - 0.5)**2.0 - x1 - 0.6)**2.0
+        return (100 * (x[1] - x[0]**2)**2
+                + (6.4 * (x[1] - 0.5)**2 - x[0] - 0.6)**2)
 
 # -------------------------------------------------------------------------------- #
 
@@ -5189,7 +5155,7 @@ class Qing(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        rng = numpy.arange(1, self.dimensions+1)
+        rng = arange(1, self.dimensions+1)
         return sum((x**2.0 - rng)**2.0)
 
 # -------------------------------------------------------------------------------- #
@@ -5308,15 +5274,17 @@ class Rana(Benchmark):
 
         self.bounds = zip([-500.000001] * self.dimensions, [500.000001] * self.dimensions)
 
-        self.global_optimum = [-500 for _ in range(self.dimensions)]
-        self.fglob = -928.5478
+        self.global_optimum = [-300.3376, 500.]
+        self.fglob = -500.8021602966615
         self.change_dimensionality = True
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        E = x + 1
-        return sum(E*cos(sqrt(abs(E-x)))*sin(sqrt(abs(E+x))) + x*cos(sqrt(abs(E+x)))*sin(sqrt(abs(E-x))))
+
+        t1 = sqrt(abs(x[1:] + x[: -1] + 1))
+        t2 = sqrt(abs(x[1:] - x[: -1] + 1))
+        return sum((x[1:] + 1) * cos(t2) * sin(t1) + x[:-1] * cos(t1) * sin(t2))
 
 
 # -------------------------------------------------------------------------------- #
@@ -5494,7 +5462,7 @@ class RosenbrockModified(Benchmark):
 
         **Two-dimensional Modified Rosenbrock function**
 
-    *Global optimum*: :math:`f(x_i) = 34.37` for :math:`\\mathbf{x} = [-0.9, -0.95]`
+    *Global optimum*: :math:`f(x_i) = 34.04024310` for :math:`\\mathbf{x} = [-0.90955374, -0.95057172]`
 
     """
 
@@ -5504,15 +5472,15 @@ class RosenbrockModified(Benchmark):
         self.bounds = zip([-2.0] * self.dimensions, [2.0] * self.dimensions)
         self.custom_bounds = ([-1.0, 0.5], [-1.0, 1.0])
 
-        self.global_optimum = [-0.9, -0.95]
-        self.fglob = 34.37
+        self.global_optimum = [-0.90955374, -0.95057172]
+        self.fglob = 34.040243106640844
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-
-        x1, x2 = x
-        return 74.0 + 100.0*(x2 - x1**2.0)**2.0 + (1.0 - x1)**2.0 - 400.0*exp(-((x1 + 1.0)**2.0 + (x2 + 1.0)**2.0)/0.1)
+        a = 74 + 100. * (x[1] - x[0]**2)**2 + (1 - x[0])**2
+        a -= 400 * exp(-((x[0] + 1.)**2 + (x[1] + 1.)**2) / 0.1)
+        return a
 
 # -------------------------------------------------------------------------------- #
 
@@ -5799,7 +5767,10 @@ class Schaffer03(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return 0.5 + (sin(cos(abs(x1**2.0 - x2**2.0)))**2.0 - 0.5)/(1 + 0.001*(x1**2.0 + x2**2.0)**2.0)
+
+        num = sin(cos(abs(x[0]**2 - x[1]**2)))**2 - 0.5
+        den = (1 + 0.001 * (x[0]**2 + x[1]**2))**2
+        return 0.5 + num / den
 
 # -------------------------------------------------------------------------------- #
 
@@ -5812,7 +5783,7 @@ class Schaffer04(Benchmark):
 
     .. math::
 
-       f_{\\text{Schaffer04}}(\\mathbf{x}) = 0.5 + \\frac{\\cos^2 \\left( \\sin(x_1^2 - x_2^2) \\right ) - 0.5}{1 + 0.001(x_1^2 + x_2^2)^2}
+       f_{\\text{Schaffer04}}(\\mathbf{x}) = 0.5 + \\frac{\\cos^2 \\left( \\sin(x_1^2 - x_2^2) \\right ) - 0.5}{1 + 0.001(x_1^2 + x_2^2)^2}^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
 
@@ -5839,8 +5810,9 @@ class Schaffer04(Benchmark):
 
         self.fun_evals += 1
 
-        x1, x2 = x
-        return 0.5 + (cos(sin(x1**2.0 - x2**2.0))**2.0 - 0.5)/(1 + 0.001*(x1**2.0 + x2**2.0)**2.0)
+        num = cos(sin(abs(x[0]**2 - x[1]**2)))**2 - 0.5
+        den = (1 + 0.001 * (x[0]**2 + x[1]**2))**2
+        return 0.5 + num / den
 
 # -------------------------------------------------------------------------------- #
 
@@ -5857,7 +5829,7 @@ class SchmidtVetters(Benchmark):
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 10]` for :math:`i=1,2,3`.
 
-    *Global optimum*: :math:`f(x_i) = 3` for :math:`x_i = 0.78547` for :math:`i=1,2,3`
+    *Global optimum*: :math:`f(x_i) = 2.99643266` for :math:`x_i = [0.79876108,  0.79962581,  0.79848824]`
 
     """
 
@@ -5865,15 +5837,16 @@ class SchmidtVetters(Benchmark):
         Benchmark.__init__(self, dimensions)
         self.bounds = zip([0.0] * self.dimensions, [10.0] * self.dimensions)
 
-        self.global_optimum = [0.78547 for _ in range(self.dimensions)]
-        self.fglob = 3.0
+        self.global_optimum = [0.79876108,  0.79962581,  0.79848824]
+        self.fglob = 2.99643266
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
 
-        x1, x2, x3 = x
-        return 1.0/(1.0 + (x1 - x2)**2.0) + sin((pi*x2 + x3)/2.0) + exp(((x1 + x2)/x2 - 2)**2.0)
+        return (1 / (1 + (x[0] - x[1])**2) + sin((pi * x[1] + x[2]) / 2)
+                + exp(((x[0] + x[1]) / x[1] - 2)**2))
+
 
 # -------------------------------------------------------------------------------- #
 
@@ -6270,11 +6243,11 @@ class Shekel05(Benchmark):
 
     .. math::
 
-        \\mathbf{c} = \\begin{bmatrix} 0.1 \\\\ 0.2 \\\\ 0.2 \\\\ 0.4 \\\\ 0.6 \\end{bmatrix}
+        \\mathbf{c} = \\begin{bmatrix} 0.1 \\\\ 0.2 \\\\ 0.2 \\\\ 0.4 \\\\ 0.4 \\end{bmatrix}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 10]` for :math:`i=1,...,4`.
 
-    *Global optimum*: :math:`f(x_i) = -10.1527` for :math:`x_i = 4` for :math:`i=1,...,4`
+    *Global optimum*: :math:`f(x_i) = -10.15319585` for :math:`x_i = 4` for :math:`i=1,...,4`
 
     """
 
@@ -6284,7 +6257,7 @@ class Shekel05(Benchmark):
         self.bounds = zip([0.0] * self.dimensions, [10.0] * self.dimensions)
 
         self.global_optimum = [4.0 for _ in range(self.dimensions)]
-        self.fglob = -10.1527
+        self.fglob = -10.15319585
 
     def evaluator(self, x, *args):
 
@@ -6297,7 +6270,7 @@ class Shekel05(Benchmark):
                      [6.0, 6.0, 6.0, 6.0],
                      [3.0, 7.0, 3.0, 7.0]])
 
-        C = asarray([0.1, 0.2, 0.2, 0.4, 0.6])
+        C = asarray([0.1, 0.2, 0.2, 0.4, 0.4])
 
         return -sum(1.0/(dot(x-a, x-a)+c) for a, c in zip(A, C))
 
@@ -6327,7 +6300,7 @@ class Shekel07(Benchmark):
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 10]` for :math:`i=1,...,4`.
 
-    *Global optimum*: :math:`f(x_i) = -10.3999` for :math:`x_i = 4` for :math:`i=1,...,4`
+    *Global optimum*: :math:`f(x_i) = -10.4028188` for :math:`x_i = 4` for :math:`i=1,...,4`
 
     """
 
@@ -6337,7 +6310,7 @@ class Shekel07(Benchmark):
         self.bounds = zip([0.0] * self.dimensions, [10.0] * self.dimensions)
 
         self.global_optimum = [4.0 for _ in range(self.dimensions)]
-        self.fglob = -10.3999
+        self.fglob = -10.4028188
 
     def evaluator(self, x, *args):
 
@@ -6383,7 +6356,7 @@ class Shekel10(Benchmark):
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 10]` for :math:`i=1,...,4`.
 
-    *Global optimum*: :math:`f(x_i) = -10.5319` for :math:`x_i = 4` for :math:`i=1,...,4`
+    *Global optimum*: :math:`f(x_i) = -10.5362837` for :math:`x_i = 4` for :math:`i=1,...,4`
 
     """
 
@@ -6393,7 +6366,7 @@ class Shekel10(Benchmark):
         self.bounds = zip([0.0] * self.dimensions, [10.0] * self.dimensions)
 
         self.global_optimum = [4.0 for _ in range(self.dimensions)]
-        self.fglob = -10.5319
+        self.fglob = -10.5362837262
 
     def evaluator(self, x, *args):
 
@@ -6717,7 +6690,7 @@ class Step(Benchmark):
 
     .. math::
 
-       f_{\\text{Step}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\left ( \\lfloor x_i \\rfloor + 0.5 \\right )^2
+       f_{\\text{Step}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\left ( \\lfloor x_i  + 0.5 \\rfloor \\right )^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
 
@@ -6736,14 +6709,14 @@ class Step(Benchmark):
         self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
         self.custom_bounds = ([-5, 5], [-5, 5])
 
-        self.global_optimum = [0.5 for _ in range(self.dimensions)]
-        self.fglob = 0.5
+        self.global_optimum = [0.0 for _ in range(self.dimensions)]
+        self.fglob = 0.0
         self.change_dimensionality = True
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return sum((floor(x) + 0.5)**2.0)
+        return sum((floor(x + 0.5))**2.0)
 
 # -------------------------------------------------------------------------------- #
 
@@ -7037,9 +7010,8 @@ class ThreeHumpCamel(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-
-        x1, x2 = x
-        return 2.0*x1**2.0  - 1.05*x1**4.0 + x1**6/6.0 + x1*x2 + x2**2.0
+        return (2.0 * x[0]**2.0  - 1.05 * x[0]**4.0 + x[0]**6/6.0
+                + x[0] * x[1] + x[1]**2.0)
 
 # -------------------------------------------------------------------------------- #
 
@@ -7111,7 +7083,7 @@ class Trigonometric01(Benchmark):
 
         self.fun_evals += 1
 
-        rng = numpy.arange(1.0, self.dimensions+1)
+        rng = arange(1.0, self.dimensions+1)
         return sum((self.dimensions - sum(cos(x) + rng*(1 - cos(x) - sin(x))))**2.0)
 
 # -------------------------------------------------------------------------------- #
@@ -7192,11 +7164,11 @@ class Tripod(Benchmark):
 
         self.fun_evals += 1
 
-        x1, x2 = x
-        p1 = float(x1 >= 0)
-        p2 = float(x2 >= 0)
+        p1 = float(x[0] >= 0)
+        p2 = float(x[1] >= 0)
 
-        return p2*(1.0 + p1) + abs(x1 + 50.0*p2*(1.0-2.0*p1)) + abs(x2 + 50.0*(1.0-2.0*p2))
+        return (p2 * (1.0 + p1) + abs(x[0] + 50.0 * p2 * (1.0 - 2.0 * p1))
+                + abs(x[1] + 50.0 * (1.0 - 2.0 * p2)))
 
 # -------------------------------------------------------------------------------- #
 
@@ -7232,11 +7204,8 @@ class Ursem01(Benchmark):
         self.fglob = -4.8168
 
     def evaluator(self, x, *args):
-
         self.fun_evals += 1
-
-        x1, x2 = x
-        return -sin(2*x1 - 0.5*pi) - 3.0*cos(x2) - 0.5*x1
+        return (-sin(2 * x[0] - 0.5 * pi) - 3.0 * cos(x[1]) - 0.5 * x[0])
 
 # -------------------------------------------------------------------------------- #
 
@@ -7275,8 +7244,10 @@ class Ursem03(Benchmark):
 
         self.fun_evals += 1
 
-        x1, x2 = x
-        return -sin(2.2*pi*x1 + 0.5*pi)*((2.0 - abs(x1))/2.0)*((3.0 - abs(x1))/2.0) - sin(2.2*pi*x2 + 0.5*pi)*((2.0 - abs(x2))/2.0)*((3.0 - abs(x2))/2.0)
+        return (-sin(2.2 * pi * x[0] + 0.5 * pi)
+                 * ((2.0 - abs(x[0]))/2.0) * ((3.0 - abs(x[0]))/2)
+                - sin(2.2 * pi * x[1] + 0.5 * pi)
+                  * ((2.0 - abs(x[1])) / 2) * ((3.0 - abs(x[1])) / 2))
 
 # -------------------------------------------------------------------------------- #
 
@@ -7666,8 +7637,8 @@ class Weierstrass(Benchmark):
 
         y = zeros((self.dimensions, ))
 
-        ak = a**(numpy.arange(0, kmax+1))
-        bk = b**(numpy.arange(0, kmax+1))
+        ak = a**(arange(0, kmax+1))
+        bk = b**(arange(0, kmax+1))
         for i in range(self.dimensions):
             y[i] = sum(ak*cos(2*pi*bk*(x[i] + 0.5))) - self.dimensions*sum(ak*cos(pi*bk))
 
@@ -7802,7 +7773,7 @@ class XinSheYang01(Benchmark):
         self.fun_evals += 1
         epsilon = uniform(0.0, 1.0, size=self.dimensions)
 
-        rng = numpy.arange(1.0, self.dimensions+1.0)
+        rng = arange(1.0, self.dimensions+1.0)
         return sum(epsilon*(abs(x)**rng))
 
 # -------------------------------------------------------------------------------- #
@@ -8095,7 +8066,7 @@ class Zacharov(Benchmark):
 
         self.fun_evals += 1
 
-        rng = numpy.arange(1.0, self.dimensions+1.0)
+        rng = arange(1.0, self.dimensions+1.0)
         return sum(x**2.0) + (0.5*sum(rng*x))**2.0 + (0.5*sum(rng*x))**4.0
 
 # -------------------------------------------------------------------------------- #
@@ -8268,7 +8239,7 @@ class Zirilli(Benchmark):
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
         self.global_optimum = [-1.0465, 0.0]
-        self.fglob = -0.3523
+        self.fglob = -0.35238603
 
     def evaluator(self, x, *args):
 
