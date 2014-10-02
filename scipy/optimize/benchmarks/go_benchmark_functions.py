@@ -30,7 +30,7 @@ from scipy.misc import factorial
 
 # Plotting stuff
 import matplotlib
-#matplotlib.use('AGG')
+# matplotlib.use('AGG')
 
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
@@ -42,7 +42,9 @@ seterr(all='ignore')
 
 # -------------------------------------------------------------------------------- #
 
+
 class Benchmark(object):
+
     """
     Defines a global optimization benchmark problem.
 
@@ -92,15 +94,13 @@ class Benchmark(object):
 
     def lower_bounds_constraints(self, x):
 
-        lower  = asarray([b[0] for b in self.bounds])
+        lower = asarray([b[0] for b in self.bounds])
         return asarray(x) - lower
-
 
     def upper_bounds_constraints(self, x):
 
-        upper  = asarray([b[1] for b in self.bounds])
+        upper = asarray([b[1] for b in self.bounds])
         return upper - asarray(x)
-
 
     def plot(self, set_title=False):
 
@@ -140,7 +140,7 @@ class Benchmark(object):
 
             for i in range(X.shape[0]):
                 for j in range(X.shape[1]):
-                    Z[i,j] = self.evaluator(asarray([X[i,j], Y[i,j]]))
+                    Z[i, j] = self.evaluator(asarray([X[i, j], Y[i, j]]))
 
             min_index = Z.argmin()
             cmap = matplotlib.cm.jet
@@ -149,11 +149,14 @@ class Benchmark(object):
                 Z = numpy.ma.array(Z, mask=numpy.isnan(Z))
                 lev = linspace(Z.min(), Z.max(), self.spacing)
                 norml = colors.BoundaryNorm(lev, 256)
-                ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cmap, linewidth=0.0, shade=True, norm=norml)
+                ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                                cmap=cmap, linewidth=0.0, shade=True, norm=norml)
             else:
-                ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cmap, linewidth=0.0, shade=True)
+                ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                                cmap=cmap, linewidth=0.0, shade=True)
 
-            cset = plt.contour(X, Y, Z, zdir='z', offset=ax.get_zlim()[0], alpha=0.3)
+            cset = plt.contour(X, Y, Z, zdir='z',
+                               offset=ax.get_zlim()[0], alpha=0.3)
 
             ax.set_xlabel(r'$x_1$', fontsize=16)
             ax.set_ylabel(r'$x_2$', fontsize=16)
@@ -184,7 +187,7 @@ class Benchmark(object):
         if not os.path.isdir(out_folder):
             os.makedirs(out_folder)
 
-        filename = os.path.join(out_folder, '%s.png'%name)
+        filename = os.path.join(out_folder, '%s.png' % name)
         fig.savefig(filename)
         plt.close(fig)
         del fig
@@ -195,6 +198,7 @@ class Benchmark(object):
 #-----------------------------------------------------------------------
 
 class Ackley(Benchmark):
+
     """
     Ackley test objective function.
 
@@ -229,13 +233,18 @@ class Ackley(Benchmark):
 
         self.fun_evals += 1
 
-        a = 20.0; b = 0.2; c = 2.0*pi
-        return -a*exp(-b*sqrt(1./self.dimensions*sum(x**2)))-exp(1./self.dimensions*sum(cos(c*x)))+a+exp(1.)
+        a = 20.0
+        b = 0.2
+        c = 2.0 * pi
+        return (-a * exp(-b * sqrt(1. / self.dimensions * sum(x ** 2)))
+                - exp(1. / self.dimensions * sum(cos(c * x)))
+                + a + exp(1.))
 
 
 #-----------------------------------------------------------------------
 
 class Adjiman(Benchmark):
+
     """
     Adjiman test objective function.
 
@@ -267,11 +276,13 @@ class Adjiman(Benchmark):
 
     def evaluator(self, x, *args):
         self.fun_evals += 1
-        return cos(x[0]) * sin(x[1]) - x[0] / (x[1]**2 + 1)
+        return cos(x[0]) * sin(x[1]) - x[0] / (x[1] ** 2 + 1)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Alpine01(Benchmark):
+
     """
     Alpine 1 test objective function.
 
@@ -310,7 +321,9 @@ class Alpine01(Benchmark):
 
 # -------------------------------------------------------------------------------- #
 
+
 class Alpine02(Benchmark):
+
     """
     Alpine 2 test objective function.
 
@@ -349,7 +362,9 @@ class Alpine02(Benchmark):
 
 # -------------------------------------------------------------------------------- #
 
+
 class AMGM(Benchmark):
+
     """
     AMGM test objective function.
 
@@ -388,17 +403,17 @@ class AMGM(Benchmark):
 
         f1 = sum(x)
         f2 = prod(x)
-
-        xsum = f1
-        f1 = f1/n
-        f2 = f2**(1.0/n)
-        f = (f1 - f2)**2
+        f1 = f1 / n
+        f2 = f2 ** (1.0 / n)
+        f = (f1 - f2) ** 2
 
         return f
 
 # -------------------------------------------------------------------------------- #
 
+
 class BartelsConn(Benchmark):
+
     """
     Bartels-Conn test objective function.
 
@@ -432,12 +447,14 @@ class BartelsConn(Benchmark):
     def evaluator(self, x, *args):
         self.fun_evals += 1
 
-        return (abs(x[0]**2.0 + x[1]**2.0 + x[0] * x[1]) + abs(sin(x[1]))
+        return (abs(x[0] ** 2.0 + x[1] ** 2.0 + x[0] * x[1]) + abs(sin(x[1]))
                 + abs(cos(x[1])))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Beale(Benchmark):
+
     """
     Beale test objective function.
 
@@ -472,11 +489,15 @@ class Beale(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return (1.5 - x[0] + x[0]*x[1])**2 + (2.25 - x[0] + x[0]*x[1]**2)**2 + (2.625 - x[0] + x[0]*x[1]**3)**2
+        return ((1.5 - x[0] + x[0] * x[1]) ** 2
+                + (2.25 - x[0] + x[0] * x[1] ** 2) ** 2
+                + (2.625 - x[0] + x[0] * x[1] ** 3) ** 2)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Bird(Benchmark):
+
     """
     Bird test objective function.
 
@@ -504,20 +525,24 @@ class Bird(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-2.0*pi] * self.dimensions, [2.0*pi] * self.dimensions)
+        self.bounds = zip([-2.0 * pi] * self.dimensions,
+                          [2.0 * pi] * self.dimensions)
 
-        self.global_optimum = ([4.701055751981055 , 3.152946019601391],
+        self.global_optimum = ([4.701055751981055, 3.152946019601391],
                                [-1.582142172055011, -3.130246799635430])
         self.fglob = -106.7645367198034
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return sin(x[0])*exp((1-cos(x[1]))**2) + cos(x[1])*exp((1-sin(x[0]))**2) + (x[0]-x[1])**2
+        return (sin(x[0]) * exp((1 - cos(x[1])) ** 2)
+                + cos(x[1]) * exp((1 - sin(x[0])) ** 2) + (x[0] - x[1]) ** 2)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Bohachevsky(Benchmark):
+
     """
     Bohachevsky test objective function.
 
@@ -556,14 +581,16 @@ class Bohachevsky(Benchmark):
         self.fun_evals += 1
 
         x0 = x[:-1]
-        x1 = roll(x,-1)[:-1]
+        x1 = roll(x, -1)[:-1]
 
-        return sum(x0**2 + 2 * x1**2 - 0.3 * cos(3 * pi * x0)
+        return sum(x0 ** 2 + 2 * x1 ** 2 - 0.3 * cos(3 * pi * x0)
                    - 0.4 * cos(4 * pi * x1) + 0.7)
 
 # -------------------------------------------------------------------------------- #
 
+
 class BoxBetts(Benchmark):
+
     """
     BoxBetts test objective function.
 
@@ -602,13 +629,16 @@ class BoxBetts(Benchmark):
         y = 0.0
 
         for i in range(1, 11):
-            y += (exp(-0.1*i*x[0]) - exp(-0.1*i*x[1]) - (exp(-0.1*i) - exp(-1.0*i))*x[2])**2.0
+            y += (exp(-0.1 * i * x[0]) - exp(-0.1 * i * x[1])
+                  - (exp(-0.1 * i) - exp(-1.0 * i)) * x[2]) ** 2.0
 
         return y
 
 # -------------------------------------------------------------------------------- #
 
+
 class Branin01(Benchmark):
+
     """
     Branin 1 test objective function.
 
@@ -644,11 +674,13 @@ class Branin01(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return (x[1]-(5.1/(4*pi**2))*x[0]**2+5*x[0]/pi-6)**2+10*(1-1/(8*pi))*cos(x[0])+10
+        return (x[1] - (5.1 / (4 * pi ** 2)) * x[0] ** 2 + 5 * x[0] / pi - 6) ** 2 + 10 * (1 - 1 / (8 * pi)) * cos(x[0]) + 10
 
 # -------------------------------------------------------------------------------- #
 
+
 class Branin02(Benchmark):
+
     """
     Branin 2 test objective function.
 
@@ -683,11 +715,13 @@ class Branin02(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return (x[1]-(5.1/(4*pi**2))*x[0]**2+5*x[0]/pi-6)**2+10*(1-1/(8*pi))*cos(x[0])*cos(x[1])+log(x[0]**2.0+x[1]**2.0+1.0)+10
+        return (x[1] - (5.1 / (4 * pi ** 2)) * x[0] ** 2 + 5 * x[0] / pi - 6) ** 2 + 10 * (1 - 1 / (8 * pi)) * cos(x[0]) * cos(x[1]) + log(x[0] ** 2.0 + x[1] ** 2.0 + 1.0) + 10
 
 # -------------------------------------------------------------------------------- #
 
+
 class Brent(Benchmark):
+
     """
     Brent test objective function.
 
@@ -723,11 +757,13 @@ class Brent(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return (x[0] + 10.0)**2.0 + (x[1] + 10.0)**2.0 + exp(-x[0]**2.0 - x[1]**2.0)
+        return (x[0] + 10.0) ** 2.0 + (x[1] + 10.0) ** 2.0 + exp(-x[0] ** 2.0 - x[1] ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Brown(Benchmark):
+
     """
     Brown test objective function.
 
@@ -767,11 +803,13 @@ class Brown(Benchmark):
 
         x0 = x[:-1]
         x1 = x[1:]
-        return sum((x0**2.0)**(x1**2.0 + 1.0) + (x1**2.0)**(x0**2.0 + 1.0))
+        return sum((x0 ** 2.0) ** (x1 ** 2.0 + 1.0) + (x1 ** 2.0) ** (x0 ** 2.0 + 1.0))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Bukin02(Benchmark):
+
     """
     Bukin 2 test objective function.
 
@@ -806,11 +844,13 @@ class Bukin02(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return 100*(x[1]**2 - 0.01*x[0]**2 + 1.0) + 0.01*(x[0] + 10.0)**2.0
+        return 100 * (x[1] ** 2 - 0.01 * x[0] ** 2 + 1.0) + 0.01 * (x[0] + 10.0) ** 2.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class Bukin04(Benchmark):
+
     """
     Bukin 4 test objective function.
 
@@ -845,11 +885,13 @@ class Bukin04(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return 100*x[1]**2 + 0.01*abs(x[0] + 10)
+        return 100 * x[1] ** 2 + 0.01 * abs(x[0] + 10)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Bukin06(Benchmark):
+
     """
     Bukin 6 test objective function.
 
@@ -884,11 +926,13 @@ class Bukin06(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return 100*sqrt(abs(x[1] - 0.01*x[0]**2)) + 0.01*abs(x[0] + 10)
+        return 100 * sqrt(abs(x[1] - 0.01 * x[0] ** 2)) + 0.01 * abs(x[0] + 10)
 
 # -------------------------------------------------------------------------------- #
 
+
 class CarromTable(Benchmark):
+
     """
     CarromTable test objective function.
 
@@ -917,20 +961,22 @@ class CarromTable(Benchmark):
 
         self.bounds = zip([-10.0] * self.dimensions, [10.0] * self.dimensions)
 
-        self.global_optimum = [(9.646157266348881 , 9.646134286497169),
+        self.global_optimum = [(9.646157266348881, 9.646134286497169),
                                (-9.646157266348881, 9.646134286497169),
-                               (9.646157266348881 , -9.646134286497169),
+                               (9.646157266348881, -9.646134286497169),
                                (-9.646157266348881, -9.646134286497169)]
         self.fglob = -24.15681551650653
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return -((cos(x[0])*cos(x[1])*exp(abs(1 - sqrt(x[0]**2 + x[1]**2)/pi)))**2)/30
+        return -((cos(x[0]) * cos(x[1]) * exp(abs(1 - sqrt(x[0] ** 2 + x[1] ** 2) / pi))) ** 2) / 30
 
 # -------------------------------------------------------------------------------- #
 
+
 class Chichinadze(Benchmark):
+
     """
     Chichinadze test objective function.
 
@@ -966,11 +1012,13 @@ class Chichinadze(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return x[0]**2 - 12*x[0] + 11 + 10*cos(pi*x[0]/2) + 8*sin(5*pi*x[0]/2) - 1.0/sqrt(5)*exp(-((x[1] - 0.5)**2)/2)
+        return x[0] ** 2 - 12 * x[0] + 11 + 10 * cos(pi * x[0] / 2) + 8 * sin(5 * pi * x[0] / 2) - 1.0 / sqrt(5) * exp(-((x[1] - 0.5) ** 2) / 2)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Cigar(Benchmark):
+
     """
     Cigar test objective function.
 
@@ -997,7 +1045,8 @@ class Cigar(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
         self.global_optimum = [0 for _ in range(self.dimensions)]
@@ -1007,11 +1056,13 @@ class Cigar(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return x[0]**2 + 1e6*sum(x[1:]**2)
+        return x[0] ** 2 + 1e6 * sum(x[1:] ** 2)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Cola(Benchmark):
+
     """
     Cola test objective function.
 
@@ -1051,10 +1102,13 @@ class Cola(Benchmark):
     def __init__(self, dimensions=17):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [[0.0, 4.0]] + list(zip([-4.0] * (self.dimensions-1), [4.0] * (self.dimensions-1)))
+        self.bounds = [[0.0, 4.0]] + \
+            list(zip([-4.0] * (self.dimensions - 1),
+                 [4.0] * (self.dimensions - 1)))
 
         self.global_optimum = [0.651906, 1.30194, 0.099242, -0.883791, -0.8796,
-                               0.204651, -3.28414, 0.851188, -3.46245, 2.53245, -0.895246,
+                               0.204651, -3.28414, 0.851188, -
+                               3.46245, 2.53245, -0.895246,
                                1.40992, -3.07367, 1.96257, -2.97872, -0.807849, -1.68978]
         self.fglob = 11.7464
 
@@ -1063,7 +1117,7 @@ class Cola(Benchmark):
         self.fun_evals += 1
 
         # C implementation - doesn't work
-##        dis = [1.27,
+# dis = [1.27,
 ##               1.69, 1.43,
 ##               2.04, 2.35, 2.43,
 ##               3.09, 3.18, 3.26, 2.85,
@@ -1071,22 +1125,22 @@ class Cola(Benchmark):
 ##               2.86, 2.56, 2.58, 2.59, 3.12, 3.06,
 ##               3.17, 3.18, 3.18, 3.12, 1.31, 1.64, 3.00,
 ##               3.21, 3.18, 3.18, 3.17, 1.70, 1.36, 2.95, 1.32,
-##               2.38, 2.31, 2.42, 1.94, 2.85, 2.81, 2.56, 2.91, 2.97]
+# 2.38, 2.31, 2.42, 1.94, 2.85, 2.81, 2.56, 2.91, 2.97]
 ##
 ##        s = 0.0
 ##        k = 1
 ##        mt = zeros((20, ))
 ##        mt[4:] = x[1:]
 ##
-##        for i in range(1, 10):
-##            for j in range(i):
+# for i in range(1, 10):
+# for j in range(i):
 ##                temp = 0.0
-##                for t in range(2):
+# for t in range(2):
 ##                    temp += (mt[i*2+t] - mt[j*2+t])**2.0
 ##                s += (dis[k-1] - sqrt(temp))**2.0
 ##                k += 1
 ##
-##        return s
+# return s
 
         # Scilab implementation
 
@@ -1102,20 +1156,23 @@ class Cola(Benchmark):
                      [2.38, 2.31, 2.42, 1.94, 2.85, 2.81, 2.56, 2.91, 2.97]])
 
         x1 = asarray([0.0, x[0]] + list(x[1::2]))
-        x2 = asarray([0.0, 0.0]  + list(x[2::2]))
-        y  = 0.0
+        x2 = asarray([0.0, 0.0] + list(x[2::2]))
+        y = 0.0
 
         for i in range(1, len(x1)):
-            y += sum((sqrt((x1[i] - x1[0:i])**2.0 + (x2[i] - x2[0:i])**2.0) - d[i, 0:i])**2.0)
+            y += sum((sqrt((x1[i] - x1[0:i]) ** 2.0 +
+                     (x2[i] - x2[0:i]) ** 2.0) - d[i, 0:i]) ** 2.0)
 
-##            for j in range(i):
+# for j in range(i):
 ##                y += (sqrt((x1[i] - x1[j])**2.0 + (x2[i] - x2[j])**2.0) - d[i, j])**2.0
 
         return y
 
 # -------------------------------------------------------------------------------- #
 
+
 class Colville(Benchmark):
+
     """
     Colville test objective function.
 
@@ -1143,11 +1200,13 @@ class Colville(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return 100*(x[0]**2-x[1])**2+(x[0]-1)**2+(x[2]-1)**2+90*(x[2]**2-x[3])**2+ 10.1*((x[1]-1)**2+(x[3]-1)**2)+19.8*(1/x[1])*(x[3]-1)
+        return 100 * (x[0] ** 2 - x[1]) ** 2 + (x[0] - 1) ** 2 + (x[2] - 1) ** 2 + 90 * (x[2] ** 2 - x[3]) ** 2 + 10.1 * ((x[1] - 1) ** 2 + (x[3] - 1) ** 2) + 19.8 * (1 / x[1]) * (x[3] - 1)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Corana(Benchmark):
+
     """
     Corana test objective function.
 
@@ -1187,16 +1246,18 @@ class Corana(Benchmark):
         d = [1., 1000., 10., 100.]
         r = 0
         for j in range(4):
-            zj =  floor(abs(x[j]/0.2) + 0.49999)*sign(x[j]) * 0.2
-            if abs(x[j]-zj) < 0.05:
-                r += 0.15 * ((zj - 0.05*sign(zj))**2) * d[j]
+            zj = floor(abs(x[j] / 0.2) + 0.49999) * sign(x[j]) * 0.2
+            if abs(x[j] - zj) < 0.05:
+                r += 0.15 * ((zj - 0.05 * sign(zj)) ** 2) * d[j]
             else:
                 r += d[j] * x[j] * x[j]
         return r
 
 # -------------------------------------------------------------------------------- #
 
+
 class CosineMixture(Benchmark):
+
     """
     Cosine Mixture test objective function.
 
@@ -1232,11 +1293,13 @@ class CosineMixture(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return -0.1 * sum(cos(5.0 * pi * x)) - sum(x**2.0)
+        return -0.1 * sum(cos(5.0 * pi * x)) - sum(x ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class CrossInTray(Benchmark):
+
     """
     Cross-in-Tray test objective function.
 
@@ -1265,7 +1328,7 @@ class CrossInTray(Benchmark):
 
         self.bounds = zip([-10.0] * self.dimensions, [10.0] * self.dimensions)
 
-        self.global_optimum = [(1.349406685353340 , 1.349406608602084),
+        self.global_optimum = [(1.349406685353340, 1.349406608602084),
                                (-1.349406685353340, 1.349406608602084),
                                (1.349406685353340, -1.349406608602084),
                                (-1.349406685353340, -1.349406608602084)]
@@ -1274,11 +1337,13 @@ class CrossInTray(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return -0.0001*(abs(sin(x[0])*sin(x[1])*exp(abs(100 - sqrt(x[0]**2 + x[1]**2)/pi))) + 1)**(0.1)
+        return -0.0001 * (abs(sin(x[0]) * sin(x[1]) * exp(abs(100 - sqrt(x[0] ** 2 + x[1] ** 2) / pi))) + 1) ** (0.1)
 
 # -------------------------------------------------------------------------------- #
 
+
 class CrossLegTable(Benchmark):
+
     """
     Cross-Leg-Table test objective function.
 
@@ -1313,11 +1378,13 @@ class CrossLegTable(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return -(abs(sin(x[0])*sin(x[1])*exp(abs(100 - sqrt(x[0]**2 + x[1]**2)/pi))) + 1)**(-0.1)
+        return -(abs(sin(x[0]) * sin(x[1]) * exp(abs(100 - sqrt(x[0] ** 2 + x[1] ** 2) / pi))) + 1) ** (-0.1)
 
 # -------------------------------------------------------------------------------- #
 
+
 class CrownedCross(Benchmark):
+
     """
     Crowned Cross test objective function.
 
@@ -1352,11 +1419,13 @@ class CrownedCross(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return 0.0001*(abs(sin(x[0])*sin(x[1])*exp(abs(100 - sqrt(x[0]**2 + x[1]**2)/pi))) + 1)**(0.1)
+        return 0.0001 * (abs(sin(x[0]) * sin(x[1]) * exp(abs(100 - sqrt(x[0] ** 2 + x[1] ** 2) / pi))) + 1) ** (0.1)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Csendes(Benchmark):
+
     """
     Csendes test objective function.
 
@@ -1392,11 +1461,13 @@ class Csendes(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return sum((x**6.0)*(2.0 + sin(1.0/x)))
+        return sum((x ** 6.0) * (2.0 + sin(1.0 / x)))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Cube(Benchmark):
+
     """
     Cube test objective function.
 
@@ -1432,11 +1503,13 @@ class Cube(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return 100.0*(x[1] - x[0]**3.0)**2.0 + (1.0 - x[0])**2.0
+        return 100.0 * (x[1] - x[0] ** 3.0) ** 2.0 + (1.0 - x[0]) ** 2.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class Damavandi(Benchmark):
+
     """
     Damavandi test objective function.
 
@@ -1474,15 +1547,17 @@ class Damavandi(Benchmark):
         self.fun_evals += 1
 
         num = sin(pi * (x[0] - 2.0)) * sin(pi * (x[1] - 2.0))
-        den = (pi**2) * (x[0] - 2.0) * (x[1] - 2.0)
-        factor1 = 1.0 - (abs(num / den))**5.0
-        factor2 = 2 + (x[0] - 7.0)**2.0 + 2 * (x[1] - 7.0)**2.0
+        den = (pi ** 2) * (x[0] - 2.0) * (x[1] - 2.0)
+        factor1 = 1.0 - (abs(num / den)) ** 5.0
+        factor2 = 2 + (x[0] - 7.0) ** 2.0 + 2 * (x[1] - 7.0) ** 2.0
 
         return factor1 * factor2
 
 # -------------------------------------------------------------------------------- #
 
+
 class Deb01(Benchmark):
+
     """
     Deb 1 test objective function.
 
@@ -1520,11 +1595,13 @@ class Deb01(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return -(1.0/self.dimensions)*sum(sin(5*pi*x)**6.0)
+        return -(1.0 / self.dimensions) * sum(sin(5 * pi * x) ** 6.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Deb02(Benchmark):
+
     """
     Deb 2 test objective function.
 
@@ -1562,11 +1639,13 @@ class Deb02(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return -(1.0/self.dimensions)*sum(sin(5*pi*(x**0.75 - 0.05))**6.0)
+        return -(1.0 / self.dimensions) * sum(sin(5 * pi * (x ** 0.75 - 0.05)) ** 6.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Decanomial(Benchmark):
+
     """
     Decanomial test objective function.
 
@@ -1604,16 +1683,19 @@ class Decanomial(Benchmark):
 
         self.fun_evals += 1
 
-        F1 = abs(x[0]**10 - 20*x[0]**9 + 180*x[0]**8 - 960*x[0]**7 + 3360*x[0]**6 - 8064*x[0]**5 + \
-               13340*x[0]**4 - 15360*x[0]**3 + 11520*x[0]**2 - 5120*x[0] + 2624.0)
-        F2 = abs(x[1]**4 + 12*x[1]**3 + 54*x[1]**2 + 108*x[1] + 81.0)
-        F = 0.001*(F1 + F2)**2
+        F1 = abs(x[0] ** 10 - 20 * x[0] ** 9 + 180 * x[0] ** 8 - 960 * x[0] ** 7 + 3360 * x[0] ** 6 - 8064 * x[0] ** 5 +
+                 13340 * x[0] ** 4 - 15360 * x[0] ** 3 + 11520 * x[0] ** 2 - 5120 * x[0] + 2624.0)
+        F2 = abs(x[1] ** 4 + 12 * x[1] ** 3 + 54 *
+                 x[1] ** 2 + 108 * x[1] + 81.0)
+        F = 0.001 * (F1 + F2) ** 2
 
         return F
 
 # -------------------------------------------------------------------------------- #
 
+
 class Deceptive(Benchmark):
+
     """
     Deceptive test objective function.
 
@@ -1654,7 +1736,7 @@ class Deceptive(Benchmark):
         self.bounds = zip([0.0] * self.dimensions, [1.0] * self.dimensions)
 
         n = self.dimensions
-        alpha = arange(1.0, n + 1.0)/(n + 1.0)
+        alpha = arange(1.0, n + 1.0) / (n + 1.0)
 
         self.global_optimum = alpha
         self.fglob = -1.0
@@ -1665,7 +1747,7 @@ class Deceptive(Benchmark):
         self.fun_evals += 1
 
         n = self.dimensions
-        alpha = arange(1.0, n + 1.0)/(n + 1.0)
+        alpha = arange(1.0, n + 1.0) / (n + 1.0)
         beta = 2.0
 
         g = zeros((n, ))
@@ -1673,22 +1755,24 @@ class Deceptive(Benchmark):
         for i in range(n):
             if x[i] <= 0.0:
                 g[i] = x[i]
-            elif x[i] < 0.8*alpha[i]:
-                g[i] = -x[i]/alpha[i] + 0.8
+            elif x[i] < 0.8 * alpha[i]:
+                g[i] = -x[i] / alpha[i] + 0.8
             elif x[i] < alpha[i]:
-                g[i] = 5.0*x[i]/alpha[i] - 4.0
-            elif x[i] < (1.0 + 4*alpha[i])/5.0:
-                g[i] = 5.0*(x[i] - alpha[i])/(alpha[i] - 1.0) + 1.0
+                g[i] = 5.0 * x[i] / alpha[i] - 4.0
+            elif x[i] < (1.0 + 4 * alpha[i]) / 5.0:
+                g[i] = 5.0 * (x[i] - alpha[i]) / (alpha[i] - 1.0) + 1.0
             elif x[i] <= 1.0:
-                g[i] = (x[i] - 1.0)/(1.0 - alpha[i]) + 4.0/5.0
+                g[i] = (x[i] - 1.0) / (1.0 - alpha[i]) + 4.0 / 5.0
             else:
                 g[i] = x[i] - 1.0
 
-        return -((1.0/n)*sum(g))**beta
+        return -((1.0 / n) * sum(g)) ** beta
 
 # -------------------------------------------------------------------------------- #
 
+
 class DeckkersAarts(Benchmark):
+
     """
     Deckkers-Aarts test objective function.
 
@@ -1723,12 +1807,14 @@ class DeckkersAarts(Benchmark):
 
     def evaluator(self, x, *args):
         self.fun_evals += 1
-        return (1.e5 * x[0]**2 + x[1]**2 - (x[0]**2 + x[1]**2)**2
-                + 1.e-5 * (x[0]**2 + x[1]**2)**4)
+        return (1.e5 * x[0] ** 2 + x[1] ** 2 - (x[0] ** 2 + x[1] ** 2) ** 2
+                + 1.e-5 * (x[0] ** 2 + x[1] ** 2) ** 4)
 
 # -------------------------------------------------------------------------------- #
 
+
 class DeflectedCorrugatedSpring(Benchmark):
+
     """
     DeflectedCorrugatedSpring test objective function.
 
@@ -1759,7 +1845,7 @@ class DeflectedCorrugatedSpring(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         alpha = 5.0
-        self.bounds = zip([0] * self.dimensions, [2*alpha] * self.dimensions)
+        self.bounds = zip([0] * self.dimensions, [2 * alpha] * self.dimensions)
 
         self.global_optimum = [alpha for _ in range(self.dimensions)]
         self.fglob = -1.0
@@ -1770,11 +1856,13 @@ class DeflectedCorrugatedSpring(Benchmark):
         self.fun_evals += 1
         K, alpha = 5.0, 5.0
 
-        return -cos(K*sqrt(sum((x - alpha)**2))) + 0.1*sum((x - alpha)**2)
+        return -cos(K * sqrt(sum((x - alpha) ** 2))) + 0.1 * sum((x - alpha) ** 2)
 
 # -------------------------------------------------------------------------------- #
 
+
 class DeVilliersGlasser01(Benchmark):
+
     """
     DeVilliers-Glasser 1 test objective function.
 
@@ -1807,13 +1895,15 @@ class DeVilliersGlasser01(Benchmark):
         self.fun_evals += 1
 
         t_i = 0.1 * arange(24)
-        y_i = 60.137 * (1.371**t_i) * sin(3.112 * t_i + 1.761)
+        y_i = 60.137 * (1.371 ** t_i) * sin(3.112 * t_i + 1.761)
 
-        return sum((x[0] * (x[1]**t_i) * sin(x[2] * t_i + x[3]) - y_i)**2.0)
+        return sum((x[0] * (x[1] ** t_i) * sin(x[2] * t_i + x[3]) - y_i) ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class DeVilliersGlasser02(Benchmark):
+
     """
     DeVilliers-Glasser 2 test objective function.
 
@@ -1846,15 +1936,17 @@ class DeVilliersGlasser02(Benchmark):
         self.fun_evals += 1
 
         t_i = 0.1 * arange(16)
-        y_i = (53.81 * 1.27**t_i * tanh(3.012 * t_i + sin(2.13 * t_i))
+        y_i = (53.81 * 1.27 ** t_i * tanh(3.012 * t_i + sin(2.13 * t_i))
                * cos(exp(0.507) * t_i))
 
-        return sum((x[0] * (x[1]**t_i) * tanh(x[2] * t_i + sin(x[3] * t_i))
-                   * cos(t_i * exp(x[4])) - y_i)**2.0)
+        return sum((x[0] * (x[1] ** t_i) * tanh(x[2] * t_i + sin(x[3] * t_i))
+                   * cos(t_i * exp(x[4])) - y_i) ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class DixonPrice(Benchmark):
+
     """
     Dixon and Price test objective function.
 
@@ -1884,7 +1976,8 @@ class DixonPrice(Benchmark):
         self.bounds = zip([-10.0] * self.dimensions, [10.0] * self.dimensions)
         self.custom_bounds = [(-2, 3), (-2, 3)]
 
-        self.global_optimum = [2.0**(-(2.0**i-2.0)/2.0**i) for i in range(1, self.dimensions+1)]
+        self.global_optimum = [2.0 ** (-(2.0 ** i - 2.0) / 2.0 ** i)
+                               for i in range(1, self.dimensions + 1)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -1894,15 +1987,16 @@ class DixonPrice(Benchmark):
 
         s = 0.0
         for i in range(1, self.dimensions):
-            s += i*(2.0*x[i]**2.0 - x[i-1])**2.0
+            s += i * (2.0 * x[i] ** 2.0 - x[i - 1]) ** 2.0
 
-        y = s + (x[0] - 1.0)**2.0
+        y = s + (x[0] - 1.0) ** 2.0
         return y
 
 
 # -------------------------------------------------------------------------------- #
 
 class Dolan(Benchmark):
+
     """
     Dolan test objective function.
 
@@ -1922,20 +2016,24 @@ class Dolan(Benchmark):
     def __init__(self, dimensions=5):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
 
-        self.global_optimum = [8.39045925, 4.81424707, 7.34574133, 68.88246895, 3.85470806]
+        self.global_optimum = [8.39045925, 4.81424707, 7.34574133, 68.88246895,
+                               3.85470806]
         self.fglob = 1e-5
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
 
-        return abs((x[0] + 1.7 * x[1]) * sin(x[0]) - 1.5 * x[2] - 0.1 * x[3] * cos(x[3] + x[4] - x[0]) + 0.2 * x[4]**2.0 - x[1] - 1.0)
+        return abs((x[0] + 1.7 * x[1]) * sin(x[0]) - 1.5 * x[2] - 0.1 * x[3] * cos(x[3] + x[4] - x[0]) + 0.2 * x[4] ** 2.0 - x[1] - 1.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class DropWave(Benchmark):
+
     """
     DropWave test objective function.
 
@@ -1971,12 +2069,14 @@ class DropWave(Benchmark):
 
         self.fun_evals += 1
 
-        norm_x = sum(x**2)
-        return -(1+cos(12 * sqrt(norm_x)))/(0.5 * norm_x + 2)
+        norm_x = sum(x ** 2)
+        return -(1 + cos(12 * sqrt(norm_x))) / (0.5 * norm_x + 2)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Easom(Benchmark):
+
     """
     Easom test objective function.
 
@@ -2005,7 +2105,8 @@ class Easom(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
 
         self.global_optimum = [0 for _ in range(self.dimensions)]
         self.fglob = 0.0
@@ -2016,14 +2117,16 @@ class Easom(Benchmark):
 
         a = 20.0
         b = 0.2
-        c = 2*pi
+        c = 2 * pi
         n = self.dimensions
 
-        return -a * exp(-b * sqrt(sum(x**2) / n)) - exp(sum(cos(c * x)) / n) + a + exp(1)
+        return -a * exp(-b * sqrt(sum(x ** 2) / n)) - exp(sum(cos(c * x)) / n) + a + exp(1)
 
 # -------------------------------------------------------------------------------- #
 
+
 class EggCrate(Benchmark):
+
     """
     Egg Crate test objective function.
 
@@ -2060,11 +2163,13 @@ class EggCrate(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return x1**2.0 + x2**2.0 + 25.0*(sin(x1)**2.0 + sin(x2)**2.0)
+        return x1 ** 2.0 + x2 ** 2.0 + 25.0 * (sin(x1) ** 2.0 + sin(x2) ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class EggHolder(Benchmark):
+
     """
     Egg Holder test objective function.
 
@@ -2091,7 +2196,8 @@ class EggHolder(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-512.1] * self.dimensions, [512.0] * self.dimensions)
+        self.bounds = zip([-512.1] * self.dimensions,
+                          [512.0] * self.dimensions)
 
         self.global_optimum = [512.0, 404.2319]
         self.fglob = -959.640662711
@@ -2099,11 +2205,13 @@ class EggHolder(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return -(x[1]+47)*sin(sqrt(abs(x[1]+x[0]/2+47)))-x[0]*sin(sqrt(abs(x[0]-(x[1]+47))))
+        return -(x[1] + 47) * sin(sqrt(abs(x[1] + x[0] / 2 + 47))) - x[0] * sin(sqrt(abs(x[0] - (x[1] + 47))))
 
 # -------------------------------------------------------------------------------- #
 
+
 class ElAttarVidyasagarDutta(Benchmark):
+
     """
     El-Attar-Vidyasagar-Dutta test objective function.
 
@@ -2131,7 +2239,8 @@ class ElAttarVidyasagarDutta(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
         self.custom_bounds = [(-4, 4), (-4, 4)]
 
         self.global_optimum = [3.40918683, -2.17143304]
@@ -2142,11 +2251,13 @@ class ElAttarVidyasagarDutta(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return (x1**2.0 + x2 - 10)**2.0 + (x1 + x2**2.0 - 7)**2.0 + (x1**2.0 + x2**3.0 - 1)**2.0
+        return (x1 ** 2.0 + x2 - 10) ** 2.0 + (x1 + x2 ** 2.0 - 7) ** 2.0 + (x1 ** 2.0 + x2 ** 3.0 - 1) ** 2.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class Exp2(Benchmark):
+
     """
     Exp2 test objective function.
 
@@ -2185,13 +2296,16 @@ class Exp2(Benchmark):
 
         y = 0.0
         for i in range(10):
-            y += (exp(-i*x[0]/10.0) - 5*exp(-i*x[1]*10) - exp(-i/10.0) + 5*exp(-i))**2.0
+            y += (exp(-i * x[0] / 10.0) - 5 * exp(-i * x[1] * 10)
+                  - exp(-i / 10.0) + 5 * exp(-i)) ** 2.0
 
         return y
 
 # -------------------------------------------------------------------------------- #
 
+
 class Exponential(Benchmark):
+
     """
     Exponential test objective function.
 
@@ -2227,11 +2341,13 @@ class Exponential(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return -exp(-0.5*sum(x**2.0))
+        return -exp(-0.5 * sum(x ** 2.0))
 
 # -------------------------------------------------------------------------------- #
 
+
 class FreudensteinRoth(Benchmark):
+
     """
     FreudensteinRoth test objective function.
 
@@ -2267,14 +2383,16 @@ class FreudensteinRoth(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        f1 = (-13.0 + x[0] + ((5.0 - x[1])*x[1] - 2.0)*x[1])**2
-        f2 = (-29.0 + x[0] + ((x[1] + 1.0)*x[1] - 14.0)*x[1])**2
+        f1 = (-13.0 + x[0] + ((5.0 - x[1]) * x[1] - 2.0) * x[1]) ** 2
+        f2 = (-29.0 + x[0] + ((x[1] + 1.0) * x[1] - 14.0) * x[1]) ** 2
 
         return f1 + f2
 
 # -------------------------------------------------------------------------------- #
 
+
 class Gear(Benchmark):
+
     """
     Gear test objective function.
 
@@ -2303,11 +2421,13 @@ class Gear(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return (1.0/6.931 - floor(x[0])*floor(x[1])/(floor(x[2])*floor(x[3])))**2
+        return (1.0 / 6.931 - floor(x[0]) * floor(x[1]) / (floor(x[2]) * floor(x[3]))) ** 2
 
 # -------------------------------------------------------------------------------- #
 
+
 class Giunta(Benchmark):
+
     """
     Giunta test objective function.
 
@@ -2343,12 +2463,14 @@ class Giunta(Benchmark):
 
         self.fun_evals += 1
 
-        arg = 16*x/15.0 - 1
-        return 0.6 + sum(sin(arg) + sin(arg)**2 + sin(4*arg)/50)
+        arg = 16 * x / 15.0 - 1
+        return 0.6 + sum(sin(arg) + sin(arg) ** 2 + sin(4 * arg) / 50)
 
 # -------------------------------------------------------------------------------- #
 
+
 class GoldsteinPrice(Benchmark):
+
     """
     Goldstein-Price test objective function.
 
@@ -2385,13 +2507,19 @@ class GoldsteinPrice(Benchmark):
 
         self.fun_evals += 1
 
-        a = 1+(x[0]+x[1]+1)**2*(19-14*x[0]+3*x[0]**2-14*x[1]+6*x[0]*x[1]+3*x[1]**2)
-        b = 30+(2*x[0]-3*x[1])**2*(18-32*x[0]+12*x[0]**2+48*x[1]-36*x[0]*x[1]+27*x[1]**2)
-        return a*b
+        a = 1 + (x[0] + x[1] + 1) ** 2 * \
+            (19 - 14 * x[0] + 3 * x[0] ** 2 -
+             14 * x[1] + 6 * x[0] * x[1] + 3 * x[1] ** 2)
+        b = 30 + (2 * x[0] - 3 * x[1]) ** 2 * \
+            (18 - 32 * x[0] + 12 * x[0] ** 2 +
+             48 * x[1] - 36 * x[0] * x[1] + 27 * x[1] ** 2)
+        return a * b
 
 # -------------------------------------------------------------------------------- #
 
+
 class Griewank(Benchmark):
+
     """
     Griewank test objective function.
 
@@ -2418,7 +2546,8 @@ class Griewank(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-600.0] * self.dimensions, [600.0] * self.dimensions)
+        self.bounds = zip([-600.0] * self.dimensions,
+                          [600.0] * self.dimensions)
         self.custom_bounds = [(-50, 50), (-50, 50)]
 
         self.global_optimum = [0 for _ in range(self.dimensions)]
@@ -2428,11 +2557,13 @@ class Griewank(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return sum(x**2)/4000.0 - prod(cos(x/sqrt(1.0+arange(len(x))))) + 1.0
+        return sum(x ** 2) / 4000.0 - prod(cos(x / sqrt(1.0 + arange(len(x))))) + 1.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class Gulf(Benchmark):
+
     """
     Gulf test objective function.
 
@@ -2470,13 +2601,15 @@ class Gulf(Benchmark):
 
         m = 99.
         i = arange(1., m + 1)
-        y = 25 + (-50 * log(i / 100.))**(2/3.)
-        vec = (exp(-((abs(y - x[1]))**x[2] / x[0])) - i / 100.)
-        return sum(vec**2)
+        y = 25 + (-50 * log(i / 100.)) ** (2 / 3.)
+        vec = (exp(-((abs(y - x[1])) ** x[2] / x[0])) - i / 100.)
+        return sum(vec ** 2)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Hansen(Benchmark):
+
     """
     Hansen test objective function.
 
@@ -2514,14 +2647,16 @@ class Hansen(Benchmark):
 
         f1 = f2 = 0.0
         for i in range(5):
-            f1 += (i+1)*cos(i*x[0] + i + 1)
-            f2 += (i+1)*cos((i+2)*x[1] + i + 1)
+            f1 += (i + 1) * cos(i * x[0] + i + 1)
+            f2 += (i + 1) * cos((i + 2) * x[1] + i + 1)
 
-        return f1*f2
+        return f1 * f2
 
 # -------------------------------------------------------------------------------- #
 
+
 class Hartmann3(Benchmark):
+
     """
     Hartmann3 test objective function.
 
@@ -2576,13 +2711,15 @@ class Hartmann3(Benchmark):
         d = zeros_like(c)
 
         for i in range(4):
-            d[i] = sum(a[:, i] * (x - p[:, i])**2)
+            d[i] = sum(a[:, i] * (x - p[:, i]) ** 2)
 
         return -sum(c * exp(-d))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Hartmann6(Benchmark):
+
     """
     Hartmann6 test objective function.
 
@@ -2635,7 +2772,8 @@ class Hartmann6(Benchmark):
 
         self.bounds = zip([0.0] * self.dimensions, [1.0] * self.dimensions)
 
-        self.global_optimum = [0.20168952, 0.15001069, 0.47687398, 0.27533243, 0.31165162, 0.65730054]
+        self.global_optimum = [0.20168952, 0.15001069,
+                               0.47687398, 0.27533243, 0.31165162, 0.65730054]
         self.fglob = -3.32236801141551
 
     def evaluator(self, x, *args):
@@ -2660,13 +2798,15 @@ class Hartmann6(Benchmark):
         d = zeros_like(c)
 
         for i in range(4):
-            d[i] = sum(a[:, i]*(x - p[:, i])**2)
+            d[i] = sum(a[:, i] * (x - p[:, i]) ** 2)
 
-        return -sum(c*exp(-d))
+        return -sum(c * exp(-d))
 
 # -------------------------------------------------------------------------------- #
 
+
 class HelicalValley(Benchmark):
+
     """
     HelicalValley test objective function.
 
@@ -2701,11 +2841,13 @@ class HelicalValley(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return 100*((x[2] - 10*arctan2(x[1], x[0])/2/pi)**2 + (sqrt(x[0]**2 + x[1]**2) - 1)**2) + x[2]**2
+        return 100 * ((x[2] - 10 * arctan2(x[1], x[0]) / 2 / pi) ** 2 + (sqrt(x[0] ** 2 + x[1] ** 2) - 1) ** 2) + x[2] ** 2
 
 # -------------------------------------------------------------------------------- #
 
+
 class HimmelBlau(Benchmark):
+
     """
     HimmelBlau test objective function.
 
@@ -2739,11 +2881,13 @@ class HimmelBlau(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return (x[0]**2 + x[1] - 11)**2 + (x[0] + x[1]**2 - 7)**2
+        return (x[0] ** 2 + x[1] - 11) ** 2 + (x[0] + x[1] ** 2 - 7) ** 2
 
 # -------------------------------------------------------------------------------- #
 
+
 class HolderTable(Benchmark):
+
     """
     HolderTable test objective function.
 
@@ -2772,20 +2916,22 @@ class HolderTable(Benchmark):
 
         self.bounds = zip([-10.0] * self.dimensions, [10.0] * self.dimensions)
 
-        self.global_optimum = [(8.055023472141116 , 9.664590028909654),
+        self.global_optimum = [(8.055023472141116, 9.664590028909654),
                                (-8.055023472141116, 9.664590028909654),
-                               (8.055023472141116 , -9.664590028909654),
+                               (8.055023472141116, -9.664590028909654),
                                (-8.055023472141116, -9.664590028909654)]
         self.fglob = -19.20850256788675
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return -abs(sin(x[0])*cos(x[1])*exp(abs(1 - sqrt(x[0]**2 + x[1]**2)/pi)))
+        return -abs(sin(x[0]) * cos(x[1]) * exp(abs(1 - sqrt(x[0] ** 2 + x[1] ** 2) / pi)))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Holzman(Benchmark):
+
     """
     Holzman test objective function.
 
@@ -2824,14 +2970,16 @@ class Holzman(Benchmark):
         val = 0
         i = arange(1, 101)
         t = 2 / 3.
-        u = 25 + (-50 * log(0.01 * i ))**t
-        v = (u - x[1])**x[2]
+        u = 25 + (-50 * log(0.01 * i)) ** t
+        v = (u - x[1]) ** x[2]
         w = exp(-v / x[0])
         return sum(-0.01 * i + w)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Hosaki(Benchmark):
+
     """
     Hosaki test objective function.
 
@@ -2867,11 +3015,13 @@ class Hosaki(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return (1 + x[0]*(-8 + x[0]*(7 + x[0]*(-7.0/3.0 + x[0] *1.0/4.0))))*x[1]*x[1] * exp(-x[1])
+        return (1 + x[0] * (-8 + x[0] * (7 + x[0] * (-7.0 / 3.0 + x[0] * 1.0 / 4.0)))) * x[1] * x[1] * exp(-x[1])
 
 # -------------------------------------------------------------------------------- #
 
+
 class Infinity(Benchmark):
+
     """
     Infinity test objective function.
 
@@ -2907,11 +3057,13 @@ class Infinity(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return sum(x**6.0*(sin(1.0/x) + 2.0))
+        return sum(x ** 6.0 * (sin(1.0 / x) + 2.0))
 
 # -------------------------------------------------------------------------------- #
 
+
 class JennrichSampson(Benchmark):
+
     """
     Jennrich-Sampson test objective function.
 
@@ -2950,11 +3102,13 @@ class JennrichSampson(Benchmark):
 
         x1, x2 = x
         rng = arange(1.0, 11.0)
-        return sum((2.0 + 2.0*rng - (exp(rng*x1) + exp(rng*x2)))**2.0)
+        return sum((2.0 + 2.0 * rng - (exp(rng * x1) + exp(rng * x2))) ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Judge(Benchmark):
+
     """
     Judge test objective function.
 
@@ -3002,20 +3156,25 @@ class Judge(Benchmark):
 
         x1, x2 = x
 
-        Y = asarray([4.284, 4.149, 3.877, 0.533, 2.211, 2.389, 2.145,  3.231, 1.998, 1.379,
-                     2.106, 1.428, 1.011, 2.179, 2.858, 1.388, 1.651, 1.593, 1.046, 2.152])
+        Y = asarray(
+            [4.284, 4.149, 3.877, 0.533, 2.211, 2.389, 2.145,  3.231, 1.998, 1.379,
+             2.106, 1.428, 1.011, 2.179, 2.858, 1.388, 1.651, 1.593, 1.046, 2.152])
 
-        X2 = asarray([0.286, 0.973, 0.384, 0.276, 0.973, 0.543, 0.957, 0.948, 0.543, 0.797,
-                      0.936, 0.889, 0.006, 0.828, 0.399, 0.617, 0.939, 0.784, 0.072, 0.889])
+        X2 = asarray(
+            [0.286, 0.973, 0.384, 0.276, 0.973, 0.543, 0.957, 0.948, 0.543, 0.797,
+             0.936, 0.889, 0.006, 0.828, 0.399, 0.617, 0.939, 0.784, 0.072, 0.889])
 
-        X3 = asarray([0.645, 0.585, 0.310, 0.058, 0.455, 0.779, 0.259, 0.202, 0.028, 0.099,
-                      0.142, 0.296, 0.175, 0.180, 0.842, 0.039, 0.103, 0.620, 0.158, 0.704])
+        X3 = asarray(
+            [0.645, 0.585, 0.310, 0.058, 0.455, 0.779, 0.259, 0.202, 0.028, 0.099,
+             0.142, 0.296, 0.175, 0.180, 0.842, 0.039, 0.103, 0.620, 0.158, 0.704])
 
-        return sum(((x1 + x2*X2 + (x2**2.0)*X3) - Y)**2.0)
+        return sum(((x1 + x2 * X2 + (x2 ** 2.0) * X3) - Y) ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Katsuura(Benchmark):
+
     """
     Katsuura test objective function.
 
@@ -3059,16 +3218,18 @@ class Katsuura(Benchmark):
         prod = 1.0
         for i in range(self.dimensions):
             s = 0.0
-            for k in range(1, d+1):
-                pow2 = 2.0**k
-                s += round(pow2*x[i])/pow2
-            prod = prod*(1.0 + (i+1.0)*s)
+            for k in range(1, d + 1):
+                pow2 = 2.0 ** k
+                s += round(pow2 * x[i]) / pow2
+            prod = prod * (1.0 + (i + 1.0) * s)
 
         return prod
 
 # -------------------------------------------------------------------------------- #
 
+
 class Keane(Benchmark):
+
     """
     Keane test objective function.
 
@@ -3107,11 +3268,13 @@ class Keane(Benchmark):
 
         x1, x2 = x
 
-        return (sin(x1 - x2)**2.0*sin(x1 + x2)**2.0)/sqrt(x1**2.0 + x2**2.0)
+        return (sin(x1 - x2) ** 2.0 * sin(x1 + x2) ** 2.0) / sqrt(x1 ** 2.0 + x2 ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Kowalik(Benchmark):
+
     """
     Kowalik test objective function.
 
@@ -3146,18 +3309,18 @@ class Kowalik(Benchmark):
 
         self.fun_evals += 1
 
-        b = asarray([4.0,   2.0,   1.0,    1/2.0,  1/4.0,
-                     1/6.0, 1/8.0, 1/10.0, 1/12.0, 1/14.0,
-                     1/16.0])
+        b = asarray([4.0,   2.0,   1.0,    1 / 2.0,  1 / 4.0,
+                     1 / 6.0, 1 / 8.0, 1 / 10.0, 1 / 12.0, 1 / 14.0,
+                     1 / 16.0])
         a = asarray([0.1957, 0.1947, 0.1735, 0.1600, 0.0844,
                      0.0627, 0.0456, 0.0342, 0.0323, 0.0235,
                      0.0246])
 
         y = 0.0
         for i in range(11):
-            bb = b[i]*b[i]
-            t = a[i] - (x[0]*(bb + b[i]*x[1])/(bb + b[i]*x[2]+x[3]))
-            y += t*t
+            bb = b[i] * b[i]
+            t = a[i] - (x[0] * (bb + b[i] * x[1]) / (bb + b[i] * x[2] + x[3]))
+            y += t * t
 
         return y
 
@@ -3165,6 +3328,7 @@ class Kowalik(Benchmark):
 # -------------------------------------------------------------------------------- #
 
 class Langermann(Benchmark):
+
     """
     Langermann test objective function.
 
@@ -3203,12 +3367,14 @@ class Langermann(Benchmark):
         b = [5, 2, 1, 4, 9]
         c = [1, 2, 5, 2, 3]
 
-        return -sum(c * exp(-(1 / pi) * ((x[0] - a)**2 +
-                    (x[1] - b)**2)) * cos(pi * ((x[0] - a)**2 + (x[1] - b)**2)))
+        return -sum(c * exp(-(1 / pi) * ((x[0] - a) ** 2 +
+                    (x[1] - b) ** 2)) * cos(pi * ((x[0] - a) ** 2 + (x[1] - b) ** 2)))
 
 # -------------------------------------------------------------------------------- #
 
+
 class LennardJones(Benchmark):
+
     """
     LennardJones test objective function.
 
@@ -3254,38 +3420,43 @@ class LennardJones(Benchmark):
 
         self.global_optimum = []
 
-        minima = [-1.0, -3.0, -6.0, -9.103852, -12.712062, -16.505384, -19.821489, -24.113360, -28.422532,
-                  -32.765970, -37.967600, -44.326801, -47.845157, -52.322627, -56.815742, -61.317995,
-                  -66.530949, -72.659782, -77.1777043]
+        minima = [
+            -1.0, -3.0, -6.0, -9.103852, -12.712062, -
+            16.505384, -19.821489, -24.113360, -28.422532,
+            -32.765970, -37.967600, -44.326801, -
+            47.845157, -52.322627, -56.815742, -61.317995,
+            -66.530949, -72.659782, -77.1777043]
 
-        k = dimensions/3
-        self.fglob = minima[k-2]
+        k = dimensions / 3
+        self.fglob = minima[k - 2]
         self.change_dimensionality = True
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
 
-        k = self.dimensions/3
+        k = self.dimensions / 3
         s = 0.0
 
-        for i in range(k-1):
-            for j in range(i+1, k):
-                a = 3*i
-                b = 3*j
+        for i in range(k - 1):
+            for j in range(i + 1, k):
+                a = 3 * i
+                b = 3 * j
                 xd = x[a] - x[b]
-                yd = x[a+1] - x[b+1]
-                zd = x[a+2] - x[b+2]
-                ed = xd*xd + yd*yd + zd*zd
-                ud = ed*ed*ed
+                yd = x[a + 1] - x[b + 1]
+                zd = x[a + 2] - x[b + 2]
+                ed = xd * xd + yd * yd + zd * zd
+                ud = ed * ed * ed
                 if ed > 0.0:
-                    s += (1.0/ud-2.0)/ud
+                    s += (1.0 / ud - 2.0) / ud
 
         return s
 
 # -------------------------------------------------------------------------------- #
 
+
 class Leon(Benchmark):
+
     """
     Leon test objective function.
 
@@ -3320,11 +3491,13 @@ class Leon(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return 100*(x[1] - x[0]**2.0)**2.0 + (1 - x[0])**2.0
+        return 100 * (x[1] - x[0] ** 2.0) ** 2.0 + (1 - x[0]) ** 2.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class Levy03(Benchmark):
+
     """
     Levy 3 test objective function.
 
@@ -3373,18 +3546,20 @@ class Levy03(Benchmark):
         z = zeros_like(x)
 
         for i in range(n):
-            z[i] = 1+(x[i]-1)/4
+            z[i] = 1 + (x[i] - 1) / 4
 
-        s = sin(pi*z[0])**2
-        for i in range(n-1):
-            s = s + (z[i]-1)**2*(1+10*(sin(pi*z[i]+1))**2)
+        s = sin(pi * z[0]) ** 2
+        for i in range(n - 1):
+            s = s + (z[i] - 1) ** 2 * (1 + 10 * (sin(pi * z[i] + 1)) ** 2)
 
-        y = s+(z[n-1]-1)**2*(1+(sin(2*pi*z[n-1]))**2)
+        y = s + (z[n - 1] - 1) ** 2 * (1 + (sin(2 * pi * z[n - 1])) ** 2)
         return y
 
 # -------------------------------------------------------------------------------- #
 
+
 class Levy05(Benchmark):
+
     """
     Levy 5 test objective function.
 
@@ -3425,11 +3600,13 @@ class Levy05(Benchmark):
         a = i * cos((i - 1) * x[0] + i)
         b = i * cos((i + 1) * x[1] + i)
 
-        return sum(a) * sum(b) + (x[0] + 1.42513)**2 + (x[1] + 0.80032)**2
+        return sum(a) * sum(b) + (x[0] + 1.42513) ** 2 + (x[1] + 0.80032) ** 2
 
 # -------------------------------------------------------------------------------- #
 
+
 class Levy13(Benchmark):
+
     """
     Levy13 test objective function.
 
@@ -3466,11 +3643,13 @@ class Levy13(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return (sin(3*pi*x[0]))**2 + ((x[0]-1)**2)*(1 + (sin(3*pi*x[1]))**2) + ((x[1]-1)**2)*(1 + (sin(2*pi*x[1]))**2)
+        return (sin(3 * pi * x[0])) ** 2 + ((x[0] - 1) ** 2) * (1 + (sin(3 * pi * x[1])) ** 2) + ((x[1] - 1) ** 2) * (1 + (sin(2 * pi * x[1])) ** 2)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Matyas(Benchmark):
+
     """
     Matyas test objective function.
 
@@ -3506,11 +3685,13 @@ class Matyas(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return 0.26*(x[0]**2 + x[1]**2) - 0.48*x[0]*x[1]
+        return 0.26 * (x[0] ** 2 + x[1] ** 2) - 0.48 * x[0] * x[1]
 
 # -------------------------------------------------------------------------------- #
 
+
 class McCormick(Benchmark):
+
     """
     McCormick test objective function.
 
@@ -3546,11 +3727,13 @@ class McCormick(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return sin(x[0] + x[1]) + (x[0] - x[1])**2 - 1.5*x[0] + 2.5*x[1] + 1
+        return sin(x[0] + x[1]) + (x[0] - x[1]) ** 2 - 1.5 * x[0] + 2.5 * x[1] + 1
 
 # -------------------------------------------------------------------------------- #
 
+
 class Michalewicz(Benchmark):
+
     """
     Michalewicz test objective function.
 
@@ -3591,11 +3774,13 @@ class Michalewicz(Benchmark):
 
         m = 10.0
         i = arange(1, self.dimensions + 1)
-        return -sum(sin(x) * sin(i * x**2 / pi)**(2*m))
+        return -sum(sin(x) * sin(i * x ** 2 / pi) ** (2 * m))
 
 # -------------------------------------------------------------------------------- #
 
+
 class MieleCantrell(Benchmark):
+
     """
     Miele-Cantrell test objective function.
 
@@ -3626,11 +3811,13 @@ class MieleCantrell(Benchmark):
         self.fun_evals += 1
 
         x1, x2, x3, x4 = x
-        return (exp(-x1) - x2)**4.0 + 100.0*(x2 - x3)**6.0 + (tan(x3 - x4))**4.0 + x1**8.0
+        return (exp(-x1) - x2) ** 4.0 + 100.0 * (x2 - x3) ** 6.0 + (tan(x3 - x4)) ** 4.0 + x1 ** 8.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class Mishra01(Benchmark):
+
     """
     Mishra 1 test objective function.
 
@@ -3658,7 +3845,8 @@ class Mishra01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.dimensions, [1.0 + 1e-9] * self.dimensions)
+        self.bounds = zip([0.0] * self.dimensions,
+                          [1.0 + 1e-9] * self.dimensions)
 
         self.global_optimum = [1.0 for _ in range(self.dimensions)]
         self.fglob = 2.0
@@ -3670,11 +3858,13 @@ class Mishra01(Benchmark):
         n = self.dimensions
 
         xn = n - sum(x[0:-1])
-        return (1 + xn)**xn
+        return (1 + xn) ** xn
 
 # -------------------------------------------------------------------------------- #
 
+
 class Mishra02(Benchmark):
+
     """
     Mishra 2 test objective function.
 
@@ -3702,7 +3892,8 @@ class Mishra02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.dimensions, [1.0 + 1e-9] * self.dimensions)
+        self.bounds = zip([0.0] * self.dimensions,
+                          [1.0 + 1e-9] * self.dimensions)
 
         self.global_optimum = [1.0 for _ in range(self.dimensions)]
         self.fglob = 2.0
@@ -3713,12 +3904,14 @@ class Mishra02(Benchmark):
         self.fun_evals += 1
         n = self.dimensions
 
-        xn = n - sum((x[0:-1] + x[1:])/2.0)
-        return (1 + xn)**xn
+        xn = n - sum((x[0:-1] + x[1:]) / 2.0)
+        return (1 + xn) ** xn
 
 # -------------------------------------------------------------------------------- #
 
+
 class Mishra03(Benchmark):
+
     """
     Mishra 3 test objective function.
 
@@ -3755,11 +3948,13 @@ class Mishra03(Benchmark):
 
         self.fun_evals += 1
         return ((0.01 * (x[0] + x[1])
-                + sqrt(abs(cos(sqrt(abs(x[0]**2 + x[1]**2)))))))
+                + sqrt(abs(cos(sqrt(abs(x[0] ** 2 + x[1] ** 2)))))))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Mishra04(Benchmark):
+
     """
     Mishra 4 test objective function.
 
@@ -3796,11 +3991,13 @@ class Mishra04(Benchmark):
 
         self.fun_evals += 1
         return ((0.01 * (x[0] + x[1])
-                + sqrt(abs(sin(sqrt(abs(x[0]**2 + x[1]**2)))))))
+                + sqrt(abs(sin(sqrt(abs(x[0] ** 2 + x[1] ** 2)))))))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Mishra05(Benchmark):
+
     """
     Mishra 5 test objective function.
 
@@ -3838,11 +4035,13 @@ class Mishra05(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return ((sin((cos(x1) + cos(x2))**2.0)**2.0) + (cos((sin(x1) + sin(x2))**2.0)**2.0) + x1)**2.0 + 0.01*(x1 + x2)
+        return ((sin((cos(x1) + cos(x2)) ** 2.0) ** 2.0) + (cos((sin(x1) + sin(x2)) ** 2.0) ** 2.0) + x1) ** 2.0 + 0.01 * (x1 + x2)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Mishra06(Benchmark):
+
     """
     Mishra 6 test objective function.
 
@@ -3880,11 +4079,13 @@ class Mishra06(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return -log(((sin((cos(x1) + cos(x2))**2.0)**2.0) - (cos((sin(x1) + sin(x2))**2.0)**2.0) + x1)**2.0) + 0.1*((x1 - 1.0)**2.0 + (x2 - 1.0)**2.0)
+        return -log(((sin((cos(x1) + cos(x2)) ** 2.0) ** 2.0) - (cos((sin(x1) + sin(x2)) ** 2.0) ** 2.0) + x1) ** 2.0) + 0.1 * ((x1 - 1.0) ** 2.0 + (x2 - 1.0) ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Mishra07(Benchmark):
+
     """
     Mishra 7 test objective function.
 
@@ -3914,18 +4115,21 @@ class Mishra07(Benchmark):
 
         self.bounds = zip([-10.0] * self.dimensions, [10.0] * self.dimensions)
         self.custom_bounds = [(-2, 2), (-2, 2)]
-        self.global_optimum = [sqrt(self.dimensions) for i in range(self.dimensions)]
+        self.global_optimum = [sqrt(self.dimensions)
+                               for i in range(self.dimensions)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return (prod(x) - factorial(self.dimensions))**2.0
+        return (prod(x) - factorial(self.dimensions)) ** 2.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class Mishra08(Benchmark):
+
     """
     Mishra 8 test objective function.
 
@@ -3962,13 +4166,17 @@ class Mishra08(Benchmark):
 
         self.fun_evals += 1
 
-        F1 = abs(x[0]**10-20*x[0]**9+180*x[0]**8-960*x[0]**7+3360*x[0]**6-8064*x[0]**5+13340*x[0]**4-15360*x[0]**3+11520*x[0]**2-5120*x[0]+2624)
-        F2 = abs(x[1]**4+12*x[1]**3+54*x[1]**2+108*x[1]+81.0)
-        return 0.001*(F1+F2)**2
+        F1 = abs(x[0] ** 10 - 20 * x[0] ** 9 + 180 * x[0] ** 8 - 960 * x[0] ** 7 + 3360 * x[0] ** 6 -
+                 8064 * x[0] ** 5 + 13340 * x[0] ** 4 - 15360 * x[0] ** 3 + 11520 * x[0] ** 2 - 5120 * x[0] + 2624)
+        F2 = abs(x[1] ** 4 + 12 * x[1] ** 3 + 54 *
+                 x[1] ** 2 + 108 * x[1] + 81.0)
+        return 0.001 * (F1 + F2) ** 2
 
 # -------------------------------------------------------------------------------- #
 
+
 class Mishra09(Benchmark):
+
     """
     Mishra 9 test objective function.
 
@@ -4007,14 +4215,16 @@ class Mishra09(Benchmark):
         self.fun_evals += 1
 
         x1, x2, x3 = x
-        F1 = 2*x1**3+5*x1*x2+4*x3-2*x1**2*x3-18.0
-        F2 = x1+x2**3+x1*x2**2+x1*x3**2-22.0
-        F3 = 8*x1**2+2*x2*x3+2*x2**2+3*x2**3-52.0
-        return (F1*F3*F2**2+F1*F2*F3**2+F2**2+(x1+x2-x3)**2)**2
+        F1 = 2 * x1 ** 3 + 5 * x1 * x2 + 4 * x3 - 2 * x1 ** 2 * x3 - 18.0
+        F2 = x1 + x2 ** 3 + x1 * x2 ** 2 + x1 * x3 ** 2 - 22.0
+        F3 = 8 * x1 ** 2 + 2 * x2 * x3 + 2 * x2 ** 2 + 3 * x2 ** 3 - 52.0
+        return (F1 * F3 * F2 ** 2 + F1 * F2 * F3 ** 2 + F2 ** 2 + (x1 + x2 - x3) ** 2) ** 2
 
 # -------------------------------------------------------------------------------- #
 
+
 class Mishra10(Benchmark):
+
     """
     Mishra 10 test objective function.
 
@@ -4052,12 +4262,14 @@ class Mishra10(Benchmark):
         x1, x2 = int(x[0]), int(x[1])
 
         f1 = x1 + x2
-        f2 = x1*x2
-        return (f1 - f2)**2.0
+        f2 = x1 * x2
+        return (f1 - f2) ** 2.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class Mishra11(Benchmark):
+
     """
     Mishra 11 test objective function.
 
@@ -4086,7 +4298,7 @@ class Mishra11(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self.bounds = zip([-10.0] * self.dimensions, [10.0] * self.dimensions)
-        self.custom_bounds= [(-3, 3), (-3, 3)]
+        self.custom_bounds = [(-3, 3), (-3, 3)]
 
         self.global_optimum = [0.0 for _ in range(self.dimensions)]
         self.fglob = 0.0
@@ -4097,11 +4309,13 @@ class Mishra11(Benchmark):
         self.fun_evals += 1
         n = self.dimensions
 
-        return ((1.0/n)*sum(abs(x)) - (prod(abs(x)))**1.0/n)**2.0
+        return ((1.0 / n) * sum(abs(x)) - (prod(abs(x))) ** 1.0 / n) ** 2.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class MultiModal(Benchmark):
+
     """
     MultiModal test objective function.
 
@@ -4139,11 +4353,13 @@ class MultiModal(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return sum(abs(x))*prod(abs(x))
+        return sum(abs(x)) * prod(abs(x))
 
 # -------------------------------------------------------------------------------- #
 
+
 class NeedleEye(Benchmark):
+
     """
     NeedleEye test objective function.
 
@@ -4194,13 +4410,15 @@ class NeedleEye(Benchmark):
                 f += 1.0
 
         if fp < 1e-6:
-            f = f/self.dimensions
+            f = f / self.dimensions
 
         return f
 
 # -------------------------------------------------------------------------------- #
 
+
 class NewFunction01(Benchmark):
+
     """
     NewFunction01 test objective function.
 
@@ -4236,11 +4454,13 @@ class NewFunction01(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return (abs(cos(sqrt(abs(x[0]**2 + x[1])))))**0.5 + 0.01 * (x[0] + x[1])
+        return (abs(cos(sqrt(abs(x[0] ** 2 + x[1]))))) ** 0.5 + 0.01 * (x[0] + x[1])
 
 # -------------------------------------------------------------------------------- #
 
+
 class NewFunction02(Benchmark):
+
     """
     NewFunction02 test objective function.
 
@@ -4276,11 +4496,13 @@ class NewFunction02(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return (abs(sin(sqrt(abs(x[0]**2 + x[1])))))**0.5 + 0.01 * (x[0] + x[1])
+        return (abs(sin(sqrt(abs(x[0] ** 2 + x[1]))))) ** 0.5 + 0.01 * (x[0] + x[1])
 
 # -------------------------------------------------------------------------------- #
 
+
 class NewFunction03(Benchmark):
+
     """
     NewFunction03 test objective function.
 
@@ -4316,16 +4538,18 @@ class NewFunction03(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        f1 = sin((cos(x[0]) + cos(x[1]))**2)**2
-        f2 = cos((sin(x[0]) + sin(x[1]))**2)**2
-        f = (f1 + f2 + x[0])**2
-        f = f + 0.01*x[0] + 0.1*x[1]
+        f1 = sin((cos(x[0]) + cos(x[1])) ** 2) ** 2
+        f2 = cos((sin(x[0]) + sin(x[1])) ** 2) ** 2
+        f = (f1 + f2 + x[0]) ** 2
+        f = f + 0.01 * x[0] + 0.1 * x[1]
 
         return f
 
 # -------------------------------------------------------------------------------- #
 
+
 class OddSquare(Benchmark):
+
     """
     Odd Square test objective function.
 
@@ -4362,10 +4586,11 @@ class OddSquare(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.0*pi] * self.dimensions, [5.0*pi] * self.dimensions)
+        self.bounds = zip([-5.0 * pi] * self.dimensions,
+                          [5.0 * pi] * self.dimensions)
         self.custom_bounds = ([-2.0, 4.0], [-2.0, 4.0])
 
-        a = asarray([1, 1.3, 0.8, -0.4, -1.3, 1.6, -0.2, -0.6, 0.5, 1.4]*2)
+        a = asarray([1, 1.3, 0.8, -0.4, -1.3, 1.6, -0.2, -0.6, 0.5, 1.4] * 2)
 
         self.global_optimum = a[0:self.dimensions]
         self.fglob = -1.0084
@@ -4375,17 +4600,19 @@ class OddSquare(Benchmark):
         self.fun_evals += 1
 
         c = 0.02
-        a = asarray([1, 1.3, 0.8, -0.4, -1.3, 1.6, -0.2, -0.6, 0.5, 1.4]*2)
+        a = asarray([1, 1.3, 0.8, -0.4, -1.3, 1.6, -0.2, -0.6, 0.5, 1.4] * 2)
 
         b = a[0:self.dimensions]
-        d = self.dimensions*max((x - b)**2.0)
-        h = sum((x - b)**2.0)
+        d = self.dimensions * max((x - b) ** 2.0)
+        h = sum((x - b) ** 2.0)
 
-        return -exp(-d/(2.0*pi))*cos(pi*d)*(1.0 + 0.02*h/(d + 0.01))
+        return -exp(-d / (2.0 * pi)) * cos(pi * d) * (1.0 + 0.02 * h / (d + 0.01))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Parsopoulos(Benchmark):
+
     """
     Parsopoulos test objective function.
 
@@ -4417,7 +4644,7 @@ class Parsopoulos(Benchmark):
 
         self.bounds = zip([-5.0] * self.dimensions, [5.0] * self.dimensions)
 
-        self.global_optimum = [pi/2.0, pi]
+        self.global_optimum = [pi / 2.0, pi]
         self.fglob = 0
 
     def evaluator(self, x, *args):
@@ -4425,11 +4652,13 @@ class Parsopoulos(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return cos(x1)**2.0 + sin(x2)**2.0
+        return cos(x1) ** 2.0 + sin(x2) ** 2.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class Pathological(Benchmark):
+
     """
     Pathological test objective function.
 
@@ -4457,7 +4686,8 @@ class Pathological(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
 
         self.global_optimum = [0 for _ in range(self.dimensions)]
         self.fglob = 0.
@@ -4466,14 +4696,16 @@ class Pathological(Benchmark):
 
         self.fun_evals += 1
 
-        vec = (0.5 + (sin(sqrt(100 * x[: -1]**2 + x[1:]**2))**2 - 0.5) /
-                      (1. + 0.001 * (x[: -1]**2 - 2 * x[: -1] * x[1:]
-                       + x[1:]**2)**2))
+        vec = (0.5 + (sin(sqrt(100 * x[: -1] ** 2 + x[1:] ** 2)) ** 2 - 0.5) /
+               (1. + 0.001 * (x[: -1] ** 2 - 2 * x[: -1] * x[1:]
+                              + x[1:] ** 2) ** 2))
         return sum(vec)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Paviani(Benchmark):
+
     """
     Paviani test objective function.
 
@@ -4502,11 +4734,13 @@ class Paviani(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return sum(log(x-2)**2.0 + log(10.0 - x)**2.0) - prod(x)**0.2
+        return sum(log(x - 2) ** 2.0 + log(10.0 - x) ** 2.0) - prod(x) ** 0.2
 
 # -------------------------------------------------------------------------------- #
 
+
 class Penalty01(Benchmark):
+
     """
     Penalty 1 test objective function.
 
@@ -4560,15 +4794,16 @@ class Penalty01(Benchmark):
 
         a, b, c = 10.0, 100.0, 4.0
         xx = abs(x)
-        u = where(xx > a, b*(xx - a)**c, 0.0)
+        u = where(xx > a, b * (xx - a) ** c, 0.0)
 
-        y = 1.0 + (x + 1.0)/4.0
-        return sum(u) + (pi/30.0)*(10.0*sin(pi*y[0])**2.0 + sum((y[0:-1] - 1.0)**2.0 *(1.0 + 10.0*sin(pi*y[1:])**2.0)) + (y[-1] - 1)**2.0)
+        y = 1.0 + (x + 1.0) / 4.0
+        return sum(u) + (pi / 30.0) * (10.0 * sin(pi * y[0]) ** 2.0 + sum((y[0:-1] - 1.0) ** 2.0 * (1.0 + 10.0 * sin(pi * y[1:]) ** 2.0)) + (y[-1] - 1) ** 2.0)
 
 
 # -------------------------------------------------------------------------------- #
 
 class Penalty02(Benchmark):
+
     """
     Penalty 2 test objective function.
 
@@ -4616,13 +4851,15 @@ class Penalty02(Benchmark):
 
         a, b, c = 5.0, 100.0, 4.0
         xx = abs(x)
-        u = where(xx > a, b*(xx - a)**c, 0.0)
+        u = where(xx > a, b * (xx - a) ** c, 0.0)
 
-        return sum(u) + 0.1*(10.0*sin(3.0*pi*x[0])**2.0 + sum((x[0:-1] - 1.0)**2.0 *(1.0 + sin(pi*x[1:])**2.0)) + (x[-1] - 1)**2.0*(1 + sin(2*pi*x[-1])**2.0))
+        return sum(u) + 0.1 * (10.0 * sin(3.0 * pi * x[0]) ** 2.0 + sum((x[0:-1] - 1.0) ** 2.0 * (1.0 + sin(pi * x[1:]) ** 2.0)) + (x[-1] - 1) ** 2.0 * (1 + sin(2 * pi * x[-1]) ** 2.0))
 
 # -------------------------------------------------------------------------------- #
 
+
 class PenHolder(Benchmark):
+
     """
     PenHolder test objective function.
 
@@ -4658,11 +4895,13 @@ class PenHolder(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return -exp(-(abs(cos(x[0])*cos(x[1])*exp(abs(1 - sqrt(x[0]**2 + x[1]**2)/pi))))**(-1))
+        return -exp(-(abs(cos(x[0]) * cos(x[1]) * exp(abs(1 - sqrt(x[0] ** 2 + x[1] ** 2) / pi)))) ** (-1))
 
 # -------------------------------------------------------------------------------- #
 
+
 class PermFunction01(Benchmark):
+
     """
     PermFunction 1 test objective function.
 
@@ -4690,7 +4929,8 @@ class PermFunction01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-self.dimensions] * self.dimensions, [self.dimensions+1] * self.dimensions)
+        self.bounds = zip([-self.dimensions] * self.dimensions,
+                          [self.dimensions + 1] * self.dimensions)
 
         self.global_optimum = range(1, self.dimensions + 1)
         self.fglob = 0.0
@@ -4704,14 +4944,16 @@ class PermFunction01(Benchmark):
         s_out = 0.0
         for k in range(1, self.dimensions + 1):
             j = arange(1, self.dimensions + 1)
-            s_in = (j**k + b) * ((x[j - 1] / j)**k - 1)
-            s_out += sum(s_in**2)
+            s_in = (j ** k + b) * ((x[j - 1] / j) ** k - 1)
+            s_out += sum(s_in ** 2)
 
         return s_out
 
 # -------------------------------------------------------------------------------- #
 
+
 class PermFunction02(Benchmark):
+
     """
     PermFunction 2 test objective function.
 
@@ -4739,10 +4981,11 @@ class PermFunction02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-self.dimensions] * self.dimensions, [self.dimensions+1] * self.dimensions)
+        self.bounds = zip([-self.dimensions] * self.dimensions,
+                          [self.dimensions + 1] * self.dimensions)
         self.custom_bounds = ([0, 1.5], [0, 1.0])
 
-        self.global_optimum = 1. / arange(1, self.dimensions+1)
+        self.global_optimum = 1. / arange(1, self.dimensions + 1)
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -4752,12 +4995,14 @@ class PermFunction02(Benchmark):
         outer = 0
         j = arange(1, self.dimensions + 1)
         for k in range(1, self.dimensions + 1):
-            inner = (j + b) * (x[j - 1]**k - (1. / j)**k)
-            outer += sum(inner**2)
+            inner = (j + b) * (x[j - 1] ** k - (1. / j) ** k)
+            outer += sum(inner ** 2)
         return outer
 # -------------------------------------------------------------------------------- #
 
+
 class Pinter(Benchmark):
+
     """
     Pinter test objective function.
 
@@ -4812,24 +5057,27 @@ class Pinter(Benchmark):
 
             if i == 0:
                 x_mi = x[-1]
-                x_pi = x[i+1]
+                x_pi = x[i + 1]
             elif i == n - 1:
-                x_mi = x[i-1]
+                x_mi = x[i - 1]
                 x_pi = x[0]
             else:
-                x_mi = x[i-1]
-                x_pi = x[i+1]
+                x_mi = x[i - 1]
+                x_pi = x[i + 1]
 
-            A = x_mi*sin(x_i) + sin(x_pi)
-            B = x_mi**2.0 - 2*x_i + 3*x_pi - cos(x_i) + 1.0
+            A = x_mi * sin(x_i) + sin(x_pi)
+            B = x_mi ** 2.0 - 2 * x_i + 3 * x_pi - cos(x_i) + 1.0
 
-            f += (i + 1.0)*x_i**2.0 + 20.0*(i + 1.0)*sin(A)**2.0 + (i + 1.0)*log10(1.0 + (i + 1.0)*B**2.0)
+            f += (i + 1.0) * x_i ** 2.0 + 20.0 * (i + 1.0) * sin(A) ** 2.0 + \
+                (i + 1.0) * log10(1.0 + (i + 1.0) * B ** 2.0)
 
         return f
 
 # -------------------------------------------------------------------------------- #
 
+
 class Plateau(Benchmark):
+
     """
     Plateau test objective function.
 
@@ -4870,7 +5118,9 @@ class Plateau(Benchmark):
 
 # -------------------------------------------------------------------------------- #
 
+
 class Powell(Benchmark):
+
     """
     Powell test objective function.
 
@@ -4898,11 +5148,13 @@ class Powell(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return (x[0] + 10*x[1])**2 + 5*(x[2] - x[3])**2 + (x[1] - 2*x[2])**4 + 10*(x[0] - x[3])**4
+        return (x[0] + 10 * x[1]) ** 2 + 5 * (x[2] - x[3]) ** 2 + (x[1] - 2 * x[2]) ** 4 + 10 * (x[0] - x[3]) ** 4
 
 # -------------------------------------------------------------------------------- #
 
+
 class PowerSum(Benchmark):
+
     """
     Power sum test objective function.
 
@@ -4924,7 +5176,8 @@ class PowerSum(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.dimensions, [float(self.dimensions)] * self.dimensions)
+        self.bounds = zip([0.0] * self.dimensions,
+                          [float(self.dimensions)] * self.dimensions)
 
         self.global_optimum = [1.0, 2.0, 2.0, 3.0]
         self.fglob = 0.0
@@ -4936,18 +5189,20 @@ class PowerSum(Benchmark):
         b = [8.0, 18.0, 44.0, 114.0]
         y = 0.0
 
-        for k in range(1, self.dimensions+1):
+        for k in range(1, self.dimensions + 1):
             s_in = 0.0
             for i in range(self.dimensions):
-                s_in = s_in + x[i]**k
+                s_in = s_in + x[i] ** k
 
-            y = y + (s_in - b[k-1])**2.0
+            y = y + (s_in - b[k - 1]) ** 2.0
 
         return y
 
 # -------------------------------------------------------------------------------- #
 
+
 class Price01(Benchmark):
+
     """
     Price 1 test objective function.
 
@@ -4976,7 +5231,8 @@ class Price01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-500.0] * self.dimensions, [500.0] * self.dimensions)
+        self.bounds = zip([-500.0] * self.dimensions,
+                          [500.0] * self.dimensions)
         self.custom_bounds = ([-10.0, 10.0], [-10.0, 10.0])
 
         self.global_optimum = [5.0, 5.0]
@@ -4987,11 +5243,13 @@ class Price01(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return (abs(x1) - 5.0)**2.0 + (abs(x2) - 5.0)**2.0
+        return (abs(x1) - 5.0) ** 2.0 + (abs(x2) - 5.0) ** 2.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class Price02(Benchmark):
+
     """
     Price 2 test objective function.
 
@@ -5029,11 +5287,13 @@ class Price02(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return 1.0 + sin(x1)**2.0 + sin(x2)**2.0 - 0.1*exp(-x1**2.0 - x2**2.0)
+        return 1.0 + sin(x1) ** 2.0 + sin(x2) ** 2.0 - 0.1 * exp(-x1 ** 2.0 - x2 ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Price03(Benchmark):
+
     """
     Price 3 test objective function.
 
@@ -5069,12 +5329,14 @@ class Price03(Benchmark):
 
     def evaluator(self, x, *args):
         self.fun_evals += 1
-        return (100 * (x[1] - x[0]**2)**2
-                + (6.4 * (x[1] - 0.5)**2 - x[0] - 0.6)**2)
+        return (100 * (x[1] - x[0] ** 2) ** 2
+                + (6.4 * (x[1] - 0.5) ** 2 - x[0] - 0.6) ** 2)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Price04(Benchmark):
+
     """
     Price 4 test objective function.
 
@@ -5113,11 +5375,13 @@ class Price04(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return (2.0*x2*x1**3.0 - x2**3.0)**2.0 + (6.0*x1 - x2**2.0 + x2)**2.0
+        return (2.0 * x2 * x1 ** 3.0 - x2 ** 3.0) ** 2.0 + (6.0 * x1 - x2 ** 2.0 + x2) ** 2.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class Qing(Benchmark):
+
     """
     Qing test objective function.
 
@@ -5145,22 +5409,25 @@ class Qing(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-500.0] * self.dimensions, [500.0] * self.dimensions)
+        self.bounds = zip([-500.0] * self.dimensions,
+                          [500.0] * self.dimensions)
         self.custom_bounds = [(-2, 2), (-2, 2)]
 
-        self.global_optimum = [sqrt(_) for _ in range(1, self.dimensions+1)]
+        self.global_optimum = [sqrt(_) for _ in range(1, self.dimensions + 1)]
         self.fglob = 0
         self.change_dimensionality = True
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        rng = arange(1, self.dimensions+1)
-        return sum((x**2.0 - rng)**2.0)
+        rng = arange(1, self.dimensions + 1)
+        return sum((x ** 2.0 - rng) ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Quadratic(Benchmark):
+
     """
     Quadratic test objective function.
 
@@ -5200,11 +5467,13 @@ class Quadratic(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return -3803.84 - 138.08*x1 - 232.92*x2 + 128.08*x1**2.0 + 203.64*x2**2.0 + 182.25*x1*x2
+        return -3803.84 - 138.08 * x1 - 232.92 * x2 + 128.08 * x1 ** 2.0 + 203.64 * x2 ** 2.0 + 182.25 * x1 * x2
 
 # -------------------------------------------------------------------------------- #
 
+
 class Quintic(Benchmark):
+
     """
     Quintic test objective function.
 
@@ -5242,11 +5511,13 @@ class Quintic(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return sum(abs(x**5 - 3*x**4 + 4*x**3 + 2*x**2 - 10*x - 4))
+        return sum(abs(x ** 5 - 3 * x ** 4 + 4 * x ** 3 + 2 * x ** 2 - 10 * x - 4))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Rana(Benchmark):
+
     """
     Rana test objective function.
 
@@ -5272,7 +5543,8 @@ class Rana(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-500.000001] * self.dimensions, [500.000001] * self.dimensions)
+        self.bounds = zip([-500.000001] * self.dimensions,
+                          [500.000001] * self.dimensions)
 
         self.global_optimum = [-300.3376, 500.]
         self.fglob = -500.8021602966615
@@ -5290,6 +5562,7 @@ class Rana(Benchmark):
 # -------------------------------------------------------------------------------- #
 
 class Rastrigin(Benchmark):
+
     """
     Rastrigin test objective function.
 
@@ -5323,11 +5596,13 @@ class Rastrigin(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return 10.0*self.dimensions + sum(x**2.0 - 10.0*cos(2.0*pi*x))
+        return 10.0 * self.dimensions + sum(x ** 2.0 - 10.0 * cos(2.0 * pi * x))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Ripple01(Benchmark):
+
     """
     Ripple 1 test objective function.
 
@@ -5361,11 +5636,13 @@ class Ripple01(Benchmark):
 
         self.fun_evals += 1
 
-        return sum(-exp(-2.0*log(2.0)*((x - 0.1)/0.8)**2.0)*(sin(5.0*pi*x)**6.0 + 0.1*cos(500.0*pi*x)**2.0))
+        return sum(-exp(-2.0 * log(2.0) * ((x - 0.1) / 0.8) ** 2.0) * (sin(5.0 * pi * x) ** 6.0 + 0.1 * cos(500.0 * pi * x) ** 2.0))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Ripple25(Benchmark):
+
     """
     Ripple 25 test objective function.
 
@@ -5399,11 +5676,13 @@ class Ripple25(Benchmark):
 
         self.fun_evals += 1
 
-        return sum(-exp(-2.0*log(2.0)*((x - 0.1)/0.8)**2.0)*(sin(5.0*pi*x)**6.0))
+        return sum(-exp(-2.0 * log(2.0) * ((x - 0.1) / 0.8) ** 2.0) * (sin(5.0 * pi * x) ** 6.0))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Rosenbrock(Benchmark):
+
     """
     Rosenbrock test objective function.
 
@@ -5439,11 +5718,13 @@ class Rosenbrock(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
+        return sum(100.0 * (x[1:] - x[:-1] ** 2.0) ** 2.0 + (1 - x[:-1]) ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class RosenbrockModified(Benchmark):
+
     """
     Modified Rosenbrock test objective function.
 
@@ -5478,13 +5759,15 @@ class RosenbrockModified(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        a = 74 + 100. * (x[1] - x[0]**2)**2 + (1 - x[0])**2
-        a -= 400 * exp(-((x[0] + 1.)**2 + (x[1] + 1.)**2) / 0.1)
+        a = 74 + 100. * (x[1] - x[0] ** 2) ** 2 + (1 - x[0]) ** 2
+        a -= 400 * exp(-((x[0] + 1.) ** 2 + (x[1] + 1.) ** 2) / 0.1)
         return a
 
 # -------------------------------------------------------------------------------- #
 
+
 class RotatedEllipse01(Benchmark):
+
     """
     Rotated Ellipse 1 test objective function.
 
@@ -5510,7 +5793,8 @@ class RotatedEllipse01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-500.0] * self.dimensions, [500.0] * self.dimensions)
+        self.bounds = zip([-500.0] * self.dimensions,
+                          [500.0] * self.dimensions)
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
         self.global_optimum = [0.0, 0.0]
@@ -5521,11 +5805,13 @@ class RotatedEllipse01(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return 7.0*x1**2.0 - 6.0*sqrt(3)*x1*x2 + 13*x2**2.0
+        return 7.0 * x1 ** 2.0 - 6.0 * sqrt(3) * x1 * x2 + 13 * x2 ** 2.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class RotatedEllipse02(Benchmark):
+
     """
     Rotated Ellipse 2 test objective function.
 
@@ -5551,7 +5837,8 @@ class RotatedEllipse02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-500.0] * self.dimensions, [500.0] * self.dimensions)
+        self.bounds = zip([-500.0] * self.dimensions,
+                          [500.0] * self.dimensions)
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
         self.global_optimum = [0.0, 0.0]
@@ -5562,11 +5849,13 @@ class RotatedEllipse02(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return x1**2.0 - x1*x2 + x2**2.0
+        return x1 ** 2.0 - x1 * x2 + x2 ** 2.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class Salomon(Benchmark):
+
     """
     Salomon test objective function.
 
@@ -5591,7 +5880,8 @@ class Salomon(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
         self.custom_bounds = [(-50, 50), (-50, 50)]
 
         self.global_optimum = [0.0 for _ in range(self.dimensions)]
@@ -5601,11 +5891,13 @@ class Salomon(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return 1.0 - cos(2.0*pi*sqrt(sum(x**2.0))) + 0.1*sqrt(sum(x**2.0))
+        return 1.0 - cos(2.0 * pi * sqrt(sum(x ** 2.0))) + 0.1 * sqrt(sum(x ** 2.0))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Sargan(Benchmark):
+
     """
     Sargan test objective function.
 
@@ -5630,7 +5922,8 @@ class Sargan(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
         self.global_optimum = [0.0 for _ in range(self.dimensions)]
@@ -5642,13 +5935,15 @@ class Sargan(Benchmark):
         self.fun_evals += 1
 
         x0 = x[:-1]
-        x1 = roll(x,-1)[:-1]
+        x1 = roll(x, -1)[:-1]
 
-        return sum(self.dimensions*(x**2 + 0.4*sum(x0*x1)))
+        return sum(self.dimensions * (x ** 2 + 0.4 * sum(x0 * x1)))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Schaffer01(Benchmark):
+
     """
     Schaffer 1 test objective function.
 
@@ -5674,7 +5969,8 @@ class Schaffer01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
         self.global_optimum = [0.0 for _ in range(self.dimensions)]
@@ -5685,11 +5981,13 @@ class Schaffer01(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return 0.5 + (sin(x1**2.0 + x2**2.0)**2.0 - 0.5)/(1 + 0.001*(x1**2.0 + x2**2.0)**2.0)
+        return 0.5 + (sin(x1 ** 2.0 + x2 ** 2.0) ** 2.0 - 0.5) / (1 + 0.001 * (x1 ** 2.0 + x2 ** 2.0) ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Schaffer02(Benchmark):
+
     """
     Schaffer 2 test objective function.
 
@@ -5715,7 +6013,8 @@ class Schaffer02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
         self.global_optimum = [0.0 for _ in range(self.dimensions)]
@@ -5726,11 +6025,13 @@ class Schaffer02(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return 0.5 + (sin(x1**2.0 - x2**2.0)**2.0 - 0.5)/(1 + 0.001*(x1**2.0 + x2**2.0)**2.0)
+        return 0.5 + (sin(x1 ** 2.0 - x2 ** 2.0) ** 2.0 - 0.5) / (1 + 0.001 * (x1 ** 2.0 + x2 ** 2.0) ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Schaffer03(Benchmark):
+
     """
     Schaffer 3 test objective function.
 
@@ -5756,7 +6057,8 @@ class Schaffer03(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
         self.global_optimum = [0.0, 1.253115]
@@ -5768,13 +6070,15 @@ class Schaffer03(Benchmark):
 
         x1, x2 = x
 
-        num = sin(cos(abs(x[0]**2 - x[1]**2)))**2 - 0.5
-        den = (1 + 0.001 * (x[0]**2 + x[1]**2))**2
+        num = sin(cos(abs(x[0] ** 2 - x[1] ** 2))) ** 2 - 0.5
+        den = (1 + 0.001 * (x[0] ** 2 + x[1] ** 2)) ** 2
         return 0.5 + num / den
 
 # -------------------------------------------------------------------------------- #
 
+
 class Schaffer04(Benchmark):
+
     """
     Schaffer 4 test objective function.
 
@@ -5800,7 +6104,8 @@ class Schaffer04(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
         self.global_optimum = [0.0, 1.253115]
@@ -5810,13 +6115,15 @@ class Schaffer04(Benchmark):
 
         self.fun_evals += 1
 
-        num = cos(sin(abs(x[0]**2 - x[1]**2)))**2 - 0.5
-        den = (1 + 0.001 * (x[0]**2 + x[1]**2))**2
+        num = cos(sin(abs(x[0] ** 2 - x[1] ** 2))) ** 2 - 0.5
+        den = (1 + 0.001 * (x[0] ** 2 + x[1] ** 2)) ** 2
         return 0.5 + num / den
 
 # -------------------------------------------------------------------------------- #
 
+
 class SchmidtVetters(Benchmark):
+
     """
     Schmidt-Vetters test objective function.
 
@@ -5844,13 +6151,14 @@ class SchmidtVetters(Benchmark):
 
         self.fun_evals += 1
 
-        return (1 / (1 + (x[0] - x[1])**2) + sin((pi * x[1] + x[2]) / 2)
-                + exp(((x[0] + x[1]) / x[1] - 2)**2))
+        return (1 / (1 + (x[0] - x[1]) ** 2) + sin((pi * x[1] + x[2]) / 2)
+                + exp(((x[0] + x[1]) / x[1] - 2) ** 2))
 
 
 # -------------------------------------------------------------------------------- #
 
 class Schwefel01(Benchmark):
+
     """
     Schwefel 1 test objective function.
 
@@ -5877,7 +6185,8 @@ class Schwefel01(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
         self.custom_bounds = ([-4.0, 4.0], [-4.0, 4.0])
 
         self.global_optimum = [0.0 for _ in range(self.dimensions)]
@@ -5889,11 +6198,13 @@ class Schwefel01(Benchmark):
         self.fun_evals += 1
 
         alpha = sqrt(pi)
-        return (sum(x**2.0))**alpha
+        return (sum(x ** 2.0)) ** alpha
 
 # -------------------------------------------------------------------------------- #
 
+
 class Schwefel02(Benchmark):
+
     """
     Schwefel 2 test objective function.
 
@@ -5919,7 +6230,8 @@ class Schwefel02(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
         self.custom_bounds = ([-4.0, 4.0], [-4.0, 4.0])
 
         self.global_optimum = [0.0 for _ in range(self.dimensions)]
@@ -5935,13 +6247,15 @@ class Schwefel02(Benchmark):
             temp = 0.0
             for j in range(i):
                 temp += x[j]
-            s += temp**2.0
+            s += temp ** 2.0
 
         return s
 
 # -------------------------------------------------------------------------------- #
 
+
 class Schwefel04(Benchmark):
+
     """
     Schwefel 4 test objective function.
 
@@ -5978,11 +6292,13 @@ class Schwefel04(Benchmark):
 
         self.fun_evals += 1
 
-        return sum((x - 1.0)**2.0 + (x[0] - x**2.0)**2.0)
+        return sum((x - 1.0) ** 2.0 + (x[0] - x ** 2.0) ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Schwefel06(Benchmark):
+
     """
     Schwefel 6 test objective function.
 
@@ -6008,7 +6324,8 @@ class Schwefel06(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
         self.custom_bounds = ([-10.0, 10.0], [-10.0, 10.0])
 
         self.global_optimum = [1.0, 3.0]
@@ -6019,12 +6336,14 @@ class Schwefel06(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        vector = [abs(x1 + 2*x2 - 7), abs(2*x1 + x2 - 5)]
+        vector = [abs(x1 + 2 * x2 - 7), abs(2 * x1 + x2 - 5)]
         return max(vector)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Schwefel20(Benchmark):
+
     """
     Schwefel 20 test objective function.
 
@@ -6050,7 +6369,8 @@ class Schwefel20(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
 
         self.global_optimum = [0.0 for _ in range(self.dimensions)]
         self.fglob = 0.0
@@ -6064,7 +6384,9 @@ class Schwefel20(Benchmark):
 
 # -------------------------------------------------------------------------------- #
 
+
 class Schwefel21(Benchmark):
+
     """
     Schwefel 21 test objective function.
 
@@ -6090,7 +6412,8 @@ class Schwefel21(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
 
         self.global_optimum = [0.0 for _ in range(self.dimensions)]
         self.fglob = 0.0
@@ -6104,7 +6427,9 @@ class Schwefel21(Benchmark):
 
 # -------------------------------------------------------------------------------- #
 
+
 class Schwefel22(Benchmark):
+
     """
     Schwefel 22 test objective function.
 
@@ -6130,7 +6455,8 @@ class Schwefel22(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
         self.custom_bounds = ([-10.0, 10.0], [-10.0, 10.0])
 
         self.global_optimum = [0.0 for _ in range(self.dimensions)]
@@ -6145,7 +6471,9 @@ class Schwefel22(Benchmark):
 
 # -------------------------------------------------------------------------------- #
 
+
 class Schwefel26(Benchmark):
+
     """
     Schwefel 26 test objective function.
 
@@ -6170,7 +6498,8 @@ class Schwefel26(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-500.0] * self.dimensions, [500.0] * self.dimensions)
+        self.bounds = zip([-500.0] * self.dimensions,
+                          [500.0] * self.dimensions)
 
         self.global_optimum = [420.968746 for _ in range(self.dimensions)]
         self.fglob = 0.0
@@ -6183,7 +6512,9 @@ class Schwefel26(Benchmark):
 
 # -------------------------------------------------------------------------------- #
 
+
 class Schwefel36(Benchmark):
+
     """
     Schwefel 36 test objective function.
 
@@ -6220,11 +6551,13 @@ class Schwefel36(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return -x1*x2*(72.0 - 2.0*x1 - 2.0*x2)
+        return -x1 * x2 * (72.0 - 2.0 * x1 - 2.0 * x2)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Shekel05(Benchmark):
+
     """
     Shekel 5 test objective function.
 
@@ -6272,11 +6605,13 @@ class Shekel05(Benchmark):
 
         C = asarray([0.1, 0.2, 0.2, 0.4, 0.4])
 
-        return -sum(1.0/(dot(x-a, x-a)+c) for a, c in zip(A, C))
+        return -sum(1.0 / (dot(x - a, x - a) + c) for a, c in zip(A, C))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Shekel07(Benchmark):
+
     """
     Shekel 7 test objective function.
 
@@ -6327,11 +6662,13 @@ class Shekel07(Benchmark):
 
         C = asarray([0.1, 0.2, 0.2, 0.4, 0.4, 0.6, 0.3])
 
-        return -sum(1.0/(dot(x-a, x-a)+c) for a, c in zip(A, C))
+        return -sum(1.0 / (dot(x - a, x - a) + c) for a, c in zip(A, C))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Shekel10(Benchmark):
+
     """
     Shekel 10 test objective function.
 
@@ -6386,11 +6723,13 @@ class Shekel10(Benchmark):
 
         C = asarray([0.1, 0.2, 0.2, 0.4, 0.4, 0.6, 0.3, 0.7, 0.5, 0.5])
 
-        return -sum(1.0/(dot(x-a, x-a)+c) for a, c in zip(A, C))
+        return -sum(1.0 / (dot(x - a, x - a) + c) for a, c in zip(A, C))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Shubert01(Benchmark):
+
     """
     Shubert 1 test objective function.
 
@@ -6427,15 +6766,17 @@ class Shubert01(Benchmark):
 
         s1 = s2 = 0.0
         for i in range(1, 6):
-            s1 = s1+i*cos((i+1)*x[0]+i)
-            s2 = s2+i*cos((i+1)*x[1]+i)
+            s1 = s1 + i * cos((i + 1) * x[0] + i)
+            s2 = s2 + i * cos((i + 1) * x[1] + i)
 
-        y = s1*s2
+        y = s1 * s2
         return y
 
 # -------------------------------------------------------------------------------- #
 
+
 class Shubert03(Benchmark):
+
     """
     Shubert 3 test objective function.
 
@@ -6470,13 +6811,15 @@ class Shubert03(Benchmark):
 
         self.fun_evals += 1
 
-        return -sin(2.0*x[0]+1.0) - 2.0*sin(3.0*x[0]+2.0) - 3.0*sin(4.0*x[0]+3.0) - 4.0*sin(5.0*x[0]+4.0) \
-               -5.0*sin(6.0*x[0]+5.0) - sin(2.0*x[1]+1.0) - 2.0*sin(3.0*x[1]+2.0) - 3.0*sin(4.0*x[1]+3.0) \
-               -4.0*sin(5.0*x[1]+4.0) - 5.0*sin(6.0*x[1]+5.0)
+        return -sin(2.0 * x[0] + 1.0) - 2.0 * sin(3.0 * x[0] + 2.0) - 3.0 * sin(4.0 * x[0] + 3.0) - 4.0 * sin(5.0 * x[0] + 4.0) \
+               - 5.0 * sin(6.0 * x[0] + 5.0) - sin(2.0 * x[1] + 1.0) - 2.0 * sin(3.0 * x[1] + 2.0) - 3.0 * sin(4.0 * x[1] + 3.0) \
+               - 4.0 * sin(5.0 * x[1] + 4.0) - 5.0 * sin(6.0 * x[1] + 5.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Shubert04(Benchmark):
+
     """
     Shubert 4 test objective function.
 
@@ -6511,13 +6854,15 @@ class Shubert04(Benchmark):
 
         self.fun_evals += 1
 
-        return -cos(2.0*x[0]+1.0) - 2.0*cos(3.0*x[0]+2.0) - 3.0*cos(4.0*x[0]+3.0) - 4.0*cos(5.0*x[0]+4.0) \
-               -5.0*cos(6.0*x[0]+5.0) - cos(2.0*x[1]+1.0) - 2.0*cos(3.0*x[1]+2.0) - 3.0*cos(4.0*x[1]+3.0) \
-               -4.0*cos(5.0*x[1]+4.0) - 5.0*cos(6.0*x[1]+5.0)
+        return -cos(2.0 * x[0] + 1.0) - 2.0 * cos(3.0 * x[0] + 2.0) - 3.0 * cos(4.0 * x[0] + 3.0) - 4.0 * cos(5.0 * x[0] + 4.0) \
+               - 5.0 * cos(6.0 * x[0] + 5.0) - cos(2.0 * x[1] + 1.0) - 2.0 * cos(3.0 * x[1] + 2.0) - 3.0 * cos(4.0 * x[1] + 3.0) \
+               - 4.0 * cos(5.0 * x[1] + 4.0) - 5.0 * cos(6.0 * x[1] + 5.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class SineEnvelope(Benchmark):
+
     """
     SineEnvelope test objective function.
 
@@ -6543,7 +6888,8 @@ class SineEnvelope(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
         self.custom_bounds = [(-20, 20), (-20, 20)]
 
         self.global_optimum = [0 for _ in range(self.dimensions)]
@@ -6556,12 +6902,14 @@ class SineEnvelope(Benchmark):
 
         X1 = x[0:-1]
         X2 = x[1:]
-        X12X22 = X1**2 + X2**2
-        return sum((sin(sqrt(X12X22))**2 - 0.5)/(1 + 0.001*X12X22)**2 + 0.5)
+        X12X22 = X1 ** 2 + X2 ** 2
+        return sum((sin(sqrt(X12X22)) ** 2 - 0.5) / (1 + 0.001 * X12X22) ** 2 + 0.5)
 
 # -------------------------------------------------------------------------------- #
 
+
 class SixHumpCamel(Benchmark):
+
     """
     Six Hump Camel test objective function.
 
@@ -6591,18 +6939,20 @@ class SixHumpCamel(Benchmark):
         self.bounds = zip([-5.0] * self.dimensions, [5.0] * self.dimensions)
         self.custom_bounds = [(-2, 2), (-1.5, 1.5)]
 
-        self.global_optimum = [(0.08984201368301331 , -0.7126564032704135),
+        self.global_optimum = [(0.08984201368301331, -0.7126564032704135),
                                (-0.08984201368301331, 0.7126564032704135)]
         self.fglob = -1.031628
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return (4 - 2.1*x[0]**2 + x[0]**4/3)*x[0]**2 + x[0]*x[1] + (4*x[1]**2 - 4)*x[1]**2
+        return (4 - 2.1 * x[0] ** 2 + x[0] ** 4 / 3) * x[0] ** 2 + x[0] * x[1] + (4 * x[1] ** 2 - 4) * x[1] ** 2
 
 # -------------------------------------------------------------------------------- #
 
+
 class Sodp(Benchmark):
+
     """
     Sodp test objective function.
 
@@ -6638,12 +6988,14 @@ class Sodp(Benchmark):
 
         self.fun_evals += 1
 
-        i = arange(1, self.dimensions+1)
-        return sum(abs(x) ** (i+1))
+        i = arange(1, self.dimensions + 1)
+        return sum(abs(x) ** (i + 1))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Sphere(Benchmark):
+
     """
     Sphere test objective function.
 
@@ -6677,11 +7029,13 @@ class Sphere(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return sum(x**2)
+        return sum(x ** 2)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Step(Benchmark):
+
     """
     Step test objective function.
 
@@ -6706,7 +7060,8 @@ class Step(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
         self.custom_bounds = ([-5, 5], [-5, 5])
 
         self.global_optimum = [0.0 for _ in range(self.dimensions)]
@@ -6716,11 +7071,13 @@ class Step(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return sum((floor(x + 0.5))**2.0)
+        return sum((floor(x + 0.5)) ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Stochastic(Benchmark):
+
     """
     Stochastic test objective function.
 
@@ -6750,7 +7107,7 @@ class Stochastic(Benchmark):
 
         self.bounds = zip([-5.0] * self.dimensions, [5.0] * self.dimensions)
 
-        self.global_optimum = [1.0/_ for _ in range(1, self.dimensions+1)]
+        self.global_optimum = [1.0 / _ for _ in range(1, self.dimensions + 1)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -6758,13 +7115,15 @@ class Stochastic(Benchmark):
 
         self.fun_evals += 1
         rnd = uniform(0.0, 1.0, size=(self.dimensions, ))
-        rng = arange(1, self.dimensions+1)
+        rng = arange(1, self.dimensions + 1)
 
-        return sum(rnd*abs(x - 1.0/rng))
+        return sum(rnd * abs(x - 1.0 / rng))
 
 # -------------------------------------------------------------------------------- #
 
+
 class StretchedV(Benchmark):
+
     """
     StretchedV test objective function.
 
@@ -6809,15 +7168,17 @@ class StretchedV(Benchmark):
         self.fun_evals += 1
 
         s = 0.0
-        for i in range(self.dimensions-1):
-            t = x[i+1]*x[i+1] + x[i]*x[i]
-            s += t**0.25 * (sin(50.0*t**0.1 + 1.0))**2.0
+        for i in range(self.dimensions - 1):
+            t = x[i + 1] * x[i + 1] + x[i] * x[i]
+            s += t ** 0.25 * (sin(50.0 * t ** 0.1 + 1.0)) ** 2.0
 
         return s
 
 # -------------------------------------------------------------------------------- #
 
+
 class StyblinskiTang(Benchmark):
+
     """
     StyblinskiTang test objective function.
 
@@ -6845,18 +7206,21 @@ class StyblinskiTang(Benchmark):
 
         self.bounds = zip([-5.0] * self.dimensions, [5.0] * self.dimensions)
 
-        self.global_optimum = [-2.903534018185960 for _ in range(self.dimensions)]
-        self.fglob = -39.16616570377142*self.dimensions
+        self.global_optimum = [
+            -2.903534018185960 for _ in range(self.dimensions)]
+        self.fglob = -39.16616570377142 * self.dimensions
         self.change_dimensionality = True
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return sum(x**4 - 16*x**2 + 5*x)/2
+        return sum(x ** 4 - 16 * x ** 2 + 5 * x) / 2
 
 # -------------------------------------------------------------------------------- #
 
+
 class TestTubeHolder(Benchmark):
+
     """
     TestTubeHolder test objective function.
 
@@ -6884,17 +7248,19 @@ class TestTubeHolder(Benchmark):
 
         self.bounds = zip([-10.0] * self.dimensions, [10.0] * self.dimensions)
 
-        self.global_optimum = [-pi/2, 0.0]
+        self.global_optimum = [-pi / 2, 0.0]
         self.fglob = -10.87229990155800
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return -4*abs(sin(x[0])*cos(x[1])*exp(abs(cos((x[0]**2 + x[1]**2)/200))))
+        return -4 * abs(sin(x[0]) * cos(x[1]) * exp(abs(cos((x[0] ** 2 + x[1] ** 2) / 200))))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Treccani(Benchmark):
+
     """
     Treccani test objective function.
 
@@ -6929,11 +7295,13 @@ class Treccani(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return x[0]**4 + 4.0*x[0]**3 + 4.0*x[0]**2 + x[1]**2
+        return x[0] ** 4 + 4.0 * x[0] ** 3 + 4.0 * x[0] ** 2 + x[1] ** 2
 
 # -------------------------------------------------------------------------------- #
 
+
 class Trefethen(Benchmark):
+
     """
     Trefethen test objective function.
 
@@ -6968,14 +7336,17 @@ class Trefethen(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        F = exp(sin(50*x[0])) + sin(60*exp(x[1])) + sin(70*sin(x[0])) + \
-            sin(sin(80*x[1])) - sin(10*(x[0]+x[1])) + 1.0/4*(x[0]**2 + x[1]**2)
+        F = exp(sin(50 * x[0])) + sin(60 * exp(x[1])) + sin(70 * sin(x[0])) + \
+            sin(sin(80 * x[1])) - sin(10 * (x[0] + x[1])) + \
+            1.0 / 4 * (x[0] ** 2 + x[1] ** 2)
 
         return F
 
 # -------------------------------------------------------------------------------- #
 
+
 class ThreeHumpCamel(Benchmark):
+
     """
     Three Hump Camel test objective function.
 
@@ -7010,12 +7381,14 @@ class ThreeHumpCamel(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return (2.0 * x[0]**2.0  - 1.05 * x[0]**4.0 + x[0]**6/6.0
-                + x[0] * x[1] + x[1]**2.0)
+        return (2.0 * x[0] ** 2.0 - 1.05 * x[0] ** 4.0 + x[0] ** 6 / 6.0
+                + x[0] * x[1] + x[1] ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Trid(Benchmark):
+
     """
     Trid test objective function.
 
@@ -7043,11 +7416,13 @@ class Trid(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return sum((x - 1.0)**2.0) - sum(x[1:]*x[0:-1])
+        return sum((x - 1.0) ** 2.0) - sum(x[1:] * x[0:-1])
 
 # -------------------------------------------------------------------------------- #
 
+
 class Trigonometric01(Benchmark):
+
     """
     Trigonometric 1 test objective function.
 
@@ -7083,12 +7458,14 @@ class Trigonometric01(Benchmark):
 
         self.fun_evals += 1
 
-        rng = arange(1.0, self.dimensions+1)
-        return sum((self.dimensions - sum(cos(x) + rng*(1 - cos(x) - sin(x))))**2.0)
+        rng = arange(1.0, self.dimensions + 1)
+        return sum((self.dimensions - sum(cos(x) + rng * (1 - cos(x) - sin(x)))) ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Trigonometric02(Benchmark):
+
     """
     Trigonometric 2 test objective function.
 
@@ -7114,7 +7491,8 @@ class Trigonometric02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-500.0] * self.dimensions, [500.0] * self.dimensions)
+        self.bounds = zip([-500.0] * self.dimensions,
+                          [500.0] * self.dimensions)
         self.custom_bounds = [(0, 2), (0, 2)]
 
         self.global_optimum = [0.9 for _ in range(self.dimensions)]
@@ -7125,11 +7503,13 @@ class Trigonometric02(Benchmark):
 
         self.fun_evals += 1
 
-        return 1.0 + sum(8.0*(sin(7.0*(x - 0.9)**2.0)**2.0) + 6.0*(sin(14.0*(x - 0.9)**2.0)**2.0) + (x - 0.9)**2.0)
+        return 1.0 + sum(8.0 * (sin(7.0 * (x - 0.9) ** 2.0) ** 2.0) + 6.0 * (sin(14.0 * (x - 0.9) ** 2.0) ** 2.0) + (x - 0.9) ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Tripod(Benchmark):
+
     """
     Tripod test objective function.
 
@@ -7155,7 +7535,8 @@ class Tripod(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.dimensions, [100.0] * self.dimensions)
+        self.bounds = zip([-100.0] * self.dimensions,
+                          [100.0] * self.dimensions)
 
         self.global_optimum = [0.0, -50.0]
         self.fglob = 0.0
@@ -7172,7 +7553,9 @@ class Tripod(Benchmark):
 
 # -------------------------------------------------------------------------------- #
 
+
 class Ursem01(Benchmark):
+
     """
     Ursem 1 test objective function.
 
@@ -7209,7 +7592,9 @@ class Ursem01(Benchmark):
 
 # -------------------------------------------------------------------------------- #
 
+
 class Ursem03(Benchmark):
+
     """
     Ursem 3 test objective function.
 
@@ -7245,13 +7630,15 @@ class Ursem03(Benchmark):
         self.fun_evals += 1
 
         return (-sin(2.2 * pi * x[0] + 0.5 * pi)
-                 * ((2.0 - abs(x[0]))/2.0) * ((3.0 - abs(x[0]))/2)
+                * ((2.0 - abs(x[0])) / 2.0) * ((3.0 - abs(x[0])) / 2)
                 - sin(2.2 * pi * x[1] + 0.5 * pi)
-                  * ((2.0 - abs(x[1])) / 2) * ((3.0 - abs(x[1])) / 2))
+                * ((2.0 - abs(x[1])) / 2) * ((3.0 - abs(x[1])) / 2))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Ursem04(Benchmark):
+
     """
     Ursem 4 test objective function.
 
@@ -7287,11 +7674,13 @@ class Ursem04(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return -3*sin(0.5*pi*x1 + 0.5*pi)*(2.0 - sqrt(x1**2.0 + x2**2.0))/4.0
+        return -3 * sin(0.5 * pi * x1 + 0.5 * pi) * (2.0 - sqrt(x1 ** 2.0 + x2 ** 2.0)) / 4.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class UrsemWaves(Benchmark):
+
     """
     Ursem Waves test objective function.
 
@@ -7327,11 +7716,13 @@ class UrsemWaves(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return -0.9*x1**2.0 + (x2**2.0 - 4.5*x2**2.0)*x1*x2 + 4.7*cos(3*x1 - x2**2.0*(2.0 + x1))*sin(2.5*pi*x1)
+        return -0.9 * x1 ** 2.0 + (x2 ** 2.0 - 4.5 * x2 ** 2.0) * x1 * x2 + 4.7 * cos(3 * x1 - x2 ** 2.0 * (2.0 + x1)) * sin(2.5 * pi * x1)
 
 # -------------------------------------------------------------------------------- #
 
+
 class VenterSobiezcczanskiSobieski(Benchmark):
+
     """
     Venter Sobiezcczanski-Sobieski test objective function.
 
@@ -7368,11 +7759,13 @@ class VenterSobiezcczanskiSobieski(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return x1**2.0 - 100.0*cos(x1)**2.0 - 100.0*cos(x1**2.0/30.0) + x2**2.0 - 100.0*cos(x2)**2.0 - 100.0*cos(x2**2.0/30.0)
+        return x1 ** 2.0 - 100.0 * cos(x1) ** 2.0 - 100.0 * cos(x1 ** 2.0 / 30.0) + x2 ** 2.0 - 100.0 * cos(x2) ** 2.0 - 100.0 * cos(x2 ** 2.0 / 30.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Vincent(Benchmark):
+
     """
     Vincent test objective function.
 
@@ -7408,11 +7801,13 @@ class Vincent(Benchmark):
 
         self.fun_evals += 1
 
-        return -sum(sin(10.0*log(x)))
+        return -sum(sin(10.0 * log(x)))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Watson(Benchmark):
+
     """
     Watson test objective function.
 
@@ -7445,11 +7840,11 @@ class Watson(Benchmark):
         self.fun_evals += 1
 
         vec = zeros((31, ))
-        div = (arange(29) + 1.0)/29.0
+        div = (arange(29) + 1.0) / 29.0
         s1 = 0.0
         dx = 1.0
 
-        for j in range (1, self.dimensions):
+        for j in range(1, self.dimensions):
             s1 += j * dx * x[j]
             dx *= div
 
@@ -7460,15 +7855,17 @@ class Watson(Benchmark):
             s2 += dx * x[j]
             dx *= div
 
-        vec[:29] = s1 - s2**2.0 - 1.0
+        vec[:29] = s1 - s2 ** 2.0 - 1.0
         vec[29] = x[0]
-        vec[30] = x[1] - x[0]**2 - 1
+        vec[30] = x[1] - x[0] ** 2 - 1
 
-        return sum(vec**2.0)
+        return sum(vec ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Wavy(Benchmark):
+
     """
     W / Wavy test objective function.
 
@@ -7506,11 +7903,13 @@ class Wavy(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return 1.0 - (1.0/self.dimensions)*sum(cos(10*x)*exp(-x**2.0/2.0))
+        return 1.0 - (1.0 / self.dimensions) * sum(cos(10 * x) * exp(-x ** 2.0 / 2.0))
 
 # -------------------------------------------------------------------------------- #
 
+
 class WayburnSeader01(Benchmark):
+
     """
     Wayburn and Seader 1 test objective function.
 
@@ -7548,11 +7947,13 @@ class WayburnSeader01(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return (x1**6.0 + x2**4.0 - 17.0)**2.0 + (2*x1 + x2 - 4.0)**2.0
+        return (x1 ** 6.0 + x2 ** 4.0 - 17.0) ** 2.0 + (2 * x1 + x2 - 4.0) ** 2.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class WayburnSeader02(Benchmark):
+
     """
     Wayburn and Seader 2 test objective function.
 
@@ -7578,7 +7979,8 @@ class WayburnSeader02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-500.0] * self.dimensions, [500.0] * self.dimensions)
+        self.bounds = zip([-500.0] * self.dimensions,
+                          [500.0] * self.dimensions)
         self.custom_bounds = ([-1, 2], [-1, 2])
 
         self.global_optimum = [0.2, 1.0]
@@ -7589,11 +7991,13 @@ class WayburnSeader02(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return (1.613 - 4.0*(x1 - 0.3125)**2.0 - 4.0*(x2 - 1.625)**2.0)**2.0 + (x2 - 1.0)**2.0
+        return (1.613 - 4.0 * (x1 - 0.3125) ** 2.0 - 4.0 * (x2 - 1.625) ** 2.0) ** 2.0 + (x2 - 1.0) ** 2.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class Weierstrass(Benchmark):
+
     """
     Weierstrass test objective function.
 
@@ -7637,16 +8041,19 @@ class Weierstrass(Benchmark):
 
         y = zeros((self.dimensions, ))
 
-        ak = a**(arange(0, kmax+1))
-        bk = b**(arange(0, kmax+1))
+        ak = a ** (arange(0, kmax + 1))
+        bk = b ** (arange(0, kmax + 1))
         for i in range(self.dimensions):
-            y[i] = sum(ak*cos(2*pi*bk*(x[i] + 0.5))) - self.dimensions*sum(ak*cos(pi*bk))
+            y[i] = sum(ak * cos(2 * pi * bk * (x[i] + 0.5))) - \
+                self.dimensions * sum(ak * cos(pi * bk))
 
         return sum(y)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Whitley(Benchmark):
+
     """
     Whitley test objective function.
 
@@ -7673,7 +8080,8 @@ class Whitley(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.24] * self.dimensions, [10.24] * self.dimensions)
+        self.bounds = zip([-10.24] * self.dimensions,
+                          [10.24] * self.dimensions)
         self.custom_bounds = ([-1, 2], [-1, 2])
 
         self.global_optimum = [1.0 for _ in range(self.dimensions)]
@@ -7689,14 +8097,16 @@ class Whitley(Benchmark):
         s_out = 0.0
         for i in xrange(n):
             for j in range(n):
-                temp = 100.0*((x[i]**2.0)-x[j]) + (1.0 - x[j])**2.0
-                s_out += (float(temp**2.0)/4000.0) - cos(temp) + 1.0
+                temp = 100.0 * ((x[i] ** 2.0) - x[j]) + (1.0 - x[j]) ** 2.0
+                s_out += (float(temp ** 2.0) / 4000.0) - cos(temp) + 1.0
 
         return s_out
 
 # -------------------------------------------------------------------------------- #
 
+
 class Wolfe(Benchmark):
+
     """
     Wolfe test objective function.
 
@@ -7728,11 +8138,13 @@ class Wolfe(Benchmark):
 
         x1, x2, x3 = x
 
-        return (4.0/3.0)*(x1**2.0 + x2**2.0 - x1*x2)**0.75 + x3
+        return (4.0 / 3.0) * (x1 ** 2.0 + x2 ** 2.0 - x1 * x2) ** 0.75 + x3
 
 # -------------------------------------------------------------------------------- #
 
+
 class XinSheYang01(Benchmark):
+
     """
     Xin-She Yang 1 test objective function.
 
@@ -7773,12 +8185,14 @@ class XinSheYang01(Benchmark):
         self.fun_evals += 1
         epsilon = uniform(0.0, 1.0, size=self.dimensions)
 
-        rng = arange(1.0, self.dimensions+1.0)
-        return sum(epsilon*(abs(x)**rng))
+        rng = arange(1.0, self.dimensions + 1.0)
+        return sum(epsilon * (abs(x) ** rng))
 
 # -------------------------------------------------------------------------------- #
 
+
 class XinSheYang02(Benchmark):
+
     """
     Xin-She Yang 2 test objective function.
 
@@ -7804,7 +8218,8 @@ class XinSheYang02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-2*pi] * self.dimensions, [2*pi] * self.dimensions)
+        self.bounds = zip([-2 * pi] * self.dimensions,
+                          [2 * pi] * self.dimensions)
 
         self.global_optimum = [0 for _ in range(self.dimensions)]
         self.fglob = 0.0
@@ -7813,11 +8228,13 @@ class XinSheYang02(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return sum(abs(x))*exp(-sum(sin(x**2.0)))
+        return sum(abs(x)) * exp(-sum(sin(x ** 2.0)))
 
 # -------------------------------------------------------------------------------- #
 
+
 class XinSheYang03(Benchmark):
+
     """
     Xin-She Yang 3 test objective function.
 
@@ -7857,11 +8274,13 @@ class XinSheYang03(Benchmark):
         self.fun_evals += 1
 
         beta, m = 15.0, 5.0
-        return exp(-sum((x/beta)**(2*m))) - 2.0*exp(-sum(x**2.0))*prod(cos(x)**2.0)
+        return exp(-sum((x / beta) ** (2 * m))) - 2.0 * exp(-sum(x ** 2.0)) * prod(cos(x) ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class XinSheYang04(Benchmark):
+
     """
     Xin-She Yang 4 test objective function.
 
@@ -7897,11 +8316,13 @@ class XinSheYang04(Benchmark):
 
         self.fun_evals += 1
 
-        return (sum(sin(x)**2.0) - exp(-sum(x**2.0)))*exp(-sum(sin(sqrt(abs(x)))**2.0))
+        return (sum(sin(x) ** 2.0) - exp(-sum(x ** 2.0))) * exp(-sum(sin(sqrt(abs(x))) ** 2.0))
 
 # -------------------------------------------------------------------------------- #
 
+
 class Xor(Benchmark):
+
     """
     Xor test objective function.
 
@@ -7927,31 +8348,34 @@ class Xor(Benchmark):
 
         self.bounds = zip([-1.0] * self.dimensions, [1.0] * self.dimensions)
 
-        self.global_optimum = [1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 0.421134]
+        self.global_optimum = [1.0, -1.0, 1.0,
+                               -1.0, -1.0, 1.0, 1.0, -1.0, 0.421134]
         self.fglob = 0.9597588
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
 
-        F11 = x[6]/(1.0+exp(-x[0]-x[1]-x[4]))
-        F12 = x[7]/(1.0+exp(-x[2]-x[3]-x[5]))
-        F1 = (1.0+exp(-F11-F12-x[8]))**(-2)
-        F21 = x[6]/(1.0+exp(-x[4]))
-        F22 = x[7]/(1.0+exp(-x[5]))
-        F2 = (1.0+exp(-F21-F22-x[8]))**(-2)
-        F31 = x[6]/(1.0+exp(-x[0]-x[4]))
-        F32 = x[7]/(1.0+exp(-x[2]-x[5]))
-        F3 = (1.0-(1.0+exp(-F31-F32-x[8]))**(-1))**2
-        F41 = x[6]/(1.0+exp(-x[1]-x[4]))
-        F42 = x[7]/(1.0+exp(-x[3]-x[5]))
-        F4 = (1.0-(1.0+exp(-F41-F42-x[8]))**(-1))**2
+        F11 = x[6] / (1.0 + exp(-x[0] - x[1] - x[4]))
+        F12 = x[7] / (1.0 + exp(-x[2] - x[3] - x[5]))
+        F1 = (1.0 + exp(-F11 - F12 - x[8])) ** (-2)
+        F21 = x[6] / (1.0 + exp(-x[4]))
+        F22 = x[7] / (1.0 + exp(-x[5]))
+        F2 = (1.0 + exp(-F21 - F22 - x[8])) ** (-2)
+        F31 = x[6] / (1.0 + exp(-x[0] - x[4]))
+        F32 = x[7] / (1.0 + exp(-x[2] - x[5]))
+        F3 = (1.0 - (1.0 + exp(-F31 - F32 - x[8])) ** (-1)) ** 2
+        F41 = x[6] / (1.0 + exp(-x[1] - x[4]))
+        F42 = x[7] / (1.0 + exp(-x[3] - x[5]))
+        F4 = (1.0 - (1.0 + exp(-F41 - F42 - x[8])) ** (-1)) ** 2
 
         return F1 + F2 + F3 + F4
 
 # -------------------------------------------------------------------------------- #
 
+
 class YaoLiu04(Benchmark):
+
     """
     Yao-Liu 4 test objective function.
 
@@ -7990,7 +8414,9 @@ class YaoLiu04(Benchmark):
 
 # -------------------------------------------------------------------------------- #
 
+
 class YaoLiu09(Benchmark):
+
     """
     Yao-Liu 9 test objective function.
 
@@ -8025,11 +8451,13 @@ class YaoLiu09(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return sum(x**2.0 - 10.0*cos(2*pi*x) + 10)
+        return sum(x ** 2.0 - 10.0 * cos(2 * pi * x) + 10)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Zacharov(Benchmark):
+
     """
     Zacharov test objective function.
 
@@ -8066,12 +8494,14 @@ class Zacharov(Benchmark):
 
         self.fun_evals += 1
 
-        rng = arange(1.0, self.dimensions+1.0)
-        return sum(x**2.0) + (0.5*sum(rng*x))**2.0 + (0.5*sum(rng*x))**4.0
+        rng = arange(1.0, self.dimensions + 1.0)
+        return sum(x ** 2.0) + (0.5 * sum(rng * x)) ** 2.0 + (0.5 * sum(rng * x)) ** 4.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class ZeroSum(Benchmark):
+
     """
     ZeroSum test objective function.
 
@@ -8110,11 +8540,13 @@ class ZeroSum(Benchmark):
         if abs(sum(x)) < 3e-16:
             return 0.0
 
-        return 1.0 + (10000.0*abs(sum(x)))**0.5
+        return 1.0 + (10000.0 * abs(sum(x))) ** 0.5
 
 # -------------------------------------------------------------------------------- #
 
+
 class Zettl(Benchmark):
+
     """
     Zettl test objective function.
 
@@ -8148,11 +8580,13 @@ class Zettl(Benchmark):
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
-        return (x[0]**2 + x[1]**2 - 2*x[0])**2 + x[0]/4
+        return (x[0] ** 2 + x[1] ** 2 - 2 * x[0]) ** 2 + x[0] / 4
 
 # -------------------------------------------------------------------------------- #
 
+
 class Zimmerman(Benchmark):
+
     """
     Zimmerman test objective function.
 
@@ -8200,16 +8634,19 @@ class Zimmerman(Benchmark):
         self.fun_evals += 1
 
         Zh1 = (lambda x: 9.0 - x[0] - x[1])
-        Zh2 = (lambda x: (x[0] - 3.0)**2.0 + (x[1] - 2.0)**2.0 - 16.0)
-        Zh3 = (lambda x: x[0]*x[1] - 14.0)
-        Zp  = (lambda x: 100.0*(1.0 + x))
+        Zh2 = (lambda x: (x[0] - 3.0) ** 2.0 + (x[1] - 2.0) ** 2.0 - 16.0)
+        Zh3 = (lambda x: x[0] * x[1] - 14.0)
+        Zp = (lambda x: 100.0 * (1.0 + x))
 
-        px = [Zh1(x), Zp(Zh2(x))*sign(Zh2(x)), Zp(Zh3(x))*sign(Zh3(x)), Zp(-x[0])*sign(x[0]), Zp(-x[1])*sign(x[1])]
+        px = [Zh1(x), Zp(Zh2(x)) * sign(Zh2(x)), Zp(Zh3(x))
+              * sign(Zh3(x)), Zp(-x[0]) * sign(x[0]), Zp(-x[1]) * sign(x[1])]
         return max(px)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Zirilli(Benchmark):
+
     """
     Zettl test objective function.
 
@@ -8246,7 +8683,7 @@ class Zirilli(Benchmark):
         self.fun_evals += 1
 
         x1, x2 = x
-        return 0.25*x1**4.0 - 0.5*x1**2.0 + 0.1*x1 + 0.5*x2**2
+        return 0.25 * x1 ** 4.0 - 0.5 * x1 ** 2.0 + 0.1 * x1 + 0.5 * x2 ** 2
 
 # -------------------------------------------------------------------------------- #
 
@@ -8256,6 +8693,7 @@ class Zirilli(Benchmark):
 #-----------------------------------------------------------------------
 
 class Problem02(Benchmark):
+
     """
     Univariate Problem02 test objective function.
 
@@ -8290,11 +8728,13 @@ class Problem02(Benchmark):
 
         self.fun_evals += 1
         x = x[0]
-        return sin(x) + sin(10.0/3.0*x)
+        return sin(x) + sin(10.0 / 3.0 * x)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Problem03(Benchmark):
+
     """
     Univariate Problem03 test objective function.
 
@@ -8332,13 +8772,15 @@ class Problem03(Benchmark):
 
         y = 0.0
         for k in range(1, 6):
-            y += k*sin((k + 1)*x+k)
+            y += k * sin((k + 1) * x + k)
 
         return -y
 
 # -------------------------------------------------------------------------------- #
 
+
 class Problem04(Benchmark):
+
     """
     Univariate Problem04 test objective function.
 
@@ -8373,11 +8815,13 @@ class Problem04(Benchmark):
 
         self.fun_evals += 1
         x = x[0]
-        return -(16*x**2 - 24*x + 5)*exp(-x)
+        return -(16 * x ** 2 - 24 * x + 5) * exp(-x)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Problem05(Benchmark):
+
     """
     Univariate Problem05 test objective function.
 
@@ -8412,11 +8856,13 @@ class Problem05(Benchmark):
 
         self.fun_evals += 1
         x = x[0]
-        return -(1.4 - 3*x)*sin(18.0*x)
+        return -(1.4 - 3 * x) * sin(18.0 * x)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Problem06(Benchmark):
+
     """
     Univariate Problem06 test objective function.
 
@@ -8451,11 +8897,13 @@ class Problem06(Benchmark):
 
         self.fun_evals += 1
         x = x[0]
-        return -(x + sin(x))*exp(-x**2.0)
+        return -(x + sin(x)) * exp(-x ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Problem07(Benchmark):
+
     """
     Univariate Problem07 test objective function.
 
@@ -8490,11 +8938,13 @@ class Problem07(Benchmark):
 
         self.fun_evals += 1
         x = x[0]
-        return sin(x) + sin(10.0/3.0*x) + log(x) - 0.84*x + 3
+        return sin(x) + sin(10.0 / 3.0 * x) + log(x) - 0.84 * x + 3
 
 # -------------------------------------------------------------------------------- #
 
+
 class Problem08(Benchmark):
+
     """
     Univariate Problem08 test objective function.
 
@@ -8532,13 +8982,15 @@ class Problem08(Benchmark):
 
         y = 0.0
         for k in range(1, 6):
-            y += k*cos((k + 1)*x+k)
+            y += k * cos((k + 1) * x + k)
 
         return -y
 
 # -------------------------------------------------------------------------------- #
 
+
 class Problem09(Benchmark):
+
     """
     Univariate Problem09 test objective function.
 
@@ -8573,11 +9025,13 @@ class Problem09(Benchmark):
 
         self.fun_evals += 1
         x = x[0]
-        return sin(x) + sin(2.0/3.0*x)
+        return sin(x) + sin(2.0 / 3.0 * x)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Problem10(Benchmark):
+
     """
     Univariate Problem10 test objective function.
 
@@ -8612,11 +9066,13 @@ class Problem10(Benchmark):
 
         self.fun_evals += 1
         x = x[0]
-        return -x*sin(x)
+        return -x * sin(x)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Problem11(Benchmark):
+
     """
     Univariate Problem11 test objective function.
 
@@ -8642,7 +9098,7 @@ class Problem11(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(-pi/2, 2*pi)]
+        self.bounds = [(-pi / 2, 2 * pi)]
 
         self.global_optimum = 2.09439
         self.fglob = -1.5
@@ -8651,11 +9107,13 @@ class Problem11(Benchmark):
 
         self.fun_evals += 1
         x = x[0]
-        return 2*cos(x) + cos(2*x)
+        return 2 * cos(x) + cos(2 * x)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Problem12(Benchmark):
+
     """
     Univariate Problem12 test objective function.
 
@@ -8681,7 +9139,7 @@ class Problem12(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(0, 2*pi)]
+        self.bounds = [(0, 2 * pi)]
 
         self.global_optimum = pi
         self.fglob = -1
@@ -8690,11 +9148,13 @@ class Problem12(Benchmark):
 
         self.fun_evals += 1
         x = x[0]
-        return (sin(x))**3.0 + (cos(x))**3.0
+        return (sin(x)) ** 3.0 + (cos(x)) ** 3.0
 
 # -------------------------------------------------------------------------------- #
 
+
 class Problem13(Benchmark):
+
     """
     Univariate Problem13 test objective function.
 
@@ -8722,18 +9182,20 @@ class Problem13(Benchmark):
 
         self.bounds = [(0.001, 0.99)]
 
-        self.global_optimum = 1.0/sqrt(2)
+        self.global_optimum = 1.0 / sqrt(2)
         self.fglob = -1.5874
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
         x = x[0]
-        return -x**(2.0/3.0) - (1.0 - x**2)**(1.0/3.0)
+        return -x ** (2.0 / 3.0) - (1.0 - x ** 2) ** (1.0 / 3.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Problem14(Benchmark):
+
     """
     Univariate Problem14 test objective function.
 
@@ -8768,11 +9230,13 @@ class Problem14(Benchmark):
 
         self.fun_evals += 1
         x = x[0]
-        return -exp(-x)*sin(2.0*pi*x)
+        return -exp(-x) * sin(2.0 * pi * x)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Problem15(Benchmark):
+
     """
     Univariate Problem15 test objective function.
 
@@ -8807,11 +9271,13 @@ class Problem15(Benchmark):
 
         self.fun_evals += 1
         x = x[0]
-        return -(-x**2.0 + 5*x - 6)/(x**2 + 1)
+        return -(-x ** 2.0 + 5 * x - 6) / (x ** 2 + 1)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Problem18(Benchmark):
+
     """
     Univariate Problem18 test objective function.
 
@@ -8849,13 +9315,15 @@ class Problem18(Benchmark):
         x = x[0]
 
         if x <= 3:
-            return (x - 2.0)**2.0
+            return (x - 2.0) ** 2.0
 
-        return 2*log(x - 2.0) + 1
+        return 2 * log(x - 2.0) + 1
 
 # -------------------------------------------------------------------------------- #
 
+
 class Problem20(Benchmark):
+
     """
     Univariate Problem20 test objective function.
 
@@ -8890,11 +9358,13 @@ class Problem20(Benchmark):
 
         self.fun_evals += 1
         x = x[0]
-        return -(x-sin(x))*exp(-x**2.0)
+        return -(x - sin(x)) * exp(-x ** 2.0)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Problem21(Benchmark):
+
     """
     Univariate Problem21 test objective function.
 
@@ -8929,11 +9399,13 @@ class Problem21(Benchmark):
 
         self.fun_evals += 1
         x = x[0]
-        return x*sin(x) + x*cos(2.0*x)
+        return x * sin(x) + x * cos(2.0 * x)
 
 # -------------------------------------------------------------------------------- #
 
+
 class Problem22(Benchmark):
+
     """
     Univariate Problem22 test objective function.
 
@@ -8961,13 +9433,13 @@ class Problem22(Benchmark):
 
         self.bounds = [(0, 20)]
 
-        self.global_optimum = 9.0*pi/2.0
-        self.fglob = exp(-27.0*pi/2.0) - 1.0
+        self.global_optimum = 9.0 * pi / 2.0
+        self.fglob = exp(-27.0 * pi / 2.0) - 1.0
 
     def evaluator(self, x, *args):
 
         self.fun_evals += 1
         x = x[0]
-        return exp(-3.0*x) - (sin(x))**3.0
+        return exp(-3.0 * x) - (sin(x)) ** 3.0
 
 # -------------------------------------------------------------------------------- #
