@@ -238,6 +238,9 @@ class TestNBinom(TestCase):
         # regression test for ticket 1779
         assert_allclose(np.exp(stats.nbinom.logpmf(700, 721, 0.52)),
                         stats.nbinom.pmf(700, 721, 0.52))
+        # regression test for ticjet 4029
+        val = scipy.stats.nbinom.logpmf(0,1,1)
+        assert_equal(val, 0)
 
 
 class TestGeom(TestCase):
