@@ -239,11 +239,11 @@ class TestNBinom(TestCase):
         assert_allclose(np.exp(stats.nbinom.logpmf(700, 721, 0.52)),
                         stats.nbinom.pmf(700, 721, 0.52))
         # regression test for ticket 4029
-        val = scipy.stats.nbinom.logpmf(0,1,1)
+        val = stats.nbinom.logpmf(0,1,1)
         assert_equal(val,0)
 
     def test_ppf(self):
-        val = truncexpon.ppf(truncexpon.cdf(1e-100,1),1)
+        val = stats.truncexpon.ppf(stats.truncexpon.cdf(1e-100,1),1)
         assert_equal(val,1e-100)
 
 
