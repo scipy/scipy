@@ -76,11 +76,13 @@ class Benchmark(object):
     def change_dimensions(self, ndim):
         if self.change_dimensionality:
             self.dimensions = ndim
-            #TODO: change bounds if the dimensionality is changed.
 
     @property
     def bounds(self):
-        return self._bounds
+        if self.change_dimensionality:
+            return [self._bounds[0]] * self.N,
+        else:
+            return self._bounds
 
     @property
     def N(self):
@@ -126,8 +128,8 @@ class Ackley(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self._bounds = zip([-30.0] * self.N, [30.0] * self.N)
 
+        self._bounds = zip([-30.0] * self.N, [30.0] * self.N)
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
@@ -169,8 +171,8 @@ class Adjiman(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self._bounds = ([-1.0, 2.0], [-1.0, 1.0])
 
+        self._bounds = ([-1.0, 2.0], [-1.0, 1.0])
         self.global_optimum = [2.0, 0.10578]
         self.fglob = -2.02180678
 
@@ -207,7 +209,6 @@ class Alpine01(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
-
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
@@ -252,8 +253,8 @@ class Alpine02(Benchmark):
         self.change_dimensionality = True
 
     def fun(self, x, *args):
-
         self.nfev += 1
+
         return prod(sqrt(x) * sin(x))
 
 
@@ -330,7 +331,6 @@ class BartelsConn(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
-
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 1.0
 
@@ -370,13 +370,12 @@ class Beale(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-4.5] * self.N, [4.5] * self.N)
-
         self.global_optimum = [3.0, 0.5]
         self.fglob = 0.0
 
     def fun(self, x, *args):
-
         self.nfev += 1
+
         return ((1.5 - x[0] + x[0] * x[1]) ** 2
                 + (2.25 - x[0] + x[0] * x[1] ** 2) ** 2
                 + (2.625 - x[0] + x[0] * x[1] ** 3) ** 2)
@@ -412,15 +411,14 @@ class Bird(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-2.0 * pi] * self.N,
-                          [2.0 * pi] * self.N)
-
+                           [2.0 * pi] * self.N)
         self.global_optimum = ([4.701055751981055, 3.152946019601391],
                                [-1.582142172055011, -3.130246799635430])
         self.fglob = -106.7645367198034
 
     def fun(self, x, *args):
-
         self.nfev += 1
+
         return (sin(x[0]) * exp((1 - cos(x[1])) ** 2)
                 + cos(x[1]) * exp((1 - sin(x[0])) ** 2) + (x[0] - x[1]) ** 2)
 
@@ -455,7 +453,6 @@ class Bohachevsky(Benchmark):
 
         self._bounds = zip([-15.0] * self.N, [15.0] * self.N)
         self.custom_bounds = [(-2, 2), (-2, 2)]
-
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
@@ -548,9 +545,11 @@ class Branin01(Benchmark):
         self.fglob = 0.39788735772973816
 
     def fun(self, x, *args):
-
         self.nfev += 1
-        return (x[1] - (5.1 / (4 * pi ** 2)) * x[0] ** 2 + 5 * x[0] / pi - 6) ** 2 + 10 * (1 - 1 / (8 * pi)) * cos(x[0]) + 10
+
+        return ((x[1] - (5.1 / (4 * pi ** 2)) * x[0] ** 2
+                + 5 * x[0] / pi - 6) ** 2
+                + 10 * (1 - 1 / (8 * pi)) * cos(x[0]) + 10)
 
 
 class Branin02(Benchmark):
@@ -587,9 +586,12 @@ class Branin02(Benchmark):
         self.fglob = 5.559037
 
     def fun(self, x, *args):
-
         self.nfev += 1
-        return (x[1] - (5.1 / (4 * pi ** 2)) * x[0] ** 2 + 5 * x[0] / pi - 6) ** 2 + 10 * (1 - 1 / (8 * pi)) * cos(x[0]) * cos(x[1]) + log(x[0] ** 2.0 + x[1] ** 2.0 + 1.0) + 10
+
+        return ((x[1] - (5.1 / (4 * pi ** 2)) * x[0] ** 2
+                + 5 * x[0] / pi - 6) ** 2
+                + 10 * (1 - 1 / (8 * pi)) * cos(x[0]) * cos(x[1])
+                + log(x[0] ** 2.0 + x[1] ** 2.0 + 1.0) + 10)
 
 
 class Brent(Benchmark):
