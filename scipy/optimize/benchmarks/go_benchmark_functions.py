@@ -3,40 +3,24 @@
 
 """
 =======================================================
-:mod:`go_benchmark` -- Benchmark optimization functions
+:mod:`go_benchmark_functions` -- Benchmark optimization functions
 =======================================================
 
 This module provides a set of benchmark problems for global optimization.
 
 .. Copyright 2013 Andrea Gavana
 
-.. module:: go_benchmark
+.. module:: go_benchmark_functions
 .. moduleauthor:: Andrea Gavana <andrea.gavana@gmail.com>
 
 """
 from __future__ import division
-import os
 
 import numpy as np
-
 from numpy import abs, arange, arctan2, asarray, atleast_1d, cos, exp, floor, inf, log, ones, log10, arange
-from numpy import pi, prod, roll, seterr, sign, sin, sqrt, sum, where, zeros, zeros_like, tan, tanh
-from numpy import linspace, meshgrid, dot
-
-from numpy.linalg import norm
-from numpy.random import uniform
+from numpy import pi, prod, roll, seterr, sign, sin, sqrt, sum, where, zeros, zeros_like, tan, tanh, dot
 
 from scipy.misc import factorial
-
-# Plotting stuff
-import matplotlib
-# matplotlib.use('AGG')
-
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
-from matplotlib import colors
-
-import matplotlib.pyplot as plt
 
 seterr(all='ignore')
 
@@ -47,24 +31,26 @@ class Benchmark(object):
     Defines a global optimization benchmark problem.
 
     This abstract class defines the basic structure of a global
-    optimization problem. Subclasses should implement the ``evaluator`` method
+    optimization problem. Subclasses should implement the ``fun`` method
     for a particular optimization problem.
 
     Public Attributes:
 
-    - *dimensions* -- the number of inputs to the problem
-    - *fun_evals* -- stores the number of function evaluations, as some crappy
-      optimization frameworks (i.e., `nlopt`) do not return this value
+    - *N* -- the dimensionality of the problem.
+    - *nfev* -- the number of function evaluations that the object has been
+                asked to calculate.
     - *change_dimensionality* -- whether we can change the benchmark function `x`
       variable length (i.e., the dimensionality of the problem)
-    - *custom_bounds* -- a set of lower/upper bounds for plot purposes (if needed).
-    - *spacing* -- the spacing to use to generate evenly spaced samples across the
-      lower/upper bounds on the variables, for plotting purposes
+    - *bounds* --the lower/upper bounds to be used for the problem. len(bounds) == N.
+    - *custom_bounds* -- a set of lower/upper bounds for that can be used for
+                         plotting purposes (if needed).
+    - *spacing* -- the spacing to use to generate evenly spaced samples across
+     the lower/upper bounds on the variables, for plotting purposes
     """
 
     def __init__(self, dimensions):
         self.dimensions = dimensions
-        self.fun_evals = 0
+        self.nfev = 0
         self.change_dimensionality = False
         self.custom_bounds = None
 
@@ -79,120 +65,35 @@ class Benchmark(object):
     def __repr__(self):
         return self.__class__.__name__
 
-    def generator(self):
-        """The generator function for the benchmark problem."""
-        return [uniform(l, u) for l, u in self.bounds]
+    def initial_vector(self):
+        """Random initialisation for the benchmark problem."""
+        return [np.random.uniform(l, u) for l, u in self._bounds]
 
-    def evaluator(self, candidates):
-        """The evaluator function for the benchmark problem."""
+    def fun(self, candidates):
+        """The fun function for the benchmark problem."""
         raise NotImplementedError
 
-    def set_dimensions(self, ndim):
-        self.dimensions = ndim
+    def change_dimensions(self, ndim):
+        if self.change_dimensionality:
+            self.dimensions = ndim
+            #TODO: change bounds if the dimensionality is changed.
+
+    @property
+    def bounds(self):
+        return self._bounds
 
     @property
     def N(self):
         return self.dimensions
 
+    #TODO: not clear why the following is needed.
     def lower_bounds_constraints(self, x):
-
-        lower = asarray([b[0] for b in self.bounds])
+        lower = asarray([b[0] for b in self._bounds])
         return asarray(x) - lower
 
     def upper_bounds_constraints(self, x):
-
-        upper = asarray([b[1] for b in self.bounds])
+        upper = asarray([b[1] for b in self._bounds])
         return upper - asarray(x)
-
-    def plot(self, set_title=False):
-
-        if self.N > 2:
-            return
-
-##        plt.rcParams['text.usetex'] = True
-        fig = plt.figure()
-
-        if self.custom_bounds:
-            bounds = self.custom_bounds
-        else:
-            bounds = self.bounds
-
-        xmin, xmax = bounds[0]
-
-        if xmin < -1e4:
-            xmin, xmax = -100, 100
-
-        name = self.__class__.__name__
-        spacing = self.spacing
-
-        X = linspace(xmin, xmax, spacing)
-
-        if self.N == 2:
-            # 3D functions
-            ax = Axes3D(fig)
-            ymin, ymax = bounds[1]
-
-            if ymin < -1e4:
-                ymin, ymax = -100, 100
-
-            Y = linspace(ymin, ymax, spacing)
-
-            X, Y = meshgrid(X, Y)
-            Z = zeros(X.shape)
-
-            for i in range(X.shape[0]):
-                for j in range(X.shape[1]):
-                    Z[i, j] = self.evaluator(asarray([X[i, j], Y[i, j]]))
-
-            min_index = Z.argmin()
-            cmap = matplotlib.cm.jet
-
-            if np.any(numpy.isnan(Z)):
-                Z = numpy.ma.array(Z, mask=numpy.isnan(Z))
-                lev = linspace(Z.min(), Z.max(), self.spacing)
-                norml = colors.BoundaryNorm(lev, 256)
-                ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
-                                cmap=cmap, linewidth=0.0, shade=True, norm=norml)
-            else:
-                ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
-                                cmap=cmap, linewidth=0.0, shade=True)
-
-            cset = plt.contour(X, Y, Z, zdir='z',
-                               offset=ax.get_zlim()[0], alpha=0.3)
-
-            ax.set_xlabel(r'$x_1$', fontsize=16)
-            ax.set_ylabel(r'$x_2$', fontsize=16)
-            ax.set_zlabel(r'$f(x_1, x_2)$', fontsize=16)
-
-        else:
-            # 2D functions
-            ax = fig.add_subplot(111)
-            Y = zeros(X.shape)
-
-            for i in range(X.shape[0]):
-                Y[i] = self.evaluator(atleast_1d(X[i]))
-
-            ax.plot(X, Y, 'b-', lw=1.5, zorder=30)
-            xf, yf = self.global_optimum, self.fglob
-
-            ax.plot(xf, yf, 'r.', ms=11, zorder=40)
-
-            ax.grid()
-            ax.set_xlabel(r'$x$', fontsize=16)
-            ax.set_ylabel(r'$f(x)$', fontsize=16)
-            zlabels = []
-
-        if set_title:
-            ax.set_title(name + ' Test Function', fontweight='bold')
-
-        out_folder = os.path.join(os.getcwd(), 'docs', 'figures')
-        if not os.path.isdir(out_folder):
-            os.makedirs(out_folder)
-
-        filename = os.path.join(out_folder, '%s.png' % name)
-        fig.savefig(filename)
-        plt.close(fig)
-        del fig
 
 
 #-----------------------------------------------------------------------
@@ -225,14 +126,14 @@ class Ackley(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-30.0] * self.N, [30.0] * self.N)
+        self._bounds = zip([-30.0] * self.N, [30.0] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         a = 20.0
         b = 0.2
@@ -268,13 +169,13 @@ class Adjiman(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = ([-1.0, 2.0], [-1.0, 1.0])
+        self._bounds = ([-1.0, 2.0], [-1.0, 1.0])
 
         self.global_optimum = [2.0, 0.10578]
         self.fglob = -2.02180678
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
         return cos(x[0]) * sin(x[1]) - x[0] / (x[1] ** 2 + 1)
 
 
@@ -305,14 +206,14 @@ class Alpine01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return sum(abs(x * sin(x) + 0.1 * x))
 
@@ -344,15 +245,15 @@ class Alpine02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [7.91705268, 4.81584232]
         self.fglob = -6.12950
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
         return prod(sqrt(x) * sin(x))
 
 
@@ -383,20 +284,19 @@ class AMGM(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [1, 1]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
-        n = self.N
+    def fun(self, x, *args):
+        self.nfev += 1
 
         f1 = sum(x)
         f2 = prod(x)
-        f1 = f1 / n
-        f2 = f2 ** (1.0 / n)
+        f1 = f1 / self.N
+        f2 = f2 ** (1.0 / self.N)
         f = (f1 - f2) ** 2
 
         return f
@@ -429,13 +329,13 @@ class BartelsConn(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 1.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (abs(x[0] ** 2.0 + x[1] ** 2.0 + x[0] * x[1]) + abs(sin(x[1]))
                 + abs(cos(x[1])))
@@ -469,14 +369,14 @@ class Beale(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-4.5] * self.N, [4.5] * self.N)
+        self._bounds = zip([-4.5] * self.N, [4.5] * self.N)
 
         self.global_optimum = [3.0, 0.5]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
         return ((1.5 - x[0] + x[0] * x[1]) ** 2
                 + (2.25 - x[0] + x[0] * x[1] ** 2) ** 2
                 + (2.625 - x[0] + x[0] * x[1] ** 3) ** 2)
@@ -511,16 +411,16 @@ class Bird(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-2.0 * pi] * self.N,
+        self._bounds = zip([-2.0 * pi] * self.N,
                           [2.0 * pi] * self.N)
 
         self.global_optimum = ([4.701055751981055, 3.152946019601391],
                                [-1.582142172055011, -3.130246799635430])
         self.fglob = -106.7645367198034
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
         return (sin(x[0]) * exp((1 - cos(x[1])) ** 2)
                 + cos(x[1]) * exp((1 - sin(x[0])) ** 2) + (x[0] - x[1]) ** 2)
 
@@ -553,15 +453,15 @@ class Bohachevsky(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-15.0] * self.N, [15.0] * self.N)
+        self._bounds = zip([-15.0] * self.N, [15.0] * self.N)
         self.custom_bounds = [(-2, 2), (-2, 2)]
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x0 = x[:-1]
         x1 = roll(x, -1)[:-1]
@@ -598,13 +498,13 @@ class BoxBetts(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = ([0.9, 1.2], [9.0, 11.2], [0.9, 1.2])
+        self._bounds = ([0.9, 1.2], [9.0, 11.2], [0.9, 1.2])
 
         self.global_optimum = [1.0, 10.0, 1.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         i = arange(1, 11)
         g = (exp(-0.1 * i * x[0]) - exp(-0.1 * i * x[1])
@@ -642,14 +542,14 @@ class Branin01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(-5., 10.), (0., 15.)]
+        self._bounds = [(-5., 10.), (0., 15.)]
 
         self.global_optimum = [(-pi, 12.275), (pi, 2.275), (9.42478, 2.475)]
         self.fglob = 0.39788735772973816
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
         return (x[1] - (5.1 / (4 * pi ** 2)) * x[0] ** 2 + 5 * x[0] / pi - 6) ** 2 + 10 * (1 - 1 / (8 * pi)) * cos(x[0]) + 10
 
 
@@ -681,14 +581,14 @@ class Branin02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(-5.0, 15.0), (-5.0, 15.0)]
+        self._bounds = [(-5.0, 15.0), (-5.0, 15.0)]
 
         self.global_optimum = [-3.2, 12.53]
         self.fglob = 5.559037
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
         return (x[1] - (5.1 / (4 * pi ** 2)) * x[0] ** 2 + 5 * x[0] / pi - 6) ** 2 + 10 * (1 - 1 / (8 * pi)) * cos(x[0]) * cos(x[1]) + log(x[0] ** 2.0 + x[1] ** 2.0 + 1.0) + 10
 
 
@@ -720,15 +620,15 @@ class Brent(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = ([-10, 2], [-10, 2])
 
         self.global_optimum = [-10.0, -10.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
         return (x[0] + 10.0) ** 2.0 + (x[1] + 10.0) ** 2.0 + exp(-x[0] ** 2.0 - x[1] ** 2.0)
 
 
@@ -760,15 +660,15 @@ class Brown(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-1.0] * self.N, [4.0] * self.N)
+        self._bounds = zip([-1.0] * self.N, [4.0] * self.N)
         self.custom_bounds = ([-1.0, 1.0], [-1.0, 1.0])
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x0 = x[:-1]
         x1 = x[1:]
@@ -803,14 +703,14 @@ class Bukin02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(-15.0, -5.0), (-3.0, 3.0)]
+        self._bounds = [(-15.0, -5.0), (-3.0, 3.0)]
 
         self.global_optimum = [-10.0, 0.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
         return 100 * (x[1] ** 2 - 0.01 * x[0] ** 2 + 1.0) + 0.01 * (x[0] + 10.0) ** 2.0
 
 
@@ -842,14 +742,14 @@ class Bukin04(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(-15.0, -5.0), (-3.0, 3.0)]
+        self._bounds = [(-15.0, -5.0), (-3.0, 3.0)]
 
         self.global_optimum = [-10.0, 0.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
         return 100 * x[1] ** 2 + 0.01 * abs(x[0] + 10)
 
 
@@ -881,14 +781,14 @@ class Bukin06(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(-15.0, -5.0), (-3.0, 3.0)]
+        self._bounds = [(-15.0, -5.0), (-3.0, 3.0)]
 
         self.global_optimum = [-10.0, 1.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
         return 100 * sqrt(abs(x[1] - 0.01 * x[0] ** 2)) + 0.01 * abs(x[0] + 10)
 
 
@@ -920,7 +820,7 @@ class CarromTable(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [(9.646157266348881, 9.646134286497169),
                                (-9.646157266348881, 9.646134286497169),
@@ -928,9 +828,9 @@ class CarromTable(Benchmark):
                                (-9.646157266348881, -9.646134286497169)]
         self.fglob = -24.15681551650653
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
         return -((cos(x[0]) * cos(x[1]) * exp(abs(1 - sqrt(x[0] ** 2 + x[1] ** 2) / pi))) ** 2) / 30
 
 
@@ -962,14 +862,14 @@ class Chichinadze(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-30.0] * self.N, [30.0] * self.N)
+        self._bounds = zip([-30.0] * self.N, [30.0] * self.N)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
         self.global_optimum = [6.189866586965680, 0.5]
         self.fglob = -42.94438701899098
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (x[0] ** 2 - 12 * x[0] + 11 + 10 * cos(pi * x[0] / 2)
                 + 8 * sin(5 * pi * x[0] / 2)
@@ -1004,7 +904,7 @@ class Cigar(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
@@ -1012,8 +912,8 @@ class Cigar(Benchmark):
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return x[0] ** 2 + 1e6 * sum(x[1:] ** 2)
 
@@ -1059,7 +959,7 @@ class Cola(Benchmark):
     def __init__(self, dimensions=17):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [[0.0, 4.0]] + \
+        self._bounds = [[0.0, 4.0]] + \
             list(zip([-4.0] * (self.N - 1),
                  [4.0] * (self.N - 1)))
 
@@ -1069,9 +969,9 @@ class Cola(Benchmark):
                                1.40992, -3.07367, 1.96257, -2.97872, -0.807849, -1.68978]
         self.fglob = 11.7464
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
 
         # C implementation - doesn't work
 # dis = [1.27,
@@ -1147,14 +1047,14 @@ class Colville(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [1 for _ in range(self.N)]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
         return (100 * (x[0] ** 2 - x[1]) ** 2
                 + (x[0] - 1) ** 2 + (x[2] - 1) ** 2
                 + 90 * (x[2] ** 2 - x[3]) ** 2
@@ -1191,14 +1091,14 @@ class Corana(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
 
         d = [1., 1000., 10., 100.]
         r = 0
@@ -1240,13 +1140,13 @@ class CosineMixture(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self.change_dimensionality = True
-        self.bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = -0.1 * self.N
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return -0.1 * sum(cos(5.0 * pi * x)) - sum(x ** 2.0)
 
@@ -1279,7 +1179,7 @@ class CrossInTray(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [(1.349406685353340, 1.349406608602084),
                                (-1.349406685353340, 1.349406608602084),
@@ -1287,9 +1187,9 @@ class CrossInTray(Benchmark):
                                (-1.349406685353340, -1.349406608602084)]
         self.fglob = -2.062611870822739
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
         return (-0.0001 * (abs(sin(x[0]) * sin(x[1])
                            * exp(abs(100 - sqrt(x[0] ** 2 + x[1] ** 2) / pi)))
                            + 1) ** (0.1))
@@ -1323,14 +1223,14 @@ class CrossLegTable(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [0., 0.]
         self.fglob = -1.0
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
         u = 100 - sqrt(x[0] ** 2 + x[1] ** 2) / pi
         v = sin(x[0]) * sin(x[1])
         return -(abs(v * exp(abs(u))) + 1) ** (-0.1)
@@ -1364,14 +1264,14 @@ class CrownedCross(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [0, 0]
         self.fglob = 0.0001
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
         u = 100 - sqrt(x[0] ** 2 + x[1] ** 2) / pi
         v = sin(x[0]) * sin(x[1])
         return 0.0001 * (abs(v * exp(abs(u))) + 1) ** (0.1)
@@ -1406,13 +1306,13 @@ class Csendes(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self.change_dimensionality = True
-        self.bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return sum((x ** 6.0) * (2.0 + sin(1.0 / x)))
 
@@ -1445,15 +1345,15 @@ class Cube(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = ([0, 2], [0, 2])
 
         self.global_optimum = [1.0, 1.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
         return 100.0 * (x[1] - x[0] ** 3.0) ** 2.0 + (1.0 - x[0]) ** 2.0
 
 
@@ -1486,14 +1386,14 @@ class Damavandi(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self.change_dimensionality = True
-        self.bounds = zip([0.0] * self.N, [14.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [14.0] * self.N)
 
         self.global_optimum = [2 for _ in range(self.N)]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
 
         num = sin(pi * (x[0] - 2.0)) * sin(pi * (x[1] - 2.0))
         den = (pi ** 2) * (x[0] - 2.0) * (x[1] - 2.0)
@@ -1534,13 +1434,13 @@ class Deb01(Benchmark):
 
         self.change_dimensionality = True
 
-        self.bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
         self.global_optimum = [0.3, -0.3]
         self.fglob = -1.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
         return -(1.0 / self.N) * sum(sin(5 * pi * x) ** 6.0)
 
 
@@ -1575,13 +1475,13 @@ class Deb02(Benchmark):
 
         self.change_dimensionality = True
 
-        self.bounds = zip([0.0] * self.N, [1.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [1.0] * self.N)
 
         self.global_optimum = [0.93388314, 0.68141781]
         self.fglob = -1.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return -(1.0 / self.N) * sum(sin(5 * pi * (x ** 0.75 - 0.05)) ** 6.0)
 
@@ -1615,15 +1515,15 @@ class Decanomial(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(0, 2.5), (-2, -4)]
 
         self.global_optimum = [2.0, -3.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
+    def fun(self, x, *args):
 
-        self.fun_evals += 1
+        self.nfev += 1
 
         val = x[1] ** 4 + 12 * x[1] ** 3 + 54 * x[1] ** 2 + 108 * x[1] + 81.0
         val2 = x[0] ** 10. - 20 * x[0] ** 9 + 180 * x[0] ** 8 - 960 * x[0] ** 7
@@ -1671,25 +1571,23 @@ class Deceptive(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [1.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [1.0] * self.N)
 
-        n = self.N
-        alpha = arange(1.0, n + 1.0) / (n + 1.0)
+        alpha = arange(1.0, self.N + 1.0) / (self.N + 1.0)
 
         self.global_optimum = alpha
         self.fglob = -1.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
-        n = self.N
-        alpha = arange(1.0, n + 1.0) / (n + 1.0)
+        alpha = arange(1.0, self.N + 1.0) / (self.N + 1.0)
         beta = 2.0
 
-        g = zeros((n, ))
+        g = zeros((self.N, ))
 
-        for i in range(n):
+        for i in range(self.N):
             if x[i] <= 0.0:
                 g[i] = x[i]
             elif x[i] < 0.8 * alpha[i]:
@@ -1703,7 +1601,7 @@ class Deceptive(Benchmark):
             else:
                 g[i] = x[i] - 1.0
 
-        return -((1.0 / n) * sum(g)) ** beta
+        return -((1.0 / self.N) * sum(g)) ** beta
 
 
 class DeckkersAarts(Benchmark):
@@ -1734,14 +1632,14 @@ class DeckkersAarts(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-20.0] * self.N, [20.0] * self.N)
+        self._bounds = zip([-20.0] * self.N, [20.0] * self.N)
         self.custom_bounds = ([-1, 1], [14, 16])
 
         self.global_optimum = [0.0, 14.9451209]
         self.fglob = -24776.518342168
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
         return (1.e5 * x[0] ** 2 + x[1] ** 2 - (x[0] ** 2 + x[1] ** 2) ** 2
                 + 1.e-5 * (x[0] ** 2 + x[1] ** 2) ** 4)
 
@@ -1778,14 +1676,14 @@ class DeflectedCorrugatedSpring(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         alpha = 5.0
-        self.bounds = zip([0] * self.N, [2 * alpha] * self.N)
+        self._bounds = zip([0] * self.N, [2 * alpha] * self.N)
 
         self.global_optimum = [alpha for _ in range(self.N)]
         self.fglob = -1.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
         K, alpha = 5.0, 5.0
 
         return (-cos(K * sqrt(sum((x - alpha) ** 2)))
@@ -1816,13 +1714,13 @@ class DeVilliersGlasser01(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([1.0] * self.N, [100.0] * self.N)
+        self._bounds = zip([1.0] * self.N, [100.0] * self.N)
 
         self.global_optimum = [60.137, 1.371, 3.112, 1.761]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         t = 0.1 * arange(24)
         y = 60.137 * (1.371 ** t) * sin(3.112 * t + 1.761)
@@ -1854,13 +1752,13 @@ class DeVilliersGlasser02(Benchmark):
     def __init__(self, dimensions=5):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([1.0] * self.N, [60.0] * self.N)
+        self._bounds = zip([1.0] * self.N, [60.0] * self.N)
 
         self.global_optimum = [53.81, 1.27, 3.012, 2.13, 0.507]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         t = 0.1 * arange(16)
         y = (53.81 * 1.27 ** t * tanh(3.012 * t + sin(2.13 * t))
@@ -1898,7 +1796,7 @@ class DixonPrice(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-2, 3), (-2, 3)]
 
         self.global_optimum = [2.0 ** (-(2.0 ** i - 2.0) / 2.0 ** i)
@@ -1906,8 +1804,8 @@ class DixonPrice(Benchmark):
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         i = arange(1, self.N)
         s = i * (2.0 * x[1:] ** 2.0 - x[:-1]) ** 2.0
@@ -1935,15 +1833,15 @@ class Dolan(Benchmark):
     def __init__(self, dimensions=5):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
 
         self.global_optimum = [8.39045925, 4.81424707, 7.34574133, 68.88246895,
                                3.85470806]
         self.fglob = 1e-5
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (abs((x[0] + 1.7 * x[1]) * sin(x[0]) - 1.5 * x[2]
                 - 0.1 * x[3] * cos(x[3] + x[4] - x[0]) + 0.2 * x[4] ** 2
@@ -1978,13 +1876,13 @@ class DropWave(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.12] * self.N, [5.12] * self.N)
+        self._bounds = zip([-5.12] * self.N, [5.12] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = -1.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         norm_x = sum(x ** 2)
         return -(1 + cos(12 * sqrt(norm_x))) / (0.5 * norm_x + 2)
@@ -2020,22 +1918,21 @@ class Easom(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         a = 20.0
         b = 0.2
         c = 2 * pi
-        n = self.N
 
-        return (-a * exp(-b * sqrt(sum(x ** 2) / n))
-                - exp(sum(cos(c * x)) / n) + a + exp(1))
+        return (-a * exp(-b * sqrt(sum(x ** 2) / self.N))
+                - exp(sum(cos(c * x)) / self.N) + a + exp(1))
 
 
 class EggCrate(Benchmark):
@@ -2066,13 +1963,13 @@ class EggCrate(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
 
         self.global_optimum = [0.0, 0.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return x[0] ** 2 + x[1] ** 2 + 25 * (sin(x[0]) ** 2 + sin(x[1]) ** 2)
 
@@ -2105,15 +2002,15 @@ class EggHolder(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-512.1] * self.N,
+        self._bounds = zip([-512.1] * self.N,
                           [512.0] * self.N)
 
         self.global_optimum = [512.0, 404.2319]
         self.fglob = -959.640662711
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         vec = (-(x[1:] + 47) * sin(sqrt(abs(x[1:] + x[:-1] / 2. + 47)))
                - x[:-1] * sin(sqrt(abs(x[:-1] - (x[1:] + 47)))))
@@ -2149,15 +2046,15 @@ class ElAttarVidyasagarDutta(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
         self.custom_bounds = [(-4, 4), (-4, 4)]
 
         self.global_optimum = [3.40918683, -2.17143304]
         self.fglob = 1.712780354
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return ((x[0] ** 2 + x[1] - 10) ** 2 + (x[0] + x[1] ** 2 - 7) ** 2
                 + (x[0] ** 2 + x[1] ** 3 - 1) ** 2)
@@ -2191,14 +2088,14 @@ class Exp2(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [20.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [20.0] * self.N)
         self.custom_bounds = [(0, 2), (0, 20)]
 
         self.global_optimum = [1.0, 10.]
         self.fglob = 0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         i = arange(10.)
         vec = (exp(-i * x[0] / 10.) - 5 * exp(-i * x[1] / 10.) - exp(-i / 10)
@@ -2235,14 +2132,14 @@ class Exponential(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.fglob = -1.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return -exp(-0.5 * sum(x ** 2.0))
 
@@ -2275,14 +2172,14 @@ class FreudensteinRoth(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-3, 3), (-5, 5)]
 
         self.global_optimum = [5.0, 4.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         f1 = (-13.0 + x[0] + ((5.0 - x[1]) * x[1] - 2.0) * x[1]) ** 2
         f2 = (-29.0 + x[0] + ((x[1] + 1.0) * x[1] - 14.0) * x[1]) ** 2
@@ -2313,12 +2210,12 @@ class Gear(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([12.0] * self.N, [60.0] * self.N)
+        self._bounds = zip([12.0] * self.N, [60.0] * self.N)
         self.global_optimum = [16, 19, 43, 49]
         self.fglob = 2.7e-12
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (1. / 6.931
                 - floor(x[0]) * floor(x[1]) / floor(x[2]) / floor(x[3])) ** 2
@@ -2352,13 +2249,13 @@ class Giunta(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
         self.global_optimum = [0.4673200277395354, 0.4673200169591304]
         self.fglob = 0.06447042053690566
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         arg = 16 * x / 15.0 - 1
         return 0.6 + sum(sin(arg) + sin(arg) ** 2 + sin(4 * arg) / 50)
@@ -2393,13 +2290,13 @@ class GoldsteinPrice(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-2.0] * self.N, [2.0] * self.N)
+        self._bounds = zip([-2.0] * self.N, [2.0] * self.N)
 
         self.global_optimum = [0., -1.]
         self.fglob = 3.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         a = 1 + (x[0] + x[1] + 1) ** 2 * \
             (19 - 14 * x[0] + 3 * x[0] ** 2 -
@@ -2438,7 +2335,7 @@ class Griewank(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-600.0] * self.N,
+        self._bounds = zip([-600.0] * self.N,
                           [600.0] * self.N)
         self.custom_bounds = [(-50, 50), (-50, 50)]
 
@@ -2446,8 +2343,8 @@ class Griewank(Benchmark):
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         i = arange(1., np.size(x))
         return sum(x ** 2 / 4000) - prod(cos(x / sqrt(i))) + 1
@@ -2482,13 +2379,13 @@ class Gulf(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [50.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [50.0] * self.N)
 
         self.global_optimum = [50.0, 25.0, 1.5]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         m = 99.
         i = arange(1., m + 1)
@@ -2525,13 +2422,13 @@ class Hansen(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [-7.58989583, -7.70831466]
         self.fglob = -176.54179
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         i = arange(5.)
         a = (i + 1) * cos(i * x[0] + i + 1)
@@ -2577,13 +2474,13 @@ class Hartmann3(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [1.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [1.0] * self.N)
 
         self.global_optimum = [0.11461292,  0.55564907,  0.85254697]
         self.fglob = -3.8627821478
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         a = asarray([[3.0,  0.1,  3.0,  0.1],
                      [10.0, 10.0, 10.0, 10.0],
@@ -2650,14 +2547,14 @@ class Hartmann6(Benchmark):
     def __init__(self, dimensions=6):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [1.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [1.0] * self.N)
 
         self.global_optimum = [0.20168952, 0.15001069,
                                0.47687398, 0.27533243, 0.31165162, 0.65730054]
         self.fglob = -3.32236801141551
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         a = asarray([[10.00,  0.05,  3.00, 17.00],
                      [3.00, 10.00,  3.50,  8.00],
@@ -2709,13 +2606,13 @@ class HelicalValley(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.N, [100] * self.N)
+        self._bounds = zip([-100.0] * self.N, [100] * self.N)
 
         self.global_optimum = [1.0, 0.0, 0.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (100 * ((x[2] - 10 * arctan2(x[1], x[0]) / 2 / pi) ** 2
                 + (sqrt(x[0] ** 2 + x[1] ** 2) - 1) ** 2) + x[2] ** 2)
@@ -2748,13 +2645,13 @@ class HimmelBlau(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-6] * self.N, [6] * self.N)
+        self._bounds = zip([-6] * self.N, [6] * self.N)
 
         self.global_optimum = [3.0, 2.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (x[0] ** 2 + x[1] - 11) ** 2 + (x[0] + x[1] ** 2 - 7) ** 2
 
@@ -2787,7 +2684,7 @@ class HolderTable(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [(8.055023472141116, 9.664590028909654),
                                (-8.055023472141116, 9.664590028909654),
@@ -2795,8 +2692,8 @@ class HolderTable(Benchmark):
                                (-8.055023472141116, -9.664590028909654)]
         self.fglob = -19.20850256788675
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return -abs(sin(x[0]) * cos(x[1])
                     * exp(abs(1 - sqrt(x[0] ** 2 + x[1] ** 2) / pi)))
@@ -2830,13 +2727,13 @@ class Holzman(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = ([0.0, 100.0], [0.0, 25.6], [0.0, 5.0])
+        self._bounds = ([0.0, 100.0], [0.0, 25.6], [0.0, 5.0])
 
         self.global_optimum = [50.0, 25.0, 1.5]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         val = 0
         i = arange(1, 101)
@@ -2875,14 +2772,14 @@ class Hosaki(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(0, 5), (0, 5)]
 
         self.global_optimum = [4, 2]
         self.fglob = -2.3458
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         val = (1 - 8 * x[0] + 7 * x[0] ** 2 - 7 / 3. * x[0] ** 3
                + 0.25 * x[0] ** 4)
@@ -2917,14 +2814,14 @@ class Infinity(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
         self.global_optimum = [1e-16 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return sum(x ** 6.0 * (sin(1.0 / x) + 2.0))
 
@@ -2957,14 +2854,14 @@ class JennrichSampson(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
         self.global_optimum = [0.257825, 0.257825]
         self.custom_bounds = [(-1, 0.34), (-1, 0.34)]
         self.fglob = 124.3621824
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         i = arange(1, 11)
         return sum((2 + 2 * i - (exp(i * x[0]) + exp(i * x[1]))) ** 2)
@@ -3007,14 +2904,14 @@ class Judge(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [0.86479, 1.2357]
         self.custom_bounds = [(-2.0, 2.0), (-2.0, 2.0)]
         self.fglob = 16.0817307
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         C = asarray([4.284, 4.149, 3.877, 0.533, 2.211, 2.389, 2.145,  3.231,
                      1.998, 1.379, 2.106, 1.428, 1.011, 2.179, 2.858, 1.388,
@@ -3061,15 +2958,15 @@ class Katsuura(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [100.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [100.0] * self.N)
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.custom_bounds = [(0, 1), (0, 1)]
         self.fglob = 1.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         d = 32
         k = np.atleast_2d(arange(1, d + 1)).T
@@ -3106,14 +3003,14 @@ class Keane(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [7.85396153, 7.85396135]
         self.custom_bounds = [(-1, 0.34), (-1, 0.34)]
         self.fglob = 0.
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         val = sin(x[0] - x[1]) ** 2 * sin(x[0] + x[1]) ** 2
         return val / sqrt(x[0] ** 2 + x[1] ** 2)
@@ -3147,12 +3044,12 @@ class Kowalik(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
         self.global_optimum = [0.192833, 0.190836, 0.123117, 0.135766]
         self.fglob = 0.00030748610
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         b = asarray([4.0, 2.0, 1.0, 1 / 2.0, 1 / 4.0, 1 / 6.0, 1 / 8.0,
                      1 / 10.0, 1 / 12.0, 1 / 14.0, 1 / 16.0])
@@ -3193,13 +3090,13 @@ class Langermann(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [2.00299219, 1.006096]
         self.fglob = -5.1621259
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         a = [3, 5, 2, 1, 7]
         b = [5, 2, 1, 4, 9]
@@ -3253,7 +3150,7 @@ class LennardJones(Benchmark):
     def __init__(self, dimensions=6):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-4.0] * self.N, [4.0] * self.N)
+        self._bounds = zip([-4.0] * self.N, [4.0] * self.N)
 
         self.global_optimum = []
 
@@ -3268,8 +3165,8 @@ class LennardJones(Benchmark):
         self.fglob = minima[k - 2]
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         k = self.N / 3
         s = 0.0
@@ -3317,13 +3214,13 @@ class Leon(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-1.2] * self.N, [1.2] * self.N)
+        self._bounds = zip([-1.2] * self.N, [1.2] * self.N)
 
         self.global_optimum = [1 for _ in range(self.N)]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return 100 * (x[1] - x[0] ** 2.0) ** 2.0 + (1 - x[0]) ** 2.0
 
@@ -3363,15 +3260,15 @@ class Levy03(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
         self.global_optimum = [1 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         y = 1 + (x - 1) / 4
         v = sum((y[: -1] - 1) ** 2 * (1 + 10 * sin(pi * y[1:]) ** 2))
@@ -3407,14 +3304,14 @@ class Levy05(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
         self.global_optimum = [-1.30685, -1.42485]
         self.fglob = -176.1375779
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         i = arange(1, 6)
         a = i * cos((i - 1) * x[0] + i)
@@ -3452,14 +3349,14 @@ class Levy13(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
         self.global_optimum = [1 for _ in range(self.N)]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         u = sin(3 * pi * x[0]) ** 2
         v = (x[0] - 1) ** 2 * (1 + (sin(3 * pi * x[1])) ** 2)
@@ -3496,13 +3393,13 @@ class Matyas(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return 0.26 * (x[0] ** 2 + x[1] ** 2) - 0.48 * x[0] * x[1]
 
@@ -3536,13 +3433,13 @@ class McCormick(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(-1.5, 4.0), (-3.0, 4.0)]
+        self._bounds = [(-1.5, 4.0), (-3.0, 4.0)]
 
         self.global_optimum = [-0.5471975602214493, -1.547197559268372]
         self.fglob = -1.913222954981037
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (sin(x[0] + x[1]) + (x[0] - x[1]) ** 2 - 1.5 * x[0]
                 + 2.5 * x[1] + 1)
@@ -3579,13 +3476,13 @@ class Michalewicz(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [pi] * self.N)
+        self._bounds = zip([0.0] * self.N, [pi] * self.N)
 
         self.global_optimum = [2.20290555, 1.570796]
         self.fglob = -1.8013
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         m = 10.0
         i = arange(1, self.N + 1)
@@ -3614,13 +3511,13 @@ class MieleCantrell(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
         self.global_optimum = [0.0, 1.0, 1.0, 1.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return ((exp(-x[0]) - x[1]) ** 4 + 100 * (x[1] - x[2]) ** 6
                 + tan(x[2] - x[3]) ** 4 + x[0] ** 8)
@@ -3655,19 +3552,17 @@ class Mishra01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N,
+        self._bounds = zip([0.0] * self.N,
                           [1.0 + 1e-9] * self.N)
 
         self.global_optimum = [1.0 for _ in range(self.N)]
         self.fglob = 2.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
-        n = self.N
-
-        xn = n - sum(x[0:-1])
+        xn = self.N - sum(x[0:-1])
         return (1 + xn) ** xn
 
 
@@ -3700,19 +3595,17 @@ class Mishra02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N,
+        self._bounds = zip([0.0] * self.N,
                           [1.0 + 1e-9] * self.N)
 
         self.global_optimum = [1.0 for _ in range(self.N)]
         self.fglob = 2.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
-        n = self.N
-
-        xn = n - sum((x[:-1] + x[1:]) / 2.0)
+        xn = self.N - sum((x[:-1] + x[1:]) / 2.0)
         return (1 + xn) ** xn
 
 
@@ -3745,13 +3638,13 @@ class Mishra03(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [-9.99378322, -9.99918927]
         self.fglob = -0.19990562
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return ((0.01 * (x[0] + x[1])
                 + sqrt(abs(cos(sqrt(abs(x[0] ** 2 + x[1] ** 2)))))))
@@ -3786,13 +3679,13 @@ class Mishra04(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [-8.71499636, -9.0533148]
         self.fglob = -0.17767
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return ((0.01 * (x[0] + x[1])
                 + sqrt(abs(sin(sqrt(abs(x[0] ** 2 + x[1] ** 2)))))))
@@ -3827,13 +3720,13 @@ class Mishra05(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [-1.98682, -10.0]
         self.fglob = -0.119829
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (0.01 * (x[0] + x[1])
                 + (sin((cos(x[0]) + cos(x[1])) ** 2) ** 2
@@ -3869,13 +3762,13 @@ class Mishra06(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [2.88631, 1.82326]
         self.fglob = -2.28395
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         a = 0.1 * ((x[0] - 1) ** 2 + (x[1] - 1) ** 2)
         u = (cos(x[0]) + cos(x[1])) ** 2
@@ -3912,15 +3805,15 @@ class Mishra07(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-2, 2), (-2, 2)]
         self.global_optimum = [sqrt(self.N)
                                for i in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (prod(x) - factorial(self.N)) ** 2.0
 
@@ -3954,13 +3847,13 @@ class Mishra08(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(1.0, 2.0), (-4.0, 1.0)]
         self.global_optimum = [2.0, 3.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         val = abs(x[0] ** 10 - 20 * x[0] ** 9 + 180 * x[0] ** 8
                   - 960 * x[0] ** 7 + 3360 * x[0] ** 6 - 8064 * x[0] ** 5
@@ -4002,12 +3895,12 @@ class Mishra09(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.global_optimum = [1.0, 2.0, 3.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         a = (2 * x[0] ** 3 + 5 * x[0] * x[1]
              + 4 * x[2] - 2 * x[0] ** 2 * x[2] - 18)
@@ -4048,12 +3941,12 @@ class Mishra10(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.global_optimum = [2.0, 2.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x1, x2 = int(x[0]), int(x[1])
 #         TODO rewrite equation above with nint(x)
@@ -4091,15 +3984,15 @@ class Mishra11(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-3, 3), (-3, 3)]
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         N = self.N
         return ((1.0 / N) * sum(abs(x)) - (prod(abs(x))) ** 1.0 / N) ** 2.0
@@ -4134,15 +4027,15 @@ class MultiModal(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return sum(abs(x)) * prod(abs(x))
 
@@ -4179,14 +4072,14 @@ class NeedleEye(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.fglob = 1.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         f = fp = 0.0
         eye = 0.0001
@@ -4233,13 +4126,13 @@ class NewFunction01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [-8.46669057, -9.99982177]
         self.fglob = -0.184642678
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return ((abs(cos(sqrt(abs(x[0] ** 2 + x[1]))))) ** 0.5
                 + 0.01 * (x[0] + x[1]))
@@ -4274,13 +4167,13 @@ class NewFunction02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [-9.94103375, -9.99771235]
         self.fglob = -0.19937167547710213
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return ((abs(sin(sqrt(abs(x[0] ** 2 + x[1]))))) ** 0.5
                 + 0.01 * (x[0] + x[1]))
@@ -4315,13 +4208,13 @@ class NewFunction03(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [-1.98682, -10.0]
         self.fglob = -1.019829
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         f1 = sin((cos(x[0]) + cos(x[1])) ** 2) ** 2
         f2 = cos((sin(x[0]) + sin(x[1])) ** 2) ** 2
@@ -4369,7 +4262,7 @@ class OddSquare(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.0 * pi] * self.N,
+        self._bounds = zip([-5.0 * pi] * self.N,
                           [5.0 * pi] * self.N)
         self.custom_bounds = ([-2.0, 4.0], [-2.0, 4.0])
 
@@ -4379,8 +4272,8 @@ class OddSquare(Benchmark):
         self.global_optimum = self.a[0: self.N]
         self.fglob = -1.0084
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
         b = self.a[0: self.N]
         d = self.N * max((x - b) ** 2.0)
         h = sum((x - b) ** 2.0)
@@ -4421,13 +4314,13 @@ class Parsopoulos(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
 
         self.global_optimum = [pi / 2.0, pi]
         self.fglob = 0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return cos(x[0]) ** 2.0 + sin(x[1]) ** 2.0
 
@@ -4461,14 +4354,14 @@ class Pathological(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         vec = (0.5 + (sin(sqrt(100 * x[: -1] ** 2 + x[1:] ** 2)) ** 2 - 0.5) /
                (1. + 0.001 * (x[: -1] ** 2 - 2 * x[: -1] * x[1:]
@@ -4498,13 +4391,13 @@ class Paviani(Benchmark):
     def __init__(self, dimensions=10):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([2.001] * self.N, [9.999] * self.N)
+        self._bounds = zip([2.001] * self.N, [9.999] * self.N)
 
         self.global_optimum = [9.350266 for _ in range(self.N)]
         self.fglob = -45.7784684040686
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return sum(log(x - 2) ** 2.0 + log(10.0 - x) ** 2.0) - prod(x) ** 0.2
 
@@ -4551,15 +4444,15 @@ class Penalty01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-50.0] * self.N, [50.0] * self.N)
+        self._bounds = zip([-50.0] * self.N, [50.0] * self.N)
         self.custom_bounds = ([-5.0, 5.0], [-5.0, 5.0])
 
         self.global_optimum = [-1.0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         a, b, c = 10.0, 100.0, 4.0
 
@@ -4611,15 +4504,15 @@ class Penalty02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-50.0] * self.N, [50.0] * self.N)
+        self._bounds = zip([-50.0] * self.N, [50.0] * self.N)
         self.custom_bounds = ([-4.0, 4.0], [-4.0, 4.0])
 
         self.global_optimum = [1.0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         a, b, c = 5.0, 100.0, 4.0
 
@@ -4663,13 +4556,13 @@ class PenHolder(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-11.0] * self.N, [11.0] * self.N)
+        self._bounds = zip([-11.0] * self.N, [11.0] * self.N)
 
         self.global_optimum = [-9.646167708023526, 9.646167671043401]
         self.fglob = -0.9635348327265058
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         a = abs(1. - (sqrt(x[0] ** 2 + x[1] ** 2) / pi))
         b = cos(x[0]) * cos(x[1]) * exp(a)
@@ -4705,15 +4598,15 @@ class PermFunction01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-self.N] * self.N,
+        self._bounds = zip([-self.N] * self.N,
                           [self.N + 1] * self.N)
 
         self.global_optimum = range(1, self.N + 1)
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         b = 0.5
         s_out = 0.0
@@ -4754,7 +4647,7 @@ class PermFunction02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-self.N] * self.N,
+        self._bounds = zip([-self.N] * self.N,
                           [self.N + 1] * self.N)
         self.custom_bounds = ([0, 1.5], [0, 1.0])
 
@@ -4762,8 +4655,8 @@ class PermFunction02(Benchmark):
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         b = 10
         outer = 0
@@ -4812,19 +4705,18 @@ class Pinter(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
-        n = self.N
         f = 0.0
 
-        for i in range(n):
+        for i in range(self.N):
             x_i = x[i]
 
             if i == 0:
@@ -4877,14 +4769,14 @@ class Plateau(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.12] * self.N, [5.12] * self.N)
+        self._bounds = zip([-5.12] * self.N, [5.12] * self.N)
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.fglob = 30.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return 30.0 + sum(floor(abs(x)))
 
@@ -4911,12 +4803,12 @@ class Powell(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-4.0] * self.N, [5.0] * self.N)
+        self._bounds = zip([-4.0] * self.N, [5.0] * self.N)
         self.global_optimum = [0, 0, 0, 0]
         self.fglob = 0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return ((x[0] + 10 * x[1]) ** 2 + 5 * (x[2] - x[3]) ** 2
                 + (x[1] - 2 * x[2]) ** 4 + 10 * (x[0] - x[3]) ** 4)
@@ -4945,14 +4837,14 @@ class PowerSum(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N,
+        self._bounds = zip([0.0] * self.N,
                           [float(self.N)] * self.N)
 
         self.global_optimum = [1.0, 2.0, 2.0, 3.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         b = [8.0, 18.0, 44.0, 114.0]
         y = 0.0
@@ -4994,15 +4886,15 @@ class Price01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-500.0] * self.N,
+        self._bounds = zip([-500.0] * self.N,
                           [500.0] * self.N)
         self.custom_bounds = ([-10.0, 10.0], [-10.0, 10.0])
 
         self.global_optimum = [5.0, 5.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (abs(x[0]) - 5.0) ** 2.0 + (abs(x[1]) - 5.0) ** 2.0
 
@@ -5036,13 +4928,13 @@ class Price02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [0.0, 0.0]
         self.fglob = 0.9
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return 1.0 + sum(sin(x) ** 2) - 0.1 * exp(-x[0] ** 2.0 - x[1] ** 2.0)
 
@@ -5076,14 +4968,14 @@ class Price03(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-50.0] * self.N, [50.0] * self.N)
+        self._bounds = zip([-50.0] * self.N, [50.0] * self.N)
         self.custom_bounds = ([0, 2], [0, 2])
 
         self.global_optimum = [1.0, 1.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (100 * (x[1] - x[0] ** 2) ** 2
                 + (6.4 * (x[1] - 0.5) ** 2 - x[0] - 0.6) ** 2)
@@ -5118,14 +5010,14 @@ class Price04(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-50.0] * self.N, [50.0] * self.N)
+        self._bounds = zip([-50.0] * self.N, [50.0] * self.N)
         self.custom_bounds = ([0, 2], [0, 2])
 
         self.global_optimum = [2.0, 4.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return ((2.0 * x[1] * x[0] ** 3.0 - x[1] ** 3.0) ** 2.0
                 + (6.0 * x[0] - x[1] ** 2.0 + x[1]) ** 2.0)
@@ -5160,7 +5052,7 @@ class Qing(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-500.0] * self.N,
+        self._bounds = zip([-500.0] * self.N,
                           [500.0] * self.N)
         self.custom_bounds = [(-2, 2), (-2, 2)]
 
@@ -5168,8 +5060,8 @@ class Qing(Benchmark):
         self.fglob = 0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         i = arange(1, self.N + 1)
         return sum((x ** 2.0 - i) ** 2.0)
@@ -5204,15 +5096,15 @@ class Quadratic(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(0, 1), (0, 1)]
 
         self.global_optimum = [0.19388, 0.48513]
         self.fglob = -3873.72418
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (-3803.84 - 138.08 * x[0] - 232.92 * x[1] + 128.08 * x[0] ** 2.0
                 + 203.64 * x[1] ** 2.0 + 182.25 * x[0] * x[1])
@@ -5247,15 +5139,15 @@ class Quintic(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-2, 2), (-2, 2)]
 
         self.global_optimum = [-1.0 for _ in range(self.N)]
         self.fglob = 0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return sum(abs(x ** 5 - 3 * x ** 4 + 4 * x ** 3 + 2 * x ** 2
                        - 10 * x - 4))
@@ -5288,15 +5180,15 @@ class Rana(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-500.000001] * self.N,
+        self._bounds = zip([-500.000001] * self.N,
                           [500.000001] * self.N)
 
         self.global_optimum = [-300.3376, 500.]
         self.fglob = -500.8021602966615
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         t1 = sqrt(abs(x[1:] + x[: -1] + 1))
         t2 = sqrt(abs(x[1:] - x[: -1] + 1))
@@ -5329,14 +5221,14 @@ class Rastrigin(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-5.12] * self.N, [5.12] * self.N)
+        self._bounds = zip([-5.12] * self.N, [5.12] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return 10.0 * self.N + sum(x ** 2.0 - 10.0 * cos(2.0 * pi * x))
 
@@ -5367,13 +5259,13 @@ class Ripple01(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([0.0] * self.N, [1.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [1.0] * self.N)
 
         self.global_optimum = [0.1 for _ in range(self.N)]
         self.fglob = -2.2
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         u = -2.0 * log(2.0) * ((x - 0.1) / 0.8) ** 2.0
         v = sin(5.0 * pi * x) ** 6.0 + 0.1 * cos(500.0 * pi * x) ** 2.0
@@ -5406,13 +5298,13 @@ class Ripple25(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([0.0] * self.N, [1.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [1.0] * self.N)
 
         self.global_optimum = [0.1 for _ in range(self.N)]
         self.fglob = -2.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         u = -2.0 * log(2.0) * ((x - 0.1) / 0.8) ** 2.0
         v = sin(5.0 * pi * x) ** 6.0
@@ -5446,15 +5338,15 @@ class Rosenbrock(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-5.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-2, 2), (-2, 2)]
 
         self.global_optimum = [1 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return sum(100.0 * (x[1:] - x[:-1] ** 2.0) ** 2.0 + (1 - x[:-1]) ** 2.0)
 
@@ -5486,14 +5378,14 @@ class RosenbrockModified(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-2.0] * self.N, [2.0] * self.N)
+        self._bounds = zip([-2.0] * self.N, [2.0] * self.N)
         self.custom_bounds = ([-1.0, 0.5], [-1.0, 1.0])
 
         self.global_optimum = [-0.90955374, -0.95057172]
         self.fglob = 34.040243106640844
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         a = 74 + 100. * (x[1] - x[0] ** 2) ** 2 + (1 - x[0]) ** 2
         a -= 400 * exp(-((x[0] + 1.) ** 2 + (x[1] + 1.) ** 2) / 0.1)
@@ -5527,15 +5419,15 @@ class RotatedEllipse01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-500.0] * self.N,
+        self._bounds = zip([-500.0] * self.N,
                           [500.0] * self.N)
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
         self.global_optimum = [0.0, 0.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (7.0 * x[0] ** 2.0 - 6.0 * sqrt(3) * x[0] * x[1]
                 + 13 * x[1] ** 2.0)
@@ -5568,15 +5460,15 @@ class RotatedEllipse02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-500.0] * self.N,
+        self._bounds = zip([-500.0] * self.N,
                           [500.0] * self.N)
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
         self.global_optimum = [0.0, 0.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return x[0] ** 2.0 - x[0] * x[1] + x[1] ** 2.0
 
@@ -5607,7 +5499,7 @@ class Salomon(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
         self.custom_bounds = [(-50, 50), (-50, 50)]
 
@@ -5615,8 +5507,8 @@ class Salomon(Benchmark):
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         u = sum(x ** 2)
         return 1 - cos(2 * pi * sqrt(u)) + 0.1 * sqrt(u)
@@ -5648,7 +5540,7 @@ class Sargan(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
@@ -5656,8 +5548,8 @@ class Sargan(Benchmark):
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x0 = x[:-1]
         x1 = roll(x, -1)[:-1]
@@ -5692,15 +5584,15 @@ class Schaffer01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         num = sin((x[0] ** 2 + x[1] ** 2)) ** 2 - 0.5
         den = (1 + 0.001 * (x[0] ** 2 + x[1] ** 2)) ** 2
@@ -5734,15 +5626,15 @@ class Schaffer02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         num = sin((x[0] ** 2 - x[1] ** 2)) ** 2 - 0.5
         den = (1 + 0.001 * (x[0] ** 2 + x[1] ** 2)) ** 2
@@ -5776,15 +5668,15 @@ class Schaffer03(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
         self.global_optimum = [0.0, 1.253115]
         self.fglob = 0.00156685
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         num = sin(cos(abs(x[0] ** 2 - x[1] ** 2))) ** 2 - 0.5
         den = (1 + 0.001 * (x[0] ** 2 + x[1] ** 2)) ** 2
@@ -5818,15 +5710,15 @@ class Schaffer04(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
         self.global_optimum = [0.0, 1.253115]
         self.fglob = 0.292579
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         num = cos(sin(abs(x[0] ** 2 - x[1] ** 2))) ** 2 - 0.5
         den = (1 + 0.001 * (x[0] ** 2 + x[1] ** 2)) ** 2
@@ -5853,13 +5745,13 @@ class SchmidtVetters(Benchmark):
 
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([0.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [0.79876108,  0.79962581,  0.79848824]
         self.fglob = 2.99643266
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (1 / (1 + (x[0] - x[1]) ** 2) + sin((pi * x[1] + x[2]) / 2)
                 + exp(((x[0] + x[1]) / x[1] - 2) ** 2))
@@ -5893,7 +5785,7 @@ class Schwefel01(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
         self.custom_bounds = ([-4.0, 4.0], [-4.0, 4.0])
 
@@ -5901,8 +5793,8 @@ class Schwefel01(Benchmark):
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         alpha = sqrt(pi)
         return (sum(x ** 2.0)) ** alpha
@@ -5935,7 +5827,7 @@ class Schwefel02(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
         self.custom_bounds = ([-4.0, 4.0], [-4.0, 4.0])
 
@@ -5943,8 +5835,8 @@ class Schwefel02(Benchmark):
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         mat = np.repeat(np.atleast_2d(x), self.N, axis=0)
         inner = sum(np.tril(mat), axis=1)
@@ -5978,15 +5870,15 @@ class Schwefel04(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([0.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [10.0] * self.N)
         self.custom_bounds = ([0.0, 2.0], [0.0, 2.0])
 
         self.global_optimum = [1.0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return sum((x - 1.0) ** 2.0 + (x[0] - x ** 2.0) ** 2.0)
 
@@ -6018,15 +5910,15 @@ class Schwefel06(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
         self.custom_bounds = ([-10.0, 10.0], [-10.0, 10.0])
 
         self.global_optimum = [1.0, 3.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return max(abs(x[0] + 2 * x[1] - 7), abs(2 * x[0] + x[1] - 5))
 
@@ -6058,15 +5950,15 @@ class Schwefel20(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return sum(abs(x))
 
@@ -6098,15 +5990,15 @@ class Schwefel21(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return max(abs(x))
 
@@ -6138,7 +6030,7 @@ class Schwefel22(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
         self.custom_bounds = ([-10.0, 10.0], [-10.0, 10.0])
 
@@ -6146,8 +6038,8 @@ class Schwefel22(Benchmark):
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return sum(abs(x)) + prod(abs(x))
 
@@ -6178,15 +6070,15 @@ class Schwefel26(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-500.0] * self.N,
+        self._bounds = zip([-500.0] * self.N,
                           [500.0] * self.N)
 
         self.global_optimum = [420.968746 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return 418.982887 * self.N - sum(x * sin(sqrt(abs(x))))
 
@@ -6218,14 +6110,14 @@ class Schwefel36(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([0.0] * self.N, [500.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [500.0] * self.N)
         self.custom_bounds = ([0.0, 20.0], [0.0, 20.0])
 
         self.global_optimum = [12.0, 12.0]
         self.fglob = -3456.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return -x[0] * x[1] * (72 - 2 * x[0] - 2 * x[1])
 
@@ -6261,13 +6153,13 @@ class Shekel05(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [4.0 for _ in range(self.N)]
         self.fglob = -10.15319585
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         m = 5
         A = asarray([[4.0, 4.0, 4.0, 4.0],
@@ -6313,13 +6205,13 @@ class Shekel07(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [4.0 for _ in range(self.N)]
         self.fglob = -10.4028188
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         m = 7
         A = asarray([[4.0, 4.0, 4.0, 4.0],
@@ -6368,13 +6260,13 @@ class Shekel10(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [4.0 for _ in range(self.N)]
         self.fglob = -10.5362837262
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         m = 10
         A = asarray([[4.0, 4.0, 4.0, 4.0],
@@ -6420,15 +6312,15 @@ class Shubert01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.global_optimum = [-7.0835, 4.8580]
 
         self.fglob = -186.7309
 
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         j = np.atleast_2d(arange(1, 6)).T
         y = j * cos((j + 1) * x + j)
@@ -6463,15 +6355,15 @@ class Shubert03(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [5.791794, 5.791794]
         self.fglob = -24.062499
 
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         j = np.atleast_2d(arange(1, 6)).T
         y = -j * sin((j + 1) * x + j)
@@ -6506,15 +6398,15 @@ class Shubert04(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [-0.80032121, -7.08350592]
         self.fglob = -29.016015
 
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         j = np.atleast_2d(arange(1, 6)).T
         y = -j * cos((j + 1) * x + j)
@@ -6549,7 +6441,7 @@ class SineEnvelope(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
         self.custom_bounds = [(-20, 20), (-20, 20)]
 
@@ -6557,8 +6449,8 @@ class SineEnvelope(Benchmark):
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         X0 = x[:-1]
         X1 = x[1:]
@@ -6595,15 +6487,15 @@ class SixHumpCamel(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
         self.custom_bounds = [(-2, 2), (-1.5, 1.5)]
 
         self.global_optimum = [(0.08984201368301331, -0.7126564032704135),
                                (-0.08984201368301331, 0.7126564032704135)]
         self.fglob = -1.031628
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
         return ((4 - 2.1 * x[0] ** 2 + x[0] ** 4 / 3) * x[0] ** 2 + x[0] * x[1]
                 + (4 * x[1] ** 2 - 4) * x[1] ** 2)
 
@@ -6635,14 +6527,14 @@ class Sodp(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         i = arange(1, self.N + 1)
         return sum(abs(x) ** (i + 1))
@@ -6674,14 +6566,14 @@ class Sphere(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-5.12] * self.N, [5.12] * self.N)
+        self._bounds = zip([-5.12] * self.N, [5.12] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return sum(x ** 2)
 
@@ -6712,7 +6604,7 @@ class Step(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
         self.custom_bounds = ([-5, 5], [-5, 5])
 
@@ -6720,8 +6612,8 @@ class Step(Benchmark):
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return sum((floor(x + 0.5)) ** 2.0)
 
@@ -6755,14 +6647,14 @@ class Stochastic(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
 
         self.global_optimum = [1.0 / _ for _ in range(1, self.N + 1)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         rnd = uniform(0.0, 1.0, size=(self.N, ))
         i = arange(1, self.N + 1)
@@ -6805,14 +6697,14 @@ class StretchedV(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10] * self.N, [10] * self.N)
+        self._bounds = zip([-10] * self.N, [10] * self.N)
 
         self.global_optimum = [0, 0]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         t = x[1:] ** 2 + x[: -1] ** 2
 #         TODO: fix equation in docs
@@ -6846,15 +6738,15 @@ class StyblinskiTang(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
 
         self.global_optimum = [
             -2.903534018185960 for _ in range(self.N)]
         self.fglob = -39.16616570377142 * self.N
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return sum(x ** 4 - 16 * x ** 2 + 5 * x) / 2
 
@@ -6886,13 +6778,13 @@ class TestTubeHolder(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [-pi / 2, 0.0]
         self.fglob = -10.87229990155800
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         u = sin(x[0]) * cos(x[1])
         v = (x[0] ** 2 + x[1] ** 2) / 200
@@ -6926,14 +6818,14 @@ class Treccani(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
         self.custom_bounds = [(-2, 2), (-2, 2)]
 
         self.global_optimum = [-2.0, 0.0]
         self.fglob = 0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return x[0] ** 4 + 4.0 * x[0] ** 3 + 4.0 * x[0] ** 2 + x[1] ** 2
 
@@ -6965,14 +6857,14 @@ class Trefethen(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
         self.global_optimum = [-0.02440307923, 0.2106124261]
         self.fglob = -3.3068686474
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         val = 0.25 * x[0] ** 2 + 0.25 * x[1] ** 2
         val += exp(sin(50. * x[0])) - sin(10 * x[0] + 10 * x[1])
@@ -7009,14 +6901,14 @@ class ThreeHumpCamel(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
         self.custom_bounds = [(-2, 2), (-1.5, 1.5)]
 
         self.global_optimum = [0.0, 0.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (2.0 * x[0] ** 2.0 - 1.05 * x[0] ** 4.0 + x[0] ** 6 / 6.0
                 + x[0] * x[1] + x[1] ** 2.0)
@@ -7043,14 +6935,14 @@ class Trid(Benchmark):
     def __init__(self, dimensions=6):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [20.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [20.0] * self.N)
 
         self.global_optimum = [6, 10, 12, 12, 10, 6]
         self.fglob = -50.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return sum((x - 1.0) ** 2.0) - sum(x[1:] * x[:-1])
 
@@ -7082,14 +6974,14 @@ class Trigonometric01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [pi] * self.N)
+        self._bounds = zip([0.0] * self.N, [pi] * self.N)
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         i = arange(1.0, self.N + 1)
         return sum((self.N - sum(cos(x) + i * (1 - cos(x) - sin(x)))) ** 2.0)
@@ -7122,7 +7014,7 @@ class Trigonometric02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-500.0] * self.N,
+        self._bounds = zip([-500.0] * self.N,
                           [500.0] * self.N)
         self.custom_bounds = [(0, 2), (0, 2)]
 
@@ -7130,8 +7022,8 @@ class Trigonometric02(Benchmark):
         self.fglob = 1.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         vec = (8 * sin(7 * (x - 0.9) ** 2) ** 2
                + 6 * sin(14 * (x - 0.9) ** 2) ** 2
@@ -7166,14 +7058,14 @@ class Tripod(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-100.0] * self.N,
+        self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
 
         self.global_optimum = [0.0, -50.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         p1 = float(x[0] >= 0)
         p2 = float(x[1] >= 0)
@@ -7209,13 +7101,13 @@ class Ursem01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(-2.5, 3.0), (-2.0, 2.0)]
+        self._bounds = [(-2.5, 3.0), (-2.0, 2.0)]
 
         self.global_optimum = [1.69714, 0.0]
         self.fglob = -4.8168
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (-sin(2 * x[0] - 0.5 * pi) - 3.0 * cos(x[1]) - 0.5 * x[0])
 
@@ -7247,13 +7139,13 @@ class Ursem03(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(-2, 2), (-1.5, 1.5)]
+        self._bounds = [(-2, 2), (-1.5, 1.5)]
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.fglob = -3.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         u = -(sin(2.2 * pi * x[0] + 0.5 * pi)
               * ((2.0 - abs(x[0])) / 2.0) * ((3.0 - abs(x[0])) / 2))
@@ -7289,13 +7181,13 @@ class Ursem04(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-2.0] * self.N, [2.0] * self.N)
+        self._bounds = zip([-2.0] * self.N, [2.0] * self.N)
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.fglob = -1.5
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (-3 * sin(0.5 * pi * x[0] + 0.5 * pi)
                 * (2 - sqrt(x[0] ** 2 + x[1] ** 2)) / 4)
@@ -7328,13 +7220,13 @@ class UrsemWaves(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(-0.9, 1.2), (-1.2, 1.2)]
+        self._bounds = [(-0.9, 1.2), (-1.2, 1.2)]
 
         self.global_optimum = [1.2 for _ in range(self.N)]
         self.fglob = -8.5536
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         u = -0.9 * x[0] ** 2
         v = (x[1] ** 2 - 4.5 * x[1] ** 2) * x[0] * x[1]
@@ -7369,14 +7261,14 @@ class VenterSobiezcczanskiSobieski(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-50.0] * self.N, [50.0] * self.N)
+        self._bounds = zip([-50.0] * self.N, [50.0] * self.N)
         self.custom_bounds = ([-10, 10], [-10, 10])
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.fglob = -400
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         u = x[0] ** 2.0 - 100.0 * cos(x[0]) ** 2.0
         v = -100.0 * cos(x[0] ** 2.0 / 30.0) + x[1] ** 2.0
@@ -7411,14 +7303,14 @@ class Vincent(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.25] * self.N, [10.0] * self.N)
+        self._bounds = zip([0.25] * self.N, [10.0] * self.N)
 
         self.global_optimum = [7.70628098 for _ in range(self.N)]
         self.fglob = -float(self.N)
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return -sum(sin(10.0 * log(x)))
 
@@ -7447,13 +7339,13 @@ class Watson(Benchmark):
     def __init__(self, dimensions=6):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
 
         self.global_optimum = [-0.0158, 1.012, -0.2329, 1.260, -1.513, 0.9928]
         self.fglob = 0.002288
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         i = np.atleast_2d(arange(30.)).T
         a = i / 29.
@@ -7498,14 +7390,14 @@ class Wavy(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-pi] * self.N, [pi] * self.N)
+        self._bounds = zip([-pi] * self.N, [pi] * self.N)
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return 1.0 - (1.0 / self.N) * sum(cos(10 * x) * exp(-x ** 2.0 / 2.0))
 
@@ -7538,14 +7430,14 @@ class WayburnSeader01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
         self.custom_bounds = ([-2, 2], [-2, 2])
 
         self.global_optimum = [1.0, 2.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (x[0] ** 6 + x[1] ** 4 - 17) ** 2 + (2 * x[0] + x[1] - 4) ** 2
 
@@ -7577,15 +7469,15 @@ class WayburnSeader02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-500.0] * self.N,
+        self._bounds = zip([-500.0] * self.N,
                           [500.0] * self.N)
         self.custom_bounds = ([-1, 2], [-1, 2])
 
         self.global_optimum = [0.2, 1.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         u = (1.613 - 4 * (x[0] - 0.3125) ** 2 - 4 * (x[1] - 1.625) ** 2) ** 2
         v = (x[1] - 1) ** 2
@@ -7622,14 +7514,14 @@ class Weierstrass(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-0.5] * self.N, [0.5] * self.N)
+        self._bounds = zip([-0.5] * self.N, [0.5] * self.N)
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.fglob = 4.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         kmax = 20
         a, b = 0.5, 3.0
@@ -7672,7 +7564,7 @@ class Whitley(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.24] * self.N,
+        self._bounds = zip([-10.24] * self.N,
                           [10.24] * self.N)
         self.custom_bounds = ([-1, 2], [-1, 2])
 
@@ -7680,10 +7572,8 @@ class Whitley(Benchmark):
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
-
-        n = self.N
+    def fun(self, x, *args):
+        self.nfev += 1
 
         XI = x
         XJ = np.atleast_2d(x).T
@@ -7715,13 +7605,13 @@ class Wolfe(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [2.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [2.0] * self.N)
 
         self.global_optimum = [0.0 for _ in range(self.N)]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return 4 / 3 * (x[0] ** 2 + x[1] ** 2 - x[0] * x[1]) ** 0.75 + x[2]
 
@@ -7756,15 +7646,15 @@ class XinSheYang01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
         self.custom_bounds = ([-2, 2], [-2, 2])
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         i = arange(1.0, self.N + 1.0)
         return sum(np.random.random() * (abs(x) ** i))
@@ -7797,15 +7687,15 @@ class XinSheYang02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-2 * pi] * self.N,
+        self._bounds = zip([-2 * pi] * self.N,
                           [2 * pi] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return sum(abs(x)) * exp(-sum(sin(x ** 2.0)))
 
@@ -7840,14 +7730,14 @@ class XinSheYang03(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-20.0] * self.N, [20.0] * self.N)
+        self._bounds = zip([-20.0] * self.N, [20.0] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = -1.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         beta, m = 15.0, 5.0
         u = sum((x / beta) ** (2 * m))
@@ -7884,14 +7774,14 @@ class XinSheYang04(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = -1.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         u = sum(sin(x) ** 2)
         v = sum(x ** 2)
@@ -7924,14 +7814,14 @@ class Xor(Benchmark):
     def __init__(self, dimensions=9):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
         self.global_optimum = [1.0, -1.0, 1.0,
                                -1.0, -1.0, 1.0, 1.0, -1.0, 0.421134]
         self.fglob = 0.9597588
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         F11 = x[6] / (1.0 + exp(-x[0] - x[1] - x[4]))
         F12 = x[7] / (1.0 + exp(-x[2] - x[3] - x[5]))
@@ -7976,14 +7866,14 @@ class YaoLiu04(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return abs(x.max())
 
@@ -8015,14 +7905,14 @@ class YaoLiu09(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.12] * self.N, [5.12] * self.N)
+        self._bounds = zip([-5.12] * self.N, [5.12] * self.N)
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return sum(x ** 2.0 - 10.0 * cos(2 * pi * x) + 10)
 
@@ -8054,15 +7944,15 @@ class Zacharov(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-5.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-5.0] * self.N, [10.0] * self.N)
         self.custom_bounds = ([-1, 1], [-1, 1])
 
         self.global_optimum = [0 for _ in range(self.N)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         u = sum(x ** 2)
         v = sum(arange(1, self.N + 1) * x)
@@ -8097,14 +7987,14 @@ class ZeroSum(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = []
         self.fglob = 0.0
         self.change_dimensionality = True
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         if abs(sum(x)) < 3e-16:
             return 0.0
@@ -8139,13 +8029,13 @@ class Zettl(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-1.0] * self.N, [5.0] * self.N)
+        self._bounds = zip([-1.0] * self.N, [5.0] * self.N)
 
         self.global_optimum = [-0.02989597760285287, 0.0]
         self.fglob = -0.003791237220468656
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return (x[0] ** 2 + x[1] ** 2 - 2 * x[0]) ** 2 + x[0] / 4
 
@@ -8188,14 +8078,14 @@ class Zimmerman(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([0.0] * self.N, [100.0] * self.N)
+        self._bounds = zip([0.0] * self.N, [100.0] * self.N)
         self.custom_bounds = ([0.0, 8.0], [0.0, 8.0])
 
         self.global_optimum = [7.0, 2.0]
         self.fglob = 0.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         Zh1 = lambda x: 9.0 - x[0] - x[1]
         Zh2 = lambda x: (x[0] - 3.0) ** 2.0 + (x[1] - 2.0) ** 2.0 - 16.0
@@ -8236,14 +8126,14 @@ class Zirilli(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
         self.global_optimum = [-1.0465, 0.0]
         self.fglob = -0.35238603
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         return 0.25 * x[0] ** 4 - 0.5 * x[0] ** 2 + 0.1 * x[0] + 0.5 * x[1] ** 2
 
@@ -8279,13 +8169,13 @@ class Problem02(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(2.7, 7.5)]
+        self._bounds = [(2.7, 7.5)]
 
         self.global_optimum = 5.145735
         self.fglob = -1.899599
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
         return sin(x) + sin(10.0 / 3.0 * x)
@@ -8318,13 +8208,13 @@ class Problem03(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(-10, 10)]
+        self._bounds = [(-10, 10)]
 
         self.global_optimum = -6.7745761
         self.fglob = -12.03124
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
         y = 0.0
@@ -8361,13 +8251,13 @@ class Problem04(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(1.9, 3.9)]
+        self._bounds = [(1.9, 3.9)]
 
         self.global_optimum = 2.868034
         self.fglob = -3.85045
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
         return -(16 * x ** 2 - 24 * x + 5) * exp(-x)
@@ -8400,13 +8290,13 @@ class Problem05(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(0.0, 1.2)]
+        self._bounds = [(0.0, 1.2)]
 
         self.global_optimum = 0.96609
         self.fglob = -1.48907
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
         return -(1.4 - 3 * x) * sin(18.0 * x)
@@ -8439,13 +8329,13 @@ class Problem06(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(-10.0, 10.0)]
+        self._bounds = [(-10.0, 10.0)]
 
         self.global_optimum = 0.67956
         self.fglob = -0.824239
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
         return -(x + sin(x)) * exp(-x ** 2.0)
@@ -8478,13 +8368,13 @@ class Problem07(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(2.7, 7.5)]
+        self._bounds = [(2.7, 7.5)]
 
         self.global_optimum = 5.19978
         self.fglob = -1.6013
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
         return sin(x) + sin(10.0 / 3.0 * x) + log(x) - 0.84 * x + 3
@@ -8517,13 +8407,13 @@ class Problem08(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(-10, 10)]
+        self._bounds = [(-10, 10)]
 
         self.global_optimum = -7.083506
         self.fglob = -14.508
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
 
@@ -8561,13 +8451,13 @@ class Problem09(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(3.1, 20.4)]
+        self._bounds = [(3.1, 20.4)]
 
         self.global_optimum = 17.039
         self.fglob = -1.90596
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
         return sin(x) + sin(2.0 / 3.0 * x)
@@ -8600,13 +8490,13 @@ class Problem10(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(0, 10)]
+        self._bounds = [(0, 10)]
 
         self.global_optimum = 7.9787
         self.fglob = -7.916727
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
         return -x * sin(x)
@@ -8639,13 +8529,13 @@ class Problem11(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(-pi / 2, 2 * pi)]
+        self._bounds = [(-pi / 2, 2 * pi)]
 
         self.global_optimum = 2.09439
         self.fglob = -1.5
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
         return 2 * cos(x) + cos(2 * x)
@@ -8678,13 +8568,13 @@ class Problem12(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(0, 2 * pi)]
+        self._bounds = [(0, 2 * pi)]
 
         self.global_optimum = pi
         self.fglob = -1
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
         return (sin(x)) ** 3.0 + (cos(x)) ** 3.0
@@ -8717,13 +8607,13 @@ class Problem13(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(0.001, 0.99)]
+        self._bounds = [(0.001, 0.99)]
 
         self.global_optimum = 1.0 / sqrt(2)
         self.fglob = -1.5874
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
         return -x ** (2.0 / 3.0) - (1.0 - x ** 2) ** (1.0 / 3.0)
@@ -8756,13 +8646,13 @@ class Problem14(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(0.0, 4.0)]
+        self._bounds = [(0.0, 4.0)]
 
         self.global_optimum = 0.224885
         self.fglob = -0.788685
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
         return -exp(-x) * sin(2.0 * pi * x)
@@ -8795,13 +8685,13 @@ class Problem15(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(-5.0, 5.0)]
+        self._bounds = [(-5.0, 5.0)]
 
         self.global_optimum = 2.41422
         self.fglob = -0.03553
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
         return -(-x ** 2.0 + 5 * x - 6) / (x ** 2 + 1)
@@ -8835,13 +8725,13 @@ class Problem18(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(0.0, 6.0)]
+        self._bounds = [(0.0, 6.0)]
 
         self.global_optimum = 2
         self.fglob = 0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
 
@@ -8878,13 +8768,13 @@ class Problem20(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(-10, 10)]
+        self._bounds = [(-10, 10)]
 
         self.global_optimum = 1.195137
         self.fglob = -0.0634905
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
         return -(x - sin(x)) * exp(-x ** 2.0)
@@ -8917,13 +8807,13 @@ class Problem21(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(0, 10)]
+        self._bounds = [(0, 10)]
 
         self.global_optimum = 4.79507
         self.fglob = -9.50835
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
         return x * sin(x) + x * cos(2.0 * x)
@@ -8956,13 +8846,13 @@ class Problem22(Benchmark):
     def __init__(self, dimensions=1):
         Benchmark.__init__(self, dimensions)
 
-        self.bounds = [(0, 20)]
+        self._bounds = [(0, 20)]
 
         self.global_optimum = 9.0 * pi / 2.0
         self.fglob = exp(-27.0 * pi / 2.0) - 1.0
 
-    def evaluator(self, x, *args):
-        self.fun_evals += 1
+    def fun(self, x, *args):
+        self.nfev += 1
 
         x = x[0]
         return exp(-3.0 * x) - (sin(x)) ** 3.0
