@@ -16,8 +16,7 @@ from numpy import array, eye, dot, sqrt, double, exp, random
 from numpy.linalg import matrix_power
 from numpy.testing import (TestCase, run_module_suite,
         assert_allclose, assert_, assert_array_almost_equal, assert_equal,
-        assert_array_equal, assert_array_almost_equal_nulp, decorators,
-        assert_array_less)
+        assert_array_equal, assert_array_almost_equal_nulp, decorators)
 
 from scipy.sparse import csc_matrix, SparseEfficiencyWarning
 from scipy.sparse.construct import eye as speye
@@ -166,7 +165,7 @@ class TestExpM(TestCase):
             [1, -3, 1, 1],
             [1, 1, -3, 1],
             [1, 1, 1, -3]])
-        assert_array_less(0, expm(Q))
+        assert_allclose(expm(Q), expm(1.0 * Q))
 
     def test_triangularity_perturbation(self):
         # Experiment (1) of
