@@ -69,8 +69,20 @@ class Benchmark(object):
         """Random initialisation for the benchmark problem."""
         return [np.random.uniform(l, u) for l, u in self._bounds]
 
-    def fun(self, candidates):
-        """The fun function for the benchmark problem."""
+    def success(self, x):
+        """Is a candidate solution at the global minimum"""
+        val = self.fun(x)
+        try:
+            np.testing.assert_almost_equal(val, self.fglob, 4)
+            if val < self.fglob:
+                raise Exception(self.__class__.__name__,
+                                'Found an even better global minimum')
+            return True
+        except AssertionError:
+            return False
+
+    def fun(self, x):
+        """Evaluation of the benchmark problem."""
         raise NotImplementedError
 
     def change_dimensions(self, ndim):
@@ -130,7 +142,7 @@ class Ackley(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-30.0] * self.N, [30.0] * self.N)
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = ([0 for _ in range(self.N)], )
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -286,7 +298,6 @@ class AMGM(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
-
         self.global_optimum = [1, 1]
         self.fglob = 0.0
         self.change_dimensionality = True
@@ -629,9 +640,9 @@ class Brent(Benchmark):
         self.fglob = 0.0
 
     def fun(self, x, *args):
-
         self.nfev += 1
-        return (x[0] + 10.0) ** 2.0 + (x[1] + 10.0) ** 2.0 + exp(-x[0] ** 2.0 - x[1] ** 2.0)
+        return ((x[0] + 10.0) ** 2.0 + (x[1] + 10.0) ** 2.0
+                + exp(-x[0] ** 2.0 - x[1] ** 2.0))
 
 
 class Brown(Benchmark):
@@ -1403,6 +1414,14 @@ class Damavandi(Benchmark):
         factor2 = 2 + (x[0] - 7.0) ** 2.0 + 2 * (x[1] - 7.0) ** 2.0
 
         return factor1 * factor2
+
+    def success(self, x):
+        """Is a candidate solution at the global minimum"""
+        val = self.fun(x)
+        if np.isnan(val):
+            return True
+
+        return False
 
 
 class Deb01(Benchmark):
@@ -4724,7 +4743,7 @@ class Pinter(Benchmark):
             if i == 0:
                 x_mi = x[-1]
                 x_pi = x[i + 1]
-            elif i == n - 1:
+            elif i == self.N - 1:
                 x_mi = x[i - 1]
                 x_pi = x[0]
             else:
@@ -6658,7 +6677,7 @@ class Stochastic(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        rnd = uniform(0.0, 1.0, size=(self.N, ))
+        rnd = np.random.uniform(0.0, 1.0, size=(self.N, ))
         i = arange(1, self.N + 1)
 
         return sum(rnd * abs(x - 1.0 / i))
