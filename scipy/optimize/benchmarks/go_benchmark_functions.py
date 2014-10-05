@@ -71,12 +71,9 @@ class Benchmark(object):
 
     def success(self, x):
         """Is a candidate solution at the global minimum"""
-        val = self.fun(x)
+        val = self.fun(asarray(x))
         try:
             np.testing.assert_almost_equal(val, self.fglob, 4)
-            if val < self.fglob:
-                raise Exception(self.__class__.__name__,
-                                'Found an even better global minimum')
             return True
         except AssertionError:
             return False
@@ -142,13 +139,12 @@ class Ackley(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-30.0] * self.N, [30.0] * self.N)
-        self.global_optimum = ([0 for _ in range(self.N)], )
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
-
         a = 20.0
         b = 0.2
         c = 2.0 * pi
@@ -185,7 +181,7 @@ class Adjiman(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = ([-1.0, 2.0], [-1.0, 1.0])
-        self.global_optimum = [2.0, 0.10578]
+        self.global_optimum = [[2.0, 0.10578]]
         self.fglob = -2.02180678
 
     def fun(self, x, *args):
@@ -221,7 +217,7 @@ class Alpine01(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -260,7 +256,7 @@ class Alpine02(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [7.91705268, 4.81584232]
+        self.global_optimum = [[7.91705268, 4.81584232]]
         self.fglob = -6.12950
         self.change_dimensionality = True
 
@@ -298,7 +294,7 @@ class AMGM(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
-        self.global_optimum = [1, 1]
+        self.global_optimum = [[1, 1]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -342,7 +338,7 @@ class BartelsConn(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 1.0
 
     def fun(self, x, *args):
@@ -381,7 +377,7 @@ class Beale(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-4.5] * self.N, [4.5] * self.N)
-        self.global_optimum = [3.0, 0.5]
+        self.global_optimum = [[3.0, 0.5]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -423,8 +419,8 @@ class Bird(Benchmark):
 
         self._bounds = zip([-2.0 * pi] * self.N,
                            [2.0 * pi] * self.N)
-        self.global_optimum = ([4.701055751981055, 3.152946019601391],
-                               [-1.582142172055011, -3.130246799635430])
+        self.global_optimum = [[4.701055751981055, 3.152946019601391],
+                               [-1.582142172055011, -3.130246799635430]]
         self.fglob = -106.7645367198034
 
     def fun(self, x, *args):
@@ -464,7 +460,7 @@ class Bohachevsky(Benchmark):
 
         self._bounds = zip([-15.0] * self.N, [15.0] * self.N)
         self.custom_bounds = [(-2, 2), (-2, 2)]
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -508,7 +504,7 @@ class BoxBetts(Benchmark):
 
         self._bounds = ([0.9, 1.2], [9.0, 11.2], [0.9, 1.2])
 
-        self.global_optimum = [1.0, 10.0, 1.0]
+        self.global_optimum = [[1.0, 10.0, 1.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -552,7 +548,7 @@ class Branin01(Benchmark):
 
         self._bounds = [(-5., 10.), (0., 15.)]
 
-        self.global_optimum = [(-pi, 12.275), (pi, 2.275), (9.42478, 2.475)]
+        self.global_optimum = [[-pi, 12.275], [pi, 2.275], [9.42478, 2.475]]
         self.fglob = 0.39788735772973816
 
     def fun(self, x, *args):
@@ -593,7 +589,7 @@ class Branin02(Benchmark):
 
         self._bounds = [(-5.0, 15.0), (-5.0, 15.0)]
 
-        self.global_optimum = [-3.2, 12.53]
+        self.global_optimum = [[-3.2, 12.53]]
         self.fglob = 5.559037
 
     def fun(self, x, *args):
@@ -636,7 +632,7 @@ class Brent(Benchmark):
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = ([-10, 2], [-10, 2])
 
-        self.global_optimum = [-10.0, -10.0]
+        self.global_optimum = [[-10.0, -10.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -676,7 +672,7 @@ class Brown(Benchmark):
         self._bounds = zip([-1.0] * self.N, [4.0] * self.N)
         self.custom_bounds = ([-1.0, 1.0], [-1.0, 1.0])
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -718,7 +714,7 @@ class Bukin02(Benchmark):
 
         self._bounds = [(-15.0, -5.0), (-3.0, 3.0)]
 
-        self.global_optimum = [-10.0, 0.0]
+        self.global_optimum = [[-10.0, 0.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -757,7 +753,7 @@ class Bukin04(Benchmark):
 
         self._bounds = [(-15.0, -5.0), (-3.0, 3.0)]
 
-        self.global_optimum = [-10.0, 0.0]
+        self.global_optimum = [[-10.0, 0.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -796,7 +792,7 @@ class Bukin06(Benchmark):
 
         self._bounds = [(-15.0, -5.0), (-3.0, 3.0)]
 
-        self.global_optimum = [-10.0, 1.0]
+        self.global_optimum = [[-10.0, 1.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -878,7 +874,7 @@ class Chichinadze(Benchmark):
         self._bounds = zip([-30.0] * self.N, [30.0] * self.N)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
-        self.global_optimum = [6.189866586965680, 0.5]
+        self.global_optimum = [[6.189866586965680, 0.5]]
         self.fglob = -42.94438701899098
 
     def fun(self, x, *args):
@@ -921,7 +917,7 @@ class Cigar(Benchmark):
                           [100.0] * self.N)
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -976,10 +972,10 @@ class Cola(Benchmark):
             list(zip([-4.0] * (self.N - 1),
                  [4.0] * (self.N - 1)))
 
-        self.global_optimum = [0.651906, 1.30194, 0.099242, -0.883791, -0.8796,
-                               0.204651, -3.28414, 0.851188, -
-                               3.46245, 2.53245, -0.895246,
-                               1.40992, -3.07367, 1.96257, -2.97872, -0.807849, -1.68978]
+        self.global_optimum = [[0.651906, 1.30194, 0.099242, -0.883791, -0.8796,
+                               0.204651, -3.28414, 0.851188, -3.46245, 2.53245,
+                               -0.895246, 1.40992, -3.07367, 1.96257, -2.97872,
+                               -0.807849, -1.68978]]
         self.fglob = 11.7464
 
     def fun(self, x, *args):
@@ -1062,7 +1058,7 @@ class Colville(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [1 for _ in range(self.N)]
+        self.global_optimum = [[1 for _ in range(self.N)]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -1106,7 +1102,7 @@ class Corana(Benchmark):
 
         self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -1155,7 +1151,7 @@ class CosineMixture(Benchmark):
         self.change_dimensionality = True
         self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = -0.1 * self.N
 
     def fun(self, x, *args):
@@ -1238,7 +1234,7 @@ class CrossLegTable(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [0., 0.]
+        self.global_optimum = [[0., 0.]]
         self.fglob = -1.0
 
     def fun(self, x, *args):
@@ -1279,7 +1275,7 @@ class CrownedCross(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [0, 0]
+        self.global_optimum = [[0, 0]]
         self.fglob = 0.0001
 
     def fun(self, x, *args):
@@ -1321,13 +1317,24 @@ class Csendes(Benchmark):
         self.change_dimensionality = True
         self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        return sum((x ** 6.0) * (2.0 + sin(1.0 / x)))
+        try:
+            return sum((x ** 6.0) * (2.0 + sin(1.0 / x)))
+        except ZeroDivisionError, FloatingPointError:
+            return np.nan
+
+    def success(self, x):
+        """Is a candidate solution at the global minimum"""
+        val = self.fun(asarray(x))
+        if np.isnan(val):
+            return True
+
+        return False
 
 
 class Cube(Benchmark):
@@ -1361,7 +1368,7 @@ class Cube(Benchmark):
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = ([0, 2], [0, 2])
 
-        self.global_optimum = [1.0, 1.0]
+        self.global_optimum = [[1.0, 1.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -1401,19 +1408,20 @@ class Damavandi(Benchmark):
         self.change_dimensionality = True
         self._bounds = zip([0.0] * self.N, [14.0] * self.N)
 
-        self.global_optimum = [2 for _ in range(self.N)]
+        self.global_optimum = [[2 for _ in range(self.N)]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
-
         self.nfev += 1
 
-        num = sin(pi * (x[0] - 2.0)) * sin(pi * (x[1] - 2.0))
-        den = (pi ** 2) * (x[0] - 2.0) * (x[1] - 2.0)
-        factor1 = 1.0 - (abs(num / den)) ** 5.0
-        factor2 = 2 + (x[0] - 7.0) ** 2.0 + 2 * (x[1] - 7.0) ** 2.0
-
-        return factor1 * factor2
+        try:
+            num = sin(pi * (x[0] - 2.0)) * sin(pi * (x[1] - 2.0))
+            den = (pi ** 2) * (x[0] - 2.0) * (x[1] - 2.0)
+            factor1 = 1.0 - (abs(num / den)) ** 5.0
+            factor2 = 2 + (x[0] - 7.0) ** 2.0 + 2 * (x[1] - 7.0) ** 2.0
+            return factor1 * factor2
+        except ZeroDivisionError:
+            return np.nan
 
     def success(self, x):
         """Is a candidate solution at the global minimum"""
@@ -1457,7 +1465,7 @@ class Deb01(Benchmark):
 
         self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [0.3, -0.3]
+        self.global_optimum = [[0.3, -0.3]]
         self.fglob = -1.0
 
     def fun(self, x, *args):
@@ -1498,7 +1506,7 @@ class Deb02(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [0.93388314, 0.68141781]
+        self.global_optimum = [[0.93388314, 0.68141781]]
         self.fglob = -1.0
 
     def fun(self, x, *args):
@@ -1539,7 +1547,7 @@ class Decanomial(Benchmark):
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(0, 2.5), (-2, -4)]
 
-        self.global_optimum = [2.0, -3.0]
+        self.global_optimum = [[2.0, -3.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -1596,7 +1604,7 @@ class Deceptive(Benchmark):
 
         alpha = arange(1.0, self.N + 1.0) / (self.N + 1.0)
 
-        self.global_optimum = alpha
+        self.global_optimum = [alpha]
         self.fglob = -1.0
         self.change_dimensionality = True
 
@@ -1656,7 +1664,7 @@ class DeckkersAarts(Benchmark):
         self._bounds = zip([-20.0] * self.N, [20.0] * self.N)
         self.custom_bounds = ([-1, 1], [14, 16])
 
-        self.global_optimum = [0.0, 14.9451209]
+        self.global_optimum = [[0.0, 14.9451209]]
         self.fglob = -24776.518342168
 
     def fun(self, x, *args):
@@ -1699,7 +1707,7 @@ class DeflectedCorrugatedSpring(Benchmark):
         alpha = 5.0
         self._bounds = zip([0] * self.N, [2 * alpha] * self.N)
 
-        self.global_optimum = [alpha for _ in range(self.N)]
+        self.global_optimum = [[alpha for _ in range(self.N)]]
         self.fglob = -1.0
         self.change_dimensionality = True
 
@@ -1737,7 +1745,7 @@ class DeVilliersGlasser01(Benchmark):
 
         self._bounds = zip([1.0] * self.N, [100.0] * self.N)
 
-        self.global_optimum = [60.137, 1.371, 3.112, 1.761]
+        self.global_optimum = [[60.137, 1.371, 3.112, 1.761]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -1775,7 +1783,7 @@ class DeVilliersGlasser02(Benchmark):
 
         self._bounds = zip([1.0] * self.N, [60.0] * self.N)
 
-        self.global_optimum = [53.81, 1.27, 3.012, 2.13, 0.507]
+        self.global_optimum = [[53.81, 1.27, 3.012, 2.13, 0.507]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -1820,8 +1828,8 @@ class DixonPrice(Benchmark):
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-2, 3), (-2, 3)]
 
-        self.global_optimum = [2.0 ** (-(2.0 ** i - 2.0) / 2.0 ** i)
-                               for i in range(1, self.N + 1)]
+        self.global_optimum = [[2.0 ** (-(2.0 ** i - 2.0) / 2.0 ** i)
+                               for i in range(1, self.N + 1)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -1857,8 +1865,8 @@ class Dolan(Benchmark):
         self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
 
-        self.global_optimum = [8.39045925, 4.81424707, 7.34574133, 68.88246895,
-                               3.85470806]
+        self.global_optimum = [[8.39045925, 4.81424707, 7.34574133, 68.88246895,
+                               3.85470806]]
         self.fglob = 1e-5
 
     def fun(self, x, *args):
@@ -1899,7 +1907,7 @@ class DropWave(Benchmark):
 
         self._bounds = zip([-5.12] * self.N, [5.12] * self.N)
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = -1.0
 
     def fun(self, x, *args):
@@ -1942,7 +1950,7 @@ class Easom(Benchmark):
         self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -1986,7 +1994,7 @@ class EggCrate(Benchmark):
 
         self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
 
-        self.global_optimum = [0.0, 0.0]
+        self.global_optimum = [[0.0, 0.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -2026,7 +2034,7 @@ class EggHolder(Benchmark):
         self._bounds = zip([-512.1] * self.N,
                           [512.0] * self.N)
 
-        self.global_optimum = [512.0, 404.2319]
+        self.global_optimum = [[512.0, 404.2319]]
         self.fglob = -959.640662711
         self.change_dimensionality = True
 
@@ -2071,7 +2079,7 @@ class ElAttarVidyasagarDutta(Benchmark):
                           [100.0] * self.N)
         self.custom_bounds = [(-4, 4), (-4, 4)]
 
-        self.global_optimum = [3.40918683, -2.17143304]
+        self.global_optimum = [[3.40918683, -2.17143304]]
         self.fglob = 1.712780354
 
     def fun(self, x, *args):
@@ -2112,7 +2120,7 @@ class Exp2(Benchmark):
         self._bounds = zip([0.0] * self.N, [20.0] * self.N)
         self.custom_bounds = [(0, 2), (0, 20)]
 
-        self.global_optimum = [1.0, 10.]
+        self.global_optimum = [[1.0, 10.]]
         self.fglob = 0
 
     def fun(self, x, *args):
@@ -2155,7 +2163,7 @@ class Exponential(Benchmark):
 
         self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = -1.0
         self.change_dimensionality = True
 
@@ -2196,7 +2204,7 @@ class FreudensteinRoth(Benchmark):
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-3, 3), (-5, 5)]
 
-        self.global_optimum = [5.0, 4.0]
+        self.global_optimum = [[5.0, 4.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -2232,7 +2240,7 @@ class Gear(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([12.0] * self.N, [60.0] * self.N)
-        self.global_optimum = [16, 19, 43, 49]
+        self.global_optimum = [[16, 19, 43, 49]]
         self.fglob = 2.7e-12
 
     def fun(self, x, *args):
@@ -2272,7 +2280,7 @@ class Giunta(Benchmark):
 
         self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [0.4673200277395354, 0.4673200169591304]
+        self.global_optimum = [[0.4673200277395354, 0.4673200169591304]]
         self.fglob = 0.06447042053690566
 
     def fun(self, x, *args):
@@ -2313,7 +2321,7 @@ class GoldsteinPrice(Benchmark):
 
         self._bounds = zip([-2.0] * self.N, [2.0] * self.N)
 
-        self.global_optimum = [0., -1.]
+        self.global_optimum = [[0., -1.]]
         self.fglob = 3.0
 
     def fun(self, x, *args):
@@ -2360,7 +2368,7 @@ class Griewank(Benchmark):
                           [600.0] * self.N)
         self.custom_bounds = [(-50, 50), (-50, 50)]
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -2402,7 +2410,7 @@ class Gulf(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [50.0] * self.N)
 
-        self.global_optimum = [50.0, 25.0, 1.5]
+        self.global_optimum = [[50.0, 25.0, 1.5]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -2445,7 +2453,7 @@ class Hansen(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [-7.58989583, -7.70831466]
+        self.global_optimum = [[-7.58989583, -7.70831466]]
         self.fglob = -176.54179
 
     def fun(self, x, *args):
@@ -2497,7 +2505,7 @@ class Hartmann3(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [0.11461292,  0.55564907,  0.85254697]
+        self.global_optimum = [[0.11461292,  0.55564907,  0.85254697]]
         self.fglob = -3.8627821478
 
     def fun(self, x, *args):
@@ -2570,8 +2578,8 @@ class Hartmann6(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [0.20168952, 0.15001069,
-                               0.47687398, 0.27533243, 0.31165162, 0.65730054]
+        self.global_optimum = [[0.20168952, 0.15001069,
+                               0.47687398, 0.27533243, 0.31165162, 0.65730054]]
         self.fglob = -3.32236801141551
 
     def fun(self, x, *args):
@@ -2629,7 +2637,7 @@ class HelicalValley(Benchmark):
 
         self._bounds = zip([-100.0] * self.N, [100] * self.N)
 
-        self.global_optimum = [1.0, 0.0, 0.0]
+        self.global_optimum = [[1.0, 0.0, 0.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -2668,7 +2676,7 @@ class HimmelBlau(Benchmark):
 
         self._bounds = zip([-6] * self.N, [6] * self.N)
 
-        self.global_optimum = [3.0, 2.0]
+        self.global_optimum = [[3.0, 2.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -2750,7 +2758,7 @@ class Holzman(Benchmark):
 
         self._bounds = ([0.0, 100.0], [0.0, 25.6], [0.0, 5.0])
 
-        self.global_optimum = [50.0, 25.0, 1.5]
+        self.global_optimum = [[50.0, 25.0, 1.5]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -2796,7 +2804,7 @@ class Hosaki(Benchmark):
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(0, 5), (0, 5)]
 
-        self.global_optimum = [4, 2]
+        self.global_optimum = [[4, 2]]
         self.fglob = -2.3458
 
     def fun(self, x, *args):
@@ -2837,7 +2845,7 @@ class Infinity(Benchmark):
 
         self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [1e-16 for _ in range(self.N)]
+        self.global_optimum = [[1e-16 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -2877,7 +2885,7 @@ class JennrichSampson(Benchmark):
 
         self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [0.257825, 0.257825]
+        self.global_optimum = [[0.257825, 0.257825]]
         self.custom_bounds = [(-1, 0.34), (-1, 0.34)]
         self.fglob = 124.3621824
 
@@ -2927,7 +2935,7 @@ class Judge(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [0.86479, 1.2357]
+        self.global_optimum = [[0.86479, 1.2357]]
         self.custom_bounds = [(-2.0, 2.0), (-2.0, 2.0)]
         self.fglob = 16.0817307
 
@@ -2981,7 +2989,7 @@ class Katsuura(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [100.0] * self.N)
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.custom_bounds = [(0, 1), (0, 1)]
         self.fglob = 1.0
         self.change_dimensionality = True
@@ -3026,7 +3034,7 @@ class Keane(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [7.85396153, 7.85396135]
+        self.global_optimum = [[7.85396153, 7.85396135]]
         self.custom_bounds = [(-1, 0.34), (-1, 0.34)]
         self.fglob = 0.
 
@@ -3066,7 +3074,7 @@ class Kowalik(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
-        self.global_optimum = [0.192833, 0.190836, 0.123117, 0.135766]
+        self.global_optimum = [[0.192833, 0.190836, 0.123117, 0.135766]]
         self.fglob = 0.00030748610
 
     def fun(self, x, *args):
@@ -3113,7 +3121,7 @@ class Langermann(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [2.00299219, 1.006096]
+        self.global_optimum = [[2.00299219, 1.006096]]
         self.fglob = -5.1621259
 
     def fun(self, x, *args):
@@ -3173,7 +3181,7 @@ class LennardJones(Benchmark):
 
         self._bounds = zip([-4.0] * self.N, [4.0] * self.N)
 
-        self.global_optimum = []
+        self.global_optimum = [[]]
 
         minima = [
             -1.0, -3.0, -6.0, -9.103852, -12.712062, -
@@ -3182,14 +3190,14 @@ class LennardJones(Benchmark):
             47.845157, -52.322627, -56.815742, -61.317995,
             -66.530949, -72.659782, -77.1777043]
 
-        k = dimensions / 3
+        k = int(dimensions / 3)
         self.fglob = minima[k - 2]
         self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        k = self.N / 3
+        k = int(self.N / 3)
         s = 0.0
 
         for i in range(k - 1):
@@ -3237,7 +3245,7 @@ class Leon(Benchmark):
 
         self._bounds = zip([-1.2] * self.N, [1.2] * self.N)
 
-        self.global_optimum = [1 for _ in range(self.N)]
+        self.global_optimum = [[1 for _ in range(self.N)]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -3284,7 +3292,7 @@ class Levy03(Benchmark):
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
-        self.global_optimum = [1 for _ in range(self.N)]
+        self.global_optimum = [[1 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -3328,7 +3336,7 @@ class Levy05(Benchmark):
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
-        self.global_optimum = [-1.30685, -1.42485]
+        self.global_optimum = [[-1.30685, -1.42485]]
         self.fglob = -176.1375779
 
     def fun(self, x, *args):
@@ -3373,7 +3381,7 @@ class Levy13(Benchmark):
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
-        self.global_optimum = [1 for _ in range(self.N)]
+        self.global_optimum = [[1 for _ in range(self.N)]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -3416,7 +3424,7 @@ class Matyas(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -3456,7 +3464,7 @@ class McCormick(Benchmark):
 
         self._bounds = [(-1.5, 4.0), (-3.0, 4.0)]
 
-        self.global_optimum = [-0.5471975602214493, -1.547197559268372]
+        self.global_optimum = [[-0.5471975602214493, -1.547197559268372]]
         self.fglob = -1.913222954981037
 
     def fun(self, x, *args):
@@ -3499,7 +3507,7 @@ class Michalewicz(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [pi] * self.N)
 
-        self.global_optimum = [2.20290555, 1.570796]
+        self.global_optimum = [[2.20290555, 1.570796]]
         self.fglob = -1.8013
 
     def fun(self, x, *args):
@@ -3534,7 +3542,7 @@ class MieleCantrell(Benchmark):
 
         self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [0.0, 1.0, 1.0, 1.0]
+        self.global_optimum = [[0.0, 1.0, 1.0, 1.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -3576,7 +3584,7 @@ class Mishra01(Benchmark):
         self._bounds = zip([0.0] * self.N,
                           [1.0 + 1e-9] * self.N)
 
-        self.global_optimum = [1.0 for _ in range(self.N)]
+        self.global_optimum = [[1.0 for _ in range(self.N)]]
         self.fglob = 2.0
         self.change_dimensionality = True
 
@@ -3619,7 +3627,7 @@ class Mishra02(Benchmark):
         self._bounds = zip([0.0] * self.N,
                           [1.0 + 1e-9] * self.N)
 
-        self.global_optimum = [1.0 for _ in range(self.N)]
+        self.global_optimum = [[1.0 for _ in range(self.N)]]
         self.fglob = 2.0
         self.change_dimensionality = True
 
@@ -3661,7 +3669,7 @@ class Mishra03(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [-9.99378322, -9.99918927]
+        self.global_optimum = [[-9.99378322, -9.99918927]]
         self.fglob = -0.19990562
 
     def fun(self, x, *args):
@@ -3702,7 +3710,7 @@ class Mishra04(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [-8.71499636, -9.0533148]
+        self.global_optimum = [[-8.71499636, -9.0533148]]
         self.fglob = -0.17767
 
     def fun(self, x, *args):
@@ -3743,7 +3751,7 @@ class Mishra05(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [-1.98682, -10.0]
+        self.global_optimum = [[-1.98682, -10.0]]
         self.fglob = -0.119829
 
     def fun(self, x, *args):
@@ -3785,7 +3793,7 @@ class Mishra06(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [2.88631, 1.82326]
+        self.global_optimum = [[2.88631, 1.82326]]
         self.fglob = -2.28395
 
     def fun(self, x, *args):
@@ -3828,8 +3836,8 @@ class Mishra07(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-2, 2), (-2, 2)]
-        self.global_optimum = [sqrt(self.N)
-                               for i in range(self.N)]
+        self.global_optimum = [[sqrt(self.N)
+                               for i in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -3870,7 +3878,7 @@ class Mishra08(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(1.0, 2.0), (-4.0, 1.0)]
-        self.global_optimum = [2.0, 3.0]
+        self.global_optimum = [[2.0, 3.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -3917,7 +3925,7 @@ class Mishra09(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
-        self.global_optimum = [1.0, 2.0, 3.0]
+        self.global_optimum = [[1.0, 2.0, 3.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -3963,7 +3971,7 @@ class Mishra10(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
-        self.global_optimum = [2.0, 2.0]
+        self.global_optimum = [[2.0, 2.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -4008,7 +4016,7 @@ class Mishra11(Benchmark):
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-3, 3), (-3, 3)]
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -4051,7 +4059,7 @@ class MultiModal(Benchmark):
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -4095,7 +4103,7 @@ class NeedleEye(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 1.0
         self.change_dimensionality = True
 
@@ -4149,7 +4157,7 @@ class NewFunction01(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [-8.46669057, -9.99982177]
+        self.global_optimum = [[-8.46669057, -9.99982177]]
         self.fglob = -0.184642678
 
     def fun(self, x, *args):
@@ -4190,7 +4198,7 @@ class NewFunction02(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [-9.94103375, -9.99771235]
+        self.global_optimum = [[-9.94103375, -9.99771235]]
         self.fglob = -0.19937167547710213
 
     def fun(self, x, *args):
@@ -4231,7 +4239,7 @@ class NewFunction03(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [-1.98682, -10.0]
+        self.global_optimum = [[-1.98682, -10.0]]
         self.fglob = -1.019829
 
     def fun(self, x, *args):
@@ -4286,11 +4294,11 @@ class OddSquare(Benchmark):
         self._bounds = zip([-5.0 * pi] * self.N,
                           [5.0 * pi] * self.N)
         self.custom_bounds = ([-2.0, 4.0], [-2.0, 4.0])
-
         self.a = asarray([1, 1.3, 0.8, -0.4, -1.3, 1.6, -0.2, -0.6, 0.5, 1.4]
                          * 2)
+#         self.global_optimum = [self.a[0: self.N]]
+        self.global_optimum = [[1.09263477,  1.39263477]]
 
-        self.global_optimum = self.a[0: self.N]
         self.fglob = -1.0084
 
     def fun(self, x, *args):
@@ -4337,7 +4345,7 @@ class Parsopoulos(Benchmark):
 
         self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
 
-        self.global_optimum = [pi / 2.0, pi]
+        self.global_optimum = [[pi / 2.0, pi]]
         self.fglob = 0
 
     def fun(self, x, *args):
@@ -4378,7 +4386,7 @@ class Pathological(Benchmark):
         self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.
 
     def fun(self, x, *args):
@@ -4414,7 +4422,7 @@ class Paviani(Benchmark):
 
         self._bounds = zip([2.001] * self.N, [9.999] * self.N)
 
-        self.global_optimum = [9.350266 for _ in range(self.N)]
+        self.global_optimum = [[9.350266 for _ in range(self.N)]]
         self.fglob = -45.7784684040686
 
     def fun(self, x, *args):
@@ -4468,7 +4476,7 @@ class Penalty01(Benchmark):
         self._bounds = zip([-50.0] * self.N, [50.0] * self.N)
         self.custom_bounds = ([-5.0, 5.0], [-5.0, 5.0])
 
-        self.global_optimum = [-1.0 for _ in range(self.N)]
+        self.global_optimum = [[-1.0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -4528,7 +4536,7 @@ class Penalty02(Benchmark):
         self._bounds = zip([-50.0] * self.N, [50.0] * self.N)
         self.custom_bounds = ([-4.0, 4.0], [-4.0, 4.0])
 
-        self.global_optimum = [1.0 for _ in range(self.N)]
+        self.global_optimum = [[1.0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -4579,7 +4587,7 @@ class PenHolder(Benchmark):
 
         self._bounds = zip([-11.0] * self.N, [11.0] * self.N)
 
-        self.global_optimum = [-9.646167708023526, 9.646167671043401]
+        self.global_optimum = [[-9.646167708023526, 9.646167671043401]]
         self.fglob = -0.9635348327265058
 
     def fun(self, x, *args):
@@ -4622,7 +4630,7 @@ class PermFunction01(Benchmark):
         self._bounds = zip([-self.N] * self.N,
                           [self.N + 1] * self.N)
 
-        self.global_optimum = range(1, self.N + 1)
+        self.global_optimum = [range(1, self.N + 1)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -4672,7 +4680,7 @@ class PermFunction02(Benchmark):
                           [self.N + 1] * self.N)
         self.custom_bounds = ([0, 1.5], [0, 1.0])
 
-        self.global_optimum = 1. / arange(1, self.N + 1)
+        self.global_optimum = [1. / arange(1, self.N + 1)]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -4728,7 +4736,7 @@ class Pinter(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -4792,7 +4800,7 @@ class Plateau(Benchmark):
 
         self._bounds = zip([-5.12] * self.N, [5.12] * self.N)
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 30.0
         self.change_dimensionality = True
 
@@ -4825,7 +4833,7 @@ class Powell(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-4.0] * self.N, [5.0] * self.N)
-        self.global_optimum = [0, 0, 0, 0]
+        self.global_optimum = [[0, 0, 0, 0]]
         self.fglob = 0
 
     def fun(self, x, *args):
@@ -4861,7 +4869,7 @@ class PowerSum(Benchmark):
         self._bounds = zip([0.0] * self.N,
                           [float(self.N)] * self.N)
 
-        self.global_optimum = [1.0, 2.0, 2.0, 3.0]
+        self.global_optimum = [[1.0, 2.0, 2.0, 3.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -4911,7 +4919,7 @@ class Price01(Benchmark):
                           [500.0] * self.N)
         self.custom_bounds = ([-10.0, 10.0], [-10.0, 10.0])
 
-        self.global_optimum = [5.0, 5.0]
+        self.global_optimum = [[5.0, 5.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -4951,7 +4959,7 @@ class Price02(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [0.0, 0.0]
+        self.global_optimum = [[0.0, 0.0]]
         self.fglob = 0.9
 
     def fun(self, x, *args):
@@ -4992,7 +5000,7 @@ class Price03(Benchmark):
         self._bounds = zip([-50.0] * self.N, [50.0] * self.N)
         self.custom_bounds = ([0, 2], [0, 2])
 
-        self.global_optimum = [1.0, 1.0]
+        self.global_optimum = [[1.0, 1.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -5034,7 +5042,7 @@ class Price04(Benchmark):
         self._bounds = zip([-50.0] * self.N, [50.0] * self.N)
         self.custom_bounds = ([0, 2], [0, 2])
 
-        self.global_optimum = [2.0, 4.0]
+        self.global_optimum = [[2.0, 4.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -5076,8 +5084,7 @@ class Qing(Benchmark):
         self._bounds = zip([-500.0] * self.N,
                           [500.0] * self.N)
         self.custom_bounds = [(-2, 2), (-2, 2)]
-
-        self.global_optimum = [sqrt(_) for _ in range(1, self.N + 1)]
+        self.global_optimum = [[sqrt(_) for _ in range(1, self.N + 1)]]
         self.fglob = 0
         self.change_dimensionality = True
 
@@ -5119,8 +5126,7 @@ class Quadratic(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(0, 1), (0, 1)]
-
-        self.global_optimum = [0.19388, 0.48513]
+        self.global_optimum = [[0.19388, 0.48513]]
         self.fglob = -3873.72418
         self.change_dimensionality = True
 
@@ -5163,7 +5169,7 @@ class Quintic(Benchmark):
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-2, 2), (-2, 2)]
 
-        self.global_optimum = [-1.0 for _ in range(self.N)]
+        self.global_optimum = [[-1.0 for _ in range(self.N)]]
         self.fglob = 0
         self.change_dimensionality = True
 
@@ -5204,7 +5210,7 @@ class Rana(Benchmark):
         self._bounds = zip([-500.000001] * self.N,
                           [500.000001] * self.N)
 
-        self.global_optimum = [-300.3376, 500.]
+        self.global_optimum = [[-300.3376, 500.]]
         self.fglob = -500.8021602966615
         self.change_dimensionality = True
 
@@ -5244,7 +5250,7 @@ class Rastrigin(Benchmark):
         Benchmark.__init__(self, dimensions)
         self._bounds = zip([-5.12] * self.N, [5.12] * self.N)
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -5282,7 +5288,7 @@ class Ripple01(Benchmark):
         Benchmark.__init__(self, dimensions)
         self._bounds = zip([0.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [0.1 for _ in range(self.N)]
+        self.global_optimum = [[0.1 for _ in range(self.N)]]
         self.fglob = -2.2
 
     def fun(self, x, *args):
@@ -5321,7 +5327,7 @@ class Ripple25(Benchmark):
         Benchmark.__init__(self, dimensions)
         self._bounds = zip([0.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [0.1 for _ in range(self.N)]
+        self.global_optimum = [[0.1 for _ in range(self.N)]]
         self.fglob = -2.0
 
     def fun(self, x, *args):
@@ -5362,7 +5368,7 @@ class Rosenbrock(Benchmark):
         self._bounds = zip([-5.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-2, 2), (-2, 2)]
 
-        self.global_optimum = [1 for _ in range(self.N)]
+        self.global_optimum = [[1 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -5402,7 +5408,7 @@ class RosenbrockModified(Benchmark):
         self._bounds = zip([-2.0] * self.N, [2.0] * self.N)
         self.custom_bounds = ([-1.0, 0.5], [-1.0, 1.0])
 
-        self.global_optimum = [-0.90955374, -0.95057172]
+        self.global_optimum = [[-0.90955374, -0.95057172]]
         self.fglob = 34.040243106640844
 
     def fun(self, x, *args):
@@ -5444,7 +5450,7 @@ class RotatedEllipse01(Benchmark):
                           [500.0] * self.N)
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
-        self.global_optimum = [0.0, 0.0]
+        self.global_optimum = [[0.0, 0.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -5485,7 +5491,7 @@ class RotatedEllipse02(Benchmark):
                           [500.0] * self.N)
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
-        self.global_optimum = [0.0, 0.0]
+        self.global_optimum = [[0.0, 0.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -5524,7 +5530,7 @@ class Salomon(Benchmark):
                           [100.0] * self.N)
         self.custom_bounds = [(-50, 50), (-50, 50)]
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -5565,7 +5571,7 @@ class Sargan(Benchmark):
                           [100.0] * self.N)
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -5609,7 +5615,7 @@ class Schaffer01(Benchmark):
                           [100.0] * self.N)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -5651,7 +5657,7 @@ class Schaffer02(Benchmark):
                           [100.0] * self.N)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -5693,7 +5699,7 @@ class Schaffer03(Benchmark):
                           [100.0] * self.N)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
-        self.global_optimum = [0.0, 1.253115]
+        self.global_optimum = [[0.0, 1.253115]]
         self.fglob = 0.00156685
 
     def fun(self, x, *args):
@@ -5735,7 +5741,7 @@ class Schaffer04(Benchmark):
                           [100.0] * self.N)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
-        self.global_optimum = [0.0, 1.253115]
+        self.global_optimum = [[0.0, 1.253115]]
         self.fglob = 0.292579
 
     def fun(self, x, *args):
@@ -5768,7 +5774,7 @@ class SchmidtVetters(Benchmark):
         Benchmark.__init__(self, dimensions)
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [0.79876108,  0.79962581,  0.79848824]
+        self.global_optimum = [[0.79876108,  0.79962581,  0.79848824]]
         self.fglob = 2.99643266
 
     def fun(self, x, *args):
@@ -5810,7 +5816,7 @@ class Schwefel01(Benchmark):
                           [100.0] * self.N)
         self.custom_bounds = ([-4.0, 4.0], [-4.0, 4.0])
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -5852,7 +5858,7 @@ class Schwefel02(Benchmark):
                           [100.0] * self.N)
         self.custom_bounds = ([-4.0, 4.0], [-4.0, 4.0])
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -5894,7 +5900,7 @@ class Schwefel04(Benchmark):
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
         self.custom_bounds = ([0.0, 2.0], [0.0, 2.0])
 
-        self.global_optimum = [1.0 for _ in range(self.N)]
+        self.global_optimum = [[1.0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -5935,7 +5941,7 @@ class Schwefel06(Benchmark):
                           [100.0] * self.N)
         self.custom_bounds = ([-10.0, 10.0], [-10.0, 10.0])
 
-        self.global_optimum = [1.0, 3.0]
+        self.global_optimum = [[1.0, 3.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -5974,7 +5980,7 @@ class Schwefel20(Benchmark):
         self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -6014,7 +6020,7 @@ class Schwefel21(Benchmark):
         self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -6055,7 +6061,7 @@ class Schwefel22(Benchmark):
                           [100.0] * self.N)
         self.custom_bounds = ([-10.0, 10.0], [-10.0, 10.0])
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -6094,7 +6100,7 @@ class Schwefel26(Benchmark):
         self._bounds = zip([-500.0] * self.N,
                           [500.0] * self.N)
 
-        self.global_optimum = [420.968746 for _ in range(self.N)]
+        self.global_optimum = [[420.968746 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -6134,7 +6140,7 @@ class Schwefel36(Benchmark):
         self._bounds = zip([0.0] * self.N, [500.0] * self.N)
         self.custom_bounds = ([0.0, 20.0], [0.0, 20.0])
 
-        self.global_optimum = [12.0, 12.0]
+        self.global_optimum = [[12.0, 12.0]]
         self.fglob = -3456.0
 
     def fun(self, x, *args):
@@ -6176,7 +6182,7 @@ class Shekel05(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [4.0 for _ in range(self.N)]
+        self.global_optimum = [[4.0 for _ in range(self.N)]]
         self.fglob = -10.15319585
 
     def fun(self, x, *args):
@@ -6228,7 +6234,7 @@ class Shekel07(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [4.0 for _ in range(self.N)]
+        self.global_optimum = [[4.0 for _ in range(self.N)]]
         self.fglob = -10.4028188
 
     def fun(self, x, *args):
@@ -6283,7 +6289,7 @@ class Shekel10(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [4.0 for _ in range(self.N)]
+        self.global_optimum = [[4.0 for _ in range(self.N)]]
         self.fglob = -10.5362837262
 
     def fun(self, x, *args):
@@ -6334,7 +6340,7 @@ class Shubert01(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
-        self.global_optimum = [-7.0835, 4.8580]
+        self.global_optimum = [[-7.0835, 4.8580]]
 
         self.fglob = -186.7309
 
@@ -6378,7 +6384,7 @@ class Shubert03(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [5.791794, 5.791794]
+        self.global_optimum = [[5.791794, 5.791794]]
         self.fglob = -24.062499
 
         self.change_dimensionality = True
@@ -6421,7 +6427,7 @@ class Shubert04(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [-0.80032121, -7.08350592]
+        self.global_optimum = [[-0.80032121, -7.08350592]]
         self.fglob = -29.016015
 
         self.change_dimensionality = True
@@ -6466,7 +6472,7 @@ class SineEnvelope(Benchmark):
                           [100.0] * self.N)
         self.custom_bounds = [(-20, 20), (-20, 20)]
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -6550,7 +6556,7 @@ class Sodp(Benchmark):
 
         self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -6589,7 +6595,7 @@ class Sphere(Benchmark):
         Benchmark.__init__(self, dimensions)
         self._bounds = zip([-5.12] * self.N, [5.12] * self.N)
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -6629,7 +6635,7 @@ class Step(Benchmark):
                           [100.0] * self.N)
         self.custom_bounds = ([-5, 5], [-5, 5])
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -6670,7 +6676,7 @@ class Stochastic(Benchmark):
 
         self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
 
-        self.global_optimum = [1.0 / _ for _ in range(1, self.N + 1)]
+        self.global_optimum = [[1.0 / _ for _ in range(1, self.N + 1)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -6720,7 +6726,7 @@ class StretchedV(Benchmark):
 
         self._bounds = zip([-10] * self.N, [10] * self.N)
 
-        self.global_optimum = [0, 0]
+        self.global_optimum = [[0, 0]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -6761,8 +6767,7 @@ class StyblinskiTang(Benchmark):
 
         self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
 
-        self.global_optimum = [
-            -2.903534018185960 for _ in range(self.N)]
+        self.global_optimum = [[-2.903534018185960 for _ in range(self.N)]]
         self.fglob = -39.16616570377142 * self.N
         self.change_dimensionality = True
 
@@ -6801,7 +6806,7 @@ class TestTubeHolder(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [-pi / 2, 0.0]
+        self.global_optimum = [[-pi / 2, 0.0]]
         self.fglob = -10.87229990155800
 
     def fun(self, x, *args):
@@ -6842,7 +6847,7 @@ class Treccani(Benchmark):
         self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
         self.custom_bounds = [(-2, 2), (-2, 2)]
 
-        self.global_optimum = [-2.0, 0.0]
+        self.global_optimum = [[-2.0, 0.0]]
         self.fglob = 0
 
     def fun(self, x, *args):
@@ -6881,7 +6886,7 @@ class Trefethen(Benchmark):
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
-        self.global_optimum = [-0.02440307923, 0.2106124261]
+        self.global_optimum = [[-0.02440307923, 0.2106124261]]
         self.fglob = -3.3068686474
 
     def fun(self, x, *args):
@@ -6925,7 +6930,7 @@ class ThreeHumpCamel(Benchmark):
         self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
         self.custom_bounds = [(-2, 2), (-1.5, 1.5)]
 
-        self.global_optimum = [0.0, 0.0]
+        self.global_optimum = [[0.0, 0.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -6958,7 +6963,7 @@ class Trid(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [20.0] * self.N)
 
-        self.global_optimum = [6, 10, 12, 12, 10, 6]
+        self.global_optimum = [[6, 10, 12, 12, 10, 6]]
         self.fglob = -50.0
         self.change_dimensionality = True
 
@@ -6997,7 +7002,7 @@ class Trigonometric01(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [pi] * self.N)
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -7039,7 +7044,7 @@ class Trigonometric02(Benchmark):
                           [500.0] * self.N)
         self.custom_bounds = [(0, 2), (0, 2)]
 
-        self.global_optimum = [0.9 for _ in range(self.N)]
+        self.global_optimum = [[0.9 for _ in range(self.N)]]
         self.fglob = 1.0
         self.change_dimensionality = True
 
@@ -7082,7 +7087,7 @@ class Tripod(Benchmark):
         self._bounds = zip([-100.0] * self.N,
                           [100.0] * self.N)
 
-        self.global_optimum = [0.0, -50.0]
+        self.global_optimum = [[0.0, -50.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -7124,7 +7129,7 @@ class Ursem01(Benchmark):
 
         self._bounds = [(-2.5, 3.0), (-2.0, 2.0)]
 
-        self.global_optimum = [1.69714, 0.0]
+        self.global_optimum = [[1.69714, 0.0]]
         self.fglob = -4.8168
 
     def fun(self, x, *args):
@@ -7162,7 +7167,7 @@ class Ursem03(Benchmark):
 
         self._bounds = [(-2, 2), (-1.5, 1.5)]
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = -3.0
 
     def fun(self, x, *args):
@@ -7204,7 +7209,7 @@ class Ursem04(Benchmark):
 
         self._bounds = zip([-2.0] * self.N, [2.0] * self.N)
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = -1.5
 
     def fun(self, x, *args):
@@ -7243,7 +7248,7 @@ class UrsemWaves(Benchmark):
 
         self._bounds = [(-0.9, 1.2), (-1.2, 1.2)]
 
-        self.global_optimum = [1.2 for _ in range(self.N)]
+        self.global_optimum = [[1.2 for _ in range(self.N)]]
         self.fglob = -8.5536
 
     def fun(self, x, *args):
@@ -7285,7 +7290,7 @@ class VenterSobiezcczanskiSobieski(Benchmark):
         self._bounds = zip([-50.0] * self.N, [50.0] * self.N)
         self.custom_bounds = ([-10, 10], [-10, 10])
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = -400
 
     def fun(self, x, *args):
@@ -7326,7 +7331,7 @@ class Vincent(Benchmark):
 
         self._bounds = zip([0.25] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [7.70628098 for _ in range(self.N)]
+        self.global_optimum = [[7.70628098 for _ in range(self.N)]]
         self.fglob = -float(self.N)
         self.change_dimensionality = True
 
@@ -7362,7 +7367,7 @@ class Watson(Benchmark):
 
         self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
 
-        self.global_optimum = [-0.0158, 1.012, -0.2329, 1.260, -1.513, 0.9928]
+        self.global_optimum = [[-0.0158, 1.012, -0.2329, 1.260, -1.513, 0.9928]]
         self.fglob = 0.002288
 
     def fun(self, x, *args):
@@ -7413,7 +7418,7 @@ class Wavy(Benchmark):
 
         self._bounds = zip([-pi] * self.N, [pi] * self.N)
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -7454,7 +7459,7 @@ class WayburnSeader01(Benchmark):
         self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
         self.custom_bounds = ([-2, 2], [-2, 2])
 
-        self.global_optimum = [1.0, 2.0]
+        self.global_optimum = [[1.0, 2.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -7494,7 +7499,7 @@ class WayburnSeader02(Benchmark):
                           [500.0] * self.N)
         self.custom_bounds = ([-1, 2], [-1, 2])
 
-        self.global_optimum = [0.2, 1.0]
+        self.global_optimum = [[0.2, 1.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -7537,7 +7542,7 @@ class Weierstrass(Benchmark):
 
         self._bounds = zip([-0.5] * self.N, [0.5] * self.N)
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 4.0
         self.change_dimensionality = True
 
@@ -7589,7 +7594,7 @@ class Whitley(Benchmark):
                           [10.24] * self.N)
         self.custom_bounds = ([-1, 2], [-1, 2])
 
-        self.global_optimum = [1.0 for _ in range(self.N)]
+        self.global_optimum = [[1.0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -7628,7 +7633,7 @@ class Wolfe(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [2.0] * self.N)
 
-        self.global_optimum = [0.0 for _ in range(self.N)]
+        self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -7670,7 +7675,7 @@ class XinSheYang01(Benchmark):
         self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
         self.custom_bounds = ([-2, 2], [-2, 2])
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -7711,7 +7716,7 @@ class XinSheYang02(Benchmark):
         self._bounds = zip([-2 * pi] * self.N,
                           [2 * pi] * self.N)
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -7753,7 +7758,7 @@ class XinSheYang03(Benchmark):
 
         self._bounds = zip([-20.0] * self.N, [20.0] * self.N)
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = -1.0
         self.change_dimensionality = True
 
@@ -7797,7 +7802,7 @@ class XinSheYang04(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = -1.0
         self.change_dimensionality = True
 
@@ -7837,8 +7842,8 @@ class Xor(Benchmark):
 
         self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [1.0, -1.0, 1.0,
-                               -1.0, -1.0, 1.0, 1.0, -1.0, 0.421134]
+        self.global_optimum = [[1.0, -1.0, 1.0,
+                               -1.0, -1.0, 1.0, 1.0, -1.0, 0.421134]]
         self.fglob = 0.9597588
 
     def fun(self, x, *args):
@@ -7889,7 +7894,7 @@ class YaoLiu04(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -7928,7 +7933,7 @@ class YaoLiu09(Benchmark):
 
         self._bounds = zip([-5.12] * self.N, [5.12] * self.N)
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -7968,7 +7973,7 @@ class Zacharov(Benchmark):
         self._bounds = zip([-5.0] * self.N, [10.0] * self.N)
         self.custom_bounds = ([-1, 1], [-1, 1])
 
-        self.global_optimum = [0 for _ in range(self.N)]
+        self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -8010,7 +8015,7 @@ class ZeroSum(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = []
+        self.global_optimum = [[]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -8052,7 +8057,7 @@ class Zettl(Benchmark):
 
         self._bounds = zip([-1.0] * self.N, [5.0] * self.N)
 
-        self.global_optimum = [-0.02989597760285287, 0.0]
+        self.global_optimum = [[-0.02989597760285287, 0.0]]
         self.fglob = -0.003791237220468656
 
     def fun(self, x, *args):
@@ -8102,7 +8107,7 @@ class Zimmerman(Benchmark):
         self._bounds = zip([0.0] * self.N, [100.0] * self.N)
         self.custom_bounds = ([0.0, 8.0], [0.0, 8.0])
 
-        self.global_optimum = [7.0, 2.0]
+        self.global_optimum = [[7.0, 2.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -8150,7 +8155,7 @@ class Zirilli(Benchmark):
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
-        self.global_optimum = [-1.0465, 0.0]
+        self.global_optimum = [[-1.0465, 0.0]]
         self.fglob = -0.35238603
 
     def fun(self, x, *args):
