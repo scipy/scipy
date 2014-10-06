@@ -163,7 +163,9 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
 
   /* Build sequence argument from inputs */
   sequence = (PyArrayObject *)PyArray_SimpleNewFromData(1, &n, NPY_DOUBLE, (char *)x);
-  if (sequence == NULL) PYERR2(error_obj,"Internal failure to make an array of doubles out of first\n                 argument to function call.");
+  if (sequence == NULL) {
+    goto fail;
+  }
 
   /* Build argument list */
   if ((arg1 = PyTuple_New(1)) == NULL) {
@@ -172,11 +174,12 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
   }
   PyTuple_SET_ITEM(arg1, 0, (PyObject *)sequence); 
                 /* arg1 now owns sequence reference */
-  if ((arglist = PySequence_Concat( arg1, args)) == NULL)
-    PYERR2(error_obj,"Internal error constructing argument list.");
+  if ((arglist = PySequence_Concat(arg1, args)) == NULL) {
+    goto fail;
+  }
 
   Py_DECREF(arg1);    /* arglist has a reference to sequence, now. */
-  arg1=NULL;
+  arg1 = NULL;
 
   /* Call function object --- variable passed to routine.  Extra
           arguments are in another passed variable.
@@ -185,8 +188,11 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
     goto fail;
   }
 
-  if ((result_array = (PyArrayObject *)PyArray_ContiguousFromObject(result, NPY_DOUBLE, dim-1, dim))==NULL) 
-    PYERR2(error_obj,"Result from function call is not a proper array of floats.");
+  result_array = (PyArrayObject *)PyArray_ContiguousFromObject(
+                                      result, NPY_DOUBLE, dim-1, dim);
+  if (result_array == NULL) {
+    goto fail;
+  }
 
   Py_DECREF(result);
   Py_DECREF(arglist);
@@ -198,16 +204,3 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
   Py_XDECREF(arg1);
   return NULL;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1210,6 +1210,8 @@ c initial call to f.  (lf0 points to yh(*,2).) -------------------------
       lf0 = lyh + nyh
       call srcma(rsav, isav, 1)
       call f (neq, t, y, rwork(lf0))
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       call srcma(rsav, isav, 2)
       nfe = 1
 c load the initial value vector in yh. ---------------------------------
@@ -1353,6 +1355,8 @@ c-----------------------------------------------------------------------
       call stoda (neq, y, rwork(lyh), nyh, rwork(lyh), rwork(lewt),
      1   rwork(lsavf), rwork(lacor), rwork(lwm), iwork(liwm),
      2   f, jac, prja, solsy)
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       kgo = 1 - kflag
       go to (300, 530, 540), kgo
 c-----------------------------------------------------------------------

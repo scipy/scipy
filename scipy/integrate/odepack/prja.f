@@ -69,6 +69,8 @@ c if miter = 1, call jac and multiply by scalar. -----------------------
  110    wm(i+2) = 0.0d0
       call srcma (rsav, isav, 1)
       call jac (neq, tn, y, 0, 0, wm(3), n)
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       call srcma (rsav, isav, 2)
       con = -hl0
       do 120 i = 1,lenp
@@ -87,6 +89,8 @@ c if miter = 2, make n calls to f to approximate j. --------------------
         fac = -hl0/r
         call srcma (rsav, isav, 1)
         call f (neq, tn, y, ftem)
+c       SCIPY error check:
+        if (neq(1) .eq. -1) return
         call srcma (rsav, isav, 2)
         do 220 i = 1,n
  220      wm(i+j1) = (ftem(i) - savf(i))*fac
@@ -122,6 +126,8 @@ c if miter = 4, call jac and multiply by scalar. -----------------------
  410    wm(i+2) = 0.0d0
       call srcma (rsav, isav, 1)
       call jac (neq, tn, y, ml, mu, wm(ml3), meband)
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       call srcma (rsav, isav, 2)
       con = -hl0
       do 420 i = 1,lenp
@@ -145,6 +151,8 @@ c if miter = 5, make mband calls to f to approximate j. ----------------
  530      y(i) = y(i) + r
         call srcma (rsav, isav, 1)
         call f (neq, tn, y, ftem)
+c       SCIPY error check:
+        if (neq(1) .eq. -1) return
         call srcma (rsav, isav, 2)
         do 550 jj = j,n,mband
           y(jj) = yh(jj,1)

@@ -53,15 +53,13 @@ void ode_function(int *n, double *t, double *y, double *ydot)
 
   /* Append t to argument list */
   if ((arg1 = PyTuple_New(1)) == NULL) {
-    if (PyErr_Occurred())
-      PyErr_Print();
+    *n = -1;
     return;
   }
   PyTuple_SET_ITEM(arg1, 0, PyFloat_FromDouble(*t)); 
                 /* arg1 now owns newly created reference */
-  if ((arglist = PySequence_Concat( arg1, multipack_extra_arguments)) == NULL) {
-    if (PyErr_Occurred())
-      PyErr_Print();
+  if ((arglist = PySequence_Concat(arg1, multipack_extra_arguments)) == NULL) {
+    *n = -1;
     Py_DECREF(arg1);
     return;
   }
@@ -69,7 +67,7 @@ void ode_function(int *n, double *t, double *y, double *ydot)
   
   result_array = (PyArrayObject *)call_python_function(multipack_python_function, *n, y, arglist, 1, odepack_error);
   if (result_array == NULL) {
-    PyErr_Print();
+    *n = -1;
     Py_DECREF(arglist);
     return;
   }
@@ -94,15 +92,13 @@ int ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu, double
 
   /* Append t to argument list */
   if ((arg1 = PyTuple_New(1)) == NULL) {
-    if (PyErr_Occurred())
-      PyErr_Print();
+    *n = -1;
     return -1;
   }
   PyTuple_SET_ITEM(arg1, 0, PyFloat_FromDouble(*t)); 
                 /* arg1 now owns newly created reference */
   if ((arglist = PySequence_Concat( arg1, multipack_extra_arguments)) == NULL) {
-    if (PyErr_Occurred())
-      PyErr_Print();
+    *n = -1;
     Py_DECREF(arg1);
     return -1;
   }
@@ -110,6 +106,7 @@ int ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu, double
 
   result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian, *n, y, arglist, 2, odepack_error);
   if (result_array == NULL) {
+    *n = -1;
     Py_DECREF(arglist);
     return -1;
   }
