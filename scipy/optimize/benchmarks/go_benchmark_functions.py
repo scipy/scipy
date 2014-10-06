@@ -89,7 +89,7 @@ class Benchmark(object):
     @property
     def bounds(self):
         if self.change_dimensionality:
-            return [self._bounds[0]] * self.N,
+            return [self._bounds[0]] * self.N
         else:
             return self._bounds
 
@@ -111,25 +111,25 @@ class Benchmark(object):
 #                     SINGLE-OBJECTIVE PROBLEMS
 #-----------------------------------------------------------------------
 
-class Ackley(Benchmark):
+class Ackley01(Benchmark):
 
     """
-    Ackley test objective function.
+    Ackley01 test objective function.
 
-    This class defines the Ackley global optimization problem. This
+    This class defines the Ackley01 global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
 
         f_{\\text{Ackley}}(\\mathbf{x}) = -20e^{-0.2 \\sqrt{\\frac{1}{n} \\sum_{i=1}^n x_i^2}} - e^{ \\frac{1}{n} \\sum_{i=1}^n \\cos(2 \\pi x_i)} + 20 + e
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-32, 32]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-35, 35]` for :math:`i=1,...,n`.
 
-    .. figure:: figures/Ackley.png
-        :alt: Ackley function
+    .. figure:: figures/Ackley01.png
+        :alt: Ackley01 function
         :align: center
 
-        **Two-dimensional Ackley function**
+        **Two-dimensional Ackley01 function**
 
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
@@ -138,19 +138,45 @@ class Ackley(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-30.0] * self.N, [30.0] * self.N)
+        self._bounds = zip([-35.0] * self.N, [35.0] * self.N)
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
-        a = 20.0
-        b = 0.2
-        c = 2.0 * pi
-        return (-a * exp(-b * sqrt(1. / self.N * sum(x ** 2)))
-                - exp(1. / self.N * sum(cos(c * x)))
-                + a + exp(1.))
+        u = sum(x ** 2)
+        v = sum(cos(2 * pi * x))
+        return (-20. * exp(-0.2 * sqrt(u / self.N))
+                - exp(v / self.N) + 20. + exp(1.))
+
+
+class Ackley02(object):
+    def __init__(self, dimensions=2):
+        Benchmark.__init__(self, dimensions)
+
+        self._bounds = zip([-32.0] * self.N, [32.0] * self.N)
+        self.global_optimum = [[0 for _ in range(self.N)]]
+        self.fglob = -200.
+
+    def fun(self, x):
+        self.nfev += 1
+        return -200 * exp(-0.02 * sqrt(x[0]**2 + x[1]**2))
+
+
+class Ackley03(object):
+    def __init__(self, dimensions=2):
+        Benchmark.__init__(self, dimensions)
+
+        self._bounds = zip([-32.0] * self.N, [32.0] * self.N)
+        self.global_optimum = [[-0.68255758, -0.36070859]]
+        self.fglob = -195.62902825923879
+
+    def fun(self, x):
+        #TODO, needs checking, Jamil3.
+        a = -200 * exp(-0.02 * sqrt(x[0]**2 + x[1]**2))
+        a += 5 * exp(cos(3 * x[0]) + sin(3 * x[1]))
+        return a
 
 
 class Adjiman(Benchmark):
@@ -388,6 +414,89 @@ class Beale(Benchmark):
                 + (2.625 - x[0] + x[0] * x[1] ** 3) ** 2)
 
 
+class BiggsExp2(object):
+    def __init__(self, dimensions=2):
+        Benchmark.__init__(self, dimensions)
+
+        self._bounds = zip([0] * 2,
+                           [20] * 2)
+        self.global_optimum = [[1., 10.]]
+        self.fglob = 0
+
+    def fun(self, x):
+        self.nfev += 1
+
+        t = arange(1, 11.) * 0.1
+        y = exp(-t) - 5 * exp(-10 * t)
+        vec = (exp(-t * x[0]) - 5 * exp(-t * x[1]) - y)**2
+
+        return sum(vec)
+
+
+class BiggsExp3(object):
+    def __init__(self, dimensions=3):
+        Benchmark.__init__(self, dimensions)
+
+        self._bounds = zip([0] * 3,
+                           [20] * 3)
+        self.global_optimum = [[1., 10., 5.]]
+        self.fglob = 0
+
+    def fun(self, x):
+        self.nfev += 1
+
+        t = arange(1., 11.) * 0.1
+        y = exp(-t) - 5 * exp(-10 * t)
+        vec = (exp(-t * x[0]) - x[2] * exp(-t * x[1]) - y)**2
+
+        return sum(vec)
+
+
+class BiggsExp4(object):
+    def __init__(self, dimensions=4):
+        Benchmark.__init__(self, dimensions)
+
+        self._bounds = zip([0.] * 4,
+                           [20.] * 4)
+        self.global_optimum = [[1., 10., 1., 5.]]
+        self.fglob = 0
+
+    def fun(self, x):
+        self.nfev += 1
+
+        t = arange(1, 11.)
+        t *= 0.1
+        y = exp(-t) - 5 * exp(-10 * t)
+        vec = (x[2] * exp(-t * x[0]) - x[3] * exp(-t * x[1]) - y)**2
+
+        return sum(vec)
+
+
+class BiggsExp5(object):
+    def __init__(self, dimensions=5):
+        Benchmark.__init__(self, dimensions)
+
+        self._bounds = zip([0.] * 5,
+                           [20.] * 5)
+        self.global_optimum = [[1., 10., 1., 5., 4.]]
+        self.fglob = 0
+
+    target_E = 0
+    solution = [1., 10., 1., 5., 4.]
+    xmin = np.array([0., 0., 0., 0., 0.])
+    xmax = np.array([20., 20., 20., 20., 20.])
+
+    def fun(self, x):
+        self.nfev += 1
+        t = arange(1, 12.)
+        t *= 0.1
+        y = exp(-t) - 5 * exp(-10 * t) + 3 * exp(-4 * t)
+        vec = (x[2] * exp(-t * x[0]) - x[3] * exp(-t * x[1])
+               + 3 * exp(-t * x[4]) - y)**2
+
+        return sum(vec)
+
+
 class Bird(Benchmark):
 
     """
@@ -503,7 +612,6 @@ class BoxBetts(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = ([0.9, 1.2], [9.0, 11.2], [0.9, 1.2])
-
         self.global_optimum = [[1.0, 10.0, 1.0]]
         self.fglob = 0.0
 
@@ -1428,6 +1536,11 @@ class Damavandi(Benchmark):
         val = self.fun(x)
         if np.isnan(val):
             return True
+        try:
+            np.testing.assert_almost_equal(val, 0., 4)
+            return True
+        except AssertionError:
+            return False
 
         return False
 
@@ -3069,7 +3182,7 @@ class Kowalik(Benchmark):
     *Global optimum*: :math:`f(x_i) = 0.00030748610` for :math:`\\mathbf{x} = [0.192833, 0.190836, 0.123117, 0.135766]`.
 
     """
-
+    #TODO, this is a NIST regression standard dataset
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
@@ -3472,6 +3585,39 @@ class McCormick(Benchmark):
 
         return (sin(x[0] + x[1]) + (x[0] - x[1]) ** 2 - 1.5 * x[0]
                 + 2.5 * x[1] + 1)
+
+
+class Meyer(Benchmark):
+    """
+    Meyer test objective function.
+
+    """
+
+    #TODO, this is a NIST regression standard dataset
+    def __init__(self, dimensions=3):
+        Benchmark.__init__(self, dimensions)
+
+        self._bounds = zip([0., 100., 100.],
+                           [1, 1000., 500.])
+        self.global_optimum = [[5.6096364710e-3, 6.1813463463e3,
+                                3.4522363462e2]]
+        self.fglob = 8.7945855171e1
+
+    def fun(self, x, *args):
+        self.nfev += 1
+
+        a = asarray([3.478E+04, 2.861E+04, 2.365E+04, 1.963E+04, 1.637E+04,
+                     1.372E+04, 1.154E+04, 9.744E+03, 8.261E+03, 7.030E+03,
+                     6.005E+03, 5.147E+03, 4.427E+03, 3.820E+03, 3.307E+03,
+                     2.872E+03])
+        b = asarray([5.000E+01, 5.500E+01, 6.000E+01, 6.500E+01, 7.000E+01,
+                     7.500E+01, 8.000E+01, 8.500E+01, 9.000E+01, 9.500E+01,
+                     1.000E+02, 1.050E+02, 1.100E+02, 1.150E+02, 1.200E+02,
+                     1.250E+02])
+
+        vec = x[0] * exp(x[1] / (b + x[2]))
+
+        return sum((a - vec) ** 2)
 
 
 class Michalewicz(Benchmark):
@@ -5260,6 +5406,62 @@ class Rastrigin(Benchmark):
         return 10.0 * self.N + sum(x ** 2.0 - 10.0 * cos(2.0 * pi * x))
 
 
+class Ratkowsky01(Benchmark):
+    """
+    Ratkowsky test objective function.
+
+    """
+
+    #TODO, this is a NIST regression standard dataset
+    def __init__(self, dimensions=4):
+        Benchmark.__init__(self, dimensions)
+
+        self._bounds = zip([0., 1., 0., 0.1],
+                           [1000, 20., 3., 6.])
+        self.global_optimum = [[6.996415127e2, 5.2771253025, 7.5962938329e-1,
+                                1.2792483859]]
+        self.fglob = 8.786404908e3
+
+    def fun(self, x, *args):
+        self.nfev += 1
+
+        a = asarray([16.08, 33.83, 65.80, 97.20, 191.55, 326.20, 386.87, 520.53,
+                     590.03, 651.92, 724.93, 699.56, 689.96, 637.56, 717.41])
+        b = arange(1, 16.)
+
+        vec = x[0] / ((1 + exp(x[1] - x[2] * b)) ** (1 / x[3]))
+
+        return sum((a - vec) ** 2)
+
+
+class Ratkowsky02(Benchmark):
+    """
+    Ratkowsky02 test objective function.
+
+    """
+
+    #TODO, this is a NIST regression standard dataset
+    def __init__(self, dimensions=4):
+        Benchmark.__init__(self, dimensions)
+
+        self._bounds = zip([10, 0.5,  0.01],
+                           [200, 5., 0.5])
+        self.global_optimum = [[7.2462237576e1, 2.6180768402, 6.7359200066e-2]]
+        self.fglob = 8.0565229338
+
+    def fun(self, x, *args):
+        self.nfev += 1
+
+        a = asarray([8.93, 10.8, 18.59, 22.33, 39.35, 56.11, 61.73, 64.62,
+                     67.08])
+        b = asarray([9., 14., 21., 28., 42., 57., 63., 70., 79.])
+
+        vec = x[0] / (1 + exp(x[1] - x[2] * b))
+
+        return sum((a - vec) ** 2)
+
+
+
 class Ripple01(Benchmark):
 
     """
@@ -6815,6 +7017,45 @@ class TestTubeHolder(Benchmark):
         u = sin(x[0]) * cos(x[1])
         v = (x[0] ** 2 + x[1] ** 2) / 200
         return -4 * abs(u * exp(abs(cos(v))))
+
+
+class Thurber(Benchmark):
+    """
+    Thurber test objective function.
+
+    """
+
+    #TODO, this is a NIST regression standard dataset
+    def __init__(self, dimensions=7):
+        Benchmark.__init__(self, dimensions)
+
+        self._bounds = zip([500., 500., 100., 10., 0.1, 0.1, 0.]
+                            , [2000., 2000., 1000., 150., 2., 1., 0.2])
+        self.global_optimum = [[1.288139680e3, 1.4910792535e3, 5.8323836877e2,
+                                75.416644291, 0.96629502864, 0.39797285797,
+                                4.9727297349e-2]]
+        self.fglob = 5642.7082397
+
+    def fun(self, x, *args):
+        self.nfev += 1
+
+        a = asarray([80.574, 84.248, 87.264, 87.195, 89.076, 89.608, 89.868,
+                     90.101, 92.405, 95.854, 100.696, 101.06, 401.672, 390.724,
+                     567.534, 635.316, 733.054, 759.087, 894.206, 990.785,
+                     1090.109, 1080.914, 1122.643, 1178.351, 1260.531, 1273.514,
+                     1288.339, 1327.543, 1353.863, 1414.509, 1425.208, 1421.384,
+                     1442.962, 1464.350, 1468.705, 1447.894, 1457.628])
+        b = asarray([-3.067, -2.981, -2.921, -2.912, -2.840, -2.797, -2.702,
+                     -2.699, -2.633, -2.481, -2.363, -2.322, -1.501, -1.460,
+                     -1.274, -1.212, -1.100, -1.046, -0.915, -0.714, -0.566,
+                     -0.545, -0.400, -0.309, -0.109, -0.103, 0.010, 0.119,
+                     0.377, 0.790, 0.963, 1.006, 1.115, 1.572, 1.841, 2.047,
+                     2.200])
+
+        vec = x[0] + x[1] * b + x[2] * b ** 2 + x[3] * b ** 3
+        vec /= 1 + x[4] * b + x[5] * b ** 2 + x[6] * b ** 3
+
+        return sum((a - vec) ** 2)
 
 
 class Treccani(Benchmark):
