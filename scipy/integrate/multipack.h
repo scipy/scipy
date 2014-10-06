@@ -55,7 +55,7 @@ the result tuple when the full_output argument is non-zero.
   multipack_python_function = fun; \
   multipack_extra_arguments = arg; }
 
-#define INIT_JAC_FUNC(fun,Dfun,arg,col_deriv,errobj) { \
+#define INIT_JAC_FUNC(fun,Dfun,arg,col_deriv,errobj,jac_type) { \
   store_multipack_globals[0] = multipack_python_function; \
   store_multipack_globals[1] = multipack_extra_arguments; \
   store_multipack_globals[2] = multipack_python_jacobian; \
@@ -73,7 +73,8 @@ the result tuple when the full_output argument is non-zero.
   multipack_python_function = fun; \
   multipack_extra_arguments = arg; \
   multipack_python_jacobian = Dfun; \
-  multipack_jac_transpose = !(col_deriv);}
+  multipack_jac_transpose = !(col_deriv); \
+  multipack_jac_type = jac_type;}
 
 #define RESTORE_JAC_FUNC() multipack_python_function = store_multipack_globals[0]; \
   multipack_extra_arguments = store_multipack_globals[1]; \
@@ -96,25 +97,11 @@ the result tuple when the full_output argument is non-zero.
     diag = (double *)ap_diag -> data; \
     mode = 2; } }
 
-/*
- *  MATRIXC2F(jac, data, n, m)
- *
- *  Copy a C-contiguous matrix at `data` to an F-contiguous matrix at `jac`.
- *  `n` and `m` are the number of rows and columns of the matrix, respectively.
- */
-#define MATRIXC2F(jac, data, n, m) \
-{ \
-  double *p1 = (double *)(jac), *p2, *p3 = (double *)(data); \
-  int i, j; \
-  for (j = 0; j < (m); p3++, j++) \
-    for (p2 = p3, i = 0; i < (n); p2 += (m), i++, p1++) \
-      *p1 = *p2; \
-}
-
 static PyObject *multipack_python_function=NULL;
 static PyObject *multipack_python_jacobian=NULL;
 static PyObject *multipack_extra_arguments=NULL;    /* a tuple */
 static int multipack_jac_transpose=1;
+static int multipack_jac_type;
 
 
 static PyObject *call_python_function(PyObject *func, npy_intp n, double *x,

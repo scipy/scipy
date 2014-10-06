@@ -78,6 +78,43 @@ void ode_function(int *n, double *t, double *y, double *ydot)
 }
 
 
+/*
+ *  Copy a contiguous matrix at `c` to a Fortran-ordered matrix at `f`.
+ *  `ldf` is the leading dimension of the Fortran array at `f`.
+ *  `nrows` and `ncols` are the number of rows and columns of the matrix, resp.
+ *  If `transposed` is 0, c[i, j] is *(c + ncols*i + j).
+ *  If `transposed` is nonzero, c[i, j] is *(c + i + nrows*j)  (i.e. `c` is
+ *  stored in F-contiguous order).
+ */
+
+static void
+copy_array_to_fortran(double *f, int ldf, int nrows, int ncols,
+                      double *c, int transposed)
+{
+    int i, j;
+    int row_stride, col_stride;
+
+    /* The strides count multiples of sizeof(double), not bytes. */
+    if (transposed) {
+        row_stride = 1;
+        col_stride = nrows;
+    }
+    else {
+        row_stride = ncols;
+        col_stride = 1;
+    }
+    for (i = 0; i < nrows; ++i) {
+        for (j = 0; j < ncols; ++j) {
+            double value;
+            /* value = c[i,j] */
+            value = *(c + row_stride*i + col_stride*j);
+            /* f[i,j] = value */
+            *(f + ldf*j + i) = value;
+        }
+    }
+}
+
+
 int ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu, double *pd, int *nrowpd)
 {
   /* This is the function called from the Fortran code it should
@@ -89,6 +126,9 @@ int ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu, double
 
   PyArrayObject *result_array;
   PyObject *arglist, *arg1;
+
+  int ndim, nrows, ncols, j, k;
+  npy_intp *dims;
 
   /* Append t to argument list */
   if ((arg1 = PyTuple_New(1)) == NULL) {
@@ -104,16 +144,96 @@ int ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu, double
   }
   Py_DECREF(arg1);    /* arglist has reference */
 
-  result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian, *n, y, arglist, 2, odepack_error);
+  result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian, *n, y,
+                                                       arglist, 2, odepack_error);
   if (result_array == NULL) {
     *n = -1;
     Py_DECREF(arglist);
     return -1;
   }
-  if (multipack_jac_transpose == 1) 
-    MATRIXC2F(pd, result_array->data, *nrowpd, *n)
-  else
-    memcpy(pd, result_array->data, (*n)*(*nrowpd)*sizeof(double));
+
+  ncols = *n;
+  if (multipack_jac_type == 4) {
+      nrows = *ml + *mu + 1;
+  }
+  else {
+      nrows = *n;
+  }
+  if (!multipack_jac_transpose) {
+      int tmp;
+      tmp = nrows;
+      nrows = ncols;
+      ncols = tmp;
+  }
+
+  ndim = PyArray_NDIM(result_array);
+  if (ndim != 2) {
+      // XXX The code currently allows ndim to be 1 or 2.  I don't
+      // know why 1 is allowed.  Perhaps that is more natural for
+      // a scalar differential equation.  But then why not allow
+      // ndim = 0?  E.g.
+      //     def rhs(x, t):
+      //         return -100*x
+      //
+      //     def jac(x, t):
+      //         return -100
+      //
+      PyErr_Format(PyExc_RuntimeError, "The Jacobian array must be two dimensional, but got ndim=%d.", ndim);
+      Py_DECREF(arglist);
+      Py_DECREF(result_array);
+      return -1;
+  }
+
+  dims = PyArray_DIMS(result_array);
+  if ((dims[0] != nrows) || (dims[1] != ncols)) {
+      PyErr_Format(PyExc_RuntimeError, "Expected a Jacobian array with shape (%d, %d), but got (%d, %d)",
+             nrows, ncols, dims[0], dims[1]);
+      Py_DECREF(arglist);
+      Py_DECREF(result_array);
+      return -1;
+  }
+
+  /*
+   *  multipack_jac_type is either 1 (full Jacobian) or 4 (banded Jacobian).
+   *  multipack_jac_transpose is !col_deriv, so if multipack_jac_transpose is 0,
+   *  the array created by the user is already in Fortran order, and a transpose is
+   *  not needed when it is copied to pd.
+   */
+
+  if ((multipack_jac_type == 1) && !multipack_jac_transpose) {
+      /* Full Jacobian, no transpose needed, so we can use memcpy. */
+      memcpy(pd, result_array->data, (*n)*(*nrowpd)*sizeof(double));
+  }
+  else {
+      /*
+       *  multipack_jac_type == 4 (banded Jacobian), or
+       *  multipack_jac_type == 1 and multipack_jac_transpose == 1.
+       *
+       *  We can't use memcpy when multipack_jac_type is 4 because the leading
+       *  dimension of pd doesn't necessarily equal the number of rows of the
+       *  matrix.
+       */
+      int m;  /* Number of rows in the (full or packed banded) Jacobian. */
+      if (multipack_jac_type == 4) {
+          m = *ml + *mu + 1;
+      }
+      else {
+          m = *n;
+      }
+      copy_array_to_fortran(pd, *nrowpd, m, *n, (double *) result_array->data,
+                            !multipack_jac_transpose);
+  }
+
+#ifdef DEBUG
+  printf("jt = %d  tr = %d  *nrowpd = %d   *n = %d\n",
+         multipack_jac_type, multipack_jac_transpose, *nrowpd, *n);
+  for (j = 0; j < *n; ++j) {
+      for (k = 0; k < *nrowpd; ++k) {
+          printf(" %8.3f", *(pd + (*nrowpd)*j + k));
+      }
+      printf("\n");
+  }
+#endif
 
   Py_DECREF(arglist);
   Py_DECREF(result_array);
@@ -238,15 +358,14 @@ static PyObject *odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdic
     o_atol = NULL;
   }
 
-
-  INIT_JAC_FUNC(fcn,Dfun,extra_args,col_deriv,odepack_error);
-
   /* Set up jt, ml, and mu */
   if (Dfun == Py_None) jt++;    /* set jt for internally generated */
   if (ml < 0 && mu < 0) jt -= 3;     /* neither ml nor mu given, 
                                         mark jt for full jacobian */
   if (ml < 0) ml = 0;    /* if one but not both are given */
   if (mu < 0) mu = 0;
+
+  INIT_JAC_FUNC(fcn, Dfun, extra_args, col_deriv, odepack_error, jt);
 
   /* Initial input vector */
   ap_y = (PyArrayObject *)PyArray_ContiguousFromObject(y0, NPY_DOUBLE, 0, 1);

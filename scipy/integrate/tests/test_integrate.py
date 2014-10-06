@@ -625,41 +625,60 @@ def test_odeint_banded_jacobian():
     def jac(y, t, c):
         return c
 
-    def bjac_cols(y, t, c):
-        return np.column_stack((np.r_[0, np.diag(c, 1)], np.diag(c)))
+    def jac_transpose(y, t, c):
+        return c.T.copy(order='C')
 
     def bjac_rows(y, t, c):
-        return np.row_stack((np.r_[0, np.diag(c, 1)], np.diag(c)))
+        return np.row_stack((
+                    np.r_[0, np.diag(c, 1)],
+                    np.diag(c),
+                    np.r_[np.diag(c, -1), 0],
+                    np.r_[np.diag(c, -2), 0, 0],
+                    ))
 
-    c = array([[-50, 75, 0],
-               [0, -0.1, 1],
-               [0, 0, -1e-4]])
+    def bjac_cols(y, t, c):
+        #return np.column_stack((np.r_[0, np.diag(c, 1)], np.diag(c)))
+        return bjac_rows(y, t, c).T.copy(order='C')
 
-    y0 = arange(3)
-    t = np.linspace(0, 50, 6)
+    c = array([[-205, 0.01, 0.00, 0.0],
+               [0.1, -2.50, 0.02, 0.0],
+               [1e-3, 0.01, -2.0, 0.01],
+               [0.00, 0.00, 0.1, -1.0]])
 
-    # The results of the following three calls should be the same.
-    sol0, info0 = odeint(func, y0, t, args=(c,), full_output=True,
+    y0 = np.ones(4)
+    t = np.array([0, 5, 10, 100])
+
+    # Use the full Jacobian.
+    sol1, info1 = odeint(func, y0, t, args=(c,), full_output=True,
+                         atol=1e-13, rtol=1e-11, mxstep=10000,
                          Dfun=jac)
 
-    sol1, info1 = odeint(func, y0, t, args=(c,), full_output=True,
-                         Dfun=bjac_cols, ml=0, mu=1, col_deriv=True)
-
+    # Use the transposed full Jacobian, with col_deriv=True.
     sol2, info2 = odeint(func, y0, t, args=(c,), full_output=True,
-                         Dfun=bjac_rows, ml=0, mu=1)
+                         atol=1e-13, rtol=1e-11, mxstep=10000,
+                         Dfun=jac_transpose, col_deriv=True)
 
-    # These could probably be compared using `assert_array_equal`.
-    # The code paths might not be *exactly* the same, so `allclose` is used
-    # to compare the solutions.
-    assert_allclose(sol0, sol1)
-    assert_allclose(sol0, sol2)
+    # Use the banded Jacobian.
+    sol3, info3 = odeint(func, y0, t, args=(c,), full_output=True,
+                         atol=1e-13, rtol=1e-11, mxstep=10000,
+                         Dfun=bjac_rows, ml=2, mu=1)
 
-    # Verify that the number of jacobian evaluations was the same
-    # for the calls of odeint with banded jacobian.  This is a regression
-    # test--there was a bug in the handling of banded jacobians that resulted
-    # in an incorrect jacobian matrix being passed to the LSODA code.
-    # That would cause errors or excessive jacobian evaluations.
+    # Use the transposed banded Jacobian, with col_deriv=True.
+    sol4, info4 = odeint(func, y0, t, args=(c,), full_output=True,
+                         atol=1e-13, rtol=1e-11, mxstep=10000,
+                         Dfun=bjac_cols, ml=2, mu=1, col_deriv=True)
+
+    assert_allclose(sol1, sol2, err_msg="sol1 != sol2")
+    assert_allclose(sol1, sol3, atol=1e-12, err_msg="sol1 != sol3")
+    assert_allclose(sol3, sol4, err_msg="sol3 != sol4")
+
+    # Verify that the number of jacobian evaluations was the same for the
+    # calls of odeint with a full jacobian and with a banded jacobian. This is
+    # a regression test--there was a bug in the handling of banded jacobians
+    # that resulted in an incorrect jacobian matrix being passed to the LSODA
+    # code.  That would cause errors or excessive jacobian evaluations.
     assert_array_equal(info1['nje'], info2['nje'])
+    assert_array_equal(info3['nje'], info4['nje'])
 
 
 def test_odeint_errors():
