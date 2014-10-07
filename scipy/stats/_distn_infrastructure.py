@@ -2210,10 +2210,7 @@ class rv_continuous(rv_generic):
         else:
             invfac = 1.0
         kwds['args'] = args
-        # Silence floating point warnings from integration.
-        olderr = np.seterr(all='ignore')
         vals = integrate.quad(fun, lb, ub, **kwds)[0] / invfac
-        np.seterr(**olderr)
         return vals
 
 
