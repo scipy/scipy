@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-=======================================================
+=================================================================
 :mod:`go_benchmark_functions` -- Benchmark optimization functions
-=======================================================
+=================================================================
 
 This module provides a set of benchmark problems for global optimization.
 
@@ -97,7 +97,7 @@ class Benchmark(object):
     def N(self):
         return self.dimensions
 
-    #TODO: not clear why the following is needed.
+    # TODO: not clear why the following is needed.
     def lower_bounds_constraints(self, x):
         lower = asarray([b[0] for b in self._bounds])
         return asarray(x) - lower
@@ -112,27 +112,26 @@ class Benchmark(object):
 #-----------------------------------------------------------------------
 
 class Ackley01(Benchmark):
-
     """
-    Ackley01 test objective function.
+    Ackley01 objective function.
 
-    This class defines the Ackley01 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The Ackley01 [1]_ global optimization problem is a multimodal minimization
+    problem defined as follows:
 
     .. math::
 
-        f_{\\text{Ackley}}(\\mathbf{x}) = -20e^{-0.2 \\sqrt{\\frac{1}{n} \\sum_{i=1}^n x_i^2}} - e^{ \\frac{1}{n} \\sum_{i=1}^n \\cos(2 \\pi x_i)} + 20 + e
+        f_{{Ackley01}}({\mathbf x}) = -20e^{-0.2\sqrt{\frac{1}{n} \sum_{i=1}^n
+         x_i^2}} - e^{ \frac{1}{n} \sum_{i=1}^n \cos(2 \pi x_i)} + 20 + e
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-35, 35]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-35,
+    35]` for :math:`i=1,...,n`.
 
-    .. figure:: figures/Ackley01.png
-        :alt: Ackley01 function
-        :align: center
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for
+    :math:`i=1,...,n`
 
-        **Two-dimensional Ackley01 function**
-
-
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation}, Vol. 4, No. 2, pp. 150--194 (2013)
     """
 
     def __init__(self, dimensions=2):
@@ -152,6 +151,25 @@ class Ackley01(Benchmark):
 
 
 class Ackley02(object):
+    """
+    Ackley02 objective function.
+
+    The Ackley02 [1]_ global optimization problem is a multimodal minimization
+    problem defined as follows:
+
+    .. math::
+
+        f_{{Ackley02}}({\mathbf x}) = -200e^{-0.02\sqrt{x_1^2 + x_2^2}}
+
+    for :math:`x_i \in [-32, 32]`
+
+    *Global optimum*: :math:`f(x_i) = -200` for :math:`x_i = [0, 0]`
+
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation}, Vol. 4, No. 2, pp. 150--194 (2013)
+
+    """
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
@@ -161,10 +179,32 @@ class Ackley02(object):
 
     def fun(self, x):
         self.nfev += 1
-        return -200 * exp(-0.02 * sqrt(x[0]**2 + x[1]**2))
+        return -200 * exp(-0.02 * sqrt(x[0] ** 2 + x[1] ** 2))
 
 
 class Ackley03(object):
+    """
+    Ackley03 [1]_ objective function.
+
+    The Ackley03 global optimization problem is a multimodal minimization
+    problem defined as follows:
+
+    .. math::
+
+        f_{{Ackley03}}({\mathbf x}) = -200e^{-0.02\sqrt{x_1^2 + x_2^2}} +
+            5e^{\cos(3x_1) + \sin(3x_2)}
+
+    for :math:`x_i \in [-32, 32]`.
+
+    *Global optimum*: :math:`f(x_i) = -195.62902825923879` for :math:`x_i =
+    [-0.68255758, -0.36070859]`
+
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation}, Vol. 4, No. 2, pp. 150--194 (2013)
+
+    """
+
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
@@ -173,8 +213,7 @@ class Ackley03(object):
         self.fglob = -195.62902825923879
 
     def fun(self, x):
-        #TODO, needs checking, Jamil3.
-        a = -200 * exp(-0.02 * sqrt(x[0]**2 + x[1]**2))
+        a = -200 * exp(-0.02 * sqrt(x[0] ** 2 + x[1] ** 2))
         a += 5 * exp(cos(3 * x[0]) + sin(3 * x[1]))
         return a
 
@@ -182,25 +221,23 @@ class Ackley03(object):
 class Adjiman(Benchmark):
 
     """
-    Adjiman test objective function.
+    Adjiman objective function.
 
-    This class defines the Adjiman global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The Adjiman [1]_ global optimization problem is a multimodal minimization
+    problem defined as follows:
 
     .. math::
 
-        f_{\\text{Adjiman}}(\\mathbf{x}) = \\cos(x_1)\\sin(x_2) - \\frac{x_1}{(x_2^2 + 1)}
+        f_{{Adjiman}}({\mathbf x}) = \cos(x_1)\sin(x_2) - \frac{x_1}{(x_2^2 +
+        1)}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_1 \\in [-1, 2]` and :math:`x_2 \\in [-1, 1]`.
+    for :math:`x_i \in [-35, 35]`.
 
-    .. figure:: figures/Adjiman.png
-        :alt: Adjiman function
-        :align: center
+    *Global optimum*: :math:`f(x_i) = -2.02181` for :math:`x_i = [2.0, 0.10578]`
 
-        **Two-dimensional Adjiman function**
-
-
-    *Global optimum*: :math:`f(x_i) = -2.02181` for :math:`\\mathbf{x} = [2, 0.10578]`
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation}, Vol. 4, No. 2, pp. 150--194 (2013)
     """
 
     def __init__(self, dimensions=2):
@@ -415,6 +452,7 @@ class Beale(Benchmark):
 
 
 class BiggsExp2(object):
+
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
@@ -428,12 +466,13 @@ class BiggsExp2(object):
 
         t = arange(1, 11.) * 0.1
         y = exp(-t) - 5 * exp(-10 * t)
-        vec = (exp(-t * x[0]) - 5 * exp(-t * x[1]) - y)**2
+        vec = (exp(-t * x[0]) - 5 * exp(-t * x[1]) - y) ** 2
 
         return sum(vec)
 
 
 class BiggsExp3(object):
+
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
@@ -447,12 +486,13 @@ class BiggsExp3(object):
 
         t = arange(1., 11.) * 0.1
         y = exp(-t) - 5 * exp(-10 * t)
-        vec = (exp(-t * x[0]) - x[2] * exp(-t * x[1]) - y)**2
+        vec = (exp(-t * x[0]) - x[2] * exp(-t * x[1]) - y) ** 2
 
         return sum(vec)
 
 
 class BiggsExp4(object):
+
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
@@ -467,12 +507,13 @@ class BiggsExp4(object):
         t = arange(1, 11.)
         t *= 0.1
         y = exp(-t) - 5 * exp(-10 * t)
-        vec = (x[2] * exp(-t * x[0]) - x[3] * exp(-t * x[1]) - y)**2
+        vec = (x[2] * exp(-t * x[0]) - x[3] * exp(-t * x[1]) - y) ** 2
 
         return sum(vec)
 
 
 class BiggsExp5(object):
+
     def __init__(self, dimensions=5):
         Benchmark.__init__(self, dimensions)
 
@@ -492,7 +533,7 @@ class BiggsExp5(object):
         t *= 0.1
         y = exp(-t) - 5 * exp(-10 * t) + 3 * exp(-4 * t)
         vec = (x[2] * exp(-t * x[0]) - x[3] * exp(-t * x[1])
-               + 3 * exp(-t * x[4]) - y)**2
+               + 3 * exp(-t * x[4]) - y) ** 2
 
         return sum(vec)
 
@@ -1022,7 +1063,7 @@ class Cigar(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
         self.global_optimum = [[0 for _ in range(self.N)]]
@@ -1080,10 +1121,11 @@ class Cola(Benchmark):
             list(zip([-4.0] * (self.N - 1),
                  [4.0] * (self.N - 1)))
 
-        self.global_optimum = [[0.651906, 1.30194, 0.099242, -0.883791, -0.8796,
-                               0.204651, -3.28414, 0.851188, -3.46245, 2.53245,
-                               -0.895246, 1.40992, -3.07367, 1.96257, -2.97872,
-                               -0.807849, -1.68978]]
+        self.global_optimum = [
+            [0.651906, 1.30194, 0.099242, -0.883791, -0.8796,
+             0.204651, -3.28414, 0.851188, -3.46245, 2.53245,
+             -0.895246, 1.40992, -3.07367, 1.96257, -2.97872,
+             -0.807849, -1.68978]]
         self.fglob = 11.7464
 
     def fun(self, x, *args):
@@ -1976,10 +2018,11 @@ class Dolan(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
 
-        self.global_optimum = [[8.39045925, 4.81424707, 7.34574133, 68.88246895,
-                               3.85470806]]
+        self.global_optimum = [
+            [8.39045925, 4.81424707, 7.34574133, 68.88246895,
+             3.85470806]]
         self.fglob = 1e-5
 
     def fun(self, x, *args):
@@ -2061,7 +2104,7 @@ class Easom(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
@@ -2075,6 +2118,48 @@ class Easom(Benchmark):
 
         return (-a * exp(-b * sqrt(sum(x ** 2) / self.N))
                 - exp(sum(cos(c * x)) / self.N) + a + exp(1))
+
+
+class Eckerle4(Benchmark):
+    """
+    Eckerle4 test objective function.
+    Eckerle, K., NIST (1979).
+    Circular Interference Transmittance Study.
+    """
+
+    # TODO, this is a NIST regression standard dataset
+    def __init__(self, dimensions=4):
+        Benchmark.__init__(self, dimensions)
+
+        self._bounds = zip([0., 1., 0., 0.1],
+                           [1000, 20., 3., 6.])
+        self.global_optimum = [[1.5543827178, 4.0888321754, 4.5154121844e2]]
+        self.fglob = 1.4635887487E-03
+
+    def fun(self, x, *args):
+        self.nfev += 1
+
+        a = asarray([1.5750000E-04, 1.6990000E-04, 2.3500000E-04, 3.1020000E-04,
+                     4.9170000E-04, 8.7100000E-04, 1.7418000E-03, 4.6400000E-03,
+                     6.5895000E-03, 9.7302000E-03, 1.4900200E-02, 2.3731000E-02,
+                     4.0168300E-02, 7.1255900E-02, 1.2644580E-01, 2.0734130E-01,
+                     2.9023660E-01, 3.4456230E-01, 3.6980490E-01, 3.6685340E-01,
+                     3.1067270E-01, 2.0781540E-01, 1.1643540E-01, 6.1676400E-02,
+                     3.3720000E-02, 1.9402300E-02, 1.1783100E-02, 7.4357000E-03,
+                     2.2732000E-03, 8.8000000E-04, 4.5790000E-04, 2.3450000E-04,
+                     1.5860000E-04, 1.1430000E-04, 7.1000000E-05])
+        b = asarray([4.0000000E+02, 4.0500000E+02, 4.1000000E+02, 4.1500000E+02,
+                     4.2000000E+02, 4.2500000E+02, 4.3000000E+02, 4.3500000E+02,
+                     4.3650000E+02, 4.3800000E+02, 4.3950000E+02, 4.4100000E+02,
+                     4.4250000E+02, 4.4400000E+02, 4.4550000E+02, 4.4700000E+02,
+                     4.4850000E+02, 4.5000000E+02, 4.5150000E+02, 4.5300000E+02,
+                     4.5450000E+02, 4.5600000E+02, 4.5750000E+02, 4.5900000E+02,
+                     4.6050000E+02, 4.6200000E+02, 4.6350000E+02, 4.6500000E+02,
+                     4.7000000E+02, 4.7500000E+02, 4.8000000E+02, 4.8500000E+02,
+                     4.9000000E+02, 4.9500000E+02, 5.0000000E+02])
+
+        vec = x[0] / x[1] * exp(-(b - x[2]) ** 2 / (2 * x[1] ** 2))
+        return sum((a - vec) ** 2)
 
 
 class EggCrate(Benchmark):
@@ -2145,7 +2230,7 @@ class EggHolder(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-512.1] * self.N,
-                          [512.0] * self.N)
+                           [512.0] * self.N)
 
         self.global_optimum = [[512.0, 404.2319]]
         self.fglob = -959.640662711
@@ -2189,7 +2274,7 @@ class ElAttarVidyasagarDutta(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
         self.custom_bounds = [(-4, 4), (-4, 4)]
 
         self.global_optimum = [[3.40918683, -2.17143304]]
@@ -2478,7 +2563,7 @@ class Griewank(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-600.0] * self.N,
-                          [600.0] * self.N)
+                           [600.0] * self.N)
         self.custom_bounds = [(-50, 50), (-50, 50)]
 
         self.global_optimum = [[0 for _ in range(self.N)]]
@@ -3182,7 +3267,8 @@ class Kowalik(Benchmark):
     *Global optimum*: :math:`f(x_i) = 0.00030748610` for :math:`\\mathbf{x} = [0.192833, 0.190836, 0.123117, 0.135766]`.
 
     """
-    #TODO, this is a NIST regression standard dataset
+    # TODO, this is a NIST regression standard dataset
+
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
@@ -3588,12 +3674,13 @@ class McCormick(Benchmark):
 
 
 class Meyer(Benchmark):
+
     """
     Meyer test objective function.
 
     """
 
-    #TODO, this is a NIST regression standard dataset
+    # TODO, this is a NIST regression standard dataset
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
@@ -3728,7 +3815,7 @@ class Mishra01(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([0.0] * self.N,
-                          [1.0 + 1e-9] * self.N)
+                           [1.0 + 1e-9] * self.N)
 
         self.global_optimum = [[1.0 for _ in range(self.N)]]
         self.fglob = 2.0
@@ -3771,7 +3858,7 @@ class Mishra02(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([0.0] * self.N,
-                          [1.0 + 1e-9] * self.N)
+                           [1.0 + 1e-9] * self.N)
 
         self.global_optimum = [[1.0 for _ in range(self.N)]]
         self.fglob = 2.0
@@ -4438,7 +4525,7 @@ class OddSquare(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-5.0 * pi] * self.N,
-                          [5.0 * pi] * self.N)
+                           [5.0 * pi] * self.N)
         self.custom_bounds = ([-2.0, 4.0], [-2.0, 4.0])
         self.a = asarray([1, 1.3, 0.8, -0.4, -1.3, 1.6, -0.2, -0.6, 0.5, 1.4]
                          * 2)
@@ -4530,7 +4617,7 @@ class Pathological(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.
@@ -4774,7 +4861,7 @@ class PermFunction01(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-self.N] * self.N,
-                          [self.N + 1] * self.N)
+                           [self.N + 1] * self.N)
 
         self.global_optimum = [range(1, self.N + 1)]
         self.fglob = 0.0
@@ -4823,7 +4910,7 @@ class PermFunction02(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-self.N] * self.N,
-                          [self.N + 1] * self.N)
+                           [self.N + 1] * self.N)
         self.custom_bounds = ([0, 1.5], [0, 1.0])
 
         self.global_optimum = [1. / arange(1, self.N + 1)]
@@ -5013,7 +5100,7 @@ class PowerSum(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([0.0] * self.N,
-                          [float(self.N)] * self.N)
+                           [float(self.N)] * self.N)
 
         self.global_optimum = [[1.0, 2.0, 2.0, 3.0]]
         self.fglob = 0.0
@@ -5062,7 +5149,7 @@ class Price01(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-500.0] * self.N,
-                          [500.0] * self.N)
+                           [500.0] * self.N)
         self.custom_bounds = ([-10.0, 10.0], [-10.0, 10.0])
 
         self.global_optimum = [[5.0, 5.0]]
@@ -5228,7 +5315,7 @@ class Qing(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-500.0] * self.N,
-                          [500.0] * self.N)
+                           [500.0] * self.N)
         self.custom_bounds = [(-2, 2), (-2, 2)]
         self.global_optimum = [[sqrt(_) for _ in range(1, self.N + 1)]]
         self.fglob = 0
@@ -5354,7 +5441,7 @@ class Rana(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-500.000001] * self.N,
-                          [500.000001] * self.N)
+                           [500.000001] * self.N)
 
         self.global_optimum = [[-300.3376, 500.]]
         self.fglob = -500.8021602966615
@@ -5407,12 +5494,13 @@ class Rastrigin(Benchmark):
 
 
 class Ratkowsky01(Benchmark):
+
     """
     Ratkowsky test objective function.
 
     """
 
-    #TODO, this is a NIST regression standard dataset
+    # TODO, this is a NIST regression standard dataset
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
@@ -5425,8 +5513,9 @@ class Ratkowsky01(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        a = asarray([16.08, 33.83, 65.80, 97.20, 191.55, 326.20, 386.87, 520.53,
-                     590.03, 651.92, 724.93, 699.56, 689.96, 637.56, 717.41])
+        a = asarray(
+            [16.08, 33.83, 65.80, 97.20, 191.55, 326.20, 386.87, 520.53,
+             590.03, 651.92, 724.93, 699.56, 689.96, 637.56, 717.41])
         b = arange(1, 16.)
 
         vec = x[0] / ((1 + exp(x[1] - x[2] * b)) ** (1 / x[3]))
@@ -5435,12 +5524,30 @@ class Ratkowsky01(Benchmark):
 
 
 class Ratkowsky02(Benchmark):
+
     """
     Ratkowsky02 test objective function.
 
+    This class defines the Ratkowsky 2 global optimization problem. This
+    is a multimodal minimization problem defined as follows:
+
+    .. math::
+#TODO fix equation
+       f_{\\text{Ratkowsky02}}(\\mathbf{x}) = \\sum_{i=1}^2 -e^{-2 \\log 2 (\\frac{x_i-0.1}{0.8})^2} \\left[\\sin^6(5 \\pi x_i) + 0.1\\cos^2(500 \\pi x_i) \\right]
+
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 1]` for :math:`i=1,...,n`.
+
+    .. figure:: figures/Ratkowsky02.png
+        :alt: Ratkowsky 2 function
+        :align: center
+
+        **Two-dimensional Ratkowsky 2 function**
+
+    *Global optimum*: :math:`f(x_i) = 8.0565229338` for :math:`x_i = [7.2462237576e1, 2.6180768402, 6.7359200066e-2]`
+
     """
 
-    #TODO, this is a NIST regression standard dataset
+    # TODO, this is a NIST regression standard dataset
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
@@ -5455,11 +5562,8 @@ class Ratkowsky02(Benchmark):
         a = asarray([8.93, 10.8, 18.59, 22.33, 39.35, 56.11, 61.73, 64.62,
                      67.08])
         b = asarray([9., 14., 21., 28., 42., 57., 63., 70., 79.])
-
         vec = x[0] / (1 + exp(x[1] - x[2] * b))
-
         return sum((a - vec) ** 2)
-
 
 
 class Ripple01(Benchmark):
@@ -5649,7 +5753,7 @@ class RotatedEllipse01(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-500.0] * self.N,
-                          [500.0] * self.N)
+                           [500.0] * self.N)
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
         self.global_optimum = [[0.0, 0.0]]
@@ -5690,7 +5794,7 @@ class RotatedEllipse02(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-500.0] * self.N,
-                          [500.0] * self.N)
+                           [500.0] * self.N)
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
         self.global_optimum = [[0.0, 0.0]]
@@ -5729,7 +5833,7 @@ class Salomon(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
         self.custom_bounds = [(-50, 50), (-50, 50)]
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
@@ -5770,7 +5874,7 @@ class Sargan(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
@@ -5814,7 +5918,7 @@ class Schaffer01(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
@@ -5856,7 +5960,7 @@ class Schaffer02(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
@@ -5898,7 +6002,7 @@ class Schaffer03(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
         self.global_optimum = [[0.0, 1.253115]]
@@ -5940,7 +6044,7 @@ class Schaffer04(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
         self.global_optimum = [[0.0, 1.253115]]
@@ -6015,7 +6119,7 @@ class Schwefel01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
         self.custom_bounds = ([-4.0, 4.0], [-4.0, 4.0])
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
@@ -6057,7 +6161,7 @@ class Schwefel02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
         self.custom_bounds = ([-4.0, 4.0], [-4.0, 4.0])
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
@@ -6140,7 +6244,7 @@ class Schwefel06(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
         self.custom_bounds = ([-10.0, 10.0], [-10.0, 10.0])
 
         self.global_optimum = [[1.0, 3.0]]
@@ -6180,7 +6284,7 @@ class Schwefel20(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
@@ -6220,7 +6324,7 @@ class Schwefel21(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
@@ -6260,7 +6364,7 @@ class Schwefel22(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
         self.custom_bounds = ([-10.0, 10.0], [-10.0, 10.0])
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
@@ -6300,7 +6404,7 @@ class Schwefel26(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
         self._bounds = zip([-500.0] * self.N,
-                          [500.0] * self.N)
+                           [500.0] * self.N)
 
         self.global_optimum = [[420.968746 for _ in range(self.N)]]
         self.fglob = 0.0
@@ -6671,7 +6775,7 @@ class SineEnvelope(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
         self.custom_bounds = [(-20, 20), (-20, 20)]
 
         self.global_optimum = [[0 for _ in range(self.N)]]
@@ -6834,7 +6938,7 @@ class Step(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
         self.custom_bounds = ([-5, 5], [-5, 5])
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
@@ -7020,17 +7124,19 @@ class TestTubeHolder(Benchmark):
 
 
 class Thurber(Benchmark):
+
     """
     Thurber test objective function.
 
     """
 
-    #TODO, this is a NIST regression standard dataset
+    # TODO, this is a NIST regression standard dataset
     def __init__(self, dimensions=7):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([500., 500., 100., 10., 0.1, 0.1, 0.]
-                            , [2000., 2000., 1000., 150., 2., 1., 0.2])
+        self._bounds = zip(
+            [500., 500., 100., 10., 0.1, 0.1, 0.],
+            [2000., 2000., 1000., 150., 2., 1., 0.2])
         self.global_optimum = [[1.288139680e3, 1.4910792535e3, 5.8323836877e2,
                                 75.416644291, 0.96629502864, 0.39797285797,
                                 4.9727297349e-2]]
@@ -7282,7 +7388,7 @@ class Trigonometric02(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-500.0] * self.N,
-                          [500.0] * self.N)
+                           [500.0] * self.N)
         self.custom_bounds = [(0, 2), (0, 2)]
 
         self.global_optimum = [[0.9 for _ in range(self.N)]]
@@ -7326,7 +7432,7 @@ class Tripod(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-100.0] * self.N,
-                          [100.0] * self.N)
+                           [100.0] * self.N)
 
         self.global_optimum = [[0.0, -50.0]]
         self.fglob = 0.0
@@ -7608,7 +7714,8 @@ class Watson(Benchmark):
 
         self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
 
-        self.global_optimum = [[-0.0158, 1.012, -0.2329, 1.260, -1.513, 0.9928]]
+        self.global_optimum = [
+            [-0.0158, 1.012, -0.2329, 1.260, -1.513, 0.9928]]
         self.fglob = 0.002288
 
     def fun(self, x, *args):
@@ -7737,7 +7844,7 @@ class WayburnSeader02(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-500.0] * self.N,
-                          [500.0] * self.N)
+                           [500.0] * self.N)
         self.custom_bounds = ([-1, 2], [-1, 2])
 
         self.global_optimum = [[0.2, 1.0]]
@@ -7832,7 +7939,7 @@ class Whitley(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-10.24] * self.N,
-                          [10.24] * self.N)
+                           [10.24] * self.N)
         self.custom_bounds = ([-1, 2], [-1, 2])
 
         self.global_optimum = [[1.0 for _ in range(self.N)]]
@@ -7955,7 +8062,7 @@ class XinSheYang02(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-2 * pi] * self.N,
-                          [2 * pi] * self.N)
+                           [2 * pi] * self.N)
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
