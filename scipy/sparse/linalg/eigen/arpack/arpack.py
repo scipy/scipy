@@ -1656,6 +1656,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Return singular vectors (True) in addition to singular values
 
         .. versionadded:: 0.12.0
+
     Returns
     -------
     u : ndarray, shape=(M, k)
