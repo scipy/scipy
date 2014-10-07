@@ -1019,14 +1019,6 @@ class TestScoreatpercentile(TestCase):
         assert_equal(stats.scoreatpercentile(x, 100), 3.5)
         assert_equal(stats.scoreatpercentile(x, 50), 1.75)
 
-    def test_2D(self):
-        x = array([[1, 1, 1],
-                   [1, 1, 1],
-                   [4, 4, 3],
-                   [1, 1, 1],
-                   [1, 1, 1]])
-        assert_array_equal(stats.scoreatpercentile(x, 50), [1, 1, 1])
-
     def test_fraction(self):
         scoreatperc = stats.scoreatpercentile
 
@@ -1107,6 +1099,18 @@ class TestScoreatpercentile(TestCase):
 
         r1 = [[0.75, 4.75, 8.75], [1.5, 5.5, 9.5], [3, 7, 11]]
         assert_equal(scoreatperc(x, (25, 50, 100), axis=1), r1)
+
+        x = array([[1, 1, 1],
+                   [1, 1, 1],
+                   [4, 4, 3],
+                   [1, 1, 1],
+                   [1, 1, 1]])
+        score = stats.scoreatpercentile(x, 50)
+        assert_equal(score.shape, ())
+        assert_equal(score, 1.0)
+        score = stats.scoreatpercentile(x, 50, axis=0)
+        assert_equal(score.shape, (3,))
+        assert_equal(score, [1, 1, 1])
 
     def test_exception(self):
         assert_raises(ValueError, stats.scoreatpercentile, [1, 2], 56,
