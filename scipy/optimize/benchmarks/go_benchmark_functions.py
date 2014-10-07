@@ -231,7 +231,7 @@ class Adjiman(Benchmark):
         f_{{Adjiman}}({\mathbf x}) = \cos(x_1)\sin(x_2) - \frac{x_1}{(x_2^2 +
         1)}
 
-    for :math:`x_i \in [-35, 35]`.
+    for :math:`x_1 \in [-1., 2.0]` and :math:`x_2 \in [-1, 1]`.
 
     *Global optimum*: :math:`f(x_i) = -2.02181` for :math:`x_i = [2.0, 0.10578]`
 
@@ -255,25 +255,26 @@ class Adjiman(Benchmark):
 class Alpine01(Benchmark):
 
     """
-    Alpine 1 test objective function.
+    Alpine01 objective function.
 
-    This class defines the Alpine 1 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The Alpine01 [1]_ global optimization problem is a multimodal minimization
+    problem defined as follows:
 
     .. math::
 
-        f_{\\text{Alpine01}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\lvert {x_i \\sin \\left( x_i \\right) + 0.1 x_i} \\rvert
+        f_{{Alpine01}}({\mathbf x}) = \sum_{i=1}^{n} \lvert {x_i \sin \left( x_i
+        \right) + 0.1 x_i} \rvert
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-10,
+    10]` for :math:`i=1,...,n`.
 
-    .. figure:: figures/Alpine01.png
-        :alt: Alpine 1 function
-        :align: center
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,
+    n`
 
-        **Two-dimensional Alpine 1 function**
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation}, Vol. 4, No. 2, pp. 150--194 (2013)
 
-
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
     """
 
     def __init__(self, dimensions=2):
