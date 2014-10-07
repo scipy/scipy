@@ -265,13 +265,9 @@ def binned_statistic_dd(sample, values, statistic='mean',
     .. versionadded:: 0.11.0
 
     """
-    if type(statistic) == str:
-        if statistic not in ['mean', 'median', 'count', 'sum', 'std']:
-            raise ValueError('unrecognized statistic "%s"' % statistic)
-    elif callable(statistic):
-        pass
-    else:
-        raise ValueError("statistic not understood")
+    known_stats = ['mean', 'median', 'count', 'sum', 'std']
+    if not callable(statistic) and statistic not in known_stats:
+        raise ValueError('invalid statistic %r' % (statistic,))
 
     # This code is based on np.histogramdd
     try:
