@@ -1,20 +1,45 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-"""
-=================================================================
-:mod:`go_benchmark_functions` -- Benchmark optimization functions
-=================================================================
-
-This module provides a set of benchmark problems for global optimization.
-
-.. Copyright 2013 Andrea Gavana
-
-.. module:: go_benchmark_functions
-.. moduleauthor:: Andrea Gavana <andrea.gavana@gmail.com>
-
-"""
 from __future__ import division
+"""
+==============================================================================
+`go_benchmark_functions` --  Problems for testing global optimization routines
+==============================================================================
+
+This module provides a comprehensive set of problems for benchmarking global
+optimization routines, such as scipy.optimize.basinhopping, or
+scipy.optimize.differential_evolution.  The purpose is to see whether a given
+optimization routine can find the global minimum, and how many function
+evaluations it requires to do so.
+The range of problems is extensive, with a range of difficulty. The problems are multivariate, with N=2 to N=17 provided.
+
+References
+----------
+.. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+    functions for global optimization problems, Int. Journal of Mathematical
+    Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013).
+    http://arxiv.org/pdf/1308.4008v1.pdf
+    (and references contained within)
+.. [2] http://infinity77.net/global_optimization/index.html
+.. [3] S. K. Mishra, Global Optimization By Differential Evolution and
+    Particle Swarm Methods: Evaluation On Some Benchmark Functions, Munich
+    Research Papers in Economics
+.. [4] E. P. Adorio, U. P. Dilman, MVF - Multivariate Test Function Library
+    in C for Unconstrained Global Optimization Methods, [Available Online]:
+    http://www.geocities.ws/eadorio/mvf.pdf
+.. [5] S. K. Mishra, Some New Test Functions For Global Optimization And
+    Performance of Repulsive Particle Swarm Method, [Available Online]:
+    http://mpra.ub.uni-muenchen.de/2718/
+.. [6] NIST StRD Nonlinear Regression Problems, retrieved on 1 Oct, 2014
+    http://www.itl.nist.gov/div898/strd/nls/nls_main.shtml
+
+"""
+
+"""
+Copyright 2013 Andrea Gavana
+Author: <andrea.gavana@gmail.com>
+
+Modifications 2014 Andrew Nelson
+<andyfaff@gmail.com>
+"""
 
 import numpy as np
 from numpy import abs, arange, arctan2, asarray, atleast_1d, cos, exp, floor, inf, log, ones, log10, arange
@@ -34,30 +59,35 @@ class Benchmark(object):
     optimization problem. Subclasses should implement the ``fun`` method
     for a particular optimization problem.
 
-    Public Attributes:
-
-    - *N* -- the dimensionality of the problem.
-    - *nfev* -- the number of function evaluations that the object has been
-                asked to calculate.
-    - *change_dimensionality* -- whether we can change the benchmark function `x`
-      variable length (i.e., the dimensionality of the problem)
-    - *bounds* --the lower/upper bounds to be used for the problem. len(bounds) == N.
-    - *custom_bounds* -- a set of lower/upper bounds for that can be used for
-                         plotting purposes (if needed).
-    - *spacing* -- the spacing to use to generate evenly spaced samples across
-     the lower/upper bounds on the variables, for plotting purposes
+    Attributes
+    ----------
+    N
+    bounds
+    xmin
+    xmax
+    fglob : float
+        The global minimum of the evaluated function.
+    global_optimum : sequence
+        A list of vectors that provide the locations of the global minimum.
+        Note that some problems have multiple global minima, not all of which
+        may be listed.
+    nfev : int
+        the number of function evaluations that the object has been asked to
+        calculate.
+    change_dimensionality : bool
+        Whether we can change the benchmark function `x` variable length (i.e.,
+        the dimensionality of the problem)
+    custom_bounds : sequence
+        a list of tuples that contain lower/upper bounds for use in plotting.
     """
 
     def __init__(self, dimensions):
         self.dimensions = dimensions
         self.nfev = 0
+        self.fglob = np.nan
+        self.global_optimum = None
         self.change_dimensionality = False
         self.custom_bounds = None
-
-        if dimensions == 1:
-            self.spacing = 1001
-        else:
-            self.spacing = 201
 
     def __str__(self):
         return '{0} ({1} dimensions)'.format(self.__class__.__name__, self.N)
@@ -66,28 +96,84 @@ class Benchmark(object):
         return self.__class__.__name__
 
     def initial_vector(self):
-        """Random initialisation for the benchmark problem."""
-        return [np.random.uniform(l, u) for l, u in self._bounds]
+        """
+        Random initialisation for the benchmark problem.
 
-    def success(self, x):
-        """Is a candidate solution at the global minimum"""
+        Returns
+        -------
+        x : sequence
+            a vector of length ``N`` that contains random floating point
+            numbers that lie between the lower and upper bounds for a given
+            parameter.
+        """
+
+        return asarray([np.random.uniform(l, u) for l, u in self._bounds])
+
+    def success(self, x, tol=1.e-5):
+        """
+        Tests if a candidate solution at the global minimum.
+        The default test is
+
+        Parameters
+        ----------
+        x : sequence
+            The candidate vector for testing if the global minimum has been
+            reached. Must have ``len(x) == self.N``
+        tol : float
+            The evaluated function and known global minimum must differ by less
+            than this amount to be at a global minimum.
+
+        Returns
+        -------
+        bool : is the candidate vector at the global minimum?
+        """
         val = self.fun(asarray(x))
-        try:
-            np.testing.assert_almost_equal(val, self.fglob, 4)
+        if abs(val - self.fglob) < tol:
             return True
-        except AssertionError:
-            return False
+
+        return False
 
     def fun(self, x):
-        """Evaluation of the benchmark problem."""
+        """
+        Evaluation of the benchmark function.
+
+        Parameters
+        ----------
+        x : sequence
+            The candidate vector for evaluating the benchmark problem. Must
+            have ``len(x) == self.N``.
+
+        Returns
+        -------
+        val : float
+              the evaluated benchmark function
+        """
+
         raise NotImplementedError
 
     def change_dimensions(self, ndim):
+        """
+        Changes the dimensionality of the benchmark problem
+
+        The dimensionality will only be changed if the problem is suitable
+
+        Parameters
+        ----------
+        ndim - int
+               The new dimensionality for the problem.
+        """
+
         if self.change_dimensionality:
             self.dimensions = ndim
 
     @property
     def bounds(self):
+        """
+        The lower/upper bounds to be used for minimizing the problem.
+        This a list of (lower, upper) tuples that contain the lower and upper
+        bounds for the problem.  The problem should not be asked for evaluation
+        outside these bounds. ``len(bounds) == N``.
+        """
         if self.change_dimensionality:
             return [self._bounds[0]] * self.N
         else:
@@ -95,17 +181,34 @@ class Benchmark(object):
 
     @property
     def N(self):
+        """
+        The dimensionality of the problem.
+        """
         return self.dimensions
 
-    # TODO: not clear why the following is needed.
-    def lower_bounds_constraints(self, x):
-        lower = asarray([b[0] for b in self._bounds])
-        return asarray(x) - lower
+    @property
+    def xmin(self):
+        """
+        The lower bounds for the problem
 
-    def upper_bounds_constraints(self, x):
-        upper = asarray([b[1] for b in self._bounds])
-        return upper - asarray(x)
+        Returns
+        -------
+        xmin - sequence
+            The lower bounds for the problem
+        """
+        return asarray([b[0] for b in self.bounds])
 
+    @property
+    def xmax(self):
+        """
+        The upper bounds for the problem
+
+        Returns
+        -------
+        xmax - sequence
+            The upper bounds for the problem
+        """
+        return asarray([b[1] for b in self.bounds])
 
 #-----------------------------------------------------------------------
 #                     SINGLE-OBJECTIVE PROBLEMS
@@ -120,7 +223,7 @@ class Ackley01(Benchmark):
 
     .. math::
 
-        f_{{Ackley01}}({\mathbf x}) = -20e^{-0.2\sqrt{\frac{1}{n} \sum_{i=1}^n
+        f_{{Ackley01}}({x}) = -20e^{-0.2\sqrt{\frac{1}{n} \sum_{i=1}^n
          x_i^2}} - e^{ \frac{1}{n} \sum_{i=1}^n \cos(2 \pi x_i)} + 20 + e
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-35,
@@ -131,7 +234,8 @@ class Ackley01(Benchmark):
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation}, Vol. 4, No. 2, pp. 150--194 (2013)
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+
     """
 
     def __init__(self, dimensions=2):
@@ -159,15 +263,16 @@ class Ackley02(object):
 
     .. math::
 
-        f_{{Ackley02}}({\mathbf x}) = -200e^{-0.02\sqrt{x_1^2 + x_2^2}}
+        f_{Ackley02}(\mathbf{x}) = -200e^{-0.02\sqrt{x_1^2 + x_2^2}}
 
-    for :math:`x_i \in [-32, 32]`
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-32,
+     32]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = -200` for :math:`x_i = [0, 0]`
+    *Global optimum*: :math:`f(x_i) = -200` for :math:`\mathbf{x} = [0, 0]`
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation}, Vol. 4, No. 2, pp. 150--194 (2013)
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
 
     """
     def __init__(self, dimensions=2):
@@ -191,17 +296,18 @@ class Ackley03(object):
 
     .. math::
 
-        f_{{Ackley03}}({\mathbf x}) = -200e^{-0.02\sqrt{x_1^2 + x_2^2}} +
+        f_{Ackley03}(\mathbf{x}) = -200e^{-0.02\sqrt{x_1^2 + x_2^2}} +
             5e^{\cos(3x_1) + \sin(3x_2)}
 
-    for :math:`x_i \in [-32, 32]`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-32,
+    32]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = -195.62902825923879` for :math:`x_i =
-    [-0.68255758, -0.36070859]`
+    *Global optimum*: :math:`f(x_i) = -195.62902825923879` for :math:`\mathbf{x}
+    =[-0.68255758, -0.36070859]`
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation}, Vol. 4, No. 2, pp. 150--194 (2013)
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
 
     """
 
@@ -228,16 +334,18 @@ class Adjiman(Benchmark):
 
     .. math::
 
-        f_{{Adjiman}}({\mathbf x}) = \cos(x_1)\sin(x_2) - \frac{x_1}{(x_2^2 +
+        f_{{Adjiman}}(\mathbf{x}) = \cos(x_1)\sin(x_2) - \frac{x_1}{(x_2^2 +
         1)}
 
-    for :math:`x_1 \in [-1., 2.0]` and :math:`x_2 \in [-1, 1]`.
+    Here, :math:`x_1 \in [-1, 2]` and :math:`x_2 \in [-1, 1]`.
 
-    *Global optimum*: :math:`f(x_i) = -2.02181` for :math:`x_i = [2.0, 0.10578]`
+    *Global optimum*: :math:`f(x_i) = -2.02181` for :math:`\mathbf{x} = [2.0,
+    0.10578]`
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation}, Vol. 4, No. 2, pp. 150--194 (2013)
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+
     """
 
     def __init__(self, dimensions=2):
@@ -262,7 +370,7 @@ class Alpine01(Benchmark):
 
     .. math::
 
-        f_{{Alpine01}}({\mathbf x}) = \sum_{i=1}^{n} \lvert {x_i \sin \left( x_i
+        f_{Alpine01}(\mathbf{x}) = \sum_{i=1}^{n} \lvert {x_i \sin \left( x_i
         \right) + 0.1 x_i} \rvert
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-10,
@@ -273,7 +381,7 @@ class Alpine01(Benchmark):
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation}, Vol. 4, No. 2, pp. 150--194 (2013)
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
 
     """
 
@@ -294,32 +402,32 @@ class Alpine01(Benchmark):
 class Alpine02(Benchmark):
 
     """
-    Alpine 2 test objective function.
+    Alpine02 objective function.
 
-    This class defines the Alpine 2 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The Alpine02 [1]_ global optimization problem is a multimodal minimization
+    problem defined as follows:
 
     .. math::
 
-        f_{\\text{Alpine02}}(\\mathbf{x}) = \\prod_{i=1}^{n} \\sqrt{x_i} \\sin(x_i)
+        f_{Alpine02}(\mathbf{x}) = \prod_{i=1}^{n} \sqrt{x_i} \sin(x_i)
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 10]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [0,
+    10]` for :math:`i=1,...,n`.
 
-    .. figure:: figures/Alpine02.png
-        :alt: Alpine 2 function
-        :align: center
+    *Global optimum*: :math:`f(x_i) = -6.1295` for :math:`\mathbf{x}=
+    [7.91705268, 4.81584232]` for :math:`i=1,2`
 
-        **Two-dimensional Alpine 2 function**
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
 
-
-    *Global optimum*: :math:`f(x_i) = -6.1295` for :math:`x_i = 7.917` for :math:`i=1,...,n`
     """
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
-
+        #TODO check minima as a function of dimensionality
         self.global_optimum = [[7.91705268, 4.81584232]]
         self.fglob = -6.12950
         self.change_dimensionality = True
@@ -333,25 +441,22 @@ class Alpine02(Benchmark):
 class AMGM(Benchmark):
 
     """
-    AMGM test objective function.
+    AMGM objective function.
 
-    This class defines the Arithmetic Mean - Geometric Mean Equality global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The AMGM (Arithmetic Mean - Geometric Mean Equality) global optimization
+    problem is a multimodal minimization problem defined as follows
 
     .. math::
 
-        f_{\\text{AMGM}}(\\mathbf{x}) = \\left ( \\frac{1}{n} \\sum_{i=1}^{n} x_i - \\sqrt[n]{ \\prod_{i=1}^{n} x_i} \\right )^2
+        f_{{AMGM}}(\mathbf{x}) = \left ( \frac{1}{n} \sum_{i=1}^{n} x_i -
+         \sqrt[n]{ \prod_{i=1}^{n} x_i} \right )^2
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 10]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [0,
+    10]` for :math:`i=1,...,n`.
 
-    .. figure:: figures/AMGM.png
-        :alt: AMGM function
-        :align: center
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_1 = x_2 = ... = x_n` for
+    :math:`i=1,...,n`
 
-        **Two-dimensional Arithmetic Mean - Geometric Mean Equality function**
-
-
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_1 = x_2 = ... = x_n` for :math:`i=1,...,n`
     """
 
     def __init__(self, dimensions=2):
@@ -377,25 +482,25 @@ class AMGM(Benchmark):
 class BartelsConn(Benchmark):
 
     """
-    Bartels-Conn test objective function.
+    Bartels-Conn objective function.
 
-    This class defines the Bartels-Conn global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The BartelsConn [1]_ global optimization problem is a multimodal
+    minimization problem defined as follows:
 
     .. math::
 
-        f_{\\text{BartelsConn}}(\\mathbf{x}) = \\lvert {x_1^2 + x_2^2 + x_1x_2} \\rvert + \\lvert {\\sin(x_1)} \\rvert + \\lvert {\\cos(x_2)} \\rvert
+        f_{{BartelsConn}}(\mathbf{x}) = \lvert {x_1^2 + x_2^2 + x_1x_2} \rvert +
+         \lvert {\sin(x_1)} \rvert + \lvert {\cos(x_2)} \rvert
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-50, 50]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-5,
+    5]` for :math:`i=1,2`.
 
-    .. figure:: figures/BartelsConn.png
-        :alt: Bartels-Conn function
-        :align: center
+    *Global optimum*: :math:`f(x_i) = 1` for :math:`\mathbf{x} = [0, 0]`
 
-        **Two-dimensional Bartels-Conn function**
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
 
-
-    *Global optimum*: :math:`f(x_i) = 1` for :math:`x_i = 0` for :math:`i=1,...,n`
     """
 
     def __init__(self, dimensions=2):
@@ -415,26 +520,25 @@ class BartelsConn(Benchmark):
 class Beale(Benchmark):
 
     """
-    Beale test objective function.
+    Beale objective function.
 
-    This class defines the Beale global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The Beale [1]_ global optimization problem is a multimodal
+    minimization problem defined as follows:
 
     .. math::
 
-        f_{\\text{Beale}}(\\mathbf{x}) = \\left(x_1 x_2 - x_1 + 1.5\\right)^{2} + \\left(x_1 x_2^{2} - x_1 + 2.25\\right)^{2} + \\left(x_1 x_2^{3} - x_1 + 2.625\\right)^{2}
+        f_{\text{Beale}}(\mathbf{x}) = \left(x_1 x_2 - x_1 + 1.5\right)^{2} +
+        \left(x_1 x_2^{2} - x_1 + 2.25\right)^{2} + \left(x_1 x_2^{3} - x_1 +
+        2.625\right)^{2}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-4.5
+    , 4.5]` for :math:`i=1,2`.
 
-    .. figure:: figures/Beale.png
-        :alt: Beale function
-        :align: center
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x}=[3, 0.5]`
 
-        **Two-dimensional Beale function**
-
-
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [3, 0.5]`
-
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
     """
 
     def __init__(self, dimensions=2):
@@ -452,7 +556,31 @@ class Beale(Benchmark):
                 + (2.625 - x[0] + x[0] * x[1] ** 3) ** 2)
 
 
-class BiggsExp2(object):
+class BiggsExp02(object):
+    """
+    BiggsExp02 objective function.
+
+    The BiggsExp02 [1]_ global optimization problem is a multimodal minimization
+    problem defined as follows
+
+    .. math::
+
+        \begin{array}\\ f_{{BiggsExp02}}(\mathbf{x}) = \sum_{i=1}^{10}
+        (e^{-t_ix_1} - 5e^{-t_ix_2} - y_i)^2\\
+        t_i = 0.1i\\
+        y_i = e^{-t_i} - 5e^{-10t_i}
+        \end{array}
+
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [0,
+     20]` for :math:`i=1,2`.
+
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x}=[1, 10]`
+
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+
+    """
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -472,7 +600,32 @@ class BiggsExp2(object):
         return sum(vec)
 
 
-class BiggsExp3(object):
+class BiggsExp03(object):
+
+    """
+    BiggsExp03 objective function.
+
+    The BiggsExp03 [1]_ global optimization problem is a multimodal minimization
+    problem defined as follows
+
+    .. math::
+
+        \begin{array}\\ f_{BiggsExp03}(\mathbf{x}) = \sum_{i=1}^{10}
+        (e^{-t_ix_1} - x_3e^{-t_ix_2} - y_i)^2\\
+        t_i = 0.1i\\
+        y_i = e^{-t_i} - 5e^{-10t_i}
+        \end{array}
+
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [0,
+    20]` for :math:`i=1,2,3`.
+
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x}=[1, 10, 5]`
+
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+
+    """
 
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
@@ -492,7 +645,32 @@ class BiggsExp3(object):
         return sum(vec)
 
 
-class BiggsExp4(object):
+class BiggsExp04(object):
+
+    """
+    BiggsExp04 objective function.
+
+    The BiggsExp04 [1]_ global optimization problem is a multimodal minimization
+    problem defined as follows
+
+    .. math::
+
+        \begin{array}\\ f_{BiggsExp04}(\mathbf{x}) = \sum_{i=1}^{10}
+        (x_3e^{-t_ix_1} - x_4e^{-t_ix_2} - y_i)^2\\
+        t_i = 0.1i\\
+        y_i = e^{-t_i} - 5e^{-10t_i}
+        \end{array}
+
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [0,
+    20]` for :math:`i=1,2,3,4`.
+
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x}=[1, 10, 1, 5]`
+
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+
+    """
 
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
@@ -505,15 +683,39 @@ class BiggsExp4(object):
     def fun(self, x):
         self.nfev += 1
 
-        t = arange(1, 11.)
-        t *= 0.1
+        t = arange(1, 11.) * 0.1
         y = exp(-t) - 5 * exp(-10 * t)
         vec = (x[2] * exp(-t * x[0]) - x[3] * exp(-t * x[1]) - y) ** 2
 
         return sum(vec)
 
 
-class BiggsExp5(object):
+class BiggsExp05(object):
+
+    """
+    BiggsExp05 objective function.
+
+    The BiggsExp05 [1]_ global optimization problem is a multimodal minimization
+    problem defined as follows
+
+    .. math::
+
+        \begin{array}\\ f_{BiggsExp04}(\mathbf{x}) = \sum_{i=1}^{11}
+        (x_3e^{-t_ix_1} - x_4e^{-t_ix_2} + 3e^{-t_ix_5} - y_i)^2\\
+        t_i = 0.1i\\
+        y_i = e^{-t_i} - 5e^{-10t_i} + 3e^{-4t_i}
+        \end{array}
+
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [0,
+     20]` for :math:`i=1,...,5`.
+
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x}=[1, 10, 1, 5, 4]`
+
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+
+    """
 
     def __init__(self, dimensions=5):
         Benchmark.__init__(self, dimensions)
@@ -530,8 +732,7 @@ class BiggsExp5(object):
 
     def fun(self, x):
         self.nfev += 1
-        t = arange(1, 12.)
-        t *= 0.1
+        t = arange(1, 12.) * 0.1
         y = exp(-t) - 5 * exp(-10 * t) + 3 * exp(-4 * t)
         vec = (x[2] * exp(-t * x[0]) - x[3] * exp(-t * x[1])
                + 3 * exp(-t * x[4]) - y) ** 2
@@ -542,26 +743,22 @@ class BiggsExp5(object):
 class Bird(Benchmark):
 
     """
-    Bird test objective function.
+    Bird objective function.
 
-    This class defines the Bird global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The Bird global optimization problem is a multimodal minimization
+    problem defined as follows
 
     .. math::
 
-        f_{\\text{Bird}}(\\mathbf{x}) = \\left(x_1 - x_2\\right)^{2} + e^{\left[1 - \\sin\\left(x_1\\right) \\right]^{2}} \\cos\\left(x_2\\right) + e^{\left[1 - \\cos\\left(x_2\\right)\\right]^{2}} \\sin\\left(x_1\\right)
+        f_{Bird}(\mathbf{x}) = \left(x_1 - x_2\right)^{2} + e^{\left[1 -
+         \sin\left(x_1\right) \right]^{2}} \cos\left(x_2\right) + e^{\left[1 -
+          \cos\left(x_2\right)\right]^{2}} \sin\left(x_1\right)
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-2\\pi, 2\\pi]` for :math:`i=1,2`.
+    for :math:`x_i \in [-2\pi, 2\pi]`
 
-    .. figure:: figures/Bird.png
-        :alt: Bird function
-        :align: center
-
-        **Two-dimensional Bird function**
-
-
-    *Global optimum*: :math:`f(x_i) = -106.7645367198034` for :math:`\\mathbf{x} = [4.701055751981055 , 3.152946019601391]` or
-    :math:`\\mathbf{x} = [-1.582142172055011, -3.130246799635430]`
+    *Global optimum*: :math:`f(x_i) = -106.7645367198034` for :math:`\mathbf{x}
+    = [4.701055751981055 , 3.152946019601391]` or :math:`\mathbf{x} =
+    [-1.582142172055011, -3.130246799635430]`
 
     """
 
@@ -584,25 +781,25 @@ class Bird(Benchmark):
 class Bohachevsky(Benchmark):
 
     """
-    Bohachevsky test objective function.
+    Bohachevsky objective function.
 
-    This class defines the Bohachevsky global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The Bohachevsky [1]_ global optimization problem is a multimodal
+    minimization problem defined as follows
 
-    .. math::
+        .. math::
 
-        f_{\\text{Bohachevsky}}(\\mathbf{x}) = \\sum_{i=1}^{n-1}\\left[x_i^2 + 2x_{i+1}^2 - 0.3\\cos(3\\pi x_i) - 0.4\\cos(4\\pi x_{i+1}) + 0.7\\right]
+        f_{Bohachevsky}(\mathbf{x}) = \sum_{i=1}^{n-1}\left[x_i^2 + 2x_{i+1}^2 -
+        0.3\cos(3\pi x_i) - 0.4\cos(4\pi x_{i+1}) + 0.7\right]
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-15, 15]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-15,
+    15]` for :math:`i=1,...,n`.
 
-    .. figure:: figures/Bohachevsky.png
-        :alt: Bohachevsky function
-        :align: center
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for
+    :math:`i=1,...,n`
 
-        **Two-dimensional Bohachevsky function**
-
-
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
 
     """
 
@@ -628,25 +825,28 @@ class Bohachevsky(Benchmark):
 class BoxBetts(Benchmark):
 
     """
-    BoxBetts test objective function.
+    BoxBetts objective function.
 
-    This class defines the Box-Betts global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The BoxBetts global optimization problem is a multimodal
+    minimization problem defined as follows
 
     .. math::
 
-        f_{\\text{BoxBetts}}(\\mathbf{x}) = \\sum_{i=1}^k g(x_i)^2
+        f_{BoxBetts}(\mathbf{x}) = \sum_{i=1}^k g(x_i)^2
 
     Where, in this exercise:
 
-    .. math:: g(x) = e^{-0.1(i+1)x_1} - e^{-0.1(i+1)x_2} - \\left[(e^{-0.1(i+1)}) - e^{-(i+1)}x_3\\right]
+    .. math::
+        g(\mathbf{x}) = e^{-0.1ix_1} - e^{-0.1ix_2} - x_3\left[e^{-0.1i}
+        - e^{-i}\right]
 
 
     And :math:`k = 10`.
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_1 \\in [0.9, 1.2], x_2 \\in [9, 11.2], x_3 \\in [0.9, 1.2]`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_1 \in [0.9,
+    1.2], x_2 \in [9, 11.2], x_3 \in [0.9, 1.2]`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [1, 10, 1]`
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x} = [1, 10, 1]`
 
     """
 
@@ -662,34 +862,30 @@ class BoxBetts(Benchmark):
 
         i = arange(1, 11)
         g = (exp(-0.1 * i * x[0]) - exp(-0.1 * i * x[1])
-             - (exp(-0.1 * i) - exp(-1.0 * i)) * x[2]) ** 2.0
-
-        return sum(g)
+             - (exp(-0.1 * i) - exp(-1.0 * i)) * x[2])
+        return sum(g**2)
 
 
 class Branin01(Benchmark):
 
     """
-    Branin 1 test objective function.
+    Branin01  objective function.
 
-    This class defines the Branin 1 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The Branin01 global optimization problem is a multimodal minimization
+    problem defined as follows
 
     .. math::
 
-        f_{\\text{Branin01}}(\\mathbf{x}) = \\left(- 1.275 \\frac{x_1^{2}}{\pi^{2}} + 5 \\frac{x_1}{\pi} + x_2 -6\\right)^{2} + \\left(10 - \\frac{5}{4 \\pi} \\right) \\cos\\left(x_1\\right) + 10
+        f_{Branin01}(\mathbf{x}) = \left(- 1.275 \frac{x_1^{2}}{\pi^{2}} + 5
+        \frac{x_1}{\pi} + x_2 -6\right)^{2} + \left(10 - \frac{5}{4 \pi} \right)
+        \cos\left(x_1\right) + 10
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_1 \\in [-5, 10], x_2 \\in [0, 15]`
+    Here, :math:`n` represents the number of dimensions and :math:`x_1 \\in [-5,
+    10], x_2 \\in [0, 15]`
 
-    .. figure:: figures/Branin01.png
-        :alt: Branin 1 function
-        :align: center
-
-        **Two-dimensional Branin 1 function**
-
-
-    *Global optimum*: :math:`f(x_i) = 0.39788735772973816` for :math:`\\mathbf{x} = [-\\pi, 12.275]` or
-    :math:`\\mathbf{x} = [\\pi, 2.275]` or :math:`\\mathbf{x} = [9.42478, 2.475]`
+    *Global optimum*: :math:`f(x_i) = 0.39788735772973816` for
+    :math:`\mathbf{x} = [-\pi, 12.275]` or :math:`\mathbf{x} = [\pi, 2.275]`
+    or :math:`\mathbf{x} = [9.42478, 2.475]`
 
     """
 
@@ -712,25 +908,24 @@ class Branin01(Benchmark):
 class Branin02(Benchmark):
 
     """
-    Branin 2 test objective function.
+    Branin02 objective function.
 
-    This class defines the Branin 2 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The Branin02 global optimization problem is a multimodal minimization
+    problem defined as follows
+
 
     .. math::
 
-        f_{\\text{Branin02}}(\\mathbf{x}) = \\left(- 1.275 \\frac{x_1^{2}}{\pi^{2}} + 5 \\frac{x_1}{\pi} + x_2 -6\\right)^{2} + \\left(10 - \\frac{5}{4 \\pi} \\right) \\cos\\left(x_1\\right) \\cos\\left(x_2\\right) + \\log(x_1^2+x_2^2 +1) + 10
+        f_{\text{Branin02}}(\mathbf{x}) = \left(- 1.275 \frac{x_1^{2}}{\pi^{2}}
+        + 5 \frac{x_1}{\pi} + x_2 -6\right)^{2} + \left(10 - \frac{5}{4 \pi}
+        \right) \cos\left(x_1\right) \cos\left(x_2\right) + \log(x_1^2+x_2^2 +1)
+        + 10
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 15]` for :math:`i=1,2`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-5,
+    15]` for :math:`i=1,2`.
 
-    .. figure:: figures/Branin02.png
-        :alt: Branin 2 function
-        :align: center
-
-        **Two-dimensional Branin 2 function**
-
-
-    *Global optimum*: :math:`f(x_i) = 5.559037` for :math:`\\mathbf{x} = [-3.2, 12.53]`
+    *Global optimum*: :math:`f(x_i) = 5.559037` for :math:`\mathbf{x} = [-3.2,
+    12.53]`
 
     """
 
@@ -754,25 +949,24 @@ class Branin02(Benchmark):
 class Brent(Benchmark):
 
     """
-    Brent test objective function.
+    Brent objective function.
 
-    This class defines the Brent global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The Brent [1]_ global optimization problem is a multimodal minimization
+    problem defined as follows:
 
     .. math::
 
-        f_{\\text{Brent}}(\\mathbf{x}) = (x_1 + 10)^2 + (x_2 + 10)^2 + e^{(-x_1^2-x_2^2)}
+        f_{\text{Brent}}(\mathbf{x}) = (x_1 + 10)^2 + (x_2 + 10)^2 +
+        e^{(-x_1^2-x_2^2)}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-10,
+    10]` for :math:`i=1,2`.
 
-    .. figure:: figures/Brent.png
-        :alt: Brent function
-        :align: center
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x} = [-10, -10]`
 
-        **Two-dimensional Brent function**
-
-
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [-10, -10]`
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
 
     """
 
@@ -794,25 +988,26 @@ class Brent(Benchmark):
 class Brown(Benchmark):
 
     """
-    Brown test objective function.
+    Brown objective function.
 
-    This class defines the Brown global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The Brown [1]_ global optimization problem is a multimodal minimization
+    problem defined as follows:
 
     .. math::
 
-        f_{\\text{Brown}}(\\mathbf{x}) = \\sum_{i=1}^{n-1}\\left[ \\left(x_i^2\\right)^{x_{i+1}^2+1} + \\left(x_{i+1}^2\\right)^{x_i^2+1} \\right]
+        f_{\text{Brown}}(\mathbf{x}) = \sum_{i=1}^{n-1}\left[
+        \left(x_i^2\right)^{x_{i+1}^2+1} + \left(x_{i+1}^2\right)^{x_i^2+1}
+        \right]
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 4]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-1,
+    4]` for :math:`i=1,...,n`.
 
-    .. figure:: figures/Brown.png
-        :alt: Brown function
-        :align: center
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for
+    :math:`i=1,...,n`
 
-        **Two-dimensional Brown function**
-
-
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
 
     """
 
@@ -831,31 +1026,31 @@ class Brown(Benchmark):
 
         x0 = x[:-1]
         x1 = x[1:]
-        return sum((x0 ** 2.0) ** (x1 ** 2.0 + 1.0) + (x1 ** 2.0) ** (x0 ** 2.0 + 1.0))
+        return sum((x0 ** 2.0) ** (x1 ** 2.0 + 1.0)
+                   + (x1 ** 2.0) ** (x0 ** 2.0 + 1.0))
 
 
 class Bukin02(Benchmark):
 
     """
-    Bukin 2 test objective function.
+    Bukin02 objective function.
 
-    This class defines the Bukin 2 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The Bukin02 [1]_ global optimization problem is a multimodal minimization
+    problem defined as follows:
 
     .. math::
 
-        f_{\\text{Bukin02}}(\\mathbf{x}) = 100 (x_2 - 0.01x_1^2 + 1) + 0.01(x_1 + 10)^2
+        f_{\text{Bukin02}}(\mathbf{x}) = 100 (x_2 - 0.01x_1^2 + 1)
+        + 0.01(x_1 + 10)^2
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_1 \\in [-15, -5], x_2 \\in [-3, 3]`
+    Here, :math:`n` represents the number of dimensions and :math:`x_1 \in [-15,
+    -5], x_2 \in [-3, 3]`
 
-    .. figure:: figures/Bukin02.png
-        :alt: Bukin 2 function
-        :align: center
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x} = [-10, 0]`
 
-        **Two-dimensional Bukin 2 function**
-
-
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [-10, 0]`
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
 
     """
 
@@ -870,31 +1065,31 @@ class Bukin02(Benchmark):
     def fun(self, x, *args):
 
         self.nfev += 1
-        return 100 * (x[1] ** 2 - 0.01 * x[0] ** 2 + 1.0) + 0.01 * (x[0] + 10.0) ** 2.0
+        return (100 * (x[1] ** 2 - 0.01 * x[0] ** 2 + 1.0)
+                + 0.01 * (x[0] + 10.0) ** 2.0)
 
 
 class Bukin04(Benchmark):
 
     """
-    Bukin 4 test objective function.
+    Bukin04 objective function.
 
-    This class defines the Bukin 4 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The Bukin04 [1]_ global optimization problem is a multimodal minimization
+    problem defined as follows:
 
     .. math::
 
-        f_{\\text{Bukin04}}(\\mathbf{x}) = 100 x_2^{2} + 0.01 \\lvert{x_1 + 10} \\rvert
+        f_{\text{Bukin04}}(\mathbf{x}) = 100 x_2^{2} + 0.01 \lvert{x_1 + 10}
+        \rvert
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_1 \\in [-15, -5], x_2 \\in [-3, 3]`
+    Here, :math:`n` represents the number of dimensions and :math:`x_1 \in [-15,
+    -5], x_2 \in [-3, 3]`
 
-    .. figure:: figures/Bukin04.png
-        :alt: Bukin 4 function
-        :align: center
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x} = [-10, 0]`
 
-        **Two-dimensional Bukin 4 function**
-
-
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [-10, 0]`
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
 
     """
 
@@ -915,25 +1110,24 @@ class Bukin04(Benchmark):
 class Bukin06(Benchmark):
 
     """
-    Bukin 6 test objective function.
+    Bukin06 objective function.
 
-    This class defines the Bukin 6 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The Bukin06 [1]_ global optimization problem is a multimodal minimization
+    problem defined as follows:
 
     .. math::
 
-        f_{\\text{Bukin06}}(\\mathbf{x}) = 100 \\sqrt{ \\lvert{x_2 - 0.01 x_1^{2}} \\rvert} + 0.01 \\lvert{x_1 + 10} \\rvert
+        f_{\text{Bukin06}}(\mathbf{x}) = 100 \sqrt{ \lvert{x_2 - 0.01 x_1^{2}}
+        \rvert} + 0.01 \lvert{x_1 + 10} \rvert
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_1 \\in [-15, -5], x_2 \\in [-3, 3]`
+    Here, :math:`n` represents the number of dimensions and :math:`x_1 \in [-15,
+    -5], x_2 \in [-3, 3]`
 
-    .. figure:: figures/Bukin06.png
-        :alt: Bukin 6 function
-        :align: center
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x} = [-10, 1]`
 
-        **Two-dimensional Bukin 6 function**
-
-
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [-10, 1]`
+    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
+     functions for global optimization problems, Int. Journal of Mathematical
+     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
 
     """
 
@@ -941,7 +1135,6 @@ class Bukin06(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = [(-15.0, -5.0), (-3.0, 3.0)]
-
         self.global_optimum = [[-10.0, 1.0]]
         self.fglob = 0.0
 
@@ -954,25 +1147,25 @@ class Bukin06(Benchmark):
 class CarromTable(Benchmark):
 
     """
-    CarromTable test objective function.
+    CarromTable objective function.
 
-    This class defines the CarromTable global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    The CarromTable [1]_ global optimization problem is a multimodal
+    minimization problem defined as follows:
 
     .. math::
 
-        f_{\\text{CarromTable}}(\\mathbf{x}) = - \\frac{1}{30} e^{2 \\left|{1 - \\frac{\\sqrt{x_{1}^{2} + x_{2}^{2}}}{\pi}}\\right|} \\cos^{2}\\left(x_{1}\\right) \\cos^{2}\\left(x_{2}\\right)
+        f_{\text{CarromTable}}(\mathbf{x}) = - \frac{1}{30}\left(\cos(x_1)
+        cos(x_2) e^{\left|1 - \frac{\sqrt{x_1^2 + x_2^2}}{\pi}\right|}\right)^2
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-10,
+    10]` for :math:`i=1,2`.
 
-    .. figure:: figures/CarromTable.png
-        :alt: CarromTable function
-        :align: center
+    *Global optimum*: :math:`f(x_i) = -24.15681551650653` for :math:`x_i = \pm
+    9.646157266348881` for :math:`i=1,...,n`
 
-        **Two-dimensional CarromTable function**
-
-
-    *Global optimum*: :math:`f(x_i) = -24.15681551650653` for :math:`x_i = \\pm 9.646157266348881` for :math:`i=1,...,n`
+    ..[1] S. K. Mishra, Global Optimization By Differential Evolution and
+     Particle Swarm Methods: Evaluation On Some Benchmark Functions, Munich
+     Research Papers in Economics
 
     """
 
@@ -980,7 +1173,6 @@ class CarromTable(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
-
         self.global_optimum = [(9.646157266348881, 9.646134286497169),
                                (-9.646157266348881, 9.646134286497169),
                                (9.646157266348881, -9.646134286497169),
@@ -988,15 +1180,17 @@ class CarromTable(Benchmark):
         self.fglob = -24.15681551650653
 
     def fun(self, x, *args):
-
         self.nfev += 1
-        return -((cos(x[0]) * cos(x[1]) * exp(abs(1 - sqrt(x[0] ** 2 + x[1] ** 2) / pi))) ** 2) / 30
+
+        u = cos(x[0]) * cos(x[1])
+        v = sqrt(x[0] ** 2 + x[1] ** 2)
+        return -((u * exp(abs(1 - v / pi))) ** 2) / 30
 
 
 class Chichinadze(Benchmark):
 
     """
-    Chichinadze test objective function.
+    Chichinadze objective function.
 
     This class defines the Chichinadze global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1006,13 +1200,6 @@ class Chichinadze(Benchmark):
         f_{\\text{Chichinadze}}(\\mathbf{x}) = x_{1}^{2} - 12 x_{1} + 8 \\sin\\left(\\frac{5}{2} \\pi x_{1}\\right) + 10 \\cos\\left(\\frac{1}{2} \\pi x_{1}\\right) + 11 - 0.2 \\frac{\\sqrt{5}}{e^{\\frac{1}{2} \\left(x_{2} -0.5\\right)^{2}}}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-30, 30]` for :math:`i=1,2`.
-
-    .. figure:: figures/Chichinadze.png
-        :alt: Chichinadze function
-        :align: center
-
-        **Two-dimensional Chichinadze function**
-
 
     *Global optimum*: :math:`f(x_i) = -42.94438701899098` for :math:`\\mathbf{x} = [6.189866586965680, 0.5]`
 
@@ -1038,7 +1225,7 @@ class Chichinadze(Benchmark):
 class Cigar(Benchmark):
 
     """
-    Cigar test objective function.
+    Cigar objective function.
 
     This class defines the Cigar global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1048,13 +1235,6 @@ class Cigar(Benchmark):
         f_{\\text{Cigar}}(\\mathbf{x}) = x_1^2 + 10^6\\sum_{i=2}^{n} x_i^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Cigar.png
-        :alt: Cigar function
-        :align: center
-
-        **Two-dimensional Cigar function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -1080,10 +1260,10 @@ class Cigar(Benchmark):
 class Cola(Benchmark):
 
     """
-    Cola test objective function.
+    Cola objective function.
 
     This class defines the Cola global optimization problem. The 17-dimensional function computes
-    indirectly the formula :math:`f(n, u)` by setting :math:`x_0 = y_0, x_1 = u_0, x_i = u_{2(iâˆ’2)}, y_i = u_{2(iâˆ’2)+1}` :
+    indirectly the formula :math:`f(n, u)` by setting :math:`x_0 = y_0, x_1 = u_0, x_i = u_{2(i2)}, y_i = u_{2(i2)+1}` :
 
     .. math::
 
@@ -1189,7 +1369,7 @@ class Cola(Benchmark):
 class Colville(Benchmark):
 
     """
-    Colville test objective function.
+    Colville objective function.
 
     This class defines the Colville global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1225,7 +1405,7 @@ class Colville(Benchmark):
 class Corana(Benchmark):
 
     """
-    Corana test objective function.
+    Corana objective function.
 
     This class defines the Corana global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1274,7 +1454,7 @@ class Corana(Benchmark):
 class CosineMixture(Benchmark):
 
     """
-    Cosine Mixture test objective function.
+    Cosine Mixture objective function.
 
     This class defines the Cosine Mixture global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1285,12 +1465,6 @@ class CosineMixture(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 1]` for :math:`i=1,...,N`.
-
-    .. figure:: figures/CosineMixture.png
-        :alt: Cosine Mixture function
-        :align: center
-
-        **Two-dimensional Cosine Mixture function**
 
     *Global optimum*: :math:`f(x_i) = -0.1N` for :math:`x_i = 0` for :math:`i=1,...,N`
 
@@ -1314,7 +1488,7 @@ class CosineMixture(Benchmark):
 class CrossInTray(Benchmark):
 
     """
-    Cross-in-Tray test objective function.
+    Cross-in-Tray objective function.
 
     This class defines the Cross-in-Tray global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1324,13 +1498,6 @@ class CrossInTray(Benchmark):
         f_{\\text{CrossInTray}}(\\mathbf{x}) = - 0.0001 \\left(\\left|{e^{\\left|{100 - \\frac{\\sqrt{x_{1}^{2} + x_{2}^{2}}}{\\pi}}\\right|} \\sin\\left(x_{1}\\right) \\sin\\left(x_{2}\\right)}\\right| + 1\\right)^{0.1}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-15, 15]` for :math:`i=1,2`.
-
-    .. figure:: figures/CrossInTray.png
-        :alt: Cross-in-Tray function
-        :align: center
-
-        **Two-dimensional Cross-in-Tray function**
-
 
     *Global optimum*: :math:`f(x_i) = -2.062611870822739` for :math:`x_i = \\pm 1.349406608602084` for :math:`i=1,2`
 
@@ -1358,7 +1525,7 @@ class CrossInTray(Benchmark):
 class CrossLegTable(Benchmark):
 
     """
-    Cross-Leg-Table test objective function.
+    Cross-Leg-Table objective function.
 
     This class defines the Cross-Leg-Table global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1368,13 +1535,6 @@ class CrossLegTable(Benchmark):
         f_{\\text{CrossLegTable}}(\\mathbf{x}) = - \\frac{1}{\\left(\\left|{e^{\\left|{100 - \\frac{\\sqrt{x_{1}^{2} + x_{2}^{2}}}{\\pi}}\\right|} \\sin\\left(x_{1}\\right) \\sin\\left(x_{2}\\right)}\\right| + 1\\right)^{0.1}}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/CrossLegTable.png
-        :alt: Cross-Leg-Table function
-        :align: center
-
-        **Two-dimensional Cross-Leg-Table function**
-
 
     *Global optimum*: :math:`f(x_i) = -1`. The global minimum is found on the planes :math:`x_1 = 0` and :math:`x_2 = 0`
 
@@ -1399,7 +1559,7 @@ class CrossLegTable(Benchmark):
 class CrownedCross(Benchmark):
 
     """
-    Crowned Cross test objective function.
+    Crowned Cross objective function.
 
     This class defines the Crowned Cross global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1409,13 +1569,6 @@ class CrownedCross(Benchmark):
         f_{\\text{CrownedCross}}(\\mathbf{x}) = 0.0001 \\left(\\left|{e^{\\left|{100- \\frac{\\sqrt{x_{1}^{2} + x_{2}^{2}}}{\\pi}}\\right|} \\sin\\left(x_{1}\\right) \\sin\\left(x_{2}\\right)}\\right| + 1\\right)^{0.1}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/CrownedCross.png
-        :alt: Crowned Cross function
-        :align: center
-
-        **Two-dimensional Crowned Cross function**
-
 
     *Global optimum*: :math:`f(x_i) = 0.0001`. The global minimum is found on the planes :math:`x_1 = 0` and :math:`x_2 = 0`
 
@@ -1440,7 +1593,7 @@ class CrownedCross(Benchmark):
 class Csendes(Benchmark):
 
     """
-    Csendes test objective function.
+    Csendes objective function.
 
     This class defines the Csendes global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1451,12 +1604,6 @@ class Csendes(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 1]` for :math:`i=1,...,N`.
-
-    .. figure:: figures/Csendes.png
-        :alt: Csendes function
-        :align: center
-
-        **Two-dimensional Csendes function**
 
     *Global optimum*: :math:`f(x_i) = 0.0` for :math:`x_i = 0` for :math:`i=1,...,N`
 
@@ -1491,7 +1638,7 @@ class Csendes(Benchmark):
 class Cube(Benchmark):
 
     """
-    Cube test objective function.
+    Cube objective function.
 
     This class defines the Cube global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1502,12 +1649,6 @@ class Cube(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,N`.
-
-    .. figure:: figures/Cube.png
-        :alt: Cube function
-        :align: center
-
-        **Two-dimensional Cube function**
 
     *Global optimum*: :math:`f(x_i) = 0.0` for :math:`\\mathbf{x} = [1, 1]`
 
@@ -1531,7 +1672,7 @@ class Cube(Benchmark):
 class Damavandi(Benchmark):
 
     """
-    Damavandi test objective function.
+    Damavandi objective function.
 
     This class defines the Damavandi global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1542,12 +1683,6 @@ class Damavandi(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 14]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Damavandi.png
-        :alt: Damavandi function
-        :align: center
-
-        **Two-dimensional Damavandi function**
 
     *Global optimum*: :math:`f(x_i) = 0.0` for :math:`x_i = 2` for :math:`i=1,...,n`
 
@@ -1591,7 +1726,7 @@ class Damavandi(Benchmark):
 class Deb01(Benchmark):
 
     """
-    Deb 1 test objective function.
+    Deb 1 objective function.
 
     This class defines the Deb 1 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1602,12 +1737,6 @@ class Deb01(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 1]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Deb01.png
-        :alt: Deb 1 function
-        :align: center
-
-        **Two-dimensional Deb 1 function**
 
     *Global optimum*: :math:`f(x_i) = 0.0`. The number of global minima is :math:`5^n` that are evenly spaced
     in the function landscape, where :math:`n` represents the dimension of the problem.
@@ -1632,7 +1761,7 @@ class Deb01(Benchmark):
 class Deb02(Benchmark):
 
     """
-    Deb 2 test objective function.
+    Deb 2 objective function.
 
     This class defines the Deb 2 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1643,12 +1772,6 @@ class Deb02(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 1]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Deb02.png
-        :alt: Deb 2 function
-        :align: center
-
-        **Two-dimensional Deb 2 function**
 
     *Global optimum*: :math:`f(x_i) = 0.0`. The number of global minima is :math:`5^n` that are evenly spaced
     in the function landscape, where :math:`n` represents the dimension of the problem.
@@ -1674,7 +1797,7 @@ class Deb02(Benchmark):
 class Decanomial(Benchmark):
 
     """
-    Decanomial test objective function.
+    Decanomial objective function.
 
     This class defines the Decanomial function global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1685,13 +1808,6 @@ class Decanomial(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/Decanomial.png
-        :alt: Decanomial function
-        :align: center
-
-        **Two-dimensional Decanomial function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [2, -3]`
 
@@ -1720,7 +1836,7 @@ class Decanomial(Benchmark):
 class Deceptive(Benchmark):
 
     """
-    Deceptive test objective function.
+    Deceptive objective function.
 
     This class defines the Deceptive global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1742,12 +1858,6 @@ class Deceptive(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 1]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Deceptive.png
-        :alt: Deceptive function
-        :align: center
-
-        **Two-dimensional Deceptive function**
 
     *Global optimum*: :math:`f(x_i) = -1` for :math:`x_i = \\alpha_i` for :math:`i=1,...,n`
 
@@ -1792,7 +1902,7 @@ class Deceptive(Benchmark):
 class DeckkersAarts(Benchmark):
 
     """
-    Deckkers-Aarts test objective function.
+    Deckkers-Aarts objective function.
 
     This class defines the Deckkers-Aarts global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1803,12 +1913,6 @@ class DeckkersAarts(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-20, 20]` for :math:`i=1,2`.
-
-    .. figure:: figures/DeckkersAarts.png
-        :alt: DeckkersAarts function
-        :align: center
-
-        **Two-dimensional Deckkers-Aarts function**
 
     *Global optimum*: :math:`f(x_i) = -24776.518242168` for :math:`\\mathbf{x} = [0, \\pm 14.9451209]`
 
@@ -1832,7 +1936,7 @@ class DeckkersAarts(Benchmark):
 class DeflectedCorrugatedSpring(Benchmark):
 
     """
-    DeflectedCorrugatedSpring test objective function.
+    DeflectedCorrugatedSpring objective function.
 
     This class defines the Deflected Corrugated Spring function global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1845,13 +1949,6 @@ class DeflectedCorrugatedSpring(Benchmark):
     Where, in this exercise, :math:`K = 5` and :math:`\\alpha = 5`.
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 2\\alpha]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/DeflectedCorrugatedSpring.png
-        :alt: Deflected Corrugated Spring function
-        :align: center
-
-        **Two-dimensional Deflected Corrugated Spring function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = \\alpha` for :math:`i=1,...,n`
 
@@ -1878,7 +1975,7 @@ class DeflectedCorrugatedSpring(Benchmark):
 class DeVilliersGlasser01(Benchmark):
 
     """
-    DeVilliers-Glasser 1 test objective function.
+    DeVilliers-Glasser 1 objective function.
 
     This class defines the DeVilliers-Glasser 1 function global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1916,7 +2013,7 @@ class DeVilliersGlasser01(Benchmark):
 class DeVilliersGlasser02(Benchmark):
 
     """
-    DeVilliers-Glasser 2 test objective function.
+    DeVilliers-Glasser 2 objective function.
 
     This class defines the DeVilliers-Glasser 2 function global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1956,7 +2053,7 @@ class DeVilliersGlasser02(Benchmark):
 class DixonPrice(Benchmark):
 
     """
-    Dixon and Price test objective function.
+    Dixon and Price objective function.
 
     This class defines the Dixon and Price global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -1966,13 +2063,6 @@ class DixonPrice(Benchmark):
         f_{\\text{DixonPrice}}(\\mathbf{x}) = (x_i - 1)^2 + \\sum_{i=2}^n i(2x_i^2 - x_{i-1})^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/DixonPrice.png
-        :alt: Dixon and Price function
-        :align: center
-
-        **Two-dimensional Dixon and Price function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 2^{- \\frac{(2^i-2)}{2^i}}` for :math:`i=1,...,n`
 
@@ -2000,7 +2090,7 @@ class DixonPrice(Benchmark):
 class Dolan(Benchmark):
 
     """
-    Dolan test objective function.
+    Dolan objective function.
 
     This class defines the Dolan global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2037,7 +2127,7 @@ class Dolan(Benchmark):
 class DropWave(Benchmark):
 
     """
-    DropWave test objective function.
+    DropWave objective function.
 
     This class defines the DropWave global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2047,13 +2137,6 @@ class DropWave(Benchmark):
         f_{\\text{DropWave}}(\\mathbf{x}) = - \\frac{1 + \\cos\\left(12 \\sqrt{\\sum_{i=1}^{n} x_i^{2}}\\right)}{2 + 0.5 \\sum_{i=1}^{n} x_i^{2}}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5.12, 5.12]` for :math:`i=1,2`.
-
-    .. figure:: figures/DropWave.png
-        :alt: DropWave function
-        :align: center
-
-        **Two-dimensional DropWave function**
-
 
     *Global optimum*: :math:`f(x_i) = -1` for :math:`x_i = 0` for :math:`i=1,2`
 
@@ -2077,7 +2160,7 @@ class DropWave(Benchmark):
 class Easom(Benchmark):
 
     """
-    Easom test objective function.
+    Easom objective function.
 
     This class defines the Easom global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2089,13 +2172,6 @@ class Easom(Benchmark):
     Where, in this exercise, :math:`a = 20, b = 0.2` and :math:`c = 2\\pi`.
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
-
-    .. figure:: figures/Easom.png
-        :alt: Easom function
-        :align: center
-
-        **Two-dimensional Easom function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,2`
 
@@ -2123,7 +2199,7 @@ class Easom(Benchmark):
 
 class Eckerle4(Benchmark):
     """
-    Eckerle4 test objective function.
+    Eckerle4 objective function.
     Eckerle, K., NIST (1979).
     Circular Interference Transmittance Study.
     """
@@ -2166,7 +2242,7 @@ class Eckerle4(Benchmark):
 class EggCrate(Benchmark):
 
     """
-    Egg Crate test objective function.
+    Egg Crate objective function.
 
     This class defines the Egg Crate global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2176,13 +2252,6 @@ class EggCrate(Benchmark):
         f_{\\text{EggCrate}}(\\mathbf{x}) = x_1^2 + x_2^2 + 25 \\left[ \\sin^2(x_1) + \\sin^2(x_2) \\right]
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,2`.
-
-    .. figure:: figures/EggCrate.png
-        :alt: Egg Crate function
-        :align: center
-
-        **Two-dimensional Egg Crate function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,2`
 
@@ -2205,7 +2274,7 @@ class EggCrate(Benchmark):
 class EggHolder(Benchmark):
 
     """
-    Egg Holder test objective function.
+    Egg Holder objective function.
 
     This class defines the Egg Holder global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2215,13 +2284,6 @@ class EggHolder(Benchmark):
         f_{\\text{EggHolder}}(\\mathbf{x}) = - x_{1} \\sin\\left(\\sqrt{\\lvert{x_{1} - x_{2} -47}\\rvert}\\right) - \\left(x_{2} + 47\\right) \\sin\\left(\\sqrt{\\left|{\\frac{1}{2} x_{1} + x_{2} + 47}\\right|}\\right)
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-512, 512]` for :math:`i=1,2`.
-
-    .. figure:: figures/EggHolder.png
-        :alt: Egg Holder function
-        :align: center
-
-        **Two-dimensional Egg Holder function**
-
 
     *Global optimum*: :math:`f(x_i) = -959.640662711` for :math:`\\mathbf{x} = [512, 404.2319]`
 
@@ -2248,7 +2310,7 @@ class EggHolder(Benchmark):
 class ElAttarVidyasagarDutta(Benchmark):
 
     """
-    El-Attar-Vidyasagar-Dutta test objective function.
+    El-Attar-Vidyasagar-Dutta objective function.
 
     This class defines the El-Attar-Vidyasagar-Dutta function global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2259,13 +2321,6 @@ class ElAttarVidyasagarDutta(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
-
-    .. figure:: figures/ElAttarVidyasagarDutta.png
-        :alt: El-Attar-Vidyasagar-Dutta function
-        :align: center
-
-        **Two-dimensional El-Attar-Vidyasagar-Dutta function**
-
 
     *Global optimum*: :math:`f(x_i) = 1.712780354` for :math:`\\mathbf{x} = [3.40918683, -2.17143304]`
 
@@ -2291,7 +2346,7 @@ class ElAttarVidyasagarDutta(Benchmark):
 class Exp2(Benchmark):
 
     """
-    Exp2 test objective function.
+    Exp2 objective function.
 
     This class defines the Exp2 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2301,13 +2356,6 @@ class Exp2(Benchmark):
         f_{\\text{Exp2}}(\\mathbf{x}) = \\sum_{i=0}^9 \\left ( e^{-ix_1/10} - 5e^{-ix_2/10} -e^{-i/10} + 5e^{-i} \\right )^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 20]` for :math:`i=1,2`.
-
-    .. figure:: figures/Exp2.png
-        :alt: Exp2 function
-        :align: center
-
-        **Two-dimensional Exp2 function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = [1, 10.]`
 
@@ -2335,7 +2383,7 @@ class Exp2(Benchmark):
 class Exponential(Benchmark):
 
     """
-    Exponential test objective function.
+    Exponential objective function.
 
     This class defines the Exponential global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2345,13 +2393,6 @@ class Exponential(Benchmark):
         f_{\\text{Exponential}}(\\mathbf{x}) = -e^{-0.5 \\sum_{i=1}^n x_i^2}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 1]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Exponential.png
-        :alt: Exponential function
-        :align: center
-
-        **Two-dimensional Exponential function**
-
 
     *Global optimum*: :math:`f(x_i) = -1` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -2375,7 +2416,7 @@ class Exponential(Benchmark):
 class FreudensteinRoth(Benchmark):
 
     """
-    FreudensteinRoth test objective function.
+    FreudensteinRoth objective function.
 
     This class defines the Freudenstein & Roth global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2385,13 +2426,6 @@ class FreudensteinRoth(Benchmark):
         f_{\\text{FreudensteinRoth}}(\\mathbf{x}) =  \\left\{x_1 - 13 + \\left[(5 - x_2)x_2 - 2 \\right] x_2 \\right\}^2 + \\left \{x_1 - 29 + \\left[(x_2 + 1)x_2 - 14 \\right] x_2 \\right\}^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/FreudensteinRoth.png
-        :alt: FreudensteinRoth function
-        :align: center
-
-        **Two-dimensional FreudensteinRoth function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [5, 4]`
 
@@ -2418,7 +2452,7 @@ class FreudensteinRoth(Benchmark):
 class Gear(Benchmark):
 
     """
-    Gear test objective function.
+    Gear objective function.
 
     This class defines the Gear global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2452,7 +2486,7 @@ class Gear(Benchmark):
 class Giunta(Benchmark):
 
     """
-    Giunta test objective function.
+    Giunta objective function.
 
     This class defines the Giunta global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2462,13 +2496,6 @@ class Giunta(Benchmark):
         f_{\\text{Giunta}}(\\mathbf{x}) = 0.6 + \\sum_{i=1}^{n} \\left[\\sin^{2}\\left(1 - \\frac{16}{15} x_i\\right) - \\frac{1}{50} \\sin\\left(4 - \\frac{64}{15} x_i\\right) - \\sin\\left(1 - \\frac{16}{15} x_i\\right)\\right]
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 1]` for :math:`i=1,2`.
-
-    .. figure:: figures/Giunta.png
-        :alt: Giunta function
-        :align: center
-
-        **Two-dimensional Giunta function**
-
 
     *Global optimum*: :math:`f(x_i) = 0.06447042053690566` for :math:`\\mathbf{x} = [0.4673200277395354, 0.4673200169591304]`
 
@@ -2492,7 +2519,7 @@ class Giunta(Benchmark):
 class GoldsteinPrice(Benchmark):
 
     """
-    Goldstein-Price test objective function.
+    Goldstein-Price objective function.
 
     This class defines the Goldstein-Price global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2503,13 +2530,6 @@ class GoldsteinPrice(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-2, 2]` for :math:`i=1,2`.
-
-    .. figure:: figures/GoldsteinPrice.png
-        :alt: Goldstein-Price function
-        :align: center
-
-        **Two-dimensional Goldstein-Price function**
-
 
     *Global optimum*: :math:`f(x_i) = 3` for :math:`\\mathbf{x} = [0, -1]`
 
@@ -2538,7 +2558,7 @@ class GoldsteinPrice(Benchmark):
 class Griewank(Benchmark):
 
     """
-    Griewank test objective function.
+    Griewank objective function.
 
     This class defines the Griewank global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2548,13 +2568,6 @@ class Griewank(Benchmark):
         f_{\\text{Griewank}}(\\mathbf{x}) = \\frac{1}{4000}\\sum_{i=1}^n x_i^2 - \\prod_{i=1}^n\\cos\\left(\\frac{x_i}{\\sqrt{i}}\\right) + 1
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-600, 600]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Griewank.png
-        :alt: Griewank function
-        :align: center
-
-        **Two-dimensional Griewank function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -2581,7 +2594,7 @@ class Griewank(Benchmark):
 class Gulf(Benchmark):
 
     """
-    Gulf test objective function.
+    Gulf objective function.
 
     This class defines the Gulf global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2625,7 +2638,7 @@ class Gulf(Benchmark):
 class Hansen(Benchmark):
 
     """
-    Hansen test objective function.
+    Hansen objective function.
 
     This class defines the Hansen global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2635,13 +2648,6 @@ class Hansen(Benchmark):
         f_{\\text{Hansen}}(\\mathbf{x}) = \\left[ \\sum_{i=0}^4(i+1)\\cos(ix_1+i+1)\\right ] \\left[\\sum_{j=0}^4(j+1)\\cos[(j+2)x_2+j+1])\\right ]
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/Hansen.png
-        :alt: Hansen function
-        :align: center
-
-        **Two-dimensional Hansen function**
-
 
     *Global optimum*: :math:`f(x_i) = -176.54179` for :math:`\\mathbf{x} = [-7.58989583, -7.70831466]`.
 
@@ -2668,7 +2674,7 @@ class Hansen(Benchmark):
 class Hartmann3(Benchmark):
 
     """
-    Hartmann3 test objective function.
+    Hartmann3 objective function.
 
     This class defines the Hartmann3 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2726,7 +2732,7 @@ class Hartmann3(Benchmark):
 class Hartmann6(Benchmark):
 
     """
-    Hartmann6 test objective function.
+    Hartmann6 objective function.
 
     This class defines the Hartmann6 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2809,7 +2815,7 @@ class Hartmann6(Benchmark):
 class HelicalValley(Benchmark):
 
     """
-    HelicalValley test objective function.
+    HelicalValley objective function.
 
     This class defines the HelicalValley global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2849,7 +2855,7 @@ class HelicalValley(Benchmark):
 class HimmelBlau(Benchmark):
 
     """
-    HimmelBlau test objective function.
+    HimmelBlau objective function.
 
     This class defines the HimmelBlau global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2859,12 +2865,6 @@ class HimmelBlau(Benchmark):
         f_{\\text{HimmelBlau}}(\\mathbf{x}) = (x_1^2 + x_2 - 11)^2 + (x_1 + x_2^2 -7)^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-6, 6]` for :math:`i=1,2`.
-
-    .. figure:: figures/HimmelBlau.png
-        :alt: HimmelBlau function
-        :align: center
-
-        **Two-dimensional HimmelBlau function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [3, 2]`
 
@@ -2887,7 +2887,7 @@ class HimmelBlau(Benchmark):
 class HolderTable(Benchmark):
 
     """
-    HolderTable test objective function.
+    HolderTable objective function.
 
     This class defines the HolderTable global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2897,13 +2897,6 @@ class HolderTable(Benchmark):
         f_{\\text{HolderTable}}(\\mathbf{x}) = - \\left|{e^{\\left|{1 - \\frac{\\sqrt{x_{1}^{2} + x_{2}^{2}}}{\\pi} }\\right|} \\sin\\left(x_{1}\\right) \\cos\\left(x_{2}\\right)}\\right|
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/HolderTable.png
-        :alt: HolderTable function
-        :align: center
-
-        **Two-dimensional HolderTable function**
-
 
     *Global optimum*: :math:`f(x_i) = -19.20850256788675` for :math:`x_i = \\pm 9.664590028909654` for :math:`i=1,2`
 
@@ -2930,7 +2923,7 @@ class HolderTable(Benchmark):
 class Holzman(Benchmark):
 
     """
-    Holzman test objective function.
+    Holzman objective function.
 
     This class defines the Holzman global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2975,7 +2968,7 @@ class Holzman(Benchmark):
 class Hosaki(Benchmark):
 
     """
-    Hosaki test objective function.
+    Hosaki objective function.
 
     This class defines the Hosaki global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -2984,16 +2977,11 @@ class Hosaki(Benchmark):
 
         f_{\\text{Hosaki}}(\\mathbf{x}) = \\left ( 1 - 8x_1 + 7x_1^2 - \\frac{7}{3}x_1^3 + \\frac{1}{4}x_1^4 \\right )x_2^2e^{-x_1}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 10]` for :math:`i=1,2`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0,
+    10]` for :math:`i=1,2`.
 
-    .. figure:: figures/Hosaki.png
-        :alt: Hosaki function
-        :align: center
-
-        **Two-dimensional Hosaki function**
-
-
-    *Global optimum*: :math:`f(x_i) = -2.3458` for :math:`\\mathbf{x} = [4, 2]`.
+    *Global optimum*: :math:`f(x_i) = -2.3458115` for :math:`\\mathbf{x} = [4,
+    2]`.
 
     """
 
@@ -3004,7 +2992,7 @@ class Hosaki(Benchmark):
         self.custom_bounds = [(0, 5), (0, 5)]
 
         self.global_optimum = [[4, 2]]
-        self.fglob = -2.3458
+        self.fglob = -2.3458115
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -3017,7 +3005,7 @@ class Hosaki(Benchmark):
 class Infinity(Benchmark):
 
     """
-    Infinity test objective function.
+    Infinity objective function.
 
     This class defines the Infinity global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3027,13 +3015,6 @@ class Infinity(Benchmark):
         f_{\\text{Infinity}}(\\mathbf{x}) = \\sum_{i=1}^{n} x_i^{6} \\left [ \\sin\\left ( \\frac{1}{x_i} \\right )+2 \\right ]
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 1]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Infinity.png
-        :alt: Infinity function
-        :align: center
-
-        **Two-dimensional Infinity function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -3057,7 +3038,7 @@ class Infinity(Benchmark):
 class JennrichSampson(Benchmark):
 
     """
-    Jennrich-Sampson test objective function.
+    Jennrich-Sampson objective function.
 
     This class defines the Jennrich-Sampson global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3067,13 +3048,6 @@ class JennrichSampson(Benchmark):
         f_{\\text{JennrichSampson}}(\\mathbf{x}) = \\sum_{i=1}^{10} \\left [2 + 2i - (e^{ix_1} + e^{ix_2}) \\right ]^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 1]` for :math:`i=1,2`.
-
-    .. figure:: figures/JennrichSampson.png
-        :alt: Jennrich-Sampson function
-        :align: center
-
-        **Two-dimensional Jennrich-Sampson function**
-
 
     *Global optimum*: :math:`f(x_i) = 124.3621824` for :math:`\\mathbf{x} = [0.257825, 0.257825]`.
 
@@ -3098,7 +3072,7 @@ class JennrichSampson(Benchmark):
 class Judge(Benchmark):
 
     """
-    Judge test objective function.
+    Judge objective function.
 
     This class defines the Judge global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3117,13 +3091,6 @@ class Judge(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/Judge.png
-        :alt: Judge function
-        :align: center
-
-        **Two-dimensional Judge function**
-
 
     *Global optimum*: :math:`f(x_i) = 16.0817307` for :math:`\\mathbf{x} = [0.86479, 1.2357]`.
 
@@ -3159,7 +3126,7 @@ class Judge(Benchmark):
 class Katsuura(Benchmark):
 
     """
-    Katsuura test objective function.
+    Katsuura objective function.
 
     This class defines the Katsuura global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3171,13 +3138,6 @@ class Katsuura(Benchmark):
     Where, in this exercise, :math:`d = 32`.
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 100]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Katsuura.png
-        :alt: Katsuura function
-        :align: center
-
-        **Two-dimensional Katsuura function**
-
 
     *Global optimum*: :math:`f(x_i) = 1` for :math:`x_i = 0` for :math:`i=1,...,n`.
 
@@ -3206,7 +3166,7 @@ class Katsuura(Benchmark):
 class Keane(Benchmark):
 
     """
-    Keane test objective function.
+    Keane objective function.
 
     This class defines the Keane global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3216,13 +3176,6 @@ class Keane(Benchmark):
         f_{\\text{Keane}}(\\mathbf{x}) = \\frac{\\sin^2(x_1 - x_2)\\sin^2(x_1 + x_2)}{\\sqrt{x_1^2 + x_2^2}}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/Keane.png
-        :alt: Keane function
-        :align: center
-
-        **Two-dimensional Keane function**
-
 
     *Global optimum*: :math:`f(x_i) = 0.0` for :math:`\\mathbf{x} = [7.85396153, 7.85396135]`.
 
@@ -3247,7 +3200,7 @@ class Keane(Benchmark):
 class Kowalik(Benchmark):
 
     """
-    Kowalik test objective function.
+    Kowalik objective function.
 
     This class defines the Kowalik global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3294,7 +3247,7 @@ class Kowalik(Benchmark):
 class Langermann(Benchmark):
 
     """
-    Langermann test objective function.
+    Langermann objective function.
 
     This class defines the Langermann global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3304,13 +3257,6 @@ class Langermann(Benchmark):
         f_{\\text{Langermann}}(\\mathbf{x}) = - \\sum_{i=1}^{5} \\frac{c_i \\cos\\left\{\\pi \\left[\\left(x_{1}- a_i\\right)^{2} + \\left(x_{2} - b_i \\right)^{2}\\right]\\right\}}{e^{\\frac{\\left( x_{1} - a_i\\right)^{2} + \\left( x_{2} - b_i\\right)^{2}}{\\pi}}}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/Langermann.png
-        :alt: Langermann function
-        :align: center
-
-        **Two-dimensional Langermann function**
-
 
     *Global optimum*: :math:`f(x_i) = -5.1621259` for :math:`\\mathbf{x} = [2.00299219, 1.006096]`
 
@@ -3339,7 +3285,7 @@ class Langermann(Benchmark):
 class LennardJones(Benchmark):
 
     """
-    LennardJones test objective function.
+    LennardJones objective function.
 
     This class defines the Lennard-Jones global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3418,7 +3364,7 @@ class LennardJones(Benchmark):
 class Leon(Benchmark):
 
     """
-    Leon test objective function.
+    Leon objective function.
 
     This class defines the Leon global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3428,13 +3374,6 @@ class Leon(Benchmark):
         f_{\\text{Leon}}(\\mathbf{x}) = \\left(1 - x_{1}\\right)^{2} + 100 \\left(x_{2} - x_{1}^{2} \\right)^{2}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1.2, 1.2]` for :math:`i=1,2`.
-
-    .. figure:: figures/Leon.png
-        :alt: Leon function
-        :align: center
-
-        **Two-dimensional Leon function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 1` for :math:`i=1,2`
 
@@ -3457,7 +3396,7 @@ class Leon(Benchmark):
 class Levy03(Benchmark):
 
     """
-    Levy 3 test objective function.
+    Levy 3 objective function.
 
     This class defines the Levy 3 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3474,13 +3413,6 @@ class Levy03(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Levy03.png
-        :alt: Levy 3 function
-        :align: center
-
-        **Two-dimensional Levy 3 function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 1` for :math:`i=1,...,n`
 
@@ -3507,7 +3439,7 @@ class Levy03(Benchmark):
 class Levy05(Benchmark):
 
     """
-    Levy 5 test objective function.
+    Levy 5 objective function.
 
     This class defines the Levy 5 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3518,13 +3450,6 @@ class Levy05(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Levy05.png
-        :alt: Levy 5 function
-        :align: center
-
-        **Two-dimensional Levy 5 function**
-
 
     *Global optimum*: :math:`f(x_i) = -176.1375779` for :math:`\\mathbf{x} = [-1.30685, -1.42485]`.
 
@@ -3552,7 +3477,7 @@ class Levy05(Benchmark):
 class Levy13(Benchmark):
 
     """
-    Levy13 test objective function.
+    Levy13 objective function.
 
     This class defines the Levy13 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3563,13 +3488,6 @@ class Levy13(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/Levy13.png
-        :alt: Levy13 function
-        :align: center
-
-        **Two-dimensional Levy13 function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 1` for :math:`i=1,2`
 
@@ -3596,7 +3514,7 @@ class Levy13(Benchmark):
 class Matyas(Benchmark):
 
     """
-    Matyas test objective function.
+    Matyas objective function.
 
     This class defines the Matyas global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3607,13 +3525,6 @@ class Matyas(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/Matyas.png
-        :alt: Matyas function
-        :align: center
-
-        **Two-dimensional Matyas function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,2`
 
@@ -3636,7 +3547,7 @@ class Matyas(Benchmark):
 class McCormick(Benchmark):
 
     """
-    McCormick test objective function.
+    McCormick objective function.
 
     This class defines the McCormick global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3647,13 +3558,6 @@ class McCormick(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_1 \\in [-1.5, 4]`, :math:`x_2 \\in [-3, 4]`.
-
-    .. figure:: figures/McCormick.png
-        :alt: McCormick function
-        :align: center
-
-        **Two-dimensional McCormick function**
-
 
     *Global optimum*: :math:`f(x_i) = -1.913222954981037` for :math:`\\mathbf{x} = [-0.5471975602214493, -1.547197559268372]`
 
@@ -3677,7 +3581,7 @@ class McCormick(Benchmark):
 class Meyer(Benchmark):
 
     """
-    Meyer test objective function.
+    Meyer objective function.
 
     """
 
@@ -3711,7 +3615,7 @@ class Meyer(Benchmark):
 class Michalewicz(Benchmark):
 
     """
-    Michalewicz test objective function.
+    Michalewicz objective function.
 
     This class defines the Michalewicz global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3724,13 +3628,6 @@ class Michalewicz(Benchmark):
     Where, in this exercise, :math:`m = 10`.
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, \\pi]` for :math:`i=1,2`.
-
-    .. figure:: figures/Michalewicz.png
-        :alt: Michalewicz function
-        :align: center
-
-        **Two-dimensional Michalewicz function**
-
 
     *Global optimum*: :math:`f(x_i) = -1.8013` for :math:`x_i = 0` for :math:`i=1,2`
 
@@ -3755,7 +3652,7 @@ class Michalewicz(Benchmark):
 class MieleCantrell(Benchmark):
 
     """
-    Miele-Cantrell test objective function.
+    Miele-Cantrell objective function.
 
     This class defines the Miele-Cantrell global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3789,7 +3686,7 @@ class MieleCantrell(Benchmark):
 class Mishra01(Benchmark):
 
     """
-    Mishra 1 test objective function.
+    Mishra 1 objective function.
 
     This class defines the Mishra 1 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3800,13 +3697,6 @@ class Mishra01(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 1]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Mishra01.png
-        :alt: Mishra 1 function
-        :align: center
-
-        **Two-dimensional Mishra 1 function**
-
 
     *Global optimum*: :math:`f(x_i) = 2` for :math:`x_i = 1` for :math:`i=1,...,n`
 
@@ -3832,7 +3722,7 @@ class Mishra01(Benchmark):
 class Mishra02(Benchmark):
 
     """
-    Mishra 2 test objective function.
+    Mishra 2 objective function.
 
     This class defines the Mishra 2 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3843,13 +3733,6 @@ class Mishra02(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 1]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Mishra02.png
-        :alt: Mishra 2 function
-        :align: center
-
-        **Two-dimensional Mishra 2 function**
-
 
     *Global optimum*: :math:`f(x_i) = 2` for :math:`x_i = 1` for :math:`i=1,...,n`
 
@@ -3875,7 +3758,7 @@ class Mishra02(Benchmark):
 class Mishra03(Benchmark):
 
     """
-    Mishra 3 test objective function.
+    Mishra 3 objective function.
 
     This class defines the Mishra 3 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3886,13 +3769,6 @@ class Mishra03(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/Mishra03.png
-        :alt: Mishra 3 function
-        :align: center
-
-        **Two-dimensional Mishra 3 function**
-
 
     *Global optimum*: :math:`f(x_i) = -0.1999` for :math:`x_i = {-9.99378322, -9.99918927}`
 
@@ -3916,7 +3792,7 @@ class Mishra03(Benchmark):
 class Mishra04(Benchmark):
 
     """
-    Mishra 4 test objective function.
+    Mishra 4 objective function.
 
     This class defines the Mishra 4 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3927,13 +3803,6 @@ class Mishra04(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/Mishra04.png
-        :alt: Mishra 4 function
-        :align: center
-
-        **Two-dimensional Mishra 4 function**
-
 
     *Global optimum*: :math:`f(x_i) = -0.17767` for :math:`x_i = {-8.71499636, -9.0533148}`
 
@@ -3957,7 +3826,7 @@ class Mishra04(Benchmark):
 class Mishra05(Benchmark):
 
     """
-    Mishra 5 test objective function.
+    Mishra 5 objective function.
 
     This class defines the Mishra 5 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -3968,13 +3837,6 @@ class Mishra05(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/Mishra05.png
-        :alt: Mishra 5 function
-        :align: center
-
-        **Two-dimensional Mishra 5 function**
-
 
     *Global optimum*: :math:`f(x_i) = -0.119829` for :math:`\\mathbf{x} = [-1.98682, -10]`
 
@@ -3999,7 +3861,7 @@ class Mishra05(Benchmark):
 class Mishra06(Benchmark):
 
     """
-    Mishra 6 test objective function.
+    Mishra 6 objective function.
 
     This class defines the Mishra 6 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4010,13 +3872,6 @@ class Mishra06(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/Mishra06.png
-        :alt: Mishra 6 function
-        :align: center
-
-        **Two-dimensional Mishra 6 function**
-
 
     *Global optimum*: :math:`f(x_i) = -2.28395` for :math:`\\mathbf{x} = [2.88631, 1.82326]`
 
@@ -4042,7 +3897,7 @@ class Mishra06(Benchmark):
 class Mishra07(Benchmark):
 
     """
-    Mishra 7 test objective function.
+    Mishra 7 objective function.
 
     This class defines the Mishra 7 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4053,13 +3908,6 @@ class Mishra07(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Mishra07.png
-        :alt: Mishra 7 function
-        :align: center
-
-        **Two-dimensional Mishra 7 function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = \\sqrt{n}` for :math:`i=1,...,n`
 
@@ -4084,7 +3932,7 @@ class Mishra07(Benchmark):
 class Mishra08(Benchmark):
 
     """
-    Mishra 8 test objective function.
+    Mishra 8 objective function.
 
     This class defines the Mishra 8 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4095,13 +3943,6 @@ class Mishra08(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/Mishra08.png
-        :alt: Mishra 8 function
-        :align: center
-
-        **Two-dimensional Mishra 8 function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [2, -3]`
 
@@ -4130,7 +3971,7 @@ class Mishra08(Benchmark):
 class Mishra09(Benchmark):
 
     """
-    Mishra 9 test objective function.
+    Mishra 9 objective function.
 
     This class defines the Mishra 9 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4178,7 +4019,7 @@ class Mishra09(Benchmark):
 class Mishra10(Benchmark):
 
     """
-    Mishra 10 test objective function.
+    Mishra 10 objective function.
 
     This class defines the Mishra 10 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4189,13 +4030,6 @@ class Mishra10(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/Mishra10.png
-        :alt: Mishra 10 function
-        :align: center
-
-        **Two-dimensional Mishra 10 function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [2, 2]`
 
@@ -4221,7 +4055,7 @@ class Mishra10(Benchmark):
 class Mishra11(Benchmark):
 
     """
-    Mishra 11 test objective function.
+    Mishra 11 objective function.
 
     This class defines the Mishra 11 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4232,13 +4066,6 @@ class Mishra11(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Mishra11.png
-        :alt: Mishra 11 function
-        :align: center
-
-        **Two-dimensional Mishra 11 function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -4264,7 +4091,7 @@ class Mishra11(Benchmark):
 class MultiModal(Benchmark):
 
     """
-    MultiModal test objective function.
+    MultiModal objective function.
 
     This class defines the MultiModal global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4275,13 +4102,6 @@ class MultiModal(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/MultiModal.png
-        :alt: MultiModal function
-        :align: center
-
-        **Two-dimensional MultiModal function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -4306,7 +4126,7 @@ class MultiModal(Benchmark):
 class NeedleEye(Benchmark):
 
     """
-    NeedleEye test objective function.
+    NeedleEye objective function.
 
     This class defines the Needle-Eye global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4320,13 +4140,6 @@ class NeedleEye(Benchmark):
     Where, in this exercise, :math:`eye = 0.0001`.
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/NeedleEye.png
-        :alt: NeedleEye function
-        :align: center
-
-        **Two-dimensional NeedleEye function**
-
 
     *Global optimum*: :math:`f(x_i) = 1` for :math:`x_i = 0.` for :math:`i=1,...,n`
 
@@ -4363,7 +4176,7 @@ class NeedleEye(Benchmark):
 class NewFunction01(Benchmark):
 
     """
-    NewFunction01 test objective function.
+    NewFunction01 objective function.
 
     This class defines the NewFunction01 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4375,14 +4188,7 @@ class NewFunction01(Benchmark):
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
 
-    .. figure:: figures/NewFunction01.png
-        :alt: NewFunction01 function
-        :align: center
-
-        **Two-dimensional NewFunction01 function**
-
-
-    *Global optimum*: :math:`f(x_i) = -0.184642678` for :math:`\\mathbf{x} = [-8.46669057, -9.99982177]`
+    *Global optimum*: :math:`f(x_i) = -0.18459899925` for :math:`\\mathbf{x} = [-8.46669057, -9.99982177]`
 
     """
 
@@ -4392,7 +4198,7 @@ class NewFunction01(Benchmark):
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [[-8.46669057, -9.99982177]]
-        self.fglob = -0.184642678
+        self.fglob = -0.18459899925
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -4404,7 +4210,7 @@ class NewFunction01(Benchmark):
 class NewFunction02(Benchmark):
 
     """
-    NewFunction02 test objective function.
+    NewFunction02 objective function.
 
     This class defines the NewFunction02 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4416,14 +4222,7 @@ class NewFunction02(Benchmark):
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
 
-    .. figure:: figures/NewFunction02.png
-        :alt: NewFunction02 function
-        :align: center
-
-        **Two-dimensional NewFunction02 function**
-
-
-    *Global optimum*: :math:`f(x_i) = -0.19937167` for :math:`\\mathbf{x} = [-9.94103375, -9.99771235]`
+    *Global optimum*: :math:`f(x_i) = -0.19933159253` for :math:`\\mathbf{x} = [-9.94103375, -9.99771235]`
 
     """
 
@@ -4433,7 +4232,7 @@ class NewFunction02(Benchmark):
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [[-9.94103375, -9.99771235]]
-        self.fglob = -0.19937167547710213
+        self.fglob = -0.19933159253
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -4445,7 +4244,7 @@ class NewFunction02(Benchmark):
 class NewFunction03(Benchmark):
 
     """
-    NewFunction03 test objective function.
+    NewFunction03 objective function.
 
     This class defines the NewFunction03 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4456,13 +4255,6 @@ class NewFunction03(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/NewFunction03.png
-        :alt: NewFunction03 function
-        :align: center
-
-        **Two-dimensional NewFunction03 function**
-
 
     *Global optimum*: :math:`f(x_i) = -1.019829` for :math:`\\mathbf{x} = [-1.98682, -10]`
 
@@ -4490,7 +4282,7 @@ class NewFunction03(Benchmark):
 class OddSquare(Benchmark):
 
     """
-    Odd Square test objective function.
+    Odd Square objective function.
 
     This class defines the Odd Square global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4510,13 +4302,6 @@ class OddSquare(Benchmark):
     And :math:`\\mathbf{b} = [1, 1.3, 0.8, -0.4, -1.3, 1.6, -0.2, -0.6, 0.5, 1.4, 1, 1.3, 0.8, -0.4, -1.3, 1.6, -0.2, -0.6, 0.5, 1.4]`
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5 \\pi, 5 \\pi]` for :math:`i=1,...,n` and :math:`n \\leq 20`.
-
-    .. figure:: figures/OddSquare.png
-        :alt: Odd Square function
-        :align: center
-
-        **Two-dimensional Odd Square function**
-
 
     *Global optimum*: :math:`f(x_i) = -1.0084` for :math:`\\mathbf{x} \\approx b`
 
@@ -4549,7 +4334,7 @@ class OddSquare(Benchmark):
 class Parsopoulos(Benchmark):
 
     """
-    Parsopoulos test objective function.
+    Parsopoulos objective function.
 
     This class defines the Parsopoulos global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4561,14 +4346,7 @@ class Parsopoulos(Benchmark):
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,2`.
 
-    .. figure:: figures/Parsopoulos.png
-        :alt: Parsopoulos function
-        :align: center
-
-        **Two-dimensional Parsopoulos function**
-
-
-    *Global optimum*: This function has inï¬nite number of global minima in R2, at points :math:`\\left(k\\frac{\\pi}{2}, \\lambda \\pi \\right)`,
+    *Global optimum*: This function has innite number of global minima in R2, at points :math:`\\left(k\\frac{\\pi}{2}, \\lambda \\pi \\right)`,
     where :math:`k = \\pm1, \\pm3, ...` and :math:`\\lambda = 0, \\pm1, \\pm2, ...`
 
     In the given domain problem, function has 12 global minima all equal to zero.
@@ -4591,7 +4369,7 @@ class Parsopoulos(Benchmark):
 class Pathological(Benchmark):
 
     """
-    Pathological test objective function.
+    Pathological objective function.
 
     This class defines the Pathological global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4602,13 +4380,6 @@ class Pathological(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
-
-    .. figure:: figures/Pathological.png
-        :alt: Pathological function
-        :align: center
-
-        **Two-dimensional Pathological function**
-
 
     *Global optimum*: :math:`f(x_i) = 0.` for :math:`x_i = 0` for :math:`i=1,2`
 
@@ -4635,7 +4406,7 @@ class Pathological(Benchmark):
 class Paviani(Benchmark):
 
     """
-    Paviani test objective function.
+    Paviani objective function.
 
     This class defines the Paviani global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4668,7 +4439,7 @@ class Paviani(Benchmark):
 class Penalty01(Benchmark):
 
     """
-    Penalty 1 test objective function.
+    Penalty 1 objective function.
 
     This class defines the Penalty 1 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4693,12 +4464,6 @@ class Penalty01(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-50, 50]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Penalty01.png
-        :alt: Penalty 1 function
-        :align: center
-
-        **Two-dimensional Penalty 1 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = -1` for :math:`i=1,...,n`
 
@@ -4734,7 +4499,7 @@ class Penalty01(Benchmark):
 class Penalty02(Benchmark):
 
     """
-    Penalty 2 test objective function.
+    Penalty 2 objective function.
 
     This class defines the Penalty 2 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4753,12 +4518,6 @@ class Penalty02(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-50, 50]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Penalty02.png
-        :alt: Penalty 2 function
-        :align: center
-
-        **Two-dimensional Penalty 2 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 1` for :math:`i=1,...,n`
 
@@ -4793,7 +4552,7 @@ class Penalty02(Benchmark):
 class PenHolder(Benchmark):
 
     """
-    PenHolder test objective function.
+    PenHolder objective function.
 
     This class defines the PenHolder global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4804,13 +4563,6 @@ class PenHolder(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-11, 11]` for :math:`i=1,2`.
-
-    .. figure:: figures/PenHolder.png
-        :alt: PenHolder function
-        :align: center
-
-        **Two-dimensional PenHolder function**
-
 
     *Global optimum*: :math:`f(x_i) = -0.9635348327265058` for :math:`x_i = \\pm 9.646167671043401` for :math:`i=1,2`
 
@@ -4835,7 +4587,7 @@ class PenHolder(Benchmark):
 class PermFunction01(Benchmark):
 
     """
-    PermFunction 1 test objective function.
+    PermFunction 1 objective function.
 
     This class defines the Perm Function 1 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4846,13 +4598,6 @@ class PermFunction01(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-n, n+1]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/PermFunction01.png
-        :alt: PermFunction 1 function
-        :align: center
-
-        **Two-dimensional PermFunction 1 function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = i` for :math:`i=1,...,n`
 
@@ -4884,7 +4629,7 @@ class PermFunction01(Benchmark):
 class PermFunction02(Benchmark):
 
     """
-    PermFunction 2 test objective function.
+    PermFunction 2 objective function.
 
     This class defines the Perm Function 2 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4895,13 +4640,6 @@ class PermFunction02(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-n, n+1]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/PermFunction02.png
-        :alt: PermFunction 2 function
-        :align: center
-
-        **Two-dimensional PermFunction 2 function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = \\frac{1}{i}` for :math:`i=1,...,n`
 
@@ -4933,7 +4671,7 @@ class PermFunction02(Benchmark):
 class Pinter(Benchmark):
 
     """
-    Pinter test objective function.
+    Pinter objective function.
 
     This class defines the Pinter global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -4953,13 +4691,6 @@ class Pinter(Benchmark):
     Where :math:`x_0 = x_n` and :math:`x_{n+1} = x_1`.
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Pinter.png
-        :alt: Pinter function
-        :align: center
-
-        **Two-dimensional Pinter function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -5006,7 +4737,7 @@ class Pinter(Benchmark):
 class Plateau(Benchmark):
 
     """
-    Plateau test objective function.
+    Plateau objective function.
 
     This class defines the Plateau global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5017,13 +4748,6 @@ class Plateau(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5.12, 5.12]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Plateau.png
-        :alt: Plateau function
-        :align: center
-
-        **Two-dimensional Plateau function**
-
 
     *Global optimum*: :math:`f(x_i) = 30` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -5047,7 +4771,7 @@ class Plateau(Benchmark):
 class Powell(Benchmark):
 
     """
-    Powell test objective function.
+    Powell objective function.
 
     This class defines the Powell global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5080,7 +4804,7 @@ class Powell(Benchmark):
 class PowerSum(Benchmark):
 
     """
-    Power sum test objective function.
+    Power sum objective function.
 
     This class defines the Power Sum global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5122,7 +4846,7 @@ class PowerSum(Benchmark):
 class Price01(Benchmark):
 
     """
-    Price 1 test objective function.
+    Price 1 objective function.
 
     This class defines the Price 1 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5133,13 +4857,6 @@ class Price01(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-500, 500]` for :math:`i=1,2`.
-
-    .. figure:: figures/Price01.png
-        :alt: Price 1 function
-        :align: center
-
-        **Two-dimensional Price 1 function**
-
 
     *Global optimum*: :math:`f(x_i) = 0.0` for :math:`\\mathbf{x} = [5, 5]` or :math:`\\mathbf{x} = [5, -5]`
     or :math:`\\mathbf{x} = [-5, 5]` or :math:`\\mathbf{x} = [-5, -5]`
@@ -5165,7 +4882,7 @@ class Price01(Benchmark):
 class Price02(Benchmark):
 
     """
-    Price 2 test objective function.
+    Price 2 objective function.
 
     This class defines the Price 2 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5176,13 +4893,6 @@ class Price02(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Price02.png
-        :alt: Price 2 function
-        :align: center
-
-        **Two-dimensional Price 2 function**
-
 
     *Global optimum*: :math:`f(x_i) = 0.9` for :math:`x_i = 0` for :math:`i=1,2`
 
@@ -5205,7 +4915,7 @@ class Price02(Benchmark):
 class Price03(Benchmark):
 
     """
-    Price 3 test objective function.
+    Price 3 objective function.
 
     This class defines the Price 3 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5215,13 +4925,6 @@ class Price03(Benchmark):
        f_{\\text{Price03}}(\\mathbf{x}) = 100(x_2 - x_1^2)^2 + \\left[6.4(x_2 - 0.5)^2 - x_1 - 0.6 \\right]^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-50, 50]` for :math:`i=1,2`.
-
-    .. figure:: figures/Price03.png
-        :alt: Price 3 function
-        :align: center
-
-        **Two-dimensional Price 3 function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [-5, -5]`, :math:`\\mathbf{x} = [-5, 5]`,
     :math:`\\mathbf{x} = [5, -5]`, :math:`\\mathbf{x} = [5, 5]`
@@ -5247,7 +4950,7 @@ class Price03(Benchmark):
 class Price04(Benchmark):
 
     """
-    Price 4 test objective function.
+    Price 4 objective function.
 
     This class defines the Price 4 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5257,13 +4960,6 @@ class Price04(Benchmark):
        f_{\\text{Price04}}(\\mathbf{x}) = (2x_1^3x_2 - x_2^3)^2 + (6x_1 - x_2^2 + x_2)^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-50, 50]` for :math:`i=1,2`.
-
-    .. figure:: figures/Price04.png
-        :alt: Price 4 function
-        :align: center
-
-        **Two-dimensional Price 4 function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [0, 0]`, :math:`\\mathbf{x} = [2, 4]` and
     :math:`\\mathbf{x} = [1.464, -2.506]`
@@ -5289,7 +4985,7 @@ class Price04(Benchmark):
 class Qing(Benchmark):
 
     """
-    Qing test objective function.
+    Qing objective function.
 
     This class defines the Qing global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5300,13 +4996,6 @@ class Qing(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-500, 500]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Qing.png
-        :alt: Qing function
-        :align: center
-
-        **Two-dimensional Qing function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = \\pm \\sqrt(i)` for :math:`i=1,...,n`
 
@@ -5332,7 +5021,7 @@ class Qing(Benchmark):
 class Quadratic(Benchmark):
 
     """
-    Quadratic test objective function.
+    Quadratic objective function.
 
     This class defines the Quadratic global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5343,13 +5032,6 @@ class Quadratic(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/Quadratic.png
-        :alt: Quadratic function
-        :align: center
-
-        **Two-dimensional Quadratic function**
-
 
     *Global optimum*: :math:`f(x_i) = -3873.72418` for :math:`\\mathbf{x} = [0.19388, 0.48513]`
 
@@ -5374,7 +5056,7 @@ class Quadratic(Benchmark):
 class Quintic(Benchmark):
 
     """
-    Quintic test objective function.
+    Quintic objective function.
 
     This class defines the Quintic global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5385,13 +5067,6 @@ class Quintic(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Quintic.png
-        :alt: Quintic function
-        :align: center
-
-        **Two-dimensional Quintic function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = -1` for :math:`i=1,...,n`
 
@@ -5417,7 +5092,7 @@ class Quintic(Benchmark):
 class Rana(Benchmark):
 
     """
-    Rana test objective function.
+    Rana objective function.
 
     This class defines the Rana global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5427,12 +5102,6 @@ class Rana(Benchmark):
        f_{\\text{Rana}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\left[x_{i} \\sin\\left(\\sqrt{\\lvert{x_{1} - x_{i} + 1}\\rvert}\\right) \\cos\\left(\\sqrt{\\lvert{x_{1} + x_{i} + 1}\\rvert}\\right) + \\left(x_{1} + 1\\right) \\sin\\left(\\sqrt{\\lvert{x_{1} + x_{i} + 1}\\rvert}\\right) \\cos\\left(\\sqrt{\\lvert{x_{1} - x_{i} + 1}\\rvert}\\right)\\right]
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-500.000001, 500.000001]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Rana.png
-        :alt: Rana function
-        :align: center
-
-        **Two-dimensional Rana function**
 
     *Global optimum*: :math:`f(x_i) = -928.5478` for :math:`x_i = -500` for :math:`i=1,...,n`
 
@@ -5459,7 +5128,7 @@ class Rana(Benchmark):
 class Rastrigin(Benchmark):
 
     """
-    Rastrigin test objective function.
+    Rastrigin objective function.
 
     This class defines the Rastrigin global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5469,12 +5138,6 @@ class Rastrigin(Benchmark):
        f_{\\text{Rastrigin}}(\\mathbf{x}) = 10n \\sum_{i=1}^n \\left[ x_i^2 - 10 \\cos(2\\pi x_i) \\right]
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5.12, 5.12]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Rastrigin.png
-        :alt: Rastrigin function
-        :align: center
-
-        **Two-dimensional Rastrigin function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -5497,7 +5160,7 @@ class Rastrigin(Benchmark):
 class Ratkowsky01(Benchmark):
 
     """
-    Ratkowsky test objective function.
+    Ratkowsky objective function.
 
     """
 
@@ -5527,7 +5190,7 @@ class Ratkowsky01(Benchmark):
 class Ratkowsky02(Benchmark):
 
     """
-    Ratkowsky02 test objective function.
+    Ratkowsky02 objective function.
 
     This class defines the Ratkowsky 2 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5537,12 +5200,6 @@ class Ratkowsky02(Benchmark):
        f_{\\text{Ratkowsky02}}(\\mathbf{x}) = \\sum_{i=1}^2 -e^{-2 \\log 2 (\\frac{x_i-0.1}{0.8})^2} \\left[\\sin^6(5 \\pi x_i) + 0.1\\cos^2(500 \\pi x_i) \\right]
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 1]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Ratkowsky02.png
-        :alt: Ratkowsky 2 function
-        :align: center
-
-        **Two-dimensional Ratkowsky 2 function**
 
     *Global optimum*: :math:`f(x_i) = 8.0565229338` for :math:`x_i = [7.2462237576e1, 2.6180768402, 6.7359200066e-2]`
 
@@ -5570,7 +5227,7 @@ class Ratkowsky02(Benchmark):
 class Ripple01(Benchmark):
 
     """
-    Ripple 1 test objective function.
+    Ripple 1 objective function.
 
     This class defines the Ripple 1 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5580,12 +5237,6 @@ class Ripple01(Benchmark):
        f_{\\text{Ripple01}}(\\mathbf{x}) = \\sum_{i=1}^2 -e^{-2 \\log 2 (\\frac{x_i-0.1}{0.8})^2} \\left[\\sin^6(5 \\pi x_i) + 0.1\\cos^2(500 \\pi x_i) \\right]
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 1]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Ripple01.png
-        :alt: Ripple 1 function
-        :align: center
-
-        **Two-dimensional Ripple 1 function**
 
     *Global optimum*: :math:`f(x_i) = -2.2` for :math:`x_i = 0.1` for :math:`i=1,2`
 
@@ -5609,7 +5260,7 @@ class Ripple01(Benchmark):
 class Ripple25(Benchmark):
 
     """
-    Ripple 25 test objective function.
+    Ripple 25 objective function.
 
     This class defines the Ripple 25 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5619,12 +5270,6 @@ class Ripple25(Benchmark):
        f_{\\text{Ripple25}}(\\mathbf{x}) = \\sum_{i=1}^2 -e^{-2 \\log 2 (\\frac{x_i-0.1}{0.8})^2} \\left[\\sin^6(5 \\pi x_i) \\right]
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 1]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Ripple25.png
-        :alt: Ripple 25 function
-        :align: center
-
-        **Two-dimensional Ripple 25 function**
 
     *Global optimum*: :math:`f(x_i) = -2` for :math:`x_i = 0.1` for :math:`i=1,2`
 
@@ -5648,7 +5293,7 @@ class Ripple25(Benchmark):
 class Rosenbrock(Benchmark):
 
     """
-    Rosenbrock test objective function.
+    Rosenbrock objective function.
 
     This class defines the Rosenbrock global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5658,12 +5303,6 @@ class Rosenbrock(Benchmark):
        f_{\\text{Rosenbrock}}(\\mathbf{x}) = \\sum_{i=1}^{n-1} [100(x_i^2 - x_{i+1})^2 + (x_i - 1)^2]
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Rosenbrock.png
-        :alt: Rosenbrock function
-        :align: center
-
-        **Two-dimensional Rosenbrock function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 1` for :math:`i=1,...,n`
 
@@ -5688,7 +5327,7 @@ class Rosenbrock(Benchmark):
 class RosenbrockModified(Benchmark):
 
     """
-    Modified Rosenbrock test objective function.
+    Modified Rosenbrock objective function.
 
     This class defines the Modified Rosenbrock global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5698,12 +5337,6 @@ class RosenbrockModified(Benchmark):
        f_{\\text{RosenbrockModified}}(\\mathbf{x}) = 74 + 100(x_2 - x_1^2)^2 + (1 - x_1)^2 - 400 e^{-\\frac{(x_1+1)^2 + (x_2 + 1)^2}{0.1}}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-2, 2]` for :math:`i=1,2`.
-
-    .. figure:: figures/RosenbrockModified.png
-        :alt: Modified Rosenbrock function
-        :align: center
-
-        **Two-dimensional Modified Rosenbrock function**
 
     *Global optimum*: :math:`f(x_i) = 34.04024310` for :math:`\\mathbf{x} = [-0.90955374, -0.95057172]`
 
@@ -5729,7 +5362,7 @@ class RosenbrockModified(Benchmark):
 class RotatedEllipse01(Benchmark):
 
     """
-    Rotated Ellipse 1 test objective function.
+    Rotated Ellipse 1 objective function.
 
     This class defines the Rotated Ellipse 1 global optimization problem. This
     is a unimodal minimization problem defined as follows:
@@ -5739,12 +5372,6 @@ class RotatedEllipse01(Benchmark):
        f_{\\text{RotatedEllipse01}}(\\mathbf{x}) = 7x_1^2 - 6 \\sqrt{3} x_1x_2 + 13x_2^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-500, 500]` for :math:`i=1,2`.
-
-    .. figure:: figures/RotatedEllipse01.png
-        :alt: Rotated Ellipse 1 function
-        :align: center
-
-        **Two-dimensional Rotated Ellipse 1 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [0, 0]`
 
@@ -5770,7 +5397,7 @@ class RotatedEllipse01(Benchmark):
 class RotatedEllipse02(Benchmark):
 
     """
-    Rotated Ellipse 2 test objective function.
+    Rotated Ellipse 2 objective function.
 
     This class defines the Rotated Ellipse 2 global optimization problem. This
     is a unimodal minimization problem defined as follows:
@@ -5780,12 +5407,6 @@ class RotatedEllipse02(Benchmark):
        f_{\\text{RotatedEllipse02}}(\\mathbf{x}) = x_1^2 - x_1x_2 + x_2^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-500, 500]` for :math:`i=1,2`.
-
-    .. figure:: figures/RotatedEllipse02.png
-        :alt: Rotated Ellipse 2 function
-        :align: center
-
-        **Two-dimensional Rotated Ellipse 2 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [0, 0]`
 
@@ -5810,7 +5431,7 @@ class RotatedEllipse02(Benchmark):
 class Salomon(Benchmark):
 
     """
-    Salomon test objective function.
+    Salomon objective function.
 
     This class defines the Salomon global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5820,12 +5441,6 @@ class Salomon(Benchmark):
        f_{\\text{Salomon}}(\\mathbf{x}) = 1 - \\cos \\left (2 \\pi \\sqrt{\\sum_{i=1}^{n} x_i^2} \\right) + 0.1 \\sqrt{\\sum_{i=1}^n x_i^2}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Salomon.png
-        :alt: Salomon function
-        :align: center
-
-        **Two-dimensional Salomon function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -5851,7 +5466,7 @@ class Salomon(Benchmark):
 class Sargan(Benchmark):
 
     """
-    Sargan test objective function.
+    Sargan objective function.
 
     This class defines the Sargan global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5861,12 +5476,6 @@ class Sargan(Benchmark):
        f_{\\text{Sargan}}(\\mathbf{x}) = \\sum_{i=1}^{n} n \\left (x_i^2 + 0.4 \\sum_{i \\neq j}^{n} x_ix_j \\right)
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Sargan.png
-        :alt: Sargan function
-        :align: center
-
-        **Two-dimensional Sargan function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -5894,7 +5503,7 @@ class Sargan(Benchmark):
 class Schaffer01(Benchmark):
 
     """
-    Schaffer 1 test objective function.
+    Schaffer 1 objective function.
 
     This class defines the Schaffer 1 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5904,12 +5513,6 @@ class Schaffer01(Benchmark):
        f_{\\text{Schaffer01}}(\\mathbf{x}) = 0.5 + \\frac{\\sin^2 (x_1^2 + x_2^2)^2 - 0.5}{1 + 0.001(x_1^2 + x_2^2)^2}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
-
-    .. figure:: figures/Schaffer01.png
-        :alt: Schaffer 1 function
-        :align: center
-
-        **Two-dimensional Schaffer 1 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,2`
 
@@ -5936,7 +5539,7 @@ class Schaffer01(Benchmark):
 class Schaffer02(Benchmark):
 
     """
-    Schaffer 2 test objective function.
+    Schaffer 2 objective function.
 
     This class defines the Schaffer 2 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5946,12 +5549,6 @@ class Schaffer02(Benchmark):
        f_{\\text{Schaffer02}}(\\mathbf{x}) = 0.5 + \\frac{\\sin^2 (x_1^2 - x_2^2)^2 - 0.5}{1 + 0.001(x_1^2 + x_2^2)^2}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
-
-    .. figure:: figures/Schaffer02.png
-        :alt: Schaffer 2 function
-        :align: center
-
-        **Two-dimensional Schaffer 2 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,2`
 
@@ -5978,7 +5575,7 @@ class Schaffer02(Benchmark):
 class Schaffer03(Benchmark):
 
     """
-    Schaffer 3 test objective function.
+    Schaffer 3 objective function.
 
     This class defines the Schaffer 3 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -5988,12 +5585,6 @@ class Schaffer03(Benchmark):
        f_{\\text{Schaffer03}}(\\mathbf{x}) = 0.5 + \\frac{\\sin^2 \\left( \\cos \\lvert x_1^2 - x_2^2 \\rvert \\right ) - 0.5}{1 + 0.001(x_1^2 + x_2^2)^2}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
-
-    .. figure:: figures/Schaffer03.png
-        :alt: Schaffer 3 function
-        :align: center
-
-        **Two-dimensional Schaffer 3 function**
 
     *Global optimum*: :math:`f(x_i) = 0.00156685` for :math:`\\mathbf{x} = [0, 1.253115]`
 
@@ -6020,7 +5611,7 @@ class Schaffer03(Benchmark):
 class Schaffer04(Benchmark):
 
     """
-    Schaffer 4 test objective function.
+    Schaffer 4 objective function.
 
     This class defines the Schaffer 4 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6030,12 +5621,6 @@ class Schaffer04(Benchmark):
        f_{\\text{Schaffer04}}(\\mathbf{x}) = 0.5 + \\frac{\\cos^2 \\left( \\sin(x_1^2 - x_2^2) \\right ) - 0.5}{1 + 0.001(x_1^2 + x_2^2)^2}^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
-
-    .. figure:: figures/Schaffer04.png
-        :alt: Schaffer 4 function
-        :align: center
-
-        **Two-dimensional Schaffer 4 function**
 
     *Global optimum*: :math:`f(x_i) = 0.292579` for :math:`\\mathbf{x} = [0, 1.253115]`
 
@@ -6062,7 +5647,7 @@ class Schaffer04(Benchmark):
 class SchmidtVetters(Benchmark):
 
     """
-    Schmidt-Vetters test objective function.
+    Schmidt-Vetters objective function.
 
     This class defines the Schmidt-Vetters global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6094,7 +5679,7 @@ class SchmidtVetters(Benchmark):
 class Schwefel01(Benchmark):
 
     """
-    Schwefel 1 test objective function.
+    Schwefel 1 objective function.
 
     This class defines the Schwefel 1 global optimization problem. This
     is a unimodal minimization problem defined as follows:
@@ -6106,12 +5691,6 @@ class Schwefel01(Benchmark):
     Where, in this exercise, :math:`\\alpha = \\sqrt{\\pi}`.
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Schwefel01.png
-        :alt: Schwefel 1 function
-        :align: center
-
-        **Two-dimensional Schwefel 1 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -6137,7 +5716,7 @@ class Schwefel01(Benchmark):
 class Schwefel02(Benchmark):
 
     """
-    Schwefel 2 test objective function.
+    Schwefel 2 objective function.
 
     This class defines the Schwefel 2 global optimization problem. This
     is a unimodal minimization problem defined as follows:
@@ -6148,12 +5727,6 @@ class Schwefel02(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Schwefel02.png
-        :alt: Schwefel 2 function
-        :align: center
-
-        **Two-dimensional Schwefel 2 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -6180,7 +5753,7 @@ class Schwefel02(Benchmark):
 class Schwefel04(Benchmark):
 
     """
-    Schwefel 4 test objective function.
+    Schwefel 4 objective function.
 
     This class defines the Schwefel 4 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6191,12 +5764,6 @@ class Schwefel04(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Schwefel04.png
-        :alt: Schwefel 4 function
-        :align: center
-
-        **Two-dimensional Schwefel 4 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 1` for :math:`i=1,...,n`
 
@@ -6220,7 +5787,7 @@ class Schwefel04(Benchmark):
 class Schwefel06(Benchmark):
 
     """
-    Schwefel 6 test objective function.
+    Schwefel 6 objective function.
 
     This class defines the Schwefel 6 global optimization problem. This
     is a unimodal minimization problem defined as follows:
@@ -6231,12 +5798,6 @@ class Schwefel06(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
-
-    .. figure:: figures/Schwefel06.png
-        :alt: Schwefel 6 function
-        :align: center
-
-        **Two-dimensional Schwefel 6 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [1, 3]`
 
@@ -6260,7 +5821,7 @@ class Schwefel06(Benchmark):
 class Schwefel20(Benchmark):
 
     """
-    Schwefel 20 test objective function.
+    Schwefel 20 objective function.
 
     This class defines the Schwefel 20 global optimization problem. This
     is a unimodal minimization problem defined as follows:
@@ -6271,12 +5832,6 @@ class Schwefel20(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Schwefel20.png
-        :alt: Schwefel 20 function
-        :align: center
-
-        **Two-dimensional Schwefel 20 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -6300,7 +5855,7 @@ class Schwefel20(Benchmark):
 class Schwefel21(Benchmark):
 
     """
-    Schwefel 21 test objective function.
+    Schwefel 21 objective function.
 
     This class defines the Schwefel 21 global optimization problem. This
     is a unimodal minimization problem defined as follows:
@@ -6311,12 +5866,6 @@ class Schwefel21(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Schwefel21.png
-        :alt: Schwefel 21 function
-        :align: center
-
-        **Two-dimensional Schwefel 21 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -6340,7 +5889,7 @@ class Schwefel21(Benchmark):
 class Schwefel22(Benchmark):
 
     """
-    Schwefel 22 test objective function.
+    Schwefel 22 objective function.
 
     This class defines the Schwefel 22 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6351,12 +5900,6 @@ class Schwefel22(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Schwefel22.png
-        :alt: Schwefel 22 function
-        :align: center
-
-        **Two-dimensional Schwefel 22 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -6381,7 +5924,7 @@ class Schwefel22(Benchmark):
 class Schwefel26(Benchmark):
 
     """
-    Schwefel 26 test objective function.
+    Schwefel 26 objective function.
 
     This class defines the Schwefel 26 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6391,12 +5934,6 @@ class Schwefel26(Benchmark):
        f_{\\text{Schwefel26}}(\\mathbf{x}) = 418.9829n - \\sum_{i=1}^n x_i \\sin(\\sqrt{|x_i|})
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-500, 500]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Schwefel26.png
-        :alt: Schwefel 26 function
-        :align: center
-
-        **Two-dimensional Schwefel 26 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 420.968746` for :math:`i=1,...,n`
 
@@ -6420,7 +5957,7 @@ class Schwefel26(Benchmark):
 class Schwefel36(Benchmark):
 
     """
-    Schwefel 36 test objective function.
+    Schwefel 36 objective function.
 
     This class defines the Schwefel 36 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6431,12 +5968,6 @@ class Schwefel36(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 500]` for :math:`i=1,2`.
-
-    .. figure:: figures/Schwefel36.png
-        :alt: Schwefel 36 function
-        :align: center
-
-        **Two-dimensional Schwefel 36 function**
 
     *Global optimum*: :math:`f(x_i) = -3456` for :math:`\\mathbf{x} = [12, 12]`
 
@@ -6459,7 +5990,7 @@ class Schwefel36(Benchmark):
 class Shekel05(Benchmark):
 
     """
-    Shekel 5 test objective function.
+    Shekel 5 objective function.
 
     This class defines the Shekel 5 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6510,7 +6041,7 @@ class Shekel05(Benchmark):
 class Shekel07(Benchmark):
 
     """
-    Shekel 7 test objective function.
+    Shekel 7 objective function.
 
     This class defines the Shekel 7 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6564,7 +6095,7 @@ class Shekel07(Benchmark):
 class Shekel10(Benchmark):
 
     """
-    Shekel 10 test objective function.
+    Shekel 10 objective function.
 
     This class defines the Shekel 10 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6622,7 +6153,7 @@ class Shekel10(Benchmark):
 class Shubert01(Benchmark):
 
     """
-    Shubert 1 test objective function.
+    Shubert 1 objective function.
 
     This class defines the Shubert 1 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6632,12 +6163,6 @@ class Shubert01(Benchmark):
        f_{\\text{Shubert01}}(\\mathbf{x}) = \\left( \\sum\\limits_{i=1}^{5} i\\cos[(i+1)x_1 + i] \\right) \\left( \\sum\\limits_{i=1}^{5} i\\cos[(i+1)x_2 + i] \\right)
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Shubert01.png
-        :alt: Shubert 1 function
-        :align: center
-
-        **Two-dimensional Shubert 1 function**
 
     *Global optimum*: :math:`f(x_i) = -186.7309` for :math:`\\mathbf{x} = [-7.0835, 4.8580]` (and many others).
 
@@ -6665,7 +6190,7 @@ class Shubert01(Benchmark):
 class Shubert03(Benchmark):
 
     """
-    Shubert 3 test objective function.
+    Shubert 3 objective function.
 
     This class defines the Shubert 3 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6675,12 +6200,6 @@ class Shubert03(Benchmark):
        f_{\\text{Shubert03}}(\\mathbf{x}) = \\sum_{i=1}^n \\sum_{j=1}^5 j \\sin \\left[(j+1)x_i \\right] + j
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Shubert03.png
-        :alt: Shubert 3 function
-        :align: center
-
-        **Two-dimensional Shubert 3 function**
 
     *Global optimum*: :math:`f(x_i) = -24.062499` for :math:`\\mathbf{x} = [5.791794, 5.791794]` (and many others).
 
@@ -6708,7 +6227,7 @@ class Shubert03(Benchmark):
 class Shubert04(Benchmark):
 
     """
-    Shubert 4 test objective function.
+    Shubert 4 objective function.
 
     This class defines the Shubert 4 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6718,12 +6237,6 @@ class Shubert04(Benchmark):
        f_{\\text{Shubert04}}(\\mathbf{x}) = \\sum_{i=1}^n \\sum_{j=1}^5 j \\cos \\left[(j+1)x_i \\right] + j
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Shubert04.png
-        :alt: Shubert 4 function
-        :align: center
-
-        **Two-dimensional Shubert 4 function**
 
     *Global optimum*: :math:`f(x_i) = -29.016015` for :math:`\\mathbf{x} = [-0.80032121, -7.08350592]` (and many others).
 
@@ -6751,7 +6264,7 @@ class Shubert04(Benchmark):
 class SineEnvelope(Benchmark):
 
     """
-    SineEnvelope test objective function.
+    SineEnvelope objective function.
 
     This class defines the SineEnvelope global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6761,12 +6274,6 @@ class SineEnvelope(Benchmark):
        f_{\\text{SineEnvelope}}(\\mathbf{x}) = -\\sum_{i=1}^{n-1}\\left[\\frac{\\sin^2(\\sqrt{x_{i+1}^2+x_{i}^2}-0.5)}{(0.001(x_{i+1}^2+x_{i}^2)+1)^2}+0.5\\right]
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/SineEnvelope.png
-        :alt: SineEnvelope function
-        :align: center
-
-        **Two-dimensional SineEnvelope function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -6796,7 +6303,7 @@ class SineEnvelope(Benchmark):
 class SixHumpCamel(Benchmark):
 
     """
-    Six Hump Camel test objective function.
+    Six Hump Camel objective function.
 
     This class defines the Six Hump Camel global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6806,12 +6313,6 @@ class SixHumpCamel(Benchmark):
        f_{\\text{SixHumpCamel}}(\\mathbf{x}) = 4x_1^2+x_1x_2-4x_2^2-2.1x_1^4+4x_2^4+\\frac{1}{3}x_1^6
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,2`.
-
-    .. figure:: figures/SixHumpCamel.png
-        :alt: Six Hump Camel function
-        :align: center
-
-        **Two-dimensional Six Hump Camel function**
 
     *Global optimum*: :math:`f(x_i) = -1.031628453489877` for :math:`\\mathbf{x} = [0.08984201368301331 , -0.7126564032704135]`
     or :math:`\\mathbf{x} = [-0.08984201368301331, 0.7126564032704135]`
@@ -6837,7 +6338,7 @@ class SixHumpCamel(Benchmark):
 class Sodp(Benchmark):
 
     """
-    Sodp test objective function.
+    Sodp objective function.
 
     This class defines the Sum Of Different Powers global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6847,12 +6348,6 @@ class Sodp(Benchmark):
        f_{\\text{Sodp}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\lvert{x_{i}}\\rvert^{i + 1}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 1]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Sodp.png
-        :alt: Sodp function
-        :align: center
-
-        **Two-dimensional Sum Of Different Powers function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -6877,7 +6372,7 @@ class Sodp(Benchmark):
 class Sphere(Benchmark):
 
     """
-    Sphere test objective function.
+    Sphere objective function.
 
     This class defines the Sphere global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6887,12 +6382,6 @@ class Sphere(Benchmark):
        f_{\\text{Sphere}}(\\mathbf{x}) = \\sum_{i=1}^{n} x_i^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 1]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Sphere.png
-        :alt: Sphere function
-        :align: center
-
-        **Two-dimensional Sphere function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -6915,7 +6404,7 @@ class Sphere(Benchmark):
 class Step(Benchmark):
 
     """
-    Step test objective function.
+    Step objective function.
 
     This class defines the Step global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6925,12 +6414,6 @@ class Step(Benchmark):
        f_{\\text{Step}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\left ( \\lfloor x_i  + 0.5 \\rfloor \\right )^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Step.png
-        :alt: Step function
-        :align: center
-
-        **Two-dimensional Step function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0.5` for :math:`i=1,...,n`
 
@@ -6955,7 +6438,7 @@ class Step(Benchmark):
 class Stochastic(Benchmark):
 
     """
-    Stochastic test objective function.
+    Stochastic objective function.
 
     This class defines a Stochastic global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -6967,13 +6450,6 @@ class Stochastic(Benchmark):
     The variable :math:`\\epsilon_i, (i=1,...,n)` is a random variable uniformly distributed in :math:`[0, 1]`.
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Stochastic.png
-        :alt: Stochastic function
-        :align: center
-
-        **Two-dimensional Stochastic function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = [1/n]` for :math:`i=1,...,n`
     """
@@ -6999,7 +6475,7 @@ class Stochastic(Benchmark):
 class StretchedV(Benchmark):
 
     """
-    StretchedV test objective function.
+    StretchedV objective function.
 
     This class defines the Stretched V global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7016,13 +6492,6 @@ class StretchedV(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/StretchedV.png
-        :alt: StretchedV function
-        :align: center
-
-        **Two-dimensional StretchedV function**
-
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [0., 0.]` when :math:`n = 2`.
 
@@ -7048,7 +6517,7 @@ class StretchedV(Benchmark):
 class StyblinskiTang(Benchmark):
 
     """
-    StyblinskiTang test objective function.
+    StyblinskiTang objective function.
 
     This class defines the Styblinski-Tang global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7058,12 +6527,6 @@ class StyblinskiTang(Benchmark):
        f_{\\text{StyblinskiTang}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\left(x_i^4 - 16x_i^2 + 5x_i \\right)
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/StyblinskiTang.png
-        :alt: StyblinskiTang function
-        :align: center
-
-        **Two-dimensional Styblinski-Tang function**
 
     *Global optimum*: :math:`f(x_i) = -39.16616570377142n` for :math:`x_i = -2.903534018185960` for :math:`i=1,...,n`
 
@@ -7087,7 +6550,7 @@ class StyblinskiTang(Benchmark):
 class TestTubeHolder(Benchmark):
 
     """
-    TestTubeHolder test objective function.
+    TestTubeHolder objective function.
 
     This class defines the TestTubeHolder global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7097,12 +6560,6 @@ class TestTubeHolder(Benchmark):
        f_{\\text{TestTubeHolder}}(\\mathbf{x}) = - 4 \\left | {e^{\\left|{\\cos\\left(\\frac{1}{200} x_{1}^{2} + \\frac{1}{200} x_{2}^{2}\\right)}\\right|} \\sin\\left(x_{1}\\right) \\cos\\left(x_{2}\\right)}\\right |
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/TestTubeHolder.png
-        :alt: TestTubeHolder function
-        :align: center
-
-        **Two-dimensional TestTubeHolder function**
 
     *Global optimum*: :math:`f(x_i) = -10.872299901558` for :math:`\\mathbf{x} = [-\\pi/2, 0]`
 
@@ -7127,7 +6584,7 @@ class TestTubeHolder(Benchmark):
 class Thurber(Benchmark):
 
     """
-    Thurber test objective function.
+    Thurber objective function.
 
     """
 
@@ -7168,7 +6625,7 @@ class Thurber(Benchmark):
 class Treccani(Benchmark):
 
     """
-    Treccani test objective function.
+    Treccani objective function.
 
     This class defines the Treccani global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7178,12 +6635,6 @@ class Treccani(Benchmark):
        f_{\\text{Treccani}}(\\mathbf{x}) = x_1^4 + 4x_1^3 + 4x_1^2 + x_2^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,2`.
-
-    .. figure:: figures/Treccani.png
-        :alt: Treccani function
-        :align: center
-
-        **Two-dimensional Treccani function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [-2, 0]` or :math:`\\mathbf{x} = [0, 0]`.
 
@@ -7207,7 +6658,7 @@ class Treccani(Benchmark):
 class Trefethen(Benchmark):
 
     """
-    Trefethen test objective function.
+    Trefethen objective function.
 
     This class defines the Trefethen global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7217,12 +6668,6 @@ class Trefethen(Benchmark):
        f_{\\text{Trefethen}}(\\mathbf{x}) = 0.25 x_{1}^{2} + 0.25 x_{2}^{2} + e^{\\sin\\left(50 x_{1}\\right)} - \\sin\\left(10 x_{1} + 10 x_{2}\\right) + \\sin\\left(60 e^{x_{2}}\\right) + \\sin\\left[70 \\sin\\left(x_{1}\\right)\\right] + \\sin\\left[\\sin\\left(80 x_{2}\\right)\\right]
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/Trefethen.png
-        :alt: Trefethen function
-        :align: center
-
-        **Two-dimensional Trefethen function**
 
     *Global optimum*: :math:`f(x_i) = -3.3068686474` for :math:`\\mathbf{x} = [-0.02440307923, 0.2106124261]`
 
@@ -7251,7 +6696,7 @@ class Trefethen(Benchmark):
 class ThreeHumpCamel(Benchmark):
 
     """
-    Three Hump Camel test objective function.
+    Three Hump Camel objective function.
 
     This class defines the Three Hump Camel global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7261,12 +6706,6 @@ class ThreeHumpCamel(Benchmark):
        f_{\\text{ThreeHumpCamel}}(\\mathbf{x}) = 2x_1^2 - 1.05x_1^4 + \\frac{x_1^6}{6} + x_1x_2 + x_2^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,2`.
-
-    .. figure:: figures/ThreeHumpCamel.png
-        :alt: Three Hump Camel function
-        :align: center
-
-        **Two-dimensional Three Hump Camel function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [0, 0]`
 
@@ -7291,7 +6730,7 @@ class ThreeHumpCamel(Benchmark):
 class Trid(Benchmark):
 
     """
-    Trid test objective function.
+    Trid objective function.
 
     This class defines the Trid global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7324,7 +6763,7 @@ class Trid(Benchmark):
 class Trigonometric01(Benchmark):
 
     """
-    Trigonometric 1 test objective function.
+    Trigonometric 1 objective function.
 
     This class defines the Trigonometric 1 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7334,12 +6773,6 @@ class Trigonometric01(Benchmark):
        f_{\\text{Trigonometric01}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\left [n - \\sum_{j=1}^{n} \\cos(x_j) + i \\left(1 - cos(x_i) - sin(x_i) \\right ) \\right]^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, \\pi]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Trigonometric01.png
-        :alt: Trigonometric 1 function
-        :align: center
-
-        **Two-dimensional Trigonometric 1 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -7364,7 +6797,7 @@ class Trigonometric01(Benchmark):
 class Trigonometric02(Benchmark):
 
     """
-    Trigonometric 2 test objective function.
+    Trigonometric 2 objective function.
 
     This class defines the Trigonometric 2 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7374,12 +6807,6 @@ class Trigonometric02(Benchmark):
        f_{\\text{Trigonometric2}}(\\mathbf{x}) = 1 + \\sum_{i=1}^{n} 8 \\sin^2 \\left[7(x_i - 0.9)^2 \\right] + 6 \\sin^2 \\left[14(x_i - 0.9)^2 \\right] + (x_i - 0.9)^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-500, 500]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Trigonometric02.png
-        :alt: Trigonometric 2 function
-        :align: center
-
-        **Two-dimensional Trigonometric 2 function**
 
     *Global optimum*: :math:`f(x_i) = 1` for :math:`x_i = 0.9` for :math:`i=1,...,n`
 
@@ -7408,7 +6835,7 @@ class Trigonometric02(Benchmark):
 class Tripod(Benchmark):
 
     """
-    Tripod test objective function.
+    Tripod objective function.
 
     This class defines the Tripod global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7418,12 +6845,6 @@ class Tripod(Benchmark):
        f_{\\text{Tripod}}(\\mathbf{x}) = p(x_2) \\left[1 + p(x_1) \\right] + \\lvert x_1 + 50p(x_2) \\left[1 - 2p(x_1) \\right] \\rvert + \\lvert x_2 + 50\\left[1 - 2p(x_2)\\right] \\rvert
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
-
-    .. figure:: figures/Tripod.png
-        :alt: Tripod function
-        :align: center
-
-        **Two-dimensional Tripod function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [0, -50]`
 
@@ -7451,7 +6872,7 @@ class Tripod(Benchmark):
 class Ursem01(Benchmark):
 
     """
-    Ursem 1 test objective function.
+    Ursem 1 objective function.
 
     This class defines the Ursem 1 global optimization problem. This
     is a unimodal minimization problem defined as follows:
@@ -7462,13 +6883,7 @@ class Ursem01(Benchmark):
 
     Here, :math:`n` represents the number of dimensions and :math:`x_1 \\in [-2.5, 3]`, :math:`x_2 \\in [-2, 2]`.
 
-    .. figure:: figures/Ursem01.png
-        :alt: Ursem 1 function
-        :align: center
-
-        **Two-dimensional Ursem 1 function**
-
-    *Global optimum*: :math:`f(x_i) = -4.8168` for :math:`\\mathbf{x} = [1.69714, 0.0]`
+    *Global optimum*: :math:`f(x_i) = -4.81681406371` for :math:`\\mathbf{x} = [1.69714, 0.0]`
 
     """
 
@@ -7478,7 +6893,7 @@ class Ursem01(Benchmark):
         self._bounds = [(-2.5, 3.0), (-2.0, 2.0)]
 
         self.global_optimum = [[1.69714, 0.0]]
-        self.fglob = -4.8168
+        self.fglob = -4.81681406371
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -7489,7 +6904,7 @@ class Ursem01(Benchmark):
 class Ursem03(Benchmark):
 
     """
-    Ursem 3 test objective function.
+    Ursem 3 objective function.
 
     This class defines the Ursem 3 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7499,12 +6914,6 @@ class Ursem03(Benchmark):
        f_{\\text{Ursem03}}(\\mathbf{x}) = - \\sin(2.2 \\pi x_1 + 0.5 \\pi) \\frac{2 - \\lvert x_1 \\rvert}{2} \\frac{3 - \\lvert x_1 \\rvert}{2} - \\sin(2.2 \\pi x_2 + 0.5 \\pi) \\frac{2 - \\lvert x_2 \\rvert}{2} \\frac{3 - \\lvert x_2 \\rvert}{2}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_1 \\in [-2, 2]`, :math:`x_2 \\in [-1.5, 1.5]`.
-
-    .. figure:: figures/Ursem03.png
-        :alt: Ursem 3 function
-        :align: center
-
-        **Two-dimensional Ursem 3 function**
 
     *Global optimum*: :math:`f(x_i) = -3` for :math:`x_i = 0` for :math:`i=1,2`
 
@@ -7531,7 +6940,7 @@ class Ursem03(Benchmark):
 class Ursem04(Benchmark):
 
     """
-    Ursem 4 test objective function.
+    Ursem 4 objective function.
 
     This class defines the Ursem 4 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7541,12 +6950,6 @@ class Ursem04(Benchmark):
        f_{\\text{Ursem04}}(\\mathbf{x}) = -3 \\sin(0.5 \\pi x_1 + 0.5 \\pi) \\frac{2 - \\sqrt{x_1^2 + x_2 ^ 2}}{4}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-2, 2]` for :math:`i=1,2`.
-
-    .. figure:: figures/Ursem04.png
-        :alt: Ursem 4 function
-        :align: center
-
-        **Two-dimensional Ursem 4 function**
 
     *Global optimum*: :math:`f(x_i) = -1.5` for :math:`x_i = 0` for :math:`i=1,2`
 
@@ -7570,7 +6973,7 @@ class Ursem04(Benchmark):
 class UrsemWaves(Benchmark):
 
     """
-    Ursem Waves test objective function.
+    Ursem Waves objective function.
 
     This class defines the Ursem Waves global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7580,12 +6983,6 @@ class UrsemWaves(Benchmark):
        f_{\\text{UrsemWaves}}(\\mathbf{x}) = -0.9x_1^2 + (x_2^2 - 4.5x_2^2)x_1x_2 + 4.7 \\cos \\left[ 2x_1 - x_2^2(2 + x_1) \\right ] \\sin(2.5 \\pi x_1)
 
     Here, :math:`n` represents the number of dimensions and :math:`x_1 \\in [-0.9, 1.2]`, :math:`x_2 \\in [-1.2, 1.2]`.
-
-    .. figure:: figures/UrsemWaves.png
-        :alt: Ursem Waves function
-        :align: center
-
-        **Two-dimensional Ursem Waves function**
 
     *Global optimum*: :math:`f(x_i) = -8.5536` for :math:`x_i = 1.2` for :math:`i=1,2`
 
@@ -7611,7 +7008,7 @@ class UrsemWaves(Benchmark):
 class VenterSobiezcczanskiSobieski(Benchmark):
 
     """
-    Venter Sobiezcczanski-Sobieski test objective function.
+    Venter Sobiezcczanski-Sobieski objective function.
 
     This class defines the Venter Sobiezcczanski-Sobieski global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7621,12 +7018,6 @@ class VenterSobiezcczanskiSobieski(Benchmark):
        f_{\\text{VenterSobiezcczanskiSobieski}}(\\mathbf{x}) = x_1^2 - 100 \\cos^2(x_1) - 100 \\cos(x_1^2/30) + x_2^2 - 100 \\cos^2(x_2) - 100 \\cos(x_2^2/30)
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-50, 50]` for :math:`i=1,2`.
-
-    .. figure:: figures/VenterSobiezcczanskiSobieski.png
-        :alt: Venter Sobiezcczanski-Sobieski function
-        :align: center
-
-        **Two-dimensional Venter Sobiezcczanski-Sobieski function**
 
     *Global optimum*: :math:`f(x_i) = -400` for :math:`x_i = 0` for :math:`i=1,2`
 
@@ -7653,7 +7044,7 @@ class VenterSobiezcczanskiSobieski(Benchmark):
 class Vincent(Benchmark):
 
     """
-    Vincent test objective function.
+    Vincent objective function.
 
     This class defines the Vincent global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7663,12 +7054,6 @@ class Vincent(Benchmark):
        f_{\\text{Vincent}}(\\mathbf{x}) = - \\sum_{i=1}^{n} \\sin(10 \\log(x))
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0.25, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Vincent.png
-        :alt: Vincent function
-        :align: center
-
-        **Two-dimensional Vincent function**
 
     *Global optimum*: :math:`f(x_i) = -n` for :math:`x_i = 7.70628098` for :math:`i=1,...,n`
 
@@ -7692,7 +7077,7 @@ class Vincent(Benchmark):
 class Watson(Benchmark):
 
     """
-    Watson test objective function.
+    Watson objective function.
 
     This class defines the Watson global optimization problem. This
     is a unimodal minimization problem defined as follows:
@@ -7738,7 +7123,7 @@ class Watson(Benchmark):
 class Wavy(Benchmark):
 
     """
-    W / Wavy test objective function.
+    W / Wavy objective function.
 
     This class defines the W / Wavy global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7751,12 +7136,6 @@ class Wavy(Benchmark):
     Where, in this exercise, :math:`k = 10`. The number of local minima is :math:`kn` and :math:`(k + 1)n` for odd and even :math:`k` respectively.
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-\\pi, \\pi]` for :math:`i=1,2`.
-
-    .. figure:: figures/Wavy.png
-        :alt: W / Wavy function
-        :align: center
-
-        **Two-dimensional W / Wavy function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,2`
 
@@ -7780,7 +7159,7 @@ class Wavy(Benchmark):
 class WayburnSeader01(Benchmark):
 
     """
-    Wayburn and Seader 1 test objective function.
+    Wayburn and Seader 1 objective function.
 
     This class defines the Wayburn and Seader 1 global optimization problem. This
     is a unimodal minimization problem defined as follows:
@@ -7791,12 +7170,6 @@ class WayburnSeader01(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,2`.
-
-    .. figure:: figures/WayburnSeader01.png
-        :alt: Wayburn and Seader 1 function
-        :align: center
-
-        **Two-dimensional Wayburn and Seader 1 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [1, 2]`
 
@@ -7820,7 +7193,7 @@ class WayburnSeader01(Benchmark):
 class WayburnSeader02(Benchmark):
 
     """
-    Wayburn and Seader 2 test objective function.
+    Wayburn and Seader 2 objective function.
 
     This class defines the Wayburn and Seader 2 global optimization problem. This
     is a unimodal minimization problem defined as follows:
@@ -7830,12 +7203,6 @@ class WayburnSeader02(Benchmark):
        f_{\\text{WayburnSeader02}}(\\mathbf{x}) = \\left[ 1.613 - 4(x_1 - 0.3125)^2 - 4(x_2 - 1.625)^2 \\right]^2 + (x_2 - 1)^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-500, 500]` for :math:`i=1,2`.
-
-    .. figure:: figures/WayburnSeader02.png
-        :alt: Wayburn and Seader 2 function
-        :align: center
-
-        **Two-dimensional Wayburn and Seader 2 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [0.2, 1]`
 
@@ -7862,7 +7229,7 @@ class WayburnSeader02(Benchmark):
 class Weierstrass(Benchmark):
 
     """
-    Weierstrass test objective function.
+    Weierstrass objective function.
 
     This class defines the Weierstrass global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7875,12 +7242,6 @@ class Weierstrass(Benchmark):
     Where, in this exercise, :math:`kmax = 20`, :math:`a = 0.5` and :math:`b = 3`.
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-0.5, 0.5]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Weierstrass.png
-        :alt: Weierstrass function
-        :align: center
-
-        **Two-dimensional Weierstrass function**
 
     *Global optimum*: :math:`f(x_i) = 4` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -7914,7 +7275,7 @@ class Weierstrass(Benchmark):
 class Whitley(Benchmark):
 
     """
-    Whitley test objective function.
+    Whitley objective function.
 
     This class defines the Whitley global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7925,12 +7286,6 @@ class Whitley(Benchmark):
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10.24, 10.24]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Whitley.png
-        :alt: Whitley function
-        :align: center
-
-        **Two-dimensional Whitley function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 1` for :math:`i=1,...,n`
 
@@ -7961,7 +7316,7 @@ class Whitley(Benchmark):
 class Wolfe(Benchmark):
 
     """
-    Wolfe test objective function.
+    Wolfe objective function.
 
     This class defines the Wolfe global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -7994,7 +7349,7 @@ class Wolfe(Benchmark):
 class XinSheYang01(Benchmark):
 
     """
-    Xin-She Yang 1 test objective function.
+    Xin-She Yang 1 objective function.
 
     This class defines the Xin-She Yang 1 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8007,12 +7362,6 @@ class XinSheYang01(Benchmark):
     The variable :math:`\\epsilon_i, (i=1,...,n)` is a random variable uniformly distributed in :math:`[0, 1]`.
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/XinSheYang01.png
-        :alt: Xin-She Yang 1 function
-        :align: center
-
-        **Two-dimensional Xin-She Yang 1 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -8038,7 +7387,7 @@ class XinSheYang01(Benchmark):
 class XinSheYang02(Benchmark):
 
     """
-    Xin-She Yang 2 test objective function.
+    Xin-She Yang 2 objective function.
 
     This class defines the Xin-She Yang 2 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8048,12 +7397,6 @@ class XinSheYang02(Benchmark):
        f_{\\text{XinSheYang02}}(\\mathbf{x}) = \\frac{\\sum_{i=1}^{n} \\lvert{x_{i}}\\rvert}{e^{\\sum_{i=1}^{n} \\sin\\left(x_{i}^{2.0}\\right)}}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-2\\pi, 2\\pi]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/XinSheYang02.png
-        :alt: Xin-She Yang 2 function
-        :align: center
-
-        **Two-dimensional Xin-She Yang 2 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -8078,7 +7421,7 @@ class XinSheYang02(Benchmark):
 class XinSheYang03(Benchmark):
 
     """
-    Xin-She Yang 3 test objective function.
+    Xin-She Yang 3 objective function.
 
     This class defines the Xin-She Yang 3 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8091,12 +7434,6 @@ class XinSheYang03(Benchmark):
     Where, in this exercise, :math:`\\beta = 15` and :math:`m = 3`.
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-20, 20]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/XinSheYang03.png
-        :alt: Xin-She Yang 3 function
-        :align: center
-
-        **Two-dimensional Xin-She Yang 3 function**
 
     *Global optimum*: :math:`f(x_i) = -1` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -8125,7 +7462,7 @@ class XinSheYang03(Benchmark):
 class XinSheYang04(Benchmark):
 
     """
-    Xin-She Yang 4 test objective function.
+    Xin-She Yang 4 objective function.
 
     This class defines the Xin-She Yang 4 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8135,12 +7472,6 @@ class XinSheYang04(Benchmark):
        f_{\\text{XinSheYang04}}(\\mathbf{x}) = \\left[ \\sum_{i=1}^{n} \\sin^2(x_i) - e^{-\\sum_{i=1}^{n} x_i^2} \\right ] e^{-\\sum_{i=1}^{n} \\sin^2 \\sqrt{ \\lvert x_i \\rvert }}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/XinSheYang04.png
-        :alt: Xin-She Yang 4 function
-        :align: center
-
-        **Two-dimensional Xin-She Yang 4 function**
 
     *Global optimum*: :math:`f(x_i) = -1` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -8167,7 +7498,7 @@ class XinSheYang04(Benchmark):
 class Xor(Benchmark):
 
     """
-    Xor test objective function.
+    Xor objective function.
 
     This class defines the Xor global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8217,7 +7548,7 @@ class Xor(Benchmark):
 class YaoLiu04(Benchmark):
 
     """
-    Yao-Liu 4 test objective function.
+    Yao-Liu 4 objective function.
 
     This class defines the Yao-Liu function 4 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8227,12 +7558,6 @@ class YaoLiu04(Benchmark):
        f_{\\text{YaoLiu04}}(\\mathbf{x}) = {max}_i \\left\{ \\left | x_i \\right | , 1 \\leq i \\leq n \\right\}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/YaoLiu04.png
-        :alt: YaoLiu04 function
-        :align: center
-
-        **Two-dimensional Yao-Liu 4 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -8256,7 +7581,7 @@ class YaoLiu04(Benchmark):
 class YaoLiu09(Benchmark):
 
     """
-    Yao-Liu 9 test objective function.
+    Yao-Liu 9 objective function.
 
     This class defines the Yao-Liu function 9 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8266,12 +7591,6 @@ class YaoLiu09(Benchmark):
        f_{\\text{YaoLiu09}}(\\mathbf{x}) = \\sum_{i=1}^n \\left [ x_i^2 - 10 \\cos(2 \\pi x_i ) + 10 \\right ]
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5.12, 5.12]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/YaoLiu09.png
-        :alt: Yao-Liu 9 function
-        :align: center
-
-        **Two-dimensional Yao-Liu 9 function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -8295,7 +7614,7 @@ class YaoLiu09(Benchmark):
 class Zacharov(Benchmark):
 
     """
-    Zacharov test objective function.
+    Zacharov objective function.
 
     This class defines the Zacharov global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8305,12 +7624,6 @@ class Zacharov(Benchmark):
          f_{\\text{Zacharov}}(\\mathbf{x}) = \\sum_{i=1}^{n} x_i^2 + \\left ( \\frac{1}{2} \\sum_{i=1}^{n} i x_i \\right )^2 + \\left ( \\frac{1}{2} \\sum_{i=1}^{n} i x_i \\right )^4
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/Zacharov.png
-        :alt: Zacharov function
-        :align: center
-
-        **Two-dimensional Zacharov function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
 
@@ -8337,7 +7650,7 @@ class Zacharov(Benchmark):
 class ZeroSum(Benchmark):
 
     """
-    ZeroSum test objective function.
+    ZeroSum objective function.
 
     This class defines the ZeroSum global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8348,12 +7661,6 @@ class ZeroSum(Benchmark):
                 1 + \\left(10000 \\left |\\sum_{i=1}^n x_i\\right| \\right)^{0.5} & \\textrm{otherwise}\\end{cases}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
-
-    .. figure:: figures/ZeroSum.png
-        :alt: ZeroSum function
-        :align: center
-
-        **Two-dimensional ZeroSum function**
 
     *Global optimum*: :math:`f(x_i) = 0` where :math:`\\sum_{i=1}^n x_i = 0`
 
@@ -8380,7 +7687,7 @@ class ZeroSum(Benchmark):
 class Zettl(Benchmark):
 
     """
-    Zettl test objective function.
+    Zettl objective function.
 
     This class defines the Zettl global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8390,12 +7697,6 @@ class Zettl(Benchmark):
        f_{\\text{Zettl}}(\\mathbf{x}) = \\frac{1}{4} x_{1} + \\left(x_{1}^{2} - 2 x_{1} + x_{2}^{2}\\right)^{2}
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 5]` for :math:`i=1,2`.
-
-    .. figure:: figures/Zettl.png
-        :alt: Zettl function
-        :align: center
-
-        **Two-dimensional Zettl function**
 
     *Global optimum*: :math:`f(x_i) = -0.0037912` for :math:`\\mathbf{x} = [-0.029896, 0.0]`
 
@@ -8418,7 +7719,7 @@ class Zettl(Benchmark):
 class Zimmerman(Benchmark):
 
     """
-    Zimmerman test objective function.
+    Zimmerman objective function.
 
     This class defines the Zimmerman global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8439,12 +7740,6 @@ class Zimmerman(Benchmark):
     Where :math:`x` is a vector and :math:`t` is a scalar.
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 100]` for :math:`i=1,2`.
-
-    .. figure:: figures/Zimmerman.png
-        :alt: Zimmerman function
-        :align: center
-
-        **Two-dimensional Zimmerman function**
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [7, 2]`
 
@@ -8477,7 +7772,7 @@ class Zimmerman(Benchmark):
 class Zirilli(Benchmark):
 
     """
-    Zettl test objective function.
+    Zettl objective function.
 
     This class defines the Zirilli global optimization problem. This
     is a unimodal minimization problem defined as follows:
@@ -8487,12 +7782,6 @@ class Zirilli(Benchmark):
        f_{\\text{Zirilli}}(\\mathbf{x}) = 0.25x_1^4 - 0.5x_1^2 + 0.1x_1 + 0.5x_2^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
-
-    .. figure:: figures/Zirilli.png
-        :alt: Zirilli function
-        :align: center
-
-        **Two-dimensional Zirilli function**
 
     *Global optimum*: :math:`f(x_i) = -0.3523` for :math:`\\mathbf{x} = [-1.0465, 0]`
 
@@ -8520,7 +7809,7 @@ class Zirilli(Benchmark):
 class Problem02(Benchmark):
 
     """
-    Univariate Problem02 test objective function.
+    Univariate Problem02 objective function.
 
     This class defines the Univariate Problem02 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8559,7 +7848,7 @@ class Problem02(Benchmark):
 class Problem03(Benchmark):
 
     """
-    Univariate Problem03 test objective function.
+    Univariate Problem03 objective function.
 
     This class defines the Univariate Problem03 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8602,7 +7891,7 @@ class Problem03(Benchmark):
 class Problem04(Benchmark):
 
     """
-    Univariate Problem04 test objective function.
+    Univariate Problem04 objective function.
 
     This class defines the Univariate Problem04 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8641,7 +7930,7 @@ class Problem04(Benchmark):
 class Problem05(Benchmark):
 
     """
-    Univariate Problem05 test objective function.
+    Univariate Problem05 objective function.
 
     This class defines the Univariate Problem05 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8680,7 +7969,7 @@ class Problem05(Benchmark):
 class Problem06(Benchmark):
 
     """
-    Univariate Problem06 test objective function.
+    Univariate Problem06 objective function.
 
     This class defines the Univariate Problem06 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8719,7 +8008,7 @@ class Problem06(Benchmark):
 class Problem07(Benchmark):
 
     """
-    Univariate Problem07 test objective function.
+    Univariate Problem07 objective function.
 
     This class defines the Univariate Problem07 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8758,7 +8047,7 @@ class Problem07(Benchmark):
 class Problem08(Benchmark):
 
     """
-    Univariate Problem08 test objective function.
+    Univariate Problem08 objective function.
 
     This class defines the Univariate Problem08 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8802,7 +8091,7 @@ class Problem08(Benchmark):
 class Problem09(Benchmark):
 
     """
-    Univariate Problem09 test objective function.
+    Univariate Problem09 objective function.
 
     This class defines the Univariate Problem09 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8841,7 +8130,7 @@ class Problem09(Benchmark):
 class Problem10(Benchmark):
 
     """
-    Univariate Problem10 test objective function.
+    Univariate Problem10 objective function.
 
     This class defines the Univariate Problem10 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8880,7 +8169,7 @@ class Problem10(Benchmark):
 class Problem11(Benchmark):
 
     """
-    Univariate Problem11 test objective function.
+    Univariate Problem11 objective function.
 
     This class defines the Univariate Problem11 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8919,7 +8208,7 @@ class Problem11(Benchmark):
 class Problem12(Benchmark):
 
     """
-    Univariate Problem12 test objective function.
+    Univariate Problem12 objective function.
 
     This class defines the Univariate Problem12 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8958,7 +8247,7 @@ class Problem12(Benchmark):
 class Problem13(Benchmark):
 
     """
-    Univariate Problem13 test objective function.
+    Univariate Problem13 objective function.
 
     This class defines the Univariate Problem13 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -8997,7 +8286,7 @@ class Problem13(Benchmark):
 class Problem14(Benchmark):
 
     """
-    Univariate Problem14 test objective function.
+    Univariate Problem14 objective function.
 
     This class defines the Univariate Problem14 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -9036,7 +8325,7 @@ class Problem14(Benchmark):
 class Problem15(Benchmark):
 
     """
-    Univariate Problem15 test objective function.
+    Univariate Problem15 objective function.
 
     This class defines the Univariate Problem15 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -9075,7 +8364,7 @@ class Problem15(Benchmark):
 class Problem18(Benchmark):
 
     """
-    Univariate Problem18 test objective function.
+    Univariate Problem18 objective function.
 
     This class defines the Univariate Problem18 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -9119,7 +8408,7 @@ class Problem18(Benchmark):
 class Problem20(Benchmark):
 
     """
-    Univariate Problem20 test objective function.
+    Univariate Problem20 objective function.
 
     This class defines the Univariate Problem20 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -9158,7 +8447,7 @@ class Problem20(Benchmark):
 class Problem21(Benchmark):
 
     """
-    Univariate Problem21 test objective function.
+    Univariate Problem21 objective function.
 
     This class defines the Univariate Problem21 global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -9197,7 +8486,7 @@ class Problem21(Benchmark):
 class Problem22(Benchmark):
 
     """
-    Univariate Problem22 test objective function.
+    Univariate Problem22 objective function.
 
     This class defines the Univariate Problem22 global optimization problem. This
     is a multimodal minimization problem defined as follows:
