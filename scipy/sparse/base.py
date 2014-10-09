@@ -298,12 +298,11 @@ class spmatrix(object):
         cls_other = type(other)
         other = np.asarray(other)
 
-        if other.ndim == 0 and other.dtype == np.object_:
-            # Not interpretable as an array; return NotImplemented so that
-            # other's __rmul__ can kick in if that's implemented.
-            return NotImplemented
-
         if other.ndim == 0:
+            if other.dtype == np.object_:
+                # Not interpretable as an array; return NotImplemented so that
+                # other's __rmul__ can kick in if that's implemented.
+                return NotImplemented
             result = self._mul_scalar(other)
         elif other.ndim == 1:
             if other.shape[0] != N:
