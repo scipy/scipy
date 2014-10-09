@@ -220,6 +220,27 @@ class TestCephes(TestCase):
         assert_equal(cephes.dawsn(0),0.0)
         assert_allclose(cephes.dawsn(1.23), 0.50053727749081767)
 
+    def test_diric(self):
+        # test behavior near multiples of 2*np.pi
+        n_odd = [1, 5, 25]
+        x = np.array(2*np.pi + 5e-5).astype(np.float32)
+        assert_almost_equal(special.diric(x, n_odd), 1.0, decimal=7)
+        x = np.array(2*np.pi + 1e-9).astype(np.float64)
+        assert_almost_equal(special.diric(x, n_odd), 1.0, decimal=15)
+        x = np.array(2*np.pi + 1e-15).astype(np.float64)
+        assert_almost_equal(special.diric(x, n_odd), 1.0, decimal=15)
+        x = np.array(2*np.pi + 1e-12).astype(np.float128)
+        assert_almost_equal(special.diric(x, n_odd), 1.0, decimal=19)
+        n_even = [2, 4, 24]
+        x = np.array(2*np.pi + 1e-9).astype(np.float64)
+        assert_almost_equal(special.diric(x, n_even), -1.0, decimal=15)
+
+        # test at some values not near a multiple of pi
+        x = np.arange(0.2*np.pi, 1.0*np.pi, 0.2*np.pi)
+        octave_result = [0.872677996249965, 0.539344662916632,
+                         0.127322003750035, -0.206011329583298]
+        assert_almost_equal(special.diric(x, 3), octave_result, decimal=15)
+
     def test_ellipe(self):
         assert_equal(cephes.ellipe(1),1.0)
 

@@ -43,8 +43,8 @@ class SpecialFunctionWarning(Warning):
 warnings.simplefilter("always", category=SpecialFunctionWarning)
 
 
-def diric(x,n):
-    """Returns the periodic sinc function, also called the Dirichlet function
+def diric(x, n):
+    """Return the periodic sinc function, also called the Dirichlet function.
 
     The Dirichlet function is defined as::
 
@@ -64,7 +64,7 @@ def diric(x,n):
     diric : ndarray
 
     """
-    x,n = asarray(x), asarray(n)
+    x, n = asarray(x), asarray(n)
     n = asarray(n + (x-x))
     x = asarray(x + (n-n))
     if issubdtype(x.dtype, inexact):
@@ -72,9 +72,9 @@ def diric(x,n):
     else:
         ytype = float
     y = zeros(x.shape, ytype)
-	
-	#empirical minval for 32, 64 or 128 bit float computations
-	#where sin(x/2)<minval, result is fixed at +1 or -1
+
+    # empirical minval for 32, 64 or 128 bit float computations
+    # where sin(x/2)<minval, result is fixed at +1 or -1
     if np.finfo(ytype).eps < 1e-18:
         minval = 1e-11
     elif np.finfo(ytype).eps < 1e-15:
@@ -83,22 +83,22 @@ def diric(x,n):
         minval = 1e-3
 
     mask1 = (n <= 0) | (n != floor(n))
-    place(y,mask1,nan)
-    
+    place(y, mask1, nan)
+
     x /= 2.0
     denom = sin(x)
     mask2 = (1-mask1) & (abs(denom) < minval)
     xsub = extract(mask2, x)
     nsub = extract(mask2, n)
     zsub = xsub / pi
-    place(y, mask2, pow(-1, np.round(zsub)*(nsub-1)))    
-   
+    place(y, mask2, pow(-1, np.round(zsub)*(nsub-1)))
+
     mask = (1-mask1) & (1-mask2)
     xsub = extract(mask, x)
     nsub = extract(mask, n)
     dsub = extract(mask, denom)
     place(y, mask, sin(nsub*xsub)/(nsub*dsub))
-    return y        
+    return y
 
 
 def jnjnp_zeros(nt):
@@ -1124,7 +1124,7 @@ def ellipk(m):
     ellipkinc : Incomplete elliptic integral of the first kind
     ellipe : Complete elliptic integral of the second kind
     ellipeinc : Incomplete elliptic integral of the second kind
- 
+
 
     """
     return ellipkm1(1 - asarray(m))
