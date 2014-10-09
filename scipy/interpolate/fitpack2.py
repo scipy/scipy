@@ -584,6 +584,10 @@ class LSQUnivariateSpline(UnivariateSpline):
     -----
     The number of data points must be larger than the spline degree `k`.
 
+    Knots `t` must satisfy the Schoenberg-Whitney conditions,
+    i.e., there must be a subset of data points ``x[j]`` such that
+    ``t[j] < x[j] < t[j+k+1]``, for ``j=0, 1,...,n-k-2``.
+
     Examples
     --------
     >>> from scipy.interpolate import LSQUnivariateSpline
