@@ -458,6 +458,12 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None, gap_thresh=
         examined below which to consider noise. Calculated using
         `stats.scoreatpercentile`.  Default is 10.
 
+    Returns
+    -------
+    peaks_indices : list
+        Indices of the locations in the `vector` where peaks were found.
+        The list is sorted.
+
     See Also
     --------
     cwt
