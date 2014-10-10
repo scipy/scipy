@@ -72,7 +72,7 @@ class UnivariateSpline(object):
     """
     One-dimensional smoothing spline fit to a given set of data points.
 
-    Fits a spline y = s(x) of degree `k` to the provided `x`, `y` data.  `s`
+    Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.  `s`
     specifies the number of knots by specifying a smoothing condition.
 
     Parameters
@@ -94,7 +94,7 @@ class UnivariateSpline(object):
         Positive smoothing factor used to choose the number of knots.  Number
         of knots will be increased until the smoothing condition is satisfied::
 
-            sum((w[i] * (y[i]-s(x[i])))**2, axis=0) <= s
+            sum((w[i] * (y[i]-spl(x[i])))**2, axis=0) <= s
 
         If None (default), ``s = len(w)`` which should be a good value if 
         ``1/w[i]`` is an estimate of the standard deviation of ``y[i]``.  
@@ -130,7 +130,7 @@ class UnivariateSpline(object):
 
     >>> w = np.isnan(y) 
     >>> y[w] = 0.
-    >>> s = UnivariateSpline(x, y, w=~w)
+    >>> spl = UnivariateSpline(x, y, w=~w)
 
     Notice the need to replace a ``nan`` by a numerical value (precise value
     does not matter as long as the corresponding weight is zero.)
@@ -306,7 +306,7 @@ class UnivariateSpline(object):
 
     def get_residual(self):
         """Return weighted sum of squared residuals of the spline
-        approximation: ``sum((w[i] * (y[i]-s(x[i])))**2, axis=0)``.
+        approximation: ``sum((w[i] * (y[i]-spl(x[i])))**2, axis=0)``.
         """
         return self._data[10]
 
@@ -441,7 +441,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     """
     One-dimensional interpolating spline for a given set of data points.
 
-    Fits a spline y=s(x) of degree `k` to the provided `x`, `y` data. Spline
+    Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data. Spline
     function passes through all provided points. Equivalent to
     `UnivariateSpline` with  s=0.
 
@@ -495,7 +495,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     >>> plt.plot(xs, spl(xs), 'g', lw=3, alpha=0.7)
     >>> plt.show()
 
-    Notice that the `spl(x)` interpolates `y`:
+    Notice that the ``spl(x)`` interpolates `y`:
 
     >>> spl.get_residual()
     0.0
@@ -532,7 +532,7 @@ class LSQUnivariateSpline(UnivariateSpline):
     """
     One-dimensional spline with explicit internal knots.
 
-    Fits a spline y=s(x) of degree `k` to the provided `x`, `y` data.  `t`
+    Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.  `t`
     specifies the internal knots of the spline
 
     Parameters
