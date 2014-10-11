@@ -8,7 +8,8 @@ cimport numpy as cnp
 
 cimport cython
 
-include "_find_interval.pxi"
+cdef extern from "src/__fitpack.h":
+    void _deBoor_D(double *t, double x, int k, int ell, int m, double *result)
 
 cdef double nan = np.nan
 
@@ -22,6 +23,68 @@ ctypedef fused double_or_complex:
 #------------------------------------------------------------------------------
 # B-splines
 #------------------------------------------------------------------------------
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+cdef inline int find_interval(double[::1] t,
+                       int k,
+                       double xval, 
+                       int prev_l,
+                       int extrapolate) nogil:
+    """
+    Find an interval such that t[interval] <= xval < t[interval+1].
+
+    Uses a linear search with locality, see fitpack's splev.
+
+    Parameters
+    ----------
+    t : ndarray, shape (nt,)
+        Knots
+    k : int
+        B-spline degree
+    xval : double
+        value to find the inteval for
+    prev_l : int
+        interval where the previous value was located.
+        if unknown, use any value < k to start the search.
+    extrapolate : int
+        whether to return the last or the first interval if xval
+        is out of bounds.
+
+    Returns
+    -------
+    interval : int
+        Suitable interval or -1 if xval was nan.
+
+    """
+    cdef:
+        int l
+        int n = t.shape[0] - k - 1
+        double tb = t[k]
+        double te = t[n]
+
+    if xval != xval:
+        # nan
+        return -1
+
+    if (xval < tb) or (xval > te):
+        if extrapolate:
+            pass
+        else:
+            return -1
+
+    l = prev_l if k < prev_l < n else k
+
+    # xval is in support, search for interval s.t. t[interval] <= xval < t[l+1]
+    while(xval < t[l] and l != k):
+        l -= 1
+
+    l += 1
+    while(xval >= t[l] and l != n):
+        l += 1
+
+    return l-1
+
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
@@ -69,98 +132,31 @@ def evaluate_spline(double[::1] t,
         raise NotImplementedError("Cannot do derivative order %s." % der)
 
     n = c.shape[0]
-    cdef double[::1] work = np.zeros(k+2, dtype=np.float_)
-    cdef double[::1] tt = t[k:t.shape[0]-k]  # avoid slicing in the hot loop
+    cdef double[::1] work = np.empty(2*k+2, dtype=np.float_)
 
     # evaluate
-    i = 0
-    for ip in range(len(xp)):
+    interval = k
+    for ip in range(xp.shape[0]):
         xval = xp[ip]
 
         # Find correct interval
-        i = find_interval(tt, xval, i, extrapolate)
+        interval = find_interval(t, k, xval, interval, extrapolate)
 
-        if i < 0:
+        if interval < 0:
             # xval was nan etc
             for jp in range(c.shape[1]):
                 out[ip, jp] = nan
             continue
-        elif i >= n - k:
-            raise RuntimeError("Should not be here: n = %r, i = %r", (n, i))
-        else:
-            interval = i + k
 
-        # Evaluate (k+1) b-splines which are non-zero on the interval
-        # returns work = B_{m-k},..., B_{m}, 0
-        eval_all_bspl(t, k, xval, interval, der, work)
+        # Evaluate (k+1) b-splines which are non-zero on the interval.
+        # on return, first k+1 elemets of work are B_{m-k},..., B_{m}
+        _deBoor_D(&t[0], xval, k, interval, der, &work[0])
 
         # Form linear combinations
         for jp in range(c.shape[1]):
             out[ip, jp] = 0.
             for a in range(k+1):
                 out[ip, jp] = out[ip, jp] + c[interval + a - k, jp] * work[a]
-
-
-@cython.wraparound(False)
-@cython.boundscheck(False)
-@cython.cdivision(True)
-cdef void eval_all_bspl(double[::1] t,
-                       int k,
-                       double xval,
-                       int m,
-                       int nu,
-                       double [::1] out) nogil:
-    """Evaluate the ``k+1`` B-splines which are non-zero on interval ``m``.
-
-    On exit, the `out` array contains `[B_{m-k}(x), ..., B_{m}(x), 0]`
-    (a zero is appended to avoid an out-of-bounds access).
-
-    Notes
-    -----
-
-    Is basically equivalent to Dierckx's `fpbspl` routine.
-
-    Implements algorithm 2.21 of [1_] for nu=0, and algorithm 3.18 for nu>0.
-
-    References
-    ----------
-    [1]_ Tom Lyche and Knut Morken, Spline Methods,
-        http://www.uio.no/studier/emner/matnat/ifi/INF-MAT5340/v05/undervisningsmateriale/
-
-    """
-    cdef int i, j, deg
-    cdef double w0, w1
-    cdef double queue[2]
-
-    for i in range(k+2):
-        out[i] = 0.
-
-    if k - nu + 1 > 0:
-        out[0] = 1.
-
-        if k != 0:
-            for deg in range(1, k+1):
-                # build all k+1 B-splines of degree k
-                queue[0] = 0.
-                queue[1] = out[0]
-                for j in range(m-deg, m+1):
-                    w0 = t[j + deg] - t[j]
-                    if w0 != 0:
-                        if deg > k - nu:
-                            w0 = 1. * deg / w0    # derivative order nu
-                        else:
-                            w0 = (xval - t[j]) / w0
-
-                    w1 = t[j+deg+1] - t[j+1]
-                    if w1 != 0:
-                        if deg > k - nu:
-                            w1 = -1. * deg / w1    # derivative order nu
-                        else:
-                            w1 = (t[j+deg+1] - xval) / w1
-
-                    out[j-m+deg] = w0 * queue[0] + w1 * queue[1]
-                    queue[0] = queue[1]
-                    queue[1] = out[j - m + deg + 1]
 
 
 def evaluate_all_bspl(double[::1] t, int k, double xval, int m, int nu=0):
@@ -220,10 +216,10 @@ def evaluate_all_bspl(double[::1] t, int k, double xval, int m, int nu=0):
     ... plt.show()
 
     """
-    bbb = np.empty(k+2, dtype=np.float_)
+    bbb = np.empty(2*k+2, dtype=np.float_)
     cdef double[::1] work = bbb
-    eval_all_bspl(t, k, xval, m, nu, work)
-    return bbb[:-1]
+    _deBoor_D(&t[0], xval, k, m, nu, &work[0])
+    return bbb[:k+1]
 
 
 @cython.wraparound(False)
@@ -240,7 +236,6 @@ def _colloc(double[::1] x, double[::1] t, int k, int offset=0):
     does no error checking.
 
     Parameters
-    ----------
     x : ndarray, shape (n,)
         sorted 1D array of x values
     t : ndarray, shape (nt + k + 1,)
@@ -266,17 +261,17 @@ def _colloc(double[::1] x, double[::1] t, int k, int offset=0):
     kl = ku = k
     cdef cnp.ndarray[cnp.float_t, ndim=2] Ab = np.zeros((kl + ku + 1, nt),
             dtype=np.float_)
-    cdef cnp.ndarray[cnp.float_t, ndim=1] out = np.empty(k+2, dtype=np.float_)
+    cdef cnp.ndarray[cnp.float_t, ndim=1] out = np.empty(2*k+2, dtype=np.float_)
     
     # collocation matrix
     left = k
     for j in range(x.shape[0]):
         xval = x[j]
         # find interval
-        left = k + find_interval(t[k:-k], xval, left, extrapolate=False)
+        left = find_interval(t, k, xval, left, extrapolate=False)
 
         # fill a row
-        eval_all_bspl(t, k, xval, left, 0, out)
+        _deBoor_D(&t[0], xval, k, left, 0, &out[0])
         # for a full matrix it would be ``A[j + offset, left-k:left+1] = bb``
         # in the banded storage, need to spread the row over
         for a in range(k+1):
@@ -316,13 +311,14 @@ def _handle_lhs_derivatives(double[::1]t, int k, double xval, ab,
     cdef int kl, ku, left, nu, a, clmn, row
 
     kl, ku = kl_ku
-    out = np.empty(k+2, dtype=np.float_)
+    cdef double[::1] out = np.empty(2*k+2, dtype=np.float_)
+
 
     # derivatives @ xval
-    left = k + find_interval(t[k:-k], xval, 0,  extrapolate=False)
+    left = find_interval(t, k, xval, k, extrapolate=False)
     for row in range(deriv_ords.size):
         nu = deriv_ords[row]
-        eval_all_bspl(t, k, xval, left, nu, out)
+        _deBoor_D(&t[0], xval, k, left, nu, &out[0])
         # if A were a full matrix, it would be just
         # ``A[row + offset, left-k:left+1] = bb``.
         for a in range(k+1):

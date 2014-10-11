@@ -41,7 +41,7 @@ class TestBSpline(TestCase):
         assert_allclose(c, b.c)
         assert_equal(k, b.k)
 
-    def _degree_0(self):
+    def test_degree_0(self):
         xx = np.linspace(0, 1, 10)
 
         b = BSpline(t=[0, 1], c=[3.], k=0)
@@ -222,7 +222,10 @@ class TestBSpline(TestCase):
     def test_basis_element_quadratic(self):
         xx = np.linspace(-1, 4, 20)
         b = BSpline.basis_element(t=[0, 1, 2, 3])
-        assert_allclose(b(xx), B_0123(xx), atol=1e-14)
+        assert_allclose(b(xx),
+                        splev(xx, (b.t, b.c, b.k)), atol=1e-14)
+        assert_allclose(b(xx),
+                        B_0123(xx), atol=1e-14)
 
         b = BSpline.basis_element(t=[0, 1, 1, 2])
         xx = np.linspace(0, 2, 10)
@@ -245,6 +248,11 @@ class TestBSpline(TestCase):
         xx = np.linspace(t[k], t[-k-1], 20)
         assert_allclose(b(xx).real, b_re(xx), atol=1e-14)
         assert_allclose(b(xx).imag, b_im(xx), atol=1e-14)
+
+    def test_nan(self):
+        # nan in, nan out.
+        b = BSpline.basis_element([0, 1, 1, 2])
+        assert_(np.isnan(b(np.nan)))
 
     def test_derivative(self):
         b, t, c, k = _make_random_spline(k=5)
