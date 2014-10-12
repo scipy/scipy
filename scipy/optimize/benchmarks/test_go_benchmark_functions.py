@@ -30,7 +30,7 @@ class TestGoBenchmarkFunctions(TestCase):
         for name, klass in self.benchmark_functions:
             if name == 'Benchmark':
                 continue
-            if name is 'LennardJones':
+            if name == 'LennardJones':
                 continue
             if name.startswith('Problem'):
                 continue

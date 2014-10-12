@@ -130,6 +130,9 @@ class Benchmark(object):
         val = self.fun(asarray(x))
         if abs(val - self.fglob) < tol:
             return True
+        if val < self.fglob:
+#             print(repr(self), val, x)
+            return True
 
         return False
 
@@ -254,7 +257,7 @@ class Ackley01(Benchmark):
                 - exp(v / self.N) + 20. + exp(1.))
 
 
-class Ackley02(object):
+class Ackley02(Benchmark):
     """
     Ackley02 objective function.
 
@@ -287,7 +290,7 @@ class Ackley02(object):
         return -200 * exp(-0.02 * sqrt(x[0] ** 2 + x[1] ** 2))
 
 
-class Ackley03(object):
+class Ackley03(Benchmark):
     """
     Ackley03 [1]_ objective function.
 
@@ -319,6 +322,7 @@ class Ackley03(object):
         self.fglob = -195.62902825923879
 
     def fun(self, x):
+        self.nfev += 1
         a = -200 * exp(-0.02 * sqrt(x[0] ** 2 + x[1] ** 2))
         a += 5 * exp(cos(3 * x[0]) + sin(3 * x[1]))
         return a
@@ -556,7 +560,7 @@ class Beale(Benchmark):
                 + (2.625 - x[0] + x[0] * x[1] ** 3) ** 2)
 
 
-class BiggsExp02(object):
+class BiggsExp02(Benchmark):
     """
     BiggsExp02 objective function.
 
@@ -600,7 +604,7 @@ class BiggsExp02(object):
         return sum(vec)
 
 
-class BiggsExp03(object):
+class BiggsExp03(Benchmark):
 
     """
     BiggsExp03 objective function.
@@ -645,7 +649,7 @@ class BiggsExp03(object):
         return sum(vec)
 
 
-class BiggsExp04(object):
+class BiggsExp04(Benchmark):
 
     """
     BiggsExp04 objective function.
@@ -690,7 +694,7 @@ class BiggsExp04(object):
         return sum(vec)
 
 
-class BiggsExp05(object):
+class BiggsExp05(Benchmark):
 
     """
     BiggsExp05 objective function.
@@ -934,8 +938,8 @@ class Branin02(Benchmark):
 
         self._bounds = [(-5.0, 15.0), (-5.0, 15.0)]
 
-        self.global_optimum = [[-3.2, 12.53]]
-        self.fglob = 5.559037
+        self.global_optimum = [[-3.1969884 ,  12.52625787]]
+        self.fglob = 5.5589144038938247
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -1040,13 +1044,13 @@ class Bukin02(Benchmark):
 
     .. math::
 
-        f_{\text{Bukin02}}(\mathbf{x}) = 100 (x_2 - 0.01x_1^2 + 1)
+        f_{\text{Bukin02}}(\mathbf{x}) = 100 (x_2^2 - 0.01x_1^2 + 1)
         + 0.01(x_1 + 10)^2
 
     Here, :math:`n` represents the number of dimensions and :math:`x_1 \in [-15,
     -5], x_2 \in [-3, 3]`
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x} = [-10, 0]`
+    *Global optimum*: :math:`f(x_i) = -124.75` for :math:`\mathbf{x} = [-15, 0]`
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical
@@ -1054,13 +1058,15 @@ class Bukin02(Benchmark):
 
     """
 
+    #TODO: this function is dodgy.  Infinity77 equation is different to code.
+    #Jamil also has wrong minimum.
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = [(-15.0, -5.0), (-3.0, 3.0)]
 
-        self.global_optimum = [[-10.0, 0.0]]
-        self.fglob = 0.0
+        self.global_optimum = [[-15.0, 0.0]]
+        self.fglob = -124.75
 
     def fun(self, x, *args):
 
@@ -1291,8 +1297,8 @@ class Cola(Benchmark):
         2.38 & 2.31 & 2.42 & 1.94 & 2.85 & 2.81 & 2.56 & 2.91 & 2.97
         \\end{pmatrix}
 
-    This function has bounds :math:`0 \\leq x_0 \\leq 4` and :math:`-4 \\leq x_i \\leq 4` for :math:`i = 1,...,n-1`. It
-    has a global minimum of 11.7464.
+    This function has bounds :math:`0 \\leq x_0 \\leq 4` and :math:`-4 \\leq x_i
+    \\leq 4` for :math:`i = 1,...,n-1`. It has a global minimum of 11.7464.
     """
 
     def __init__(self, dimensions=17):
@@ -1310,60 +1316,31 @@ class Cola(Benchmark):
         self.fglob = 11.7464
 
     def fun(self, x, *args):
-
         self.nfev += 1
 
-        # C implementation - doesn't work
-# dis = [1.27,
-##               1.69, 1.43,
-##               2.04, 2.35, 2.43,
-##               3.09, 3.18, 3.26, 2.85,
-##               3.20, 3.22, 3.27, 2.88, 1.55,
-##               2.86, 2.56, 2.58, 2.59, 3.12, 3.06,
-##               3.17, 3.18, 3.18, 3.12, 1.31, 1.64, 3.00,
-##               3.21, 3.18, 3.18, 3.17, 1.70, 1.36, 2.95, 1.32,
-# 2.38, 2.31, 2.42, 1.94, 2.85, 2.81, 2.56, 2.91, 2.97]
-##
-##        s = 0.0
-##        k = 1
-##        mt = zeros((20, ))
-##        mt[4:] = x[1:]
-##
-# for i in range(1, 10):
-# for j in range(i):
-##                temp = 0.0
-# for t in range(2):
-##                    temp += (mt[i*2+t] - mt[j*2+t])**2.0
-##                s += (dis[k-1] - sqrt(temp))**2.0
-##                k += 1
-##
-# return s
+        d = asarray([[0, 0,  0,  0,  0,  0,  0,  0,  0, 0],
+                 [1.27, 0,  0,  0,  0,  0,  0,  0,  0, 0],
+                 [1.69, 1.43, 0,  0,  0,  0,  0,  0,  0, 0],
+                 [2.04, 2.35, 2.43, 0,    0,    0,    0,    0,    0, 0],
+                 [3.09, 3.18, 3.26, 2.85, 0,    0,    0,    0,    0, 0],
+                 [3.20, 3.22, 3.27, 2.88, 1.55, 0,    0,    0,    0, 0],
+                 [2.86, 2.56, 2.58, 2.59, 3.12, 3.06, 0,    0,    0, 0],
+                 [3.17, 3.18, 3.18, 3.12, 1.31, 1.64, 3.00, 0,    0, 0],
+                 [3.21, 3.18, 3.18, 3.17, 1.70, 1.36, 2.95, 1.32, 0, 0],
+                 [2.38, 2.31, 2.42, 1.94, 2.85, 2.81, 2.56, 2.91, 2.97, 0.]])
 
-        # Scilab implementation
 
-        d = asarray([[0, 0,  0,  0,  0,  0,  0,  0,  0],
-                     [1.27, 0,  0,  0,  0,  0,  0,  0,  0],
-                     [1.69, 1.43, 0,  0,  0,  0,  0,  0,  0],
-                     [2.04, 2.35, 2.43, 0,    0,    0,    0,    0,    0],
-                     [3.09, 3.18, 3.26, 2.85, 0,    0,    0,    0,    0],
-                     [3.20, 3.22, 3.27, 2.88, 1.55, 0,    0,    0,    0],
-                     [2.86, 2.56, 2.58, 2.59, 3.12, 3.06, 0,    0,    0],
-                     [3.17, 3.18, 3.18, 3.12, 1.31, 1.64, 3.00, 0,    0],
-                     [3.21, 3.18, 3.18, 3.17, 1.70, 1.36, 2.95, 1.32, 0],
-                     [2.38, 2.31, 2.42, 1.94, 2.85, 2.81, 2.56, 2.91, 2.97]])
+        xi = np.atleast_2d(asarray([0.0, x[0]] + list(x[1::2])))
+        xj = np.repeat(xi, np.size(xi, 1), axis = 0)
+        xi = xi.T
 
-        x1 = asarray([0.0, x[0]] + list(x[1::2]))
-        x2 = asarray([0.0, 0.0] + list(x[2::2]))
-        y = 0.0
+        yi = np.atleast_2d(asarray([0.0, 0.0] + list(x[2::2])))
+        yj = np.repeat(yi, np.size(yi, 1), axis = 0)
+        yi = yi.T
 
-        for i in range(1, len(x1)):
-            y += sum((sqrt((x1[i] - x1[0:i]) ** 2.0 +
-                     (x2[i] - x2[0:i]) ** 2.0) - d[i, 0:i]) ** 2.0)
-
-# for j in range(i):
-##                y += (sqrt((x1[i] - x1[j])**2.0 + (x2[i] - x2[j])**2.0) - d[i, j])**2.0
-
-        return y
+        inner = (sqrt(((xi - xj) ** 2 + (yi - yj) ** 2)) - d) ** 2
+        inner = np.tril(inner, -1)
+        return sum(sum(inner, axis = 1))
 
 
 class Colville(Benchmark):
@@ -1616,7 +1593,7 @@ class Csendes(Benchmark):
         self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
         self.global_optimum = [[0 for _ in range(self.N)]]
-        self.fglob = 0.0
+        self.fglob = np.nan
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -1631,6 +1608,11 @@ class Csendes(Benchmark):
         val = self.fun(asarray(x))
         if np.isnan(val):
             return True
+        try:
+            np.testing.assert_almost_equal(val, 0., 4)
+            return True
+        except AssertionError:
+            return False
 
         return False
 
@@ -1695,7 +1677,7 @@ class Damavandi(Benchmark):
         self._bounds = zip([0.0] * self.N, [14.0] * self.N)
 
         self.global_optimum = [[2 for _ in range(self.N)]]
-        self.fglob = 0.0
+        self.fglob = np.nan
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -2205,11 +2187,11 @@ class Eckerle4(Benchmark):
     """
 
     # TODO, this is a NIST regression standard dataset
-    def __init__(self, dimensions=4):
+    def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0., 1., 0., 0.1],
-                           [1000, 20., 3., 6.])
+        self._bounds = zip([0., 1., 10.],
+                           [20, 20., 600.])
         self.global_optimum = [[1.5543827178, 4.0888321754, 4.5154121844e2]]
         self.fglob = 1.4635887487E-03
 
@@ -3799,10 +3781,12 @@ class Mishra04(Benchmark):
 
     .. math::
 
-       f_{\\text{Mishra04}}(\\mathbf{x}) = \\sqrt{\\lvert \\sin{\\sqrt{\\lvert x_1^2 + x_2^2 \\rvert}} \\rvert} + 0.01(x_1 + x_2)
+       f_{\\text{Mishra04}}(\\mathbf{x}) = \\sqrt{\\lvert \\sin{\\sqrt{\\lvert
+       x_1^2 + x_2^2 \\rvert}} \\rvert} + 0.01(x_1 + x_2)
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in
+    [-10, 10]` for :math:`i=1,2`.
 
     *Global optimum*: :math:`f(x_i) = -0.17767` for :math:`x_i = {-8.71499636, -9.0533148}`
 
@@ -3813,8 +3797,8 @@ class Mishra04(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [[-8.71499636, -9.0533148]]
-        self.fglob = -0.17767
+        self.global_optimum = [[-8.92011797, -8.85128046]]
+        self.fglob = -0.17768386538
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -5122,7 +5106,8 @@ class Rana(Benchmark):
 
         t1 = sqrt(abs(x[1:] + x[: -1] + 1))
         t2 = sqrt(abs(x[1:] - x[: -1] + 1))
-        return sum((x[1:] + 1) * cos(t2) * sin(t1) + x[:-1] * cos(t1) * sin(t2))
+        v = (x[1:] + 1) * cos(t2) * sin(t1) + x[:-1] * cos(t1) * sin(t2)
+        return sum(v)
 
 
 class Rastrigin(Benchmark):
@@ -5438,11 +5423,14 @@ class Salomon(Benchmark):
 
     .. math::
 
-       f_{\\text{Salomon}}(\\mathbf{x}) = 1 - \\cos \\left (2 \\pi \\sqrt{\\sum_{i=1}^{n} x_i^2} \\right) + 0.1 \\sqrt{\\sum_{i=1}^n x_i^2}
+       f_{\\text{Salomon}}(\\mathbf{x}) = 1 - \\cos \\left (2 \\pi
+       \\sqrt{\\sum_{i=1}^{n} x_i^2} \\right) + 0.1 \\sqrt{\\sum_{i=1}^n x_i^2}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in
+    [-100, 100]` for :math:`i=1,...,n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for
+    :math:`i=1,...,n`
 
     """
 
@@ -7084,14 +7072,18 @@ class Watson(Benchmark):
 
     .. math::
 
-       f_{\\text{Watson}}(\\mathbf{x}) = \\sum_{i=0}^{29} \\left\\{ \\sum_{j=0}^4 ((j + 1)a_i^j x_{j+1}) - \\left[ \\sum_{j=0}^5 a_i^j x_{j+1} \\right ]^2 - 1 \\right\\}^2 + x_1^2
+       f_{\\text{Watson}}(\\mathbf{x}) = \\sum_{i=0}^{29} \\left\\{
+       \\sum_{j=0}^4 ((j + 1)a_i^j x_{j+1}) - \\left[ \\sum_{j=0}^5 a_i^j
+       x_{j+1} \\right ]^2 - 1 \\right\\}^2 + x_1^2
 
 
     Where, in this exercise, :math:`a_i = i/29`.
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,...,6`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5,
+    5]` for :math:`i=1,...,6`.
 
-    *Global optimum*: :math:`f(x_i) = 0.002288` for :math:`\\mathbf{x} = [-0.0158, 1.012, -0.2329, 1.260, -1.513, 0.9928]`
+    *Global optimum*: :math:`f(x_i) = 0.002288` for :math:`\\mathbf{x} =
+    [-0.0158, 1.012, -0.2329, 1.260, -1.513, 0.9928]`
 
     """
 
@@ -7236,7 +7228,9 @@ class Weierstrass(Benchmark):
 
     .. math::
 
-       f_{\\text{Weierstrass}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\left [ \\sum_{k=0}^{kmax} a^k \\cos \\left( 2 \\pi b^k (x_i + 0.5) \\right) - n \\sum_{k=0}^{kmax} a^k \\cos(\\pi b^k) \\right ]
+       f_{\\text{Weierstrass}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\left [
+       \\sum_{k=0}^{kmax} a^k \\cos \\left( 2 \\pi b^k (x_i + 0.5) \\right) - n
+       \\sum_{k=0}^{kmax} a^k \\cos(\\pi b^k) \\right ]
 
 
     Where, in this exercise, :math:`kmax = 20`, :math:`a = 0.5` and :math:`b = 3`.
@@ -7246,7 +7240,7 @@ class Weierstrass(Benchmark):
     *Global optimum*: :math:`f(x_i) = 4` for :math:`x_i = 0` for :math:`i=1,...,n`
 
     """
-
+#TODO this is hard if you are the least bit away from 0.
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 

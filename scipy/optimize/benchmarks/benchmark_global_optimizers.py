@@ -1,3 +1,4 @@
+from __future__ import division
 """
 benchmarks for the global optimization algorithms
 
@@ -7,9 +8,10 @@ import numpy as np
 import time
 import inspect
 from scipy.optimize import basinhopping, differential_evolution, OptimizeResult
+from scipy.optimize import anneal
 
 import go_benchmark_functions as gbf
-from numpy.testing import Tester, TestCase, assert_array_almost_equal
+from numpy.testing import *
 from collections import defaultdict
 
 NUMTRIALS = 100
@@ -46,24 +48,6 @@ class _BenchOptimizers(object):
     def energy_gradient(self, x):
         return self.fun(x), self.function.der(x)
 
-    # for basinhopping
-    def accept_test(self, x_new=None, *args, **kwargs):
-        """
-        Does the new candidate vector lie inbetween the bounds?
-
-        Returns
-        -------
-        accept_test : bool
-            The candidate vector lies inbetween the bounds
-        """
-        if not hasattr(self.function, "xmin"):
-            return True
-        if np.any(x_new < self.function.xmin):
-            return False
-        if np.any(x_new > self.function.xmax):
-            return False
-        return True
-
     def add_result(self, result, t, name):
         """
         Add a result to the list
@@ -77,7 +61,6 @@ class _BenchOptimizers(object):
         name : str
             The name of the minimizer used
         """
-
         result.time = t
         result.name = name
         if not hasattr(result, "njev"):
@@ -90,8 +73,8 @@ class _BenchOptimizers(object):
         """
         Print the current list of results
         """
-        results = self.average_results()
-        results = sorted(results, key=lambda x: (x.nfail, x.mean_time))
+        results = self.average_results().values()
+        results = sorted(results, key=lambda x: (x.nsuccess, x.mean_time))
         print("")
         print("=========================================================")
         print(("Optimizer benchmark: %s" % (self.function_name)))
@@ -99,11 +82,11 @@ class _BenchOptimizers(object):
               (results[0].ndim, str(self.minimizer_kwargs))))
         print(("averaged over %d starting configurations" %
               (results[0].ntrials)))
-        print("  Optimizer    nfail   nfev    njev    nhev    time")
+        print("  Optimizer    nsuccess   nfev    njev    nhev    time")
         print("---------------------------------------------------------")
         for res in results:
             print(("%30s   | %4d  | %8d  | %4d  | %4d  | %.6g" %
-                  (res.name, res.nfail, res.mean_nfev, res.mean_njev,
+                  (res.name, res.nsuccess, res.mean_nfev, res.mean_njev,
                    res.mean_nhev, res.mean_time)))
 
     def average_results(self):
@@ -123,25 +106,44 @@ class _BenchOptimizers(object):
             newres.mean_nhev = np.mean([r.nhev for r in result_list])
             newres.mean_time = np.mean([r.time for r in result_list])
             newres.ntrials = len(result_list)
-            newres.nfail = len([r for r in result_list if not r.success])
+            newres.nsuccess = len([r for r in result_list if r.success])
             try:
                 newres.ndim = len(result_list[0].x)
             except TypeError:
                 newres.ndim = 1
             averaged_results[name] = newres
-        return averaged_results.values()
+        return averaged_results
 
-    def bench_run(self, **minimizer_kwargs):
+    # for basinhopping
+    def accept_test(self, x_new=None, *args, **kwargs):
         """
-        Do an optimization test starting at x0 for all the optimizers
+        Does the new candidate vector lie inbetween the bounds?
+
+        Returns
+        -------
+        accept_test : bool
+            The candidate vector lies inbetween the bounds
+        """
+        if not hasattr(self.function, "xmin"):
+            return True
+        if np.any(x_new < self.function.xmin):
+            return False
+        if np.any(x_new > self.function.xmax):
+            return False
+        return True
+
+    def run_basinhopping(self):
+        """
+        Do an optimization run for basinhopping
         """
         kwargs = self.minimizer_kwargs
-
         if hasattr(self.fun, "temperature"):
             kwargs["T"] = self.function.temperature
         if hasattr(self.fun, "stepsize"):
             kwargs["stepsize"] = self.function.stepsize
+
         minimizer_kwargs = {"method": "L-BFGS-B"}
+
         x0 = self.function.initial_vector()
 
         # basinhopping - no gradient
@@ -160,7 +162,10 @@ class _BenchOptimizers(object):
         res.nfev = self.function.nfev
         self.add_result(res, t1 - t0, 'basinhopping')
 
-        # differential_evolution
+    def run_differentialevolution(self):
+        """
+        Do an optimization run for differential_evolution
+        """
         self.function.nfev = 0
 
         t0 = time.time()
@@ -174,7 +179,36 @@ class _BenchOptimizers(object):
         res.nfev = self.function.nfev
         self.add_result(res, t1 - t0, 'differential_evolution')
 
+    def run_anneal(self):
+        """
+        Do an optimization run for simulated annealing
+        """
+        self.function.nfev = 0
+        x0 = self.function.initial_vector()
 
+        t0 = time.time()
+
+        result = anneal(self.fun, x0, disp=False, lower=self.function.xmin,
+                        upper=self.function.xmax)
+
+        t1 = time.time()
+
+        res = OptimizeResult()
+        res.x = result[0]
+        res.success = self.function.success(res.x)
+        res.nfev = self.function.nfev
+        self.add_result(res, t1 - t0, 'anneal')
+
+    def bench_run(self, trials=NUMTRIALS):
+        """
+        Run the optimization tests for the required minimizers.
+        """
+        for i in range(trials):
+            self.run_differentialevolution()
+            self.run_basinhopping()
+            self.run_anneal()
+
+@dec.slow
 class BenchGlobalOptimizers(TestCase):
     """
     Benchmark the global optimizers using the go_benchmark_functions
@@ -186,20 +220,45 @@ class BenchGlobalOptimizers(TestCase):
         functions = [item for item in bench_members if
                                     issubclass(item[1], gbf.Benchmark)]
 
+        print('')
+        print('------------------------------')
+        print('Benchmarking Global Optimizers')
+        print('------------------------------')
+
+        print("{0:20} {1:^30} {2:^30}".format('',
+                                              'success %',
+                                              'nfev'))
+
+        print('{0:20} {1:>10} {2:>10} {3:>10} {4:>10} {5:>10}'
+              ' {6:>10}'.format('Problem',
+                                'basin %',
+                                'diffev %',
+                                'anneal %',
+                                'basin',
+                                'diffev',
+                                'anneal'))
+
         for name, klass in functions:
-            f = klass()
             if name == 'Benchmark':
                 continue
-            if name is 'LennardJones':
+            if name == 'LennardJones':
                 continue
             if name.startswith('Problem'):
                 continue
 
+            f = klass()
             b = _BenchOptimizers(name, f)
-            for i in range(NUMTRIALS):
-                b.bench_run()
+            b.bench_run()
+            av_results = b.average_results()
 
-            b.print_results()
+            print('{0:20} {1:>10.1f} {2:>10.1f} {3:>10.1f} {4:>10d} {5:>10d}'
+                  ' {6:>10d}'.format(name[0: 20],
+                100 * av_results['basinhopping'].nsuccess / NUMTRIALS,
+                100 * av_results['differential_evolution'].nsuccess / NUMTRIALS,
+                100 * av_results['anneal'].nsuccess / NUMTRIALS,
+                int(av_results['basinhopping'].mean_nfev),
+                int(av_results['differential_evolution'].mean_nfev),
+                int(av_results['anneal'].mean_nfev)))
 
 
 if __name__ == "__main__":
