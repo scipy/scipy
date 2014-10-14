@@ -267,6 +267,17 @@ class TestSplev(TestCase):
         z = splev(1, tck)
         assert_equal(z.shape, ())
 
+    def test_2d_shape(self):
+        x = [1, 2, 3, 4, 5]
+        y = [4, 5, 6, 7, 8]
+        tck = splrep(x, y)
+        t = np.array([[1.0, 1.5, 2.0, 2.5],
+                      [3.0, 3.5, 4.0, 4.5]])
+        z = splev(t, tck)
+        z0 = splev(t[0], tck)
+        z1 = splev(t[1], tck)
+        assert_equal(z, np.row_stack((z0, z1)))
+
     def test_extrapolation_modes(self):
         # test extrapolation modes
         #    * if ext=0, return the extrapolated value.

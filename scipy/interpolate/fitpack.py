@@ -541,7 +541,7 @@ def splev(x, tck, der=0, ext=0):
     Parameters
     ----------
     x : array_like
-        A 1-D array of points at which to return the value of the smoothed
+        An array of points at which to return the value of the smoothed
         spline or its derivatives.  If `tck` was returned from `splprep`,
         then the parameter values, u should be given.
     tck : tuple
@@ -599,7 +599,7 @@ def splev(x, tck, der=0, ext=0):
 
         x = asarray(x)
         shape = x.shape
-        x = atleast_1d(x)
+        x = atleast_1d(x).ravel()
         y, ier = _fitpack._spl_(x, der, t, c, k, ext)
 
         if ier == 10:
