@@ -546,6 +546,25 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     return result
 
 
+def _approx_fprime_helper(xk, f, epsilon, args=None, f0=None):
+    """
+    See ``approx_fprime``.  An optional initial funciton value is added.
+
+    """
+    if args is None:
+        args = ()
+    if f0 is None:
+        f0 = f(*((xk,) + args))
+    grad = numpy.zeros((len(xk),), float)
+    ei = numpy.zeros((len(xk),), float)
+    for k in range(len(xk)):
+        ei[k] = 1.0
+        d = epsilon * ei
+        grad[k] = (f(*((xk + d,) + args)) - f0) / d[k]
+        ei[k] = 0.0
+    return grad
+
+
 def approx_fprime(xk, f, epsilon, *args):
     """Finite-difference approximation of the gradient of a scalar function.
 
@@ -601,16 +620,7 @@ def approx_fprime(xk, f, epsilon, *args):
     array([   2.        ,  400.00004198])
 
     """
-    f0 = f(*((xk,) + args))
-    grad = numpy.zeros((len(xk),), float)
-    ei = numpy.zeros((len(xk),), float)
-    for k in range(len(xk)):
-        ei[k] = 1.0
-        d = epsilon * ei
-        grad[k] = (f(*((xk + d,) + args)) - f0) / d[k]
-        ei[k] = 0.0
-
-    return grad
+    return _approx_fprime_helper(xk, f, epsilon, args=args)
 
 
 def check_grad(func, grad, x0, *args, **kwargs):
