@@ -83,7 +83,7 @@ Jeff Armstrong for discrete state-space and linear time-invariant functionality
 Mark Wiebe for fixing type casting after changes in Numpy.
 Andrey Smirnov for improvements to FIR filter design.
 Anthony Scopatz for help with code review and merging.
-Lars Buitinck for improvements to io.arff and scipy.sparse.
+Lars Buitinck for improvements to scipy.sparse and various other modules.
 Scott Sinclair for documentation improvements and some bug fixes.
 Gael Varoquaux for cleanups in scipy.sparse.
 Skipper Seabold for a fix to special.gammainc.
