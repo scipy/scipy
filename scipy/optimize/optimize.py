@@ -548,7 +548,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
 def _approx_fprime_helper(xk, f, epsilon, args=None, f0=None):
     """
-    See ``approx_fprime``.  An optional initial funciton value is added.
+    See ``approx_fprime``.  An optional initial function value arg is added.
 
     """
     if args is None:
