@@ -546,13 +546,11 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     return result
 
 
-def _approx_fprime_helper(xk, f, epsilon, args=None, f0=None):
+def _approx_fprime_helper(xk, f, epsilon, args=(), f0=None):
     """
     See ``approx_fprime``.  An optional initial function value arg is added.
 
     """
-    if args is None:
-        args = ()
     if f0 is None:
         f0 = f(*((xk,) + args))
     grad = numpy.zeros((len(xk),), float)
