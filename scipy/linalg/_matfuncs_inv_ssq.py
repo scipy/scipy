@@ -69,8 +69,7 @@ class _MatrixM1PowerOperator(LinearOperator):
             X = self._A.dot(X) - X
         return X
 
-    @property
-    def T(self):
+    def _adjoint(self):
         return _MatrixM1PowerOperator(self._A.T, self._p)
 
 
