@@ -60,11 +60,6 @@ def as2d(ar):
         return aux
 
 
-class CallableLinearOperator(LinearOperator):
-    def __call__(self, x):
-        return self.matmat(x)
-
-
 def _makeOperator(operatorInput, expectedShape):
     """Takes a dense numpy array or a sparse matrix or
     a function and makes an operator performing matrix * blockvector
@@ -85,12 +80,6 @@ def _makeOperator(operatorInput, expectedShape):
 
     if operator.shape != expectedShape:
         raise ValueError('operator has invalid shape')
-
-    if sys.version_info[0] >= 3:
-        # special methods are looked up on the class -- so make a new one
-        operator.__class__ = CallableLinearOperator
-    else:
-        operator.__call__ = operator.matmat
 
     return operator
 
