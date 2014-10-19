@@ -58,6 +58,7 @@ class TestLinearOperator(TestCase):
 
             assert_equal((2*A)*[1,1,1], [12,30])
             assert_equal((2*A).rmatvec([1,1]), [10, 14, 18])
+            assert_equal((2*A).H.matvec([1,1]), [10, 14, 18])
             assert_equal((2*A)*[[1],[1],[1]], [[12],[30]])
             assert_equal((2*A).matmat([[1],[1],[1]]), [[12],[30]])
             assert_equal((A*2)*[1,1,1], [12,30])
@@ -65,6 +66,7 @@ class TestLinearOperator(TestCase):
             assert_equal((2j*A)*[1,1,1], [12j,30j])
             assert_equal((A+A)*[1,1,1], [12, 30])
             assert_equal((A+A).rmatvec([1,1]), [10, 14, 18])
+            assert_equal((A+A).H.matvec([1,1]), [10, 14, 18])
             assert_equal((A+A)*[[1],[1],[1]], [[12], [30]])
             assert_equal((A+A).matmat([[1],[1],[1]]), [[12], [30]])
             assert_equal((-A)*[1,1,1], [-6,-15])
@@ -114,6 +116,7 @@ class TestLinearOperator(TestCase):
             assert_equal((A*B).matmat([[1],[1]]), [[50],[113]])
 
             assert_equal((A*B).rmatvec([1,1]), [71,92])
+            assert_equal((A*B).H.matvec([1,1]), [71,92])
 
             assert_(isinstance(A*B, interface._ProductLinearOperator))
 
@@ -128,6 +131,7 @@ class TestLinearOperator(TestCase):
 
             assert_equal((C**2)*[1,1], [17,37])
             assert_equal((C**2).rmatvec([1,1]), [22,32])
+            assert_equal((C**2).H.matvec([1,1]), [22,32])
             assert_equal((C**2).matmat([[1],[1]]), [[17],[37]])
 
             assert_(isinstance(C**2, interface._PowerLinearOperator))
