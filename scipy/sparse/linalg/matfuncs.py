@@ -193,17 +193,17 @@ class MatrixPowerOperator(LinearOperator):
         self.ndim = A.ndim
         self.shape = A.shape
 
-    def matvec(self, x):
+    def _matvec(self, x):
         for i in range(self._p):
             x = self._A.dot(x)
         return x
 
-    def rmatvec(self, x):
+    def _rmatvec(self, x):
         for i in range(self._p):
             x = x.dot(self._A)
         return x
 
-    def matmat(self, X):
+    def _matmat(self, X):
         for i in range(self._p):
             X = _smart_matrix_product(self._A, X, structure=self._structure)
         return X
@@ -237,17 +237,17 @@ class ProductOperator(LinearOperator):
             self.ndim = len(self.shape)
         self._operator_sequence = args
 
-    def matvec(self, x):
+    def _matvec(self, x):
         for A in reversed(self._operator_sequence):
             x = A.dot(x)
         return x
 
-    def rmatvec(self, x):
+    def _rmatvec(self, x):
         for A in self._operator_sequence:
             x = x.dot(A)
         return x
 
-    def matmat(self, X):
+    def _matmat(self, X):
         for A in reversed(self._operator_sequence):
             X = _smart_matrix_product(A, X, structure=self._structure)
         return X

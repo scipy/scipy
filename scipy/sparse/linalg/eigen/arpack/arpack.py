@@ -897,10 +897,11 @@ class SpLuInv(LinearOperator):
     """
     def __init__(self, M):
         self.M_lu = splu(M)
-        LinearOperator.__init__(self, M.shape, None, dtype=M.dtype)
+        self.shape = M.shape
+        self.dtype = M.dtype
         self.isreal = not np.issubdtype(self.dtype, np.complexfloating)
 
-    def matvec(self, x):
+    def _matvec(self, x):
         # careful here: splu.solve will throw away imaginary
         # part of x if M is real
         x = np.asarray(x)
@@ -919,9 +920,10 @@ class LuInv(LinearOperator):
     """
     def __init__(self, M):
         self.M_lu = lu_factor(M)
-        LinearOperator.__init__(self, M.shape, None, dtype=M.dtype)
+        self.shape = M.shape
+        self.dtype = M.dtype
 
-    def matvec(self, x):
+    def _matvec(self, x):
         return lu_solve(self.M_lu, x)
 
 
@@ -940,13 +942,13 @@ class IterInv(LinearOperator):
         self.ifunc = ifunc
         self.tol = tol
         if hasattr(M, 'dtype'):
-            dtype = M.dtype
+            self.dtype = M.dtype
         else:
             x = np.zeros(M.shape[1])
-            dtype = (M * x).dtype
-        LinearOperator.__init__(self, M.shape, None, dtype=dtype)
+            self.dtype = (M * x).dtype
+        self.shape = M.shape
 
-    def matvec(self, x):
+    def _matvec(self, x):
         b, info = self.ifunc(self.M, x, tol=self.tol)
         if info != 0:
             raise ValueError("Error in inverting M: function "
@@ -989,15 +991,19 @@ class IterOpInv(LinearOperator):
             self.OP = LinearOperator(self.A.shape,
                                      mult_func,
                                      dtype=dtype)
-        LinearOperator.__init__(self, A.shape, None, dtype=dtype)
+        self.shape = A.shape
 
-    def matvec(self, x):
+    def _matvec(self, x):
         b, info = self.ifunc(self.OP, x, tol=self.tol)
         if info != 0:
             raise ValueError("Error in inverting [A-sigma*M]: function "
                              "%s did not converge (info = %i)."
                              % (self.ifunc.__name__, info))
         return b
+
+    @property
+    def dtype(self):
+        return self.OP.dtype
 
 
 def get_inv_matvec(M, symmetric=False, tol=0):

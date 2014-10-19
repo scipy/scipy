@@ -3,12 +3,14 @@
 
 from __future__ import division, print_function, absolute_import
 
+from functools import partial
+from itertools import product
+
 from numpy.testing import TestCase, assert_, assert_equal, \
         assert_raises
 
 import numpy as np
 import scipy.sparse as sparse
-from itertools import product
 
 from scipy.sparse.linalg import interface
 
@@ -75,7 +77,7 @@ class TestLinearOperator(TestCase):
             z = 2*A
             assert_(len(z.args) == 2 and z.args[0] is A and z.args[1] == 2)
 
-            assert_(isinstance(A.matvec(np.array([1,2,3])), np.ndarray))
+            assert_(isinstance(A.matvec([1, 2, 3]), np.ndarray))
             assert_(isinstance(A.matvec(np.array([[1],[2],[3]])), np.ndarray))
             assert_(isinstance(A * np.array([1,2,3]), np.ndarray))
             assert_(isinstance(A * np.array([[1],[2],[3]]), np.ndarray))
@@ -140,19 +142,19 @@ class TestAsLinearOperator(TestCase):
             self.cases.append(np.array([[1,2,3],[4,5,6]], dtype=dtype))
             self.cases.append(sparse.csr_matrix([[1,2,3],[4,5,6]], dtype=dtype))
 
-            class matlike:
+            class matlike(interface.LinearOperator):
                 def __init__(self, dtype):
                     self.dtype = np.dtype(dtype)
                     self.shape = (2,3)
 
-                def matvec(self,x):
+                def _matvec(self,x):
                     y = np.array([1*x[0] + 2*x[1] + 3*x[2],
                                    4*x[0] + 5*x[1] + 6*x[2]], dtype=self.dtype)
                     if len(x.shape) == 2:
                         y = y.reshape(-1,1)
                     return y
 
-                def rmatvec(self,x):
+                def _rmatvec(self,x):
                     return np.array([1*x[0] + 4*x[1],
                                       2*x[0] + 5*x[1],
                                       3*x[0] + 6*x[1]], dtype=self.dtype)
@@ -198,3 +200,27 @@ class TestAsLinearOperator(TestCase):
             assert_equal(
                     A.dot(np.array([[1,4],[2,5],[3,6]])),
                     [[14,32],[32,77]])
+
+
+def test_repr():
+    A = interface.LinearOperator(shape=(1, 1), matvec=lambda x: 1)
+    assert_('unspecified dtype' in repr(A))
+
+
+def test_identity():
+    ident = interface.IdentityOperator((3, 3))
+    assert_equal(ident * [1, 2, 3], [1, 2, 3])
+    assert_equal(ident.dot(np.arange(9).reshape(3, 3)).ravel(), np.arange(9))
+
+    assert_raises(ValueError, ident.matvec, [1, 2, 3, 4])
+
+
+def test_attributes():
+    A = interface.aslinearoperator(np.arange(16).reshape(4, 4))
+    B = interface.LinearOperator(shape=(4, 3), matvec=partial(np.ones, 4))
+
+    for op in [A, B, A * B, A.H, A + A, B + B, A ** 4]:
+        assert_(hasattr(op, "dtype"))
+        assert_(hasattr(op, "shape"))
+
+        assert_(hasattr(op, "_matvec"))
