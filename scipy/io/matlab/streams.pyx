@@ -201,7 +201,7 @@ cdef class ZlibInputStream(GenericStream):
         return (self._max_length == self._read_bytes) and \
                (self._buffer_size == self._buffer_position)
 
-    cpdef long int tell(self):
+    cpdef long int tell(self) except -1:
         return self._total_position
 
     cpdef int seek(self, long int offset, int whence=0) except -1:
@@ -304,7 +304,7 @@ cdef class FileStream(GenericStream):
             raise IOError('Failed seek')
         return ret
 
-    cpdef long int tell(self):
+    cpdef long int tell(self) except -1:
         return ftell(self.file)
 
     cdef int read_into(self, void *buf, size_t n) except -1:
