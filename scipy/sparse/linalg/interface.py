@@ -25,7 +25,8 @@ class LinearOperator(with_metaclass(ABCMeta, object)):
     callables to the constructor of this class, or subclass it and
     implement at least the method ``_matvec`` and the attributes or
     properties ``shape`` (pair of integers) and dtype (may be None),
-    and optionally the methods ``_rmatvec`` and ``_matmat``.
+    and optionally the methods ``_rmatvec``, ``_matmat`` and
+    ``_adjoint``.
 
     Parameters
     ----------
@@ -290,9 +291,23 @@ class LinearOperator(with_metaclass(ABCMeta, object)):
 
         return '<%dx%d %s with %s>' % (M, N, self.__class__.__name__, dt)
 
-    @property
-    def H(self):
+    def adjoint(self):
+        """Hermitian adjoint.
+
+        Returns the Hermitian adjoint of self, aka the Hermitian
+        conjugate or Hermitian transpose. For a complex matrix, the
+        Hermitian adjoint is equal to the conjugate transpose.
+
+        Can be abbreviated self.H instead of self.adjoint().
+
+        Returns
+        -------
+        A_H : LinearOperator
+            Hermitian adjoint of self.
+        """
         return self._adjoint()
+
+    H = property(adjoint)
 
 
 class _CustomLinearOperator(LinearOperator):
@@ -331,6 +346,12 @@ class _CustomLinearOperator(LinearOperator):
             raise NotImplemented("rmatvec is not defined")
         return self.__rmatvec_impl(x)
 
+    def _adjoint(self):
+        return _CustomLinearOperator(shape=(self.shape[1], self.shape[0]),
+                                     matvec=self.__rmatvec_impl,
+                                     rmatvec=self.__matvec_impl,
+                                     dtype=self.dtype)
+
 
 def _get_dtype(operators, dtypes=[]):
     for obj in operators:
@@ -360,7 +381,7 @@ class _SumLinearOperator(LinearOperator):
     def _matmat(self, x):
         return self.args[0].matmat(x) + self.args[1].matmat(x)
 
-    def _adjoint(self, x):
+    def _adjoint(self):
         A, B = self.args
         return A.H + B.H
 
@@ -386,9 +407,9 @@ class _ProductLinearOperator(LinearOperator):
     def _matmat(self, x):
         return self.args[0].matmat(self.args[1].matmat(x))
 
-    def _adjoint(self, x):
+    def _adjoint(self):
         A, B = self.args
-        return A.H * B.H
+        return B.H * A.H
 
 
 class _ScaledLinearOperator(LinearOperator):
@@ -410,9 +431,9 @@ class _ScaledLinearOperator(LinearOperator):
     def _matmat(self, x):
         return self.args[1] * self.args[0].matmat(x)
 
-    def _adjoint(self, x):
+    def _adjoint(self):
         A, alpha = self.args
-        return A * alpha
+        return A.H * alpha
 
 
 class _PowerLinearOperator(LinearOperator):
