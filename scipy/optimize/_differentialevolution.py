@@ -475,7 +475,7 @@ class DifferentialEvolutionSolver(object):
                            nfev=nfev,
                            nit=nit,
                            message=status_message,
-                           success=(warning_flag != True))
+                           success=(warning_flag is not True))
 
         # do the optimisation.
         for nit in range(1, self.maxiter + 1):
@@ -536,7 +536,7 @@ class DifferentialEvolutionSolver(object):
             nfev=nfev,
             nit=nit,
             message=status_message,
-            success=(warning_flag != True))
+            success=(warning_flag is not True))
 
         if self.polish:
             result = minimize(self.func,

@@ -49,7 +49,7 @@ def main():
 
 
 def single_file_checkext(fname, striproot=True):
-    if striproot == True:
+    if striproot:
         sys.stdout.write('%s: ' % fname.replace(basepath, ''))
     else:
         sys.stdout.write('%s: ' % fname)
