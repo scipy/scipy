@@ -890,4 +890,3 @@ def _logm(A):
         X = np.empty_like(A)
         X.fill(np.nan)
         return X
-

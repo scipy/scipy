@@ -598,4 +598,3 @@ def test_la_roots():
     assert_raises(ValueError, orth.la_roots, 0, 2)
     assert_raises(ValueError, orth.la_roots, 3.3, 2)
     assert_raises(ValueError, orth.la_roots, 3, -1.1)
-
