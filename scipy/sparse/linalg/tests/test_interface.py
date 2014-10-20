@@ -146,23 +146,44 @@ class TestAsLinearOperator(TestCase):
             self.cases.append(np.array([[1,2,3],[4,5,6]], dtype=dtype))
             self.cases.append(sparse.csr_matrix([[1,2,3],[4,5,6]], dtype=dtype))
 
-            class matlike(interface.LinearOperator):
+            # Test default implementations of _adjoint and _rmatvec, which
+            # refer to each other.
+            def mv(x, dtype):
+                y = np.array([1 * x[0] + 2 * x[1] + 3 * x[2],
+                              4 * x[0] + 5 * x[1] + 6 * x[2]], dtype=dtype)
+                if len(x.shape) == 2:
+                    y = y.reshape(-1, 1)
+                return y
+
+            def rmv(x, dtype):
+                return np.array([1 * x[0] + 4 * x[1],
+                                 2 * x[0] + 5 * x[1],
+                                 3 * x[0] + 6 * x[1]], dtype=dtype)
+
+            class BaseMatlike(interface.LinearOperator):
                 def __init__(self, dtype):
                     self.dtype = np.dtype(dtype)
                     self.shape = (2,3)
 
-                def _matvec(self,x):
-                    y = np.array([1*x[0] + 2*x[1] + 3*x[2],
-                                   4*x[0] + 5*x[1] + 6*x[2]], dtype=self.dtype)
-                    if len(x.shape) == 2:
-                        y = y.reshape(-1,1)
-                    return y
+                def _matvec(self, x):
+                    return mv(x, self.dtype)
 
+            class HasRmatvec(BaseMatlike):
                 def _rmatvec(self,x):
-                    return np.array([1*x[0] + 4*x[1],
-                                      2*x[0] + 5*x[1],
-                                      3*x[0] + 6*x[1]], dtype=self.dtype)
-            self.cases.append(matlike('int'))
+                    return rmv(x, self.dtype)
+
+            class HasAdjoint(BaseMatlike):
+                def _adjoint(self):
+                    shape = self.shape[1], self.shape[0]
+                    matvec = partial(rmv, dtype=self.dtype)
+                    rmatvec = partial(mv, dtype=self.dtype)
+                    return interface.LinearOperator(matvec=matvec,
+                                                    rmatvec=rmatvec,
+                                                    dtype=self.dtype,
+                                                    shape=shape)
+
+            self.cases.append(HasRmatvec(dtype))
+            self.cases.append(HasAdjoint(dtype))
 
         make_cases('int32')
         make_cases('float32')
@@ -182,6 +203,8 @@ class TestAsLinearOperator(TestCase):
 
             assert_equal(A.rmatvec(np.array([1,2])), [9,12,15])
             assert_equal(A.rmatvec(np.array([[1],[2]])), [[9],[12],[15]])
+            assert_equal(A.H.matvec(np.array([1,2])), [9,12,15])
+            assert_equal(A.H.matvec(np.array([[1],[2]])), [[9],[12],[15]])
 
             assert_equal(
                     A.matmat(np.array([[1,4],[2,5],[3,6]])),
@@ -228,3 +251,22 @@ def test_attributes():
         assert_(hasattr(op, "shape"))
 
         assert_(hasattr(op, "_matvec"))
+
+
+def test_botched_subclass():
+    class Empty(interface.LinearOperator):
+        pass
+
+    assert_raises(TypeError, Empty)
+
+    class Identity(interface.LinearOperator):
+        def __init__(self, n):
+            self.shape = (n, n)
+            self.dtype = None
+
+        def _matvec(self, x):
+            return x
+
+    id3 = Identity(3)
+    assert_equal(id3.matvec([1, 2, 3]), [1, 2, 3])
+    assert_raises(NotImplementedError, id3.rmatvec, [4, 5, 6])
