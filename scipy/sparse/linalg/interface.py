@@ -195,6 +195,14 @@ class LinearOperator(with_metaclass(ABCMeta, object)):
 
         return y
 
+    def _rmatvec(self, x):
+        """Default implementation of _rmatvec; defers to adjoint."""
+        if type(self)._adjoint == LinearOperator._adjoint:
+            # _adjoint not overridden, prevent infinite recursion
+            raise NotImplementedError
+        else:
+            return self.H.matvec(x)
+
     def matmat(self, X):
         """Matrix-matrix multiplication.
 
@@ -255,7 +263,7 @@ class LinearOperator(with_metaclass(ABCMeta, object)):
                 raise ValueError('expected rank-1 or rank-2 array or matrix')
 
     def dot(self, other):
-        # modeled after scipy.sparse.base.dot
+        """Alias for self * other, for compatibility with ndarray/matrices."""
         return self * other
 
     def __rmul__(self, x):
@@ -308,6 +316,13 @@ class LinearOperator(with_metaclass(ABCMeta, object)):
         return self._adjoint()
 
     H = property(adjoint)
+
+    def _adjoint(self):
+        """Default implementation of _adjoint; defers to rmatvec."""
+        shape = (self.shape[1], self.shape[0])
+        return _CustomLinearOperator(shape, matvec=self.rmatvec,
+                                     rmatvec=self.matvec,
+                                     dtype=self.dtype)
 
 
 class _CustomLinearOperator(LinearOperator):
