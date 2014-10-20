@@ -26,7 +26,7 @@ NUMPY_PY25 = os.environ['HOME'] + '/.wine/drive_c/Python25/Lib/site-packages/num
 NUMPY_PY26 = os.environ['HOME'] + '/.wine/drive_c/Python26/Lib/site-packages/numpy/'
 NUMPY_PY27 = os.environ['HOME'] + '/.wine/drive_c/Python27/Lib/site-packages/numpy/'
 NUMPY_PY31 = os.environ['HOME'] + '/.wine/drive_c/Python31/Lib/site-packages/numpy/'
-SSE3_LIBS = os.environ['HOME'] +  '/.wine/drive_c/local/lib/yop/sse3'
+SSE3_LIBS = os.environ['HOME'] + '/.wine/drive_c/local/lib/yop/sse3'
 SSE2_LIBS = os.environ['HOME'] + '/.wine/drive_c/local/lib/yop/sse2'
 NOSSE_LIBS = os.environ['HOME'] + '/.wine/drive_c/local/lib/yop/nosse'
 

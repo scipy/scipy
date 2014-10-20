@@ -145,9 +145,9 @@ options(bootstrap=Bunch(bootstrap_dir="bootstrap"),
         bdist_wininst_simple=Bunch(python_version=PYVER),)
 
 # Where we can find BLAS/LAPACK/ATLAS on Windows/Wine
-SITECFG = {"sse3" : {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\lib\yop\sse3'},
-           "sse2" : {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\lib\yop\sse2'},
-           "nosse" : {'ATLAS': 'None', 'BLAS': r'C:\local\lib\yop\nosse',
+SITECFG = {"sse3": {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\lib\yop\sse3'},
+           "sse2": {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\lib\yop\sse2'},
+           "nosse": {'ATLAS': 'None', 'BLAS': r'C:\local\lib\yop\nosse',
                       'LAPACK': r'C:\local\lib\yop\nosse'}}
 
 # Wine config for win32 builds
@@ -393,6 +393,7 @@ def bdist_wininst_sse3(options):
 def bdist_superpack(options):
     """Build all arch specific wininst installers."""
     pyver = options.python_version
+
     def copy_bdist(arch):
         # Copy the wininst in dist into the release directory
         source = os.path.join('dist', wininst_name(pyver))
@@ -655,7 +656,7 @@ Checksums
 
 def write_log_task(filename='Changelog'):
     st = subprocess.Popen(
-            ['git', 'log',  '%s..%s' % (LOG_START, LOG_END)],
+            ['git', 'log', '%s..%s' % (LOG_START, LOG_END)],
             stdout=subprocess.PIPE)
 
     out = st.communicate()[0]
