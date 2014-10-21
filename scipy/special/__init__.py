@@ -351,12 +351,14 @@ The following functions evaluate values of orthogonal polynomials:
    eval_sh_chebyu
    eval_sh_jacobi
 
-The functions below, in turn, return :ref:`orthopoly1d` objects, which
-functions similarly as :ref:`numpy.poly1d`.  The :ref:`orthopoly1d`
-class also has an attribute ``weights`` which returns the roots, weights,
-and total weights for the appropriate form of Gaussian quadrature.
-These are returned in an ``n x 3`` array with roots in the first column,
-weights in the second column, and total weights in the final column.
+The functions below, in turn, return the polynomial coefficients in
+:ref:`orthopoly1d` objects, which function similarly as :ref:`numpy.poly1d`.
+The :ref:`orthopoly1d` class also has an attribute ``weights`` which returns
+the roots, weights, and total weights for the appropriate form of Gaussian
+quadrature.  These are returned in an ``n x 3`` array with roots in the first
+column, weights in the second column, and total weights in the final column.
+Note that ``orthopoly1d`` objects are converted to ``poly1d`` when doing
+arithmetic, and lose information of the original orthogonal polynomial.
 
 .. autosummary::
    :toctree: generated/
@@ -379,13 +381,10 @@ weights in the second column, and total weights in the final column.
 
 .. warning::
 
-   Large-order polynomials obtained from these functions
-   are numerically unstable.
+   Computing values of high-order polynomials (around ``order > 20``) using
+   polynomial coefficients is numerically unstable. To evaluate polynomial
+   values, the ``eval_*`` functions should be used instead.
 
-   ``orthopoly1d`` objects are converted to ``poly1d``, when doing
-   arithmetic.  ``numpy.poly1d`` works in power basis and cannot
-   represent high-order polynomials accurately, which can cause
-   significant inaccuracy.
 
 
 Hypergeometric Functions
