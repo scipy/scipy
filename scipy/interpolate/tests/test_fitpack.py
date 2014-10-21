@@ -390,5 +390,30 @@ def test_dblint():
     assert_almost_equal(dblint(-100, 100, -100, 100, tck), 1)
 
 
+def test_splev_der_k():
+    # regression test for gh-2188: splev(x, tck, der=k) gives garbage or crashes
+    # for x outside of knot range
+
+    # test case from gh-2188
+    tck = (np.array([0., 0., 2.5, 2.5]),
+           np.array([-1.56679978, 2.43995873, 0., 0.]),
+           1)
+    t, c, k = tck
+    x = np.array([-3, 0, 2.5, 3])
+
+    # an explicit form of the linear spline
+    assert_allclose(splev(x, tck), c[0] + (c[1] - c[0]) * x/t[2])
+    assert_allclose(splev(x, tck, 1), (c[1]-c[0]) / t[2])
+
+    # now check a random spline vs splder
+    np.random.seed(1234)
+    x = np.sort(np.random.random(30))
+    y = np.random.random(30)
+    t, c, k = splrep(x, y)
+
+    x = [t[0] - 1., t[-1] + 1.]
+    tck2 = splder((t, c, k), k)
+    assert_allclose(splev(x, (t, c, k), k), splev(x, tck2))
+
 if __name__ == "__main__":
     run_module_suite()
