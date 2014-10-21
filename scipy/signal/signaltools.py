@@ -1556,7 +1556,7 @@ def resample(x, num, t=None, axis=0, window=None):
     and the new sample positions will be returned as well as the new
     samples.
     
-    As noted resample uses fft transformations which can be realy
+    As noted resample uses fft transformations which can be really
     **slow** if the number of input samples is large and prime, see
     `scipy.fftpack.fft`.
 
