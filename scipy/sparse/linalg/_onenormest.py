@@ -153,16 +153,6 @@ def resample_column(i, X):
     X[:, i] = np.random.randint(0, 2, size=X.shape[0])*2 - 1
 
 
-def norm_1d_1(v):
-    # this is faster than calling the numpy/scipy norm function
-    return np.sum(np.abs(v))
-
-
-def norm_1d_inf(v):
-    # this is faster than calling the numpy/scipy norm function
-    return np.max(np.abs(v))
-
-
 def less_than_or_close(a, b):
     return np.allclose(a, b) or (a < b)
 
@@ -214,7 +204,7 @@ def _algorithm_2_2(A, AT, t):
     X = np.ones((n, t))
     if t > 1:
         X[:, 1:] = np.random.randint(0, 2, size=(n, t-1))*2 - 1
-    X /= float(n)
+    X /= n
 
     # Iteratively improve the lower bounds.
     # Track extra things, to assert invariants for debugging.
@@ -224,12 +214,12 @@ def _algorithm_2_2(A, AT, t):
     ind = range(t)
     while True:
         Y = np.asarray(A_linear_operator.matmat(X))
-        g = [norm_1d_1(Y[:, j]) for j in range(t)]
+        g = np.sum(np.abs(Y), axis=0)
         best_j = np.argmax(g)
-        g = sorted(g, reverse=True)
+        g = np.sort(g)[::-1]
         S = sign_round_up(Y)
         Z = np.asarray(AT_linear_operator.matmat(S))
-        h = [norm_1d_inf(row) for row in Z]
+        h = np.max(np.abs(Z), axis=1)
 
         # If this algorithm runs for fewer than two iterations,
         # then its return values do not have the properties indicated
@@ -242,8 +232,8 @@ def _algorithm_2_2(A, AT, t):
         if k >= 2:
             if less_than_or_close(max(h), np.dot(Z[:, best_j], X[:, best_j])):
                 break
-        h_i_pairs = zip(h, range(n))
-        h, ind = zip(*sorted(h_i_pairs, reverse=True)[:t])
+        ind = np.argsort(h)[-t:][::-1]
+        h = h[ind]
         for j in range(t):
             X[:, j] = elementary_vector(n, ind[j])
 
@@ -342,9 +332,9 @@ def _onenormest_core(A, AT, t, itmax):
                 resample_column(i, X)
                 nresamples += 1
     # "Choose starting matrix X with columns of unit 1-norm."
-    X /= float(n)
+    X /= n
     # "indices of used unit vectors e_j"
-    ind_hist = set()
+    ind_hist = np.zeros(n, dtype=bool)
     est_old = 0
     S = np.zeros((n, t), dtype=float)
     k = 1
@@ -352,7 +342,7 @@ def _onenormest_core(A, AT, t, itmax):
     while True:
         Y = np.asarray(A_linear_operator.matmat(X))
         nmults += 1
-        mags = [norm_1d_1(Y[:, j]) for j in range(t)]
+        mags = np.sum(np.abs(Y), axis=0)
         est = np.max(mags)
         best_j = np.argmax(mags)
         if est > est_old or k == 2:
@@ -381,28 +371,28 @@ def _onenormest_core(A, AT, t, itmax):
         # (3)
         Z = np.asarray(AT_linear_operator.matmat(S))
         nmults += 1
-        h = [norm_1d_inf(row) for row in Z]
+        h = np.max(np.abs(Z), axis=1)
         # (4)
-        if k >= 2 and max(h) == h[ind_best]:
+        if k >= 2 and np.max(h) == h[ind_best]:
             break
         # "Sort h so that h_first >= ... >= h_last
         # and re-order ind correspondingly."
-        h_i_pairs = zip(h, range(n))
-        h, ind = zip(*sorted(h_i_pairs, reverse=True))
+        ind = np.argsort(h)[::-1]
+        h = h[ind]
         if t > 1:
             # (5)
             # Break if the most promising t vectors have been visited already.
-            if set(ind[:t]) <= ind_hist:
+            if np.all(ind_hist[ind[:t]]):
                 break
             # Put the most promising unvisited vectors at the front of the list
             # and put the visited vectors at the end of the list.
             # Preserve the order of the indices induced by the ordering of h.
-            unused_entries = [i for i in ind if i not in ind_hist]
-            used_entries = [i for i in ind if i in ind_hist]
-            ind = unused_entries + used_entries
+            unused_entries = ind[np.logical_not(ind_hist[ind])]
+            used_entries = ind[ind_hist[ind]]
+            ind = np.concatenate((unused_entries, used_entries))
         for j in range(t):
             X[:, j] = elementary_vector(n, ind[j])
-        ind_hist.update(ind[:t])
+        ind_hist[ind[:t]] = True
         k += 1
     v = elementary_vector(n, ind_best)
     return est, v, w, nmults, nresamples

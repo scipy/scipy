@@ -7,7 +7,7 @@ import warnings
 
 import numpy as np
 from numpy.testing import (TestCase, run_module_suite, assert_allclose,
-        assert_, assert_equal, decorators)
+        assert_, assert_equal)
 
 from scipy.sparse import SparseEfficiencyWarning
 import scipy.linalg
