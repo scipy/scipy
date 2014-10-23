@@ -78,13 +78,7 @@ class LinearOperator(object):
         self.shape = shape
         self._matvec = matvec
         self.args = ()
-
-        if rmatvec is None:
-            def rmatvec(v):
-                raise NotImplementedError('rmatvec is not defined')
-            self.rmatvec = rmatvec
-        else:
-            self.rmatvec = rmatvec
+        self._func_rmatvec = rmatvec
 
         if matmat is not None:
             # matvec each column of V
@@ -92,6 +86,14 @@ class LinearOperator(object):
 
         if dtype is not None:
             self.dtype = np.dtype(dtype)
+
+    def rmatvec(self, x):
+        """
+        User provided rmatvec function that is overridden in derived classes.
+        """
+        if self._func_rmatvec is None:
+            raise NotImplementedError("rmatvec is not defined.")
+        return self._func_rmatvec(x)
 
     def _matmat(self, X):
         """Default matrix-matrix multiplication handler.  Falls back on
@@ -259,7 +261,7 @@ class _SumLinearOperator(LinearOperator):
         if A.shape != B.shape:
             raise ValueError('shape mismatch')
         super(_SumLinearOperator, self).__init__(A.shape,
-                self.matvec, self.rmatvec, self.matmat, _get_dtype([A,B]))
+                self.matvec, None, self.matmat, _get_dtype([A,B]))
         self.args = (A, B)
 
     def matvec(self, x):
@@ -280,7 +282,7 @@ class _ProductLinearOperator(LinearOperator):
         if A.shape[1] != B.shape[0]:
             raise ValueError('shape mismatch')
         super(_ProductLinearOperator, self).__init__((A.shape[0], B.shape[1]),
-                self.matvec, self.rmatvec, self.matmat, _get_dtype([A,B]))
+                self.matvec, None, self.matmat, _get_dtype([A,B]))
         self.args = (A, B)
 
     def matvec(self, x):
@@ -300,7 +302,7 @@ class _ScaledLinearOperator(LinearOperator):
         if not np.isscalar(alpha):
             raise ValueError('scalar expected as alpha')
         super(_ScaledLinearOperator, self).__init__(A.shape,
-                self.matvec, self.rmatvec, self.matmat,
+                self.matvec, None, self.matmat,
                 _get_dtype([A], [type(alpha)]))
         self.args = (A, alpha)
 
@@ -323,7 +325,7 @@ class _PowerLinearOperator(LinearOperator):
         if not isintlike(p):
             raise ValueError('integer expected as p')
         super(_PowerLinearOperator, self).__init__(A.shape,
-                self.matvec, self.rmatvec, self.matmat,
+                self.matvec, None, self.matmat,
                 _get_dtype([A]))
         self.args = (A, p)
 
@@ -344,9 +346,10 @@ class _PowerLinearOperator(LinearOperator):
 
 
 class MatrixLinearOperator(LinearOperator):
+
     def __init__(self, A):
         super(MatrixLinearOperator, self).__init__(shape=A.shape,
-                dtype=A.dtype, matvec=None, rmatvec=self.rmatvec)
+                dtype=A.dtype, matvec=None, rmatvec=None)
         self.matvec = A.dot
         self.matmat = A.dot
         self.__mul__ = A.dot
@@ -363,7 +366,7 @@ class MatrixLinearOperator(LinearOperator):
 class IdentityOperator(LinearOperator):
     def __init__(self, shape, dtype):
         super(IdentityOperator, self).__init__(shape=shape, dtype=dtype,
-                matvec=None, rmatvec=self.rmatvec)
+                matvec=None, rmatvec=None)
 
     def matvec(self, x):
         return x

@@ -11,6 +11,7 @@ import scipy.sparse as sparse
 from itertools import product
 
 from scipy.sparse.linalg import interface
+from scipy.lib._gcutils import assert_deallocated
 
 
 class TestLinearOperator(TestCase):
@@ -129,6 +130,17 @@ class TestLinearOperator(TestCase):
             assert_equal((C**2).matmat([[1],[1]]), [[17],[37]])
 
             assert_(isinstance(C**2, interface._PowerLinearOperator))
+
+    def test_memory_deallocation(self):
+        """Test that memory is deallocatable by reference counting"""
+
+        rng = np.random.RandomState(0)
+        X = rng.rand(100, 100)
+        with assert_deallocated(interface.MatrixLinearOperator, X):
+            pass
+
+        with assert_deallocated(interface.LinearOperator, X.shape, X.dtype):
+            pass
 
 
 class TestAsLinearOperator(TestCase):
