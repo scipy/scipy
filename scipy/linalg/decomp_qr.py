@@ -298,14 +298,14 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
 
 def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
     """
-    Compute RQ decomposition of a square real matrix.
+    Compute RQ decomposition of a matrix.
 
-    Calculate the decomposition ``A = R Q`` where ``Q`` is
-    unitary/orthogonal and ``R`` upper triangular.
+    Calculate the decomposition ``A = R Q`` where Q is unitary/orthogonal
+    and R upper triangular.
 
     Parameters
     ----------
-    a : array, shape (M, M)
+    a : (M, N) array_like
         Matrix to be decomposed
     overwrite_a : bool, optional
         Whether data in a is overwritten (may improve performance)
@@ -323,15 +323,24 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
 
     Returns
     -------
-    R : float array, shape (M, N)
-        Upper triangular
-    Q : float or complex array, shape (M, M)
-        Unitary/orthogonal
+    R : float or complex ndarray
+        Of shape (M, N) or (M, K) for ``mode='economic'``.  ``K = min(M, N)``.
+    Q : float or complex ndarray
+        Of shape (N, N) or (K, N) for ``mode='economic'``.  Not returned
+        if ``mode='r'``.
 
     Raises
     ------
     LinAlgError
         If decomposition fails.
+
+    Notes
+    -----
+    This is an interface to the LAPACK routines sgerqf, dgerqf, cgerqf, zgerqf,
+    sorgrq, dorgrq, cungrq and zungrq.
+
+    If ``mode=economic``, the shapes of Q and R are (K, N) and (M, K) instead
+    of (N,N) and (M,N), with ``K=min(M,N)``.
 
     Examples
     --------

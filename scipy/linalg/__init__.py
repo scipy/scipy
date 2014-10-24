@@ -71,6 +71,7 @@ Decompositions
    polar - Compute the polar decomposition.
    qr - QR decomposition of a matrix
    qr_multiply - QR decomposition and multiplication by Q
+   rq - RQ decomposition of a matrix
    qz - QZ decomposition of a pair of matrices
    schur - Schur decomposition of a matrix
    rsf2csf - Real to complex Schur form
