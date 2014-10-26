@@ -253,7 +253,7 @@ def test_attributes():
         assert_(hasattr(op, "_matvec"))
 
 
-def test_botched_subclass():
+def test_inheritance():
     class Empty(interface.LinearOperator):
         pass
 
@@ -261,8 +261,7 @@ def test_botched_subclass():
 
     class Identity(interface.LinearOperator):
         def __init__(self, n):
-            self.shape = (n, n)
-            self.dtype = None
+            super(Identity, self).__init__(dtype=None, shape=(n, n))
 
         def _matvec(self, x):
             return x
@@ -270,3 +269,14 @@ def test_botched_subclass():
     id3 = Identity(3)
     assert_equal(id3.matvec([1, 2, 3]), [1, 2, 3])
     assert_raises(NotImplementedError, id3.rmatvec, [4, 5, 6])
+
+    class MatmatOnly(interface.LinearOperator):
+        def __init__(self, A):
+            super(MatmatOnly, self).__init__(A.dtype, A.shape)
+            self.A = A
+
+        def _matmat(self, x):
+            return self.A.dot(x)
+
+    mm = MatmatOnly(np.random.randn(5, 3))
+    assert_equal(mm.matvec(np.random.randn(3)).shape, (5,))

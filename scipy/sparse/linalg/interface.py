@@ -1,17 +1,14 @@
 from __future__ import division, print_function, absolute_import
 
-from abc import ABCMeta, abstractmethod
-
 import numpy as np
 
-from scipy.lib.six import with_metaclass
 from scipy.sparse import isspmatrix
 from scipy.sparse.sputils import isshape, isintlike
 
 __all__ = ['LinearOperator', 'aslinearoperator']
 
 
-class LinearOperator(with_metaclass(ABCMeta, object)):
+class LinearOperator(object):
     """Common interface for performing matrix vector products
 
     Many iterative methods (e.g. cg, gmres) do not need to know the
@@ -22,11 +19,21 @@ class LinearOperator(with_metaclass(ABCMeta, object)):
     objects.
 
     To construct a concrete LinearOperator, either pass appropriate
-    callables to the constructor of this class, or subclass it and
-    implement at least the method ``_matvec`` and the attributes or
-    properties ``shape`` (pair of integers) and dtype (may be None),
-    and optionally the methods ``_rmatvec``, ``_matmat`` and
-    ``_adjoint``.
+    callables to the constructor of this class, or subclass it.
+
+    A subclass must implement either one of the methods ``_matvec``
+    and ``_matmat``, and the attributes/properties ``shape`` (pair of
+    integers) and ``dtype`` (may be None). It may call the ``__init__``
+    on this class to have these attributes validated. Implementing
+    ``_matvec`` automatically implements ``_matmat`` (using a naive
+    algorithm) and vice-versa.
+
+    Optionally, a subclass may implement ``_rmatvec`` or ``_adjoint``
+    to implement the Hermitian adjoint (conjugate transpose). As with
+    ``_matvec`` and ``_matmat``, implementing either ``_rmatvec`` or
+    ``_adjoint`` implements the other automatically. Implementing
+    ``_adjoint`` is preferable; ``_rmatvec`` is mostly there for
+    backwards compatibility.
 
     Parameters
     ----------
@@ -82,24 +89,51 @@ class LinearOperator(with_metaclass(ABCMeta, object)):
             return _CustomLinearOperator(*args, **kwargs)
         else:
             obj = super(LinearOperator, cls).__new__(cls)
+
+            if (type(obj)._matvec == LinearOperator._matvec
+                    and type(obj)._matmat == LinearOperator._matmat):
+                raise TypeError("LinearOperator subclass should implement"
+                                " at least one of _matvec and _matmat.")
+
             obj.__init__(*args, **kwargs)
             return obj
 
+    def __init__(self, dtype, shape):
+        """Initialize this LinearOperator.
+
+        To be called by subclasses. ``dtype`` may be None; ``shape`` should
+        be convertible to a length-2 tuple.
+        """
+        if dtype is not None:
+            dtype = np.dtype(dtype)
+
+        shape = tuple(shape)
+        if not isshape(shape):
+            raise ValueError("invalid shape %r (must be 2-d)" % shape)
+
+        self.dtype = dtype
+        self.shape = shape
+
     def _matmat(self, X):
-        """Default matrix-matrix multiplication handler.  Falls back on
-        the user-defined matvec() routine, which is always provided.
+        """Default matrix-matrix multiplication handler.
+
+        Falls back on the user-defined _matvec method, so defining that will
+        define matrix multiplication (though in a very suboptimal way).
         """
 
         return np.hstack([self.matvec(col.reshape(-1,1)) for col in X.T])
 
-    @abstractmethod
     def _matvec(self, x):
-        """Matrix-vector multiplication.
+        """Default matrix-vector multiplication handler.
 
         If self is a linear operator of shape (M, N), then this method will
         be called on a shape (N,) or (N, 1) ndarray, and should return a
         shape (M,) or (M, 1) ndarray.
+
+        This default implementation falls back on _matmat, so defining that
+        will define matrix-vector multiplication as well.
         """
+        return self.matmat(x.reshape(-1, 1))
 
     def matvec(self, x):
         """Matrix-vector multiplication.
@@ -317,6 +351,16 @@ class LinearOperator(with_metaclass(ABCMeta, object)):
 
     H = property(adjoint)
 
+    def transpose(self):
+        """Transpose this linear operator.
+
+        Returns a LinearOperator that represents the transpose of this one.
+        Can be abbreviated self.T instead of self.transpose().
+        """
+        return self._transpose()
+
+    T = property(transpose)
+
     def _adjoint(self):
         """Default implementation of _adjoint; defers to rmatvec."""
         shape = (self.shape[1], self.shape[0])
@@ -329,22 +373,13 @@ class _CustomLinearOperator(LinearOperator):
     """Linear operator defined in terms of user-specified operations."""
 
     def __init__(self, shape, matvec, rmatvec=None, matmat=None, dtype=None):
-        shape = tuple(shape)
-
-        if not isshape(shape):
-            raise ValueError('invalid shape')
+        super(_CustomLinearOperator, self).__init__(dtype, shape)
 
         self.args = ()
-        self.shape = shape
 
         self.__matvec_impl = matvec
         self.__rmatvec_impl = rmatvec
         self.__matmat_impl = matmat
-
-        if dtype is None:
-            self.dtype = None
-        else:
-            self.dtype = np.dtype(dtype)
 
     def _matmat(self, X):
         if self.__matmat_impl is not None:
@@ -384,8 +419,7 @@ class _SumLinearOperator(LinearOperator):
             raise ValueError('cannot add %r and %r: shape mismatch'
                              % (A, B))
         self.args = (A, B)
-        self.dtype = _get_dtype([A, B])
-        self.shape = A.shape
+        super(_SumLinearOperator, self).__init__(_get_dtype([A, B]), A.shape)
 
     def _matvec(self, x):
         return self.args[0].matvec(x) + self.args[1].matvec(x)
@@ -409,9 +443,9 @@ class _ProductLinearOperator(LinearOperator):
         if A.shape[1] != B.shape[0]:
             raise ValueError('cannot multiply %r and %r: shape mismatch'
                              % (A, B))
-        self.shape = (A.shape[0], B.shape[1])
+        super(_ProductLinearOperator, self).__init__(_get_dtype([A, B]),
+                                                     (A.shape[0], B.shape[1]))
         self.args = (A, B)
-        self.dtype = _get_dtype([A, B])
 
     def _matvec(self, x):
         return self.args[0].matvec(self.args[1].matvec(x))
@@ -433,8 +467,8 @@ class _ScaledLinearOperator(LinearOperator):
             raise ValueError('LinearOperator expected as A')
         if not np.isscalar(alpha):
             raise ValueError('scalar expected as alpha')
-        self.shape = A.shape
-        self.dtype = _get_dtype([A], [type(alpha)])
+        dtype = _get_dtype([A], [type(alpha)])
+        super(_ScaledLinearOperator, self).__init__(dtype, A.shape)
         self.args = (A, alpha)
 
     def _matvec(self, x):
@@ -460,9 +494,8 @@ class _PowerLinearOperator(LinearOperator):
         if not isintlike(p):
             raise ValueError('integer expected as p')
 
+        super(_PowerLinearOperator, self).__init__(_get_dtype([A]), A.shape)
         self.args = (A, p)
-        self.dtype = _get_dtype([A])
-        self.shape = A.shape
 
     def _power(self, fun, x):
         res = np.array(x, copy=True)
@@ -486,20 +519,13 @@ class _PowerLinearOperator(LinearOperator):
 
 class MatrixLinearOperator(LinearOperator):
     def __init__(self, A):
+        super(MatrixLinearOperator, self).__init__(A.dtype, A.shape)
         self.A = A
         self.__adj = None
         self.args = (A,)
-        self.dtype = A.dtype
-        self.shape = A.shape
 
     def _matmat(self, X):
         return self.A.dot(X)
-
-    def _matvec(self, x):
-        return self.A.dot(x)
-
-    def _rmatvec(self, x):
-        return self._adjoint().matvec(x)
 
     def _adjoint(self):
         if self.__adj is None:
@@ -524,8 +550,7 @@ class _AdjointMatrixOperator(MatrixLinearOperator):
 
 class IdentityOperator(LinearOperator):
     def __init__(self, shape, dtype=None):
-        self.dtype = dtype
-        self.shape = shape
+        super(IdentityOperator, self).__init__(dtype, shape)
 
     def _matvec(self, x):
         return x
