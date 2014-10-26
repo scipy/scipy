@@ -67,6 +67,7 @@ MANIFEST
 # distutils configuration
 site.cfg
 # other temporary files
+.coverage
 .deps
 .libs
 
