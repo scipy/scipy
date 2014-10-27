@@ -10,7 +10,8 @@ import glob
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from numpy.distutils.system_info import get_info
-
+    from scipy._build_utils import get_sgemv_fix
+    
     config = Configuration('dsolve',parent_package,top_path)
     config.add_data_dir('tests')
 
@@ -28,6 +29,8 @@ def configuration(parent_package='',top_path=None):
     if os.name == 'nt' and ('FPATH' in os.environ or 'MKLROOT' in os.environ):
         # when using MSVC + MKL, lsame is already in MKL
         sources.remove(join(superlu_src, 'lsame.c'))
+        
+    sources += get_sgemv_fix(lapack_opt)
 
     config.add_library('superlu_src',
                        sources=sources,

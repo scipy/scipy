@@ -15,7 +15,7 @@ from scipy.linalg import _fblas as fblas
 from scipy.lib.six import xrange
 
 from numpy.testing import TestCase, run_module_suite, assert_array_equal, \
-    assert_array_almost_equal, assert_
+    assert_allclose, assert_array_almost_equal, assert_
 
 
 # decimal accuracy to require between Python and LAPACK/BLAS calculations
@@ -463,6 +463,49 @@ try:
     class TestSgemv(TestCase, BaseGemv):
         blas_func = fblas.sgemv
         dtype = float32
+        
+        def test_sgemv_on_osx(self):
+            from itertools import product
+            import sys
+            import numpy as np
+            
+            if sys.platform != 'darwin': 
+                return
+        
+            def aligned_array(shape, align, dtype, order='C'):
+                # Make array shape `shape` with aligned at `align` bytes
+                d = dtype()
+                # Make array of correct size with `align` extra bytes
+                N = np.prod(shape)
+                tmp = np.zeros(N * d.nbytes + align, dtype=np.uint8)
+                address = tmp.__array_interface__["data"][0]
+                # Find offset into array giving desired alignment
+                for offset in range(align):
+                    if (address + offset) % align == 0: 
+                        break
+                tmp = tmp[offset:offset+N*d.nbytes].view(dtype=dtype)
+                return tmp.reshape(shape, order=order)
+
+            def as_aligned(arr, align, dtype, order='C'):
+                # Copy `arr` into an aligned array with same shape
+                aligned = aligned_array(arr.shape, align, dtype, order)
+                aligned[:] = arr[:]
+                return aligned
+                
+            def assert_dot_close(A, X, desired):
+                assert_allclose(self.blas_func(1.0,A,X), desired, 
+                    rtol=1e-5, atol=1e-7)
+            
+            testdata = product((15,32), (10000,), (200,89), ('C','F'))
+            for align, m, n, a_order in testdata:
+                A_d = np.random.rand(m, n)
+                X_d = np.random.rand(n)
+                desired = np.dot(A_d, X_d)
+                # Calculation with aligned single precision
+                A_f = as_aligned(A_d, align, np.float32, order=a_order)
+                X_f = as_aligned(X_d, align, np.float32, order=a_order)
+                assert_dot_close(A_f, X_f, desired)
+
 except AttributeError:
     class TestSgemv:
         pass
