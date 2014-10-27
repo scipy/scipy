@@ -6,27 +6,34 @@ from distutils.dep_util import newer
 
 
 __all__ = ['needs_g77_abi_wrapper', 'split_fortran_files',
-           'get_g77_abi_wrappers']
+           'get_g77_abi_wrappers',
+           'needs_sgemv_fix', 'get_sgemv_fix']
 
 
-def _uses_veclib(info):
-    r_accelerate = re.compile("Accelerate|vecLib")
-
+def uses_veclib(info):
+    if sys.platform != "darwin":
+        return False
+    r_accelerate = re.compile("vecLib")
     extra_link_args = info.get('extra_link_args', '')
     for arg in extra_link_args:
         if r_accelerate.search(arg):
             return True
-
     return False
 
 
 def uses_accelerate(info):
-    return _uses_veclib(info)
+    if sys.platform != "darwin":
+        return False
+    r_accelerate = re.compile("Accelerate")
+    extra_link_args = info.get('extra_link_args', '')
+    for arg in extra_link_args:
+        if r_accelerate.search(arg):
+            return True
+    return False
 
 
 def uses_mkl(info):
     r_mkl = re.compile("mkl_core")
-
     libraries = info.get('libraries', '')
     for library in libraries:
         if r_mkl.search(library):
@@ -36,8 +43,8 @@ def uses_mkl(info):
 
 
 def needs_g77_abi_wrapper(info):
-    """Returns true if g77 ABI wrapper must be used."""
-    if uses_accelerate(info):
+    """Returns True if g77 ABI wrapper must be used."""
+    if uses_accelerate(info) or uses_veclib(info):
         return True
     # XXX: is this really true only on Mac OS X ?
     elif uses_mkl(info) and sys.platform == "darwin":
@@ -76,6 +83,23 @@ def get_g77_abi_wrappers(info):
             os.path.join(path, 'src', 'wrap_dummy_accelerate.f'),
         ]
     return wrapper_sources
+
+
+def needs_sgemv_fix(info):
+    """Returns True if SGEMV must be fixed."""
+    if uses_accelerate(info):
+        return True
+    else:
+        return False
+
+
+def get_sgemv_fix(info):
+    """ Returns source file needed to correct SGEMV """
+    path = os.path.abspath(os.path.dirname(__file__))
+    if needs_sgemv_fix(info):
+        return [os.path.join(path, 'src', 'apple_sgemv_fix.c')]
+    else:
+        return []
 
 
 def split_fortran_files(source_dir, subroutines=None):
