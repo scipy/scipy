@@ -216,7 +216,8 @@ def _algorithm_2_2(A, AT, t):
         Y = np.asarray(A_linear_operator.matmat(X))
         g = np.sum(np.abs(Y), axis=0)
         best_j = np.argmax(g)
-        g = np.sort(g)[::-1]
+        g.sort()
+        g = g[::-1]
         S = sign_round_up(Y)
         Z = np.asarray(AT_linear_operator.matmat(S))
         h = np.max(np.abs(Z), axis=1)
