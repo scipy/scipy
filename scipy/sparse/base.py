@@ -750,8 +750,12 @@ class spmatrix(object):
         M, N = self.shape
         if (k > 0 and k >= N) or (k < 0 and -k >= M):
             raise ValueError("k exceeds matrix dimensions")
+        self._setdiag(np.asarray(values), k)
+
+    def _setdiag(self, values, k):
+        M, N = self.shape
         if k < 0:
-            if np.asarray(values).ndim == 0:
+            if values.ndim == 0:
                 # broadcast
                 max_index = min(M+k, N)
                 for i in xrange(max_index):
@@ -763,7 +767,7 @@ class spmatrix(object):
                 for i,v in enumerate(values[:max_index]):
                     self[i - k, i] = v
         else:
-            if np.asarray(values).ndim == 0:
+            if values.ndim == 0:
                 # broadcast
                 max_index = min(M, N-k)
                 for i in xrange(max_index):

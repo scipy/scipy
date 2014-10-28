@@ -414,11 +414,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         return d
     diagonal.__doc__ = _data_matrix.diagonal.__doc__
 
-    def setdiag(self, values, k=0):
+    def _setdiag(self, values, k):
         M, N = self.shape
-        if k <= -M or k >= N:
-            raise ValueError('k exceeds matrix dimensions')
-        values = np.asarray(values, dtype=self.dtype)
         if values.ndim and not len(values):
             return
         idx_dtype = self.row.dtype
@@ -452,8 +449,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         self.col = np.concatenate((self.col[keep], new_col))
         self.data = np.concatenate((self.data[keep], new_data))
         self.has_canonical_format = False
-
-    setdiag.__doc__ = _data_matrix.setdiag.__doc__
 
     # needed by _data_matrix
     def _with_data(self,data,copy=True):

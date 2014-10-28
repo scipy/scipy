@@ -655,6 +655,36 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         i, j = self._swap((i.ravel(), j.ravel()))
         self._set_many(i, j, x.ravel())
 
+    def _setdiag(self, values, k):
+        if 0 in self.shape:
+            return
+
+        M, N = self.shape
+        broadcast = (values.ndim == 0)
+
+        if k < 0:
+            if broadcast:
+                max_index = min(M + k, N)
+            else:
+                max_index = min(M + k, N, len(values))
+            i = np.arange(max_index, dtype=self.indices.dtype)
+            j = np.arange(max_index, dtype=self.indices.dtype)
+            i -= k
+
+        else:
+            if broadcast:
+                max_index = min(M, N - k)
+            else:
+                max_index = min(M, N - k, len(values))
+            i = np.arange(max_index, dtype=self.indices.dtype)
+            j = np.arange(max_index, dtype=self.indices.dtype)
+            j += k
+
+        if not broadcast:
+            values = values[:len(i)]
+
+        self[i, j] = values
+
     def _set_many(self, i, j, x):
         """Sets value at each (i, j) to x
 
