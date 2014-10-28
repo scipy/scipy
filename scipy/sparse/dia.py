@@ -56,15 +56,15 @@ class dia_matrix(_data_matrix):
     Examples
     --------
 
-    >>> from scipy.sparse import *
-    >>> from scipy import *
-    >>> dia_matrix((3, 4), dtype=int8).toarray()
+    >>> import numpy as np
+    >>> from scipy.sparse import dia_matrix
+    >>> dia_matrix((3, 4), dtype=np.int8).toarray()
     array([[0, 0, 0, 0],
            [0, 0, 0, 0],
            [0, 0, 0, 0]], dtype=int8)
 
-    >>> data = array([[1, 2, 3, 4]]).repeat(3, axis=0)
-    >>> offsets = array([0,-1,2])
+    >>> data = np.array([[1, 2, 3, 4]]).repeat(3, axis=0)
+    >>> offsets = np.array([0, -1, 2])
     >>> dia_matrix((data, offsets), shape=(4, 4)).toarray()
     array([[1, 0, 3, 0],
            [1, 2, 0, 4],
