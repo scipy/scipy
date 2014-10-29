@@ -1,6 +1,4 @@
 /**
- * distance_wrap.c
- *
  * Author: Damian Eads
  * Date:   September 22, 2007 (moved to new file on June 8, 2008)
  * Adapted for incorporation into Scipy, April 9, 2008.
@@ -34,110 +32,66 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <math.h>
+#include <stdlib.h>
 #include <Python.h>
 #include <numpy/arrayobject.h>
 
-#include "distance.h"
+#include "distance_impl.h"
 
-static PyObject *cdist_euclidean_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *XA_, *XB_, *dm_;
-  int mA, mB, n;
-  double *dm;
-  const double *XA, *XB;
-  if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_)) {
-    return 0;
-  }
-  else {
-    XA = (const double*)XA_->data;
-    XB = (const double*)XB_->data;
-    dm = (double*)dm_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
+#define DEFINE_WRAP_CDIST(name, type)                                   \
+    static PyObject *                                                   \
+    cdist_ ## name ## _wrap(PyObject *self, PyObject *args)             \
+    {                                                                   \
+        PyArrayObject *XA_, *XB_, *dm_;                                 \
+        Py_ssize_t mA, mB, n;                                           \
+        double *dm;                                                     \
+        const type *XA, *XB;                                            \
+        if (!PyArg_ParseTuple(args, "O!O!O!",                           \
+                              &PyArray_Type, &XA_, &PyArray_Type, &XB_, \
+                              &PyArray_Type, &dm_)) {                   \
+            return NULL;                                                \
+        }                                                               \
+        else {                                                          \
+            XA = (const type *)XA_->data;                               \
+            XB = (const type *)XB_->data;                               \
+            dm = (double *)dm_->data;                                   \
+            mA = XA_->dimensions[0];                                    \
+            mB = XB_->dimensions[0];                                    \
+            n = XA_->dimensions[1];                                     \
+            cdist_ ## name ## _ ## type(XA, XB, dm, mA, mB, n);         \
+        }                                                               \
+        return Py_BuildValue("d", 0.);                                  \
+    }
 
-    cdist_euclidean(XA, XB, dm, mA, mB, n);
-  }
-  return Py_BuildValue("d", 0.0);
-}
+DEFINE_WRAP_CDIST(bray_curtis, double)
+DEFINE_WRAP_CDIST(canberra, double)
+DEFINE_WRAP_CDIST(chebyshev, double)
+DEFINE_WRAP_CDIST(city_block, double)
+DEFINE_WRAP_CDIST(euclidean, double)
+DEFINE_WRAP_CDIST(hamming, double)
+DEFINE_WRAP_CDIST(jaccard, double)
+DEFINE_WRAP_CDIST(sqeuclidean, double)
 
-
-static PyObject *cdist_sqeuclidean_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *XA_, *XB_, *dm_;
-  int mA, mB, n;
-  double *dm;
-  const double *XA, *XB;
-  if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_)) {
-    return 0;
-  }
-  else {
-    XA = (const double*)XA_->data;
-    XB = (const double*)XB_->data;
-    dm = (double*)dm_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
-
-    cdist_sqeuclidean(XA, XB, dm, mA, mB, n);
-  }
-  return Py_BuildValue("d", 0.0);
-}
+DEFINE_WRAP_CDIST(yule_bool, char)
 
 
-static PyObject *cdist_canberra_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *XA_, *XB_, *dm_;
-  int mA, mB, n;
-  double *dm;
-  const double *XA, *XB;
-  if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_)) {
-    return 0;
-  }
-  else {
-    XA = (const double*)XA_->data;
-    XB = (const double*)XB_->data;
-    dm = (double*)dm_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
-
-    cdist_canberra(XA, XB, dm, mA, mB, n);
-  }
-  return Py_BuildValue("d", 0.0);
-}
-
-static PyObject *cdist_bray_curtis_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *XA_, *XB_, *dm_;
-  int mA, mB, n;
-  double *dm;
-  const double *XA, *XB;
-  if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_)) {
-    return 0;
-  }
-  else {
-    XA = (const double*)XA_->data;
-    XB = (const double*)XB_->data;
-    dm = (double*)dm_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
-
-    cdist_bray_curtis(XA, XB, dm, mA, mB, n);
-  }
-  return Py_BuildValue("d", 0.0);
+static NPY_INLINE double *mahalanobis_dimbuf(Py_ssize_t n)
+{
+    double *dimbuf;
+    dimbuf = calloc(n, 2 * sizeof(double));
+    if (!dimbuf) {
+        PyErr_Format(PyExc_MemoryError, "could not allocate %zd * %zd bytes",
+                     n, 2 * sizeof(double));
+    }
+    return dimbuf;
 }
 
 
 static PyObject *cdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *covinv_, *dm_;
   int mA, mB, n;
-  double *dm;
+  double *dm, *dimbuf;
   const double *XA, *XB;
   const double *covinv;
   if (!PyArg_ParseTuple(args, "O!O!O!O!",
@@ -155,35 +109,15 @@ static PyObject *cdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
     mB = XB_->dimensions[0];
     n = XA_->dimensions[1];
 
-    cdist_mahalanobis(XA, XB, covinv, dm, mA, mB, n);
+    dimbuf = mahalanobis_dimbuf(n);
+    if (!dimbuf) {
+      return NULL;
+    }
+    cdist_mahalanobis(XA, XB, covinv, dimbuf, dm, mA, mB, n);
+    free(dimbuf);
   }
   return Py_BuildValue("d", 0.0);
 }
-
-
-static PyObject *cdist_chebyshev_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *XA_, *XB_, *dm_;
-  int mA, mB, n;
-  double *dm;
-  const double *XA, *XB;
-  if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_)) {
-    return 0;
-  }
-  else {
-    XA = (const double*)XA_->data;
-    XB = (const double*)XB_->data;
-    dm = (double*)dm_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
-
-    cdist_chebyshev(XA, XB, dm, mA, mB, n);
-  }
-  return Py_BuildValue("d", 0.0);
-}
-
 
 static PyObject *cdist_cosine_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_, *normsA_, *normsB_;
@@ -237,52 +171,6 @@ static PyObject *cdist_seuclidean_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *cdist_city_block_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *XA_, *XB_, *dm_;
-  int mA, mB, n;
-  double *dm;
-  const double *XA, *XB;
-  if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_)) {
-    return 0;
-  }
-  else {
-    XA = (const double*)XA_->data;
-    XB = (const double*)XB_->data;
-    dm = (double*)dm_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
-
-    cdist_city_block(XA, XB, dm, mA, mB, n);
-  }
-  return Py_BuildValue("d", 0.0);
-}
-
-static PyObject *cdist_hamming_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *XA_, *XB_, *dm_;
-  int mA, mB, n;
-  double *dm;
-  const double *XA, *XB;
-  if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_)) {
-    return 0;
-  }
-  else {
-    XA = (const double*)XA_->data;
-    XB = (const double*)XB_->data;
-    dm = (double*)dm_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
-
-    cdist_hamming(XA, XB, dm, mA, mB, n);
-  }
-  return Py_BuildValue("d", 0.0);
-}
-
 static PyObject *cdist_hamming_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
@@ -301,30 +189,7 @@ static PyObject *cdist_hamming_bool_wrap(PyObject *self, PyObject *args) {
     mB = XB_->dimensions[0];
     n = XA_->dimensions[1];
 
-    cdist_hamming_bool(XA, XB, dm, mA, mB, n);
-  }
-  return Py_BuildValue("d", 0.0);
-}
-
-static PyObject *cdist_jaccard_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *XA_, *XB_, *dm_;
-  int mA, mB, n;
-  double *dm;
-  const double *XA, *XB;
-  if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_)) {
-    return 0;
-  }
-  else {
-    XA = (const double*)XA_->data;
-    XB = (const double*)XB_->data;
-    dm = (double*)dm_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
-
-    cdist_jaccard(XA, XB, dm, mA, mB, n);
+    cdist_hamming_char(XA, XB, dm, mA, mB, n);
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -347,7 +212,7 @@ static PyObject *cdist_jaccard_bool_wrap(PyObject *self, PyObject *args) {
     mB = XB_->dimensions[0];
     n = XA_->dimensions[1];
 
-    cdist_jaccard_bool(XA, XB, dm, mA, mB, n);
+    cdist_jaccard_char(XA, XB, dm, mA, mB, n);
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -402,29 +267,6 @@ static PyObject *cdist_weighted_minkowski_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *cdist_yule_bool_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *XA_, *XB_, *dm_;
-  int mA, mB, n;
-  double *dm;
-  const char *XA, *XB;
-  if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_)) {
-    return 0;
-  }
-  else {
-    XA = (const char*)XA_->data;
-    XB = (const char*)XB_->data;
-    dm = (double*)dm_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
-
-    cdist_yule_bool(XA, XB, dm, mA, mB, n);
-  }
-  return Py_BuildValue("");
-}
-
 static PyObject *cdist_matching_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
@@ -443,7 +285,7 @@ static PyObject *cdist_matching_bool_wrap(PyObject *self, PyObject *args) {
     mB = XB_->dimensions[0];
     n = XA_->dimensions[1];
 
-    cdist_matching_bool(XA, XB, dm, mA, mB, n);
+    cdist_matching_char(XA, XB, dm, mA, mB, n);
   }
   return Py_BuildValue("");
 }
@@ -466,7 +308,7 @@ static PyObject *cdist_dice_bool_wrap(PyObject *self, PyObject *args) {
     mB = XB_->dimensions[0];
     n = XA_->dimensions[1];
 
-    cdist_dice_bool(XA, XB, dm, mA, mB, n);
+    cdist_dice_char(XA, XB, dm, mA, mB, n);
   }
   return Py_BuildValue("");
 }
@@ -489,7 +331,7 @@ static PyObject *cdist_rogerstanimoto_bool_wrap(PyObject *self, PyObject *args) 
     mB = XB_->dimensions[0];
     n = XA_->dimensions[1];
 
-    cdist_rogerstanimoto_bool(XA, XB, dm, mA, mB, n);
+    cdist_rogerstanimoto_char(XA, XB, dm, mA, mB, n);
   }
   return Py_BuildValue("");
 }
@@ -512,7 +354,7 @@ static PyObject *cdist_russellrao_bool_wrap(PyObject *self, PyObject *args) {
     mB = XB_->dimensions[0];
     n = XA_->dimensions[1];
 
-    cdist_russellrao_bool(XA, XB, dm, mA, mB, n);
+    cdist_russellrao_char(XA, XB, dm, mA, mB, n);
   }
   return Py_BuildValue("");
 }
@@ -535,7 +377,7 @@ static PyObject *cdist_kulsinski_bool_wrap(PyObject *self, PyObject *args) {
     mB = XB_->dimensions[0];
     n = XA_->dimensions[1];
 
-    cdist_kulsinski_bool(XA, XB, dm, mA, mB, n);
+    cdist_kulsinski_char(XA, XB, dm, mA, mB, n);
   }
   return Py_BuildValue("");
 }
@@ -558,7 +400,7 @@ static PyObject *cdist_sokalmichener_bool_wrap(PyObject *self, PyObject *args) {
     mB = XB_->dimensions[0];
     n = XA_->dimensions[1];
 
-    cdist_sokalmichener_bool(XA, XB, dm, mA, mB, n);
+    cdist_sokalmichener_char(XA, XB, dm, mA, mB, n);
   }
   return Py_BuildValue("");
 }
@@ -581,104 +423,49 @@ static PyObject *cdist_sokalsneath_bool_wrap(PyObject *self, PyObject *args) {
     mB = XB_->dimensions[0];
     n = XA_->dimensions[1];
 
-    cdist_sokalsneath_bool(XA, XB, dm, mA, mB, n);
+    cdist_sokalsneath_char(XA, XB, dm, mA, mB, n);
   }
   return Py_BuildValue("");
 }
 
 /***************************** pdist ***/
 
-static PyObject *pdist_euclidean_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *X_, *dm_;
-  int m, n;
-  double *dm;
-  const double *X;
-  if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_)) {
-    return 0;
-  }
-  else {
-    X = (const double*)X_->data;
-    dm = (double*)dm_->data;
-    m = X_->dimensions[0];
-    n = X_->dimensions[1];
+#define DEFINE_WRAP_PDIST_DOUBLE(name)                                  \
+    static PyObject *                                                   \
+    pdist_ ## name ## _wrap(PyObject *self, PyObject *args)             \
+    {                                                                   \
+        PyArrayObject *X_, *dm_;                                        \
+        Py_ssize_t m, n;                                                \
+        double *dm;                                                     \
+        const double *X;                                                \
+        if (!PyArg_ParseTuple(args, "O!O!", &PyArray_Type, &X_,         \
+                                            &PyArray_Type, &dm_)) {     \
+            return NULL;                                                \
+        }                                                               \
+        else {                                                          \
+            X = (const double *)X_->data;                               \
+            dm = (double *)dm_->data;                                   \
+            m = X_->dimensions[0];                                      \
+            n = X_->dimensions[1];                                      \
+            pdist_ ## name ## _double(X, dm, m, n);                     \
+        }                                                               \
+        return Py_BuildValue("d", 0.);                                  \
+    }
 
-    pdist_euclidean(X, dm, m, n);
-  }
-  return Py_BuildValue("d", 0.0);
-}
-
-
-static PyObject *pdist_sqeuclidean_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *X_, *dm_;
-  int m, n;
-  double *dm;
-  const double *X;
-  if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_)) {
-    return 0;
-  }
-  else {
-    X = (const double*)X_->data;
-    dm = (double*)dm_->data;
-    m = X_->dimensions[0];
-    n = X_->dimensions[1];
-
-    pdist_sqeuclidean(X, dm, m, n);
-  }
-  return Py_BuildValue("d", 0.0);
-}
-
-
-static PyObject *pdist_canberra_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *X_, *dm_;
-  int m, n;
-  double *dm;
-  const double *X;
-  if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_)) {
-    return 0;
-  }
-  else {
-    X = (const double*)X_->data;
-    dm = (double*)dm_->data;
-    m = X_->dimensions[0];
-    n = X_->dimensions[1];
-
-    pdist_canberra(X, dm, m, n);
-  }
-  return Py_BuildValue("d", 0.0);
-}
-
-static PyObject *pdist_bray_curtis_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *X_, *dm_;
-  int m, n;
-  double *dm;
-  const double *X;
-  if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_)) {
-    return 0;
-  }
-  else {
-    X = (const double*)X_->data;
-    dm = (double*)dm_->data;
-    m = X_->dimensions[0];
-    n = X_->dimensions[1];
-
-    pdist_bray_curtis(X, dm, m, n);
-  }
-  return Py_BuildValue("d", 0.0);
-}
+DEFINE_WRAP_PDIST_DOUBLE(bray_curtis)
+DEFINE_WRAP_PDIST_DOUBLE(canberra)
+DEFINE_WRAP_PDIST_DOUBLE(chebyshev)
+DEFINE_WRAP_PDIST_DOUBLE(city_block)
+DEFINE_WRAP_PDIST_DOUBLE(euclidean)
+DEFINE_WRAP_PDIST_DOUBLE(hamming)
+DEFINE_WRAP_PDIST_DOUBLE(jaccard)
+DEFINE_WRAP_PDIST_DOUBLE(sqeuclidean)
 
 
 static PyObject *pdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *covinv_, *dm_;
   int m, n;
-  double *dm;
+  double *dimbuf, *dm;
   const double *X;
   const double *covinv;
   if (!PyArg_ParseTuple(args, "O!O!O!",
@@ -694,29 +481,13 @@ static PyObject *pdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
-    pdist_mahalanobis(X, covinv, dm, m, n);
-  }
-  return Py_BuildValue("d", 0.0);
-}
+    dimbuf = mahalanobis_dimbuf(n);
+    if (!dimbuf) {
+        return NULL;
+    }
 
-
-static PyObject *pdist_chebyshev_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *X_, *dm_;
-  int m, n;
-  double *dm;
-  const double *X;
-  if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_)) {
-    return 0;
-  }
-  else {
-    X = (const double*)X_->data;
-    dm = (double*)dm_->data;
-    m = X_->dimensions[0];
-    n = X_->dimensions[1];
-
-    pdist_chebyshev(X, dm, m, n);
+    pdist_mahalanobis(X, covinv, dimbuf, dm, m, n);
+    free(dimbuf);
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -768,48 +539,6 @@ static PyObject *pdist_seuclidean_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *pdist_city_block_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *X_, *dm_;
-  int m, n;
-  double *dm;
-  const double *X;
-  if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_)) {
-    return 0;
-  }
-  else {
-    X = (const double*)X_->data;
-    dm = (double*)dm_->data;
-    m = X_->dimensions[0];
-    n = X_->dimensions[1];
-
-    pdist_city_block(X, dm, m, n);
-  }
-  return Py_BuildValue("d", 0.0);
-}
-
-static PyObject *pdist_hamming_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *X_, *dm_;
-  int m, n;
-  double *dm;
-  const double *X;
-  if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_)) {
-    return 0;
-  }
-  else {
-    X = (const double*)X_->data;
-    dm = (double*)dm_->data;
-    m = X_->dimensions[0];
-    n = X_->dimensions[1];
-
-    pdist_hamming(X, dm, m, n);
-  }
-  return Py_BuildValue("d", 0.0);
-}
-
 static PyObject *pdist_hamming_bool_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *X_, *dm_;
   int m, n;
@@ -826,28 +555,7 @@ static PyObject *pdist_hamming_bool_wrap(PyObject *self, PyObject *args) {
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
-    pdist_hamming_bool(X, dm, m, n);
-  }
-  return Py_BuildValue("d", 0.0);
-}
-
-static PyObject *pdist_jaccard_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *X_, *dm_;
-  int m, n;
-  double *dm;
-  const double *X;
-  if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_)) {
-    return 0;
-  }
-  else {
-    X = (const double*)X_->data;
-    dm = (double*)dm_->data;
-    m = X_->dimensions[0];
-    n = X_->dimensions[1];
-
-    pdist_jaccard(X, dm, m, n);
+    pdist_hamming_char(X, dm, m, n);
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -868,7 +576,7 @@ static PyObject *pdist_jaccard_bool_wrap(PyObject *self, PyObject *args) {
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
-    pdist_jaccard_bool(X, dm, m, n);
+    pdist_jaccard_char(X, dm, m, n);
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -910,7 +618,7 @@ static PyObject *pdist_weighted_minkowski_wrap(PyObject *self, PyObject *args) {
   else {
     X = (double*)X_->data;
     dm = (double*)dm_->data;
-    w = (const double*)w_->data;
+    w = (double*)w_->data;
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
@@ -936,7 +644,7 @@ static PyObject *pdist_yule_bool_wrap(PyObject *self, PyObject *args) {
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
-    pdist_yule_bool(X, dm, m, n);
+    pdist_yule_bool_char(X, dm, m, n);
   }
   return Py_BuildValue("");
 }
@@ -957,7 +665,7 @@ static PyObject *pdist_matching_bool_wrap(PyObject *self, PyObject *args) {
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
-    pdist_matching_bool(X, dm, m, n);
+    pdist_matching_char(X, dm, m, n);
   }
   return Py_BuildValue("");
 }
@@ -978,7 +686,7 @@ static PyObject *pdist_dice_bool_wrap(PyObject *self, PyObject *args) {
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
-    pdist_dice_bool(X, dm, m, n);
+    pdist_dice_char(X, dm, m, n);
   }
   return Py_BuildValue("");
 }
@@ -999,7 +707,7 @@ static PyObject *pdist_rogerstanimoto_bool_wrap(PyObject *self, PyObject *args) 
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
-    pdist_rogerstanimoto_bool(X, dm, m, n);
+    pdist_rogerstanimoto_char(X, dm, m, n);
   }
   return Py_BuildValue("");
 }
@@ -1020,7 +728,7 @@ static PyObject *pdist_russellrao_bool_wrap(PyObject *self, PyObject *args) {
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
-    pdist_russellrao_bool(X, dm, m, n);
+    pdist_russellrao_char(X, dm, m, n);
   }
   return Py_BuildValue("");
 }
@@ -1041,7 +749,7 @@ static PyObject *pdist_kulsinski_bool_wrap(PyObject *self, PyObject *args) {
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
-    pdist_kulsinski_bool(X, dm, m, n);
+    pdist_kulsinski_char(X, dm, m, n);
   }
   return Py_BuildValue("");
 }
@@ -1062,7 +770,7 @@ static PyObject *pdist_sokalmichener_bool_wrap(PyObject *self, PyObject *args) {
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
-    pdist_sokalmichener_bool(X, dm, m, n);
+    pdist_sokalmichener_char(X, dm, m, n);
   }
   return Py_BuildValue("");
 }
@@ -1083,7 +791,7 @@ static PyObject *pdist_sokalsneath_bool_wrap(PyObject *self, PyObject *args) {
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
-    pdist_sokalsneath_bool(X, dm, m, n);
+    pdist_sokalsneath_char(X, dm, m, n);
   }
   return Py_BuildValue("");
 }

@@ -36,7 +36,7 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('ckdtree', sources=['ckdtree.c'])  # FIXME: cython
 
     config.add_extension('_distance_wrap',
-        sources=[join('src', 'distance_wrap.c'), join('src', 'distance.c')],
+        sources=[join('src', 'distance_wrap.c')],
         include_dirs=[get_numpy_include_dirs()])
 
     return config
