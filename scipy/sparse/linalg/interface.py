@@ -1,3 +1,45 @@
+"""Abstract linear algebra library.
+
+This module defines a class hierarchy that implements a kind of "lazy"
+matrix representation, called the ``LinearOperator``. It can be used to do
+linear algebra with extremely large sparse or structured matrices, without
+representing those explicitly in memory. Such matrices can be added,
+multiplied, transposed, etc.
+
+As a motivating example, suppose you want have a matrix where almost all of
+the elements have the value one. The standard sparse matrix representation
+skips the storage of zeros, but not ones. By contrast, a LinearOperator is
+able to represent such matrices efficiently. First, we need a compact way to
+represent an all-ones matrix::
+
+    >>> import numpy as np
+    >>> class AddOne(LinearOperator):
+    ...     def __init__(self, shape):
+    ...         super(AddOne, self).__init__(dtype=None, shape=shape)
+    ...     def _matvec(self, x):
+    ...         return np.repeat(x.sum(), self.shape[0])
+
+Instances of this class emulate ``np.ones(shape)``, but using a constant
+amount of storage, independent of ``shape``. The ``_matvec`` method specifies
+how this linear operator multiplies with (operates on) a vector. We can now
+add this operator to a sparse matrix that stores only offsets from one::
+
+    >>> from scipy.sparse import csr_matrix
+    >>> offsets = csr_matrix([[1, 0, 2], [0, -1, 0], [0, 0, 3]])
+    >>> A = aslinearoperator(offsets) + AddOne(offsets.shape)
+    >>> A.dot([1, 2, 3])
+    array([13,  4, 15])
+
+The result is the same as that given by its dense, explicitly-stored
+counterpart::
+
+    >>> (np.ones(A.shape, A.dtype) + offsets.toarray()).dot([1, 2, 3])
+    array([13,  4, 15])
+
+Several algorithms in the ``scipy.sparse`` library are able to operate on
+``LinearOperator`` instances.
+"""
+
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
