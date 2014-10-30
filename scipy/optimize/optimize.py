@@ -32,6 +32,7 @@ import numpy
 from scipy.lib.six import callable
 from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
                    vectorize, asarray, sqrt, Inf, asfarray, isinf)
+import numpy as np
 from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          line_search_wolfe2 as line_search)
 
@@ -136,7 +137,7 @@ def is_array_scalar(x):
     """Test whether `x` is either a scalar or an array scalar.
 
     """
-    return len(atleast_1d(x) == 1)
+    return np.size(x) == 1
 
 _epsilon = sqrt(numpy.finfo(float).eps)
 
