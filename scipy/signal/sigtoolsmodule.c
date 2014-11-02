@@ -11,6 +11,7 @@ is granted under the SciPy License.
 
 #include "sigtools.h"
 #include <setjmp.h>
+#include <stdlib.h>
 
 #define PYERR(message) {PyErr_SetString(PyExc_ValueError, message); goto fail;}
 
@@ -26,20 +27,14 @@ is granted under the SciPy License.
 
 jmp_buf MALLOC_FAIL;
 
-char *check_malloc (int);
-
-char *check_malloc (size)
-	int size;
+char *check_malloc(size_t size)
 {
-    char *the_block;
-    
-    the_block = (char *)malloc(size);
-    if (the_block == NULL)
-	{
-	    printf("\nERROR: unable to allocate %d bytes!\n", size);
-	    longjmp(MALLOC_FAIL,-1);
-	}
-    return(the_block);
+    char *the_block = malloc(size);
+    if (the_block == NULL) {
+        printf("\nERROR: unable to allocate %zu bytes!\n", size);
+        longjmp(MALLOC_FAIL,-1);
+    }
+    return the_block;
 }
 
 
