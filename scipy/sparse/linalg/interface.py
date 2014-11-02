@@ -13,9 +13,9 @@ able to represent such matrices efficiently. First, we need a compact way to
 represent an all-ones matrix::
 
     >>> import numpy as np
-    >>> class AddOne(LinearOperator):
+    >>> class Ones(LinearOperator):
     ...     def __init__(self, shape):
-    ...         super(AddOne, self).__init__(dtype=None, shape=shape)
+    ...         super(Ones, self).__init__(dtype=None, shape=shape)
     ...     def _matvec(self, x):
     ...         return np.repeat(x.sum(), self.shape[0])
 
@@ -26,7 +26,7 @@ add this operator to a sparse matrix that stores only offsets from one::
 
     >>> from scipy.sparse import csr_matrix
     >>> offsets = csr_matrix([[1, 0, 2], [0, -1, 0], [0, 0, 3]])
-    >>> A = aslinearoperator(offsets) + AddOne(offsets.shape)
+    >>> A = aslinearoperator(offsets) + Ones(offsets.shape)
     >>> A.dot([1, 2, 3])
     array([13,  4, 15])
 
@@ -107,7 +107,9 @@ class LinearOperator(object):
     the return type is handled internally by LinearOperator.
 
     LinearOperator instances can also be multiplied, added with each
-    other and exponentiated, to produce a new linear operator.
+    other and exponentiated, all lazily: the result of these operations
+    is always a new, composite LinearOperator, that defers linear
+    operations to the original operators and combines the results.
 
     Examples
     --------
@@ -181,7 +183,7 @@ class LinearOperator(object):
         """Matrix-vector multiplication.
 
         Performs the operation y=A*x where A is an MxN linear
-        operator and x is a column vector or rank-1 array.
+        operator and x is a column vector or 1-d array.
 
         Parameters
         ----------
@@ -228,7 +230,7 @@ class LinearOperator(object):
         """Adjoint matrix-vector multiplication.
 
         Performs the operation y = A^H * x where A is an MxN linear
-        operator and x is a column vector or rank-1 array.
+        operator and x is a column vector or 1-d array.
 
         Parameters
         ----------
@@ -306,12 +308,14 @@ class LinearOperator(object):
         X = np.asanyarray(X)
 
         if X.ndim != 2:
-            raise ValueError('expected rank-2 ndarray or matrix')
+            raise ValueError('expected 2-d ndarray or matrix, not %d-d'
+                             % X.ndim)
 
         M,N = self.shape
 
         if X.shape[0] != N:
-            raise ValueError('dimension mismatch')
+            raise ValueError('dimension mismatch: %r, %r'
+                             % (self.shape, X.shape))
 
         Y = self._matmat(X)
 
@@ -324,6 +328,23 @@ class LinearOperator(object):
         return self*x
 
     def __mul__(self, x):
+        return self.dot(x)
+
+    def dot(self, x):
+        """Matrix-matrix or matrix-vector multiplication.
+
+        Parameters
+        ----------
+        x : array_like
+            1-d or 2-d array, representing a vector or matrix.
+
+        Returns
+        -------
+        Ax : array
+            1-d or 2-d array (depending on the shape of x) that represents
+            the result of applying this linear operator on x.
+
+        """
         if isinstance(x, LinearOperator):
             return _ProductLinearOperator(self, x)
         elif np.isscalar(x):
@@ -336,11 +357,8 @@ class LinearOperator(object):
             elif x.ndim == 2:
                 return self.matmat(x)
             else:
-                raise ValueError('expected rank-1 or rank-2 array or matrix')
-
-    def dot(self, other):
-        """Alias for self * other, for compatibility with ndarray/matrices."""
-        return self * other
+                raise ValueError('expected 1-d or 2-d array or matrix, got %r'
+                                 % x)
 
     def __rmul__(self, x):
         if np.isscalar(x):
@@ -632,7 +650,7 @@ def aslinearoperator(A):
 
     elif isinstance(A, np.ndarray) or isinstance(A, np.matrix):
         if A.ndim > 2:
-            raise ValueError('array must have rank <= 2')
+            raise ValueError('array must have ndim <= 2')
         A = np.atleast_2d(np.asarray(A))
         return MatrixLinearOperator(A)
 
