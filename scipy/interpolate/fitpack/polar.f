@@ -1,5 +1,6 @@
       subroutine polar(iopt,m,x,y,z,w,rad,s,nuest,nvest,eps,nu,tu,
      *  nv,tv,u,v,c,fp,wrk1,lwrk1,wrk2,lwrk2,iwrk,kwrk,ier)
+      implicit none
 c  subroutine polar fits a smooth function f(x,y) to a set of data
 c  points (x(i),y(i),z(i)) scattered arbitrarily over an approximation
 c  domain  x**2+y**2 <= rad(atan(y/x))**2. through the transformation
@@ -349,7 +350,7 @@ c  ..user specified function
       real*8 rad
 c  ..local scalars..
       real*8 tol,pi,dist,r,one
-      integer i,ib1,ib3,ki,kn,kwest,la,lbu,lcc,lcs,lro,j
+      integer i,ib1,ib3,ki,kn,kwest,la,lbu,lcc,lcs,lro,j,
      * lbv,lco,lf,lff,lfp,lh,lq,lsu,lsv,lwest,maxit,ncest,ncc,nuu,
      * nvv,nreg,nrint,nu4,nv4,iopt1,iopt2,iopt3,ipar,nvmin
 c  ..function references..

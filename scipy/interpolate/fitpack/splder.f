@@ -81,7 +81,7 @@ c..++
 c--  10  do 20 i=2,m
 c--        if(x(i).lt.x(i-1)) go to 200
 c--  20  continue
-  30  ier = 0
+      ier = 0
 c  fetch tb and te, the boundaries of the approximation interval.
       k1 = k+1
       k3 = k1+1
