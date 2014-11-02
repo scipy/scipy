@@ -909,15 +909,15 @@ def clqmn(m,n,z,type=3):
     mm = max(1,m)
     nn = max(1,n)
 
-    if type==2 and imag(z)==0:
+    if type == 2 and imag(z) == 0:
         z = z+1e-300j
     q,qd = specfun.clqmn(mm,nn,real(z),imag(z))
-    if imag(z)>0:
+    if imag(z) > 0:
         sign = 1
     else:
         sign = -1
     # DLMF 14.23.6
-    if type==2:
+    if type == 2:
         p,pd = specfun.clpmn(mm,nn,real(z),imag(z),3)
         q = q+sign*0.5j*pi*p
         qd = qd+sign*0.5j*pi*pd
