@@ -76,7 +76,8 @@ class TestBSpline(TestCase):
                         bspl(xx), atol=1e-14)
 
     def test_rndm_naive_eval(self):
-        # test random coefficient spline *on the base interval, t[k] <= x < t[-k-1]*
+        # test random coefficient spline *on the base interval*,
+        # t[k] <= x < t[-k-1]
         b, t, c, k = _make_random_spline()
         xx = np.linspace(t[k], t[-k-1], 50)
         y_b = b(xx)
@@ -299,7 +300,7 @@ def test_knots_multiplicity():
         x = np.unique(t)
         x = np.r_[t[0]-0.1, 0.5*(x[1:] + x[:1]), t[-1]+0.1]
         assert_allclose(splev(x, (t, c, k), der), b(x, der),
-                atol=atol, rtol=rtol, err_msg = 'der = %s  k = %s' % (der, b.k))
+                atol=atol, rtol=rtol, err_msg='der = %s  k = %s' % (der, b.k))
 
     # test loop itself
     # [the index `j` is for interpreting the traceback in case of a failure]
@@ -372,6 +373,7 @@ def B_012(x):
                             (x >= 1) & (x <= 2)],
                            [lambda x: 0., lambda x: x, lambda x: 2.-x])
 
+
 def B_0123(x, der=0):
     """A quadratic B-spline function B(x | 0, 1, 2, 3)."""
     x = np.atleast_1d(x)
@@ -386,8 +388,9 @@ def B_0123(x, der=0):
                  lambda x: 1.]
     else:
         raise ValueError('never be here: der=%s' % der)
-    pieces = np.piecewise(x, conds, funcs)   
+    pieces = np.piecewise(x, conds, funcs)
     return pieces
+
 
 def _make_random_spline(n=35, k=3):
     np.random.seed(123)
@@ -559,7 +562,8 @@ class TestInterp(TestCase):
         der_l = [(1, [1., 2.])]
         der_r = [(1, [3., 4.])]
 
-        tck = make_interp_spline(self.xx, yy, k=3, deriv_l=der_l, deriv_r=der_r)
+        tck = make_interp_spline(self.xx, yy, k=3,
+                deriv_l=der_l, deriv_r=der_r)
         b = BSpline(*tck)
         assert_allclose(b(self.xx), yy, atol=1e-14, rtol=1e-14)
         assert_allclose(b(self.xx[0], 1), der_l[0][1], atol=1e-14, rtol=1e-14)

@@ -4,7 +4,7 @@ import functools
 import operator
 
 import numpy as np
-from scipy.linalg import solve_banded
+from scipy.linalg import get_lapack_funcs, LinAlgError
 from . import _bspl
 from . import fitpack
 
@@ -39,7 +39,7 @@ class BSpline(object):
         B-spline order
     extrapolate : bool, optional
         whether to extrapolate beyond the base interval, ``t[k] .. t[n]``,
-        or to return nans. 
+        or to return nans.
         If True, extrapolates the first and last polynomial pieces of b-spline
         functions active on the base interval.
         Default is True.
@@ -582,14 +582,16 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
         raise ValueError("number of derivatives at boundaries.")
 
     # set up the LHS: the collocation matrix + derivatives @boundaries
-    Ab, kl_ku = _bspl._colloc(x, t, k, offset=nleft)
+    kl = ku = k
+    ab = np.zeros((2*kl + ku + 1, nt), dtype=np.float_, order='F')
+    _bspl._colloc(x, t, k, ab, offset=nleft)
     if nleft > 0:
-        _bspl._handle_lhs_derivatives(t, k, x[0], Ab, kl_ku, deriv_l_ords)
+        _bspl._handle_lhs_derivatives(t, k, x[0], ab, kl, ku, deriv_l_ords)
     if nright > 0:
-        _bspl._handle_lhs_derivatives(t, k, x[-1], Ab, kl_ku, deriv_r_ords,
+        _bspl._handle_lhs_derivatives(t, k, x[-1], ab, kl, ku, deriv_r_ords,
                                 offset=nt-nright)
 
-    # RHS
+    # set up the RHS: values to interpolate (+ derivative values, if any)
     extradim = prod(y.shape[1:])
     rhs = np.empty((nt, extradim), dtype=y.dtype)
     if nleft > 0:
@@ -598,6 +600,16 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
     if nright > 0:
         rhs[nt - nright:] = deriv_r_vals.reshape(-1, extradim)
 
-    c = solve_banded(kl_ku, Ab, rhs, overwrite_ab=True,
-                     overwrite_b=True, check_finite=check_finite)
+    # solve Ab @ x = rhs; this is the relevant part of linalg.solve_banded
+    if check_finite:
+        ab, rhs = map(np.asarray_chkfinite, (ab, rhs))
+    gbsv, = get_lapack_funcs(('gbsv',), (ab, rhs))
+    lu, piv, c, info = gbsv(kl, ku, ab, rhs,
+            overwrite_ab=True, overwrite_b=True)
+
+    if info > 0:
+        raise LinAlgError("Collocation matix is singular.")
+    elif info < 0:
+        raise ValueError('illegal value in %d-th argument of internal gbsv' % -info)
+
     return t, c.reshape((nt,) + y.shape[1:]), k
