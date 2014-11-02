@@ -684,11 +684,11 @@ def yule(u, v):
 
     .. math::
 
-         \\frac{R}{c_{TT} + c_{FF} + \\frac{R}{2}}
+         \\frac{R}{c_{TT} * c_{FF} + \\frac{R}{2}}
 
     where :math:`c_{ij}` is the number of occurrences of
     :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
-    :math:`k < n` and :math:`R = 2.0 * (c_{TF} + c_{FT})`.
+    :math:`k < n` and :math:`R = 2.0 * c_{TF} * c_{FT}`.
 
     Parameters
     ----------
