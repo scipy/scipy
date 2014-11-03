@@ -26,7 +26,7 @@ typedef struct {
 #define SIGNERR -1
 #define CONVERR -2
 
-double
+static double
 scipy_zeros_functions_func(double x, void *params)
 {
     scipy_zeros_parameters *myparams = params;
