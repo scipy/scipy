@@ -250,8 +250,15 @@ class TestKMean(object):
         kmeans2(data, 3, minit='points')
         kmeans2(data[:, :1], 3, minit='points')  # special case (1-D)
 
-        kmeans2(data, 3, minit='random')
-        kmeans2(data[:, :1], 3, minit='random')  # special case (1-D)
+        kmeans2(data, 3, minit='++')
+        kmeans2(data[:, :1], 3, minit='++')  # special case (1-D)
+
+        # minit='random' can give warnings, filter those
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore',
+                        message="One of the clusters is empty. Re-run")
+            kmeans2(data, 3, minit='random')
+            kmeans2(data[:, :1], 3, minit='random')  # special case (1-D)
 
     @pytest.mark.skipif(sys.platform == 'win32', reason='Fails with MemoryError in Wine.')
     def test_krandinit(self):
