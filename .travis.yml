@@ -54,8 +54,9 @@ before_install:
   # End install gmpy2 dependencies
   - mkdir builds
   - pushd builds
-  # Slow installs, force binary wheels
-  - $PIPI --no-index Cython
+  # Slow installs, try to use binary wheels
+  # Use Cython Python-only mode to save Cython compile time, if we have no wheel
+  - $PIPI --install-option="--no-cython-compile" Cython
   - $PIPI numpy$NUMPYSPEC
   - $PIPI nose mpmath argparse
   - $PIPI gmpy2  # speeds up mpmath (scipy.special tests)
