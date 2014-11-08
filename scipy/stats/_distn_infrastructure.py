@@ -15,6 +15,7 @@ import warnings
 
 from scipy.misc import doccer
 from ._distr_params import distcont, distdiscrete
+from scipy.lib._util import check_random_state
 
 from scipy.special import (comb, chndtr, gammaln, hyp0f1,
                            entr, kl_div)
@@ -36,7 +37,6 @@ from numpy import (place, any, argsort, argmax, vectorize,
                    asarray, nan, inf, isinf, NINF, empty)
 
 import numpy as np
-import numpy.random as mtrand
 
 from ._constants import _EPS, _XMAX
 
@@ -57,7 +57,7 @@ docheaders = {'methods': """\nMethods\n-------\n""",
               'examples': """\nExamples\n--------\n"""}
 
 _doc_rvs = """\
-``rvs(%(shapes)s, loc=0, scale=1, size=1)``
+``rvs(%(shapes)s, loc=0, scale=1, size=1, random_state=None)``
     Random variates.
 """
 _doc_pdf = """\
@@ -608,13 +608,31 @@ class rv_generic(object):
     and rv_continuous.
 
     """
-    def __init__(self):
+    def __init__(self, seed=None):
         super(rv_generic, self).__init__()
 
         # figure out if _stats signature has 'moments' keyword
         sign = inspect.getargspec(self._stats)
         self._stats_has_moments = ((sign[2] is not None) or
                                    ('moments' in sign[0]))
+        self._random_state = check_random_state(seed)
+
+    @property
+    def random_state(self):
+        """ Get or set the RandomState object for generating random variates.
+
+        This can be either None or an existing RandomState object.
+
+        If None (or np.random), use the RandomState singleton used by np.random.
+        If already a RandomState instance, use it.
+        If an int, use a new RandomState instance seeded with seed.
+
+        """
+        return self._random_state
+
+    @random_state.setter
+    def random_state(self, seed):
+        self._random_state = check_random_state(seed)
 
     def _construct_argparser(
             self, meths_to_inspect, locscale_in, locscale_out):
@@ -775,7 +793,7 @@ class rv_generic(object):
     ##(return 1-d using self._size to get number)
     def _rvs(self, *args):
         ## Use basic inverse cdf algorithm for RV generation as default.
-        U = mtrand.sample(self._size)
+        U = self._random_state.random_sample(self._size)
         Y = self._ppf(U, *args)
         return Y
 
@@ -811,6 +829,10 @@ class rv_generic(object):
             Scale parameter (default=1).
         size : int or tuple of ints, optional
             Defining number of random variates (default=1).
+        random_state : None or int or np.random.RandomState instance, optional
+            If int or RandomState, use it for drawing the random variates
+            If None, rely on self.random_state
+            Default is None.
 
         Returns
         -------
@@ -819,6 +841,7 @@ class rv_generic(object):
 
         """
         discrete = kwds.pop('discrete', None)
+        rndm = kwds.pop('random_state', None)
         args, loc, scale, size = self._parse_args_rvs(*args, **kwds)
         cond = logical_and(self._argcheck(*args), (scale >= 0))
         if not np.all(cond):
@@ -832,11 +855,20 @@ class rv_generic(object):
         if np.all(scale == 0):
             return loc*ones(size, 'd')
 
+        # extra gymnastics needed for a custom random_state
+        if rndm is not None:
+            random_state_saved = self._random_state
+            self._random_state = rndm
+
         vals = self._rvs(*args)
         if self._size is not None:
             vals = reshape(vals, size)
 
         vals = vals * scale + loc
+
+        # do not forget to restore the _random_state
+        if rndm is not None:
+            self._random_state = random_state_saved
 
         # Cast to int if discrete
         if discrete:
@@ -1228,6 +1260,12 @@ class rv_continuous(rv_generic):
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
+    seed : None or int or np.random.RandomState instance, optional
+        This parameter defines the RandomState object to use for drawing
+        random variates.
+        If None (or np.random), the global np.random state is used.
+        If integer, it is used to seed the local RandomState instance
+        Default is None.
 
     Methods
     -------
@@ -1398,15 +1436,15 @@ class rv_continuous(rv_generic):
 
     def __init__(self, momtype=1, a=None, b=None, xtol=1e-14,
                  badvalue=None, name=None, longname=None,
-                 shapes=None, extradoc=None):
+                 shapes=None, extradoc=None, seed=None):
 
-        super(rv_continuous, self).__init__()
+        super(rv_continuous, self).__init__(seed)
 
         # save the ctor parameters, cf generic freeze
         self._ctor_param = dict(
             momtype=momtype, a=a, b=b, xtol=xtol,
             badvalue=badvalue, name=name, longname=longname,
-            shapes=shapes, extradoc=extradoc)
+            shapes=shapes, extradoc=extradoc, seed=seed)
 
         if badvalue is None:
             badvalue = nan
@@ -2435,6 +2473,12 @@ class rv_discrete(rv_generic):
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
+    seed : None or int or np.random.RandomState instance, optional
+        This parameter defines the RandomState object to use for drawing
+        random variates.
+        If None, the global np.random state is used.
+        If integer, it is used to seed the local RandomState instance
+        Default is None.
 
     Methods
     -------
@@ -2558,15 +2602,15 @@ class rv_discrete(rv_generic):
 
     def __init__(self, a=0, b=inf, name=None, badvalue=None,
                  moment_tol=1e-8, values=None, inc=1, longname=None,
-                 shapes=None, extradoc=None):
+                 shapes=None, extradoc=None, seed=None):
 
-        super(rv_discrete, self).__init__()
+        super(rv_discrete, self).__init__(seed)
 
         # cf generic freeze
         self._ctor_param = dict(
             a=a, b=b, name=name, badvalue=badvalue,
             moment_tol=moment_tol, values=values, inc=inc,
-            longname=longname, shapes=shapes, extradoc=extradoc)
+            longname=longname, shapes=shapes, extradoc=extradoc, seed=seed)
 
         if badvalue is None:
             badvalue = nan
@@ -2705,6 +2749,10 @@ class rv_discrete(rv_generic):
         size : int or tuple of ints, optional
             Defining number of random variates (default=1).  Note that `size`
             has to be given as keyword, not as positional argument.
+        random_state : None or int or np.random.RandomState instance, optional
+            If int or RandomState, use it for drawing the random variates
+            If None, rely on self.random_state
+            Default is None.
 
         Returns
         -------
