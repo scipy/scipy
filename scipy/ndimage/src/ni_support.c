@@ -709,7 +709,6 @@ NI_CoordinateList* NI_InitCoordinateList(int size, int rank)
     NI_CoordinateList *list = \
         (NI_CoordinateList*)malloc(sizeof(NI_CoordinateList));
     if (!list) {
-        PyErr_NoMemory();
         return NULL;
     }
     list->block_size = size;
@@ -740,25 +739,18 @@ NI_CoordinateBlock* NI_CoordinateListAddBlock(NI_CoordinateList *list)
     NI_CoordinateBlock* block = NULL;
     block = (NI_CoordinateBlock*)malloc(sizeof(NI_CoordinateBlock));
     if (!block) {
-        PyErr_NoMemory();
-        goto exit;
+        return NULL;
     }
     block->coordinates = (npy_intp*)malloc(list->block_size * list->rank *
                                                            sizeof(npy_intp));
     if (!block->coordinates) {
-        PyErr_NoMemory();
-        goto exit;
+        free(block);
+        return NULL;
     }
     block->next = list->blocks;
     list->blocks = block;
     block->size = 0;
 
-exit:
-    if (PyErr_Occurred()) {
-        if (block)
-            free(block);
-        return NULL;
-    }
     return block;
 }
 
