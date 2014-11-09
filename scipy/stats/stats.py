@@ -1639,7 +1639,7 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
         The number of bins to use for the histogram. Default is 10.
     defaultlimits : tuple (lower, upper), optional
         The lower and upper values for the range of the histogram.
-        If no value is given, a range slightly larger then the range of the
+        If no value is given, a range slightly larger than the range of the
         values in a is used. Specifically ``(a.min() - s, a.max() + s)``,
         where ``s = (1/2)(a.max() - a.min()) / (numbins - 1)``.
     weights : array_like, optional
@@ -1758,7 +1758,7 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
         The number of bins to use for the histogram. Default is 10.
     defaultreallimits : tuple (lower, upper), optional
         The lower and upper values for the range of the histogram.
-        If no value is given, a range slightly larger then the range of the
+        If no value is given, a range slightly larger than the range of the
         values in a is used. Specifically ``(a.min() - s, a.max() + s)``,
         where ``s = (1/2)(a.max() - a.min()) / (numbins - 1)``.
     weights : array_like, optional
