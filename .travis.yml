@@ -33,8 +33,9 @@ matrix:
         - PYFLAKES_NODOCTEST=1 pyflakes scipy | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused' > test.out; cat test.out; test \! -s test.out
         - pep8 scipy
 before_install:
-  # Automated travis-ci wheel builds (disabled because intermittent issues)
-  - WHEELHOUSE=https://8167b5c3a2af93a0a9fb-13c6eee0d707a05fa610c311eec04c66.ssl.cf2.rackcdn.com/
+  # Automated travis-ci wheel builds
+  - WHEELHOUSE=http://travis-wheels.scikit-image.org
+  - PIPI="pip install --find-links $WHEELHOUSE"
   - uname -a
   - free -m
   - df -h
@@ -53,12 +54,13 @@ before_install:
   # End install gmpy2 dependencies
   - mkdir builds
   - pushd builds
-  # Slow installs, force binary wheels
-  - pip install Cython
-  - pip install numpy$NUMPYSPEC
-  - pip install nose mpmath argparse
-  - pip install gmpy2  # speeds up mpmath (scipy.special tests)
-  - if [ "${TESTMODE}" == "full" ]; then pip install coverage coveralls; fi
+  # Slow installs, try to use binary wheels
+  # Use Cython Python-only mode to save Cython compile time, if we have no wheel
+  - $PIPI --install-option="--no-cython-compile" Cython
+  - $PIPI numpy$NUMPYSPEC
+  - $PIPI nose mpmath argparse
+  - $PIPI gmpy2  # speeds up mpmath (scipy.special tests)
+  - if [ "${TESTMODE}" == "full" ]; then $PIPI coverage coveralls; fi
   - python -V
   - popd
 script:
