@@ -562,7 +562,7 @@ def test_wishart_quantile_dimensions():
         np.array([[2,0],
                   [0,2]]),    # 2-dim
         np.array([[2,0],
-                  [0,2]])[:,:,np.newaxis] # 3-dim
+                  [0,2]])[:,:,np.newaxis]  # 3-dim
     ]
 
     w = wishart(2,np.eye(2))
@@ -592,7 +592,7 @@ def test_wishart_frozen():
 
     # Construct a 1D and 2D set of parameters
     parameters = [
-        (10, 1, np.linspace(0.1, 10, 5)), # 1D case
+        (10, 1, np.linspace(0.1, 10, 5)),  # 1D case
         (10, scale, X)
     ]
 
@@ -670,7 +670,7 @@ def test_invwishart_frozen():
 
     # Construct a 1D and 2D set of parameters
     parameters = [
-        (10, 1, np.linspace(0.1, 10, 5)), # 1D case
+        (10, 1, np.linspace(0.1, 10, 5)),  # 1D case
         (10, scale, X)
     ]
 

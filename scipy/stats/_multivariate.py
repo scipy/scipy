@@ -1282,8 +1282,8 @@ class wishart_gen(object):
 
         """
         var = scale**2
-        diag = scale.diagonal()[np.newaxis, :] # 1 x dim array
-        var += np.dot(diag.T, diag) # outer product
+        diag = scale.diagonal()[np.newaxis, :]  # 1 x dim array
+        var += np.dot(diag.T, diag)  # outer product
         var *= df
         return var
 
@@ -1782,8 +1782,8 @@ class invwishart_gen(wishart_gen):
         """
         if df > dim + 3:
             var = (df - dim + 1) * scale**2
-            diag = scale.diagonal()[np.newaxis, :] # 1 x dim array
-            var += (df - dim - 1) * np.dot(diag.T, diag) # outer product
+            diag = scale.diagonal()[np.newaxis, :]  # 1 x dim array
+            var += (df - dim - 1) * np.dot(diag.T, diag)  # outer product
             var /= (df - dim) * (df - dim - 1)**2 * (df - dim - 3)
         else:
             var = None
