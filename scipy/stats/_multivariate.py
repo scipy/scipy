@@ -1129,17 +1129,21 @@ class wishart_gen(object):
         # Note: x has components along the last axis, so that x.T has
         # components alone the 0-th axis. Then since det(A) = det(A'), this
         # gives us a 1-dim vector of determinants
-        log_det_x = np.log(np.linalg.det(x.T))
+        # TODO slogdet is unavailable as long as Numpy 1.5.x is supported
+        # s, log_det_x = np.linalg.slogdet(x.T)
 
-        v_inv_x = np.zeros(x.shape)
-        tr_v_inv_x = np.zeros(x.shape[-1])
+        # Retrieve tr(scale^{-1} x)
+        log_det_x = np.zeros(x.shape[-1])
+        scale_inv_x = np.zeros(x.shape)
+        tr_scale_inv_x = np.zeros(x.shape[-1])
         for i in range(x.shape[-1]):
-            v_inv_x[:,:,i] = scipy.linalg.cho_solve((C, True), x[:,:,i])
-            tr_v_inv_x[i] = v_inv_x[:,:,i].diagonal().sum()
+            log_det_x[i] = np.log(np.linalg.det(x[:,:,i]))
+            scale_inv_x[:,:,i] = scipy.linalg.cho_solve((C, True), x[:,:,i])
+            tr_scale_inv_x[i] = scale_inv_x[:,:,i].diagonal().sum()
 
         # Log PDF
         out = (
-            (0.5 * (df - dim - 1) * log_det_x - 0.5 * tr_v_inv_x) -
+            (0.5 * (df - dim - 1) * log_det_x - 0.5 * tr_scale_inv_x) -
             (0.5 * df * dim * _LOG_2 + 0.5 * df * log_det_scale + multigammaln(0.5*df, dim))
         )
 
@@ -1171,7 +1175,7 @@ class wishart_gen(object):
 
         # Cholesky decomposition of V, log(det(V)), solve V^{-1} x = `v_inv_x`
         C, lower = scipy.linalg.cho_factor(scale, lower=True)
-        log_det_scale = 2 * np.log(C.diagonal().prod())
+        log_det_scale = 2 * np.sum(np.log(C.diagonal()))
 
         out = self._logpdf(x, dim, df, scale, log_det_scale, C)
         return _squeeze_output(out)
@@ -1288,7 +1292,7 @@ class wishart_gen(object):
         """
         var = scale**2
         diag = scale.diagonal()[np.newaxis, :]  # 1 x dim array
-        var += np.dot(diag.T, diag)  # outer product
+        var += np.outer(diag, diag)
         var *= df
         return var
 
@@ -1334,7 +1338,7 @@ class wishart_gen(object):
         """
         # Random normal variates for off-diagonal elements
         n_tril = (dim*(dim-1)/2)
-        covariances = np.random.normal(size=n*n_tril).reshape(shape + (n_tril,))
+        covariances = np.random.normal(size=n*n_tril).reshape(shape+(n_tril,))
 
         # Random chi-square variates for diagonal elements
         variances = np.r_[
@@ -1461,7 +1465,7 @@ class wishart_frozen(object):
             df, scale
         )
         self.C, lower = scipy.linalg.cho_factor(self.scale, lower=True)
-        self.log_det_scale = 2 * np.log(self.C.diagonal().prod())
+        self.log_det_scale = 2 * np.sum(np.log(self.C.diagonal()))
 
     def logpdf(self, x):
         x = self._wishart._process_quantiles(x, self.dim)
@@ -1629,20 +1633,20 @@ class invwishart_gen(wishart_gen):
 
         """
         log_det_x = np.zeros(x.shape[-1])
-        v_x_inv = np.zeros(x.shape)
-        tr_v_x_inv = np.zeros(x.shape[-1])
+        scale_x_inv = np.zeros(x.shape)
+        tr_scale_x_inv = np.zeros(x.shape[-1])
 
         for i in range(x.shape[-1]):
             C, lower = scipy.linalg.cho_factor(x[:,:,i], lower=True)
 
-            log_det_x[i] = 2 * np.log(C.diagonal().prod())
+            log_det_x[i] = 2 * np.sum(np.log(C.diagonal()))
 
-            v_x_inv[:,:,i] = scipy.linalg.cho_solve((C, True), scale).T
-            tr_v_x_inv[i] = v_x_inv[:,:,i].diagonal().sum()
+            scale_x_inv[:,:,i] = scipy.linalg.cho_solve((C, True), scale).T
+            tr_scale_x_inv[i] = scale_x_inv[:,:,i].diagonal().sum()
 
         # Log PDF
         out = (
-            (0.5 * df * log_det_scale - 0.5 * tr_v_x_inv) -
+            (0.5 * df * log_det_scale - 0.5 * tr_scale_x_inv) -
             (0.5 * df * dim * _LOG_2 + 0.5 * (df + dim + 1) * log_det_x) -
             multigammaln(0.5*df, dim)
         )
@@ -1792,7 +1796,7 @@ class invwishart_gen(wishart_gen):
         if df > dim + 3:
             var = (df - dim + 1) * scale**2
             diag = scale.diagonal()[np.newaxis, :]  # 1 x dim array
-            var += (df - dim - 1) * np.dot(diag.T, diag)  # outer product
+            var += (df - dim - 1) * np.outer(diag, diag)
             var /= (df - dim) * (df - dim - 1)**2 * (df - dim - 3)
         else:
             var = None
@@ -1915,7 +1919,7 @@ class invwishart_frozen(object):
 
         # Get the determinant via Cholesky factorization
         C, lower = scipy.linalg.cho_factor(self.scale, lower=True)
-        self.log_det_scale = 2 * np.log(C.diagonal().prod())
+        self.log_det_scale = 2 * np.sum(np.log(C.diagonal()))
 
         # Get the inverse using the Cholesky factorization
         self.inv_scale = scipy.linalg.cho_solve((C, lower), self.eye)
