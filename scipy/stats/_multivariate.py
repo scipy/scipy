@@ -6,12 +6,14 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import scipy.linalg
 from scipy.misc import doccer
-from scipy.special import gammaln
+from scipy.special import gammaln, psi, multigammaln
 
 
-__all__ = ['multivariate_normal', 'dirichlet']
+__all__ = ['multivariate_normal', 'dirichlet', 'wishart', 'invwishart']
 
 _LOG_2PI = np.log(2 * np.pi)
+_LOG_2 = np.log(2)
+_LOG_PI = np.log(np.pi)
 
 
 def _process_parameters(dim, mean, cov):
@@ -882,3 +884,1074 @@ for name in ['logpdf', 'pdf', 'rvs', 'mean', 'var', 'entropy']:
     method_frozen.__doc__ = doccer.docformat(
         method.__doc__, dirichlet_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, dirichlet_docdict_params)
+
+
+_wishart_doc_default_callparams = """\
+df : integer
+    Degrees of freedom, must be greater than or equal to dimension of the
+    scale matrix
+scale : array_like
+    Scale matrix of the distribution
+"""
+
+_wishart_doc_callparams_note = ""
+
+_wishart_doc_frozen_callparams = ""
+
+_wishart_doc_frozen_callparams_note = \
+    """See class definition for a detailed description of parameters."""
+
+wishart_docdict_params = {
+    '_doc_default_callparams': _wishart_doc_default_callparams,
+    '_doc_callparams_note': _wishart_doc_callparams_note
+}
+
+wishart_docdict_noparams = {
+    '_doc_default_callparams': _wishart_doc_frozen_callparams,
+    '_doc_callparams_note': _wishart_doc_frozen_callparams_note
+}
+
+
+class wishart_gen(object):
+    r"""
+    A Wishart random variable.
+
+    The `df` keyword specifies the degrees of freedom. The `scale` keyword
+    specifies the scale matrix. In this context, the scale matrix is often
+    interpreted in terms of a multivariate normal precision matrix (the inverse
+    of the covariance matrix).
+
+    Methods
+    -------
+    pdf(x, df, scale)
+        Probability density function.
+    logpdf(x, df, scale)
+        Log of the probability density function.
+    rvs(df, scale, size=1)
+        Draw random samples from a Wishart distribution.
+    entropy()
+        Compute the differential entropy of the Wishart distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Quantiles, with the last axis of `x` denoting the components.
+    %(_doc_default_callparams)s
+
+    Alternatively, the object may be called (as a function) to fix the degrees
+    of freedom and scale parameters, returning a "frozen" Wishart random
+    variable:
+
+    rv = wishart(df=1, scale=1)
+        - Frozen object with the same methods but holding the given
+          degrees of freedom and scale fixed.
+
+    Notes
+    -----
+    %(_doc_callparams_note)s
+
+    The scale matrix `scale` must be a (symmetric) positive definite
+    matrix.
+
+    The Wishart distribution is often denoted
+
+    .. math::
+
+        W_p(\nu, \Sigma)
+
+    where :math:`\nu` is the degrees of freedom and :math:`\Sigma` is the
+    :math:`p \times p` scale matrix.
+
+    The probability density function for `wishart` has support over positive
+    definite matrices :math:`S`; if if :math:`S \sim W_p(\nu, \Sigma)`, then
+    its PDF is given by:
+
+    .. math::
+
+        f(S) = \frac{|S|^{\frac{\nu - p - 1}{2}}}{2^{ \frac{\nu p}{2} } |\Sigma|^\frac{\nu}{2} \Gamma_p \left ( \frac{\nu}{2} \right )}
+        e^{-tr(\Sigma^{-1} S) / 2}
+
+    If :math:`S \sim W_p(\nu, \Sigma)` (Wishart) then
+    :math:`S^{-1} \sim W_p^{-1}(\nu, \Sigma^{-1})` (inverse Wishart).
+
+    If the scale matrix is 1-dimensional and equal to one, then the Wishart
+    distribution :math:`W_1(\nu, 1)` collapses to the :math:`\chi^2(\nu)`
+    distribution.
+
+    .. versionadded:: 0.15.0
+
+    Examples
+    --------
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.stats import wishart, chi2
+    >>> x = np.linspace(1e-5, 8, 100)
+    >>> w = wishart.pdf(x, df=3, scale=1); w[:5]
+    array([ 0.00126156,  0.10892176,  0.14793434,  0.17400548,  0.1929669 ])
+    >>> c = chi2.pdf(x, 3); c[:5]
+    array([ 0.00126156,  0.10892176,  0.14793434,  0.17400548,  0.1929669 ])
+    >>> plt.plot(x, w)
+
+    The input quantiles can be any shape of array, as long as the last
+    axis labels the components.
+
+    References
+    ----------
+    .. [1] Eaton, Morris L. 2007.
+       "Multivariate Statistics: A Vector Space Approach."
+       Lecture Notes-Monograph Series 53 (January): i - 512.
+    .. [2] Smith, W. B., and R. R. Hocking. 1972.
+       "Algorithm AS 53: Wishart Variate Generator."
+       Journal of the Royal Statistical Society.
+       Series C (Applied Statistics) 21 (3): 341-45. doi:10.2307/2346290.
+
+    """
+
+    def __init__(self):
+        self.__doc__ = doccer.docformat(self.__doc__, wishart_docdict_params)
+
+    def __call__(self, df=None, scale=None):
+        """
+        Create a frozen Wishart distribution.
+
+        See `wishart_frozen` for more information.
+
+        """
+        return wishart_frozen(df, scale)
+
+    def _process_parameters(self, df, scale):
+        if scale is None:
+            scale = 1.0
+        scale = np.asarray(scale, dtype=float)
+
+        if scale.ndim == 0:
+            scale = scale[np.newaxis,np.newaxis]
+        elif scale.ndim == 1:
+            scale = np.diag(scale)
+        elif scale.ndim == 2 and not scale.shape[0] == scale.shape[1]:
+            raise ValueError("Array 'scale' must be square if it is two"
+                             " dimensional, but scale.scale = %s."
+                             % str(scale.shape))
+        elif scale.ndim > 2:
+            raise ValueError("Array 'scale' must be at most two-dimensional,"
+                             " but scale.ndim = %d" % scale.ndim)
+
+        dim = scale.shape[0]
+
+        if df is None:
+            df = dim
+        elif not np.isscalar(df):
+            raise ValueError("Degrees of freedom must be a scalar.")
+        elif df < dim:
+            raise ValueError("Degrees of freedom cannot be less than dimension"
+                             " of scale matrix, but df = %d" % df)
+
+        return dim, df, scale
+
+    def _process_quantiles(self, x, dim):
+        """
+        Adjust quantiles array so that last axis labels the components of
+        each data point.
+        """
+        x = np.asarray(x, dtype=float)
+
+        if x.ndim == 0:
+            x = x * np.eye(dim)[:, :, np.newaxis]
+        if x.ndim == 1:
+            if dim == 1:
+                x = x[np.newaxis, np.newaxis, :]
+            else:
+                x = np.diag(x)[:, :, np.newaxis]
+        elif x.ndim == 2:
+            if not x.shape[0] == x.shape[1]:
+                raise ValueError("Quantiles must be square if they are two"
+                                 " dimensional, but x.shape = %s."
+                                 % str(x.shape))
+            x = x[:, :, np.newaxis]
+        elif x.ndim == 3:
+            if not x.shape[0] == x.shape[1]:
+                raise ValueError("Quantiles must be square in the first two"
+                                 " dimensions if they are three dimensional"
+                                 ", but x.shape = %s." % str(x.shape))
+        elif x.ndim > 3:
+            raise ValueError("Quantiles must be at most two-dimensional with"
+                             " an additional dimension for multiple"
+                             "components, but x.ndim = %d" % x.ndim)
+
+        # Now we have 3-dim array; should have shape [dim, dim, *]
+        if not x.shape[0:2] == (dim, dim):
+            raise ValueError('Quantiles have incompatible dimensions: should'
+                             ' be %s, got %s.' % ((dim, dim), x.shape[0:2]))
+
+        return x
+
+    def _process_size(self, size):
+        size = np.array(size, dtype=float)
+
+        if size.ndim == 0:
+            size = size[np.newaxis]
+        elif size.ndim > 1:
+            raise ValueError('Size must be an integer or tuple of integers;'
+                             ' thus must have dimension <= 1.'
+                             ' Got size.ndim = %s' % str(tuple(size)))
+        n = size.prod()
+        shape = tuple(size)
+        
+        return n, shape
+
+    def _logpdf(self, x, dim, df, scale, log_det_scale, C):
+        """
+        Parameters
+        ----------
+        x : ndarray
+            Points at which to evaluate the log of the probability
+            density function
+        dim : int
+            Dimension of the scale matrix
+        df : int
+            Degrees of freedom
+        scale : ndarray
+            Scale matrix
+        log_det_scale : float
+            Logarithm of the determinant of the scale matrix
+        C : ndarray
+            Cholesky factorization of the scale matrix, lower triagular.
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'logpdf' instead.
+
+        """
+        # log determinant of x
+        # Note: x has components along the last axis, so that x.T has
+        # components alone the 0-th axis. Then since det(A) = det(A'), this
+        # gives us a 1-dim vector of determinants
+        log_det_x = np.log(np.linalg.det(x.T))
+
+        v_inv_x = np.zeros(x.shape)
+        tr_v_inv_x = np.zeros(x.shape[-1])
+        for i in range(x.shape[-1]):
+            v_inv_x[:,:,i] = scipy.linalg.cho_solve((C, True), x[:,:,i])
+            tr_v_inv_x[i] = v_inv_x[:,:,i].diagonal().sum()
+
+        # Log PDF
+        out = (
+            (0.5 * (df - dim - 1) * log_det_x - 0.5 * tr_v_inv_x) -
+            (0.5 * df * dim * _LOG_2 + 0.5 * df * log_det_scale + multigammaln(0.5*df, dim))
+        )
+
+        return out
+
+    def logpdf(self, x, df, scale):
+        """
+        Log of the Wishart probability density function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+        %(_doc_default_callparams)s
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+
+        Returns
+        -------
+        pdf : ndarray
+            Log of the probability density function evaluated at `x`
+
+        """
+        dim, df, scale = self._process_parameters(df, scale)
+        x = self._process_quantiles(x, dim)
+
+        # Cholesky decomposition of V, log(det(V)), solve V^{-1} x = `v_inv_x`
+        C, lower = scipy.linalg.cho_factor(scale, lower=True)
+        log_det_scale = 2 * np.log(C.diagonal().prod())
+
+        out = self._logpdf(x, dim, df, scale, log_det_scale, C)
+        return _squeeze_output(out)
+
+    def pdf(self, x, df, scale):
+        """
+        Wishart probability density function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+        %(_doc_default_callparams)s
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+
+        Returns
+        -------
+        pdf : ndarray
+            Probability density function evaluated at `x`
+
+        """
+        return np.exp(self.logpdf(x, df, scale))
+
+    def _mean(self, dim, df, scale):
+        """
+        Parameters
+        ----------
+        dim : int
+            Dimension of the scale matrix
+        %(_doc_default_callparams)s
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'mean' instead.
+
+        """
+        return df * scale
+
+    def mean(self, df, scale):
+        """
+        Mean of the Wishart distribution
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        mean : float
+            The mean of the distribution
+        """
+        dim, df, scale = self._process_parameters(df, scale)
+        out = self._mean(dim, df, scale)
+        return _squeeze_output(out)
+
+    def _mode(self, dim, df, scale):
+        """
+        Parameters
+        ----------
+        dim : int
+            Dimension of the scale matrix
+        %(_doc_default_callparams)s
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'mode' instead.
+
+        """
+        if df >= dim + 1:
+            out = (df-dim-1) * scale
+        else:
+            out = None
+        return out
+
+    def mode(self, df, scale):
+        """
+        Mode of the Wishart distribution
+
+        Only valid if the degrees of freedom are greater than the dimension of
+        the scale matrix.
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        mode : float or None
+            The Mode of the distribution
+        """
+        dim, df, scale = self._process_parameters(df, scale)
+        out = self._mode(dim, df, scale)
+        return _squeeze_output(out) if out is not None else out
+
+    def _var(self, dim, df, scale):
+        """
+        Parameters
+        ----------
+        dim : int
+            Dimension of the scale matrix
+        %(_doc_default_callparams)s
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'var' instead.
+
+        """
+        var = scale**2
+        diag = scale.diagonal()[np.newaxis, :] # 1 x dim array
+        var += np.dot(diag.T, diag) # outer product
+        var *= df
+        return var
+
+    def var(self, df, scale):
+        """
+        Variance of the Wishart distribution
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        var : float
+            The variance of the distribution
+        """
+        dim, df, scale = self._process_parameters(df, scale)
+        out = self._var(dim, df, scale)
+        return _squeeze_output(out)
+
+    def _rvs(self, n, shape, dim, df, scale, C):
+        """
+        Parameters
+        ----------
+        n : integer
+            Number of variates to generate
+        shape : iterable
+            Shape of the variates to generate
+        dim : int
+            Dimension of the scale matrix
+        df : int
+            Degrees of freedom
+        scale : ndarray
+            Scale matrix
+        C : ndarray
+            Cholesky factorization of the scale matrix, lower triagular.
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'rvs' instead.
+
+        """
+        # Random normal variates for off-diagonal elements
+        n_tril = (dim*(dim-1)/2)
+        covariances = np.random.normal(size=n*n_tril).reshape(shape + (n_tril,))
+
+        # Random chi-square variates for diagonal elements
+        variances = np.r_[
+            [np.random.chisquare(df-(i+1)+1, size=n)**0.5 for i in range(dim)]
+        ].reshape((dim,) + shape[::-1]).T
+
+        # Create the A matri(ces)
+        A = np.zeros(shape + scale.shape)
+
+        # Input the covariances
+        size_idx = tuple([slice(None,None,None)]*len(shape))
+        tril_idx = np.tril_indices(dim, k=-1)
+        A[size_idx + tril_idx] = covariances
+
+        # Input the variances
+        diag_idx = np.diag_indices(dim)
+        A[size_idx + diag_idx] = variances
+
+        # Calculate C A A' C'
+        for index in np.ndindex(shape):
+            CA = np.dot(C, A[index])
+            A[index] = np.dot(CA.T, CA)
+
+        return A
+
+    def rvs(self, df, scale, size=1):
+        """
+        Draw random samples from a Wishart distribution.
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+        size : integer or iterable of integers, optional
+            Number of samples to draw (default 1).
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+
+        Returns
+        -------
+        rvs : ndarray
+            Random variates of shape (`size`) + (`dim`, `dim), where `dim` is
+            the dimension of the scale matrix.
+
+        """
+        n, shape = self._process_size(size)
+        dim, df, scale = self._process_parameters(df, scale)
+
+        # Cholesky decomposition of scale
+        C, lower = scipy.linalg.cho_factor(scale, lower=True)
+
+        out = self._rvs(n, shape, dim, df, scale, C)
+        return _squeeze_output(out)
+
+    def _entropy(self, dim, df, log_det_scale):
+        """
+        Parameters
+        ----------
+        dim : int
+            Dimension of the scale matrix
+        df : int
+            Degrees of freedom
+        log_det_scale : float
+            Logarithm of the determinant of the scale matrix
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'entropy' instead.
+
+        """
+        return (
+            0.5 * (dim+1) * log_det_scale +
+            0.5 * dim * (dim+1) * _LOG_2 +
+            multigammaln(0.5*df, dim) -
+            0.5 * (df - dim - 1) * np.sum(
+                [psi(0.5*(df + 1 - (i+1))) for i in range(dim)]
+            ) + 
+            0.5 * df * dim
+        )
+
+    def entropy(self, df, scale):
+        """
+        Compute the differential entropy of the Wishart.
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+
+        Returns
+        -------
+        h : scalar
+            Entropy of the Wishart distribution
+
+        """
+        dim, df, scale = self._process_parameters(df, scale)
+
+        log_det_scale = np.log(np.linalg.det(scale))
+        
+        return self._entropy(dim, df, log_det_scale)
+wishart = wishart_gen()
+
+
+class wishart_frozen(object):
+    """
+    Create a frozen Wishart distribution.
+
+    Parameters
+    ----------
+    df : array_like
+        Degrees of freedom of the distribution
+    scale : array_like
+        Scale matrix of the distribution
+    """
+    def __init__(self, df, scale):
+        self._wishart = wishart_gen()
+        self.dim, self.df, self.scale = self._wishart._process_parameters(
+            df, scale
+        )
+        self.C, lower = scipy.linalg.cho_factor(self.scale, lower=True)
+        self.log_det_scale = 2 * np.log(self.C.diagonal().prod())
+
+    def logpdf(self, x):
+        x = self._wishart._process_quantiles(x, self.dim)
+
+        out = self._wishart._logpdf(x, self.dim, self.df, self.scale,
+                                    self.log_det_scale, self.C)
+        return _squeeze_output(out)
+
+    def pdf(self, x):
+        return np.exp(self.logpdf(x))
+
+    def mean(self):
+        out = self._wishart._mean(self.dim, self.df, self.scale)
+        return _squeeze_output(out)
+
+    def mode(self):
+        out = self._wishart._mode(self.dim, self.df, self.scale)
+        return _squeeze_output(out) if out is not None else out
+
+    def var(self):
+        out = self._wishart._var(self.dim, self.df, self.scale)
+        return _squeeze_output(out)
+
+    def rvs(self, size=1):
+        n, shape = self._wishart._process_size(size)
+        out = self._wishart._rvs(n, shape,
+                                 self.dim, self.df, self.scale, self.C)
+        return _squeeze_output(out)
+
+    def entropy(self):
+        return self._wishart._entropy(self.dim, self.df, self.log_det_scale)
+
+# Set frozen generator docstrings from corresponding docstrings in
+# Wishart and fill in default strings in class docstrings
+for name in ['logpdf', 'pdf', 'mean', 'mode', 'var', 'rvs', 'entropy']:
+    method = wishart_gen.__dict__[name]
+    method_frozen = wishart_frozen.__dict__[name]
+    method_frozen.__doc__ = doccer.docformat(
+        method.__doc__, wishart_docdict_noparams)
+    method.__doc__ = doccer.docformat(method.__doc__, wishart_docdict_params)
+
+
+class invwishart_gen(wishart_gen):
+    r"""
+    A Wishart random variable.
+
+    The `df` keyword specifies the degrees of freedom. The `scale` keyword
+    specifies the scale matrix. In this context, the scale matrix is often
+    interpreted in terms of a multivariate normal precision matrix (the inverse
+    of the covariance matrix).
+
+    Methods
+    -------
+    pdf(x, df, scale)
+        Probability density function.
+    logpdf(x, df, scale)
+        Log of the probability density function.
+    rvs(df, scale, size=1)
+        Draw random samples from a Wishart distribution.
+    entropy()
+        Compute the differential entropy of the Wishart distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Quantiles, with the last axis of `x` denoting the components.
+    %(_doc_default_callparams)s
+
+    Alternatively, the object may be called (as a function) to fix the degrees
+    of freedom and scale parameters, returning a "frozen" Wishart random
+    variable:
+
+    rv = wishart(df=1, scale=1)
+        - Frozen object with the same methods but holding the given
+          degrees of freedom and scale fixed.
+
+    Notes
+    -----
+    %(_doc_callparams_note)s
+
+    The scale matrix `scale` must be a (symmetric) positive definite
+    matrix.
+
+    The Wishart distribution is often denoted
+
+    .. math::
+
+        W_p^{-1}(\nu, \Psi)
+
+    where :math:`\nu` is the degrees of freedom and :math:`\Psi` is the
+    :math:`p \times p` scale matrix.
+
+    The probability density function for `invwishart` has support over positive
+    definite matrices :math:`S`; if if :math:`S \sim W^{-1}_p(\nu, \Sigma)`,
+    then its PDF is given by:
+
+    .. math::
+
+        f(S) = \frac{|\Sigma|^\frac{\nu}{2}}{2^{ \frac{\nu p}{2} } |S|^{\frac{\nu + p + 1}{2}} \Gamma_p \left ( \frac{\nu}{2} \right )}
+        e^{-tr(\Sigma S^{-1}) / 2}
+
+    If :math:`S \sim W_p^{-1}(\nu, \Psi)` (inverse Wishart) then
+    :math:`S^{-1} \sim W_p(\nu, \Psi^{-1})` (Wishart).
+
+    If the scale matrix is 1-dimensional and equal to one, then the inverse
+    Wishart distribution :math:`W_1(\nu, 1)` collapses to the
+    inverse Gamma distribution with parameters :math:`shape = \frac{\nu}{2}`
+    and :math:`scale=\frac{1}{2}`.
+
+    .. versionadded:: 0.15.0
+
+    Examples
+    --------
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.stats import invwishart, invgamma
+    >>> x = np.linspace(0.01, 1, 100)
+    >>> iw = invwishart.pdf(x, df=6, scale=1); iw[:3]
+    array([  1.20546865e-15,   5.42497807e-06,   4.45813929e-03])
+    >>> ig = invgamma.pdf(x, 6/2., scale=1./2); c[:3]
+    array([  1.20546865e-15,   5.42497807e-06,   4.45813929e-03])
+    >>> plt.plot(x, iw)
+
+    The input quantiles can be any shape of array, as long as the last
+    axis labels the components.
+
+    References
+    ----------
+    .. [1] Eaton, Morris L. 2007.
+       "Multivariate Statistics: A Vector Space Approach."
+       Lecture Notes-Monograph Series 53 (January): i - 512.
+
+    """
+
+    def __init__(self):
+        self.__doc__ = doccer.docformat(self.__doc__, wishart_docdict_params)
+
+    def __call__(self, df=None, scale=None):
+        """
+        Create a frozen inverse Wishart distribution.
+
+        See `invwishart_frozen` for more information.
+
+        """
+        return invwishart_frozen(df, scale)
+
+    def _logpdf(self, x, dim, df, scale, log_det_scale):
+        """
+        Parameters
+        ----------
+        x : ndarray
+            Points at which to evaluate the log of the probability
+            density function
+        dim : int
+            Dimension of the scale matrix
+        df : int
+            Degrees of freedom
+        scale : ndarray
+            Scale matrix
+        log_det_scale : float
+            Logarithm of the determinant of the scale matrix
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'logpdf' instead.
+
+        """
+        log_det_x = np.zeros(x.shape[-1])
+        v_x_inv = np.zeros(x.shape)
+        tr_v_x_inv = np.zeros(x.shape[-1])
+
+        for i in range(x.shape[-1]):
+            C, lower = scipy.linalg.cho_factor(x[:,:,i], lower=True)
+
+            log_det_x[i] = 2 * np.log(C.diagonal().prod())
+
+            v_x_inv[:,:,i] = scipy.linalg.cho_solve((C, True), scale).T
+            tr_v_x_inv[i] = v_x_inv[:,:,i].diagonal().sum()
+
+        # Log PDF
+        out = (
+            (0.5 * df * log_det_scale - 0.5 * tr_v_x_inv) -
+            (0.5 * df * dim * _LOG_2 + 0.5 * (df + dim + 1) * log_det_x) -
+            multigammaln(0.5*df, dim)
+        )
+
+        return out
+
+    def logpdf(self, x, df, scale):
+        """
+        Log of the inverse Wishart probability density function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+        %(_doc_default_callparams)s
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+
+        Returns
+        -------
+        pdf : ndarray
+            Log of the probability density function evaluated at `x`
+
+        """
+        dim, df, scale = self._process_parameters(df, scale)
+        x = self._process_quantiles(x, dim)
+
+        log_det_scale = np.log(np.linalg.det(scale))
+
+        out = self._logpdf(x, dim, df, scale, log_det_scale)
+        return _squeeze_output(out)
+
+    def pdf(self, x, df, scale):
+        """
+        Inverse Wishart probability density function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+        %(_doc_default_callparams)s
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+
+        Returns
+        -------
+        pdf : ndarray
+            Probability density function evaluated at `x`
+
+        """
+        return np.exp(self.logpdf(x, df, scale))
+
+    def _mean(self, dim, df, scale):
+        """
+        Parameters
+        ----------
+        dim : int
+            Dimension of the scale matrix
+        %(_doc_default_callparams)s
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'mean' instead.
+
+        """
+        if df > dim + 1:
+            out = scale / (df - dim - 1)
+        else:
+            out = None
+        return out
+
+    def mean(self, df, scale):
+        """
+        Mean of the inverse Wishart distribution
+
+        Only valid if the degrees of freedom are greater than the dimension of
+        the scale matrix plus one.
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        mean : float or None
+            The mean of the distribution
+        """
+        dim, df, scale = self._process_parameters(df, scale)
+        out = self._mean(dim, df, scale)
+        return _squeeze_output(out) if out is not None else out
+
+    def _mode(self, dim, df, scale):
+        """
+        Parameters
+        ----------
+        dim : int
+            Dimension of the scale matrix
+        %(_doc_default_callparams)s
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'mode' instead.
+
+        """
+        return scale / (df + dim + 1)
+
+    def mode(self, df, scale):
+        """
+        Mode of the inverse Wishart distribution
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        mode : float
+            The Mode of the distribution
+        """
+        dim, df, scale = self._process_parameters(df, scale)
+        out = self._mode(dim, df, scale)
+        return _squeeze_output(out)
+
+    def _var(self, dim, df, scale):
+        """
+        Parameters
+        ----------
+        dim : int
+            Dimension of the scale matrix
+        %(_doc_default_callparams)s
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'var' instead.
+        """
+        if df > dim + 3:
+            var = (df - dim + 1) * scale**2
+            diag = scale.diagonal()[np.newaxis, :] # 1 x dim array
+            var += (df - dim - 1) * np.dot(diag.T, diag) # outer product
+            var /= (df - dim) * (df - dim - 1)**2 * (df - dim - 3)
+        else:
+            var = None
+        return var
+
+    def var(self, df, scale):
+        """
+        Variance of the inverse Wishart distribution
+
+        Only valid if the degrees of freedom are greater than the dimension of
+        the scale matrix plus three.
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        var : float
+            The variance of the distribution
+        """
+        dim, df, scale = self._process_parameters(df, scale)
+        out = self._var(dim, df, scale)
+        return _squeeze_output(out) if out is not None else out
+
+    def _rvs(self, n, shape, dim, df, inv_scale, C, eye):
+        """
+        Parameters
+        ----------
+        n : integer
+            Number of variates to generate
+        shape : iterable
+            Shape of the variates to generate
+        dim : int
+            Dimension of the scale matrix
+        df : int
+            Degrees of freedom
+        inv_scale : ndarray
+            Inverse of the scale matrix
+        C : ndarray
+            Cholesky factorization of the inverse scale matrix, lower
+            triagular.
+        eye : ndarray
+            A `dim`-shape identity matrix.
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'rvs' instead.
+
+        """
+        # Get random draws from a Wishart with parameter `inv_scale`
+        out = super(invwishart_gen, self)._rvs(n, shape, dim, df, inv_scale, C)
+
+        # Invert the draws to get draws from inverse Wishart
+        for index in np.ndindex(shape):
+            scipy.linalg.cho_factor(out[index], lower=True, overwrite_a=True)
+            out[index] = scipy.linalg.cho_solve((out[index], True), eye)
+
+        return out
+
+    def rvs(self, df, scale, size=1):
+        """
+        Draw random samples from an inverse Wishart distribution.
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+        size : integer or iterable of integers, optional
+            Number of samples to draw (default 1).
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+
+        Returns
+        -------
+        rvs : ndarray
+            Random variates of shape (`size`) + (`dim`, `dim), where `dim` is
+            the dimension of the scale matrix.
+
+        """
+        n, shape = self._process_size(size)
+        dim, df, scale = self._process_parameters(df, scale)
+
+        # Invert the scale
+        eye = np.eye(dim)
+        L, lower = scipy.linalg.cho_factor(scale, lower=True)
+        inv_scale = scipy.linalg.cho_solve((L, lower), eye)
+        # Cholesky decomposition of inverted scale
+        C, lower = scipy.linalg.cho_factor(inv_scale, lower=True)
+
+        out = self._rvs(n, shape, dim, df, inv_scale, C, eye)
+
+        return _squeeze_output(out)
+
+    def entropy(self):
+        # Need to find reference for inverse Wishart entropy
+        raise AttributeError
+
+invwishart = invwishart_gen()
+
+class invwishart_frozen(object):
+    def __init__(self, df, scale):
+        """
+        Create a frozen inverse Wishart distribution.
+
+        Parameters
+        ----------
+        df : array_like
+            Degrees of freedom of the distribution
+        scale : array_like
+            Scale matrix of the distribution
+        """
+        self._invwishart = invwishart_gen()
+        self.dim, self.df, self.scale = self._invwishart._process_parameters(
+            df, scale
+        )
+        self.eye = np.eye(self.dim)
+
+        # Get the determinant via Cholesky factorization
+        C, lower = scipy.linalg.cho_factor(self.scale, lower=True)
+        self.log_det_scale = 2 * np.log(C.diagonal().prod())
+
+        # Get the inverse using the Cholesky factorization
+        self.inv_scale = scipy.linalg.cho_solve((C, lower), self.eye)
+
+        # Get the Cholesky factorization of the inverse scale
+        self.C, lower = scipy.linalg.cho_factor(self.inv_scale, lower=True)
+
+    def logpdf(self, x):
+        x = self._invwishart._process_quantiles(x, self.dim)
+        out = self._invwishart._logpdf(x, self.dim, self.df, self.scale,
+                                       self.log_det_scale)
+        return _squeeze_output(out)
+
+    def pdf(self, x):
+        return np.exp(self.logpdf(x))
+
+    def mean(self):
+        out = self._invwishart._mean(self.dim, self.df, self.scale)
+        return _squeeze_output(out) if out is not None else out
+
+    def mode(self):
+        out = self._invwishart._mode(self.dim, self.df, self.scale)
+        return _squeeze_output(out)
+
+    def var(self):
+        out = self._invwishart._var(self.dim, self.df, self.scale)
+        return _squeeze_output(out) if out is not None else out
+
+    def rvs(self, size=1):
+        n, shape = self._invwishart._process_size(size)
+
+        out = self._invwishart._rvs(n, shape, self.dim, self.df,
+                                    self.inv_scale, self.C, self.eye)
+
+        return _squeeze_output(out)
+
+    def entropy(self):
+        # Need to find reference for inverse Wishart entropy
+        raise AttributeError
+
+# Set frozen generator docstrings from corresponding docstrings in
+# inverse Wishart and fill in default strings in class docstrings
+for name in ['logpdf', 'pdf', 'mean', 'mode', 'var', 'rvs']:
+    method = invwishart_gen.__dict__[name]
+    method_frozen = wishart_frozen.__dict__[name]
+    method_frozen.__doc__ = doccer.docformat(
+        method.__doc__, wishart_docdict_noparams)
+    method.__doc__ = doccer.docformat(method.__doc__, wishart_docdict_params)
