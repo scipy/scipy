@@ -1360,7 +1360,7 @@ class wishart_gen(object):
         # Calculate C A A' C'
         for index in np.ndindex(shape):
             CA = np.dot(C, A[index])
-            A[index] = np.dot(CA.T, CA)
+            A[index] = np.dot(CA, CA.T)
 
         return A
 
@@ -1853,7 +1853,7 @@ class invwishart_gen(wishart_gen):
 
         # Invert the draws to get draws from inverse Wishart
         for index in np.ndindex(shape):
-            scipy.linalg.cho_factor(out[index], lower=True, overwrite_a=True)
+            out[index] = scipy.linalg.cho_factor(out[index], lower=True)
             out[index] = scipy.linalg.cho_solve((out[index], True), eye)
 
         return out
