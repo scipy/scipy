@@ -1698,7 +1698,10 @@ class invwishart_gen(wishart_gen):
         log_det_x = np.zeros(x.shape[-1])
         #scale_x_inv = np.zeros(x.shape)
         x_inv = np.copy(x).T
-        _cho_inv_batch(x_inv)  # works in-place
+        if dim > 1:
+            _cho_inv_batch(x_inv)  # works in-place
+        else:
+            x_inv = 1./x_inv
         tr_scale_x_inv = np.zeros(x.shape[-1])
 
         for i in range(x.shape[-1]):
@@ -1917,12 +1920,15 @@ class invwishart_gen(wishart_gen):
         out = super(invwishart_gen, self)._rvs(n, shape, dim, df, inv_scale, C)
 
         # Invert the draws to get draws from inverse Wishart
-        for index in np.ndindex(shape):
-            out[index] = scipy.linalg.cho_factor(out[index], lower=True)
-            out[index] = scipy.linalg.cho_solve((out[index], True), eye)
+        # for index in np.ndindex(shape):
+        #     out[index] = scipy.linalg.cho_factor(out[index], lower=True)
+        #     out[index] = scipy.linalg.cho_solve((out[index], True), eye)
 
         # (works on the arrays in-place)
-        _cho_inv_batch(out)
+        if dim > 1:
+            _cho_inv_batch(out)
+        else:
+            out = 1./out
 
         return out
 
