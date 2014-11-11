@@ -679,7 +679,7 @@ def test_invwishart_frozen():
         assert_equal(iw.var(), invwishart.var(df, scale))
         assert_equal(iw.mean(), invwishart.mean(df, scale))
         assert_equal(iw.mode(), invwishart.mode(df, scale))
-        assert_equal(iw.pdf(x), invwishart.pdf(x, df, scale))
+        assert_allclose(iw.pdf(x), invwishart.pdf(x, df, scale))
 
 def test_invwishart_1D_is_invgamma():
     # The 1-dimensional inverse Wishart with an identity scale matrix is just
