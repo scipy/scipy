@@ -478,6 +478,7 @@ class multivariate_normal_gen(object):
 
         """
         dim, mean, cov = _process_parameters(None, mean, cov)
+        # TODO replace with np.linalg.slogdet with Numpy 1.5.x not necessary
         return 0.5 * np.log(np.linalg.det(2 * np.pi * np.e * cov))
 
 
@@ -891,7 +892,7 @@ df : integer
     Degrees of freedom, must be greater than or equal to dimension of the
     scale matrix
 scale : array_like
-    Scale matrix of the distribution
+    Symmetric positive definite scale matrix of the distribution
 """
 
 _wishart_doc_callparams_note = ""
@@ -917,9 +918,10 @@ class wishart_gen(object):
     A Wishart random variable.
 
     The `df` keyword specifies the degrees of freedom. The `scale` keyword
-    specifies the scale matrix. In this context, the scale matrix is often
-    interpreted in terms of a multivariate normal precision matrix (the inverse
-    of the covariance matrix).
+    specifies the scale matrix, which must be symmetric and positive definite.
+    In this context, the scale matrix is often interpreted in terms of a
+    multivariate normal precision matrix (the inverse of the covariance
+    matrix).
 
     Methods
     -------
@@ -950,8 +952,9 @@ class wishart_gen(object):
     -----
     %(_doc_callparams_note)s
 
-    The scale matrix `scale` must be a (symmetric) positive definite
-    matrix.
+    The scale matrix `scale` must be a symmetric positive definite
+    matrix. Singular matrices, including the symmetric positive semi-definite
+    case, are not supported.
 
     The Wishart distribution is often denoted
 
@@ -963,7 +966,7 @@ class wishart_gen(object):
     :math:`p \times p` scale matrix.
 
     The probability density function for `wishart` has support over positive
-    definite matrices :math:`S`; if if :math:`S \sim W_p(\nu, \Sigma)`, then
+    definite matrices :math:`S`; if :math:`S \sim W_p(\nu, \Sigma)`, then
     its PDF is given by:
 
     .. math::
@@ -1150,6 +1153,7 @@ class wishart_gen(object):
         ----------
         x : array_like
             Quantiles, with the last axis of `x` denoting the components.
+            Each quantile must be a symmetric positive definite matrix.
         %(_doc_default_callparams)s
 
         Notes
@@ -1180,6 +1184,7 @@ class wishart_gen(object):
         ----------
         x : array_like
             Quantiles, with the last axis of `x` denoting the components.
+            Each quantile must be a symmetric positive definite matrix.
         %(_doc_default_callparams)s
 
         Notes
@@ -1432,6 +1437,7 @@ class wishart_gen(object):
         """
         dim, df, scale = self._process_parameters(df, scale)
 
+        # TODO replace with np.linalg.slogdet when Numpy 1.5.x not necessary
         log_det_scale = np.log(np.linalg.det(scale))
         
         return self._entropy(dim, df, log_det_scale)
@@ -1500,12 +1506,12 @@ for name in ['logpdf', 'pdf', 'mean', 'mode', 'var', 'rvs', 'entropy']:
 
 class invwishart_gen(wishart_gen):
     r"""
-    A Wishart random variable.
+    An inverse Wishart random variable.
 
     The `df` keyword specifies the degrees of freedom. The `scale` keyword
-    specifies the scale matrix. In this context, the scale matrix is often
-    interpreted in terms of a multivariate normal precision matrix (the inverse
-    of the covariance matrix).
+    specifies the scale matrix, which must be symmetric and positive definite.
+    In this context, the scale matrix is often interpreted in terms of a
+    multivariate normal covariance matrix.
 
     Methods
     -------
@@ -1514,9 +1520,7 @@ class invwishart_gen(wishart_gen):
     logpdf(x, df, scale)
         Log of the probability density function.
     rvs(df, scale, size=1)
-        Draw random samples from a Wishart distribution.
-    entropy()
-        Compute the differential entropy of the Wishart distribution.
+        Draw random samples from an inverse Wishart distribution.
 
     Parameters
     ----------
@@ -1525,10 +1529,10 @@ class invwishart_gen(wishart_gen):
     %(_doc_default_callparams)s
 
     Alternatively, the object may be called (as a function) to fix the degrees
-    of freedom and scale parameters, returning a "frozen" Wishart random
-    variable:
+    of freedom and scale parameters, returning a "frozen" inverse Wishart
+    random variable:
 
-    rv = wishart(df=1, scale=1)
+    rv = invwishart(df=1, scale=1)
         - Frozen object with the same methods but holding the given
           degrees of freedom and scale fixed.
 
@@ -1536,10 +1540,11 @@ class invwishart_gen(wishart_gen):
     -----
     %(_doc_callparams_note)s
 
-    The scale matrix `scale` must be a (symmetric) positive definite
-    matrix.
+    The scale matrix `scale` must be a symmetric positive definite
+    matrix. Singular matrices, including the symmetric positive semi-definite
+    case, are not supported.
 
-    The Wishart distribution is often denoted
+    The inverse Wishart distribution is often denoted
 
     .. math::
 
@@ -1549,7 +1554,7 @@ class invwishart_gen(wishart_gen):
     :math:`p \times p` scale matrix.
 
     The probability density function for `invwishart` has support over positive
-    definite matrices :math:`S`; if if :math:`S \sim W^{-1}_p(\nu, \Sigma)`,
+    definite matrices :math:`S`; if :math:`S \sim W^{-1}_p(\nu, \Sigma)`,
     then its PDF is given by:
 
     .. math::
@@ -1607,7 +1612,7 @@ class invwishart_gen(wishart_gen):
         ----------
         x : ndarray
             Points at which to evaluate the log of the probability
-            density function
+            density function.
         dim : int
             Dimension of the scale matrix
         df : int
@@ -1652,6 +1657,7 @@ class invwishart_gen(wishart_gen):
         ----------
         x : array_like
             Quantiles, with the last axis of `x` denoting the components.
+            Each quantile must be a symmetric positive definite matrix.
         %(_doc_default_callparams)s
 
         Notes
@@ -1667,6 +1673,7 @@ class invwishart_gen(wishart_gen):
         dim, df, scale = self._process_parameters(df, scale)
         x = self._process_quantiles(x, dim)
 
+        # TODO replace with np.linalg.slogdet when Numpy 1.5.x not necessary
         log_det_scale = np.log(np.linalg.det(scale))
 
         out = self._logpdf(x, dim, df, scale, log_det_scale)
@@ -1680,6 +1687,8 @@ class invwishart_gen(wishart_gen):
         ----------
         x : array_like
             Quantiles, with the last axis of `x` denoting the components.
+            Each quantile must be a symmetric positive definite matrix.
+
         %(_doc_default_callparams)s
 
         Notes
