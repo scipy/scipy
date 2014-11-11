@@ -1173,8 +1173,8 @@ class wishart_gen(object):
         dim, df, scale = self._process_parameters(df, scale)
         x = self._process_quantiles(x, dim)
 
-        # Cholesky decomposition of V, log(det(V)), solve V^{-1} x = `v_inv_x`
-        C, lower = scipy.linalg.cho_factor(scale, lower=True)
+        # Cholesky decomposition of scale, get log(det(scale))
+        C = scipy.linalg.cholesky(scale, lower=True)
         log_det_scale = 2 * np.sum(np.log(C.diagonal()))
 
         out = self._logpdf(x, dim, df, scale, log_det_scale, C)
@@ -1345,7 +1345,7 @@ class wishart_gen(object):
             [np.random.chisquare(df-(i+1)+1, size=n)**0.5 for i in range(dim)]
         ].reshape((dim,) + shape[::-1]).T
 
-        # Create the A matri(ces)
+        # Create the A matri(ces) - lower triangular
         A = np.zeros(shape + scale.shape)
 
         # Input the covariances
@@ -1358,6 +1358,16 @@ class wishart_gen(object):
         A[size_idx + diag_idx] = variances
 
         # Calculate C A A' C'
+        # Note: this is the product of a (lower) (lower) (lower)' (lower)'
+        #       or, denoting B = AA', it is C B C' where C is the lower
+        #       triangular Cholesky factorization of the scale matrix.
+        #       this appears to conflict with the instructions in [1]_, which
+        #       suggest that it should be D' B D where D is the lower
+        #       triangular factorization of the scale matrix. However, it is
+        #       meant to refer to the Bartlett (1933) representation of a
+        #       Wishart random variate as L A A' L' where L is lower triangular
+        #       so it appears that understanding D' to be upper triangular
+        #       is either a typo in or misreading of [1]_.
         for index in np.ndindex(shape):
             CA = np.dot(C, A[index])
             A[index] = np.dot(CA, CA.T)
@@ -1389,7 +1399,7 @@ class wishart_gen(object):
         dim, df, scale = self._process_parameters(df, scale)
 
         # Cholesky decomposition of scale
-        C, lower = scipy.linalg.cho_factor(scale, lower=True)
+        C = scipy.linalg.cholesky(scale, lower=True)
 
         out = self._rvs(n, shape, dim, df, scale, C)
         return _squeeze_output(out)
@@ -1464,7 +1474,7 @@ class wishart_frozen(object):
         self.dim, self.df, self.scale = self._wishart._process_parameters(
             df, scale
         )
-        self.C, lower = scipy.linalg.cho_factor(self.scale, lower=True)
+        self.C = scipy.linalg.cholesky(self.scale, lower=True)
         self.log_det_scale = 2 * np.sum(np.log(self.C.diagonal()))
 
     def logpdf(self, x):
@@ -1961,7 +1971,7 @@ class invwishart_gen(wishart_gen):
         L, lower = scipy.linalg.cho_factor(scale, lower=True)
         inv_scale = scipy.linalg.cho_solve((L, lower), eye)
         # Cholesky decomposition of inverted scale
-        C, lower = scipy.linalg.cho_factor(inv_scale, lower=True)
+        C = scipy.linalg.cholesky(inv_scale, lower=True)
 
         out = self._rvs(n, shape, dim, df, inv_scale, C, eye)
 
@@ -1999,7 +2009,7 @@ class invwishart_frozen(object):
         self.inv_scale = scipy.linalg.cho_solve((C, lower), self.eye)
 
         # Get the Cholesky factorization of the inverse scale
-        self.C, lower = scipy.linalg.cho_factor(self.inv_scale, lower=True)
+        self.C = scipy.linalg.cholesky(self.inv_scale, lower=True)
 
     def logpdf(self, x):
         x = self._invwishart._process_quantiles(x, self.dim)
