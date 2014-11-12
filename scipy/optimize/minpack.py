@@ -502,6 +502,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False, **kw):
         How the `sigma` parameter affects the estimated covariance
         depends on `absolute_sigma` argument, as described above.
 
+    Raises
+    ------
+    OptimizeWarning
+        if covariance of the parameters can not be estimated.
+
     See Also
     --------
     leastsq
