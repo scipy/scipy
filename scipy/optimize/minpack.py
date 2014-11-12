@@ -578,7 +578,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False, **kw):
             warn_cov = True
 
     if warn_cov:
-        warnings.warn('Covariance of the parameters could not be estimated', category=OptimizeWarning)
+        warnings.warn('Covariance of the parameters could not be estimated',
+                category=OptimizeWarning)
 
     if return_full:
         return popt, pcov, infodict, errmsg, ier
