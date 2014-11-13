@@ -765,7 +765,7 @@ static void _VoronoiFT(char *pf, npy_intp len, npy_intp *coor, int rank,
                        npy_intp **f, npy_intp *g, Float64 *sampling)
 {
     npy_intp l = -1, ii, maxl, idx1, idx2;
-    int jj;
+    npy_intp jj;
 
     for(ii = 0; ii < len; ii++)
         for(jj = 0; jj < rank; jj++)
@@ -853,7 +853,7 @@ static void _ComputeFT(char *pi, char *pf, npy_intp *ishape,
                        int d, npy_intp *coor, npy_intp **f, npy_intp *g,
                                              PyArrayObject *features, Float64 *sampling)
 {
-    int kk;
+    npy_intp kk;
     npy_intp jj;
 
     if (d == 0) {
