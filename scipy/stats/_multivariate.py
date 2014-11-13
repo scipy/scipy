@@ -1139,7 +1139,7 @@ class wishart_gen(object):
         for i in range(x.shape[-1]):
             log_det_x[i] = np.log(np.linalg.det(x[:,:,i]))
             scale_inv_x[:,:,i] = scipy.linalg.cho_solve((C, True), x[:,:,i])
-            tr_scale_inv_x[i] = scale_inv_x[:,:,i].diagonal().sum()
+            tr_scale_inv_x[i] = scale_inv_x[:,:,i].trace()
 
         # Log PDF
         out = (
@@ -1291,7 +1291,7 @@ class wishart_gen(object):
 
         """
         var = scale**2
-        diag = scale.diagonal()[np.newaxis, :]  # 1 x dim array
+        diag = scale.diagonal()  # 1 x dim array
         var += np.outer(diag, diag)
         var *= df
         return var
@@ -1519,7 +1519,7 @@ for name in ['logpdf', 'pdf', 'mean', 'mode', 'var', 'rvs', 'entropy']:
 
 
 from numpy import asarray_chkfinite, asarray
-from scipy.linalg.misc import LinAlgError, _datacopied
+from scipy.linalg.misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 def _cho_inv_batch(a, check_finite=True):
     """
@@ -1720,7 +1720,7 @@ class invwishart_gen(wishart_gen):
             log_det_x[i] = 2 * np.sum(np.log(C.diagonal()))
 
             #scale_x_inv[:,:,i] = scipy.linalg.cho_solve((C, True), scale).T
-            tr_scale_x_inv[i] = np.dot(scale, x_inv[i]).diagonal().sum()
+            tr_scale_x_inv[i] = np.dot(scale, x_inv[i]).trace()
 
         # Log PDF
         out = (
@@ -1873,7 +1873,7 @@ class invwishart_gen(wishart_gen):
         """
         if df > dim + 3:
             var = (df - dim + 1) * scale**2
-            diag = scale.diagonal()[np.newaxis, :]  # 1 x dim array
+            diag = scale.diagonal()  # 1 x dim array
             var += (df - dim - 1) * np.outer(diag, diag)
             var /= (df - dim) * (df - dim - 1)**2 * (df - dim - 3)
         else:
