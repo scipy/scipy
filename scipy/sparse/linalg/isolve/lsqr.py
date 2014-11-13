@@ -57,6 +57,8 @@ import numpy as np
 from math import sqrt
 from scipy.sparse.linalg.interface import aslinearoperator
 
+eps = np.finfo(np.float64).eps
+
 
 def _sym_ortho(a, b):
     """
@@ -432,8 +434,8 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         # Now use these norms to estimate certain other quantities,
         # some of which will be small near a solution.
         test1 = rnorm / bnorm
-        test2 = arnorm / (anorm * rnorm)
-        test3 = 1 / acond
+        test2 = arnorm / (anorm * rnorm + eps)
+        test3 = 1 / (acond + eps)
         t1 = test1 / (1 + anorm * xnorm / bnorm)
         rtol = btol + atol * anorm * xnorm / bnorm
 
