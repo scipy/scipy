@@ -2435,7 +2435,8 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         objective function had its minimum value. (See `Note 1` for
         which point is returned.)
     fval : float
-        Function value at the point `x0`.
+        Function value at the point `x0`. (Returned when `full_output` is
+        True.)
     grid : tuple
         Representation of the evaluation grid.  It has the same
         length as `x0`. (Returned when `full_output` is True.)
@@ -2694,7 +2695,7 @@ def show_options(solver=None, method=None):
             <= gtol`` where ``pg_i`` is the i-th component of the
             projected gradient.
         eps : float or ndarray
-            If `jac` is approximated, use this value for the step size.            
+            If `jac` is approximated, use this value for the step size.
         maxcor : int
             The maximum number of variable metric corrections used to
             define the limited memory matrix. (The limited memory BFGS
