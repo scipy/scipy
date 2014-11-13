@@ -13,6 +13,8 @@ from numpy.testing import (
     run_module_suite,
 )
 
+from test_continuous_basic import check_distribution_rvs
+
 import numpy
 import numpy as np
 
@@ -607,9 +609,11 @@ def test_wishart_frozen():
 def test_wishart_1D_is_chisquared():
     # The 1-dimensional Wishart with an identity scale matrix is just a
     # chi-squared distribution.
-    # Test mean, mode, variance, pdf
-    np.random.seed(1234)
+    # Test variance, mean, entropy, pdf
+    # Kolgomorov-Smirnov test for rvs
+    np.random.seed(482974)
 
+    sn = 500
     dim = 1
     scale = np.eye(dim)
 
@@ -619,17 +623,29 @@ def test_wishart_1D_is_chisquared():
         w = wishart(df, scale)
         c = chi2(df)
 
+        # Statistics
         assert_allclose(w.var(), c.var())
         assert_allclose(w.mean(), c.mean())
         assert_allclose(w.entropy(), c.entropy())
+
+        # PDF
         assert_allclose(w.pdf(X), c.pdf(X))
+
+        # rvs
+        rvs = w.rvs(size=sn)
+        args = (df,)
+        alpha = 0.01
+        check_distribution_rvs('chi2', args, alpha, rvs)
+
 
 def test_wishart_is_scaled_chisquared():
     # The 2-dimensional Wishart with an arbitrary scale matrix can be
     # transformed to a scaled chi-squared distribution.
     # For :math:`S \sim W_p(V,n)` and :math:`\lambda \in \mathbb{R}^p` we have
     # :math:`\lambda' S \lambda \sim \lambda' V \lambda \times \chi^2(n)`
+    np.random.seed(482974)
 
+    sn = 500
     df = 10
     dim = 4
     # Construct an arbitrary positive definite matrix
@@ -642,12 +658,20 @@ def test_wishart_is_scaled_chisquared():
     w = wishart(df, sigma_lamda)
     c = chi2(df, scale=sigma_lamda)
 
+    # Statistics
     assert_allclose(w.var(), c.var())
     assert_allclose(w.mean(), c.mean())
     assert_allclose(w.entropy(), c.entropy())
 
+    # PDF
     X = np.linspace(0.1,10,num=10)
     assert_allclose(w.pdf(X), c.pdf(X))
+
+    # rvs
+    rvs = w.rvs(size=sn)
+    args = (df,0,sigma_lamda)
+    alpha = 0.01
+    check_distribution_rvs('chi2', args, alpha, rvs)
 
 def test_invwishart_frozen():
     # Test that the frozen and non-frozen inverse Wishart gives the same
@@ -684,9 +708,11 @@ def test_invwishart_frozen():
 def test_invwishart_1D_is_invgamma():
     # The 1-dimensional inverse Wishart with an identity scale matrix is just
     # an inverse gamma distribution.
-    # Test mean, mode, variance, pdf
-    np.random.seed(1234)
+    # Test variance, mean, pdf
+    # Kolgomorov-Smirnov test for rvs
+    np.random.seed(482974)
 
+    sn = 500
     dim = 1
     scale = np.eye(dim)
 
@@ -696,9 +722,77 @@ def test_invwishart_1D_is_invgamma():
         iw = invwishart(df, scale)
         ig = invgamma(df/2, scale=1./2)
 
+        # Statistics
         assert_allclose(iw.var(), ig.var())
         assert_allclose(iw.mean(), ig.mean())
+
+        # PDF
         assert_allclose(iw.pdf(X), ig.pdf(X))
+
+        # rvs
+        rvs = iw.rvs(size=sn)
+        args = (df/2, 0, 1./2)
+        alpha = 0.01
+        check_distribution_rvs('invgamma', args, alpha, rvs)
+
+def test_wishart_invwishart_2D_rvs():
+    dim = 3
+    df = 10
+
+    # Construct a simple non-diagonal positive definite matrix
+    scale = np.eye(dim)
+    scale[0,1] = 0.5
+    scale[1,0] = 0.5
+
+    # Construct frozen Wishart and inverse Wishart random variables
+    w = wishart(df, scale)
+    iw = invwishart(df, scale)
+
+    # Get the generated random variables from a known seed
+    np.random.seed(248042)
+    w_rvs = wishart.rvs(df, scale)
+    np.random.seed(248042)
+    frozen_w_rvs = w.rvs()
+    np.random.seed(248042)
+    iw_rvs = invwishart.rvs(df, scale)
+    np.random.seed(248042)
+    frozen_iw_rvs = iw.rvs()
+
+    # Manually calculate what it should be, based on the Bartlett (1933)
+    # decomposition of a Wishart into D A A' D', where D is the Cholesky
+    # factorization of the scale matrix and A is the lower triangular matrix
+    # with the square root of chi^2 variates on the diagonal and N(0,1)
+    # variates in the lower triangle.
+    np.random.seed(248042)
+    covariances = np.random.normal(size=3)
+    variances = np.r_[
+        np.random.chisquare(df),
+        np.random.chisquare(df-1),
+        np.random.chisquare(df-2),
+    ]**0.5
+
+    # Construct the lower-triangular A matrix
+    A = np.diag(variances)
+    A[np.tril_indices(dim, k=-1)] = covariances
+
+    # Wishart random variate
+    D = np.linalg.cholesky(scale)
+    DA = D.dot(A)
+    manual_w_rvs = np.dot(DA, DA.T)
+
+    # inverse Wishart random variate
+    # Supposing that the inverse wishart has scale matrix `scale`, then the
+    # random variate is the inverse of a random variate drawn from a Wishart
+    # distribution with scale matrix `inv_scale = np.linalg.inv(scale)`
+    iD = np.linalg.cholesky(np.linalg.inv(scale))
+    iDA = iD.dot(A)
+    manual_iw_rvs = np.linalg.inv(np.dot(iDA, iDA.T))
+
+    # Test for equality
+    assert_allclose(w_rvs, manual_w_rvs)
+    assert_allclose(frozen_w_rvs, manual_w_rvs)
+    assert_allclose(iw_rvs, manual_iw_rvs)
+    assert_allclose(frozen_iw_rvs, manual_iw_rvs)
 
 if __name__ == "__main__":
     run_module_suite()
