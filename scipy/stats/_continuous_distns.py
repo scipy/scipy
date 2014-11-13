@@ -1407,7 +1407,7 @@ class genpareto_gen(rv_continuous):
 
         genpareto.pdf(x, c) = (1 + c * x)**(-1 - 1/c)
 
-    defined for ``x >= 0`` if ``c >=0``, and for 
+    defined for ``x >= 0`` if ``c >=0``, and for
     ``0 <= x <= -1/c`` if ``c < 0``.
 
     For ``c == 0``, `genpareto` reduces to the exponential
@@ -1525,8 +1525,8 @@ class genextreme_gen(rv_continuous):
             exp(-exp(-x))*exp(-x),                    for c==0
             exp(-(1-c*x)**(1/c))*(1-c*x)**(1/c-1),    for x <= 1/c, c > 0
 
-    Note that several sources and software packages use the opposite 
-    convention for the sign of the shape parameter ``c``. 
+    Note that several sources and software packages use the opposite
+    convention for the sign of the shape parameter ``c``.
 
     %(example)s
 
@@ -2921,7 +2921,7 @@ class ncx2_gen(rv_continuous):
     -----
     The probability density function for `ncx2` is::
 
-        ncx2.pdf(x, df, nc) = exp(-(nc+df)/2) * 1/2 * (x/nc)**((df-2)/4)
+        ncx2.pdf(x, df, nc) = exp(-(nc+x)/2) * 1/2 * (x/nc)**((df-2)/4)
                               * I[(df-2)/2](sqrt(nc*x))
 
     for ``x > 0``.
