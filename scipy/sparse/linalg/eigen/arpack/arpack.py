@@ -1728,7 +1728,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             ularge = eigvec[:, above_cutoff]
             vhlarge = _herm(X.dot(ularge) / slarge) if return_singular_vectors != 'u' else None
 
-        u  = _augmented_orthonormal_cols(ularge, nsmall)  if ularge  is not None else None
+        u = _augmented_orthonormal_cols(ularge, nsmall) if ularge is not None else None
         vh = _augmented_orthonormal_rows(vhlarge, nsmall) if vhlarge is not None else None
 
     else:
