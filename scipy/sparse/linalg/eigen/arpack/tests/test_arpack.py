@@ -735,5 +735,30 @@ def test_linearoperator_deallocation():
         pass
 
 
+def test_svds_partial_return():
+    x = np.array([[1, 2, 3],
+                  [3, 4, 3],
+                  [1, 0, 2],
+                  [0, 0, 1]], np.float)
+    # test vertical matrix
+    z = csr_matrix(x)
+    vh_full = svds(z, 2)[-1]
+    vh_partial = svds(z, 2, return_singular_vectors='vh')[-1]
+    dvh = np.linalg.norm(np.abs(vh_full) - np.abs(vh_partial))
+    if dvh > 1e-10:
+        raise AssertionError('right eigenvector matrices differ when using return_singular_vectors parameter')
+    if svds(z, 2, return_singular_vectors='vh')[0] is not None:
+        raise AssertionError('left eigenvector matrix was computed when it should not have been')
+    # test horizontal matrix
+    z = csr_matrix(x.T)
+    u_full = svds(z, 2)[0]
+    u_partial = svds(z, 2, return_singular_vectors='vh')[0]
+    du = np.linalg.norm(np.abs(u_full) - np.abs(u_partial))
+    if du > 1e-10:
+        raise AssertionError('left eigenvector matrices differ when using return_singular_vectors parameter')
+    if svds(z, 2, return_singular_vectors='u')[-1] is not None:
+        raise AssertionError('right eigenvector matrix was computed when it should not have been')
+
+
 if __name__ == "__main__":
     run_module_suite()
