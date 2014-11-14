@@ -121,6 +121,22 @@ def spline_filter(input, order=3, output=numpy.float64):
     return return_value
 
 
+def _geometric_transform(input, mapping, coordinates, matrix, offset, output,
+                         order, mode, cval, extra_arguments, extra_keywords):
+    """
+    Wrapper around _nd_image.geometric_transform to work around
+    endianness issues
+    """
+    _nd_image.geometric_transform(
+        input, mapping, coordinates, matrix, offset, output,
+        order, mode, cval, extra_arguments, extra_keywords)
+
+    if output is not None and not output.dtype.isnative:
+        output.byteswap(True)
+
+    return output
+
+
 def geometric_transform(input, mapping, output_shape=None,
                         output=None, order=3,
                         mode='constant', cval=0.0, prefilter=True,
@@ -205,8 +221,8 @@ def geometric_transform(input, mapping, output_shape=None,
         filtered = input
     output, return_value = _ni_support._get_output(output, input,
                                                    shape=output_shape)
-    _nd_image.geometric_transform(filtered, mapping, None, None, None,
-               output, order, mode, cval, extra_arguments, extra_keywords)
+    _geometric_transform(filtered, mapping, None, None, None, output,
+                         order, mode, cval, extra_arguments, extra_keywords)
     return return_value
 
 
@@ -304,8 +320,8 @@ def map_coordinates(input, coordinates, output=None, order=3,
         filtered = input
     output, return_value = _ni_support._get_output(output, input,
                                                    shape=output_shape)
-    _nd_image.geometric_transform(filtered, None, coordinates, None, None,
-               output, order, mode, cval, None, None)
+    _geometric_transform(filtered, None, coordinates, None, None,
+                         output, order, mode, cval, None, None)
     return return_value
 
 
@@ -398,8 +414,8 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         _nd_image.zoom_shift(filtered, matrix, offset, output, order,
                              mode, cval)
     else:
-        _nd_image.geometric_transform(filtered, None, None, matrix, offset,
-                            output, order, mode, cval, None, None)
+        _geometric_transform(filtered, None, None, matrix, offset,
+                             output, order, mode, cval, None, None)
     return return_value
 
 
