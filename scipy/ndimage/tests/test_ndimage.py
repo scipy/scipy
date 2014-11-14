@@ -1409,7 +1409,7 @@ class TestNdimage:
                                         output=out)
             assert_array_almost_equal(out, [1])
 
-            out = numpy.empty_like(data, dtype=data.dtype.newbyteorder())
+            out = numpy.empty_like(data).astype(data.dtype.newbyteorder())
             ndimage.geometric_transform(data, mapping,
                                         data.shape,
                                         output=out)
@@ -1691,8 +1691,8 @@ class TestNdimage:
             ndimage.map_coordinates(data, idx, order=order, output=out)
             assert_array_almost_equal(out, expected)
 
-            out = numpy.empty_like(expected,
-                                   dtype=expected.dtype.newbyteorder())
+            out = numpy.empty_like(expected).astype(
+                expected.dtype.newbyteorder())
             ndimage.map_coordinates(data, idx, order=order, output=out)
             assert_array_almost_equal(out, expected)
 
@@ -1744,7 +1744,7 @@ class TestNdimage:
                                      output=out)
             assert_array_almost_equal(out, [1])
 
-            out = numpy.empty_like(data, dtype=data.dtype.newbyteorder())
+            out = numpy.empty_like(data).astype(data.dtype.newbyteorder())
             ndimage.affine_transform(data, [[1]],
                                      order=order,
                                      output=out)
