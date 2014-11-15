@@ -308,9 +308,6 @@ class interp2d(object):
 
 class interp1d(_Interpolator1D):
     """
-    interp1d(x, y, kind='linear', axis=-1, copy=True, bounds_error=True,
-             fill_value=np.nan, assume_sorted=False)
-
     Interpolate a 1-D function.
 
     `x` and `y` are arrays of values used to approximate some function f:
@@ -350,21 +347,26 @@ class interp1d(_Interpolator1D):
         If False, values of `x` can be in any order and they are sorted first.
         If True, `x` has to be an array of monotonically increasing values.
 
+    Methods
+    -------
+    __call__
+
     See Also
     --------
-    UnivariateSpline : A more recent wrapper of the FITPACK routines.
     splrep, splev
-        Spline interpolation based on FITPACK.
-    interp2d
+        Spline interpolation/smoothing based on FITPACK.
+    UnivariateSpline : An object-oriented wrapper of the FITPACK routines.
+    interp2d : 2-D interpolation
 
     Examples
     --------
+    >>> import matplotlib.pyplot as plt
     >>> from scipy import interpolate
     >>> x = np.arange(0, 10)
     >>> y = np.exp(-x/3.0)
     >>> f = interpolate.interp1d(x, y)
 
-    >>> xnew = np.arange(0,9, 0.1)
+    >>> xnew = np.arange(0, 9, 0.1)
     >>> ynew = f(xnew)   # use interpolation function returned by `interp1d`
     >>> plt.plot(x, y, 'o', xnew, ynew, '-')
     >>> plt.show()
