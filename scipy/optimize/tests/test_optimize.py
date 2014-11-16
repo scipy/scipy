@@ -812,6 +812,10 @@ class TestOptimizeScalar(TestCase):
         optimize.minimize_scalar(self.fun, args=1.5)
 
 
+def test_brent_negative_tolerance():
+    assert_raises(ValueError, optimize.brent, np.cos, tol=-.01)
+
+
 class TestNewtonCg(object):
     def test_rosenbrock(self):
         x0 = np.array([-1.2, 1.0])

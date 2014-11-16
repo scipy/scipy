@@ -1900,6 +1900,8 @@ def _minimize_scalar_brent(func, brack=None, args=(),
                            **unknown_options):
     _check_unknown_options(unknown_options)
     tol = xtol
+    if tol < 0:
+        raise ValueError('tolerance should be >= 0, got %r' % tol)
 
     brent = Brent(func=func, args=args, tol=tol,
                   full_output=True, maxiter=maxiter)
