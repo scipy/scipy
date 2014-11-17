@@ -414,9 +414,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     fcalls, func = wrap_function(func, args)
     x0 = asfarray(x0).flatten()
     N = len(x0)
-    rank = len(x0.shape)
-    if not -1 < rank < 2:
-        raise ValueError("Initial guess must be a scalar or rank-1 sequence.")
     if maxiter is None:
         maxiter = N * 200
     if maxfun is None:
@@ -428,10 +425,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     sigma = 0.5
     one2np1 = list(range(1, N + 1))
 
-    if rank == 0:
-        sim = numpy.zeros((N + 1,), dtype=x0.dtype)
-    else:
-        sim = numpy.zeros((N + 1, N), dtype=x0.dtype)
+    sim = numpy.zeros((N + 1, N), dtype=x0.dtype)
     fsim = numpy.zeros((N + 1,), float)
     sim[0] = x0
     if retall:
@@ -2280,9 +2274,6 @@ def _minimize_powell(func, x0, args=(), callback=None,
     if retall:
         allvecs = [x]
     N = len(x)
-    rank = len(x.shape)
-    if not - 1 < rank < 2:
-        raise ValueError("Initial guess must be a scalar or rank-1 sequence.")
     if maxiter is None:
         maxiter = N * 1000
     if maxfun is None:
