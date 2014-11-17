@@ -1440,6 +1440,16 @@ class TestSOSFilt(TestCase):
         assert_allclose(y[0, 0], np.ones(8))
         assert_allclose(zf[:, 0, 0, :], zi)
 
+    def test_sosfilt_zi(self):
+        sos = signal.butter(6, 0.2, output='sos')
+        zi = sosfilt_zi(sos)
+
+        y, zf = sosfilt(sos, np.ones(40), zi=zi)
+        assert_allclose(zf, zi, rtol=1e-13)
+
+        # Expected steady state value of the step response of this filter:
+        ss = np.prod(sos[:, :3].sum(axis=-1) / sos[:, 3:].sum(axis=-1))
+        assert_allclose(y, ss, rtol=1e-13)
 
 if __name__ == "__main__":
     run_module_suite()

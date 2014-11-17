@@ -1919,10 +1919,19 @@ def sosfilt_zi(sos):
     sos = np.asarray(sos)
     if sos.ndim != 2 or sos.shape[1] != 6:
         raise ValueError('sos must be shape (n_sections, 6)')
+
     n_sections = sos.shape[0]
     zi = np.empty((n_sections, 2))
+    scale = 1.0
     for section in range(n_sections):
-        zi[section] = lfilter_zi(sos[section, :3], sos[section, 3:])
+        b = sos[section, :3]
+        a = sos[section, 3:]
+        zi[section] = scale * lfilter_zi(b, a)
+        # If H(z) = B(z)/A(z) is this section's transfer function, then
+        # b.sum()/a.sum() is H(1), the gain at omega=0.  That's the steady
+        # state value of this section's step response.
+        scale *= b.sum() / a.sum()
+
     return zi
 
 
