@@ -550,7 +550,7 @@ def zpk2tf(z, p, k):
     return b, a
 
 
-def tf2sos(b, a):
+def tf2sos(b, a, pairing='simple'):
     """
     Return second-order sections from transfer function representation
 
@@ -560,6 +560,8 @@ def tf2sos(b, a):
         Numerator polynomial coefficients.
     a : array_like
         Denominator polynomial coefficients.
+    pairing : {'simple', 'keep_odd'}
+        The pairing method to use. See `zpk2sos`.
 
     Returns
     -------
@@ -576,13 +578,13 @@ def tf2sos(b, a):
     converted to SOS by first converting to ZPK format, then converting
     ZPK to SOS.
 
-    .. versionadded:: 0.15.0
+    .. versionadded:: 0.16.0
 
     See Also
     --------
     zpk2sos, sosfilt
     """
-    return zpk2sos(*tf2zpk(b, a))
+    return zpk2sos(*tf2zpk(b, a), pairing=pairing)
 
 
 def sos2tf(sos):
@@ -605,7 +607,7 @@ def sos2tf(sos):
 
     Notes
     -----
-    .. versionadded:: 0.15.0
+    .. versionadded:: 0.16.0
     """
     sos = np.asarray(sos)
     b = [1.]
@@ -639,7 +641,7 @@ def sos2zpk(sos):
 
     Notes
     -----
-    .. versionadded:: 0.15.0
+    .. versionadded:: 0.16.0
     """
     sos = np.asarray(sos)
     n_sections = sos.shape[0]
@@ -654,7 +656,17 @@ def sos2zpk(sos):
     return z, p, k
 
 
-def zpk2sos(z, p, k):
+def _nearest_real_complex_idx(fro, to, which):
+    """Get the next closest real or complex element based on distance"""
+    assert which in ('real', 'complex')
+    order = np.argsort(np.abs(fro - to))
+    mask = np.isreal(fro[order])
+    if which == 'complex':
+        mask = ~mask
+    return order[np.where(mask)[0][0]]
+
+
+def zpk2sos(z, p, k, pairing='simple'):
     """
     Return second-order sections from zeros, poles, and gain of a system
 
@@ -666,6 +678,8 @@ def zpk2sos(z, p, k):
         Poles of the transfer function.
     k : float
         System gain.
+    pairing : {'simple', 'keep_odd'}
+        The pairing method to use. See Notes below.
 
     Returns
     -------
@@ -682,124 +696,176 @@ def zpk2sos(z, p, k):
     section. This is done by pairing poles with the nearest zeros, starting
     with the poles closest to the unit circle.
 
-    .. versionadded:: 0.15.0
+    .. versionadded:: 0.16.0
 
     See Also
     --------
     sosfilt
+
+    Notes
+    -----
+    *Algorithms*
+
+    The current algorithms are designed specifically for use with digital
+    filters. Although they can operate on analog filters, the results may
+    be sub-optimal.
+
+    The steps in the ``pairing='simple'`` and ``pairing='keep_odd'``
+    algorithms are mostly shared, and are as follows:
+
+    As a pre-processing step, add poles or zeros to the origin as
+    necessary to obtain the same number of poles and zeros for pairing.
+    If ``pairing == 'simple'`` and there are an odd number of poles,
+    add an additional pole and a zero at the origin. Note that with
+    ``pairing == 'simple'``, we are guaranteed there are even numbers
+    of real poles, complex poles, real zeros, and real poles to pair.
+    With `pairing == 'keep_odd'` we do not have this guarantee.
+
+    These following steps are then iterated over until no more poles or
+    zeros remain:
+
+    1. Take the (next remaining) pole (complex or real) closest to the
+       unit circle to begin a new filter section.
+
+    2. If the pole is real and there are no other remaining real poles [#]_,
+       add the closest real zero to the section and leave it as a first
+       order section. Note that after this step we are guaranteed to be
+       left with an even number of real poles, complex poles, real zeros,
+       and complex zeros for subsequent pairing iterations.
+
+    3. Else:
+
+        1. If the pole is complex and the zero is the only remaining real
+           zero*, then pair the pole with the *next* closest zero
+           (guaranteed to be complex). This is necessary to ensure that
+           there will be a real zero remaining to eventually create a
+           first-order section (thus keeping the odd order).
+
+        2. Else pair the pole with the closest remaining zero (complex or
+           real).
+
+        3. Proceed to complete the second-order section by adding another
+           pole and zero to the current pole and zero in the section:
+
+            1. If the current pole and zero are both complex, add their
+               conjugates.
+
+            2. Else if the pole is complex and the zero is real, add the
+               conjugate pole and the next closest real zero.
+
+            3. Else if the pole is real and the zero is complex, add the
+               conjugate zero and the real pole closest to those zeros.
+
+            4. Else (we must have a real pole and real zero) add the next
+               real pole closest to the unit circle, and then add the real
+               zero closest to that pole.
+
+    .. [#] = This conditional can only be met for specific odd-order inputs
+             with the `pairing == 'keep_odd'` method.
+
     """
     # TODO in the near future:
-    # 1. Allow more zeros than poles (probably no reason not to).
-    # 2. Add SOS capability to `filtfilt`, `freqz`, etc. somehow (#3259).
-    # 3. Make `decimate` use `sosfilt` instead of `lfilter`.
-    # 4. Make sosfilt automatically simplify sections to first order
+    # 1. Add SOS capability to `filtfilt`, `freqz`, etc. somehow (#3259).
+    # 2. Make `decimate` use `sosfilt` instead of `lfilter`.
+    # 3. Make sosfilt automatically simplify sections to first order
     #    when possible. Note this might make `sosfiltfilt` a bit harder (ICs).
-    # 5. Further optimizations of the section ordering / pole-zero pairing.
+    # 4. Further optimizations of the section ordering / pole-zero pairing.
     # See the wiki for other potential issues.
 
-    # make copies
-    p = np.array(p)
-    z = np.array(z)
-    if len(z) > len(p):
-        raise ValueError('Cannot have more zeros than poles')
+    valid_pairings = ['simple', 'keep_odd']
+    if pairing not in valid_pairings:
+        raise ValueError('pairing must be one of %s, not %s'
+                         % (valid_pairings, pairing))
     if len(z) == len(p) == 0:
         return array([[k, 0., 0., 1., 0., 0.]])
-    n_sections = (len(p) + 1) // 2
+
+    # ensure we have the same number of poles and zeros, and make copies
+    p = np.concatenate((p, np.zeros(max(len(z) - len(p), 0))))
+    z = np.concatenate((z, np.zeros(max(len(p) - len(z), 0))))
+    n_sections = (max(len(p), len(z)) + 1) // 2
     sos = zeros((n_sections, 6))
 
-    #
-    # Errors propagate through cascaded biquads, so principles to follow:
-    # 1. Minimize each biquad's peak gain
-    #    - Pair poles w/nearest zeros
-    #      (Begin pairing process w/the pole closest to the unit circle)
-    # 2. Poles near the unit circle have highest peaks, place them last
-    #
+    if len(p) % 2 == 1 and pairing == 'simple':
+        p = np.concatenate((p, [0.]))
+        z = np.concatenate((z, [0.]))
+    assert len(p) == len(z)
 
     # Ensure we have complex conjugate pairs
-    # (_cplxreal only gives us one element of each complex pair):
-    z = _cplxpair(z).conj()  # get the upper-half one from each pair
-    p_unsorted = concatenate(_cplxreal(p))
+    # (note that _cplxreal only gives us one element of each complex pair):
+    z = np.concatenate(_cplxreal(z))
+    p = np.concatenate(_cplxreal(p))
 
-    # Sort poles by proximity to the unit circle, but keep complex pairs
-    # together, and real pairs together in order to construct filters with
-    # resulting real b, a coefficients (while adding the complex conjs):
-    order = np.argsort(np.abs(1 - np.abs(p_unsorted)))
-    p_out = np.zeros(n_sections * 2, np.complex128)
-    for ii in range(0, 2 * n_sections, 2):
-        if p_unsorted[order[0]].imag != 0:
-            # complex pair
-            p_out[ii] = p_unsorted[order[0]]
-            p_out[ii+1] = p_out[ii].conj()
-            dels = [0]
-        else:
-            # real, use it and the next-worst real
-            idx = np.where(p_unsorted[order].imag == 0)[0]
-            if len(idx) > 1:
-                idx = idx[[0, 1]]
-                p_out[ii:ii+2] = p_unsorted[order[idx]]
-            else:
-                idx = idx[[0]]
-                p_out[ii] = p_unsorted[order[idx[0]]]
-            dels = idx
-        order = np.delete(order, dels)
-    assert len(order) == 0
+    p_sos = np.zeros((n_sections, 2), np.complex128)
+    z_sos = np.zeros_like(p_sos)
+    for si in range(n_sections):
+        # Select the next "worst" pole
+        p1_idx = np.argmin(np.abs(1 - np.abs(p)))
+        p1 = p[p1_idx]
+        p = np.delete(p, p1_idx)
 
-    #
-    # order zeros according to proximity to poles, keeping conjugate pairs:
-    #
-    z_out = np.zeros_like(p_out)
-    p_c = np.where(np.iscomplex(p_out))[0][::2]  # only track first per pair
-    p_r = np.where(np.isreal(p_out))[0]
-    z_c = np.where(np.iscomplex(z))[0][::2]
-    z_r = np.where(np.isreal(z))[0]
-    # first, pair complex zeros with complex poles if possible
-    z_r_start = 2*len(z_c)
-    for ii in range(0, 2*len(z_c), 2):
-        # find the complex zeros closest to our strongest (remaining) poles
-        if len(p_c) > 0:
-            # pair some complex zeros with the "worst" pair of complex poles
-            idx = np.argmin(np.abs(z[z_c] - p_out[p_c[0]]))
-            z_out[ii:ii+2] = z[z_c[idx]:z_c[idx]+2]
-            z_c = np.delete(z_c, idx)
-            p_c = np.delete(p_c, 0)
+        # Pair that pole with a zero
+
+        if np.isreal(p1) and np.isreal(p).sum() == 0:
+            # Special case to set a first-order section
+            z1_idx = _nearest_real_complex_idx(z, p1, 'real')
+            z1 = z[z1_idx]
+            z = np.delete(z, z1_idx)
+            p2 = z2 = 0
         else:
-            # pair to two real poles
-            idx = np.argmin(np.abs(z[z_c] - p_out[p_r[0]]))
-            z_out[ii:ii+2] = z[z_c[idx]:z_c[idx]+2]
-            z_c = np.delete(z_c, idx)
-            p_r = np.delete(p_r, [0, 1])
-    assert len(z_c) == 0
-    # second, pair the real zeros
-    ii = z_r_start
-    while len(z_r) > 0:
-        if len(p_c) > 0:
-            # put two real zeros with a pair of poles
-            idx = np.argsort(np.abs(z[z_r] - p_out[p_c[0]]))[:2]
-            if len(idx) > 1:
-                z_out[ii:ii+2] = z[z_r[idx]]
-                z_r = np.delete(z_r, idx)
+            if not np.isreal(p1) and np.isreal(z).sum() == 1:
+                # Special case to ensure we choose a complex zero to pair
+                # with so later (setting up a first-order section)
+                z1_idx = _nearest_real_complex_idx(z, p1, 'complex')
+                assert not np.isreal(z[z1_idx])
             else:
-                z_out[ii] = z[z_r[idx[0]]]
-                z_r = np.delete(z_r, idx)
-                assert len(z_r) == 0
-            p_c = np.delete(p_c, 0)
-            ii += 2
-        else:
-            # put one real zero with one real pole
-            idx = np.argmin(np.abs(z[z_r] - p_out[p_r[0]]))
-            z_out[ii] = z[z_r[idx]]
-            z_r = np.delete(z_r, idx)
-            p_r = np.delete(p_r, 0)
-            ii += 1
+                # Pair the pole with the closest zero (real or complex)
+                z1_idx = np.argmin(np.abs(p1 - z))
+            z1 = z[z1_idx]
+            z = np.delete(z, z1_idx)
+
+            # Now that we have p1 and z1, figure out what p2 and z2 need to be
+            if not np.isreal(p1):
+                if not np.isreal(z1):  # complex pole, complex zero
+                    p2 = p1.conj()
+                    z2 = z1.conj()
+                else:  # complex pole, real zero
+                    p2 = p1.conj()
+                    z2_idx = _nearest_real_complex_idx(z, p1, 'real')
+                    z2 = z[z2_idx]
+                    assert np.isreal(z2)
+                    z = np.delete(z, z2_idx)
+            else:
+                if not np.isreal(z1):  # real pole, complex zero
+                    z2 = z1.conj()
+                    p2_idx = _nearest_real_complex_idx(p, z1, 'real')
+                    p2 = p[p2_idx]
+                    assert np.isreal(p2)
+                else:  # real pole, real zero
+                    # pick the next "worst" pole to use
+                    idx = np.where(np.isreal(p))[0]
+                    assert len(idx) > 0
+                    p2_idx = idx[np.argmin(np.abs(np.abs(p[idx]) - 1))]
+                    p2 = p[p2_idx]
+                    # find a real zero to match the added pole
+                    assert np.isreal(p2)
+                    z2_idx = _nearest_real_complex_idx(z, p2, 'real')
+                    z2 = z[z2_idx]
+                    assert np.isreal(z2)
+                    z = np.delete(z, z2_idx)
+                p = np.delete(p, p2_idx)
+        p_sos[si] = [p1, p2]
+        z_sos[si] = [z1, z2]
+    assert len(p) == len(z) == 0  # we've consumed all poles and zeros
+    del p, z
 
     # Construct the system, reversing order so the "worst" are last
-    p = np.reshape(p_out[::-1], (n_sections, 2))
-    z = np.reshape(z_out[::-1], (n_sections, 2))
+    p_sos = np.reshape(p_sos[::-1], (n_sections, 2))
+    z_sos = np.reshape(z_sos[::-1], (n_sections, 2))
     gains = np.ones(n_sections)
     gains[0] = k
-    for section in range(n_sections):
-        sos[section, :3], sos[section, 3:] = zpk2tf(z[section], p[section],
-                                                    gains[section])
+    for si in range(n_sections):
+        x = zpk2tf(z_sos[si], p_sos[si], gains[si])
+        sos[si] = np.concatenate(x)
     return sos
 
 

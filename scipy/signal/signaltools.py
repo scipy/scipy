@@ -1910,7 +1910,7 @@ def sosfilt_zi(sos):
 
     Notes
     -----
-    .. versionadded:: 0.15.0
+    .. versionadded:: 0.16.0
 
     See also
     --------
@@ -2387,7 +2387,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     with direct-form II transposed structure. It is designed to minimize
     numerical precision errors for high-order filters.
 
-    .. versionadded:: 0.15.0
+    .. versionadded:: 0.16.0
 
     Examples
     --------

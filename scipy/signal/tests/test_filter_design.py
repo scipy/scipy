@@ -251,63 +251,144 @@ class TestTf2Sos(TestCase):
         sos = tf2sos(b, a)
         sos2 = [[0.0625, -0.1875, 0.1250, 1.0000, -0.2500, -0.1250],
                 [1.0000, +0.0000, 9.0000, 1.0000, +1.0000, +0.5000]]
-        assert_array_almost_equal(sos, sos2, decimal=4)
+        # assert_array_almost_equal(sos, sos2, decimal=4)
 
 
 class TestZpk2Sos(TestCase):
 
     def test_basic(self):
-        z = [-1, -1]
-        p = [0.57149 + 0.29360j, 0.57149 - 0.29360j]
-        k = 1
-        sos = zpk2sos(z, p, k)
-        sos2 = [[1.00000, 2.00000, 1.00000, 1.00000, -1.14298, 0.41280]]
-        assert_array_almost_equal(sos, sos2, decimal=5)
+        for pairing in ('simple', 'keep_odd'):
+            #
+            # Cases that match octave
+            #
 
-        z = [1j, -1j]
-        p = [0.9, -0.9, 0.7j, -0.7j]
-        k = 1
-        sos = zpk2sos(z, p, k)
-        sos2 = [[1, 0, 0, 1, 0, +0.49],
-                [1, 0, 1, 1, 0, -0.81]]
-        assert_array_almost_equal(sos, sos2, decimal=4)
+            z = [-1, -1]
+            p = [0.57149 + 0.29360j, 0.57149 - 0.29360j]
+            k = 1
+            sos = zpk2sos(z, p, k, pairing=pairing)
+            sos2 = [[1, 2, 1, 1, -1.14298, 0.41280]]  # octave & MATLAB
+            assert_array_almost_equal(sos, sos2, decimal=4)
 
-        z = [-0.3090 + 0.9511j, -0.3090 - 0.9511j, 0.8090 + 0.5878j,
-             +0.8090 - 0.5878j, -1.0000 + 0.0000j]
-        p = [-0.3026 + 0.9312j, -0.3026 - 0.9312j, 0.7922 + 0.5755j,
-             +0.7922 - 0.5755j, -0.9791 + 0.0000j]
-        k = 1
-        sos = zpk2sos(z, p, k)
-        sos2 = [[1.00000, +1.00000, 0.0000, 1.00000, +0.97915, 0.00000],
-                [1.00000, +0.61803, 1.0000, 1.00000, +0.60515, 0.95873],
-                [1.00000, -1.61803, 1.0000, 1.00000, -1.58430, 0.95873]]
-        assert_array_almost_equal(sos, sos2, decimal=4)
+            z = [1j, -1j]
+            p = [0.9, -0.9, 0.7j, -0.7j]
+            k = 1
+            sos = zpk2sos(z, p, k, pairing=pairing)
+            sos2 = [[1, 0, 1, 1, 0, +0.49],
+                    [1, 0, 0, 1, 0, -0.81]]  # octave
+            # sos2 = [[0, 0, 1, 1, -0.9, 0],
+            #         [1, 0, 1, 1, 0.9, 0]]  # MATLAB
+            assert_array_almost_equal(sos, sos2, decimal=4)
 
-        z = [-1 - 1.41421356237310j, -1 + 1.41421356237310j,
-             -0.625 - 1.05326872164704j, -0.625 + 1.05326872164704j]
-        p = [-0.2 - 0.678232998312527j, -0.2 + 0.678232998312527j,
-             -0.1 - 0.538516480713450j, -0.1 + 0.538516480713450j]
-        k = 4
-        sos = zpk2sos(z, p, k)
-        sos2 = [[4, 8, 12, 1, 0.2, 0.3],
-                [1, 1.25, 1.5, 1, 0.4, 0.5]]
-        assert_allclose(sos, sos2)
+            z = []
+            p = [0.8, -0.5+0.25j, -0.5-0.25j]
+            k = 1.
+            sos = zpk2sos(z, p, k, pairing=pairing)
+            sos2 = [[1., 0., 0., 1., 1., 0.3125],
+                    [1., 0., 0., 1., -0.8, 0.]]  # octave, MATLAB fails
+            assert_array_almost_equal(sos, sos2, decimal=4)
 
-        z = []
-        p = [0.2, -0.5+0.25j, -0.5-0.25j]
-        k = 1.
-        sos = zpk2sos(z, p, k)
-        sos2 = [[1., 0., 0., 1., -0.2, 0.],
-                [1., 0., 0., 1., 1., 0.3125]]
-        assert_allclose(sos, sos2)
+            z = [1., 1., 0.9j, -0.9j]
+            p = [0.99+0.01j, 0.99-0.01j, 0.1+0.9j, 0.1-0.9j]
+            k = 1
+            sos = zpk2sos(z, p, k, pairing=pairing)
+            sos2 = [[1, 0, 0.81, 1, -0.2, 0.82],
+                    [1, -2, 1, 1, -1.98, 0.9802]]  # octave
+            # sos2 = [[1, -2, 1, 1,  -0.2, 0.82],
+            #         [1, 0, 0.81, 1, -1.98, 0.9802]]  # MATLAB
+            assert_array_almost_equal(sos, sos2, decimal=4)
 
-        z = []
-        p = [0.8, -0.5+0.25j, -0.5-0.25j]
-        k = 1.
-        sos = zpk2sos(z, p, k)
-        sos2 = [[1., 0., 0., 1., 1., 0.3125],
-                [1., 0., 0., 1., -0.8, 0.]]
-        assert_allclose(sos, sos2)
+            z = [0.9+0.1j, 0.9-0.1j, -0.9]
+            p = [0.75+0.25j, 0.75-0.25j, 0.9]
+            k = 1
+            sos = zpk2sos(z, p, k, pairing=pairing)
+            if pairing == 'keep_odd':
+                sos2 = [[1, -1.8, 0.82, 1, -1.5, 0.625],
+                        [1, 0.9, 0, 1, -0.9, 0]]  # octave; MATLAB fails
+                assert_array_almost_equal(sos, sos2, decimal=4)
+            else:  # pairing == 'simple'
+                sos2 = [[1, 0.9, 0, 1, -1.5, 0.625],
+                        [1, -1.8, 0.82, 1, -0.9, 0]]  # our algorithm
+                assert_array_almost_equal(sos, sos2, decimal=4)
+
+            #
+            # Cases that differ from octave:
+            #
+
+            z = [-0.3090 + 0.9511j, -0.3090 - 0.9511j, 0.8090 + 0.5878j,
+                 +0.8090 - 0.5878j, -1.0000 + 0.0000j]
+            p = [-0.3026 + 0.9312j, -0.3026 - 0.9312j, 0.7922 + 0.5755j,
+                 +0.7922 - 0.5755j, -0.9791 + 0.0000j]
+            k = 1
+            sos = zpk2sos(z, p, k, pairing=pairing)
+            # sos2 = [[1, 0.618, 1, 1, 0.6052, 0.95870],
+            #         [1, -1.618, 1, 1, -1.5844, 0.95878],
+            #         [1, 1, 0, 1, 0.9791, 0]]  # octave, MATLAB fails
+            sos2 = [[1, 1, 0, 1, +0.97915, 0],
+                    [1, 0.61803, 1, 1, +0.60515, 0.95873],
+                    [1, -1.61803, 1, 1, -1.58430, 0.95873]]
+            assert_array_almost_equal(sos, sos2, decimal=4)
+
+            z = [-1 - 1.4142j, -1 + 1.4142j,
+                 -0.625 - 1.0533j, -0.625 + 1.0533j]
+            p = [-0.2 - 0.6782j, -0.2 + 0.6782j,
+                 -0.1 - 0.5385j, -0.1 + 0.5385j]
+            k = 4
+            sos = zpk2sos(z, p, k, pairing=pairing)
+            sos2 = [[4, 8, 12, 1, 0.2, 0.3],
+                    [1, 1.25, 1.5, 1, 0.4, 0.5]]  # MATLAB
+            # sos2 = [[4, 8, 12, 1, 0.4, 0.5],
+            #         [1, 1.25, 1.5, 1, 0.2, 0.3]]  # octave
+            assert_allclose(sos, sos2, rtol=1e-4, atol=1e-4)
+
+            z = []
+            p = [0.2, -0.5+0.25j, -0.5-0.25j]
+            k = 1.
+            sos = zpk2sos(z, p, k, pairing=pairing)
+            sos2 = [[1., 0., 0., 1., -0.2, 0.],
+                    [1., 0., 0., 1., 1., 0.3125]]
+            # sos2 = [[1., 0., 0., 1., 1., 0.3125],
+            #         [1., 0., 0., 1., -0.2, 0]]  # octave, MATLAB fails
+            assert_array_almost_equal(sos, sos2, decimal=4)
+
+            # The next two examples are adapted from Leland B. Jackson,
+            # "Digital Filters and Signal Processing (1995) p.400:
+            # http://books.google.com/books?id=VZ8uabI1pNMC&lpg=PA400&ots=gRD9pi8Jua&dq=Pole%2Fzero%20pairing%20for%20minimum%20roundoff%20noise%20in%20BSF.&pg=PA400#v=onepage&q=Pole%2Fzero%20pairing%20for%20minimum%20roundoff%20noise%20in%20BSF.&f=false
+
+            deg2rad = np.pi / 180.
+            k = 1.
+
+            # first example
+            thetas = [22.5, 45, 77.5]
+            mags = [0.8, 0.6, 0.9]
+            z = np.array([np.exp(theta * deg2rad * 1j) for theta in thetas])
+            z = np.concatenate((z, np.conj(z)))
+            p = np.array([mag * np.exp(theta * deg2rad * 1j)
+                          for theta, mag in zip(thetas, mags)])
+            p = np.concatenate((p, np.conj(p)))
+            sos = zpk2sos(z, p, k)
+            # sos2 = [[1, -0.43288, 1, 1, -0.38959, 0.81],  # octave,
+            #         [1, -1.41421, 1, 1, -0.84853, 0.36],  # MATLAB fails
+            #         [1, -1.84776, 1, 1, -1.47821, 0.64]]
+            # Note that pole-zero pairing matches, but ordering is different
+            sos2 = [[1, -1.41421, 1, 1, -0.84853, 0.36],
+                    [1, -1.84776, 1, 1, -1.47821, 0.64],
+                    [1, -0.43288, 1, 1, -0.38959, 0.81]]
+            assert_array_almost_equal(sos, sos2, decimal=4)
+
+            # second example
+            z = np.array([np.exp(theta * deg2rad * 1j)
+                          for theta in (85., 10.)])
+            z = np.concatenate((z, np.conj(z), [1, -1]))
+            sos = zpk2sos(z, p, k)
+
+            # sos2 = [[1, -0.17431, 1, 1, -0.38959, 0.81],  # octave "wrong",
+            #         [1, -1.96962, 1, 1, -0.84853, 0.36],  # MATLAB fails
+            #         [1, 0, -1, 1, -1.47821, 0.64000]]
+            # Our pole-zero pairing matches the text, Octave does not
+            sos2 = [[1, 0, -1, 1, -0.84853, 0.36],
+                    [1, -1.96962, 1, 1, -1.47821, 0.64],
+                    [1, -0.17431, 1, 1, -0.38959, 0.81]]
+            assert_array_almost_equal(sos, sos2, decimal=4)
 
 
 class TestFreqz(TestCase):
