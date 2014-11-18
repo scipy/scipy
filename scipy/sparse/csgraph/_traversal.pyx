@@ -400,8 +400,8 @@ cdef unsigned int _breadth_first_undirected(
     return i_nl
 
 cdef struct DfsStackEntry:
-    long node
-    long index
+    Py_ssize_t node
+    Py_ssize_t index
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
