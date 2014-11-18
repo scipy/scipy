@@ -399,9 +399,69 @@ cdef unsigned int _breadth_first_undirected(
 
     return i_nl
 
+cdef struct DfsStackEntry:
+    int node
+    int index
 
-def depth_first_order(csgraph, i_start,
-                      directed=True, return_predecessors=True):
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+cdef int _depth_first_iterative(int i_start, 
+                                int[::1] indptr, 
+                                int[::1] indices, 
+                                int[::1] order, 
+                                int[::1] predecessors, 
+                                int scipy_compat) nogil:
+    cdef int i, j
+    cdef int idx
+    cdef int n = order.shape[0]
+    cdef int order_end = 0
+
+    cdef int* status = <int*> stdlib.malloc(n*sizeof(int))
+    cdef DfsStackEntry* stack = <DfsStackEntry*>stdlib.malloc(n * sizeof(DfsStackEntry))
+    cdef DfsStackEntry* head = stack
+    
+    for idx in range(n):
+        status[idx] = 0
+
+    try:
+        head.node = i_start
+        head.index = indptr[i_start]
+
+        order[order_end] = i_start
+        order_end += 1
+
+        predecessors[i_start] = -9999 * scipy_compat + i_start * (1-scipy_compat)
+        status[i_start] = 1
+        
+        while head >= stack:
+            i = head.node
+
+            for idx in range(head.index, indptr[i+1]):
+                j = indices[idx]
+
+                if status[j] == 0:
+                    head.index = idx + 1
+
+                    predecessors[j] = i
+                    status[j] = 1
+                    order[order_end] = j
+                    order_end += 1
+
+                    head += 1
+                    head.node = j
+                    head.index = indptr[j]
+                    break
+            
+            if head.node == i: # no push
+                status[i] = 2
+                head -= 1
+
+    finally:
+        stdlib.free(stack)
+        stdlib.free(status)
+
+def depth_first_order(csgraph, i_start, directed=True, return_predecessors=True, scipy_compat=True):
     """
     depth_first_order(csgraph, i_start, directed=True, return_predecessors=True)
 
@@ -442,142 +502,21 @@ def depth_first_order(csgraph, i_start,
         predecessors[i]. If node i is not in the tree (and for the parent
         node) then predecessors[i] = -9999.
     """
-    global NULL_IDX
-    csgraph = validate_graph(csgraph, directed, dense_output=False)
-    cdef int N = csgraph.shape[0]
+    cdef int n = csgraph.shape[0]
 
-    node_list = np.empty(N, dtype=ITYPE)
-    predecessors = np.empty(N, dtype=ITYPE)
-    root_list = np.empty(N, dtype=ITYPE)
-    flag = np.zeros(N, dtype=ITYPE)
-    node_list.fill(NULL_IDX)
-    predecessors.fill(NULL_IDX)
-    root_list.fill(NULL_IDX)
+    order = np.empty(n, dtype=np.int32)
+    predecessors = np.empty(n, dtype=np.int32)
 
-    if directed:
-        length = _depth_first_directed(i_start,
-                              csgraph.indices, csgraph.indptr,
-                              node_list, predecessors,
-                              root_list, flag)
-    else:
-        csgraph_T = csgraph.T.tocsr()
-        length = _depth_first_undirected(i_start,
-                                         csgraph.indices, csgraph.indptr,
-                                         csgraph_T.indices, csgraph_T.indptr,
-                                         node_list, predecessors,
-                                         root_list, flag)
+    if not directed:
+        csgraph = csgraph + csgraph.T
+
+    _depth_first_iterative(i_start, csgraph.indptr, csgraph.indices, order, predecessors, 1 if scipy_compat else 0)
 
     if return_predecessors:
-        return node_list[:length], predecessors
-    else:
-        return node_list[:length]
-    
+        return order, predecessors
 
-cdef unsigned int _depth_first_directed(
-                           unsigned int head_node,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] node_list,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] root_list,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] flag):
-    cdef unsigned int i, j, i_nl_end, cnode, pnode
-    cdef unsigned int N = node_list.shape[0]
-    cdef int no_children, i_root
-
-    node_list[0] = head_node
-    root_list[0] = head_node
-    i_root = 0
-    i_nl_end = 1
-    flag[head_node] = 1
-
-    while i_root >= 0:
-        pnode = root_list[i_root]
-        no_children = True
-        for i from indptr[pnode] <= i < indptr[pnode + 1]:
-            cnode = indices[i]
-            if flag[cnode]:
-                continue
-            else:
-                i_root += 1
-                root_list[i_root] = cnode
-                node_list[i_nl_end] = cnode
-                predecessors[cnode] = pnode
-                flag[cnode] = 1
-                i_nl_end += 1
-                no_children = False
-                break
-
-        if i_nl_end == N:
-            break
-        
-        if no_children:
-            i_root -= 1
-    
-    return i_nl_end
-    
-
-cdef unsigned int _depth_first_undirected(
-                           unsigned int head_node,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indices1,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr1,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indices2,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr2,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] node_list,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] root_list,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] flag):
-    cdef unsigned int i, j, i_nl_end, cnode, pnode
-    cdef unsigned int N = node_list.shape[0]
-    cdef int no_children, i_root
-
-    node_list[0] = head_node
-    root_list[0] = head_node
-    i_root = 0
-    i_nl_end = 1
-    flag[head_node] = 1
-
-    while i_root >= 0:
-        pnode = root_list[i_root]
-        no_children = True
-
-        for i from indptr1[pnode] <= i < indptr1[pnode + 1]:
-            cnode = indices1[i]
-            if flag[cnode]:
-                continue
-            else:
-                i_root += 1
-                root_list[i_root] = cnode
-                node_list[i_nl_end] = cnode
-                predecessors[cnode] = pnode
-                flag[cnode] = 1
-                i_nl_end += 1
-                no_children = False
-                break
-
-        if no_children:
-            for i from indptr2[pnode] <= i < indptr2[pnode + 1]:
-                cnode = indices2[i]
-                if flag[cnode]:
-                    continue
-                else:
-                    i_root += 1
-                    root_list[i_root] = cnode
-                    node_list[i_nl_end] = cnode
-                    predecessors[cnode] = pnode
-                    flag[cnode] = 1
-                    i_nl_end += 1
-                    no_children = False
-                    break
-
-        if i_nl_end == N:
-            break
-        
-        if no_children:
-            i_root -= 1
-    
-    return i_nl_end
-
+    return order
+ 
 
 cdef int _connected_components_directed(
                                  np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
