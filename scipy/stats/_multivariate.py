@@ -1313,7 +1313,49 @@ class wishart_gen(object):
         out = self._var(dim, df, scale)
         return _squeeze_output(out)
 
-    def _rvs(self, n, shape, dim, df, scale, C):
+    def _standard_rvs(self, n, shape, dim, df):
+        """
+        Parameters
+        ----------
+        n : integer
+            Number of variates to generate
+        shape : iterable
+            Shape of the variates to generate
+        dim : int
+            Dimension of the scale matrix
+        df : int
+            Degrees of freedom
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'rvs' instead.
+
+        """
+        # Random normal variates for off-diagonal elements
+        n_tril = (dim*(dim-1)/2)
+        covariances = np.random.normal(size=n*n_tril).reshape(shape+(n_tril,))
+
+        # Random chi-square variates for diagonal elements
+        variances = np.r_[
+            [np.random.chisquare(df-(i+1)+1, size=n)**0.5 for i in range(dim)]
+        ].reshape((dim,) + shape[::-1]).T
+
+        # Create the A matri(ces) - lower triangular
+        A = np.zeros(shape + (dim, dim))
+
+        # Input the covariances
+        size_idx = tuple([slice(None,None,None)]*len(shape))
+        tril_idx = np.tril_indices(dim, k=-1)
+        A[size_idx + tril_idx] = covariances
+
+        # Input the variances
+        diag_idx = np.diag_indices(dim)
+        A[size_idx + diag_idx] = variances
+
+        return A
+
+    def _rvs(self, n, shape, dim, df, C):
         """
         Parameters
         ----------
@@ -1336,28 +1378,11 @@ class wishart_gen(object):
         called directly; use 'rvs' instead.
 
         """
-        # Random normal variates for off-diagonal elements
-        n_tril = (dim*(dim-1)/2)
-        covariances = np.random.normal(size=n*n_tril).reshape(shape+(n_tril,))
+        # Calculate the matrices A, which are actually lower triangular
+        # Cholesky factorizations of a matrix B such that B ~ W(df, I)
+        A = self._standard_rvs(n, shape, dim, df)
 
-        # Random chi-square variates for diagonal elements
-        variances = np.r_[
-            [np.random.chisquare(df-(i+1)+1, size=n)**0.5 for i in range(dim)]
-        ].reshape((dim,) + shape[::-1]).T
-
-        # Create the A matri(ces) - lower triangular
-        A = np.zeros(shape + scale.shape)
-
-        # Input the covariances
-        size_idx = tuple([slice(None,None,None)]*len(shape))
-        tril_idx = np.tril_indices(dim, k=-1)
-        A[size_idx + tril_idx] = covariances
-
-        # Input the variances
-        diag_idx = np.diag_indices(dim)
-        A[size_idx + diag_idx] = variances
-
-        # Calculate C A A' C'
+        # Calculate SA = C A A' C', where SA ~ W(df, scale)
         # Note: this is the product of a (lower) (lower) (lower)' (lower)'
         #       or, denoting B = AA', it is C B C' where C is the lower
         #       triangular Cholesky factorization of the scale matrix.
@@ -1401,7 +1426,7 @@ class wishart_gen(object):
         # Cholesky decomposition of scale
         C = scipy.linalg.cholesky(scale, lower=True)
 
-        out = self._rvs(n, shape, dim, df, scale, C)
+        out = self._rvs(n, shape, dim, df, C)
         return _squeeze_output(out)
 
     def _entropy(self, dim, df, log_det_scale):
@@ -1502,7 +1527,7 @@ class wishart_frozen(object):
     def rvs(self, size=1):
         n, shape = self._wishart._process_size(size)
         out = self._wishart._rvs(n, shape,
-                                 self.dim, self.df, self.scale, self.C)
+                                 self.dim, self.df, self.C)
         return _squeeze_output(out)
 
     def entropy(self):
@@ -1668,7 +1693,9 @@ class invwishart_gen(wishart_gen):
     .. [1] Eaton, Morris L. 2007.
        "Multivariate Statistics: A Vector Space Approach."
        Lecture Notes-Monograph Series 53 (January): i - 512.
-
+    .. [2] Jones, M. C. 1985.
+       "Generating Inverse Wishart Matrices."
+       Communications in Statistics - Simulation and Computation 14 (2):511-14.
     """
 
     def __init__(self):
@@ -1900,7 +1927,7 @@ class invwishart_gen(wishart_gen):
         out = self._var(dim, df, scale)
         return _squeeze_output(out) if out is not None else out
 
-    def _rvs(self, n, shape, dim, df, inv_scale, C, eye):
+    def _rvs(self, n, shape, dim, df, C):
         """
         Parameters
         ----------
@@ -1912,13 +1939,8 @@ class invwishart_gen(wishart_gen):
             Dimension of the scale matrix
         df : int
             Degrees of freedom
-        inv_scale : ndarray
-            Inverse of the scale matrix
         C : ndarray
-            Cholesky factorization of the inverse scale matrix, lower
-            triagular.
-        eye : ndarray
-            A `dim`-shape identity matrix.
+            Cholesky factorization of the scale matrix, lower triagular.
 
         Notes
         -----
@@ -1926,21 +1948,30 @@ class invwishart_gen(wishart_gen):
         called directly; use 'rvs' instead.
 
         """
-        # Get random draws from a Wishart with parameter `inv_scale`
-        out = super(invwishart_gen, self)._rvs(n, shape, dim, df, inv_scale, C)
+        # Get random draws A such that A ~ W(df, I)
+        A = super(invwishart_gen, self)._standard_rvs(n, shape, dim, df)
 
-        # Invert the draws to get draws from inverse Wishart
-        # for index in np.ndindex(shape):
-        #     out[index] = scipy.linalg.cho_factor(out[index], lower=True)
-        #     out[index] = scipy.linalg.cho_solve((out[index], True), eye)
+        # Calculate SA = (CA)'^{-1} (CA)^{-1} ~ iW(df, scale)
+        eye = np.eye(dim)
+        trtrs = get_lapack_funcs(('trtrs'), (A,))
 
-        # (works on the arrays in-place)
-        if dim > 1:
-            _cho_inv_batch(out)
-        else:
-            out = 1./out
+        for index in np.ndindex(A.shape[:-2]):
+            # Calculate CA
+            CA = np.dot(C, A[index])
+            # Get (C A)^{-1} via triangular solver
+            if dim > 1:
+                CA, info = trtrs(CA, eye, lower=True)
+                if info > 0:
+                    raise LinAlgError("Singular matrix.")
+                if info < 0:
+                    raise ValueError('Illegal value in %d-th argument of'
+                                     ' internal trtrs' % -info)
+            else:
+                CA = 1. / CA
+            # Get SA
+            A[index] = np.dot(CA.T, CA)
 
-        return out
+        return A
 
     def rvs(self, df, scale, size=1):
         """
@@ -1973,7 +2004,7 @@ class invwishart_gen(wishart_gen):
         # Cholesky decomposition of inverted scale
         C = scipy.linalg.cholesky(inv_scale, lower=True)
 
-        out = self._rvs(n, shape, dim, df, inv_scale, C, eye)
+        out = self._rvs(n, shape, dim, df, C)
 
         return _squeeze_output(out)
 
@@ -1999,14 +2030,14 @@ class invwishart_frozen(object):
         self.dim, self.df, self.scale = self._invwishart._process_parameters(
             df, scale
         )
-        self.eye = np.eye(self.dim)
 
         # Get the determinant via Cholesky factorization
         C, lower = scipy.linalg.cho_factor(self.scale, lower=True)
         self.log_det_scale = 2 * np.sum(np.log(C.diagonal()))
 
         # Get the inverse using the Cholesky factorization
-        self.inv_scale = scipy.linalg.cho_solve((C, lower), self.eye)
+        eye = np.eye(self.dim)
+        self.inv_scale = scipy.linalg.cho_solve((C, lower), eye)
 
         # Get the Cholesky factorization of the inverse scale
         self.C = scipy.linalg.cholesky(self.inv_scale, lower=True)
@@ -2035,8 +2066,7 @@ class invwishart_frozen(object):
     def rvs(self, size=1):
         n, shape = self._invwishart._process_size(size)
 
-        out = self._invwishart._rvs(n, shape, self.dim, self.df,
-                                    self.inv_scale, self.C, self.eye)
+        out = self._invwishart._rvs(n, shape, self.dim, self.df, self.C)
 
         return _squeeze_output(out)
 
