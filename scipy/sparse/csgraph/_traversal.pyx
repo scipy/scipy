@@ -418,7 +418,16 @@ cdef void _depth_first_iterative(int32_or_int64 i_start,
     cdef int32_or_int64 order_end = 0
 
     cdef int* status = <int*> stdlib.malloc(n*sizeof(int))
+    if not status:
+        with gil:
+            raise MemoryError()
+
     cdef DfsStackEntry* stack = <DfsStackEntry*>stdlib.malloc(n * sizeof(DfsStackEntry))
+    if not stack:
+        stdlib.free(status)
+        with gil:
+            raise MemoryError()
+
     cdef DfsStackEntry* head = stack
     
     for idx in range(n):
