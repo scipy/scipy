@@ -406,16 +406,16 @@ cdef struct DfsStackEntry:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.nonecheck(False)
-cdef int _depth_first_iterative(int i_start, 
-                                int[::1] indptr, 
-                                int[::1] indices, 
-                                int[::1] order, 
-                                int[::1] predecessors, 
-                                int scipy_compat) nogil:
-    cdef int i, j
-    cdef int idx
-    cdef int n = order.shape[0]
-    cdef int order_end = 0
+cdef void _depth_first_iterative(int32_or_int64 i_start, 
+                                 int32_or_int64[::1] indptr, 
+                                 int32_or_int64[::1] indices, 
+                                 int32_or_int64[::1] order, 
+                                 int32_or_int64[::1] predecessors, 
+                                 int scipy_compat) nogil:
+    cdef int32_or_int64 i, j
+    cdef int32_or_int64 idx
+    cdef int32_or_int64 n = order.shape[0]
+    cdef int32_or_int64 order_end = 0
 
     cdef int* status = <int*> stdlib.malloc(n*sizeof(int))
     cdef DfsStackEntry* stack = <DfsStackEntry*>stdlib.malloc(n * sizeof(DfsStackEntry))
@@ -504,13 +504,16 @@ def depth_first_order(csgraph, i_start, directed=True, return_predecessors=True,
     """
     cdef int n = csgraph.shape[0]
 
-    order = np.empty(n, dtype=np.int32)
-    predecessors = np.empty(n, dtype=np.int32)
+    order = np.empty(n, dtype=csgraph.indptr.dtype)
+    predecessors = np.empty(n, dtype=csgraph.indptr.dtype)
 
     if not directed:
         csgraph = csgraph + csgraph.T
 
-    _depth_first_iterative(i_start, csgraph.indptr, csgraph.indices, order, predecessors, 1 if scipy_compat else 0)
+    if csgraph.indptr.dtype == ITYPE:
+        _depth_first_iterative[ITYPE_t](i_start, csgraph.indptr, csgraph.indices, order, predecessors, 1 if scipy_compat else 0)
+    else:
+        _depth_first_iterative[np.int64_t](i_start, csgraph.indptr, csgraph.indices, order, predecessors, 1 if scipy_compat else 0)
 
     if return_predecessors:
         return order, predecessors
