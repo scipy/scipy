@@ -40,7 +40,6 @@ def orthogonal_procrustes(A, B, check_finite=True):
         dot(R.T, R) == I.
     scale : float
         The sum of singular values of an intermediate matrix.
-        This value is not returned unless specifically requested.
 
     Raises
     ------
