@@ -275,7 +275,8 @@ Gamma and Related Functions
    psi          -- Logarithmic derivative of the gamma function.
    rgamma       -- One divided by the gamma function.
    polygamma    -- Nth derivative of psi function.
-   multigammaln
+   multigammaln -- Log of the multivariate gamma.
+   digamma      -- Digamma function (derivative of the logarithm of gamma).
 
 
 Error Function and Fresnel Integrals
@@ -525,7 +526,11 @@ Other Special Functions
 .. autosummary::
    :toctree: generated/
 
+   agm          -- Arithmetic-Geometric Mean
+   bernoulli    -- Bernoulli numbers
    binom        -- Binomial coefficient.
+   diric        -- Dirichlet function (periodic sinc)
+   euler        -- Euler numbers
    expn         -- Exponential integral.
    exp1         -- Exponential integral of order 1 (for complex argument)
    expi         -- Another exponential integral -- Ei(x)
