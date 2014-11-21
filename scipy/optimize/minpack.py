@@ -7,7 +7,7 @@ import numpy as np
 from numpy import (atleast_1d, dot, take, triu, shape, eye,
                    transpose, zeros, product, greater, array,
                    all, where, isscalar, asarray, inf, abs,
-                   finfo, inexact, issubdtype, dtype)
+                   finfo, inexact, issubdtype, dtype, sqrt)
 from .optimize import OptimizeResult, _check_unknown_options
 
 error = _minpack.error
@@ -253,7 +253,7 @@ def _root_hybr(func, x0, args=(), jac=None,
     return sol
 
 
-def leastsq(func, x0, args=(), Dfun=None, full_output=0,
+def leastsq(func, x0, args=(), Dfun=None, full_output=0, mp_pool=None,
             col_deriv=0, ftol=1.49012e-8, xtol=1.49012e-8,
             gtol=0.0, maxfev=0, epsfcn=None, factor=100, diag=None):
     """
@@ -279,6 +279,10 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         across the rows. If this is None, the Jacobian will be estimated.
     full_output : bool
         non-zero to return all optional outputs.
+    mp_pool: object
+        an existing multi-processing Pool. If not None, and if Dfun is None,
+        this Pool will be used for calculating the finite difference Jacobian
+        using multiple processors.
     col_deriv : bool
         non-zero to specify that the Jacobian function computes derivatives
         down the columns (faster, because there is no transpose operation).
@@ -374,6 +378,26 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         raise TypeError('Improper input: N=%s must not exceed M=%s' % (n, m))
     if epsfcn is None:
         epsfcn = finfo(dtype).eps
+    if Dfun is None and mp_pool is not None:
+        eps = sqrt(max(epsfcn, finfo(dtype).eps))
+        col_deriv = 1
+
+        def Dfun(x, *args):
+            "multi-processing jacobian, emulating fdjac2"
+            res0 = func(x, *args)
+            steps, dvals = [], []
+            for i, x0 in enumerate(x):
+                tmpx = 1.0*x
+                step = eps*abs(x0)
+                if step < (finfo(dtype).tiny):
+                    step = eps
+                tmpx[i] += step
+                dvals.append((tmpx,) + args)
+                steps.append(step)
+            resids = [mp_pool.apply_async(func, dval) for dval in dvals]
+            resids = [r.get() for r in resids]
+            return array([(res-res0)/step for (res, step) in zip(resids, steps)])
+
     if Dfun is None:
         if maxfev == 0:
             maxfev = 200*(n + 1)

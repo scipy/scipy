@@ -12,7 +12,7 @@ from numpy import array, float64, matrix
 from scipy import optimize
 from scipy.special import lambertw
 from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
-
+import multiprocessing
 
 class ReturnShape(object):
     """This class exists to create a callable that does not have a '__name__' attribute.
@@ -190,6 +190,10 @@ class TestRootLM(TestCase):
                                     method='lm', args=(Qtot, k)).x
         assert_array_almost_equal(final_flows, np.ones(4))
 
+def residual_func(p, y, x):
+    a,b,c = p
+    err = y-(a*x**2 + b*x + c)
+    return err
 
 class TestLeastSq(TestCase):
     def setUp(self):
@@ -273,6 +277,15 @@ class TestLeastSq(TestCase):
         assert_(success in [1,2,3,4])
         assert_((func(p1,x,y)**2).sum() < 1e-4 * (func(p0,x,y)**2).sum())
 
+    def test_mp_pool(self):
+        """test using multiprocessing pool"""
+        p0 = matrix([0,0,0])
+        mpool = multiprocessing.Pool(2)
+        full_output = leastsq(residual_func, p0,
+                              args=(self.y_meas, self.x),
+                              full_output=True, mp_pool=mpool)
+        params_fit, cov_x, infodict, mesg, ier = full_output
+        assert_(ier in (1,2,3,4), 'solution not found: %s' % mesg)
 
 class TestCurveFit(TestCase):
     def setUp(self):
