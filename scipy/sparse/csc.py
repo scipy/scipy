@@ -34,9 +34,9 @@ class csc_matrix(_cs_matrix, IndexMixin):
             to construct an empty matrix with shape (M, N)
             dtype is optional, defaulting to dtype='d'.
 
-        csc_matrix((data, ij), [shape=(M, N)])
-            where ``data`` and ``ij`` satisfy the relationship
-            ``a[ij[0, k], ij[1, k]] = data[k]``
+        csc_matrix((data, (row_ind, col_ind)), [shape=(M, N)])
+            where ``data``, ``row_ind`` and ``col_ind`` satisfy the
+            relationship ``a[row_ind[k], col_ind[k]] = data[k]``.
 
         csc_matrix((data, indices, indptr), [shape=(M, N)])
             is the standard CSC representation where the row indices for
