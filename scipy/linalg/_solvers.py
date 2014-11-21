@@ -202,6 +202,8 @@ def solve_discrete_lyapunov(a, q, method=None):
        Dover Books on Engineering Series. Dover Publications.
 
     """
+    a = np.asarray(a)
+    q = np.asarray(q)
     if method is None:
         # Select automatically based on size of matrices
         if a.shape[0] >= 10:
