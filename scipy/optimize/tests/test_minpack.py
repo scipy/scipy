@@ -5,14 +5,15 @@ from __future__ import division, print_function, absolute_import
 
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
         assert_array_almost_equal, TestCase, run_module_suite, assert_raises,
-        assert_allclose)
+        assert_allclose, dec)
 import numpy as np
 from numpy import array, float64, matrix
 
 from scipy import optimize
 from scipy.special import lambertw
 from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
-
+from scipy.lib._numpy_compat import _assert_warns
+from scipy.optimize import OptimizeWarning
 
 class ReturnShape(object):
     """This class exists to create a callable that does not have a '__name__' attribute.
@@ -383,9 +384,14 @@ class TestCurveFit(TestCase):
             return a*x + b
 
         x = [1, 2, 3, 4]
-        y = [2, 4, 6, 8]
-        assert_allclose(curve_fit(f_linear, x, y)[0], [2, 0], atol=1e-10)
+        y = [1, 2, 3, 4]
+        assert_allclose(curve_fit(f_linear, x, y)[0], [1, 0], atol=1e-10)
 
+    def test_indeterminate_covariance(self):
+        # Test that a warning is returned when pcov is indeterminate
+        xdata = np.array([1, 2, 3, 4, 5, 6])
+        ydata = np.array([1, 2, 3, 4, 5.5, 6])
+        _assert_warns(OptimizeWarning, curve_fit, lambda x, a, b: a*x, xdata, ydata)
 
 class TestFixedPoint(TestCase):
 
