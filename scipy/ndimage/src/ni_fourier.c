@@ -190,6 +190,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
     npy_intp kk, hh, size;
     Float64 *iparameters = (void *)PyArray_DATA(parameter_array);
     int ll;
+    NPY_BEGIN_THREADS_DEF;
 
     /* precalculate the parameters: */
     parameters = (double*)malloc(input->nd * sizeof(double));
@@ -231,6 +232,9 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
             }
         }
     }
+
+    NPY_BEGIN_THREADS;
+
     switch (filter_type) {
         case _NI_GAUSSIAN:
             /* calculate the tables of exponentials: */
@@ -367,6 +371,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
                 CASE_FOURIER_FILTER_RC(pi, tmp, tmp_r, tmp_i, Complex64);
                 CASE_FOURIER_FILTER_RC(pi, tmp, tmp_r, tmp_i, Complex128);
             default:
+                NPY_END_THREADS;
                 PyErr_SetString(PyExc_RuntimeError, "data type not supported");
                 goto exit;
             }
@@ -374,6 +379,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
                 CASE_FOURIER_OUT_CC(po, tmp_r, tmp_i, Complex64);
                 CASE_FOURIER_OUT_CC(po, tmp_r, tmp_i, Complex128);
             default:
+                NPY_END_THREADS;
                 PyErr_SetString(PyExc_RuntimeError, "data type not supported");
                 goto exit;
             }
@@ -393,6 +399,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
                 CASE_FOURIER_FILTER_RR(pi, tmp, Float32)
                 CASE_FOURIER_FILTER_RR(pi, tmp, Float64)
             default:
+                NPY_END_THREADS;
                 PyErr_SetString(PyExc_RuntimeError, "data type not supported");
                 goto exit;
             }
@@ -402,6 +409,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
                 CASE_FOURIER_OUT_RC(po, tmp, Complex64);
                 CASE_FOURIER_OUT_RC(po, tmp, Complex128);
             default:
+                NPY_END_THREADS;
                 PyErr_SetString(PyExc_RuntimeError, "data type not supported");
                 goto exit;
             }
@@ -410,7 +418,8 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
     }
 
  exit:
-    if (parameters) free(parameters);
+    NPY_END_THREADS;
+    free(parameters);
     if (params) {
         for(kk = 0; kk < input->nd; kk++)
             if (params[kk]) free(params[kk]);
@@ -441,6 +450,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
     npy_intp kk, hh, size;
     Float64 *ishifts = (void *)PyArray_DATA(shift_array);
     int ll;
+    NPY_BEGIN_THREADS_DEF;
 
     /* precalculate the shifts: */
     shifts = (double*)malloc(input->nd * sizeof(double));
@@ -473,6 +483,9 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
             }
         }
     }
+
+    NPY_BEGIN_THREADS;
+
     for (hh = 0; hh < input->nd; hh++) {
         if (params[hh]) {
             if (hh == axis && n >= 0) {
@@ -525,6 +538,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
             CASE_FOURIER_SHIFT_C(pi, r, i, cost, sint, Complex64)
             CASE_FOURIER_SHIFT_C(pi, r, i, cost, sint, Complex128)
         default:
+            NPY_END_THREADS;
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
             goto exit;
         }
@@ -532,6 +546,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
             CASE_FOURIER_OUT_CC(po, r, i, Complex64);
             CASE_FOURIER_OUT_CC(po, r, i, Complex128);
         default:
+            NPY_END_THREADS;
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
             goto exit;
         }
@@ -539,7 +554,8 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
     }
 
  exit:
-    if (shifts) free(shifts);
+    NPY_END_THREADS;
+    free(shifts);
     if (params) {
         for(kk = 0; kk < input->nd; kk++)
             if (params[kk]) free(params[kk]);
