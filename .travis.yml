@@ -34,7 +34,6 @@ matrix:
         - pep8 scipy
 before_install:
   # Automated travis-ci wheel builds (disabled because intermittent issues)
-  - WHEELHOUSE=https://8167b5c3a2af93a0a9fb-13c6eee0d707a05fa610c311eec04c66.ssl.cf2.rackcdn.com/
   - uname -a
   - free -m
   - df -h
