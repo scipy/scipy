@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+import warnings
 
 import numpy as np
 from numpy import arccosh, arcsinh, arctanh
@@ -12,6 +13,7 @@ from scipy.special import (
     mathieu_cem, mathieu_sem, mathieu_modcem1, mathieu_modsem1, mathieu_modcem2,
     mathieu_modsem2,
 )
+from scipy.integrate import IntegrationWarning
 
 from scipy.special._testutils import FuncData
 
@@ -292,14 +294,19 @@ def test_gsl():
     for test in TESTS:
         yield _test_factory, test
 
+
 def test_local():
     TESTS = [
         data_local(ellip_harm_2, 'ellip',(0, 1, 2, 3, 4), 6, rtol=1e-10, atol=1e-13),
         data_local(ellip_harm, 'ellip',(0, 1, 2, 3, 4), 5, rtol=1e-10, atol=1e-13),
     ]
 
-    for test in TESTS:
-        yield _test_factory, test
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=IntegrationWarning)
+
+        for test in TESTS:
+            yield _test_factory, test
+
 
 def _test_factory(test, dtype=np.double):
     """Boost test"""

@@ -5,12 +5,14 @@
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 from numpy.testing import assert_equal, assert_almost_equal, assert_allclose,\
  assert_
 from scipy.special._testutils import assert_func_equal
 from scipy.special import ellip_harm, ellip_harm_2, ellip_normal
-from scipy.integrate import quad
+from scipy.integrate import quad, IntegrationWarning
 from numpy import array, sqrt, pi
 from scipy.special._testutils import FuncData
 
@@ -50,12 +52,20 @@ def test_ellip_potential():
         res = sqrt((x2 - x1)**2 + (y2 - y1)**2 + (z2 - z1)**2)
         return 1/res
 
-    assert_allclose(summation(120, sqrt(19), 2, 41, sqrt(17), 2, 15, 25)[0],
-    potential(120, sqrt(19), 2, 41, sqrt(17), 2, 15, 25), atol=0, rtol=1e-08)
+    pts = [
+        (120, sqrt(19), 2, 41, sqrt(17), 2, 15, 25),
+        (120, sqrt(16), 3.2, 21, sqrt(11), 2.9, 11, 20),
+       ]
 
-    exact = potential(120, sqrt(19), 2, 41, sqrt(17), 2, 15, 25)
-    result, last_term = summation(120, sqrt(19), 2, 41, sqrt(17), 2, 15, 25)
-    assert_(abs(result - exact) < 10*abs(last_term))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=IntegrationWarning)
+
+        for p in pts:
+            err_msg = repr(p)
+            exact = potential(*p)
+            result, last_term = summation(*p)
+            assert_allclose(exact, result, atol=0, rtol=1e-8, err_msg=err_msg)
+            assert_(abs(result - exact) < 10*abs(last_term), err_msg)
 
 
 def test_ellip_norm():
