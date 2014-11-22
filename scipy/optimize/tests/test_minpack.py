@@ -386,6 +386,16 @@ class TestCurveFit(TestCase):
         y = [2, 4, 6, 8]
         assert_allclose(curve_fit(f_linear, x, y)[0], [2, 0], atol=1e-10)
 
+    def test_NaN_handling(self):
+        # Test for correct handling of NaNs in input data: gh-3422
+
+        # create input with NaNs
+        xdata = np.array([1, np.nan, 3])
+        ydata = np.array([1, 2, 3])
+
+        assert_raises(ValueError, curve_fit, lambda x, a, b: a*x + b, xdata, ydata)
+        assert_raises(ValueError, curve_fit, lambda x, a, b: a*x + b, ydata, xdata)
+
 
 class TestFixedPoint(TestCase):
 
