@@ -19,16 +19,21 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     These are also known as Lame functions of the first kind, and are
     solutions to the Lame equation:
 
-    .. math:: (s^2 - h^2)(s^2 - k^2)E''(s) + s(2s^2 - h^2 - k^2)E'(s) + (p - q s^2)E(s) = 0
+    .. math:: (s^2 - h^2)(s^2 - k^2)E''(s) + s(2s^2 - h^2 - k^2)E'(s) + (a - q s^2)E(s) = 0
+
+    where :math:`q = (n+1)n` and :math:`a` is the eigenvalue (not
+    returned) corresponding to the solutions.
 
     Parameters
     ----------
     h2 : float
         ``h**2``
     k2 : float
-        ``k**2``
+        ``k**2``; should be larger than ``h**2``
     n : int
         Degree
+    s : float
+        Coordinate
     p : int
         Order, can range between [1,2n+1]
     signm : {1, -1}, optional
@@ -78,6 +83,20 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     >>> w
     2.5
 
+    Check that the functions indeed are solutions to the Lame equation:
+
+    >>> from scipy.interpolate import UnivariateSpline
+    >>> def eigenvalue(f, df, ddf):
+    ...     r = ((s**2 - h**2)*(s**2 - k**2)*ddf + s*(2*s**2 - h**2 - k**2)*df - n*(n+1)*s**2*f)/f
+    ...     return -r.mean(), r.std()
+    >>> s = np.linspace(0.1, 10, 200)
+    >>> k, h, n, p = 8.0, 2.2, 3, 2
+    >>> E = ellip_harm(h**2, k**2, n, p, s)
+    >>> E_spl = UnivariateSpline(s, E)
+    >>> a, a_err = eigenvalue(E_spl(s), E_spl(s,1), E_spl(s,2))
+    >>> a, a_err
+    (583.44366156701483, 6.4580890640310646e-11)
+
     """
     return _ellip_harm(h2, k2, n, p, s, signm, signn)
 
@@ -96,18 +115,23 @@ def ellip_harm_2(h2, k2, n, p, s):
     These are also known as Lame functions of the second kind, and are
     solutions to the Lame equation:
 
-    .. math:: (s^2 - h^2)(s^2 - k^2)F''(s) + s(2s^2 - h^2 - k^2)F'(s) + (p - q s^2)F(s) = 0
+    .. math:: (s^2 - h^2)(s^2 - k^2)F''(s) + s(2s^2 - h^2 - k^2)F'(s) + (a - q s^2)F(s) = 0
+
+    where :math:`q = (n+1)n` and :math:`a` is the eigenvalue (not
+    returned) corresponding to the solutions.
 
     Parameters
     ----------
     h2 : float
         ``h**2``
     k2 : float
-        ``k**2``
+        ``k**2``; should be larger than ``h**2``
     n : int
         Degree.
     p : int
         Order, can range between [1,2n+1].
+    s : float
+        Coordinate
 
     Returns
     -------
@@ -160,7 +184,7 @@ def ellip_normal(h2, k2, n, p):
     h2 : float
         ``h**2``
     k2 : float
-        ``k**2``
+        ``k**2``; should be larger than ``h**2``
     n: int
         Degree.
     p: int
