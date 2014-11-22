@@ -411,11 +411,11 @@ cleanup:
   if (messages & TNC_MSG_EXIT)
     fprintf(stderr, "tnc: %s\n", tnc_rc_string[rc - TNC_MINRC]);
 
-  if (xscale) free(xscale);
+  free(xscale);
   if (free_low) free(low);
   if (free_up) free(up);
   if (free_g) free(g);
-  if (xoffset) free(xoffset);
+  free(xoffset);
 
   return rc;
 }
@@ -861,18 +861,18 @@ static tnc_rc tnc_minimize(int n, double x[],
   (*f) /= *fscale;
 
 cleanup:
-  if (oldg) free(oldg);
-  if (g) free(g);
-  if (temp) free(temp);
-  if (diagb) free(diagb);
-  if (pk) free(pk);
+  free(oldg);
+  free(g);
+  free(temp);
+  free(diagb);
+  free(pk);
 
-  if (sk) free(sk);
-  if (yk) free(yk);
-  if (sr) free(sr);
-  if (yr) free(yr);
+  free(sk);
+  free(yk);
+  free(sr);
+  free(yr);
 
-  if (pivot) free(pivot);
+  free(pivot);
 
   return rc;
 }
@@ -1170,11 +1170,11 @@ static int tnc_direction(double *zsol, double *diagb,
   dcopy1(n, emat, diagb);
 
 cleanup:
-  if (r) free(r);
-  if (v) free(v);
-  if (zk) free(zk);
-  if (emat) free(emat);
-  if (gv) free(gv);
+  free(r);
+  free(v);
+  free(zk);
+  free(emat);
+  free(gv);
   return frc;
 }
 
@@ -1314,9 +1314,9 @@ static int msolve(double g[], double y[], int n,
   }
 
 cleanup:
-  if (hg) free(hg);
-  if (hyk) free(hyk);
-  if (hyr) free(hyr);
+  free(hg);
+  free(hyk);
+  free(hyr);
 
   return frc;
 }
@@ -1522,9 +1522,9 @@ static ls_rc linearSearch(int n, tnc_function *function, void *state,
   else rc = LS_MAXFUN;
 
 cleanup:
-  if (temp) free(temp);
-  if (tempgfull) free(tempgfull);
-  if (newgfull) free(newgfull);
+  free(temp);
+  free(tempgfull);
+  free(newgfull);
 
   return rc;
 }

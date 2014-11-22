@@ -789,10 +789,9 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
 
  exit:
     NPY_END_THREADS;
-    if (offsets) free(offsets);
-    if (foffsets) free(foffsets);
-    if (footprint)
-        free(footprint);
+    free(offsets);
+    free(foffsets);
+    free(footprint);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -989,12 +988,9 @@ int NI_EuclideanFeatureTransform(PyArrayObject* input,
                input->nd, input->nd - 1, coor, f, g, features, sampling, 0);
 
  exit:
-    if (f)
-        free(f);
-    if (g)
-        free(g);
-    if (tmp)
-        free(tmp);
+    free(f);
+    free(g);
+    free(tmp);
 
     return PyErr_Occurred() ? 0 : 1;
 }

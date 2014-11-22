@@ -133,8 +133,8 @@ exit:
     if (errmsg[0] != 0) {
         PyErr_SetString(PyExc_RuntimeError, errmsg);
     }
-    if (ibuffer) free(ibuffer);
-    if (obuffer) free(obuffer);
+    free(ibuffer);
+    free(obuffer);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -283,9 +283,9 @@ exit:
     if (err == 1) {
         PyErr_SetString(PyExc_RuntimeError, "array type not supported");
     }
-    if (offsets) free(offsets);
-    if (ww) free(ww);
-    if (pf) free(pf);
+    free(offsets);
+    free(ww);
+    free(pf);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -354,8 +354,8 @@ NI_UniformFilter1D(PyArrayObject *input, npy_intp filter_size,
     if (errmsg[0] != 0) {
         PyErr_SetString(PyExc_RuntimeError, errmsg);
     }
-    if (ibuffer) free(ibuffer);
-    if (obuffer) free(obuffer);
+    free(ibuffer);
+    free(obuffer);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -478,9 +478,9 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
     if (errmsg[0] != 0) {
         PyErr_SetString(PyExc_RuntimeError, errmsg);
     }
-    if (ibuffer) free(ibuffer);
-    if (obuffer) free(obuffer);
-    if (ring) free(ring);
+    free(ibuffer);
+    free(obuffer);
+    free(ring);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -634,8 +634,8 @@ exit:
     if (err == 1) {
         PyErr_SetString(PyExc_RuntimeError, "array type not supported");
     }
-    if (offsets) free(offsets);
-    if (ss) free(ss);
+    free(offsets);
+    free(ss);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -802,8 +802,8 @@ exit:
     if (err == 1) {
         PyErr_SetString(PyExc_RuntimeError, "array type not supported");
     }
-    if (offsets) free(offsets);
-    if (buffer) free(buffer);
+    free(offsets);
+    free(buffer);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -861,8 +861,8 @@ int NI_GenericFilter1D(PyArrayObject *input,
         }
     } while(more);
 exit:
-    if (ibuffer) free(ibuffer);
-    if (obuffer) free(obuffer);
+    free(ibuffer);
+    free(obuffer);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -991,7 +991,7 @@ int NI_GenericFilter(PyArrayObject* input,
         NI_FILTER_NEXT2(fi, ii, io, oo, pi, po);
     }
 exit:
-    if (offsets) free(offsets);
-    if (buffer) free(buffer);
+    free(offsets);
+    free(buffer);
     return PyErr_Occurred() ? 0 : 1;
 }

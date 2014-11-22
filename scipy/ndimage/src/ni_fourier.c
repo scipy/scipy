@@ -558,7 +558,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
     free(shifts);
     if (params) {
         for(kk = 0; kk < input->nd; kk++)
-            if (params[kk]) free(params[kk]);
+            free(params[kk]);
         free(params);
     }
     return PyErr_Occurred() ? 0 : 1;
