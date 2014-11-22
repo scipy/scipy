@@ -42,19 +42,19 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libatlas-dev libatlas-base-dev liblapack-dev gfortran
   - sudo apt-get install -qq libgmp-dev libmpfr-dev
+  - mkdir builds
+  - pushd builds
   # Install gmpy2 dependencies
   - wget ftp://ftp.gnu.org/gnu/mpc/mpc-1.0.2.tar.gz
   - tar xzvf mpc-1.0.2.tar.gz
-  - cd mpc-1.0.2
+  - pushd mpc-1.0.2
   - ./configure
   - make
   - sudo make install
-  - cd ..
+  - popd
   # End install gmpy2 dependencies
-  - mkdir builds
-  - pushd builds
-  # Slow installs, force binary wheels
-  - pip install Cython
+  # Speed up install by not compiling Cython
+  - pip install --install-option="--no-cython-compile" Cython
   - pip install numpy$NUMPYSPEC
   - pip install nose mpmath argparse
   - pip install gmpy2  # speeds up mpmath (scipy.special tests)
