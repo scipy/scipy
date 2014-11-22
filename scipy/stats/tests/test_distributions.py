@@ -238,6 +238,9 @@ class TestNBinom(TestCase):
         # regression test for ticket 1779
         assert_allclose(np.exp(stats.nbinom.logpmf(700, 721, 0.52)),
                         stats.nbinom.pmf(700, 721, 0.52))
+        # logpmf(0,1,1) shouldn't return nan (regression test for gh-4029)
+        val = scipy.stats.nbinom.logpmf(0,1,1)
+        assert_equal(val,0)
 
 
 class TestGeom(TestCase):
@@ -512,7 +515,7 @@ class TestGenpareto(TestCase):
         assert_allclose(rv.logpdf(1), 0)
 
     def test_x_inf(self):
-        # make sure x=inf is handled gracefully 
+        # make sure x=inf is handled gracefully
         rv = stats.genpareto(c=0.1)
         assert_allclose([rv.pdf(np.inf), rv.cdf(np.inf)], [0., 1.])
         assert_(np.isneginf(rv.logpdf(np.inf)))
