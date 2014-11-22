@@ -284,8 +284,9 @@ def wrap_function(function, args):
     return ncalls, function_wrapper
 
 
-def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
-         full_output=0, disp=1, retall=0, callback=None):
+def fmin(func, x0=None, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
+         full_output=0, disp=1, retall=0, callback=None,
+         x0s=None):
     """
     Minimize a function using the downhill simplex algorithm.
 
@@ -298,6 +299,9 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         The objective function to be minimized.
     x0 : ndarray
         Initial guess.
+    x0s : ndarray with shape: (N+1, N)
+        Instead of x0, x0s allows the caller to provide an initial 
+        simplex rather than just a single initial guess.
     args : tuple, optional
         Extra arguments passed to func, i.e. ``f(x,*args)``.
     callback : callable, optional
@@ -371,7 +375,17 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             'disp': disp,
             'return_all': retall}
 
-    res = _minimize_neldermead(func, x0, args, callback=callback, **opts)
+    if x0 is not None and x0s is not None:
+        raise ValueError("Either x0 or x0s must be provided, but not both.")
+    if x0 is None and x0s is None:
+        raise ValueError("One of x0 or x0s must be provided.")
+
+    if x0 is not None:
+        res = _minimize_neldermead(func, x0, args, callback=callback, **opts)
+    else:
+        res = _minimize_neldermead_simplex(func, simplex=x0s, args=args, 
+                                           callback=callback, **opts)
+
     if full_output:
         retlist = res['x'], res['fun'], res['nit'], res['nfev'], res['status']
         if retall:
@@ -411,7 +425,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     maxfun = maxfev
     retall = return_all
 
-    fcalls, func = wrap_function(func, args)
     x0 = asfarray(x0).flatten()
     N = len(x0)
     rank = len(x0.shape)
@@ -432,11 +445,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         sim = numpy.zeros((N + 1,), dtype=x0.dtype)
     else:
         sim = numpy.zeros((N + 1, N), dtype=x0.dtype)
-    fsim = numpy.zeros((N + 1,), float)
     sim[0] = x0
-    if retall:
-        allvecs = [sim[0]]
-    fsim[0] = func(x0)
+
     nonzdelt = 0.05
     zdelt = 0.00025
     for k in range(0, N):
@@ -445,10 +455,72 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             y[k] = (1 + nonzdelt)*y[k]
         else:
             y[k] = zdelt
-
         sim[k + 1] = y
-        f = func(y)
-        fsim[k + 1] = f
+
+    return _minimize_neldermead_simplex(func, sim, args=(), callback=callback,
+                                        xtol=xtol, ftol=ftol, maxiter=maxiter, maxfev=maxfev,
+                                        disp=disp, return_all=return_all,
+                                        **unknown_options)
+
+
+def _minimize_neldermead_simplex(func, simplex, args=(), callback=None,
+                                 xtol=1e-4, ftol=1e-4, maxiter=None, maxfev=None,
+                                 disp=False, return_all=False,
+                                 **unknown_options):
+    """
+    Minimization of scalar function of one or more variables using the
+    Nelder-Mead algorithm given a starting simplex.
+    
+    Parameters
+    ----------
+    func : callable func(x,*args)
+        The objective function to be minimized.
+    simplex : ndarray
+        Initial D+1 guesses forming a simplex in D dimensions.
+
+    Options for the Nelder-Mead algorithm are:
+        disp : bool
+            Set to True to print convergence messages.
+        xtol : float
+            Relative error in solution `xopt` acceptable for convergence.
+        ftol : float
+            Relative error in ``fun(xopt)`` acceptable for convergence.
+        maxiter : int
+            Maximum number of iterations to perform.
+        maxfev : int
+            Maximum number of function evaluations to make.
+
+    This function is called by the `minimize` function with
+    `method=Nelder-Mead`. It is not supposed to be called directly.
+    """
+    _check_unknown_options(unknown_options)
+    maxfun = maxfev
+    retall = return_all
+
+    fcalls, func = wrap_function(func, args)
+    simplex = asfarray(simplex)
+    simplex = simplex.reshape(simplex.shape[0], -1) # Collapse all trailing dimensions so it is just a simplex.
+    N = simplex.shape[1]
+    if maxiter is None:
+        maxiter = N * 200
+    if maxfun is None:
+        maxfun = N * 200
+
+    rho = 1
+    chi = 2
+    psi = 0.5
+    sigma = 0.5
+    one2np1 = list(range(1, N + 1))
+
+    sim = simplex # for short.
+    fsim = numpy.zeros((N + 1,), float)
+    if retall:
+        allvecs = []
+        
+    for k, y in enumerate(sim):
+        if retall:
+            allvecs.append(y)
+        fsim[k] = func(y)
 
     ind = numpy.argsort(fsim)
     fsim = numpy.take(fsim, ind, 0)

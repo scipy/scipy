@@ -253,8 +253,8 @@ class TestOptimize(object):
                     res['status']
         else:
             retval = optimize.fmin(self.func, self.startparams,
-                                        args=(), maxiter=self.maxiter,
-                                        full_output=True, disp=False, retall=False)
+                                   args=(), maxiter=self.maxiter,
+                                   full_output=True, disp=False, retall=False)
 
             (params, fopt, numiter, func_calls, warnflag) = retval
 
@@ -270,6 +270,44 @@ class TestOptimize(object):
         assert_allclose(self.trace[76:78],
                         [[0.1928968, -0.62780447, 0.35166118],
                          [0.19572515, -0.63648426, 0.35838135]],
+                        atol=1e-14, rtol=1e-7)
+
+    def test_neldermead_with_initial_simplex(self, use_wrapper=False):
+        """ Nelder-Mead simplex algorithm
+        """
+        N = len(self.startparams)
+        # Build a simplex around self.startparams:
+        startSimplex = np.array([self.startparams.ravel()] * (1+N), dtype=float)
+        for k in range(N):
+            startSimplex[k+1,k] += 1
+        if use_wrapper:
+            opts = {'maxiter': self.maxiter, 'disp': False,
+                    'return_all': False}
+            res = optimize.minimize(self.func, x0s=startSimplex, args=(),
+                                    method='Nelder-mead', options=opts)
+            import epdb;epdb.st()
+            params, fopt, numiter, func_calls, warnflag = \
+                    res['x'], res['fun'], res['nit'], res['nfev'], \
+                    res['status']
+        else:
+            retval = optimize.fmin(self.func, x0s=startSimplex,
+                                   args=(), maxiter=self.maxiter,
+                                   full_output=True, disp=False, retall=False)
+
+            (params, fopt, numiter, func_calls, warnflag) = retval
+
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
+
+        # Ensure that function call counts are 'known good'; these are from
+        # Scipy 0.15.0. Don't allow them to increase.
+        assert_(self.funccalls == 136, self.funccalls)
+        assert_(self.gradcalls == 0, self.gradcalls)
+
+        # Ensure that the function behaves the same; this is from Scipy 0.15.0
+        assert_allclose(self.trace[76:78],
+                        [[-0.15009129121879666, -0.52439315524822927, 0.48747849836941826], 
+                         [-0.14676569920571259, -0.52497238610700325, 0.48756062019115209]],
                         atol=1e-14, rtol=1e-7)
 
     def test_ncg(self, use_wrapper=False):
