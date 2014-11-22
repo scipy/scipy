@@ -18,6 +18,8 @@ except ImportError:
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
+    from numpy.distutils.system_info import get_info as get_system_info
+
     config = Configuration('special', parent_package, top_path)
 
     define_macros = []
@@ -73,14 +75,16 @@ def configuration(parent_package='',top_path=None):
                   "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c"]
     ufuncs_dep = (headers + ufuncs_src + amos_src + c_misc_src + cephes_src
                   + mach_src + cdf_src + specfun_src)
+    cfg = dict(get_system_info('lapack_opt'))
+    cfg.setdefault('include_dirs', []).extend([curdir] + inc_dirs + [numpy.get_include()])
+    cfg.setdefault('libraries', []).extend(['sc_amos','sc_c_misc','sc_cephes','sc_mach',
+                                            'sc_cdf', 'sc_specfun'])
+    cfg.setdefault('define_macros', []).extend(define_macros)
     config.add_extension('_ufuncs',
-                         libraries=['sc_amos','sc_c_misc','sc_cephes','sc_mach',
-                                    'sc_cdf', 'sc_specfun'],
                          depends=ufuncs_dep,
                          sources=ufuncs_src,
-                         include_dirs=[curdir] + inc_dirs,
-                         define_macros=define_macros,
-                         extra_info=get_info("npymath"))
+                         extra_info=get_info("npymath"),
+                         **cfg)
 
     # Extension _ufuncs_cxx
     ufuncs_cxx_src = ['_ufuncs_cxx.cxx', 'sf_error.c',
@@ -93,6 +97,13 @@ def configuration(parent_package='',top_path=None):
                          include_dirs=[curdir],
                          define_macros=define_macros,
                          extra_info=get_info("npymath"))
+
+    config.add_extension('_ellip_harm_2',
+                         sources=['_ellip_harm_2.c', '_ufuncs.c',
+                                  'Faddeeva.cc','sf_error.c','_logit.c.src',"cdf_wrappers.c",
+                                  "specfun_wrappers.c","amos_wrappers.c"],
+                         **cfg
+                         )
 
     config.add_data_files('tests/*.py')
     config.add_data_files('tests/data/README')

@@ -327,6 +327,16 @@ These are not universal functions:
    lpmn     -- [+]Associated Legendre Function of the first kind for real arguments.
    lqmn     -- [+]Associated Legendre Function of the second kind.
 
+Ellipsoidal Harmonics
+---------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   ellip_harm    -- Ellipsoidal harmonic E
+   ellip_harm_2  -- Ellipsoidal harmonic F
+   ellip_normal  -- Ellipsoidal normalization constant
+
 Orthogonal polynomials
 ----------------------
 
@@ -580,6 +590,7 @@ from . import specfun
 from . import orthogonal
 from .orthogonal import *
 from .spfun_stats import multigammaln
+from ._ellip_harm import ellip_harm, ellip_harm_2, ellip_normal
 from .lambertw import lambertw
 
 
