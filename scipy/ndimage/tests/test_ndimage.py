@@ -1412,6 +1412,24 @@ class TestNdimage:
                                                         order=order)
             assert_array_almost_equal(out, [1])
 
+    def test_geometric_transform01_with_output_parameter(self):
+        data = numpy.array([1])
+
+        def mapping(x):
+            return x
+        for order in range(0, 6):
+            out = numpy.empty_like(data)
+            ndimage.geometric_transform(data, mapping,
+                                        data.shape,
+                                        output=out)
+            assert_array_almost_equal(out, [1])
+
+            out = numpy.empty_like(data).astype(data.dtype.newbyteorder())
+            ndimage.geometric_transform(data, mapping,
+                                        data.shape,
+                                        output=out)
+            assert_array_almost_equal(out, [1])
+
     def test_geometric_transform02(self):
         data = numpy.ones([4])
 
@@ -1674,6 +1692,25 @@ class TestNdimage:
                                        [0, 4, 1, 3],
                                        [0, 7, 6, 8]])
 
+    def test_map_coordinates01_with_output_parameter(self):
+        data = numpy.array([[4, 1, 3, 2],
+                            [7, 6, 8, 5],
+                            [3, 5, 3, 6]])
+        idx = numpy.indices(data.shape)
+        idx -= 1
+        expected = numpy.array([[0, 0, 0, 0],
+                                [0, 4, 1, 3],
+                                [0, 7, 6, 8]])
+        for order in range(0, 6):
+            out = numpy.empty_like(expected)
+            ndimage.map_coordinates(data, idx, order=order, output=out)
+            assert_array_almost_equal(out, expected)
+
+            out = numpy.empty_like(expected).astype(
+                expected.dtype.newbyteorder())
+            ndimage.map_coordinates(data, idx, order=order, output=out)
+            assert_array_almost_equal(out, expected)
+
     def test_map_coordinates02(self):
         data = numpy.array([[4, 1, 3, 2],
                                [7, 6, 8, 5],
@@ -1721,6 +1758,21 @@ class TestNdimage:
         for order in range(0, 6):
             out = ndimage.affine_transform(data, [[1]],
                                                      order=order)
+            assert_array_almost_equal(out, [1])
+
+    def test_affine_transform01_with_output_parameter(self):
+        data = numpy.array([1])
+        for order in range(0, 6):
+            out = numpy.empty_like(data)
+            ndimage.affine_transform(data, [[1]],
+                                     order=order,
+                                     output=out)
+            assert_array_almost_equal(out, [1])
+
+            out = numpy.empty_like(data).astype(data.dtype.newbyteorder())
+            ndimage.affine_transform(data, [[1]],
+                                     order=order,
+                                     output=out)
             assert_array_almost_equal(out, [1])
 
     def test_affine_transform02(self):
