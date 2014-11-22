@@ -466,7 +466,8 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
         size *= output->dimensions[qq];
     for(kk = 0; kk < size; kk++) {
         double t = 0.0;
-        int constant = 0, edge = 0, offset = 0;
+        int constant = 0, edge = 0;
+        npy_intp offset = 0;
         if (map) {
             /* call mappint functions: */
             if (!map(io.coordinates, icoor, orank, irank, map_data)) {
@@ -513,11 +514,11 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
             double cc = map_coordinate(icoor[hh], idimensions[hh], mode);
             if (cc > -1.0) {
                 /* find the filter location along this axis: */
-                int start;
+                npy_intp start;
                 if (order & 1) {
-                    start = (int)floor(cc) - order / 2;
+                    start = (npy_intp)floor(cc) - order / 2;
                 } else {
-                    start = (int)floor(cc + 0.5) - order / 2;
+                    start = (npy_intp)floor(cc + 0.5) - order / 2;
                 }
                 /* get the offset to the start of the filter: */
                 offset += istrides[hh] * start;
@@ -526,12 +527,12 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                     edge = 1;
                     edge_offsets[hh] = data_offsets[hh];
                     for(ll = 0; ll <= order; ll++) {
-                        int idx = start + ll;
-                        int len = idimensions[hh];
+                        npy_intp idx = start + ll;
+                        npy_intp len = idimensions[hh];
                         if (len <= 1) {
                             idx = 0;
                         } else {
-                            int s2 = 2 * len - 2;
+                            npy_intp s2 = 2 * len - 2;
                             if (idx < 0) {
                                 idx = s2 * (int)(-idx / s2) + idx;
                                 idx = idx <= 1 - len ? idx + s2 : -idx;
@@ -562,7 +563,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
             t = 0.0;
             for(hh = 0; hh < filter_size; hh++) {
                 double coeff = 0.0;
-                int idx = 0;
+                npy_intp idx = 0;
 
                 if (NI_UNLIKELY(edge)) {
                     for(ll = 0; ll < irank; ll++) {
@@ -739,13 +740,13 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                 cc *= zoom;
             cc = map_coordinate(cc, idimensions[jj], mode);
             if (cc > -1.0) {
-                int start;
+                npy_intp start;
                 if (zeros && zeros[jj])
                     zeros[jj][kk] = 0;
                 if (order & 1) {
-                    start = (int)floor(cc) - order / 2;
+                    start = (npy_intp)floor(cc) - order / 2;
                 } else {
-                    start = (int)floor(cc + 0.5) - order / 2;
+                    start = (npy_intp)floor(cc + 0.5) - order / 2;
                 }
                 offsets[jj][kk] = istrides[jj] * start;
                 if (start < 0 || start + order >= idimensions[jj]) {
@@ -755,12 +756,12 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                         goto exit;
                     }
                     for(hh = 0; hh <= order; hh++) {
-                        int idx = start + hh;
-                         int len = idimensions[jj];
+                        npy_intp idx = start + hh;
+                        npy_intp len = idimensions[jj];
                         if (len <= 1) {
                             idx = 0;
                         } else {
-                            int s2 = 2 * len - 2;
+                            npy_intp s2 = 2 * len - 2;
                             if (idx < 0) {
                                 idx = s2 * (int)(-idx / s2) + idx;
                                 idx = idx <= 1 - len ? idx + s2 : -idx;
@@ -846,7 +847,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
             const int type_num = NI_NormalizeType(input->descr->type_num);
             t = 0.0;
             for(hh = 0; hh < filter_size; hh++) {
-                int idx = 0;
+                npy_intp idx = 0;
                 double coeff = 0.0;
 
                 if (NI_UNLIKELY(edge)) {

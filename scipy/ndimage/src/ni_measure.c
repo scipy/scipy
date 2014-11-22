@@ -564,11 +564,11 @@ int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
             doit = label != 0;
         }
         if (doit) {
-            int bin;
+            npy_intp bin;
             double val;
             NI_GET_VALUE(pi, val, NI_NormalizeType(input->descr->type_num));
             if (val >= min && val < max) {
-                bin = (int)((val - min) / bsize);
+                bin = (npy_intp)((val - min) / bsize);
                 ++(ph[idx][bin]);
             }
         }
@@ -691,7 +691,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     /* Initialization and find the maximum of the input. */
     maxval = 0;
     for(jj = 0; jj < size; jj++) {
-        int ival = 0;
+        npy_intp ival = 0;
         switch(NI_NormalizeType(input->descr->type_num)) {
         CASE_GET_INPUT(ival, pi, UInt8);
         CASE_GET_INPUT(ival, pi, UInt16);

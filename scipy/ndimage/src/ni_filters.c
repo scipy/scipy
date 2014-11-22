@@ -639,9 +639,10 @@ exit:
     return PyErr_Occurred() ? 0 : 1;
 }
 
-static double NI_Select(double *buffer, int min, int max, int rank)
+static double NI_Select(double *buffer, npy_intp min,
+                        npy_intp max, npy_intp rank)
 {
-    int ii, jj;
+    npy_intp ii, jj;
     double x, t;
 
     if (min == max)

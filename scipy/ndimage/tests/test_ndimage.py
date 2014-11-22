@@ -32,11 +32,12 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import math
+import sys
 
 import numpy
 from numpy import fft
 from numpy.testing import (assert_, assert_equal, assert_array_equal,
-        run_module_suite, assert_array_almost_equal, assert_almost_equal)
+        run_module_suite, assert_array_almost_equal, assert_almost_equal, dec)
 import scipy.ndimage as ndimage
 
 
@@ -1704,6 +1705,16 @@ class TestNdimage:
         out = ndimage.map_coordinates(data[:,::2], idx)
         assert_array_almost_equal(out, [[0, 0], [0, 4], [0, 7]])
         assert_array_almost_equal(out, ndimage.shift(data[:,::2], (1, 1)))
+
+    # do not run on 32 bit or windows (no sparse memory)
+    @dec.skipif('win32' in sys.platform or numpy.intp(0).itemsize < 8)
+    def test_map_coordinates_large_data(self):
+        # check crash on large data
+        n = 30000
+        a = numpy.empty(n**2, dtype=numpy.float32).reshape(n, n)
+        # fill the part we might read
+        a[n - 3:,n - 3:] = 0
+        ndimage.map_coordinates(a, [[n - 1.5], [n - 1.5]], order=1)
 
     def test_affine_transform01(self):
         data = numpy.array([1])
