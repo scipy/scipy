@@ -65,6 +65,12 @@ class TestSolveLyapunov(TestCase):
                     0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j, 1.000+0.j,
                     0.000+0.j]]),
          np.eye(11)),
+        # https://github.com/scipy/scipy/issues/4176
+        (np.matrix([[0, 1], [-1/2, -1]]),
+         (np.matrix([0, 3]).T * np.matrix([0, 3]).T.T)),
+        # https://github.com/scipy/scipy/issues/4176
+        (np.matrix([[0, 1], [-1/2, -1]]),
+         (np.array(np.matrix([0, 3]).T * np.matrix([0, 3]).T.T))),
         ]
 
     def check_continuous_case(self, a, q):
