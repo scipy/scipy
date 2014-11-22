@@ -116,7 +116,7 @@
    ! Warning:
    !   If compute_v=0 and overwrite_a=1, the contents of a is destroyed.
 
-     callstatement if(irange_capi==Py_None);else{irange[0]++;irange[1]++;}(*f2py_func)((compute_v?"V":"N"),(vrange_capi==Py_None?(irange_capi==Py_None?"A":"I"):"V"),(lower?"L":"U"),&n,a,&n,vrange,vrange+1,irange,irange+1,&atol,&m,w,z,&ldz,isuppz,work,&lwork,<_2=,,rwork\,&lrwork\,,\2>iwork,&liwork,&info);if(irange_capi==Py_None);else{irange[0]--;irange[1]--;}if(vrange_capi==Py_None);else {capi_w_tmp-\>dimensions[0]=capi_z_tmp-\>dimensions[1]=m;/*capi_z_tmp-\>strides[0]=m*capi_z_tmp-\>descr-\>elsize;*/}
+     callstatement if(irange_capi==Py_None);else{irange[0]++;irange[1]++;}(*f2py_func)((compute_v?"V":"N"),(vrange_capi==Py_None?(irange_capi==Py_None?"A":"I"):"V"),(lower?"L":"U"),&n,a,&n,vrange,vrange+1,irange,irange+1,&atol,&m,w,z,&ldz,isuppz,work,&lwork,<_2=,,rwork\,&lrwork\,,\2>iwork,&liwork,&info);if(irange_capi==Py_None);else{irange[0]--;irange[1]--;}if(vrange_capi==Py_None);else{PyArray_DIMS(capi_w_tmp)[0]=PyArray_DIMS(capi_z_tmp)[1]=m;/*capi_z_tmp-\>strides[0]=m*capi_z_tmp-\>descr-\>elsize;*/}
 
      callprotoargument char*,char*,char*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,int*,int*,<ctypereal>*,int*,<ctypereal>*,<ctype>*,int*,int*,<ctype>*,int*,<_3=,,float*\,int*\,,double*\,int*\,>int*,int*,int*
 
