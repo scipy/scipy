@@ -171,8 +171,7 @@ exit:
     Py_XDECREF(input);
     Py_XDECREF(weights);
     Py_XDECREF(output);
-    if (origin)
-        free(origin);
+    free(origin);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
@@ -245,8 +244,7 @@ exit:
     Py_XDECREF(footprint);
     Py_XDECREF(structure);
     Py_XDECREF(output);
-    if (origin)
-        free(origin);
+    free(origin);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
@@ -271,8 +269,7 @@ exit:
     Py_XDECREF(input);
     Py_XDECREF(footprint);
     Py_XDECREF(output);
-    if (origin)
-        free(origin);
+    free(origin);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
@@ -435,8 +432,7 @@ exit:
     Py_XDECREF(input);
     Py_XDECREF(output);
     Py_XDECREF(footprint);
-    if (origin)
-        free(origin);
+    free(origin);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
@@ -713,8 +709,7 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
     Py_XDECREF(start);
     Py_XDECREF(end);
     Py_XDECREF(slc);
-    if (regions)
-        free(regions);
+    free(regions);
     if (PyErr_Occurred()) {
         Py_XDECREF(result);
         return NULL;
@@ -849,8 +844,7 @@ exit:
     Py_XDECREF(strct);
     Py_XDECREF(mask);
     Py_XDECREF(output);
-    if (origins)
-        free(origins);
+    free(origins);
     if (PyErr_Occurred()) {
         Py_XDECREF(cobj);
         return NULL;
@@ -892,7 +886,7 @@ exit:
     Py_XDECREF(array);
     Py_XDECREF(strct);
     Py_XDECREF(mask);
-    if (origins) free(origins);
+    free(origins);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 

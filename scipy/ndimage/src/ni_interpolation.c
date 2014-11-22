@@ -312,7 +312,7 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
     if (errmsg[0] != 0) {
         PyErr_SetString(PyExc_RuntimeError, errmsg);
     }
-    if (buffer) free(buffer);
+    free(buffer);
     return PyErr_Occurred() ? 0 : 1;
 }
 

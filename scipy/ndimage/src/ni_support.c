@@ -694,8 +694,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
 
  exit:
     if (PyErr_Occurred()) {
-        if (*offsets)
-            free(*offsets);
+        free(*offsets);
         if (coordinate_offsets && *coordinate_offsets)
             free(*coordinate_offsets);
         return 0;
@@ -759,8 +758,7 @@ NI_CoordinateBlock* NI_CoordinateListDeleteBlock(NI_CoordinateList *list)
     NI_CoordinateBlock* block = list->blocks;
     if (block) {
         list->blocks = block->next;
-        if (block->coordinates)
-            free(block->coordinates);
+        free(block->coordinates);
         free(block);
     }
     return list->blocks;
@@ -773,8 +771,7 @@ void NI_FreeCoordinateList(NI_CoordinateList *list)
         while (block) {
             NI_CoordinateBlock *tmp = block;
             block = block->next;
-            if (tmp->coordinates)
-                free(tmp->coordinates);
+            free(tmp->coordinates);
             free(tmp);
         }
         list->blocks = NULL;
