@@ -403,6 +403,9 @@ class TestCurveFit(TestCase):
         assert_raises(ValueError, curve_fit, lambda x, a, b: a*x + b, xdata, ydata)
         assert_raises(ValueError, curve_fit, lambda x, a, b: a*x + b, ydata, xdata)
 
+        assert_raises(ValueError, curve_fit, lambda x, a, b: a*x + b,
+                      xdata, ydata, **{"check_finite": True})
+
 
 class TestFixedPoint(TestCase):
 
