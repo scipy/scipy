@@ -1623,7 +1623,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     Parameters
     ----------
-    A : sparse matrix
+    A : {sparse matrix, LinearOperator}
         Array to compute the SVD on, of shape (M, N)
     k : int, optional
         Number of singular values and vectors to compute.
@@ -1671,23 +1671,45 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     This is a naive implementation using ARPACK as an eigensolver
     on A.H * A or A * A.H, depending on which one is more efficient.
     """
-    if not (isinstance(A, np.ndarray) or isspmatrix(A)):
+    if not (isinstance(A, LinearOperator) or isspmatrix(A)):
         A = np.asarray(A)
 
     n, m = A.shape
 
-    if n > m:
-        X = A
-        XH = _herm(A)
+    if isinstance(A, LinearOperator):
+        if n > m:
+            X_dot = A.matvec
+            X_matmat = A.matmat
+            XH_dot = A.rmatvec
+        else:
+            X_dot = A.rmatvec
+            XH_dot = A.matvec
+
+            dtype = getattr(A, 'dtype', None)
+            if dtype is None:
+                dtype = A.dot(np.zeros([m,1])).dtype
+
+            # A^H * V; works around lack of LinearOperator.adjoint.
+            # XXX This can be slow!
+            def X_matmat(V):
+                out = np.empty((V.shape[1], m), dtype=dtype)
+                for i, col in enumerate(V.T):
+                    out[i, :] = A.rmatvec(col.reshape(-1, 1)).T
+                return out.T
+
     else:
-        XH = A
-        X = _herm(A)
+        if n > m:
+            X_dot = X_matmat = A.dot
+            XH_dot = _herm(A).dot
+        else:
+            XH_dot = A.dot
+            X_dot = X_matmat = _herm(A).dot
 
     def matvec_XH_X(x):
-        return XH.dot(X.dot(x))
+        return XH_dot(X_dot(x))
 
-    XH_X = LinearOperator(matvec=matvec_XH_X, dtype=X.dtype,
-                          shape=(X.shape[1], X.shape[1]))
+    XH_X = LinearOperator(matvec=matvec_XH_X, dtype=A.dtype,
+                          shape=(min(A.shape), min(A.shape)))
 
     # Get a low rank approximation of the implicitly defined gramian matrix.
     # This is not a stable way to approach the problem.
@@ -1720,11 +1742,11 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
         if n > m:
             vlarge = eigvec[:, above_cutoff]
-            ularge = X.dot(vlarge) / slarge
+            ularge = X_matmat(vlarge) / slarge
             vhlarge = _herm(vlarge)
         else:
             ularge = eigvec[:, above_cutoff]
-            vhlarge = _herm(X.dot(ularge) / slarge)
+            vhlarge = _herm(X_matmat(ularge) / slarge)
 
         u = _augmented_orthonormal_cols(ularge, nsmall)
         vh = _augmented_orthonormal_rows(vhlarge, nsmall)
@@ -1737,10 +1759,10 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
         if n > m:
             v = eigvec
-            u = X.dot(v) / s
+            u = X_matmat(v) / s
             vh = _herm(v)
         else:
             u = eigvec
-            vh = _herm(X.dot(u) / s)
+            vh = _herm(X_matmat(u) / s)
 
     return u, s, vh
