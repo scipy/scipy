@@ -1,53 +1,60 @@
 from __future__ import division, print_function, absolute_import
-from ._ufuncs import _ellip_harm
-from ._ellip_harm_2 import _ellipsoid, _ellipsoid_norm
+
 import threading
 import numpy as np
+
+from ._ufuncs import _ellip_harm
+from ._ellip_harm_2 import _ellipsoid, _ellipsoid_norm
+
+
 # the functions _ellipsoid, _ellipsoid_norm use global variables, the lock  
 # protects them if the function is called from multiple threads simultaneously
 _ellip_lock = threading.Lock()
 
+
 def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     r"""
-    Ellipsoidal Harmonic functions E^p_n(l), also known as Lame Functions:The first kind
+    Ellipsoidal harmonic functions E^p_n(l)
 
-    Lame's Equation is the following Differential Equation:
+    These are also known as Lame functions of the first kind, and are
+    solutions to the Lame equation:
 
-    .. math:: (s^2 - h^2)(s^2 - k^2)E''(s) + s(2s^2 - h^2 - k^2)E'(s) + (p - qs)E(s) = 0
+    .. math:: (s^2 - h^2)(s^2 - k^2)E''(s) + s(2s^2 - h^2 - k^2)E'(s) + (p - q s^2)E(s) = 0
 
     Parameters
     ----------
-    h2 : double
-        :math:`h^2`
-    k2 : double
-        :math:`k^2`
+    h2 : float
+        ``h**2``
+    k2 : float
+        ``k**2``
     n : int
-       degree
+        Degree
     p : int
-       order, can range between [1,2n+1]
-    signm : double, optional
-           determines the sign of prefactor of functions. Can be :math:`\pm` 1. See Notes 
-    signn : double, optional
-           determines the sign of prefactor of functions. Can be :math:`\pm` 1. See Notes 
-    
+        Order, can range between [1,2n+1]
+    signm : {1, -1}, optional
+        Sign of prefactor of functions. Can be +/-1. See Notes.
+    signn : {1, -1}, optional
+        Sign of prefactor of functions. Can be +/-1. See Notes.
+
     Returns
     -------
-    ellip_harm : double
+    E : float
         the harmonic :math:`E^p_n(s)`
 
     See Also
     --------
-    ellip_harm2, ellip_normal
+    ellip_harm_2, ellip_normal
 
     Notes
     -----
-    Uses LAPACK subroutine DSTEVR
-    The geometric intepretation is in accordance with [2]_,[3]_,[4]_
-    signm and signn control the sign of prefactor for functions according to their type.
-    K : +1
-    L : signm
-    M : signn
-    N : signm*signn
+    The geometric intepretation of the ellipsoidal functions is
+    explained in [2]_, [3]_, [4]_.  The `signm` and `signn` arguments control the
+    sign of prefactors for functions according to their type::
+
+        K : +1 
+        L : signm
+        M : signn
+        N : signm*signn
 
     References
     ----------
@@ -74,39 +81,50 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     """
     return _ellip_harm(h2, k2, n, p, s, signm, signn)
 
+
 # np.vectorize does not work on Cython functions on Numpy < 1.8, so a wrapper is needed
 def _ellip_harm_2_vec(h2, k2, n, p, s):
     return _ellipsoid(h2, k2, n, p, s)
 
 _ellip_harm_2_vec = np.vectorize(_ellip_harm_2_vec, otypes='d')
 
+
 def ellip_harm_2(h2, k2, n, p, s):
     r"""
-    Ellipsoidal Harmonic functions F^p_n(l), also known as Lame Functions:The second kind
+    Ellipsoidal harmonic functions F^p_n(l)
 
-    .. math::
+    These are also known as Lame functions of the second kind, and are
+    solutions to the Lame equation:
 
-     F^p_n(s)=(2n + 1)E^p_n(s)\int_{0}^{1/s}\frac{du}{(E^p_n(1/u))^2\sqrt{(1-u^2k^2)(1-u^2h^2)}}
+    .. math:: (s^2 - h^2)(s^2 - k^2)F''(s) + s(2s^2 - h^2 - k^2)F'(s) + (p - q s^2)F(s) = 0
 
     Parameters
     ----------
-    h2 : double
-        :math:`h^2`
-    k2 : double
-        :math:`k^2`
+    h2 : float
+        ``h**2``
+    k2 : float
+        ``k**2``
     n : int
-       degree
+        Degree.
     p : int
-       order, can range between [1,2n+1]
-    
+        Order, can range between [1,2n+1].
+
     Returns
     -------
-    ellip_harm_2 : double
-        the harmonic :math:`F^p_n(s)`
+    F : float
+        The harmonic :math:`F^p_n(s)`
+
+    Notes
+    -----
+    Lame functions of the second kind are related to the functions of the first kind:
+
+    .. math::
+
+       F^p_n(s)=(2n + 1)E^p_n(s)\int_{0}^{1/s}\frac{du}{(E^p_n(1/u))^2\sqrt{(1-u^2k^2)(1-u^2h^2)}}
 
     See Also
     --------
-    ellip_harm
+    ellip_harm, ellip_normal
 
     Examples
     --------
@@ -120,42 +138,46 @@ def ellip_harm_2(h2, k2, n, p, s):
         with np.errstate(all='ignore'):
             return _ellip_harm_2_vec(h2, k2, n, p, s)
 
+
 def _ellip_normal_vec(h2, k2, n, p):
     return _ellipsoid_norm(h2, k2, n, p)
 
 _ellip_normal_vec = np.vectorize(_ellip_normal_vec, otypes='d')
 
+
 def ellip_normal(h2, k2, n, p):
     r"""
-    Normalization constant for Ellipsoidal Harmonic Functions: the first kind
+    Ellipsoidal harmonic normalization constants gamma^p_n
+
+    The normalization constant is defined as
 
     .. math:: 
 
-    \gamma^p_n=8\int_{0}^{h}\int_{h}^{k}\frac{(y^2-x^2)(E^p_n(y)E^p_n(x))^2}{\sqrt((k^2-y^2)(y^2-h^2)(h^2-x^2)(k^2-x^2)}dydx
+       \gamma^p_n=8\int_{0}^{h}dx\int_{h}^{k}dy\frac{(y^2-x^2)(E^p_n(y)E^p_n(x))^2}{\sqrt((k^2-y^2)(y^2-h^2)(h^2-x^2)(k^2-x^2)}
 
     Parameters
     ----------
-    h2: double
-        :math:`h^2`
-    k2: double
-        :math:`k^2`
+    h2 : float
+        ``h**2``
+    k2 : float
+        ``k**2``
     n: int
-       degree
+        Degree.
     p: int
-       order, can range between [1,2n+1]
+        Order, can range between [1,2n+1].
 
     Returns
     -------
-    ellip_normal : double
-        the normalization constant :math:`\gamma^p_n`
+    gamma : float
+        The normalization constant :math:`\gamma^p_n`
 
     See Also
     --------
-    ellip_harm
+    ellip_harm, ellip_harm_2
 
     Examples
     --------
-    >>> from scipy.special import ellip_harm_2
+    >>> from scipy.special import ellip_normal
     >>> w = ellip_normal(5,8,3,7)
     >>> w
     1723.38796997
