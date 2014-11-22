@@ -223,14 +223,14 @@ def test_boost():
 
         data(betainc, 'ibeta_small_data_ipp-ibeta_small_data', (0,1,2), 5, rtol=6e-15),
         data(betainc, 'ibeta_data_ipp-ibeta_data', (0,1,2), 5, rtol=5e-13),
-        data(betainc, 'ibeta_int_data_ipp-ibeta_int_data', (0,1,2), 5, rtol=2e-15),
+        data(betainc, 'ibeta_int_data_ipp-ibeta_int_data', (0,1,2), 5, rtol=2e-14),
         data(betainc, 'ibeta_large_data_ipp-ibeta_large_data', (0,1,2), 5, rtol=3e-10),
 
         data(betaincinv, 'ibeta_inv_data_ipp-ibeta_inv_data', (0,1,2), 3, rtol=3e-6),
 
         data(btdtr, 'ibeta_small_data_ipp-ibeta_small_data', (0,1,2), 5, rtol=6e-15),
         data(btdtr, 'ibeta_data_ipp-ibeta_data', (0,1,2), 5, rtol=4e-13),
-        data(btdtr, 'ibeta_int_data_ipp-ibeta_int_data', (0,1,2), 5, rtol=2e-15),
+        data(btdtr, 'ibeta_int_data_ipp-ibeta_int_data', (0,1,2), 5, rtol=2e-14),
         data(btdtr, 'ibeta_large_data_ipp-ibeta_large_data', (0,1,2), 5, rtol=3e-10),
 
         data(btdtri, 'ibeta_inv_data_ipp-ibeta_inv_data', (0,1,2), 3, rtol=3e-6),
@@ -406,7 +406,7 @@ def test_boost():
 
         data(sph_jn_, 'sph_bessel_data_ipp-sph_bessel_data', (0,1), 2, vectorized=False, knownfailure='sph_jn inaccurate at large n, small x'),
         data(sph_yn_, 'sph_neumann_data_ipp-sph_neumann_data', (0,1), 2, rtol=4e-15, vectorized=False),
-        data(sph_harm_, 'spherical_harmonic_ipp-spherical_harmonic', (1,0,3,2), (4,5), rtol=5e-12,
+        data(sph_harm_, 'spherical_harmonic_ipp-spherical_harmonic', (1,0,3,2), (4,5), rtol=5e-11,
              param_filter=(lambda p: np.ones(p.shape, '?'),
                            lambda p: np.ones(p.shape, '?'),
                            lambda p: np.logical_and(p < 2*np.pi, p >= 0),
