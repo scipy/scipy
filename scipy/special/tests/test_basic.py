@@ -1260,7 +1260,7 @@ class TestEllip(TestCase):
         elkinc = special.ellipkinc(phi,m)
         assert_almost_equal(elkinc,0.79398143,8)
         # From pg. 614 of A & S
-        
+
         assert_equal(special.ellipkinc(pi/2, 0.0), pi/2)
         assert_equal(special.ellipkinc(pi/2, 1.0), np.inf)
         assert_equal(special.ellipkinc(pi/2, -np.inf), 0.0)
@@ -1275,7 +1275,7 @@ class TestEllip(TestCase):
         assert_equal(special.ellipkinc(-np.inf, np.inf), np.nan)
         assert_equal(special.ellipkinc(np.nan, 0.5), np.nan)
         assert_equal(special.ellipkinc(np.nan, np.nan), np.nan)
-    
+
         assert_allclose(special.ellipkinc(0.38974112035318718, 1), 0.4, rtol=1e-14)
         assert_allclose(special.ellipkinc(1.5707, -10), 0.79084284661724946)
 
@@ -1346,7 +1346,7 @@ class TestEllip(TestCase):
         assert_equal(special.ellipeinc(np.nan, 0.5), np.nan)
         assert_equal(special.ellipeinc(np.nan, np.nan), np.nan)
         assert_allclose(special.ellipeinc(1.5707, -10), 3.6388185585822876)
-        
+
     def test_ellipeinc_2(self):
         # Regression test for gh-3550
         # ellipeinc(phi, mbad) was NaN and mvals[2:6] were twice the correct value
@@ -2484,12 +2484,12 @@ class TestLegendre(TestCase):
         leg3 = special.legendre(3)
         leg4 = special.legendre(4)
         leg5 = special.legendre(5)
-        assert_equal(leg0.c,[1])
-        assert_equal(leg1.c,[1,0])
-        assert_equal(leg2.c,array([3,0,-1])/2.0)
-        assert_almost_equal(leg3.c,array([5,0,-3,0])/2.0)
-        assert_almost_equal(leg4.c,array([35,0,-30,0,3])/8.0)
-        assert_almost_equal(leg5.c,array([63,0,-70,0,15,0])/8.0)
+        assert_equal(leg0.c, [1])
+        assert_equal(leg1.c, [1,0])
+        assert_almost_equal(leg2.c, array([3,0,-1])/2.0, decimal=13)
+        assert_almost_equal(leg3.c, array([5,0,-3,0])/2.0)
+        assert_almost_equal(leg4.c, array([35,0,-30,0,3])/8.0)
+        assert_almost_equal(leg5.c, array([63,0,-70,0,15,0])/8.0)
 
 
 class TestLambda(TestCase):
