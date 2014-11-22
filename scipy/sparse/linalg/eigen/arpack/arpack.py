@@ -1685,10 +1685,14 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             X_dot = A.rmatvec
             XH_dot = A.matvec
 
+            dtype = getattr(A, 'dtype', None)
+            if dtype is None:
+                dtype = A.dot(np.zeros([m,1])).dtype
+
             # A^H * V; works around lack of LinearOperator.adjoint.
             # XXX This can be slow!
             def X_matmat(V):
-                out = np.empty((V.shape[1], m))
+                out = np.empty((V.shape[1], m), dtype=dtype)
                 for i, col in enumerate(V.T):
                     out[i, :] = A.rmatvec(col.reshape(-1, 1)).T
                 return out.T

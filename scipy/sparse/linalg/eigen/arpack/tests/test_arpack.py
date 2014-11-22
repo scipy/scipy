@@ -728,50 +728,59 @@ class CheckingLinearOperator(LinearOperator):
 
 
 def test_svd_linop():
-    # Test svds on a LinearOperator.
-    n, m, k = 6, 7, 3
-    A = np.random.RandomState(52).randn(n, m)
-    L = CheckingLinearOperator(A)
+    nmks = [(6, 7, 3),
+            (9, 5, 4),
+            (10, 8, 5)]
 
-    v0 = np.ones(min(A.shape))
+    def reorder(args):
+        U, s, VH = args
+        j = np.argsort(s)
+        return U[:,j], s[j], VH[j,:]
 
-    U1, s1, VH1 = svds(A, k, v0=v0)
-    U2, s2, VH2 = svds(L, k, v0=v0)
+    for n, m, k in nmks:
+        # Test svds on a LinearOperator.
+        A = np.random.RandomState(52).randn(n, m)
+        L = CheckingLinearOperator(A)
 
-    assert_allclose(np.abs(U1), np.abs(U2))
-    assert_allclose(s1, s2)
-    assert_allclose(np.abs(VH1), np.abs(VH2))
-    assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
-                    np.dot(U2, np.dot(np.diag(s2), VH2)))
+        v0 = np.ones(min(A.shape))
 
-    # Try again with n > m and which="SM".
-    n, m, k = 9, 5, 4
-    A = np.random.RandomState(1909).randn(n, m)
-    L = CheckingLinearOperator(A)
+        U1, s1, VH1 = reorder(svds(A, k, v0=v0))
+        U2, s2, VH2 = reorder(svds(L, k, v0=v0))
 
-    U1, s1, VH1 = svds(A, k, which="SM")
-    U2, s2, VH2 = svds(L, k, which="SM")
+        assert_allclose(np.abs(U1), np.abs(U2))
+        assert_allclose(s1, s2)
+        assert_allclose(np.abs(VH1), np.abs(VH2))
+        assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
+                        np.dot(U2, np.dot(np.diag(s2), VH2)))
 
-    assert_allclose(np.abs(U1), np.abs(U2))
-    assert_allclose(s1, s2)
-    assert_allclose(np.abs(VH1), np.abs(VH2))
-    assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
-                    np.dot(U2, np.dot(np.diag(s2), VH2)))
+        # Try again with which="SM".
+        A = np.random.RandomState(1909).randn(n, m)
+        L = CheckingLinearOperator(A)
 
-    # Complex input and explicit which="LM".
-    n, m, k = 10, 8, 5
-    rng = np.random.RandomState(1648)
-    A = (rng.randn(n, m) + 1j * rng.randn(n, m)).astype(np.complex64)
-    L = CheckingLinearOperator(A)
+        U1, s1, VH1 = reorder(svds(A, k, which="SM"))
+        U2, s2, VH2 = reorder(svds(L, k, which="SM"))
 
-    U1, s1, VH1 = svds(A, k, which="LM")
-    U2, s2, VH2 = svds(L, k, which="LM")
+        assert_allclose(np.abs(U1), np.abs(U2))
+        assert_allclose(s1, s2)
+        assert_allclose(np.abs(VH1), np.abs(VH2))
+        assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
+                        np.dot(U2, np.dot(np.diag(s2), VH2)))
 
-    assert_allclose(np.abs(U1), np.abs(U2), rtol=1e-4)
-    assert_allclose(s1, s2, rtol=1e-4)
-    assert_allclose(np.abs(VH1), np.abs(VH2), rtol=1e-4)
-    assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
-                    np.dot(U2, np.dot(np.diag(s2), VH2)), rtol=1e-5)
+        if k < min(n, m) - 1:
+            # Complex input and explicit which="LM".
+            for (dt, eps) in [(complex, 1e-7), (np.complex64, 1e-3)]:
+                rng = np.random.RandomState(1648)
+                A = (rng.randn(n, m) + 1j * rng.randn(n, m)).astype(dt)
+                L = CheckingLinearOperator(A)
+
+                U1, s1, VH1 = reorder(svds(A, k, which="LM"))
+                U2, s2, VH2 = reorder(svds(L, k, which="LM"))
+
+                assert_allclose(np.abs(U1), np.abs(U2), rtol=eps)
+                assert_allclose(s1, s2, rtol=eps)
+                assert_allclose(np.abs(VH1), np.abs(VH2), rtol=eps)
+                assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
+                                np.dot(U2, np.dot(np.diag(s2), VH2)), rtol=eps)
 
 
 def test_linearoperator_deallocation():
