@@ -159,6 +159,14 @@ class TestExpM(TestCase):
                         A = A + 1j * random.rand(n, n) * scale
                     assert_array_almost_equal(expm(logm(A)), A)
 
+    def test_integer_matrix(self):
+        Q = np.array([
+            [-3, 1, 1, 1],
+            [1, -3, 1, 1],
+            [1, 1, -3, 1],
+            [1, 1, 1, -3]])
+        assert_allclose(expm(Q), expm(1.0 * Q))
+
     def test_triangularity_perturbation(self):
         # Experiment (1) of
         # Awad H. Al-Mohy and Nicholas J. Higham (2012)
