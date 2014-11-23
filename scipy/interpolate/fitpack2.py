@@ -110,6 +110,13 @@ class UnivariateSpline(object):
 
         The default value is 0.
 
+    check_finite : bool, optional
+        Whether to check that the input arrays contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination or non-sensical results) if the inputs
+        do contain infinities or NaNs.
+        Default is False.
+
     See Also
     --------
     InterpolatedUnivariateSpline : Subclass with smoothing forced to 0
@@ -156,7 +163,13 @@ class UnivariateSpline(object):
     >>> plt.show()
 
     """
-    def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None, ext=0):
+    def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None,
+                 ext=0, check_finite=False):
+
+        if check_finite:
+            if not np.isfinite(x).all() or not np.isfinite(y).all():
+                raise ValueError("x and y array must not contain NaNs or infs.")
+
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         try:
             self.ext = _extrap_modes[ext]
@@ -470,6 +483,13 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
 
         The default value is 0.
 
+    check_finite : bool, optional
+        Whether to check that the input arrays contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination or non-sensical results) if the inputs
+        do contain infinities or NaNs.
+        Default is False.
+
     See Also
     --------
     UnivariateSpline : Superclass -- allows knots to be selected by a
@@ -501,7 +521,14 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     0.0
 
     """
-    def __init__(self, x, y, w=None, bbox=[None]*2, k=3, ext=0):
+    def __init__(self, x, y, w=None, bbox=[None]*2, k=3,
+                 ext=0, check_finite=False):
+
+        if check_finite:
+            if (not np.isfinite(x).all() or not np.isfinite(y).all() or
+                not np.isfinite(w).all()):
+                    raise ValueError("Input must not contain NaNs or infs.")
+
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         self._data = dfitpack.fpcurf0(x,y,k,w=w,
                                       xb=bbox[0],xe=bbox[1],s=0)
@@ -566,6 +593,13 @@ class LSQUnivariateSpline(UnivariateSpline):
 
         The default value is 0.
 
+    check_finite : bool, optional
+        Whether to check that the input arrays contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination or non-sensical results) if the inputs
+        do contain infinities or NaNs.
+        Default is False.
+
     Raises
     ------
     ValueError
@@ -612,7 +646,14 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     """
 
-    def __init__(self, x, y, t, w=None, bbox=[None]*2, k=3, ext=0):
+    def __init__(self, x, y, t, w=None, bbox=[None]*2, k=3,
+                 ext=0, check_finite=False):
+
+        if check_finite:
+            if (not np.isfinite(x).all() or not np.isfinite(y).all() or
+                not np.isfinite(w).all() or not np.isfinite(t).all()):
+                    raise ValueError("Input(s) must not contain NaNs or infs.")
+
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         xb = bbox[0]
         xe = bbox[1]
