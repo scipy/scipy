@@ -117,7 +117,6 @@ def test_eigenvalue_order():
         assert_allclose(w, d[-k:])
 
 
-
 def test_diagonal():
     # This test was moved from '__main__' in lobpcg.py.
     # Coincidentally or not, this is the same eigensystem
