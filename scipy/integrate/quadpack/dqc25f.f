@@ -232,7 +232,7 @@ c***        call to dgtsl has been replaced by call to
 c***        lapack routine dgtsv
 c
 c      call dgtsl(noequ,d1,d,d2,v(4),iers)
-      call dgtsv(noequ,1,d1(2:),d,d2(:noequ-1),v(4),noequ,iers)
+      call dgtsv(noequ,1,d1(2),d,d2,v(4),noequ,iers)
       go to 50
 c
 c           compute the chebyshev moments by means of forward
@@ -290,7 +290,7 @@ c***        call to dgtsl has been replaced by call to
 c***        lapack routine dgtsv
 c
 c      call dgtsl(noequ,d1,d,d2,v(3),iers)
-      call dgtsv(noequ,1,d1(2:),d,d2(:noequ-1),v(3),noequ,iers)
+      call dgtsv(noequ,1,d1(2),d,d2,v(3),noequ,iers)
       go to 100
 c
 c           compute the chebyshev moments by means of forward recursion.
