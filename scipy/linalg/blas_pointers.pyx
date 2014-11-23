@@ -1,3 +1,114 @@
+"""
+Function pointers to BLAS functions.
+
+BLAS Functions
+==============
+
+- caxpy
+- ccopy
+- cdotc
+- cdotu
+- cgemm
+- cgemv
+- cgerc
+- cgeru
+- chemm
+- chemv
+- cher
+- cher2
+- cher2k
+- cherk
+- crotg
+- cscal
+- csrot
+- csscal
+- cswap
+- csymm
+- csyr
+- csyr2k
+- csyrk
+- ctrmm
+- ctrmv
+- dasum
+- daxpy
+- dcopy
+- ddot
+- dgemm
+- dgemv
+- dger
+- dnrm2
+- drot
+- drotg
+- drotm
+- drotmg
+- dscal
+- dswap
+- dsymm
+- dsymv
+- dsyr
+- dsyr2
+- dsyr2k
+- dsyrk
+- dtrmm
+- dtrmv
+- dzasum
+- dznrm2
+- icamax
+- idamax
+- isamax
+- izamax
+- sasum
+- saxpy
+- scasum
+- scnrm2
+- scopy
+- sdot
+- sgemm
+- sgemv
+- sger
+- snrm2
+- srot
+- srotg
+- srotm
+- srotmg
+- sscal
+- sswap
+- ssymm
+- ssymv
+- ssyr
+- ssyr2
+- ssyr2k
+- ssyrk
+- strmm
+- strmv
+- zaxpy
+- zcopy
+- zdotc
+- zdotu
+- zdrot
+- zdscal
+- zgemm
+- zgemv
+- zgerc
+- zgeru
+- zhemm
+- zhemv
+- zher
+- zher2
+- zher2k
+- zherk
+- zrotg
+- zscal
+- zswap
+- zsymm
+- zsyr
+- zsyr2k
+- zsyrk
+- ztrmm
+- ztrmv
+
+"""
+
 from . import  blas
 
 cdef extern from "f2pyptr.h":

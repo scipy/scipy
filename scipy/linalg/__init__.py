@@ -165,6 +165,10 @@ Low-level routines
 
    `scipy.linalg.lapack` -- Low-level LAPACK functions
 
+   `scipy.linalg.blas_pointers` -- Function pointers to BLAS functions
+
+   `scipy.linalg.lapack_pointers` -- Function pointers to LAPACK functions
+
 """
 
 from __future__ import division, print_function, absolute_import
