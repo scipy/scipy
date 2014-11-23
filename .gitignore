@@ -182,6 +182,7 @@ scipy/sparse/sparsetools/other_impl.h
 scipy/sparse/sparsetools/sparsetools_impl.h
 scipy/spatial/ckdtree.c
 scipy/spatial/qhull.c
+scipy/special/_ellip_harm_2.c
 scipy/special/_logit.c
 scipy/special/_ufuncs.c
 scipy/special/_ufuncs.h

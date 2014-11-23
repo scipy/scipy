@@ -184,3 +184,21 @@ def _ellipsoid_norm(double h2, double k2, int n, int p):
     if  error > 10e-8*fabs(result):
         return nan 
     return result
+
+
+# Needed for the _sf_error calls in _ellip_harm.pxd
+
+cimport numpy as np
+
+np.import_array()
+np.import_ufunc()
+
+cdef extern from "numpy/ufuncobject.h":
+    int PyUFunc_getfperr() nogil
+
+cdef public int wrap_PyUFunc_getfperr() nogil:
+    """
+    Call PyUFunc_getfperr in a context where PyUFunc_API array is initialized;
+    this avoids messing with the UNIQUE_SYMBOL #defines
+    """
+    return PyUFunc_getfperr()
