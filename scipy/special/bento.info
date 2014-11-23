@@ -36,3 +36,13 @@ Library:
     Extension: specfun
          Sources:
             specfun.pyf
+    Extension: _ellip_harm_2
+        Sources:
+            _ellip_harm_2.c,
+            _ufuncs.c,
+            Faddeeva.cc,
+            sf_error.c,
+            _logit.c.src,
+            cdf_wrappers.c,
+            specfun_wrappers.c,
+            amos_wrappers.c
