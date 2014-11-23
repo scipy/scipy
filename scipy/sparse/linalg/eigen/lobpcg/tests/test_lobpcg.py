@@ -46,13 +46,25 @@ def compare_solutions(A,B,m):
     V = rand(n,m)
     X = linalg.orth(V)
 
-    eigs,vecs = lobpcg(A, X, B=B, tol=1e-5, maxiter=30)
+    # Check smallest eigenvalues.
+
+    eigs, vecs = lobpcg(A, X, B=B, largest=False, tol=1e-5, maxiter=30)
     eigs.sort()
 
     w,v = eig(A,b=B)
     w.sort()
 
-    assert_almost_equal(w[:int(m/2)],eigs[:int(m/2)],decimal=2)
+    assert_allclose(w[:int(m/2)],eigs[:int(m/2)], rtol=1e-3)
+
+    # Check largest eigenvalues.
+
+    eigs, vecs = lobpcg(A, X, B=B, largest=True, tol=1e-5, maxiter=30)
+    eigs.sort()
+
+    w,v = eig(A,b=B)
+    w.sort()
+
+    assert_allclose(w[-int(m/2):],eigs[-int(m/2):], rtol=1e-3)
 
 
 def test_Small():
@@ -95,9 +107,13 @@ def test_eigenvalue_order():
     A = np.diag(d)
     for k in 6, 20:
         x = np.random.rand(n, k)
-        w, v = lobpcg(A, x, tol=1e-5, maxiter=20000, largest=False)
+        # check small eigenvalues
+        w, V = lobpcg(A, x, tol=1e-5, maxiter=20000, largest=False)
+        _check_eigen(A, w, V, rtol=1e-8, atol=1e-5)
         assert_allclose(w, d[:k])
-        w, v = lobpcg(A, x, tol=1e-5, maxiter=20000, largest=True)
+        # check large eigenvalues
+        w, V = lobpcg(A, x, tol=1e-5, maxiter=20000, largest=True)
+        _check_eigen(A, w, V, rtol=1e-8, atol=1e-5)
         assert_allclose(w, d[-k:])
 
 
@@ -176,7 +192,7 @@ def _check_fiedler(n, p):
     assert_equal(lobpcg_V.shape, (n, p))
     _check_eigen(L, lobpcg_w, lobpcg_V)
     assert_array_less(np.abs(np.min(lobpcg_w)), 1e-14)
-    assert_allclose(np.sort(lobpcg_w)[1:], analytic_w[1:p])
+    assert_allclose(lobpcg_w[1:], analytic_w[1:p])
 
     # Check large lobpcg eigenvalues.
     X = analytic_V[:, -p:]
@@ -184,7 +200,7 @@ def _check_fiedler(n, p):
     assert_equal(lobpcg_w.shape, (p,))
     assert_equal(lobpcg_V.shape, (n, p))
     _check_eigen(L, lobpcg_w, lobpcg_V)
-    assert_allclose(np.sort(lobpcg_w), analytic_w[-p:])
+    assert_allclose(lobpcg_w, analytic_w[-p:])
 
     # Look for the Fiedler vector using good but not exactly correct guesses.
     fiedler_guess = np.concatenate((np.ones(n//2), -np.ones(n-n//2)))
@@ -192,7 +208,6 @@ def _check_fiedler(n, p):
     lobpcg_w, lobpcg_V = lobpcg(L, X, largest=False)
     # Mathematically, the smaller eigenvalue should be zero
     # and the larger should be the algebraic connectivity.
-    lobpcg_w = np.sort(lobpcg_w)
     assert_allclose(lobpcg_w, analytic_w[:2], atol=1e-14)
 
 

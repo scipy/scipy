@@ -291,13 +291,12 @@ def lobpcg(A, X,
     if sizeX > n:
         raise ValueError('X column dimension exceeds the row dimension')
 
-    A = _makeOperator(A, (n,n))
     B = _makeOperator(B, (n,n))
     M = _makeOperator(M, (n,n))
 
     if (n - sizeY) < (5 * sizeX):
 
-        #A = _makeOperator(A, (n,n))
+        A = _makeOperator(A, (n,n))
 
         # warn('The problem size is small compared to the block size.' \
         #        ' Using dense eigensolver instead of LOBPCG.')
@@ -316,10 +315,10 @@ def lobpcg(A, X,
         B_dense = None if B is None else B(np.eye(n))
         return eigh(A_dense, B_dense, eigvals=eigvals, check_finite=False)
 
-    #if largest:
-        #A = _makeOperator(-A, (n,n))
-    #else:
-        #A = _makeOperator(A, (n,n))
+    if largest:
+        A = _makeOperator(-A, (n,n))
+    else:
+        A = _makeOperator(A, (n,n))
 
     if residualTolerance is None:
         residualTolerance = np.sqrt(1e-15) * n
@@ -379,8 +378,6 @@ def lobpcg(A, X,
 
     _lambda, eigBlockVector = eigh(gramXAX, check_finite=False)
     ii = np.argsort(_lambda)[:sizeX]
-    if largest:
-        ii = ii[::-1]
     _lambda = _lambda[ii]
 
     eigBlockVector = np.asarray(eigBlockVector[:,ii])
@@ -509,8 +506,6 @@ def lobpcg(A, X,
         # Solve the generalized eigenvalue problem.
         _lambda, eigBlockVector = eigh(gramA, gramB, check_finite=False)
         ii = np.argsort(_lambda)[:sizeX]
-        if largest:
-            ii = ii[::-1]
         if verbosityLevel > 10:
             print(ii)
 
@@ -572,8 +567,9 @@ def lobpcg(A, X,
     aux = np.sum(blockVectorR.conjugate() * blockVectorR, 0)
     residualNorms = np.sqrt(aux)
 
-    #if largest:
-        #_lambda = -_lambda
+    if largest:
+        _lambda = -_lambda[::-1]
+        blockVectorX = np.fliplr(blockVectorX)
 
     if verbosityLevel > 0:
         print('final eigenvalue:', _lambda)
