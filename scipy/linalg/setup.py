@@ -128,6 +128,17 @@ def configuration(parent_package='',top_path=None):
                          include_dirs=[get_numpy_include_dirs()])
 
     config.add_data_dir('tests')
+
+    config.add_data_dir('benchmarks')
+
+    config.add_data_files('blas_pointers.pxd')
+
+    config.add_data_files('f2pyptr.h')
+
+    config.add_extension('blas_pointers',
+                         sources=['blas_pointers.c'],
+                         include_dirs=['.'])
+
     return config
 
 
