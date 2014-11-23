@@ -8,7 +8,7 @@ from os.path import join
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info, NotFoundError
     from numpy.distutils.misc_util import Configuration
-    from scipy._build_utils import get_g77_abi_wrappers, split_fortran_files
+    from scipy._build_utils import get_sgemv_fix, get_g77_abi_wrappers, split_fortran_files
 
     config = Configuration('linalg',parent_package,top_path)
 
@@ -25,6 +25,7 @@ def configuration(parent_package='',top_path=None):
     # fblas:
     sources = ['fblas.pyf.src']
     sources += get_g77_abi_wrappers(lapack_opt)
+    sources += get_sgemv_fix(lapack_opt)
 
     config.add_extension('_fblas',
                          sources=sources,
