@@ -142,6 +142,15 @@ class TestUnivariateSpline(TestCase):
         assert_allclose(spl2(0.6) - spl2(0.2),
                         spl.integral(0.2, 0.6))
 
+    def test_nan(self):
+        # bail out early if the input data contains nans
+        x = np.arange(10, dtype=float)
+        y = x**3
+        for z in [np.nan, np.inf, -np.inf]:
+            y[-1] = z
+            assert_raises(ValueError, UnivariateSpline,
+                    **dict(x=x, y=y, check_finite=True))
+
 
 class TestLSQBivariateSpline(TestCase):
     # NOTE: The systems in this test class are rank-deficient
