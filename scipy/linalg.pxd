@@ -1,1 +1,2 @@
 cimport linalg.blas_pointers
+cimport linalg.lapack_pointers
