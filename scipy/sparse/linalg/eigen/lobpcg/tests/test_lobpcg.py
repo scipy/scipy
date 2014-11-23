@@ -88,6 +88,20 @@ def test_regression():
     assert_allclose(w, [1])
 
 
+def test_eigenvalue_order():
+    # https://github.com/scipy/scipy/issues/4174
+    n = 99
+    d = np.arange(1, n+1)
+    A = np.diag(d)
+    for k in 6, 20:
+        x = np.random.rand(n, k)
+        w, v = lobpcg(A, x, tol=1e-5, maxiter=20000, largest=False)
+        assert_allclose(w, d[:k])
+        w, v = lobpcg(A, x, tol=1e-5, maxiter=20000, largest=True)
+        assert_allclose(w, d[-k:])
+
+
+
 def test_diagonal():
     # This test was moved from '__main__' in lobpcg.py.
     # Coincidentally or not, this is the same eigensystem
