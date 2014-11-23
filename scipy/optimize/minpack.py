@@ -451,7 +451,8 @@ def _weighted_general_function(params, xdata, ydata, function, weights):
     return weights * (function(xdata, *params) - ydata)
 
 
-def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False, **kw):
+def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
+              check_finite=True, **kw):
     """
     Use non-linear least squares to fit a function, f, to data.
 
@@ -488,6 +489,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False, **kw):
         If True, `sigma` describes one standard deviation errors of
         the input data points. The estimated covariance in `pcov` is
         based on these values.
+    check_finite : bool, optional
+        If True, check that the input arrays do not contain nans of infs,
+        and raise a ValueError if they do. Setting this parameter to
+        False may silently produce nonsensical results if the input arrays
+        do contain nans.
+        Default is True.
 
     Returns
     -------
@@ -506,6 +513,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False, **kw):
     ------
     OptimizeWarning
         if covariance of the parameters can not be estimated.
+
+    ValueError
+        if ydata and xdata contain NaNs.
 
     See Also
     --------
@@ -546,11 +556,18 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False, **kw):
     if isscalar(p0):
         p0 = array([p0])
 
-    ydata = np.asanyarray(ydata)
-    if isinstance(xdata, (list, tuple)):
+    # NaNs can not be handled
+    if check_finite:
+        ydata = np.asarray_chkfinite(ydata)
+    else:
+        ydata = np.asarray(ydata)
+    if isinstance(xdata, (list, tuple, np.ndarray)):
         # `xdata` is passed straight to the user-defined `f`, so allow
         # non-array_like `xdata`.
-        xdata = np.asarray(xdata)
+        if check_finite:
+            xdata = np.asarray_chkfinite(xdata)
+        else:
+            xdata = np.asarray(xdata)
 
     args = (xdata, ydata, f)
     if sigma is None:
