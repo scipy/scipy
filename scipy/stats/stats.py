@@ -1088,9 +1088,9 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals
 
 
-_DescribeResult = namedtuple('DescribeResult', ('n', 'minmax', 'mean',
+_DescribeResult = namedtuple('DescribeResult', ('datalen', 'minmax', 'mean',
                                                 'variance', 'skewness',
-                                                'exc_kurtosis'))
+                                                'kurtosis'))
 
 
 def describe(a, axis=0, ddof=1):
@@ -1109,21 +1109,21 @@ def describe(a, axis=0, ddof=1):
 
     Returns
     -------
-    n : int
-       length of data along axis
+    datalen : int
+       Length of data along `axis`.
     minmax: tuple of ndarrays or floats
-       minimum and maximum value of data array
+       Minimum and maximum value of data array.
     mean : ndarray or float
-       arithmetic mean of data along axis
+       Arithmetic mean of data along axis.
     variance : ndarray or float
-       unbiased variance of the data along axis, denominator is number of
+       Unbiased variance of the data along axis, denominator is number of
        observations minus one.
     skewness : ndarray or float
-       biased skewness, based on moment calculations with denominator equal to
-       the number of observations, i.e. no degrees of freedom correction
-    exc_kurtosis : ndarray or float
-       biased kurtosis (Fisher), the kurtosis is normalized so that it is
-       zero for the normal distribution. No degrees of freedom or bias
+       Biased skewness, based on moment calculations with denominator equal to
+       the number of observations, i.e. no degrees of freedom correction.
+    kurtosis : ndarray or float
+       Biased kurtosis (Fisher).  The kurtosis is normalized so that it is
+       zero for the normal distribution.  No degrees of freedom or bias
        correction is used.
 
     See Also

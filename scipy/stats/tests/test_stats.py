@@ -2190,14 +2190,14 @@ def test_ttest_1samp_new():
         np.seterr(**olderr)
 
 
-class test_describe(TestCase):
+class TestDescribe(TestCase):
     def test_describe_numbers(self):
-        x = np.vstack((np.ones((3,4)),2*np.ones((2,4))))
+        x = np.vstack((np.ones((3,4)), 2 * np.ones((2,4))))
         nc, mmc = (5, ([1., 1., 1., 1.], [2., 2., 2., 2.]))
         mc = np.array([1.4, 1.4, 1.4, 1.4])
         vc = np.array([0.3, 0.3, 0.3, 0.3])
-        skc = [0.40824829046386357]*4
-        kurtc = [-1.833333333333333]*4
+        skc = [0.40824829046386357] * 4
+        kurtc = [-1.833333333333333] * 4
         n, mm, m, v, sk, kurt = stats.describe(x)
         assert_equal(n, nc)
         assert_equal(mm, mmc)
@@ -2217,8 +2217,8 @@ class test_describe(TestCase):
 
     def test_describe_result_attributes(self):
         actual = stats.describe(np.arange(5))
-        attributes = ('n', 'minmax', 'mean', 'variance', 'skewness',
-                      'exc_kurtosis')
+        attributes = ('datalen', 'minmax', 'mean', 'variance', 'skewness',
+                      'kurtosis')
         for i, attr in enumerate(attributes):
             assert_equal(actual[i], getattr(actual, attr))
 
