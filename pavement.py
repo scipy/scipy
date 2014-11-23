@@ -114,7 +114,7 @@ RELEASE = 'doc/release/0.15.0-notes.rst'
 
 # Start/end of the log (from git)
 LOG_START = 'v0.14.0'
-LOG_END = 'master'
+LOG_END = 'v0.15.0b1'
 
 
 #-------------------------------------------------------
