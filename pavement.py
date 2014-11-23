@@ -66,10 +66,8 @@ import subprocess
 import re
 import shutil
 import warnings
-try:
-    from hash import md5
-except ImportError:
-    import md5
+from hashlib import md5
+from hashlib import sha256
 
 import distutils
 
@@ -628,17 +626,28 @@ def _create_dmg(pyver, src_dir, volname=None):
 # Release notes and Changelog
 #----------------------------
 
-def compute_md5():
-    released = paver.path.path(options.installers.installersdir).listdir()
+def compute_md5(idirs):
+    released = paver.path.path(idirs).listdir()
     checksums = []
-    for f in released:
-        if not f.endswith('DS_Store'):
-            m = md5.md5(open(f, 'r').read())
-            checksums.append('%s  %s' % (m.hexdigest(), f))
+    for f in sorted(released):
+        m = md5(open(f, 'r').read())
+        checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
 
     return checksums
 
-def write_release_task(filename='NOTES.txt'):
+def compute_sha256(idirs):
+    # better checksum so gpg signed README.txt containing the sums can be used
+    # to verify the binaries instead of signing all binaries
+    released = paver.path.path(idirs).listdir()
+    checksums = []
+    for f in sorted(released):
+        m = sha256(open(f, 'r').read())
+        checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
+
+    return checksums
+
+def write_release_task(options, filename='NOTES.txt'):
+    idirs = options.installers.installersdir
     source = paver.path.path(RELEASE)
     target = paver.path.path(filename)
     if target.exists():
@@ -649,9 +658,17 @@ def write_release_task(filename='NOTES.txt'):
 Checksums
 =========
 
-""")
-    ftarget.writelines(['%s\n' % c for c in compute_md5()])
+MD5
+~~~
 
+""")
+    ftarget.writelines(['%s\n' % c for c in compute_md5(idirs)])
+    ftarget.writelines("""
+SHA256
+~~~~~~
+
+""")
+    ftarget.writelines(['%s\n' % c for c in compute_sha256(idirs)])
 
 def write_log_task(filename='Changelog'):
     st = subprocess.Popen(
@@ -664,14 +681,14 @@ def write_log_task(filename='Changelog'):
     a.close()
 
 @task
-def write_release():
-    write_release_task()
+def write_release(options):
+    write_release_task(options)
 
 @task
 def write_log():
     write_log_task()
 
 @task
-def write_release_and_log():
-    write_release_task(os.path.join(options.installers.releasedir, 'README'))
+def write_release_and_log(options):
+    write_release_task(options, os.path.join(options.installers.releasedir, 'README'))
     write_log_task(os.path.join(options.installers.releasedir, 'Changelog'))
