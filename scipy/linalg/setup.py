@@ -148,6 +148,10 @@ def configuration(parent_package='',top_path=None):
                          sources=['_test_blas_pointers.c'],
                          include_dirs=['.'])
 
+    config.add_extension('_test_lapack_pointers',
+                         sources=['_test_lapack_pointers.c'],
+                         include_dirs=['.'])
+
     return config
 
 
