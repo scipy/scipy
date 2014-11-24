@@ -151,4 +151,3 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     # unknown arguments should not go through:
     k.update({'kaboom': 42})
     npt.assert_raises(TypeError, distfn.cdf, x, **k)
-

@@ -401,4 +401,3 @@ def expm_cond(A, check_finite=True):
 
     kappa = (K_norm * A_norm) / X_norm
     return kappa
-

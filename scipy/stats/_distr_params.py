@@ -113,4 +113,3 @@ distdiscrete = [
     ['skellam', (15, 8)],
     ['zipf', (6.5,)]
 ]
-

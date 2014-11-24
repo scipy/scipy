@@ -101,4 +101,3 @@ include_dirs = /usr/local/include
 #
 #[umfpack]
 #umfpack_libs = umfpack
-

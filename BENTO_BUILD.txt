@@ -27,4 +27,3 @@ No-frill version:
         $ BENTO_ROOT/bentomaker build -p
         # or with verbose output
         $ BENTO_ROOT/bentomaker build -v
-

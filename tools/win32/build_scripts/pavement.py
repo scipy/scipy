@@ -14,9 +14,9 @@ BUILD_ROOT = os.getcwd()
 PYVER = '2.5'
 ARCH = 'nosse'
 
-PYEXECS = {"2.5" : "C:\python25\python.exe",
-        "2.4" : "C:\python24\python24.exe",
-        "2.3" : "C:\python23\python23.exe"}
+PYEXECS = {"2.5": "C:\python25\python.exe",
+        "2.4": "C:\python24\python24.exe",
+        "2.3": "C:\python23\python23.exe"}
 
 _SSE3_CFG = r"""[atlas]
 library_dirs = C:\local\lib\yop\sse3"""
@@ -27,7 +27,7 @@ library_dirs = fakedirectorywhichhopefullydoesnotexist
 [DEFAULT]
 library_dirs = C:\local\lib\yop\nosse"""
 
-SITECFG = {"sse2" : _SSE2_CFG, "sse3" : _SSE3_CFG, "nosse" : _NOSSE_CFG}
+SITECFG = {"sse2": _SSE2_CFG, "sse3": _SSE3_CFG, "nosse": _NOSSE_CFG}
 
 options(
     clean=Bunch(

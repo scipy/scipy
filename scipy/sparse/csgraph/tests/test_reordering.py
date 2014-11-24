@@ -97,4 +97,4 @@ def test_graph_maximum_bipartite_matching():
     Rmat = coo_matrix((Rdata,(Rrow,Rcol))).tocsc()
     C3 = Rmat*B
     assert_equal(any(C3.diagonal() == 0), False)
-    
+

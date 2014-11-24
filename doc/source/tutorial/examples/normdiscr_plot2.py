@@ -42,7 +42,7 @@ normline = plt.plot(ind+width/2.0, stats.norm.cdf(ind+0.5,scale=nd_std),
 
 plt.ylabel('cdf')
 plt.title('Cumulative Frequency and CDF of normdiscrete')
-plt.xticks(ind+width, ind )
-plt.legend( (rects1[0], rects2[0]), ('true', 'sample') )
+plt.xticks(ind+width, ind)
+plt.legend((rects1[0], rects2[0]), ('true', 'sample'))
 
 plt.show()

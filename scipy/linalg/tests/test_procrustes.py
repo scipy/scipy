@@ -187,4 +187,3 @@ def test_orthogonal_procrustes_skbio_example():
     B_approx = scale * np.dot(A, R) + B_mu
     assert_allclose(B_approx, B_orig)
     assert_allclose(B / norm(B), B_standardized)
-

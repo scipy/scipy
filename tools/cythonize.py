@@ -101,8 +101,8 @@ def process_tempita_pyx(fromfile, tofile):
 
 rules = {
     # fromext : function
-    '.pyx' : process_pyx,
-    '.pyx.in' : process_tempita_pyx
+    '.pyx': process_pyx,
+    '.pyx.in': process_tempita_pyx
     }
 #
 # Hash db
