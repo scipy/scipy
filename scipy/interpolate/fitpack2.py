@@ -305,7 +305,9 @@ class UnivariateSpline(object):
         return fitpack.splev(x, self._eval_args, der=nu, ext=ext)
 
     def get_knots(self):
-        """ Return positions of (boundary and interior) knots of the spline.
+        """ Return positions of interior knots of the spline.
+
+        Internally, the knot vector contains ``2*k`` additional boundary knots.
         """
         data = self._data
         k,n = data[5],data[7]
@@ -318,18 +320,76 @@ class UnivariateSpline(object):
         return data[9][:n-k-1]
 
     def get_residual(self):
-        """Return weighted sum of squared residuals of the spline
-        approximation: ``sum((w[i] * (y[i]-spl(x[i])))**2, axis=0)``.
+        """Return weighted sum of squared residuals of the spline approximation.
+
+           This is equivalent to::
+
+                sum((w[i] * (y[i]-spl(x[i])))**2, axis=0)
+
         """
         return self._data[10]
 
     def integral(self, a, b):
         """ Return definite integral of the spline between two given points.
+
+        Parameters
+        ----------
+        a : float
+            Lower limit of integration.
+        b : float
+            Upper limit of integration.
+
+        Returns
+        -------
+        integral : float
+            The value of the definite integral of the spline between limits.
+
+        Examples
+        --------
+        >>> from scipy.interpolate import UnivariateSpline
+        >>> x = np.linspace(0, 3, 11)
+        >>> y = x**2
+        >>> spl = UnivariateSpline(x, y)
+        >>> spl.integral(0, 3)
+        9.0
+
+        which agrees with :math:`\int x^2 dx = x^3 / 3` between the limits
+        of 0 and 3.
+
+        A caveat is that this routine assumes the spline to be zero outside of
+        the data limits:
+
+        >>> spl.integral(-1, 4)
+        9.0
+        >>> spl.integral(-1, 0)
+        0.0
+
         """
         return dfitpack.splint(*(self._eval_args+(a,b)))
 
     def derivatives(self, x):
-        """ Return all derivatives of the spline at the point x."""
+        """ Return all derivatives of the spline at the point x.
+
+        Parameters
+        ----------
+        x : float
+            The point to evaluate the derivatives at.
+
+        Returns
+        -------
+        der : ndarray, shape(k+1,)
+            Derivatives of the orders 0 to k.
+
+        Examples
+        --------
+        >>> from scipy.interpolate import UnivariateSpline
+        >>> x = np.linspace(0, 3, 11)
+        >>> y = x**2
+        >>> spl = UnivariateSpline(x, y)
+        >>> spl.derivatives(1.5)
+        array([2.25, 3.0, 2.0, 0])
+
+        """
         d,ier = dfitpack.spalde(*(self._eval_args+(x,)))
         if not ier == 0:
             raise ValueError("Error code returned by spalde: %s" % ier)
