@@ -23,10 +23,8 @@ class TestGoBenchmarkFunctions(TestCase):
         pass
 
     def test_optimum_solution(self):
-        """
-        Check that the function returns the global minimum if given
-        the optimal solution
-        """
+#         Check that the function returns the global minimum if given
+#         the optimal solution
         for name, klass in self.benchmark_functions:
             if name == 'Benchmark':
                 continue
@@ -40,9 +38,7 @@ class TestGoBenchmarkFunctions(TestCase):
             assert(f.success(f.global_optimum[0]))
 
     def test_solution_exists(self):
-        """
-        Every benchmark function should have a minimum energy
-        """
+#         Every benchmark function should have a minimum energy
         for name, klass in self.benchmark_functions:
             if name == 'Benchmark':
                 continue
