@@ -73,9 +73,9 @@ def max_len_seq(nbits, state=None, length=None, taps=None):
             known_taps = np.array(list(_mls_taps.keys()))
             raise ValueError('nbits must be between %s and %s if taps is None'
                              % (known_taps.min(), known_taps.max()))
-        taps = np.array(_mls_taps[nbits], int)
+        taps = np.array(_mls_taps[nbits], np.intp)
     else:
-        taps = np.unique(np.array(taps, int))[::-1]
+        taps = np.unique(np.array(taps, np.intp))[::-1]
         if np.any(taps < 0) or np.any(taps > nbits) or taps.size < 1:
             raise ValueError('taps must be non-empty with values between '
                              'zero and nbits (inclusive)')
