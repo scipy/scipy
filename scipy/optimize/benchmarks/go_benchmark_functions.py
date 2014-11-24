@@ -285,7 +285,7 @@ class Ackley02(Benchmark):
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = -200.
 
-    def fun(self, x):
+    def fun(self, x, *args):
         self.nfev += 1
         return -200 * exp(-0.02 * sqrt(x[0] ** 2 + x[1] ** 2))
 
@@ -321,7 +321,7 @@ class Ackley03(Benchmark):
         self.global_optimum = [[-0.68255758, -0.36070859]]
         self.fglob = -195.62902825923879
 
-    def fun(self, x):
+    def fun(self, x, *args):
         self.nfev += 1
         a = -200 * exp(-0.02 * sqrt(x[0] ** 2 + x[1] ** 2))
         a += 5 * exp(cos(3 * x[0]) + sin(3 * x[1]))
@@ -594,7 +594,7 @@ class BiggsExp02(Benchmark):
         self.global_optimum = [[1., 10.]]
         self.fglob = 0
 
-    def fun(self, x):
+    def fun(self, x, *args):
         self.nfev += 1
 
         t = arange(1, 11.) * 0.1
@@ -639,7 +639,7 @@ class BiggsExp03(Benchmark):
         self.global_optimum = [[1., 10., 5.]]
         self.fglob = 0
 
-    def fun(self, x):
+    def fun(self, x, *args):
         self.nfev += 1
 
         t = arange(1., 11.) * 0.1
@@ -684,7 +684,7 @@ class BiggsExp04(Benchmark):
         self.global_optimum = [[1., 10., 1., 5.]]
         self.fglob = 0
 
-    def fun(self, x):
+    def fun(self, x, *args):
         self.nfev += 1
 
         t = arange(1, 11.) * 0.1
@@ -729,12 +729,8 @@ class BiggsExp05(Benchmark):
         self.global_optimum = [[1., 10., 1., 5., 4.]]
         self.fglob = 0
 
-    target_E = 0
-    solution = [1., 10., 1., 5., 4.]
-    xmin = np.array([0., 0., 0., 0., 0.])
-    xmax = np.array([20., 20., 20., 20., 20.])
 
-    def fun(self, x):
+    def fun(self, x, *args):
         self.nfev += 1
         t = arange(1, 12.) * 0.1
         y = exp(-t) - 5 * exp(-10 * t) + 3 * exp(-4 * t)
@@ -1315,10 +1311,7 @@ class Cola(Benchmark):
              -0.807849, -1.68978]]
         self.fglob = 11.7464
 
-    def fun(self, x, *args):
-        self.nfev += 1
-
-        d = asarray([[0, 0,  0,  0,  0,  0,  0,  0,  0, 0],
+        self.d = asarray([[0, 0,  0,  0,  0,  0,  0,  0,  0, 0],
                  [1.27, 0,  0,  0,  0,  0,  0,  0,  0, 0],
                  [1.69, 1.43, 0,  0,  0,  0,  0,  0,  0, 0],
                  [2.04, 2.35, 2.43, 0,    0,    0,    0,    0,    0, 0],
@@ -1329,6 +1322,8 @@ class Cola(Benchmark):
                  [3.21, 3.18, 3.18, 3.17, 1.70, 1.36, 2.95, 1.32, 0, 0],
                  [2.38, 2.31, 2.42, 1.94, 2.85, 2.81, 2.56, 2.91, 2.97, 0.]])
 
+    def fun(self, x, *args):
+        self.nfev += 1
 
         xi = np.atleast_2d(asarray([0.0, x[0]] + list(x[1::2])))
         xj = np.repeat(xi, np.size(xi, 1), axis = 0)
@@ -1338,7 +1333,7 @@ class Cola(Benchmark):
         yj = np.repeat(yi, np.size(yi, 1), axis = 0)
         yi = yi.T
 
-        inner = (sqrt(((xi - xj) ** 2 + (yi - yj) ** 2)) - d) ** 2
+        inner = (sqrt(((xi - xj) ** 2 + (yi - yj) ** 2)) - self.d) ** 2
         inner = np.tril(inner, -1)
         return sum(sum(inner, axis = 1))
 
@@ -1389,8 +1384,9 @@ class Corana(Benchmark):
 
     .. math::
 
-        f_{\\text{Corana}}(\\mathbf{x}) = \\begin{cases} \\sum_{i=1}^n 0.15 d_i [z_i - 0.05\\textrm{sgn}(z_i)]^2 & \\textrm{if}|x_i-z_i| < 0.05 \\\\
-               d_ix_i^2 & \\textrm{otherwise}\\end{cases}
+        f_{\\text{Corana}}(\\mathbf{x}) = \\begin{cases} \\sum_{i=1}^n 0.15 d_i
+        [z_i - 0.05\\textrm{sgn}(z_i)]^2 & \\textrm{if}|x_i-z_i| < 0.05 \\\\
+        d_ix_i^2 & \\textrm{otherwise}\\end{cases}
 
     Where, in this exercise:
 
@@ -2195,30 +2191,37 @@ class Eckerle4(Benchmark):
         self.global_optimum = [[1.5543827178, 4.0888321754, 4.5154121844e2]]
         self.fglob = 1.4635887487E-03
 
+        self.a = asarray([1.5750000E-04, 1.6990000E-04, 2.3500000E-04,
+                          3.1020000E-04, 4.9170000E-04, 8.7100000E-04,
+                          1.7418000E-03, 4.6400000E-03, 6.5895000E-03,
+                          9.7302000E-03, 1.4900200E-02, 2.3731000E-02,
+                          4.0168300E-02, 7.1255900E-02, 1.2644580E-01,
+                          2.0734130E-01, 2.9023660E-01, 3.4456230E-01,
+                          3.6980490E-01, 3.6685340E-01, 3.1067270E-01,
+                          2.0781540E-01, 1.1643540E-01, 6.1676400E-02,
+                          3.3720000E-02, 1.9402300E-02, 1.1783100E-02,
+                          7.4357000E-03, 2.2732000E-03, 8.8000000E-04,
+                          4.5790000E-04, 2.3450000E-04, 1.5860000E-04,
+                          1.1430000E-04, 7.1000000E-05])
+
+        self.b = asarray([4.0000000E+02, 4.0500000E+02, 4.1000000E+02,
+                          4.1500000E+02, 4.2000000E+02, 4.2500000E+02,
+                          4.3000000E+02, 4.3500000E+02, 4.3650000E+02,
+                          4.3800000E+02, 4.3950000E+02, 4.4100000E+02,
+                          4.4250000E+02, 4.4400000E+02, 4.4550000E+02,
+                          4.4700000E+02, 4.4850000E+02, 4.5000000E+02,
+                          4.5150000E+02, 4.5300000E+02, 4.5450000E+02,
+                          4.5600000E+02, 4.5750000E+02, 4.5900000E+02,
+                          4.6050000E+02, 4.6200000E+02, 4.6350000E+02,
+                          4.6500000E+02, 4.7000000E+02, 4.7500000E+02,
+                          4.8000000E+02, 4.8500000E+02, 4.9000000E+02,
+                          4.9500000E+02, 5.0000000E+02])
+
     def fun(self, x, *args):
         self.nfev += 1
 
-        a = asarray([1.5750000E-04, 1.6990000E-04, 2.3500000E-04, 3.1020000E-04,
-                     4.9170000E-04, 8.7100000E-04, 1.7418000E-03, 4.6400000E-03,
-                     6.5895000E-03, 9.7302000E-03, 1.4900200E-02, 2.3731000E-02,
-                     4.0168300E-02, 7.1255900E-02, 1.2644580E-01, 2.0734130E-01,
-                     2.9023660E-01, 3.4456230E-01, 3.6980490E-01, 3.6685340E-01,
-                     3.1067270E-01, 2.0781540E-01, 1.1643540E-01, 6.1676400E-02,
-                     3.3720000E-02, 1.9402300E-02, 1.1783100E-02, 7.4357000E-03,
-                     2.2732000E-03, 8.8000000E-04, 4.5790000E-04, 2.3450000E-04,
-                     1.5860000E-04, 1.1430000E-04, 7.1000000E-05])
-        b = asarray([4.0000000E+02, 4.0500000E+02, 4.1000000E+02, 4.1500000E+02,
-                     4.2000000E+02, 4.2500000E+02, 4.3000000E+02, 4.3500000E+02,
-                     4.3650000E+02, 4.3800000E+02, 4.3950000E+02, 4.4100000E+02,
-                     4.4250000E+02, 4.4400000E+02, 4.4550000E+02, 4.4700000E+02,
-                     4.4850000E+02, 4.5000000E+02, 4.5150000E+02, 4.5300000E+02,
-                     4.5450000E+02, 4.5600000E+02, 4.5750000E+02, 4.5900000E+02,
-                     4.6050000E+02, 4.6200000E+02, 4.6350000E+02, 4.6500000E+02,
-                     4.7000000E+02, 4.7500000E+02, 4.8000000E+02, 4.8500000E+02,
-                     4.9000000E+02, 4.9500000E+02, 5.0000000E+02])
-
-        vec = x[0] / x[1] * exp(-(b - x[2]) ** 2 / (2 * x[1] ** 2))
-        return sum((a - vec) ** 2)
+        vec = x[0] / x[1] * exp(-(self.b - x[2]) ** 2 / (2 * x[1] ** 2))
+        return sum((self.a - vec) ** 2)
 
 
 class EggCrate(Benchmark):
@@ -2695,20 +2698,21 @@ class Hartmann3(Benchmark):
         self.global_optimum = [[0.11461292,  0.55564907,  0.85254697]]
         self.fglob = -3.8627821478
 
+        self.a = asarray([[3.0,  0.1,  3.0,  0.1],
+                     [10.0, 10.0, 10.0, 10.0],
+                     [30.0, 35.0, 30.0, 35.0]])
+        self.p = asarray([[0.36890, 0.46990, 0.10910, 0.03815],
+                          [0.11700, 0.43870, 0.87320, 0.57430],
+                          [0.26730, 0.74700, 0.55470, 0.88280]])
+        self.c = asarray([1.0, 1.2, 3.0, 3.2])
+
+
     def fun(self, x, *args):
         self.nfev += 1
 
-        a = asarray([[3.0,  0.1,  3.0,  0.1],
-                     [10.0, 10.0, 10.0, 10.0],
-                     [30.0, 35.0, 30.0, 35.0]])
-        p = asarray([[0.36890, 0.46990, 0.10910, 0.03815],
-                     [0.11700, 0.43870, 0.87320, 0.57430],
-                     [0.26730, 0.74700, 0.55470, 0.88280]])
-        c = asarray([1.0, 1.2, 3.0, 3.2])
-
         XX = np.atleast_2d(x).T
-        d = sum(a * (XX - p) ** 2, axis=0)
-        return -sum(c * exp(-d))
+        d = sum(self.a * (XX - self.p) ** 2, axis=0)
+        return -sum(self.c * exp(-d))
 
 
 class Hartmann6(Benchmark):
@@ -2721,7 +2725,8 @@ class Hartmann6(Benchmark):
 
     .. math::
 
-        f_{\\text{Hartmann6}}(\\mathbf{x}) = -\\sum\\limits_{i=1}^{4} c_i e^{-\\sum\\limits_{j=1}^{n}a_{ij}(x_j - p_{ij})^2}
+        f_{\\text{Hartmann6}}(\\mathbf{x}) = -\\sum\\limits_{i=1}^{4} c_i
+        e^{-\\sum\\limits_{j=1}^{n}a_{ij}(x_j - p_{ij})^2}
 
     Where, in this exercise:
 
@@ -2765,33 +2770,31 @@ class Hartmann6(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [[0.20168952, 0.15001069,
-                               0.47687398, 0.27533243, 0.31165162, 0.65730054]]
+        self.global_optimum = [[0.20168952, 0.15001069, 0.47687398, 0.27533243,
+                                0.31165162, 0.65730054]]
         self.fglob = -3.32236801141551
+
+        self.a = asarray([[10.00,  0.05,  3.00, 17.00],
+                          [3.00, 10.00,  3.50,  8.00],
+                          [17.00, 17.00,  1.70,  0.05],
+                          [3.50,  0.10, 10.00, 10.00],
+                          [1.70,  8.00, 17.00,  0.10],
+                          [8.00, 14.00,  8.00, 14.00]])
+
+        self.p = asarray([[0.1312, 0.2329, 0.2348, 0.4047],
+                          [0.1696, 0.4135, 0.1451, 0.8828],
+                          [0.5569, 0.8307, 0.3522, 0.8732],
+                          [0.0124, 0.3736, 0.2883, 0.5743],
+                          [0.8283, 0.1004, 0.3047, 0.1091],
+                          [0.5886, 0.9991, 0.6650, 0.0381]])
+        self.c = asarray([1.0, 1.2, 3.0, 3.2])
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        a = asarray([[10.00,  0.05,  3.00, 17.00],
-                     [3.00, 10.00,  3.50,  8.00],
-                     [17.00, 17.00,  1.70,  0.05],
-                     [3.50,  0.10, 10.00, 10.00],
-                     [1.70,  8.00, 17.00,  0.10],
-                     [8.00, 14.00,  8.00, 14.00]])
-
-        p = asarray([[0.1312, 0.2329, 0.2348, 0.4047],
-                     [0.1696, 0.4135, 0.1451, 0.8828],
-                     [0.5569, 0.8307, 0.3522, 0.8732],
-                     [0.0124, 0.3736, 0.2883, 0.5743],
-                     [0.8283, 0.1004, 0.3047, 0.1091],
-                     [0.5886, 0.9991, 0.6650, 0.0381]])
-        c = asarray([1.0, 1.2, 3.0, 3.2])
-
         XX = np.atleast_2d(x).T
-        d = sum(a * (XX - p) ** 2, axis=0)
-        return -sum(c * exp(-d))
-
-        return -sum(c * exp(-d))
+        d = sum(self.a * (XX - self.p) ** 2, axis=0)
+        return -sum(self.c * exp(-d))
 
 
 class HelicalValley(Benchmark):
@@ -3086,23 +3089,24 @@ class Judge(Benchmark):
         self.global_optimum = [[0.86479, 1.2357]]
         self.custom_bounds = [(-2.0, 2.0), (-2.0, 2.0)]
         self.fglob = 16.0817307
+        self.c = asarray([4.284, 4.149, 3.877, 0.533, 2.211, 2.389, 2.145,
+                          3.231, 1.998, 1.379, 2.106, 1.428, 1.011, 2.179,
+                          2.858, 1.388, 1.651, 1.593, 1.046, 2.152])
+
+        self.a = asarray([0.286, 0.973, 0.384, 0.276, 0.973, 0.543, 0.957,
+                          0.948, 0.543, 0.797, 0.936, 0.889, 0.006, 0.828,
+                          0.399, 0.617, 0.939, 0.784, 0.072, 0.889])
+
+        self.b = asarray([0.645, 0.585, 0.310, 0.058, 0.455, 0.779, 0.259,
+                          0.202, 0.028, 0.099, 0.142, 0.296, 0.175, 0.180,
+                          0.842, 0.039, 0.103, 0.620, 0.158, 0.704])
+
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        C = asarray([4.284, 4.149, 3.877, 0.533, 2.211, 2.389, 2.145,  3.231,
-                     1.998, 1.379, 2.106, 1.428, 1.011, 2.179, 2.858, 1.388,
-                     1.651, 1.593, 1.046, 2.152])
-
-        A = asarray([0.286, 0.973, 0.384, 0.276, 0.973, 0.543, 0.957, 0.948,
-                     0.543, 0.797, 0.936, 0.889, 0.006, 0.828, 0.399, 0.617,
-                     0.939, 0.784, 0.072, 0.889])
-
-        B = asarray([0.645, 0.585, 0.310, 0.058, 0.455, 0.779, 0.259, 0.202,
-                     0.028, 0.099, 0.142, 0.296, 0.175, 0.180, 0.842, 0.039,
-                     0.103, 0.620, 0.158, 0.704])
-
-        return sum(((x[0] + x[1] * A + (x[1] ** 2.0) * B) - C) ** 2.0)
+        return sum(((x[0] + x[1] * self.a + (x[1] ** 2.0) * self.b) - self.c)
+                    ** 2.0)
 
 
 class Katsuura(Benchmark):
@@ -3115,7 +3119,8 @@ class Katsuura(Benchmark):
 
     .. math::
 
-        f_{\\text{Katsuura}}(\\mathbf{x}) = \\prod_{i=0}^{n-1} \\left [ 1 + (i+1) \\sum_{k=1}^{d} \\lfloor (2^k x_i) \\rfloor 2^{-k} \\right ]
+        f_{\\text{Katsuura}}(\\mathbf{x}) = \\prod_{i=0}^{n-1} \\left [ 1 +
+        (i+1) \\sum_{k=1}^{d} \\lfloor (2^k x_i) \\rfloor 2^{-k} \\right ]
 
     Where, in this exercise, :math:`d = 32`.
 
@@ -3211,18 +3216,16 @@ class Kowalik(Benchmark):
         self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
         self.global_optimum = [[0.192833, 0.190836, 0.123117, 0.135766]]
         self.fglob = 0.00030748610
+        self.b = asarray([4.0, 2.0, 1.0, 1 / 2.0, 1 / 4.0, 1 / 6.0, 1 / 8.0,
+                          1 / 10.0, 1 / 12.0, 1 / 14.0, 1 / 16.0])
+        self.a = asarray([0.1957, 0.1947, 0.1735, 0.1600, 0.0844, 0.0627,
+                          0.0456, 0.0342, 0.0323, 0.0235, 0.0246])
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        b = asarray([4.0, 2.0, 1.0, 1 / 2.0, 1 / 4.0, 1 / 6.0, 1 / 8.0,
-                     1 / 10.0, 1 / 12.0, 1 / 14.0, 1 / 16.0])
-        a = asarray([0.1957, 0.1947, 0.1735, 0.1600, 0.0844,
-                     0.0627, 0.0456, 0.0342, 0.0323, 0.0235,
-                     0.0246])
-
-        vec = a - (x[0] * (b ** 2 + b * x[1])
-                   / (b ** 2 + b * x[2] + x[3]))
+        vec = self.a - (x[0] * (self.b ** 2 + self.b * x[1])
+                   / (self.b ** 2 + self.b * x[2] + x[3]))
         return sum(vec ** 2)
 
 
@@ -3287,8 +3290,8 @@ class LennardJones(Benchmark):
     Valid for any dimension, :math:`n = 3*k, k=2,3,4,...,20`. :math:`k` is the number of atoms in 3-D space
     constraints: unconstrained type: multi-modal with one global minimum; non-separable
 
-    Value-to-reach: :math:`minima[k-2] + 0.0001`. See array of minima below; additional minima available at
-    the Cambridge cluster database:
+    Value-to-reach: :math:`minima[k-2] + 0.0001`. See array of minima below;
+    additional minima available at the Cambridge cluster database:
 
     http://www-wales.ch.cam.ac.uk/~jon/structures/LJ/tables.150.html
 
@@ -3576,22 +3579,21 @@ class Meyer(Benchmark):
         self.global_optimum = [[5.6096364710e-3, 6.1813463463e3,
                                 3.4522363462e2]]
         self.fglob = 8.7945855171e1
+        self.a = asarray([3.478E+04, 2.861E+04, 2.365E+04, 1.963E+04, 1.637E+04,
+                          1.372E+04, 1.154E+04, 9.744E+03, 8.261E+03, 7.030E+03,
+                          6.005E+03, 5.147E+03, 4.427E+03, 3.820E+03, 3.307E+03,
+                          2.872E+03])
+        self.b = asarray([5.000E+01, 5.500E+01, 6.000E+01, 6.500E+01, 7.000E+01,
+                          7.500E+01, 8.000E+01, 8.500E+01, 9.000E+01, 9.500E+01,
+                          1.000E+02, 1.050E+02, 1.100E+02, 1.150E+02, 1.200E+02,
+                          1.250E+02])
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        a = asarray([3.478E+04, 2.861E+04, 2.365E+04, 1.963E+04, 1.637E+04,
-                     1.372E+04, 1.154E+04, 9.744E+03, 8.261E+03, 7.030E+03,
-                     6.005E+03, 5.147E+03, 4.427E+03, 3.820E+03, 3.307E+03,
-                     2.872E+03])
-        b = asarray([5.000E+01, 5.500E+01, 6.000E+01, 6.500E+01, 7.000E+01,
-                     7.500E+01, 8.000E+01, 8.500E+01, 9.000E+01, 9.500E+01,
-                     1.000E+02, 1.050E+02, 1.100E+02, 1.150E+02, 1.200E+02,
-                     1.250E+02])
+        vec = x[0] * exp(x[1] / (self.b + x[2]))
 
-        vec = x[0] * exp(x[1] / (b + x[2]))
-
-        return sum((a - vec) ** 2)
+        return sum((self.a - vec) ** 2)
 
 
 class Michalewicz(Benchmark):
@@ -4299,7 +4301,6 @@ class OddSquare(Benchmark):
         self.custom_bounds = ([-2.0, 4.0], [-2.0, 4.0])
         self.a = asarray([1, 1.3, 0.8, -0.4, -1.3, 1.6, -0.2, -0.6, 0.5, 1.4]
                          * 2)
-#         self.global_optimum = [self.a[0: self.N]]
         self.global_optimum = [[1.09263477,  1.39263477]]
 
         self.fglob = -1.0084
@@ -5083,11 +5084,18 @@ class Rana(Benchmark):
 
     .. math::
 
-       f_{\\text{Rana}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\left[x_{i} \\sin\\left(\\sqrt{\\lvert{x_{1} - x_{i} + 1}\\rvert}\\right) \\cos\\left(\\sqrt{\\lvert{x_{1} + x_{i} + 1}\\rvert}\\right) + \\left(x_{1} + 1\\right) \\sin\\left(\\sqrt{\\lvert{x_{1} + x_{i} + 1}\\rvert}\\right) \\cos\\left(\\sqrt{\\lvert{x_{1} - x_{i} + 1}\\rvert}\\right)\\right]
+       f_{\\text{Rana}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\left[x_{i}
+       \\sin\\left(\\sqrt{\\lvert{x_{1} - x_{i} + 1}\\rvert}\\right)
+       \\cos\\left(\\sqrt{\\lvert{x_{1} + x_{i} + 1}\\rvert}\\right) +
+       \\left(x_{1} + 1\\right) \\sin\\left(\\sqrt{\\lvert{x_{1} + x_{i} +
+       1}\\rvert}\\right) \\cos\\left(\\sqrt{\\lvert{x_{1} - x_{i} +
+       1}\\rvert}\\right)\\right]
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-500.000001, 500.000001]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in
+    [-500.0, 500.0]` for :math:`i=1,...,n`.
 
-    *Global optimum*: :math:`f(x_i) = -928.5478` for :math:`x_i = -500` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x_i) = -928.5478` for :math:`\mathbf{x}=
+    [-300.3376, 500]`.
 
     """
 
@@ -5158,18 +5166,16 @@ class Ratkowsky01(Benchmark):
         self.global_optimum = [[6.996415127e2, 5.2771253025, 7.5962938329e-1,
                                 1.2792483859]]
         self.fglob = 8.786404908e3
+        self.a = asarray([16.08, 33.83, 65.80, 97.20, 191.55, 326.20, 386.87,
+                          520.53, 590.03, 651.92, 724.93, 699.56, 689.96,
+                          637.56, 717.41])
+        self.b = arange(1, 16.)
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        a = asarray(
-            [16.08, 33.83, 65.80, 97.20, 191.55, 326.20, 386.87, 520.53,
-             590.03, 651.92, 724.93, 699.56, 689.96, 637.56, 717.41])
-        b = arange(1, 16.)
-
-        vec = x[0] / ((1 + exp(x[1] - x[2] * b)) ** (1 / x[3]))
-
-        return sum((a - vec) ** 2)
+        vec = x[0] / ((1 + exp(x[1] - x[2] * self.b)) ** (1 / x[3]))
+        return sum((self.a - vec) ** 2)
 
 
 class Ratkowsky02(Benchmark):
@@ -5198,15 +5204,15 @@ class Ratkowsky02(Benchmark):
                            [200, 5., 0.5])
         self.global_optimum = [[7.2462237576e1, 2.6180768402, 6.7359200066e-2]]
         self.fglob = 8.0565229338
+        self.a = asarray([8.93, 10.8, 18.59, 22.33, 39.35, 56.11, 61.73, 64.62,
+                          67.08])
+        self.b = asarray([9., 14., 21., 28., 42., 57., 63., 70., 79.])
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        a = asarray([8.93, 10.8, 18.59, 22.33, 39.35, 56.11, 61.73, 64.62,
-                     67.08])
-        b = asarray([9., 14., 21., 28., 42., 57., 63., 70., 79.])
-        vec = x[0] / (1 + exp(x[1] - x[2] * b))
-        return sum((a - vec) ** 2)
+        vec = x[0] / (1 + exp(x[1] - x[2] * self.b))
+        return sum((self.a - vec) ** 2)
 
 
 class Ripple01(Benchmark):
@@ -6010,20 +6016,21 @@ class Shekel05(Benchmark):
 
         self.global_optimum = [[4.0 for _ in range(self.N)]]
         self.fglob = -10.15319585
+        self.A = asarray([[4.0, 4.0, 4.0, 4.0],
+                          [1.0, 1.0, 1.0, 1.0],
+                          [8.0, 8.0, 8.0, 8.0],
+                          [6.0, 6.0, 6.0, 6.0],
+                          [3.0, 7.0, 3.0, 7.0]])
+
+        self.C = asarray([0.1, 0.2, 0.2, 0.4, 0.4])
+
 
     def fun(self, x, *args):
         self.nfev += 1
 
         m = 5
-        A = asarray([[4.0, 4.0, 4.0, 4.0],
-                     [1.0, 1.0, 1.0, 1.0],
-                     [8.0, 8.0, 8.0, 8.0],
-                     [6.0, 6.0, 6.0, 6.0],
-                     [3.0, 7.0, 3.0, 7.0]])
-
-        C = asarray([0.1, 0.2, 0.2, 0.4, 0.4])
-
-        return -sum(1.0 / (dot(x - a, x - a) + c) for a, c in zip(A, C))
+        return -sum(1.0 / (dot(x - a, x - a) + c) for a, c
+                    in zip(self.A, self.C))
 
 
 class Shekel07(Benchmark):
@@ -6062,22 +6069,22 @@ class Shekel07(Benchmark):
 
         self.global_optimum = [[4.0 for _ in range(self.N)]]
         self.fglob = -10.4028188
+        self.A = asarray([[4.0, 4.0, 4.0, 4.0],
+                          [1.0, 1.0, 1.0, 1.0],
+                          [8.0, 8.0, 8.0, 8.0],
+                          [6.0, 6.0, 6.0, 6.0],
+                          [3.0, 7.0, 3.0, 7.0],
+                          [2.0, 9.0, 2.0, 9.0],
+                          [5.0, 5.0, 3.0, 3.0]])
+
+        self.C = asarray([0.1, 0.2, 0.2, 0.4, 0.4, 0.6, 0.3])
 
     def fun(self, x, *args):
         self.nfev += 1
 
         m = 7
-        A = asarray([[4.0, 4.0, 4.0, 4.0],
-                     [1.0, 1.0, 1.0, 1.0],
-                     [8.0, 8.0, 8.0, 8.0],
-                     [6.0, 6.0, 6.0, 6.0],
-                     [3.0, 7.0, 3.0, 7.0],
-                     [2.0, 9.0, 2.0, 9.0],
-                     [5.0, 5.0, 3.0, 3.0]])
-
-        C = asarray([0.1, 0.2, 0.2, 0.4, 0.4, 0.6, 0.3])
-
-        return -sum(1.0 / (dot(x - a, x - a) + c) for a, c in zip(A, C))
+        return -sum(1.0 / (dot(x - a, x - a) + c) for a, c
+                    in zip(self.A, self.C))
 
 
 class Shekel10(Benchmark):
@@ -6117,25 +6124,25 @@ class Shekel10(Benchmark):
 
         self.global_optimum = [[4.0 for _ in range(self.N)]]
         self.fglob = -10.5362837262
+        self.A = asarray([[4.0, 4.0, 4.0, 4.0],
+                          [1.0, 1.0, 1.0, 1.0],
+                          [8.0, 8.0, 8.0, 8.0],
+                          [6.0, 6.0, 6.0, 6.0],
+                          [3.0, 7.0, 3.0, 7.0],
+                          [2.0, 9.0, 2.0, 9.0],
+                          [5.0, 5.0, 3.0, 3.0],
+                          [8.0, 1.0, 8.0, 1.0],
+                          [6.0, 2.0, 6.0, 2.0],
+                          [7.0, 3.6, 7.0, 3.6]])
+
+        self.C = asarray([0.1, 0.2, 0.2, 0.4, 0.4, 0.6, 0.3, 0.7, 0.5, 0.5])
 
     def fun(self, x, *args):
         self.nfev += 1
 
         m = 10
-        A = asarray([[4.0, 4.0, 4.0, 4.0],
-                     [1.0, 1.0, 1.0, 1.0],
-                     [8.0, 8.0, 8.0, 8.0],
-                     [6.0, 6.0, 6.0, 6.0],
-                     [3.0, 7.0, 3.0, 7.0],
-                     [2.0, 9.0, 2.0, 9.0],
-                     [5.0, 5.0, 3.0, 3.0],
-                     [8.0, 1.0, 8.0, 1.0],
-                     [6.0, 2.0, 6.0, 2.0],
-                     [7.0, 3.6, 7.0, 3.6]])
-
-        C = asarray([0.1, 0.2, 0.2, 0.4, 0.4, 0.6, 0.3, 0.7, 0.5, 0.5])
-
-        return -sum(1.0 / (dot(x - a, x - a) + c) for a, c in zip(A, C))
+        return -sum(1.0 / (dot(x - a, x - a) + c) for a, c
+                    in zip(self.A, self.C))
 
 
 class Shubert01(Benchmark):
@@ -6587,27 +6594,27 @@ class Thurber(Benchmark):
                                 75.416644291, 0.96629502864, 0.39797285797,
                                 4.9727297349e-2]]
         self.fglob = 5642.7082397
+        self.a = asarray([80.574, 84.248, 87.264, 87.195, 89.076, 89.608,
+                          89.868, 90.101, 92.405, 95.854, 100.696, 101.06,
+                          401.672, 390.724, 567.534, 635.316, 733.054, 759.087,
+                          894.206, 990.785, 1090.109, 1080.914, 1122.643,
+                          1178.351, 1260.531, 1273.514, 1288.339, 1327.543,
+                          1353.863, 1414.509, 1425.208, 1421.384, 1442.962,
+                          1464.350, 1468.705, 1447.894, 1457.628])
+        self.b = np.asarray([-3.067, -2.981, -2.921, -2.912, -2.840, -2.797,
+                             -2.702, -2.699, -2.633, -2.481, -2.363, -2.322,
+                             -1.501, -1.460, -1.274, -1.212, -1.100, -1.046,
+                             -0.915, -0.714, -0.566, -0.545, -0.400, -0.309,
+                             -0.109, -0.103, 0.010, 0.119, 0.377, 0.790, 0.963,
+                             1.006, 1.115, 1.572, 1.841, 2.047, 2.200])
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        a = asarray([80.574, 84.248, 87.264, 87.195, 89.076, 89.608, 89.868,
-                     90.101, 92.405, 95.854, 100.696, 101.06, 401.672, 390.724,
-                     567.534, 635.316, 733.054, 759.087, 894.206, 990.785,
-                     1090.109, 1080.914, 1122.643, 1178.351, 1260.531, 1273.514,
-                     1288.339, 1327.543, 1353.863, 1414.509, 1425.208, 1421.384,
-                     1442.962, 1464.350, 1468.705, 1447.894, 1457.628])
-        b = asarray([-3.067, -2.981, -2.921, -2.912, -2.840, -2.797, -2.702,
-                     -2.699, -2.633, -2.481, -2.363, -2.322, -1.501, -1.460,
-                     -1.274, -1.212, -1.100, -1.046, -0.915, -0.714, -0.566,
-                     -0.545, -0.400, -0.309, -0.109, -0.103, 0.010, 0.119,
-                     0.377, 0.790, 0.963, 1.006, 1.115, 1.572, 1.841, 2.047,
-                     2.200])
+        vec = x[0] + x[1] * self.b + x[2] * self.b ** 2 + x[3] * self.b ** 3
+        vec /= 1 + x[4] * self.b + x[5] * self.b ** 2 + x[6] * self.b ** 3
 
-        vec = x[0] + x[1] * b + x[2] * b ** 2 + x[3] * b ** 3
-        vec /= 1 + x[4] * b + x[5] * b ** 2 + x[6] * b ** 3
-
-        return sum((a - vec) ** 2)
+        return sum((self.a - vec) ** 2)
 
 
 class Treccani(Benchmark):

@@ -14,7 +14,7 @@ import go_benchmark_functions as gbf
 from numpy.testing import *
 from collections import defaultdict
 
-NUMTRIALS = 100
+NUMTRIALS = 50
 
 
 class _BenchOptimizers(object):
@@ -68,26 +68,6 @@ class _BenchOptimizers(object):
         if not hasattr(result, "nhev"):
             result.nhev = 0
         self.results.append(result)
-
-    def print_results(self):
-        """
-        Print the current list of results
-        """
-        results = self.average_results().values()
-        results = sorted(results, key=lambda x: (x.nsuccess, x.mean_time))
-        print("")
-        print("=========================================================")
-        print(("Optimizer benchmark: %s" % (self.function_name)))
-        print(("dimensions: %d, extra kwargs: %s" %
-              (results[0].ndim, str(self.minimizer_kwargs))))
-        print(("averaged over %d starting configurations" %
-              (results[0].ntrials)))
-        print("  Optimizer    nsuccess   nfev    njev    nhev    time")
-        print("---------------------------------------------------------")
-        for res in results:
-            print(("%30s   | %4d  | %8d  | %4d  | %4d  | %.6g" %
-                  (res.name, res.nsuccess, res.mean_nfev, res.mean_njev,
-                   res.mean_nhev, res.mean_time)))
 
     def average_results(self):
         """
@@ -208,7 +188,7 @@ class _BenchOptimizers(object):
             self.run_basinhopping()
             self.run_anneal()
 
-@dec.slow
+
 class BenchGlobalOptimizers(TestCase):
     """
     Benchmark the global optimizers using the go_benchmark_functions
@@ -224,8 +204,8 @@ class BenchGlobalOptimizers(TestCase):
         print('------------------------------')
         print('Benchmarking Global Optimizers')
         print('------------------------------')
-
-        print("{0:20} {1:^30} {2:^30}".format('',
+        print('Trials: {0}'.format(NUMTRIALS))
+        print('{0:20} {1:^30} {2:^30}'.format('',
                                               'success %',
                                               'nfev'))
 
