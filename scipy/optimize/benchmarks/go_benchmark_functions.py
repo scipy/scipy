@@ -131,7 +131,7 @@ class Benchmark(object):
         if abs(val - self.fglob) < tol:
             return True
         if val < self.fglob:
-#             print(repr(self), val, x)
+            #print(repr(self), val, x)
             return True
 
         return False
@@ -729,7 +729,6 @@ class BiggsExp05(Benchmark):
         self.global_optimum = [[1., 10., 1., 5., 4.]]
         self.fglob = 0
 
-
     def fun(self, x, *args):
         self.nfev += 1
         t = arange(1, 12.) * 0.1
@@ -934,7 +933,7 @@ class Branin02(Benchmark):
 
         self._bounds = [(-5.0, 15.0), (-5.0, 15.0)]
 
-        self.global_optimum = [[-3.1969884 ,  12.52625787]]
+        self.global_optimum = [[-3.1969884, 12.52625787]]
         self.fglob = 5.5589144038938247
 
     def fun(self, x, *args):
@@ -1311,14 +1310,14 @@ class Cola(Benchmark):
              -0.807849, -1.68978]]
         self.fglob = 11.7464
 
-        self.d = asarray([[0, 0,  0,  0,  0,  0,  0,  0,  0, 0],
-                 [1.27, 0,  0,  0,  0,  0,  0,  0,  0, 0],
-                 [1.69, 1.43, 0,  0,  0,  0,  0,  0,  0, 0],
-                 [2.04, 2.35, 2.43, 0,    0,    0,    0,    0,    0, 0],
-                 [3.09, 3.18, 3.26, 2.85, 0,    0,    0,    0,    0, 0],
-                 [3.20, 3.22, 3.27, 2.88, 1.55, 0,    0,    0,    0, 0],
-                 [2.86, 2.56, 2.58, 2.59, 3.12, 3.06, 0,    0,    0, 0],
-                 [3.17, 3.18, 3.18, 3.12, 1.31, 1.64, 3.00, 0,    0, 0],
+        self.d = asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                 [1.27, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                 [1.69, 1.43, 0, 0, 0, 0, 0, 0, 0, 0],
+                 [2.04, 2.35, 2.43, 0, 0, 0, 0, 0, 0, 0],
+                 [3.09, 3.18, 3.26, 2.85, 0, 0, 0, 0, 0, 0],
+                 [3.20, 3.22, 3.27, 2.88, 1.55, 0, 0, 0, 0, 0],
+                 [2.86, 2.56, 2.58, 2.59, 3.12, 3.06, 0, 0, 0, 0],
+                 [3.17, 3.18, 3.18, 3.12, 1.31, 1.64, 3.00, 0, 0, 0],
                  [3.21, 3.18, 3.18, 3.17, 1.70, 1.36, 2.95, 1.32, 0, 0],
                  [2.38, 2.31, 2.42, 1.94, 2.85, 2.81, 2.56, 2.91, 2.97, 0.]])
 
@@ -1326,16 +1325,16 @@ class Cola(Benchmark):
         self.nfev += 1
 
         xi = np.atleast_2d(asarray([0.0, x[0]] + list(x[1::2])))
-        xj = np.repeat(xi, np.size(xi, 1), axis = 0)
+        xj = np.repeat(xi, np.size(xi, 1), axis=0)
         xi = xi.T
 
         yi = np.atleast_2d(asarray([0.0, 0.0] + list(x[2::2])))
-        yj = np.repeat(yi, np.size(yi, 1), axis = 0)
+        yj = np.repeat(yi, np.size(yi, 1), axis=0)
         yi = yi.T
 
         inner = (sqrt(((xi - xj) ** 2 + (yi - yj) ** 2)) - self.d) ** 2
         inner = np.tril(inner, -1)
-        return sum(sum(inner, axis = 1))
+        return sum(sum(inner, axis=1))
 
 
 class Colville(Benchmark):
@@ -2695,17 +2694,16 @@ class Hartmann3(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [[0.11461292,  0.55564907,  0.85254697]]
+        self.global_optimum = [[0.11461292, 0.55564907, 0.85254697]]
         self.fglob = -3.8627821478
 
-        self.a = asarray([[3.0,  0.1,  3.0,  0.1],
-                     [10.0, 10.0, 10.0, 10.0],
-                     [30.0, 35.0, 30.0, 35.0]])
+        self.a = asarray([[3.0, 0.1, 3.0, 0.1],
+                          [10.0, 10.0, 10.0, 10.0],
+                          [30.0, 35.0, 30.0, 35.0]])
         self.p = asarray([[0.36890, 0.46990, 0.10910, 0.03815],
                           [0.11700, 0.43870, 0.87320, 0.57430],
                           [0.26730, 0.74700, 0.55470, 0.88280]])
         self.c = asarray([1.0, 1.2, 3.0, 3.2])
-
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -2774,12 +2772,12 @@ class Hartmann6(Benchmark):
                                 0.31165162, 0.65730054]]
         self.fglob = -3.32236801141551
 
-        self.a = asarray([[10.00,  0.05,  3.00, 17.00],
-                          [3.00, 10.00,  3.50,  8.00],
-                          [17.00, 17.00,  1.70,  0.05],
-                          [3.50,  0.10, 10.00, 10.00],
-                          [1.70,  8.00, 17.00,  0.10],
-                          [8.00, 14.00,  8.00, 14.00]])
+        self.a = asarray([[10.00, 0.05, 3.00, 17.00],
+                          [3.00, 10.00, 3.50, 8.00],
+                          [17.00, 17.00, 1.70, 0.05],
+                          [3.50, 0.10, 10.00, 10.00],
+                          [1.70, 8.00, 17.00, 0.10],
+                          [8.00, 14.00, 8.00, 14.00]])
 
         self.p = asarray([[0.1312, 0.2329, 0.2348, 0.4047],
                           [0.1696, 0.4135, 0.1451, 0.8828],
@@ -3100,7 +3098,6 @@ class Judge(Benchmark):
         self.b = asarray([0.645, 0.585, 0.310, 0.058, 0.455, 0.779, 0.259,
                           0.202, 0.028, 0.099, 0.142, 0.296, 0.175, 0.180,
                           0.842, 0.039, 0.103, 0.620, 0.158, 0.704])
-
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -4301,7 +4298,7 @@ class OddSquare(Benchmark):
         self.custom_bounds = ([-2.0, 4.0], [-2.0, 4.0])
         self.a = asarray([1, 1.3, 0.8, -0.4, -1.3, 1.6, -0.2, -0.6, 0.5, 1.4]
                          * 2)
-        self.global_optimum = [[1.09263477,  1.39263477]]
+        self.global_optimum = [[1.09263477, 1.39263477]]
 
         self.fglob = -1.0084
 
@@ -5200,7 +5197,7 @@ class Ratkowsky02(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([10, 0.5,  0.01],
+        self._bounds = zip([10, 0.5, 0.01],
                            [200, 5., 0.5])
         self.global_optimum = [[7.2462237576e1, 2.6180768402, 6.7359200066e-2]]
         self.fglob = 8.0565229338
@@ -5660,7 +5657,7 @@ class SchmidtVetters(Benchmark):
         Benchmark.__init__(self, dimensions)
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [[0.79876108,  0.79962581,  0.79848824]]
+        self.global_optimum = [[0.79876108, 0.79962581, 0.79848824]]
         self.fglob = 2.99643266
 
     def fun(self, x, *args):
@@ -6023,7 +6020,6 @@ class Shekel05(Benchmark):
                           [3.0, 7.0, 3.0, 7.0]])
 
         self.C = asarray([0.1, 0.2, 0.2, 0.4, 0.4])
-
 
     def fun(self, x, *args):
         self.nfev += 1

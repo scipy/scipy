@@ -12,19 +12,19 @@ from numpy.testing import (assert_equal, TestCase, assert_allclose,
 class TestGoBenchmarkFunctions(TestCase):
 
     def setUp(self):
-#         self.old_seterr = np.seterr(invalid='raise')
+        #self.old_seterr = np.seterr(invalid='raise')
 
         bench_members = inspect.getmembers(gbf, inspect.isclass)
         self.benchmark_functions = [item for item in bench_members if
                                     issubclass(item[1], gbf.Benchmark)]
 
     def tearDown(self):
-#         np.seterr(**self.old_seterr)
+        #np.seterr(**self.old_seterr)
         pass
 
     def test_optimum_solution(self):
-#         Check that the function returns the global minimum if given
-#         the optimal solution
+        #Check that the function returns the global minimum if given
+        #the optimal solution
         for name, klass in self.benchmark_functions:
             if name == 'Benchmark':
                 continue
@@ -38,7 +38,7 @@ class TestGoBenchmarkFunctions(TestCase):
             assert(f.success(f.global_optimum[0]))
 
     def test_solution_exists(self):
-#         Every benchmark function should have a minimum energy
+        #Every benchmark function should have a minimum energy
         for name, klass in self.benchmark_functions:
             if name == 'Benchmark':
                 continue
