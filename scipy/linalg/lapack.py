@@ -190,6 +190,21 @@ All functions
    chegvx
    zhegvx
    
+   slarf
+   dlarf
+   clarf
+   zlarf
+
+   slarfg
+   dlarfg
+   clarfg
+   zlarfg
+
+   slartg
+   dlartg
+   clartg
+   zlartg
+
    dlasd4
    slasd4
 
@@ -238,6 +253,9 @@ All functions
    cpotrs
    zpotrs
 
+   crot
+   zrot
+
    strsyl
    dtrsyl
    ctrsyl
@@ -280,7 +298,6 @@ All functions
 
    sorghr
    dorghr
-
    sorgqr
    dorgqr
 
