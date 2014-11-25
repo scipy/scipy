@@ -17,6 +17,8 @@ from scipy.io.netcdf import netcdf_file
 
 from nose.tools import assert_true, assert_false, assert_equal, assert_raises
 
+from scipy.lib._tmpdirs import in_tempdir
+
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
 
 N_EG_ELS = 11  # number of elements for example variable
@@ -264,37 +266,34 @@ def test_zero_dimensional_var():
 def test_byte_gatts():
     # Check that global "string" atts work like they did before py3k
     # unicode and general bytes confusion
-    filename = pjoin(TEST_DATA_PATH, 'g_byte_atts.nc')
-    f = netcdf_file(filename, 'w')
-    f._attributes['holy'] = b'grail'
-    f._attributes['witch'] = 'floats'
-    f.close()
-
-    f = netcdf_file(filename, 'r')
-    assert_equal(f._attributes['holy'], b'grail')
-    assert_equal(f._attributes['witch'], b'floats')
-    f.close()
-
-    os.remove(filename)
+    with in_tempdir():
+        filename = 'g_byte_atts.nc'
+        f = netcdf_file(filename, 'w')
+        f._attributes['holy'] = b'grail'
+        f._attributes['witch'] = 'floats'
+        f.close()
+        f = netcdf_file(filename, 'r')
+        assert_equal(f._attributes['holy'], b'grail')
+        assert_equal(f._attributes['witch'], b'floats')
+        f.close()
 
 
 def test_open_append():
     # open 'w' put one attr
-    filename = pjoin(TEST_DATA_PATH, 'append_dat.nc')
-    f = netcdf_file(filename, 'w')
-    f._attributes['Kilroy'] = 'was here'
-    f.close()
+    with in_tempdir():
+        filename = 'append_dat.nc'
+        f = netcdf_file(filename, 'w')
+        f._attributes['Kilroy'] = 'was here'
+        f.close()
 
-    # open again in 'a', read the att and and a new one
-    f = netcdf_file(filename, 'a')
-    assert_equal(f._attributes['Kilroy'], b'was here')
-    f._attributes['naughty'] = b'Zoot'
-    f.close()
+        # open again in 'a', read the att and and a new one
+        f = netcdf_file(filename, 'a')
+        assert_equal(f._attributes['Kilroy'], b'was here')
+        f._attributes['naughty'] = b'Zoot'
+        f.close()
 
-    # open yet again in 'r' and check both atts
-    f = netcdf_file(filename, 'r')
-    assert_equal(f._attributes['Kilroy'], b'was here')
-    assert_equal(f._attributes['naughty'], b'Zoot')
-    f.close()
-
-    os.remove(filename)
+        # open yet again in 'r' and check both atts
+        f = netcdf_file(filename, 'r')
+        assert_equal(f._attributes['Kilroy'], b'was here')
+        assert_equal(f._attributes['naughty'], b'Zoot')
+        f.close()
