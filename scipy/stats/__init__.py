@@ -253,6 +253,7 @@ which work for masked arrays.
 
    ttest_1samp
    ttest_ind
+   ttest_ind_from_stats
    ttest_rel
    kstest
    chisquare
