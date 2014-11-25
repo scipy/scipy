@@ -2217,7 +2217,7 @@ class TestDescribe(TestCase):
 
     def test_describe_result_attributes(self):
         actual = stats.describe(np.arange(5))
-        attributes = ('datalen', 'minmax', 'mean', 'variance', 'skewness',
+        attributes = ('nobs', 'minmax', 'mean', 'variance', 'skewness',
                       'kurtosis')
         for i, attr in enumerate(attributes):
             assert_equal(actual[i], getattr(actual, attr))
