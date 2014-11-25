@@ -121,6 +121,7 @@ Inferential Stats
 
    ttest_1samp
    ttest_ind
+   ttest_ind_from_stats
    ttest_rel
    chisquare
    power_divergence
@@ -200,8 +201,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
            'kendalltau', 'linregress', 'theilslopes', 'ttest_1samp',
-           'ttest_ind', 'ttest_rel', 'kstest', 'chisquare',
-           'power_divergence', 'ks_2samp', 'mannwhitneyu',
+           'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
+           'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'zprob', 'chisqprob', 'ksprob', 'fprob', 'betai',
            'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
@@ -3276,13 +3277,98 @@ def _ttest_finish(df, t):
     return t, prob
 
 
+def _ttest_ind_from_stats(mean1, mean2, denom, df):
+
+    d = mean1 - mean2
+    t = np.divide(d, denom)
+    t, prob = _ttest_finish(df, t)
+
+    return t, prob
+
+
+def _unequal_var_ttest_denom(v1, n1, v2, n2):
+    vn1 = v1 / n1
+    vn2 = v2 / n2
+    df = ((vn1 + vn2)**2) / ((vn1**2) / (n1 - 1) + (vn2**2) / (n2 - 1))
+
+    # If df is undefined, variances are zero (assumes n1 > 0 & n2 > 0).
+    # Hence it doesn't matter what df is as long as it's not NaN.
+    df = np.where(np.isnan(df), 1, df)
+    denom = np.sqrt(vn1 + vn2)
+    return df, denom
+
+
+def _equal_var_ttest_denom(v1, n1, v2, n2):
+    df = n1 + n2 - 2
+    svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / float(df)
+    denom = np.sqrt(svar * (1.0 / n1 + 1.0 / n2))
+    return df, denom
+
+
+def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
+                         equal_var=True):
+    """
+    T-test for means of two independent samples from descriptive statistics.
+
+    This is a two-sided test for the null hypothesis that 2 independent samples
+    have identical average (expected) values.
+
+    Parameters
+    ----------
+    mean1 : array_like
+        The mean(s) of sample 1.
+    std1 : array_like
+        The standard deviation(s) of sample 1.
+    nobs1 : array_like
+        The number(s) of observations of sample 1.
+    mean2 : array_like
+        The mean(s) of sample 2
+    std2 : array_like
+        The standard deviations(s) of sample 2.
+    nobs2 : array_like
+        The number(s) of observations of sample 2.
+    equal_var : bool, optional
+        If True (default), perform a standard independent 2 sample test
+        that assumes equal population variances [1]_.
+        If False, perform Welch's t-test, which does not assume equal
+        population variance [2]_.
+
+    Returns
+    -------
+    t : float or array
+        The calculated t-statistics
+    prob : float or array
+        The two-tailed p-value.
+
+    See also
+    --------
+    scipy.stats.ttest_ind
+
+    Notes
+    -----
+    .. versionadded:: 0.16.0
+
+    References
+    ----------
+    .. [1] http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
+
+    .. [2] http://en.wikipedia.org/wiki/Welch%27s_t_test
+    """
+    if equal_var:
+        df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2)
+    else:
+        df, denom = _unequal_var_ttest_denom(std1**2, nobs1,
+                                             std2**2, nobs2)
+    return _ttest_ind_from_stats(mean1, mean2, denom, df)
+
+
 def ttest_ind(a, b, axis=0, equal_var=True):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
     This is a two-sided test for the null hypothesis that 2 independent samples
     have identical average (expected) values. This test assumes that the
-    populations have identical variances.
+    populations have identical variances by default.
 
     Parameters
     ----------
@@ -3374,24 +3460,13 @@ def ttest_ind(a, b, axis=0, equal_var=True):
     n2 = b.shape[axis]
 
     if equal_var:
-        df = n1 + n2 - 2
-        svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / float(df)
-        denom = np.sqrt(svar * (1.0 / n1 + 1.0 / n2))
+        df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
     else:
-        vn1 = v1 / n1
-        vn2 = v2 / n2
-        df = ((vn1 + vn2)**2) / ((vn1**2) / (n1 - 1) + (vn2**2) / (n2 - 1))
+        df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
 
-        # If df is undefined, variances are zero (assumes n1 > 0 & n2 > 0).
-        # Hence it doesn't matter what df is as long as it's not NaN.
-        df = np.where(np.isnan(df), 1, df)
-        denom = np.sqrt(vn1 + vn2)
-
-    d = np.mean(a, axis) - np.mean(b, axis)
-    t = np.divide(d, denom)
-    t, prob = _ttest_finish(df, t)
-
-    return t, prob
+    return _ttest_ind_from_stats(np.mean(a, axis),
+                                 np.mean(b, axis),
+                                 denom, df)
 
 
 def ttest_rel(a, b, axis=0):
