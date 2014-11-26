@@ -3142,6 +3142,36 @@ def show_options(solver=None, method=None):
 
                 See `scipy.sparse.linalg.lgmres` for details.
 
+    *df-sane* options:
+
+        ftol : float, optional
+            Relative norm tolerance.
+
+        fatol : float, optional
+            Absolute norm tolerance.
+            Algorithm terminates when ``||func(x)|| < fatol + ftol ||func(x_0)||``.
+
+        fnorm : callable, optional
+            Norm to use in the convergence check. If None, 2-norm is used.
+
+        maxfev : int, optional
+            Maximum number of function evaluations.
+
+        disp : bool, optional
+            Whether to print convergence process to stdout.
+
+        eta_stragegy : callable, optional
+            Choice of the ``eta_k`` parameter, which gives slack for growth
+            of ``||F||**2``.  Called as ``eta_k = eta_strategy(k, x, F)`` with
+            `k` the iteration number, `x` the current iterate and `F` the current
+            residual. Should satisfy ``eta_k > 0`` and ``sum(eta, k=0..inf) < inf``.
+            Default: ``||F||**2 / (1 + k)**2``.
+
+        M : int, optional
+            Number of iterates to include in the nonmonotonic line search.
+            Default: 10
+
+
     **linprog options**
 
     *simplex* options:
