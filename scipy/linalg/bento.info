@@ -26,3 +26,15 @@ Library:
     Extension: _solve_toeplitz
         Sources:
              _solve_toeplitz.c
+    Extension: blas_pointers
+        Sources:
+            blas_pointers.c
+    Extension: lapack_pointers
+        Sources:
+            lapack_pointers.c
+    Extension: _test_blas_pointers
+        Sources:
+            _test_blas_pointers.c
+    Extension: _test_lapack_pointers
+        Sources:
+            _test_lapack_pointers.c
