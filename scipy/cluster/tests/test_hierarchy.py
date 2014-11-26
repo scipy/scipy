@@ -46,7 +46,8 @@ from scipy.cluster.hierarchy import (
     linkage, from_mlab_linkage, to_mlab_linkage, num_obs_linkage, inconsistent,
     cophenet, fclusterdata, fcluster, is_isomorphic, single, leaders,
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
-    is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram)
+    is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
+    set_link_color_palette)
 from scipy.spatial.distance import pdist
 
 import hierarchy_test_data
@@ -815,6 +816,18 @@ class TestDendrogram(object):
                                     [10.0, 10.0, 32.5, 32.5]],
                          'ivl': ['2', '5', '1', '0', '(2)'],
                          'leaves': [2, 5, 1, 0, 7]})
+
+    def test_dendrogram_colors(self):
+        # Tests dendrogram plots with alternate colors
+        Z = linkage(hierarchy_test_data.ytdist, 'single')
+
+        set_link_color_palette(['c', 'm', 'y', 'k'])
+        R = dendrogram(Z, no_plot=True,
+                       above_threshold_color='g', color_threshold=250)
+        set_link_color_palette(['g', 'r', 'c', 'm', 'y', 'k'])
+
+        color_list = R['color_list']
+        assert_equal(color_list, ['c', 'm', 'g', 'g', 'g'])
 
 
 def calculate_maximum_distances(Z):
