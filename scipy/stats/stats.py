@@ -1088,7 +1088,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals
 
 
-_DescribeResult = namedtuple('DescribeResult', ('datalen', 'minmax', 'mean',
+_DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
                                                 'variance', 'skewness',
                                                 'kurtosis'))
 
@@ -1109,8 +1109,8 @@ def describe(a, axis=0, ddof=1):
 
     Returns
     -------
-    datalen : int
-       Length of data along `axis`.
+    nobs : int
+       Number of observations (length of data along `axis`).
     minmax: tuple of ndarrays or floats
        Minimum and maximum value of data array.
     mean : ndarray or float
