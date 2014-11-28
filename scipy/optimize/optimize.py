@@ -3208,6 +3208,47 @@ def show_options(solver=None, method=None):
             fail to converge due to cycling, using Bland's rule can provide
             convergence at the expense of a less optimal path about the simplex.
 
+
+    **fixpoint options**
+
+    *steffensen* options:
+
+        maxiter : int, optional
+            Maximum number of iterations to make.
+
+        xtol : float, optional
+            Relative tolerance. Default: 1e-8
+
+        xatol : float, optional
+            Absolute tolerance. Default: 0
+
+    *squarem* options:
+
+        xtol : float, optional
+            Relative norm tolerance.
+
+        xatol : float, optional
+            Absolute norm tolerance.
+            Algorithm terminates when ``||func(x) - x|| < xtol ||x|| + xatol``.
+
+        fnorm : callable, optional
+            Norm to use in the convergence check. If None, 2-norm is used.
+
+        maxfev : int, optional
+            Maximum number of function evaluations.
+
+        disp : bool, optional
+            Whether to print convergence process to stdout.
+
+        step_rule : {1, 2, 3}, optional
+            Which of the SQUAREM step length rules to use.
+            Default: 3 if is_contraction, otherwise 2
+
+        fmerit : callable, optional
+            Merit function to be minimized in the globalization step;
+            called as ``fmerit(x, F)``. For EM, take the negative of
+            the likelihood function. Default: ||F - x||**2
+
     """
     import textwrap
 
@@ -3227,7 +3268,7 @@ def show_options(solver=None, method=None):
         return
 
     solver = solver.lower()
-    if solver not in ('minimize', 'minimize_scalar', 'root', 'linprog'):
+    if solver not in ('minimize', 'minimize_scalar', 'root', 'linprog', 'fixpoint'):
         raise ValueError('Unknown solver.')
 
     solvers_doc = [s.strip()

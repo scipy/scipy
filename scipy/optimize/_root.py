@@ -17,7 +17,7 @@ from warnings import warn
 
 from .optimize import MemoizeJac, OptimizeResult, _check_unknown_options
 from .minpack import _root_hybr, leastsq, _fixpoint_steffensen
-from ._spectral import _root_df_sane
+from ._spectral import _root_df_sane, _fixpoint_squarem
 from . import nonlin
 
 
@@ -224,7 +224,7 @@ def fixpoint(fun, x0, args=(), method=None, jac=None, tol=None, callback=None,
         Initial guess for the fixed point.
     args : tuple, optional
         Extra arguments to `func`.
-    method : {'steffensen'}, optional
+    method : {'steffensen', 'squarem'}, optional
         Method to use to solve for the fixed point.
     jac : callable, optional
         Method returning Jacobian of the function.
@@ -245,6 +245,9 @@ def fixpoint(fun, x0, args=(), method=None, jac=None, tol=None, callback=None,
     -----
     Method *steffensen* uses Steffensen's Method with Aitken's
     ``Del^2`` convergence acceleration. [1]_
+
+    Method *squarem* uses the SQUAREM [2]_ spectral acceleration
+    approach.
 
     See Also
     --------
@@ -270,12 +273,15 @@ def fixpoint(fun, x0, args=(), method=None, jac=None, tol=None, callback=None,
     # set default tolerances
     if tol is not None:
         options = dict(options)
-        if meth in ('steffensen',):
+        if meth in ('steffensen', 'squarem'):
             options.setdefault('xtol', tol)
 
     if meth == 'steffensen':
         _warn_jac_unused(jac, method)
         sol = _fixpoint_steffensen(fun, x0, args=args, callback=callback, **options)
+    elif meth == 'squarem':
+        _warn_jac_unused(jac, method)
+        sol = _fixpoint_squarem(fun, x0, args=args, callback=callback, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
 

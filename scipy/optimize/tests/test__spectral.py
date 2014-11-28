@@ -4,9 +4,9 @@ import itertools
 
 import numpy as np
 from numpy import exp
-from numpy.testing import assert_, assert_equal
+from numpy.testing import assert_, assert_equal, assert_allclose
 
-from scipy.optimize import root
+from scipy.optimize import root, fixpoint
 
 
 def test_performance():
@@ -134,6 +134,22 @@ def test_stagnation():
     assert_(not sol.success)
     assert_equal(sol.message, "convergence stagnated")
     assert_(sol.nfev < 1000, repr(sol.nfev))
+
+
+def test_squarem():
+    # fixed point should be sqrt(c)
+    def func(x, c):
+        return 0.5*(x + c/x)
+
+    c = np.array([0.75, 1.0, 1.25])
+    x0 = [1.1, 1.15, 0.9]
+    olderr = np.seterr(all='ignore')
+    try:
+        sol = fixpoint(func, x0, args=(c,), method='squarem')
+    finally:
+        np.seterr(**olderr)
+    assert_(sol.success)
+    assert_allclose(sol.x, np.sqrt(c))
 
 
 # Some of the test functions and initial guesses listed in
