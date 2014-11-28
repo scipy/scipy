@@ -7,7 +7,7 @@ Functions
 """
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['root']
+__all__ = ['root', 'fixpoint']
 
 import numpy as np
 
@@ -16,7 +16,7 @@ from scipy._lib.six import callable
 from warnings import warn
 
 from .optimize import MemoizeJac, OptimizeResult, _check_unknown_options
-from .minpack import _root_hybr, leastsq
+from .minpack import _root_hybr, leastsq, _fixpoint_steffensen
 from ._spectral import _root_df_sane
 from . import nonlin
 
@@ -206,6 +206,80 @@ def _warn_jac_unused(jac, method):
     if jac is not None:
         warn('Method %s does not use the jacobian (jac).' % (method,),
              RuntimeWarning)
+
+
+def fixpoint(fun, x0, args=(), method=None, jac=None, tol=None, callback=None,
+             options=None):
+    """
+    Find a fixed point of the function.
+
+    Given a function of one or more variables and a starting point, find a
+    fixed-point of the function: i.e. where ``func(x0) == x0``.
+
+    Parameters
+    ----------
+    fun : function
+        Function to evaluate.
+    x0 : array_like
+        Initial guess for the fixed point.
+    args : tuple, optional
+        Extra arguments to `func`.
+    method : {'steffensen'}, optional
+        Method to use to solve for the fixed point.
+    jac : callable, optional
+        Method returning Jacobian of the function.
+    tol : float, optional
+        Convergence tolerance. Default: 1e-08.
+    callback : callable, optional
+        Function to call on each iteration. Called as ``callback(x)``
+        where ``x`` is the current iterate.
+    options : dict, optional
+        Solver-specific options.
+
+    Returns
+    -------
+    sol : OptimizeResult
+        Solution to the fixed-point problem.
+
+    Notes
+    -----
+    Method *steffensen* uses Steffensen's Method with Aitken's
+    ``Del^2`` convergence acceleration. [1]_
+
+    See Also
+    --------
+    OptimizeResult
+
+    References
+    ----------
+    .. [1] Burden, Faires, "Numerical Analysis", 5th edition, pg. 80.
+    .. [2] R. Varadhan, C. Roland. Scand. J. Statistics, 35, 335 (2008).
+
+    """
+    if not isinstance(args, tuple):
+        args = (args,)
+
+    meth = method.lower()
+    if options is None:
+        options = {}
+
+    if callback is not None and meth in ():
+        warn('Method %s does not accept callback.' % method,
+             RuntimeWarning)
+
+    # set default tolerances
+    if tol is not None:
+        options = dict(options)
+        if meth in ('steffensen',):
+            options.setdefault('xtol', tol)
+
+    if meth == 'steffensen':
+        _warn_jac_unused(jac, method)
+        sol = _fixpoint_steffensen(fun, x0, args=args, callback=callback, **options)
+    else:
+        raise ValueError('Unknown solver %s' % method)
+
+    return sol
 
 
 def _root_leastsq(func, x0, args=(), jac=None,

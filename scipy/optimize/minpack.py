@@ -642,7 +642,7 @@ def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=0):
 
 def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
     """
-    Find a fixed point of the function.
+    Steffensen's method for finding a fixed point.
 
     Given a function of one or more variables and a starting point, find a
     fixed-point of the function: i.e. where ``func(x0) == x0``.
@@ -660,6 +660,11 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
     maxiter : int, optional
         Maximum number of iterations, defaults to 500.
 
+    Raises
+    ------
+    RuntimeError
+        No converge within maxiter iterations.
+
     Notes
     -----
     Uses Steffensen's Method using Aitken's ``Del^2`` convergence acceleration.
@@ -676,34 +681,45 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
     array([ 1.4920333 ,  1.37228132])
 
     """
-    if not isscalar(x0):
-        x0 = asarray(x0)
-        p0 = x0
-        for iter in range(maxiter):
-            p1 = func(p0, *args)
-            p2 = func(p1, *args)
-            d = p2 - 2.0 * p1 + p0
-            p = where(d == 0, p2, p0 - (p1 - p0)*(p1 - p0) / d)
-            relerr = where(p0 == 0, p, (p-p0)/p0)
-            if all(abs(relerr) < xtol):
-                return p
-            p0 = p
+    sol = _fixpoint_steffensen(func, x0, args, xtol=xtol, maxiter=maxiter)
+    if not sol.success:
+        raise RuntimeError(sol.message)
+    return sol.x
+
+
+def _fixpoint_steffensen(func, x0, args=(), xtol=1e-8, xatol=1e-300, maxiter=500,
+                         callback=None, **unknown_options):
+    _check_unknown_options(unknown_options)
+    success = True
+
+    x0 = np.asarray(x0)
+    x0_shape = x0.shape
+    x0 = x0.ravel()
+
+    p0 = x0
+    for iter in range(maxiter):
+        if callback is not None:
+            callback(p0.reshape(x0_shape))
+        p1 = np.asarray(func(p0.reshape(x0_shape), *args)).ravel()
+        p2 = np.asarray(func(p1.reshape(x0_shape), *args)).flatten() # make a copy
+        d = p2 - 2.0 * p1 + p0
+        m = (d == 0)
+        p = p2
+        p[~m] = p0[~m] - (p1[~m] - p0[~m])**2 / d[~m]
+        if (abs(p - p0) <= xtol * abs(p0) + xatol).all():
+            success = True
+            break
+        p0 = p
     else:
-        p0 = x0
-        for iter in range(maxiter):
-            p1 = func(p0, *args)
-            p2 = func(p1, *args)
-            d = p2 - 2.0 * p1 + p0
-            if d == 0.0:
-                return p2
-            else:
-                p = p0 - (p1 - p0)*(p1 - p0) / d
-            if p0 == 0:
-                relerr = p
-            else:
-                relerr = (p - p0)/p0
-            if abs(relerr) < xtol:
-                return p
-            p0 = p
-    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
-    raise RuntimeError(msg)
+        success = False
+
+    if success:
+        msg = "Converged successfully"
+    else:
+        msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
+
+    return OptimizeResult(success=success,
+                          x=p.reshape(x0_shape),
+                          message=msg,
+                          nit=iter,
+                          nfev=2*iter)

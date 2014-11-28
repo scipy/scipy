@@ -110,7 +110,8 @@ Fixed point finding:
 .. autosummary::
    :toctree: generated/
 
-   fixed_point - Single-variable fixed-point solver
+   fixpoint - Single-variable fixed-point solver
+   fixed_point - Steffensen's method for fixed points
 
 Multidimensional
 ----------------

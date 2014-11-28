@@ -3,10 +3,11 @@ Unit tests for optimization routines from _root.py.
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_
+from numpy.testing import assert_, assert_allclose
 import numpy as np
 
-from scipy.optimize import root
+from scipy.optimize import root, fixpoint
+from scipy.special import lambertw
 
 
 class TestRoot(object):
@@ -45,3 +46,87 @@ class TestRoot(object):
             x, y = z
             return np.array([x**3 - 1, y**3 - f])
         root(func, [1.1, 1.1], args=1.5)
+
+
+class TestFixPoint(object):
+
+    def _check_scalar_trivial(self, method):
+        # f(x) = 2x; fixed point should be x=0
+        def func(x):
+            return 2.0*x
+        x0 = 1.0
+        sol = fixpoint(func, x0, method=method)
+        assert_(sol.success)
+        assert_allclose(sol.x, 0.0, atol=1e-15)
+
+    def _check_scalar_basic1(self, method):
+        # f(x) = x**2; x0=1.05; fixed point should be x=1
+        def func(x):
+            return x**2
+        x0 = 1.05
+        sol = fixpoint(func, x0, method=method)
+        assert_(sol.success)
+        assert_allclose(sol.x, 1.0)
+
+    def _check_scalar_basic2(self, method):
+        # f(x) = x**0.5; x0=1.05; fixed point should be x=1
+        def func(x):
+            return x**0.5
+        x0 = 1.05
+        sol = fixpoint(func, x0, method=method)
+        assert_(sol.success)
+        assert_allclose(sol.x, 1.0)
+
+    def _check_array_trivial(self, method):
+        def func(x):
+            return 2.0*x
+        x0 = [0.3, 0.15]
+        olderr = np.seterr(all='ignore')
+        try:
+            sol = fixpoint(func, x0, method=method)
+        finally:
+            np.seterr(**olderr)
+        assert_(sol.success)
+        assert_allclose(sol.x, [0.0, 0.0], atol=1e-15)
+
+    def _check_array_basic1(self, method):
+        # f(x) = c * x**2; fixed point should be x=1/c
+        def func(x, c):
+            return c * x**2
+        c = np.array([0.75, 1.0, 1.25])
+        x0 = [1.1, 1.15, 0.9]
+        olderr = np.seterr(all='ignore')
+        try:
+            sol = fixpoint(func, x0, args=(c,), method=method)
+        finally:
+            np.seterr(**olderr)
+        assert_(sol.success)
+        assert_allclose(sol.x, 1.0/c)
+
+    def _check_array_basic2(self, method):
+        # f(x) = c * x**0.5; fixed point should be x=c**2
+        def func(x, c):
+            return c * x**0.5
+        c = np.array([0.75, 1.0, 1.25])
+        x0 = [0.8, 1.1, 1.1]
+        sol = fixpoint(func, x0, args=(c,), method=method)
+        assert_(sol.success)
+        assert_allclose(sol.x, c**2)
+
+    def _check_lambertw(self, method):
+        # python-list/2010-December/594592.html
+        sol = fixpoint(lambda xx: np.exp(-2.0*xx)/2.0, 1.0,
+                       method=method, args=(), options=dict(xtol=1e-12, maxiter=500))
+        assert_(sol.success)
+        assert_allclose(sol.x, np.exp(-2.0*sol.x)/2.0)
+        assert_allclose(sol.x, lambertw(1)/2)
+
+    def test_methods(self):
+        for method in ['steffensen']:
+            yield self._check_scalar_trivial, method
+            yield self._check_scalar_basic1, method
+            yield self._check_scalar_basic2, method
+            yield self._check_array_trivial, method
+            yield self._check_array_basic1, method
+            yield self._check_array_basic2, method
+            yield self._check_lambertw, method
