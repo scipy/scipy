@@ -18,6 +18,20 @@ flag_map = {0: CONVERGED, -1: SIGNERR, -2: CONVERR}
 
 
 class RootResults(object):
+    """ Represents the root finding result.
+    Attributes
+    ----------
+    root : float
+        Estimated root location.
+    iterations : int
+        Number of iterations needed to find the root.
+    function_calls : int
+        Number of times the function was called.
+    converged : bool
+        True if the routine converged.
+    flag : str
+        Description of the cause of termination.
+    """
     def __init__(self, root, iterations, function_calls, flag):
         self.root = root
         self.iterations = iterations
