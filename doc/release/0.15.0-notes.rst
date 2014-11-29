@@ -61,6 +61,9 @@ providing better performance.
 Add function ``orthogonal_procrustes`` for solving the procrustes
 linear algebra problem.
 
+BLAS level 2 functions ``her``, ``syr``, ``her2`` and ``syr2`` are now wrapped
+in ``scipy.linalg``.
+
 ``scipy.sparse`` improvements
 -----------------------------
 
@@ -107,6 +110,9 @@ can easily be installed with ``pip install weave``.
 
 ``scipy.special.bessel_diff_formula`` is deprecated.  It is a private function,
 and therefore will be removed from the public API in a following release.
+
+``scipy.stats.nanmean``, ``nanmedian`` and ``nanstd`` functions are deprecated
+in favor of their numpy equivalents.
 
 
 Backwards incompatible changes
