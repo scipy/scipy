@@ -3,8 +3,6 @@
 Signal processing (:mod:`scipy.signal`)
 =======================================
 
-.. module:: scipy.signal
-
 Convolution
 ===========
 

@@ -15,7 +15,7 @@ counterparts, it is called the discrete Fourier transform (DFT).  The DFT has
 become a mainstay of numerical computing in part because of a very fast
 algorithm for computing it, called the Fast Fourier Transform (FFT), which was
 known to Gauss (1805) and was brought to light in its current form by Cooley
-and Tukey [CT]_.  Press et al. [NR]_ provide an accessible introduction to
+and Tukey [CT65]_.  Press et al. [NR]_ provide an accessible introduction to
 Fourier analysis and its applications.
 
 
@@ -475,7 +475,7 @@ dst(type=3), idst(type=3), and idst(type=3) (``*dst2_cache``).
 References
 ----------
 
-.. [CT] Cooley, James W., and John W. Tukey, 1965, "An algorithm for the
+.. [CT65] Cooley, James W., and John W. Tukey, 1965, "An algorithm for the
         machine calculation of complex Fourier series," *Math. Comput.*
         19: 297-301.
 

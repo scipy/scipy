@@ -108,7 +108,7 @@ class netcdf_file(object):
     version : {1, 2}, optional
         version of netcdf to read / write, where 1 means *Classic
         format* and 2 means *64-bit offset format*.  Default is 1.  See
-        `here <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf/Which-Format.html>`_
+        `here <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf/Which-Format.html>`__
         for more info.
 
     Notes
@@ -120,7 +120,7 @@ class netcdf_file(object):
     NetCDF files are a self-describing binary data format. The file contains
     metadata that describes the dimensions and variables in the file. More
     details about NetCDF files can be found `here
-    <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html>`_. There
+    <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html>`__. There
     are three main sections to a NetCDF data structure:
 
     1. Dimensions

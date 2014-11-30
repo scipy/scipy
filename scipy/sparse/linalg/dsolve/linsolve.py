@@ -188,18 +188,18 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     diag_pivot_thresh : float, optional
         Threshold used for a diagonal entry to be an acceptable pivot.
-        See SuperLU user's guide for details [SLU]_
+        See SuperLU user's guide for details [1]_
     drop_tol : float, optional
         (deprecated) No effect.
     relax : int, optional
         Expert option for customizing the degree of relaxing supernodes.
-        See SuperLU user's guide for details [SLU]_
+        See SuperLU user's guide for details [1]_
     panel_size : int, optional
         Expert option for customizing the panel size.
-        See SuperLU user's guide for details [SLU]_
+        See SuperLU user's guide for details [1]_
     options : dict, optional
         Dictionary containing additional expert options to SuperLU.
-        See SuperLU user guide [SLU]_ (section 2.4 on the 'Options' argument)
+        See SuperLU user guide [1]_ (section 2.4 on the 'Options' argument)
         for more details. For example, you can specify
         ``options=dict(Equil=False, IterRefine='SINGLE'))``
         to turn equilibration off and perform a single iterative refinement.
@@ -219,7 +219,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     References
     ----------
-    .. [SLU] SuperLU http://crd.lbl.gov/~xiaoye/SuperLU/
+    .. [1] SuperLU http://crd.lbl.gov/~xiaoye/SuperLU/
 
     """
 

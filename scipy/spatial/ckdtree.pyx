@@ -1738,7 +1738,7 @@ cdef class cKDTree:
         Returns
         -------
         results : set
-            Set of pairs ``(i,j)``, with ``i < j`, for which the corresponding
+            Set of pairs ``(i,j)``, with ``i < j``, for which the corresponding
             positions are close.
 
         """
