@@ -43,8 +43,9 @@ Modifications 2014 Andrew Nelson
 """
 
 import numpy as np
-from numpy import abs, arange, arctan2, asarray, atleast_1d, cos, exp, floor, inf, log, ones, log10, arange
-from numpy import pi, prod, roll, seterr, sign, sin, sqrt, sum, where, zeros, zeros_like, tan, tanh, dot
+from numpy import (abs, arctan2, asarray, cos, exp, floor, inf, log, log10,
+                   arange, pi, prod, roll, seterr, sign, sin, sqrt, sum, where,
+                   zeros, tan, tanh, dot)
 
 from scipy.misc import factorial
 
@@ -132,7 +133,6 @@ class Benchmark(object):
         if abs(val - self.fglob) < tol:
             return True
         if val < self.fglob:
-            #print(repr(self), val, x)
             return True
 
         return False
@@ -432,7 +432,7 @@ class Alpine02(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
-        #TODO check minima as a function of dimensionality
+        # TODO check minima as a function of dimensionality
         self.global_optimum = [[7.91705268, 4.81584232]]
         self.fglob = -6.12950
         self.change_dimensionality = True
@@ -1043,10 +1043,11 @@ class Bukin02(Benchmark):
         f_{\text{Bukin02}}(\mathbf{x}) = 100 (x_2^2 - 0.01x_1^2 + 1)
         + 0.01(x_1 + 10)^2
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_1 \in [-15,
-    -5], x_2 \in [-3, 3]`
+    Here, :math:`n` represents the number of dimensions and :math:`x_1 \in 
+    [-15, -5], x_2 \in [-3, 3]`
 
-    *Global optimum*: :math:`f(x_i) = -124.75` for :math:`\mathbf{x} = [-15, 0]`
+    *Global optimum*: :math:`f(x_i) = -124.75` for :math:`\mathbf{x} = 
+    [-15, 0]`
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical
@@ -1054,8 +1055,8 @@ class Bukin02(Benchmark):
 
     """
 
-    #TODO: this function is dodgy.  Infinity77 equation is different to code.
-    #Jamil also has wrong minimum.
+    # TODO: this function is dodgy.  Infinity77 equation is different to code.
+    # Jamil also has wrong minimum.
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
@@ -3201,9 +3202,11 @@ class Kowalik(Benchmark):
        \\mathbf{a} = [4, 2, 1, 1/2, 1/4 1/8, 1/10, 1/12, 1/14, 1/16] \\\\
        \\mathbf{b} = [0.1957, 0.1947, 0.1735, 0.1600, 0.0844, 0.0627, 0.0456, 0.0342, 0.0323, 0.0235, 0.0246]
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,...,4`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in 
+    [-5, 5]` for :math:`i=1,...,4`.
 
-    *Global optimum*: :math:`f(x_i) = 0.00030748610` for :math:`\\mathbf{x} = [0.192833, 0.190836, 0.123117, 0.135766]`.
+    *Global optimum*: :math:`f(x_i) = 0.00030748610` for :math:`\\mathbf{x} = 
+    [0.192833, 0.190836, 0.123117, 0.135766]`.
 
     """
     # TODO, this is a NIST regression standard dataset
@@ -3491,7 +3494,7 @@ class Levy13(Benchmark):
         u = sin(3 * pi * x[0]) ** 2
         v = (x[0] - 1) ** 2 * (1 + (sin(3 * pi * x[1])) ** 2)
         w = (x[1] - 1) ** 2 * (1 + (sin(2 * pi * x[1])) ** 2)
-        return (u + v + w)
+        return u + v + w
 
 
 class Matyas(Benchmark):
@@ -3507,7 +3510,8 @@ class Matyas(Benchmark):
         f_{\\text{Matyas}}(\\mathbf{x}) = 0.26(x_1^2 + x_2^2) - 0.48x_1x_2
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,2`
 
@@ -5185,12 +5189,13 @@ class Ratkowsky02(Benchmark):
     is a multimodal minimization problem defined as follows:
 
     .. math::
-#TODO fix equation
+    # TODO fix equation
        f_{\\text{Ratkowsky02}}(\\mathbf{x}) = \\sum_{i=1}^2 -e^{-2 \\log 2 (\\frac{x_i-0.1}{0.8})^2} \\left[\\sin^6(5 \\pi x_i) + 0.1\\cos^2(500 \\pi x_i) \\right]
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 1]` for :math:`i=1,...,n`.
 
-    *Global optimum*: :math:`f(x_i) = 8.0565229338` for :math:`x_i = [7.2462237576e1, 2.6180768402, 6.7359200066e-2]`
+    *Global optimum*: :math:`f(x_i) = 8.0565229338` for :math:`x_i =
+    [7.2462237576e1, 2.6180768402, 6.7359200066e-2]`
 
     """
 
@@ -7678,7 +7683,7 @@ class ZeroSum(Benchmark):
 
         if abs(sum(x)) < 3e-16:
             return 0.0
-#         TODO: the abs term doesn't appear to be in the equation.
+        # TODO: the abs term doesn't appear to be in the equation.
         return 1.0 + (10000.0 * abs(sum(x))) ** 0.5
 
 
@@ -8325,8 +8330,8 @@ class Problem15(Benchmark):
     """
     Univariate Problem15 objective function.
 
-    This class defines the Univariate Problem15 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Univariate Problem15 global optimization problem.
+    This is a multimodal minimization problem defined as follows:
 
     .. math::
 
@@ -8364,8 +8369,8 @@ class Problem18(Benchmark):
     """
     Univariate Problem18 objective function.
 
-    This class defines the Univariate Problem18 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Univariate Problem18 global optimization problem.
+    This is a multimodal minimization problem defined as follows:
 
     .. math::
 
@@ -8408,8 +8413,8 @@ class Problem20(Benchmark):
     """
     Univariate Problem20 objective function.
 
-    This class defines the Univariate Problem20 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Univariate Problem20 global optimization problem.
+    This is a multimodal minimization problem defined as follows:
 
     .. math::
 
@@ -8447,8 +8452,8 @@ class Problem21(Benchmark):
     """
     Univariate Problem21 objective function.
 
-    This class defines the Univariate Problem21 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Univariate Problem21 global optimization problem.
+    This is a multimodal minimization problem defined as follows:
 
     .. math::
 
@@ -8486,8 +8491,8 @@ class Problem22(Benchmark):
     """
     Univariate Problem22 objective function.
 
-    This class defines the Univariate Problem22 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Univariate Problem22 global optimization problem.
+    This is a multimodal minimization problem defined as follows:
 
     .. math::
 
