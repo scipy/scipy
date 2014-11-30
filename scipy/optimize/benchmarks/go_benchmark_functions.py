@@ -9,7 +9,8 @@ optimization routines, such as scipy.optimize.basinhopping, or
 scipy.optimize.differential_evolution.  The purpose is to see whether a given
 optimization routine can find the global minimum, and how many function
 evaluations it requires to do so.
-The range of problems is extensive, with a range of difficulty. The problems are multivariate, with N=2 to N=17 provided.
+The range of problems is extensive, with a range of difficulty. The problems are
+multivariate, with N=2 to N=17 provided.
 
 References
 ----------
