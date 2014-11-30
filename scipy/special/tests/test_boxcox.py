@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import run_module_suite, assert_equal, assert_almost_equal
-from scipy.special import boxcox, boxcox1p
+from scipy.special import boxcox, boxcox1p, inv_boxcox, inv_boxcox1p
 
 
 # There are more tests of boxcox and boxcox1p in test_mpmath.py.
@@ -71,6 +71,20 @@ def test_boxcox1p_nonfinite():
     x = -1
     y = boxcox1p(x, [-2.5, 0])
     yield assert_equal, y, np.array([-np.inf, -np.inf])
+
+
+def test_inv_boxcox():
+    x = np.array([0., 1., 2.])
+    lam = np.array([0., 1., 2.])
+    y = boxcox(x, lam)
+    x2 = inv_boxcox(y, lam)
+    assert_almost_equal(x, x2)
+
+    x = np.array([0., 1., 2.])
+    lam = np.array([0., 1., 2.])
+    y = boxcox1p(x, lam)
+    x2 = inv_boxcox1p(y, lam)
+    assert_almost_equal(x, x2)
 
 
 if __name__ == '__main__':

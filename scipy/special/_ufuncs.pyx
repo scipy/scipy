@@ -1786,6 +1786,12 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_i1 "i1"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_i1e "i1e"(double) nogil
+from _boxcox cimport inv_boxcox as _func_inv_boxcox
+ctypedef double _proto_inv_boxcox_t(double, double) nogil
+cdef _proto_inv_boxcox_t *_proto_inv_boxcox_t_var = &_func_inv_boxcox
+from _boxcox cimport inv_boxcox1p as _func_inv_boxcox1p
+ctypedef double _proto_inv_boxcox1p_t(double, double) nogil
+cdef _proto_inv_boxcox1p_t *_proto_inv_boxcox1p_t_var = &_func_inv_boxcox1p
 cdef extern from "_ufuncs_defs.h":
     cdef int _func_it2i0k0_wrap "it2i0k0_wrap"(double, double *, double *) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -2955,7 +2961,7 @@ cdef char *ufunc_boxcox1p_doc = (
     "\n"
     "Examples\n"
     "--------\n"
-    ">> boxcox1p(1e-4, [0, 0.5, 1])\n"
+    ">>> boxcox1p(1e-4, [0, 0.5, 1])\n"
     "array([  9.99950003e-05,   9.99975001e-05,   1.00000000e-04])\n"
     ">>> boxcox1p([0.01, 0.1], 0.25)\n"
     "array([ 0.00996272,  0.09645476])")
@@ -6092,6 +6098,110 @@ ufunc_i1e_ptr[2*1+1] = <void*>(<char*>"i1e")
 ufunc_i1e_data[0] = &ufunc_i1e_ptr[2*0]
 ufunc_i1e_data[1] = &ufunc_i1e_ptr[2*1]
 i1e = np.PyUFunc_FromFuncAndData(ufunc_i1e_loops, ufunc_i1e_data, ufunc_i1e_types, 2, 1, 1, 0, "i1e", ufunc_i1e_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_inv_boxcox_loops[2]
+cdef void *ufunc_inv_boxcox_ptr[4]
+cdef void *ufunc_inv_boxcox_data[2]
+cdef char ufunc_inv_boxcox_types[6]
+cdef char *ufunc_inv_boxcox_doc = (
+    "inv_boxcox(y, lmbda)\n"
+    "\n"
+    "Compute the inverse of the Box-Cox transformation.\n"
+    "\n"
+    "Find ``x`` such that::\n"
+    "\n"
+    "    y = (x**lmbda - 1) / lmbda  if lmbda != 0\n"
+    "        log(x)                  if lmbda == 0\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "y : array_like\n"
+    "    Data to be transformed.\n"
+    "lmbda : array_like\n"
+    "    Power parameter of the Box-Cox transform.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "x : array\n"
+    "    Transformed data.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "\n"
+    ".. versionadded:: 0.16.0\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    ">>> y = boxcox([1, 4, 10], 2.5)\n"
+    ">>> inv_boxcox(y, 2.5)\n"
+    "array([1., 4., 10.])")
+ufunc_inv_boxcox_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_inv_boxcox_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_inv_boxcox_types[0] = <char>NPY_FLOAT
+ufunc_inv_boxcox_types[1] = <char>NPY_FLOAT
+ufunc_inv_boxcox_types[2] = <char>NPY_FLOAT
+ufunc_inv_boxcox_types[3] = <char>NPY_DOUBLE
+ufunc_inv_boxcox_types[4] = <char>NPY_DOUBLE
+ufunc_inv_boxcox_types[5] = <char>NPY_DOUBLE
+ufunc_inv_boxcox_ptr[2*0] = <void*>_func_inv_boxcox
+ufunc_inv_boxcox_ptr[2*0+1] = <void*>(<char*>"inv_boxcox")
+ufunc_inv_boxcox_ptr[2*1] = <void*>_func_inv_boxcox
+ufunc_inv_boxcox_ptr[2*1+1] = <void*>(<char*>"inv_boxcox")
+ufunc_inv_boxcox_data[0] = &ufunc_inv_boxcox_ptr[2*0]
+ufunc_inv_boxcox_data[1] = &ufunc_inv_boxcox_ptr[2*1]
+inv_boxcox = np.PyUFunc_FromFuncAndData(ufunc_inv_boxcox_loops, ufunc_inv_boxcox_data, ufunc_inv_boxcox_types, 2, 2, 1, 0, "inv_boxcox", ufunc_inv_boxcox_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_inv_boxcox1p_loops[2]
+cdef void *ufunc_inv_boxcox1p_ptr[4]
+cdef void *ufunc_inv_boxcox1p_data[2]
+cdef char ufunc_inv_boxcox1p_types[6]
+cdef char *ufunc_inv_boxcox1p_doc = (
+    "inv_boxcox1p(y, lmbda)\n"
+    "\n"
+    "Compute the inverse of the Box-Cox transformation.\n"
+    "\n"
+    "Find ``x`` such that::\n"
+    "\n"
+    "    y = ((1+x)**lmbda - 1) / lmbda  if lmbda != 0\n"
+    "        log(1+x)                    if lmbda == 0\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "y : array_like\n"
+    "    Data to be transformed.\n"
+    "lmbda : array_like\n"
+    "    Power parameter of the Box-Cox transform.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "x : array\n"
+    "    Transformed data.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "\n"
+    ".. versionadded:: 0.16.0\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    ">>> y = boxcox1p([1, 4, 10], 2.5)\n"
+    ">>> inv_boxcox1p(y, 2.5)\n"
+    "array([1., 4., 10.])")
+ufunc_inv_boxcox1p_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_inv_boxcox1p_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_inv_boxcox1p_types[0] = <char>NPY_FLOAT
+ufunc_inv_boxcox1p_types[1] = <char>NPY_FLOAT
+ufunc_inv_boxcox1p_types[2] = <char>NPY_FLOAT
+ufunc_inv_boxcox1p_types[3] = <char>NPY_DOUBLE
+ufunc_inv_boxcox1p_types[4] = <char>NPY_DOUBLE
+ufunc_inv_boxcox1p_types[5] = <char>NPY_DOUBLE
+ufunc_inv_boxcox1p_ptr[2*0] = <void*>_func_inv_boxcox1p
+ufunc_inv_boxcox1p_ptr[2*0+1] = <void*>(<char*>"inv_boxcox1p")
+ufunc_inv_boxcox1p_ptr[2*1] = <void*>_func_inv_boxcox1p
+ufunc_inv_boxcox1p_ptr[2*1+1] = <void*>(<char*>"inv_boxcox1p")
+ufunc_inv_boxcox1p_data[0] = &ufunc_inv_boxcox1p_ptr[2*0]
+ufunc_inv_boxcox1p_data[1] = &ufunc_inv_boxcox1p_ptr[2*1]
+inv_boxcox1p = np.PyUFunc_FromFuncAndData(ufunc_inv_boxcox1p_loops, ufunc_inv_boxcox1p_data, ufunc_inv_boxcox1p_types, 2, 2, 1, 0, "inv_boxcox1p", ufunc_inv_boxcox1p_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_it2i0k0_loops[2]
 cdef void *ufunc_it2i0k0_ptr[4]

@@ -11,7 +11,8 @@ from scipy.misc.doccer import inherit_docstring_from
 from scipy import special
 from scipy import optimize
 from scipy import integrate
-from scipy.special import (gammaln as gamln, gamma as gam, boxcox, boxcox1p)
+from scipy.special import (gammaln as gamln, gamma as gam, boxcox, boxcox1p,
+                           inv_boxcox, inv_boxcox1p)
 
 from numpy import (where, arange, putmask, ravel, sum, shape,
                    log, sqrt, exp, arctanh, tan, sin, arcsin, arctan,
@@ -1437,15 +1438,10 @@ class genpareto_gen(rv_continuous):
             -x)
 
     def _cdf(self, x, c):
-        return -special.expm1(self._logsf(x, c))
+        return -inv_boxcox1p(-x, -c)
 
     def _sf(self, x, c):
-        return np.exp(self._logsf(x, c))
-
-    def _logsf(self, x, c):
-        return _lazywhere((x == x) & (c != 0), (x, c),
-            lambda x, c: -special.log1p(c*x) / c,
-            -x)
+        return inv_boxcox(-x, -c)
 
     def _ppf(self, q, c):
         return -boxcox1p(-q, -c)
