@@ -28,7 +28,7 @@ from numpy import array
 import scipy.sparse as SP
 
 import scipy.io.matlab.byteordercodes as boc
-from scipy.io.matlab.miobase import matdims, MatWriteError
+from scipy.io.matlab.miobase import matdims, MatWriteError, MatReadError
 from scipy.io.matlab.mio import (mat_reader_factory, loadmat, savemat, whosmat)
 from scipy.io.matlab.mio5 import (MatlabObject, MatFile5Writer, MatFile5Reader,
                                   MatlabFunction, varmats_from_mat)
@@ -1048,6 +1048,12 @@ def test_empty_sparse():
     res = loadmat(sio)
     assert_array_equal(res['x'].shape, empty_sparse.shape)
     assert_array_equal(res['x'].todense(), 0)
+
+
+def test_empty_mat_error():
+    # Test we get a specific warning for an empty mat file
+    sio = BytesIO()
+    assert_raises(MatReadError, loadmat, sio)
 
 
 if __name__ == "__main__":
