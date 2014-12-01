@@ -209,6 +209,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     Notes
     -----
     See `splev` for evaluation of the spline and its derivatives.
+    The number of dimensions N must be smaller than 11.
 
     References
     ----------
