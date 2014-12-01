@@ -22,8 +22,8 @@ class TestGoBenchmarkFunctions(TestCase):
         # Check that the function returns the global minimum if given
         # the optimal solution
         for name, klass in self.benchmark_functions:
-            if (name == ['Benchmark', 'LennardJones'] 
-                or name.startswith('Problem')):
+            if (name in ['Benchmark', 'LennardJones'] or
+                 name.startswith('Problem')):
                 continue
 
             f = klass()

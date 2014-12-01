@@ -43,7 +43,7 @@ Modifications 2014 Andrew Nelson
 """
 
 import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp, floor, inf, log, log10,
+from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
                    arange, pi, prod, roll, seterr, sign, sin, sqrt, sum, where,
                    zeros, tan, tanh, dot)
 
@@ -2941,7 +2941,6 @@ class Holzman(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        val = 0
         i = arange(1, 101)
         t = 2 / 3.
         u = 25 + (-50 * log(0.01 * i)) ** t
@@ -6030,7 +6029,6 @@ class Shekel05(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        m = 5
         return -sum(1.0 / (dot(x - a, x - a) + c) for a, c
                     in zip(self.A, self.C))
 
@@ -6084,7 +6082,6 @@ class Shekel07(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        m = 7
         return -sum(1.0 / (dot(x - a, x - a) + c) for a, c
                     in zip(self.A, self.C))
 
@@ -6142,7 +6139,6 @@ class Shekel10(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        m = 10
         return -sum(1.0 / (dot(x - a, x - a) + c) for a, c
                     in zip(self.A, self.C))
 
@@ -7265,7 +7261,6 @@ class Weierstrass(Benchmark):
         kmax = 20
         a, b = 0.5, 3.0
 
-        i = arange(self.N)
         k = np.atleast_2d(arange(kmax + 1.)).T
 
         t1 = a ** k * cos(2 * pi * b ** k * (x + 0.5))
