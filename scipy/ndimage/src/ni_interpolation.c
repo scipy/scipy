@@ -850,7 +850,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
         size *= output->dimensions[qq];
     for(kk = 0; kk < size; kk++) {
         double t = 0.0;
-        int edge = 0, oo = 0, zero = 0;
+        npy_intp edge = 0, oo = 0, zero = 0;
 
         for(hh = 0; hh < rank; hh++) {
             if (zeros && zeros[hh][io.coordinates[hh]]) {
