@@ -24,6 +24,12 @@ matrix:
         - OPTIMIZE=-OO
     - python: 2.7
       env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - NUMPYSPEC=
+        - NPY_RELAXED_STRIDES_CHECKING=1
+    - python: 2.7
+      env:
         - PYFLAKES=1
         - PEP8=1
       before_install:
