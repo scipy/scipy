@@ -4027,8 +4027,6 @@ def ks_2samp(data1, data2):
 
     """
     data1, data2 = map(asarray, (data1, data2))
-    n1 = data1.shape[0]
-    n2 = data2.shape[0]
     n1 = len(data1)
     n2 = len(data2)
     data1 = np.sort(data1)
