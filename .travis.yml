@@ -8,20 +8,24 @@ matrix:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC=
+        - NPY_RELAXED_STRIDES_CHECKING=0
     - python: 3.3
       env:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC=
+        - NPY_RELAXED_STRIDES_CHECKING=0
     - python: 2.7
       env:
         - TESTMODE=full
         - COVERAGE=--coverage
+        - NPY_RELAXED_STRIDES_CHECKING=0
     - python: 2.6
       env:
         - TESTMODE=fast
         - NUMPYSPEC===1.5.1
         - OPTIMIZE=-OO
+        - NPY_RELAXED_STRIDES_CHECKING=0
     - python: 2.7
       env:
         - TESTMODE=fast
@@ -32,6 +36,7 @@ matrix:
       env:
         - PYFLAKES=1
         - PEP8=1
+        - NPY_RELAXED_STRIDES_CHECKING=0
       before_install:
         - pip install pep8==1.5.1
         - pip install pyflakes
@@ -61,7 +66,8 @@ before_install:
   # Speed up install by not compiling Cython
   - pip install --install-option="--no-cython-compile" Cython
     # Install numpy and report one of its compilation settings.
-  - pip install numpy$NUMPYSPEC
+  - if [ NPY_RELAXED_STRIDES_CHECKING = 0 ]; pip install numpy$NUMPYSPEC; fi
+  - if [ NPY_RELAXED_STRIDES_CHECKING = 1 ]; pip install --upgrade git+git://github.com/numpy/numpy.git@v1.9.1; fi
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
   - pip install nose mpmath argparse
   - pip install gmpy2  # speeds up mpmath (scipy.special tests)
