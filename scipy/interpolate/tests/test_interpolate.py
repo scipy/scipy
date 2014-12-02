@@ -652,6 +652,13 @@ class TestPPoly(TestCase):
             assert_allclose(pp(xi, dx), pp.derivative(dx)(xi),
                             err_msg="dx=%d" % (dx,))
 
+    def test_antiderivative_of_constant(self):
+        # https://github.com/scipy/scipy/issues/4216
+        np.random.seed(1234)
+        p = PPoly([[1.]], [0, 1])
+        assert_equal(p.antiderivative().c, PPoly([[1], [0]], [0, 1]).c)
+        assert_equal(p.antiderivative().x, PPoly([[1], [0]], [0, 1]).x)
+
     def test_antiderivative_simple(self):
         np.random.seed(1234)
         # [ p1(x) = 3*x**2 + 2*x + 1,

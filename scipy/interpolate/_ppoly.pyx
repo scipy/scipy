@@ -138,7 +138,7 @@ def fix_continuity(double_or_complex[:,:,::1] c,
     # shape checks
     if c.shape[1] != x.shape[0] - 1:
         raise ValueError("x and c have incompatible shapes")
-    if order >= c.shape[0] - 1:
+    if order > c.shape[0] - 1:
         raise ValueError("order too large")
     if order < 0:
         raise ValueError("order negative")
