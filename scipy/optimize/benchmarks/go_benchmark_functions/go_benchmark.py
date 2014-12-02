@@ -120,7 +120,7 @@ class Benchmark(object):
 
         Parameters
         ----------
-        ndim - int
+        ndim : int
                The new dimensionality for the problem.
         """
 
@@ -154,7 +154,7 @@ class Benchmark(object):
 
         Returns
         -------
-        xmin - sequence
+        xmin : sequence
             The lower bounds for the problem
         """
         return asarray([b[0] for b in self.bounds])
@@ -166,8 +166,7 @@ class Benchmark(object):
 
         Returns
         -------
-        xmax - sequence
+        xmax : sequence
             The upper bounds for the problem
         """
         return asarray([b[1] for b in self.bounds])
-        

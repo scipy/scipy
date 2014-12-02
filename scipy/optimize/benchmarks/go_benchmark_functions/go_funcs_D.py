@@ -19,12 +19,16 @@ class Damavandi(Benchmark):
 
     .. math::
 
-        f_{\\text{Damavandi}}(\\mathbf{x}) = \\left[ 1 - \\lvert{\\frac{\\sin[\\pi(x_1-2)]\\sin[\\pi(x2-2)]}{\\pi^2(x_1-2)(x_2-2)}} \\rvert^5 \\right] \\left[2 + (x_1-7)^2 + 2(x_2-7)^2 \\right]
+        f_{\\text{Damavandi}}(\\mathbf{x}) = \\left[ 1 - \\lvert{\\frac{
+        \\sin[\\pi(x_1-2)]\\sin[\\pi(x2-2)]}{\\pi^2(x_1-2)(x_2-2)}}
+        \\rvert^5 \\right] \\left[2 + (x_1-7)^2 + 2(x_2-7)^2 \\right]
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 14]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and 
+    :math:`x_i \\in [0, 14]` for :math:`i=1,...,n`.
 
-    *Global optimum*: :math:`f(x_i) = 0.0` for :math:`x_i = 2` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x_i) = 0.0` for :math:`x_i = 2` for
+    :math:`i=1,...,n`
 
     """
 

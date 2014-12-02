@@ -10,7 +10,6 @@ from .go_benchmark import Benchmark
 
 
 class TestTubeHolder(Benchmark):
-
     """
     TestTubeHolder objective function.
 
@@ -19,12 +18,15 @@ class TestTubeHolder(Benchmark):
 
     .. math::
 
-       f_{\\text{TestTubeHolder}}(\\mathbf{x}) = - 4 \\left | {e^{\\left|{\\cos\\left(\\frac{1}{200} x_{1}^{2} + \\frac{1}{200} x_{2}^{2}\\right)}\\right|} \\sin\\left(x_{1}\\right) \\cos\\left(x_{2}\\right)}\\right |
+        f_{\\text{TestTubeHolder}}(\\mathbf{x}) = - 4 \\left | {e^{\left|{\\cos 
+        \\left(\\frac{1}{200} x_{1}^{2} + \\frac{1}{200} x_{2}^{2}\\right)}
+        \\right|}\\sin\\left(x_{1}\\right) \\cos\\left(x_{2}\\right)}\\right|
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in 
+    [-10, 10]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = -10.872299901558` for :math:`\\mathbf{x} = [-\\pi/2, 0]`
-
+    *Global optimum*: :math:`f(x_i) = -10.872299901558` for :math:`\\mathbf{x}=
+    [-\\pi/2, 0]`
     """
 
     def __init__(self, dimensions=2):
@@ -96,10 +98,11 @@ class Treccani(Benchmark):
 
        f_{\\text{Treccani}}(\\mathbf{x}) = x_1^4 + 4x_1^3 + 4x_1^2 + x_2^2
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,2`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in
+    [-5, 5]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [-2, 0]` or :math:`\\mathbf{x} = [0, 0]`.
-
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [-2, 0]`
+    or :math:`\\mathbf{x} = [0, 0]`.
     """
 
     def __init__(self, dimensions=2):
