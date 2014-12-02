@@ -667,7 +667,6 @@ class TestPPoly(TestCase):
 
     def test_antiderivative_of_constant(self):
         # https://github.com/scipy/scipy/issues/4216
-        np.random.seed(1234)
         p = PPoly([[1.]], [0, 1])
         assert_equal(p.antiderivative().c, PPoly([[1], [0]], [0, 1]).c)
         assert_equal(p.antiderivative().x, PPoly([[1], [0]], [0, 1]).x)
