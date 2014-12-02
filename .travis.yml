@@ -30,7 +30,7 @@ matrix:
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NUMPYSPEC=1.8.2
+        - NUMPYSPEC=
         - NPY_RELAXED_STRIDES_CHECKING=1
     - python: 2.7
       env:
