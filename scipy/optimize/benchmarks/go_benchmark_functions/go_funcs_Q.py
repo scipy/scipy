@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
-import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, sign, sin, sqrt, sum, where,
-                   zeros, tan, tanh, dot)
 
-from scipy.misc import factorial
+from numpy import abs, sum, arange, sqrt
+
 from .go_benchmark import Benchmark
 
 
@@ -14,17 +11,19 @@ class Qing(Benchmark):
     """
     Qing objective function.
 
-    This class defines the Qing global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Qing global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{Qing}}(\\mathbf{x}) = \\sum_{i=1}^{n} (x_i^2 - i)^2
+        f_{\text{Qing}}(x) = \sum_{i=1}^{n} (x_i^2 - i)^2
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-500, 500]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-500, 500]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = \\pm \\sqrt(i)` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = \pm \sqrt(i)` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -55,12 +54,15 @@ class Quadratic(Benchmark):
 
     .. math::
 
-       f_{\\text{Quadratic}}(\\mathbf{x}) = -3803.84 - 138.08x_1 - 232.92x_2 + 128.08x_1^2 + 203.64x_2^2 + 182.25x_1x_2
+        f_{\text{Quadratic}}(x) = -3803.84 - 138.08x_1 - 232.92x_2 + 128.08x_1^2
+        + 203.64x_2^2 + 182.25x_1x_2
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-10, 10]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = -3873.72418` for :math:`\\mathbf{x} = [0.19388, 0.48513]`
+    *Global optimum*: :math:`f(x) = -3873.72418` for
+    :math:`x = [0.19388, 0.48513]`
 
     """
 
@@ -85,17 +87,20 @@ class Quintic(Benchmark):
     """
     Quintic objective function.
 
-    This class defines the Quintic global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Quintic global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{Quintic}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\left|{x_{i}^{5} - 3 x_{i}^{4} + 4 x_{i}^{3} + 2 x_{i}^{2} - 10 x_{i} -4}\\right|
+        f_{\text{Quintic}}(x) = \sum_{i=1}^{n} \left|{x_{i}^{5} - 3 x_{i}^{4}
+        + 4 x_{i}^{3} + 2 x_{i}^{2} - 10 x_{i} -4}\right|
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-10, 10]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = -1` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = -1` for
+    :math:`i = 1, ..., n`
 
     """
 

@@ -1,31 +1,30 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
-import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, sign, sin, sqrt, sum, where,
-                   zeros, tan, tanh, dot)
 
-from scipy.misc import factorial
+from numpy import abs, asarray, cos, exp, arange, pi, sin, sqrt, sum
 from .go_benchmark import Benchmark
 
 
 class Easom(Benchmark):
 
-    """
+    r"""
     Easom objective function.
 
-    This class defines the Easom global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Easom global optimization problem. This is a
+    a multimodal minimization problem defined as follows:
 
     .. math::
 
-        f_{\\text{Easom}}(\\mathbf{x}) = a - \\frac{a}{e^{b \\sqrt{\\frac{\\sum_{i=1}^{n} x_i^{2}}{n}}}} + e - e^{\\frac{\\sum_{i=1}^{n} \\cos\\left(c x_i\\right)}{n}}
+        f_{\text{Easom}}({x}) = a - \frac{a}{e^{b \sqrt{\frac{\sum_{i=1}^{n}
+        x_i^{2}}{n}}}} + e - e^{\frac{\sum_{i=1}^{n} \cos\left(c x_i\right)}
+        {n}}
 
-    Where, in this exercise, :math:`a = 20, b = 0.2` and :math:`c = 2\\pi`.
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
+    Where, in this exercise, :math:`a = 20, b = 0.2` and :math:`c = 2 \pi`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,2`
+    Here, :math:`x_i \in [-100, 100]` for :math:`i = 1, 2`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0]`
 
     """
 
@@ -50,7 +49,7 @@ class Easom(Benchmark):
 
 
 class Eckerle4(Benchmark):
-    """
+    r"""
     Eckerle4 objective function.
     Eckerle, K., NIST (1979).
     Circular Interference Transmittance Study.
@@ -100,7 +99,7 @@ class Eckerle4(Benchmark):
 
 class EggCrate(Benchmark):
 
-    """
+    r"""
     Egg Crate objective function.
 
     This class defines the Egg Crate global optimization problem. This
@@ -108,11 +107,13 @@ class EggCrate(Benchmark):
 
     .. math::
 
-        f_{\\text{EggCrate}}(\\mathbf{x}) = x_1^2 + x_2^2 + 25 \\left[ \\sin^2(x_1) + \\sin^2(x_2) \\right]
+        f_{\text{EggCrate}}(x) = x_1^2 + x_2^2 + 25 \left[ \sin^2(x_1)
+        + \sin^2(x_2) \right]
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,2`
+    with :math:`x_i \in [-5, 5]` for :math:`i = 1, 2`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0]`
 
     """
 
@@ -132,7 +133,7 @@ class EggCrate(Benchmark):
 
 class EggHolder(Benchmark):
 
-    """
+    r"""
     Egg Holder objective function.
 
     This class defines the Egg Holder global optimization problem. This
@@ -140,11 +141,16 @@ class EggHolder(Benchmark):
 
     .. math::
 
-        f_{\\text{EggHolder}}(\\mathbf{x}) = - x_{1} \\sin\\left(\\sqrt{\\lvert{x_{1} - x_{2} -47}\\rvert}\\right) - \\left(x_{2} + 47\\right) \\sin\\left(\\sqrt{\\left|{\\frac{1}{2} x_{1} + x_{2} + 47}\\right|}\\right)
+        f_{\text{EggHolder}}=\sum_{1}^{n - 1}\left[-\left(x_{i + 1}
+        + 47 \right ) \sin\sqrt{\lvert x_{i+1} + x_i/2 + 47 \rvert}
+        - x_i \sin\sqrt{\lvert x_i - (x_{i + 1} + 47)\rvert}\right ]
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-512, 512]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = -959.640662711` for :math:`\\mathbf{x} = [512, 404.2319]`
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in
+    [-512, 512]` for :math:`i = 1, ..., n`.
+
+    *Global optimum*: :math:`f(x) = -959.640662711` for
+    :math:`{x} = [512, 404.2319]`
 
     """
 
@@ -168,20 +174,23 @@ class EggHolder(Benchmark):
 
 class ElAttarVidyasagarDutta(Benchmark):
 
-    """
+    r"""
     El-Attar-Vidyasagar-Dutta objective function.
 
-    This class defines the El-Attar-Vidyasagar-Dutta function global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the El-Attar-Vidyasagar-Dutta function global
+    optimization problem. This is a multimodal minimization problem defined as
+    follows:
 
     .. math::
 
-       f_{\\text{ElAttarVidyasagarDutta}}(\\mathbf{x}) = (x_1^2 + x_2 - 10)^2 + (x_1 + x_2^2 - 7)^2 + (x_1^2 + x_2^3 - 1)^2
+       f_{\text{ElAttarVidyasagarDutta}}(x) = (x_1^2 + x_2 - 10)^2
+       + (x_1 + x_2^2 - 7)^2 + (x_1^2 + x_2^3 - 1)^2
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
+    with :math:`x_i \in [-100, 100]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = 1.712780354` for :math:`\\mathbf{x} = [3.40918683, -2.17143304]`
+    *Global optimum*: :math:`f(x) = 1.712780354` for
+    :math:`x= [3.40918683, -2.17143304]`
 
     """
 
@@ -204,19 +213,21 @@ class ElAttarVidyasagarDutta(Benchmark):
 
 class Exp2(Benchmark):
 
-    """
+    r"""
     Exp2 objective function.
 
-    This class defines the Exp2 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Exp2 global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-        f_{\\text{Exp2}}(\\mathbf{x}) = \\sum_{i=0}^9 \\left ( e^{-ix_1/10} - 5e^{-ix_2/10} -e^{-i/10} + 5e^{-i} \\right )^2
+        f_{\text{Exp2}}(x) = \sum_{i=0}^9 \left ( e^{-ix_1/10} - 5e^{-ix_2/10}
+        - e^{-i/10} + 5e^{-i} \right )^2
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 20]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = [1, 10.]`
+    with :math:`x_i \in [0, 20]` for :math:`i = 1, 2`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 10.]`
 
     """
 
@@ -241,7 +252,7 @@ class Exp2(Benchmark):
 
 class Exponential(Benchmark):
 
-    """
+    r"""
     Exponential objective function.
 
     This class defines the Exponential global optimization problem. This
@@ -249,11 +260,14 @@ class Exponential(Benchmark):
 
     .. math::
 
-        f_{\\text{Exponential}}(\\mathbf{x}) = -e^{-0.5 \\sum_{i=1}^n x_i^2}
+        f_{\text{Exponential}}(x) = -e^{-0.5 \sum_{i=1}^n x_i^2}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 1]` for :math:`i=1,...,n`.
 
-    *Global optimum*: :math:`f(x_i) = -1` for :math:`x_i = 0` for :math:`i=1,...,n`
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in
+    [-1, 1]` for :math:`i = 1, ..., n`.
+
+    *Global optimum*: :math:`f(x_i) = -1` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 

@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
                    arange, pi, prod, roll, sign, sin, sqrt, sum, where,
                    zeros, tan, tanh, dot)
-
-from scipy.misc import factorial
 from .go_benchmark import Benchmark
 
 
 class TestTubeHolder(Benchmark):
-    """
+
+    r"""
     TestTubeHolder objective function.
 
     This class defines the TestTubeHolder global optimization problem. This
@@ -18,15 +18,15 @@ class TestTubeHolder(Benchmark):
 
     .. math::
 
-        f_{\\text{TestTubeHolder}}(\\mathbf{x}) = - 4 \\left | {e^{\left|{\\cos 
-        \\left(\\frac{1}{200} x_{1}^{2} + \\frac{1}{200} x_{2}^{2}\\right)}
-        \\right|}\\sin\\left(x_{1}\\right) \\cos\\left(x_{2}\\right)}\\right|
+        f_{\text{TestTubeHolder}}(x) = - 4 \left | {e^{\left|{\cos 
+        \left(\frac{1}{200} x_{1}^{2} + \frac{1}{200} x_{2}^{2}\right)}
+        \right|}\sin\left(x_{1}\right) \cos\left(x_{2}\right)}\right|
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in 
-    [-10, 10]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = -10.872299901558` for :math:`\\mathbf{x}=
-    [-\\pi/2, 0]`
+    with :math:`x_i \in [-10, 10]` for :math:`i = 1, 2`.
+
+    *Global optimum*: :math:`f(x) = -10.872299901558` for
+    :math:`x= [-\pi/2, 0]`
     """
 
     def __init__(self, dimensions=2):
@@ -47,7 +47,7 @@ class TestTubeHolder(Benchmark):
 
 class Thurber(Benchmark):
 
-    """
+    r"""
     Thurber objective function.
 
     """
@@ -88,21 +88,22 @@ class Thurber(Benchmark):
 
 class Treccani(Benchmark):
 
-    """
+    r"""
     Treccani objective function.
 
-    This class defines the Treccani global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Treccani global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{Treccani}}(\\mathbf{x}) = x_1^4 + 4x_1^3 + 4x_1^2 + x_2^2
+        f_{\text{Treccani}}(x) = x_1^4 + 4x_1^3 + 4x_1^2 + x_2^2
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in
-    [-5, 5]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [-2, 0]`
-    or :math:`\\mathbf{x} = [0, 0]`.
+    with :math:`x_i \in
+    [-5, 5]` for :math:`i = 1, 2`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [-2, 0]` or
+    :math:`x = [0, 0]`.
     """
 
     def __init__(self, dimensions=2):
@@ -122,19 +123,26 @@ class Treccani(Benchmark):
 
 class Trefethen(Benchmark):
 
-    """
+    r"""
     Trefethen objective function.
 
-    This class defines the Trefethen global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Trefethen global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{Trefethen}}(\\mathbf{x}) = 0.25 x_{1}^{2} + 0.25 x_{2}^{2} + e^{\\sin\\left(50 x_{1}\\right)} - \\sin\\left(10 x_{1} + 10 x_{2}\\right) + \\sin\\left(60 e^{x_{2}}\\right) + \\sin\\left[70 \\sin\\left(x_{1}\\right)\\right] + \\sin\\left[\\sin\\left(80 x_{2}\\right)\\right]
+        f_{\text{Trefethen}}(x) = 0.25 x_{1}^{2} + 0.25 x_{2}^{2}
+                                  + e^{\sin\left(50 x_{1}\right)}
+                                  - \sin\left(10 x_{1} + 10 x_{2}\right)
+                                  + \sin\left(60 e^{x_{2}}\right)
+                                  + \sin\left[70 \sin\left(x_{1}\right)\right]
+                                  + \sin\left[\sin\left(80 x_{2}\right)\right]
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = -3.3068686474` for :math:`\\mathbf{x} = [-0.02440307923, 0.2106124261]`
+    with :math:`x_i \in [-10, 10]` for :math:`i = 1, 2`.
+
+    *Global optimum*: :math:`f(x) = -3.3068686474` for
+    :math:`x = [-0.02440307923, 0.2106124261]`
 
     """
 
@@ -160,7 +168,7 @@ class Trefethen(Benchmark):
 
 class ThreeHumpCamel(Benchmark):
 
-    """
+    r"""
     Three Hump Camel objective function.
 
     This class defines the Three Hump Camel global optimization problem. This
@@ -168,11 +176,13 @@ class ThreeHumpCamel(Benchmark):
 
     .. math::
 
-       f_{\\text{ThreeHumpCamel}}(\\mathbf{x}) = 2x_1^2 - 1.05x_1^4 + \\frac{x_1^6}{6} + x_1x_2 + x_2^2
+        f_{\text{ThreeHumpCamel}}(x) = 2x_1^2 - 1.05x_1^4 + \frac{x_1^6}{6}
+                                       + x_1x_2 + x_2^2
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [0, 0]`
+    with :math:`x_i \in [-5, 5]` for :math:`i = 1, 2`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0]`
 
     """
 
@@ -194,19 +204,22 @@ class ThreeHumpCamel(Benchmark):
 
 class Trid(Benchmark):
 
-    """
+    r"""
     Trid objective function.
 
-    This class defines the Trid global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Trid global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{Trid}}(\\mathbf{x}) = \\sum_{i=1}^{n}(x_i - 1)^2 - \\sum_{i=2}^{n} x_ix_{i-1}
+        f_{\text{Trid}}(x) = \sum_{i=1}^{n} (x_i - 1)^2
+                            - \sum_{i=2}^{n} x_i x_{i-1}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-20, 20]` for :math:`i=1,...,6`.
 
-    *Global optimum*: :math:`f(x_i) = -50` for :math:`\\mathbf{x} = [6, 10, 12, 12, 10, 6]`
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-20, 20]` for :math:`i = 1, ..., 6`.
+
+    *Global optimum*: :math:`f(x) = -50` for :math:`x = [6, 10, 12, 12, 10, 6]`
 
     """
 
@@ -227,7 +240,7 @@ class Trid(Benchmark):
 
 class Trigonometric01(Benchmark):
 
-    """
+    r"""
     Trigonometric 1 objective function.
 
     This class defines the Trigonometric 1 global optimization problem. This
@@ -235,11 +248,16 @@ class Trigonometric01(Benchmark):
 
     .. math::
 
-       f_{\\text{Trigonometric01}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\left [n - \\sum_{j=1}^{n} \\cos(x_j) + i \\left(1 - cos(x_i) - sin(x_i) \\right ) \\right]^2
+        f_{\text{Trigonometric01}}(x) = \sum_{i=1}^{n} \left [n -
+                                        \sum_{j=1}^{n} \cos(x_j)
+                                        + i \left(1 - cos(x_i)
+                                        - sin(x_i) \right ) \right]^2
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, \\pi]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [0, \pi]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -261,7 +279,7 @@ class Trigonometric01(Benchmark):
 
 class Trigonometric02(Benchmark):
 
-    """
+    r"""
     Trigonometric 2 objective function.
 
     This class defines the Trigonometric 2 global optimization problem. This
@@ -269,11 +287,16 @@ class Trigonometric02(Benchmark):
 
     .. math::
 
-       f_{\\text{Trigonometric2}}(\\mathbf{x}) = 1 + \\sum_{i=1}^{n} 8 \\sin^2 \\left[7(x_i - 0.9)^2 \\right] + 6 \\sin^2 \\left[14(x_i - 0.9)^2 \\right] + (x_i - 0.9)^2
+        f_{\text{Trigonometric2}}(x) = 1 + \sum_{i=1}^{n} 8 \sin^2
+                                       \left[7(x_i - 0.9)^2 \right]
+                                       + 6 \sin^2 \left[14(x_i - 0.9)^2 \right]
+                                       + (x_i - 0.9)^2
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-500, 500]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-500, 500]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 1` for :math:`x_i = 0.9` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 1` for :math:`x_i = 0.9` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -299,7 +322,7 @@ class Trigonometric02(Benchmark):
 
 class Tripod(Benchmark):
 
-    """
+    r"""
     Tripod objective function.
 
     This class defines the Tripod global optimization problem. This
@@ -307,11 +330,14 @@ class Tripod(Benchmark):
 
     .. math::
 
-       f_{\\text{Tripod}}(\\mathbf{x}) = p(x_2) \\left[1 + p(x_1) \\right] + \\lvert x_1 + 50p(x_2) \\left[1 - 2p(x_1) \\right] \\rvert + \\lvert x_2 + 50\\left[1 - 2p(x_2)\\right] \\rvert
+        f_{\text{Tripod}}(x) = p(x_2) \left[1 + p(x_1) \right] +
+                               \lvert x_1 + 50p(x_2) \left[1 - 2p(x_1) \right]
+                               \rvert + \lvert x_2 + 50\left[1 - 2p(x_2)\right]
+                               \rvert
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
+    with :math:`x_i \in [-100, 100]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [0, -50]`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, -50]`
 
     """
 

@@ -1,31 +1,30 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
                    arange, pi, prod, roll, sign, sin, sqrt, sum, where,
                    zeros, tan, tanh, dot)
-
-from scipy.misc import factorial
+from scipy.special import factorial
 from .go_benchmark import Benchmark
 
 
 class Matyas(Benchmark):
 
-    """
+    r"""
     Matyas objective function.
 
-    This class defines the Matyas global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Matyas global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-        f_{\\text{Matyas}}(\\mathbf{x}) = 0.26(x_1^2 + x_2^2) - 0.48x_1x_2
+        f_{\text{Matyas}}(x) = 0.26(x_1^2 + x_2^2) - 0.48 x_1 x_2
 
 
-    Here, :math:`n` represents the number of dimensions and
-    :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
+    with :math:`x_i \in [-10, 10]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,2`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0]`
 
     """
 
@@ -45,20 +44,22 @@ class Matyas(Benchmark):
 
 class McCormick(Benchmark):
 
-    """
+    r"""
     McCormick objective function.
 
-    This class defines the McCormick global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the McCormick global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{McCormick}}(\\mathbf{x}) = - x_{1} + 2 x_{2} + \\left(x_{1} - x_{2}\\right)^{2} + \\sin\\left(x_{1} + x_{2}\\right) + 1
+       f_{\text{McCormick}}(x) = - x_{1} + 2 x_{2} + \left(x_{1}
+       - x_{2}\right)^{2} + \sin\left(x_{1} + x_{2}\right) + 1
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_1 \\in [-1.5, 4]`, :math:`x_2 \\in [-3, 4]`.
+    with :math:`x_1 \in [-1.5, 4]`, :math:`x_2 \in [-3, 4]`.
 
-    *Global optimum*: :math:`f(x_i) = -1.913222954981037` for :math:`\\mathbf{x} = [-0.5471975602214493, -1.547197559268372]`
+    *Global optimum*: :math:`f(x) = -1.913222954981037` for
+    :math:`x = [-0.5471975602214493, -1.547197559268372]`
 
     """
 
@@ -79,7 +80,7 @@ class McCormick(Benchmark):
 
 class Meyer(Benchmark):
 
-    """
+    r"""
     Meyer objective function.
 
     """
@@ -112,7 +113,7 @@ class Meyer(Benchmark):
 
 class Michalewicz(Benchmark):
 
-    """
+    r"""
     Michalewicz objective function.
 
     This class defines the Michalewicz global optimization problem. This
@@ -120,14 +121,15 @@ class Michalewicz(Benchmark):
 
     .. math::
 
-       f_{\\text{Michalewicz}}(\\mathbf{x}) = - \\sum_{i=1}^{2} \\sin\\left(x_i\\right) \\sin^{2 m}\\left(\\frac{i x_i^{2}}{\\pi}\\right)
+       f_{\text{Michalewicz}}(x) = - \sum_{i=1}^{2} \sin\left(x_i\right)
+       \sin^{2 m}\left(\frac{i x_i^{2}}{\pi}\right)
 
 
     Where, in this exercise, :math:`m = 10`.
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, \\pi]` for :math:`i=1,2`.
+    with :math:`x_i \in [0, \pi]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = -1.8013` for :math:`x_i = 0` for :math:`i=1,2`
+    *Global optimum*: :math:`f(x_i) = -1.8013` for :math:`x = [0, 0]`
 
     """
 
@@ -149,7 +151,7 @@ class Michalewicz(Benchmark):
 
 class MieleCantrell(Benchmark):
 
-    """
+    r"""
     Miele-Cantrell objective function.
 
     This class defines the Miele-Cantrell global optimization problem. This
@@ -157,12 +159,13 @@ class MieleCantrell(Benchmark):
 
     .. math::
 
-       f_{\\text{MieleCantrell}}(\\mathbf{x}) = (e^{-x_1} - x_2)^4 + 100(x_2 - x_3)^6 + \\tan^4(x_3 - x_4) + x_1^8
+       f_{\text{MieleCantrell}}({x}) = (e^{-x_1} - x_2)^4 + 100(x_2 - x_3)^6
+       + \tan^4(x_3 - x_4) + x_1^8
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 1]` for :math:`i=1,...,4`.
+    with :math:`x_i \in [-1, 1]` for :math:`i = 1, ..., 4`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [0, 1, 1, 1]`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 1, 1, 1]`
 
     """
 
@@ -183,7 +186,7 @@ class MieleCantrell(Benchmark):
 
 class Mishra01(Benchmark):
 
-    """
+    r"""
     Mishra 1 objective function.
 
     This class defines the Mishra 1 global optimization problem. This
@@ -191,12 +194,20 @@ class Mishra01(Benchmark):
 
     .. math::
 
-       f_{\\text{Mishra01}}(\\mathbf{x}) = (1 + x_n)^{x_n} \\hspace{10pt} ; \\hspace{10pt} x_n = n - \\sum_{i=1}^{n-1} x_i
+       f_{\text{Mishra01}}(x) = (1 + x_n)^{x_n}
+
+     
+    where
+
+    .. math::
+
+        x_n = n - \sum_{i=1}^{n-1} x_i
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 1]` for :math:`i=1,...,n`.
+    with :math:`x_i \in [0, 1]` for :math:`i =1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 2` for :math:`x_i = 1` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 2` for :math:`x_i = 1` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -219,7 +230,7 @@ class Mishra01(Benchmark):
 
 class Mishra02(Benchmark):
 
-    """
+    r"""
     Mishra 2 objective function.
 
     This class defines the Mishra 2 global optimization problem. This
@@ -227,12 +238,21 @@ class Mishra02(Benchmark):
 
     .. math::
 
-       f_{\\text{Mishra02}}(\\mathbf{x}) = (1 + x_n)^{x_n} \\hspace{10pt} ; \\hspace{10pt} x_n = n - \\sum_{i=1}^{n-1} \\frac{(x_i + x_{i+1})}{2}
+        f_{\text{Mishra02}}({x}) = (1 + x_n)^{x_n}
+     
+
+     with
+     
+     .. math::
+     
+         x_n = n - \sum_{i=1}^{n-1} \frac{(x_i + x_{i+1})}{2}
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 1]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and 
+    :math:`x_i \in [0, 1]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 2` for :math:`x_i = 1` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 2` for :math:`x_i = 1` 
+    for :math:`i = 1, ..., n`
 
     """
 
@@ -255,7 +275,7 @@ class Mishra02(Benchmark):
 
 class Mishra03(Benchmark):
 
-    """
+    r"""
     Mishra 3 objective function.
 
     This class defines the Mishra 3 global optimization problem. This
@@ -263,12 +283,14 @@ class Mishra03(Benchmark):
 
     .. math::
 
-       f_{\\text{Mishra03}}(\\mathbf{x}) = \\sqrt{\\lvert \\cos{\\sqrt{\\lvert x_1^2 + x_2^2 \\rvert}} \\rvert} + 0.01(x_1 + x_2)
+       f_{\text{Mishra03}}(x) = \sqrt{\lvert \cos{\sqrt{\lvert x_1^2 
+       + x_2^2 \rvert}} \rvert} + 0.01(x_1 + x_2)
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
+    with :math:`x_i \in [-10, 10]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = -0.1999` for :math:`x_i = {-9.99378322, -9.99918927}`
+    *Global optimum*: :math:`f(x) = -0.1999` for 
+    :math:`x = [-9.99378322, -9.99918927]`
 
     """
 
@@ -289,22 +311,22 @@ class Mishra03(Benchmark):
 
 class Mishra04(Benchmark):
 
-    """
+    r"""
     Mishra 4 objective function.
 
-    This class defines the Mishra 4 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Mishra 4 global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{Mishra04}}(\\mathbf{x}) = \\sqrt{\\lvert \\sin{\\sqrt{\\lvert
-       x_1^2 + x_2^2 \\rvert}} \\rvert} + 0.01(x_1 + x_2)
+       f_{\text{Mishra04}}({x}) = \sqrt{\lvert \sin{\sqrt{\lvert
+       x_1^2 + x_2^2 \rvert}} \rvert} + 0.01(x_1 + x_2)
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in
-    [-10, 10]` for :math:`i=1,2`.
+    with :math:`x_i \in [-10, 10]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = -0.17767` for :math:`x_i = {-8.71499636, -9.0533148}`
+    *Global optimum*: :math:`f(x) = -0.17767` for
+    :math:`x = [-8.71499636, -9.0533148]`
 
     """
 
@@ -325,20 +347,21 @@ class Mishra04(Benchmark):
 
 class Mishra05(Benchmark):
 
-    """
+    r"""
     Mishra 5 objective function.
 
-    This class defines the Mishra 5 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Mishra 5 global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{Mishra05}}(\\mathbf{x}) = \\left [ \\sin^2 ((\\cos(x_1) + \\cos(x_2))^2) + \\cos^2 ((\\sin(x_1) + \\sin(x_2))^2) + x_1 \\right ]^2 + 0.01(x_1 + x_2)
+       f_{\text{Mishra05}}(x) = \left [ \sin^2 ((\cos(x_1) + \cos(x_2))^2)
+       + \cos^2 ((\sin(x_1) + \sin(x_2))^2) + x_1 \right ]^2 + 0.01(x_1 + x_2)
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
+    with :math:`x_i \in [-10, 10]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = -0.119829` for :math:`\\mathbf{x} = [-1.98682, -10]`
+    *Global optimum*: :math:`f(x) = -0.119829` for :math:`x = [-1.98682, -10]`
 
     """
 
@@ -360,7 +383,7 @@ class Mishra05(Benchmark):
 
 class Mishra06(Benchmark):
 
-    """
+    r"""
     Mishra 6 objective function.
 
     This class defines the Mishra 6 global optimization problem. This
@@ -368,12 +391,14 @@ class Mishra06(Benchmark):
 
     .. math::
 
-       f_{\\text{Mishra06}}(\\mathbf{x}) = -\\log{\\left [ \\sin^2 ((\\cos(x_1) + \\cos(x_2))^2) - \\cos^2 ((\\sin(x_1) + \\sin(x_2))^2) + x_1 \\right ]^2} + 0.01 \\left[(x_1 -1)^2 + (x_2 - 1)^2 \\right]
+       f_{\text{Mishra06}}(x) = -\log{\left [ \sin^2 ((\cos(x_1)
+       + \cos(x_2))^2) - \cos^2 ((\sin(x_1) + \sin(x_2))^2) + x_1 \right ]^2}
+       + 0.01 \left[(x_1 -1)^2 + (x_2 - 1)^2 \right]
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
+    with :math:`x_i \in [-10, 10]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = -2.28395` for :math:`\\mathbf{x} = [2.88631, 1.82326]`
+    *Global optimum*: :math:`f(x_i) = -2.28395` for :math:`x = [2.88631, 1.82326]`
 
     """
 
@@ -396,7 +421,7 @@ class Mishra06(Benchmark):
 
 class Mishra07(Benchmark):
 
-    """
+    r"""
     Mishra 7 objective function.
 
     This class defines the Mishra 7 global optimization problem. This
@@ -404,12 +429,14 @@ class Mishra07(Benchmark):
 
     .. math::
 
-       f_{\\text{Mishra07}}(\\mathbf{x}) = \\left [\\prod_{i=1}^{n} x_i - n! \\right]^2
+       f_{\text{Mishra07}}(x) = \left [\prod_{i=1}^{n} x_i - n! \right]^2
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-10, 10]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = \\sqrt{n}` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = \sqrt{n}` 
+    for :math:`i = 1, ..., n`
 
     """
 
@@ -431,7 +458,7 @@ class Mishra07(Benchmark):
 
 class Mishra08(Benchmark):
 
-    """
+    r"""
     Mishra 8 objective function.
 
     This class defines the Mishra 8 global optimization problem. This
@@ -439,12 +466,15 @@ class Mishra08(Benchmark):
 
     .. math::
 
-       f_{\\text{Mishra08}}(\\mathbf{x}) = 0.001 \\left[\\lvert x_1^{10} - 20x_1^9 + 180x_1^8 - 960 x_1^7 + 3360x_1^6 - 8064x_1^5 + 13340x_1^4 - 15360x_1^3 + 11520x_1^2 - 5120x_1 + 2624 \\rvert \\lvert x_2^4 + 12x_2^3 + 54x_2^2 + 108x_2 + 81 \\rvert \\right]^2
+       f_{\text{Mishra08}}(x) = 0.001 \left[\lvert x_1^{10} - 20x_1^9
+       + 180x_1^8 - 960 x_1^7 + 3360x_1^6 - 8064x_1^5 + 13340x_1^4 - 15360x_1^3
+       + 11520x_1^2 - 5120x_1 + 2624 \rvert \lvert x_2^4 + 12x_2^3 + 54x_2^2
+       + 108x_2 + 81 \rvert \right]^2
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
+    with :math:`x_i \in [-10, 10]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [2, -3]`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [2, -3]`
 
     """
 
@@ -470,7 +500,7 @@ class Mishra08(Benchmark):
 
 class Mishra09(Benchmark):
 
-    """
+    r"""
     Mishra 9 objective function.
 
     This class defines the Mishra 9 global optimization problem. This
@@ -478,21 +508,22 @@ class Mishra09(Benchmark):
 
     .. math::
 
-       f_{\\text{Mishra09}}(\\mathbf{x}) = \\left[ ab^2c + abc^2 + b^2 + (x_1 + x_2 - x_3)^2 \\right]^2
+       f_{\text{Mishra09}}({x}) = \left[ ab^2c + abc^2 + b^2
+       + (x_1 + x_2 - x_3)^2 \right]^2
 
 
     Where, in this exercise:
 
     .. math::
 
-        \\begin{cases} a = 2x_1^3 + 5x_1x_2 + 4x_3 - 2x_1^2x_3 - 18 \\\\
-        b = x_1 + x_2^3 + x_1x_2^2 + x_1x_3^2 - 22 \\\\
-        c = 8x_1^2 + 2x_2x_3 + 2x_2^2 + 3x_2^3 - 52 \\end{cases}
+        \begin{cases} a = 2x_1^3 + 5x_1x_2 + 4x_3 - 2x_1^2x_3 - 18 \\
+        b = x_1 + x_2^3 + x_1x_2^2 + x_1x_3^2 - 22 \\
+        c = 8x_1^2 + 2x_2x_3 + 2x_2^2 + 3x_2^3 - 52 \end{cases}
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2,3`.
+    with :math:`x_i \in [-10, 10]` for :math:`i = 1, 2, 3`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [1, 2, 3]`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 2, 3]`
 
     """
 
@@ -518,20 +549,21 @@ class Mishra09(Benchmark):
 
 class Mishra10(Benchmark):
 
-    """
+    r"""
     Mishra 10 objective function.
 
-    This class defines the Mishra 10 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Mishra 10 global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
     TODO - int(x) should be used instead of floor(x)!!!!!
-       f_{\\text{Mishra10}}(\\mathbf{x}) = \\left[ \\lfloor x_1 \\perp x_2 \\rfloor - \\lfloor x_1 \\rfloor - \\lfloor x_2 \\rfloor \\right]^2
+       f_{\text{Mishra10}}({x}) = \left[ \lfloor x_1 \perp x_2 \rfloor - 
+       \lfloor x_1 \rfloor - \lfloor x_2 \rfloor \right]^2
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
+    with :math:`x_i \in [-10, 10]` for :math:`i =1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [2, 2]`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [2, 2]`
 
     """
 
@@ -554,20 +586,24 @@ class Mishra10(Benchmark):
 
 class Mishra11(Benchmark):
 
-    """
+    r"""
     Mishra 11 objective function.
 
-    This class defines the Mishra 11 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Mishra 11 global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{Mishra11}}(\\mathbf{x}) = \\left [ \\frac{1}{n} \\sum_{i=1}^{n} \\lvert x_i \\rvert - \\left(\\prod_{i=1}^{n} \\lvert x_i \\rvert \\right )^{\\frac{1}{n}} \\right]^2
+       f_{\text{Mishra11}}(x) = \left [ \frac{1}{n} \sum_{i=1}^{n} \lvert x_i
+       \rvert - \left(\prod_{i=1}^{n} \lvert x_i \rvert \right )^{\frac{1}{n}}
+       \right]^2
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-10, 10]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -590,7 +626,7 @@ class Mishra11(Benchmark):
 
 class MultiModal(Benchmark):
 
-    """
+    r"""
     MultiModal objective function.
 
     This class defines the MultiModal global optimization problem. This
@@ -598,12 +634,15 @@ class MultiModal(Benchmark):
 
     .. math::
 
-       f_{\\text{MultiModal}}(\\mathbf{x}) = \\left( \\sum_{i=1}^n \\lvert x_i \\rvert \\right) \\left( \\prod_{i=1}^n \\lvert x_i \\rvert \\right)
+       f_{\text{MultiModal}}(x) = \left( \sum_{i=1}^n \lvert x_i \rvert 
+       \right) \left( \prod_{i=1}^n \lvert x_i \rvert \right)
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-10, 10]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 

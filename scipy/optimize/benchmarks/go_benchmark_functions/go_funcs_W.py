@@ -1,36 +1,33 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
-import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, sign, sin, sqrt, sum, where,
-                   zeros, tan, tanh, dot)
 
-from scipy.misc import factorial
+from numpy import atleast_2d, arange, sum, cos, exp, pi
 from .go_benchmark import Benchmark
 
 
 class Watson(Benchmark):
 
-    """
+    r"""
     Watson objective function.
 
-    This class defines the Watson global optimization problem. This
-    is a unimodal minimization problem defined as follows:
+    This class defines the Watson global optimization problem. This is a
+    unimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{Watson}}(\\mathbf{x}) = \\sum_{i=0}^{29} \\left\\{
-       \\sum_{j=0}^4 ((j + 1)a_i^j x_{j+1}) - \\left[ \\sum_{j=0}^5 a_i^j
-       x_{j+1} \\right ]^2 - 1 \\right\\}^2 + x_1^2
+        f_{\text{Watson}}(x) = \sum_{i=0}^{29} \left\{
+                               \sum_{j=0}^4 ((j + 1)a_i^j x_{j+1})
+                               - \left[ \sum_{j=0}^5 a_i^j
+                               x_{j+1} \right ]^2 - 1 \right\}^2
+                               + x_1^2
 
 
     Where, in this exercise, :math:`a_i = i/29`.
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5,
-    5]` for :math:`i=1,...,6`.
+    with :math:`x_i \in [-5, 5]` for :math:`i = 1, ..., 6`.
 
-    *Global optimum*: :math:`f(x_i) = 0.002288` for :math:`\\mathbf{x} =
-    [-0.0158, 1.012, -0.2329, 1.260, -1.513, 0.9928]`
+    *Global optimum*: :math:`f(x) = 0.002288` for
+    :math:`x = [-0.0158, 1.012, -0.2329, 1.260, -1.513, 0.9928]`
 
     """
 
@@ -39,14 +36,14 @@ class Watson(Benchmark):
 
         self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
 
-        self.global_optimum = [
-            [-0.0158, 1.012, -0.2329, 1.260, -1.513, 0.9928]]
+        self.global_optimum = [[-0.0158, 1.012, -0.2329, 1.260, -1.513,
+                                0.9928]]
         self.fglob = 0.002288
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        i = np.atleast_2d(arange(30.)).T
+        i = atleast_2d(arange(30.)).T
         a = i / 29.
         j = arange(5.)
         k = arange(6.)
@@ -61,22 +58,24 @@ class Watson(Benchmark):
 
 class Wavy(Benchmark):
 
-    """
-    W / Wavy objective function.
+    r"""
+    Wavy objective function.
 
-    This class defines the W / Wavy global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the W / Wavy global optimization problem. This is a 
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{Wavy}}(\\mathbf{x}) = 1 - \\frac{1}{n} \\sum_{i=1}^{n} \\cos(kx_i)e^{-\\frac{x_i^2}{2}}
+        f_{\text{Wavy}}(x) = 1 - \frac{1}{n} \sum_{i=1}^{n}
+                             \cos(kx_i)e^{-\frac{x_i^2}{2}}
 
 
-    Where, in this exercise, :math:`k = 10`. The number of local minima is :math:`kn` and :math:`(k + 1)n` for odd and even :math:`k` respectively.
+    Where, in this exercise, :math:`k = 10`. The number of local minima is
+    :math:`kn` and :math:`(k + 1)n` for odd and even :math:`k` respectively.
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-\\pi, \\pi]` for :math:`i=1,2`.
+    Here, :math:`x_i \in [-\pi, \pi]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,2`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0]`
 
     """
 
@@ -97,7 +96,7 @@ class Wavy(Benchmark):
 
 class WayburnSeader01(Benchmark):
 
-    """
+    r"""
     Wayburn and Seader 1 objective function.
 
     This class defines the Wayburn and Seader 1 global optimization problem. This
@@ -105,12 +104,13 @@ class WayburnSeader01(Benchmark):
 
     .. math::
 
-       f_{\\text{WayburnSeader01}}(\\mathbf{x}) = (x_1^6 + x_2^4 - 17)^2 + (2x_1 + x_2 - 4)^2
+        f_{\text{WayburnSeader01}}(x) = (x_1^6 + x_2^4 - 17)^2
+                                        + (2x_1 + x_2 - 4)^2
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,2`.
+    with :math:`x_i \in [-5, 5]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [1, 2]`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 2]`
 
     """
 
@@ -131,7 +131,7 @@ class WayburnSeader01(Benchmark):
 
 class WayburnSeader02(Benchmark):
 
-    """
+    r"""
     Wayburn and Seader 2 objective function.
 
     This class defines the Wayburn and Seader 2 global optimization problem. This
@@ -139,11 +139,14 @@ class WayburnSeader02(Benchmark):
 
     .. math::
 
-       f_{\\text{WayburnSeader02}}(\\mathbf{x}) = \\left[ 1.613 - 4(x_1 - 0.3125)^2 - 4(x_2 - 1.625)^2 \\right]^2 + (x_2 - 1)^2
+        f_{\text{WayburnSeader02}}(x) = \left[ 1.613 - 4(x_1 - 0.3125)^2
+                                        - 4(x_2 - 1.625)^2 \right]^2
+                                        + (x_2 - 1)^2
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-500, 500]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [0.2, 1]`
+    with :math:`x_i \in [-500, 500]` for :math:`i = 1, 2`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [0.2, 1]`
 
     """
 
@@ -167,24 +170,28 @@ class WayburnSeader02(Benchmark):
 
 class Weierstrass(Benchmark):
 
-    """
+    r"""
     Weierstrass objective function.
 
-    This class defines the Weierstrass global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Weierstrass global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{Weierstrass}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\left [
-       \\sum_{k=0}^{kmax} a^k \\cos \\left( 2 \\pi b^k (x_i + 0.5) \\right) - n
-       \\sum_{k=0}^{kmax} a^k \\cos(\\pi b^k) \\right ]
+       f_{\text{Weierstrass}}(x) = \sum_{i=1}^{n} \left [
+                                   \sum_{k=0}^{kmax} a^k \cos 
+                                   \left( 2 \pi b^k (x_i + 0.5) \right) - n
+                                   \sum_{k=0}^{kmax} a^k \cos(\pi b^k) \right ]
 
 
-    Where, in this exercise, :math:`kmax = 20`, :math:`a = 0.5` and :math:`b = 3`.
+    Where, in this exercise, :math:`kmax = 20`, :math:`a = 0.5` and
+    :math:`b = 3`.
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-0.5, 0.5]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-0.5, 0.5]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 4` for :math:`x_i = 0` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 4` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
     # TODO this is hard if you are the least bit away from 0.
@@ -203,7 +210,7 @@ class Weierstrass(Benchmark):
         kmax = 20
         a, b = 0.5, 3.0
 
-        k = np.atleast_2d(arange(kmax + 1.)).T
+        k = atleast_2d(arange(kmax + 1.)).T
 
         t1 = a ** k * cos(2 * pi * b ** k * (x + 0.5))
         t2 = self.N * sum(a ** k.T * cos(pi * b ** k.T))
@@ -214,7 +221,7 @@ class Weierstrass(Benchmark):
 
 class Whitley(Benchmark):
 
-    """
+    r"""
     Whitley objective function.
 
     This class defines the Whitley global optimization problem. This
@@ -222,12 +229,17 @@ class Whitley(Benchmark):
 
     .. math::
 
-       f_{\\text{Whitley}}(\\mathbf{x}) = \\sum_{i=1}^n \\sum_{j=1}^n \\left[\\frac{(100(x_i^2-x_j)^2 + (1-x_j)^2)^2}{4000} - \\cos(100(x_i^2-x_j)^2 + (1-x_j)^2)+1 \\right]
+        f_{\text{Whitley}}(x) = \sum_{i=1}^n \sum_{j=1}^n
+                                \left[\frac{(100(x_i^2-x_j)^2
+                                + (1-x_j)^2)^2}{4000} - \cos(100(x_i^2-x_j)^2
+                                + (1-x_j)^2)+1 \right]
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10.24, 10.24]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-10.24, 10.24]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 1` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 1` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -246,7 +258,7 @@ class Whitley(Benchmark):
         self.nfev += 1
 
         XI = x
-        XJ = np.atleast_2d(x).T
+        XJ = atleast_2d(x).T
 
         temp = 100.0 * ((XI ** 2.0) - XJ) + (1.0 - XJ) ** 2.0
         inner = (temp ** 2.0 / 4000.0) - cos(temp) + 1.0
@@ -255,7 +267,7 @@ class Whitley(Benchmark):
 
 class Wolfe(Benchmark):
 
-    """
+    r"""
     Wolfe objective function.
 
     This class defines the Wolfe global optimization problem. This
@@ -263,12 +275,12 @@ class Wolfe(Benchmark):
 
     .. math::
 
-       f_{\\text{Wolfe}}(\\mathbf{x}) = \\frac{4}{3}(x_1^2 + x_2^2 - x_1x_2)^{0.75} + x_3
+       f_{\text{Wolfe}}(x) = \frac{4}{3}(x_1^2 + x_2^2 - x_1x_2)^{0.75} + x_3
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 2]` for :math:`i=1,2,3`.
+    with :math:`x_i \in [0, 2]` for :math:`i = 1, 2, 3`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,2,3`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0, 0]`
 
     """
 

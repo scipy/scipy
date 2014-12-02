@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
-import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, sign, sin, sqrt, sum, where,
-                   zeros, tan, tanh, dot)
 
-from scipy.misc import factorial
+import numpy as np
+from numpy import abs, sum, sin, cos, pi, exp, arange, prod, sqrt
 from .go_benchmark import Benchmark
 
 
 class XinSheYang01(Benchmark):
 
-    """
+    r"""
     Xin-She Yang 1 objective function.
 
     This class defines the Xin-She Yang 1 global optimization problem. This
@@ -19,14 +16,18 @@ class XinSheYang01(Benchmark):
 
     .. math::
 
-       f_{\\text{XinSheYang01}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\epsilon_i \\lvert x_i \\rvert^i
+        f_{\text{XinSheYang01}}(x) = \sum_{i=1}^{n} \epsilon_i \lvert x_i 
+                                     \rvert^i
 
 
-    The variable :math:`\\epsilon_i, (i=1,...,n)` is a random variable uniformly distributed in :math:`[0, 1]`.
+    The variable :math:`\epsilon_i, (i = 1, ..., n)` is a random variable
+    uniformly distributed in :math:`[0, 1]`.
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-5, 5]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -49,7 +50,7 @@ class XinSheYang01(Benchmark):
 
 class XinSheYang02(Benchmark):
 
-    """
+    r"""
     Xin-She Yang 2 objective function.
 
     This class defines the Xin-She Yang 2 global optimization problem. This
@@ -57,11 +58,15 @@ class XinSheYang02(Benchmark):
 
     .. math::
 
-       f_{\\text{XinSheYang02}}(\\mathbf{x}) = \\frac{\\sum_{i=1}^{n} \\lvert{x_{i}}\\rvert}{e^{\\sum_{i=1}^{n} \\sin\\left(x_{i}^{2.0}\\right)}}
+        f_{\text{XinSheYang02}}(\x) = \frac{\sum_{i=1}^{n} \lvert{x_{i}}\rvert}
+                                      {e^{\sum_{i=1}^{n} \sin\left(x_{i}^{2.0}
+                                      \right)}}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-2\\pi, 2\\pi]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-2\pi, 2\pi]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -83,7 +88,7 @@ class XinSheYang02(Benchmark):
 
 class XinSheYang03(Benchmark):
 
-    """
+    r"""
     Xin-She Yang 3 objective function.
 
     This class defines the Xin-She Yang 3 global optimization problem. This
@@ -91,14 +96,18 @@ class XinSheYang03(Benchmark):
 
     .. math::
 
-       f_{\\text{XinSheYang03}}(\\mathbf{x}) = e^{-\\sum_{i=1}^{n} (x_i/\\beta)^{2m}} - 2e^{-\\sum_{i=1}^{n} x_i^2} \\prod_{i=1}^{n} \\cos^2(x_i)
+        f_{\text{XinSheYang03}}(x) = e^{-\sum_{i=1}^{n} (x_i/\beta)^{2m}}
+                                     - 2e^{-\sum_{i=1}^{n} x_i^2}
+                                     \prod_{i=1}^{n} \cos^2(x_i)
 
 
-    Where, in this exercise, :math:`\\beta = 15` and :math:`m = 3`.
+    Where, in this exercise, :math:`\beta = 15` and :math:`m = 3`.
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-20, 20]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-20, 20]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = -1` for :math:`x_i = 0` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = -1` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -124,7 +133,7 @@ class XinSheYang03(Benchmark):
 
 class XinSheYang04(Benchmark):
 
-    """
+    r"""
     Xin-She Yang 4 objective function.
 
     This class defines the Xin-She Yang 4 global optimization problem. This
@@ -132,11 +141,16 @@ class XinSheYang04(Benchmark):
 
     .. math::
 
-       f_{\\text{XinSheYang04}}(\\mathbf{x}) = \\left[ \\sum_{i=1}^{n} \\sin^2(x_i) - e^{-\\sum_{i=1}^{n} x_i^2} \\right ] e^{-\\sum_{i=1}^{n} \\sin^2 \\sqrt{ \\lvert x_i \\rvert }}
+        f_{\text{XinSheYang04}}(x) = \left[ \sum_{i=1}^{n} \sin^2(x_i)
+                                     - e^{-\sum_{i=1}^{n} x_i^2} \right ]
+                                     e^{-\sum_{i=1}^{n} \sin^2 \sqrt{ \lvert
+                                     x_i \rvert }}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-10, 10]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = -1` for :math:`x_i = 0` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = -1` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -160,23 +174,31 @@ class XinSheYang04(Benchmark):
 
 class Xor(Benchmark):
 
-    """
+    r"""
     Xor objective function.
 
-    This class defines the Xor global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Xor global optimization problem. This is a 
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{Xor}}(\\mathbf{x}) = \\left[ 1 + \\exp \\left( - \\frac{x_7}{1 + \\exp(-x_1 - x_2 - x_5)} - \\frac{x_8}{1 + \\exp(-x_3 - x_4 - x_6)} - x_9 \\right ) \\right ]^{-2} \\\\
-       + \\left [ 1 + \\exp \\left( -\\frac{x_7}{1 + \\exp(-x_5)} - \\frac{x_8}{1 + \\exp(-x_6)} - x_9 \\right ) \\right] ^{-2} \\\\
-       + \\left [1 - \\left\\{1 + \\exp \\left(-\\frac{x_7}{1 + \\exp(-x_1 - x_5)} - \\frac{x_8}{1 + \\exp(-x_3 - x_6)} - x_9 \\right ) \\right\\}^{-1} \\right ]^2 \\\\
-       + \\left [1 - \\left\\{1 + \\exp \\left(-\\frac{x_7}{1 + \\exp(-x_2 - x_5)} - \\frac{x_8}{1 + \\exp(-x_4 - x_6)} - x_9 \\right ) \\right\\}^{-1} \\right ]^2
+        f_{\text{Xor}}(x) = \left[ 1 + \exp \left( - \frac{x_7}{1 +
+        \exp(-x_1 - x_2 - x_5)} - \frac{x_8}{1 + \exp(-x_3 - x_4 - x_6)}
+        - x_9 \right ) \right ]^{-2} \\
+        + \left [ 1 + \exp \left( -\frac{x_7}{1 + \exp(-x_5)}
+        - \frac{x_8}{1 + \exp(-x_6)} - x_9 \right ) \right] ^{-2} \\
+        + \left [1 - \left\{1 + \exp \left(-\frac{x_7}{1 + \exp(-x_1 - x_5)}
+        - \frac{x_8}{1 + \exp(-x_3 - x_6)} - x_9 \right ) \right\}^{-1}
+        \right ]^2 \\
+        + \left [1 - \left\{1 + \exp \left(-\frac{x_7}{1 + \exp(-x_2 - x_5)}
+        - \frac{x_8}{1 + \exp(-x_4 - x_6)} - x_9 \right ) \right\}^{-1}
+        \right ]^2
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 1]` for :math:`i=1,...,9`.
+    with :math:`x_i \in [-1, 1]` for :math:`i=1,...,9`.
 
-    *Global optimum*: :math:`f(x_i) = 0.9597588` for :math:`\\mathbf{x} = [1, -1, 1, -1, -1, 1, 1, -1, 0.421134]`
+    *Global optimum*: :math:`f(x) = 0.9597588` for
+    :math:`\x = [1, -1, 1, -1, -1, 1, 1, -1, 0.421134]`
 
     """
 

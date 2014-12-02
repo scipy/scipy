@@ -1,17 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
-import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, sign, sin, sqrt, sum, where,
-                   zeros, tan, tanh, dot)
 
-from scipy.misc import factorial
+from numpy import abs, cos, exp, log, arange, pi, roll, sin, sqrt, sum
 from .go_benchmark import Benchmark
 
 
 class BartelsConn(Benchmark):
 
-    """
+    r"""
     Bartels-Conn objective function.
 
     The BartelsConn [1]_ global optimization problem is a multimodal
@@ -19,13 +15,13 @@ class BartelsConn(Benchmark):
 
     .. math::
 
-        f_{{BartelsConn}}(\mathbf{x}) = \lvert {x_1^2 + x_2^2 + x_1x_2} \rvert +
+        f_{\text{BartelsConn}}(x) = \lvert {x_1^2 + x_2^2 + x_1x_2} \rvert +
          \lvert {\sin(x_1)} \rvert + \lvert {\cos(x_2)} \rvert
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-5,
-    5]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = 1` for :math:`\mathbf{x} = [0, 0]`
+    with :math:`x_i \in [-5, 5]` for :math:`i = 1, 2`.
+
+    *Global optimum*: :math:`f(x) = 1` for :math:`x = [0, 0]`
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical
@@ -49,7 +45,7 @@ class BartelsConn(Benchmark):
 
 class Beale(Benchmark):
 
-    """
+    r"""
     Beale objective function.
 
     The Beale [1]_ global optimization problem is a multimodal
@@ -57,14 +53,14 @@ class Beale(Benchmark):
 
     .. math::
 
-        f_{\text{Beale}}(\mathbf{x}) = \left(x_1 x_2 - x_1 + 1.5\right)^{2} +
+        f_{\text{Beale}}(x) = \left(x_1 x_2 - x_1 + 1.5\right)^{2} +
         \left(x_1 x_2^{2} - x_1 + 2.25\right)^{2} + \left(x_1 x_2^{3} - x_1 +
         2.625\right)^{2}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-4.5
-    , 4.5]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x}=[3, 0.5]`
+    with :math:`x_i \in [-4.5, 4.5]` for :math:`i = 1, 2`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x=[3, 0.5]`
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical
@@ -87,7 +83,8 @@ class Beale(Benchmark):
 
 
 class BiggsExp02(Benchmark):
-    """
+
+    r"""
     BiggsExp02 objective function.
 
     The BiggsExp02 [1]_ global optimization problem is a multimodal minimization
@@ -95,16 +92,17 @@ class BiggsExp02(Benchmark):
 
     .. math::
 
-        \begin{array}\\ f_{{BiggsExp02}}(\mathbf{x}) = \sum_{i=1}^{10}
-        (e^{-t_ix_1} - 5e^{-t_ix_2} - y_i)^2\\
-        t_i = 0.1i\\
-        y_i = e^{-t_i} - 5e^{-10t_i}
-        \end{array}
+        \begin{matrix}
+        f_{\text{BiggsExp02}}(x) = \sum_{i=1}^{10} (e^{-t_i x_1}
+           - 5 e^{-t_i x_2} - y_i)^2 \\
+        t_i = 0.1 i\\
+        y_i = e^{-t_i} - 5 e^{-10t_i}\\
+        \end{matrix}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [0,
-     20]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x}=[1, 10]`
+    with :math:`x_i \in [0, 20]` for :math:`i = 1, 2`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 10]`
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical
@@ -132,7 +130,7 @@ class BiggsExp02(Benchmark):
 
 class BiggsExp03(Benchmark):
 
-    """
+    r"""
     BiggsExp03 objective function.
 
     The BiggsExp03 [1]_ global optimization problem is a multimodal minimization
@@ -140,16 +138,16 @@ class BiggsExp03(Benchmark):
 
     .. math::
 
-        \begin{array}\\ f_{BiggsExp03}(\mathbf{x}) = \sum_{i=1}^{10}
-        (e^{-t_ix_1} - x_3e^{-t_ix_2} - y_i)^2\\
+        \begin{matrix}\ f_{\text{BiggsExp03}}(x) = \sum_{i=1}^{10}
+        (e^{-t_i x_1} - x_3e^{-t_i x_2} - y_i)^2\\
         t_i = 0.1i\\
-        y_i = e^{-t_i} - 5e^{-10t_i}
-        \end{array}
+        y_i = e^{-t_i} - 5e^{-10 t_i}\\
+        \end{matrix}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [0,
-    20]` for :math:`i=1,2,3`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x}=[1, 10, 5]`
+    with :math:`x_i \in [0, 20]` for :math:`i = 1, 2, 3`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 10, 5]`
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical
@@ -177,24 +175,24 @@ class BiggsExp03(Benchmark):
 
 class BiggsExp04(Benchmark):
 
-    """
+    r"""
     BiggsExp04 objective function.
 
-    The BiggsExp04 [1]_ global optimization problem is a multimodal minimization
-    problem defined as follows
+    The BiggsExp04 [1]_ global optimization problem is a multimodal
+    minimization problem defined as follows
 
     .. math::
 
-        \begin{array}\\ f_{BiggsExp04}(\mathbf{x}) = \sum_{i=1}^{10}
-        (x_3e^{-t_ix_1} - x_4e^{-t_ix_2} - y_i)^2\\
+        \begin{matrix}\ f_{\text{BiggsExp04}}(x) = \sum_{i=1}^{10}
+        (x_3 e^{-t_i x_1} - x_4 e^{-t_i x_2} - y_i)^2\\
         t_i = 0.1i\\
-        y_i = e^{-t_i} - 5e^{-10t_i}
-        \end{array}
+        y_i = e^{-t_i} - 5 e^{-10 t_i}\\
+        \end{matrix}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [0,
-    20]` for :math:`i=1,2,3,4`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x}=[1, 10, 1, 5]`
+    with :math:`x_i \in [0, 20]` for :math:`i = 1, ..., 4`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 10, 1, 5]`
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical
@@ -222,7 +220,7 @@ class BiggsExp04(Benchmark):
 
 class BiggsExp05(Benchmark):
 
-    """
+    r"""
     BiggsExp05 objective function.
 
     The BiggsExp05 [1]_ global optimization problem is a multimodal minimization
@@ -230,16 +228,16 @@ class BiggsExp05(Benchmark):
 
     .. math::
 
-        \begin{array}\\ f_{BiggsExp04}(\mathbf{x}) = \sum_{i=1}^{11}
-        (x_3e^{-t_ix_1} - x_4e^{-t_ix_2} + 3e^{-t_ix_5} - y_i)^2\\
+        \begin{matrix}\ f_{\text{BiggsExp05}}(x) = \sum_{i=1}^{11}
+        (x_3 e^{-t_i x_1} - x_4 e^{-t_i x_2} + 3 e^{-t_i x_5} - y_i)^2\\
         t_i = 0.1i\\
-        y_i = e^{-t_i} - 5e^{-10t_i} + 3e^{-4t_i}
-        \end{array}
+        y_i = e^{-t_i} - 5e^{-10 t_i} + 3e^{-4 t_i}\\
+        \end{matrix}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [0,
-     20]` for :math:`i=1,...,5`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x}=[1, 10, 1, 5, 4]`
+    with :math:`x_i \in [0, 20]` for :math:`i=1, ..., 5`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 10, 1, 5, 4]`
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical
@@ -267,7 +265,7 @@ class BiggsExp05(Benchmark):
 
 class Bird(Benchmark):
 
-    """
+    r"""
     Bird objective function.
 
     The Bird global optimization problem is a multimodal minimization
@@ -275,14 +273,15 @@ class Bird(Benchmark):
 
     .. math::
 
-        f_{Bird}(\mathbf{x}) = \left(x_1 - x_2\right)^{2} + e^{\left[1 -
+        f_{\text{Bird}}(x) = \left(x_1 - x_2\right)^{2} + e^{\left[1 -
          \sin\left(x_1\right) \right]^{2}} \cos\left(x_2\right) + e^{\left[1 -
           \cos\left(x_2\right)\right]^{2}} \sin\left(x_1\right)
 
-    for :math:`x_i \in [-2\pi, 2\pi]`
 
-    *Global optimum*: :math:`f(x_i) = -106.7645367198034` for :math:`\mathbf{x}
-    = [4.701055751981055 , 3.152946019601391]` or :math:`\mathbf{x} =
+    with :math:`x_i \in [-2\pi, 2\pi]`
+
+    *Global optimum*: :math:`f(x) = -106.7645367198034` for :math:`x
+    = [4.701055751981055, 3.152946019601391]` or :math:`x =
     [-1.582142172055011, -3.130246799635430]`
 
     """
@@ -305,7 +304,7 @@ class Bird(Benchmark):
 
 class Bohachevsky(Benchmark):
 
-    """
+    r"""
     Bohachevsky objective function.
 
     The Bohachevsky [1]_ global optimization problem is a multimodal
@@ -313,14 +312,15 @@ class Bohachevsky(Benchmark):
 
         .. math::
 
-        f_{Bohachevsky}(\mathbf{x}) = \sum_{i=1}^{n-1}\left[x_i^2 + 2x_{i+1}^2 -
-        0.3\cos(3\pi x_i) - 0.4\cos(4\pi x_{i+1}) + 0.7\right]
+        f_{\text{Bohachevsky}}(x) = \sum_{i=1}^{n-1}\left[x_i^2 + 2 x_{i+1}^2 -
+        0.3 \cos(3 \pi x_i) - 0.4 \cos(4 \pi x_{i + 1}) + 0.7 \right]
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-15,
-    15]` for :math:`i=1,...,n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for
-    :math:`i=1,...,n`
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in
+    [-15, 15]` for :math:`i = 1, ..., n`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for :math:`i = 1,
+    ..., n`
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical
@@ -349,7 +349,7 @@ class Bohachevsky(Benchmark):
 
 class BoxBetts(Benchmark):
 
-    """
+    r"""
     BoxBetts objective function.
 
     The BoxBetts global optimization problem is a multimodal
@@ -357,21 +357,22 @@ class BoxBetts(Benchmark):
 
     .. math::
 
-        f_{BoxBetts}(\mathbf{x}) = \sum_{i=1}^k g(x_i)^2
+        f_{\text{BoxBetts}}(x) = \sum_{i=1}^k g(x_i)^2
+
 
     Where, in this exercise:
 
     .. math::
-        g(\mathbf{x}) = e^{-0.1ix_1} - e^{-0.1ix_2} - x_3\left[e^{-0.1i}
+
+        g(x) = e^{-0.1i x_1} - e^{-0.1i x_2} - x_3\left[e^{-0.1i}
         - e^{-i}\right]
 
 
     And :math:`k = 10`.
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_1 \in [0.9,
-    1.2], x_2 \in [9, 11.2], x_3 \in [0.9, 1.2]`.
+    Here, :math:`x_1 \in [0.9, 1.2], x_2 \in [9, 11.2], x_3 \in [0.9, 1.2]`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x} = [1, 10, 1]`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 10, 1]`
 
     """
 
@@ -393,7 +394,7 @@ class BoxBetts(Benchmark):
 
 class Branin01(Benchmark):
 
-    """
+    r"""
     Branin01  objective function.
 
     The Branin01 global optimization problem is a multimodal minimization
@@ -401,16 +402,15 @@ class Branin01(Benchmark):
 
     .. math::
 
-        f_{Branin01}(\mathbf{x}) = \left(- 1.275 \frac{x_1^{2}}{\pi^{2}} + 5
-        \frac{x_1}{\pi} + x_2 -6\right)^{2} + \left(10 - \frac{5}{4 \pi} \right)
+        f_{\text{Branin01}}(x) = \left(- 1.275 \frac{x_1^{2}}{\pi^{2}} + 5
+        \frac{x_1}{\pi} + x_2 -6\right)^{2} + \left(10 -\frac{5}{4 \pi} \right)
         \cos\left(x_1\right) + 10
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_1 \\in [-5,
-    10], x_2 \\in [0, 15]`
 
-    *Global optimum*: :math:`f(x_i) = 0.39788735772973816` for
-    :math:`\mathbf{x} = [-\pi, 12.275]` or :math:`\mathbf{x} = [\pi, 2.275]`
-    or :math:`\mathbf{x} = [9.42478, 2.475]`
+    with :math:`x_1 \in [-5, 10], x_2 \in [0, 15]`
+
+    *Global optimum*: :math:`f(x) = 0.39788735772973816` for :math:`x =
+    [-\pi, 12.275]` or :math:`x = [\pi, 2.275]` or :math:`x = [9.42478, 2.475]`
 
     """
 
@@ -432,25 +432,23 @@ class Branin01(Benchmark):
 
 class Branin02(Benchmark):
 
-    """
+    r"""
     Branin02 objective function.
 
     The Branin02 global optimization problem is a multimodal minimization
     problem defined as follows
 
-
     .. math::
 
-        f_{\text{Branin02}}(\mathbf{x}) = \left(- 1.275 \frac{x_1^{2}}{\pi^{2}}
-        + 5 \frac{x_1}{\pi} + x_2 -6\right)^{2} + \left(10 - \frac{5}{4 \pi}
-        \right) \cos\left(x_1\right) \cos\left(x_2\right) + \log(x_1^2+x_2^2 +1)
-        + 10
+        f_{\text{Branin02}}(x) = \left(- 1.275 \frac{x_1^{2}}{\pi^{2}}
+        + 5 \frac{x_1}{\pi} + x_2 - 6 \right)^{2} + \left(10 - \frac{5}{4 \pi}
+        \right) \cos\left(x_1\right) \cos\left(x_2\right)
+        + \log(x_1^2+x_2^2 + 1) + 10
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-5,
-    15]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = 5.559037` for :math:`\mathbf{x} = [-3.2,
-    12.53]`
+    with :math:`x_i \in [-5, 15]` for :math:`i = 1, 2`.
+
+    *Global optimum*: :math:`f(x) = 5.559037` for :math:`x = [-3.2, 12.53]`
 
     """
 
@@ -473,7 +471,7 @@ class Branin02(Benchmark):
 
 class Brent(Benchmark):
 
-    """
+    r"""
     Brent objective function.
 
     The Brent [1]_ global optimization problem is a multimodal minimization
@@ -481,13 +479,12 @@ class Brent(Benchmark):
 
     .. math::
 
-        f_{\text{Brent}}(\mathbf{x}) = (x_1 + 10)^2 + (x_2 + 10)^2 +
-        e^{(-x_1^2-x_2^2)}
+        f_{\text{Brent}}(x) = (x_1 + 10)^2 + (x_2 + 10)^2 + e^{(-x_1^2 -x_2^2)}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-10,
-    10]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x} = [-10, -10]`
+    with :math:`x_i \in [-10, 10]` for :math:`i = 1, 2`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [-10, -10]`
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical
@@ -512,7 +509,7 @@ class Brent(Benchmark):
 
 class Brown(Benchmark):
 
-    """
+    r"""
     Brown objective function.
 
     The Brown [1]_ global optimization problem is a multimodal minimization
@@ -520,12 +517,12 @@ class Brown(Benchmark):
 
     .. math::
 
-        f_{\text{Brown}}(\mathbf{x}) = \sum_{i=1}^{n-1}\left[
-        \left(x_i^2\right)^{x_{i+1}^2+1} + \left(x_{i+1}^2\right)^{x_i^2+1}
-        \right]
+        f_{\text{Brown}}(x) = \sum_{i=1}^{n-1}\left[
+        \left(x_i^2\right)^{x_{i + 1}^2 + 1}
+        + \left(x_{i + 1}^2\right)^{x_i^2 + 1}\right]
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-1,
-    4]` for :math:`i=1,...,n`.
+
+    with :math:`x_i \in [-1, 4]` for :math:`i=1,...,n`.
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for
     :math:`i=1,...,n`
@@ -557,7 +554,7 @@ class Brown(Benchmark):
 
 class Bukin02(Benchmark):
 
-    """
+    r"""
     Bukin02 objective function.
 
     The Bukin02 [1]_ global optimization problem is a multimodal minimization
@@ -565,14 +562,13 @@ class Bukin02(Benchmark):
 
     .. math::
 
-        f_{\text{Bukin02}}(\mathbf{x}) = 100 (x_2^2 - 0.01x_1^2 + 1)
+        f_{\text{Bukin02}}(x) = 100 (x_2^2 - 0.01x_1^2 + 1)
         + 0.01(x_1 + 10)^2
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_1 \in 
-    [-15, -5], x_2 \in [-3, 3]`
 
-    *Global optimum*: :math:`f(x_i) = -124.75` for :math:`\mathbf{x} = 
-    [-15, 0]`
+    with :math:`x_1 \in [-15, -5], x_2 \in [-3, 3]`
+
+    *Global optimum*: :math:`f(x) = -124.75` for :math:`x = [-15, 0]`
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical
@@ -580,7 +576,7 @@ class Bukin02(Benchmark):
 
     """
 
-    # TODO: this function is dodgy.  Infinity77 equation is different to code.
+    # TODO: check.  Infinity77 equation is different to code.
     # Jamil also has wrong minimum.
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -599,7 +595,7 @@ class Bukin02(Benchmark):
 
 class Bukin04(Benchmark):
 
-    """
+    r"""
     Bukin04 objective function.
 
     The Bukin04 [1]_ global optimization problem is a multimodal minimization
@@ -607,13 +603,13 @@ class Bukin04(Benchmark):
 
     .. math::
 
-        f_{\text{Bukin04}}(\mathbf{x}) = 100 x_2^{2} + 0.01 \lvert{x_1 + 10}
+        f_{\text{Bukin04}}(x) = 100 x_2^{2} + 0.01 \lvert{x_1 + 10}
         \rvert
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_1 \in [-15,
-    -5], x_2 \in [-3, 3]`
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x} = [-10, 0]`
+    with :math:`x_1 \in [-15, -5], x_2 \in [-3, 3]`
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [-10, 0]`
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical
@@ -637,7 +633,7 @@ class Bukin04(Benchmark):
 
 class Bukin06(Benchmark):
 
-    """
+    r"""
     Bukin06 objective function.
 
     The Bukin06 [1]_ global optimization problem is a multimodal minimization
@@ -645,13 +641,13 @@ class Bukin06(Benchmark):
 
     .. math::
 
-        f_{\text{Bukin06}}(\mathbf{x}) = 100 \sqrt{ \lvert{x_2 - 0.01 x_1^{2}}
+        f_{\text{Bukin06}}(x) = 100 \sqrt{ \lvert{x_2 - 0.01 x_1^{2}}
         \rvert} + 0.01 \lvert{x_1 + 10} \rvert
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_1 \in [-15,
-    -5], x_2 \in [-3, 3]`
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\mathbf{x} = [-10, 1]`
+    with :math:`x_1 \in [-15, -5], x_2 \in [-3, 3]`
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [-10, 1]`
 
     .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
      functions for global optimization problems, Int. Journal of Mathematical

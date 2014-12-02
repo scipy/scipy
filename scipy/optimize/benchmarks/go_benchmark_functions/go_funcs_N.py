@@ -1,33 +1,37 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
-import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, sign, sin, sqrt, sum, where,
-                   zeros, tan, tanh, dot)
 
-from scipy.misc import factorial
+from numpy import cos, sqrt, sum, sin, abs
 from .go_benchmark import Benchmark
 
 
 class NeedleEye(Benchmark):
 
-    """
+    r"""
     NeedleEye objective function.
 
-    This class defines the Needle-Eye global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Needle-Eye global optimization problem. This is a
+    a multimodal minimization problem defined as follows:
 
     .. math::
 
-        f_{\\text{NeedleEye}}(\\mathbf{x}) = \\begin{cases} 1 & \\textrm{if} \\hspace{5pt} \\lvert x_i \\rvert  <  eye \\hspace{5pt} \\forall i \\\\
-               \\sum_{i=1}^n (100 + \\lvert x_i \\rvert) & \\textrm{if} \\hspace{5pt} \\lvert x_i \\rvert > eye \\\\
-               0 & \\textrm{otherwise} \\end{cases}
+        f_{\text{NeedleEye}}(x) =
+            \begin{cases}
+            1 & \textrm{if }\hspace{5pt} \lvert x_i \rvert  <  eye \hspace{5pt}
+            \forall i \\
+            \sum_{i=1}^n (100 + \lvert x_i \rvert) & \textrm{if } \hspace{5pt}
+            \lvert x_i \rvert > eye \\
+            0 & \textrm{otherwise}\\
+            \end{cases}
+
 
     Where, in this exercise, :math:`eye = 0.0001`.
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-10, 10]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 1` for :math:`x_i = 0.` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 1` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -61,20 +65,22 @@ class NeedleEye(Benchmark):
 
 class NewFunction01(Benchmark):
 
-    """
+    r"""
     NewFunction01 objective function.
 
-    This class defines the NewFunction01 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the NewFunction01 global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{NewFunction01}}(\\mathbf{x}) = \\left | {\\cos\\left(\\sqrt{\\left|{x_{1}^{2} + x_{2}}\\right|}\\right)} \\right |^{0.5} + (x_{1} + x_{2})/100
+       f_{\text{NewFunction01}}(x) = \left | {\cos\left(\sqrt{\left|{x_{1}^{2}
+       + x_{2}}\right|}\right)} \right |^{0.5} + (x_{1} + x_{2})/100
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
+    with :math:`x_i \in [-10, 10]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = -0.18459899925` for :math:`\\mathbf{x} = [-8.46669057, -9.99982177]`
+    *Global optimum*: :math:`f(x) = -0.18459899925` for
+    :math:`x = [-8.46669057, -9.99982177]`
 
     """
 
@@ -95,20 +101,22 @@ class NewFunction01(Benchmark):
 
 class NewFunction02(Benchmark):
 
-    """
+    r"""
     NewFunction02 objective function.
 
-    This class defines the NewFunction02 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the NewFunction02 global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{NewFunction02}}(\\mathbf{x}) = \\left | {\\sin\\left(\\sqrt{\\lvert{x_{1}^{2} + x_{2}}\\rvert}\\right)} \\right |^{0.5} + (x_{1} + x_{2})/100
+       f_{\text{NewFunction02}}(x) = \left | {\sin\left(\sqrt{\lvert{x_{1}^{2}
+       + x_{2}}\rvert}\right)} \right |^{0.5} + (x_{1} + x_{2})/100
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
+    with :math:`x_i \in [-10, 10]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = -0.19933159253` for :math:`\\mathbf{x} = [-9.94103375, -9.99771235]`
+    *Global optimum*: :math:`f(x) = -0.19933159253` for
+    :math:`x = [-9.94103375, -9.99771235]`
 
     """
 
@@ -129,20 +137,25 @@ class NewFunction02(Benchmark):
 
 class NewFunction03(Benchmark):
 
-    """
+    r"""
     NewFunction03 objective function.
 
-    This class defines the NewFunction03 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the NewFunction03 global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{NewFunction03}}(\\mathbf{x}) = 0.01 x_{1} + 0.1 x_{2} + \\left\{x_{1} + \\sin^{2}\\left[\\left(\\cos\\left(x_{1}\\right) + \\cos\\left(x_{2}\\right)\\right)^{2}\\right] + \\cos^{2}\\left[\\left(\\sin\\left(x_{1}\\right) + \\sin\\left(x_{2}\\right)\\right)^{2}\\right]\\right\}^{2}
+       f_{\text{NewFunction03}}(x) = 0.01 x_{1} + 0.1 x_{2} + \left\{x_{1}
+       + \sin^{2}\left[\left(\cos\left(x_{1}\right)
+       + \cos\left(x_{2}\right)\right)^{2}\right]
+       + \cos^{2}\left[\left(\sin\left(x_{1}\right)
+       + \sin\left(x_{2}\right)\right)^{2}\right]\right\}^{2}
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
+    with :math:`x_i \in [-10, 10]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = -1.019829` for :math:`\\mathbf{x} = [-1.98682, -10]`
+    *Global optimum*: :math:`f(x) = -1.019829` for
+    :math:`x = [-1.98682, -10]`
 
     """
 

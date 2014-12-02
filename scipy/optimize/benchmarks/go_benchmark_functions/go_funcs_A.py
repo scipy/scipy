@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
-from numpy import (abs, cos, exp, pi, prod, sin, sqrt, sum)
 
+from numpy import abs, cos, exp, pi, prod, sin, sqrt, sum
 from .go_benchmark import Benchmark
 
 
@@ -15,8 +15,9 @@ class Ackley01(Benchmark):
 
     .. math::
 
-        f_{Ackley01}(x) = -20 e^{-0.2 \sqrt{\frac{1}{n} \sum_{i=1}^n
+        f_{\text{Ackley01}}(x) = -20 e^{-0.2 \sqrt{\frac{1}{n} \sum_{i=1}^n
          x_i^2}} - e^{\frac{1}{n} \sum_{i=1}^n \cos(2 \pi x_i)} + 20 + e
+
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \in
     [-35, 35]` for :math:`i = 1, ..., n`.
@@ -55,9 +56,10 @@ class Ackley02(Benchmark):
 
     .. math::
 
-        f_{Ackley02}(x) = -200 e^{-0.02 \sqrt{x_1^2 + x_2^2}}
+        f_{\text{Ackley02}(x) = -200 e^{-0.02 \sqrt{x_1^2 + x_2^2}}
 
-    For :math:`x_i \in [-32, 32]` for :math:`i=1, 2`.
+
+    with :math:`x_i \in [-32, 32]` for :math:`i=1, 2`.
 
     *Global optimum*: :math:`f(x) = -200` for :math:`x = [0, 0]`
 
@@ -88,10 +90,11 @@ class Ackley03(Benchmark):
 
     .. math::
 
-        f_{Ackley03}(x) = -200 e^{-0.02 \sqrt{x_1^2 + x_2^2}} +
+        f_{\text{Ackley03}}(x) = -200 e^{-0.02 \sqrt{x_1^2 + x_2^2}} +
             5e^{\cos(3x_1) + \sin(3x_2)}
 
-    For :math:`x_i \in [-32, 32]` for :math:`i=1, 2`.
+
+    with :math:`x_i \in [-32, 32]` for :math:`i=1, 2`.
 
     *Global optimum*: :math:`f(x) = -195.62902825923879` for :math:`x
     = [-0.68255758, -0.36070859]`
@@ -125,9 +128,10 @@ class Adjiman(Benchmark):
 
     .. math::
 
-        f_{Adjiman}(x) = \cos(x_1)\sin(x_2) - \frac{x_1}{(x_2^2 + 1)}
+        f_{\text{Adjiman}}(x) = \cos(x_1)\sin(x_2) - \frac{x_1}{(x_2^2 + 1)}
 
-    Here, :math:`x_1 \in [-1, 2]` and :math:`x_2 \in [-1, 1]`.
+
+    with, :math:`x_1 \in [-1, 2]` and :math:`x_2 \in [-1, 1]`.
 
     *Global optimum*: :math:`f(x) = -2.02181` for :math:`x = [2.0, 0.10578]`
 
@@ -158,8 +162,9 @@ class Alpine01(Benchmark):
 
     .. math::
 
-        f_{Alpine01}(x) = \sum_{i=1}^{n} \lvert {x_i \sin \left( x_i
+        f_{\text{Alpine01}}(x) = \sum_{i=1}^{n} \lvert {x_i \sin \left( x_i
         \right) + 0.1 x_i} \rvert
+
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \in
     [-10, 10]` for :math:`i = 1, ..., n`.
@@ -196,7 +201,8 @@ class Alpine02(Benchmark):
 
     .. math::
 
-        f_{Alpine02}(x) = \prod_{i=1}^{n} \sqrt{x_i} \sin(x_i)
+        f_{\text{Alpine02}(x) = \prod_{i=1}^{n} \sqrt{x_i} \sin(x_i)
+
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \in [0,
     10]` for :math:`i = 1, ..., n`.
@@ -214,7 +220,6 @@ class Alpine02(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
-        # TODO check minima as a function of dimensionality
         self.global_optimum = [[7.91705268, 4.81584232]]
         self.fglob = -6.12950
         self.change_dimensionality = True
@@ -235,8 +240,9 @@ class AMGM(Benchmark):
 
     .. math::
 
-        f_{AMGM}(x) = \left ( \frac{1}{n} \sum_{i=1}^{n} x_i -
+        f_{\text{AMGM}}(x) = \left ( \frac{1}{n} \sum_{i=1}^{n} x_i -
          \sqrt[n]{ \prod_{i=1}^{n} x_i} \right )^2
+
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \in
     [0, 10]` for :math:`i = 1, ..., n`.

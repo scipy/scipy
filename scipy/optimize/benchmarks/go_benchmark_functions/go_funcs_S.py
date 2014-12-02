@@ -1,32 +1,31 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
                    arange, pi, prod, roll, sign, sin, sqrt, sum, where,
                    zeros, tan, tanh, dot)
-
-from scipy.misc import factorial
 from .go_benchmark import Benchmark
 
 
 class Salomon(Benchmark):
 
-    """
+    r"""
     Salomon objective function.
 
-    This class defines the Salomon global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Salomon global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{Salomon}}(\\mathbf{x}) = 1 - \\cos \\left (2 \\pi
-       \\sqrt{\\sum_{i=1}^{n} x_i^2} \\right) + 0.1 \\sqrt{\\sum_{i=1}^n x_i^2}
+        f_{\text{Salomon}}(x) = 1 - \cos \left (2 \pi
+        \sqrt{\sum_{i=1}^{n} x_i^2} \right) + 0.1 \sqrt{\sum_{i=1}^n x_i^2}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in
-    [-100, 100]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in
+    [-100, 100]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for
-    :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -49,7 +48,7 @@ class Salomon(Benchmark):
 
 class Sargan(Benchmark):
 
-    """
+    r"""
     Sargan objective function.
 
     This class defines the Sargan global optimization problem. This
@@ -57,11 +56,15 @@ class Sargan(Benchmark):
 
     .. math::
 
-       f_{\\text{Sargan}}(\\mathbf{x}) = \\sum_{i=1}^{n} n \\left (x_i^2 + 0.4 \\sum_{i \\neq j}^{n} x_ix_j \\right)
+        f_{\text{Sargan}}(x) = \sum_{i=1}^{n} n \left (x_i^2
+        + 0.4 \sum_{i \neq j}^{n} x_ix_j \right)
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-100, 100]` for
+    :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -86,7 +89,7 @@ class Sargan(Benchmark):
 
 class Schaffer01(Benchmark):
 
-    """
+    r"""
     Schaffer 1 objective function.
 
     This class defines the Schaffer 1 global optimization problem. This
@@ -94,11 +97,13 @@ class Schaffer01(Benchmark):
 
     .. math::
 
-       f_{\\text{Schaffer01}}(\\mathbf{x}) = 0.5 + \\frac{\\sin^2 (x_1^2 + x_2^2)^2 - 0.5}{1 + 0.001(x_1^2 + x_2^2)^2}
+        f_{\text{Schaffer01}}(x) = 0.5 + \frac{\sin^2 (x_1^2 + x_2^2)^2 - 0.5}
+        {1 + 0.001(x_1^2 + x_2^2)^2}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
+    with :math:`x_i \in [-100, 100]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,2`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0]` for
+    :math:`i = 1, 2`
 
     """
 
@@ -122,7 +127,7 @@ class Schaffer01(Benchmark):
 
 class Schaffer02(Benchmark):
 
-    """
+    r"""
     Schaffer 2 objective function.
 
     This class defines the Schaffer 2 global optimization problem. This
@@ -130,11 +135,13 @@ class Schaffer02(Benchmark):
 
     .. math::
 
-       f_{\\text{Schaffer02}}(\\mathbf{x}) = 0.5 + \\frac{\\sin^2 (x_1^2 - x_2^2)^2 - 0.5}{1 + 0.001(x_1^2 + x_2^2)^2}
+        f_{\text{Schaffer02}}(x) = 0.5 + \frac{\sin^2 (x_1^2 - x_2^2)^2 - 0.5}
+        {1 + 0.001(x_1^2 + x_2^2)^2}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
+    with :math:`x_i \in [-100, 100]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,2`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0]` for
+    :math:`i = 1, 2`
 
     """
 
@@ -158,7 +165,7 @@ class Schaffer02(Benchmark):
 
 class Schaffer03(Benchmark):
 
-    """
+    r"""
     Schaffer 3 objective function.
 
     This class defines the Schaffer 3 global optimization problem. This
@@ -166,11 +173,12 @@ class Schaffer03(Benchmark):
 
     .. math::
 
-       f_{\\text{Schaffer03}}(\\mathbf{x}) = 0.5 + \\frac{\\sin^2 \\left( \\cos \\lvert x_1^2 - x_2^2 \\rvert \\right ) - 0.5}{1 + 0.001(x_1^2 + x_2^2)^2}
+       f_{\text{Schaffer03}}(x) = 0.5 + \frac{\sin^2 \left( \cos \lvert x_1^2
+       - x_2^2 \rvert \right ) - 0.5}{1 + 0.001(x_1^2 + x_2^2)^2}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
+    with :math:`x_i \in [-100, 100]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = 0.00156685` for :math:`\\mathbf{x} = [0, 1.253115]`
+    *Global optimum*: :math:`f(x) = 0.00156685` for :math:`x = [0, 1.253115]`
 
     """
 
@@ -194,7 +202,7 @@ class Schaffer03(Benchmark):
 
 class Schaffer04(Benchmark):
 
-    """
+    r"""
     Schaffer 4 objective function.
 
     This class defines the Schaffer 4 global optimization problem. This
@@ -202,11 +210,12 @@ class Schaffer04(Benchmark):
 
     .. math::
 
-       f_{\\text{Schaffer04}}(\\mathbf{x}) = 0.5 + \\frac{\\cos^2 \\left( \\sin(x_1^2 - x_2^2) \\right ) - 0.5}{1 + 0.001(x_1^2 + x_2^2)^2}^2
+        f_{\text{Schaffer04}}(x) = 0.5 + \frac{\cos^2 \left( \sin(x_1^2 - x_2^2)
+        \right ) - 0.5}{1 + 0.001(x_1^2 + x_2^2)^2}^2
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
+    with :math:`x_i \in [-100, 100]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = 0.292579` for :math:`\\mathbf{x} = [0, 1.253115]`
+    *Global optimum*: :math:`f(x) = 0.292579` for :math:`x = [0, 1.253115]`
 
     """
 
@@ -230,7 +239,7 @@ class Schaffer04(Benchmark):
 
 class SchmidtVetters(Benchmark):
 
-    """
+    r"""
     Schmidt-Vetters objective function.
 
     This class defines the Schmidt-Vetters global optimization problem. This
@@ -238,11 +247,14 @@ class SchmidtVetters(Benchmark):
 
     .. math::
 
-       f_{\\text{SchmidtVetters}}(\\mathbf{x}) = \\frac{1}{1 + (x_1 - x_2)^2} + \\sin \\left(\\frac{\\pi x_2 + x_3}{2} \\right) + e^{\\left(\\frac{x_1+x_2}{x_2} - 2\\right)^2}
+        f_{\text{SchmidtVetters}}(x) = \frac{1}{1 + (x_1 - x_2)^2}
+        + \sin \left(\frac{\pi x_2 + x_3}{2} \right)
+        + e^{\left(\frac{x_1+x_2}{x_2} - 2\right)^2}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 10]` for :math:`i=1,2,3`.
+    with :math:`x_i \in [0, 10]` for :math:`i = 1, 2, 3`.
 
-    *Global optimum*: :math:`f(x_i) = 2.99643266` for :math:`x_i = [0.79876108,  0.79962581,  0.79848824]`
+    *Global optimum*: :math:`f(x) = 2.99643266` for
+    :math:`x = [0.79876108,  0.79962581,  0.79848824]`
 
     """
 
@@ -262,21 +274,24 @@ class SchmidtVetters(Benchmark):
 
 class Schwefel01(Benchmark):
 
-    """
+    r"""
     Schwefel 1 objective function.
 
-    This class defines the Schwefel 1 global optimization problem. This
-    is a unimodal minimization problem defined as follows:
+    This class defines the Schwefel 1 global optimization problem. This is a
+    unimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{Schwefel01}}(\\mathbf{x}) = \\left(\\sum_{i=1}^n x_i^2 \\right)^{\\alpha}
+       f_{\text{Schwefel01}}(x) = \left(\sum_{i=1}^n x_i^2 \right)^{\alpha}
 
-    Where, in this exercise, :math:`\\alpha = \\sqrt{\\pi}`.
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
+    Where, in this exercise, :math:`\alpha = \sqrt{\pi}`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-100, 100]` for :math:`i = 1, ..., n`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0`
+    for :math:`i = 1, ..., n`
 
     """
 
@@ -299,7 +314,7 @@ class Schwefel01(Benchmark):
 
 class Schwefel02(Benchmark):
 
-    """
+    r"""
     Schwefel 2 objective function.
 
     This class defines the Schwefel 2 global optimization problem. This
@@ -307,12 +322,15 @@ class Schwefel02(Benchmark):
 
     .. math::
 
-       f_{\\text{Schwefel02}}(\\mathbf{x}) = \\sum_{i=1}^n \\left(\\sum_{j=1}^i x_i \\right)^2
+        f_{\text{Schwefel02}}(x) = \sum_{i=1}^n \left(\sum_{j=1}^i 
+        x_i \right)^2
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-100, 100]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -336,7 +354,7 @@ class Schwefel02(Benchmark):
 
 class Schwefel04(Benchmark):
 
-    """
+    r"""
     Schwefel 4 objective function.
 
     This class defines the Schwefel 4 global optimization problem. This
@@ -344,12 +362,15 @@ class Schwefel04(Benchmark):
 
     .. math::
 
-       f_{\\text{Schwefel04}}(\\mathbf{x}) = \\sum_{i=1}^n \\left[(x_i - 1)^2 + (x_1 - x_i^2)^2 \\right]
+        f_{\text{Schwefel04}}(x) = \sum_{i=1}^n \left[(x_i - 1)^2
+        + (x_1 - x_i^2)^2 \right]
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 10]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [0, 10]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 1` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for:math:`x_i = 1` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -370,7 +391,7 @@ class Schwefel04(Benchmark):
 
 class Schwefel06(Benchmark):
 
-    """
+    r"""
     Schwefel 6 objective function.
 
     This class defines the Schwefel 6 global optimization problem. This
@@ -378,12 +399,13 @@ class Schwefel06(Benchmark):
 
     .. math::
 
-       f_{\\text{Schwefel06}}(\\mathbf{x}) = \\max(\\lvert x_1 + 2x_2 - 7 \\rvert, \\lvert 2x_1 + x_2 - 5 \\rvert)
+       f_{\text{Schwefel06}}(x) = \max(\lvert x_1 + 2x_2 - 7 \rvert,
+                                   \lvert 2x_1 + x_2 - 5 \rvert)
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,2`.
+    with :math:`x_i \in [-100, 100]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [1, 3]`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 3]`
 
     """
 
@@ -404,7 +426,7 @@ class Schwefel06(Benchmark):
 
 class Schwefel20(Benchmark):
 
-    """
+    r"""
     Schwefel 20 objective function.
 
     This class defines the Schwefel 20 global optimization problem. This
@@ -412,12 +434,14 @@ class Schwefel20(Benchmark):
 
     .. math::
 
-       f_{\\text{Schwefel20}}(\\mathbf{x}) = \\sum_{i=1}^n \\lvert x_i \\rvert
+       f_{\text{Schwefel20}}(x) = \sum_{i=1}^n \lvert x_i \rvert
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-100, 100]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -438,7 +462,7 @@ class Schwefel20(Benchmark):
 
 class Schwefel21(Benchmark):
 
-    """
+    r"""
     Schwefel 21 objective function.
 
     This class defines the Schwefel 21 global optimization problem. This
@@ -446,12 +470,15 @@ class Schwefel21(Benchmark):
 
     .. math::
 
-       f_{\\text{Schwefel21}}(\\mathbf{x}) = \\smash{\\displaystyle\\max_{1 \leq i \leq n}} \\lvert x_i \\rvert
+        f_{\text{Schwefel21}}(x) = \smash{\displaystyle\max_{1 \leq i \leq n}}
+                                   \lvert x_i \rvert
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-100, 100]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -472,7 +499,7 @@ class Schwefel21(Benchmark):
 
 class Schwefel22(Benchmark):
 
-    """
+    r"""
     Schwefel 22 objective function.
 
     This class defines the Schwefel 22 global optimization problem. This
@@ -480,12 +507,15 @@ class Schwefel22(Benchmark):
 
     .. math::
 
-       f_{\\text{Schwefel22}}(\\mathbf{x}) = \\sum_{i=1}^n \\lvert x_i \\rvert + \\prod_{i=1}^n \\lvert x_i \\rvert
+        f_{\text{Schwefel22}}(x) = \sum_{i=1}^n \lvert x_i \rvert
+                                  + \prod_{i=1}^n \lvert x_i \rvert
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-100, 100]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -507,7 +537,7 @@ class Schwefel22(Benchmark):
 
 class Schwefel26(Benchmark):
 
-    """
+    r"""
     Schwefel 26 objective function.
 
     This class defines the Schwefel 26 global optimization problem. This
@@ -515,11 +545,14 @@ class Schwefel26(Benchmark):
 
     .. math::
 
-       f_{\\text{Schwefel26}}(\\mathbf{x}) = 418.9829n - \\sum_{i=1}^n x_i \\sin(\\sqrt{|x_i|})
+        f_{\text{Schwefel26}}(x) = 418.9829n - \sum_{i=1}^n x_i
+                                  \sin(\sqrt{|x_i|})
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-500, 500]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-500, 500]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 420.968746` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 420.968746` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -540,7 +573,7 @@ class Schwefel26(Benchmark):
 
 class Schwefel36(Benchmark):
 
-    """
+    r"""
     Schwefel 36 objective function.
 
     This class defines the Schwefel 36 global optimization problem. This
@@ -548,12 +581,12 @@ class Schwefel36(Benchmark):
 
     .. math::
 
-       f_{\\text{Schwefel36}}(\\mathbf{x}) = -x_1x_2(72 - 2x_1 - 2x_2)
+        f_{\text{Schwefel36}}(x) = -x_1x_2(72 - 2x_1 - 2x_2)
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 500]` for :math:`i=1,2`.
+    with :math:`x_i \in [0, 500]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = -3456` for :math:`\\mathbf{x} = [12, 12]`
+    *Global optimum*: :math:`f(x) = -3456` for :math:`x = [12, 12]`
 
     """
 
@@ -573,7 +606,7 @@ class Schwefel36(Benchmark):
 
 class Shekel05(Benchmark):
 
-    """
+    r"""
     Shekel 5 objective function.
 
     This class defines the Shekel 5 global optimization problem. This
@@ -581,21 +614,28 @@ class Shekel05(Benchmark):
 
     .. math::
 
-       f_{\\text{Shekel05}}(\\mathbf{x}) = \\sum_{i=1}^{m} \\frac{1}{c_{i} + \\sum_{j=1}^{n} (x_{j} - a_{ij})^2 }`
+        f_{\text{Shekel05}}(x) = \sum_{i=1}^{m} \frac{1}{c_{i}
+        + \sum_{j=1}^{n} (x_{j} - a_{ij})^2 }`
 
     Where, in this exercise:
 
     .. math::
 
-        \\mathbf{a} = \\begin{bmatrix} 4.0 & 4.0 & 4.0 & 4.0 \\\\ 1.0 & 1.0 & 1.0 & 1.0 \\\\ 8.0 & 8.0 & 8.0 & 8.0 \\\\ 6.0 & 6.0 & 6.0 & 6.0 \\\\ 3.0 & 7.0 & 3.0 & 7.0 \\end{bmatrix}
-
+        a = 
+        \begin{bmatrix}
+        4.0 & 4.0 & 4.0 & 4.0 \\ 1.0 & 1.0 & 1.0 & 1.0 \\
+        8.0 & 8.0 & 8.0 & 8.0 \\ 6.0 & 6.0 & 6.0 & 6.0 \\
+        3.0 & 7.0 & 3.0 & 7.0 
+        \end{bmatrix}
     .. math::
 
-        \\mathbf{c} = \\begin{bmatrix} 0.1 \\\\ 0.2 \\\\ 0.2 \\\\ 0.4 \\\\ 0.4 \\end{bmatrix}
+        c = \begin{bmatrix} 0.1 \\ 0.2 \\ 0.2 \\ 0.4 \\ 0.4 \end{bmatrix}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 10]` for :math:`i=1,...,4`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [0, 10]` for :math:`i = 1, ..., 4`.
 
-    *Global optimum*: :math:`f(x_i) = -10.15319585` for :math:`x_i = 4` for :math:`i=1,...,4`
+    *Global optimum*: :math:`f(x) = -10.15319585` for :math:`x_i = 4` for
+    :math:`i = 1, ..., 4`
 
     """
 
@@ -623,7 +663,7 @@ class Shekel05(Benchmark):
 
 class Shekel07(Benchmark):
 
-    """
+    r"""
     Shekel 7 objective function.
 
     This class defines the Shekel 7 global optimization problem. This
@@ -631,22 +671,34 @@ class Shekel07(Benchmark):
 
     .. math::
 
-       f_{\\text{Shekel07}}(\\mathbf{x}) = \\sum_{i=1}^{m} \\frac{1}{c_{i} + \\sum_{j=1}^{n} (x_{j} - a_{ij})^2 }`
+        f_{\text{Shekel07}}(x) = \sum_{i=1}^{m} \frac{1}{c_{i}
+                                 + \sum_{j=1}^{n} (x_{j} - a_{ij})^2 }`
 
     Where, in this exercise:
 
     .. math::
 
-        \\mathbf{a} = \\begin{bmatrix} 4.0 & 4.0 & 4.0 & 4.0 \\\\ 1.0 & 1.0 & 1.0 & 1.0 \\\\ 8.0 & 8.0 & 8.0 & 8.0 \\\\
-        6.0 & 6.0 & 6.0 & 6.0 \\\\ 3.0 & 7.0 & 3.0 & 7.0 \\\\ 2.0 & 9.0 & 2.0 & 9.0 \\\\ 5.0 & 5.0 & 3.0 & 3.0 \\end{bmatrix}
+        a =
+        \begin{bmatrix}
+        4.0 & 4.0 & 4.0 & 4.0 \\ 1.0 & 1.0 & 1.0 & 1.0 \\
+        8.0 & 8.0 & 8.0 & 8.0 \\ 6.0 & 6.0 & 6.0 & 6.0 \\
+        3.0 & 7.0 & 3.0 & 7.0 \\ 2.0 & 9.0 & 2.0 & 9.0 \\
+        5.0 & 5.0 & 3.0 & 3.0
+        \end{bmatrix}
+
 
     .. math::
 
-        \\mathbf{c} = \\begin{bmatrix} 0.1 \\\\ 0.2 \\\\ 0.2 \\\\ 0.4 \\\\ 0.4 \\\\ 0.6 \\\\ 0.3 \\end{bmatrix}
+        c =
+        \begin{bmatrix}
+        0.1 \\ 0.2 \\ 0.2 \\ 0.4 \\ 0.4 \\ 0.6 \\ 0.3 
+        \end{bmatrix}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 10]` for :math:`i=1,...,4`.
 
-    *Global optimum*: :math:`f(x_i) = -10.4028188` for :math:`x_i = 4` for :math:`i=1,...,4`
+    with :math:`x_i \in [0, 10]` for :math:`i = 1, ..., 4`.
+
+    *Global optimum*: :math:`f(x) = -10.4028188` for :math:`x_i = 4` for
+    :math:`i = 1, ..., 4`
 
     """
 
@@ -676,7 +728,7 @@ class Shekel07(Benchmark):
 
 class Shekel10(Benchmark):
 
-    """
+    r"""
     Shekel 10 objective function.
 
     This class defines the Shekel 10 global optimization problem. This
@@ -684,23 +736,35 @@ class Shekel10(Benchmark):
 
     .. math::
 
-       f_{\\text{Shekel10}}(\\mathbf{x}) = \\sum_{i=1}^{m} \\frac{1}{c_{i} + \\sum_{j=1}^{n} (x_{j} - a_{ij})^2 }`
+       f_{\text{Shekel10}}(x) = \sum_{i=1}^{m} \frac{1}{c_{i} 
+                                + \sum_{j=1}^{n} (x_{j} - a_{ij})^2 }`
 
     Where, in this exercise:
 
     .. math::
 
-        \\mathbf{a} = \\begin{bmatrix} 4.0 & 4.0 & 4.0 & 4.0 \\\\ 1.0 & 1.0 & 1.0 & 1.0 \\\\ 8.0 & 8.0 & 8.0 & 8.0 \\\\
-        6.0 & 6.0 & 6.0 & 6.0 \\\\ 3.0 & 7.0 & 3.0 & 7.0 \\\\ 2.0 & 9.0 & 2.0 & 9.0 \\\\ 5.0 & 5.0 & 3.0 & 3.0 \\\\
-        8.0 & 1.0 & 8.0 & 1.0 \\\\ 6.0 & 2.0 & 6.0 & 2.0 \\\\ 7.0 & 3.6 & 7.0 & 3.6 \\end{bmatrix}
+        a =
+        \begin{bmatrix}
+        4.0 & 4.0 & 4.0 & 4.0 \\ 1.0 & 1.0 & 1.0 & 1.0 \\
+        8.0 & 8.0 & 8.0 & 8.0 \\ 6.0 & 6.0 & 6.0 & 6.0 \\
+        3.0 & 7.0 & 3.0 & 7.0 \\ 2.0 & 9.0 & 2.0 & 9.0 \\
+        5.0 & 5.0 & 3.0 & 3.0 \\ 8.0 & 1.0 & 8.0 & 1.0 \\
+        6.0 & 2.0 & 6.0 & 2.0 \\ 7.0 & 3.6 & 7.0 & 3.6
+        \end{bmatrix}
+
 
     .. math::
 
-        \\mathbf{c} = \\begin{bmatrix} 0.1 \\\\ 0.2 \\\\ 0.2 \\\\ 0.4 \\\\ 0.4 \\\\ 0.6 \\\\ 0.3 \\\\ 0.7 \\\\ 0.5 \\\\ 0.5 \\end{bmatrix}
+        c =
+        \begin{bmatrix}
+        0.1 \\ 0.2 \\ 0.2 \\ 0.4 \\ 0.4 \\ 0.6 \\ 0.3 \\ 0.7 \\ 0.5 \\ 0.5
+        \end{bmatrix}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 10]` for :math:`i=1,...,4`.
 
-    *Global optimum*: :math:`f(x_i) = -10.5362837` for :math:`x_i = 4` for :math:`i=1,...,4`
+    with :math:`x_i \in [0, 10]` for :math:`i = 1, ..., 4`.
+
+    *Global optimum*: :math:`f(x) = -10.5362837` for :math:`x_i = 4` for
+    :math:`i = 1, ..., 4`
 
     """
 
@@ -733,7 +797,7 @@ class Shekel10(Benchmark):
 
 class Shubert01(Benchmark):
 
-    """
+    r"""
     Shubert 1 objective function.
 
     This class defines the Shubert 1 global optimization problem. This
@@ -741,11 +805,14 @@ class Shubert01(Benchmark):
 
     .. math::
 
-       f_{\\text{Shubert01}}(\\mathbf{x}) = \\left( \\sum\\limits_{i=1}^{5} i\\cos[(i+1)x_1 + i] \\right) \\left( \\sum\\limits_{i=1}^{5} i\\cos[(i+1)x_2 + i] \\right)
+        f_{\text{Shubert01}}(x) = \prod_{i=1}^{n}\left(\sum_{j=1}^{5}
+                                  cos(j+1)x_i+j \right )
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-10, 10]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = -186.7309` for :math:`\\mathbf{x} = [-7.0835, 4.8580]` (and many others).
+    *Global optimum*: :math:`f(x) = -186.7309` for
+    :math:`x = [-7.0835, 4.8580]` (and many others).
 
     """
 
@@ -765,12 +832,11 @@ class Shubert01(Benchmark):
         j = np.atleast_2d(arange(1, 6)).T
         y = j * cos((j + 1) * x + j)
         return prod(sum(y, axis=0))
-        # TODO change equation to reflect higher dimensions are possible
 
 
 class Shubert03(Benchmark):
 
-    """
+    r"""
     Shubert 3 objective function.
 
     This class defines the Shubert 3 global optimization problem. This
@@ -778,11 +844,14 @@ class Shubert03(Benchmark):
 
     .. math::
 
-       f_{\\text{Shubert03}}(\\mathbf{x}) = \\sum_{i=1}^n \\sum_{j=1}^5 j \\sin \\left[(j+1)x_i \\right] + j
+        f_{\text{Shubert03}}(x) = \sum_{i=1}^n \sum_{j=1}^5 -j 
+                                  \sin((j+1)x_i + j)
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-10, 10]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = -24.062499` for :math:`\\mathbf{x} = [5.791794, 5.791794]` (and many others).
+    *Global optimum*: :math:`f(x) = -24.062499` for
+    :math:`x = [5.791794, 5.791794]` (and many others).
 
     """
 
@@ -801,13 +870,12 @@ class Shubert03(Benchmark):
 
         j = np.atleast_2d(arange(1, 6)).T
         y = -j * sin((j + 1) * x + j)
-        # TODO change equation to reflect higher dimensions are possible
         return sum(sum(y))
 
 
 class Shubert04(Benchmark):
 
-    """
+    r"""
     Shubert 4 objective function.
 
     This class defines the Shubert 4 global optimization problem. This
@@ -815,11 +883,14 @@ class Shubert04(Benchmark):
 
     .. math::
 
-       f_{\\text{Shubert04}}(\\mathbf{x}) = \\sum_{i=1}^n \\sum_{j=1}^5 j \\cos \\left[(j+1)x_i \\right] + j
+        f_{\text{Shubert04}}(x) = \left(\sum_{i=1}^n \sum_{j=1}^5 -j
+                                  \cos ((j+1)x_i + j)\right)
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-10, 10]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = -29.016015` for :math:`\\mathbf{x} = [-0.80032121, -7.08350592]` (and many others).
+    *Global optimum*: :math:`f(x) = -29.016015` for
+    :math:`x = [-0.80032121, -7.08350592]` (and many others).
 
     """
 
@@ -838,13 +909,12 @@ class Shubert04(Benchmark):
 
         j = np.atleast_2d(arange(1, 6)).T
         y = -j * cos((j + 1) * x + j)
-        # TODO change equation to reflect higher dimensions are possible
         return sum(sum(y))
 
 
 class SineEnvelope(Benchmark):
 
-    """
+    r"""
     SineEnvelope objective function.
 
     This class defines the SineEnvelope global optimization problem. This
@@ -852,11 +922,16 @@ class SineEnvelope(Benchmark):
 
     .. math::
 
-       f_{\\text{SineEnvelope}}(\\mathbf{x}) = -\\sum_{i=1}^{n-1}\\left[\\frac{\\sin^2(\\sqrt{x_{i+1}^2+x_{i}^2}-0.5)}{(0.001(x_{i+1}^2+x_{i}^2)+1)^2}+0.5\\right]
+        f_{\text{SineEnvelope}}(x) = -\sum_{i=1}^{n-1}\left[\frac{\sin^2(
+                                       \sqrt{x_{i+1}^2+x_{i}^2}-0.5)}
+                                       {(0.001(x_{i+1}^2+x_{i}^2)+1)^2}
+                                       + 0.5\right]
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-100, 100]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -883,7 +958,7 @@ class SineEnvelope(Benchmark):
 
 class SixHumpCamel(Benchmark):
 
-    """
+    r"""
     Six Hump Camel objective function.
 
     This class defines the Six Hump Camel global optimization problem. This
@@ -891,12 +966,14 @@ class SixHumpCamel(Benchmark):
 
     .. math::
 
-       f_{\\text{SixHumpCamel}}(\\mathbf{x}) = 4x_1^2+x_1x_2-4x_2^2-2.1x_1^4+4x_2^4+\\frac{1}{3}x_1^6
+        f_{\text{SixHumpCamel}}(x) = 4x_1^2+x_1x_2-4x_2^2-2.1x_1^4+
+                                    4x_2^4+\frac{1}{3}x_1^6
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,2`.
+    with :math:`x_i \in [-5, 5]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = -1.031628453489877` for :math:`\\mathbf{x} = [0.08984201368301331 , -0.7126564032704135]`
-    or :math:`\\mathbf{x} = [-0.08984201368301331, 0.7126564032704135]`
+    *Global optimum*: :math:`f(x) = -1.031628453489877` for
+    :math:`x = [0.08984201368301331 , -0.7126564032704135]` or 
+    :math:`x = [-0.08984201368301331, 0.7126564032704135]`
 
     """
 
@@ -918,7 +995,7 @@ class SixHumpCamel(Benchmark):
 
 class Sodp(Benchmark):
 
-    """
+    r"""
     Sodp objective function.
 
     This class defines the Sum Of Different Powers global optimization problem. This
@@ -926,11 +1003,13 @@ class Sodp(Benchmark):
 
     .. math::
 
-       f_{\\text{Sodp}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\lvert{x_{i}}\\rvert^{i + 1}
+        f_{\text{Sodp}}(x) = \sum_{i=1}^{n} \lvert{x_{i}}\rvert^{i + 1}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 1]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-1, 1]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -952,7 +1031,7 @@ class Sodp(Benchmark):
 
 class Sphere(Benchmark):
 
-    """
+    r"""
     Sphere objective function.
 
     This class defines the Sphere global optimization problem. This
@@ -960,11 +1039,13 @@ class Sphere(Benchmark):
 
     .. math::
 
-       f_{\\text{Sphere}}(\\mathbf{x}) = \\sum_{i=1}^{n} x_i^2
+        f_{\text{Sphere}}(x) = \sum_{i=1}^{n} x_i^2
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 1]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-1, 1]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -984,7 +1065,7 @@ class Sphere(Benchmark):
 
 class Step(Benchmark):
 
-    """
+    r"""
     Step objective function.
 
     This class defines the Step global optimization problem. This
@@ -992,11 +1073,14 @@ class Step(Benchmark):
 
     .. math::
 
-       f_{\\text{Step}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\left ( \\lfloor x_i  + 0.5 \\rfloor \\right )^2
+        f_{\text{Step}}(x) = \sum_{i=1}^{n} \left ( \lfloor x_i
+                             + 0.5 \rfloor \right )^2
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-100, 100]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-100, 100]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0.5` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0.5` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -1018,7 +1102,7 @@ class Step(Benchmark):
 
 class Stochastic(Benchmark):
 
-    """
+    r"""
     Stochastic objective function.
 
     This class defines a Stochastic global optimization problem. This
@@ -1026,13 +1110,17 @@ class Stochastic(Benchmark):
 
     .. math::
 
-        f_{\\text{Stochastic}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\epsilon_i \\left | {x_i - \\frac{1}{i}} \\right |
+        f_{\text{Stochastic}}(x) = \sum_{i=1}^{n} \epsilon_i 
+                                    \left | {x_i - \frac{1}{i}} \right |
 
-    The variable :math:`\\epsilon_i, (i=1,...,n)` is a random variable uniformly distributed in :math:`[0, 1]`.
+    The variable :math:`\epsilon_i, (i=1,...,n)` is a random variable uniformly
+    distributed in :math:`[0, 1]`.
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-5, 5]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = [1/n]` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = [1/n]` for
+    :math:`i = 1, ..., n`
     """
 
     def __init__(self, dimensions=2):
@@ -1055,7 +1143,7 @@ class Stochastic(Benchmark):
 
 class StretchedV(Benchmark):
 
-    """
+    r"""
     StretchedV objective function.
 
     This class defines the Stretched V global optimization problem. This
@@ -1063,7 +1151,8 @@ class StretchedV(Benchmark):
 
     .. math::
 
-       f_{\\text{StretchedV}}(\\mathbf{x}) = \sum_{i=1}^{n-1} t^{1/4} [\sin (50t^{0.1}) + 1]^2
+        f_{\text{StretchedV}}(x) = \sum_{i=1}^{n-1} t^{1/4}
+                                   [\sin (50t^{0.1}) + 1]^2
 
     Where, in this exercise:
 
@@ -1072,9 +1161,11 @@ class StretchedV(Benchmark):
        t = x_{i+1}^2 + x_i^2
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-10, 10]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [0., 0.]` when :math:`n = 2`.
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [0., 0.]` when
+    :math:`n = 2`.
 
     """
 
@@ -1091,13 +1182,12 @@ class StretchedV(Benchmark):
         self.nfev += 1
 
         t = x[1:] ** 2 + x[: -1] ** 2
-#         TODO: fix equation in docs
         return sum(t ** 0.25 * (sin(50.0 * t ** 0.1) + 1) ** 2)
 
 
 class StyblinskiTang(Benchmark):
 
-    """
+    r"""
     StyblinskiTang objective function.
 
     This class defines the Styblinski-Tang global optimization problem. This
@@ -1105,11 +1195,14 @@ class StyblinskiTang(Benchmark):
 
     .. math::
 
-       f_{\\text{StyblinskiTang}}(\\mathbf{x}) = \\sum_{i=1}^{n} \\left(x_i^4 - 16x_i^2 + 5x_i \\right)
+       f_{\text{StyblinskiTang}}(x) = \sum_{i=1}^{n} \left(x_i^4
+                                       - 16x_i^2 + 5x_i \right)
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-5, 5]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-5, 5]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = -39.16616570377142n` for :math:`x_i = -2.903534018185960` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = -39.16616570377142n` for
+    :math:`x_i = -2.903534018185960` for :math:`i = 1, ..., n`
 
     """
 

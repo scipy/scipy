@@ -1,17 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
-import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, sign, sin, sqrt, sum, where,
-                   zeros, tan, tanh, dot)
 
-from scipy.misc import factorial
+from numpy import sin, sum
 from .go_benchmark import Benchmark
 
 
 class Infinity(Benchmark):
 
-    """
+    r"""
     Infinity objective function.
 
     This class defines the Infinity global optimization problem. This
@@ -19,11 +15,15 @@ class Infinity(Benchmark):
 
     .. math::
 
-        f_{\\text{Infinity}}(\\mathbf{x}) = \\sum_{i=1}^{n} x_i^{6} \\left [ \\sin\\left ( \\frac{1}{x_i} \\right )+2 \\right ]
+        f_{\text{Infinity}}(x) = \sum_{i=1}^{n} x_i^{6} 
+        \left [ \sin\left ( \frac{1}{x_i} \right ) + 2 \right ]
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 1]` for :math:`i=1,...,n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-1, 1]` for :math:`i = 1, ..., n`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 

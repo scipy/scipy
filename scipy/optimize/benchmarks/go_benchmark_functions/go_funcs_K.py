@@ -1,32 +1,31 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
-import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, sign, sin, sqrt, sum, where,
-                   zeros, tan, tanh, dot)
 
-from scipy.misc import factorial
+from numpy import asarray, atleast_2d, floor, arange, sin, sqrt, prod, sum
 from .go_benchmark import Benchmark
 
 
 class Katsuura(Benchmark):
 
-    """
+    r"""
     Katsuura objective function.
 
-    This class defines the Katsuura global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Katsuura global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-        f_{\\text{Katsuura}}(\\mathbf{x}) = \\prod_{i=0}^{n-1} \\left [ 1 +
-        (i+1) \\sum_{k=1}^{d} \\lfloor (2^k x_i) \\rfloor 2^{-k} \\right ]
+        f_{\text{Katsuura}}(x) = \prod_{i=0}^{n-1} \left [ 1 +
+        (i+1) \sum_{k=1}^{d} \lfloor (2^k x_i) \rfloor 2^{-k} \right ]
+
 
     Where, in this exercise, :math:`d = 32`.
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 100]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and 
+    :math:`x_i \in [0, 100]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = 1` for :math:`x_i = 0` for :math:`i=1,...,n`.
+    *Global optimum*: :math:`f(x) = 1` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`.
 
     """
 
@@ -44,7 +43,7 @@ class Katsuura(Benchmark):
         self.nfev += 1
 
         d = 32
-        k = np.atleast_2d(arange(1, d + 1)).T
+        k = atleast_2d(arange(1, d + 1)).T
         i = arange(0., self.N * 1.)
         inner = floor(2 ** k * x) * (2. ** (-k))
         return prod(sum(inner, axis=0) * (i + 1) + 1)
@@ -52,7 +51,7 @@ class Katsuura(Benchmark):
 
 class Keane(Benchmark):
 
-    """
+    r"""
     Keane objective function.
 
     This class defines the Keane global optimization problem. This
@@ -60,11 +59,14 @@ class Keane(Benchmark):
 
     .. math::
 
-        f_{\\text{Keane}}(\\mathbf{x}) = \\frac{\\sin^2(x_1 - x_2)\\sin^2(x_1 + x_2)}{\\sqrt{x_1^2 + x_2^2}}
+        f_{\text{Keane}}(x) = \frac{\sin^2(x_1 - x_2)\sin^2(x_1 + x_2)}
+        {\sqrt{x_1^2 + x_2^2}}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0, 10]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = 0.0` for :math:`\\mathbf{x} = [7.85396153, 7.85396135]`.
+    with :math:`x_i \in [0, 10]` for :math:`i = 1, 2`.
+
+    *Global optimum*: :math:`f(x) = 0.0` for 
+    :math:`x = [7.85396153, 7.85396135]`.
 
     """
 
@@ -86,7 +88,7 @@ class Keane(Benchmark):
 
 class Kowalik(Benchmark):
 
-    """
+    r"""
     Kowalik objective function.
 
     This class defines the Kowalik global optimization problem. This
@@ -94,19 +96,25 @@ class Kowalik(Benchmark):
 
     .. math::
 
-       f_{\\text{Kowalik}}(\\mathbf{x}) = \\sum_{i=0}^{10} \\left [ a_i - \\frac{x_1(b_i^2+b_ix_2)}{b_i^2 + b_ix_3 + x_4} \\right ]^2
+        f_{\text{Kowalik}}(x) = \sum_{i=0}^{10} \left [ a_i
+        - \frac{x_1 (b_i^2 + b_i x_2)} {b_i^2 + b_i x_3 + x_4} \right ]^2
+
 
     Where:
 
     .. math::
 
-       \\mathbf{a} = [4, 2, 1, 1/2, 1/4 1/8, 1/10, 1/12, 1/14, 1/16] \\\\
-       \\mathbf{b} = [0.1957, 0.1947, 0.1735, 0.1600, 0.0844, 0.0627, 0.0456, 0.0342, 0.0323, 0.0235, 0.0246]
+        \begin{matrix}
+        a = [4, 2, 1, 1/2, 1/4 1/8, 1/10, 1/12, 1/14, 1/16] \\
+        b = [0.1957, 0.1947, 0.1735, 0.1600, 0.0844, 0.0627,
+             0.0456, 0.0342, 0.0323, 0.0235, 0.0246]\\
+        \end{matrix}
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in 
-    [-5, 5]` for :math:`i=1,...,4`.
 
-    *Global optimum*: :math:`f(x_i) = 0.00030748610` for :math:`\\mathbf{x} = 
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in 
+    [-5, 5]` for :math:`i = 1, ..., 4`.
+
+    *Global optimum*: :math:`f(x) = 0.00030748610` for :math:`x = 
     [0.192833, 0.190836, 0.123117, 0.135766]`.
 
     """

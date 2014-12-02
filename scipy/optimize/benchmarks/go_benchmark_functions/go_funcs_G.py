@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
-import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, sign, sin, sqrt, sum, where,
-                   zeros, tan, tanh, dot)
 
-from scipy.misc import factorial
+import numpy as np
+from numpy import abs, sin, cos, exp, floor, log, arange, prod, sqrt, sum
+
 from .go_benchmark import Benchmark
 
 
 class Gear(Benchmark):
 
-    """
+    r"""
     Gear objective function.
 
     This class defines the Gear global optimization problem. This
@@ -19,13 +17,15 @@ class Gear(Benchmark):
 
     .. math::
 
-       f_{\\text{Gear}}(\\mathbf{x}) = \\left \\{ \\frac{1.0}{6.931} - \\frac{\\lfloor x_1\\rfloor \\lfloor x_2 \\rfloor } {\\lfloor x_3 \\rfloor \\lfloor x_4 \\rfloor } \\right\\}^2
+       f_{\text{Gear}}({x}) = \left \{ \frac{1.0}{6.931}
+       - \frac{\lfloor x_1\rfloor \lfloor x_2 \rfloor }
+       {\lfloor x_3 \rfloor \lfloor x_4 \rfloor } \right\}^2
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [12, 60]` for :math:`i=1,...,4`.
+    with :math:`x_i \in [12, 60]` for :math:`i = 1, ..., 4`.
 
-    *Global optimum*: :math:`f(x_i) = 2.7 \\cdot 10^{-12}` for :math:`\\mathbf{x} = [16, 19, 43, 49]`, where the various
-    :math:`x_i` may be permuted.
+    *Global optimum*: :math:`f(x) = 2.7 \cdot 10^{-12}` for :math:`x =
+    [16, 19, 43, 49]`, where the various :math:`x_i` may be permuted.
 
     """
 
@@ -45,7 +45,7 @@ class Gear(Benchmark):
 
 class Giunta(Benchmark):
 
-    """
+    r"""
     Giunta objective function.
 
     This class defines the Giunta global optimization problem. This
@@ -53,11 +53,16 @@ class Giunta(Benchmark):
 
     .. math::
 
-        f_{\\text{Giunta}}(\\mathbf{x}) = 0.6 + \\sum_{i=1}^{n} \\left[\\sin^{2}\\left(1 - \\frac{16}{15} x_i\\right) - \\frac{1}{50} \\sin\\left(4 - \\frac{64}{15} x_i\\right) - \\sin\\left(1 - \\frac{16}{15} x_i\\right)\\right]
+        f_{\text{Giunta}}({x}) = 0.6 + \sum_{i=1}^{n} \left[\sin^{2}\left(1
+        - \frac{16}{15} x_i\right) - \frac{1}{50} \sin\left(4
+        - \frac{64}{15} x_i\right) - \sin\left(1
+        - \frac{16}{15} x_i\right)\right]
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-1, 1]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = 0.06447042053690566` for :math:`\\mathbf{x} = [0.4673200277395354, 0.4673200169591304]`
+    with :math:`x_i \in [-1, 1]` for :math:`i = 1, 2`.
+
+    *Global optimum*: :math:`f(x) = 0.06447042053690566` for
+    :math:`x = [0.4673200277395354, 0.4673200169591304]`
 
     """
 
@@ -78,7 +83,7 @@ class Giunta(Benchmark):
 
 class GoldsteinPrice(Benchmark):
 
-    """
+    r"""
     Goldstein-Price objective function.
 
     This class defines the Goldstein-Price global optimization problem. This
@@ -86,12 +91,15 @@ class GoldsteinPrice(Benchmark):
 
     .. math::
 
-        f_{\\text{GoldsteinPrice}}(\\mathbf{x}) = \\left[ 1+(x_1+x_2+1)^2(19-14x_1+3x_1^2-14x_2+6x_1x_2+3x_2^2) \\right] \\left[ 30+(2x_1-3x_2)^2(18-32x_1+12x_1^2+48x_2-36x_1x_2+27x_2^2) \\right]
+        f_{\text{GoldsteinPrice}}(x) = \left[ 1 + (x_1 + x_2 + 1)^2 
+        (19 - 14 x_1 + 3 x_1^2 - 14 x_2 + 6 x_1 x_2 + 3 x_2^2) \right]
+        \left[ 30 + ( 2x_1 - 3 x_2)^2 (18 - 32 x_1 + 12 x_1^2
+        + 48 x_2 - 36 x_1 x_2 + 27 x_2^2) \right]
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-2, 2]` for :math:`i=1,2`.
+    with :math:`x_i \in [-2, 2]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x_i) = 3` for :math:`\\mathbf{x} = [0, -1]`
+    *Global optimum*: :math:`f(x) = 3` for :math:`x = [0, -1]`
 
     """
 
@@ -117,7 +125,7 @@ class GoldsteinPrice(Benchmark):
 
 class Griewank(Benchmark):
 
-    """
+    r"""
     Griewank objective function.
 
     This class defines the Griewank global optimization problem. This
@@ -125,11 +133,15 @@ class Griewank(Benchmark):
 
     .. math::
 
-        f_{\\text{Griewank}}(\\mathbf{x}) = \\frac{1}{4000}\\sum_{i=1}^n x_i^2 - \\prod_{i=1}^n\\cos\\left(\\frac{x_i}{\\sqrt{i}}\\right) + 1
+        f_{\text{Griewank}}(x) = \frac{1}{4000}\sum_{i=1}^n x_i^2
+        - \prod_{i=1}^n\cos\left(\frac{x_i}{\sqrt{i}}\right) + 1
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-600, 600]` for :math:`i=1,...,n`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for :math:`i=1,...,n`
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-600, 600]` for :math:`i = 1, ..., n`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
+    :math:`i = 1, ..., n`
 
     """
 
@@ -153,27 +165,29 @@ class Griewank(Benchmark):
 
 class Gulf(Benchmark):
 
-    """
+    r"""
     Gulf objective function.
 
-    This class defines the Gulf global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Gulf global optimization problem. This is a
+    multimodal minimization problem defined as follows:
 
     .. math::
 
-        f_{\\text{Gulf}}(\\mathbf{x}) = \\sum_{i=1}^99 \\left( e^{-\\frac{\\lvert y_i - x_2 \\rvert^{x_3}}{x_1}    }  - t_i \\right)
+        f_{\text{Gulf}}(x) = \sum_{i=1}^99 \left( e^{-\frac{\lvert y_i
+        - x_2 \rvert^{x_3}}{x_1}}  - t_i \right)
+
 
     Where, in this exercise:
 
     .. math::
 
-       t_i = i/100 \\\\
-       y_i = 25 + [-50 \\log(t_i)]^{2/3}
+       t_i = i/100 \\
+       y_i = 25 + [-50 \log(t_i)]^{2/3}
 
 
-    Here, :math:`x_i \\in [0, 60]` for :math:`i=1,2,3`.
+    with :math:`x_i \in [0, 60]` for :math:`i = 1, 2, 3`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [50, 25, 1.5]`
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [50, 25, 1.5]`
 
     """
 

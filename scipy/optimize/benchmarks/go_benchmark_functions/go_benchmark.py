@@ -20,10 +20,17 @@ class Benchmark(object):
 
     Attributes
     ----------
-    N
-    bounds
-    xmin
-    xmax
+    N : int
+        The dimensionality of the problem.
+    bounds : sequence
+        The lower/upper bounds to be used for minimizing the problem.
+        This a list of (lower, upper) tuples that contain the lower and upper
+        bounds for the problem.  The problem should not be asked for evaluation
+        outside these bounds. ``len(bounds) == N``.
+    xmin : sequence
+        The lower bounds for the problem
+    xmax : sequence
+        The upper bounds for the problem
     fglob : float
         The global minimum of the evaluated function.
     global_optimum : sequence
@@ -41,7 +48,17 @@ class Benchmark(object):
     """
 
     def __init__(self, dimensions):
-        self.dimensions = dimensions
+        """
+        Initialises the problem
+        
+        Parameters
+        ----------
+        
+        dimensions : int
+            The dimensionality of the problem
+        """
+
+        self._dimensions = dimensions
         self.nfev = 0
         self.fglob = np.nan
         self.global_optimum = None
@@ -126,6 +143,9 @@ class Benchmark(object):
 
         if self.change_dimensionality:
             self.dimensions = ndim
+        else:
+            raise ValueError('dimensionality cannot be changed for this'
+            'problem')
 
     @property
     def bounds(self):
@@ -142,10 +162,15 @@ class Benchmark(object):
 
     @property
     def N(self):
-        """
+        """        
         The dimensionality of the problem.
+        
+        Returns
+        -------
+        N : int
+            The dimensionality of the problem
         """
-        return self.dimensions
+        return self._dimensions
 
     @property
     def xmin(self):

@@ -11,10 +11,8 @@ from scipy.optimize import basinhopping, differential_evolution, OptimizeResult
 from scipy.optimize import anneal
 
 import go_benchmark_functions as gbf
-from numpy.testing import *
+from numpy.testing import TestCase, Tester
 from collections import defaultdict
-
-NUMTRIALS = 50
 
 
 class _BenchOptimizers(object):
@@ -179,11 +177,11 @@ class _BenchOptimizers(object):
         res.nfev = self.function.nfev
         self.add_result(res, t1 - t0, 'anneal')
 
-    def bench_run(self, trials=NUMTRIALS):
+    def bench_run(self, numtrials=50):
         """
         Run the optimization tests for the required minimizers.
         """
-        for i in range(trials):
+        for i in range(numtrials):
             self.run_differentialevolution()
             self.run_basinhopping()
             self.run_anneal()
@@ -195,7 +193,7 @@ class BenchGlobalOptimizers(TestCase):
     suite
     """
 
-    def bench_all(self):
+    def bench_all(self, numtrials=1):
         bench_members = inspect.getmembers(gbf, inspect.isclass)
         functions = [item for item in bench_members if
                                     issubclass(item[1], gbf.Benchmark)]
@@ -204,7 +202,7 @@ class BenchGlobalOptimizers(TestCase):
         print('------------------------------')
         print('Benchmarking Global Optimizers')
         print('------------------------------')
-        print('Trials: {0}'.format(NUMTRIALS))
+        print('Trials: {0}'.format(numtrials))
         print('{0:20} {1:^30} {2:^30}'.format('',
                                               'success %',
                                               'nfev'))
@@ -228,14 +226,14 @@ class BenchGlobalOptimizers(TestCase):
 
             f = klass()
             b = _BenchOptimizers(name, f)
-            b.bench_run()
+            b.bench_run(numtrials=numtrials)
             av_results = b.average_results()
 
             print('{0:20} {1:>10.1f} {2:>10.1f} {3:>10.1f} {4:>10d} {5:>10d}'
                   ' {6:>10d}'.format(name[0: 20],
-                100 * av_results['basinhopping'].nsuccess / NUMTRIALS,
-                100 * av_results['differential_evolution'].nsuccess / NUMTRIALS,
-                100 * av_results['anneal'].nsuccess / NUMTRIALS,
+                100 * av_results['basinhopping'].nsuccess / numtrials,
+                100 * av_results['differential_evolution'].nsuccess / numtrials,
+                100 * av_results['anneal'].nsuccess / numtrials,
                 int(av_results['basinhopping'].mean_nfev),
                 int(av_results['differential_evolution'].mean_nfev),
                 int(av_results['anneal'].mean_nfev)))

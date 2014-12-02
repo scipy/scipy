@@ -1,29 +1,29 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
-import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, sign, sin, sqrt, sum, where,
-                   zeros, tan, tanh, dot)
 
-from scipy.misc import factorial
+from numpy import sum, cos, sin, log
 from .go_benchmark import Benchmark
 
 
 class VenterSobiezcczanskiSobieski(Benchmark):
 
-    """
+    r"""
     Venter Sobiezcczanski-Sobieski objective function.
 
-    This class defines the Venter Sobiezcczanski-Sobieski global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Venter Sobiezcczanski-Sobieski global optimization
+    problem. This is a multimodal minimization problem defined as follows:
 
     .. math::
 
-       f_{\\text{VenterSobiezcczanskiSobieski}}(\\mathbf{x}) = x_1^2 - 100 \\cos^2(x_1) - 100 \\cos(x_1^2/30) + x_2^2 - 100 \\cos^2(x_2) - 100 \\cos(x_2^2/30)
+        f_{\text{VenterSobiezcczanskiSobieski}}(x) = x_1^2 - 100 \cos^2(x_1)
+                                                      - 100 \cos(x_1^2/30)
+                                                      + x_2^2 - 100 \cos^2(x_2)
+                                                      - 100 \cos(x_2^2/30)
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-50, 50]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = -400` for :math:`x_i = 0` for :math:`i=1,2`
+    with :math:`x_i \in [-50, 50]` for :math:`i = 1, 2`.
+
+    *Global optimum*: :math:`f(x) = -400` for :math:`x = [0, 0]`
 
     """
 
@@ -47,7 +47,7 @@ class VenterSobiezcczanskiSobieski(Benchmark):
 
 class Vincent(Benchmark):
 
-    """
+    r"""
     Vincent objective function.
 
     This class defines the Vincent global optimization problem. This
@@ -55,11 +55,13 @@ class Vincent(Benchmark):
 
     .. math::
 
-       f_{\\text{Vincent}}(\\mathbf{x}) = - \\sum_{i=1}^{n} \\sin(10 \\log(x))
+        f_{\text{Vincent}}(x) = - \sum_{i=1}^{n} \sin(10 \log(x))
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [0.25, 10]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [0.25, 10]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x_i) = -n` for :math:`x_i = 7.70628098` for :math:`i=1,...,n`
+    *Global optimum*: :math:`f(x) = -n` for :math:`x_i = 7.70628098`
+    for :math:`i = 1, ..., n`
 
     """
 

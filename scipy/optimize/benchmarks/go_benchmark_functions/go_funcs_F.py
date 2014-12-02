@@ -1,29 +1,27 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
-import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, sign, sin, sqrt, sum, where,
-                   zeros, tan, tanh, dot)
 
-from scipy.misc import factorial
 from .go_benchmark import Benchmark
 
 
 class FreudensteinRoth(Benchmark):
 
-    """
+    r"""
     FreudensteinRoth objective function.
 
-    This class defines the Freudenstein & Roth global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Freudenstein & Roth global optimization problem.
+    This is a multimodal minimization problem defined as follows:
 
     .. math::
 
-        f_{\\text{FreudensteinRoth}}(\\mathbf{x}) =  \\left\{x_1 - 13 + \\left[(5 - x_2)x_2 - 2 \\right] x_2 \\right\}^2 + \\left \{x_1 - 29 + \\left[(x_2 + 1)x_2 - 14 \\right] x_2 \\right\}^2
+        f_{\text{FreudensteinRoth}}(x) =  \left\{x_1 - 13 + \left[(5 - x_2) x_2
+        - 2 \right] x_2 \right\}^2 + \left \{x_1 - 29 
+        + \left[(x_2 + 1) x_2 - 14 \right] x_2 \right\}^2
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \\in [-10, 10]` for :math:`i=1,2`.
 
-    *Global optimum*: :math:`f(x_i) = 0` for :math:`\\mathbf{x} = [5, 4]`
+    with :math:`x_i \in [-10, 10]` for :math:`i = 1, 2`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x = [5, 4]`
 
     """
 
