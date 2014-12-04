@@ -57,7 +57,7 @@ def bayes_mvs(data, alpha=0.90):
 
         with `center` the mean of the conditional pdf of the value given the
         data, and `(lower, upper)` a confidence interval, centered on the
-        median, containing the estimate to a probability `alpha`.
+        median, containing the estimate to a probability ``alpha``.
 
     Notes
     -----
@@ -65,12 +65,12 @@ def bayes_mvs(data, alpha=0.90):
     the (center, (lower, upper)) with center the mean of the conditional pdf
     of the value given the data and (lower, upper) is a confidence interval
     centered on the median, containing the estimate to a probability
-    `alpha`.
+    ``alpha``.
 
     Converts data to 1-D and assumes all data has the same mean and variance.
     Uses Jeffrey's prior for variance and std.
 
-    Equivalent to tuple((x.mean(), x.interval(alpha)) for x in mvsdist(dat))
+    Equivalent to ``tuple((x.mean(), x.interval(alpha)) for x in mvsdist(dat))``
 
     References
     ----------
@@ -641,7 +641,7 @@ def boxcox(x, lmbda=None, alpha=None):
         If `lmbda` is None, find the lambda that maximizes the log-likelihood
         function and return it as the second output argument.
     alpha : {None, float}, optional
-        If `alpha` is not None, return the ``100 * (1-alpha)%`` confidence
+        If ``alpha`` is not None, return the ``100 * (1-alpha)%`` confidence
         interval for `lmbda` as the third output argument.
         Must be between 0.0 and 1.0.
 
@@ -653,9 +653,9 @@ def boxcox(x, lmbda=None, alpha=None):
         If the `lmbda` parameter is None, the second returned argument is
         the lambda that maximizes the log-likelihood function.
     (min_ci, max_ci) : tuple of float, optional
-        If `lmbda` parameter is None and `alpha` is not None, this returned
+        If `lmbda` parameter is None and ``alpha`` is not None, this returned
         tuple of floats represents the minimum and maximum confidence limits
-        given `alpha`.
+        given ``alpha``.
 
     See Also
     --------
@@ -673,7 +673,7 @@ def boxcox(x, lmbda=None, alpha=None):
     not.  Such a shift parameter is equivalent to adding a positive constant to
     `x` before calling `boxcox`.
 
-    The confidence limits returned when `alpha` is provided give the interval
+    The confidence limits returned when ``alpha`` is provided give the interval
     where:
 
     .. math::
