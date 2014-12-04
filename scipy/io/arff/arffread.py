@@ -700,37 +700,6 @@ test_weka.__test__ = False
 
 
 if __name__ == '__main__':
-    #import glob
-    #for i in glob.glob('arff.bak/data/*'):
-    #    relation, attributes = read_header(open(i))
-    #    print "Parsing header of %s: relation %s, %d attributes" % (i,
-    #            relation, len(attributes))
-
     import sys
     filename = sys.argv[1]
-    #filename = 'arff.bak/data/pharynx.arff'
-    #floupi(filename)
     test_weka(filename)
-
-    #gf = []
-    #wf = []
-    #for i in glob.glob('arff.bak/data/*'):
-    #    try:
-    #        print "=============== reading %s ======================" % i
-    #        floupi(i)
-    #        gf.append(i)
-    #    except ValueError, e:
-    #        print "!!!! Error parsing the file !!!!!"
-    #        print e
-    #        wf.append(i)
-    #    except IndexError, e:
-    #        print "!!!! Error parsing the file !!!!!"
-    #        print e
-    #        wf.append(i)
-    #    except ArffError, e:
-    #        print "!!!! Error parsing the file !!!!!"
-    #        print e
-    #        wf.append(i)
-
-    #print "%d good files" % len(gf)
-    #print "%d bad files" % len(wf)
