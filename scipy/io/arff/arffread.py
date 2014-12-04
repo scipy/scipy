@@ -520,7 +520,7 @@ def loadarff(f):
 
     Raises
     ------
-    `ParseArffError`
+    ParseArffError
         This is raised if the given file is not ARFF-formatted.
     NotImplementedError
         The ARFF file has an attribute which is not supported yet.
