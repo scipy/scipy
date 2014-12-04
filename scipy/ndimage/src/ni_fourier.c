@@ -422,7 +422,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
     free(parameters);
     if (params) {
         for(kk = 0; kk < input->nd; kk++)
-            if (params[kk]) free(params[kk]);
+            free(params[kk]);
         free(params);
     }
     return PyErr_Occurred() ? 0 : 1;
