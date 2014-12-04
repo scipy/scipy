@@ -482,7 +482,7 @@ int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels,
     size = 1;
     for(qq = 0; qq < input->nd; qq++)
         size *= input->dimensions[qq];
-    sum = (double*)malloc(n_results * sizeof(double));
+    sum = malloc(n_results * sizeof(double));
     if (!sum) {
         PyErr_NoMemory();
         goto exit;
@@ -554,7 +554,7 @@ int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
             goto exit;
         pm = (void *)PyArray_DATA(labels);
     }
-    ph = (Int32**)malloc(n_results * sizeof(Int32*));
+    ph = malloc(n_results * sizeof(Int32*));
     if (!ph) {
         PyErr_NoMemory();
         goto exit;
@@ -703,7 +703,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     for(ll = 0; ll < input->nd; ll++)
         size *= input->dimensions[ll];
     /* Storage for the temporary queue data. */
-    temp = (NI_WatershedElement*)malloc(size * sizeof(NI_WatershedElement));
+    temp = malloc(size * sizeof(NI_WatershedElement));
     if (!temp) {
         PyErr_NoMemory();
         goto exit;
@@ -734,10 +734,8 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     }
     pi = (void *)PyArray_DATA(input);
     /* Allocate and initialize the storage for the queue. */
-    first = (NI_WatershedElement**)malloc((maxval + 1) *
-                                                                                sizeof(NI_WatershedElement*));
-    last = (NI_WatershedElement**)malloc((maxval + 1) *
-                                                                             sizeof(NI_WatershedElement*));
+    first = malloc((maxval + 1) * sizeof(NI_WatershedElement*));
+    last = malloc((maxval + 1) * sizeof(NI_WatershedElement*));
     if (NI_UNLIKELY(!first || !last)) {
         NPY_END_THREADS;
         PyErr_NoMemory();
@@ -838,7 +836,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     for (kk = 0; kk < ssize; kk++)
         if (ps[kk] && kk != (ssize / 2))
             ++nneigh;
-    nstrides = (npy_intp*)malloc(nneigh * sizeof(npy_intp));
+    nstrides = malloc(nneigh * sizeof(npy_intp));
     if (NI_UNLIKELY(!nstrides)) {
         NPY_END_THREADS;
         PyErr_NoMemory();

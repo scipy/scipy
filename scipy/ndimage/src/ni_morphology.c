@@ -509,11 +509,6 @@ int NI_BinaryErosion2(PyArrayObject* array, PyArrayObject* strct,
     free(coordinate_offsets);
     NI_FreeCoordinateList(list1);
     NI_FreeCoordinateList(list2);
-    if (PyErr_Occurred()) {
-        return 0;
-    } else {
-        return 1;
-    }
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -564,7 +559,7 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
 
     for(jj = 0; jj < size; jj++) {
         if (*(Int8*)pi < 0) {
-            temp = (NI_BorderElement*)malloc(sizeof(NI_BorderElement));
+            temp = malloc(sizeof(NI_BorderElement));
             if (NI_UNLIKELY(!temp)) {
                 PyErr_NoMemory();
                 goto exit;
@@ -572,9 +567,9 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
             temp->next = border_elements;
             border_elements = temp;
             temp->index = jj;
-            temp->coordinates = (npy_intp*)malloc(input->nd * sizeof(npy_intp));
+            temp->coordinates = malloc(input->nd * sizeof(npy_intp));
             for(kk = 0; kk < input->nd; kk++)
-                    temp->coordinates[kk] = ii.coordinates[kk];
+                temp->coordinates[kk] = ii.coordinates[kk];
         }
         NI_ITERATOR_NEXT(ii, pi);
     }
@@ -707,7 +702,7 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
 
     /* we only use the first half of the structure data, so we make a
          temporary structure for use with the filter functions: */
-    footprint = (Bool*)malloc(ssize * sizeof(Bool));
+    footprint = malloc(ssize * sizeof(Bool));
     if (!footprint) {
         PyErr_NoMemory();
         goto exit;
@@ -973,9 +968,9 @@ int NI_EuclideanFeatureTransform(PyArrayObject* input,
     }
 
     /* Some temporaries */
-    f = (npy_intp**)malloc(mx * sizeof(npy_intp*));
-    g = (npy_intp*)malloc(mx * sizeof(npy_intp));
-    tmp = (npy_intp*)malloc(mx * input->nd * sizeof(npy_intp));
+    f = malloc(mx * sizeof(npy_intp*));
+    g = malloc(mx * sizeof(npy_intp));
+    tmp = malloc(mx * input->nd * sizeof(npy_intp));
     if (!f || !g || !tmp) {
         PyErr_NoMemory();
         goto exit;

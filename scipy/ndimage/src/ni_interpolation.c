@@ -394,8 +394,8 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     }
 
     /* offsets used at the borders: */
-    edge_offsets = (npy_intp**)malloc(irank * sizeof(npy_intp*));
-    data_offsets = (npy_intp**)malloc(irank * sizeof(npy_intp*));
+    edge_offsets = malloc(irank * sizeof(npy_intp*));
+    data_offsets = malloc(irank * sizeof(npy_intp*));
     if (NI_UNLIKELY(!edge_offsets || !data_offsets)) {
         NPY_END_THREADS;
         PyErr_NoMemory();
@@ -404,7 +404,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     for(jj = 0; jj < irank; jj++)
         data_offsets[jj] = NULL;
     for(jj = 0; jj < irank; jj++) {
-        data_offsets[jj] = (npy_intp*)malloc((order + 1) * sizeof(npy_intp));
+        data_offsets[jj] = malloc((order + 1) * sizeof(npy_intp));
         if (NI_UNLIKELY(!data_offsets[jj])) {
             NPY_END_THREADS;
             PyErr_NoMemory();
@@ -412,7 +412,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
         }
     }
     /* will hold the spline coefficients: */
-    splvals = (double**)malloc(irank * sizeof(double*));
+    splvals = malloc(irank * sizeof(double*));
     if (NI_UNLIKELY(!splvals)) {
         NPY_END_THREADS;
         PyErr_NoMemory();
@@ -421,7 +421,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     for(jj = 0; jj < irank; jj++)
         splvals[jj] = NULL;
     for(jj = 0; jj < irank; jj++) {
-        splvals[jj] = (double*)malloc((order + 1) * sizeof(double));
+        splvals[jj] = malloc((order + 1) * sizeof(double));
         if (NI_UNLIKELY(!splvals[jj])) {
             NPY_END_THREADS;
             PyErr_NoMemory();
@@ -442,9 +442,9 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     po = (void *)PyArray_DATA(output);
 
     /* make a table of all possible coordinates within the spline filter: */
-    fcoordinates = (npy_intp*)malloc(irank * filter_size * sizeof(npy_intp));
+    fcoordinates = malloc(irank * filter_size * sizeof(npy_intp));
     /* make a table of all offsets within the spline filter: */
-    foffsets = (npy_intp*)malloc(filter_size * sizeof(npy_intp));
+    foffsets = malloc(filter_size * sizeof(npy_intp));
     if (NI_UNLIKELY(!fcoordinates || !foffsets)) {
         NPY_END_THREADS;
         PyErr_NoMemory();
@@ -694,6 +694,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
 
     /* if the mode is 'constant' we need some temps later: */
     if (mode == NI_EXTEND_CONSTANT) {
+        zeros = malloc(rank * sizeof(npy_intp*));
         zeros = (npy_intp**)malloc(rank * sizeof(npy_intp*));
         if (NI_UNLIKELY(!zeros)) {
             NPY_END_THREADS;
@@ -703,7 +704,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
         for(jj = 0; jj < rank; jj++)
             zeros[jj] = NULL;
         for(jj = 0; jj < rank; jj++) {
-            zeros[jj] = (npy_intp*)malloc(odimensions[jj] * sizeof(npy_intp));
+            zeros[jj] = malloc(odimensions[jj] * sizeof(npy_intp));
             if (NI_UNLIKELY(!zeros[jj])) {
                 NPY_END_THREADS;
                 PyErr_NoMemory();
@@ -713,11 +714,11 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     }
 
     /* store offsets, along each axis: */
-    offsets = (npy_intp**)malloc(rank * sizeof(npy_intp*));
+    offsets = malloc(rank * sizeof(npy_intp*));
     /* store spline coefficients, along each axis: */
-    splvals = (double***)malloc(rank * sizeof(double**));
+    splvals = malloc(rank * sizeof(double**));
     /* store offsets at all edges: */
-    edge_offsets = (npy_intp***)malloc(rank * sizeof(npy_intp**));
+    edge_offsets = malloc(rank * sizeof(npy_intp**));
     if (NI_UNLIKELY(!offsets || !splvals || !edge_offsets)) {
         NPY_END_THREADS;
         PyErr_NoMemory();
@@ -729,9 +730,9 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
         edge_offsets[jj] = NULL;
     }
     for(jj = 0; jj < rank; jj++) {
-        offsets[jj] = (npy_intp*)malloc(odimensions[jj] * sizeof(npy_intp));
-        splvals[jj] = (double**)malloc(odimensions[jj] * sizeof(double*));
-        edge_offsets[jj] = (npy_intp**)malloc(odimensions[jj] * sizeof(npy_intp*));
+        offsets[jj] = malloc(odimensions[jj] * sizeof(npy_intp));
+        splvals[jj] = malloc(odimensions[jj] * sizeof(double*));
+        edge_offsets[jj] = malloc(odimensions[jj] * sizeof(npy_intp*));
         if (NI_UNLIKELY(!offsets[jj] || !splvals[jj] || !edge_offsets[jj])) {
             NPY_END_THREADS;
             PyErr_NoMemory();
@@ -768,7 +769,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                 }
                 offsets[jj][kk] = istrides[jj] * start;
                 if (start < 0 || start + order >= idimensions[jj]) {
-                    edge_offsets[jj][kk] = (npy_intp*)malloc((order + 1) * sizeof(npy_intp));
+                    edge_offsets[jj][kk] = malloc((order + 1) * sizeof(npy_intp));
                     if (NI_UNLIKELY(!edge_offsets[jj][kk])) {
                         NPY_END_THREADS;
                         PyErr_NoMemory();
@@ -794,7 +795,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                     }
                 }
                 if (order > 0) {
-                    splvals[jj][kk] = (double*)malloc((order + 1) * sizeof(double));
+                    splvals[jj][kk] = malloc((order + 1) * sizeof(double));
                     if (NI_UNLIKELY(!splvals[jj][kk])) {
                         NPY_END_THREADS;
                         PyErr_NoMemory();
@@ -819,8 +820,8 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     po = (void *)PyArray_DATA(output);
 
     /* store all coordinates and offsets with filter: */
-    fcoordinates = (npy_intp*)malloc(rank * filter_size * sizeof(npy_intp));
-    foffsets = (npy_intp*)malloc(filter_size * sizeof(npy_intp));
+    fcoordinates = malloc(rank * filter_size * sizeof(npy_intp));
+    foffsets = malloc(filter_size * sizeof(npy_intp));
     if (NI_UNLIKELY(!fcoordinates || !foffsets)) {
         NPY_END_THREADS;
         PyErr_NoMemory();

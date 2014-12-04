@@ -193,7 +193,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
     NPY_BEGIN_THREADS_DEF;
 
     /* precalculate the parameters: */
-    parameters = (double*)malloc(input->nd * sizeof(double));
+    parameters = malloc(input->nd * sizeof(double));
     if (!parameters) {
         PyErr_NoMemory();
         goto exit;
@@ -216,7 +216,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
         }
     }
     /* allocate memory for tables: */
-    params = (double**) malloc(input->nd * sizeof(double*));
+    params = malloc(input->nd * sizeof(double*));
     if (!params) {
         PyErr_NoMemory();
         goto exit;
@@ -225,7 +225,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
         params[kk] = NULL;
     for(kk = 0; kk < input->nd; kk++) {
         if (input->dimensions[kk] > 1) {
-            params[kk] = (double*)malloc(input->dimensions[kk] * sizeof(double));
+            params[kk] = malloc(input->dimensions[kk] * sizeof(double));
             if (!params[kk]) {
                 PyErr_NoMemory();
                 goto exit;
@@ -453,7 +453,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
     NPY_BEGIN_THREADS_DEF;
 
     /* precalculate the shifts: */
-    shifts = (double*)malloc(input->nd * sizeof(double));
+    shifts = malloc(input->nd * sizeof(double));
     if (!shifts) {
         PyErr_NoMemory();
         goto exit;
@@ -467,7 +467,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
         shifts[kk] = -2.0 * M_PI * *ishifts++ / (double)shape;
     }
     /* allocate memory for tables: */
-    params = (double**) malloc(input->nd * sizeof(double*));
+    params = malloc(input->nd * sizeof(double*));
     if (!params) {
         PyErr_NoMemory();
         goto exit;
@@ -476,7 +476,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
         params[kk] = NULL;
     for(kk = 0; kk < input->nd; kk++) {
         if (input->dimensions[kk] > 1) {
-            params[kk] = (double*)malloc(input->dimensions[kk] * sizeof(double));
+            params[kk] = malloc(input->dimensions[kk] * sizeof(double));
             if (!params[kk]) {
                 PyErr_NoMemory();
                 goto exit;
