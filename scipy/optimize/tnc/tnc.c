@@ -67,8 +67,7 @@ typedef enum
  * Return code strings
  */
 
-char *tnc_rc_string[11] =
-{
+const char *const tnc_rc_string[11] = {
   "Memory allocation failed",
   "Invalid parameters (n<0)",
   "Infeasible (low bound > up bound)",
