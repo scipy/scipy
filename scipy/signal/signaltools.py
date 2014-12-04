@@ -946,7 +946,7 @@ def lfiltic(b, a, y, x=None):
 
 
 def deconvolve(signal, divisor):
-    """Deconvolves `divisor` out of `signal`.
+    """Deconvolves ``divisor`` out of ``signal``.
 
     Returns the quotient and remainder such that
     ``signal = convolve(divisor, quotient) + remainder``
