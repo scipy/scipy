@@ -83,7 +83,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                     self.shape = self._swap((major_dim,minor_dim))
 
         if dtype is not None:
-            self.data = self.data.astype(dtype)
+            self.data = np.asarray(self.data, dtype=dtype)
 
         self.check_format(full_check=False)
 
@@ -483,26 +483,26 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         fn = getattr(_sparsetools, self.format + '_matmat_pass1')
         fn(M, N,
-           self.indptr.astype(idx_dtype),
-           self.indices.astype(idx_dtype),
-           other.indptr.astype(idx_dtype),
-           other.indices.astype(idx_dtype),
+           np.asarray(self.indptr, dtype=idx_dtype),
+           np.asarray(self.indices, dtype=idx_dtype),
+           np.asarray(other.indptr, dtype=idx_dtype),
+           np.asarray(other.indices, dtype=idx_dtype),
            indptr)
 
         nnz = indptr[-1]
         idx_dtype = get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices),
                                     maxval=nnz)
-        indptr = indptr.astype(idx_dtype)
+        indptr = np.asarray(indptr, dtype=idx_dtype)
         indices = np.empty(nnz, dtype=idx_dtype)
         data = np.empty(nnz, dtype=upcast(self.dtype, other.dtype))
 
         fn = getattr(_sparsetools, self.format + '_matmat_pass2')
-        fn(M, N, self.indptr.astype(idx_dtype),
-           self.indices.astype(idx_dtype),
+        fn(M, N, np.asarray(self.indptr, dtype=idx_dtype),
+           np.asarray(self.indices, dtype=idx_dtype),
            self.data,
-           other.indptr.astype(idx_dtype),
-           other.indices.astype(idx_dtype),
+           np.asarray(other.indptr, dtype=idx_dtype),
+           np.asarray(other.indices, dtype=idx_dtype),
            other.data,
            indptr, indices, data)
 
@@ -673,8 +673,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         check_bounds(i, M)
         check_bounds(j, N)
 
-        i = i.astype(self.indices.dtype)
-        j = j.astype(self.indices.dtype)
+        i = np.asarray(i, dtype=self.indices.dtype)
+        j = np.asarray(j, dtype=self.indices.dtype)
 
         n_samples = len(x)
         offsets = np.empty(n_samples, dtype=self.indices.dtype)
@@ -726,12 +726,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # Update index data type
         idx_dtype = get_index_dtype((self.indices, self.indptr),
                                     maxval=(self.indptr[-1] + x.size))
-        if idx_dtype != self.indptr.dtype:
-            self.indptr = self.indptr.astype(idx_dtype)
-            self.indices = self.indices.astype(idx_dtype)
-        if idx_dtype != i.dtype or idx_dtype != j.dtype:
-            i = i.astype(idx_dtype)
-            j = j.astype(idx_dtype)
+        self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
+        self.indices = np.asarray(self.indices, dtype=idx_dtype)
+        i = np.asarray(i, dtype=idx_dtype)
+        j = np.asarray(j, dtype=idx_dtype)
 
         # Collate old and new in chunks by major index
         indices_parts = []
@@ -767,7 +765,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # update attributes
         self.indices = np.concatenate(indices_parts)
         self.data = np.concatenate(data_parts)
-        nnzs = np.ediff1d(self.indptr, to_begin=0).astype(idx_dtype)
+        nnzs = np.asarray(np.ediff1d(self.indptr, to_begin=0), dtype=idx_dtype)
         nnzs[1:][ui] += new_nnzs
         self.indptr = np.cumsum(nnzs, out=nnzs)
 
@@ -1063,11 +1061,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             data = np.empty(maxnnz, dtype=upcast(self.dtype, other.dtype))
 
         fn(self.shape[0], self.shape[1],
-           self.indptr.astype(idx_dtype),
-           self.indices.astype(idx_dtype),
+           np.asarray(self.indptr, dtype=idx_dtype),
+           np.asarray(self.indices, dtype=idx_dtype),
            self.data,
-           other.indptr.astype(idx_dtype),
-           other.indices.astype(idx_dtype),
+           np.asarray(other.indptr, dtype=idx_dtype),
+           np.asarray(other.indices, dtype=idx_dtype),
            other.data,
            indptr, indices, data)
 
