@@ -147,6 +147,67 @@ cdef inline void larf(char* side, int m, int n, blas_t* v, int incv, blas_t tau,
     else:
         lapack_pointers.zlarf(side, &m, &n, v, &incv, &tau, c, &ldc, work)
 
+cdef inline void gemv(char* trans, int m, int n, blas_t alpha, blas_t* a,
+        int lda, blas_t* x, int incx, blas_t beta, blas_t* y, int incy) nogil:
+    if blas_t is float:
+        blas_pointers.sgemv(trans, &m, &n, &alpha, a, &lda, x, &incx, &beta,
+                y, &incy)
+    elif blas_t is double:
+        blas_pointers.dgemv(trans, &m, &n, &alpha, a, &lda, x, &incx, &beta,
+                y, &incy)
+    elif blas_t is float_complex:
+        blas_pointers.cgemv(trans, &m, &n, &alpha, a, &lda, x, &incx, &beta,
+                y, &incy)
+    else:
+        blas_pointers.zgemv(trans, &m, &n, &alpha, a, &lda, x, &incx, &beta,
+                y, &incy)
+
+cdef inline void gemm(char* transa, char* transb, int m, int n, int k,
+        blas_t alpha, blas_t* a, int lda, blas_t* b, int ldb, blas_t beta,
+        blas_t* c, int ldc) nogil:
+    if blas_t is float:
+        blas_pointers.sgemm(transa, transb, &m, &n, &k, &alpha, a, &lda,
+                b, &ldb, &beta, c, &ldc)
+    elif blas_t is double:
+        blas_pointers.dgemm(transa, transb, &m, &n, &k, &alpha, a, &lda,
+                b, &ldb, &beta, c, &ldc)
+    elif blas_t is float_complex:
+        blas_pointers.cgemm(transa, transb, &m, &n, &k, &alpha, a, &lda,
+                b, &ldb, &beta, c, &ldc)
+    else:
+        blas_pointers.zgemm(transa, transb, &m, &n, &k, &alpha, a, &lda,
+                b, &ldb, &beta, c, &ldc)
+
+cdef inline int geqrf(int m, int n, blas_t* a, int lda, blas_t* tau,
+                      blas_t* work, int lwork) nogil:
+    cdef int info
+    if blas_t is float:
+        lapack_pointers.sgeqrf(&m, &n, a, &lda, tau, work, &lwork, &info)
+    elif blas_t is double:
+        lapack_pointers.dgeqrf(&m, &n, a, &lda, tau, work, &lwork, &info)
+    elif blas_t is float_complex:
+        lapack_pointers.cgeqrf(&m, &n, a, &lda, tau, work, &lwork, &info)
+    else:
+        lapack_pointers.zgeqrf(&m, &n, a, &lda, tau, work, &lwork, &info)
+    return info
+
+cdef inline int ormqr(char* side, char* trans, int m, int n, int k, blas_t* a,
+    int lda, blas_t* tau, blas_t* c, int ldc, blas_t* work, int lwork) nogil:
+    cdef int info = 0 
+    if blas_t is float:
+        lapack_pointers.sormqr(side, trans, &m, &n, &k, a, &lda, tau, c, &ldc,
+                work, &lwork, &info)
+    elif blas_t is double:
+        lapack_pointers.dormqr(side, trans, &m, &n, &k, a, &lda, tau, c, &ldc,
+                work, &lwork, &info)
+    elif blas_t is float_complex:
+        lapack_pointers.cunmqr(side, trans, &m, &n, &k, a, &lda, tau, c, &ldc,
+                work, &lwork, &info)
+    else:
+        lapack_pointers.zunmqr(side, trans, &m, &n, &k, a, &lda, tau, c, &ldc,
+                work, &lwork, &info)
+    return info
+
 #------------------------------------------------------------------------------
 # Utility routines
 #------------------------------------------------------------------------------
@@ -169,6 +230,26 @@ cdef void blas_t_conj(int n, blas_t* x, int* xs) nogil:
     if blas_t is float_complex or blas_t is double_complex:
         for j in range(n):
             index1(x, xs, j)[0] = index1(x, xs, j)[0].conjugate()
+
+cdef void blas_t_2d_conj(int m, int n, blas_t* x, int* xs) nogil:
+    cdef int i, j
+    if blas_t is float_complex or blas_t is double_complex:
+        for i in range(m):
+            for j in range(n):
+                index2(x, xs, i, j)[0] = index2(x, xs, i, j)[0].conjugate()
+
+cdef int to_lwork(blas_t a, blas_t b) nogil:
+    cdef int ai, bi
+    if blas_t is float or blas_t is double:
+        ai = <int>a
+        bi = <int>b
+    elif blas_t is float_complex:
+        ai = <int>((<float*>&a)[0])
+        bi = <int>((<float*>&b)[0])
+    elif blas_t is double_complex:
+        ai = <int>((<double*>&a)[0])
+        bi = <int>((<double*>&b)[0])
+    return max(ai, bi)
 
 #------------------------------------------------------------------------------
 # QR update routines start here.
@@ -260,6 +341,187 @@ cdef int qr_block_col_delete(int m, int n, blas_t* q, int* qs,
     libc.stdlib.free(work)
     return 0
 
+cdef void qr_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
+                        int k) nogil:
+    cdef int j
+    cdef blas_t c, s
+    cdef int limit = min(m-1, n)
+
+    for j in range(limit):
+        lartg(index2(r, rs, j, j), index2(r, rs, m-1, j), &c, &s)
+
+        rot(n-j-1, index2(r, rs, j, j+1), rs[1], index2(r, rs, m-1, j+1), rs[1],
+            c, s)
+
+        rot(m, col(q, qs, j), qs[0], col(q, qs, m-1), qs[0], c, s.conjugate())
+
+    # permute q 
+    for j in range(m-1, k, -1):
+        swap(m, row(q, qs, j), qs[1], row(q, qs, j-1), qs[1])
+
+cdef int qr_block_row_insert(int m, int n, blas_t* q, int* qs,
+                              blas_t* r, int* rs, int k, int p) nogil:
+    # this should someday call lapack's xtpqrt (requires lapack >= 3.4
+    # released nov 11). RHEL6's atlas doesn't seem to have it.
+    # On input this looks something like this:
+    # q = x x x x 0 0 0  r = x x x
+    #     x x x x 0 0 0      0 x x
+    #     x x x x 0 0 0      0 0 x
+    #     x x x x 0 0 0      0 0 0
+    #     0 0 0 0 1 0 0      * * *
+    #     0 0 0 0 0 1 0      * * *
+    #     0 0 0 0 0 0 1      * * *
+    #
+    # The method will be to apply a series of reflectors to re triangularize r.
+    # followed by permuting the rows of q to put the new rows in the requested
+    # position.
+    cdef int j, hlen
+    cdef blas_t rjj, tau
+    cdef blas_t* work
+    cdef char* sideL = 'L'
+    cdef char* sideR = 'R'
+    # for tall or sqr + rows should be n. for fat + rows should be new m
+    cdef int limit = min(m, n)
+
+    work = <blas_t*>libc.stdlib.malloc(max(m,n)*sizeof(blas_t))
+    if not work:
+        return MEMORY_ERROR
+
+    for j in range(limit):
+        rjj = index2(r, rs, j, j)[0]
+        hlen = m-j
+        larfg(hlen, &rjj, index2(r, rs, j+1, j), rs[0], &tau)
+        index2(r, rs, j, j)[0] = 1
+        if j+1 < n:
+            larf(sideL, hlen, n-j-1, index2(r, rs, j, j), rs[0],
+                    tau.conjugate(), index2(r, rs, j, j+1), rs[1], work)
+        larf(sideR, m, hlen, index2(r, rs, j, j), rs[0], tau,
+                index2(q, qs, 0, j), qs[1], work)
+        memset(index2(r, rs, j, j), 0, hlen*sizeof(blas_t))
+        index2(r, rs, j, j)[0] = rjj
+
+    # permute the rows., work columnwise, since q is fortran order
+    if k != m-p:
+        for j in range(m):
+            copy(m-k-p, index2(q, qs, k, j), qs[0], work, 1)
+            copy(p, index2(q, qs, m-p, j), qs[0], index2(q, qs, k, j), qs[0])
+            copy(m-k-p, work, 1, index2(q, qs, k+p, j), qs[0])
+
+    libc.stdlib.free(work)
+    return 0
+
+cdef void qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
+                        int k) nogil:
+    cdef int j
+    cdef blas_t c, s, temp, tau
+    cdef blas_t* work
+    
+    for j in range(m-2, k-1, -1):
+        lartg(index2(r, rs, j, k), index2(r, rs, j+1, k), &c, &s)
+
+        # update r if j is a nonzero row
+        if j+1 < n:
+            rot(n-j-1, index2(r, rs, j, j+1), rs[1],
+                    index2(r, rs, j+1, j+1), rs[1], c, s)
+
+        # update the columns of q
+        rot(m, col(q, qs, j), qs[0], col(q, qs, j+1), qs[0], c, s.conjugate())
+
+cdef int qr_block_col_insert(int m, int n, blas_t* q, int* qs,
+                              blas_t* r, int* rs, int k, int p) nogil:
+    cdef int i, j
+    cdef blas_t c, s
+    cdef blas_t* tau = NULL
+    cdef blas_t* work = NULL
+    cdef int info, lwork
+    cdef char* side = 'R'
+    cdef char* trans = 'N'
+
+    if m >= n:
+        # if m > n, r looks like this.
+        # x x x x x x x x x x
+        #   x x x x x x x x x
+        #     x x x x x x x x
+        #       x x x x x x x
+        #       x x x   x x x
+        #       x x x     x x
+        #       x x x       x
+        #       x x x 
+        #       x x x 
+        #       x x x 
+        #       x x x 
+        #       x x x 
+        #
+        # First zero the lower part of the new columns using a qr.  
+
+        # query the workspace, 
+        info = geqrf(m-n+p, p, index2(r, rs, n-p, k), rs[1], tau, &c, -1)
+        info = ormqr(side, trans, m, m-(n-p), p, index2(r, rs, n-p, k), rs[1],
+                tau, index2(q, qs, 0, n-p), qs[1], &s, -1)
+
+        # we're only doing one allocation, so use the larger
+        lwork = to_lwork(c, s)
+
+        # allocate the workspace + tau
+        work = <blas_t*>libc.stdlib.malloc((lwork+min(m-n+p, p))*sizeof(blas_t))
+        if not work:
+            return MEMORY_ERROR
+        tau = work + lwork
+
+        # qr
+        info = geqrf(m-n+p, p, index2(r, rs, n-p, k), rs[1], tau, work, lwork)
+        if info < 0: 
+            return libc.stdlib.abs(info)
+
+        # apply the Q from this small qr to the last (m-(n-p)) columns of q.
+        info = ormqr(side, trans, m, m-(n-p), p, index2(r, rs, n-p, k), rs[1],
+                tau, index2(q, qs, 0, n-p), qs[1], work, lwork)
+        if info < 0:
+            return info
+
+        libc.stdlib.free(work)
+
+        # zero the reflectors since we're done with them
+        # memset can be used here, since r is always fortan order
+        for j in range(p):
+            memset(index2(r, rs, n-p+1+j, k+j), 0, (m-(n-p+1+j))*sizeof(blas_t))
+
+        # now we have something that looks like 
+        # x x x x x x x x x x
+        #   x x x x x x x x x
+        #     x x x x x x x x
+        #       x x x x x x x
+        #       x x x   x x x
+        #       x x x     x x
+        #       x x x       x
+        #       x x x         
+        #       0 x x        
+        #       0 0 x         
+        #       0 0 0 
+        #       0 0 0 
+        #
+        # and the rest of the columns need to be eliminated using rotations.
+
+        for i in range(p):
+            for j in range(n-p+i-1, k+i-1, -1):
+                lartg(index2(r, rs, j, k+i), index2(r, rs, j+1, k+i), &c, &s)
+                if j+1 < n:
+                    rot(n-k-i-1, index2(r, rs, j, k+i+1), rs[1],
+                            index2(r, rs, j+1, k+i+1), rs[1], c, s)
+                rot(m, col(q, qs, j), qs[0], col(q, qs, j+1), qs[0],
+                        c, s.conjugate())
+    else: 
+        # this case we can only uses givens rotations.
+        for i in range(p):
+            for j in range(m-2, k+i-1, -1):
+                lartg(index2(r, rs, j, k+i), index2(r, rs, j+1, k+i), &c, &s)
+                if j+1 < n:
+                    rot(n-k-i-1, index2(r, rs, j, k+i+1), rs[1],
+                            index2(r, rs, j+1, k+i+1), rs[1], c, s)
+                rot(m, col(q, qs, j), qs[0], col(q, qs, j+1), qs[0],
+                        c, s.conjugate())
+    return 0
+
 cdef void hessenberg_qr(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
                         int k) nogil:
     """Reduce an upper hessenberg matrix r, to upper triangluar,
@@ -317,6 +579,167 @@ cdef void p_subdiag_qr(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
 
         # restore the rjj element
         index2(r, rs, j, j)[0] = rjj
+
+def _form_qTu(object a, object b):
+    """ this function only exists to expose the cdef version below for testing
+        purposes. Here we perform minimal input validation to ensure that the
+        inputs meet the requirements below.
+    """
+    cdef cnp.ndarray q, u, qTu
+    cdef int typecode
+    cdef void* qTuvoid
+    cdef int qTus[2]
+
+    if not cnp.PyArray_Check(a) or not cnp.PyArray_Check(b):
+        raise ValueError('Inputs must be arrays')
+
+    q = a
+    u = b
+    
+    typecode = cnp.PyArray_TYPE(q)
+    if cnp.PyArray_TYPE(u) != typecode:
+        raise ValueError('q and u must have the same type.')
+
+    if not (typecode == cnp.NPY_FLOAT or typecode == cnp.NPY_DOUBLE \
+            or typecode == cnp.NPY_CFLOAT or typecode == cnp.NPY_CDOUBLE):
+        raise ValueError('q and u must be a blas compatible type: f d F or D')
+
+    q = validate_array(q)
+    u = validate_array(u)
+
+    qTu = cnp.PyArray_ZEROS(u.ndim, u.shape, typecode, 1)
+    qTuvoid = extract(qTu, qTus)
+    form_qTu(q, u, qTuvoid, qTus, 0)
+    return qTu
+
+cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus,
+              int k):
+    """ assuming here that q and u have compatible shapes, and are the same type
+        + Q is contiguous.  This function is preferable over simply calling
+        np.dot for two reasons: 1) this output is always in F order, 2) no
+        copies need be made if Q is complex.  Point 2 in particular makes this
+        a good bit faster for complex inputs.
+    """
+    cdef int m = q.shape[0]
+    cdef int n = q.shape[1]
+    cdef int typecode = cnp.PyArray_TYPE(q)
+    cdef cnp.ndarray qTu
+    cdef char* T = 'T'
+    cdef char* C = 'C'
+    cdef char* N = 'N'
+    cdef void* qvoid
+    cdef void* uvoid
+    cdef int qs[2]
+    cdef int us[2]
+    cdef int ldu
+
+    if cnp.PyArray_CHKFLAGS(q, cnp.NPY_F_CONTIGUOUS):
+        qvoid = extract(q, qs)
+        if u.ndim == 1:
+            uvoid = extract(u, us)
+            if typecode == cnp.NPY_FLOAT:
+                gemv(T, m, n, 1, <float*>qvoid, qs[1],
+                        <float*>uvoid, us[0], 0, col(<float*>qTuvoid, qTus, k), qTus[0])
+            if typecode == cnp.NPY_DOUBLE:
+                gemv(T, m, n, 1, <double*>qvoid, qs[1],
+                        <double*>uvoid, us[0], 0, col(<double*>qTuvoid, qTus, k), qTus[0])
+            if typecode == cnp.NPY_CFLOAT:
+                gemv(C, m, n, 1, <float_complex*>qvoid, qs[1],
+                        <float_complex*>uvoid, us[0], 0,
+                        col(<float_complex*>qTuvoid, qTus, k), qTus[0])
+            if typecode == cnp.NPY_CDOUBLE:
+                gemv(C, m, n, 1, <double_complex*>qvoid, qs[1],
+                        <double_complex*>uvoid, us[0], 0,
+                        col(<double_complex*>qTuvoid, qTus, k), qTus[0])
+        elif u.ndim == 2:
+            p = u.shape[1]
+            if cnp.PyArray_CHKFLAGS(u, cnp.NPY_F_CONTIGUOUS):
+                utrans = N
+                uvoid = extract(u, us)
+                ldu = us[1]
+            elif cnp.PyArray_CHKFLAGS(u, cnp.NPY_C_CONTIGUOUS):
+                utrans = T
+                uvoid = extract(u, us)
+                ldu = us[0]
+            else:
+                u = PyArray_FromArraySafe(u, NULL, cnp.NPY_F_CONTIGUOUS)
+                utrans = N
+                uvoid = extract(u, us)
+                ldu = us[1]
+            if typecode == cnp.NPY_FLOAT:
+                gemm(T, utrans, m, p, m, 1, <float*>qvoid, qs[1],
+                        <float*>uvoid, ldu, 0, col(<float*>qTuvoid, qTus, k), qTus[1])
+            if typecode == cnp.NPY_DOUBLE:
+                gemm(T, utrans, m, p, m, 1, <double*>qvoid, qs[1],
+                        <double*>uvoid, ldu, 0, col(<double*>qTuvoid, qTus, k), qTus[1])
+            if typecode == cnp.NPY_CFLOAT:
+                gemm(C, utrans, m, p, m, 1, <float_complex*>qvoid, qs[1],
+                        <float_complex*>uvoid, ldu, 0,
+                        col(<float_complex*>qTuvoid, qTus, k), qTus[1])
+            if typecode == cnp.NPY_CDOUBLE:
+                gemm(C, utrans, m, p, m, 1, <double_complex*>qvoid, qs[1],
+                        <double_complex*>uvoid, ldu, 0,
+                        col(<double_complex*>qTuvoid, qTus, k), qTus[1])
+    
+    elif cnp.PyArray_CHKFLAGS(q, cnp.NPY_C_CONTIGUOUS):
+        qvoid = extract(q, qs)
+        if u.ndim == 1:
+            uvoid = extract(u, us)
+            if typecode == cnp.NPY_FLOAT:
+                gemv(N, m, n, 1, <float*>qvoid, qs[0],
+                        <float*>uvoid, us[0], 0, col(<float*>qTuvoid, qTus, k), qTus[0])
+            if typecode == cnp.NPY_DOUBLE:
+                gemv(N, m, n, 1, <double*>qvoid, qs[0],
+                        <double*>uvoid, us[0], 0, col(<double*>qTuvoid, qTus, k), qTus[0])
+            if typecode == cnp.NPY_CFLOAT:
+                blas_t_conj(m, <float_complex*>uvoid, us)
+                gemv(N, m, n, 1, <float_complex*>qvoid, qs[0],
+                        <float_complex*>uvoid, us[0], 0,
+                        col(<float_complex*>qTuvoid, qTus, k), qTus[0])
+                blas_t_conj(m, col(<float_complex*>qTuvoid, qTus, k), qTus)
+            if typecode == cnp.NPY_CDOUBLE:
+                blas_t_conj(m, <double_complex*>uvoid, us)
+                gemv(N, m, n, 1, <double_complex*>qvoid, qs[0],
+                        <double_complex*>uvoid, us[0], 0,
+                        col(<double_complex*>qTuvoid, qTus, k), qTus[0])
+                blas_t_conj(m, col(<double_complex*>qTuvoid, qTus, k), qTus)
+        elif u.ndim == 2:
+            p = u.shape[1]
+            if cnp.PyArray_CHKFLAGS(u, cnp.NPY_F_CONTIGUOUS):
+                utrans = N
+                uvoid = extract(u, us)
+                ldu = us[1]
+            elif cnp.PyArray_CHKFLAGS(u, cnp.NPY_C_CONTIGUOUS):
+                utrans = T
+                uvoid = extract(u, us)
+                ldu = us[0]
+            else:
+                u = PyArray_FromArraySafe(u, NULL, cnp.NPY_F_CONTIGUOUS)
+                utrans = N
+                uvoid = extract(u, us)
+                ldu = us[1]
+            if typecode == cnp.NPY_FLOAT:
+                gemm(N, utrans, m, p, m, 1, <float*>qvoid, qs[0],
+                        <float*>uvoid, ldu, 0, col(<float*>qTuvoid, qTus, k), qTus[1])
+            elif typecode == cnp.NPY_DOUBLE:
+                gemm(N, utrans, m, p, m, 1, <double*>qvoid, qs[0],
+                        <double*>uvoid, ldu, 0, col(<double*>qTuvoid, qTus, k), qTus[1])
+            elif typecode == cnp.NPY_CFLOAT:
+                blas_t_2d_conj(m, p, <float_complex*>uvoid, us)
+                gemm(N, utrans, m, p, m, 1, <float_complex*>qvoid, qs[0],
+                        <float_complex*>uvoid, ldu, 0,
+                        col(<float_complex*>qTuvoid, qTus, k), qTus[1])
+                blas_t_2d_conj(m, p, col(<float_complex*>qTuvoid, qTus, k), qTus)
+            elif typecode == cnp.NPY_CDOUBLE:
+                blas_t_2d_conj(m, p, <double_complex*>uvoid, us)
+                gemm(N, utrans, m, p, m, 1, <double_complex*>qvoid, qs[0],
+                        <double_complex*>uvoid, ldu, 0,
+                        col(<double_complex*>qTuvoid, qTus, k), qTus[1])
+                blas_t_2d_conj(m, p, col(<double_complex*>qTuvoid, qTus, k), qTus)
+        else:
+            raise ValueError('1 <= u.ndim <= 2')
+    else:
+        raise ValueError('q must be either F or C contig')
 
 cdef validate_array(cnp.ndarray a):
     # here we check that a has positive strides and that its size is small
@@ -560,6 +983,253 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True):
             if info == MEMORY_ERROR:
                 raise MemoryError('malloc failed')
         return q1, r1[:,:-p]
+    else:
+        raise ValueError("which must be either 'row' or 'col'")
+
+@cython.embedsignature(True)
+def qr_insert(Q, R, u, k, which='row', overwrite_qu=True):
+    """QR update on row or column insertions
+
+    If ``A = Q R`` is the qr factorization of A, return the qr factorization
+    of `A` where rows or columns have been inserted starting at row or
+    column `k`.
+
+    Parameters
+    ----------
+    Q : (M, M) array_like
+        Unitary/orthogonal matrix from the qr decomposition of A.
+    R : (M, N) array_like
+        Upper triangular matrix from the qr decomposition of A.
+    u : (N,), (p, N), (M,), or (M, p) array_like
+        Rows or coluns to insert
+    k : int
+        Index before which `u` is to be inserted.
+    which: {'row', 'col'}, optional
+        Determines if rows or columns will be inserted, defaults to 'row'
+    overwrite_qu : bool, optional
+        If True, consume Q, and u, if possible, while performing the update,
+        otherwise make copies as necessary. Defaults to True.
+
+    Returns
+    -------
+    Q1 : ndarray
+        Updated unitary/orthogonal factor
+    R1 : ndarray
+        Updated upper triangular factor
+
+    Notes
+    -----
+    This routine does not guarantee that the diagonal entries of `R1` are
+    positive.
+
+    .. versionadded:: 0.16.0
+
+    Examples
+    --------
+    >>> from scipy import linalg
+    >>> a = np.array([[  3.,  -2.,  -2.],
+                      [  6.,  -7.,   4.],
+                      [  7.,   8.,  -6.]])
+    >>> q, r = linalg.qr(a)
+
+    Given this q, r decomposition, update q and r when 2 rows are inserted.
+                      
+    >>> u = np.array([[  6.,  -9.,  -3.], 
+                      [ -3.,  10.,   1.]])
+    >>> q1, r1 = linalg.qr_insert(q, r, u, 2, 'row', False)
+    >>> q1
+    array([[-0.25445668,  0.02246245,  0.18146236, -0.72798806,  0.60979671],
+           [-0.50891336,  0.23226178, -0.82836478, -0.02837033, -0.00828114],
+           [-0.50891336,  0.35715302,  0.38937158,  0.58110733,  0.35235345],
+           [ 0.25445668, -0.52202743, -0.32165498,  0.36263239,  0.65404509],
+           [-0.59373225, -0.73856549,  0.16065817, -0.0063658 , -0.27595554]])
+    >>> r1
+    array([[-11.78982612,   6.44623587,   3.81685018],
+           [  0.        , -16.01393278,   3.72202865],
+           [  0.        ,   0.        ,  -6.13010256],
+           [  0.        ,   0.        ,   0.        ],
+           [  0.        ,   0.        ,   0.        ]])
+
+    The update is equivalent, but faster than the following.
+
+    >>> a1 = np.insert(a, 2, u, 0)
+    >>> a1
+    array([[  3.,  -2.,  -2.],
+           [  6.,  -7.,   4.],
+           [  6.,  -9.,  -3.],
+           [ -3.,  10.,   1.],
+           [  7.,   8.,  -6.]])
+    >>> q_direct, r_direct = linalg.qr(a1)
+
+    Check that we have equivalent results:
+
+    >>> np.dot(q1, r1)
+    array([[  3.,  -2.,  -2.],
+           [  6.,  -7.,   4.],
+           [  6.,  -9.,  -3.],
+           [ -3.,  10.,   1.],
+           [  7.,   8.,  -6.]])
+
+    >>> np.allclose(np.dot(q1, r1), a1)
+    True
+
+    And the updated Q is still unitary:
+
+    >>> np.allclose(np.dot(q1.T, q1), np.eye(5))
+    True
+
+    """
+    cdef cnp.ndarray q1, r1, u1, qnew, rnew
+    cdef int k1 = k 
+    cdef int q_flags = NPY_ANYORDER
+    cdef int u_flags = cnp.NPY_BEHAVED_NS | cnp.NPY_ELEMENTSTRIDES
+    cdef int typecode, m, n, p, info
+    cdef int qs[2]
+    cdef void* rvoid
+    cdef int rs[2]
+    cdef cnp.npy_intp shape[2]
+
+    if which == 'row':
+        q1, r1, typecode, m, n = validate_qr(Q, R, True, NPY_ANYORDER, True,
+                NPY_ANYORDER)
+        u1 = PyArray_CheckFromAny(u, NULL, 0, 0, u_flags, NULL)
+        if cnp.PyArray_TYPE(u1) != typecode:
+            raise ValueError('u must have the same type as Q and R')
+        if not (-m <= k1 < m):
+            raise ValueError('k is not a valid index')
+        if k1 < 0:
+            k1 += m
+
+        if u1.ndim == 2:
+            p = u.shape[0]
+            if u.shape[1] != n:
+                raise ValueError('bad size u')
+        else:
+            p = 1
+            if u.shape[0] != n:
+                raise ValueError('bad size u')
+
+        shape[0] = m+p
+        shape[1] = m+p
+        qnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
+        shape[1] = n
+        rnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
+        
+        # doing this by hand is unlikely to be any quicker.
+        rnew[:m,:] = r1    
+        rnew[m:,:] = u1
+        qnew[:-p,:-p] = q1;
+        ind = np.arange(m,m+p)
+        qnew[ind,ind] = 1
+
+        if p == 1:
+            if typecode == cnp.NPY_FLOAT:
+                qr_row_insert(m+p, n, <float*>extract(qnew, qs), qs,
+                        <float*>extract(rnew, rs), rs, k1)
+            elif typecode == cnp.NPY_DOUBLE:
+                qr_row_insert(m+p, n, <double*>extract(qnew, qs), qs,
+                        <double*>extract(rnew, rs), rs, k1)
+            elif typecode == cnp.NPY_CFLOAT:
+                qr_row_insert(m+p, n, <float_complex*>extract(qnew, qs), qs,
+                        <float_complex*>extract(rnew, rs), rs, k1)
+            else:  # cnp.NPY_CDOUBLE:
+                qr_row_insert(m+p, n, <double_complex*>extract(qnew, qs), qs,
+                        <double_complex*>extract(rnew, rs), rs, k1)
+        else:
+            if typecode == cnp.NPY_FLOAT:
+                info = qr_block_row_insert(m+p, n, <float*>extract(qnew, qs), qs,
+                        <float*>extract(rnew, rs), rs, k1, p)
+            elif typecode == cnp.NPY_DOUBLE:
+                info = qr_block_row_insert(m+p, n, <double*>extract(qnew, qs), qs,
+                        <double*>extract(rnew, rs), rs, k1, p)
+            elif typecode == cnp.NPY_CFLOAT:
+                info = qr_block_row_insert(m+p, n, <float_complex*>extract(qnew, qs),
+                        qs, <float_complex*>extract(rnew, rs), rs, k1, p)
+            else:  # cnp.NPY_CDOUBLE
+                info = qr_block_row_insert(m+p, n, <double_complex*>extract(qnew, qs),
+                        qs, <double_complex*>extract(rnew, rs), rs, k1, p)
+            if info == MEMORY_ERROR:
+                raise MemoryError('malloc failed')
+        return qnew, rnew
+
+    elif which == 'col':
+        u1 = PyArray_CheckFromAny(u, NULL, 0, 0, u_flags, NULL)
+        if u1.ndim == 2:
+            q_flags = cnp.NPY_F_CONTIGUOUS
+        q1, r1, typecode, m, n = validate_qr(Q, R, overwrite_qu,
+                q_flags, True, NPY_ANYORDER)
+        if not cnp.PyArray_ISONESEGMENT(q1):
+            q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
+
+        if (not overwrite_qu and cnp.PyArray_CHKFLAGS(q1, cnp.NPY_C_CONTIGUOUS)
+            and (typecode == cnp.NPY_CFLOAT or typecode == cnp.NPY_CDOUBLE)):
+            u_flags |= cnp.NPY_ENSURECOPY
+            u1 = PyArray_FromArraySafe(u1, NULL, u_flags)
+
+        if cnp.PyArray_TYPE(u1) != typecode:
+            raise ValueError('u must have the same type as Q and R')
+        if not (-n <= k1 < n):
+            raise ValueError('k is not a valid index')
+        if k1 < 0:
+            k1 += n
+
+        if u.shape[0] != m:
+            raise ValueError('bad size u')
+        if u.ndim == 2:
+            p = u.shape[1]
+        else:
+            p = 1
+
+        shape[0] = m
+        shape[1] = n+p
+        rnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
+
+        rnew[:,:k1] = r1[:,:k1]
+        rnew[:,k1+p:] = r1[:,k1:]
+
+        u1 = validate_array(u1)
+        rvoid = extract(rnew, rs)
+        if p == 1:
+            form_qTu(q1, u1, rvoid, rs, k1)
+        else:
+            form_qTu(q1, u1, rvoid, rs, k1)
+        
+        if p == 1:
+            if typecode == cnp.NPY_FLOAT:
+                qr_col_insert(m, n+p, <float*>extract(q1, qs), qs,
+                        <float*>rvoid, rs, k1)
+            elif typecode == cnp.NPY_DOUBLE:
+                qr_col_insert(m, n+p, <double*>extract(q1, qs), qs,
+                        <double*>rvoid, rs, k1)
+            elif typecode == cnp.NPY_CFLOAT:
+                qr_col_insert(m, n+p, <float_complex*>extract(q1, qs), qs,
+                        <float_complex*>rvoid, rs, k1)
+            else:  # cnp.NPY_CDOUBLE
+                qr_col_insert(m, n+p, <double_complex*>extract(q1, qs), qs,
+                        <double_complex*>rvoid, rs, k1)
+        else:
+            if typecode == cnp.NPY_FLOAT:
+                info = qr_block_col_insert(m, n+p, <float*>extract(q1, qs), qs,
+                        <float*>rvoid, rs, k1, p)
+            elif typecode == cnp.NPY_DOUBLE:
+                info = qr_block_col_insert(m, n+p, <double*>extract(q1, qs), qs,
+                        <double*>rvoid, rs, k1, p)
+            elif typecode == cnp.NPY_CFLOAT:
+                info = qr_block_col_insert(m, n+p, <float_complex*>extract(q1, qs),
+                        qs, <float_complex*>rvoid, rs, k1, p)
+            else:  # cnp.NPY_CDOUBLE:
+                info = qr_block_col_insert(m, n+p, <double_complex*>extract(q1, qs), 
+                        qs, <double_complex*>rvoid, rs, k1, p)
+            if info != 0:
+                if info > 0: 
+                    raise ValueError('The {0}th argument to ?geqrf was'
+                            'invalid'.format(info))
+                elif info < 0:
+                    raise ValueError('The {0}th argument to ?ormqr/?unmqr was'
+                            'invalid'.format(abs(info)))
+                elif info == MEMORY_ERROR:
+                    raise MemoryError('malloc failed')
+        return q1, rnew
     else:
         raise ValueError("which must be either 'row' or 'col'")
 

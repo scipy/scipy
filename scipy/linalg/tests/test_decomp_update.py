@@ -424,4 +424,377 @@ class TestQRdelete_d(BaseQRdelete):
 class TestQRdelete_D(BaseQRdelete):
     dtype = np.dtype('D')
 
+class BaseQRinsert(BaseQRdeltas):
+    def generate(self, type, mode='full', which='row', p=1):
+        a, q, r = super(BaseQRinsert, self).generate(type, mode)
 
+        assert_(p > 0)
+
+        # super call set the seed...
+        if which == 'row':
+            u = np.random.random((p, a.shape[1]))
+        elif which == 'col':
+            u = np.random.random((a.shape[0], p))
+        else:
+            ValueError('which should be either "row" or "col"')
+
+        u = np.squeeze(u)
+
+        if np.iscomplexobj(self.dtype.type(1)):
+            b = np.random.random(u.shape)
+            u = u + 1j * b
+
+        u = u.astype(self.dtype)
+        return a, q, r, u
+
+    def test_sqr_1_row(self):
+        a, q, r, u = self.generate('sqr', which='row')
+        for row in range(r.shape[0]):
+            q1, r1 = qr_insert(q, r, u, row)
+            a1 = np.insert(a, row, u, 0)
+            check_qr(q1, r1, a1, self.rtol, self.atol)
+    
+    def test_sqr_p_row(self):
+        # sqr + rows --> fat always
+        a, q, r, u = self.generate('sqr', which='row', p=3)
+        for row in range(r.shape[0]):
+            q1, r1 = qr_insert(q, r, u, row)
+            a1 = np.insert(a, row*np.ones(3, np.intp), u, 0)
+            check_qr(q1, r1, a1, self.rtol, self.atol)
+
+    def test_sqr_1_col(self):
+        a, q, r, u = self.generate('sqr', which='col')
+        for col in range(r.shape[1]):
+            q1, r1 = qr_insert(q, r, u, col, 'col', False)
+            a1 = np.insert(a, col, u, 1)
+            check_qr(q1, r1, a1, self.rtol, self.atol)
+
+    def test_sqr_p_col(self):
+        # sqr + cols --> fat always
+        a, q, r, u = self.generate('sqr', which='col', p=3)
+        for col in range(r.shape[1]):
+            q1, r1 = qr_insert(q, r, u, col, 'col', False)
+            a1 = np.insert(a, col*np.ones(3, np.intp), u, 1)
+            check_qr(q1, r1, a1, self.rtol, self.atol)
+
+    def test_tall_1_row(self):
+        a, q, r, u = self.generate('tall', which='row')
+        for row in range(r.shape[0]):
+            q1, r1 = qr_insert(q, r, u, row)
+            a1 = np.insert(a, row, u, 0)
+            check_qr(q1, r1, a1, self.rtol, self.atol)
+
+    def test_tall_p_row(self):
+        # tall + rows --> tall always
+        a, q, r, u = self.generate('tall', which='row', p=3)
+        for row in range(r.shape[0]):
+            q1, r1 = qr_insert(q, r, u, row)
+            a1 = np.insert(a, row*np.ones(3, np.intp), u, 0)
+            check_qr(q1, r1, a1, self.rtol, self.atol)
+
+    def test_tall_1_col(self):
+        a, q, r, u = self.generate('tall', which='col')
+        for col in range(r.shape[1]):
+            q1, r1 = qr_insert(q, r, u, col, 'col', False)
+            a1 = np.insert(a, col, u, 1)
+            check_qr(q1, r1, a1, self.rtol, self.atol)
+
+    # for column adds to tall matrices there are three cases to test
+    # tall + pcol --> tall
+    # tall + pcol --> sqr
+    # tall + pcol --> fat
+    def base_tall_p_col_xxx(self, p):
+        a, q, r, u = self.generate('tall', which='col', p=p)
+        for col in range(r.shape[1]):
+            q1, r1 = qr_insert(q, r, u, col, 'col', False)
+            a1 = np.insert(a, col*np.ones(p, np.intp), u, 1)
+            check_qr(q1, r1, a1, self.rtol, self.atol)
+
+    def test_tall_p_col_tall(self):
+        # 12x7 + 12x3 = 12x10 --> stays tall
+        self.base_tall_p_col_xxx(3)
+
+    def test_tall_p_col_sqr(self):
+        # 12x7 + 12x5 = 12x10 --> becomes sqr
+        self.base_tall_p_col_xxx(5)
+
+    def test_tall_p_col_fat(self):
+        # 12x7 + 12x7 = 12x14 --> becomes fat
+        self.base_tall_p_col_xxx(7)
+
+    def test_fat_1_row(self):
+        a, q, r, u = self.generate('fat', which='row')
+        for row in range(r.shape[0]):
+            q1, r1 = qr_insert(q, r, u, row)
+            a1 = np.insert(a, row, u, 0)
+            check_qr(q1, r1, a1, self.rtol, self.atol)
+
+    # for row adds to fat matrices there are three cases to test
+    # fat + prow --> fat
+    # fat + prow --> sqr
+    # fat + prow --> tall
+    def base_fat_p_row_xxx(self, p):
+        a, q, r, u = self.generate('fat', which='row', p=p)
+        for row in range(r.shape[0]):
+            q1, r1 = qr_insert(q, r, u, row)
+            a1 = np.insert(a, row*np.ones(p, np.intp), u, 0)
+            check_qr(q1, r1, a1, self.rtol, self.atol)
+    
+    def test_fat_p_row_fat(self):
+        # 7x12 + 3x12 = 10x12 --> stays fat
+        self.base_fat_p_row_xxx(3)
+
+    def test_fat_p_row_sqr(self):
+        # 7x12 + 5x12 = 12x12 --> becomes sqr
+        self.base_fat_p_row_xxx(5)
+
+    def test_fat_p_row_tall(self):
+        # 7x12 + 7x12 = 14x12 --> becomes tall
+        self.base_fat_p_row_xxx(7)
+
+    def test_fat_1_col(self):
+        a, q, r, u = self.generate('fat', which='col')
+        for col in range(r.shape[1]):
+            q1, r1 = qr_insert(q, r, u, col, 'col', False)
+            a1 = np.insert(a, col, u, 1)
+            check_qr(q1, r1, a1, self.rtol, self.atol)
+
+    def test_fat_p_col(self):
+        # fat + cols --> fat always
+        a, q, r, u = self.generate('fat', which='col', p=3)
+        for col in range(r.shape[1]):
+            q1, r1 = qr_insert(q, r, u, col, 'col', False)
+            a1 = np.insert(a, col*np.ones(3, np.intp), u, 1)
+            check_qr(q1, r1, a1, self.rtol, self.atol)
+
+    def base_non_simple_strides(self, adjust_strides, k, p, which):
+        for type in ['sqr']:#, 'tall', 'fat']:
+            a, q0, r0, u0 = self.generate(type, which=which, p=p)
+            qs, rs, us = adjust_strides((q0, r0, u0))
+            if p == 1:
+                ai = np.insert(a, k, u0, 0 if which == 'row' else 1)
+            else:
+                ai = np.insert(a, k*np.ones(p, np.intp),
+                        u0 if which == 'row' else u0, 
+                        0 if which == 'row' else 1)
+
+            # for each variable, q, r, u we try with it strided and
+            # overwrite=False. Then we try with overwrite=True. Nothing
+            # is checked to see if it can be overwritten, since only
+            # F ordered Q can be overwritten when adding columns.
+
+            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F')
+            q1, r1 = qr_insert(qs, r, u, k, which, False)
+            check_qr(q1, r1, ai, self.rtol, self.atol)
+            q1o, r1o = qr_insert(qs, r, u, k, which, True)
+            check_qr(q1o, r1o, ai, self.rtol, self.atol)
+
+            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F')
+            q2, r2 = qr_insert(q, rs, u, k, which, False)
+            check_qr(q2, r2, ai, self.rtol, self.atol)
+            q2o, r2o = qr_insert(q, rs, u, k, which, True)
+            check_qr(q2o, r2o, ai, self.rtol, self.atol)
+
+            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F')
+            q3, r3 = qr_insert(q, r, us, k, which, False)
+            check_qr(q3, r3, ai, self.rtol, self.atol)
+            q3o, r3o = qr_insert(q, r, us, k, which, True)
+            check_qr(q3o, r3o, ai, self.rtol, self.atol)
+
+            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F')
+            # since some of these were consumed above
+            qs, rs, us = adjust_strides((q, r, u))
+            q5, r5 = qr_insert(qs, rs, us, k, which, False)
+            check_qr(q5, r5, ai, self.rtol, self.atol)
+            q5o, r5o = qr_insert(qs, rs, us, k, which, True)
+            check_qr(q5o, r5o, ai, self.rtol, self.atol)
+    
+    def test_non_unit_strides_1_row(self):
+        self.base_non_simple_strides(make_strided, 0, 1, 'row')
+
+    def test_non_unit_strides_p_row(self):
+        self.base_non_simple_strides(make_strided, 0, 3, 'row')
+
+    def test_non_unit_strides_1_col(self):
+        self.base_non_simple_strides(make_strided, 0, 1, 'col')
+
+    def test_non_unit_strides_p_col(self):
+        self.base_non_simple_strides(make_strided, 0, 3, 'col')
+
+    def test_neg_strides_1_row(self):
+        self.base_non_simple_strides(negate_strides, 0, 1, 'row')
+
+    def test_neg_strides_p_row(self):
+        self.base_non_simple_strides(negate_strides, 0, 3, 'row')
+
+    def test_neg_strides_1_col(self):
+        self.base_non_simple_strides(negate_strides, 0, 1, 'col')
+
+    def test_neg_strides_p_col(self):
+        self.base_non_simple_strides(negate_strides, 0, 3, 'col')
+
+    def test_non_itemsize_strides_1_row(self):
+        self.base_non_simple_strides(nonitemsize_strides, 0, 1, 'row')
+
+    def test_non_itemsize_strides_p_row(self):
+        self.base_non_simple_strides(nonitemsize_strides, 0, 3, 'row')
+
+    def test_non_itemsize_strides_1_col(self):
+        self.base_non_simple_strides(nonitemsize_strides, 0, 1, 'col')
+
+    def test_non_itemsize_strides_p_col(self):
+        self.base_non_simple_strides(nonitemsize_strides, 0, 3, 'col')
+
+    def test_non_native_byte_order_1_row(self):
+        self.base_non_simple_strides(make_nonnative, 0, 1, 'row')
+
+    def test_non_native_byte_order_p_row(self):
+        self.base_non_simple_strides(make_nonnative, 0, 3, 'row')
+
+    def test_non_native_byte_order_1_col(self):
+        self.base_non_simple_strides(make_nonnative, 0, 1, 'col')
+
+    def test_non_native_byte_order_p_col(self):
+        self.base_non_simple_strides(make_nonnative, 0, 3, 'col')
+
+    def test_overwrite_qu_rank_1(self):
+        # when inserting rows, the size of both Q and R change, so only
+        # column inserts can overwrite q. Only complex column inserts 
+        # with C ordered Q overwrite u. Any contiguous Q is overwritten
+        # when inserting 1 column
+        a, q0, r, u, = self.generate('sqr', which='col', p=1)
+        q = q0.copy('C')
+        u0 = u.copy()
+        # don't overwrite
+        q1, r1 = qr_insert(q, r, u, 0, 'col', False)
+        a1 = np.insert(a, 0, u0, 1)
+        check_qr(q1, r1, a1, self.rtol, self.atol)
+        check_qr(q, r, a, self.rtol, self.atol)
+
+        # try overwriting
+        q2, r2 = qr_insert(q, r, u, 0, 'col', True)
+        check_qr(q2, r2, a1, self.rtol, self.atol)
+        # verify the overwriting
+        assert_allclose(q2, q, rtol=self.rtol, atol=self.atol)
+        assert_allclose(u, u0.conj(), self.rtol, self.atol)
+
+        # now try with a fortran ordered Q
+        qF = q0.copy('F')
+        u1 = u0.copy()
+        q3, r3 = qr_insert(qF, r, u1, 0, 'col', False)
+        check_qr(q3, r3, a1, self.rtol, self.atol)
+        check_qr(qF, r, a, self.rtol, self.atol)
+
+        # try overwriting
+        q4, r4 = qr_insert(qF, r, u1, 0, 'col', True)
+        check_qr(q4, r4, a1, self.rtol, self.atol)
+        assert_allclose(q4, qF, rtol=self.rtol, atol=self.atol)
+
+    def test_overwrite_qu_rank_p(self):
+        # when inserting rows, the size of both Q and R change, so only
+        # column inserts can potentially overwrite Q.  In practice, only
+        # F ordered Q are overwritten with a rank p update.
+        a, q0, r, u, = self.generate('sqr', which='col', p=3)
+        q = q0.copy('F')
+        a1 = np.insert(a, np.zeros(3, np.intp), u, 1)
+
+        # don't overwrite
+        q1, r1 = qr_insert(q, r, u, 0, 'col', False)
+        check_qr(q1, r1, a1, self.rtol, self.atol)
+        check_qr(q, r, a, self.rtol, self.atol)
+
+        # try overwriting
+        q2, r2 = qr_insert(q, r, u, 0, 'col', True)
+        check_qr(q2, r2, a1, self.rtol, self.atol)
+        assert_allclose(q2, q, rtol=self.rtol, atol=self.atol)
+
+    def test_economic_qr(self):
+        a, q, r, u = self.generate('tall', which='row', mode='economic')
+        assert_raises(ValueError, qr_insert, q, r, u, 0)
+
+    def test_empty_inputs(self):
+        a, q, r, u = self.generate('sqr', which='row')
+        assert_raises(ValueError, qr_insert, np.array([]), r, u, 0, 'row')
+        assert_raises(ValueError, qr_insert, q, np.array([]), u, 0, 'row')
+        assert_raises(ValueError, qr_insert, q, r, np.array([]), 0, 'row')
+        assert_raises(ValueError, qr_insert, np.array([]), r, u, 0, 'col')
+        assert_raises(ValueError, qr_insert, q, np.array([]), u, 0, 'col')
+        assert_raises(ValueError, qr_insert, q, r, np.array([]), 0, 'col')
+
+    def test_mismatched_shapes(self):
+        a, q, r, u = self.generate('tall', which='row')
+        assert_raises(ValueError, qr_insert, q, r[1:], u, 0, 'row')
+        assert_raises(ValueError, qr_insert, q[:-2], r, u, 0, 'row')
+        assert_raises(ValueError, qr_insert, q, r, u[1:], 0, 'row')
+        assert_raises(ValueError, qr_insert, q, r[1:], u, 0, 'col')
+        assert_raises(ValueError, qr_insert, q[:-2], r, u, 0, 'col')
+        assert_raises(ValueError, qr_insert, q, r, u[1:], 0, 'col')
+
+    def test_integer_input(self):
+        q = np.arange(16).reshape(4, 4)
+        r = q.copy()  # doesn't matter
+        u = q[:, 0].copy()
+        assert_raises(ValueError, qr_insert, q, r, u, 0, 'row')
+        assert_raises(ValueError, qr_insert, q, r, u, 0, 'col')
+
+class TestQRinsert_f(BaseQRinsert):
+    dtype = np.dtype('f')
+
+class TestQRinsert_F(BaseQRinsert):
+    dtype = np.dtype('F')
+
+class TestQRinsert_d(BaseQRinsert):
+    dtype = np.dtype('d')
+
+class TestQRinsert_D(BaseQRinsert):
+    dtype = np.dtype('D')
+
+def test_form_qTu():
+    # we want to ensure that all of the code paths through this function are tested,
+    # Most of them should be hit with the rest of test suite, but explicit tests make
+    # clear precisely what is being tested.
+    #
+    # this function expects that Q is either C or F contiguous. But U have any positive strides.
+    #
+    # some of these test are duplicates, since contig 1d arrays are both C and F. 
+    # should we test a Mx1 2d array?
+
+    q_order = ['F', 'C']
+    u_order = ['F', 'C', 'A'] # here A means is not F not C
+    u_shape = [1, 3]
+    dtype = ['f', 'd', 'F', 'D']
+
+    for qo, uo, us, d in itertools.product(q_order, u_order, u_shape, dtype):
+        yield check_form_qTu, qo, uo, us, d
+    
+def check_form_qTu(q_order, u_order, u_shape, dtype):
+    np.random.seed(47)
+    q_shape = (8,8)
+    if u_shape == 1:
+        u_shape = (8,)
+    else:
+        u_shape = (8, u_shape)
+    dtype = np.dtype(dtype)
+
+    if dtype.char in 'fd':
+        q = np.random.random(q_shape)
+        u = np.random.random(u_shape)
+    elif dtype.char in 'FD':
+        q = np.random.random(q_shape) + 1j*np.random.random(q_shape)
+        u = np.random.random(u_shape) + 1j*np.random.random(u_shape)
+    else:
+        ValueError("form_qTu doesn't support this dtype")
+
+    q = np.require(q, dtype, q_order)
+    if u_order != 'A':
+        u = np.require(u, dtype, u_order)
+    else:
+        u, = make_strided((u.astype(dtype),))
+    
+    rtol = 10.0 ** -(np.finfo(dtype).precision-2)
+    atol = 2*np.finfo(dtype).eps
+
+    expected = np.dot(q.T.conj(), u)
+    res = _decomp_update._form_qTu(q, u)
+    assert_allclose(res, expected, rtol=rtol, atol=atol)
+ 
