@@ -178,6 +178,21 @@ cdef inline void gemm(char* transa, char* transb, int m, int n, int k,
         blas_pointers.zgemm(transa, transb, &m, &n, &k, &alpha, a, &lda,
                 b, &ldb, &beta, c, &ldc)
 
+cdef inline void trmm(char* side, char* uplo, char* transa, char* diag, int m,
+        int n, blas_t alpha, blas_t* a, int lda, blas_t* b, int ldb) nogil:
+    if blas_t is float:
+        blas_pointers.strmm(side, uplo, transa, diag, &m, &n, &alpha, a, &lda,
+                b, &ldb)
+    elif blas_t is double:
+        blas_pointers.dtrmm(side, uplo, transa, diag, &m, &n, &alpha, a, &lda,
+                b, &ldb)
+    elif blas_t is float_complex:
+        blas_pointers.ctrmm(side, uplo, transa, diag, &m, &n, &alpha, a, &lda,
+                b, &ldb)
+    else:
+        blas_pointers.ztrmm(side, uplo, transa, diag, &m, &n, &alpha, a, &lda,
+                b, &ldb)
+
 cdef inline int geqrf(int m, int n, blas_t* a, int lda, blas_t* tau,
                       blas_t* work, int lwork) nogil:
     cdef int info
@@ -520,6 +535,130 @@ cdef int qr_block_col_insert(int m, int n, blas_t* q, int* qs,
                             index2(r, rs, j+1, k+i+1), rs[1], c, s)
                 rot(m, col(q, qs, j), qs[0], col(q, qs, j+1), qs[0],
                         c, s.conjugate())
+    return 0
+
+cdef void qr_rank_1_update(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
+                           blas_t* u, int* us, blas_t* v, int* vs) nogil:
+    """ here we will assume that the u = Q.T.dot(u) and not the bare u.
+        if A is MxN then q is MxM, r is MxN, u is M and v is N.
+        e.g. currently assuming full matrices.
+    """
+    cdef int j
+    cdef blas_t c, s
+
+    # The technique here is to reduce u to a series of givens rotations followed
+    # by a scalar e.g. [u1,u2,u3] --> [u,0,0].  Applying these rotations to r as
+    # we go.  Then we will have the update be adding v scaled by the remainder
+    # of u to the first row of r, which will be upper hessenberg due to the
+    # givens applied to reduce u. We then reduce the upper hessenberg r to upper
+    # triangular.
+
+    for j in range(m-2, -1, -1):
+        lartg(index1(u, us, j), index1(u, us, j+1), &c, &s)
+
+        # update jth and (j+1)th rows of r.
+        # reduce this n to skip all the zeros in r.
+        rot(n, row(r, rs, j), rs[1], row(r, rs, j+1), rs[1], c, s)
+
+        # update jth and (j+1)th cols of q.
+        rot(m, col(q, qs, j), qs[0], col(q, qs, j+1), qs[0], c, s.conjugate())
+
+    # add v to the first row
+    blas_t_conj(n, v, vs)
+    axpy(n, u[0],  v, vs[0], row(r, rs, 0), rs[1])
+    
+    # return to q, r form
+    hessenberg_qr(m, n, q, qs, r, rs, 0)
+    # no return, return q, r from python driver.
+
+cdef int qr_rank_p_update(int m, int n, int p, blas_t* q, int* qs, blas_t* r,
+                        int* rs, blas_t* u, int* us, blas_t* v, int* vs) nogil:
+    cdef int i, j
+    cdef blas_t c, s
+    cdef blas_t* tau = NULL
+    cdef blas_t* work = NULL
+    cdef int info, lwork
+    cdef char* sideR = 'R'
+    cdef char* sideL = 'L'
+    cdef char* uplo = 'U'
+    cdef char* trans = 'N'
+    cdef char* diag = 'N'
+
+    if m > n:
+        # query the workspace
+        # below p_subdiag_qr will need workspace of size m, which is the
+        # minimum, ormqr will also require.
+        info = geqrf(m-n, p, index2(u, us, n, 0), us[1], tau, &c, -1)
+        if info < 0:
+            return libc.stdlib.abs(info)
+        info = ormqr(sideR, trans, m, m-n, p, index2(u, us, n, 0), us[1], tau,
+                index2(q, qs, 0, n), qs[1], &s, -1)
+        if info < 0:
+            return info
+ 
+        # we're only doing one allocation, so use the larger
+        lwork = to_lwork(c, s)
+
+        # allocate the workspace + tau
+        work = <blas_t*>libc.stdlib.malloc((lwork+min(m-n, p))*sizeof(blas_t))
+        if not work:
+            return MEMORY_ERROR
+        tau = work + lwork
+
+        # qr
+        info = geqrf(m-n, p, index2(u, us, n, 0), us[1], tau, work, lwork)
+        if info < 0:
+            libc.stdlib.free(work)
+            return libc.stdlib.abs(info)
+
+        # apply the Q from this small qr to the last (m-n) columns of q.
+        info = ormqr(sideR, trans, m, m-n, p, index2(u, us, n, 0), us[1], tau,
+                index2(q, qs, 0, n), qs[1], work, lwork)
+        if info < 0:
+            libc.stdlib.free(work)
+            return info
+
+        # reduce u the rest of the way to upper triangular using givens.
+        for i in range(p):
+            for j in range(n+i-1, i-1, -1):
+                lartg(index2(u, us, j, i), index2(u, us, j+1, i), &c, &s)
+                if p-i-1:
+                    rot(p-i-1, index2(u, us, j, i+1), us[1],
+                            index2(u, us, j+1, i+1), us[1], c, s)
+                rot(n, row(r, rs, j), rs[1], row(r, rs, j+1), rs[1], c, s)
+                rot(m, col(q, qs, j), qs[0], col(q, qs, j+1), qs[0],
+                        c, s.conjugate())
+
+    else: # m == n or m < n
+        # reduce u to upper triangular using givens.
+        for i in range(p):
+            for j in range(m-2, i-1, -1):
+                lartg(index2(u, us, j, i), index2(u, us, j+1, i), &c, &s)
+                if p-i-1:
+                    rot(p-i-1, index2(u, us, j, i+1), us[1],
+                            index2(u, us, j+1, i+1), us[1], c, s)
+                rot(n, row(r, rs, j), rs[1], row(r, rs, j+1), rs[1], c, s)
+                rot(m, col(q, qs, j), qs[0], col(q, qs, j+1), qs[0],
+                        c, s.conjugate())
+
+        # allocate workspace
+        work = <blas_t*>libc.stdlib.malloc(n*sizeof(blas_t))
+        if not work:
+            return MEMORY_ERROR
+
+    # now form UV**H and add it to R.
+    # This won't fill in any more of R than we have already.
+    blas_t_2d_conj(p, n, v, vs)
+    trmm(sideL, uplo, trans, diag, p, n, 1, u, us[1], v, vs[1])
+
+    # (should this be n, p length adds instead since these are fortan contig?)
+    for j in range(p):
+        axpy(n, 1, row(v, vs, j), vs[1], row(r, rs, j), rs[1])
+
+    # now r has p subdiagonals, eliminate them with reflectors.
+    p_subdiag_qr(m, n, q, qs, r, rs, 0, p, work)
+
+    libc.stdlib.free(work)
     return 0
 
 cdef void hessenberg_qr(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
@@ -1232,6 +1371,244 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qu=True):
         return q1, rnew
     else:
         raise ValueError("which must be either 'row' or 'col'")
+
+@cython.embedsignature(True)
+def qr_update(Q, R, u, v, overwrite_qruv=True):
+    """Rank-k QR update
+
+    If ``A = Q R`` is the qr factorization of A, return the qr factorization
+    of ``A + U V**T for real A or ``A + U V**H`` for complex A.
+
+    Parameters
+    ----------
+    Q : (M, M) array_like
+        Unitary/orthogonal matrix from the qr decomposition of A.
+    R : (M, N) array_like
+        Upper triangular matrix from the qr decomposition of A.
+    u : (M,) or (M, k) array_like
+        Left update vector
+    v : (N,) or (N, k) array_like
+        Right update vector
+    overwrite_qruv : bool, optional
+        If True, consume Q, R, and v, if possible, while performing the update,
+        otherwise make copies as necessary. Defaults to True.
+
+    Returns
+    -------
+    Q1 : ndarray
+        Updated unitary/orthogonal factor
+    R1 : ndarray
+        Updated upper triangular factor
+
+    Notes
+    -----
+    This routine does not guarantee that the diagonal entries of `R1` are
+    positive.
+
+    .. versionadded:: 0.16.0
+
+    Examples
+    --------
+    >>> from scipy import linalg
+    >>> a = np.array([[  3.,  -2.,  -2.],
+                      [  6.,  -9.,  -3.],
+                      [ -3.,  10.,   1.],
+                      [  6.,  -7.,   4.],
+                      [  7.,   8.,  -6.]])
+    >>> q, r = linalg.qr(a)
+
+    Given this q, r decomposition, perform a rank 1 update.
+
+    >>> u = np.array([7., -2., 4., 3., 5.])
+    >>> v = np.array([1., 3., -5.])
+    >>> q_up, r_up = linalg.qr_update(q, r, u, v, False)
+    >>> q_up
+    array([[ 0.54073807,  0.18645997,  0.81707661, -0.02136616,  0.06902409],
+           [ 0.21629523, -0.63257324,  0.06567893,  0.34125904, -0.65749222],
+           [ 0.05407381,  0.64757787, -0.12781284, -0.20031219, -0.72198188],
+           [ 0.48666426, -0.30466718, -0.27487277, -0.77079214,  0.0256951 ],
+           [ 0.64888568,  0.23001   , -0.4859845 ,  0.49883891,  0.20253783]])
+    >>> r_up
+    array([[ 18.49324201,  24.11691794, -44.98940746],
+           [  0.        ,  31.95894662, -27.40998201],
+           [  0.        ,   0.        ,  -9.25451794],
+           [  0.        ,   0.        ,   0.        ],
+           [  0.        ,   0.        ,   0.        ]])
+    
+    The update is equivalent, but faster than the following.
+
+    >>> a_up = a + np.outer(u, v)
+    >>> q_direct, r_direct = linalg.qr(a_up)
+
+    Check that we have equivalent results:
+
+    >>> np.allclose(np.dot(q_up, r_up), a_up)
+    True
+
+    And the updated Q is still unitary:
+
+    >>> np.allclose(np.dot(q_up.T, q_up), np.eye(5))
+    True
+
+    Similarly, perform a rank 2 update.
+    >>> u2 = np.array([[ 7., -1,],
+                       [-2.,  4.],
+                       [ 4.,  2.],
+                       [ 3., -6.],
+                       [ 5.,  3.]])
+    >>> v2 = np.array([[ 1., 2.],
+                       [ 3., 4.],
+                       [-5., 2]])
+    >>> q_up2, r_up2 = linalg.qr_update(q, r, u, v, False)
+    >>> q_up2
+    array([[-0.33626508, -0.03477253,  0.61956287, -0.64352987, -0.29618884],
+           [-0.50439762,  0.58319694, -0.43010077, -0.33395279,  0.33008064],
+           [-0.21016568, -0.63123106,  0.0582249 , -0.13675572,  0.73163206],
+           [ 0.12609941,  0.49694436,  0.64590024,  0.31191919,  0.47187344],
+           [-0.75659643, -0.11517748,  0.10284903,  0.5986227 , -0.21299983]])
+    >>> r_up2
+    array([[-23.79075451, -41.1084062 ,  24.71548348],
+           [  0.        , -33.83931057,  11.02226551],
+           [  0.        ,   0.        , -48.91476811],
+           [ -0.        ,   0.        ,   0.        ],
+           [  0.        ,   0.        ,   0.        ]])
+
+    This update is also a valid qr decomposition of ``A + U V**T``.
+
+    >>> a_up2 = a + np.dot(u2, v2.T)
+    >>> np.allclose(a_up2, np.dot(q_up2, r_up2))
+    True
+    >>> np.allclose(np.dot(q_up2.T, q_up2), np.eye(5))
+    True
+
+    """
+    cdef cnp.ndarray q1, r1, u1, v1, qTu
+    cdef int uv_flags = cnp.NPY_BEHAVED_NS | cnp.NPY_ELEMENTSTRIDES
+    cdef int typecode, p, m, n, info
+    cdef int qs[2]
+    cdef int rs[2]
+    cdef void* qTuvoid
+    cdef int qTus[2]
+    cdef int vs[2]
+
+    # validate u and v first, since the rank of the update determines our
+    # requirements on Q and R.
+    if not overwrite_qruv:
+        uv_flags |= cnp.NPY_ENSURECOPY
+    u1 = PyArray_CheckFromAny(u, NULL, 0, 0, uv_flags, NULL)
+    v1 = PyArray_CheckFromAny(v, NULL, 0, 0, uv_flags, NULL)
+
+    if u1.ndim > 2 or v1.ndim > 2:
+        raise ValueError('u and v can be no more than 2d')
+
+    if u1.ndim != v1.ndim:
+        raise ValueError('u and v must have the same number of dimensions')
+    
+    if u1.ndim == 2 and u1.shape[1] != v1.shape[1]:
+        raise ValueError('Second dimension of u and v must be the same')
+
+    if u1.ndim == 1:
+        p = 1
+        # Here we only require that Q be contiguous, either C or F order is
+        # fine. There isn't really any way to specify that to
+        # PyArray_CheckFromAny so we allow any order through, then copy if
+        # necessary.
+        q1, r1, typecode, m, n = validate_qr(Q, R, overwrite_qruv, NPY_ANYORDER,
+                overwrite_qruv, NPY_ANYORDER)
+        if not cnp.PyArray_ISONESEGMENT(q1):
+            q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
+    else:
+        p = u1.shape[1]
+        q1, r1, typecode, m, n = validate_qr(Q, R, overwrite_qruv,
+                cnp.NPY_F_CONTIGUOUS, overwrite_qruv, cnp.NPY_F_CONTIGUOUS)
+        # for a rank p update, u must also be contiguous
+        if not cnp.PyArray_ISONESEGMENT(u1):
+            u1 = PyArray_FromArraySafe(u1, NULL, cnp.NPY_F_CONTIGUOUS)
+        # and v.T must be F contiguous --> v must be C contiguous
+        if not cnp.PyArray_CHKFLAGS(v1, cnp.NPY_C_CONTIGUOUS):
+            v1 = PyArray_FromArraySafe(v1, NULL, cnp.NPY_C_CONTIGUOUS)
+
+    if cnp.PyArray_TYPE(u1) != typecode or cnp.PyArray_TYPE(v1) != typecode:
+        raise ValueError('u and v must have the same type as Q and R')
+
+    if u1.shape[0] != m: 
+        raise ValueError('u.shape[0] must equal Q.shape[0]')
+
+    if v1.shape[0] != n:
+        raise ValueError('v.shape[0] must equal R.shape[1]')
+
+    # limit p to at most max(n, m)
+    if p > n or p > m:
+        raise ValueError('Update rank larger than np.dot(Q, R).')
+        
+    u1 = validate_array(u1)
+    v1 = validate_array(v1)
+    qTu = cnp.PyArray_ZEROS(u1.ndim, u1.shape, typecode, 1)
+    qTuvoid = extract(qTu, qTus)
+    form_qTu(q1, u1, qTuvoid, qTus, 0)
+    
+    if p == 1:
+        if typecode == cnp.NPY_FLOAT:
+            qr_rank_1_update(m, n,
+                <float*>extract(q1, qs), qs,
+                <float*>extract(r1, rs), rs,
+                <float*>qTuvoid, qTus,
+                <float*>extract(v1, vs), vs)
+        elif typecode == cnp.NPY_DOUBLE:
+            qr_rank_1_update(m, n,
+                <double*>extract(q1, qs), qs,
+                <double*>extract(r1, rs), rs,
+                <double*>qTuvoid, qTus,
+                <double*>extract(v1, vs), vs)
+        elif typecode == cnp.NPY_CFLOAT:
+            qr_rank_1_update(m, n,
+                <float_complex*>extract(q1, qs), qs,
+                <float_complex*>extract(r1, rs), rs,
+                <float_complex*>qTuvoid, qTus,
+                <float_complex*>extract(v1, vs), vs)
+        else: # cnp.NPY_CDOUBLE
+            qr_rank_1_update(m, n,
+                <double_complex*>extract(q1, qs), qs,
+                <double_complex*>extract(r1, rs), rs,
+                <double_complex*>qTuvoid, qTus,
+                <double_complex*>extract(v1, vs), vs)
+    else:
+        # can we do better than this python call?
+        v1 = v1.T
+        if typecode == cnp.NPY_FLOAT:
+            info = qr_rank_p_update(m, n, p,
+                <float*>extract(q1, qs), qs,
+                <float*>extract(r1, rs), rs,
+                <float*>qTuvoid, qTus,
+                <float*>extract(v1, vs), vs)
+        elif typecode == cnp.NPY_DOUBLE:
+            info = qr_rank_p_update(m, n, p,
+                <double*>extract(q1, qs), qs,
+                <double*>extract(r1, rs), rs,
+                <double*>qTuvoid, qTus,
+                <double*>extract(v1, vs), vs)
+        elif typecode == cnp.NPY_CFLOAT:
+            info = qr_rank_p_update(m, n, p,
+                <float_complex*>extract(q1, qs), qs,
+                <float_complex*>extract(r1, rs), rs,
+                <float_complex*>qTuvoid, qTus,
+                <float_complex*>extract(v1, vs), vs)
+        else: # cnp.NPY_CDOUBLE
+            info = qr_rank_p_update(m, n, p,
+                <double_complex*>extract(q1, qs), qs,
+                <double_complex*>extract(r1, rs), rs,
+                <double_complex*>qTuvoid, qTus,
+                <double_complex*>extract(v1, vs), vs)
+        if info != 0:
+            if info > 0: 
+                raise ValueError('The {0}th argument to ?geqrf was'
+                        'invalid'.format(info))
+            elif info < 0:
+                raise ValueError('The {0}th argument to ?ormqr/?unmqr was'
+                        'invalid'.format(abs(info)))
+            elif info == MEMORY_ERROR:
+                raise MemoryError('malloc failed')
+    return q1, r1
 
 cnp.import_array()
 

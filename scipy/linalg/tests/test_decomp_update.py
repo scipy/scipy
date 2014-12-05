@@ -749,6 +749,241 @@ class TestQRinsert_d(BaseQRinsert):
 class TestQRinsert_D(BaseQRinsert):
     dtype = np.dtype('D')
 
+class BaseQRupdate(BaseQRdeltas):
+    def generate(self, type, mode='full', p=1):
+        a, q, r = super(BaseQRupdate, self).generate(type, mode)
+
+        # super call set the seed...
+        u = np.random.random((q.shape[0], p))
+        v = np.random.random((r.shape[1], p))
+
+        u = np.squeeze(u)
+        v = np.squeeze(v)
+
+        if np.iscomplexobj(self.dtype.type(1)):
+            b = np.random.random(u.shape)
+            u = u + 1j * b
+
+            c = np.random.random(v.shape)
+            v = v + 1j * c
+
+        u = u.astype(self.dtype)
+        v = v.astype(self.dtype)
+        return a, q, r, u, v
+
+    def test_sqr_rank_1(self):
+        a, q, r, u, v = self.generate('sqr')
+        q1, r1 = qr_update(q, r, u, v, False)
+        a1 = a + np.outer(u, v.conj())
+        check_qr(q1, r1, a1, self.rtol, self.atol)
+
+    def test_sqr_rank_p(self):
+        # test ndim = 2, rank 1 updates here too
+        for p in [1, 2, 3, 5]:
+            a, q, r, u, v = self.generate('sqr', p=p)
+            if p == 1:
+                u = u.reshape(u.size, 1)
+                v = v.reshape(v.size, 1)
+            q1, r1 = qr_update(q, r, u, v, False)
+            a1 = a + np.dot(u, v.T.conj())
+            check_qr(q1, r1, a1, self.rtol, self.atol)
+
+    def test_tall_rank_1(self):
+        a, q, r, u, v = self.generate('tall')
+        q1, r1 = qr_update(q, r, u, v, False)
+        a1 = a + np.outer(u, v.conj())
+        check_qr(q1, r1, a1, self.rtol, self.atol)
+
+    def test_tall_rank_p(self):
+        for p in [1, 2, 3, 5]:
+            a, q, r, u, v = self.generate('tall', p=p)
+            if p == 1:
+                u = u.reshape(u.size, 1)
+                v = v.reshape(v.size, 1)
+            q1, r1 = qr_update(q, r, u, v, False)
+            a1 = a + np.dot(u, v.T.conj())
+            check_qr(q1, r1, a1, self.rtol, self.atol)
+
+    def test_fat_rank_1(self):
+        a, q, r, u, v = self.generate('fat')
+        q1, r1 = qr_update(q, r, u, v, False)
+        a1 = a + np.outer(u, v.conj())
+        check_qr(q1, r1, a1, self.rtol, self.atol)
+
+    def test_fat_rank_p(self):
+        for p in [1, 2, 3, 5]:
+            a, q, r, u, v = self.generate('fat', p=p)
+            if p == 1:
+                u = u.reshape(u.size, 1)
+                v = v.reshape(v.size, 1)
+            q1, r1 = qr_update(q, r, u, v, False)
+            a1 = a + np.dot(u, v.T.conj())
+            check_qr(q1, r1, a1, self.rtol, self.atol)
+
+    def base_non_simple_strides(self, adjust_strides, p, overwriteable):
+        for type in ['sqr', 'tall', 'fat']:
+            a, q0, r0, u0, v0 = self.generate(type, p=p)
+            qs, rs, us, vs = adjust_strides((q0, r0, u0, v0))
+            if p == 1:
+                aup = a + np.outer(u0, v0.conj())
+            else:
+                aup = a + np.dot(u0, v0.T.conj())
+
+            # for each variable, q, r, u, v we try with it strided and
+            # overwrite=False. Then we try with overwrite=True, and make
+            # sure that if p == 1, r and v are still overwritten.
+            # a strided q and u must always be copied.
+
+            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F'); v = v0.copy('C')
+            q1, r1 = qr_update(qs, r, u, v, False)
+            check_qr(q1, r1, aup, self.rtol, self.atol)
+            q1o, r1o = qr_update(qs, r, u, v, True)
+            check_qr(q1o, r1o, aup, self.rtol, self.atol)
+            if overwriteable:
+                assert_allclose(r1o, r, rtol=self.rtol, atol=self.atol)
+                assert_allclose(v, v0.conj(), rtol=self.rtol, atol=self.atol)
+
+            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F'); v = v0.copy('C')
+            q2, r2 = qr_update(q, rs, u, v, False)
+            check_qr(q2, r2, aup, self.rtol, self.atol)
+            q2o, r2o = qr_update(q, rs, u, v, True)
+            check_qr(q2o, r2o, aup, self.rtol, self.atol)
+            if overwriteable:
+                assert_allclose(r2o, rs, rtol=self.rtol, atol=self.atol)
+                assert_allclose(v, v0.conj(), rtol=self.rtol, atol=self.atol)
+
+            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F'); v = v0.copy('C')
+            q3, r3 = qr_update(q, r, us, v, False)
+            check_qr(q3, r3, aup, self.rtol, self.atol)
+            q3o, r3o = qr_update(q, r, us, v, True)
+            check_qr(q3o, r3o, aup, self.rtol, self.atol)
+            if overwriteable:
+                assert_allclose(r3o, r, rtol=self.rtol, atol=self.atol)
+                assert_allclose(v, v0.conj(), rtol=self.rtol, atol=self.atol)
+
+            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F'); v = v0.copy('C')
+            q4, r4 = qr_update(q, r, u, vs, False)
+            check_qr(q4, r4, aup, self.rtol, self.atol)
+            q4o, r4o = qr_update(q, r, u, vs, True)
+            check_qr(q4o, r4o, aup, self.rtol, self.atol)
+            if overwriteable:
+                assert_allclose(r4o, r, rtol=self.rtol, atol=self.atol)
+                assert_allclose(vs, v0.conj(), rtol=self.rtol, atol=self.atol)
+
+            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F'); v = v0.copy('C')
+            # since some of these were consumed above
+            qs, rs, us, vs = adjust_strides((q, r, u, v))
+            q5, r5 = qr_update(qs, rs, us, vs, False)
+            check_qr(q5, r5, aup, self.rtol, self.atol)
+            q5o, r5o = qr_update(qs, rs, us, vs, True)
+            check_qr(q5o, r5o, aup, self.rtol, self.atol)
+            if overwriteable:
+                assert_allclose(r5o, rs, rtol=self.rtol, atol=self.atol)
+                assert_allclose(vs, v0.conj(), rtol=self.rtol, atol=self.atol)
+
+    def test_non_unit_strides_rank_1(self):
+        self.base_non_simple_strides(make_strided, 1, True)
+
+    def test_non_unit_strides_rank_p(self):
+        self.base_non_simple_strides(make_strided, 3, False)
+
+    def test_neg_strides_rank_1(self):
+        self.base_non_simple_strides(negate_strides, 1, False)
+
+    def test_neg_strides_rank_p(self):
+        self.base_non_simple_strides(negate_strides, 3, False)
+    
+    def test_non_itemsize_strides_rank_1(self):
+        self.base_non_simple_strides(nonitemsize_strides, 1, False)
+
+    def test_non_itemsize_strides_rank_p(self):
+        self.base_non_simple_strides(nonitemsize_strides, 3, False)
+
+    def test_non_native_byte_order_rank_1(self):
+        self.base_non_simple_strides(make_nonnative, 1, False)
+
+    def test_non_native_byte_order_rank_p(self):
+        self.base_non_simple_strides(make_nonnative, 3, False)
+
+    def test_overwrite_qruv_rank_1(self):
+        # Any positive strided q, r, u, and v can be overwritten for a rank 1 
+        # update, only checking C and F contiguous.
+        a, q0, r0, u0, v0 = self.generate('sqr')
+        a1 = a + np.outer(u0, v0.conj())
+        q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F'); v = v0.copy('F')
+
+        # don't overwrite
+        q1, r1 = qr_update(q, r, u, v, False)
+        check_qr(q1, r1, a1, self.rtol, self.atol)
+        check_qr(q, r, a, self.rtol, self.atol)
+
+        q2, r2 = qr_update(q, r, u, v, True)
+        check_qr(q2, r2, a1, self.rtol, self.atol)
+        # verify the overwriting, no good way to check u and v.
+        assert_allclose(q2, q, rtol=self.rtol, atol=self.atol)
+        assert_allclose(r2, r, rtol=self.rtol, atol=self.atol)
+
+        q = q0.copy('C'); r = r0.copy('C'); u = u0.copy('C'); v = v0.copy('C')
+        q3, r3 = qr_update(q, r, u, v, True)
+        check_qr(q3, r3, a1, self.rtol, self.atol)
+        assert_allclose(q3, q, rtol=self.rtol, atol=self.atol)
+        assert_allclose(r3, r, rtol=self.rtol, atol=self.atol)
+
+    def test_overwrite_qruv_rank_p(self):
+        # for rank p updates, q r must be F contiguous, v must be C (v.T --> F)
+        # and u can be C or F, but is only overwritten if Q is C and complex
+        a, q0, r0, u0, v0 = self.generate('sqr', p=3)
+        a1 = a + np.dot(u0, v0.T.conj())
+        q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F'); v = v0.copy('C')
+
+        # don't overwrite
+        q1, r1 = qr_update(q, r, u, v, False)
+        check_qr(q1, r1, a1, self.rtol, self.atol)
+        check_qr(q, r, a, self.rtol, self.atol)
+
+        q2, r2 = qr_update(q, r, u, v, True)
+        check_qr(q2, r2, a1, self.rtol, self.atol)
+        # verify the overwriting, no good way to check u and v.
+        assert_allclose(q2, q, rtol=self.rtol, atol=self.atol)
+        assert_allclose(r2, r, rtol=self.rtol, atol=self.atol)
+
+    def test_economic_qr(self):
+        a, q, r, u, v = self.generate('tall', mode='economic')
+        assert_raises(ValueError, qr_update, q, r, u, v)
+
+    def test_empty_inputs(self):
+        a, q, r, u, v = self.generate('tall')
+        assert_raises(ValueError, qr_update, np.array([]), r, u, v)
+        assert_raises(ValueError, qr_update, q, np.array([]), u, v)
+        assert_raises(ValueError, qr_update, q, r, np.array([]), v)
+        assert_raises(ValueError, qr_update, q, r, u, np.array([]))
+
+    def test_mismatched_shapes(self):
+        a, q, r, u, v = self.generate('tall')
+        assert_raises(ValueError, qr_update, q, r[1:], u, v)
+        assert_raises(ValueError, qr_update, q[:-2], r, u, v)
+        assert_raises(ValueError, qr_update, q, r, u[1:], v)
+        assert_raises(ValueError, qr_update, q, r, u, v[1:])
+
+    def test_integer_input(self):
+        q = np.arange(16).reshape(4, 4)
+        r = q.copy()  # doesn't matter
+        u = q[:, 0].copy()
+        v = r[0, :].copy()
+        assert_raises(ValueError, qr_update, q, r, u, v)
+
+class TestQRupdate_f(BaseQRupdate):
+    dtype = np.dtype('f')
+
+class TestQRupdate_F(BaseQRupdate):
+    dtype = np.dtype('F')
+
+class TestQRupdate_d(BaseQRupdate):
+    dtype = np.dtype('d')
+
+class TestQRupdate_D(BaseQRupdate):
+    dtype = np.dtype('D')
+
 def test_form_qTu():
     # we want to ensure that all of the code paths through this function are tested,
     # Most of them should be hit with the rest of test suite, but explicit tests make
