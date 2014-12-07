@@ -988,7 +988,7 @@ class TestCompareWithStats(TestCase):
                 x, y, xm, ym = self.generate_xy_sample(n)
                 r = stats.skewtest(x)
                 rm = stats.mstats.skewtest(xm)
-                assert_equal(r[0], rm[0])
+                assert_allclose(r[0], rm[0], rtol=1e-15)
                 # TODO this test is not performed as it is a known issue that
                 # mstats returns a slightly different p-value what is a bit
                 # strange is that other tests like test_maskedarray_input don't

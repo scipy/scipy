@@ -79,7 +79,7 @@ class TestSS2TF:
         assert_allclose(a0, a, rtol=1e-13)
         assert_allclose(a1, a, rtol=1e-13)
         assert_allclose(a2, a, rtol=1e-13)
-        assert_allclose(b_all, np.vstack((b0, b1, b2)), rtol=1e-13)
+        assert_allclose(b_all, np.vstack((b0, b1, b2)), rtol=1e-13, atol=1e-14)
 
 
 class Test_lsim2(object):

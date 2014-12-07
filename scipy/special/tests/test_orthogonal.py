@@ -297,13 +297,13 @@ def test_j_roots():
     verify_gauss_quad(roots(0.5, -0.5), evalf(0.5, -0.5), 25, atol=1e-13)
     verify_gauss_quad(roots(0.5, -0.5), evalf(0.5, -0.5), 100, atol=1e-12)
 
-    verify_gauss_quad(roots(1, 0.5), evalf(1, 0.5), 5)
-    verify_gauss_quad(roots(1, 0.5), evalf(1, 0.5), 25, atol=1e-13)
+    verify_gauss_quad(roots(1, 0.5), evalf(1, 0.5), 5, atol=2e-13)
+    verify_gauss_quad(roots(1, 0.5), evalf(1, 0.5), 25, atol=2e-13)
     verify_gauss_quad(roots(1, 0.5), evalf(1, 0.5), 100, atol=1e-12)
 
     verify_gauss_quad(roots(0.9, 2), evalf(0.9, 2), 5)
     verify_gauss_quad(roots(0.9, 2), evalf(0.9, 2), 25, atol=1e-13)
-    verify_gauss_quad(roots(0.9, 2), evalf(0.9, 2), 100, atol=1e-13)
+    verify_gauss_quad(roots(0.9, 2), evalf(0.9, 2), 100, atol=2e-13)
 
     verify_gauss_quad(roots(18.24, 27.3), evalf(18.24, 27.3), 5)
     verify_gauss_quad(roots(18.24, 27.3), evalf(18.24, 27.3), 25)
@@ -368,8 +368,8 @@ def test_js_roots():
     verify_gauss_quad(roots(47.1, 0.2), evalf(47.1, 0.2), 25, atol=1e-11)
     verify_gauss_quad(roots(47.1, 0.2), evalf(47.1, 0.2), 100, atol=1e-10)
 
-    verify_gauss_quad(roots(68.9, 2.25), evalf(68.9, 2.25), 5)
-    verify_gauss_quad(roots(68.9, 2.25), evalf(68.9, 2.25), 25, atol=1e-13)
+    verify_gauss_quad(roots(68.9, 2.25), evalf(68.9, 2.25), 5, atol=2e-14)
+    verify_gauss_quad(roots(68.9, 2.25), evalf(68.9, 2.25), 25, atol=2e-13)
     verify_gauss_quad(roots(68.9, 2.25), evalf(68.9, 2.25), 100, atol=1e-12)
 
     x, w = orth.js_roots(5, 3, 2, False)
