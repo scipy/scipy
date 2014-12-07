@@ -7,25 +7,33 @@ matrix:
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NUMPYSPEC=
+        - NUMPYSPEC=numpy
     - python: 3.3
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NUMPYSPEC=
+        - NUMPYSPEC=numpy
     - python: 2.7
       env:
         - TESTMODE=full
         - COVERAGE=--coverage
+        - NUMPYSPEC=numpy        
     - python: 2.6
       env:
         - TESTMODE=fast
-        - NUMPYSPEC===1.5.1
         - OPTIMIZE=-OO
+        - NUMPYSPEC="numpy==1.5.1"
+    - python: 2.7
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - NPY_RELAXED_STRIDES_CHECKING=1
+        - NUMPYSPEC="git+git://github.com/numpy/numpy.git@v1.9.1"
     - python: 2.7
       env:
         - PYFLAKES=1
         - PEP8=1
+        - NUMPYSPEC=numpy
       before_install:
         - pip install pep8==1.5.1
         - pip install pyflakes
@@ -54,13 +62,14 @@ before_install:
   # End install gmpy2 dependencies
   # Speed up install by not compiling Cython
   - pip install --install-option="--no-cython-compile" Cython
-  - pip install numpy$NUMPYSPEC
+  - pip install $NUMPYSPEC
   - pip install nose mpmath argparse
   - pip install gmpy2  # speeds up mpmath (scipy.special tests)
   - if [ "${TESTMODE}" == "full" ]; then pip install coverage coveralls; fi
   - python -V
   - popd
 script:
+  - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
   - python $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE
 notifications:
   # Perhaps we should have status emails sent to the mailing list, but
