@@ -10,7 +10,6 @@ from scipy.special import entr, gammaln as gamln
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
 import numpy as np
-import numpy.random as mtrand
 
 from ._distn_infrastructure import (
         rv_discrete, _lazywhere, _ncx2_pdf, _ncx2_cdf, get_distribution_names)
@@ -35,7 +34,7 @@ class binom_gen(rv_discrete):
 
     """
     def _rvs(self, n, p):
-        return mtrand.binomial(n, p, self._size)
+        return self._random_state.binomial(n, p, self._size)
 
     def _argcheck(self, n, p):
         self.b = n
@@ -149,7 +148,7 @@ class nbinom_gen(rv_discrete):
 
     """
     def _rvs(self, n, p):
-        return mtrand.negative_binomial(n, p, self._size)
+        return self._random_state.negative_binomial(n, p, self._size)
 
     def _argcheck(self, n, p):
         return (n > 0) & (p >= 0) & (p <= 1)
@@ -206,7 +205,7 @@ class geom_gen(rv_discrete):
 
     """
     def _rvs(self, p):
-        return mtrand.geometric(p, size=self._size)
+        return self._random_state.geometric(p, size=self._size)
 
     def _argcheck(self, p):
         return (p <= 1) & (p >= 0)
@@ -295,7 +294,7 @@ class hypergeom_gen(rv_discrete):
 
     """
     def _rvs(self, M, n, N):
-        return mtrand.hypergeometric(n, M-n, N, size=self._size)
+        return self._random_state.hypergeometric(n, M-n, N, size=self._size)
 
     def _argcheck(self, M, n, N):
         cond = rv_discrete._argcheck(self, M, n, N)
@@ -376,7 +375,7 @@ class logser_gen(rv_discrete):
     def _rvs(self, p):
         # looks wrong for p>0.5, too few k=1
         # trying to use generic is worse, no k=1 at all
-        return mtrand.logseries(p, size=self._size)
+        return self._random_state.logseries(p, size=self._size)
 
     def _argcheck(self, p):
         return (p > 0) & (p < 1)
@@ -420,7 +419,7 @@ class poisson_gen(rv_discrete):
 
     """
     def _rvs(self, mu):
-        return mtrand.poisson(mu, self._size)
+        return self._random_state.poisson(mu, self._size)
 
     def _logpmf(self, k, mu):
         Pk = k*log(mu)-gamln(k+1) - mu
@@ -613,7 +612,7 @@ class randint_gen(rv_discrete):
 
         If ``high`` is ``None``, then range is >=0  and < low
         """
-        return mtrand.randint(low, high, self._size)
+        return self._random_state.randint(low, high, self._size)
 
     def _entropy(self, low, high):
         return log(high - low)
@@ -641,7 +640,7 @@ class zipf_gen(rv_discrete):
 
     """
     def _rvs(self, a):
-        return mtrand.zipf(a, size=self._size)
+        return self._random_state.zipf(a, size=self._size)
 
     def _argcheck(self, a):
         return a > 1
@@ -732,7 +731,8 @@ class skellam_gen(rv_discrete):
     """
     def _rvs(self, mu1, mu2):
         n = self._size
-        return mtrand.poisson(mu1, n) - mtrand.poisson(mu2, n)
+        return (self._random_state.poisson(mu1, n) -
+                self._random_state.poisson(mu2, n))
 
     def _pmf(self, x, mu1, mu2):
         px = np.where(x < 0,

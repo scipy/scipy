@@ -10,7 +10,7 @@ from scipy import stats
 from common_tests import (check_normalization, check_moment, check_mean_expect,
         check_var_expect, check_skew_expect, check_kurt_expect,
         check_entropy, check_private_entropy, NUMPY_BELOW_1_7,
-        check_edge_support, check_named_args)
+        check_edge_support, check_named_args, check_random_state)
 
 from scipy.stats._distr_params import distcont
 
@@ -125,6 +125,7 @@ def test_cont_basic():
                       'pareto': 1.5, 'tukeylambda': 0.3}
             x = spec_x.get(distname, 0.5)
             yield check_named_args, distfn, x, arg, locscale_defaults, meths
+            yield check_random_state, distfn, arg
 
             # Entropy
             skp = npt.dec.skipif
@@ -182,6 +183,7 @@ def test_cont_basic_slow():
             elif distname == 'ksone':
                 arg = (3,)
             yield check_named_args, distfn, x, arg, locscale_defaults, meths
+            yield check_random_state, distfn, arg
 
             # Entropy
             skp = npt.dec.skipif
