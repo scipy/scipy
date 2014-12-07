@@ -269,9 +269,13 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         # check jacobian
         cjac = con.get('jac')
         if cjac is None:
-            # approximate jacobian function
-            def cjac(x, *args):
-                return approx_jacobian(x, con['fun'], epsilon, *args)
+            # approximate jacobian function.  The factory function is needed
+            # to keep a reference to `fun`, see gh-4240.
+            def cjac_factory(fun):
+                def cjac(x, *args):
+                    return approx_jacobian(x, fun, epsilon, *args)
+                return cjac
+            cjac = cjac_factory(con['fun'])
 
         # update constraints' dictionary
         cons[ctype] += ({'fun': con['fun'],
