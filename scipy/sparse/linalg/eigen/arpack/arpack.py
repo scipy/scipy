@@ -54,6 +54,7 @@ from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse.sputils import isdense
 from scipy.sparse.linalg import gmres, splu
 from scipy.linalg.lapack import get_lapack_funcs
+from scipy.lib._util import _aligned_zeros
 
 
 _type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z'}
@@ -508,8 +509,9 @@ class _SymmetricArpackParams(_ArpackParams):
         if self.ncv > n or self.ncv <= k:
             raise ValueError("ncv must be k<ncv<=n, ncv=%s" % self.ncv)
 
-        self.workd = np.zeros(3 * n, self.tp)
-        self.workl = np.zeros(self.ncv * (self.ncv + 8), self.tp)
+        # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
+        self.workd = _aligned_zeros(3 * n, self.tp)
+        self.workl = _aligned_zeros(self.ncv * (self.ncv + 8), self.tp)
 
         ltr = _type_conv[self.tp]
         if ltr not in ["s", "d"]:
@@ -690,8 +692,9 @@ class _UnsymmetricArpackParams(_ArpackParams):
         if self.ncv > n or self.ncv <= k + 1:
             raise ValueError("ncv must be k+1<ncv<=n, ncv=%s" % self.ncv)
 
-        self.workd = np.zeros(3 * n, self.tp)
-        self.workl = np.zeros(3 * self.ncv * (self.ncv + 2), self.tp)
+        # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
+        self.workd = _aligned_zeros(3 * n, self.tp)
+        self.workl = _aligned_zeros(3 * self.ncv * (self.ncv + 2), self.tp)
 
         ltr = _type_conv[self.tp]
         self._arpack_solver = _arpack.__dict__[ltr + 'naupd']
@@ -703,7 +706,8 @@ class _UnsymmetricArpackParams(_ArpackParams):
         self.ipntr = np.zeros(14, "int")
 
         if self.tp in 'FD':
-            self.rwork = np.zeros(self.ncv, self.tp.lower())
+            # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
+            self.rwork = _aligned_zeros(self.ncv, self.tp.lower())
         else:
             self.rwork = None
 
