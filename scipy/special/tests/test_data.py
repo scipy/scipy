@@ -313,12 +313,12 @@ def test_boost():
 
         data(gammainc, 'igamma_small_data_ipp-igamma_small_data', (0,1), 5, rtol=5e-15),
         data(gammainc, 'igamma_med_data_ipp-igamma_med_data', (0,1), 5, rtol=2e-13),
-        data(gammainc, 'igamma_int_data_ipp-igamma_int_data', (0,1), 5, rtol=2e-14),
+        data(gammainc, 'igamma_int_data_ipp-igamma_int_data', (0,1), 5, rtol=2e-13),
         data(gammainc, 'igamma_big_data_ipp-igamma_big_data', (0,1), 5, rtol=2e-9),
         
-        data(gdtr_, 'igamma_small_data_ipp-igamma_small_data', (0,1), 5, rtol=5e-15),
+        data(gdtr_, 'igamma_small_data_ipp-igamma_small_data', (0,1), 5, rtol=1e-13),
         data(gdtr_, 'igamma_med_data_ipp-igamma_med_data', (0,1), 5, rtol=2e-13),
-        data(gdtr_, 'igamma_int_data_ipp-igamma_int_data', (0,1), 5, rtol=2e-14),
+        data(gdtr_, 'igamma_int_data_ipp-igamma_int_data', (0,1), 5, rtol=2e-13),
         data(gdtr_, 'igamma_big_data_ipp-igamma_big_data', (0,1), 5, rtol=2e-9),
 
         data(gammaincc, 'igamma_small_data_ipp-igamma_small_data', (0,1), 3, rtol=8e-5),
