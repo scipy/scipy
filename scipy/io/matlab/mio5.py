@@ -743,7 +743,8 @@ class VarWriter5(object):
                           mxSPARSE_CLASS,
                           is_complex=is_complex,
                           is_logical=is_logical,
-                          nzmax=nz)
+                          # matlab won't load file with 0 nzmax
+                          nzmax=1 if nz == 0 else nz)
         self.write_element(A.indices.astype('i4'))
         self.write_element(A.indptr.astype('i4'))
         self.write_element(A.data.real)

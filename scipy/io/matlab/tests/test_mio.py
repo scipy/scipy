@@ -1048,6 +1048,14 @@ def test_empty_sparse():
     res = loadmat(sio)
     assert_array_equal(res['x'].shape, empty_sparse.shape)
     assert_array_equal(res['x'].todense(), 0)
+    # Do empty sparse matrices get written with max nnz 1?
+    # See https://github.com/scipy/scipy/issues/4208
+    sio.seek(0)
+    reader = MatFile5Reader(sio)
+    reader.initialize_read()
+    reader.read_file_header()
+    hdr, _ = reader.read_var_header()
+    assert_equal(hdr.nzmax, 1)
 
 
 if __name__ == "__main__":

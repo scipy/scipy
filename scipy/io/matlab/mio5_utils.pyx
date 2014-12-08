@@ -126,7 +126,7 @@ cdef class VarHeader5:
     cdef int is_complex
     cdef readonly int is_logical
     cdef public int is_global
-    cdef size_t nzmax
+    cdef readonly size_t nzmax
 
     def set_dims(self, dims):
         """ Allow setting of dimensions from python
