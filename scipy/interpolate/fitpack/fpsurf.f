@@ -242,7 +242,7 @@ c  add the contribution of the row to the sum of squares of residual
 c  right hand sides.
  230      fp = fp+zi**2
 c  find the number of the next data point in the panel.
- 240      in = nummer(in)
+          in = nummer(in)
           go to 150
  250    continue
 c  find dmax, the maximum value for the diagonal elements in the reduced
@@ -302,7 +302,7 @@ c  find for each interval the sum of squared residuals fpint for the
 c  data points having the coordinate belonging to that knot interval.
 c  calculate also coord which is the same sum, weighted by the position
 c  of the data points considered.
- 310    do 320 i=1,nrint
+        do 320 i=1,nrint
           fpint(i) = 0.
           coord(i) = 0.
  320    continue

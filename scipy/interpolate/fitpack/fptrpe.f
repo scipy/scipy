@@ -14,7 +14,7 @@ c  ..array arguments..
       integer nr(m)
 c  ..local scalars..
       real*8 co,pinv,piv,si,one
-      integer i,iband,irot,it,ii,i2,i3,j,jj,l,mid,nmd,m2,m3,
+      integer i,irot,it,ii,i2,i3,j,jj,l,mid,nmd,m2,m3,
      * nrold,n4,number,n1,n7,n11,m1
 c  ..local arrays..
       real*8 h(5),h1(5),h2(4)

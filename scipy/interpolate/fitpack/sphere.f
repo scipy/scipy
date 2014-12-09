@@ -1,5 +1,6 @@
       subroutine sphere(iopt,m,teta,phi,r,w,s,ntest,npest,eps,
      *  nt,tt,np,tp,c,fp,wrk1,lwrk1,wrk2,lwrk2,iwrk,kwrk,ier)
+      implicit none
 c  subroutine sphere determines a smooth bicubic spherical spline
 c  approximation s(teta,phi), 0 <= teta <= pi ; 0 <= phi <= 2*pi
 c  to a given set of data points (teta(i),phi(i),r(i)),i=1,2,...,m.
@@ -314,7 +315,7 @@ c  ..array arguments..
       integer iwrk(kwrk)
 c  ..local scalars..
       real*8 tol,pi,pi2,one
-      integer i,ib1,ib3,ki,kn,kwest,la,lbt,lcc,lcs,lro,j
+      integer i,ib1,ib3,ki,kn,kwest,la,lbt,lcc,lcs,lro,j,
      * lbp,lco,lf,lff,lfp,lh,lq,lst,lsp,lwest,maxit,ncest,ncc,ntt,
      * npp,nreg,nrint,ncof,nt4,np4
 c  ..function references..
