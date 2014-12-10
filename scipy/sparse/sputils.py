@@ -111,14 +111,12 @@ def getdtype(dtype, a=None, default=None):
     Furthermore, 'dtype' must be in 'allowed' set.
     """
     #TODO is this really what we want?
-    canCast = True
     if dtype is None:
         try:
             newdtype = a.dtype
         except AttributeError:
             if default is not None:
                 newdtype = np.dtype(default)
-                canCast = False
             else:
                 raise TypeError("could not interpret data type")
     else:

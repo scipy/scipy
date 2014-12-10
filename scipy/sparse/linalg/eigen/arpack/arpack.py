@@ -42,18 +42,14 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['eigs', 'eigsh', 'svds', 'ArpackError', 'ArpackNoConvergence']
 
-import sys
-import warnings
 
 from . import _arpack
 import numpy as np
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
-from scipy.sparse import eye, csc_matrix, csr_matrix, \
-    isspmatrix, isspmatrix_csr
+from scipy.sparse import eye, isspmatrix, isspmatrix_csr
 from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse.sputils import isdense
 from scipy.sparse.linalg import gmres, splu
-from scipy.linalg.lapack import get_lapack_funcs
 from scipy.lib._util import _aligned_zeros
 
 

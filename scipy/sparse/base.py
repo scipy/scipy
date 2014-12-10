@@ -5,7 +5,6 @@ __all__ = ['spmatrix', 'isspmatrix', 'issparse',
         'SparseWarning','SparseEfficiencyWarning']
 
 import sys
-from warnings import warn
 
 import numpy as np
 

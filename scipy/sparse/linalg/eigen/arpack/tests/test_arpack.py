@@ -11,12 +11,12 @@ import warnings
 import numpy as np
 
 from numpy.testing import assert_allclose, \
-        assert_array_almost_equal_nulp, TestCase, run_module_suite, dec, \
-        assert_raises, verbose, assert_equal, assert_array_equal
+        assert_array_almost_equal_nulp, run_module_suite, \
+        assert_raises, assert_equal, assert_array_equal
 
-from numpy import array, finfo, argsort, dot, round, conj, random
+from numpy import dot, conj, random
 from scipy.linalg import eig, eigh
-from scipy.sparse import csc_matrix, csr_matrix, lil_matrix, isspmatrix
+from scipy.sparse import csc_matrix, csr_matrix, isspmatrix
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
      ArpackNoConvergence, arpack
@@ -211,7 +211,6 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
     exact_eval = d['eval'].astype(typ.upper())
     ind = argsort_which(exact_eval, typ, k, which,
                         sigma, OPpart, mode)
-    exact_eval_a = exact_eval
     exact_eval = exact_eval[ind]
 
     # compute arpack eigenvalues
@@ -247,7 +246,6 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
 
         ind = argsort_which(eval, typ, k, which,
                             sigma, OPpart, mode)
-        eval_a = eval
         eval = eval[ind]
         evec = evec[:,ind]
 
@@ -792,7 +790,6 @@ def test_linearoperator_deallocation():
     M_d = np.eye(10)
     M_s = csc_matrix(M_d)
     M_o = aslinearoperator(M_d)
-    v = np.ones(10)
 
     with assert_deallocated(lambda: arpack.SpLuInv(M_s)):
         pass
