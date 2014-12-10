@@ -12,11 +12,11 @@ import math
 import warnings
 
 import numpy as np
-from numpy import array, eye, dot, sqrt, double, exp, random
+from numpy import array, eye, exp, random
 from numpy.linalg import matrix_power
 from numpy.testing import (TestCase, run_module_suite,
         assert_allclose, assert_, assert_array_almost_equal, assert_equal,
-        assert_array_equal, assert_array_almost_equal_nulp, decorators)
+        assert_array_almost_equal_nulp)
 
 from scipy.sparse import csc_matrix, SparseEfficiencyWarning
 from scipy.sparse.construct import eye as speye
@@ -194,7 +194,6 @@ class TestExpM(TestCase):
         # so that it becomes technically not upper triangular.
         random.seed(1234)
         tiny = 1e-17
-        n = 4
         A_logm_perturbed = A_logm.copy()
         A_logm_perturbed[1, 0] = tiny
         A_expm_logm_perturbed = expm(A_logm_perturbed)

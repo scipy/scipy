@@ -4,7 +4,6 @@ import sys
 import os
 import gc
 import re
-import time
 import threading
 
 from nose import SkipTest

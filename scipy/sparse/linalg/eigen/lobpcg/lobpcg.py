@@ -271,8 +271,6 @@ def lobpcg(A, X,
            http://www-math.cudenver.edu/~aknyazev/software/BLOPEX/
 
     """
-    failureFlag = True
-
     blockVectorX = X
     blockVectorY = Y
     residualTolerance = tol
@@ -366,8 +364,6 @@ def lobpcg(A, X,
     # Compute the initial Ritz vectors: solve the eigenproblem.
     blockVectorAX = A(blockVectorX)
     gramXAX = np.dot(blockVectorX.T, blockVectorAX)
-    # gramXBX is X^T * X.
-    gramXBX = np.dot(blockVectorX.T, blockVectorX)
 
     _lambda, eigBlockVector = eigh(gramXAX, check_finite=False)
     ii = np.argsort(_lambda)[:sizeX]
@@ -422,7 +418,6 @@ def lobpcg(A, X,
             ident = np.eye(currentBlockSize, dtype=A.dtype)
 
         if currentBlockSize == 0:
-            failureFlag = False  # All eigenpairs converged.
             break
 
         if verbosityLevel > 0:

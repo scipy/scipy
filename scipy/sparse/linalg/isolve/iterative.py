@@ -5,7 +5,6 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr']
 
 from . import _iterative
-import numpy as np
 
 from scipy.sparse.linalg.interface import LinearOperator
 from scipy.lib.decorator import decorator
