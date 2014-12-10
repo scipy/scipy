@@ -1927,9 +1927,6 @@ class TestDatacopied(TestCase):
         F1 = Fake1()
         F2 = Fake2()
 
-        AF1 = asarray(F1)
-        AF2 = asarray(F2)
-
         for item, status in [(M, False), (A, False), (L, True),
                              (M2, False), (F1, False), (F2, False)]:
             arr = asarray(item)
@@ -2003,7 +2000,6 @@ def test_lapack_misaligned():
     S = np.frombuffer(S.data, offset=4, count=100, dtype=np.float)
     S.shape = 10, 10
     b = np.ones(10)
-    v = np.ones(3,dtype=float)
     LU, piv = lu_factor(S)
     for (func, args, kwargs) in [
             (eig,(S,),dict(overwrite_a=True)),  # crash
@@ -2102,7 +2098,7 @@ def test_orth_memory_efficiency():
     n = 10*1000*1000
     try:
         _check_orth(n)
-    except MemoryError as e:
+    except MemoryError:
         raise AssertionError('memory error perhaps caused by orth regression')
 
 
