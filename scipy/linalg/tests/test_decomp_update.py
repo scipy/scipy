@@ -218,14 +218,15 @@ class BaseQRdelete(BaseQRdeltas):
             else:
                 s = slice(k,k+p)
                 if k < 0:
-                    s = slice(k, k+p+ (a.shape[0] if which == 'row' else a.shape[1]))
+                    s = slice(k, k + p + (a.shape[0] if which == 'row' else a.shape[1]))
                 a1 = np.delete(a, s, 0 if which == 'row' else 1)
 
             # for each variable, q, r we try with it strided and
             # overwrite=False. Then we try with overwrite=True, and make
             # sure that q and r are still overwritten.
 
-            q = q0.copy('F'); r = r0.copy('F') 
+            q = q0.copy('F')
+            r = r0.copy('F') 
             q1, r1 = qr_delete(qs, r, k, p, which, False)
             check_qr(q1, r1, a1, self.rtol, self.atol)
             q1o, r1o = qr_delete(qs, r, k, p, which, True)
@@ -234,7 +235,8 @@ class BaseQRdelete(BaseQRdeltas):
                 assert_allclose(q1o, qs[qind], rtol=self.rtol, atol=self.atol)
                 assert_allclose(r1o, r[rind], rtol=self.rtol, atol=self.atol)
 
-            q = q0.copy('F'); r = r0.copy('F')
+            q = q0.copy('F')
+            r = r0.copy('F')
             q2, r2 = qr_delete(q, rs, k, p, which, False)
             check_qr(q2, r2, a1, self.rtol, self.atol)
             q2o, r2o = qr_delete(q, rs, k, p, which, True)
@@ -243,7 +245,8 @@ class BaseQRdelete(BaseQRdeltas):
                 assert_allclose(q2o, q[qind], rtol=self.rtol, atol=self.atol)
                 assert_allclose(r2o, rs[rind], rtol=self.rtol, atol=self.atol)
 
-            q = q0.copy('F'); r = r0.copy('F')
+            q = q0.copy('F')
+            r = r0.copy('F')
             # since some of these were consumed above
             qs, rs = adjust_strides((q, r))
             q3, r3 = qr_delete(qs, rs, k, p, which, False)
@@ -326,13 +329,15 @@ class BaseQRdelete(BaseQRdeltas):
             a1 = np.delete(a, slice(3, 3+p), 0 if which == 'row' else 1)
 
         # don't overwrite
-        q = q0.copy('F'); r = r0.copy('F')
+        q = q0.copy('F')
+        r = r0.copy('F')
         q1, r1 = qr_delete(q, r, 3, p, which, False)
         check_qr(q1, r1, a1, self.rtol, self.atol)
         check_qr(q, r, a, self.rtol, self.atol)
 
         if test_F:
-            q = q0.copy('F'); r = r0.copy('F')
+            q = q0.copy('F')
+            r = r0.copy('F')
             q2, r2 = qr_delete(q, r, 3, p, which, True)
             check_qr(q2, r2, a1, self.rtol, self.atol)
             # verify the overwriting
@@ -340,7 +345,8 @@ class BaseQRdelete(BaseQRdeltas):
             assert_allclose(r2, r[rind], rtol=self.rtol, atol=self.atol)
 
         if test_C:
-            q = q0.copy('C'); r = r0.copy('C')
+            q = q0.copy('C')
+            r = r0.copy('C')
             q3, r3 = qr_delete(q, r, 3, p, which, True)
             check_qr(q3, r3, a1, self.rtol, self.atol)
             assert_allclose(q3, q[qind], rtol=self.rtol, atol=self.atol)
@@ -568,7 +574,7 @@ class BaseQRinsert(BaseQRdeltas):
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
     def base_non_simple_strides(self, adjust_strides, k, p, which):
-        for type in ['sqr']:#, 'tall', 'fat']:
+        for type in ['sqr', 'tall', 'fat']:
             a, q0, r0, u0 = self.generate(type, which=which, p=p)
             qs, rs, us = adjust_strides((q0, r0, u0))
             if p == 1:
@@ -583,25 +589,33 @@ class BaseQRinsert(BaseQRdeltas):
             # is checked to see if it can be overwritten, since only
             # F ordered Q can be overwritten when adding columns.
 
-            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F')
+            q = q0.copy('F')
+            r = r0.copy('F')
+            u = u0.copy('F')
             q1, r1 = qr_insert(qs, r, u, k, which, False)
             check_qr(q1, r1, ai, self.rtol, self.atol)
             q1o, r1o = qr_insert(qs, r, u, k, which, True)
             check_qr(q1o, r1o, ai, self.rtol, self.atol)
 
-            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F')
+            q = q0.copy('F')
+            r = r0.copy('F')
+            u = u0.copy('F')
             q2, r2 = qr_insert(q, rs, u, k, which, False)
             check_qr(q2, r2, ai, self.rtol, self.atol)
             q2o, r2o = qr_insert(q, rs, u, k, which, True)
             check_qr(q2o, r2o, ai, self.rtol, self.atol)
 
-            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F')
+            q = q0.copy('F')
+            r = r0.copy('F')
+            u = u0.copy('F')
             q3, r3 = qr_insert(q, r, us, k, which, False)
             check_qr(q3, r3, ai, self.rtol, self.atol)
             q3o, r3o = qr_insert(q, r, us, k, which, True)
             check_qr(q3o, r3o, ai, self.rtol, self.atol)
 
-            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F')
+            q = q0.copy('F')
+            r = r0.copy('F')
+            u = u0.copy('F')
             # since some of these were consumed above
             qs, rs, us = adjust_strides((q, r, u))
             q5, r5 = qr_insert(qs, rs, us, k, which, False)
@@ -834,7 +848,10 @@ class BaseQRupdate(BaseQRdeltas):
             # sure that if p == 1, r and v are still overwritten.
             # a strided q and u must always be copied.
 
-            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F'); v = v0.copy('C')
+            q = q0.copy('F')
+            r = r0.copy('F')
+            u = u0.copy('F')
+            v = v0.copy('C')
             q1, r1 = qr_update(qs, r, u, v, False)
             check_qr(q1, r1, aup, self.rtol, self.atol)
             q1o, r1o = qr_update(qs, r, u, v, True)
@@ -843,7 +860,10 @@ class BaseQRupdate(BaseQRdeltas):
                 assert_allclose(r1o, r, rtol=self.rtol, atol=self.atol)
                 assert_allclose(v, v0.conj(), rtol=self.rtol, atol=self.atol)
 
-            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F'); v = v0.copy('C')
+            q = q0.copy('F')
+            r = r0.copy('F')
+            u = u0.copy('F')
+            v = v0.copy('C')
             q2, r2 = qr_update(q, rs, u, v, False)
             check_qr(q2, r2, aup, self.rtol, self.atol)
             q2o, r2o = qr_update(q, rs, u, v, True)
@@ -852,7 +872,10 @@ class BaseQRupdate(BaseQRdeltas):
                 assert_allclose(r2o, rs, rtol=self.rtol, atol=self.atol)
                 assert_allclose(v, v0.conj(), rtol=self.rtol, atol=self.atol)
 
-            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F'); v = v0.copy('C')
+            q = q0.copy('F')
+            r = r0.copy('F')
+            u = u0.copy('F')
+            v = v0.copy('C')
             q3, r3 = qr_update(q, r, us, v, False)
             check_qr(q3, r3, aup, self.rtol, self.atol)
             q3o, r3o = qr_update(q, r, us, v, True)
@@ -861,7 +884,10 @@ class BaseQRupdate(BaseQRdeltas):
                 assert_allclose(r3o, r, rtol=self.rtol, atol=self.atol)
                 assert_allclose(v, v0.conj(), rtol=self.rtol, atol=self.atol)
 
-            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F'); v = v0.copy('C')
+            q = q0.copy('F')
+            r = r0.copy('F')
+            u = u0.copy('F')
+            v = v0.copy('C')
             q4, r4 = qr_update(q, r, u, vs, False)
             check_qr(q4, r4, aup, self.rtol, self.atol)
             q4o, r4o = qr_update(q, r, u, vs, True)
@@ -870,7 +896,10 @@ class BaseQRupdate(BaseQRdeltas):
                 assert_allclose(r4o, r, rtol=self.rtol, atol=self.atol)
                 assert_allclose(vs, v0.conj(), rtol=self.rtol, atol=self.atol)
 
-            q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F'); v = v0.copy('C')
+            q = q0.copy('F')
+            r = r0.copy('F')
+            u = u0.copy('F')
+            v = v0.copy('C')
             # since some of these were consumed above
             qs, rs, us, vs = adjust_strides((q, r, u, v))
             q5, r5 = qr_update(qs, rs, us, vs, False)
@@ -910,7 +939,10 @@ class BaseQRupdate(BaseQRdeltas):
         # update, only checking C and F contiguous.
         a, q0, r0, u0, v0 = self.generate('sqr')
         a1 = a + np.outer(u0, v0.conj())
-        q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F'); v = v0.copy('F')
+        q = q0.copy('F')
+        r = r0.copy('F')
+        u = u0.copy('F')
+        v = v0.copy('F')
 
         # don't overwrite
         q1, r1 = qr_update(q, r, u, v, False)
@@ -923,7 +955,10 @@ class BaseQRupdate(BaseQRdeltas):
         assert_allclose(q2, q, rtol=self.rtol, atol=self.atol)
         assert_allclose(r2, r, rtol=self.rtol, atol=self.atol)
 
-        q = q0.copy('C'); r = r0.copy('C'); u = u0.copy('C'); v = v0.copy('C')
+        q = q0.copy('C')
+        r = r0.copy('C')
+        u = u0.copy('C')
+        v = v0.copy('C')
         q3, r3 = qr_update(q, r, u, v, True)
         check_qr(q3, r3, a1, self.rtol, self.atol)
         assert_allclose(q3, q, rtol=self.rtol, atol=self.atol)
@@ -934,7 +969,10 @@ class BaseQRupdate(BaseQRdeltas):
         # and u can be C or F, but is only overwritten if Q is C and complex
         a, q0, r0, u0, v0 = self.generate('sqr', p=3)
         a1 = a + np.dot(u0, v0.T.conj())
-        q = q0.copy('F'); r = r0.copy('F'); u = u0.copy('F'); v = v0.copy('C')
+        q = q0.copy('F')
+        r = r0.copy('F')
+        u = u0.copy('F')
+        v = v0.copy('C')
 
         # don't overwrite
         q1, r1 = qr_update(q, r, u, v, False)
@@ -995,7 +1033,7 @@ def test_form_qTu():
     # should we test a Mx1 2d array?
 
     q_order = ['F', 'C']
-    u_order = ['F', 'C', 'A'] # here A means is not F not C
+    u_order = ['F', 'C', 'A']  # here A means is not F not C
     u_shape = [1, 3]
     dtype = ['f', 'd', 'F', 'D']
 
