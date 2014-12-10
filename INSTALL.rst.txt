@@ -136,8 +136,8 @@ Use the command::
   git clone https://github.com/scipy/scipy.git
 
 Before building and installing from git, remove the old installation
-(e.g. in /usr/lib/python2.4/site-packages/scipy or
-$HOME/lib/python2.4/site-packages/scipy).  Then type::
+(e.g. in /usr/lib/python3.4/site-packages/scipy or
+$HOME/lib/python3.4/site-packages/scipy).  Then type::
 
   cd scipy
   git clean -xdf
@@ -155,11 +155,11 @@ INSTALLATION
 
 First make sure that all SciPy prerequisites are installed and working
 properly.  Then be sure to remove any old SciPy installations (e.g.
-/usr/lib/python2.4/site-packages/scipy or $HOME/lib/python2.4/
+/usr/lib/python3.4/site-packages/scipy or $HOME/lib/python3.4/
 site-packages/scipy). On windows, if you installed scipy previously from a
 binary, use the remove facility from the add/remove software panel, or remote
 the scipy directory by hand if you installed from sources (e.g.
-C:\Python24\Lib\site-packages\scipy for python 2.4).
+C:\Python34\Lib\site-packages\scipy for python 3.4).
 
 From tarballs
 -------------
@@ -301,7 +301,7 @@ size of the file liblapack.a -- it should be about 6MB. The location
 of liblapack.a is shown by executing
 ::
 
-    python /lib/python2.4/site-packages/numpy/distutils/system_info.py
+    python /lib/python3.4/site-packages/numpy/distutils/system_info.py
 
 (or the appropriate installation directory).
 
@@ -344,7 +344,7 @@ in one command::
 
 1) Platform information::
 
-     python -c 'import os,sys;print os.name,sys.platform'
+     python -c 'import os, sys; print(os.name, sys.platform)'
      uname -a
      OS, its distribution name and version information
      etc.
@@ -359,11 +359,11 @@ in one command::
 
 3) Python version::
 
-     python -c 'import sys;print sys.version'
+     python -c 'import sys; print(sys.version)'
 
 4) NumPy version::
 
-     python -c 'import numpy;print numpy.__version__'
+     python -c 'import numpy; print(numpy.__version__)'
 
 5) ATLAS version, the locations of atlas and lapack libraries, building
    information if any. If you have ATLAS version 3.3.6 or newer, then
@@ -379,7 +379,7 @@ in one command::
 
      python INSTALLDIR/numpy/distutils/system_info.py
 
-where INSTALLDIR is, for example, /usr/lib/python2.4/site-packages/.
+where INSTALLDIR is, for example, /usr/lib/python3.4/site-packages/.
 
 8) Feel free to add any other relevant information.
    For example, the full output (both stdout and stderr) of the SciPy
