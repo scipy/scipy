@@ -308,7 +308,7 @@ double it2struve0_wrap(double x) {
   F_FUNC(itth0,ITTH0)(&x,&out);
   CONVINF("it2struve0", out);
   if (flag) {
-    out = M_PI - out;
+    out = NPY_PI - out;
   }
   return out;
 }
