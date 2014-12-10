@@ -10,8 +10,6 @@ cimport numpy as cnp
 
 cimport cython
 
-cdef double nan = np.nan
-
 cimport libc.stdlib
 cimport libc.math
 
@@ -26,6 +24,9 @@ cdef extern from "blas_defs.h":
                  int *lda, double *wr, double *wi, double *vl, int *ldvl,
                  double *vr, int *ldvr, double *work, int *lwork,
                  int *info)
+
+cdef extern from "numpy/npy_math.h":
+    double nan "NPY_NAN"
 
 #------------------------------------------------------------------------------
 # Piecewise power basis polynomials
