@@ -119,33 +119,6 @@ static PyObject *cdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *cdist_cosine_wrap(PyObject *self, PyObject *args) {
-  PyArrayObject *XA_, *XB_, *dm_, *normsA_, *normsB_;
-  int mA, mB, n;
-  double *dm;
-  const double *XA, *XB, *normsA, *normsB;
-  if (!PyArg_ParseTuple(args, "O!O!O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_,
-			&PyArray_Type, &normsA_,
-			&PyArray_Type, &normsB_)) {
-    return 0;
-  }
-  else {
-    XA = (const double*)XA_->data;
-    XB = (const double*)XB_->data;
-    dm = (double*)dm_->data;
-    normsA = (const double*)normsA_->data;
-    normsB = (const double*)normsB_->data;
-    mA = XA_->dimensions[0];
-    mB = XB_->dimensions[0];
-    n = XA_->dimensions[1];
-
-    cdist_cosine(XA, XB, dm, mA, mB, n, normsA, normsB);
-  }
-  return Py_BuildValue("d", 0.0);
-}
-
 static PyObject *cdist_seuclidean_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *XA_, *XB_, *dm_, *var_;
   int mA, mB, n;
@@ -840,7 +813,6 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"cdist_canberra_wrap", cdist_canberra_wrap, METH_VARARGS},
   {"cdist_chebyshev_wrap", cdist_chebyshev_wrap, METH_VARARGS},
   {"cdist_city_block_wrap", cdist_city_block_wrap, METH_VARARGS},
-  {"cdist_cosine_wrap", cdist_cosine_wrap, METH_VARARGS},
   {"cdist_dice_bool_wrap", cdist_dice_bool_wrap, METH_VARARGS},
   {"cdist_euclidean_wrap", cdist_euclidean_wrap, METH_VARARGS},
   {"cdist_sqeuclidean_wrap", cdist_sqeuclidean_wrap, METH_VARARGS},

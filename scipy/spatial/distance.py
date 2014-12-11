@@ -1262,15 +1262,11 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
             else:
                 VV = np.var(X, axis=0, ddof=1)
             _distance_wrap.pdist_seuclidean_wrap(_convert_to_double(X), VV, dm)
-        # Need to test whether vectorized cosine works better.
-        # Find out: Is there a dot subtraction operator so I can
-        # subtract matrices in a similar way to multiplying them?
-        # Need to get rid of as much unnecessary C code as possible.
         elif mstr in set(['cosine', 'cos']):
-            norms = np.sqrt(np.sum(X * X, axis=1))
+            norms = _row_norms(X)
             _distance_wrap.pdist_cosine_wrap(_convert_to_double(X), dm, norms)
         elif mstr in set(['old_cosine', 'old_cos']):
-            norms = np.sqrt(np.sum(X * X, axis=1))
+            norms = _row_norms(X)
             nV = norms.reshape(m, 1)
             # The numerator u * v
             nm = np.dot(X, X.T)
@@ -1281,8 +1277,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
             dm = squareform(dm)
         elif mstr in set(['correlation', 'co']):
             X2 = X - X.mean(1)[:, np.newaxis]
-            #X2 = X - np.matlib.repmat(np.mean(X, axis=1).reshape(m, 1), 1, n)
-            norms = np.sqrt(np.sum(X2 * X2, axis=1))
+            norms = _row_norms(X2)
             _distance_wrap.pdist_cosine_wrap(_convert_to_double(X2),
                                              _convert_to_double(dm),
                                              _convert_to_double(norms))
@@ -1720,6 +1715,26 @@ def num_obs_y(Y):
     return d
 
 
+def _row_norms(X):
+    norms = np.einsum('ij,ij->i', X, X)
+    return np.sqrt(norms, out=norms)
+
+
+def _cosine_cdist(XA, XB, dm):
+    XA = _convert_to_double(XA)
+    XB = _convert_to_double(XB)
+
+    normsA = _row_norms(XA)
+    normsB = _row_norms(XB)
+
+    np.dot(XA, XB.T, out=dm)
+
+    dm /= normsA.reshape(-1, 1)
+    dm /= normsB
+    dm *= -1
+    dm += 1
+
+
 def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     """
     Computes distance between each pair of the two collections of inputs.
@@ -2107,28 +2122,14 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                 del X
             _distance_wrap.cdist_seuclidean_wrap(_convert_to_double(XA),
                                                  _convert_to_double(XB), VV, dm)
-        # Need to test whether vectorized cosine works better.
-        # Find out: Is there a dot subtraction operator so I can
-        # subtract matrices in a similar way to multiplying them?
-        # Need to get rid of as much unnecessary C code as possible.
         elif mstr in set(['cosine', 'cos']):
-            normsA = np.sqrt(np.sum(XA * XA, axis=1))
-            normsB = np.sqrt(np.sum(XB * XB, axis=1))
-            _distance_wrap.cdist_cosine_wrap(_convert_to_double(XA),
-                                             _convert_to_double(XB), dm,
-                                             normsA,
-                                             normsB)
+            _cosine_cdist(XA, XB, dm)
         elif mstr in set(['correlation', 'co']):
-            XA2 = XA - XA.mean(1)[:, np.newaxis]
-            XB2 = XB - XB.mean(1)[:, np.newaxis]
-            #X2 = X - np.matlib.repmat(np.mean(X, axis=1).reshape(m, 1), 1, n)
-            normsA = np.sqrt(np.sum(XA2 * XA2, axis=1))
-            normsB = np.sqrt(np.sum(XB2 * XB2, axis=1))
-            _distance_wrap.cdist_cosine_wrap(_convert_to_double(XA2),
-                                             _convert_to_double(XB2),
-                                             _convert_to_double(dm),
-                                             _convert_to_double(normsA),
-                                             _convert_to_double(normsB))
+            XA = np.array(XA, dtype=np.double, copy=True)
+            XB = np.array(XB, dtype=np.double, copy=True)
+            XA -= XA.mean(axis=1)[:, np.newaxis]
+            XB -= XB.mean(axis=1)[:, np.newaxis]
+            _cosine_cdist(XA, XB, dm)
         elif mstr in set(['mahalanobis', 'mahal', 'mah']):
             if VI is not None:
                 VI = _convert_to_double(np.asarray(VI, order='c'))
