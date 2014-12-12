@@ -7,7 +7,8 @@ from numpy.testing import (assert_equal, assert_array_equal,
     assert_almost_equal, assert_array_almost_equal, assert_, run_module_suite)
 
 import numpy as np
-from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
+from scipy.spatial import (KDTree, Rectangle, distance_matrix, 
+        cKDTree, minkowski_distance_p)
 from scipy.spatial import minkowski_distance as distance
 
 
@@ -714,6 +715,22 @@ def test_ball_point_ints():
     assert_equal(sorted([4, 8, 9, 12]),
                  sorted(tree.query_ball_point((2, 0), 1)))
 
+def test_subset_query():
+    # set up a random kdtree and test against brute force
+    for i, x in enumerate(xrange(30), 1):
+        n = 100000
+        pts = np.random.uniform(-20, 20, [n, 2])
+        pt = np.random.uniform(-20, 20, 2)
+        subset = np.random.choice(np.arange(n),
+                                  np.random.uniform(10, .2 * n),
+                                  replace=False)
+        tree = KDTree(pts)
+        ix, d = tree.query_subset(pt, subset)
+        fnn = tree.data[ix]
+
+        brute_force = min(((i, minkowski_distance_p(pt, tree.data[i]))
+                           for i in subset), key=lambda tup: tup[1])
+        assert_equal(brute_force, (ix, d))
 
 def test_kdtree_comparisons():
     # Regression test: node comparisons were done wrong in 0.12 w/Py3.

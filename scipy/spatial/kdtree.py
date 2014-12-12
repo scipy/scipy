@@ -71,6 +71,13 @@ def minkowski_distance(x, y, p=2):
     else:
         return minkowski_distance_p(x, y, p)**(1./p)
 
+def brute_force_minimum(x, data, index, p):
+    # compute the distances
+    distances = ((pt, minkowski_distance_p(x, data[pt], p))
+                 for pt in index)
+
+    #return the closest point
+    return min(distances, key=lambda tup: tup[1])
 
 class Rectangle(object):
     """Hyperrectangle class.
@@ -170,7 +177,6 @@ class Rectangle(object):
         """
         return minkowski_distance(0, np.maximum(self.maxes-other.mins,other.maxes-self.mins),p)
 
-
 class KDTree(object):
     """
     kd-tree for quick nearest-neighbor lookup
@@ -258,12 +264,13 @@ class KDTree(object):
             self.children = len(idx)
 
     class innernode(node):
-        def __init__(self, split_dim, split, less, greater):
+        def __init__(self, split_dim, split, less, greater, indices):
             self.split_dim = split_dim
             self.split = split
             self.less = less
             self.greater = greater
             self.children = less.children+greater.children
+            self.child_idx = indices
 
     def __build(self, idx, maxes, mins):
         if len(idx) <= self.leafsize:
@@ -307,7 +314,8 @@ class KDTree(object):
             greatermins[d] = split
             return KDTree.innernode(d, split,
                     self.__build(idx[less_idx],lessmaxes,mins),
-                    self.__build(idx[greater_idx],maxes,greatermins))
+                    self.__build(idx[greater_idx],maxes,greatermins),
+                    idx)
 
     def __query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf):
 
@@ -390,6 +398,113 @@ class KDTree(object):
             return sorted([(-d,i) for (d,i) in neighbors])
         else:
             return sorted([((-d)**(1./p),i) for (d,i) in neighbors])
+
+    def query_subset(self, x, subset, p=2):
+        """
+        Query the kd-tree for nearest neigbor in subset
+
+        Parameters
+        ----------
+        x: point to query
+        subset: array_like
+                indexes of self.data to constrain the search to
+        p : float, 1<=p<=infinity
+            Which Minkowski p-norm to use.
+            1 is the sum-of-absolute-values "Manhattan" distance
+            2 is the usual Euclidean distance
+            infinity is the maximum-coordinate-difference distance
+
+        Returns
+        --------
+        d: float
+           The distance to the nearest neighbor in subset.
+        i: integer
+           The index location of the nearest neighbor constrained
+           to the subset in self.data
+
+        Examples
+        --------
+        >>> from scipy import spatial
+        >>> x, y = np.mgrid[0:5, 2:8]
+        >>> pts = np.column_stack([x.ravel(), y.ravel()])
+        >>> tree = spatial.KDTree(pts)
+        >>> tree.data
+        array([[0, 2],
+               [0, 3],
+               [0, 4],
+               [0, 5],
+               [0, 6],
+               [0, 7],
+               [1, 2],
+               [1, 3],
+               [1, 4],
+               [1, 5],
+               [1, 6],
+               [1, 7],
+               [2, 2],
+               [2, 3],
+               [2, 4],
+               [2, 5],
+               [2, 6],
+               [2, 7],
+               [3, 2],
+               [3, 3],
+               [3, 4],
+               [3, 5],
+               [3, 6],
+               [3, 7],
+               [4, 2],
+               [4, 3],
+               [4, 4],
+               [4, 5],
+               [4, 6],
+               [4, 7]])
+        >>> tree.query_subset(pts[1], [3, 8, 12])
+        (8, 2) 
+        
+        """
+        # perform bruteforce search if cheaper than traversal
+        if len(subset) < np.log2(self.n):
+            return brute_force_minimum(x, self.data, subset, p)
+        
+        subset_vec = np.zeros(self.n)
+        subset_vec[subset] = 1
+        return self.__query_subset(self.tree, x, subset_vec, p)
+
+    def __query_subset(self, node, x, subset, p):
+        # initialize a boolean array of size self.n
+        child_vec = np.zeros_like(subset)
+
+        if isinstance(node, KDTree.innernode):
+            # set boolean switches to 1, if that idx is in child idx's
+            child_vec[node.child_idx] = 1
+
+            # does this branches children intersect subset?
+            if np.dot(child_vec, subset) >= 1:
+                # find near branch to traverse
+                if x[node.split_dim] < node.split:
+                    near, far = node.less, node.greater
+                else:
+                    near, far = node.greater, node.less
+                near = self.__query_subset(near, x, subset, p)
+
+                # if near branch resulted in dead end, check far
+                if not near:
+                    return self.__query_subset(far, x, subset, p)
+                # is the further branch closer
+                if minkowski_distance_p(x[node.split_dim], node.split, p) < near[1]:
+                    far = self.__query_subset(far, x, subset, p)
+                    if far and far[1] < near[1]:
+                        return far
+                return near
+        else:
+            child_vec[node.idx] = 1
+            # does this leaf intersect with subset
+            if np.dot(child_vec, subset) >= 1:
+                universe = np.arange(self.n)[subset.astype(bool)]
+                candidates = np.intersect1d(universe, node.idx)
+                # compute the candidate distances
+                return brute_force_minimum(x, self.data, candidates, p)
 
     def query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf):
         """
