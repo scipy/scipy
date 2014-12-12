@@ -607,9 +607,7 @@ def _loadarff(ofile):
     def next_data_line(row_iter):
         """Assumes we are already in the data part (eg after @data)."""
         raw = next(row_iter)
-        while r_empty.match(raw):
-            raw = next(row_iter)
-        while r_comment.match(raw):
+        while r_empty.match(raw) or r_comment.match(raw):
             raw = next(row_iter)
         return raw
 
@@ -640,9 +638,7 @@ def _loadarff(ofile):
         # We do not abstract skipping comments and empty lines for performances
         # reason.
         raw = next(row_iter)
-        while r_empty.match(raw):
-            raw = next(row_iter)
-        while r_comment.match(raw):
+        while r_empty.match(raw) or r_comment.match(raw):
             raw = next(row_iter)
 
         # 'compiling' the range since it does not change
@@ -653,9 +649,7 @@ def _loadarff(ofile):
         row = raw.split(delim)
         yield tuple([convertors[i](row[i]) for i in elems])
         for raw in row_iter:
-            while r_comment.match(raw):
-                raw = next(row_iter)
-            while r_empty.match(raw):
+            while r_comment.match(raw) or r_empty.match(raw):
                 raw = next(row_iter)
             row = raw.split(delim)
             yield tuple([convertors[i](row[i]) for i in elems])
