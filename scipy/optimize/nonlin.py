@@ -445,7 +445,11 @@ class TerminationCondition(object):
         self.f_tol = f_tol
         self.f_rtol = f_rtol
 
-        self.norm = maxnorm
+        if norm is None:
+            self.norm = maxnorm
+        else:
+            self.norm = norm
+
         self.iter = iter
 
         self.f0_norm = None
