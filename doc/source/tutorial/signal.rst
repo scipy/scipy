@@ -447,7 +447,7 @@ As an example consider the following system:
 
 The code calculates the signal :math:`y[n]` for a given signal :math:`x[n]`;
 first for initial condiditions :math:`y[-1] = 0` (default case), then for
-:math:`y[-1] = 2` by means of :fun:`lfiltic`.
+:math:`y[-1] = 2` by means of :func:`lfiltic`.
 
 >>> import numpy as np
 >>> from scipy import signal

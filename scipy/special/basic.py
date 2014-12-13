@@ -491,7 +491,7 @@ def hyp0f1(v, z):
     .. math:: _0F_1(v,z) = \sum_{k=0}^{\inf}\frac{z^k}{(v)_k k!}.
 
     It's also the limit as q -> infinity of ``1F1(q;v;z/q)``, and satisfies
-    the differential equation :math:``f''(z) + vf'(z) = f(z)`.
+    the differential equation :math:`f''(z) + vf'(z) = f(z)`.
     """
     v = atleast_1d(v)
     z = atleast_1d(z)
@@ -688,7 +688,7 @@ def lpmn(m,n,z):
     return p,pd
 
 
-def clpmn(m,n,z,type=3):
+def clpmn(m, n, z, type=3):
     """Associated Legendre function of the first kind, Pmn(z)
 
     Computes the (associated) Legendre function of the first kind
@@ -712,15 +712,15 @@ def clpmn(m,n,z,type=3):
         Input value.
     type : int
        takes values 2 or 3
-       2: cut on the real axis |x|>1
-       3: cut on the real axis -1<x<1 (default)
+       2: cut on the real axis ``|x| > 1``
+       3: cut on the real axis ``-1 < x < 1`` (default)
 
     Returns
     -------
     Pmn_z : (m+1, n+1) array
-       Values for all orders 0..m and degrees 0..n
+       Values for all orders ``0..m`` and degrees ``0..n``
     Pmn_d_z : (m+1, n+1) array
-       Derivatives for all orders 0..m and degrees 0..n
+       Derivatives for all orders ``0..m`` and degrees ``0..n``
 
     See Also
     --------
@@ -734,7 +734,7 @@ def clpmn(m,n,z,type=3):
     factor with respect to Ferrer's function of the first kind
     (cf. `lpmn`).
 
-    For ``type=2`` a cut at |x|>1 is chosen. Approaching the real values
+    For ``type=2`` a cut at ``|x| > 1`` is chosen. Approaching the real values
     on the interval (-1, 1) in the complex plane yields Ferrer's function
     of the first kind.
 

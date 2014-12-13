@@ -2847,7 +2847,7 @@ add_newdoc("scipy.special", "pro_rad2",
 
     Computes the prolate spheroidal radial function of the second kind
     and its derivative (with respect to x) for mode parameters m>=0
-    and n>=m, spheroidal parameter c and |x|<1.0.
+    and n>=m, spheroidal parameter c and ``|x| < 1.0``.
 
     Returns
     -------

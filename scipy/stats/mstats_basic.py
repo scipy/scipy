@@ -1848,8 +1848,8 @@ def obrientransform(*args):
     """
     Computes a transform on input data (any number of columns).  Used to
     test for homogeneity of variance prior to running one-way stats.  Each
-    array in *args is one level of a factor.  If an F_oneway() run on the
-    transformed data and found significant, variances are unequal.   From
+    array in ``*args`` is one level of a factor.  If an `f_oneway()` run on
+    the transformed data and found significant, variances are unequal.   From
     Maxwell and Delaney, p.112.
 
     Returns: transformed data for use in an ANOVA
@@ -1949,7 +1949,8 @@ def f_oneway(*args):
     any number of groups.  From Heiman, pp.394-7.
 
     Usage: ``f_oneway(*args)``, where ``*args`` is 2 or more arrays,
-                                one per treatment group.
+    one per treatment group.
+
     Returns: f-value, probability
 
     """

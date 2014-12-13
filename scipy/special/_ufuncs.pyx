@@ -9133,7 +9133,7 @@ cdef char *ufunc_pro_rad2_doc = (
     "\n"
     "Computes the prolate spheroidal radial function of the second kind\n"
     "and its derivative (with respect to x) for mode parameters m>=0\n"
-    "and n>=m, spheroidal parameter c and |x|<1.0.\n"
+    "and n>=m, spheroidal parameter c and ``|x| < 1.0``.\n"
     "\n"
     "Returns\n"
     "-------\n"

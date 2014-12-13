@@ -997,11 +997,11 @@ def skew(a, axis=0, bias=True):
 
     References
     ----------
-    [CRCProbStat2000]_ Section 2.2.24.1
 
-    .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
+    .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
        Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
+       Section 2.2.24.1
 
     """
     a, axis = _chk_asarray(a,axis)
@@ -2690,11 +2690,11 @@ def spearmanr(a, b=None, axis=0):
 
     References
     ----------
-    [CRCProbStat2000]_ Section  14.7
 
-    .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
+    .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
        Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
+       Section  14.7
 
     Examples
     --------

@@ -622,9 +622,9 @@ def check_grad(func, grad, x0, *args, **kwargs):
 
     Parameters
     ----------
-    func : callable func(x0,*args)
+    func : callable ``func(x0, *args)``
         Function whose derivative is to be checked.
-    grad : callable grad(x0, *args)
+    grad : callable ``grad(x0, *args)``
         Gradient of `func`.
     x0 : ndarray
         Points to check `grad` against forward difference approximation of grad
@@ -648,8 +648,10 @@ def check_grad(func, grad, x0, *args, **kwargs):
 
     Examples
     --------
-    >>> def func(x): return x[0]**2 - 0.5 * x[1]**3
-    >>> def grad(x): return [2 * x[0], -1.5 * x[1]**2]
+    >>> def func(x):
+            return x[0]**2 - 0.5 * x[1]**3
+    >>> def grad(x):
+            return [2 * x[0], -1.5 * x[1]**2]
     >>> check_grad(func, grad, [1.5, -1.5])
     2.9802322387695312e-08
 
@@ -2710,7 +2712,7 @@ def show_options(solver=None, method=None):
         gtol : float
             Precision goal for the value of the projected gradient in
             the stopping criterion (after applying x scaling factors).
-            If gtol < 0.0, gtol is set to 1e-2 * sqrt(accuracy).
+            If gtol < 0.0, gtol is set to ``1e-2 * sqrt(accuracy)``.
             Setting it to 0.0 is not recommended.  Defaults to -1.
         scale : list of floats
             Scaling factors to apply to each variable.  If None, the
@@ -2721,13 +2723,13 @@ def show_options(solver=None, method=None):
             offsets are (up+low)/2 for interval bounded variables
             and x for the others.
         maxCGit : int
-            Maximum number of hessian*vector evaluations per main
+            Maximum number of hessian times vector evaluations per main
             iteration.  If maxCGit == 0, the direction chosen is
             -gradient if maxCGit < 0, maxCGit is set to
             max(1,min(50,n/2)).  Defaults to -1.
         maxiter : int
             Maximum number of function evaluation.  if None, `maxiter` is
-            set to max(100, 10*len(x0)).  Defaults to None.
+            set to ``max(100, 10*len(x0))``.  Defaults to None.
         eta : float
             Severity of the line search. if < 0 or > 1, set to 0.25.
             Defaults to -1.
@@ -2905,7 +2907,7 @@ def show_options(solver=None, method=None):
                         - ``svd``: keep only the most significant SVD
                             components.
                           Extra parameters:
-                              - ``to_retain`: number of SVD components to
+                              - ``to_retain``: number of SVD components to
                                   retain when rank reduction is done.
                                   Default is ``max_rank - 2``.
                 max_rank : int, optional
@@ -2959,7 +2961,7 @@ def show_options(solver=None, method=None):
                     - ``svd``: keep only the most significant SVD
                         components.
                       Extra parameters:
-                          - ``to_retain`: number of SVD components to
+                          - ``to_retain``: number of SVD components to
                               retain when rank reduction is done.
                               Default is ``max_rank - 2``.
             max_rank : int, optional
@@ -3013,7 +3015,7 @@ def show_options(solver=None, method=None):
             Print status to stdout on every iteration.
         maxiter : int, optional
             Maximum number of iterations to make. If more are needed to
-            meet convergence, `NoConvergence` is raised.
+            meet convergence, ``NoConvergence`` is raised.
         ftol : float, optional
             Relative tolerance for the residual. If omitted, not used.
         fatol : float, optional

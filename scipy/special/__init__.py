@@ -363,12 +363,12 @@ The following functions evaluate values of orthogonal polynomials:
    eval_sh_jacobi
 
 The functions below, in turn, return the polynomial coefficients in
-:ref:`orthopoly1d` objects, which function similarly as :ref:`numpy.poly1d`.
-The :ref:`orthopoly1d` class also has an attribute ``weights`` which returns
+:class:`~.orthopoly1d` objects, which function similarly as :ref:`numpy.poly1d`.
+The :class:`~.orthopoly1d` class also has an attribute ``weights`` which returns
 the roots, weights, and total weights for the appropriate form of Gaussian
 quadrature.  These are returned in an ``n x 3`` array with roots in the first
 column, weights in the second column, and total weights in the final column.
-Note that ``orthopoly1d`` objects are converted to ``poly1d`` when doing
+Note that :class:`~.orthopoly1d` objects are converted to ``poly1d`` when doing
 arithmetic, and lose information of the original orthogonal polynomial.
 
 .. autosummary::
