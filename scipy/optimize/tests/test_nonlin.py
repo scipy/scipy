@@ -127,21 +127,14 @@ class TestNonlin(object):
     def test_tol_norm_called(self):
         """ Check that supplying tol_norm keyword to nonlin_solve works"""
         self._tol_norm_used = False
-        
+
         def local_norm_func(x):
             self._tol_norm_used = True
             return np.absolute(x).max()
 
-        for f in [F, F2, F2_lucky, F3, F4_powell, F5, F6]:
-            for func in SOLVERS.values():
-                self._tol_norm_used = False
-                if func in f.KNOWN_BAD.values():
-                    if func in MUST_WORK.values():
-                        continue
-                    continue
-                func(f, f.xin, f_tol=1e-2, maxiter=200, verbose=0,
-                     tol_norm=local_norm_func)
-                assert self._tol_norm_used == True
+        nonlin.newton_krylov(F, F.xin, f_tol=1e-2, maxiter=200, verbose=0,
+             tol_norm=local_norm_func)
+        assert self._tol_norm_used
 
     def test_problem_root(self):
         """ Tests for root """
