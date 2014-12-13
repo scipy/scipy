@@ -484,8 +484,8 @@ double xxa, *ssa, *cca;
          * http://functions.wolfram.com/GammaBetaErf/FresnelC/06/02/
          * http://functions.wolfram.com/GammaBetaErf/FresnelS/06/02/
          */
-	cc = 0.5 + 1/(M_PI*x) * sin(M_PI*x*x/2);
-	ss = 0.5 - 1/(M_PI*x) * cos(M_PI*x*x/2);
+	cc = 0.5 + 1/(NPY_PI*x) * sin(NPY_PI*x*x/2);
+	ss = 0.5 - 1/(NPY_PI*x) * cos(NPY_PI*x*x/2);
 	goto done;
     }
 
