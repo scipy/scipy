@@ -3,9 +3,11 @@ Unit tests for optimization routines from minpack.py.
 """
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
         assert_array_almost_equal, TestCase, run_module_suite, assert_raises,
-        assert_allclose, dec)
+        assert_allclose)
 import numpy as np
 from numpy import array, float64, matrix
 
@@ -14,6 +16,7 @@ from scipy.special import lambertw
 from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
 from scipy.lib._numpy_compat import _assert_warns
 from scipy.optimize import OptimizeWarning
+
 
 class ReturnShape(object):
     """This class exists to create a callable that does not have a '__name__' attribute.
@@ -369,14 +372,17 @@ class TestCurveFit(TestCase):
         def f_flat(x, a, b):
             return a*x
 
-        popt, pcov = curve_fit(f_flat, xdata, ydata, p0=[2, 0], sigma=sigma)
-        assert_(pcov.shape == (2, 2))
-        pcov_expected = np.array([np.inf]*4).reshape(2, 2)
-        assert_array_equal(pcov, pcov_expected)
+        with warnings.catch_warnings():
+            # suppress warnings when testing with inf's
+            warnings.filterwarnings('ignore', category=OptimizeWarning)
+            popt, pcov = curve_fit(f_flat, xdata, ydata, p0=[2, 0], sigma=sigma)
+            assert_(pcov.shape == (2, 2))
+            pcov_expected = np.array([np.inf]*4).reshape(2, 2)
+            assert_array_equal(pcov, pcov_expected)
 
-        popt, pcov = curve_fit(f, xdata[:2], ydata[:2], p0=[2, 0])
-        assert_(pcov.shape == (2, 2))
-        assert_array_equal(pcov, pcov_expected)
+            popt, pcov = curve_fit(f, xdata[:2], ydata[:2], p0=[2, 0])
+            assert_(pcov.shape == (2, 2))
+            assert_array_equal(pcov, pcov_expected)
 
     def test_array_like(self):
         # Test sequence input.  Regression test for gh-3037.
