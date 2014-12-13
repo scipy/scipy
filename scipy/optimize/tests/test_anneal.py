@@ -65,28 +65,25 @@ class TestAnneal(TestCase):
 
     @dec.slow
     def test_fast(self, use_wrapper=False):
-        """ Anneal: test for fast schedule """
         retval = self.anneal_schedule('fast', use_wrapper)
         self.assertEqual(retval, 0)
 
     @dec.slow
     def test_boltzmann(self, use_wrapper=False):
-        """ Anneal: test for Boltzmann schedule """
         retval = self.anneal_schedule('boltzmann', use_wrapper)
         assert_(retval <= 3)  # usually 3
 
     @dec.slow
     def test_cauchy(self, use_wrapper=False):
-        """ Anneal: test for Cauchy schedule """
         retval = self.anneal_schedule('cauchy', use_wrapper)
         self.assertEqual(retval, 0)
 
     @dec.slow
     def test_minimize(self):
-        """ minimize with 'anneal' method """
         self.test_fast(True)
         self.test_boltzmann(True)
         self.test_cauchy(True)
+
 
 if __name__ == "__main__":
     run_module_suite()

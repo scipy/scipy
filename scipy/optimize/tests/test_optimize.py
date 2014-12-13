@@ -87,7 +87,7 @@ class TestOptimize(object):
         return np.dot(self.hess(x), p)
 
     def test_cg(self, use_wrapper=False):
-        """ conjugate gradient optimization routine """
+        # conjugate gradient optimization routine
         if use_wrapper:
             opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
@@ -119,7 +119,7 @@ class TestOptimize(object):
                         atol=1e-14, rtol=1e-7)
 
     def test_bfgs(self, use_wrapper=False):
-        """ Broyden-Fletcher-Goldfarb-Shanno optimization routine """
+        # Broyden-Fletcher-Goldfarb-Shanno optimization routine
         if use_wrapper:
             opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
@@ -152,7 +152,7 @@ class TestOptimize(object):
                         atol=1e-14, rtol=1e-7)
 
     def test_bfgs_nan(self):
-        """Test corner case where nan is fed to optimizer.  See #1542."""
+        # Test corner case where nan is fed to optimizer.  See gh-2067.
         func = lambda x: x
         fprime = lambda x: np.ones_like(x)
         x0 = [np.nan]
@@ -161,7 +161,7 @@ class TestOptimize(object):
             assert_(np.isnan(func(x)))
 
     def test_bfgs_numerical_jacobian(self):
-        """ BFGS with numerical jacobian and a vector epsilon parameter """
+        # BFGS with numerical jacobian and a vector epsilon parameter.
         # define the epsilon parameter using a random vector
         epsilon = np.sqrt(np.finfo(float).eps) * np.random.rand(len(self.solution))
 
@@ -173,7 +173,7 @@ class TestOptimize(object):
                         atol=1e-6)
 
     def test_bfgs_infinite(self, use_wrapper=False):
-        """Test corner case where -Inf is the minimum.  See #1494."""
+        # Test corner case where -Inf is the minimum.  See gh-2019.
         func = lambda x: -np.e**-x
         fprime = lambda x: -func(x)
         x0 = [0]
@@ -199,8 +199,7 @@ class TestOptimize(object):
         assert_allclose(xs, 1.0, rtol=1e-4, atol=1e-4)
 
     def test_powell(self, use_wrapper=False):
-        """ Powell (direction set) optimization routine
-        """
+        # Powell (direction set) optimization routine
         if use_wrapper:
             opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
@@ -241,8 +240,7 @@ class TestOptimize(object):
                         atol=1e-14, rtol=1e-7)
 
     def test_neldermead(self, use_wrapper=False):
-        """ Nelder-Mead simplex algorithm
-        """
+        # Nelder-Mead simplex algorithm
         if use_wrapper:
             opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
@@ -273,8 +271,7 @@ class TestOptimize(object):
                         atol=1e-14, rtol=1e-7)
 
     def test_ncg(self, use_wrapper=False):
-        """ line-search Newton conjugate gradient optimization routine
-        """
+        # line-search Newton conjugate gradient optimization routine
         if use_wrapper:
             opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
@@ -307,7 +304,7 @@ class TestOptimize(object):
                         atol=1e-6, rtol=1e-7)
 
     def test_ncg_hess(self, use_wrapper=False):
-        """ Newton conjugate gradient with Hessian """
+        # Newton conjugate gradient with Hessian
         if use_wrapper:
             opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
@@ -341,7 +338,7 @@ class TestOptimize(object):
                         atol=1e-6, rtol=1e-7)
 
     def test_ncg_hessp(self, use_wrapper=False):
-        """ Newton conjugate gradient with Hessian times a vector p """
+        # Newton conjugate gradient with Hessian times a vector p.
         if use_wrapper:
             opts = {'maxiter': self.maxiter, 'disp': False,
                     'return_all': False}
@@ -375,8 +372,7 @@ class TestOptimize(object):
                         atol=1e-6, rtol=1e-7)
 
     def test_l_bfgs_b(self):
-        """ limited-memory bound-constrained BFGS algorithm
-        """
+        # limited-memory bound-constrained BFGS algorithm
         retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
                                         self.grad, args=(),
                                         maxiter=self.maxiter)
@@ -398,7 +394,7 @@ class TestOptimize(object):
                         atol=1e-14, rtol=1e-7)
 
     def test_l_bfgs_b_numjac(self):
-        """ L-BFGS-B with numerical jacobian """
+        # L-BFGS-B with numerical jacobian
         retval = optimize.fmin_l_bfgs_b(self.func, self.startparams,
                                         approx_grad=True,
                                         maxiter=self.maxiter)
@@ -409,7 +405,7 @@ class TestOptimize(object):
                         atol=1e-6)
 
     def test_l_bfgs_b_funjac(self):
-        """ L-BFGS-B with combined objective function and jacobian """
+        # L-BFGS-B with combined objective function and jacobian
         def fun(x):
             return self.func(x), self.grad(x)
 
@@ -422,7 +418,7 @@ class TestOptimize(object):
                         atol=1e-6)
 
     def test_minimize_l_bfgs_b(self):
-        """ Minimize with L-BFGS-B method """
+        # Minimize with L-BFGS-B method
         opts = {'disp': False, 'maxiter': self.maxiter}
         r = optimize.minimize(self.func, self.startparams,
                               method='L-BFGS-B', jac=self.grad,
@@ -493,7 +489,7 @@ class TestOptimize(object):
         assert_allclose(res.x, 1.0, rtol=1e-4, atol=1e-4)
 
     def test_minimize(self):
-        """Tests for the minimize wrapper."""
+        # Tests for the minimize wrapper.
         self.setUp()
         self.test_bfgs(True)
         self.setUp()
@@ -576,7 +572,7 @@ class TestOptimize(object):
             yield check, 'anneal'
 
     def test_slsqp_respect_bounds(self):
-        # github issue 3108
+        # Regression test for gh-3108
         def f(x):
             return sum((x - np.array([1., 2., 3., 4.]))**2)
 
@@ -611,7 +607,7 @@ class TestOptimize(object):
         assert_allclose(sol_4.x, 2, atol=1e-8)
 
     def test_minimize_coerce_args_param(self):
-        # github issue #3503
+        # Regression test for gh-3503
         def Y(x, c):
             return np.sum((x-c)**2)
 
@@ -624,7 +620,6 @@ class TestOptimize(object):
 
 
 class TestLBFGSBBounds(TestCase):
-    """ Tests for L-BFGS-B with bounds """
     def setUp(self):
         self.bounds = ((1, None), (None, None))
         self.solution = (1, 0)
@@ -639,7 +634,6 @@ class TestLBFGSBBounds(TestCase):
         return self.fun(x, p), self.jac(x, p)
 
     def test_l_bfgs_b_bounds(self):
-        """ L-BFGS-B with bounds """
         x, f, d = optimize.fmin_l_bfgs_b(self.fun, [0, -1],
                                          fprime=self.jac,
                                          bounds=self.bounds)
@@ -647,14 +641,14 @@ class TestLBFGSBBounds(TestCase):
         assert_allclose(x, self.solution, atol=1e-6)
 
     def test_l_bfgs_b_funjac(self):
-        """ L-BFGS-B with fun and jac combined and extra arguments """
+        # L-BFGS-B with fun and jac combined and extra arguments
         x, f, d = optimize.fmin_l_bfgs_b(self.fj, [0, -1], args=(2.0, ),
                                          bounds=self.bounds)
         assert_(d['warnflag'] == 0, d['task'])
         assert_allclose(x, self.solution, atol=1e-6)
 
     def test_minimize_l_bfgs_b_bounds(self):
-        """ Minimize with method='L-BFGS-B' with bounds """
+        # Minimize with method='L-BFGS-B' with bounds
         res = optimize.minimize(self.fun, [0, -1], method='L-BFGS-B',
                                 jac=self.jac, bounds=self.bounds)
         assert_(res['success'], res['message'])
@@ -662,7 +656,6 @@ class TestLBFGSBBounds(TestCase):
 
 
 class TestOptimizeScalar(TestCase):
-    """Tests for scalar optimizers"""
     def setUp(self):
         self.solution = 1.5
 
@@ -671,7 +664,6 @@ class TestOptimizeScalar(TestCase):
         return (x - a)**2 - 0.8
 
     def test_brent(self):
-        """ brent algorithm """
         x = optimize.brent(self.fun)
         assert_allclose(x, self.solution, atol=1e-6)
 
@@ -685,7 +677,6 @@ class TestOptimizeScalar(TestCase):
         assert_allclose(x, self.solution, atol=1e-6)
 
     def test_golden(self):
-        """ golden algorithm """
         x = optimize.golden(self.fun)
         assert_allclose(x, self.solution, atol=1e-6)
 
@@ -699,7 +690,6 @@ class TestOptimizeScalar(TestCase):
         assert_allclose(x, self.solution, atol=1e-6)
 
     def test_fminbound(self):
-        """Test fminbound """
         x = optimize.fminbound(self.fun, 0, 1)
         assert_allclose(x, 1, atol=1e-4)
 
@@ -808,7 +798,7 @@ class TestOptimizeScalar(TestCase):
         assert_allclose(res.x, self.solution, atol=1e-6)
 
     def test_minimize_scalar_coerce_args_param(self):
-        # github issue #3503
+        # Regression test for gh-3503
         optimize.minimize_scalar(self.fun, args=1.5)
 
 
@@ -839,7 +829,7 @@ class TestNewtonCg(object):
 class TestRosen(TestCase):
 
     def test_hess(self):
-        """Compare rosen_hess(x) times p with rosen_hess_prod(x,p) (ticket #1248)"""
+        # Compare rosen_hess(x) times p with rosen_hess_prod(x,p).  See gh-1775
         x = np.array([3, 4, 5])
         p = np.array([2, 2, 2])
         hp = optimize.rosen_hess_prod(x, p)
