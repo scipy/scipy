@@ -140,7 +140,8 @@ class TestNanFunc(TestCase):
         with warnings.catch_warnings():
             warns = (DeprecationWarning, RuntimeWarning)
             warnings.simplefilter('ignore', warns)
-            m = stats.nanmean(self.Xall)
+            with np.errstate(invalid='ignore'):
+                m = stats.nanmean(self.Xall)
         assert_(np.isnan(m))
 
     def test_nanstd_none(self):
@@ -162,7 +163,8 @@ class TestNanFunc(TestCase):
         with warnings.catch_warnings():
             warns = (DeprecationWarning, RuntimeWarning)
             warnings.simplefilter('ignore', warns)
-            s = stats.nanstd(self.Xall)
+            with np.errstate(invalid='ignore'):
+                s = stats.nanstd(self.Xall)
         assert_(np.isnan(s))
 
     def test_nanstd_bias_kw(self):

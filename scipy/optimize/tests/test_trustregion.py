@@ -15,9 +15,7 @@ from numpy.testing import (TestCase, assert_, assert_equal, assert_allclose,
 
 
 class Accumulator:
-    """
-    This is for testing callbacks.
-    """
+    """ This is for testing callbacks."""
     def __init__(self):
         self.count = 0
         self.accum = None

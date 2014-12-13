@@ -115,7 +115,6 @@ class TestNonlin(object):
         pass
 
     def test_problem_nonlin(self):
-        """ Tests for nonlin functions """
         for f in [F, F2, F2_lucky, F3, F4_powell, F5, F6]:
             for func in SOLVERS.values():
                 if func in f.KNOWN_BAD.values():
@@ -125,7 +124,6 @@ class TestNonlin(object):
                 yield self._check_nonlin_func, f, func
 
     def test_problem_root(self):
-        """ Tests for root """
         for f in [F, F2, F2_lucky, F3, F4_powell, F5, F6]:
             for meth in SOLVERS:
                 if meth in f.KNOWN_BAD:

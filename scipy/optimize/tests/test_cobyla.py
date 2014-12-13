@@ -26,13 +26,12 @@ class TestCobyla(TestCase):
         return -self.con1(x)
 
     def test_simple(self):
-        """ fmin_cobyla """
         x = fmin_cobyla(self.fun, self.x0, [self.con1, self.con2], rhobeg=1,
                         rhoend=1e-5, iprint=0, maxfun=100)
         assert_allclose(x, self.solution, atol=1e-4)
 
     def test_minimize_simple(self):
-        """ Minimize with method='COBYLA' """
+        # Minimize with method='COBYLA'
         cons = ({'type': 'ineq', 'fun': self.con1},
                 {'type': 'ineq', 'fun': self.con2})
         sol = minimize(self.fun, self.x0, method='cobyla', constraints=cons,

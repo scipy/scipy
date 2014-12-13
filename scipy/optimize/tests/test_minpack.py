@@ -3,9 +3,11 @@ Unit tests for optimization routines from minpack.py.
 """
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
         assert_array_almost_equal, TestCase, run_module_suite, assert_raises,
-        assert_allclose, dec)
+        assert_allclose)
 import numpy as np
 from numpy import array, float64, matrix
 
@@ -14,6 +16,7 @@ from scipy.special import lambertw
 from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
 from scipy.lib._numpy_compat import _assert_warns
 from scipy.optimize import OptimizeWarning
+
 
 class ReturnShape(object):
     """This class exists to create a callable that does not have a '__name__' attribute.
@@ -93,13 +96,13 @@ def pressure_network_jacobian(flow_rates, Qtot, k):
 
 
 def pressure_network_fun_and_grad(flow_rates, Qtot, k):
-    return pressure_network(flow_rates, Qtot, k), \
-        pressure_network_jacobian(flow_rates, Qtot, k)
+    return (pressure_network(flow_rates, Qtot, k),
+            pressure_network_jacobian(flow_rates, Qtot, k))
 
 
 class TestFSolve(TestCase):
     def test_pressure_network_no_gradient(self):
-        """fsolve without gradient, equal pipes -> equal flows"""
+        # fsolve without gradient, equal pipes -> equal flows.
         k = np.ones(4) * 0.5
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
@@ -110,7 +113,7 @@ class TestFSolve(TestCase):
         assert_(ier == 1, mesg)
 
     def test_pressure_network_with_gradient(self):
-        """fsolve with gradient, equal pipes -> equal flows"""
+        # fsolve with gradient, equal pipes -> equal flows
         k = np.ones(4) * 0.5
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
@@ -120,7 +123,6 @@ class TestFSolve(TestCase):
         assert_array_almost_equal(final_flows, np.ones(4))
 
     def test_wrong_shape_func_callable(self):
-        """The callable 'func' has no '__name__' attribute."""
         func = ReturnShape(1)
         # x0 is a list of two elements, but func will return an array with
         # length 1, so this should result in a TypeError.
@@ -134,7 +136,6 @@ class TestFSolve(TestCase):
         assert_raises(TypeError, optimize.fsolve, dummy_func, x0, args=((1,),))
 
     def test_wrong_shape_fprime_callable(self):
-        """The callables 'func' and 'deriv_func' have no '__name__' attribute."""
         func = ReturnShape(1)
         deriv_func = ReturnShape((2,2))
         assert_raises(TypeError, optimize.fsolve, func, x0=[0,1], fprime=deriv_func)
@@ -152,7 +153,7 @@ class TestFSolve(TestCase):
 
 class TestRootHybr(TestCase):
     def test_pressure_network_no_gradient(self):
-        """root/hybr without gradient, equal pipes -> equal flows"""
+        # root/hybr without gradient, equal pipes -> equal flows
         k = np.ones(4) * 0.5
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
@@ -161,7 +162,7 @@ class TestRootHybr(TestCase):
         assert_array_almost_equal(final_flows, np.ones(4))
 
     def test_pressure_network_with_gradient(self):
-        """root/hybr with gradient, equal pipes -> equal flows"""
+        # root/hybr with gradient, equal pipes -> equal flows
         k = np.ones(4) * 0.5
         Qtot = 4
         initial_guess = matrix([2., 0., 2., 0.])
@@ -171,7 +172,8 @@ class TestRootHybr(TestCase):
         assert_array_almost_equal(final_flows, np.ones(4))
 
     def test_pressure_network_with_gradient_combined(self):
-        """root/hybr with gradient and function combined, equal pipes -> equal flows"""
+        # root/hybr with gradient and function combined, equal pipes -> equal
+        # flows
         k = np.ones(4) * 0.5
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
@@ -183,7 +185,7 @@ class TestRootHybr(TestCase):
 
 class TestRootLM(TestCase):
     def test_pressure_network_no_gradient(self):
-        """root/lm without gradient, equal pipes -> equal flows"""
+        # root/lm without gradient, equal pipes -> equal flows
         k = np.ones(4) * 0.5
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
@@ -234,7 +236,6 @@ class TestLeastSq(TestCase):
         assert_array_equal(p0, p0_copy)
 
     def test_wrong_shape_func_callable(self):
-        """The callable 'func' has no '__name__' attribute."""
         func = ReturnShape(1)
         # x0 is a list of two elements, but func will return an array with
         # length 1, so this should result in a TypeError.
@@ -248,7 +249,6 @@ class TestLeastSq(TestCase):
         assert_raises(TypeError, optimize.leastsq, dummy_func, x0, args=((1,),))
 
     def test_wrong_shape_Dfun_callable(self):
-        """The callables 'func' and 'deriv_func' have no '__name__' attribute."""
         func = ReturnShape(1)
         deriv_func = ReturnShape((2,2))
         assert_raises(TypeError, optimize.leastsq, func, x0=[0,1], Dfun=deriv_func)
@@ -259,7 +259,7 @@ class TestLeastSq(TestCase):
         assert_raises(TypeError, optimize.leastsq, func, x0=[0,1], Dfun=deriv_func)
 
     def test_float32(self):
-        # From Track ticket #920
+        # Regression test for gh-1447
         def func(p,x,y):
             q = p[0]*np.exp(-(x-p[1])**2/(2.0*p[2]**2))+p[3]
             return q - y
@@ -369,14 +369,17 @@ class TestCurveFit(TestCase):
         def f_flat(x, a, b):
             return a*x
 
-        popt, pcov = curve_fit(f_flat, xdata, ydata, p0=[2, 0], sigma=sigma)
-        assert_(pcov.shape == (2, 2))
-        pcov_expected = np.array([np.inf]*4).reshape(2, 2)
-        assert_array_equal(pcov, pcov_expected)
+        with warnings.catch_warnings():
+            # suppress warnings when testing with inf's
+            warnings.filterwarnings('ignore', category=OptimizeWarning)
+            popt, pcov = curve_fit(f_flat, xdata, ydata, p0=[2, 0], sigma=sigma)
+            assert_(pcov.shape == (2, 2))
+            pcov_expected = np.array([np.inf]*4).reshape(2, 2)
+            assert_array_equal(pcov, pcov_expected)
 
-        popt, pcov = curve_fit(f, xdata[:2], ydata[:2], p0=[2, 0])
-        assert_(pcov.shape == (2, 2))
-        assert_array_equal(pcov, pcov_expected)
+            popt, pcov = curve_fit(f, xdata[:2], ydata[:2], p0=[2, 0])
+            assert_(pcov.shape == (2, 2))
+            assert_array_equal(pcov, pcov_expected)
 
     def test_array_like(self):
         # Test sequence input.  Regression test for gh-3037.
