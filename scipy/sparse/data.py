@@ -12,11 +12,8 @@ __all__ = []
 
 import numpy as np
 
-from scipy.lib.six import zip as izip
-
 from .base import spmatrix
 from .sputils import isscalarlike
-from .lil import lil_matrix
 
 
 # TODO implement all relevant operations

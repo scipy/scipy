@@ -7,17 +7,13 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['lil_matrix','isspmatrix_lil']
 
-from bisect import bisect_left
 
 import numpy as np
-from scipy.lib.six import xrange
 
 from .base import spmatrix, isspmatrix
-from .sputils import getdtype, isshape, issequence, isscalarlike, ismatrix, \
+from .sputils import getdtype, isshape, isscalarlike, \
     IndexMixin, upcast_scalar, get_index_dtype
 
-from warnings import warn
-from .base import SparseEfficiencyWarning
 from . import _csparsetools
 
 

@@ -14,13 +14,11 @@ __all__ = ['expm', 'inv']
 
 import math
 
-from numpy import asarray, dot, eye, ceil, log2
 import numpy as np
 
 import scipy.misc
 from scipy.lib._numpy_compat import count_nonzero as _np_count_nonzero
-from scipy.linalg.misc import norm
-from scipy.linalg.basic import solve, solve_triangular, inv
+from scipy.linalg.basic import solve, solve_triangular
 
 from scipy.sparse.base import isspmatrix
 from scipy.sparse.construct import eye as speye

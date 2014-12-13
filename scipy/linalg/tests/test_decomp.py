@@ -962,24 +962,6 @@ class TestQR(TestCase):
         a = [[8,2,3],[2,9,3],[5,3,6]]
         q,r = qr(a)
         c = [1, 2, 3]
-        qc,r = qr_multiply(a, mode="left", c=c)
-        assert_array_almost_equal(dot(q, c), qc[:, 0])
-        qc,r = qr_multiply(a, mode="left", c=identity(3))
-        assert_array_almost_equal(q, qc)
-
-    def test_simple_right(self):
-        a = [[8,2,3],[2,9,3],[5,3,6]]
-        q,r = qr(a)
-        c = [1, 2, 3]
-        qc,r = qr_multiply(a, mode="right", c=c)
-        assert_array_almost_equal(dot(c, q), qc[0, :])
-        qc,r = qr_multiply(a, mode="right", c=identity(3))
-        assert_array_almost_equal(q, qc)
-
-    def test_simple_left(self):
-        a = [[8,2,3],[2,9,3],[5,3,6]]
-        q,r = qr(a)
-        c = [1, 2, 3]
         qc,r2 = qr_multiply(a, c, "left")
         assert_array_almost_equal(dot(q, c), qc)
         assert_array_almost_equal(r, r2)
@@ -1945,9 +1927,6 @@ class TestDatacopied(TestCase):
         F1 = Fake1()
         F2 = Fake2()
 
-        AF1 = asarray(F1)
-        AF2 = asarray(F2)
-
         for item, status in [(M, False), (A, False), (L, True),
                              (M2, False), (F1, False), (F2, False)]:
             arr = asarray(item)
@@ -2021,7 +2000,6 @@ def test_lapack_misaligned():
     S = np.frombuffer(S.data, offset=4, count=100, dtype=np.float)
     S.shape = 10, 10
     b = np.ones(10)
-    v = np.ones(3,dtype=float)
     LU, piv = lu_factor(S)
     for (func, args, kwargs) in [
             (eig,(S,),dict(overwrite_a=True)),  # crash
@@ -2120,7 +2098,7 @@ def test_orth_memory_efficiency():
     n = 10*1000*1000
     try:
         _check_orth(n)
-    except MemoryError as e:
+    except MemoryError:
         raise AssertionError('memory error perhaps caused by orth regression')
 
 

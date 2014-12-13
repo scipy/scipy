@@ -10,7 +10,7 @@ Laplacian of a compressed-sparse graph
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from scipy.sparse import isspmatrix, coo_matrix
+from scipy.sparse import isspmatrix
 
 
 ###############################################################################
@@ -85,7 +85,6 @@ def _setdiag_dense(A, d):
 
 
 def _laplacian_sparse(graph, normed=False, axis=0):
-    n = graph.shape[0]
     if graph.format == 'coo':
         m = graph.copy()
     else:
@@ -106,7 +105,6 @@ def _laplacian_sparse(graph, normed=False, axis=0):
 
 
 def _laplacian_dense(graph, normed=False, axis=0):
-    n = graph.shape[0]
     m = np.array(graph)
     np.fill_diagonal(m, 0)
     w = m.sum(axis=axis)

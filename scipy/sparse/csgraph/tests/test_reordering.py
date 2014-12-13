@@ -4,8 +4,7 @@ import numpy as np
 from numpy.testing import assert_equal
 from scipy.sparse.csgraph import reverse_cuthill_mckee,\
         maximum_bipartite_matching
-from scipy.sparse import diags, csr_matrix, csc_matrix,\
-        coo_matrix
+from scipy.sparse import diags, csr_matrix, coo_matrix
 
 def test_graph_reverse_cuthill_mckee():
     A = np.array([[1, 0, 0, 0, 1, 0, 0, 0],

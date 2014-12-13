@@ -8,12 +8,11 @@ import numpy
 import numpy as np
 from numpy import ones, array, asarray, empty
 
-from numpy.testing import *
+from numpy.testing import TestCase, run_module_suite
 
 from scipy import sparse
-from scipy.lib.six import xrange
-from scipy.sparse import csr_matrix, coo_matrix, dia_matrix, lil_matrix, \
-        dok_matrix, rand, SparseEfficiencyWarning
+from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, rand,
+                          SparseEfficiencyWarning)
 
 
 def random_sparse(m,n,nnz_per_row):

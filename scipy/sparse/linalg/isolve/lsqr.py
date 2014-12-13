@@ -281,7 +281,6 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
 
     itn = 0
     istop = 0
-    nstop = 0
     ctol = 0
     if conlim > 0:
         ctol = 1/conlim
@@ -300,8 +299,6 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     Set up the first vectors u and v for the bidiagonalization.
     These satisfy  beta*u = b,  alfa*v = A'u.
     """
-    __xm = np.zeros(m)  # a matrix for temporary holding
-    __xn = np.zeros(n)  # a matrix for temporary holding
     v = np.zeros(n)
     u = b
     x = np.zeros(n)

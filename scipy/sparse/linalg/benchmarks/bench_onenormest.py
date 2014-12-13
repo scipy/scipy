@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 import time
 
 import numpy as np
-from numpy.testing import (Tester, TestCase, assert_allclose)
+from numpy.testing import Tester, TestCase
 
 import scipy.sparse
 
