@@ -15,14 +15,14 @@ from __future__ import division, print_function, absolute_import
 
 from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 import numpy
-from numpy import product, zeros, array, dot, transpose, ones, \
-    nan_to_num, zeros_like, linspace
+from numpy import (product, zeros, array, dot, transpose, ones,
+                   nan_to_num, zeros_like, linspace)
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
 from scipy.lib.six import xrange
-from numpy import r_, eye, real, atleast_1d, atleast_2d, poly, \
-     squeeze, diag, asarray
+from numpy import (r_, eye, real, atleast_1d, atleast_2d, poly,
+                   squeeze, diag, asarray)
 
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
            'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
@@ -62,8 +62,8 @@ def tf2ss(num, den):
         msg = "Improper transfer function. `num` is longer than `den`."
         raise ValueError(msg)
     if M == 0 or K == 0:  # Null system
-        return array([], float), array([], float), array([], float), \
-               array([], float)
+        return (array([], float), array([], float), array([], float),
+                array([], float))
 
     # pad numerator to have same number of columns has denominator
     num = r_['-1', zeros((num.shape[0], K - M), num.dtype), num]

@@ -1300,7 +1300,7 @@ def slepian(M, width, sym=True):
     """
     if (M * width > 27.38):
         raise ValueError("Cannot reliably obtain Slepian sequences for"
-              " M*width > 27.38.")
+                         " M*width > 27.38.")
     if M < 1:
         return np.array([])
     if M == 1:
@@ -1457,16 +1457,17 @@ def get_window(window, Nx, fftbins=True):
                 args = window[1:]
         elif isinstance(window, string_types):
             if window in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
-                        'general gaussian', 'general_gaussian',
-                        'general gauss', 'general_gauss', 'ggs',
-                        'slepian', 'optimal', 'slep', 'dss',
-                        'chebwin', 'cheb']:
+                          'general gaussian', 'general_gaussian',
+                          'general gauss', 'general_gauss', 'ggs',
+                          'slepian', 'optimal', 'slep', 'dss',
+                          'chebwin', 'cheb']:
                 raise ValueError("The '" + window + "' window needs one or "
-                                    "more parameters  -- pass a tuple.")
+                                 "more parameters  -- pass a tuple.")
             else:
                 winstr = window
         else:
-            raise ValueError("%s as window type is not supported." % str(type(window)))
+            raise ValueError("%s as window type is not supported." %
+                             str(type(window)))
 
         if winstr in ['blackman', 'black', 'blk']:
             winfunc = blackman
