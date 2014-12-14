@@ -125,7 +125,7 @@ class TestNonlin(object):
                 yield self._check_nonlin_func, f, func
 
     def test_tol_norm_called(self):
-        """ Check that supplying tol_norm keyword to nonlin_solve works"""
+        # Check that supplying tol_norm keyword to nonlin_solve works
         self._tol_norm_used = False
 
         def local_norm_func(x):
@@ -134,7 +134,7 @@ class TestNonlin(object):
 
         nonlin.newton_krylov(F, F.xin, f_tol=1e-2, maxiter=200, verbose=0,
              tol_norm=local_norm_func)
-        assert self._tol_norm_used
+        assert_(self._tol_norm_used)
 
     def test_problem_root(self):
         """ Tests for root """
