@@ -45,10 +45,3 @@ else:
                 raise AssertionError("First warning for %s is not a "
                         "%s( is %s)" % (func.__name__, warning_class, l[0]))
         return result
-
-
-if NumpyVersion(np.__version__) >= '1.6.0':
-    count_nonzero = np.count_nonzero
-else:
-    def count_nonzero(a):
-        return (a != 0).sum()

@@ -22,7 +22,7 @@ matrix:
       env:
         - TESTMODE=fast
         - OPTIMIZE=-OO
-        - NUMPYSPEC="numpy==1.5.1"
+        - NUMPYSPEC="numpy==1.6.2"
     - python: 2.7
       env:
         - TESTMODE=fast

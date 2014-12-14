@@ -6,7 +6,6 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal, assert_,
         decorators, TestCase, run_module_suite)
-from scipy.lib._numpy_compat import count_nonzero as _count_nonzero
 import scipy.linalg
 import scipy.sparse.linalg
 from scipy.sparse.linalg._onenormest import _onenormest_core, _algorithm_2_2
@@ -77,7 +76,7 @@ class TestOnenormest(TestCase):
         assert_(0.05 < np.mean(nresample_list) < 0.2)
 
         # check the proportion of norms computed exactly correctly
-        nexact = _count_nonzero(relative_errors < 1e-14)
+        nexact = np.count_nonzero(relative_errors < 1e-14)
         proportion_exact = nexact / float(nsamples)
         assert_(0.9 < proportion_exact < 0.95)
 
@@ -117,7 +116,7 @@ class TestOnenormest(TestCase):
         assert_equal(np.max(nresample_list), 0)
 
         # check the proportion of norms computed exactly correctly
-        nexact = _count_nonzero(relative_errors < 1e-14)
+        nexact = np.count_nonzero(relative_errors < 1e-14)
         proportion_exact = nexact / float(nsamples)
         assert_(0.15 < proportion_exact < 0.25)
 
@@ -184,7 +183,7 @@ class TestOnenormest(TestCase):
         assert_equal(max_nresamples, 0)
 
         # check the proportion of norms computed exactly correctly
-        nexact = _count_nonzero(relative_errors < 1e-14)
+        nexact = np.count_nonzero(relative_errors < 1e-14)
         proportion_exact = nexact / float(nsamples)
         assert_(0.7 < proportion_exact < 0.8)
 

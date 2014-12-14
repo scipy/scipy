@@ -279,8 +279,6 @@ class TestUtilities(object):
             ok = (j != -1) | at_boundary
             assert_(ok.all(), "%s %s" % (err_msg, np.where(~ok)))
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.6.0',
-                "No einsum in numpy 1.5.x")
     def test_degenerate_barycentric_transforms(self):
         # The triangulation should not produce invalid barycentric
         # transforms that stump the simplex finding
@@ -299,8 +297,6 @@ class TestUtilities(object):
         self._check_barycentric_transforms(tri)
 
     @dec.slow
-    @dec.skipif(NumpyVersion(np.__version__) < '1.6.0',
-                "No einsum in numpy 1.5.x")
     def test_more_barycentric_transforms(self):
         # Triangulate some "nasty" grids
 

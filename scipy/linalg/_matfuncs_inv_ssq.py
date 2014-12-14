@@ -15,7 +15,6 @@ from scipy.linalg import svdvals, solve_triangular
 from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse.linalg import onenormest
 import scipy.special
-from scipy.lib._numpy_compat import count_nonzero as _count_nonzero
 
 
 class LogmRankWarning(UserWarning):
@@ -371,7 +370,7 @@ def _inverse_squaring_helper(T0, theta):
     # this search will not terminate if any diagonal entry of T is zero.
     s0 = 0
     tmp_diag = np.diag(T)
-    if _count_nonzero(tmp_diag) != n:
+    if np.count_nonzero(tmp_diag) != n:
         raise Exception('internal inconsistency')
     while np.max(np.absolute(tmp_diag - 1)) > theta[7]:
         tmp_diag = np.sqrt(tmp_diag)
@@ -653,7 +652,7 @@ def _remainder_matrix_power(A, t):
     # Zeros on the diagonal of the triangular matrix are forbidden,
     # because the inverse scaling and squaring cannot deal with it.
     T_diag = np.diag(T)
-    if _count_nonzero(T_diag) != n:
+    if np.count_nonzero(T_diag) != n:
         raise FractionalMatrixPowerError(
                 'cannot use inverse scaling and squaring to find '
                 'the fractional matrix power of a singular matrix')

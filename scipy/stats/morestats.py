@@ -11,11 +11,10 @@ import numpy as np
 from numpy import (isscalar, r_, log, sum, around, unique, asarray,
                    zeros, arange, sort, amin, amax, any, atleast_1d,
                    sqrt, ceil, floor, array, poly1d, compress,
-                   pi, exp, ravel, angle)
+                   pi, exp, ravel, angle, count_nonzero)
 from numpy.testing.decorators import setastest
 
 from scipy.lib.six import string_types
-from scipy.lib._numpy_compat import count_nonzero
 from scipy import optimize
 from scipy import special
 from . import statlib

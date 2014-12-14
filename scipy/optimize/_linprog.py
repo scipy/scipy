@@ -18,7 +18,6 @@ Functions
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from scipy.lib._numpy_compat import count_nonzero as _count_nonzero
 from .optimize import OptimizeResult, _check_unknown_options
 
 __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']
@@ -636,7 +635,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     # The number of artificial variables (one for each lower-bound and equality
     # constraint)
-    n_artificial = meq + _count_nonzero(bub < 0)
+    n_artificial = meq + np.count_nonzero(bub < 0)
 
     try:
         Aub_rows, Aub_cols = Aub.shape
