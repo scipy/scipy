@@ -52,14 +52,14 @@ class BaseAxpy(object):
         x = arange(3.,dtype=self.dtype)
         y = arange(3.,dtype=x.dtype)
         real_y = x*1.+y
-        self.blas_func(x,y)
+        y = self.blas_func(x,y)
         assert_array_almost_equal(real_y,y)
 
     def test_simple(self):
         x = arange(3.,dtype=self.dtype)
         y = arange(3.,dtype=x.dtype)
         real_y = x*3.+y
-        self.blas_func(x,y,a=3.)
+        y = self.blas_func(x,y,a=3.)
         assert_array_almost_equal(real_y,y)
 
     def test_x_stride(self):
@@ -67,21 +67,21 @@ class BaseAxpy(object):
         y = zeros(3,x.dtype)
         y = arange(3.,dtype=x.dtype)
         real_y = x[::2]*3.+y
-        self.blas_func(x,y,a=3.,n=3,incx=2)
+        y = self.blas_func(x,y,a=3.,n=3,incx=2)
         assert_array_almost_equal(real_y,y)
 
     def test_y_stride(self):
         x = arange(3.,dtype=self.dtype)
         y = zeros(6,x.dtype)
         real_y = x*3.+y[::2]
-        self.blas_func(x,y,a=3.,n=3,incy=2)
+        y = self.blas_func(x,y,a=3.,n=3,incy=2)
         assert_array_almost_equal(real_y,y[::2])
 
     def test_x_and_y_stride(self):
         x = arange(12.,dtype=self.dtype)
         y = zeros(6,x.dtype)
         real_y = x[::4]*3.+y[::2]
-        self.blas_func(x,y,a=3.,n=3,incx=4,incy=2)
+        y = self.blas_func(x,y,a=3.,n=3,incx=4,incy=2)
         assert_array_almost_equal(real_y,y[::2])
 
     def test_x_bad_size(self):
@@ -141,14 +141,14 @@ class BaseScal(object):
     def test_simple(self):
         x = arange(3.,dtype=self.dtype)
         real_x = x*3.
-        self.blas_func(3.,x)
+        x = self.blas_func(3.,x)
         assert_array_almost_equal(real_x,x)
 
     def test_x_stride(self):
         x = arange(6.,dtype=self.dtype)
         real_x = x.copy()
         real_x[::2] = x[::2]*array(3.,self.dtype)
-        self.blas_func(3.,x,n=3,incx=2)
+        x = self.blas_func(3.,x,n=3,incx=2)
         assert_array_almost_equal(real_x,x)
 
     def test_x_bad_size(self):
@@ -197,25 +197,25 @@ class BaseCopy(object):
     def test_simple(self):
         x = arange(3.,dtype=self.dtype)
         y = zeros(shape(x),x.dtype)
-        self.blas_func(x,y)
+        y = self.blas_func(x,y)
         assert_array_almost_equal(x,y)
 
     def test_x_stride(self):
         x = arange(6.,dtype=self.dtype)
         y = zeros(3,x.dtype)
-        self.blas_func(x,y,n=3,incx=2)
+        y = self.blas_func(x,y,n=3,incx=2)
         assert_array_almost_equal(x[::2],y)
 
     def test_y_stride(self):
         x = arange(3.,dtype=self.dtype)
         y = zeros(6,x.dtype)
-        self.blas_func(x,y,n=3,incy=2)
+        y = self.blas_func(x,y,n=3,incy=2)
         assert_array_almost_equal(x,y[::2])
 
     def test_x_and_y_stride(self):
         x = arange(12.,dtype=self.dtype)
         y = zeros(6,x.dtype)
-        self.blas_func(x,y,n=3,incx=4,incy=2)
+        y = self.blas_func(x,y,n=3,incx=4,incy=2)
         assert_array_almost_equal(x[::4],y[::2])
 
     def test_x_bad_size(self):
@@ -284,7 +284,7 @@ class BaseSwap(object):
         y = zeros(shape(x),x.dtype)
         desired_x = y.copy()
         desired_y = x.copy()
-        self.blas_func(x,y)
+        x, y = self.blas_func(x,y)
         assert_array_almost_equal(desired_x,x)
         assert_array_almost_equal(desired_y,y)
 
@@ -293,7 +293,7 @@ class BaseSwap(object):
         y = zeros(3,x.dtype)
         desired_x = y.copy()
         desired_y = x.copy()[::2]
-        self.blas_func(x,y,n=3,incx=2)
+        x, y = self.blas_func(x,y,n=3,incx=2)
         assert_array_almost_equal(desired_x,x[::2])
         assert_array_almost_equal(desired_y,y)
 
@@ -302,7 +302,7 @@ class BaseSwap(object):
         y = zeros(6,x.dtype)
         desired_x = y.copy()[::2]
         desired_y = x.copy()
-        self.blas_func(x,y,n=3,incy=2)
+        x, y = self.blas_func(x,y,n=3,incy=2)
         assert_array_almost_equal(desired_x,x)
         assert_array_almost_equal(desired_y,y[::2])
 
@@ -311,7 +311,7 @@ class BaseSwap(object):
         y = zeros(6,x.dtype)
         desired_x = y.copy()[::2]
         desired_y = x.copy()[::4]
-        self.blas_func(x,y,n=3,incx=4,incy=2)
+        x, y = self.blas_func(x,y,n=3,incx=4,incy=2)
         assert_array_almost_equal(desired_x,x[::4])
         assert_array_almost_equal(desired_y,y[::2])
 
