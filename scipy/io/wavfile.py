@@ -35,7 +35,7 @@ def _read_fmt_chunk(fid):
         fmt = '>'
     else:
         fmt = '<'
-    res = struct.unpack(fmt+'iHHIIHH',fid.read(20))
+    res = struct.unpack(fmt+'iHHIIHH', fid.read(20))
     size, comp, noc, rate, sbytes, ba, bits = res
     if comp not in KNOWN_WAVE_FORMATS or size > 16:
         comp = WAVE_FORMAT_PCM
@@ -53,7 +53,7 @@ def _read_data_chunk(fid, comp, noc, bits, mmap=False):
         fmt = '>i'
     else:
         fmt = '<i'
-    size = struct.unpack(fmt,fid.read(4))[0]
+    size = struct.unpack(fmt, fid.read(4))[0]
 
     bytes = bits//8
     if bits == 8:
@@ -76,7 +76,7 @@ def _read_data_chunk(fid, comp, noc, bits, mmap=False):
         fid.seek(start + size)
 
     if noc > 1:
-        data = data.reshape(-1,noc)
+        data = data.reshape(-1, noc)
     return data
 
 
@@ -136,15 +136,14 @@ def read(filename, mmap=False):
 
     Notes
     -----
-
     * The file can be an open file or a filename.
-
-    * The returned sample rate is a Python integer
-    * The data is returned as a numpy array with a
-      data-type determined from the file.
+    * The returned sample rate is a Python integer.
+    * The data is returned as a numpy array with a data-type determined
+      from the file.
+    * This function cannot read wav files with 24 bit data.
 
     """
-    if hasattr(filename,'read'):
+    if hasattr(filename, 'read'):
         fid = filename
         mmap = False
     else:
@@ -160,6 +159,9 @@ def read(filename, mmap=False):
             chunk_id = fid.read(4)
             if chunk_id == b'fmt ':
                 size, comp, noc, rate, sbytes, ba, bits = _read_fmt_chunk(fid)
+                if bits == 24:
+                    raise ValueError("Unsupported bit depth: the wav file "
+                                     "has 24 bit data.")
             elif chunk_id == b'fact':
                 _skip_unknown_chunk(fid)
             elif chunk_id == b'data':
@@ -172,7 +174,7 @@ def read(filename, mmap=False):
                               WavFileWarning)
                 _skip_unknown_chunk(fid)
     finally:
-        if not hasattr(filename,'read'):
+        if not hasattr(filename, 'read'):
             fid.close()
         else:
             fid.seek(0)
@@ -206,14 +208,15 @@ def write(filename, rate, data):
       (Nsamples, Nchannels).
 
     """
-    if hasattr(filename,'write'):
+    if hasattr(filename, 'write'):
         fid = filename
     else:
         fid = open(filename, 'wb')
 
     try:
         dkind = data.dtype.kind
-        if not (dkind == 'i' or dkind == 'f' or (dkind == 'u' and data.dtype.itemsize == 1)):
+        if not (dkind == 'i' or dkind == 'f' or (dkind == 'u' and
+                                                 data.dtype.itemsize == 1)):
             raise ValueError("Unsupported data type '%s'" % data.dtype)
 
         fid.write(b'RIFF')
@@ -232,11 +235,13 @@ def write(filename, rate, data):
         bits = data.dtype.itemsize * 8
         sbytes = rate*(bits // 8)*noc
         ba = noc * (bits // 8)
-        fid.write(struct.pack('<ihHIIHH', 16, comp, noc, rate, sbytes, ba, bits))
+        fid.write(struct.pack('<ihHIIHH', 16, comp, noc, rate, sbytes,
+                              ba, bits))
         # data chunk
         fid.write(b'data')
         fid.write(struct.pack('<i', data.nbytes))
-        if data.dtype.byteorder == '>' or (data.dtype.byteorder == '=' and sys.byteorder == 'big'):
+        if data.dtype.byteorder == '>' or (data.dtype.byteorder == '=' and
+                                           sys.byteorder == 'big'):
             data = data.byteswap()
         _array_tofile(fid, data)
 
@@ -247,7 +252,7 @@ def write(filename, rate, data):
         fid.write(struct.pack('<i', size-8))
 
     finally:
-        if not hasattr(filename,'write'):
+        if not hasattr(filename, 'write'):
             fid.close()
         else:
             fid.seek(0)
