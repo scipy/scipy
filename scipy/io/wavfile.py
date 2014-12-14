@@ -136,12 +136,11 @@ def read(filename, mmap=False):
 
     Notes
     -----
-
     * The file can be an open file or a filename.
-
-    * The returned sample rate is a Python integer
-    * The data is returned as a numpy array with a
-      data-type determined from the file.
+    * The returned sample rate is a Python integer.
+    * The data is returned as a numpy array with a data-type determined
+      from the file.
+    * This function cannot read wav files with 24 bit data.
 
     """
     if hasattr(filename,'read'):
@@ -160,6 +159,9 @@ def read(filename, mmap=False):
             chunk_id = fid.read(4)
             if chunk_id == b'fmt ':
                 size, comp, noc, rate, sbytes, ba, bits = _read_fmt_chunk(fid)
+                if bits == 24:
+                    raise ValueError("Unsupported bit depth: the wav file "
+                                     "has 24 bit data.")
             elif chunk_id == b'fact':
                 _skip_unknown_chunk(fid)
             elif chunk_id == b'data':
