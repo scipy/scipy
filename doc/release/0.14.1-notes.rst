@@ -14,7 +14,7 @@ Issues closed
 - `#3780 <https://github.com/scipy/scipy/issues/3780>`__: Segfault when using CSR/CSC matrix and uint32/uint64
 - `#3781 <https://github.com/scipy/scipy/pull/3781>`__: BUG: sparse: fix omitted types in sparsetools typemaps
 - `#3802 <https://github.com/scipy/scipy/issues/3802>`__: 0.14.0 API breakage: _gen generators are missing from scipy.stats.distributions API
-- `#3805 <https://github.com/scipy/scipy/issues/3805>`__: ndimge test failures with numpy 1.10
+- `#3805 <https://github.com/scipy/scipy/issues/3805>`__: ndimage test failures with numpy 1.10
 - `#3812 <https://github.com/scipy/scipy/issues/3812>`__: == sometimes wrong on csr_matrix
 - `#3853 <https://github.com/scipy/scipy/issues/3853>`__: Many scipy.sparse test errors/failures with numpy 1.9.0b2
 - `#4084 <https://github.com/scipy/scipy/pull/4084>`__: fix exception declarations for Cython 0.21.1 compatibility
@@ -25,3 +25,8 @@ Issues closed
 - `#4154 <https://github.com/scipy/scipy/issues/4154>`__: Backport gh-4041 for 0.14.1 (Ensure that the 'size' argument of PIL's 'resize' method is a tuple)
 - `#4163 <https://github.com/scipy/scipy/issues/4163>`__: Backport #4142 (ZeroDivisionError in scipy.sparse.linalg.lsqr)
 - `#4164 <https://github.com/scipy/scipy/issues/4164>`__: Backport gh-4153 (remove use of deprecated numpy API in lib/lapack/ f2py wrapper)
+- `#4180 <https://github.com/scipy/scipy/pull/4180>`__: backport pil resize support tuple fix
+- `#4168 <https://github.com/scipy/scipy/issues/4168>`__: Lots of arpack test failures on windows 32 bits with numpy 1.9.1
+- `#4218 <https://github.com/scipy/scipy/pull/4218>`__: attempt to make ndimage interpolation compatible with numpy relaxed...
+- `#4225 <https://github.com/scipy/scipy/pull/4225>`__: BUG: off-by-one error in PPoly shape checks
+- `#4248 <https://github.com/scipy/scipy/pull/4248>`__: BUG: optimize: fix issue with incorrect use of closure for slsqp.
