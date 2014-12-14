@@ -80,7 +80,7 @@ class BenchmarkSparse(TestCase):
             vars = dict([(var, mat.asformat(format)) for (var, _, mat) in matrices])
             for X,Y in [('A','A'),('A','B'),('B','A'),('B','B')]:
                 x,y = vars[X],vars[Y]
-                for op in ['__add__','__sub__','multiply','__div__','__mul__']:
+                for op in ['__add__','__sub__','multiply','__mul__']:
                     fn = getattr(x,op)
                     fn(y)  # warmup
 
