@@ -583,16 +583,16 @@ def test_eigh():
         for typ in v['dtype']:
             for overwrite in v['overwrite']:
                 for turbo in v['turbo']:
-                    for eigenvals in v['eigvals']:
+                    for eigenvalues in v['eigvals']:
                         for lower in v['lower']:
                             yield (eigenhproblem_standard,
                                    'ordinary',
                                    dim, typ, overwrite, lower,
-                                   turbo, eigenvals)
+                                   turbo, eigenvalues)
                             yield (eigenhproblem_general,
                                    'general ',
                                    dim, typ, overwrite, lower,
-                                   turbo, eigenvals)
+                                   turbo, eigenvalues)
 
 
 def _complex_symrand(dim, dtype):
@@ -604,7 +604,7 @@ def _complex_symrand(dim, dtype):
 
 def eigenhproblem_standard(desc, dim, dtype,
                            overwrite, lower, turbo,
-                           eigvals):
+                           eigenvalues):
     """Solve a standard eigenvalue problem."""
     if iscomplex(empty(1, dtype=dtype)):
         a = _complex_symrand(dim, dtype)
@@ -615,7 +615,7 @@ def eigenhproblem_standard(desc, dim, dtype,
         a_c = a.copy()
     else:
         a_c = a
-    w, z = eigh(a, overwrite_a=overwrite, lower=lower, eigvals=eigvals)
+    w, z = eigh(a, overwrite_a=overwrite, lower=lower, eigvals=eigenvalues)
     assert_dtype_equal(z.dtype, dtype)
     w = w.astype(dtype)
     diag_ = diag(dot(z.T.conj(), dot(a_c, z))).real
@@ -624,7 +624,7 @@ def eigenhproblem_standard(desc, dim, dtype,
 
 def eigenhproblem_general(desc, dim, dtype,
                           overwrite, lower, turbo,
-                          eigvals):
+                          eigenvalues):
     """Solve a generalized eigenvalue problem."""
     if iscomplex(empty(1, dtype=dtype)):
         a = _complex_symrand(dim, dtype)
@@ -639,7 +639,7 @@ def eigenhproblem_general(desc, dim, dtype,
         a_c, b_c = a, b
 
     w, z = eigh(a, b, overwrite_a=overwrite, lower=lower,
-                overwrite_b=overwrite, turbo=turbo, eigvals=eigvals)
+                overwrite_b=overwrite, turbo=turbo, eigvals=eigenvalues)
     assert_dtype_equal(z.dtype, dtype)
     w = w.astype(dtype)
     diag1_ = diag(dot(z.T.conj(), dot(a_c, z))).real
