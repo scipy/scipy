@@ -717,13 +717,12 @@ def test_ball_point_ints():
 
 def test_subset_query():
     # set up a random kdtree and test against brute force
-    for i, x in enumerate(xrange(30), 1):
+    for i, x in enumerate(range(30), 1):
         n = 100000
         pts = np.random.uniform(-20, 20, [n, 2])
         pt = np.random.uniform(-20, 20, 2)
-        subset = np.random.choice(np.arange(n),
-                                  np.random.uniform(10, .2 * n),
-                                  replace=False)
+        samples = np.random.uniform(np.arange(n), np.random.uniform(10, .2*n))
+        subset = list(set(samples.astype(int)))
         tree = KDTree(pts)
         ix, d = tree.query_subset(pt, subset)
         fnn = tree.data[ix]
