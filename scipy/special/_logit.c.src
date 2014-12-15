@@ -33,7 +33,7 @@
         return x / (1 + x);
     }
     else {
-        return 1 / (1 + npy_exp@c@(-x));
+        return .5 * (1 + npy_tanh@c@(.5 * x));
     }
 }
 
