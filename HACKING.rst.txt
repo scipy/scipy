@@ -141,25 +141,7 @@ Other ways to contribute
 There are many ways to contribute other than contributing code.  Participating
 in discussions on the scipy-user and scipy-dev *mailing lists* is a contribution
 in itself.  The `scipy.org`_ *website* contains a lot of information on the
-SciPy community and can always use a new pair of hands.  A redesign of this
-website is ongoing, see `scipy.github.com`_.  The redesigned website is a
-static site based on Sphinx, the sources for it are
-also on Github at `scipy.org-new`_.
-
-The SciPy *documentation* is constantly being improved by many developers and
-users.  You can contribute by sending a PR on Github that improves the
-documentation, but there's also a `documentation wiki`_ that is very convenient
-for making edits to docstrings (and doesn't require git knowledge).  Anyone can
-register a username on that wiki, ask on the scipy-dev mailing list for edit
-rights and make edits.  The documentation there is updated every day with the
-latest changes in the SciPy master branch, and wiki edits are regularly
-reviewed and merged into master.  Another advantage of the documentation wiki
-is that you can immediately see how the reStructuredText (reST) of docstrings
-and other docs is rendered as html, so you can easily catch formatting errors.
-
-Code that doesn't belong in SciPy itself or in another package but helps users
-accomplish a certain task is valuable.  `SciPy Central`_ is the place to share
-this type of code (snippets, examples, plotting code, etc.).
+SciPy community and can always use a new pair of hands.
 
 
 Recommended development setup
