@@ -11,8 +11,8 @@ from numpy import ones, array, asarray, empty
 from numpy.testing import TestCase, run_module_suite
 
 from scipy import sparse
-from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, rand,
-                          SparseEfficiencyWarning)
+from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, lil_matrix,
+                          dok_matrix, rand, SparseEfficiencyWarning)
 
 
 def random_sparse(m,n,nnz_per_row):
@@ -231,13 +231,13 @@ class BenchmarkSparse(TestCase):
         for name,A in matrices:
             A = A.tocoo()
 
-            for format in ['lil','dok']:
+            for format, cls in [('lil', lil_matrix), ('dok', dok_matrix)]:
 
                 start = time.clock()
 
                 iter = 0
                 while time.clock() < start + 0.5:
-                    T = eval(format + '_matrix')(A.shape)
+                    T = cls(A.shape)
                     for i,j,v in zip(A.row,A.col,A.data):
                         T[i,j] = v
                     iter += 1
