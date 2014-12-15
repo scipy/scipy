@@ -579,7 +579,7 @@ def linkage(y, method='single', metric='euclidean'):
                                {T}d(v,s)^2
                         + \\frac{|v|+|t|}
                                {T}d(v,t)^2
-                        + \\frac{|v|}
+                        - \\frac{|v|}
                                {T}d(s,t)^2}
 
         where :math:`u` is the newly joined cluster consisting of
