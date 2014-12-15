@@ -66,10 +66,8 @@ import subprocess
 import re
 import shutil
 import warnings
-try:
-    from hash import md5
-except ImportError:
-    import md5
+from hashlib import md5
+from hashlib import sha256
 
 import distutils
 
@@ -145,17 +143,18 @@ options(bootstrap=Bunch(bootstrap_dir="bootstrap"),
         bdist_wininst_simple=Bunch(python_version=PYVER),)
 
 # Where we can find BLAS/LAPACK/ATLAS on Windows/Wine
-SITECFG = {"sse3": {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\lib\yop\sse3'},
-           "sse2": {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\lib\yop\sse2'},
-           "nosse": {'ATLAS': 'None', 'BLAS': r'C:\local\lib\yop\nosse',
-                      'LAPACK': r'C:\local\lib\yop\nosse'}}
+SITECFG = {"sse3" : {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\vendor\binaries\sse3'},
+           "sse2" : {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\vendor\binaries\sse2'},
+           "nosse" : {'ATLAS': 'None', 'BLAS': r'C:\local\vendor\binaries\nosse',
+                      'LAPACK': r'C:\local\vendor\binaries\nosse'}}
 
 # Wine config for win32 builds
 if sys.platform == "win32":
-    WINE_PY26 = [r"C:\Python26\python26.exe"]
-    WINE_PY27 = [r"C:\Python27\python27.exe"]
+    WINE_PY26 = [r"C:\Python26\python.exe"]
+    WINE_PY27 = [r"C:\Python27\python.exe"]
     WINE_PY32 = [r"C:\Python32\python.exe"]
     WINE_PY33 = [r"C:\Python33\python.exe"]
+    WINE_PY34 = [r"C:\Python34\python.exe"]
     WINDOWS_ENV = os.environ
     MAKENSIS = ["makensis"]
 elif sys.platform == "darwin":
@@ -163,6 +162,7 @@ elif sys.platform == "darwin":
     WINE_PY27 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python27/python.exe"]
     WINE_PY32 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python32/python.exe"]
     WINE_PY33 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python33/python.exe"]
+    WINE_PY34 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python34/python.exe"]
     WINDOWS_ENV = os.environ
     WINDOWS_ENV["DYLD_FALLBACK_LIBRARY_PATH"] = "/usr/X11/lib:/usr/lib"
     MAKENSIS = ["wine", "makensis"]
@@ -171,9 +171,10 @@ else:
     WINE_PY27 = [os.environ['HOME'] + "/.wine/drive_c/Python27/python.exe"]
     WINE_PY32 = [os.environ['HOME'] + "/.wine/drive_c/Python32/python.exe"],
     WINE_PY33 = [os.environ['HOME'] + "/.wine/drive_c/Python33/python.exe"],
+    WINE_PY34 = [os.environ['HOME'] + "/.wine/drive_c/Python34/python.exe"],
     WINDOWS_ENV = os.environ
     MAKENSIS = ["wine", "makensis"]
-WINE_PYS = {'3.3':WINE_PY33, '3.2':WINE_PY32,
+WINE_PYS = {'3.4':WINE_PY34, '3.3':WINE_PY33, '3.2':WINE_PY32,
             '2.7':WINE_PY27, '2.6':WINE_PY26}
 
 # Framework Python locations on OS X
@@ -181,7 +182,9 @@ MPKG_PYTHON = {
         "2.6": "/Library/Frameworks/Python.framework/Versions/2.6/bin/python",
         "2.7": "/Library/Frameworks/Python.framework/Versions/2.7/bin/python",
         "3.2": "/Library/Frameworks/Python.framework/Versions/3.2/bin/python3",
-        "3.3": "/Library/Frameworks/Python.framework/Versions/3.3/bin/python3"}
+        "3.3": "/Library/Frameworks/Python.framework/Versions/3.3/bin/python3",
+        "3.4": "/Library/Frameworks/Python.framework/Versions/3.4/bin/python3"
+        }
 # Full path to the *static* gfortran runtime
 LIBGFORTRAN_A_PATH = "/usr/local/lib/libgfortran.a"
 
@@ -393,7 +396,6 @@ def bdist_wininst_sse3(options):
 def bdist_superpack(options):
     """Build all arch specific wininst installers."""
     pyver = options.python_version
-
     def copy_bdist(arch):
         # Copy the wininst in dist into the release directory
         source = os.path.join('dist', wininst_name(pyver))
@@ -629,17 +631,28 @@ def _create_dmg(pyver, src_dir, volname=None):
 # Release notes and Changelog
 #----------------------------
 
-def compute_md5():
-    released = paver.path.path(options.installers.installersdir).listdir()
+def compute_md5(idirs):
+    released = paver.path.path(idirs).listdir()
     checksums = []
-    for f in released:
-        if not f.endswith('DS_Store'):
-            m = md5.md5(open(f, 'r').read())
-            checksums.append('%s  %s' % (m.hexdigest(), f))
+    for f in sorted(released):
+        m = md5(open(f, 'r').read())
+        checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
 
     return checksums
 
-def write_release_task(filename='NOTES.txt'):
+def compute_sha256(idirs):
+    # better checksum so gpg signed README.txt containing the sums can be used
+    # to verify the binaries instead of signing all binaries
+    released = paver.path.path(idirs).listdir()
+    checksums = []
+    for f in sorted(released):
+        m = sha256(open(f, 'r').read())
+        checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(f)))
+
+    return checksums
+
+def write_release_task(options, filename='NOTES.txt'):
+    idirs = options.installers.installersdir
     source = paver.path.path(RELEASE)
     target = paver.path.path(filename)
     if target.exists():
@@ -650,13 +663,21 @@ def write_release_task(filename='NOTES.txt'):
 Checksums
 =========
 
-""")
-    ftarget.writelines(['%s\n' % c for c in compute_md5()])
+MD5
+~~~
 
+""")
+    ftarget.writelines(['%s\n' % c for c in compute_md5(idirs)])
+    ftarget.writelines("""
+SHA256
+~~~~~~
+
+""")
+    ftarget.writelines(['%s\n' % c for c in compute_sha256(idirs)])
 
 def write_log_task(filename='Changelog'):
     st = subprocess.Popen(
-            ['git', 'log', '%s..%s' % (LOG_START, LOG_END)],
+            ['git', 'log',  '%s..%s' % (LOG_START, LOG_END)],
             stdout=subprocess.PIPE)
 
     out = st.communicate()[0]
@@ -665,14 +686,14 @@ def write_log_task(filename='Changelog'):
     a.close()
 
 @task
-def write_release():
-    write_release_task()
+def write_release(options):
+    write_release_task(options)
 
 @task
 def write_log():
     write_log_task()
 
 @task
-def write_release_and_log():
-    write_release_task(os.path.join(options.installers.releasedir, 'README'))
+def write_release_and_log(options):
+    write_release_task(options, os.path.join(options.installers.releasedir, 'README'))
     write_log_task(os.path.join(options.installers.releasedir, 'Changelog'))
