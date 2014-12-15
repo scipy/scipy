@@ -114,7 +114,7 @@ RELEASE = 'doc/release/0.15.0-notes.rst'
 
 # Start/end of the log (from git)
 LOG_START = 'v0.14.0'
-LOG_END = 'v0.15.0b1'
+LOG_END = 'HEAD'
 
 
 #-------------------------------------------------------
@@ -143,17 +143,18 @@ options(bootstrap=Bunch(bootstrap_dir="bootstrap"),
         bdist_wininst_simple=Bunch(python_version=PYVER),)
 
 # Where we can find BLAS/LAPACK/ATLAS on Windows/Wine
-SITECFG = {"sse3" : {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\lib\yop\sse3'},
-           "sse2" : {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\lib\yop\sse2'},
-           "nosse" : {'ATLAS': 'None', 'BLAS': r'C:\local\lib\yop\nosse',
-                      'LAPACK': r'C:\local\lib\yop\nosse'}}
+SITECFG = {"sse3" : {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\vendor\binaries\sse3'},
+           "sse2" : {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\vendor\binaries\sse2'},
+           "nosse" : {'ATLAS': 'None', 'BLAS': r'C:\local\vendor\binaries\nosse',
+                      'LAPACK': r'C:\local\vendor\binaries\nosse'}}
 
 # Wine config for win32 builds
 if sys.platform == "win32":
-    WINE_PY26 = [r"C:\Python26\python26.exe"]
-    WINE_PY27 = [r"C:\Python27\python27.exe"]
+    WINE_PY26 = [r"C:\Python26\python.exe"]
+    WINE_PY27 = [r"C:\Python27\python.exe"]
     WINE_PY32 = [r"C:\Python32\python.exe"]
     WINE_PY33 = [r"C:\Python33\python.exe"]
+    WINE_PY34 = [r"C:\Python34\python.exe"]
     WINDOWS_ENV = os.environ
     MAKENSIS = ["makensis"]
 elif sys.platform == "darwin":
@@ -161,6 +162,7 @@ elif sys.platform == "darwin":
     WINE_PY27 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python27/python.exe"]
     WINE_PY32 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python32/python.exe"]
     WINE_PY33 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python33/python.exe"]
+    WINE_PY34 = ["wine", os.environ['HOME'] + "/.wine/drive_c/Python34/python.exe"]
     WINDOWS_ENV = os.environ
     WINDOWS_ENV["DYLD_FALLBACK_LIBRARY_PATH"] = "/usr/X11/lib:/usr/lib"
     MAKENSIS = ["wine", "makensis"]
@@ -169,9 +171,10 @@ else:
     WINE_PY27 = [os.environ['HOME'] + "/.wine/drive_c/Python27/python.exe"]
     WINE_PY32 = [os.environ['HOME'] + "/.wine/drive_c/Python32/python.exe"],
     WINE_PY33 = [os.environ['HOME'] + "/.wine/drive_c/Python33/python.exe"],
+    WINE_PY34 = [os.environ['HOME'] + "/.wine/drive_c/Python34/python.exe"],
     WINDOWS_ENV = os.environ
     MAKENSIS = ["wine", "makensis"]
-WINE_PYS = {'3.3':WINE_PY33, '3.2':WINE_PY32,
+WINE_PYS = {'3.4':WINE_PY34, '3.3':WINE_PY33, '3.2':WINE_PY32,
             '2.7':WINE_PY27, '2.6':WINE_PY26}
 
 # Framework Python locations on OS X
@@ -179,7 +182,9 @@ MPKG_PYTHON = {
         "2.6": "/Library/Frameworks/Python.framework/Versions/2.6/bin/python",
         "2.7": "/Library/Frameworks/Python.framework/Versions/2.7/bin/python",
         "3.2": "/Library/Frameworks/Python.framework/Versions/3.2/bin/python3",
-        "3.3": "/Library/Frameworks/Python.framework/Versions/3.3/bin/python3"}
+        "3.3": "/Library/Frameworks/Python.framework/Versions/3.3/bin/python3",
+        "3.4": "/Library/Frameworks/Python.framework/Versions/3.4/bin/python3"
+        }
 # Full path to the *static* gfortran runtime
 LIBGFORTRAN_A_PATH = "/usr/local/lib/libgfortran.a"
 
