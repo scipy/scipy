@@ -1863,7 +1863,7 @@ add_newdoc("scipy.special", "kl_div",
 
     Elementwise function for computing Kullback-Leibler divergence.
 
-    .. math:: \text{kl_div}(x, y) = \begin{cases} x \log(x / y) - x + y & x > 0, y > 0 \\ y & x = 0, y \ge 0 \\ \infty & \text{otherwise} \end{cases}
+    .. math:: \text{kl\_div}(x, y) = \begin{cases} x \log(x / y) - x + y & x > 0, y > 0 \\ y & x = 0, y \ge 0 \\ \infty & \text{otherwise} \end{cases}
 
     Parameters
     ----------
@@ -2882,7 +2882,7 @@ add_newdoc("scipy.special", "pseudo_huber",
 
     Pseudo-Huber loss function.
 
-    .. math:: \text{pseudo_huber}(\delta, r) = \delta^2 \left( \sqrt{ 1 + \left( \frac{r}{\delta} \right)^2 } - 1 \right)
+    .. math:: \text{pseudo\_huber}(\delta, r) = \delta^2 \left( \sqrt{ 1 + \left( \frac{r}{\delta} \right)^2 } - 1 \right)
 
     Parameters
     ----------
@@ -2930,7 +2930,7 @@ add_newdoc("scipy.special", "rel_entr",
 
     Elementwise function for computing relative entropy.
 
-    .. math:: \text{rel_entr}(x, y) = \begin{cases} x \log(x / y) & x > 0, y > 0 \\ 0 & x = 0, y \ge 0 \\ \infty & \text{otherwise} \end{cases}
+    .. math:: \text{rel\_entr}(x, y) = \begin{cases} x \log(x / y) & x > 0, y > 0 \\ 0 & x = 0, y \ge 0 \\ \infty & \text{otherwise} \end{cases}
 
     Parameters
     ----------
