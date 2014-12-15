@@ -5,11 +5,11 @@ import time
 import warnings
 
 import numpy
-import numpy as np
-from numpy import ones, array, asarray, empty
+from numpy import ones, array, asarray, empty, random, zeros
 
-from numpy.testing import *
+from numpy.testing import Tester, TestCase
 
+import scipy
 from scipy import sparse
 from scipy.lib.six import xrange
 from scipy.sparse import csr_matrix, coo_matrix, dia_matrix, lil_matrix, \
@@ -81,7 +81,7 @@ class BenchmarkSparse(TestCase):
             vars = dict([(var,mat.asformat(format)) for (var,name,mat) in matrices])
             for X,Y in [('A','A'),('A','B'),('B','A'),('B','B')]:
                 x,y = vars[X],vars[Y]
-                for op in ['__add__','__sub__','multiply','__div__','__mul__']:
+                for op in ['__add__','__sub__','multiply','__mul__']:
                     fn = getattr(x,op)
                     fn(y)  # warmup
 
@@ -304,11 +304,11 @@ class BenchmarkSparse(TestCase):
                 i, j = [], []
                 while len(i) < N:
                     n = N - len(i)
-                    ip = np.random.randint(0, A.shape[0], size=n)
-                    jp = np.random.randint(0, A.shape[1], size=n)
-                    i = np.r_[i, ip]
-                    j = np.r_[j, jp]
-                v = np.random.rand(n)
+                    ip = numpy.random.randint(0, A.shape[0], size=n)
+                    jp = numpy.random.randint(0, A.shape[1], size=n)
+                    i = numpy.r_[i, ip]
+                    j = numpy.r_[j, jp]
+                v = numpy.random.rand(n)
 
                 if N == 1:
                     i = int(i)
@@ -365,32 +365,36 @@ class BenchmarkSparse(TestCase):
         print('           Sparse Matrix fancy __getitem__')
         self._getset_bench(kernel,  ['csr', 'csc', 'lil'])
 
-# class TestLarge(TestCase):
-#    def bench_large(self):
-#        # Create a 100x100 matrix with 100 non-zero elements
-#        # and play around with it
-#        #TODO move this out of Common since it doesn't use spmatrix
-#        random.seed(0)
-#        A = dok_matrix((100,100))
-#        for k in xrange(100):
-#            i = random.randrange(100)
-#            j = random.randrange(100)
-#            A[i,j] = 1.
-#        csr = A.tocsr()
-#        csc = A.tocsc()
-#        csc2 = csr.tocsc()
-#        coo = A.tocoo()
-#        csr2 = coo.tocsr()
-#        assert_array_equal(A.transpose().todense(), csr.transpose().todense())
-#        assert_array_equal(csc.todense(), csr.todense())
-#        assert_array_equal(csr.todense(), csr2.todense())
-#        assert_array_equal(csr2.todense().transpose(), coo.transpose().todense())
-#        assert_array_equal(csr2.todense(), csc2.todense())
-#        csr_plus_csc = csr + csc
-#        csc_plus_csr = csc + csr
-#        assert_array_equal(csr_plus_csc.todense(), (2*A).todense())
-#        assert_array_equal(csr_plus_csc.todense(), csc_plus_csr.todense())
+    def bench_large(self):
+        H1, W1 = 1, 100000
+        H2, W2 = W1, 1000
+        C1 = 10
+        C2 = 1000000
 
+        print()
+
+        random.seed(0)
+
+        print('                  Sparse Matrix Large Matrix Multiplication')
+        start = time.time()
+        matrix1 = lil_matrix(zeros((H1, W1)))
+        matrix2 = lil_matrix(zeros((H2, W2)))
+        for i in xrange(C1):
+            matrix1[random.randint(H1), random.randint(W1)] = random.rand()
+        for i in xrange(C2):
+            matrix2[random.randint(H2), random.randint(W2)] = random.rand()
+        matrix1 = matrix1.tocsr()
+        matrix2 = matrix2.tocsr()
+        end = time.time()
+
+        start = time.time()
+        for i in range(100):
+            matrix3 = matrix1 * matrix2
+        end = time.time()
+        print('==============================================================================')
+        print('Matrix 1 shape | Matrix 2 shape | Matrix 1 count | Matrix 2 count | time (sec)')
+        print('------------------------------------------------------------------------------')
+        print('%14s | %14s | %14d | %14d | %10.3f' % (matrix1.shape, matrix2.shape, C1, C2, end-start))
 
 if __name__ == "__main__":
-    run_module_suite()
+    test = Tester(__file__).bench()
