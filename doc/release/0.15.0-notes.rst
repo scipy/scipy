@@ -255,6 +255,7 @@ Issues closed
 - `#2669 <https://github.com/scipy/scipy/issues/2669>`__: .signal.ltisys.ss2tf should only apply to MISO systems in current...
 - `#2911 <https://github.com/scipy/scipy/issues/2911>`__: interpolate.splder() failure on Fedora
 - `#3171 <https://github.com/scipy/scipy/issues/3171>`__: future of weave in scipy
+- `#3176 <https://github.com/scipy/scipy/issues/3176>`__: Suggestion to improve error message in scipy.integrate.odeint
 - `#3198 <https://github.com/scipy/scipy/issues/3198>`__: pdf() and logpdf() methods for scipy.stats.gaussian_kde
 - `#3318 <https://github.com/scipy/scipy/issues/3318>`__: Travis CI is breaking on test("full")
 - `#3329 <https://github.com/scipy/scipy/issues/3329>`__: scipy.stats.scoreatpercentile backward-incompatible change not...
@@ -316,6 +317,7 @@ Issues closed
 - `#4025 <https://github.com/scipy/scipy/issues/4025>`__: DOC: signal: The return value of find_peaks_cwt is not documented.
 - `#4029 <https://github.com/scipy/scipy/issues/4029>`__: scipy.stats.nbinom.logpmf(0,1,1) returns nan. Correct value is...
 - `#4032 <https://github.com/scipy/scipy/issues/4032>`__: ERROR: test_imresize (test_pilutil.TestPILUtil)
+- `#4038 <https://github.com/scipy/scipy/issues/4038>`__: errors do not propagate through scipy.integrate.odeint properly
 - `#4171 <https://github.com/scipy/scipy/issues/4171>`__: orthogonal_procrustes always returns scale.
 - `#4176 <https://github.com/scipy/scipy/issues/4176>`__: Solving the Discrete Lyapunov Equation does not work with matrix...
 
@@ -489,14 +491,14 @@ Pull requests
 - `#3892 <https://github.com/scipy/scipy/pull/3892>`__: DOC: sparse.linalg: Fix lobpcg docstring.
 - `#3894 <https://github.com/scipy/scipy/pull/3894>`__: DOC: stats: Assorted docstring edits.
 - `#3896 <https://github.com/scipy/scipy/pull/3896>`__: Fix 2 mistakes in MatrixMarket format parsing
-- `#3897 <https://github.com/scipy/scipy/pull/3897>`__: BUG: associated Legendre function of second kind for 1<|x|<1.0001
+- `#3897 <https://github.com/scipy/scipy/pull/3897>`__: BUG: associated Legendre function of second kind for 1<x<1.0001
 - `#3899 <https://github.com/scipy/scipy/pull/3899>`__: BUG: fix undefined behavior in alngam
 - `#3906 <https://github.com/scipy/scipy/pull/3906>`__: MAINT/DOC: Whitespace tweaks in several docstrings.
 - `#3907 <https://github.com/scipy/scipy/pull/3907>`__: TST: relax bounds of interpolate test to accomodate rounding...
 - `#3909 <https://github.com/scipy/scipy/pull/3909>`__: MAINT: Create a common version of `count_nonzero` for compatibility...
 - `#3910 <https://github.com/scipy/scipy/pull/3910>`__: Fix a couple of test errors in master
 - `#3911 <https://github.com/scipy/scipy/pull/3911>`__: Use MathJax for the html docs
-- `#3914 <https://github.com/scipy/scipy/pull/3914>`__: Rework the *_roots functions and document them.
+- `#3914 <https://github.com/scipy/scipy/pull/3914>`__: Rework the _roots functions and document them.
 - `#3916 <https://github.com/scipy/scipy/pull/3916>`__: Remove all linpack_lite code and replace with LAPACK routines
 - `#3917 <https://github.com/scipy/scipy/pull/3917>`__: splines, constant extrapolation
 - `#3918 <https://github.com/scipy/scipy/pull/3918>`__: DOC: tweak the rv_discrete docstring example
@@ -530,13 +532,14 @@ Pull requests
 - `#3960 <https://github.com/scipy/scipy/pull/3960>`__: BUG: io.netcdf: do not close mmap if there are references left...
 - `#3965 <https://github.com/scipy/scipy/pull/3965>`__: DOC: Fix a few more sphinx warnings that occur when building...
 - `#3966 <https://github.com/scipy/scipy/pull/3966>`__: DOC: add guidelines for using test generators in HACKING
-- `#3968 <https://github.com/scipy/scipy/pull/3968>`__: BUG: sparse.linalg: make *Inv objects in arpack garbage-collectable...
+- `#3968 <https://github.com/scipy/scipy/pull/3968>`__: BUG: sparse.linalg: make Inv objects in arpack garbage-collectable...
 - `#3971 <https://github.com/scipy/scipy/pull/3971>`__: Remove all linpack_lite code and replace with LAPACK routines
 - `#3972 <https://github.com/scipy/scipy/pull/3972>`__: fix typo in error message
 - `#3973 <https://github.com/scipy/scipy/pull/3973>`__: MAINT: better error message for multivariate normal.
 - `#3981 <https://github.com/scipy/scipy/pull/3981>`__: turn the cryptically named scipy.special information theory functions...
 - `#3984 <https://github.com/scipy/scipy/pull/3984>`__: Wrap her, syr, her2, syr2 blas routines
-- `#3990 <https://github.com/scipy/scipy/pull/3990>`__: improve *UnivariateSpline docs
+- `#3990 <https://github.com/scipy/scipy/pull/3990>`__: improve UnivariateSpline docs
+- `#3991 <https://github.com/scipy/scipy/pull/3991>`__: ENH: stats: return namedtuple for describe output
 - `#3993 <https://github.com/scipy/scipy/pull/3993>`__: DOC: stats: percentileofscore references np.percentile
 - `#3997 <https://github.com/scipy/scipy/pull/3997>`__: BUG: linalg: pascal(35) was incorrect: last element overflowed...
 - `#3998 <https://github.com/scipy/scipy/pull/3998>`__: MAINT: use isMaskedArray instead of is_masked to check type
@@ -565,7 +568,7 @@ Pull requests
 - `#4084 <https://github.com/scipy/scipy/pull/4084>`__: BUG: Match exception declarations in scipy/io/matlab/streams.pyx...
 - `#4091 <https://github.com/scipy/scipy/pull/4091>`__: DOC: special: more clear instructions on how to evaluate polynomials
 - `#4105 <https://github.com/scipy/scipy/pull/4105>`__: BUG: Workaround for SGEMV segfault in Accelerate
-- `#4107 <https://github.com/scipy/scipy/pull/4107>`__: DOC: get rid of 'import *' in examples
+- `#4107 <https://github.com/scipy/scipy/pull/4107>`__: DOC: get rid of 'import \*' in examples
 - `#4113 <https://github.com/scipy/scipy/pull/4113>`__: DOC: fix typos in distance.yule
 - `#4114 <https://github.com/scipy/scipy/pull/4114>`__: MAINT C fixes
 - `#4117 <https://github.com/scipy/scipy/pull/4117>`__: deprecate nanmean, nanmedian and nanstd in favor of their numpy...
@@ -587,3 +590,10 @@ Pull requests
 - `#4183 <https://github.com/scipy/scipy/pull/4183>`__: Skip Cython build in Travis-CI
 - `#4184 <https://github.com/scipy/scipy/pull/4184>`__: Pr 4074
 - `#4187 <https://github.com/scipy/scipy/pull/4187>`__: Pr/3923
+- `#4190 <https://github.com/scipy/scipy/pull/4190>`__: BUG: special: fix up ellip_harm build
+- `#4193 <https://github.com/scipy/scipy/pull/4193>`__: BLD: fix msvc compiler errors
+- `#4194 <https://github.com/scipy/scipy/pull/4194>`__: BUG: fix buffer dtype mismatch on win-amd64
+- `#4199 <https://github.com/scipy/scipy/pull/4199>`__: ENH: Changed scipy.stats.describe output from datalen to nobs
+- `#4201 <https://github.com/scipy/scipy/pull/4201>`__: DOC: add blas2 and nan* deprecations to the release notes
+- `#4243 <https://github.com/scipy/scipy/pull/4243>`__: TST: bump test tolerances
+
