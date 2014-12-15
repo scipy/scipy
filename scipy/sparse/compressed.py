@@ -15,7 +15,8 @@ from .dia import dia_matrix
 from . import _sparsetools
 from .sputils import upcast, upcast_char, to_native, isdense, isshape, \
      getdtype, isscalarlike, isintlike, IndexMixin, get_index_dtype, \
-     downcast_intp_index, _compat_unique, _compat_bincount
+     downcast_intp_index, _compat_unique, _compat_bincount, \
+     supported_bitwise_dtypes
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
@@ -359,6 +360,79 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def __radd__(self,other):
         return self.__add__(other)
+
+
+    def __or__(self, other):
+        # First check if argument is a scalar
+        if self.dtype not in supported_bitwise_dtypes:
+            raise TypeError("Unsupported dtype for 'or': %s " % self.dtype)
+        if isscalarlike(other):
+            if not other:
+                # Just copy ourselves
+                return self.copy()
+
+            else:  # Now we would add this scalar to every element.
+                raise NotImplementedError('or-ing a nonzero scalar to a '
+                                          'sparse matrix is not supported')
+        elif isspmatrix(other):
+            if (other.shape != self.shape):
+                raise ValueError("inconsistent shapes")
+
+            return self._binopt(other,'_bor_')
+        elif isdense(other):
+            # Convert this matrix to a dense matrix and add them
+            return self.todense() | other
+        else:
+            return NotImplemented
+
+    def __ror__(self, other):
+        return self.__or__(other)
+
+    def __and__(self, other):
+        # First check if argument is a scalar        
+        if self.dtype not in supported_bitwise_dtypes:
+            raise TypeError("Unsupported dtype for 'and': %s " % self.dtype)
+        if isscalarlike(other):
+            if not other:
+                # Return empty array of current shape and dtype 
+                return self.__class__(self.shape, self.dtype)
+
+            else:  # Now we would add this scalar to every element.
+                raise NotImplementedError('and-ing a nonzero scalar to a '
+                                          'sparse matrix is not supported')
+        elif isspmatrix(other):
+            if (other.shape != self.shape):
+                raise ValueError("inconsistent shapes")
+
+            return self._binopt(other,'_band_')
+        elif isdense(other):
+            # Convert this matrix to a dense matrix and add them
+            return self.todense() & other
+        else:
+            return NotImplemented
+
+    def __rand__(self, other):
+        return self.__and__(other)
+
+    def __xor__(self, other):
+        if self.dtype not in supported_bitwise_dtypes:
+            raise TypeError("Unsupported dtype for 'xor': %s " % self.dtype)
+        if isscalarlike(other):
+            raise NotImplementedError('xoring a scalar and a sparse matrix'
+                                      'is not implemented')
+
+        elif isspmatrix(other):
+            if (other.shape != self.shape):
+                raise ValueError("inconsistent shapes")
+            return self._binopt(other, '_bxor_')
+        elif isdense(other):
+            return self.todense() ^ other
+        
+        else:
+            return NotImplemented
+
+    def __rxor__(self, other):
+        return self.__xor__(other)
 
     def __sub__(self,other):
         # First check if argument is a scalar

@@ -481,6 +481,24 @@ class spmatrix(object):
         else:
             raise NotImplementedError
 
+    def __and__(self, other):  # self & other
+        return self.tocsr().__and__(other)
+
+    def __rand__(self, other):
+        return self.tocsr().__rand__(other)
+
+    def __or__(self, other):  # self & other
+        return self.tocsr().__or__(other)
+
+    def __ror__(self, other):  # self & other
+        return self.tocsr().__ror__(other)
+
+    def __xor__(self, other):  # self & other
+        return self.tocsr().__xor__(other)
+
+    def __rxor__(self, other):  # self & other
+        return self.tocsr().__rxor__(other)
+        
     def __getattr__(self, attr):
         if attr == 'A':
             return self.toarray()
