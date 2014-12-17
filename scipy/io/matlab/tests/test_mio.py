@@ -31,9 +31,11 @@ import scipy.io.matlab.byteordercodes as boc
 from scipy.io.matlab.miobase import matdims, MatWriteError, MatReadError
 from scipy.io.matlab.mio import (mat_reader_factory, loadmat, savemat, whosmat)
 from scipy.io.matlab.mio5 import (MatlabObject, MatFile5Writer, MatFile5Reader,
-                                  MatlabFunction, varmats_from_mat)
+                                  MatlabFunction, varmats_from_mat,
+                                  to_writeable)
 from scipy.io.matlab import mio5_params as mio5p
 
+from nose.tools import assert_true
 
 test_data_path = pjoin(dirname(__file__), 'data')
 
@@ -679,6 +681,52 @@ def test_empty_struct():
     d = loadmat(stream)
     a2 = d['arr']
     assert_array_equal(a2, arr)
+
+
+def test_to_writeable():
+    # Test to_writeable function
+    res = to_writeable(np.array([1])) # pass through ndarrays
+    assert_equal(res.shape, (1,))
+    assert_array_equal(res, 1)
+    expected = np.array([(1, 2)], dtype=[('a', '|O8'), ('b', '|O8')])
+    assert_array_equal(to_writeable({'a':1,'b':2}), expected)
+    # Fields with underscores discarded
+    assert_array_equal(to_writeable({'a':1,'b':2, '_c':3}), expected)
+    # Not-string fields discarded
+    assert_array_equal(to_writeable({'a':1,'b':2, 100:3}), expected)
+    # String fields that are valid Python identifiers discarded
+    assert_array_equal(to_writeable({'a':1,'b':2, '99':3}), expected)
+    # Object with field names is equivalent
+    class klass(object): pass
+    c = klass
+    c.a = 1
+    c.b = 2
+    assert_array_equal(to_writeable(c), expected)
+    # empty list and tuple go to empty array
+    res = to_writeable([])
+    assert_equal(res.shape, (0,))
+    assert_equal(res.dtype.type, np.float64)
+    res = to_writeable(())
+    assert_equal(res.shape, (0,))
+    assert_equal(res.dtype.type, np.float64)
+    # None -> None
+    assert_true(to_writeable(None) is None)
+    # String to strings
+    assert_equal(to_writeable('a string').dtype.type, np.str_)
+    # Scalars to numpy to numpy scalars
+    res = to_writeable(1)
+    assert_equal(res.shape, ())
+    assert_equal(res.dtype.type, np.array(1).dtype.type)
+    assert_array_equal(res, 1)
+    # not object convertable
+    assert_true(to_writeable(object()) is None)
+    # dict keys with legal characters are convertible
+    res = to_writeable({'a': 1})['a']
+    assert_equal(res.shape, (1,))
+    assert_equal(res.dtype.type, np.object_)
+    # but not with illegal characters
+    assert_true(to_writeable({'1':1}) is None)
+    assert_true(to_writeable({'_a':1}) is None)
 
 
 def test_recarray():

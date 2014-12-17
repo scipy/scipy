@@ -410,53 +410,6 @@ def to_writeable(source):
     Returns
     -------
     arr : ndarray
-
-    Examples
-    --------
-    >>> to_writeable(np.array([1])) # pass through ndarrays
-    array([1])
-    >>> expected = np.array([(1, 2)], dtype=[('a', '|O8'), ('b', '|O8')])
-    >>> np.all(to_writeable({'a':1,'b':2}) == expected)
-    True
-    >>> np.all(to_writeable({'a':1,'b':2, '_c':3}) == expected)
-    True
-    >>> np.all(to_writeable({'a':1,'b':2, 100:3}) == expected)
-    True
-    >>> np.all(to_writeable({'a':1,'b':2, '99':3}) == expected)
-    True
-    >>> class klass(object): pass
-    >>> c = klass
-    >>> c.a = 1
-    >>> c.b = 2
-    >>> np.all(to_writeable({'a':1,'b':2}) == expected)
-    True
-    >>> to_writeable([])
-    array([], dtype=float64)
-    >>> to_writeable(())
-    array([], dtype=float64)
-    >>> to_writeable(None)
-
-    >>> to_writeable('a string').dtype.type == np.str_
-    True
-    >>> to_writeable(1)
-    array(1)
-    >>> to_writeable([1])
-    array([1])
-    >>> to_writeable([1])
-    array([1])
-    >>> to_writeable(object()) # not convertable
-
-    dict keys with legal characters are convertible
-
-    >>> to_writeable({'a':1})['a']
-    array([1], dtype=object)
-
-    but not with illegal characters
-
-    >>> to_writeable({'1':1}) is None
-    True
-    >>> to_writeable({'_a':1}) is None
-    True
     '''
     if isinstance(source, np.ndarray):
         return source
