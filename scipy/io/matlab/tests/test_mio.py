@@ -32,7 +32,7 @@ from scipy.io.matlab.miobase import matdims, MatWriteError, MatReadError
 from scipy.io.matlab.mio import (mat_reader_factory, loadmat, savemat, whosmat)
 from scipy.io.matlab.mio5 import (MatlabObject, MatFile5Writer, MatFile5Reader,
                                   MatlabFunction, varmats_from_mat,
-                                  to_writeable)
+                                  to_writeable, EmptyStructMarker)
 from scipy.io.matlab import mio5_params as mio5p
 
 from nose.tools import assert_true
@@ -450,7 +450,15 @@ def test_warnings():
 
 
 def test_regression_653():
-    assert_raises(TypeError, savemat, BytesIO(), {'d':{1:2}}, format='5')
+    # Saving a dictionary with only invalid keys used to raise an error. Now we
+    # save this as an empty struct in matlab space.
+    sio = BytesIO()
+    savemat(sio, {'d':{1:2}}, format='5')
+    back = loadmat(sio)['d']
+    # Check we got an empty struct equivalent
+    assert_equal(back.shape, (1,1))
+    assert_equal(back.dtype, np.dtype(np.object))
+    assert_(back[0,0] is None)
 
 
 def test_structname_len():
@@ -683,6 +691,17 @@ def test_empty_struct():
     assert_array_equal(a2, arr)
 
 
+def test_save_empty_dict():
+    # saving empty dict also gives empty struct
+    stream = BytesIO()
+    savemat(stream, {'arr': {}})
+    d = loadmat(stream)
+    a = d['arr']
+    assert_equal(a.shape, (1,1))
+    assert_equal(a.dtype, np.dtype(np.object))
+    assert_(a[0,0] is None)
+
+
 def test_to_writeable():
     # Test to_writeable function
     res = to_writeable(np.array([1])) # pass through ndarrays
@@ -718,15 +737,23 @@ def test_to_writeable():
     assert_equal(res.shape, ())
     assert_equal(res.dtype.type, np.array(1).dtype.type)
     assert_array_equal(res, 1)
-    # not object convertable
+    # Empty dict returns EmptyStructMarker
+    assert_true(to_writeable({}) is EmptyStructMarker)
+    # Object does not have (even empty) __dict__
     assert_true(to_writeable(object()) is None)
+    # Custom object does have empty __dict__, returns EmptyStructMarker
+    class C(object): pass
+    assert_true(to_writeable(c()) is EmptyStructMarker)
     # dict keys with legal characters are convertible
     res = to_writeable({'a': 1})['a']
     assert_equal(res.shape, (1,))
     assert_equal(res.dtype.type, np.object_)
-    # but not with illegal characters
-    assert_true(to_writeable({'1':1}) is None)
-    assert_true(to_writeable({'_a':1}) is None)
+    # Only fields with illegal characters, falls back to EmptyStruct
+    assert_true(to_writeable({'1':1}) is EmptyStructMarker)
+    assert_true(to_writeable({'_a':1}) is EmptyStructMarker)
+    # Unless there are valid fields, in which case structured array
+    assert_equal(to_writeable({'1':1, 'f': 2}),
+                 np.array([(2,)], dtype=[('f', '|O8')]))
 
 
 def test_recarray():
