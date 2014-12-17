@@ -178,7 +178,7 @@ int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
     for(ll = 0; ll < weights->nd; ll++)
         fsize *= weights->dimensions[ll];
     pw = (Float64*)PyArray_DATA(weights);
-    pf = (Bool*)malloc(fsize * sizeof(Bool));
+    pf = malloc(fsize * sizeof(Bool));
     if (!pf) {
         PyErr_NoMemory();
         goto exit;
@@ -192,7 +192,7 @@ int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
         }
     }
     /* copy the weights to contiguous memory: */
-    ww = (Float64*)malloc(filter_size * sizeof(Float64));
+    ww = malloc(filter_size * sizeof(Float64));
     if (!ww) {
         PyErr_NoMemory();
         goto exit;
@@ -541,7 +541,7 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
     }
     /* get the structure: */
     if (structure) {
-        ss = (double*)malloc(filter_size * sizeof(double));
+        ss = malloc(filter_size * sizeof(double));
         if (!ss) {
             PyErr_NoMemory();
             goto exit;
@@ -715,7 +715,7 @@ int NI_RankFilter(PyArrayObject* input, int rank,
         }
     }
     /* buffer for rank calculation: */
-    buffer = (double*)malloc(filter_size * sizeof(double));
+    buffer = malloc(filter_size * sizeof(double));
     if (!buffer) {
         PyErr_NoMemory();
         goto exit;
@@ -932,7 +932,7 @@ int NI_GenericFilter(PyArrayObject* input,
     for(ll = 0; ll < input->nd; ll++)
         size *= input->dimensions[ll];
     /* buffer for filter calculation: */
-    buffer = (double*)malloc(filter_size * sizeof(double));
+    buffer = malloc(filter_size * sizeof(double));
     if (!buffer) {
         PyErr_NoMemory();
         goto exit;
