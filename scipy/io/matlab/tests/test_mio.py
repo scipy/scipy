@@ -32,6 +32,7 @@ from scipy.io.matlab.miobase import matdims, MatWriteError
 from scipy.io.matlab.mio import (mat_reader_factory, loadmat, savemat, whosmat)
 from scipy.io.matlab.mio5 import (MatlabObject, MatFile5Writer, MatFile5Reader,
                                   MatlabFunction, varmats_from_mat)
+from scipy.io.matlab import mio5_params as mio5p
 
 
 test_data_path = pjoin(dirname(__file__), 'data')
@@ -845,6 +846,23 @@ def test_logical_array():
     x = np.array([[True], [False]], dtype=np.bool_)
     assert_array_equal(d['testbools'], x)
     assert_equal(d['testbools'].dtype, x.dtype)
+
+
+def test_logical_out_type():
+    # Confirm that bool type written as uint8, uint8 class
+    # See gh-4022
+    stream = BytesIO()
+    barr = np.array([False, True, False])
+    savemat(stream, {'barray': barr})
+    stream.seek(0)
+    reader = MatFile5Reader(stream)
+    reader.initialize_read()
+    reader.read_file_header()
+    hdr, _ = reader.read_var_header()
+    assert_equal(hdr.mclass, mio5p.mxUINT8_CLASS)
+    assert_equal(hdr.is_logical, True)
+    var = reader.read_var_array(hdr, False)
+    assert_equal(var.dtype.type, np.uint8)
 
 
 def test_mat4_3d():
