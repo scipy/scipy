@@ -2210,6 +2210,9 @@ def _hermnorm(N):
     return plist
 
 
+# Note: when removing pdf_fromgamma, also remove the _hermnorm support function
+@np.deprecate(message="scipy.stats.pdf_fromgamma is deprecated in scipy 0.16.0 "
+                      "in favour of statsmodels.distributions.ExpandedNormal.")
 def pdf_fromgamma(g1, g2, g3=0.0, g4=None):
     if g4 is None:
         g4 = 3 * g2**2
