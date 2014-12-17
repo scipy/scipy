@@ -837,12 +837,11 @@ def test_write_opposite_endian():
 
 
 def test_logical_array():
-    # The roundtrip test doesn't verify that we load the data up with the correct (bool) dtype
-    fp = open(pjoin(test_data_path, 'testbool_8_WIN64.mat'), 'rb')
-    rdr = MatFile5Reader(fp, mat_dtype=True)
-    d = rdr.get_variables()
-    fp.close()
-
+    # The roundtrip test doesn't verify that we load the data up with the
+    # correct (bool) dtype
+    with open(pjoin(test_data_path, 'testbool_8_WIN64.mat'), 'rb') as fobj:
+        rdr = MatFile5Reader(fobj, mat_dtype=True)
+        d = rdr.get_variables()
     x = np.array([[True], [False]], dtype=np.bool_)
     assert_array_equal(d['testbools'], x)
     assert_equal(d['testbools'].dtype, x.dtype)
