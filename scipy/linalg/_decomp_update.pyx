@@ -557,8 +557,8 @@ cdef void qr_rank_1_update(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
         lartg(index1(u, us, j), index1(u, us, j+1), &c, &s)
 
         # update jth and (j+1)th rows of r.
-        # reduce this n to skip all the zeros in r.
-        rot(n, row(r, rs, j), rs[1], row(r, rs, j+1), rs[1], c, s)
+        if n-j > 0:
+            rot(n-j, index2(r, rs, j, j), rs[1], index2(r, rs, j+1, j), rs[1], c, s)
 
         # update jth and (j+1)th cols of q.
         rot(m, col(q, qs, j), qs[0], col(q, qs, j+1), qs[0], c, s.conjugate())
