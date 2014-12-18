@@ -5,6 +5,7 @@
 *~
 *$
 *.bak
+.idea/*
 *.kdev4
 *.org
 .project

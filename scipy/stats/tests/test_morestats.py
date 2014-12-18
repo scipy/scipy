@@ -594,11 +594,24 @@ def test_mvsdist_bad_arg():
     assert_raises(ValueError, stats.mvsdist, data)
 
 
-def test_kstat_bad_arg():
-    # Raise ValueError if n > 4 or n > 1.
-    data = [1]
-    n = 10
-    assert_raises(ValueError, stats.kstat, data, n=n)
+class TestKstat(TestCase):
+    # Note: `kstat` still needs review.  Statistics Review issue gh-675.
+
+    def test_moments_normal_distribution(self):
+        np.random.seed(32149)
+        data = np.random.randn(12345)
+        moments = []
+        for n in [1, 2, 3, 4]:
+            moments.append(stats.kstat(data, n))
+
+        expected = [0.011315, 1.017931, 0.05811052, 0.0754134]
+        assert_allclose(moments, expected, rtol=1e-4)
+
+    def test_kstat_bad_arg(self):
+        # Raise ValueError if n > 4 or n < 1.
+        data = np.arange(10)
+        for n in [0, 4.001]:
+            assert_raises(ValueError, stats.kstat, data, n=n)
 
 
 def test_kstatvar_bad_arg():
