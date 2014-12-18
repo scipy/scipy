@@ -1317,6 +1317,20 @@ class _TestCommon:
             assert_equal(result.shape, (4,2))
             assert_equal(result, dot(a,b))
 
+    def test_matmat_high_dimensional_other(self):
+        A = self.spmatrix(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
+        B = np.ones((3, 3, 3))
+        assert_raises(NotImplementedError, A.__mul__, B)
+
+    def test_matmat_object(self):
+        class OperatorStub:
+            def __rmul__(self, other):
+                return other
+        I = scipy.sparse.identity(4, dtype=float)
+        A = OperatorStub()
+        B = A * I
+        assert_array_equal(I.A, B.A)
+
     def test_sparse_format_conversions(self):
         A = sparse.kron([[1,0,2],[0,3,4],[5,0,0]], [[1,2],[0,3]])
         D = A.todense()
