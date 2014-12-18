@@ -35,8 +35,6 @@ from scipy.io.matlab.mio5 import (MatlabObject, MatFile5Writer, MatFile5Reader,
                                   to_writeable, EmptyStructMarker)
 from scipy.io.matlab import mio5_params as mio5p
 
-from nose.tools import assert_true
-
 test_data_path = pjoin(dirname(__file__), 'data')
 
 
@@ -729,7 +727,7 @@ def test_to_writeable():
     assert_equal(res.shape, (0,))
     assert_equal(res.dtype.type, np.float64)
     # None -> None
-    assert_true(to_writeable(None) is None)
+    assert_(to_writeable(None) is None)
     # String to strings
     assert_equal(to_writeable('a string').dtype.type, np.str_)
     # Scalars to numpy to numpy scalars
@@ -738,19 +736,19 @@ def test_to_writeable():
     assert_equal(res.dtype.type, np.array(1).dtype.type)
     assert_array_equal(res, 1)
     # Empty dict returns EmptyStructMarker
-    assert_true(to_writeable({}) is EmptyStructMarker)
+    assert_(to_writeable({}) is EmptyStructMarker)
     # Object does not have (even empty) __dict__
-    assert_true(to_writeable(object()) is None)
+    assert_(to_writeable(object()) is None)
     # Custom object does have empty __dict__, returns EmptyStructMarker
     class C(object): pass
-    assert_true(to_writeable(c()) is EmptyStructMarker)
+    assert_(to_writeable(c()) is EmptyStructMarker)
     # dict keys with legal characters are convertible
     res = to_writeable({'a': 1})['a']
     assert_equal(res.shape, (1,))
     assert_equal(res.dtype.type, np.object_)
     # Only fields with illegal characters, falls back to EmptyStruct
-    assert_true(to_writeable({'1':1}) is EmptyStructMarker)
-    assert_true(to_writeable({'_a':1}) is EmptyStructMarker)
+    assert_(to_writeable({'1':1}) is EmptyStructMarker)
+    assert_(to_writeable({'_a':1}) is EmptyStructMarker)
     # Unless there are valid fields, in which case structured array
     assert_equal(to_writeable({'1':1, 'f': 2}),
                  np.array([(2,)], dtype=[('f', '|O8')]))
