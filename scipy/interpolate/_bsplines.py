@@ -4,11 +4,12 @@ import functools
 import operator
 
 import numpy as np
-from scipy.linalg import get_lapack_funcs, LinAlgError
+from scipy.linalg import (get_lapack_funcs, LinAlgError,
+                          cholesky_banded, cho_solve_banded)
 from . import _bspl
 from . import fitpack
 
-__all__ = ["BSpline", "make_interp_spline"]
+__all__ = ["BSpline", "make_interp_spline", "make_lsq_spline"]
 
 
 # copy-paste from interpolate.py
@@ -515,6 +516,12 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
     >>> np.allclose([b_n(x0, 2), b_n(x1, 2)], [0, 0])
     True
 
+    See Also
+    --------
+    BSpline : base class representing the B-spline objects
+    make_lsq_spline : a similar factory function for spline fitting
+    UnivariateSpline : a wrapper over FITPACK spline fitting routines
+
     """
     # special-case k=0 right away
     if k == 0:
@@ -555,7 +562,8 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
     if x.size != y.shape[0]:
         raise ValueError('x & y are incompatible.')
     if t.size < x.size + k + 1:
-        raise ValueError('Got %d knots, need at least %d.' % (t.size, x.size + k + 1))
+        raise ValueError('Got %d knots, need at least %d.' %
+                         (t.size, x.size + k + 1))
     if k > 0 and np.any((x < t[k]) | (x > t[-k])):
         raise ValueError('Out of bounds w/ x = %s.' % x)
 
@@ -613,3 +621,146 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
         raise ValueError('illegal value in %d-th argument of internal gbsv' % -info)
 
     return t, c.reshape((nt,) + y.shape[1:]), k
+
+
+def make_lsq_spline(x, y, t, k=3, w=None, check_finite=True):
+    r"""Compute the (coefficients of) an LSQ B-spline.
+
+    The result is a linear combination
+
+    .. math::
+
+            S(x) = \sum_j c_j B_j(x; t)
+
+    of the B-spline basis elements, :math:`B_j(x; t)`, which minimizes
+
+    .. math::
+
+        \sum_{j} \left( w_j \times (S(x_j) - y_j) \right)^2
+
+    Parameters
+    ----------
+    x : array_like, shape (m,)
+        Abscissas.
+    y : array_like, shape (m, ...)
+        Ordinates.
+    t : array_like, shape (n + k + 1,).
+        Knots.
+        Knots and data points must satisfy Schoenberg-Whitney conditions.
+    k : int, optional
+        B-spline degree. Default is cubic, k=3.
+    w : array_like, shape (n,), optional
+        Weights for spline fitting. Must be positive. If ``None``,
+        then weights are all equal.
+        Default is ``None``.
+    check_finite : bool, optional
+        Whether to check that the input arrays contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default is True.
+
+    Returns
+    -------
+    tck : tuple
+        Here ``c`` is an ndarray, shape(n, ...), representing the coefficients
+        of the LSQ B-spline of degree ``k`` with knots ``t``.
+        ``t`` and ``k`` are returned unchanged.
+
+    Notes
+    -----
+
+    The number of data points must be larger than the spline degree `k`.
+
+    Knots `t` must satisfy the Schoenberg-Whitney conditions,
+    i.e., there must be a subset of data points ``x[j]`` such that
+    ``t[j] < x[j] < t[j+k+1]``, for ``j=0, 1,...,n-k-2``.
+
+    Examples
+    --------
+    Generate some noisy data:
+
+    >>> x = np.linspace(-3, 3, 50)
+    >>> y = np.exp(-x**2) + 0.1 * np.random.randn(50)
+
+    Now fit a smoothing cubic spline with a pre-defined internal knots.
+    Here we make the knot vector (k+1)-regular by adding boundary knots:
+
+    >>> from scipy.interpolate import make_lsq_spline, BSpline
+    >>> t = [-1, 0, 1]
+    >>> k = 3
+    >>> t = np.r_[(x[0],)*(k+1),
+    ...           t,
+    ...           (x[-1],)*(k+1)]
+    >>> tck = make_lsq_spline(x, y, t, k)
+    >>> spl = BSpline(*tck)
+
+    For comparison, we also construct an interpolating spline for the same
+    set of data:
+
+    >>> from scipy.interpolate import make_interp_spline
+    >>> tck_i = make_interp_spline(x, y)
+    >>> spl_i = BSpline(*tck_i)
+
+    Plot both:
+
+    >>> import matplotlib.pyplot as plt
+    >>> xs = np.linspace(-3, 3, 100)
+    >>> plt.plot(x, y, 'ro', ms=5)
+    >>> plt.plot(xs, spl(xs), 'g-', lw=3, label='LSQ spline')
+    >>> plt.plot(xs, spl_i(xs), 'b-', lw=3, alpha=0.7, label='interp spline')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
+    See Also
+    --------
+    BSpline : base class representing the B-spline objects
+    make_interp_spline : a similar factory function for interpolating splines
+    LSQUnivariateSpline : a FITPACK-based spline fitting routine
+
+    """
+    x = _as_float_array(x, check_finite)
+    y = _as_float_array(y, check_finite)
+    t = _as_float_array(t, check_finite)
+    if w is not None:
+        w = _as_float_array(w, check_finite)
+    else:
+        w = np.ones_like(x)
+    k = int(k)
+
+    if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):
+        raise ValueError("Expect x to be a 1-D sorted array_like.")
+    if x.shape[0] < k+1:
+        raise("Need more x points.")
+    if k < 0:
+        raise ValueError("Expect non-negative k.")
+    if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
+        raise ValueError("Expect t to be a 1-D sorted array_like.")
+    if x.size != y.shape[0]:
+        raise ValueError('x & y are incompatible.')
+    if k > 0 and np.any((x < t[k]) | (x > t[-k])):
+        raise ValueError('Out of bounds w/ x = %s.' % x)
+    if x.size != w.size:
+        raise ValueError('Incompatible weights.')
+
+    # number of coefficients
+    n = t.size - k - 1
+
+    # construct A.T @ A and rhs with A the collocation matrix, and
+    # rhs = A.T @ y for solving the LSQ problem  ``A.T @ A @ c = A.T @ y``
+    lower = True
+    extradim = prod(y.shape[1:])
+    ab = np.zeros((k+1, n), dtype=np.float_, order='F')
+    rhs = np.zeros((n, extradim), dtype=y.dtype, order='F')
+    _bspl._norm_eq_lsq(x, t, k,
+                      y.reshape(-1, extradim),
+                      w,
+                      ab, rhs)
+    rhs = rhs.reshape((n,) + y.shape[1:])
+
+    # have observation matrix & rhs, can solve the LSQ problem
+    cho_decomp = cholesky_banded(ab, overwrite_ab=True, lower=lower,
+                                 check_finite=check_finite)
+    c = cho_solve_banded((cho_decomp, lower), rhs, overwrite_b=True,
+                         check_finite=check_finite)
+
+    return t, c, k

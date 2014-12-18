@@ -326,3 +326,85 @@ def _handle_lhs_derivatives(double[::1]t, int k, double xval,
         for a in range(k+1):
             clmn = left - k + a
             ab[kl + ku + offset + row - clmn, clmn] = wrk[a]
+
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _norm_eq_lsq(double[::1] x,
+                double[::1] t,
+                int k,
+                cnp.ndarray y,
+                double[::1] w,
+                double[::1, :] ab,
+                double_or_complex[::1, :] rhs):
+    """Construct the normal equations for the B-spline LSQ problem.
+
+    The observation equations are ``A @ c = y``, and the normal equations are
+    ``A.T @ A @ c = A.T @ y``. This routine fills in the rhs and lhs for the
+    latter.
+
+    The B-spline collocation matrix is defined as :math:`A_{j,l} = B_l(x_j)`,
+    so that row ``j`` contains all the B-splines which are non-zero
+    at ``x_j``.
+
+    The normal eq matrix has at most `2k+1` bands and is constructed in the
+    LAPACK symmetrix banded storage: ``A[i, j] == ab[i-j, j]`` with `i >= j`.
+    See the doctsring for `scipy.linalg.cholesky_banded` for more info.
+    
+    This routine is not supposed to be called directly, and
+    does no error checking.
+
+    Parameters
+    ----------
+    x : ndarray, shape (n,)
+        sorted 1D array of x values
+    t : ndarray, shape (nt + k + 1,)
+        sorted 1D array of knots
+    k : int
+        spline order
+    y : ndarray, shape (n, s)
+        a 2D array of y values. The second dimension contains all trailing
+        dimensions of the original array of ordinates.
+    w : ndarray, shape(n,)
+        Weights.
+    ab : ndarray, shape (k+1, n), in Fortran order.
+        This parameter is modified in-place.
+        On entry: should be zeroed out.
+        On exit: LHS of the normal equations.
+    rhs : ndarray, shape (n, s), in Fortran order.
+        This parameter is modified in-place.
+        On entry: should be zeroed out.
+        On exit: RHS of the normal equations.
+
+    """
+    cdef:
+        int j, r, s, row, clmn, left, ci
+        double xval, wval
+        double[::1] wrk = np.empty(2*k + 2, dtype=np.float_)
+
+    left = k
+    for j in range(x.shape[0]):
+        xval = x[j]
+        wval = w[j] * w[j]
+        # find interval
+        left = find_interval(t, k, xval, left, extrapolate=False)
+            
+        # non-zero B-splines at xval
+        _deBoor_D(&t[0], xval, k, left, 0, &wrk[0])
+
+        # non-zero values of A.T @ A: banded storage w/ lower=True
+        # The colloq matrix in full storage would be
+        #   A[j, left-k:left+1] = wrk,
+        # Here we work out A.T @ A *in the banded storage* w/lower=True
+        # see the docstring of `scipy.linalg.cholesky_banded`.
+        for r in range(k+1):
+            row = left - k + r
+            for s in range(r+1):
+                clmn = left - k + s
+                ab[r-s, clmn] += wrk[r] * wrk[s] * wval
+                
+            # ... and A.T @ y
+            for ci in range(rhs.shape[1]):
+                rhs[row, ci] = rhs[row, ci] + wrk[r] * y[j, ci] * wval    # XXX: y is not typed
+

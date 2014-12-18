@@ -100,6 +100,7 @@ An alternative set of univariate spline routines:
 
    BSpline
    make_interp_spline
+   make_lsq_spline
 
 
 2-D Splines
