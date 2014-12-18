@@ -51,7 +51,7 @@ from scipy.lib.six import u
 from scipy.spatial.distance import (squareform, pdist, cdist, matching,
         jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule,
         num_obs_y, num_obs_dm, is_valid_dm, is_valid_y, minkowski, wminkowski,
-        euclidean, sqeuclidean, cosine, correlation, mahalanobis,
+        euclidean, sqeuclidean, cosine, correlation, hamming, mahalanobis,
         canberra, braycurtis, sokalmichener, _validate_vector)
 
 
@@ -1867,6 +1867,14 @@ def test_euclideans():
     d1 = euclidean(x, y)
     d2 = sqeuclidean(x, y)
     assert_almost_equal(d1**2, d2, decimal=14)
+
+
+def test_hamming_unequal_length():
+    # Regression test for gh-4290.
+    x = [0, 0, 1]
+    y = [1, 0, 1, 0]
+    # Used to give an AttributeError from ndarray.mean called on bool
+    assert_raises(ValueError, hamming, x, y)
 
 
 def test_sqeuclidean_dtypes():
