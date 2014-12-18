@@ -1326,10 +1326,10 @@ class _TestCommon:
         class OperatorStub:
             def __rmul__(self, other):
                 return other
-        I = scipy.sparse.identity(4, dtype=float)
-        A = OperatorStub()
-        B = A * I
-        assert_array_equal(I.A, B.A)
+        A = self.spmatrix(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
+        B = OperatorStub()
+        C = A * B
+        assert_array_equal(A.A, C.A)
 
     def test_sparse_format_conversions(self):
         A = sparse.kron([[1,0,2],[0,3,4],[5,0,0]], [[1,2],[0,3]])
