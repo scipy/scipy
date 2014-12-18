@@ -7,6 +7,7 @@ from . import _odepack
 from copy import copy
 
 _msgs = {2: "Integration successful.",
+         1: "Nothing was done; the integration time was 0.",
          -1: "Excess work done on this call (perhaps wrong Dfun type).",
          -2: "Excess accuracy requested (tolerances too small).",
          -3: "Illegal input detected (internal error).",
