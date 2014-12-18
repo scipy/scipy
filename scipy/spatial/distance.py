@@ -366,7 +366,7 @@ def hamming(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    return (u != v).mean()
+    return np.not_equal(u, v).mean()
 
 
 def jaccard(u, v):
