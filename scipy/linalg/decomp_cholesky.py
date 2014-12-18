@@ -184,7 +184,7 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     Cholesky decompose a banded Hermitian positive-definite matrix
 
     The matrix a is stored in ab either in lower diagonal or upper
-    diagonal ordered form:
+    diagonal ordered form::
 
         ab[u + i - j, j] == a[i,j]        (if upper form; i <= j)
         ab[    i - j, j] == a[i,j]        (if lower form; i >= j)
