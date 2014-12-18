@@ -25,8 +25,7 @@ from numpy import (r_, eye, real, atleast_1d, atleast_2d, poly,
                    squeeze, diag, asarray)
 #imports added for place
 from numpy import isreal, imag, newaxis, hstack, sort, delete, \
-    allclose, sqrt, conj, vstack, roll, unique, spacing, argsort
-import warnings
+    allclose, sqrt, conj, vstack, spacing, argsort, sum as npsum
 #for whatever reason I can't find it through scipy.linalg
 from numpy.linalg import matrix_rank 
 
@@ -1476,34 +1475,32 @@ def place(A,B,P, method="YT", maxtry=20, force_maxtry=False, return_poles=False)
             #in R are not computed
             Q,_ = linalg.qr(MatU1_A_Pi, mode="full")
             KerPj = Q[:,MatU1_A_Pi.shape[1]:]
+            
+            #we want to select one vector in KerPj to build the transfer
+            #matrix X
+            #however qr returns sometimes vectors with zeros on the same
+            #line for each pole and this yields very long convergence times.
+            #Or some other times a set of vectors, one with zero imaginary 
+            #part and one (or several) with imaginary parts. After trying 
+            #many ways to select the best possible one (eg ditch vectors 
+            #with zero imaginary part for complex poles) I ended up summing
+            #all vectors in KerPj, this solves 100% of the problems and is
+            #still a valid choice for X. Indeed for complex poles we are sure
+            #to have a non zero imaginary part that way, and the problem of
+            #lines full of zeros in X is solved too as when a vector from KerPj
+            #has a zero the other one(s) (when KerPj.shape[1]>1) for sure won't
+            #have a zero there.
+
+            Xj = npsum(KerPj,axis=1)[:,newaxis]
+            Xj = Xj / linalg.norm(Xj)
             if ~isreal(P[j]):  # complex pole
-                k = 0 
-                #avoid as much as possible vectors from null space with
-                #0 imaginary part
-                while allclose(imag(KerPj[:,k]),0):
-                    #if they are all full of zeros try next one, if they
-                    #are all full of zeros well... I dunno if their are some
-                    #wicked linear systems where this could happen but be safe
-                    #and raise
-                    k += 1
-                   
-                if k == KerPj.shape[1]:
-                    warnings.warn(
-                        "Could not find a complex vector matching %s Null Space" % str(P[j]))
-                    k -= 1
-        
-                #for complex conjugages X[j]/X[j+1] have to be Re(X[j]) and Im(X[j]) as per
-                #section 6.2 page 20 of YT. We have ensured before that all complex
-                #poles are ordered such as P[J] and P[j+1] are conjugates      
-                Xj_full = KerPj[:,k,newaxis].copy()
-                Xj = hstack([real(Xj_full), imag(Xj_full)])
+                Xj = hstack([real(Xj), imag(Xj)])
                 KerP.extend([KerPj, KerPj])
 
                 #skip next pole as it is the conjugate                
                 skip_conjugate = True
                 
-            else:  # real pole nothing to do     
-                Xj = KerPj[:,0,newaxis].copy()
+            else: #real pole nothing to do     
                 KerP.append(KerPj)
 
             if j == 0:
