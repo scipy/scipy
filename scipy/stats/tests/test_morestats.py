@@ -604,7 +604,7 @@ class TestKstat(TestCase):
         for n in [1, 2, 3, 4]:
             moments.append(stats.kstat(data, n))
 
-        expected = [0.011315, 1.017931, 0.05811052, 0.0754137]
+        expected = [0.011315, 1.017931, 0.05811052, 0.0754134]
         assert_allclose(moments, expected, rtol=1e-4)
 
     def test_kstat_bad_arg(self):
