@@ -137,6 +137,11 @@ class Test_place:
         #should fail as rank(B) is two
         assert_raises(ValueError, place, A, B, (-2,-2,-2,-2))
 
+        #should fail, these poles can' be placed with this linear system
+        #as they are way too close
+
+        assert_raises(ValueError, place, A, B, (-2,-2,-3,-3))
+
         #should fail as a complex misses its conjugate
         assert_raises(ValueError, place, A, B, (-2+1j,-2-1j,-2+3j,-2))
 

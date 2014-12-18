@@ -27,7 +27,8 @@ from numpy import (r_, eye, real, atleast_1d, atleast_2d, poly,
 from numpy import isreal, imag, newaxis, hstack, sort, delete, \
     allclose, sqrt, conj, vstack, spacing, argsort, sum as npsum
 #for whatever reason I can't find it through scipy.linalg
-from numpy.linalg import matrix_rank 
+from numpy.linalg import matrix_rank
+from numpy.linalg.linalg import LinAlgError
 
 
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
@@ -1410,6 +1411,8 @@ def place(A,B,P, method="YT", maxtry=20, force_maxtry=False, return_poles=False)
     #10->12/12/2014
     #-bugfixes, bugfixes, bugfixes...
     #-removed complex support from KNV0 as it is not reliable enough 
+    #17/12/2014
+    #-improved transfer matrix initial selection
 
     #play it safe safe with whatever the users might pass as P
     P = sort(array(P).flatten())[::-1]  
@@ -1542,8 +1545,12 @@ def place(A,B,P, method="YT", maxtry=20, force_maxtry=False, return_poles=False)
                 X[:,idx+1] = rel+1j*img
                 idx += 1  # skip next one
             idx += 1
+            
+        try:
+            M=linalg.solve(X.T,dot(diag(P),X.T)).T
+        except LinAlgError:
+            raise ValueError("The poles you've chosen can't be placed")
 
-        M = linalg.solve(X.T,dot(diag(P),X.T)).T
         K = linalg.solve(Z,dot(U0.T,M-A))
         
     #Beware Kautsky solves A+BK but the usual form is A-BK
