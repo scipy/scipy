@@ -8,25 +8,34 @@ Routines for updating QR decompositions
 # Copyright (C) 2014 Eric Moore
 #
 # A few references for Updating QR factorizations:
+# 
+# 1, 2, and 3 cover updates to full decompositons (q is square) and 4 and 5
+# cover updates to thin (economic) decompositions (r is square). Reference 3
+# additonally covers updating complete orthogonal factorizations and cholesky
+# decompositions (i.e. updating R alone).
 #
 # 1. Golub, G. H. & Loan, C. F. van V. Matrix Computations, 3rd Ed.
 #    (Johns Hopkins University Press, 1996).
 #
-# 2. Daniel, J. W., Gragg, W. B., Kaufman, L. & Stewart, G. W.
-#    Reorthogonalization and stable algorithms for updating the Gram-Schmidt QR
-#    factorization. Math. Comput. 30, 772795 (1976).
-#
-# 3. Gill, P. E., Golub, G. H., Murray, W. & Saunders, M. A. Methods for
-#    modifying matrix factorizations. Math. Comp. 28, 505535 (1974).
-#
-# 4. Hammarling, S. & Lucas, C. Updating the QR factorization and the least
+# 2. Hammarling, S. & Lucas, C. Updating the QR factorization and the least
 #    squares problem. 1-73 (The University of Manchester, 2008).
 #    at <http://eprints.ma.man.ac.uk/1192/>
+#
+# 3. Gill, P. E., Golub, G. H., Murray, W. & Saunders, M. A. Methods for
+#    modifying matrix factorizations. Math. Comp. 28, 505-535 (1974).
+#
+# 4. Daniel, J. W., Gragg, W. B., Kaufman, L. & Stewart, G. W.
+#    Reorthogonalization and stable algorithms for updating the Gram-Schmidt QR
+#    factorization. Math. Comput. 30, 772-795 (1976).
+#
+# 5. Reichel, L. & Gragg, W. B. Algorithm 686: FORTRAN Subroutines for
+#    Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 369–377 (1990).
 # 
 
 cimport cython
 cimport libc.stdlib
 cimport libc.limits as limits
+from libc.math cimport sqrt, fabs, hypot
 from libc.string cimport memset
 cimport numpy as cnp
 
@@ -34,7 +43,7 @@ cdef int NPY_ANYORDER = 0
 cdef int MEMORY_ERROR = limits.INT_MAX
 
 # These are commented out in the numpy support we cimported above.
-# Here I have declared them with as taking void* instead of PyArrayDescr
+# Here I have declared them as taking void* instead of PyArrayDescr
 # and object. In this file, only NULL is passed to these parameters.
 cdef extern from *:
     cnp.ndarray PyArray_CheckFromAny(object, void*, int, int, int, void*)
@@ -89,6 +98,16 @@ cdef inline void swap(int n, blas_t* x, int incx, blas_t* y, int incy) nogil:
     else:
         blas_pointers.zswap(&n, x, &incx, y, &incy)
 
+cdef inline void scal(int n, blas_t a, blas_t* x, int incx) nogil:
+    if blas_t is float:
+        blas_pointers.sscal(&n, &a, x, &incx)
+    elif blas_t is double:
+        blas_pointers.dscal(&n, &a, x, &incx)
+    elif blas_t is float_complex:
+        blas_pointers.cscal(&n, &a, x, &incx)
+    else:
+        blas_pointers.zscal(&n, &a, x, &incx)
+
 cdef inline void axpy(int n, blas_t a, blas_t* x, int incx,
                       blas_t* y, int incy) nogil:
     if blas_t is float:
@@ -99,6 +118,88 @@ cdef inline void axpy(int n, blas_t a, blas_t* x, int incx,
         blas_pointers.caxpy(&n, &a, x, &incx, y, &incy)
     else:
         blas_pointers.zaxpy(&n, &a, x, &incx, y, &incy)
+
+cdef inline blas_t nrm2(int n, blas_t* x, int incx) nogil:
+    # since dnrm2 etc are functions, we can't at present call them...
+    # this is mostly cribbed from netlib's dnrm2
+    cdef double norm, scale, ssq, absxi
+    cdef float fnorm, fscale, fssq, fabsxi
+    if blas_t is float:
+        if n < 1 or incx < 1:
+            fnorm = 0
+        elif n == 1:
+            fnorm = fabs(x[0])
+        else:
+            fscale = 0.0
+            fssq = 1.0
+    
+            for k in range(n):
+                if index1(x, &incx, k)[0] != 0:
+                    fabsxi = fabs(index1(x, &incx, k)[0])
+                    if fscale < fabsxi:
+                        fssq = 1 + fssq * (fscale/fabsxi)**2
+                        fscale = fabsxi
+                    else:
+                        fssq = fssq + (fabsxi/fscale)**2
+            fnorm = fscale*sqrt(fssq)
+        return fnorm
+    elif blas_t is double:
+        if n < 1 or incx < 1:
+            norm = 0
+        elif n == 1:
+            norm = fabs(x[0])
+        else:
+            scale = 0.0
+            ssq = 1.0
+    
+            for k in range(n):
+                if index1(x, &incx, k)[0] != 0:
+                    absxi = fabs(index1(x, &incx, k)[0])
+                    if scale < absxi:
+                        ssq = 1 + ssq * (scale/absxi)**2
+                        scale = absxi
+                    else:
+                        ssq = ssq + (absxi/scale)**2
+            norm = scale*sqrt(ssq)
+        return norm
+    elif blas_t is float_complex:
+        if n < 1 or incx < 1:
+            fnorm = 0
+        elif n == 1:
+            fnorm = hypot(x[0].real, x[0].imag)
+        else:
+            fscale = 0.0
+            fssq = 1.0
+    
+            for k in range(n):
+                if index1(x, &incx, k)[0] != 0:
+                    fabsxi = hypot(index1(x, &incx, k)[0].real, index1(x, &incx, k)[0].imag)
+                    if fscale < fabsxi:
+                        fssq = 1 + fssq * (fscale/fabsxi)**2
+                        fscale = fabsxi
+                    else:
+                        fssq = fssq + (fabsxi/fscale)**2
+            fnorm = fscale*sqrt(fssq)
+        return fnorm
+    else:
+        if n < 1 or incx < 1:
+            norm = 0
+        elif n == 1:
+            norm = hypot(x[0].real, x[0].imag)
+        else:
+            scale = 0.0
+            ssq = 1.0
+    
+            for k in range(n):
+                if index1(x, &incx, k)[0] != 0:
+                    absxi = hypot(index1(x, &incx, k)[0].real, index1(x, &incx, k)[0].imag)
+                    if scale < absxi:
+                        ssq = 1 + ssq * (scale/absxi)**2
+                        scale = absxi
+                    else:
+                        ssq = ssq + (absxi/scale)**2
+            norm = scale*sqrt(ssq)
+        return norm
 
 cdef inline void lartg(blas_t* a, blas_t* b, blas_t* c, blas_t* s) nogil:
     cdef blas_t g
@@ -252,6 +353,22 @@ cdef void blas_t_2d_conj(int m, int n, blas_t* x, int* xs) nogil:
         for i in range(m):
             for j in range(n):
                 index2(x, xs, i, j)[0] = index2(x, xs, i, j)[0].conjugate()
+
+cdef blas_t blas_t_sqrt(blas_t x) nogil:
+    if blas_t is float:
+        return sqrt(x)
+    elif blas_t is double:
+        return sqrt(x)
+    elif blas_t is float_complex:
+        return <float_complex>sqrt(<double>((<float*>&x)[0]))
+    else:
+        return sqrt((<double*>&x)[0])
+
+cdef bint blas_t_less_than(blas_t x, blas_t y) nogil:
+    if blas_t is float or blas_t is double:
+        return x < y
+    else:
+        return x.real < y.real
 
 cdef int to_lwork(blas_t a, blas_t b) nogil:
     cdef int ai, bi
@@ -537,6 +654,48 @@ cdef int qr_block_col_insert(int m, int n, blas_t* q, int* qs,
                         c, s.conjugate())
     return 0
 
+cdef void thin_qr_rank_1_update(int m, int n, blas_t* q, int* qs, bint qisF, 
+    blas_t* r, int* rs, blas_t* u, int* us, blas_t* v, int* vs, blas_t* s,
+    int* ss) nogil:
+    """Assume that q is (M,N) and either C or F contiguous, r is (N,N), u is M,
+       and V is N.  s is a 2*n work array.
+    """
+    cdef int j, info
+    cdef blas_t c, sn, rlast, t, rcond = 0.0
+    
+    info = reorth(m, n, q, qs, qisF, u, us, s, &rcond)
+
+    # reduce s with givens, using u as the n+1 column of q
+    # do the first one since the rots will be different.
+    lartg(index1(s, ss, n-1), index1(s, ss, n), &c, &sn)
+    t = index2(r, rs, n-1, n-1)[0] 
+    rlast = -t * sn.conjugate()
+    index2(r, rs, n-1, n-1)[0] = t * c
+    rot(m, col(q, qs, n-1), qs[0], u, us[0], c, sn.conjugate())
+
+    for j in range(n-2, -1, -1):
+        lartg(index1(s, ss, j), index1(s, ss, j+1), &c, &sn)
+        rot(n-j, index2(r, rs, j, j), rs[1],
+                index2(r, rs, j+1, j), rs[1], c, sn)
+        rot(m, col(q, qs, j), qs[0], col(q, qs, j+1), qs[0], c, sn.conjugate())
+
+    # add v to the first row of r
+    blas_t_conj(n, v, vs)
+    axpy(n, s[0],  v, vs[0], row(r, rs, 0), rs[1])
+
+    # now r is upper hessenberg with the only value in the last row stored in 
+    # rlast (This is very similar to hessenberg_qr below, but this loop ends 
+    # at n-1 instead of n)
+    for j in range(n-1):
+        lartg(index2(r, rs, j, j), index2(r, rs, j+1, j), &c, &sn)
+        rot(n-j-1, index2(r, rs, j, j+1), rs[1],
+                index2(r, rs, j+1, j+1), rs[1], c, sn)
+        rot(m, col(q, qs, j), qs[0], col(q, qs, j+1), qs[0], c, sn.conjugate())
+
+    # handle the extra value in rlast
+    lartg(index2(r, rs, n-1, n-1), &rlast, &c, &sn)
+    rot(m, col(q, qs, n-1), qs[0], u, us[0], c, sn.conjugate())
+
 cdef void qr_rank_1_update(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
                            blas_t* u, int* us, blas_t* v, int* vs) nogil:
     """ here we will assume that the u = Q.T.dot(u) and not the bare u.
@@ -718,6 +877,163 @@ cdef void p_subdiag_qr(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
 
         # restore the rjj element
         index2(r, rs, j, j)[0] = rjj
+
+def _reorth(cnp.ndarray q, cnp.ndarray u, rcond):
+    cdef cnp.ndarray s
+    cdef double rc_d
+    cdef float rc_f
+    cdef int m, n
+    cdef void* qp
+    cdef void* up
+    cdef void* sp
+    cdef int qs[2]
+    cdef int us[2]
+    cdef int ss[2]
+    cdef cnp.npy_intp size
+    cdef bint qisF
+
+    if q.ndim != 2: raise ValueError('q must be 2d')
+    m = q.shape[0]
+    n = q.shape[1]
+    if cnp.PyArray_CHKFLAGS(q, cnp.NPY_F_CONTIGUOUS):
+        qisF = True
+    elif cnp.PyArray_CHKFLAGS(q, cnp.NPY_C_CONTIGUOUS):
+        qisF = False
+    else:
+        raise ValueError('q must be one segment.')
+    if u.ndim != 1: raise ValueError('u must be 1d')
+    if u.shape[0] != m: raise ValueError('u.shape[0] must be q.shape[0]')
+    typecode = cnp.PyArray_TYPE(q)
+    if cnp.PyArray_TYPE(u) != typecode:
+        raise ValueError('q and u must have the same type.')
+
+    if not (typecode == cnp.NPY_FLOAT or typecode == cnp.NPY_DOUBLE \
+            or typecode == cnp.NPY_CFLOAT or typecode == cnp.NPY_CDOUBLE):
+        raise ValueError('q and u must be a blas compatible type: f d F or D')
+
+    q = validate_array(q)
+    u = validate_array(u)
+
+    qp = extract(q, qs)
+    up = extract(u, us)
+
+    size = 2*n
+    s = cnp.PyArray_ZEROS(1, &size, typecode, 1)
+    sp = extract(s, ss)
+
+    if typecode == cnp.NPY_FLOAT:
+        rc_f = rcond
+        info = reorth(m, n, <float*>qp, qs, qisF, <float*>up, us, <float*>sp, &rc_f)
+        return u, s[:n+1], rc_f, info
+    if typecode == cnp.NPY_DOUBLE:
+        rc_d = rcond
+        info = reorth(m, n, <double*>qp, qs, qisF, <double*>up, us, <double*>sp, &rc_d)
+        return u, s[:n+1], rc_d, info
+    if typecode == cnp.NPY_CFLOAT:
+        rc_f = rcond
+        info = reorth(m, n, <float_complex*>qp, qs, qisF, <float_complex*>up, us, <float_complex*>sp, <float_complex*>&rc_f)
+        return u, s[:n+1], rc_f, info
+    if typecode == cnp.NPY_CDOUBLE:
+        rc_d = rcond
+        info = reorth(m, n, <double_complex*>qp, qs, qisF, <double_complex*>up, us, <double_complex*>sp, <double_complex*>&rc_d)
+        return u, s[:n+1], rc_d, info
+
+cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
+                int* us, blas_t* s, blas_t* RCOND) nogil:
+    """Given a (m,n) matrix q with orthonormal columns and a (m,) vector u,
+       find vectors s, w and scalar p such that u = Qs + pw where w is of unit
+       length and orthogonal to the columns of q.
+
+       FIX comment on return values, and RCOND 
+
+       The method used for orthogonalizing u against q is described in [5]
+       listed in the file header.
+    """
+    cdef blas_t unorm, snorm, wnorm, wpnorm, sigma_max, sigma_min, rc
+    cdef char* T = 'T'
+    cdef char* N = 'N'
+    cdef char* C = 'C'
+    cdef int ss = 1
+    cdef blas_t inv_root2 = <blas_t>sqrt(2)
+
+    # normalize u
+    unorm = nrm2(m, u, us[0])
+    scal(m, 1/unorm, u, us[0])
+
+    # decompose u into q's columns.
+    if qisF:
+        if blas_t is float or blas_t is double:
+            gemv(T, m, n, 1, q, qs[1], u, us[0], 0, s, 1)
+        else:
+            gemv(C, m, n, 1, q, qs[1], u, us[0], 0, s, 1)
+    else:
+        if blas_t is float or blas_t is double:
+            gemv(N, n, m, 1, q, n, u, us[0], 0, s, 1)
+        else:
+            blas_t_conj(m, u, us)
+            gemv(N, n, m, 1, q, n, u, us[0], 0, s, 1)
+            blas_t_conj(m, u, us)
+            blas_t_conj(n, s, &ss)
+
+    # sigma_max is the largest singular value of q augmented with u/unorm
+    snorm = nrm2(n, s, 1)
+    sigma_max = blas_t_sqrt(1 + snorm)
+
+    # make u be the part of u that is not in span(q)
+    # i.e. u -= q.dot(s)
+    if qisF:
+        gemv(N, m, n, -1, q, qs[1], s, 1, 1, u, us[0])
+    else:
+        gemv(T, n, m, -1, q, n, s, 1, 1, u, us[0])
+    wnorm = nrm2(m, u, us[0])
+
+    # sigma_min is the smallest singular value of q qugmented with u/unorm
+    # the others are == 1, since q is orthonormal.
+    sigma_min = wnorm / sigma_max
+    rc = sigma_min / sigma_max
+
+    # check the conditioning of the problem.
+    if blas_t_less_than(rc, RCOND[0]):
+        RCOND[0] = rc
+        return 2
+    RCOND[0] = rc
+
+    if blas_t_less_than(inv_root2, wnorm):
+        scal(m, 1/wnorm, u, us[0])
+        scal(n, unorm, s, 1)
+        s[n] = unorm*wnorm
+        return 0
+
+    # if the above check failed, try one reorthogonalization
+    if qisF:
+        if blas_t is float or blas_t is double:
+            gemv(T, m, n, 1, q, qs[1], u, us[0], 0, s+n, 1)
+        else:
+            gemv(C, m, n, 1, q, qs[1], u, us[0], 0, s+n, 1)
+        gemv(N, m, n, -1, q, qs[1], s+n, 1, 1, u, us[0])
+    else:
+        if blas_t is float or blas_t is double:
+            gemv(N, n, m, 1, q, n, u, us[0], 0, s+n, 1)
+        else:
+            blas_t_conj(m, u, us)
+            gemv(N, n, m, 1, q, n, u, us[0], 0, s+n, 1)
+            blas_t_conj(m, u, us)
+            blas_t_conj(n, s+n, &ss)
+        gemv(T, n, m, -1, q, n, s+n, 1, 1, u, us[0])
+        
+    wpnorm = nrm2(m, u, us[0]) 
+    
+    if blas_t_less_than(wpnorm, wnorm/inv_root2): # u lies in span(q) 
+        scal(m, 0, u, us[0])
+        axpy(n, 1, s, 1, s+n, 1)
+        scal(n, unorm, s, 1)
+        s[n] = 0
+        return 1
+    scal(m, 1/wpnorm, u, us[0])
+    axpy(n, 1, s, 1, s+n, 1)
+    scal(n, unorm, s, 1)
+    s[n] = wpnorm*unorm
+    return 0
 
 def _form_qTu(object a, object b):
     """ this function only exists to expose the cdef version below for testing
@@ -903,6 +1219,7 @@ cdef validate_qr(object q0, object r0, bint overwrite_q, int q_order,
     cdef cnp.ndarray Q
     cdef cnp.ndarray R
     cdef int typecode
+    cdef bint economic = False
 
     q_order |= cnp.NPY_BEHAVED_NS | cnp.NPY_ELEMENTSTRIDES  
     r_order |= cnp.NPY_BEHAVED_NS | cnp.NPY_ELEMENTSTRIDES
@@ -930,17 +1247,20 @@ cdef validate_qr(object q0, object r0, bint overwrite_q, int q_order,
             or typecode == cnp.NPY_CFLOAT or typecode == cnp.NPY_CDOUBLE):
         raise ValueError('only floatingcomplex arrays supported')
 
+    # we support MxM MxN and MxN NxN
     if Q.shape[1] != R.shape[0]:
         raise ValueError('Q and R do not have compatible shapes')
 
-    # economic decomposition are not supported.
-    if Q.shape[0] != Q.shape[1]:
-        raise ValueError('economic mode decompositions are not supported.')
+    # so one or the other or both should be square.
+    if Q.shape[0] != Q.shape[1] and R.shape[0] == R.shape[1]:
+        economic = True
+    elif Q.shape[0] != Q.shape[1]:
+        raise ValueError('bad shapes.')
 
     Q = validate_array(Q)
     R = validate_array(R)
 
-    return Q, R, typecode, Q.shape[0], R.shape[1]
+    return Q, R, typecode, Q.shape[0], R.shape[1], economic
  
 cdef void* extract(cnp.ndarray a, int* as):
     if a.ndim == 2:
@@ -1042,10 +1362,13 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True):
     cdef int typecode, m, n, info
     cdef int qs[2]
     cdef int rs[2]
+    cdef bint economic
 
     if which == 'row':
-        q1, r1, typecode, m, n = validate_qr(Q, R, overwrite_qr, NPY_ANYORDER,
-                overwrite_qr, NPY_ANYORDER)
+        q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qr,
+                NPY_ANYORDER, overwrite_qr, NPY_ANYORDER)
+        if economic:
+            raise ValueError('economic mode decompositions are not supported.')
         if not (-m <= k1 < m):
             raise ValueError('k is not a valid index')
         if k1 < 0:
@@ -1081,11 +1404,13 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True):
         return q1[p:, p:], r1[p:, :]
     elif which == 'col':
         if p1 > 1:
-            q1, r1, typecode, m, n = validate_qr(Q, R, overwrite_qr,
+            q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qr,
                     cnp.NPY_F_CONTIGUOUS, overwrite_qr, cnp.NPY_F_CONTIGUOUS)
         else:
-            q1, r1, typecode, m, n = validate_qr(Q, R, overwrite_qr,
+            q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qr,
                     NPY_ANYORDER, overwrite_qr, NPY_ANYORDER)
+        if economic:
+            raise ValueError('economic mode decompositions are not supported.')
         if not (-n <= k1 < n):
             raise ValueError('k is not a valid index')
         if k1 < 0:
@@ -1227,10 +1552,13 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qu=True):
     cdef void* rvoid
     cdef int rs[2]
     cdef cnp.npy_intp shape[2]
+    cdef bint economic
 
     if which == 'row':
-        q1, r1, typecode, m, n = validate_qr(Q, R, True, NPY_ANYORDER, True,
-                NPY_ANYORDER)
+        q1, r1, typecode, m, n, economic = validate_qr(Q, R, True, NPY_ANYORDER,
+                True, NPY_ANYORDER)
+        if economic:
+            raise ValueError('economic mode decompositions are not supported.')
         u1 = PyArray_CheckFromAny(u, NULL, 0, 0, u_flags, NULL)
         if cnp.PyArray_TYPE(u1) != typecode:
             raise ValueError('u must have the same type as Q and R')
@@ -1295,8 +1623,10 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qu=True):
         u1 = PyArray_CheckFromAny(u, NULL, 0, 0, u_flags, NULL)
         if u1.ndim == 2:
             q_flags = cnp.NPY_F_CONTIGUOUS
-        q1, r1, typecode, m, n = validate_qr(Q, R, overwrite_qu,
+        q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qu,
                 q_flags, True, NPY_ANYORDER)
+        if economic:
+            raise ValueError('economic mode decompositions are not supported.')
         if not cnp.PyArray_ISONESEGMENT(q1):
             q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
 
@@ -1377,7 +1707,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=True):
     """Rank-k QR update
 
     If ``A = Q R`` is the qr factorization of A, return the qr factorization
-    of ``A + U V**T for real A or ``A + U V**H`` for complex A.
+    of ``A + U V**T`` for real A or ``A + U V**H`` for complex A.
 
     Parameters
     ----------
@@ -1482,14 +1812,18 @@ def qr_update(Q, R, u, v, overwrite_qruv=True):
     True
 
     """
-    cdef cnp.ndarray q1, r1, u1, v1, qTu
+    cdef cnp.ndarray q1, r1, u1, v1, qTu, s
     cdef int uv_flags = cnp.NPY_BEHAVED_NS | cnp.NPY_ELEMENTSTRIDES
     cdef int typecode, p, m, n, info
     cdef int qs[2]
     cdef int rs[2]
     cdef void* qTuvoid
     cdef int qTus[2]
+    cdef int us[2]
     cdef int vs[2]
+    cdef int ss[2]
+    cdef bint economic, qisF = False
+    cdef cnp.npy_intp ndim, len
 
     # validate u and v first, since the rank of the update determines our
     # requirements on Q and R.
@@ -1513,14 +1847,21 @@ def qr_update(Q, R, u, v, overwrite_qruv=True):
         # fine. There isn't really any way to specify that to
         # PyArray_CheckFromAny so we allow any order through, then copy if
         # necessary.
-        q1, r1, typecode, m, n = validate_qr(Q, R, overwrite_qruv, NPY_ANYORDER,
+        q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qruv, NPY_ANYORDER,
                 overwrite_qruv, NPY_ANYORDER)
         if not cnp.PyArray_ISONESEGMENT(q1):
             q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
+            qisF = True
+        elif cnp.PyArray_CHKFLAGS(q1, cnp.NPY_F_CONTIGUOUS):
+            qisF = True
+        else:
+            qisF = False
     else:
         p = u1.shape[1]
-        q1, r1, typecode, m, n = validate_qr(Q, R, overwrite_qruv,
+        q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qruv,
                 cnp.NPY_F_CONTIGUOUS, overwrite_qruv, cnp.NPY_F_CONTIGUOUS)
+        if economic:
+            raise ValueError('economic mode decompositions are not supported.')
         # for a rank p update, u must also be contiguous
         if not cnp.PyArray_ISONESEGMENT(u1):
             u1 = PyArray_FromArraySafe(u1, NULL, cnp.NPY_F_CONTIGUOUS)
@@ -1543,71 +1884,104 @@ def qr_update(Q, R, u, v, overwrite_qruv=True):
         
     u1 = validate_array(u1)
     v1 = validate_array(v1)
-    qTu = cnp.PyArray_ZEROS(u1.ndim, u1.shape, typecode, 1)
-    qTuvoid = extract(qTu, qTus)
-    form_qTu(q1, u1, qTuvoid, qTus, 0)
-    
-    if p == 1:
+
+    if economic:
+        ndim = 1
+        len = 2*n
+        s = cnp.PyArray_ZEROS(ndim, &len, typecode, 1)
         if typecode == cnp.NPY_FLOAT:
-            qr_rank_1_update(m, n,
-                <float*>extract(q1, qs), qs,
+            thin_qr_rank_1_update(m, n,
+                <float*>extract(q1, qs), qs, qisF,
                 <float*>extract(r1, rs), rs,
-                <float*>qTuvoid, qTus,
-                <float*>extract(v1, vs), vs)
+                <float*>extract(u1, us), us,
+                <float*>extract(v1, vs), vs,
+                <float*>extract(s, ss), ss)
         elif typecode == cnp.NPY_DOUBLE:
-            qr_rank_1_update(m, n,
-                <double*>extract(q1, qs), qs,
+            thin_qr_rank_1_update(m, n,
+                <double*>extract(q1, qs), qs, qisF,
                 <double*>extract(r1, rs), rs,
-                <double*>qTuvoid, qTus,
-                <double*>extract(v1, vs), vs)
+                <double*>extract(u1, us), us,
+                <double*>extract(v1, vs), vs,
+                <double*>extract(s, ss), ss)
         elif typecode == cnp.NPY_CFLOAT:
-            qr_rank_1_update(m, n,
-                <float_complex*>extract(q1, qs), qs,
+            thin_qr_rank_1_update(m, n,
+                <float_complex*>extract(q1, qs), qs, qisF,
                 <float_complex*>extract(r1, rs), rs,
-                <float_complex*>qTuvoid, qTus,
-                <float_complex*>extract(v1, vs), vs)
+                <float_complex*>extract(u1, us), us,
+                <float_complex*>extract(v1, vs), vs,
+                <float_complex*>extract(s, ss), ss)
         else: # cnp.NPY_CDOUBLE
-            qr_rank_1_update(m, n,
-                <double_complex*>extract(q1, qs), qs,
+            thin_qr_rank_1_update(m, n,
+                <double_complex*>extract(q1, qs), qs, qisF,
                 <double_complex*>extract(r1, rs), rs,
-                <double_complex*>qTuvoid, qTus,
-                <double_complex*>extract(v1, vs), vs)
+                <double_complex*>extract(u1, us), us,
+                <double_complex*>extract(v1, vs), vs,
+                <double_complex*>extract(s, ss), ss)
     else:
-        # can we do better than this python call?
-        v1 = v1.T
-        if typecode == cnp.NPY_FLOAT:
-            info = qr_rank_p_update(m, n, p,
-                <float*>extract(q1, qs), qs,
-                <float*>extract(r1, rs), rs,
-                <float*>qTuvoid, qTus,
-                <float*>extract(v1, vs), vs)
-        elif typecode == cnp.NPY_DOUBLE:
-            info = qr_rank_p_update(m, n, p,
-                <double*>extract(q1, qs), qs,
-                <double*>extract(r1, rs), rs,
-                <double*>qTuvoid, qTus,
-                <double*>extract(v1, vs), vs)
-        elif typecode == cnp.NPY_CFLOAT:
-            info = qr_rank_p_update(m, n, p,
-                <float_complex*>extract(q1, qs), qs,
-                <float_complex*>extract(r1, rs), rs,
-                <float_complex*>qTuvoid, qTus,
-                <float_complex*>extract(v1, vs), vs)
-        else: # cnp.NPY_CDOUBLE
-            info = qr_rank_p_update(m, n, p,
-                <double_complex*>extract(q1, qs), qs,
-                <double_complex*>extract(r1, rs), rs,
-                <double_complex*>qTuvoid, qTus,
-                <double_complex*>extract(v1, vs), vs)
-        if info != 0:
-            if info > 0: 
-                raise ValueError('The {0}th argument to ?geqrf was'
-                        'invalid'.format(info))
-            elif info < 0:
-                raise ValueError('The {0}th argument to ?ormqr/?unmqr was'
-                        'invalid'.format(abs(info)))
-            elif info == MEMORY_ERROR:
-                raise MemoryError('malloc failed')
+        qTu = cnp.PyArray_ZEROS(u1.ndim, u1.shape, typecode, 1)
+        qTuvoid = extract(qTu, qTus)
+        form_qTu(q1, u1, qTuvoid, qTus, 0)
+        if p == 1:
+            if typecode == cnp.NPY_FLOAT:
+                qr_rank_1_update(m, n,
+                    <float*>extract(q1, qs), qs,
+                    <float*>extract(r1, rs), rs,
+                    <float*>qTuvoid, qTus,
+                    <float*>extract(v1, vs), vs)
+            elif typecode == cnp.NPY_DOUBLE:
+                qr_rank_1_update(m, n,
+                    <double*>extract(q1, qs), qs,
+                    <double*>extract(r1, rs), rs,
+                    <double*>qTuvoid, qTus,
+                    <double*>extract(v1, vs), vs)
+            elif typecode == cnp.NPY_CFLOAT:
+                qr_rank_1_update(m, n,
+                    <float_complex*>extract(q1, qs), qs,
+                    <float_complex*>extract(r1, rs), rs,
+                    <float_complex*>qTuvoid, qTus,
+                    <float_complex*>extract(v1, vs), vs)
+            else: # cnp.NPY_CDOUBLE
+                qr_rank_1_update(m, n,
+                    <double_complex*>extract(q1, qs), qs,
+                    <double_complex*>extract(r1, rs), rs,
+                    <double_complex*>qTuvoid, qTus,
+                    <double_complex*>extract(v1, vs), vs)
+        else:
+            # can we do better than this python call?
+            v1 = v1.T
+            if typecode == cnp.NPY_FLOAT:
+                info = qr_rank_p_update(m, n, p,
+                    <float*>extract(q1, qs), qs,
+                    <float*>extract(r1, rs), rs,
+                    <float*>qTuvoid, qTus,
+                    <float*>extract(v1, vs), vs)
+            elif typecode == cnp.NPY_DOUBLE:
+                info = qr_rank_p_update(m, n, p,
+                    <double*>extract(q1, qs), qs,
+                    <double*>extract(r1, rs), rs,
+                    <double*>qTuvoid, qTus,
+                    <double*>extract(v1, vs), vs)
+            elif typecode == cnp.NPY_CFLOAT:
+                info = qr_rank_p_update(m, n, p,
+                    <float_complex*>extract(q1, qs), qs,
+                    <float_complex*>extract(r1, rs), rs,
+                    <float_complex*>qTuvoid, qTus,
+                    <float_complex*>extract(v1, vs), vs)
+            else: # cnp.NPY_CDOUBLE
+                info = qr_rank_p_update(m, n, p,
+                    <double_complex*>extract(q1, qs), qs,
+                    <double_complex*>extract(r1, rs), rs,
+                    <double_complex*>qTuvoid, qTus,
+                    <double_complex*>extract(v1, vs), vs)
+            if info != 0:
+                if info > 0: 
+                    raise ValueError('The {0}th argument to ?geqrf was'
+                            'invalid'.format(info))
+                elif info < 0:
+                    raise ValueError('The {0}th argument to ?ormqr/?unmqr was'
+                            'invalid'.format(abs(info)))
+                elif info == MEMORY_ERROR:
+                    raise MemoryError('malloc failed')
     return q1, r1
 
 cnp.import_array()

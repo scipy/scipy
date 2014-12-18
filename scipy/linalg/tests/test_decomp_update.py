@@ -834,6 +834,12 @@ class BaseQRupdate(BaseQRdeltas):
             a1 = a + np.dot(u, v.T.conj())
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
+    def test_economic_rank_1(self):
+        a, q, r, u, v = self.generate('tall', 'economic')
+        q1, r1 = qr_update(q, r, u, v, False)
+        a1 = a + np.outer(u, v.conj())
+        check_qr(q1, r1, a1, self.rtol, self.atol, False)
+
     def base_non_simple_strides(self, adjust_strides, p, overwriteable):
         for type in ['sqr', 'tall', 'fat']:
             a, q0, r0, u0, v0 = self.generate(type, p=p)
@@ -964,6 +970,37 @@ class BaseQRupdate(BaseQRdeltas):
         assert_allclose(q3, q, rtol=self.rtol, atol=self.atol)
         assert_allclose(r3, r, rtol=self.rtol, atol=self.atol)
 
+    def test_overwrite_qruv_rank_1_economic(self):
+        # updating economic decompositions can overwrite any contigous r,
+        # and positively strided r and u. V is only ever read.
+        # only checking C and F contiguous.
+        a, q0, r0, u0, v0 = self.generate('tall', 'economic')
+        a1 = a + np.outer(u0, v0.conj())
+        q = q0.copy('F')
+        r = r0.copy('F')
+        u = u0.copy('F')
+        v = v0.copy('F')
+
+        # don't overwrite
+        q1, r1 = qr_update(q, r, u, v, False)
+        check_qr(q1, r1, a1, self.rtol, self.atol, False)
+        check_qr(q, r, a, self.rtol, self.atol, False)
+
+        q2, r2 = qr_update(q, r, u, v, True)
+        check_qr(q2, r2, a1, self.rtol, self.atol, False)
+        # verify the overwriting, no good way to check u and v.
+        assert_allclose(q2, q, rtol=self.rtol, atol=self.atol)
+        assert_allclose(r2, r, rtol=self.rtol, atol=self.atol)
+
+        q = q0.copy('C')
+        r = r0.copy('C')
+        u = u0.copy('C')
+        v = v0.copy('C')
+        q3, r3 = qr_update(q, r, u, v, True)
+        check_qr(q3, r3, a1, self.rtol, self.atol, False)
+        assert_allclose(q3, q, rtol=self.rtol, atol=self.atol)
+        assert_allclose(r3, r, rtol=self.rtol, atol=self.atol)
+
     def test_overwrite_qruv_rank_p(self):
         # for rank p updates, q r must be F contiguous, v must be C (v.T --> F)
         # and u can be C or F, but is only overwritten if Q is C and complex
@@ -986,7 +1023,7 @@ class BaseQRupdate(BaseQRdeltas):
         assert_allclose(r2, r, rtol=self.rtol, atol=self.atol)
 
     def test_economic_qr(self):
-        a, q, r, u, v = self.generate('tall', mode='economic')
+        a, q, r, u, v = self.generate('tall', mode='economic', p=3)
         assert_raises(ValueError, qr_update, q, r, u, v)
 
     def test_empty_inputs(self):
