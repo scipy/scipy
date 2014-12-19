@@ -329,7 +329,7 @@ class spmatrix(object):
         if other.ndim == 2 and other.shape[1] == 1:
             result = result.reshape(-1, 1)
         if issubclass(cls_other, np.matrix):
-            result = np.asmatrix(result)
+            result = result.view(cls_other)
         return result
 
     # by default, use CSR for __mul__ handlers
