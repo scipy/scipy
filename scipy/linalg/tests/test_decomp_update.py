@@ -418,6 +418,23 @@ class BaseQRdelete(BaseQRdeltas):
         r = q.copy()  # doesn't matter
         assert_raises(ValueError, qr_delete, q, r, 0, 1)
 
+    def test_check_finite(self):
+        a0, q0, r0 = self.generate('tall')
+
+        q = q0.copy('F')
+        q[1,1] = np.nan
+        assert_raises(ValueError, qr_delete, q, r0, 0, 1, 'row')
+        assert_raises(ValueError, qr_delete, q, r0, 0, 3, 'row')
+        assert_raises(ValueError, qr_delete, q, r0, 0, 1, 'col')
+        assert_raises(ValueError, qr_delete, q, r0, 0, 3, 'col')
+
+        r = r0.copy('F')
+        r[1,1] = np.nan
+        assert_raises(ValueError, qr_delete, q0, r, 0, 1, 'row')
+        assert_raises(ValueError, qr_delete, q0, r, 0, 3, 'row')
+        assert_raises(ValueError, qr_delete, q0, r, 0, 1, 'col')
+        assert_raises(ValueError, qr_delete, q0, r, 0, 3, 'col')
+
 class TestQRdelete_f(BaseQRdelete):
     dtype = np.dtype('f')
 
@@ -750,6 +767,30 @@ class BaseQRinsert(BaseQRdeltas):
         u = q[:, 0].copy()
         assert_raises(ValueError, qr_insert, q, r, u, 0, 'row')
         assert_raises(ValueError, qr_insert, q, r, u, 0, 'col')
+    
+    def test_check_finite(self):
+        a0, q0, r0, u0 = self.generate('sqr', which='row', p=3)
+
+        q = q0.copy('F')
+        q[1,1] = np.nan
+        assert_raises(ValueError, qr_insert, q, r0, u0[:,0], 0, 'row')
+        assert_raises(ValueError, qr_insert, q, r0, u0, 0, 'row')
+        assert_raises(ValueError, qr_insert, q, r0, u0[:,0], 0, 'col')
+        assert_raises(ValueError, qr_insert, q, r0, u0, 0, 'col')
+
+        r = r0.copy('F')
+        r[1,1] = np.nan
+        assert_raises(ValueError, qr_insert, q0, r, u0[:,0], 0, 'row')
+        assert_raises(ValueError, qr_insert, q0, r, u0, 0, 'row')
+        assert_raises(ValueError, qr_insert, q0, r, u0[:,0], 0, 'col')
+        assert_raises(ValueError, qr_insert, q0, r, u0, 0, 'col')
+
+        u = u0.copy('F')
+        u[0,0] = np.nan
+        assert_raises(ValueError, qr_insert, q0, r0, u[:,0], 0, 'row')
+        assert_raises(ValueError, qr_insert, q0, r0, u, 0, 'row')
+        assert_raises(ValueError, qr_insert, q0, r0, u[:,0], 0, 'col')
+        assert_raises(ValueError, qr_insert, q0, r0, u, 0, 'col')
 
 class TestQRinsert_f(BaseQRinsert):
     dtype = np.dtype('f')
@@ -975,7 +1016,6 @@ class BaseQRupdate(BaseQRdeltas):
     def test_non_native_byte_order_economic_rank_p(self):
         self.base_non_simple_strides(make_nonnative, 'economic', 3, False)
 
-
     def test_overwrite_qruv_rank_1(self):
         # Any positive strided q, r, u, and v can be overwritten for a rank 1 
         # update, only checking C and F contiguous.
@@ -1078,6 +1118,52 @@ class BaseQRupdate(BaseQRdeltas):
         u = q[:, 0].copy()
         v = r[0, :].copy()
         assert_raises(ValueError, qr_update, q, r, u, v)
+
+    def test_check_finite(self):
+        a0, q0, r0, u0, v0 = self.generate('tall', p=3)
+
+        q = q0.copy('F')
+        q[1,1] = np.nan
+        assert_raises(ValueError, qr_update, q, r0, u0[:,0], v0[:,0])
+        assert_raises(ValueError, qr_update, q, r0, u0, v0)
+
+        r = r0.copy('F')
+        r[1,1] = np.nan
+        assert_raises(ValueError, qr_update, q0, r, u0[:,0], v0[:,0])
+        assert_raises(ValueError, qr_update, q0, r, u0, v0)
+
+        u = u0.copy('F')
+        u[0,0] = np.nan
+        assert_raises(ValueError, qr_update, q0, r0, u[:,0], v0[:,0])
+        assert_raises(ValueError, qr_update, q0, r0, u, v0)
+
+        v = v0.copy('F')
+        v[0,0] = np.nan
+        assert_raises(ValueError, qr_update, q0, r0, u[:,0], v[:,0])
+        assert_raises(ValueError, qr_update, q0, r0, u, v)
+
+    def test_economic_check_finite(self):
+        a0, q0, r0, u0, v0 = self.generate('tall', mode='economic', p=3)
+
+        q = q0.copy('F')
+        q[1,1] = np.nan
+        assert_raises(ValueError, qr_update, q, r0, u0[:,0], v0[:,0])
+        assert_raises(ValueError, qr_update, q, r0, u0, v0)
+
+        r = r0.copy('F')
+        r[1,1] = np.nan
+        assert_raises(ValueError, qr_update, q0, r, u0[:,0], v0[:,0])
+        assert_raises(ValueError, qr_update, q0, r, u0, v0)
+
+        u = u0.copy('F')
+        u[0,0] = np.nan
+        assert_raises(ValueError, qr_update, q0, r0, u[:,0], v0[:,0])
+        assert_raises(ValueError, qr_update, q0, r0, u, v0)
+
+        v = v0.copy('F')
+        v[0,0] = np.nan
+        assert_raises(ValueError, qr_update, q0, r0, u[:,0], v[:,0])
+        assert_raises(ValueError, qr_update, q0, r0, u, v)
 
 class TestQRupdate_f(BaseQRupdate):
     dtype = np.dtype('f')

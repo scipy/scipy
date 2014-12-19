@@ -923,8 +923,8 @@ def _reorth(cnp.ndarray q, cnp.ndarray u, rcond):
             or typecode == cnp.NPY_CFLOAT or typecode == cnp.NPY_CDOUBLE):
         raise ValueError('q and u must be a blas compatible type: f d F or D')
 
-    q = validate_array(q)
-    u = validate_array(u)
+    q = validate_array(q, True)
+    u = validate_array(u, True)
 
     qp = extract(q, qs)
     up = extract(u, us)
@@ -1071,8 +1071,8 @@ def _form_qTu(object a, object b):
             or typecode == cnp.NPY_CFLOAT or typecode == cnp.NPY_CDOUBLE):
         raise ValueError('q and u must be a blas compatible type: f d F or D')
 
-    q = validate_array(q)
-    u = validate_array(u)
+    q = validate_array(q, True)
+    u = validate_array(u, True)
 
     qTu = cnp.PyArray_ZEROS(u.ndim, u.shape, typecode, 1)
     qTuvoid = extract(qTu, qTus)
@@ -1208,7 +1208,7 @@ cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus,
     else:
         raise ValueError('q must be either F or C contig')
 
-cdef validate_array(cnp.ndarray a):
+cdef validate_array(cnp.ndarray a, bint chkfinite):
     # here we check that a has positive strides and that its size is small
     # enough to fit in into an int, as BLAS/LAPACK require
     cdef bint copy = False
@@ -1222,12 +1222,16 @@ cdef validate_array(cnp.ndarray a):
         if a.shape[j] >= limits.INT_MAX:
             raise ValueError('Input array to large for use with BLAS')
 
+    if chkfinite:
+        if not np.isfinite(a).all():
+            raise ValueError('array must not contain infs or NaNs')
+
     if copy:
             return PyArray_FromArraySafe(a, NULL, cnp.NPY_F_CONTIGUOUS)
     return a
 
 cdef validate_qr(object q0, object r0, bint overwrite_q, int q_order,
-                 bint overwrite_r, int r_order):
+                 bint overwrite_r, int r_order, bint chkfinite):
     cdef cnp.ndarray Q
     cdef cnp.ndarray R
     cdef int typecode
@@ -1269,8 +1273,8 @@ cdef validate_qr(object q0, object r0, bint overwrite_q, int q_order,
     elif Q.shape[0] != Q.shape[1]:
         raise ValueError('bad shapes.')
 
-    Q = validate_array(Q)
-    R = validate_array(R)
+    Q = validate_array(Q, chkfinite)
+    R = validate_array(R, chkfinite)
 
     return Q, R, typecode, Q.shape[0], R.shape[1], economic
  
@@ -1284,7 +1288,7 @@ cdef void* extract(cnp.ndarray a, int* as):
     return cnp.PyArray_DATA(a)
 
 @cython.embedsignature(True)
-def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True):
+def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
     """QR downdate on row or column deletions
 
     If ``A = Q R`` is the qr factorization of A, return the qr factorization
@@ -1307,6 +1311,10 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True):
         If True, consume Q and R, overwriting their contents with their
         downdated versions, and returning approriately sized views.  
         Defaults to True.
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -1378,7 +1386,7 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True):
 
     if which == 'row':
         q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qr,
-                NPY_ANYORDER, overwrite_qr, NPY_ANYORDER)
+                NPY_ANYORDER, overwrite_qr, NPY_ANYORDER, check_finite)
         if economic:
             raise ValueError('economic mode decompositions are not supported.')
         if not (-m <= k1 < m):
@@ -1417,10 +1425,11 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True):
     elif which == 'col':
         if p1 > 1:
             q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qr,
-                    cnp.NPY_F_CONTIGUOUS, overwrite_qr, cnp.NPY_F_CONTIGUOUS)
+                    cnp.NPY_F_CONTIGUOUS, overwrite_qr, cnp.NPY_F_CONTIGUOUS,
+                    check_finite)
         else:
             q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qr,
-                    NPY_ANYORDER, overwrite_qr, NPY_ANYORDER)
+                    NPY_ANYORDER, overwrite_qr, NPY_ANYORDER, check_finite)
         if economic:
             raise ValueError('economic mode decompositions are not supported.')
         if not (-n <= k1 < n):
@@ -1463,7 +1472,7 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True):
         raise ValueError("which must be either 'row' or 'col'")
 
 @cython.embedsignature(True)
-def qr_insert(Q, R, u, k, which='row', overwrite_qu=True):
+def qr_insert(Q, R, u, k, which='row', overwrite_qu=True, check_finite=True):
     """QR update on row or column insertions
 
     If ``A = Q R`` is the qr factorization of A, return the qr factorization
@@ -1485,6 +1494,10 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qu=True):
     overwrite_qu : bool, optional
         If True, consume Q, and u, if possible, while performing the update,
         otherwise make copies as necessary. Defaults to True.
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -1568,7 +1581,7 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qu=True):
 
     if which == 'row':
         q1, r1, typecode, m, n, economic = validate_qr(Q, R, True, NPY_ANYORDER,
-                True, NPY_ANYORDER)
+                True, NPY_ANYORDER, check_finite)
         if economic:
             raise ValueError('economic mode decompositions are not supported.')
         u1 = PyArray_CheckFromAny(u, NULL, 0, 0, u_flags, NULL)
@@ -1587,6 +1600,8 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qu=True):
             p = 1
             if u.shape[0] != n:
                 raise ValueError('bad size u')
+
+        u1 = validate_array(u1, check_finite)
 
         shape[0] = m+p
         shape[1] = m+p
@@ -1636,7 +1651,7 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qu=True):
         if u1.ndim == 2:
             q_flags = cnp.NPY_F_CONTIGUOUS
         q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qu,
-                q_flags, True, NPY_ANYORDER)
+                q_flags, True, NPY_ANYORDER, check_finite)
         if economic:
             raise ValueError('economic mode decompositions are not supported.')
         if not cnp.PyArray_ISONESEGMENT(q1):
@@ -1668,7 +1683,7 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qu=True):
         rnew[:,:k1] = r1[:,:k1]
         rnew[:,k1+p:] = r1[:,k1:]
 
-        u1 = validate_array(u1)
+        u1 = validate_array(u1, check_finite)
         rvoid = extract(rnew, rs)
         if p == 1:
             form_qTu(q1, u1, rvoid, rs, k1)
@@ -1715,7 +1730,7 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qu=True):
         raise ValueError("which must be either 'row' or 'col'")
 
 @cython.embedsignature(True)
-def qr_update(Q, R, u, v, overwrite_qruv=True):
+def qr_update(Q, R, u, v, overwrite_qruv=True, check_finite=True):
     """Rank-k QR update
 
     If ``A = Q R`` is the qr factorization of A, return the qr factorization
@@ -1734,6 +1749,10 @@ def qr_update(Q, R, u, v, overwrite_qruv=True):
     overwrite_qruv : bool, optional
         If True, consume Q, R, u, and v, if possible, while performing the
         update, otherwise make copies as necessary. Defaults to True.
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
@@ -1858,7 +1877,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=True):
     # Rather than overspecify our order requirements on Q and R, let anything
     # through then adjust.
     q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qruv, NPY_ANYORDER,
-            overwrite_qruv, NPY_ANYORDER)
+            overwrite_qruv, NPY_ANYORDER, check_finite)
 
     if not overwrite_qruv:
         uv_flags |= cnp.NPY_ENSURECOPY
@@ -1892,8 +1911,8 @@ def qr_update(Q, R, u, v, overwrite_qruv=True):
     if p > n or p > m:
         raise ValueError('Update rank larger than np.dot(Q, R).')
 
-    u1 = validate_array(u1)
-    v1 = validate_array(v1)
+    u1 = validate_array(u1, check_finite)
+    v1 = validate_array(v1, check_finite)
 
     if economic:
         ndim = 1
