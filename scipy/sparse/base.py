@@ -287,70 +287,41 @@ class spmatrix(object):
         self._mul_sparse_matrix()
         """
 
-        M,N = self.shape
-
-        if other.__class__ is np.ndarray:
-            # Fast path for the most common case
-            if other.shape == (N,):
-                return self._mul_vector(other)
-            elif other.shape == (N, 1):
-                return self._mul_vector(other.ravel()).reshape(M, 1)
-            elif other.ndim == 2 and other.shape[0] == N:
-                return self._mul_multivector(other)
-
-        if isscalarlike(other):
-            # scalar value
-            return self._mul_scalar(other)
+        M, N = self.shape
 
         if issparse(other):
-            if self.shape[1] != other.shape[0]:
+            if other.shape[0] != N:
                 raise ValueError('dimension mismatch')
             return self._mul_sparse_matrix(other)
 
-        try:
-            other.shape
-        except AttributeError:
-            # If it's a list or whatever, treat it like a matrix
-            other_a = np.asanyarray(other)
+        cls_other = type(other)
+        other = np.asarray(other)
 
-            if other_a.ndim == 0 and other_a.dtype == np.object_:
+        if other.ndim == 0:
+            if other.dtype == np.object_:
                 # Not interpretable as an array; return NotImplemented so that
                 # other's __rmul__ can kick in if that's implemented.
                 return NotImplemented
-
-            other = other_a
-
-        if other.ndim == 1 or other.ndim == 2 and other.shape[1] == 1:
-            # dense row or column vector
-            if other.shape != (N,) and other.shape != (N,1):
+            result = self._mul_scalar(other)
+        elif other.ndim == 1:
+            if other.shape[0] != N:
                 raise ValueError('dimension mismatch')
-
-            result = self._mul_vector(np.ravel(other))
-
-            if isinstance(other, np.matrix):
-                result = np.asmatrix(result)
-
-            if other.ndim == 2 and other.shape[1] == 1:
-                # If 'other' was an (nx1) column vector, reshape the result
-                result = result.reshape(-1,1)
-
-            return result
-
+            result = self._mul_vector(other)
         elif other.ndim == 2:
-            ##
-            # dense 2D array or matrix ("multivector")
-
-            if other.shape[0] != self.shape[1]:
+            if other.shape[0] != N:
                 raise ValueError('dimension mismatch')
-
-            result = self._mul_multivector(np.asarray(other))
-
-            if isinstance(other, np.matrix):
-                result = np.asmatrix(result)
-
-            return result
+            if other.shape[1] == 1:
+                result = self._mul_vector(other[:, 0])
+            else:
+                result = self._mul_multivector(other)
         else:
-            raise ValueError('could not interpret dimensions')
+            raise NotImplemented
+
+        if other.ndim == 2 and other.shape[1] == 1:
+            result = result.reshape(-1, 1)
+        if issubclass(cls_other, np.matrix):
+            result = np.asmatrix(result)
+        return result
 
     # by default, use CSR for __mul__ handlers
     def _mul_scalar(self, other):
