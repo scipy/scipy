@@ -79,12 +79,6 @@ class TestSparseUtils(TestCase):
         j2 = np.array([0, 7, 14, 21, 28, 35, 42, 49, 56, 63])
         assert_array_equal(j1, j2)
 
-    def test_compat_bincount(self):
-        x = np.arange(4)
-        y1 = sputils._compat_bincount_impl(x, minlength=10)
-        y2 = np.array([1, 1, 1, 1, 0, 0, 0, 0, 0, 0])
-        assert_array_equal(y1, y2)
-
 
 if __name__ == "__main__":
     run_module_suite()

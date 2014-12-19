@@ -113,9 +113,9 @@ else:
 
     from scipy.version import version as __version__
     from scipy.lib._version import NumpyVersion as _NumpyVersion
-    if _NumpyVersion(__numpy_version__) < '1.5.1':
+    if _NumpyVersion(__numpy_version__) < '1.6.2':
         import warnings
-        warnings.warn("Numpy 1.5.1 or above is recommended for this version of "
+        warnings.warn("Numpy 1.6.2 or above is recommended for this version of "
                       "scipy (detected version %s)" % __numpy_version__,
                       UserWarning)
 

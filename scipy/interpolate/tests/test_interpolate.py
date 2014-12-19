@@ -1451,9 +1451,8 @@ class TestRegularGridInterpolator(TestCase):
         RegularGridInterpolator((x, y), values, fill_value=1)
 
         # complex values cannot
-        if NumpyVersion(np.__version__) >= '1.6.0':
-            assert_raises(ValueError, RegularGridInterpolator,
-                          (x, y), values, fill_value=1+2j)
+        assert_raises(ValueError, RegularGridInterpolator,
+                      (x, y), values, fill_value=1+2j)
 
     def test_fillvalue_type(self):
         # from #3703; test that interpolator object construction succeeds
