@@ -437,6 +437,17 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return copy._mul_sparse_matrix(other)
             else:
                 raise ValueError("inconsistent shapes")
+        # Dense matrix.
+        if isdense(other):
+            if self.shape == other.shape:
+                ret = self.tocoo()
+                ret.data = np.multiply(ret.data, other[ret.row, ret.col]
+                                       ).view(np.ndarray).ravel()
+                # Current tests expect dense output.
+                return ret.todense()
+            # Single element.
+            elif other.size == 1:
+                return self.__mul__(other.flat[0])
         # Anything else.
         return np.multiply(self.todense(), other)
 
