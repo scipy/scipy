@@ -840,9 +840,20 @@ class BaseQRupdate(BaseQRdeltas):
         a1 = a + np.outer(u, v.conj())
         check_qr(q1, r1, a1, self.rtol, self.atol, False)
 
-    def base_non_simple_strides(self, adjust_strides, p, overwriteable):
+    def test_economic_rank_p(self):
+        for p in [1, 2, 3, 5]:
+            a, q, r, u, v = self.generate('tall', 'economic', p)
+            if p == 1:
+                u = u.reshape(u.size, 1)
+                v = v.reshape(v.size, 1)
+            q1, r1 = qr_update(q, r, u, v, False)
+            a1 = a + np.dot(u, v.T.conj())
+            check_qr(q1, r1, a1, self.rtol, self.atol, False)
+
+    def base_non_simple_strides(self, adjust_strides, mode, p, overwriteable):
+        assert_sqr = False if mode == 'economic' else True
         for type in ['sqr', 'tall', 'fat']:
-            a, q0, r0, u0, v0 = self.generate(type, p=p)
+            a, q0, r0, u0, v0 = self.generate(type, mode, p)
             qs, rs, us, vs = adjust_strides((q0, r0, u0, v0))
             if p == 1:
                 aup = a + np.outer(u0, v0.conj())
@@ -859,9 +870,9 @@ class BaseQRupdate(BaseQRdeltas):
             u = u0.copy('F')
             v = v0.copy('C')
             q1, r1 = qr_update(qs, r, u, v, False)
-            check_qr(q1, r1, aup, self.rtol, self.atol)
+            check_qr(q1, r1, aup, self.rtol, self.atol, assert_sqr)
             q1o, r1o = qr_update(qs, r, u, v, True)
-            check_qr(q1o, r1o, aup, self.rtol, self.atol)
+            check_qr(q1o, r1o, aup, self.rtol, self.atol, assert_sqr)
             if overwriteable:
                 assert_allclose(r1o, r, rtol=self.rtol, atol=self.atol)
                 assert_allclose(v, v0.conj(), rtol=self.rtol, atol=self.atol)
@@ -871,9 +882,9 @@ class BaseQRupdate(BaseQRdeltas):
             u = u0.copy('F')
             v = v0.copy('C')
             q2, r2 = qr_update(q, rs, u, v, False)
-            check_qr(q2, r2, aup, self.rtol, self.atol)
+            check_qr(q2, r2, aup, self.rtol, self.atol, assert_sqr)
             q2o, r2o = qr_update(q, rs, u, v, True)
-            check_qr(q2o, r2o, aup, self.rtol, self.atol)
+            check_qr(q2o, r2o, aup, self.rtol, self.atol, assert_sqr)
             if overwriteable:
                 assert_allclose(r2o, rs, rtol=self.rtol, atol=self.atol)
                 assert_allclose(v, v0.conj(), rtol=self.rtol, atol=self.atol)
@@ -883,9 +894,9 @@ class BaseQRupdate(BaseQRdeltas):
             u = u0.copy('F')
             v = v0.copy('C')
             q3, r3 = qr_update(q, r, us, v, False)
-            check_qr(q3, r3, aup, self.rtol, self.atol)
+            check_qr(q3, r3, aup, self.rtol, self.atol, assert_sqr)
             q3o, r3o = qr_update(q, r, us, v, True)
-            check_qr(q3o, r3o, aup, self.rtol, self.atol)
+            check_qr(q3o, r3o, aup, self.rtol, self.atol, assert_sqr)
             if overwriteable:
                 assert_allclose(r3o, r, rtol=self.rtol, atol=self.atol)
                 assert_allclose(v, v0.conj(), rtol=self.rtol, atol=self.atol)
@@ -895,9 +906,9 @@ class BaseQRupdate(BaseQRdeltas):
             u = u0.copy('F')
             v = v0.copy('C')
             q4, r4 = qr_update(q, r, u, vs, False)
-            check_qr(q4, r4, aup, self.rtol, self.atol)
+            check_qr(q4, r4, aup, self.rtol, self.atol, assert_sqr)
             q4o, r4o = qr_update(q, r, u, vs, True)
-            check_qr(q4o, r4o, aup, self.rtol, self.atol)
+            check_qr(q4o, r4o, aup, self.rtol, self.atol, assert_sqr)
             if overwriteable:
                 assert_allclose(r4o, r, rtol=self.rtol, atol=self.atol)
                 assert_allclose(vs, v0.conj(), rtol=self.rtol, atol=self.atol)
@@ -909,36 +920,61 @@ class BaseQRupdate(BaseQRdeltas):
             # since some of these were consumed above
             qs, rs, us, vs = adjust_strides((q, r, u, v))
             q5, r5 = qr_update(qs, rs, us, vs, False)
-            check_qr(q5, r5, aup, self.rtol, self.atol)
+            check_qr(q5, r5, aup, self.rtol, self.atol, assert_sqr)
             q5o, r5o = qr_update(qs, rs, us, vs, True)
-            check_qr(q5o, r5o, aup, self.rtol, self.atol)
+            check_qr(q5o, r5o, aup, self.rtol, self.atol, assert_sqr)
             if overwriteable:
                 assert_allclose(r5o, rs, rtol=self.rtol, atol=self.atol)
                 assert_allclose(vs, v0.conj(), rtol=self.rtol, atol=self.atol)
 
     def test_non_unit_strides_rank_1(self):
-        self.base_non_simple_strides(make_strided, 1, True)
+        self.base_non_simple_strides(make_strided, 'full', 1, True)
+
+    def test_non_unit_strides_economic_rank_1(self):
+        self.base_non_simple_strides(make_strided, 'economic', 1, True)
 
     def test_non_unit_strides_rank_p(self):
-        self.base_non_simple_strides(make_strided, 3, False)
+        self.base_non_simple_strides(make_strided, 'full', 3, False)
+
+    def test_non_unit_strides_economic_rank_p(self):
+        self.base_non_simple_strides(make_strided, 'economic', 3, False)
 
     def test_neg_strides_rank_1(self):
-        self.base_non_simple_strides(negate_strides, 1, False)
+        self.base_non_simple_strides(negate_strides, 'full', 1, False)
+
+    def test_neg_strides_economic_rank_1(self):
+        self.base_non_simple_strides(negate_strides, 'economic', 1, False)
 
     def test_neg_strides_rank_p(self):
-        self.base_non_simple_strides(negate_strides, 3, False)
-    
+        self.base_non_simple_strides(negate_strides, 'full', 3, False)
+
+    def test_neg_strides_economic_rank_p(self):
+        self.base_non_simple_strides(negate_strides, 'economic', 3, False)
+     
     def test_non_itemsize_strides_rank_1(self):
-        self.base_non_simple_strides(nonitemsize_strides, 1, False)
+        self.base_non_simple_strides(nonitemsize_strides, 'full', 1, False)
+
+    def test_non_itemsize_strides_economic_rank_1(self):
+        self.base_non_simple_strides(nonitemsize_strides, 'economic', 1, False)
 
     def test_non_itemsize_strides_rank_p(self):
-        self.base_non_simple_strides(nonitemsize_strides, 3, False)
+        self.base_non_simple_strides(nonitemsize_strides, 'full', 3, False)
+
+    def test_non_itemsize_strides_economic_rank_p(self):
+        self.base_non_simple_strides(nonitemsize_strides, 'economic', 3, False)
 
     def test_non_native_byte_order_rank_1(self):
-        self.base_non_simple_strides(make_nonnative, 1, False)
+        self.base_non_simple_strides(make_nonnative, 'full', 1, False)
+
+    def test_non_native_byte_order_economic_rank_1(self):
+        self.base_non_simple_strides(make_nonnative, 'economic', 1, False)
 
     def test_non_native_byte_order_rank_p(self):
-        self.base_non_simple_strides(make_nonnative, 3, False)
+        self.base_non_simple_strides(make_nonnative, 'full', 3, False)
+
+    def test_non_native_byte_order_economic_rank_p(self):
+        self.base_non_simple_strides(make_nonnative, 'economic', 3, False)
+
 
     def test_overwrite_qruv_rank_1(self):
         # Any positive strided q, r, u, and v can be overwritten for a rank 1 
@@ -1021,10 +1057,6 @@ class BaseQRupdate(BaseQRdeltas):
         # verify the overwriting, no good way to check u and v.
         assert_allclose(q2, q, rtol=self.rtol, atol=self.atol)
         assert_allclose(r2, r, rtol=self.rtol, atol=self.atol)
-
-    def test_economic_qr(self):
-        a, q, r, u, v = self.generate('tall', mode='economic', p=3)
-        assert_raises(ValueError, qr_update, q, r, u, v)
 
     def test_empty_inputs(self):
         a, q, r, u, v = self.generate('tall')

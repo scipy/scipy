@@ -696,6 +696,18 @@ cdef void thin_qr_rank_1_update(int m, int n, blas_t* q, int* qs, bint qisF,
     lartg(index2(r, rs, n-1, n-1), &rlast, &c, &sn)
     rot(m, col(q, qs, n-1), qs[0], u, us[0], c, sn.conjugate())
 
+cdef void thin_qr_rank_p_update(int m, int n, int p, blas_t* q, int* qs,
+    bint qisF, blas_t* r, int* rs, blas_t* u, int* us, blas_t* v, int* vs,
+    blas_t* s, int* ss) nogil:
+    """Assume that q is (M,N) and either C or F contiguous, r is (N,N), u is
+       (M,p) and V is (N,p).  s is a 2*n work array.
+    """
+    cdef int j
+
+    for j in range(p):
+        thin_qr_rank_1_update(m, n, q, qs, qisF, r, rs, col(u, us, j), us,
+                              col(v, vs, j), vs, s, ss)
+  
 cdef void qr_rank_1_update(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
                            blas_t* u, int* us, blas_t* v, int* vs) nogil:
     """ here we will assume that the u = Q.T.dot(u) and not the bare u.
@@ -1711,17 +1723,17 @@ def qr_update(Q, R, u, v, overwrite_qruv=True):
 
     Parameters
     ----------
-    Q : (M, M) array_like
+    Q : (M, M) or (M, N) array_like
         Unitary/orthogonal matrix from the qr decomposition of A.
-    R : (M, N) array_like
+    R : (M, N) or (N, N) array_like
         Upper triangular matrix from the qr decomposition of A.
     u : (M,) or (M, k) array_like
         Left update vector
     v : (N,) or (N, k) array_like
         Right update vector
     overwrite_qruv : bool, optional
-        If True, consume Q, R, and v, if possible, while performing the update,
-        otherwise make copies as necessary. Defaults to True.
+        If True, consume Q, R, u, and v, if possible, while performing the
+        update, otherwise make copies as necessary. Defaults to True.
 
     Returns
     -------
@@ -1733,7 +1745,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=True):
     Notes
     -----
     This routine does not guarantee that the diagonal entries of `R1` are
-    positive.
+    real or positive.
 
     .. versionadded:: 0.16.0
 
@@ -1780,7 +1792,25 @@ def qr_update(Q, R, u, v, overwrite_qruv=True):
     >>> np.allclose(np.dot(q_up.T, q_up), np.eye(5))
     True
 
-    Similarly, perform a rank 2 update.
+    Updating economic (reduced, thin) decompositions is also possible:
+    >>> qe, re = linalg.qr(a, mode='economic')
+    >>> qe_up, re_up = linalg.qr_update(qe, re, u, v, False)
+    >>> qe_up
+    array([[ 0.54073807,  0.18645997,  0.81707661],
+           [ 0.21629523, -0.63257324,  0.06567893],
+           [ 0.05407381,  0.64757787, -0.12781284],
+           [ 0.48666426, -0.30466718, -0.27487277],
+           [ 0.64888568,  0.23001   , -0.4859845 ]])
+    >>> re_up
+    array([[ 18.49324201,  24.11691794, -44.98940746],
+           [  0.        ,  31.95894662, -27.40998201],
+           [  0.        ,   0.        ,  -9.25451794]])
+    >>> np.allclose(np.dot(qe_up, re_up), a_up)
+    True
+    >>> np.allclose(np.dot(qe_up.T, qe_up), np.eye(3))
+    True
+
+    Similarly to the above, perform a rank 2 update.
     >>> u2 = np.array([[ 7., -1,],
                        [-2.,  4.],
                        [ 4.,  2.],
@@ -1825,12 +1855,24 @@ def qr_update(Q, R, u, v, overwrite_qruv=True):
     cdef bint economic, qisF = False
     cdef cnp.npy_intp ndim, len
 
-    # validate u and v first, since the rank of the update determines our
-    # requirements on Q and R.
+    # Rather than overspecify our order requirements on Q and R, let anything
+    # through then adjust.
+    q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qruv, NPY_ANYORDER,
+            overwrite_qruv, NPY_ANYORDER)
+
     if not overwrite_qruv:
         uv_flags |= cnp.NPY_ENSURECOPY
     u1 = PyArray_CheckFromAny(u, NULL, 0, 0, uv_flags, NULL)
     v1 = PyArray_CheckFromAny(v, NULL, 0, 0, uv_flags, NULL)
+
+    if cnp.PyArray_TYPE(u1) != typecode or cnp.PyArray_TYPE(v1) != typecode:
+        raise ValueError('u and v must have the same type as Q and R')
+
+    if u1.shape[0] != m: 
+        raise ValueError('u.shape[0] must equal Q.shape[0]')
+
+    if v1.shape[0] != n:
+        raise ValueError('v.shape[0] must equal R.shape[1]')
 
     if u1.ndim > 2 or v1.ndim > 2:
         raise ValueError('u and v can be no more than 2d')
@@ -1843,45 +1885,13 @@ def qr_update(Q, R, u, v, overwrite_qruv=True):
 
     if u1.ndim == 1:
         p = 1
-        # Here we only require that Q be contiguous, either C or F order is
-        # fine. There isn't really any way to specify that to
-        # PyArray_CheckFromAny so we allow any order through, then copy if
-        # necessary.
-        q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qruv, NPY_ANYORDER,
-                overwrite_qruv, NPY_ANYORDER)
-        if not cnp.PyArray_ISONESEGMENT(q1):
-            q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
-            qisF = True
-        elif cnp.PyArray_CHKFLAGS(q1, cnp.NPY_F_CONTIGUOUS):
-            qisF = True
-        else:
-            qisF = False
     else:
         p = u1.shape[1]
-        q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qruv,
-                cnp.NPY_F_CONTIGUOUS, overwrite_qruv, cnp.NPY_F_CONTIGUOUS)
-        if economic:
-            raise ValueError('economic mode decompositions are not supported.')
-        # for a rank p update, u must also be contiguous
-        if not cnp.PyArray_ISONESEGMENT(u1):
-            u1 = PyArray_FromArraySafe(u1, NULL, cnp.NPY_F_CONTIGUOUS)
-        # and v.T must be F contiguous --> v must be C contiguous
-        if not cnp.PyArray_CHKFLAGS(v1, cnp.NPY_C_CONTIGUOUS):
-            v1 = PyArray_FromArraySafe(v1, NULL, cnp.NPY_C_CONTIGUOUS)
-
-    if cnp.PyArray_TYPE(u1) != typecode or cnp.PyArray_TYPE(v1) != typecode:
-        raise ValueError('u and v must have the same type as Q and R')
-
-    if u1.shape[0] != m: 
-        raise ValueError('u.shape[0] must equal Q.shape[0]')
-
-    if v1.shape[0] != n:
-        raise ValueError('v.shape[0] must equal R.shape[1]')
 
     # limit p to at most max(n, m)
     if p > n or p > m:
         raise ValueError('Update rank larger than np.dot(Q, R).')
-        
+
     u1 = validate_array(u1)
     v1 = validate_array(v1)
 
@@ -1889,39 +1899,78 @@ def qr_update(Q, R, u, v, overwrite_qruv=True):
         ndim = 1
         len = 2*n
         s = cnp.PyArray_ZEROS(ndim, &len, typecode, 1)
-        if typecode == cnp.NPY_FLOAT:
-            thin_qr_rank_1_update(m, n,
-                <float*>extract(q1, qs), qs, qisF,
-                <float*>extract(r1, rs), rs,
-                <float*>extract(u1, us), us,
-                <float*>extract(v1, vs), vs,
-                <float*>extract(s, ss), ss)
-        elif typecode == cnp.NPY_DOUBLE:
-            thin_qr_rank_1_update(m, n,
-                <double*>extract(q1, qs), qs, qisF,
-                <double*>extract(r1, rs), rs,
-                <double*>extract(u1, us), us,
-                <double*>extract(v1, vs), vs,
-                <double*>extract(s, ss), ss)
-        elif typecode == cnp.NPY_CFLOAT:
-            thin_qr_rank_1_update(m, n,
-                <float_complex*>extract(q1, qs), qs, qisF,
-                <float_complex*>extract(r1, rs), rs,
-                <float_complex*>extract(u1, us), us,
-                <float_complex*>extract(v1, vs), vs,
-                <float_complex*>extract(s, ss), ss)
-        else: # cnp.NPY_CDOUBLE
-            thin_qr_rank_1_update(m, n,
-                <double_complex*>extract(q1, qs), qs, qisF,
-                <double_complex*>extract(r1, rs), rs,
-                <double_complex*>extract(u1, us), us,
-                <double_complex*>extract(v1, vs), vs,
-                <double_complex*>extract(s, ss), ss)
+        if not cnp.PyArray_ISONESEGMENT(q1):
+            q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
+            qisF = True
+        elif cnp.PyArray_CHKFLAGS(q1, cnp.NPY_F_CONTIGUOUS):
+            qisF = True
+        else:
+            qisF = False
+        if p == 1:
+            if typecode == cnp.NPY_FLOAT:
+                thin_qr_rank_1_update(m, n,
+                    <float*>extract(q1, qs), qs, qisF,
+                    <float*>extract(r1, rs), rs,
+                    <float*>extract(u1, us), us,
+                    <float*>extract(v1, vs), vs,
+                    <float*>extract(s, ss), ss)
+            elif typecode == cnp.NPY_DOUBLE:
+                thin_qr_rank_1_update(m, n,
+                    <double*>extract(q1, qs), qs, qisF,
+                    <double*>extract(r1, rs), rs,
+                    <double*>extract(u1, us), us,
+                    <double*>extract(v1, vs), vs,
+                    <double*>extract(s, ss), ss)
+            elif typecode == cnp.NPY_CFLOAT:
+                thin_qr_rank_1_update(m, n,
+                    <float_complex*>extract(q1, qs), qs, qisF,
+                    <float_complex*>extract(r1, rs), rs,
+                    <float_complex*>extract(u1, us), us,
+                    <float_complex*>extract(v1, vs), vs,
+                    <float_complex*>extract(s, ss), ss)
+            else: # cnp.NPY_CDOUBLE
+                thin_qr_rank_1_update(m, n,
+                    <double_complex*>extract(q1, qs), qs, qisF,
+                    <double_complex*>extract(r1, rs), rs,
+                    <double_complex*>extract(u1, us), us,
+                    <double_complex*>extract(v1, vs), vs,
+                    <double_complex*>extract(s, ss), ss)
+        else:
+            if typecode == cnp.NPY_FLOAT:
+                thin_qr_rank_p_update(m, n, p,
+                    <float*>extract(q1, qs), qs, qisF,
+                    <float*>extract(r1, rs), rs,
+                    <float*>extract(u1, us), us,
+                    <float*>extract(v1, vs), vs,
+                    <float*>extract(s, ss), ss)
+            elif typecode == cnp.NPY_DOUBLE:
+                thin_qr_rank_p_update(m, n, p,
+                    <double*>extract(q1, qs), qs, qisF,
+                    <double*>extract(r1, rs), rs,
+                    <double*>extract(u1, us), us,
+                    <double*>extract(v1, vs), vs,
+                    <double*>extract(s, ss), ss)
+            elif typecode == cnp.NPY_CFLOAT:
+                thin_qr_rank_p_update(m, n, p,
+                    <float_complex*>extract(q1, qs), qs, qisF,
+                    <float_complex*>extract(r1, rs), rs,
+                    <float_complex*>extract(u1, us), us,
+                    <float_complex*>extract(v1, vs), vs,
+                    <float_complex*>extract(s, ss), ss)
+            else: # cnp.NPY_CDOUBLE
+                thin_qr_rank_p_update(m, n, p,
+                    <double_complex*>extract(q1, qs), qs, qisF,
+                    <double_complex*>extract(r1, rs), rs,
+                    <double_complex*>extract(u1, us), us,
+                    <double_complex*>extract(v1, vs), vs,
+                    <double_complex*>extract(s, ss), ss)
     else:
         qTu = cnp.PyArray_ZEROS(u1.ndim, u1.shape, typecode, 1)
         qTuvoid = extract(qTu, qTus)
-        form_qTu(q1, u1, qTuvoid, qTus, 0)
         if p == 1:
+            if not cnp.PyArray_ISONESEGMENT(q1):
+                q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
+            form_qTu(q1, u1, qTuvoid, qTus, 0)
             if typecode == cnp.NPY_FLOAT:
                 qr_rank_1_update(m, n,
                     <float*>extract(q1, qs), qs,
@@ -1947,8 +1996,18 @@ def qr_update(Q, R, u, v, overwrite_qruv=True):
                     <double_complex*>qTuvoid, qTus,
                     <double_complex*>extract(v1, vs), vs)
         else:
-            # can we do better than this python call?
+            if not cnp.PyArray_CHKFLAGS(q1, cnp.NPY_F_CONTIGUOUS):
+                q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
+            if not cnp.PyArray_CHKFLAGS(r1, cnp.NPY_F_CONTIGUOUS):
+                r1 = PyArray_FromArraySafe(r1, NULL, cnp.NPY_F_CONTIGUOUS)
+            if not cnp.PyArray_ISONESEGMENT(u1):
+                u1 = PyArray_FromArraySafe(u1, NULL, cnp.NPY_F_CONTIGUOUS)
+            # v.T must be F contiguous --> v must be C contiguous
+            if not cnp.PyArray_CHKFLAGS(v1, cnp.NPY_C_CONTIGUOUS):
+                v1 = PyArray_FromArraySafe(v1, NULL, cnp.NPY_C_CONTIGUOUS)
+            # can we do better than this python call to get the strides right?
             v1 = v1.T
+            form_qTu(q1, u1, qTuvoid, qTus, 0)
             if typecode == cnp.NPY_FLOAT:
                 info = qr_rank_p_update(m, n, p,
                     <float*>extract(q1, qs), qs,
