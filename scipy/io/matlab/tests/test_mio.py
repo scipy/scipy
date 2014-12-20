@@ -700,25 +700,39 @@ def test_save_empty_dict():
     assert_(a[0,0] is None)
 
 
+def assert_any_equal(output, alternatives):
+    """ Assert `output` is equal to at least one element in `alternatives`
+    """
+    one_equal = False
+    for expected in alternatives:
+        if np.all(output == expected):
+             one_equal = True
+             break
+    assert_(one_equal)
+
+
 def test_to_writeable():
     # Test to_writeable function
     res = to_writeable(np.array([1])) # pass through ndarrays
     assert_equal(res.shape, (1,))
     assert_array_equal(res, 1)
-    expected = np.array([(1, 2)], dtype=[('a', '|O8'), ('b', '|O8')])
-    assert_array_equal(to_writeable({'a':1,'b':2}), expected)
+    # Dict fields can be written in any order
+    expected1 = np.array([(1, 2)], dtype=[('a', '|O8'), ('b', '|O8')])
+    expected2 = np.array([(2, 1)], dtype=[('b', '|O8'), ('a', '|O8')])
+    alternatives = (expected1, expected2)
+    assert_any_equal(to_writeable({'a':1,'b':2}), alternatives)
     # Fields with underscores discarded
-    assert_array_equal(to_writeable({'a':1,'b':2, '_c':3}), expected)
+    assert_any_equal(to_writeable({'a':1,'b':2, '_c':3}), alternatives)
     # Not-string fields discarded
-    assert_array_equal(to_writeable({'a':1,'b':2, 100:3}), expected)
+    assert_any_equal(to_writeable({'a':1,'b':2, 100:3}), alternatives)
     # String fields that are valid Python identifiers discarded
-    assert_array_equal(to_writeable({'a':1,'b':2, '99':3}), expected)
+    assert_any_equal(to_writeable({'a':1,'b':2, '99':3}), alternatives)
     # Object with field names is equivalent
     class klass(object): pass
     c = klass
     c.a = 1
     c.b = 2
-    assert_array_equal(to_writeable(c), expected)
+    assert_any_equal(to_writeable(c), alternatives)
     # empty list and tuple go to empty array
     res = to_writeable([])
     assert_equal(res.shape, (0,))
