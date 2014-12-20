@@ -4,19 +4,18 @@
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 from scipy.lib.six import xrange
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt,
-                   where, mgrid, cos, sin, exp, place, issubdtype, extract,
-                   less, vectorize, inexact, nan, zeros, atleast_1d, sinc)
+                   where, mgrid, sin, place, issubdtype, extract,
+                   less, inexact, nan, zeros, atleast_1d, sinc)
 from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta,
                       hankel1, hankel2, yv, kv, gammaln, ndtri, errprint, poch,
-                      binom, xlogy)
-from . import _ufuncs
-import types
+                      binom)
 from . import specfun
 from . import orthogonal
-import warnings
 
 __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'ber_zeros', 'bernoulli', 'berp_zeros', 'bessel_diff_formula',
@@ -63,6 +62,19 @@ def diric(x, n):
     -------
     diric : ndarray
 
+    Examples
+    --------
+    >>> from scipy import special
+    >>> import matplotlib.pyplot as plt
+
+    >>> x = np.linspace(-8*np.pi, 8*np.pi, num=201)
+    >>> plt.figure(figsize=(8,8));
+    >>> for idx, n in enumerate([2,3,4,9]):
+    ...     plt.subplot(2, 2, idx+1)
+    ...     plt.plot(x, special.diric(x, n))
+    ...     plt.title('diric, n={}'.format(n))
+    >>> plt.show()
+
     """
     x, n = asarray(x), asarray(n)
     n = asarray(n + (x-x))
@@ -74,7 +86,7 @@ def diric(x, n):
     y = zeros(x.shape, ytype)
 
     # empirical minval for 32, 64 or 128 bit float computations
-    # where sin(x/2)<minval, result is fixed at +1 or -1
+    # where sin(x/2) < minval, result is fixed at +1 or -1
     if np.finfo(ytype).eps < 1e-18:
         minval = 1e-11
     elif np.finfo(ytype).eps < 1e-15:
