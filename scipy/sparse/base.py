@@ -49,7 +49,7 @@ _formats = {'csc':[0, "Compressed Sparse Column"],
 
 
 # These univariate ufuncs preserve zeros.
-_ufuncs_with_fixed_point_at_zero = set([
+_ufuncs_with_fixed_point_at_zero = frozenset([
         np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh, np.arcsinh,
         np.arctanh, np.rint, np.sign, np.expm1, np.log1p, np.deg2rad,
         np.rad2deg, np.floor, np.ceil, np.trunc, np.sqrt])
