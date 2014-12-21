@@ -7,6 +7,7 @@ import numpy as np
 import scipy.linalg
 from scipy.misc import doccer
 from scipy.special import gammaln, psi, multigammaln
+from scipy.lib._util import check_random_state
 
 
 __all__ = ['multivariate_normal', 'dirichlet', 'wishart', 'invwishart']
@@ -280,7 +281,7 @@ class multivariate_normal_gen(object):
         Probability density function.
     logpdf(x, mean=None, cov=1, allow_singular=False)
         Log of the probability density function.
-    rvs(mean=None, cov=1, allow_singular=False, size=1)
+    rvs(mean=None, cov=1, size=1, random_state=None)
         Draw random samples from a multivariate normal distribution.
     entropy()
         Compute the differential entropy of the multivariate normal.
@@ -347,10 +348,12 @@ class multivariate_normal_gen(object):
     >>> ax2.contourf(x, y, rv.pdf(pos))
 
     """
-    def __init__(self):
-        self.__doc__ = doccer.docformat(self.__doc__, docdict_params)
 
-    def __call__(self, mean=None, cov=1, allow_singular=False):
+    def __init__(self, seed=None):
+        self.__doc__ = doccer.docformat(self.__doc__, docdict_params)
+        self._random_state = check_random_state(seed)
+
+    def __call__(self, mean=None, cov=1, allow_singular=False, seed=None):
         """
         Create a frozen multivariate normal distribution.
 
@@ -358,7 +361,25 @@ class multivariate_normal_gen(object):
 
         """
         return multivariate_normal_frozen(mean, cov,
-                                          allow_singular=allow_singular)
+                                          allow_singular=allow_singular,
+                                          seed=seed)
+
+    @property
+    def random_state(self):
+        """ Get or set the RandomState object for generating random variates.
+
+        This can be either None or an existing RandomState object.
+
+        If None (or np.random), use the RandomState singleton used by np.random.
+        If already a RandomState instance, use it.
+        If an int, use a new RandomState instance seeded with seed.
+
+        """
+        return self._random_state
+
+    @random_state.setter
+    def random_state(self, seed):
+        self._random_state = check_random_state(seed)
 
     def _logpdf(self, x, mean, prec_U, log_det_cov, rank):
         """
@@ -439,7 +460,7 @@ class multivariate_normal_gen(object):
         out = np.exp(self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank))
         return _squeeze_output(out)
 
-    def rvs(self, mean=None, cov=1, size=1):
+    def rvs(self, mean=None, cov=1, size=1, random_state=None):
         """
         Draw random samples from a multivariate normal distribution.
 
@@ -448,6 +469,10 @@ class multivariate_normal_gen(object):
         %(_doc_default_callparams)s
         size : integer, optional
             Number of samples to draw (default 1).
+        random_state : None or int or np.random.RandomState instance, optional
+            If int or RandomState, use it for drawing the random variates.
+            If None (or np.random), the global np.random state is used.
+            Default is None.
 
         Returns
         -------
@@ -461,7 +486,13 @@ class multivariate_normal_gen(object):
 
         """
         dim, mean, cov = _process_parameters(None, mean, cov)
-        out = np.random.multivariate_normal(mean, cov, size)
+
+        # extra gymnastics needed for a custom random_state
+        if random_state is not None:
+            random_state = check_random_state(random_state)
+            out = random_state.multivariate_normal(mean, cov, size)
+        else:
+            out = self._random_state.multivariate_normal(mean, cov, size)
         return _squeeze_output(out)
 
     def entropy(self, mean=None, cov=1):
@@ -491,7 +522,7 @@ multivariate_normal = multivariate_normal_gen()
 
 
 class multivariate_normal_frozen(object):
-    def __init__(self, mean=None, cov=1, allow_singular=False):
+    def __init__(self, mean=None, cov=1, allow_singular=False, seed=None):
         """
         Create a frozen multivariate normal distribution.
 
@@ -504,6 +535,12 @@ class multivariate_normal_frozen(object):
         allow_singular : bool, optional
             If this flag is True then tolerate a singular
             covariance matrix (default False).
+        seed : None or int or np.random.RandomState instance, optional
+            This parameter defines the RandomState object to use for drawing
+            random variates.
+            If None (or np.random), the global np.random state is used.
+            If integer, it is used to seed the local RandomState instance
+            Default is None.
 
         Examples
         --------
@@ -520,7 +557,7 @@ class multivariate_normal_frozen(object):
         """
         self.dim, self.mean, self.cov = _process_parameters(None, mean, cov)
         self.cov_info = _PSD(self.cov, allow_singular=allow_singular)
-        self._mnorm = multivariate_normal_gen()
+        self._mnorm = multivariate_normal_gen(seed)
 
     def logpdf(self, x):
         x = _process_quantiles(x, self.dim)
@@ -531,8 +568,8 @@ class multivariate_normal_frozen(object):
     def pdf(self, x):
         return np.exp(self.logpdf(x))
 
-    def rvs(self, size=1):
-        return self._mnorm.rvs(self.mean, self.cov, size)
+    def rvs(self, size=1, random_state=None):
+        return self._mnorm.rvs(self.mean, self.cov, size, random_state)
 
     def entropy(self):
         """
@@ -654,7 +691,7 @@ class dirichlet_gen(object):
         Probability density function.
     logpdf(x, alpha)
         Log of the probability density function.
-    rvs(alpha, size=1)
+    rvs(alpha, size=1, random_state=None)
         Draw random samples from a Dirichlet distribution.
     mean(alpha)
         The mean of the Dirichlet distribution
@@ -705,11 +742,29 @@ class dirichlet_gen(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, seed=None):
         self.__doc__ = doccer.docformat(self.__doc__, dirichlet_docdict_params)
+        self._random_state = check_random_state(seed)
 
-    def __call__(self, alpha):
-        return dirichlet_frozen(alpha)
+    def __call__(self, alpha, seed=None):
+        return dirichlet_frozen(alpha, seed=seed)
+
+    @property
+    def random_state(self):
+        """ Get or set the RandomState object for generating random variates.
+
+        This can be either None or an existing RandomState object.
+
+        If None (or np.random), use the RandomState singleton used by np.random.
+        If already a RandomState instance, use it.
+        If an int, use a new RandomState instance seeded with seed.
+
+        """
+        return self._random_state
+
+    @random_state.setter
+    def random_state(self, seed):
+        self._random_state = check_random_state(seed)
 
     def _logpdf(self, x, alpha):
         """
@@ -838,7 +893,7 @@ class dirichlet_gen(object):
             (alpha - 1) * scipy.special.psi(alpha))
         return _squeeze_output(out)
 
-    def rvs(self, alpha, size=1):
+    def rvs(self, alpha, size=1, random_state=None):
         """
         Draw random samples from a Dirichlet distribution.
 
@@ -847,7 +902,10 @@ class dirichlet_gen(object):
         %(_dirichlet_doc_default_callparams)s
         size : int, optional
             Number of samples to draw (default 1).
-
+        random_state : None or int or np.random.RandomState instance, optional
+            If int or RandomState, use it for drawing the random variates.
+            If None (or np.random), the global np.random state is used.
+            Default is None.
 
         Returns
         -------
@@ -857,16 +915,20 @@ class dirichlet_gen(object):
 
         """
         alpha = _dirichlet_check_parameters(alpha)
-        return np.random.dirichlet(alpha, size=size)
+        if random_state is None:
+            return self._random_state.dirichlet(alpha, size=size)
+        else:
+            random_state = check_random_state(random_state)
+            return random_state.dirichlet(alpha, size=size)
 
 
 dirichlet = dirichlet_gen()
 
 
 class dirichlet_frozen(object):
-    def __init__(self, alpha):
+    def __init__(self, alpha, seed=None):
         self.alpha = _dirichlet_check_parameters(alpha)
-        self._dirichlet = dirichlet_gen()
+        self._dirichlet = dirichlet_gen(seed)
 
     def logpdf(self, x):
         return self._dirichlet.logpdf(x, self.alpha)
@@ -883,8 +945,8 @@ class dirichlet_frozen(object):
     def entropy(self):
         return self._dirichlet.entropy(self.alpha)
 
-    def rvs(self, size=1):
-        return self._dirichlet.rvs(self.alpha, size)
+    def rvs(self, size=1, random_state=None):
+        return self._dirichlet.rvs(self.alpha, size, random_state)
 
 
 # Set frozen generator docstrings from corresponding docstrings in
@@ -939,7 +1001,7 @@ class wishart_gen(object):
         Probability density function.
     logpdf(x, df, scale)
         Log of the probability density function.
-    rvs(df, scale, size=1)
+    rvs(df, scale, size=1, random_state=None)
         Draw random samples from a Wishart distribution.
     entropy()
         Compute the differential entropy of the Wishart distribution.
@@ -1020,17 +1082,36 @@ class wishart_gen(object):
     axis labels the components.
 
     """
-    def __init__(self):
-        self.__doc__ = doccer.docformat(self.__doc__, wishart_docdict_params)
 
-    def __call__(self, df=None, scale=None):
+    def __init__(self, seed=None):
+        self.__doc__ = doccer.docformat(self.__doc__, wishart_docdict_params)
+        self._random_state = check_random_state(seed)
+
+    def __call__(self, df=None, scale=None, seed=None):
         """
         Create a frozen Wishart distribution.
 
         See `wishart_frozen` for more information.
 
         """
-        return wishart_frozen(df, scale)
+        return wishart_frozen(df, scale, seed)
+
+    @property
+    def random_state(self):
+        """ Get or set the RandomState object for generating random variates.
+
+        This can be either None or an existing RandomState object.
+
+        If None (or np.random), use the RandomState singleton used by np.random.
+        If already a RandomState instance, use it.
+        If an int, use a new RandomState instance seeded with seed.
+
+        """
+        return self._random_state
+
+    @random_state.setter
+    def random_state(self, seed):
+        self._random_state = check_random_state(seed)
 
     def _process_parameters(self, df, scale):
         if scale is None:
@@ -1320,7 +1401,7 @@ class wishart_gen(object):
         out = self._var(dim, df, scale)
         return _squeeze_output(out)
 
-    def _standard_rvs(self, n, shape, dim, df):
+    def _standard_rvs(self, n, shape, dim, df, random_state):
         """
         Parameters
         ----------
@@ -1332,6 +1413,8 @@ class wishart_gen(object):
             Dimension of the scale matrix
         df : int
             Degrees of freedom
+        random_state : np.random.RandomState instance
+            RandomState used for drawing the random variates.
 
         Notes
         -----
@@ -1341,12 +1424,12 @@ class wishart_gen(object):
         """
         # Random normal variates for off-diagonal elements
         n_tril = dim * (dim-1) // 2
-        covariances = np.random.normal(size=n*n_tril).reshape(shape+(n_tril,))
+        covariances = random_state.normal(
+            size=n*n_tril).reshape(shape+(n_tril,))
 
         # Random chi-square variates for diagonal elements
-        variances = np.r_[
-            [np.random.chisquare(df-(i+1)+1, size=n)**0.5 for i in range(dim)]
-        ].reshape((dim,) + shape[::-1]).T
+        variances = np.r_[[random_state.chisquare(df-(i+1)+1, size=n)**0.5
+             for i in range(dim)]].reshape((dim,) + shape[::-1]).T
 
         # Create the A matri(ces) - lower triangular
         A = np.zeros(shape + (dim, dim))
@@ -1362,7 +1445,7 @@ class wishart_gen(object):
 
         return A
 
-    def _rvs(self, n, shape, dim, df, C):
+    def _rvs(self, n, shape, dim, df, C, random_state):
         """
         Parameters
         ----------
@@ -1378,6 +1461,10 @@ class wishart_gen(object):
             Scale matrix
         C : ndarray
             Cholesky factorization of the scale matrix, lower triangular.
+        random_state : None or int or np.random.RandomState instance, optional
+            If int or RandomState, use it for drawing the random variates.
+            If None (or np.random), the global np.random state is used.
+            Default is None.
 
         Notes
         -----
@@ -1385,9 +1472,13 @@ class wishart_gen(object):
         called directly; use 'rvs' instead.
 
         """
+        if random_state is not None:
+            random_state = check_random_state(random_state)
+        else:
+            random_state = self._random_state
         # Calculate the matrices A, which are actually lower triangular
         # Cholesky factorizations of a matrix B such that B ~ W(df, I)
-        A = self._standard_rvs(n, shape, dim, df)
+        A = self._standard_rvs(n, shape, dim, df, random_state)
 
         # Calculate SA = C A A' C', where SA ~ W(df, scale)
         # Note: this is the product of a (lower) (lower) (lower)' (lower)'
@@ -1406,7 +1497,7 @@ class wishart_gen(object):
 
         return A
 
-    def rvs(self, df, scale, size=1):
+    def rvs(self, df, scale, size=1, random_state=None):
         """
         Draw random samples from a Wishart distribution.
 
@@ -1415,6 +1506,10 @@ class wishart_gen(object):
         %(_doc_default_callparams)s
         size : integer or iterable of integers, optional
             Number of samples to draw (default 1).
+        random_state : None or int or np.random.RandomState instance, optional
+            If int or RandomState, use it for drawing the random variates.
+            If None (or np.random), the global np.random state is used.
+            Default is None.
 
         Returns
         -------
@@ -1433,7 +1528,8 @@ class wishart_gen(object):
         # Cholesky decomposition of scale
         C = scipy.linalg.cholesky(scale, lower=True)
 
-        out = self._rvs(n, shape, dim, df, C)
+        out = self._rvs(n, shape, dim, df, C, random_state)
+
         return _squeeze_output(out)
 
     def _entropy(self, dim, df, log_det_scale):
@@ -1523,10 +1619,16 @@ class wishart_frozen(object):
         Degrees of freedom of the distribution
     scale : array_like
         Scale matrix of the distribution
+    seed : None or int or np.random.RandomState instance, optional
+        This parameter defines the RandomState object to use for drawing
+        random variates.
+        If None (or np.random), the global np.random state is used.
+        If integer, it is used to seed the local RandomState instance
+        Default is None.
 
     """
-    def __init__(self, df, scale):
-        self._wishart = wishart_gen()
+    def __init__(self, df, scale, seed=None):
+        self._wishart = wishart_gen(seed)
         self.dim, self.df, self.scale = self._wishart._process_parameters(
             df, scale)
         self.C, self.log_det_scale = self._wishart._cholesky_logdet(self.scale)
@@ -1553,10 +1655,10 @@ class wishart_frozen(object):
         out = self._wishart._var(self.dim, self.df, self.scale)
         return _squeeze_output(out)
 
-    def rvs(self, size=1):
+    def rvs(self, size=1, random_state=None):
         n, shape = self._wishart._process_size(size)
         out = self._wishart._rvs(n, shape,
-                                 self.dim, self.df, self.C)
+                                 self.dim, self.df, self.C, random_state)
         return _squeeze_output(out)
 
     def entropy(self):
@@ -1654,7 +1756,7 @@ class invwishart_gen(wishart_gen):
         Probability density function.
     logpdf(x, df, scale)
         Log of the probability density function.
-    rvs(df, scale, size=1)
+    rvs(df, scale, size=1, random_state=None)
         Draw random samples from an inverse Wishart distribution.
 
     Parameters
@@ -1736,17 +1838,36 @@ class invwishart_gen(wishart_gen):
     axis labels the components.
 
     """
-    def __init__(self):
-        self.__doc__ = doccer.docformat(self.__doc__, wishart_docdict_params)
 
-    def __call__(self, df=None, scale=None):
+    def __init__(self, seed=None):
+        self.__doc__ = doccer.docformat(self.__doc__, wishart_docdict_params)
+        self._random_state = check_random_state(seed)
+
+    def __call__(self, df=None, scale=None, seed=None):
         """
         Create a frozen inverse Wishart distribution.
 
         See `invwishart_frozen` for more information.
 
         """
-        return invwishart_frozen(df, scale)
+        return invwishart_frozen(df, scale, seed)
+
+    @property
+    def random_state(self):
+        """ Get or set the RandomState object for generating random variates.
+
+        This can be either None or an existing RandomState object.
+
+        If None (or np.random), use the RandomState singleton used by np.random.
+        If already a RandomState instance, use it.
+        If an int, use a new RandomState instance seeded with seed.
+
+        """
+        return self._random_state
+
+    @random_state.setter
+    def random_state(self, seed):
+        self._random_state = check_random_state(seed)
 
     def _logpdf(self, x, dim, df, scale, log_det_scale):
         """
@@ -1963,7 +2084,7 @@ class invwishart_gen(wishart_gen):
         out = self._var(dim, df, scale)
         return _squeeze_output(out) if out is not None else out
 
-    def _rvs(self, n, shape, dim, df, C):
+    def _rvs(self, n, shape, dim, df, C, random_state):
         """
         Parameters
         ----------
@@ -1977,6 +2098,10 @@ class invwishart_gen(wishart_gen):
             Degrees of freedom
         C : ndarray
             Cholesky factorization of the scale matrix, lower triagular.
+        random_state : None or int or np.random.RandomState instance, optional
+            If int or RandomState, use it for drawing the random variates.
+            If None (or np.random), the global np.random state is used.
+            Default is None.
 
         Notes
         -----
@@ -1984,8 +2109,14 @@ class invwishart_gen(wishart_gen):
         called directly; use 'rvs' instead.
 
         """
+        if random_state is not None:
+            random_state = check_random_state(random_state)
+        else:
+            random_state = self._random_state
+
         # Get random draws A such that A ~ W(df, I)
-        A = super(invwishart_gen, self)._standard_rvs(n, shape, dim, df)
+        A = super(invwishart_gen, self)._standard_rvs(n, shape, dim,
+                                                      df, random_state)
 
         # Calculate SA = (CA)'^{-1} (CA)^{-1} ~ iW(df, scale)
         eye = np.eye(dim)
@@ -2009,7 +2140,7 @@ class invwishart_gen(wishart_gen):
 
         return A
 
-    def rvs(self, df, scale, size=1):
+    def rvs(self, df, scale, size=1, random_state=None):
         """
         Draw random samples from an inverse Wishart distribution.
 
@@ -2018,6 +2149,10 @@ class invwishart_gen(wishart_gen):
         %(_doc_default_callparams)s
         size : integer or iterable of integers, optional
             Number of samples to draw (default 1).
+        random_state : None or int or np.random.RandomState instance, optional
+            If int or RandomState, use it for drawing the random variates.
+            If None (or np.random), the global np.random state is used.
+            Default is None.
 
         Returns
         -------
@@ -2040,7 +2175,7 @@ class invwishart_gen(wishart_gen):
         # Cholesky decomposition of inverted scale
         C = scipy.linalg.cholesky(inv_scale, lower=True)
 
-        out = self._rvs(n, shape, dim, df, C)
+        out = self._rvs(n, shape, dim, df, C, random_state)
 
         return _squeeze_output(out)
 
@@ -2051,7 +2186,7 @@ class invwishart_gen(wishart_gen):
 invwishart = invwishart_gen()
 
 class invwishart_frozen(object):
-    def __init__(self, df, scale):
+    def __init__(self, df, scale, seed=None):
         """
         Create a frozen inverse Wishart distribution.
 
@@ -2061,9 +2196,15 @@ class invwishart_frozen(object):
             Degrees of freedom of the distribution
         scale : array_like
             Scale matrix of the distribution
+        seed : None or int or np.random.RandomState instance, optional
+            This parameter defines the RandomState object to use for drawing
+            random variates.
+            If None (or np.random), the global np.random state is used.
+            If integer, it is used to seed the local RandomState instance
+            Default is None.
 
         """
-        self._invwishart = invwishart_gen()
+        self._invwishart = invwishart_gen(seed)
         self.dim, self.df, self.scale = self._invwishart._process_parameters(
             df, scale
         )
@@ -2100,10 +2241,11 @@ class invwishart_frozen(object):
         out = self._invwishart._var(self.dim, self.df, self.scale)
         return _squeeze_output(out) if out is not None else out
 
-    def rvs(self, size=1):
+    def rvs(self, size=1, random_state=None):
         n, shape = self._invwishart._process_size(size)
 
-        out = self._invwishart._rvs(n, shape, self.dim, self.df, self.C)
+        out = self._invwishart._rvs(n, shape, self.dim, self.df,
+                                    self.C, random_state)
 
         return _squeeze_output(out)
 
