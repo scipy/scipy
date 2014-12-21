@@ -206,20 +206,26 @@ def get_matfile_version(fileobj):
     minor_version : int
         minor MATLAB file format version
 
+    Raises
+    ------
+    MatReadError
+        If the file is empty.
+    ValueError
+        The matfile version is unknown.
+
     Notes
     -----
     Has the side effect of setting the file read pointer to 0
-
     """
     # Mat4 files have a zero somewhere in first 4 bytes
     fileobj.seek(0)
-    mopt_bytes = np.ndarray(shape=(4,),
-                           dtype=np.uint8,
-                           buffer = fileobj.read(4))
-    if 0 in mopt_bytes:
+    mopt_bytes = fileobj.read(4)
+    if len(mopt_bytes) == 0:
+        raise MatReadError("Mat file appears to be empty")
+    mopt_ints = np.ndarray(shape=(4,), dtype=np.uint8, buffer=mopt_bytes)
+    if 0 in mopt_ints:
         fileobj.seek(0)
         return (0,0)
-
     # For 5 format or 7.3 format we need to read an integer in the
     # header. Bytes 124 through 128 contain a version integer and an
     # endian test string
@@ -232,9 +238,7 @@ def get_matfile_version(fileobj):
     ret = (maj_val, min_val)
     if maj_val in (1, 2):
         return ret
-    else:
-        raise ValueError('Unknown mat file type, version %s, %s'
-                         % ret)
+    raise ValueError('Unknown mat file type, version %s, %s' % ret)
 
 
 def matdims(arr, oned_as='column'):
