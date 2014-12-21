@@ -6,7 +6,7 @@ import numpy as np
 cimport numpy as cnp
 
 
-cpdef size_t cproduct(tup):
+def cproduct(tup):
     cdef size_t res = 1
     cdef int i
     for i in range(len(tup)):

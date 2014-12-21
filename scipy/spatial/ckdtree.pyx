@@ -38,35 +38,16 @@ __all__ = ['cKDTree']
 # ints to lists.  The results of the if is known at compile time, so the
 # test is optimized away.
 
-cdef inline int set_add_pair(set results,
-                             np.intp_t i,
-                             np.intp_t j) except -1:
-
+cdef inline int set_add_ordered_pair(set results,
+                                     np.intp_t i, np.intp_t j) except -1:
+    if i > j:
+        i, j = j, i
     if sizeof(long) < sizeof(np.intp_t):
         # Win 64
         results.add((int(i), int(j)))
     else:
         # Other platforms
         results.add((i, j))
-    return 0
-
-
-cdef inline int set_add_ordered_pair(set results,
-                                     np.intp_t i,
-                                     np.intp_t j) except -1:
-
-    if sizeof(long) < sizeof(np.intp_t):
-        # Win 64
-        if i < j:
-            results.add((int(i), int(j)))
-        else:
-            results.add((int(j), int(i)))
-    else:
-        # Other platforms
-        if i < j:
-            results.add((i, j))
-        else:
-            results.add((j, i))
     return 0
 
 cdef inline int list_append(list results, np.intp_t i) except -1:
@@ -217,7 +198,8 @@ cdef class coo_entries:
         self.j_data = <np.intp_t *>np.PyArray_DATA(self.j)
         self.v_data = <np.float64_t*>np.PyArray_DATA(self.v)
 
-    cdef void add(coo_entries self, np.intp_t i, np.intp_t j, np.float64_t v):
+    cdef int add(coo_entries self, np.intp_t i, np.intp_t j,
+                 np.float64_t v) except -1:
         cdef np.intp_t k
         if self.n == self.n_max:
             self.n_max *= 2
@@ -807,8 +789,11 @@ cdef class cKDTree:
     cdef np.intp_t* raw_indices
 
     def __init__(cKDTree self, data, np.intp_t leafsize=10):
-        self.data = np.ascontiguousarray(data,dtype=np.float64)
-        self.n, self.m = np.shape(self.data)
+        cdef np.ndarray[np.float64_t, ndim=2] data_arr = \
+            np.ascontiguousarray(data, dtype=np.float64)
+        self.data = data_arr
+        self.n = data_arr.shape[0]
+        self.m = data_arr.shape[1]
         self.leafsize = leafsize
         if self.leafsize<1:
             raise ValueError("leafsize must be at least 1")
@@ -1208,21 +1193,20 @@ cdef class cKDTree:
         cdef np.ndarray[np.float64_t, ndim=2] dd
         cdef np.ndarray[np.float64_t, ndim=2] xx
         cdef np.intp_t c, n, i, j
-        x = np.asarray(x).astype(np.float64)
-        if np.shape(x)[-1] != self.m:
+        cdef np.ndarray x_arr = np.asarray(x, dtype=np.float64)
+        if x_arr.ndim == 0 or x_arr.shape[x_arr.ndim - 1] != self.m:
             raise ValueError("x must consist of vectors of length %d but "
                              "has shape %s" % (int(self.m), np.shape(x)))
         if p < 1:
             raise ValueError("Only p-norms with 1<=p<=infinity permitted")
-        if len(x.shape)==1:
+        if x_arr.ndim == 1:
             single = True
-            x = x[np.newaxis,:]
+            x_arr = x_arr[np.newaxis,:]
         else:
             single = False
         retshape = np.shape(x)[:-1]
         n = <np.intp_t> np.prod(retshape)
-        xx = np.reshape(x,(n,self.m))
-        xx = np.ascontiguousarray(xx,dtype=np.float64)
+        xx = np.ascontiguousarray(x_arr).reshape(n, self.m)
         dd = np.empty((n,k),dtype=np.float64)
         dd.fill(infinity)
         ii = np.empty((n,k),dtype=np.intp)
@@ -1386,7 +1370,7 @@ cdef class cKDTree:
         """
         cdef np.ndarray[np.float64_t, ndim=1, mode="c"] xx
         
-        x = np.asarray(x).astype(np.float64)
+        x = np.asarray(x, dtype=np.float64)
         if x.shape[-1] != self.m:
             raise ValueError("Searching for a %d-dimensional point in a " \
                              "%d-dimensional KDTree" % (int(x.shape[-1]), int(self.m)))
@@ -1395,7 +1379,7 @@ cdef class cKDTree:
             return self.__query_ball_point(&xx[0], r, p, eps)
         else:
             retshape = x.shape[:-1]
-            result = np.empty(retshape, dtype=np.object)
+            result = np.empty(retshape, dtype=object)
             for c in np.ndindex(retshape):
                 xx = np.ascontiguousarray(x[c], dtype=np.float64)
                 result[c] = self.__query_ball_point(&xx[0], r, p, eps)
@@ -1898,6 +1882,7 @@ cdef class cKDTree:
             and so may overflow if very large (2e9).
 
         """
+        cdef int r_ndim
         cdef np.intp_t n_queries, i
         cdef np.ndarray[np.float64_t, ndim=1, mode="c"] real_r
         cdef np.ndarray[np.intp_t, ndim=1, mode="c"] results, idx
@@ -1908,14 +1893,11 @@ cdef class cKDTree:
 
         # Make a copy of r array to ensure it's contiguous and to modify it
         # below
-        if np.shape(r) == ():
-            real_r = np.array([r], dtype=np.float64)
-            n_queries = 1
-        elif len(np.shape(r))==1:
-            real_r = np.array(r, dtype=np.float64)
-            n_queries = r.shape[0]
-        else:
+        r_ndim = len(np.shape(r))
+        if r_ndim > 1:
             raise ValueError("r must be either a single value or a one-dimensional array of values")
+        real_r = np.array(r, ndmin=1, dtype=np.float64, copy=True)
+        n_queries = real_r.shape[0]
 
         # Internally, we represent all distances as distance ** p
         if p != infinity:
@@ -1930,19 +1912,19 @@ cdef class cKDTree:
             p, 0.0, 0.0)
         
         # Go!
-        results = np.zeros((n_queries,), dtype=np.intp)
+        results = np.zeros(n_queries, dtype=np.intp)
         idx = np.arange(n_queries, dtype=np.intp)
         self.__count_neighbors_traverse(other, n_queries,
                                         &real_r[0], &results[0], &idx[0],
                                         self.tree, other.tree,
                                         tracker)
         
-        if np.shape(r) == ():
+        if r_ndim == 0:
             if results[0] <= <np.intp_t> LONG_MAX:
                 return int(results[0])
             else:
                 return results[0]
-        elif len(np.shape(r))==1:
+        else:
             return results
 
     # ----------------------

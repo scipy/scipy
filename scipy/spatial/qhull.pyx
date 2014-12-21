@@ -19,6 +19,9 @@ cimport setlist
 
 from numpy.compat import asbytes
 
+cdef extern from "numpy/npy_math.h":
+    double nan "NPY_NAN"
+
 __all__ = ['Delaunay', 'ConvexHull', 'Voronoi', 'tsearch']
 
 #------------------------------------------------------------------------------
@@ -575,11 +578,13 @@ cdef class _Qhull:
         if self._is_delaunay:
             facet_ndim += 1
 
-        id_map = np.empty((qh_qh.facet_id,), dtype=np.intc)
-        id_map.fill(-1)
+        id_map = np.empty(qh_qh.facet_id, dtype=np.intc)
 
         # Compute facet indices
         with nogil:
+            for i in range(qh_qh.facet_id):
+                id_map[i] = -1
+
             facet = qh_qh.facet_list
             j = 0
             while facet and facet.next:
@@ -750,8 +755,9 @@ cdef class _Qhull:
         # -- Grab Voronoi regions
         regions = []
 
-        point_region = np.empty((self.numpoints,), np.intp)
-        point_region.fill(-1)
+        point_region = np.empty(self.numpoints, np.intp)
+        for i in range(self.numpoints):
+            point_region[i] = -1
 
         vertex = qh_qh.vertex_list
         while vertex and vertex.next:
@@ -997,7 +1003,7 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef double c[NPY_MAXDIMS+1]
     cdef double *transform
     cdef double anorm, rcond
-    cdef double nan, rcond_limit
+    cdef double rcond_limit
 
     cdef double work[4*NPY_MAXDIMS]
     cdef int iwork[NPY_MAXDIMS]
@@ -1006,7 +1012,6 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef double y1, y2, y3
     cdef double det
 
-    nan = np.nan
     ndim = points.shape[1]
     nsimplex = simplices.shape[0]
 
@@ -1978,7 +1983,7 @@ class Delaunay(_QhullUser):
             eps = 100 * np.finfo(np.double).eps
         else:
             eps = tol
-        eps_broad = np.sqrt(eps)
+        eps_broad = sqrt(eps)
         out = np.zeros((xi.shape[0],), dtype=np.intc)
         out_ = out
         _get_delaunay_info(&info, self, 1, 0, 0)

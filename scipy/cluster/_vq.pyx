@@ -7,6 +7,7 @@ Original C version by Damian Eads.
 Translated to Cython by David Warde-Farley, October 2009.
 """
 
+cimport cython
 import numpy as np
 cimport numpy as np
 from cluster_blas cimport *
@@ -247,6 +248,7 @@ def vq(np.ndarray obs, np.ndarray codes):
     return outcodes, outdists
 
 
+@cython.cdivision(True)
 cdef np.ndarray _update_cluster_means(vq_type *obs, int32_t *labels,
                                       vq_type *cb, int nobs, int nc, int nfeat):
     """
