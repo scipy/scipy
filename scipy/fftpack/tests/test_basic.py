@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # Created by Pearu Peterson, September 2002
-""" Test functions for fftpack.basic module
-"""
+
 from __future__ import division, print_function, absolute_import
 
 __usage__ = """
@@ -13,15 +12,15 @@ Run tests if fftpack is not installed:
   python tests/test_basic.py
 """
 
-from numpy.testing import assert_, assert_equal, assert_array_almost_equal, \
-        assert_array_almost_equal_nulp, assert_raises, run_module_suite, \
-        TestCase, dec
+from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
+        assert_array_almost_equal_nulp, assert_raises, run_module_suite,
+        TestCase, dec)
 from scipy.fftpack import ifft,fft,fftn,ifftn,rfft,irfft, fft2
 from scipy.fftpack import _fftpack as fftpack
 from scipy.fftpack.basic import _is_safe_size
 
-from numpy import arange, add, array, asarray, zeros, dot, exp, pi,\
-     swapaxes, double, cdouble
+from numpy import (arange, add, array, asarray, zeros, dot, exp, pi,
+     swapaxes, double, cdouble)
 import numpy as np
 import numpy.fft
 
@@ -734,9 +733,7 @@ class FakeArray2(object):
 
 
 class TestOverwrite(object):
-    """
-    Check input overwrite behavior of the FFT functions
-    """
+    """Check input overwrite behavior of the FFT functions """
 
     real_dtypes = [np.float32, np.float64]
     dtypes = real_dtypes + [np.complex64, np.complex128]
@@ -744,7 +741,7 @@ class TestOverwrite(object):
     def _check(self, x, routine, fftsize, axis, overwrite_x, should_overwrite):
         x2 = x.copy()
         for fake in [lambda x: x, FakeArray, FakeArray2]:
-            y = routine(fake(x2), fftsize, axis, overwrite_x=overwrite_x)
+            routine(fake(x2), fftsize, axis, overwrite_x=overwrite_x)
 
             sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
                 routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
