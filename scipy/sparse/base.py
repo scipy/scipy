@@ -48,6 +48,13 @@ _formats = {'csc':[0, "Compressed Sparse Column"],
             }
 
 
+# These univariate ufuncs preserve zeros.
+_ufuncs_with_fixed_point_at_zero = (
+        np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh, np.arcsinh,
+        np.arctanh, np.rint, np.sign, np.expm1, np.log1p, np.deg2rad,
+        np.rad2deg, np.floor, np.ceil, np.trunc, np.sqrt)
+
+
 MAXPRINT = 50
 
 
@@ -838,9 +845,7 @@ class spmatrix(object):
             result = self.minimum(*without_self)
         elif func is np.absolute:
             result = abs(self)
-        elif func in (np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh,
-                      np.arcsinh, np.arctanh, np.rint, np.sign, np.expm1, np.log1p,
-                      np.deg2rad, np.rad2deg, np.floor, np.ceil, np.trunc, np.sqrt):
+        elif func in _ufuncs_with_fixed_point_at_zero:
             func_name = func.__name__
             if hasattr(self, func_name):
                 result = getattr(self, func_name)()
