@@ -12,7 +12,7 @@ __all__ = []
 
 import numpy as np
 
-from .base import spmatrix,  _ufuncs_with_fixed_point_at_zero
+from .base import spmatrix, _ufuncs_with_fixed_point_at_zero
 from .sputils import isscalarlike
 
 
