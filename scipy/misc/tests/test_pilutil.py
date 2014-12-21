@@ -5,9 +5,8 @@ import tempfile
 import shutil
 import numpy as np
 
-from numpy.testing import assert_, assert_equal, \
-        dec, decorate_methods, TestCase, run_module_suite, \
-        assert_allclose
+from numpy.testing import (assert_, assert_equal, dec, decorate_methods,
+                           TestCase, run_module_suite, assert_allclose)
 
 from scipy import misc
 
@@ -102,7 +101,7 @@ def tst_fromimage(filename, irange):
 
 @_pilskip
 def test_fromimage():
-    ''' Test generator for parametric tests '''
+    # Test generator for parametric tests
     data = {'icon.png':(0,255),
             'icon_mono.png':(0,2),
             'icon_mono_flat.png':(0,1)}
@@ -110,6 +109,7 @@ def test_fromimage():
         yield tst_fromimage, os.path.join(datapath,'data',fn), irange
 
 decorate_methods(TestPILUtil, _pilskip)
+
 
 if __name__ == "__main__":
     run_module_suite()
