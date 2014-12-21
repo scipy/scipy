@@ -133,6 +133,7 @@ Special Matrices
    invhilbert - Inverse Hilbert matrix
    leslie - Leslie matrix
    pascal - Pascal matrix
+   invpascal - Inverse Pascal matrix
    toeplitz - Toeplitz matrix
    tri - Construct a matrix filled with ones at and below a given diagonal
 
