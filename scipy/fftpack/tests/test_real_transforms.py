@@ -84,7 +84,7 @@ class _TestDCTBase(TestCase):
 
 class _TestDCTIIBase(_TestDCTBase):
     def test_definition_matlab(self):
-        """Test correspondance with matlab (orthornomal mode)."""
+        # Test correspondance with matlab (orthornomal mode).
         for i in range(len(X)):
             x = np.array(X[i], dtype=self.rdt)
             yr = Y[i]
@@ -96,7 +96,7 @@ class _TestDCTIIBase(_TestDCTBase):
 
 class _TestDCTIIIBase(_TestDCTBase):
     def test_definition_ortho(self):
-        """Test orthornomal mode."""
+        # Test orthornomal mode.
         for i in range(len(X)):
             x = np.array(X[i], dtype=self.rdt)
             y = dct(x, norm='ortho', type=2)
@@ -343,16 +343,14 @@ class TestIDSTIIIFloat(_TestIDSTBase):
 
 
 class TestOverwrite(object):
-    """
-    Check input overwrite behavior
-    """
+    """Check input overwrite behavior """
 
     real_dtypes = [np.float32, np.float64]
 
     def _check(self, x, routine, type, fftsize, axis, norm, overwrite_x,
                should_overwrite, **kw):
         x2 = x.copy()
-        y = routine(x2, type, fftsize, axis, norm, overwrite_x=overwrite_x)
+        routine(x2, type, fftsize, axis, norm, overwrite_x=overwrite_x)
 
         sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
             routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
@@ -408,6 +406,7 @@ class TestOverwrite(object):
             self._check_1d(idst, dtype, (16,), -1, overwritable)
             self._check_1d(idst, dtype, (16, 2), 0, overwritable)
             self._check_1d(idst, dtype, (2, 16), 1, overwritable)
+
 
 if __name__ == "__main__":
     np.testing.run_module_suite()

@@ -1,8 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_array_equal, assert_almost_equal, \
-                          assert_array_almost_equal, assert_equal
+from numpy.testing import (assert_array_equal, assert_almost_equal,
+                           assert_array_almost_equal, assert_equal)
 
 from scipy.misc import pade, logsumexp, face, ascent
 
@@ -38,7 +38,7 @@ def test_pade_4term_exp():
 
 
 def test_logsumexp():
-    """Test whether logsumexp() function correctly handles large inputs."""
+    # Test whether logsumexp() function correctly handles large inputs.
     a = np.arange(200)
     desired = np.log(np.sum(np.exp(a)))
     assert_almost_equal(logsumexp(a), desired)
@@ -75,7 +75,7 @@ def test_logsumexp():
 
     # Test keeping dimensions
     assert_array_almost_equal(logsumexp([[1e10, 1e-10],
-                                         [-1e10, -np.inf]], 
+                                         [-1e10, -np.inf]],
                                         axis=-1,
                                         keepdims=True),
                               [[1e10], [-1e10]])
@@ -83,7 +83,7 @@ def test_logsumexp():
     # Test multiple axes
     if NumpyVersion(np.__version__) >= NumpyVersion('1.7.0'):
         assert_array_almost_equal(logsumexp([[1e10, 1e-10],
-                                             [-1e10, -np.inf]], 
+                                             [-1e10, -np.inf]],
                                             axis=(-1,-2)),
                                   1e10)
 
