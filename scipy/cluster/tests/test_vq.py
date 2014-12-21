@@ -91,7 +91,7 @@ class TestVq(TestCase):
     #     assert_array_equal(b, tb)
 
     def test_vq_1d(self):
-        """Test special rank 1 vq algo, python implementation."""
+        # Test special rank 1 vq algo, python implementation.
         data = X[:, 0]
         initc = data[:3]
         a, b = _vq.vq(data, initc)
@@ -176,7 +176,6 @@ class TestKMean(TestCase):
         assert_raises(ClusterError, kmeans2, data, initk, missing='raise')
 
     def test_kmeans2_simple(self):
-        """Testing simple call to kmeans2 and its results."""
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
         code = initc.copy()
         code1 = kmeans2(X, code, iter=1)[0]
@@ -186,27 +185,22 @@ class TestKMean(TestCase):
         assert_array_almost_equal(code2, CODET2)
 
     def test_kmeans2_rank1(self):
-        """Testing simple call to kmeans2 with rank 1 data."""
         data = np.fromfile(DATAFILE1, sep=", ")
         data = data.reshape((200, 2))
         data1 = data[:, 0]
-        data2 = data[:, 1]
 
         initc = data1[:3]
         code = initc.copy()
-        code1 = kmeans2(data1, code, iter=1)[0]
-        code2 = kmeans2(data1, code, iter=2)[0]
+        kmeans2(data1, code, iter=1)[0]
+        kmeans2(data1, code, iter=2)[0]
 
     def test_kmeans2_rank1_2(self):
-        """Testing simple call to kmeans2 with rank 1 data."""
         data = np.fromfile(DATAFILE1, sep=", ")
         data = data.reshape((200, 2))
         data1 = data[:, 0]
-
-        code1 = kmeans2(data1, 2, iter=1)
+        kmeans2(data1, 2, iter=1)
 
     def test_kmeans2_init(self):
-        """Testing that kmeans2 init methods work."""
         data = np.fromfile(DATAFILE1, sep=", ")
         data = data.reshape((200, 2))
 
@@ -221,11 +215,11 @@ class TestKMean(TestCase):
             kmeans2(data[:, :1], 3, minit='random')  # special case (1-D)
 
     def test_kmeans2_empty(self):
-        """Ticket #505."""
+        # Regression test for gh-1032.
         assert_raises(ValueError, kmeans2, [], 2)
 
     def test_kmeans_0k(self):
-        """Regression test for #546: fail when k arg is 0."""
+        # Regression test for gh-1073: fail when k arg is 0.
         assert_raises(ValueError, kmeans, X, 0)
         assert_raises(ValueError, kmeans2, X, 0)
         assert_raises(ValueError, kmeans2, X, np.array([]))

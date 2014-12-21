@@ -39,7 +39,6 @@ from numpy.testing import (TestCase, run_module_suite, dec, assert_raises,
                            assert_allclose, assert_equal, assert_)
 
 from scipy.lib.six import xrange
-from scipy.lib.six import u
 
 import scipy.cluster.hierarchy
 from scipy.cluster.hierarchy import (
@@ -56,7 +55,6 @@ import hierarchy_test_data
 # Matplotlib is not a scipy dependency but is optionally used in dendrogram, so
 # check if it's available
 try:
-    # import matplotlib
     import matplotlib
     # and set the backend to be Agg (no gui)
     matplotlib.use('Agg')
@@ -73,7 +71,6 @@ class TestLinkage(object):
         y = np.zeros((0,))
         assert_raises(ValueError, linkage, y)
 
-    ################### linkage
     def test_linkage_tdist(self):
         for method in ['single', 'complete', 'average', 'weighted', u'single']:
             yield self.check_linkage_tdist, method
@@ -84,7 +81,6 @@ class TestLinkage(object):
         expectedZ = getattr(hierarchy_test_data, 'linkage_ytdist_' + method)
         assert_allclose(Z, expectedZ, atol=1e-10)
 
-    ################### linkage on Q
     def test_linkage_X(self):
         for method in ['centroid', 'median', 'ward']:
             yield self.check_linkage_q, method
