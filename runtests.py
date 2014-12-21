@@ -85,7 +85,7 @@ def main(argv):
     parser.add_argument("--mode", "-m", default="fast",
                         help="'fast', 'full', or something that could be "
                              "passed to nosetests -A [default: fast]")
-    parser.add_argument("--submodule", "-s", default=None,
+    parser.add_argument("--submodule", "-s", nargs="+", default=None,
                         help="Submodule whose tests to run (cluster, constants, ...)")
     parser.add_argument("--pythonpath", "-p", default=None,
                         help="Paths to prepend to PYTHONPATH")
@@ -168,17 +168,18 @@ def main(argv):
 
     if args.build_only:
         sys.exit(0)
-    elif args.submodule:
-        modname = PROJECT_MODULE + '.' + args.submodule
-        try:
-            __import__(modname)
-            if args.bench:
-                test = sys.modules[modname].bench
-            else:
-                test = sys.modules[modname].test
-        except (ImportError, KeyError, AttributeError) as e:
-            print("Cannot run tests for %s (%s)" % (modname, e))
-            sys.exit(2)
+    elif args.submodule is not None:
+        for submodule in args.submodule:
+            modname = PROJECT_MODULE + '.' + submodule
+            try:
+                __import__(modname)
+                if args.bench:
+                    test = sys.modules[modname].bench
+                else:
+                    test = sys.modules[modname].test
+            except (ImportError, KeyError, AttributeError) as e:
+                print("Cannot run tests for %s (%s)" % (modname, e))
+                sys.exit(2)
     elif args.tests:
         def fix_test_path(x):
             # fix up test path
