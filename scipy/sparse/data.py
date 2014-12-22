@@ -12,7 +12,7 @@ __all__ = []
 
 import numpy as np
 
-from .base import spmatrix
+from .base import spmatrix, _ufuncs_with_fixed_point_at_zero
 from .sputils import isscalarlike
 
 
@@ -74,9 +74,7 @@ class _data_matrix(spmatrix):
 
 
 # Add the numpy unary ufuncs for which func(0) = 0 to _data_matrix.
-for npfunc in [np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh,
-               np.arcsinh, np.arctanh, np.rint, np.sign, np.expm1, np.log1p,
-               np.deg2rad, np.rad2deg, np.floor, np.ceil, np.trunc, np.sqrt]:
+for npfunc in _ufuncs_with_fixed_point_at_zero:
     name = npfunc.__name__
 
     def _create_method(op):
