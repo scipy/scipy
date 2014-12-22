@@ -18,13 +18,13 @@ matrix:
     - python: 2.7
       env:
         - TESTMODE=full
-        - SUBMODULE=-s special
+        - SUBMODULE="-s special"
         - COVERAGE=--coverage
         - NUMPYSPEC=numpy        
     - python: 2.7
       env:
         - TESTMODE=full
-        - SUBMODULE=-s sparse cluster constants fftpack integrate interpolate io lib linalg misc ndimage odr optimize signal spatial stats weave
+        - SUBMODULE="-s sparse cluster constants fftpack integrate interpolate io lib linalg misc ndimage odr optimize signal spatial stats weave"
         - COVERAGE=--coverage
         - NUMPYSPEC=numpy        
     - python: 2.6
