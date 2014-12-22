@@ -544,6 +544,9 @@ class betaprime_gen(rv_continuous):
                                                     * (b-2.0)*(b-1.0)), inf)
         else:
             raise NotImplementedError
+    def _cdf(self, x, a, b):
+        return special.betainc(a, b, x/(1.+x))
+        
 betaprime = betaprime_gen(a=0.0, name='betaprime')
 
 
