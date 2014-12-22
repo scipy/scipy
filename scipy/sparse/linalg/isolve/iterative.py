@@ -337,7 +337,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
 
 
 @non_reentrant
-def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=None, callback=None, restrt=None):
+def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=None):
     """
     Use Generalized Minimal RESidual iteration to solve A x = b.
 
@@ -373,15 +373,6 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
         Maximum number of iterations (restart cycles).  Iteration will stop
         after maxiter steps even if the specified tolerance has not been
         achieved.
-    xtype : {'f','d','F','D'}
-        This parameter is DEPRECATED --- avoid using it.
-
-        The type of the result.  If None, then it will be determined from
-        A.dtype.char and b.  If A does not have a typecode method then it
-        will compute A.matvec(x0) to get a typecode.   To save the extra
-        computation when A does not have a typecode attribute use xtype=0
-        for the same type as b or use xtype='f','d','F',or 'D'.
-        This parameter has been superseded by LinearOperator.
     M : {sparse matrix, dense matrix, LinearOperator}
         Inverse of the preconditioner of A.  M should approximate the
         inverse of A and be easy to solve for (see Notes).  Effective
@@ -391,8 +382,6 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
     callback : function
         User-supplied function to call after each iteration.  It is called
         as callback(rk), where rk is the current residual vector.
-    restrt : int, optional
-        DEPRECATED - use `restart` instead.
 
     See Also
     --------
@@ -411,13 +400,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
       M = spla.LinearOperator((n, n), M_x)
 
     """
-
-    # Change 'restrt' keyword to 'restart'
-    if restrt is None:
-        restrt = restart
-    elif restart is not None:
-        raise ValueError("Cannot specify both restart and restrt keywords. "
-                         "Preferably use 'restart' only.")
+    xtype = None
 
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
@@ -425,9 +408,9 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
     if maxiter is None:
         maxiter = n*10
 
-    if restrt is None:
-        restrt = 20
-    restrt = min(restrt, n)
+    if restart is None:
+        restart = 20
+    restart = min(restart, n)
 
     matvec = A.matvec
     psolve = M.matvec
@@ -439,8 +422,8 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
     ndx1 = 1
     ndx2 = -1
     # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-    work = _aligned_zeros((6+restrt)*n,dtype=x.dtype)
-    work2 = _aligned_zeros((restrt+1)*(2*restrt+2),dtype=x.dtype)
+    work = _aligned_zeros((6+restart)*n,dtype=x.dtype)
+    work2 = _aligned_zeros((restart+1)*(2*restart+2),dtype=x.dtype)
     ijob = 1
     info = 0
     ftflag = True
@@ -453,7 +436,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
     while True:
         olditer = iter_
         x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, restrt, work, work2, iter_, resid, info, ndx1, ndx2, ijob)
+           revcom(b, x, restart, work, work2, iter_, resid, info, ndx1, ndx2, ijob)
         # if callback is not None and iter_ > olditer:
         #    callback(x)
         slice1 = slice(ndx1-1, ndx1-1+n)
@@ -501,7 +484,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
 
 
 @non_reentrant
-def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, callback=None):
+def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None):
     """Use Quasi-Minimal Residual iteration to solve A x = b
 
     Parameters
@@ -542,21 +525,13 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
     callback : function
         User-supplied function to call after each iteration.  It is called
         as callback(xk), where xk is the current solution vector.
-    xtype : {'f','d','F','D'}
-        This parameter is DEPRECATED -- avoid using it.
-
-        The type of the result.  If None, then it will be determined from
-        A.dtype.char and b.  If A does not have a typecode method then it
-        will compute A.matvec(x0) to get a typecode.   To save the extra
-        computation when A does not have a typecode attribute use xtype=0
-        for the same type as b or use xtype='f','d','F',or 'D'.
-        This parameter has been superseded by LinearOperator.
 
     See Also
     --------
     LinearOperator
 
     """
+    xtype = None
     A_ = A
     A,M,x,b,postprocess = make_system(A,None,x0,b,xtype)
 
