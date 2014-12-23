@@ -214,7 +214,6 @@ class geom_gen(rv_discrete):
         return np.power(1-p, k-1) * p
 
     def _logpmf(self, k, p):
-            
         return special.xlog1py(k - 1, -p) + log(p)
 
     def _cdf(self, x, p):
