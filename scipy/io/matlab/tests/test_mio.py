@@ -706,14 +706,14 @@ def assert_any_equal(output, alternatives):
     one_equal = False
     for expected in alternatives:
         if np.all(output == expected):
-             one_equal = True
-             break
+            one_equal = True
+            break
     assert_(one_equal)
 
 
 def test_to_writeable():
     # Test to_writeable function
-    res = to_writeable(np.array([1])) # pass through ndarrays
+    res = to_writeable(np.array([1]))  # pass through ndarrays
     assert_equal(res.shape, (1,))
     assert_array_equal(res, 1)
     # Dict fields can be written in any order
@@ -728,7 +728,10 @@ def test_to_writeable():
     # String fields that are valid Python identifiers discarded
     assert_any_equal(to_writeable({'a':1,'b':2, '99':3}), alternatives)
     # Object with field names is equivalent
-    class klass(object): pass
+
+    class klass(object):
+        pass
+
     c = klass
     c.a = 1
     c.b = 2
@@ -754,7 +757,10 @@ def test_to_writeable():
     # Object does not have (even empty) __dict__
     assert_(to_writeable(object()) is None)
     # Custom object does have empty __dict__, returns EmptyStructMarker
-    class C(object): pass
+
+    class C(object):
+        pass
+
     assert_(to_writeable(c()) is EmptyStructMarker)
     # dict keys with legal characters are convertible
     res = to_writeable({'a': 1})['a']

@@ -610,7 +610,7 @@ class VarWriter5(object):
             self.write_object(narr)
         elif isinstance(narr, MatlabFunction):
             raise MatWriteError('Cannot write matlab functions')
-        elif narr is EmptyStructMarker: # empty struct array
+        elif narr is EmptyStructMarker:  # empty struct array
             self.write_empty_struct()
         elif narr.dtype.fields:  # struct array
             self.write_struct(narr)
