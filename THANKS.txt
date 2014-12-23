@@ -138,6 +138,8 @@ Alex Rothberg for stats.combine_pvalues.
 Brandon Liu for stats.combine_pvalues.
 Clark Fitzgerald for namedtuple outputs in scipy.stats.
 Florian Wilhelm for usage of RandomState in scipy.stats distributions.
+Robert T. McGibbon for Levinson-Durbin Toeplitz solver.
+
 
 Institutions
 ------------
