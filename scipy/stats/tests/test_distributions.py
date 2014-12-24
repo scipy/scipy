@@ -269,7 +269,6 @@ class TestGeom(TestCase):
         val = stats.geom.logpmf(1,1)
         assert_equal(val,0.0)
         
-
     def test_cdf_sf(self):
         vals = stats.geom.cdf([1, 2, 3], 0.5)
         vals_sf = stats.geom.sf([1, 2, 3], 0.5)
