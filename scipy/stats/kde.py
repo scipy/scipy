@@ -25,6 +25,7 @@ import warnings
 # Scipy imports.
 from scipy.lib.six import callable, string_types
 from scipy import linalg, special
+from scipy.spatial.distance import cdist
 
 from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
      ravel, power, atleast_1d, squeeze, sum, transpose
@@ -223,24 +224,10 @@ class gaussian_kde(object):
                     self.d)
                 raise ValueError(msg)
 
-        result = zeros((m,), dtype=np.float)
-
-        if m >= self.n:
-            # there are more points than data, so loop over data
-            for i in range(self.n):
-                diff = self.dataset[:, i, newaxis] - points
-                tdiff = dot(self.inv_cov, diff)
-                energy = sum(diff*tdiff,axis=0) / 2.0
-                result = result + exp(-energy)
-        else:
-            # loop over points
-            for i in range(m):
-                diff = self.dataset - points[:, i, newaxis]
-                tdiff = dot(self.inv_cov, diff)
-                energy = sum(diff * tdiff, axis=0) / 2.0
-                result[i] = sum(exp(-energy), axis=0)
-
-        result = result / self._norm_factor
+        # compute the normalised residuals
+        chi2 = cdist(points.T, self.dataset.T, 'mahalanobis', VI=self.inv_cov) ** 2
+        # compute the pdf
+        result = np.sum(np.exp(-.5 * chi2), axis=1) / self._norm_factor
 
         return result
 
