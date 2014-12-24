@@ -264,6 +264,11 @@ class TestGeom(TestCase):
         vals1 = np.log(stats.geom.pmf([1,2,3], 0.5))
         vals2 = stats.geom.logpmf([1,2,3], 0.5)
         assert_allclose(vals1, vals2, rtol=1e-15, atol=0)
+        
+        # Regression test for bug #4028.
+        val = stats.geom.logpmf(1,1)
+        assert_equal(val,0.0)
+        
 
     def test_cdf_sf(self):
         vals = stats.geom.cdf([1, 2, 3], 0.5)
