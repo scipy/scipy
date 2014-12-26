@@ -133,11 +133,7 @@ def test_large_pseudo_determinant():
     # Check some determinants.
     assert_equal(scipy.linalg.det(cov), 0)
     assert_equal(scipy.linalg.det(cov[:npos, :npos]), np.inf)
-
-    # np.linalg.slogdet is only available in numpy 1.6+
-    # but scipy currently supports numpy 1.5.1.
-    # assert_allclose(np.linalg.slogdet(cov[:npos, :npos]),
-    #                 (1, large_total_log))
+    assert_allclose(np.linalg.slogdet(cov[:npos, :npos]), (1, large_total_log))
 
     # Check the pseudo-determinant.
     psd = _PSD(cov)
