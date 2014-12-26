@@ -26,6 +26,13 @@ New features
 
 The function `scipy.linalg.invpascal` computes the inverse of a Pascal matrix.
 
+`scipy.stats` improvements
+--------------------------
+
+The Wishart distribution and its inverse have been added, as
+`scipy.stats.wishart` and `scipy.stats.invwishart`.
+
+
 Deprecated features
 ===================
 
