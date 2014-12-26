@@ -150,6 +150,8 @@ Multivariate distributions
 
    multivariate_normal   -- Multivariate normal distribution
    dirichlet             -- Dirichlet
+   wishart               -- Wishart
+   invwishart            -- Inverse Wishart
 
 Discrete distributions
 ======================

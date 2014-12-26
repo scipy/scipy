@@ -13,6 +13,8 @@ from numpy.testing import (
     run_module_suite,
 )
 
+from test_continuous_basic import check_distribution_rvs
+
 import numpy
 import numpy as np
 
@@ -20,6 +22,7 @@ import scipy.linalg
 from scipy.stats._multivariate import _PSD, _lnB
 from scipy.stats import multivariate_normal
 from scipy.stats import dirichlet, beta
+from scipy.stats import wishart, invwishart, chi2, invgamma
 from scipy.stats import norm
 
 from scipy.integrate import romb
@@ -480,6 +483,316 @@ def test_dimensions_mismatch():
         msg = "Dimension mismatch"
         assert_equal(str(e)[:len(msg)], msg)
 
+
+def test_wishart_scale_dimensions():
+    # Test that we can call the Wishart with various scale dimensions
+
+    # Test case: dim=1, scale=1
+    true_scale = np.array(1, ndmin=2)
+    scales = [
+        1,                    # scalar
+        [1],                  # iterable
+        np.array(1),          # 0-dim
+        np.r_[1],             # 1-dim
+        np.array(1, ndmin=2)  # 2-dim
+    ]
+    for scale in scales:
+        w = wishart(1, scale)
+        assert_equal(w.scale, true_scale)
+        assert_equal(w.scale.shape, true_scale.shape)
+
+    # Test case: dim=2, scale=[[1,0]
+    #                          [0,2]
+    true_scale = np.array([[1,0],
+                           [0,2]])
+    scales = [
+        [1,2],             # iterable
+        np.r_[1,2],        # 1-dim
+        np.array([[1,0],   # 2-dim
+                  [0,2]])
+    ]
+    for scale in scales:
+        w = wishart(2, scale)
+        assert_equal(w.scale, true_scale)
+        assert_equal(w.scale.shape, true_scale.shape)
+
+    # We cannot call with a df < dim
+    assert_raises(ValueError, wishart, 1, np.eye(2))
+
+    # We cannot call with a 3-dimension array
+    scale = np.array(1, ndmin=3)
+    assert_raises(ValueError, wishart, 1, scale)
+
+    
+def test_wishart_quantile_dimensions():
+    # Test that we can call the Wishart rvs with various quantile dimensions
+    
+    # If dim == 1, consider x.shape = [1,1,1]
+    X = [
+        1,                      # scalar
+        [1],                    # iterable
+        np.array(1),            # 0-dim
+        np.r_[1],               # 1-dim
+        np.array(1, ndmin=2),   # 2-dim
+        np.array([1], ndmin=3)  # 3-dim
+    ]
+
+    w = wishart(1,1)
+    density = w.pdf(np.array(1, ndmin=3))
+    for x in X:
+        assert_equal(w.pdf(x), density)
+
+    # If dim == 1, consider x.shape = [1,1,*]
+    X = [
+        [1,2,3],                     # iterable
+        np.r_[1,2,3],                # 1-dim
+        np.array([1,2,3], ndmin=3)   # 3-dim
+    ]
+
+    w = wishart(1,1)
+    density = w.pdf(np.array([1,2,3], ndmin=3))
+    for x in X:
+        assert_equal(w.pdf(x), density)
+
+    # If dim == 2, consider x.shape = [2,2,1]
+    # where x[:,:,*] = np.eye(1)*2
+    X = [
+        2,                    # scalar
+        [2,2],                # iterable
+        np.array(2),          # 0-dim
+        np.r_[2,2],           # 1-dim
+        np.array([[2,0],
+                  [0,2]]),    # 2-dim
+        np.array([[2,0],
+                  [0,2]])[:,:,np.newaxis]  # 3-dim
+    ]
+
+    w = wishart(2,np.eye(2))
+    density = w.pdf(np.array([[2,0],
+                              [0,2]])[:,:,np.newaxis])
+    for x in X:
+        assert_equal(w.pdf(x), density)
+
+
+def test_wishart_frozen():
+    # Test that the frozen and non-frozen Wishart gives the same answers
+
+    # Construct an arbitrary positive definite scale matrix
+    dim = 4
+    scale = np.diag(np.arange(dim)+1)
+    scale[np.tril_indices(dim, k=-1)] = np.arange(dim*(dim-1)/2)
+    scale = np.dot(scale.T, scale)
+
+    # Construct a collection of positive definite matrices to test the PDF
+    X = []
+    for i in range(5):
+        x = np.diag(np.arange(dim)+(i+1)**2)
+        x[np.tril_indices(dim, k=-1)] = np.arange(dim*(dim-1)/2)
+        x = np.dot(x.T, x)
+        X.append(x)
+    X = np.array(X).T
+
+    # Construct a 1D and 2D set of parameters
+    parameters = [
+        (10, 1, np.linspace(0.1, 10, 5)),  # 1D case
+        (10, scale, X)
+    ]
+
+    for (df, scale, x) in parameters:
+        w = wishart(df, scale)
+        assert_equal(w.var(), wishart.var(df, scale))
+        assert_equal(w.mean(), wishart.mean(df, scale))
+        assert_equal(w.mode(), wishart.mode(df, scale))
+        assert_equal(w.entropy(), wishart.entropy(df, scale))
+        assert_equal(w.pdf(x), wishart.pdf(x, df, scale))
+
+def test_wishart_1D_is_chisquared():
+    # The 1-dimensional Wishart with an identity scale matrix is just a
+    # chi-squared distribution.
+    # Test variance, mean, entropy, pdf
+    # Kolgomorov-Smirnov test for rvs
+    np.random.seed(482974)
+
+    sn = 500
+    dim = 1
+    scale = np.eye(dim)
+
+    df_range = np.arange(1, 10, 2, dtype=float)
+    X = np.linspace(0.1,10,num=10)
+    for df in df_range:
+        w = wishart(df, scale)
+        c = chi2(df)
+
+        # Statistics
+        assert_allclose(w.var(), c.var())
+        assert_allclose(w.mean(), c.mean())
+        assert_allclose(w.entropy(), c.entropy())
+
+        # PDF
+        assert_allclose(w.pdf(X), c.pdf(X))
+
+        # rvs
+        rvs = w.rvs(size=sn)
+        args = (df,)
+        alpha = 0.01
+        check_distribution_rvs('chi2', args, alpha, rvs)
+
+
+def test_wishart_is_scaled_chisquared():
+    # The 2-dimensional Wishart with an arbitrary scale matrix can be
+    # transformed to a scaled chi-squared distribution.
+    # For :math:`S \sim W_p(V,n)` and :math:`\lambda \in \mathbb{R}^p` we have
+    # :math:`\lambda' S \lambda \sim \lambda' V \lambda \times \chi^2(n)`
+    np.random.seed(482974)
+
+    sn = 500
+    df = 10
+    dim = 4
+    # Construct an arbitrary positive definite matrix
+    scale = np.diag(np.arange(4)+1)
+    scale[np.tril_indices(4, k=-1)] = np.arange(6)
+    scale = np.dot(scale.T, scale)
+    # Use :math:`\lambda = [1, \dots, 1]'`
+    lamda = np.ones((dim,1))
+    sigma_lamda = lamda.T.dot(scale).dot(lamda).squeeze()
+    w = wishart(df, sigma_lamda)
+    c = chi2(df, scale=sigma_lamda)
+
+    # Statistics
+    assert_allclose(w.var(), c.var())
+    assert_allclose(w.mean(), c.mean())
+    assert_allclose(w.entropy(), c.entropy())
+
+    # PDF
+    X = np.linspace(0.1,10,num=10)
+    assert_allclose(w.pdf(X), c.pdf(X))
+
+    # rvs
+    rvs = w.rvs(size=sn)
+    args = (df,0,sigma_lamda)
+    alpha = 0.01
+    check_distribution_rvs('chi2', args, alpha, rvs)
+
+def test_invwishart_frozen():
+    # Test that the frozen and non-frozen inverse Wishart gives the same
+    # answers
+
+    # Construct an arbitrary positive definite scale matrix
+    dim = 4
+    scale = np.diag(np.arange(dim)+1)
+    scale[np.tril_indices(dim, k=-1)] = np.arange(dim*(dim-1)/2)
+    scale = np.dot(scale.T, scale)
+
+    # Construct a collection of positive definite matrices to test the PDF
+    X = []
+    for i in range(5):
+        x = np.diag(np.arange(dim)+(i+1)**2)
+        x[np.tril_indices(dim, k=-1)] = np.arange(dim*(dim-1)/2)
+        x = np.dot(x.T, x)
+        X.append(x)
+    X = np.array(X).T
+
+    # Construct a 1D and 2D set of parameters
+    parameters = [
+        (10, 1, np.linspace(0.1, 10, 5)),  # 1D case
+        (10, scale, X)
+    ]
+
+    for (df, scale, x) in parameters:
+        iw = invwishart(df, scale)
+        assert_equal(iw.var(), invwishart.var(df, scale))
+        assert_equal(iw.mean(), invwishart.mean(df, scale))
+        assert_equal(iw.mode(), invwishart.mode(df, scale))
+        assert_allclose(iw.pdf(x), invwishart.pdf(x, df, scale))
+
+def test_invwishart_1D_is_invgamma():
+    # The 1-dimensional inverse Wishart with an identity scale matrix is just
+    # an inverse gamma distribution.
+    # Test variance, mean, pdf
+    # Kolgomorov-Smirnov test for rvs
+    np.random.seed(482974)
+
+    sn = 500
+    dim = 1
+    scale = np.eye(dim)
+
+    df_range = np.arange(5, 20, 2, dtype=float)
+    X = np.linspace(0.1,10,num=10)
+    for df in df_range:
+        iw = invwishart(df, scale)
+        ig = invgamma(df/2, scale=1./2)
+
+        # Statistics
+        assert_allclose(iw.var(), ig.var())
+        assert_allclose(iw.mean(), ig.mean())
+
+        # PDF
+        assert_allclose(iw.pdf(X), ig.pdf(X))
+
+        # rvs
+        rvs = iw.rvs(size=sn)
+        args = (df/2, 0, 1./2)
+        alpha = 0.01
+        check_distribution_rvs('invgamma', args, alpha, rvs)
+
+def test_wishart_invwishart_2D_rvs():
+    dim = 3
+    df = 10
+
+    # Construct a simple non-diagonal positive definite matrix
+    scale = np.eye(dim)
+    scale[0,1] = 0.5
+    scale[1,0] = 0.5
+
+    # Construct frozen Wishart and inverse Wishart random variables
+    w = wishart(df, scale)
+    iw = invwishart(df, scale)
+
+    # Get the generated random variables from a known seed
+    np.random.seed(248042)
+    w_rvs = wishart.rvs(df, scale)
+    np.random.seed(248042)
+    frozen_w_rvs = w.rvs()
+    np.random.seed(248042)
+    iw_rvs = invwishart.rvs(df, scale)
+    np.random.seed(248042)
+    frozen_iw_rvs = iw.rvs()
+
+    # Manually calculate what it should be, based on the Bartlett (1933)
+    # decomposition of a Wishart into D A A' D', where D is the Cholesky
+    # factorization of the scale matrix and A is the lower triangular matrix
+    # with the square root of chi^2 variates on the diagonal and N(0,1)
+    # variates in the lower triangle.
+    np.random.seed(248042)
+    covariances = np.random.normal(size=3)
+    variances = np.r_[
+        np.random.chisquare(df),
+        np.random.chisquare(df-1),
+        np.random.chisquare(df-2),
+    ]**0.5
+
+    # Construct the lower-triangular A matrix
+    A = np.diag(variances)
+    A[np.tril_indices(dim, k=-1)] = covariances
+
+    # Wishart random variate
+    D = np.linalg.cholesky(scale)
+    DA = D.dot(A)
+    manual_w_rvs = np.dot(DA, DA.T)
+
+    # inverse Wishart random variate
+    # Supposing that the inverse wishart has scale matrix `scale`, then the
+    # random variate is the inverse of a random variate drawn from a Wishart
+    # distribution with scale matrix `inv_scale = np.linalg.inv(scale)`
+    iD = np.linalg.cholesky(np.linalg.inv(scale))
+    iDA = iD.dot(A)
+    manual_iw_rvs = np.linalg.inv(np.dot(iDA, iDA.T))
+
+    # Test for equality
+    assert_allclose(w_rvs, manual_w_rvs)
+    assert_allclose(frozen_w_rvs, manual_w_rvs)
+    assert_allclose(iw_rvs, manual_iw_rvs)
+    assert_allclose(frozen_iw_rvs, manual_iw_rvs)
 
 if __name__ == "__main__":
     run_module_suite()
