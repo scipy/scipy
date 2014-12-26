@@ -4,14 +4,9 @@ Test functions for multivariate normal distributions.
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import (
-    assert_allclose,
-    assert_almost_equal,
-    assert_array_almost_equal,
-    assert_equal,
-    assert_raises,
-    run_module_suite,
-)
+from numpy.testing import (assert_allclose, assert_almost_equal,
+                           assert_array_almost_equal, assert_equal,
+                           assert_raises, run_module_suite)
 
 from test_continuous_basic import check_distribution_rvs
 
@@ -519,10 +514,10 @@ def test_wishart_scale_dimensions():
     scale = np.array(1, ndmin=3)
     assert_raises(ValueError, wishart, 1, scale)
 
-    
+
 def test_wishart_quantile_dimensions():
     # Test that we can call the Wishart rvs with various quantile dimensions
-    
+
     # If dim == 1, consider x.shape = [1,1,1]
     X = [
         1,                      # scalar
@@ -789,6 +784,7 @@ def test_wishart_invwishart_2D_rvs():
     assert_allclose(frozen_w_rvs, manual_w_rvs)
     assert_allclose(iw_rvs, manual_iw_rvs)
     assert_allclose(frozen_iw_rvs, manual_iw_rvs)
+
 
 if __name__ == "__main__":
     run_module_suite()

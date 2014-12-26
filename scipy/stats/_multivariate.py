@@ -478,8 +478,8 @@ class multivariate_normal_gen(object):
 
         """
         dim, mean, cov = _process_parameters(None, mean, cov)
-        # TODO replace with np.linalg.slogdet with Numpy 1.5.x not necessary
-        return 0.5 * np.log(np.linalg.det(2 * np.pi * np.e * cov))
+        _, logdet = np.linalg.slogdet(2 * np.pi * np.e * cov)
+        return 0.5 * logdet
 
 
 multivariate_normal = multivariate_normal_gen()
@@ -948,6 +948,10 @@ class wishart_gen(object):
         - Frozen object with the same methods but holding the given
           degrees of freedom and scale fixed.
 
+    See Also
+    --------
+    invwishart, chi2
+
     Notes
     -----
     %(_doc_callparams_note)s
@@ -971,8 +975,9 @@ class wishart_gen(object):
 
     .. math::
 
-        f(S) = \frac{|S|^{\frac{\nu - p - 1}{2}}}{2^{ \frac{\nu p}{2} } |\Sigma|^\frac{\nu}{2} \Gamma_p \left ( \frac{\nu}{2} \right )}
-        e^{-tr(\Sigma^{-1} S) / 2}
+        f(S) = \frac{|S|^{\frac{\nu - p - 1}{2}}}{2^{ \frac{\nu p}{2} }
+               |\Sigma|^\frac{\nu}{2} \Gamma_p \left ( \frac{\nu}{2} \right )}
+               e^{-tr(\Sigma^{-1} S) / 2}
 
     If :math:`S \sim W_p(\nu, \Sigma)` (Wishart) then
     :math:`S^{-1} \sim W_p^{-1}(\nu, \Sigma^{-1})` (inverse Wishart).
@@ -981,7 +986,14 @@ class wishart_gen(object):
     distribution :math:`W_1(\nu, 1)` collapses to the :math:`\chi^2(\nu)`
     distribution.
 
-    .. versionadded:: 0.15.0
+    .. versionadded:: 0.16.0
+
+    References
+    ----------
+    .. [1] M.L. Eaton, "Multivariate Statistics: A Vector Space Approach",
+           Wiley, 1983.
+    .. [2] W.B. Smith and R.R. Hocking, "Algorithm AS 53: Wishart Variate
+           Generator", Applied Statistics, vol. 21, pp. 341-345, 1972.
 
     Examples
     --------
@@ -997,18 +1009,7 @@ class wishart_gen(object):
     The input quantiles can be any shape of array, as long as the last
     axis labels the components.
 
-    References
-    ----------
-    .. [1] Eaton, Morris L. 2007.
-       "Multivariate Statistics: A Vector Space Approach."
-       Lecture Notes-Monograph Series 53 (January): i - 512.
-    .. [2] Smith, W. B., and R. R. Hocking. 1972.
-       "Algorithm AS 53: Wishart Variate Generator."
-       Journal of the Royal Statistical Society.
-       Series C (Applied Statistics) 21 (3): 341-45. doi:10.2307/2346290.
-
     """
-
     def __init__(self):
         self.__doc__ = doccer.docformat(self.__doc__, wishart_docdict_params)
 
@@ -1098,7 +1099,7 @@ class wishart_gen(object):
                              ' Got size.ndim = %s' % str(tuple(size)))
         n = size.prod()
         shape = tuple(size)
-        
+
         return n, shape
 
     def _logpdf(self, x, dim, df, scale, log_det_scale, C):
@@ -1129,23 +1130,20 @@ class wishart_gen(object):
         # Note: x has components along the last axis, so that x.T has
         # components alone the 0-th axis. Then since det(A) = det(A'), this
         # gives us a 1-dim vector of determinants
-        # TODO slogdet is unavailable as long as Numpy 1.5.x is supported
-        # s, log_det_x = np.linalg.slogdet(x.T)
 
         # Retrieve tr(scale^{-1} x)
         log_det_x = np.zeros(x.shape[-1])
         scale_inv_x = np.zeros(x.shape)
         tr_scale_inv_x = np.zeros(x.shape[-1])
         for i in range(x.shape[-1]):
-            log_det_x[i] = np.log(np.linalg.det(x[:,:,i]))
+            _, log_det_x[i] = np.linalg.slogdet(x[:,:,i])
             scale_inv_x[:,:,i] = scipy.linalg.cho_solve((C, True), x[:,:,i])
             tr_scale_inv_x[i] = scale_inv_x[:,:,i].trace()
 
         # Log PDF
-        out = (
-            (0.5 * (df - dim - 1) * log_det_x - 0.5 * tr_scale_inv_x) -
-            (0.5 * df * dim * _LOG_2 + 0.5 * df * log_det_scale + multigammaln(0.5*df, dim))
-        )
+        out = ((0.5 * (df - dim - 1) * log_det_x - 0.5 * tr_scale_inv_x) -
+               (0.5 * df * dim * _LOG_2 + 0.5 * df * log_det_scale +
+                multigammaln(0.5*df, dim)))
 
         return out
 
@@ -1452,7 +1450,7 @@ class wishart_gen(object):
             multigammaln(0.5*df, dim) -
             0.5 * (df - dim - 1) * np.sum(
                 [psi(0.5*(df + 1 - (i+1))) for i in range(dim)]
-            ) + 
+            ) +
             0.5 * df * dim
         )
 
@@ -1475,10 +1473,7 @@ class wishart_gen(object):
 
         """
         dim, df, scale = self._process_parameters(df, scale)
-
-        # TODO replace with np.linalg.slogdet when Numpy 1.5.x not necessary
-        log_det_scale = np.log(np.linalg.det(scale))
-        
+        _, log_det_scale = np.linalg.slogdet(scale)
         return self._entropy(dim, df, log_det_scale)
 wishart = wishart_gen()
 
@@ -1493,6 +1488,7 @@ class wishart_frozen(object):
         Degrees of freedom of the distribution
     scale : array_like
         Scale matrix of the distribution
+
     """
     def __init__(self, df, scale):
         self._wishart = wishart_gen()
@@ -1563,13 +1559,16 @@ def _cho_inv_batch(a, check_finite=True):
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+
     Returns
     -------
     x : array
         Array of inverses of the matrices a_i
+
     See also
     --------
     scipy.linalg.cholesky : Cholesky factorization of a matrix
+
     """
     if check_finite:
         a1 = asarray_chkfinite(a)
@@ -1606,6 +1605,7 @@ def _cho_inv_batch(a, check_finite=True):
 
     return a1
 
+
 class invwishart_gen(wishart_gen):
     r"""
     An inverse Wishart random variable.
@@ -1638,6 +1638,10 @@ class invwishart_gen(wishart_gen):
         - Frozen object with the same methods but holding the given
           degrees of freedom and scale fixed.
 
+    See Also
+    --------
+    wishart
+
     Notes
     -----
     %(_doc_callparams_note)s
@@ -1661,8 +1665,9 @@ class invwishart_gen(wishart_gen):
 
     .. math::
 
-        f(S) = \frac{|\Sigma|^\frac{\nu}{2}}{2^{ \frac{\nu p}{2} } |S|^{\frac{\nu + p + 1}{2}} \Gamma_p \left ( \frac{\nu}{2} \right )}
-        e^{-tr(\Sigma S^{-1}) / 2}
+        f(S) = \frac{|\Sigma|^\frac{\nu}{2}}{2^{ \frac{\nu p}{2} }
+               |S|^{\frac{\nu + p + 1}{2}} \Gamma_p \left(\frac{\nu}{2} \right)}
+               e^{-tr(\Sigma S^{-1}) / 2}
 
     If :math:`S \sim W_p^{-1}(\nu, \Psi)` (inverse Wishart) then
     :math:`S^{-1} \sim W_p(\nu, \Psi^{-1})` (Wishart).
@@ -1672,7 +1677,14 @@ class invwishart_gen(wishart_gen):
     inverse Gamma distribution with parameters :math:`shape = \frac{\nu}{2}`
     and :math:`scale=\frac{1}{2}`.
 
-    .. versionadded:: 0.15.0
+    .. versionadded:: 0.16.0
+
+    References
+    ----------
+    .. [1] M.L. Eaton, "Multivariate Statistics: A Vector Space Approach",
+           Wiley, 1983.
+    .. [2] M.C. Jones, "Generating Inverse Wishart Matrices", Communications in
+           Statistics - Simulation and Computation, vol. 14.2, pp.511-514, 1985.
 
     Examples
     --------
@@ -1688,16 +1700,7 @@ class invwishart_gen(wishart_gen):
     The input quantiles can be any shape of array, as long as the last
     axis labels the components.
 
-    References
-    ----------
-    .. [1] Eaton, Morris L. 2007.
-       "Multivariate Statistics: A Vector Space Approach."
-       Lecture Notes-Monograph Series 53 (January): i - 512.
-    .. [2] Jones, M. C. 1985.
-       "Generating Inverse Wishart Matrices."
-       Communications in Statistics - Simulation and Computation 14 (2):511-14.
     """
-
     def __init__(self):
         self.__doc__ = doccer.docformat(self.__doc__, wishart_docdict_params)
 
@@ -1750,11 +1753,9 @@ class invwishart_gen(wishart_gen):
             tr_scale_x_inv[i] = np.dot(scale, x_inv[i]).trace()
 
         # Log PDF
-        out = (
-            (0.5 * df * log_det_scale - 0.5 * tr_scale_x_inv) -
-            (0.5 * df * dim * _LOG_2 + 0.5 * (df + dim + 1) * log_det_x) -
-            multigammaln(0.5*df, dim)
-        )
+        out = ((0.5 * df * log_det_scale - 0.5 * tr_scale_x_inv) -
+               (0.5 * df * dim * _LOG_2 + 0.5 * (df + dim + 1) * log_det_x) -
+               multigammaln(0.5*df, dim))
 
         return out
 
@@ -1781,10 +1782,7 @@ class invwishart_gen(wishart_gen):
         """
         dim, df, scale = self._process_parameters(df, scale)
         x = self._process_quantiles(x, dim)
-
-        # TODO replace with np.linalg.slogdet when Numpy 1.5.x not necessary
-        log_det_scale = np.log(np.linalg.det(scale))
-
+        _, log_det_scale = np.linalg.slogdet(scale)
         out = self._logpdf(x, dim, df, scale, log_det_scale)
         return _squeeze_output(out)
 
