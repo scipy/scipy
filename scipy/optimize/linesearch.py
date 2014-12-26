@@ -214,19 +214,22 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
     Returns
     -------
-    alpha : float
-        Alpha for which ``x_new = x0 + alpha * pk``.
+    alpha : float or None
+        Alpha for which ``x_new = x0 + alpha * pk``,
+        or None if something has gone wrong.
     fc : int
         Number of function evaluations made.
     gc : int
         Number of gradient evaluations made.
-    new_fval : float
-        New function value ``f(x_new)=f(x0+alpha*pk)``.
+    new_fval : float or None
+        New function value ``f(x_new)=f(x0+alpha*pk)``,
+        or None if something has gone wrong.
     old_fval : float
         Old function value ``f(x0)``.
-    new_slope : float
+    new_slope : float or None
         The local slope along the search direction at the
-        new value ``<myfprime(x_new), pk>``.
+        new value ``<myfprime(x_new), pk>``,
+        or None if something has gone wrong.
     
 
     Notes
@@ -266,9 +269,8 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         gfk = fprime(xk, *args)
     derphi0 = np.dot(gfk, pk)
 
-    alpha_star, phi_star, old_fval, derphi_star = \
-                scalar_search_wolfe2(phi, derphi, old_fval, old_old_fval,
-                                     derphi0, c1, c2, amax)
+    alpha_star, phi_star, old_fval, derphi_star = scalar_search_wolfe2(
+            phi, derphi, old_fval, old_old_fval, derphi0, c1, c2, amax)
 
     if derphi_star is not None:
         # derphi_star is a number (derphi) -- so use the most recently
@@ -309,14 +311,14 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
 
     Returns
     -------
-    alpha_star : float
-        Best alpha
-    phi_star
+    alpha_star : float or None
+        Best alpha, or None if something has gone wrong.
+    phi_star : float
         phi at alpha_star
-    phi0
+    phi0 : float
         phi at 0
-    derphi_star
-        derphi at alpha_star
+    derphi_star : float or None
+        derphi at alpha_star, or None if something has gone wrong.
 
     Notes
     -----
