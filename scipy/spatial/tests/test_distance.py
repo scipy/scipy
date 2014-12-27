@@ -1609,6 +1609,20 @@ def test_hamming_unequal_length():
     assert_raises(ValueError, hamming, x, y)
 
 
+def test_hamming_string_array():
+    # https://github.com/scikit-learn/scikit-learn/issues/4014
+    a = np.array(['eggs', 'spam', 'spam', 'eggs', 'spam', 'spam', 'spam',
+                  'spam', 'spam', 'spam', 'spam', 'eggs', 'eggs', 'spam',
+                  'eggs', 'eggs', 'eggs', 'eggs', 'eggs', 'spam'],
+                  dtype='|S4')
+    b = np.array(['eggs', 'spam', 'spam', 'eggs', 'eggs', 'spam', 'spam',
+                  'spam', 'spam', 'eggs', 'spam', 'eggs', 'spam', 'eggs',
+                  'spam', 'spam', 'eggs', 'spam', 'spam', 'eggs'],
+                  dtype='|S4')
+    desired = 0.45
+    assert_allclose(hamming(a, b), desired)
+
+
 def test_sqeuclidean_dtypes():
     # Assert that sqeuclidean returns the right types of values.
     # Integer types should be converted to floating for stability.

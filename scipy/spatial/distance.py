@@ -366,7 +366,9 @@ def hamming(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    return np.not_equal(u, v).mean()
+    if u.shape != v.shape:
+        raise ValueError('The 1d arrays must have equal lengths.')
+    return (u != v).mean()
 
 
 def jaccard(u, v):
