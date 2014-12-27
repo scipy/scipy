@@ -142,19 +142,6 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
     return deco
 
 
-def _can_cast_samekind(dtype1, dtype2):
-    """Compatibility function for numpy 1.5.1; `casting` kw is numpy >=1.6.x
-
-    default for casting kw is 'safe', which gives the same result as in 1.5.x
-    and a strict subset of 'same_kind'.  So for 1.5.x we just skip the cases
-    where 'safe' is False and 'same_kind' True.
-    """
-    if NumpyVersion(np.__version__) < '1.6.0':
-        return np.can_cast(dtype1, dtype2)
-    else:
-        return np.can_cast(dtype1, dtype2, casting='same_kind')
-
-
 def todense(a):
     if isinstance(a, np.ndarray) or isscalarlike(a):
         return a
@@ -1791,14 +1778,14 @@ class _TestInplaceArithmetic:
             datsp = self.datsp_dtypes[dtype]
 
             # Avoid implicit casting.
-            if _can_cast_samekind(type(2), dtype):
+            if np.can_cast(type(2), dtype, casting='same_kind'):
                 a = datsp.copy()
                 a *= 2
                 b = dat.copy()
                 b *= 2
                 assert_array_equal(b, a.todense())
 
-            if _can_cast_samekind(type(17.3), dtype):
+            if np.can_cast(type(17.3), dtype, casting='same_kind'):
                 a = datsp.copy()
                 a *= 17.3
                 b = dat.copy()
@@ -1813,14 +1800,14 @@ class _TestInplaceArithmetic:
             dat = self.dat_dtypes[dtype]
             datsp = self.datsp_dtypes[dtype]
 
-            if _can_cast_samekind(type(2), dtype):
+            if np.can_cast(type(2), dtype, casting='same_kind'):
                 a = datsp.copy()
                 a /= 2
                 b = dat.copy()
                 b /= 2
                 assert_array_equal(b, a.todense())
 
-            if _can_cast_samekind(type(17.3), dtype):
+            if np.can_cast(type(17.3), dtype, casting='same_kind'):
                 a = datsp.copy()
                 a /= 17.3
                 b = dat.copy()
