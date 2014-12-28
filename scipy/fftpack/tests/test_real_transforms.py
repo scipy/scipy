@@ -57,8 +57,7 @@ class _TestDCTBase(TestCase):
         for i in FFTWDATA_SIZES:
             x, yr = fftw_dct_ref(self.type, i, self.rdt)
             y = dct(x, type=self.type)
-            self.assertTrue(y.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
+            assert_equal(y.dtype, self.rdt)
             # XXX: we divide by np.max(y) because the tests fail otherwise. We
             # should really use something like assert_array_approx_equal. The
             # difference is due to fftw using a better algorithm w.r.t error
@@ -89,8 +88,7 @@ class _TestDCTIIBase(_TestDCTBase):
             x = np.array(X[i], dtype=self.rdt)
             yr = Y[i]
             y = dct(x, norm="ortho", type=2)
-            self.assertTrue(y.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
+            assert_equal(y.dtype, self.rdt)
             assert_array_almost_equal(y, yr, decimal=self.dec)
 
 
@@ -101,8 +99,7 @@ class _TestDCTIIIBase(_TestDCTBase):
             x = np.array(X[i], dtype=self.rdt)
             y = dct(x, norm='ortho', type=2)
             xi = dct(y, norm="ortho", type=3)
-            self.assertTrue(xi.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (xi.dtype, self.rdt))
+            assert_equal(xi.dtype, self.rdt)
             assert_array_almost_equal(xi, x, decimal=self.dec)
 
 
@@ -162,8 +159,7 @@ class _TestIDCTBase(TestCase):
                 x /= 2 * (i-1)
             else:
                 x /= 2 * i
-            self.assertTrue(x.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (x.dtype, self.rdt))
+            assert_equal(x.dtype, self.rdt)
             # XXX: we divide by np.max(y) because the tests fail otherwise. We
             # should really use something like assert_array_approx_equal. The
             # difference is due to fftw using a better algorithm w.r.t error
@@ -224,8 +220,7 @@ class _TestDSTBase(TestCase):
         for i in FFTWDATA_SIZES:
             xr, yr = fftw_dst_ref(self.type, i, self.rdt)
             y = dst(xr, type=self.type)
-            self.assertTrue(y.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
+            assert_equal(y.dtype, self.rdt)
             # XXX: we divide by np.max(y) because the tests fail otherwise. We
             # should really use something like assert_array_approx_equal. The
             # difference is due to fftw using a better algorithm w.r.t error
@@ -290,8 +285,7 @@ class _TestIDSTBase(TestCase):
                 x /= 2 * (i+1)
             else:
                 x /= 2 * i
-            self.assertTrue(x.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (x.dtype, self.rdt))
+            assert_equal(x.dtype, self.rdt)
             # XXX: we divide by np.max(x) because the tests fail otherwise. We
             # should really use something like assert_array_approx_equal. The
             # difference is due to fftw using a better algorithm w.r.t error
