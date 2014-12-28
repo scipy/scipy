@@ -324,7 +324,7 @@ class spmatrix(object):
             else:
                 result = self._mul_multivector(other)
         else:
-            raise NotImplementedError
+            return NotImplemented
 
         if other.ndim == 2 and other.shape[1] == 1:
             result = result.reshape(-1, 1)
