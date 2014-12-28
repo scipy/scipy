@@ -39,8 +39,42 @@ at time X for reason Y unless someone reviews it before then.
 
 Changes and new additions should be tested. Untested code is broken code.
 
-Who gets commit rights should always be discussed on the scipy-dev mailing list
-before the change is made.
+Who gets commit rights is decided by the core development team; changes in
+commit rights will then be announced on the scipy-dev mailing list.
+
+Who the core development team is comprised of is a little fuzzy - there are
+quite a few people who do have commit rights and would like to keep them but
+are no longer active.  To get an idea, look at the output of::
+
+    $ git shortlog --grep="Merge pull request" -a -c -s <current_release_minus_2>..upstream/master|sort -n
+
+and apply some common sense to it (and don't forget people who are still active
+but for some reason never merge PRs).
+
+
+Guidelines for committers
+-------------------------
+
+- When merging contributions, a committer is responsible for ensuring that
+  those meet the requirements outlined in `HACKING.txt`_. Also check that new
+  features and backwards compatibility breaks were discussed on the scipy-dev
+  mailing list.
+- New code goes in via a pull request.
+- Merge new code with the green button.  In case of merge conflicts, ask the PR
+  submitter to rebase (may require providing some git instructions).
+- Backports and trivial additions to finish a PR (really trivial, like a typo
+  or PEP8 fix) can be pushed directly.
+- For PRs that add new features or are in some way complex, wait at least a day
+  before merging it. That way, others get a chance to comment before the code
+  goes in.
+- Squashing commits or cleaning up commit messages of a PR that you consider
+  too messy is OK. Make sure though to retain the original author name when
+  doing this.
+- Make sure that the labels and milestone on a merged PR are set correctly.
+- When you want to reject a PR: if it's very obvious you can just close it and
+  explain why, if not obvious then it's a good idea to first explain why you
+  think the PR is not suitable for inclusion in Scipy and then let a second
+  committer comment or close.
 
 
 FAQ
@@ -427,3 +461,6 @@ Other
 
     - Release manager: Ralf Gommers
     - Planet SciPy: Gael Varoquaux
+
+
+.. _HACKING.txt: https://github.com/scipy/scipy/blob/master/HACKING.rst.txt
