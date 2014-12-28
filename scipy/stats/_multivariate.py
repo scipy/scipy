@@ -1173,7 +1173,7 @@ class wishart_gen(object):
 
         # Cholesky decomposition of scale, get log(det(scale))
         C = scipy.linalg.cholesky(scale, lower=True)
-        log_det_scale = 2 * np.sum(np.log(C.diagonal()))
+        _, log_det_scale = np.linalg.slogdet(scale)
 
         out = self._logpdf(x, dim, df, scale, log_det_scale, C)
         return _squeeze_output(out)
@@ -1496,7 +1496,7 @@ class wishart_frozen(object):
             df, scale
         )
         self.C = scipy.linalg.cholesky(self.scale, lower=True)
-        self.log_det_scale = 2 * np.sum(np.log(self.C.diagonal()))
+        _, self.log_det_scale = np.linalg.slogdet(self.scale)
 
     def logpdf(self, x):
         x = self._wishart._process_quantiles(x, self.dim)
