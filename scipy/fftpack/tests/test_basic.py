@@ -12,9 +12,9 @@ Run tests if fftpack is not installed:
   python tests/test_basic.py
 """
 
-from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
+from numpy.testing import (assert_equal, assert_array_almost_equal,
         assert_array_almost_equal_nulp, assert_raises, run_module_suite,
-        TestCase, dec)
+        assert_array_less, TestCase, dec)
 from scipy.fftpack import ifft,fft,fftn,ifftn,rfft,irfft, fft2
 from scipy.fftpack import _fftpack as fftpack
 from scipy.fftpack.basic import _is_safe_size
@@ -44,6 +44,12 @@ SMALL_PRIME_SIZES = [
 ]
 
 from numpy.random import rand
+
+
+def _assert_close_in_norm(x, y, rtol, size, rdt):
+    # helper function for testing
+    err_msg = "size: %s  rdt: %s" % (size, rdt)
+    assert_array_less(np.linalg.norm(x - y), rtol*np.linalg.norm(x), err_msg)
 
 
 def random(size):
@@ -260,19 +266,15 @@ class _TestIFFTBase(TestCase):
             np.random.seed(1234)
             x = np.random.rand(size).astype(self.rdt)
             y = ifft(fft(x))
-            assert_(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
-                            (size, self.rdt))
+            _assert_close_in_norm(x, y, rtol, size, self.rdt)
             y = fft(ifft(x))
-            assert_(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
-                            (size, self.rdt))
+            _assert_close_in_norm(x, y, rtol, size, self.rdt)
 
             x = (x + 1j*np.random.rand(size)).astype(self.cdt)
             y = ifft(fft(x))
-            assert_(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
-                            (size, self.rdt))
+            _assert_close_in_norm(x, y, rtol, size, self.rdt)
             y = fft(ifft(x))
-            assert_(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
-                            (size, self.rdt))
+            _assert_close_in_norm(x, y, rtol, size, self.rdt)
 
     def test_invalid_sizes(self):
         assert_raises(ValueError, ifft, [])
@@ -393,11 +395,9 @@ class _TestIRFFTBase(TestCase):
             np.random.seed(1234)
             x = np.random.rand(size).astype(self.rdt)
             y = irfft(rfft(x))
-            assert_(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
-                            (size, self.rdt))
+            _assert_close_in_norm(x, y, rtol, size, self.rdt)
             y = rfft(irfft(x))
-            assert_(np.linalg.norm(x - y) < rtol*np.linalg.norm(x),
-                            (size, self.rdt))
+            _assert_close_in_norm(x, y, rtol, size, self.rdt)
 
     def test_invalid_sizes(self):
         assert_raises(ValueError, irfft, [])
@@ -638,7 +638,7 @@ class _TestIfftn(TestCase):
     def test_definition(self):
         x = np.array([[1,2,3],[4,5,6],[7,8,9]], dtype=self.dtype)
         y = ifftn(x)
-        assert_(y.dtype == self.cdtype)
+        assert_equal(y.dtype, self.cdtype)
         assert_array_almost_equal_nulp(y,direct_idftn(x),self.maxnlp)
         x = random((20,26))
         assert_array_almost_equal_nulp(ifftn(x),direct_idftn(x),self.maxnlp)
