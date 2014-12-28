@@ -1320,7 +1320,7 @@ class _TestCommon:
     def test_matmat_high_dimensional_other(self):
         A = self.spmatrix(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
         B = np.ones((3, 3, 3))
-        assert_raises(NotImplementedError, A.__mul__, B)
+        assert_equal(A.__mul__(B), NotImplemented)
 
     def test_matmat_object(self):
         class OperatorStub:
