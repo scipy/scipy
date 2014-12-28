@@ -591,8 +591,8 @@ class _TestLinearFilter(TestCase):
         zi = np.ones(0).astype(self.dt)
         y, zf = lfilter(b, a, x, zi=zi)
         assert_array_almost_equal(y, x)
-        self.assertTrue(zf.dtype == self.dt)
-        self.assertTrue(zf.size == 0)
+        assert_equal(zf.dtype, self.dt)
+        assert_equal(zf.size, 0)
 
     def test_lfiltic_bad_zi(self):
         # Regression test for #3699: bad initial conditions
@@ -661,19 +661,19 @@ class _TestCorrelateReal(TestCase):
         a, b, y_r = self._setup_rank1()
         y = correlate(a, b, 'valid')
         assert_array_almost_equal(y, y_r[1:4])
-        self.assertTrue(y.dtype == self.dt)
+        assert_equal(y.dtype, self.dt)
 
     def test_rank1_same(self):
         a, b, y_r = self._setup_rank1()
         y = correlate(a, b, 'same')
         assert_array_almost_equal(y, y_r[:-1])
-        self.assertTrue(y.dtype == self.dt)
+        assert_equal(y.dtype, self.dt)
 
     def test_rank1_full(self):
         a, b, y_r = self._setup_rank1()
         y = correlate(a, b, 'full')
         assert_array_almost_equal(y, y_r)
-        self.assertTrue(y.dtype == self.dt)
+        assert_equal(y.dtype, self.dt)
 
     def _setup_rank3(self):
         a = np.linspace(0, 39, 40).reshape((2, 4, 5), order='F').astype(
@@ -709,19 +709,19 @@ class _TestCorrelateReal(TestCase):
         a, b, y_r = self._setup_rank3()
         y = correlate(a, b, "valid")
         assert_array_almost_equal(y, y_r[1:2, 2:4, 3:5])
-        self.assertTrue(y.dtype == self.dt)
+        assert_equal(y.dtype, self.dt)
 
     def test_rank3_same(self):
         a, b, y_r = self._setup_rank3()
         y = correlate(a, b, "same")
         assert_array_almost_equal(y, y_r[0:-1, 1:-1, 1:-2])
-        self.assertTrue(y.dtype == self.dt)
+        assert_equal(y.dtype, self.dt)
 
     def test_rank3_all(self):
         a, b, y_r = self._setup_rank3()
         y = correlate(a, b)
         assert_array_almost_equal(y, y_r)
-        self.assertTrue(y.dtype == self.dt)
+        assert_equal(y.dtype, self.dt)
 
 
 def _get_testcorrelate_class(datatype, base):
@@ -764,19 +764,19 @@ class _TestCorrelateComplex(TestCase):
         a, b, y_r = self._setup_rank1('valid')
         y = correlate(a, b, 'valid')
         assert_array_almost_equal(y, y_r, decimal=self.decimal)
-        self.assertTrue(y.dtype == self.dt)
+        assert_equal(y.dtype, self.dt)
 
     def test_rank1_same(self):
         a, b, y_r = self._setup_rank1('same')
         y = correlate(a, b, 'same')
         assert_array_almost_equal(y, y_r, decimal=self.decimal)
-        self.assertTrue(y.dtype == self.dt)
+        assert_equal(y.dtype, self.dt)
 
     def test_rank1_full(self):
         a, b, y_r = self._setup_rank1('full')
         y = correlate(a, b, 'full')
         assert_array_almost_equal(y, y_r, decimal=self.decimal)
-        self.assertTrue(y.dtype == self.dt)
+        assert_equal(y.dtype, self.dt)
 
     def test_rank3(self):
         a = np.random.randn(10, 8, 6).astype(self.dt)
@@ -790,7 +790,7 @@ class _TestCorrelateComplex(TestCase):
 
         y = correlate(a, b, 'full')
         assert_array_almost_equal(y, y_r, decimal=self.decimal - 1)
-        self.assertTrue(y.dtype == self.dt)
+        assert_equal(y.dtype, self.dt)
 
 
 class TestCorrelate2d(TestCase):
