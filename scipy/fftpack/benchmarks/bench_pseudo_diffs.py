@@ -189,4 +189,4 @@ class TestShift(TestCase):
             print(' (secs for %s calls)' % (repeat))
 
 if __name__ == "__main__":
-    run_module_suite()
+    Tester().bench()

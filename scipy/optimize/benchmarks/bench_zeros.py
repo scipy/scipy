@@ -4,11 +4,10 @@ from math import sqrt
 
 from numpy.testing import *
 
-from scipy.optimize import zeros as cc
 
 # Import testing parameters
-from scipy.optimize._tstutils import methods, mstrings, functions, \
-     fstrings, description
+from scipy.optimize._tstutils import (methods, mstrings, functions,
+     fstrings, description)
 
 
 class BenchZeros(TestCase):
@@ -35,4 +34,4 @@ class BenchZeros(TestCase):
             print('\n\n')
 
 if __name__ == '__main__':
-    run_module_suite()
+    Tester().bench()

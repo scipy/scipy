@@ -7,7 +7,7 @@ from __future__ import division, print_function, absolute_import
 import time
 
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, Tester
 import scipy.linalg
 
 
@@ -55,3 +55,7 @@ def bench_sqrtm():
             # Check that the results are the same for all block sizes.
             assert_allclose(B_1, B_32)
             assert_allclose(B_1, B_64)
+
+
+if __name__ == "__main__":
+    Tester().bench()
