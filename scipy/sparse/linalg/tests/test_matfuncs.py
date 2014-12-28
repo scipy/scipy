@@ -20,7 +20,7 @@ from numpy.testing import (TestCase, run_module_suite,
 
 from scipy.sparse import csc_matrix, SparseEfficiencyWarning
 from scipy.sparse.construct import eye as speye
-from scipy.sparse.linalg.matfuncs import (expm,
+from scipy.sparse.linalg.matfuncs import (expm, _expm,
         ProductOperator, MatrixPowerOperator,
         _onenorm_matrix_power_nnm)
 from scipy.linalg import logm
@@ -136,7 +136,10 @@ class TestExpM(TestCase):
             for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
                 a = scale * speye(3, 3, dtype=dtype, format='csc')
                 e = exp(scale) * eye(3, dtype=dtype)
-                assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
+                exact_onenorm = _expm(a, use_exact_onenorm=True).toarray()
+                inexact_onenorm = _expm(a, use_exact_onenorm=False).toarray()
+                assert_array_almost_equal_nulp(exact_onenorm, e, nulp=100)
+                assert_array_almost_equal_nulp(inexact_onenorm, e, nulp=100)
 
     def test_padecases_dtype_sparse_complex(self):
         # float32 and complex64 lead to errors in spsolve/UMFpack

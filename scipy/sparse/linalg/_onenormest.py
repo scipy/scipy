@@ -70,7 +70,8 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     """
 
     # Check the input.
-    if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
+    A = aslinearoperator(A)
+    if A.shape[0] != A.shape[1]:
         raise ValueError('expected the operator to act like a square matrix')
 
     # If the operator size is small compared to t,
@@ -91,7 +92,7 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
         w = A_explicit[:, argmax_j]
         est = col_abs_sums[argmax_j]
     else:
-        est, v, w, nmults, nresamples = _onenormest_core(A, A.T, t, itmax)
+        est, v, w, nmults, nresamples = _onenormest_core(A, A.H, t, itmax)
 
     # Report the norm estimate along with some certificates of the estimate.
     if compute_v or compute_w:
