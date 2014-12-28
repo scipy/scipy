@@ -547,14 +547,14 @@ class TestWishart(TestCase):
         # Construct an arbitrary positive definite scale matrix
         dim = 4
         scale = np.diag(np.arange(dim)+1)
-        scale[np.tril_indices(dim, k=-1)] = np.arange(dim*(dim-1)/2)
+        scale[np.tril_indices(dim, k=-1)] = np.arange(dim * (dim-1) // 2)
         scale = np.dot(scale.T, scale)
 
         # Construct a collection of positive definite matrices to test the PDF
         X = []
         for i in range(5):
             x = np.diag(np.arange(dim)+(i+1)**2)
-            x[np.tril_indices(dim, k=-1)] = np.arange(dim*(dim-1)/2)
+            x[np.tril_indices(dim, k=-1)] = np.arange(dim * (dim-1) // 2)
             x = np.dot(x.T, x)
             X.append(x)
         X = np.array(X).T

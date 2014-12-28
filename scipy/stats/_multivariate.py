@@ -1089,7 +1089,7 @@ class wishart_gen(object):
         return x
 
     def _process_size(self, size):
-        size = np.array(size, dtype=float)
+        size = np.asarray(size)
 
         if size.ndim == 0:
             size = size[np.newaxis]
@@ -1331,7 +1331,7 @@ class wishart_gen(object):
 
         """
         # Random normal variates for off-diagonal elements
-        n_tril = (dim*(dim-1)/2)
+        n_tril = dim * (dim-1) // 2
         covariances = np.random.normal(size=n*n_tril).reshape(shape+(n_tril,))
 
         # Random chi-square variates for diagonal elements
