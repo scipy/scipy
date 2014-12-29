@@ -114,9 +114,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'euclidean')
         Y2 = cdist(X1, X2, 'test_euclidean')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_euclidean_random_unicode(self):
         eps = 1e-07
@@ -124,9 +122,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, u('euclidean'))
         Y2 = cdist(X1, X2, u('test_euclidean'))
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_sqeuclidean_random(self):
         eps = 1e-07
@@ -134,9 +130,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'sqeuclidean')
         Y2 = cdist(X1, X2, 'test_sqeuclidean')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_cityblock_random(self):
         eps = 1e-07
@@ -144,9 +138,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'cityblock')
         Y2 = cdist(X1, X2, 'test_cityblock')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_hamming_double_random(self):
         eps = 1e-07
@@ -154,9 +146,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'hamming')
         Y2 = cdist(X1, X2, 'test_hamming')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_hamming_bool_random(self):
         eps = 1e-07
@@ -164,9 +154,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'hamming')
         Y2 = cdist(X1, X2, 'test_hamming')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_jaccard_double_random(self):
         eps = 1e-07
@@ -184,9 +172,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'jaccard')
         Y2 = cdist(X1, X2, 'test_jaccard')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_chebychev_random(self):
         eps = 1e-07
@@ -194,9 +180,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'chebychev')
         Y2 = cdist(X1, X2, 'test_chebychev')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_minkowski_random_p3d8(self):
         eps = 1e-07
@@ -204,9 +188,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'minkowski', p=3.8)
         Y2 = cdist(X1, X2, 'test_minkowski', p=3.8)
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_minkowski_random_p4d6(self):
         eps = 1e-07
@@ -214,9 +196,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'minkowski', p=4.6)
         Y2 = cdist(X1, X2, 'test_minkowski', p=4.6)
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_minkowski_random_p1d23(self):
         eps = 1e-07
@@ -224,9 +204,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'minkowski', p=1.23)
         Y2 = cdist(X1, X2, 'test_minkowski', p=1.23)
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_wminkowski_random_p3d8(self):
         eps = 1e-07
@@ -235,9 +213,7 @@ class TestCdist(TestCase):
         w = 1.0 / X1.std(axis=0)
         Y1 = cdist(X1, X2, 'wminkowski', p=3.8, w=w)
         Y2 = cdist(X1, X2, 'test_wminkowski', p=3.8, w=w)
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_wminkowski_random_p4d6(self):
         eps = 1e-07
@@ -246,9 +222,7 @@ class TestCdist(TestCase):
         w = 1.0 / X1.std(axis=0)
         Y1 = cdist(X1, X2, 'wminkowski', p=4.6, w=w)
         Y2 = cdist(X1, X2, 'test_wminkowski', p=4.6, w=w)
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_wminkowski_random_p1d23(self):
         eps = 1e-07
@@ -257,9 +231,7 @@ class TestCdist(TestCase):
         w = 1.0 / X1.std(axis=0)
         Y1 = cdist(X1, X2, 'wminkowski', p=1.23, w=w)
         Y2 = cdist(X1, X2, 'test_wminkowski', p=1.23, w=w)
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_seuclidean_random(self):
         eps = 1e-07
@@ -267,9 +239,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'seuclidean')
         Y2 = cdist(X1, X2, 'test_seuclidean')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_cosine_random(self):
         eps = 1e-07
@@ -277,9 +247,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'cosine')
         Y2 = cdist(X1, X2, 'test_cosine')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_correlation_random(self):
         eps = 1e-07
@@ -287,9 +255,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'correlation')
         Y2 = cdist(X1, X2, 'test_correlation')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_mahalanobis_random(self):
         eps = 1e-07
@@ -297,9 +263,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'mahalanobis')
         Y2 = cdist(X1, X2, 'test_mahalanobis')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_canberra_random(self):
         eps = 1e-07
@@ -307,9 +271,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'canberra')
         Y2 = cdist(X1, X2, 'test_canberra')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_braycurtis_random(self):
         eps = 1e-07
@@ -320,7 +282,7 @@ class TestCdist(TestCase):
         if verbose > 2:
             print(Y1, Y2)
             print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps)
 
     def test_cdist_yule_random(self):
         eps = 1e-07
@@ -328,9 +290,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'yule')
         Y2 = cdist(X1, X2, 'test_yule')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_matching_random(self):
         eps = 1e-07
@@ -338,9 +298,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'matching')
         Y2 = cdist(X1, X2, 'test_matching')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_kulsinski_random(self):
         eps = 1e-07
@@ -348,9 +306,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'kulsinski')
         Y2 = cdist(X1, X2, 'test_kulsinski')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_dice_random(self):
         eps = 1e-07
@@ -358,9 +314,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'dice')
         Y2 = cdist(X1, X2, 'test_dice')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_rogerstanimoto_random(self):
         eps = 1e-07
@@ -368,9 +322,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'rogerstanimoto')
         Y2 = cdist(X1, X2, 'test_rogerstanimoto')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_russellrao_random(self):
         eps = 1e-07
@@ -378,9 +330,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'russellrao')
         Y2 = cdist(X1, X2, 'test_russellrao')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_sokalmichener_random(self):
         eps = 1e-07
@@ -388,9 +338,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'sokalmichener')
         Y2 = cdist(X1, X2, 'test_sokalmichener')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_sokalsneath_random(self):
         eps = 1e-07
@@ -398,9 +346,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'sokalsneath')
         Y2 = cdist(X1, X2, 'test_sokalsneath')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
 
 class TestPdist(TestCase):
@@ -1175,6 +1121,12 @@ class TestPdist(TestCase):
 
 def within_tol(a, b, tol):
     return np.abs(a - b).max() < tol
+
+
+def _assert_within_tol(a, b, atol, verbose_=False):
+    if verbose_:
+        print(np.abs(a-b).max())
+    assert_allclose(a, b, rtol=0, atol=atol)
 
 
 class TestSomeDistanceFunctions(TestCase):
