@@ -238,9 +238,6 @@ class TestNBinom(TestCase):
         # regression test for ticket 1779
         assert_allclose(np.exp(stats.nbinom.logpmf(700, 721, 0.52)),
                         stats.nbinom.pmf(700, 721, 0.52))
-        # regression test for ticket 4029
-        val = stats.nbinom.logpmf(0,1,1)
-        assert_equal(val,0)
 
     def test_ppf(self):
         val = stats.truncexpon.ppf(stats.truncexpon.cdf(1e-100,1),1)
@@ -2090,7 +2087,14 @@ class TestSubclassingNoShapes(TestCase):
                 return 42
         assert_raises(TypeError, _dist_gen, **dict(name='dummy'))
 
+		
+class TestTruncExpon(TestCase):
+    def test_nbinom_pmf(self):
+        # regression test for ticket 4029
+        val = stats.nbinom.logpmf(0, 1, 1)
+        assert_equal(val, 0)
 
+		
 @dec.skipif(DOCSTRINGS_STRIPPED)
 def test_docstrings():
     badones = [',\s*,', '\(\s*,', '^\s*:']
