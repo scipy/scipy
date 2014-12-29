@@ -14,7 +14,7 @@ from numpy import (shape, sometrue, array, transpose, searchsorted,
 import numpy as np
 import scipy.linalg
 import scipy.special as spec
-from scipy.misc import comb
+from scipy.special import comb
 import math
 import warnings
 import functools
