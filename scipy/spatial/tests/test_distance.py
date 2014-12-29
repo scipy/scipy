@@ -1320,7 +1320,7 @@ class TestNumObsY(TestCase):
     def test_num_obs_y_1(self):
         # Tests num_obs_y(y) on a condensed distance matrix over 1
         # observations. Expecting exception.
-        self.assertRaises(ValueError, self.check_y, 1)
+        assert_raises(ValueError, self.check_y, 1)
 
     def test_num_obs_y_2(self):
         # Tests num_obs_y(y) on a condensed distance matrix over 2
@@ -1345,7 +1345,7 @@ class TestNumObsY(TestCase):
             a.add(n*(n-1)/2)
         for i in xrange(5, 105):
             if i not in a:
-                self.assertRaises(ValueError, self.bad_y, i)
+                assert_raises(ValueError, self.bad_y, i)
 
     def minit(self, n):
         self.assertTrue(self.check_y(n))
@@ -1405,7 +1405,7 @@ class TestIsValidDM(TestCase):
     def test_is_valid_dm_int16_array_E(self):
         # Tests is_valid_dm(*) on an int16 array. Exception expected.
         D = np.zeros((5, 5), dtype='i')
-        self.assertRaises(TypeError, is_valid_dm_throw, (D))
+        assert_raises(TypeError, is_valid_dm_throw, (D))
 
     def test_is_valid_dm_int16_array_F(self):
         D = np.zeros((5, 5), dtype='i')
@@ -1413,7 +1413,7 @@ class TestIsValidDM(TestCase):
 
     def test_is_valid_dm_improper_shape_1D_E(self):
         D = np.zeros((5,), dtype=np.double)
-        self.assertRaises(ValueError, is_valid_dm_throw, (D))
+        assert_raises(ValueError, is_valid_dm_throw, (D))
 
     def test_is_valid_dm_improper_shape_1D_F(self):
         D = np.zeros((5,), dtype=np.double)
@@ -1421,7 +1421,7 @@ class TestIsValidDM(TestCase):
 
     def test_is_valid_dm_improper_shape_3D_E(self):
         D = np.zeros((3,3,3), dtype=np.double)
-        self.assertRaises(ValueError, is_valid_dm_throw, (D))
+        assert_raises(ValueError, is_valid_dm_throw, (D))
 
     def test_is_valid_dm_improper_shape_3D_F(self):
         D = np.zeros((3,3,3), dtype=np.double)
@@ -1432,7 +1432,7 @@ class TestIsValidDM(TestCase):
         D = squareform(y)
         for i in xrange(0, 5):
             D[i, i] = 2.0
-        self.assertRaises(ValueError, is_valid_dm_throw, (D))
+        assert_raises(ValueError, is_valid_dm_throw, (D))
 
     def test_is_valid_dm_nonzero_diagonal_F(self):
         y = np.random.rand(10)
@@ -1445,7 +1445,7 @@ class TestIsValidDM(TestCase):
         y = np.random.rand(10)
         D = squareform(y)
         D[1,3] = D[3,1] + 1
-        self.assertRaises(ValueError, is_valid_dm_throw, (D))
+        assert_raises(ValueError, is_valid_dm_throw, (D))
 
     def test_is_valid_dm_asymmetric_F(self):
         y = np.random.rand(10)
@@ -1489,7 +1489,7 @@ class TestIsValidY(TestCase):
 
     def test_is_valid_y_int16_array_E(self):
         y = np.zeros((10,), dtype='i')
-        self.assertRaises(TypeError, is_valid_y_throw, (y))
+        assert_raises(TypeError, is_valid_y_throw, (y))
 
     def test_is_valid_y_int16_array_F(self):
         y = np.zeros((10,), dtype='i')
@@ -1497,7 +1497,7 @@ class TestIsValidY(TestCase):
 
     def test_is_valid_y_improper_shape_2D_E(self):
         y = np.zeros((3,3,), dtype=np.double)
-        self.assertRaises(ValueError, is_valid_y_throw, (y))
+        assert_raises(ValueError, is_valid_y_throw, (y))
 
     def test_is_valid_y_improper_shape_2D_F(self):
         y = np.zeros((3,3,), dtype=np.double)
@@ -1505,7 +1505,7 @@ class TestIsValidY(TestCase):
 
     def test_is_valid_y_improper_shape_3D_E(self):
         y = np.zeros((3,3,3), dtype=np.double)
-        self.assertRaises(ValueError, is_valid_y_throw, (y))
+        assert_raises(ValueError, is_valid_y_throw, (y))
 
     def test_is_valid_y_improper_shape_3D_F(self):
         y = np.zeros((3,3,3), dtype=np.double)
@@ -1533,7 +1533,7 @@ class TestIsValidY(TestCase):
             a.add(n*(n-1)/2)
         for i in xrange(5, 105):
             if i not in a:
-                self.assertRaises(ValueError, self.bad_y, i)
+                assert_raises(ValueError, self.bad_y, i)
 
     def bad_y(self, n):
         y = np.random.rand(n)
