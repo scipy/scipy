@@ -437,6 +437,14 @@ class rv_frozen(object):
         self.dist._argcheck(*shapes)
         self.a, self.b = self.dist.a, self.dist.b
 
+    @property
+    def random_state(self):
+        return self.dist._random_state
+
+    @random_state.setter
+    def random_state(self, seed):
+        self.dist._random_state = check_random_state(seed)
+
     def pdf(self, x):   # raises AttributeError in frozen discrete distribution
         return self.dist.pdf(x, *self.args, **self.kwds)
 
@@ -455,9 +463,9 @@ class rv_frozen(object):
     def isf(self, q):
         return self.dist.isf(q, *self.args, **self.kwds)
 
-    def rvs(self, size=None):
+    def rvs(self, size=None, random_state=None):
         kwds = self.kwds.copy()
-        kwds.update({'size': size})
+        kwds.update({'size': size, 'random_state': random_state})
         return self.dist.rvs(*self.args, **kwds)
 
     def sf(self, x):

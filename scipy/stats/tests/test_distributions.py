@@ -1291,6 +1291,20 @@ class TestFrozen(TestCase):
         # Regression test for gh-3522
         assert_(hasattr(stats.distributions, 'rv_frozen'))
 
+    def test_random_state(self):
+        # only check that the random_state attribute exists,
+        frozen = stats.norm()
+        assert_(hasattr(frozen, 'random_state'))
+
+        # ... that it can be set,
+        frozen.random_state = 42
+        assert_equal(frozen.random_state.get_state(),
+                     np.random.RandomState(42).get_state())
+
+        # ... and that .rvs method accepts it as an argument
+        rndm = np.random.RandomState(1234)
+        frozen.rvs(size=8, random_state=rndm)
+
 
 class TestExpect(TestCase):
     # Test for expect method.
