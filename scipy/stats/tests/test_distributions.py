@@ -867,7 +867,7 @@ class TestBetaPrime(TestCase):
         # regression test for issue 4030: Implentation of 
         # scipy.stats.betaprime.cdf()
         x = stats.betaprime.cdf(0,0.2,0.3)
-        assert_(x,0.0)
+        assert_equal(x,0.0)
 
 
 class TestGamma(TestCase):
