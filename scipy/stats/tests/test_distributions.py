@@ -863,6 +863,12 @@ class TestBetaPrime(TestCase):
         assert_(np.isfinite(b.logpdf(x)).all())
         assert_allclose(b.pdf(x), np.exp(b.logpdf(x)))
 
+    def test_cdf(self):
+        # regression test for issue 4030: Implentation of 
+        # scipy.stats.betaprime.cdf()
+        x = stats.betaprime.cdf(0,0.2,0.3)
+        assert_(x,0.0)
+
 
 class TestGamma(TestCase):
     def test_pdf(self):

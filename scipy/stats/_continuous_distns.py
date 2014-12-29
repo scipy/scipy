@@ -525,6 +525,9 @@ class betaprime_gen(rv_continuous):
         return (special.xlogy(a-1.0, x) - special.xlog1py(a+b, x) -
                 special.betaln(a, b))
 
+    def _cdf(self, x, a, b):
+        return special.betainc(a, b, x/(1.+x))
+
     def _cdf_skip(self, x, a, b):
         # remove for now: special.hyp2f1 is incorrect for large a
         x = where(x == 1.0, 1.0-1e-6, x)
