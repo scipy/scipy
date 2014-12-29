@@ -35,7 +35,7 @@ print("MatrixMarket problem %s" % problem)
 print("Invert %d x %d matrix; nnz = %d" % (Am.shape[0], Am.shape[1], Am.nnz))
 
 count[0] = 0
-x0, info = la.gmres(A, b, restrt=M, tol=1e-14)
+x0, info = la.gmres(A, b, restart=M, tol=1e-14)
 count_0 = count[0]
 err0 = np.linalg.norm(Am*x0 - b) / np.linalg.norm(b)
 print("GMRES(%d):" % M, count_0, "matvecs, residual", err0)
