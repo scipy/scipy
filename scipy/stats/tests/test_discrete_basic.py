@@ -8,7 +8,7 @@ from scipy import stats
 from common_tests import (check_normalization, check_moment, check_mean_expect,
         check_var_expect, check_skew_expect, check_kurt_expect,
         check_entropy, check_private_entropy, check_edge_support,
-        check_named_args, check_random_state)
+        check_named_args, check_random_state_property)
 from scipy.stats._distr_params import distdiscrete
 knf = npt.dec.knownfailureif
 
@@ -44,7 +44,7 @@ def test_discrete_basic():
         k = spec_k.get(distname, 1)
         yield check_named_args, distfn, k, arg, locscale_defaults, meths
         yield check_scale_docstring, distfn
-        yield check_random_state, distfn, arg
+        yield check_random_state_property, distfn, arg
 
         # Entropy
         yield check_entropy, distfn, arg, distname
