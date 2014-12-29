@@ -38,11 +38,9 @@ from __future__ import division, print_function, absolute_import
 import os.path
 from scipy.lib.six import xrange
 
-from nose.tools import assert_true
-
 import numpy as np
 from numpy.linalg import norm
-from numpy.testing import (verbose, TestCase, run_module_suite,
+from numpy.testing import (verbose, TestCase, run_module_suite, assert_,
         assert_raises, assert_array_equal, assert_equal, assert_almost_equal,
         assert_allclose)
 
@@ -1632,7 +1630,7 @@ def test_sqeuclidean_dtypes():
 
     for dtype in [np.int8, np.int16, np.int32, np.int64]:
         d = sqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
-        assert_true(np.issubdtype(d.dtype, np.floating))
+        assert_(np.issubdtype(d.dtype, np.floating))
 
     for dtype in [np.uint8, np.uint16, np.uint32, np.uint64]:
         d1 = sqeuclidean([0], np.asarray([-1], dtype=dtype))
