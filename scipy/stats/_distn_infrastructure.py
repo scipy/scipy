@@ -435,6 +435,7 @@ class rv_frozen(object):
         # a, b may be set in _argcheck, depending on *args, **kwds. Ouch.
         shapes, _, _ = self.dist._parse_args(*args, **kwds)
         self.dist._argcheck(*shapes)
+        self.a, self.b = self.dist.a, self.dist.b
 
     def pdf(self, x):   # raises AttributeError in frozen discrete distribution
         return self.dist.pdf(x, *self.args, **self.kwds)

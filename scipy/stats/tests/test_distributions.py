@@ -1196,6 +1196,9 @@ class TestFrozen(TestCase):
         result = dist.moment(2,loc=10.0, scale=3.0)
         assert_equal(result_f, result)
 
+        assert_equal(frozen.a, dist.a)
+        assert_equal(frozen.b, dist.b)
+
     def test_gamma(self):
         a = 2.0
         dist = stats.gamma
@@ -1245,6 +1248,9 @@ class TestFrozen(TestCase):
         result = dist.moment(2, a)
         assert_equal(result_f, result)
 
+        assert_equal(frozen.a, frozen.dist.a)
+        assert_equal(frozen.b, frozen.dist.b)
+
     def test_regression_ticket_1293(self):
         # Create a frozen distribution.
         frozen = stats.lognorm(1)
@@ -1272,9 +1278,11 @@ class TestFrozen(TestCase):
         rv = stats.genpareto(c=-0.1)
         a, b = rv.dist.a, rv.dist.b
         assert_equal([a, b], [0., 10.])
+        assert_equal([rv.a, rv.b], [0., 10.])
 
         stats.genpareto.pdf(0, c=0.1)  # this changes genpareto.b
         assert_equal([rv.dist.a, rv.dist.b], [a, b])
+        assert_equal([rv.a, rv.b], [a, b])
 
         rv1 = stats.genpareto(c=0.1)
         assert_(rv1.dist is not rv.dist)
