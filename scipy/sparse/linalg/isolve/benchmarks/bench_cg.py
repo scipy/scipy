@@ -1,5 +1,7 @@
-"""Check the speed of the conjugate gradient solver.
 """
+Check the speed of the conjugate gradient solver.
+"""
+
 from __future__ import division, print_function, absolute_import
 
 import time
@@ -7,26 +9,28 @@ import time
 import numpy as np
 from numpy.testing import Tester, TestCase, assert_allclose, assert_equal
 
-import scipy.linalg
-import scipy.sparse
+from scipy import linalg, sparse
+import scipy.sparse.linalg
+
 
 def _create_sparse_poisson1d(n):
     # Make Gilbert Strang's favorite matrix
     # http://www-math.mit.edu/~gs/PIX/cupcakematrix.jpg
-    P1d = scipy.sparse.diags([[-1]*(n-1), [2]*n, [-1]*(n-1)], [-1, 0, 1])
+    P1d = sparse.diags([[-1]*(n-1), [2]*n, [-1]*(n-1)], [-1, 0, 1])
     assert_equal(P1d.shape, (n, n))
     return P1d
 
+
 def _create_sparse_poisson2d(n):
     P1d = _create_sparse_poisson1d(n)
-    P2d = scipy.sparse.kronsum(P1d, P1d)
+    P2d = sparse.kronsum(P1d, P1d)
     assert_equal(P2d.shape, (n*n, n*n))
     return P2d
+
 
 class BenchmarkConjuateGradientSolver(TestCase):
 
     def bench_cg(self):
-
         # print headers and define the column formats
         print()
         print('         generic solve vs. conjugate gradient solve')
@@ -50,7 +54,7 @@ class BenchmarkConjuateGradientSolver(TestCase):
                 P_dense = P_sparse.A
                 tm_start = time.clock()
                 for i in range(repeats):
-                    x_dense = scipy.linalg.solve(P_dense, b)
+                    x_dense = linalg.solve(P_dense, b)
                 tm_end = time.clock()
                 tm_dense = tm_end - tm_start
 
@@ -58,7 +62,7 @@ class BenchmarkConjuateGradientSolver(TestCase):
             if sparse_is_active:
                 tm_start = time.clock()
                 for i in range(repeats):
-                    x_sparse, info = scipy.sparse.linalg.cg(P_sparse, b)
+                    x_sparse, info = sparse.linalg.cg(P_sparse, b)
                 tm_end = time.clock()
                 tm_sparse = tm_end - tm_start
 
@@ -70,6 +74,7 @@ class BenchmarkConjuateGradientSolver(TestCase):
             shape = (n*n, n*n)
             if dense_is_active:
                 print(fmt % (shape, repeats, 'dense solve', tm_dense))
+
             if sparse_is_active:
                 print(fmt % (shape, repeats, 'sparse cg', tm_sparse))
 
