@@ -153,7 +153,7 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     npt.assert_raises(TypeError, distfn.cdf, x, **k)
 
 
-def check_random_state(distfn, args):
+def check_random_state_property(distfn, args):
     # check the random_state attribute of a distribution *instance*
 
     # This test fiddles with distfn.random_state. This breaks other tests,
