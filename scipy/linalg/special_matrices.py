@@ -7,7 +7,7 @@ from scipy.lib.six import string_types
 
 
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
-           'hadamard', 'leslie', 'all_mat', 'kron', 'block_diag', 'companion',
+           'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
            'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft']
 
 
@@ -427,11 +427,6 @@ def leslie(f, s):
     a[0] = f
     a[list(range(1, n)), list(range(0, n - 1))] = s
     return a
-
-
-@np.deprecate
-def all_mat(*args):
-    return list(map(np.matrix, args))
 
 
 def kron(a, b):
