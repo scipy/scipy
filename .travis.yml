@@ -13,6 +13,11 @@ matrix:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC=numpy
+    - python: 3.2
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - NUMPYSPEC=numpy
     - python: 2.7
       env:
         - TESTMODE=full
