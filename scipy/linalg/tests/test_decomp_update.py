@@ -197,6 +197,37 @@ class BaseQRdelete(BaseQRdeltas):
                 a1 = np.delete(a, slice(col, col+ndel), 1)
                 check_qr(q1, r1, a1, self.rtol, self.atol)
 
+    def test_economic_1_row(self):
+        # this test always starts and ends with an economic decomp.
+        a, q, r = self.generate('tall', 'economic')
+        for row in range(r.shape[0]):
+            q1, r1 = qr_delete(q, r, row, overwrite_qr=False)
+            a1 = np.delete(a, row, 0)
+            check_qr(q1, r1, a1, self.rtol, self.atol, False)
+
+    # for economic row deletes 
+    # eco - prow = eco
+    # eco - prow = sqr
+    # eco - prow = fat
+    def base_economic_p_row_xxx(self, ndel):
+        a, q, r = self.generate('tall', 'economic')
+        for row in range(a.shape[0]-ndel):
+            q1, r1 = qr_delete(q, r, row, ndel, overwrite_qr=False)
+            a1 = np.delete(a, slice(row, row+ndel), 0)
+            check_qr(q1, r1, a1, self.rtol, self.atol, False)
+
+    def test_economic_p_row_economic(self):
+        # (12, 7) - (3, 7) = (9,7) --> stays economic
+        self.base_economic_p_row_xxx(3)
+
+    def test_economic_p_row_sqr(self):
+        # (12, 7) - (5, 7) = (7, 7) --> becomes square
+        self.base_economic_p_row_xxx(5)
+
+    def test_economic_p_row_fat(self):
+        # (12, 7) - (7,7) = (5, 7) --> becomes fat
+        self.base_economic_p_row_xxx(7)
+
     # all row deletes and single column deletes should be able to
     # handle any non negative strides. (only row and column vector
     # operations are used.) p column delete require fortran ordered
@@ -371,7 +402,7 @@ class BaseQRdelete(BaseQRdeltas):
     def test_economic_qr(self):
         a, q, r = self.generate('tall', mode='economic')
         # only test row delete, this logic is shared.
-        assert_raises(ValueError, qr_delete, q, r, 0)
+        assert_raises(ValueError, qr_delete, q, r, 0, 1, 'col')
 
     def test_bad_which(self):
         a, q, r = self.generate('sqr')

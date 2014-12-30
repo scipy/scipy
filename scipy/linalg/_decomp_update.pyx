@@ -386,28 +386,122 @@ cdef int to_lwork(blas_t a, blas_t b) nogil:
 #------------------------------------------------------------------------------
 # QR update routines start here.
 #------------------------------------------------------------------------------
-cdef void qr_row_delete(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
-                        int k) nogil:
-    cdef int j
-    cdef blas_t c, s
+
+cdef bint reorthx(int m, int n, blas_t* q, int* qs, bint qisF, int j, blas_t* u, blas_t* s) nogil:
+    # U should be all zeros on entry.
+    cdef blas_t unorm, snorm, wnorm, wpnorm, sigma_max, sigma_min, rc
+    cdef char* T = 'T'
+    cdef char* N = 'N'
+    cdef char* C = 'C'
+    cdef int ss = 1
+    cdef blas_t inv_root2 = <blas_t>sqrt(2)
+
+    # u starts out as the jth basis vector.
+    u[j] = 1
+
+    # s = Q.T.dot(u) = jth row of Q.
+    copy(n, row(q, qs, j), qs[1], s, 1)
+    blas_t_conj(n, s, &ss)
+
+    # make u be the part of u that is not in span(q)
+    # i.e. u -= q.dot(s)
+    if qisF:
+        gemv(N, m, n, -1, q, qs[1], s, 1, 1, u, 1)
+    else:
+        gemv(T, n, m, -1, q, n, s, 1, 1, u, 1)
+    wnorm = nrm2(m, u, 1)
+
+    if blas_t_less_than(inv_root2, wnorm):
+        scal(m, 1/wnorm, u, 1)
+        s[n] = wnorm
+        return True
+
+    # if the above check failed, try one reorthogonalization
+    if qisF:
+        if blas_t is float or blas_t is double:
+            gemv(T, m, n, 1, q, qs[1], u, 1, 0, s+n, 1)
+        else:
+            gemv(C, m, n, 1, q, qs[1], u, 1, 0, s+n, 1)
+        gemv(N, m, n, -1, q, qs[1], s+n, 1, 1, u, 1)
+    else:
+        if blas_t is float or blas_t is double:
+            gemv(N, n, m, 1, q, n, u, 1, 0, s+n, 1)
+        else:
+            blas_t_conj(m, u, &ss)
+            gemv(N, n, m, 1, q, n, u, 1, 0, s+n, 1)
+            blas_t_conj(m, u, &ss)
+            blas_t_conj(n, s+n, &ss)
+        gemv(T, n, m, -1, q, n, s+n, 1, 1, u, 1)
+        
+    wpnorm = nrm2(m, u, 1) 
     
-    if k != 0:
-        for j in range(k, 0, -1):
-            swap(m, row(q, qs, j), qs[1], row(q, qs, j-1), qs[1])
+    if blas_t_less_than(wpnorm, wnorm/inv_root2): # u lies in span(q) 
+        scal(m, 0, u, 1)
+        axpy(n, 1, s, 1, s+n, 1)
+        s[n] = 0
+        return False
+    scal(m, 1/wpnorm, u, 1)
+    axpy(n, 1, s, 1, s+n, 1)
+    s[n] = wpnorm
+    return True
 
-    blas_t_conj(m, row(q, qs, 0), &qs[1])
+cdef int thin_qr_row_delete(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* r, int* rs, int k, int p_eco, int p_full) nogil:
+    cdef int i, j, argmin_row_norm 
+    cdef size_t usize = (m + 3*n + 1) * sizeof(blas_t)
+    cdef blas_t* s
+    cdef blas_t* u
+    cdef blas_t* s1
+    cdef int us[1]
+    cdef int ss[1]
+    cdef blas_t c, sn, min_row_norm, row_norm
 
-    for j in range(m-2, -1, -1):
-        lartg(index2(q, qs, 0, j), index2(q, qs, 0, j+1), &c, &s)
+    u = <blas_t*>libc.stdlib.malloc(usize)
+    if not u:
+        return MEMORY_ERROR
+    s = u + m
+    ss[0] = 1
+    ss[1] = 0
+    us[0] = 1
+    us[1] = 0
 
-        # update the columns of r if there is a nonzero row.
-        if j < n:
-            rot(n-j, index2(r, rs, j, j), rs[1], index2(r, rs, j+1, j), rs[1],
-                    c, s)
+    for i in range(p_eco):
+        memset(u, 0, usize)
+        # permute q such that row k is the last row.
+        if k != m-1:
+            for j in range(k, m-1):
+                swap(n, row(q, qs, j), qs[1], row(q, qs, j+1), qs[1])
 
-        # update the rows of q
-        rot(m-1, index2(q, qs, 1, j), qs[0], index2(q, qs, 1, j+1), qs[0],
-                c, s.conjugate())
+        if not reorthx(m, n, q, qs, qisF, m-1, u, s):
+            # if we get here it means that this basis vector lies in span(q).
+            # we want to use s[:n+1] but we need a vector into null(q)
+            # find the row of q with the smallest norm and try that. (Daniel, p785)
+            min_row_norm = nrm2(n, row(q, qs, 0), qs[1])
+            argmin_row_norm = 0
+            for j in range(1, m):
+                row_norm = nrm2(n, row(q, qs, j), qs[1])
+                if blas_t_less_than(row_norm, min_row_norm):
+                    min_row_norm = row_norm
+                    argmin_row_norm = j
+            memset(u, 0, m*sizeof(blas_t))
+            if not reorthx(m, n, q, qs, qisF, argmin_row_norm, u, s+n+1):
+                # failed, quit.
+                libc.stdlib.free(u)
+                return 0
+
+        memset(s+2*n, 0, n*sizeof(blas_t))
+
+        # what happens here...
+        for j in range(n-1, -1, -1):
+            lartg(index1(s, ss, n), index1(s, ss, j), &c, &sn)
+            rot(n-j, index1(s+2*n, ss, j), ss[0], index2(r, rs,j, j), rs[1], c, sn)
+            rot(m-1, u, us[0], col(q, qs, j), qs[0], c, sn.conjugate())
+        m -= 1
+
+    libc.stdlib.free(u)
+
+    if p_full:
+        qr_block_row_delete(m, n, q, qs, r, rs, k, p_full)
+    return 1
 
 cdef void qr_block_row_delete(int m, int n, blas_t* q, int* qs,
                               blas_t* r, int* rs, int k, int p) nogil:
@@ -1379,35 +1473,53 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
     cdef cnp.ndarray q1, r1
     cdef int k1 = k
     cdef int p1 = p
+    cdef int p_eco, p_full
     cdef int typecode, m, n, info
     cdef int qs[2]
     cdef int rs[2]
-    cdef bint economic
+    cdef bint economic, qisF = False 
 
     if which == 'row':
         q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qr,
                 NPY_ANYORDER, overwrite_qr, NPY_ANYORDER, check_finite)
-        if economic:
-            raise ValueError('economic mode decompositions are not supported.')
         if not (-m <= k1 < m):
             raise ValueError('k is not a valid index')
         if k1 < 0:
             k1 += m
         if k1 + p1 > m or p1 <= 0: 
             raise ValueError('p out of range')
-        if p1 == 1:
+        if economic:
+            if not cnp.PyArray_ISONESEGMENT(q1):
+                q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
+                qisF = True
+            elif cnp.PyArray_CHKFLAGS(q1, cnp.NPY_F_CONTIGUOUS):
+                qisF = True
+            else:
+                qisF = False
+            if m-p >= n:
+                p_eco = p1
+                p_full = 0
+            else:
+                p_eco = m-n
+                p_full = p1 - p_eco
             if typecode == cnp.NPY_FLOAT:
-                qr_row_delete(m, n, <float*>extract(q1, qs), qs,
-                    <float*>extract(r1, rs), rs, k1)
+                info = thin_qr_row_delete(m, n, <float*>extract(q1, qs), qs, qisF,
+                    <float*>extract(r1, rs), rs, k1, p_eco, p_full)
             elif typecode == cnp.NPY_DOUBLE:
-                qr_row_delete(m, n, <double*>extract(q1, qs), qs,
-                    <double*>extract(r1, rs), rs, k1)
+                info = thin_qr_row_delete(m, n, <double*>extract(q1, qs), qs, qisF,
+                    <double*>extract(r1, rs), rs, k1, p_eco, p_full)
             elif typecode == cnp.NPY_CFLOAT:
-                qr_row_delete(m, n, <float_complex*>extract(q1, qs), qs,
-                    <float_complex*>extract(r1, rs), rs, k1)
-            else:  # cnp.NPY_CDOUBLE:
-                qr_row_delete(m, n, <double_complex*>extract(q1, qs), qs,
-                    <double_complex*>extract(r1, rs), rs, k1)
+                info = thin_qr_row_delete(m, n, <float_complex*>extract(q1, qs), qs, qisF,
+                    <float_complex*>extract(r1, rs), rs, k1, p_eco, p_full)
+            else:  #  cnp.NPY_CDOUBLE
+                info = thin_qr_row_delete(m, n, <double_complex*>extract(q1, qs), qs, qisF,
+                    <double_complex*>extract(r1, rs), rs, k1, p_eco, p_full)
+            if info == 1:
+                return q1[p_full:-p_eco, p_full:], r1[p_full:,:]
+            elif info == MEMORY_ERROR:
+                raise MemoryError('malloc failed')
+            else:
+                raise ValueError('Reorthogonalization Failed, unable to perform row deletion.')
         else:
             if typecode == cnp.NPY_FLOAT:
                 qr_block_row_delete(m, n, <float*>extract(q1, qs), qs,
@@ -1421,7 +1533,7 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
             else:  # cnp.NPY_CDOUBLE:
                 qr_block_row_delete(m, n, <double_complex*>extract(q1, qs), qs,
                     <double_complex*>extract(r1, rs), rs, k1, p1)
-        return q1[p:, p:], r1[p:, :]
+            return q1[p1:, p1:], r1[p1:, :]
     elif which == 'col':
         if p1 > 1:
             q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qr,
