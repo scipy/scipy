@@ -86,7 +86,7 @@ def make_nonnative(arrs):
 class BaseQRdeltas(object):
     def __init__(self):
         self.rtol = 10.0 ** -(np.finfo(self.dtype).precision-2)
-        self.atol = 5 * np.finfo(self.dtype).eps
+        self.atol = 10 * np.finfo(self.dtype).eps
 
     def generate(self, type, mode='full'):
         np.random.seed(29382)
