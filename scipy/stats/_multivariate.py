@@ -1136,7 +1136,7 @@ class wishart_gen(object):
         scale_inv_x = np.zeros(x.shape)
         tr_scale_inv_x = np.zeros(x.shape[-1])
         for i in range(x.shape[-1]):
-            _, log_det_x[i] = np.linalg.slogdet(x[:,:,i])
+            _, log_det_x[i] = self._cholesky_logdet(x[:,:,i])
             scale_inv_x[:,:,i] = scipy.linalg.cho_solve((C, True), x[:,:,i])
             tr_scale_inv_x[i] = scale_inv_x[:,:,i].trace()
 
@@ -1172,8 +1172,7 @@ class wishart_gen(object):
         x = self._process_quantiles(x, dim)
 
         # Cholesky decomposition of scale, get log(det(scale))
-        C = scipy.linalg.cholesky(scale, lower=True)
-        _, log_det_scale = np.linalg.slogdet(scale)
+        C, log_det_scale = self._cholesky_logdet(scale)
 
         out = self._logpdf(x, dim, df, scale, log_det_scale, C)
         return _squeeze_output(out)
@@ -1473,8 +1472,34 @@ class wishart_gen(object):
 
         """
         dim, df, scale = self._process_parameters(df, scale)
-        _, log_det_scale = np.linalg.slogdet(scale)
+        _, log_det_scale = self._cholesky_logdet(scale)
         return self._entropy(dim, df, log_det_scale)
+
+    def _cholesky_logdet(self, scale):
+        """
+        Compute Cholesky decomposition and determine (log(det(scale)).
+
+        Parameters
+        ----------
+        scale : ndarray
+            Scale matrix.
+
+        Returns
+        -------
+        c_decomp : ndarray
+            The Cholesky decomposition of `scale`.
+        logdet : scalar
+            The log of the determinant of `scale`.
+
+        Notes
+        -----
+        This computation of ``logdet`` is equivalent to
+        ``np.linalg.slogdet(scale)``.  It is ~2x faster though.
+
+        """
+        c_decomp = scipy.linalg.cholesky(scale, lower=True)
+        logdet = 2 * np.sum(np.log(c_decomp.diagonal()))
+        return c_decomp, logdet
 wishart = wishart_gen()
 
 
@@ -1493,10 +1518,8 @@ class wishart_frozen(object):
     def __init__(self, df, scale):
         self._wishart = wishart_gen()
         self.dim, self.df, self.scale = self._wishart._process_parameters(
-            df, scale
-        )
-        self.C = scipy.linalg.cholesky(self.scale, lower=True)
-        _, self.log_det_scale = np.linalg.slogdet(self.scale)
+            df, scale)
+        self.C, self.log_det_scale = self._wishart._cholesky_logdet(self.scale)
 
     def logpdf(self, x):
         x = self._wishart._process_quantiles(x, self.dim)
@@ -1782,7 +1805,7 @@ class invwishart_gen(wishart_gen):
         """
         dim, df, scale = self._process_parameters(df, scale)
         x = self._process_quantiles(x, dim)
-        _, log_det_scale = np.linalg.slogdet(scale)
+        _, log_det_scale = self._cholesky_logdet(scale)
         out = self._logpdf(x, dim, df, scale, log_det_scale)
         return _squeeze_output(out)
 
