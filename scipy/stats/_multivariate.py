@@ -179,8 +179,8 @@ class _PSD(object):
 
     Parameters
     ----------
-    M : 2d array-like
-        Symmetric positive semidefinite matrix.
+    M : array_like
+        Symmetric positive semidefinite matrix (2-D).
     cond, rcond : float, optional
         Cutoff for small eigenvalues.
         Singular values smaller than rcond * largest_eigenvalue are
@@ -312,7 +312,8 @@ class multivariate_normal_gen(object):
 
     .. math::
 
-        f(x) = \frac{1}{\sqrt{(2 \pi)^k \det \Sigma}} \exp\left( -\frac{1}{2} (x - \mu)^T \Sigma^{-1} (x - \mu) \right),
+        f(x) = \frac{1}{\sqrt{(2 \pi)^k \det \Sigma}}
+               \exp\left( -\frac{1}{2} (x - \mu)^T \Sigma^{-1} (x - \mu) \right),
 
     where :math:`\mu` is the mean, :math:`\Sigma` the covariance matrix,
     and :math:`k` is the dimension of the space where :math:`x` takes values.
@@ -323,11 +324,14 @@ class multivariate_normal_gen(object):
     --------
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import multivariate_normal
+
     >>> x = np.linspace(0, 5, 10, endpoint=False)
     >>> y = multivariate_normal.pdf(x, mean=2.5, cov=0.5); y
     array([ 0.00108914,  0.01033349,  0.05946514,  0.20755375,  0.43939129,
             0.56418958,  0.43939129,  0.20755375,  0.05946514,  0.01033349])
-    >>> plt.plot(x, y)
+    >>> fig1 = plt.figure()
+    >>> ax = fig1.add_subplot(111)
+    >>> ax.plot(x, y)
 
     The input quantiles can be any shape of array, as long as the last
     axis labels the components.  This allows us for instance to
@@ -338,10 +342,11 @@ class multivariate_normal_gen(object):
     >>> pos = np.empty(x.shape + (2,))
     >>> pos[:, :, 0] = x; pos[:, :, 1] = y
     >>> rv = multivariate_normal([0.5, -0.2], [[2.0, 0.3], [0.3, 0.5]])
-    >>> plt.contourf(x, y, rv.pdf(pos))
+    >>> fig2 = plt.figure()
+    >>> ax2 = fig2.add_subplot(111)
+    >>> ax2.contourf(x, y, rv.pdf(pos))
 
     """
-
     def __init__(self):
         self.__doc__ = doccer.docformat(self.__doc__, docdict_params)
 
@@ -392,14 +397,14 @@ class multivariate_normal_gen(object):
             Quantiles, with the last axis of `x` denoting the components.
         %(_doc_default_callparams)s
 
-        Notes
-        -----
-        %(_doc_callparams_note)s
-
         Returns
         -------
         pdf : ndarray
             Log of the probability density function evaluated at `x`
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
 
         """
         dim, mean, cov = _process_parameters(None, mean, cov)
@@ -418,14 +423,14 @@ class multivariate_normal_gen(object):
             Quantiles, with the last axis of `x` denoting the components.
         %(_doc_default_callparams)s
 
-        Notes
-        -----
-        %(_doc_callparams_note)s
-
         Returns
         -------
         pdf : ndarray
             Probability density function evaluated at `x`
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
 
         """
         dim, mean, cov = _process_parameters(None, mean, cov)
@@ -444,15 +449,15 @@ class multivariate_normal_gen(object):
         size : integer, optional
             Number of samples to draw (default 1).
 
-        Notes
-        -----
-        %(_doc_callparams_note)s
-
         Returns
         -------
         rvs : ndarray or scalar
             Random variates of size (`size`, `N`), where `N` is the
             dimension of the random variable.
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
 
         """
         dim, mean, cov = _process_parameters(None, mean, cov)
@@ -467,14 +472,14 @@ class multivariate_normal_gen(object):
         ----------
         %(_doc_default_callparams)s
 
-        Notes
-        -----
-        %(_doc_callparams_note)s
-
         Returns
         -------
         h : scalar
             Entropy of the multivariate normal distribution
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
 
         """
         dim, mean, cov = _process_parameters(None, mean, cov)
@@ -618,6 +623,7 @@ def _lnB(alpha):
     Internal helper function to compute the log of the useful quotient
 
     .. math::
+
         B(\alpha) = \frac{\prod_{i=1}{K}\Gamma(\alpha_i)}{\Gamma\left(\sum_{i=1}^{K}\alpha_i\right)}
 
     Parameters
@@ -689,7 +695,9 @@ class dirichlet_gen(object):
     where
 
     .. math::
-        \mathrm{B}(\boldsymbol\alpha) = \frac{\prod_{i=1}^K \Gamma(\alpha_i)}{\Gamma\bigl(\sum_{i=1}^K \alpha_i\bigr)}
+
+        \mathrm{B}(\boldsymbol\alpha) = \frac{\prod_{i=1}^K \Gamma(\alpha_i)}
+                                     {\Gamma\bigl(\sum_{i=1}^K \alpha_i\bigr)}
 
     and :math:`\boldsymbol\alpha=(\alpha_1,\ldots,\alpha_K)`, the
     concentration parameters and :math:`K` is the dimension of the space
@@ -734,7 +742,8 @@ class dirichlet_gen(object):
         Returns
         -------
         pdf : ndarray
-            Log of the probability density function evaluated at `x`
+            Log of the probability density function evaluated at `x`.
+
         """
         alpha = _dirichlet_check_parameters(alpha)
         x = _dirichlet_check_input(alpha, x)
@@ -755,7 +764,8 @@ class dirichlet_gen(object):
         Returns
         -------
         pdf : ndarray
-            The probability density function evaluated at `x`
+            The probability density function evaluated at `x`.
+
         """
         alpha = _dirichlet_check_parameters(alpha)
         x = _dirichlet_check_input(alpha, x)
@@ -835,7 +845,7 @@ class dirichlet_gen(object):
         Parameters
         ----------
         %(_dirichlet_doc_default_callparams)s
-        size : integer, optional
+        size : int, optional
             Number of samples to draw (default 1).
 
 
@@ -888,7 +898,7 @@ for name in ['logpdf', 'pdf', 'rvs', 'mean', 'var', 'entropy']:
 
 
 _wishart_doc_default_callparams = """\
-df : integer
+df : int
     Degrees of freedom, must be greater than or equal to dimension of the
     scale matrix
 scale : array_like
@@ -1158,14 +1168,14 @@ class wishart_gen(object):
             Each quantile must be a symmetric positive definite matrix.
         %(_doc_default_callparams)s
 
-        Notes
-        -----
-        %(_doc_callparams_note)s
-
         Returns
         -------
         pdf : ndarray
             Log of the probability density function evaluated at `x`
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
 
         """
         dim, df, scale = self._process_parameters(df, scale)
@@ -1188,14 +1198,14 @@ class wishart_gen(object):
             Each quantile must be a symmetric positive definite matrix.
         %(_doc_default_callparams)s
 
-        Notes
-        -----
-        %(_doc_callparams_note)s
-
         Returns
         -------
         pdf : ndarray
             Probability density function evaluated at `x`
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
 
         """
         return np.exp(self.logpdf(x, df, scale))
@@ -1367,7 +1377,7 @@ class wishart_gen(object):
         scale : ndarray
             Scale matrix
         C : ndarray
-            Cholesky factorization of the scale matrix, lower triagular.
+            Cholesky factorization of the scale matrix, lower triangular.
 
         Notes
         -----
@@ -1406,15 +1416,15 @@ class wishart_gen(object):
         size : integer or iterable of integers, optional
             Number of samples to draw (default 1).
 
-        Notes
-        -----
-        %(_doc_callparams_note)s
-
         Returns
         -------
         rvs : ndarray
             Random variates of shape (`size`) + (`dim`, `dim), where `dim` is
             the dimension of the scale matrix.
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
 
         """
         n, shape = self._process_size(size)
@@ -1461,14 +1471,14 @@ class wishart_gen(object):
         ----------
         %(_doc_default_callparams)s
 
-        Notes
-        -----
-        %(_doc_callparams_note)s
-
         Returns
         -------
         h : scalar
             Entropy of the Wishart distribution
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
 
         """
         dim, df, scale = self._process_parameters(df, scale)
@@ -1578,7 +1588,7 @@ def _cho_inv_batch(a, check_finite=True):
     a : array
         Array of matrices to invert, where the matrices themselves are stored
         in the last two dimensions.
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -1586,7 +1596,7 @@ def _cho_inv_batch(a, check_finite=True):
     Returns
     -------
     x : array
-        Array of inverses of the matrices a_i
+        Array of inverses of the matrices ``a_i``.
 
     See also
     --------
@@ -1714,9 +1724,11 @@ class invwishart_gen(wishart_gen):
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import invwishart, invgamma
     >>> x = np.linspace(0.01, 1, 100)
-    >>> iw = invwishart.pdf(x, df=6, scale=1); iw[:3]
+    >>> iw = invwishart.pdf(x, df=6, scale=1)
+    >>> iw[:3]
     array([  1.20546865e-15,   5.42497807e-06,   4.45813929e-03])
-    >>> ig = invgamma.pdf(x, 6/2., scale=1./2); c[:3]
+    >>> ig = invgamma.pdf(x, 6/2., scale=1./2)
+    >>> ig[:3]
     array([  1.20546865e-15,   5.42497807e-06,   4.45813929e-03])
     >>> plt.plot(x, iw)
 
@@ -1793,14 +1805,14 @@ class invwishart_gen(wishart_gen):
             Each quantile must be a symmetric positive definite matrix.
         %(_doc_default_callparams)s
 
-        Notes
-        -----
-        %(_doc_callparams_note)s
-
         Returns
         -------
         pdf : ndarray
             Log of the probability density function evaluated at `x`
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
 
         """
         dim, df, scale = self._process_parameters(df, scale)
@@ -1821,14 +1833,14 @@ class invwishart_gen(wishart_gen):
 
         %(_doc_default_callparams)s
 
-        Notes
-        -----
-        %(_doc_callparams_note)s
-
         Returns
         -------
         pdf : ndarray
             Probability density function evaluated at `x`
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
 
         """
         return np.exp(self.logpdf(x, df, scale))
@@ -1868,6 +1880,7 @@ class invwishart_gen(wishart_gen):
         -------
         mean : float or None
             The mean of the distribution
+
         """
         dim, df, scale = self._process_parameters(df, scale)
         out = self._mean(dim, df, scale)
@@ -1901,6 +1914,7 @@ class invwishart_gen(wishart_gen):
         -------
         mode : float
             The Mode of the distribution
+
         """
         dim, df, scale = self._process_parameters(df, scale)
         out = self._mode(dim, df, scale)
@@ -1918,6 +1932,7 @@ class invwishart_gen(wishart_gen):
         -----
         As this function does no argument checking, it should not be
         called directly; use 'var' instead.
+
         """
         if df > dim + 3:
             var = (df - dim + 1) * scale**2
@@ -2004,15 +2019,15 @@ class invwishart_gen(wishart_gen):
         size : integer or iterable of integers, optional
             Number of samples to draw (default 1).
 
-        Notes
-        -----
-        %(_doc_callparams_note)s
-
         Returns
         -------
         rvs : ndarray
             Random variates of shape (`size`) + (`dim`, `dim), where `dim` is
             the dimension of the scale matrix.
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
 
         """
         n, shape = self._process_size(size)
@@ -2046,6 +2061,7 @@ class invwishart_frozen(object):
             Degrees of freedom of the distribution
         scale : array_like
             Scale matrix of the distribution
+
         """
         self._invwishart = invwishart_gen()
         self.dim, self.df, self.scale = self._invwishart._process_parameters(
