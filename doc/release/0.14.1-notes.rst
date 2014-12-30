@@ -27,6 +27,7 @@ Issues closed
 - `#4164 <https://github.com/scipy/scipy/issues/4164>`__: Backport gh-4153 (remove use of deprecated numpy API in lib/lapack/ f2py wrapper)
 - `#4180 <https://github.com/scipy/scipy/pull/4180>`__: backport pil resize support tuple fix
 - `#4168 <https://github.com/scipy/scipy/issues/4168>`__: Lots of arpack test failures on windows 32 bits with numpy 1.9.1
+- `#4203 <https://github.com/scipy/scipy/issues/4203>`__: Matrix multiplication in 0.14.x is more than 10x slower compared...
 - `#4218 <https://github.com/scipy/scipy/pull/4218>`__: attempt to make ndimage interpolation compatible with numpy relaxed...
 - `#4225 <https://github.com/scipy/scipy/pull/4225>`__: BUG: off-by-one error in PPoly shape checks
 - `#4248 <https://github.com/scipy/scipy/pull/4248>`__: BUG: optimize: fix issue with incorrect use of closure for slsqp.
