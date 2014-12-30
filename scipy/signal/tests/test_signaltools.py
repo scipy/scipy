@@ -1,21 +1,22 @@
 from __future__ import division, print_function, absolute_import
 
 from decimal import Decimal
+from itertools import product
 
 from numpy.testing import (
     TestCase, run_module_suite, assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
     assert_raises, assert_allclose, assert_, dec)
+from numpy import array, arange
+import numpy as np
 
-import scipy.signal as signal
+from scipy.optimize import fmin
+from scipy import signal
 from scipy.signal import (
     correlate, convolve, convolve2d, fftconvolve,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, tf2zpk,
     invres, vectorstrength, signaltools, lfiltic)
-
-
-from numpy import array, arange
-import numpy as np
+from scipy.signal.signaltools import _filtfilt_gust
 
 
 class _TestConvolve(TestCase):
@@ -889,6 +890,136 @@ class TestFiltFilt(TestCase):
         # test for 'a' coefficient as single number
         out = signal.filtfilt([.5, .5], 1, np.arange(10))
         assert_allclose(out, np.arange(10), rtol=1e-14, atol=1e-14)
+
+    def test_gust_simple(self):
+        # The input array has length 2.  The exact solution for this case
+        # was computed "by hand".
+        x = np.array([1.0, 2.0])
+        b = np.array([0.5])
+        a = np.array([1.0, -0.5])
+        y, z1, z2 = _filtfilt_gust(b, a, x)
+        assert_allclose([z1[0], z2[0]],
+                        [0.3*x[0] + 0.2*x[1], 0.2*x[0] + 0.3*x[1]])
+        assert_allclose(y, [z1[0] + 0.25*z2[0] + 0.25*x[0] + 0.125*x[1],
+                            0.25*z1[0] + z2[0] + 0.125*x[0] + 0.25*x[1]])
+
+    def test_gust_scalars(self):
+        # The filter coefficients are both scalars, so the filter simply
+        # multiplies its input by b/a.  When it is used in filtfilt, the
+        # factor is (b/a)**2.
+        x = np.arange(12)
+        b = 3.0
+        a = 2.0
+        y = filtfilt(b, a, x, method="gust")
+        expected = (b/a)**2 * x
+        assert_allclose(y, expected)
+
+
+def filtfilt_gust_opt(b, a, x):
+    """
+    An alternative implementation of filtfilt with Gustafsson edges.
+
+    This function computes the same result as
+    `scipy.signal.signaltools._filtfilt_gust`, but only 1-d arrays
+    are accepted.  The problem is solved using `fmin` from `scipy.optimize`.
+    `_filtfilt_gust` is significanly faster than this implementation.
+    """
+    def filtfilt_gust_opt_func(ics, b, a, x):
+        """Objective function used in filtfilt_gust_opt."""
+        m = max(len(a), len(b)) - 1
+        z0f = ics[:m]
+        z0b = ics[m:]
+        y_f = lfilter(b, a, x, zi=z0f)[0]
+        y_fb = lfilter(b, a, y_f[::-1], zi=z0b)[0][::-1]
+
+        y_b = lfilter(b, a, x[::-1], zi=z0b)[0][::-1]
+        y_bf = lfilter(b, a, y_b, zi=z0f)[0]
+        value = np.sum((y_fb - y_bf)**2)
+        return value
+
+    m = max(len(a), len(b)) - 1
+    zi = lfilter_zi(b, a)
+    ics = np.concatenate((x[:m].mean()*zi, x[-m:].mean()*zi))
+    result = fmin(filtfilt_gust_opt_func, ics, args=(b, a, x),
+                  xtol=1e-10, ftol=1e-12,
+                  maxfun=10000, maxiter=10000,
+                  full_output=True, disp=False)
+    opt, fopt, niter, funcalls, warnflag = result
+    if warnflag > 0:
+        raise RuntimeError("minimization failed in filtfilt_gust_opt: "
+                           "warnflag=%d" % warnflag)
+    z0f = opt[:m]
+    z0b = opt[m:]
+
+    # Apply the forward-backward filter using the computed initial
+    # conditions.
+    y_b = lfilter(b, a, x[::-1], zi=z0b)[0][::-1]
+    y = lfilter(b, a, y_b, zi=z0f)[0]
+
+    return y, z0f, z0b
+
+
+def check_filtfilt_gust(b, a, shape, axis, irlen=None):
+    # Generate x, the data to be filtered.
+    np.random.seed(123)
+    x = np.random.randn(*shape)
+
+    # Apply filtfilt to x. This is the main calculation to be checked.
+    y = filtfilt(b, a, x, axis=axis, method="gust", irlen=irlen)
+
+    # Also call the private function so we can test the ICs.
+    yg, zg1, zg2 = _filtfilt_gust(b, a, x, axis=axis, irlen=irlen)
+
+    # filtfilt_gust_opt is an independent implementation that gives the
+    # expected result, but it only handles 1-d arrays, so use some looping
+    # and reshaping shenanigans to create the expected output arrays.
+    xx = np.swapaxes(x, axis, -1)
+    out_shape = xx.shape[:-1]
+    yo = np.empty_like(xx)
+    m = max(len(a), len(b)) - 1
+    zo1 = np.empty(out_shape + (m,))
+    zo2 = np.empty(out_shape + (m,))
+    for indx in product(*[range(d) for d in out_shape]):
+        yo[indx], zo1[indx], zo2[indx] = filtfilt_gust_opt(b, a, xx[indx])
+    yo = np.swapaxes(yo, -1, axis)
+    zo1 = np.swapaxes(zo1, -1, axis)
+    zo2 = np.swapaxes(zo2, -1, axis)
+
+    assert_allclose(y, yo, rtol=1e-9, atol=1e-10)
+    assert_allclose(yg, yo, rtol=1e-9, atol=1e-10)
+    assert_allclose(zg1, zo1, rtol=1e-9, atol=1e-10)
+    assert_allclose(zg2, zo2, rtol=1e-9, atol=1e-10)
+
+
+def test_filtfilt_gust():
+    # Design a filter.
+    b, a = signal.ellip(3, 0.01, 120, 0.0875)
+
+    # Find the approximate impulse response length of the filter.
+    z, p, k = tf2zpk(b, a)
+    eps = 1e-10
+    r = np.max(np.abs(p))
+    approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
+
+    np.random.seed(123)
+
+    for irlen in [None, approx_impulse_len]:
+        signal_len = 5 * approx_impulse_len
+
+        # 1-d test case
+        yield check_filtfilt_gust, b, a, (signal_len,), 0, irlen
+
+        # 3-d test case; test each axis.
+        for axis in range(3):
+            shape = [2, 2, 2]
+            shape[axis] = signal_len
+            yield check_filtfilt_gust, b, a, shape, axis, irlen
+
+    # Test case with length less than 2*approx_impulse_len.
+    # In this case, `filtfilt_gust` should behave the same as if
+    # `irlen=None` was given.
+    length = 2*approx_impulse_len - 50
+    yield check_filtfilt_gust, b, a, (length,), 0, approx_impulse_len
 
 
 class TestDecimate(TestCase):
