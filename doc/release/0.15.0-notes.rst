@@ -15,7 +15,7 @@ of bug-fixes and optimizations.  Moreover, our development attention
 will now shift to bug-fix releases on the 0.16.x branch, and on adding
 new features on the master branch.
 
-This release requires Python 2.6, 2.7 or 3.2-3.3 and NumPy 1.5.1 or greater.
+This release requires Python 2.6, 2.7 or 3.2-3.4 and NumPy 1.5.1 or greater.
 
 
 New features
@@ -24,42 +24,42 @@ New features
 Linear Programming Interface
 ----------------------------
 
-The new function ``scipy.optimize.linprog`` provides a generic
-linear programming similar to the way ``scipy.optimize.minimize``
+The new function `scipy.optimize.linprog` provides a generic
+linear programming similar to the way `scipy.optimize.minimize`
 provides a generic interface to nonlinear programming optimizers.
 Currently the only method supported is *simplex* which provides
 a two-phase, dense-matrix-based simplex algorithm. Callbacks
-functions are supported,allowing the user to monitor the progress
+functions are supported, allowing the user to monitor the progress
 of the algorithm.
 
-Differential_evolution, a global optimizer
+Differential evolution, a global optimizer
 ------------------------------------------
 
-A new ``differential_evolution`` function is available in the ``scipy.optimize``
-module.  Differential Evolution is an algorithm used for finding the global
-minimum of multivariate functions. It is stochastic in nature (does not use
-gradient methods), and can search large areas of candidate space, but often
-requires larger numbers of function evaluations than conventional gradient
-based techniques.
+A new `scipy.optimize.differential_evolution` function has been added to the
+``optimize`` module.  Differential Evolution is an algorithm used for finding
+the global minimum of multivariate functions. It is stochastic in nature (does
+not use gradient methods), and can search large areas of candidate space, but
+often requires larger numbers of function evaluations than conventional
+gradient based techniques.
 
 ``scipy.signal`` improvements
 -----------------------------
 
-The function ``max_len_seq`` was added, which computes a Maximum
+The function `scipy.signal.max_len_seq` was added, which computes a Maximum
 Length Sequence (MLS) signal.
 
 ``scipy.integrate`` improvements
 --------------------------------
 
-It is now possible to use ``scipy.integrate`` routines to integrate
+It is now possible to use `scipy.integrate` routines to integrate
 multivariate ctypes functions, thus avoiding callbacks to Python and
 providing better performance.
 
 ``scipy.linalg`` improvements
 -----------------------------
 
-Add function ``orthogonal_procrustes`` for solving the procrustes
-linear algebra problem.
+The function `scipy.linalg.orthogonal_procrustes` for solving the procrustes
+linear algebra problem was added.
 
 BLAS level 2 functions ``her``, ``syr``, ``her2`` and ``syr2`` are now wrapped
 in ``scipy.linalg``.
@@ -67,7 +67,7 @@ in ``scipy.linalg``.
 ``scipy.sparse`` improvements
 -----------------------------
 
-``scipy.sparse.linalg.svds`` can now take a ``LinearOperator`` as its main input.
+`scipy.sparse.linalg.svds` can now take a ``LinearOperator`` as its main input.
 
 ``scipy.special`` improvements
 ------------------------------
@@ -88,27 +88,27 @@ for computing reorderings of sparse graphs were added.
 ``scipy.stats`` improvements
 ----------------------------
 
-Added a Dirichlet distribution as multivariate distribution.
+Added a Dirichlet multivariate distribution, `scipy.stats.dirichlet`.
 
-The new function ``scipy.stats.median_test`` computes Mood's median test.
+The new function `scipy.stats.median_test` computes Mood's median test.
 
-The new function ``scipy.stats.combine_pvalues`` implements Fisher's
+The new function `scipy.stats.combine_pvalues` implements Fisher's
 and Stouffer's methods for combining p-values.
 
-``scipy.stats.describe`` returns a namedtuple rather than a tuple, allowing
+`scipy.stats.describe` returns a namedtuple rather than a tuple, allowing
 users to access results by index or by name.
 
 
 Deprecated features
 ===================
 
-The ``scipy.weave`` module is deprecated.  It was the only module never ported
+The `scipy.weave` module is deprecated.  It was the only module never ported
 to Python 3.x, and is not recommended to be used for new code - use Cython
 instead.  In order to support existing code, ``scipy.weave`` has been packaged
-separately: `https://github.com/scipy/weave`_.  It is a pure Python package, and
+separately: https://github.com/scipy/weave.  It is a pure Python package, and
 can easily be installed with ``pip install weave``.
 
-``scipy.special.bessel_diff_formula`` is deprecated.  It is a private function,
+`scipy.special.bessel_diff_formula` is deprecated.  It is a private function,
 and therefore will be removed from the public API in a following release.
 
 ``scipy.stats.nanmean``, ``nanmedian`` and ``nanstd`` functions are deprecated
@@ -121,14 +121,14 @@ Backwards incompatible changes
 scipy.ndimage
 -------------
 
-The functions ``scipy.ndimage.minimum_positions``,
-``scipy.ndimage.maximum_positions`` and ``scipy.ndimage.extrema`` return
+The functions `scipy.ndimage.minimum_positions`,
+`scipy.ndimage.maximum_positions`` and `scipy.ndimage.extrema` return
 positions as ints instead of floats.
 
 scipy.integrate
 ---------------
 
-The format of banded Jacobians in ``scipy.integrate.ode`` solvers is
+The format of banded Jacobians in `scipy.integrate.ode` solvers is
 changed. Note that the previous documentation of this feature was
 erroneous.
 
@@ -138,9 +138,7 @@ Authors
 * Abject +
 * Ankit Agrawal +
 * Sylvain Bellemare +
-* Benny +
 * Matthew Brett
-* brettrmurphy +
 * Christian Brodbeck
 * Christian Brueffer
 * Lars Buitinck
@@ -157,10 +155,12 @@ Authors
 * Yotam Doron +
 * Marcos Duarte +
 * endolith
+* Jesse Engel +
 * Rob Falck +
 * Corey Farwell +
 * Clark Fitzgerald +
 * Tom Flannaghan +
+* Jaime Frio +
 * Chad Fulton +
 * Jochen Garcke +
 * François Garillot +
@@ -172,19 +172,13 @@ Authors
 * Olivier Grisel
 * Charles Harris
 * Trent Hauck +
-* Helder +
 * Ian Henriksen +
 * Jinhyok Heo +
 * Matt Hickford +
 * Andreas Hilboll
-* Horta +
 * Danilo Horta +
 * David Menéndez Hurtado +
 * Gert-Ludwig Ingold
-* jaimefrio +
-* Janani +
-* janani +
-* jesseengel +
 * Thouis (Ray) Jones
 * Chris Kerr +
 * Carl Kleffner +
@@ -201,14 +195,18 @@ Authors
 * Alex Loew +
 * Loïc Estève +
 * Jaakko Luttinen +
+* Benny Malengier
 * Tobias Megies +
 * Sturla Molden
 * Eric Moore
+* Brett R. Murphy +
 * Paul Nation +
 * Andrew Nelson
 * Brian Newsom +
 * Joel Nothman
 * Sergio Oller +
+* Janani Padmanabhan +
+* Tiago M.D. Pereira +
 * Nicolas Del Piano +
 * Manuel Reinhardt +
 * Thomas Robitaille
@@ -219,7 +217,6 @@ Authors
 * Brigitta Sipocz +
 * Alex Stewart +
 * Julian Taylor
-* tiagopereira +
 * James Tomlinson +
 * Benjamin Trendelkamp-Schroer +
 * Richard Tsai
@@ -238,7 +235,7 @@ Authors
 * Víctor Zabalza +
 * Tiziano Zito +
 
-A total of 102 people contributed to this release.
+A total of 99 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 

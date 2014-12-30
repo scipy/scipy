@@ -10,8 +10,6 @@ List the authors who contributed within a given revision interval.
 
 from __future__ import division, print_function, absolute_import
 
-from subprocess import Popen, PIPE, call
-import tempfile
 import optparse
 import re
 import sys
@@ -29,6 +27,7 @@ if PY3:
 else:
     stdout_b = sys.stdout
 
+
 NAME_MAP = {
     u('87'): u('Han Genuit'),
     u('aarchiba'): u('Anne Archibald'),
@@ -37,6 +36,8 @@ NAME_MAP = {
     u('argriffing'): u('Alex Griffing'),
     u('arichar6'): u('Steve Richardson'),
     u('ArmstrongJ'): u('Jeff Armstrong'),
+    u('Benny'): u('Benny Malengier'),
+    u('brettrmurphy'): u('Brett R. Murphy'),
     u('cgholke'): u('Christoph Gohlke'),
     u('cgohlke'): u('Christoph Gohlke'),
     u('chris.burns'): u('Chris Burns'),
@@ -44,6 +45,7 @@ NAME_MAP = {
     u('ckuster'): u('Christopher Kuster'),
     u('Collin Stocks'): u('Collin RM Stocks'),
     u('cnovak'): u('Clemens Novak'),
+    u('ctokhelm'): u('Collin Tokhelm'),
     u('Daniel Smith'): u('Daniel B. Smith'),
     u('Dapid'): u('David Menendez Hurtado'),
     u('dellsystem'): u('Wendy Liu'),
@@ -56,8 +58,14 @@ NAME_MAP = {
     u('Gael varoquaux'): u('Gaël Varoquaux'),
     u('gotgenes'): u('Chris Lasher'),
     u('Han'): u('Han Genuit'),
+    u('Helder'): u('Helder Cesar'),
+    u('Horta'): u('Danilo Horta'),
     u('Jake Vanderplas'): u('Jacob Vanderplas'),
     u('jamestwebber'): u('James T. Webber'),
+    u('jaimefrio'): u('Jaime Frio'),
+    u('janani'): u('Janani Padmanabhan'),
+    u('Janani'): u('Janani Padmanabhan'),
+    u('jesseengel'): u('Jesse Engel'),
     u('josef'): u('Josef Perktold'),
     u('josef-pktd'): u('Josef Perktold'),
     u('kat'): u('Kat Huang'),
@@ -71,6 +79,7 @@ NAME_MAP = {
     u('sebhaase'): u('Sebastian Haase'),
     u('SytseK'): u('Sytse Knypstra'),
     u('Takuya OSHIMA'): u('Takuya Oshima'),
+    u('tiagopereira'): u('Tiago M.D. Pereira'),
     u('tonysyu'): u('Tony S. Yu'),
     u('Travis E. Oliphant'): u('Travis Oliphant'),
     u('warren.weckesser'): u('Warren Weckesser'),
