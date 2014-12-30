@@ -4,9 +4,8 @@ from __future__ import division, print_function, absolute_import
 from os import getcwd
 from os.path import realpath, abspath, dirname, isfile, join as pjoin, exists
 
+from numpy.testing import assert_, assert_equal
 from scipy.lib._tmpdirs import tempdir, in_tempdir, in_dir
-
-from nose.tools import assert_true, assert_false, assert_equal
 
 MY_PATH = abspath(__file__)
 MY_DIR = dirname(MY_PATH)
@@ -17,16 +16,16 @@ def test_tempdir():
         fname = pjoin(tmpdir, 'example_file.txt')
         with open(fname, 'wt') as fobj:
             _ = fobj.write('a string\\n')
-    assert_false(exists(tmpdir))
+    assert_(not exists(tmpdir))
 
 
 def test_in_tempdir():
     my_cwd = getcwd()
     with in_tempdir() as tmpdir:
         _ = open('test.txt', 'wt').write('some text')
-        assert_true(isfile('test.txt'))
-        assert_true(isfile(pjoin(tmpdir, 'test.txt')))
-    assert_false(exists(tmpdir))
+        assert_(isfile('test.txt'))
+        assert_(isfile(pjoin(tmpdir, 'test.txt')))
+    assert_(not exists(tmpdir))
     assert_equal(getcwd(), my_cwd)
 
 
@@ -40,4 +39,4 @@ def test_given_directory():
         assert_equal(tmpdir, MY_DIR)
         assert_equal(realpath(MY_DIR), realpath(abspath(getcwd())))
     # We were deleting the Given directory!  Check not so now.
-    assert_true(isfile(MY_PATH))
+    assert_(isfile(MY_PATH))

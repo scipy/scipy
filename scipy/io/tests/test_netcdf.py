@@ -11,11 +11,9 @@ from glob import glob
 from contextlib import contextmanager
 
 import numpy as np
-from numpy.testing import assert_, assert_allclose, assert_warns
+from numpy.testing import assert_, assert_allclose, assert_raises, assert_equal
 
 from scipy.io.netcdf import netcdf_file
-
-from nose.tools import assert_true, assert_false, assert_equal, assert_raises
 
 from scipy.lib._tmpdirs import in_tempdir
 
@@ -64,20 +62,20 @@ def test_read_write_files():
         # To read the NetCDF file we just created::
         with netcdf_file('simple.nc') as f:
             # Using mmap is the default
-            assert_true(f.use_mmap)
+            assert_(f.use_mmap)
             check_simple(f)
             assert_equal(f._attributes['appendRan'], 1)
 
         # Read it in append (and check mmap is off)
         with netcdf_file('simple.nc', 'a') as f:
-            assert_false(f.use_mmap)
+            assert_(not f.use_mmap)
             check_simple(f)
             assert_equal(f._attributes['appendRan'], 1)
 
         # Now without mmap
         with netcdf_file('simple.nc', mmap=False) as f:
             # Using mmap is the default
-            assert_false(f.use_mmap)
+            assert_(not f.use_mmap)
             check_simple(f)
 
         # To read the NetCDF file we just created, as file object, no
@@ -88,19 +86,19 @@ def test_read_write_files():
         with open('simple.nc', 'rb') as fobj:
             with netcdf_file(fobj) as f:
                 # by default, don't use mmap for file-like
-                assert_false(f.use_mmap)
+                assert_(not f.use_mmap)
                 check_simple(f)
 
         # Read file from fileobj, with mmap
         with open('simple.nc', 'rb') as fobj:
             with netcdf_file(fobj, mmap=True) as f:
-                assert_true(f.use_mmap)
+                assert_(f.use_mmap)
                 check_simple(f)
 
         # Again read it in append mode (adding another att)
         with open('simple.nc', 'r+b') as fobj:
             with netcdf_file(fobj, 'a') as f:
-                assert_false(f.use_mmap)
+                assert_(not f.use_mmap)
                 check_simple(f)
                 f.createDimension('app_dim', 1)
                 var = f.createVariable('app_var', 'i', ('app_dim',))
