@@ -36,15 +36,13 @@
 from __future__ import division, print_function, absolute_import
 
 import os.path
-from scipy.lib.six import xrange
+from scipy.lib.six import xrange, u
 
 import numpy as np
 from numpy.linalg import norm
 from numpy.testing import (verbose, TestCase, run_module_suite, assert_,
         assert_raises, assert_array_equal, assert_equal, assert_almost_equal,
         assert_allclose)
-
-from scipy.lib.six import u
 
 from scipy.spatial.distance import (squareform, pdist, cdist, matching,
         jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule,
