@@ -24,7 +24,7 @@ from scipy.sparse.linalg.matfuncs import (expm,
         ProductOperator, MatrixPowerOperator,
         _onenorm_matrix_power_nnm)
 from scipy.linalg import logm
-from scipy.misc import factorial
+from scipy.special import factorial
 import scipy.sparse
 import scipy.sparse.linalg
 

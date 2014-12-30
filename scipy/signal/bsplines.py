@@ -1,7 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
 from scipy.lib.six import xrange
-import scipy.special
 from numpy import (logical_and, asarray, pi, zeros_like,
                    piecewise, array, arctan2, tan, zeros, arange, floor)
 from numpy.core.umath import (sqrt, exp, greater, less, cos, add, sin,
@@ -10,12 +9,10 @@ from numpy.core.umath import (sqrt, exp, greater, less, cos, add, sin,
 # From splinemodule.c
 from .spline import cspline2d, sepfir2d
 
-from scipy.misc import comb
+from scipy.special import comb, gamma
 
 __all__ = ['spline_filter', 'bspline', 'gauss_spline', 'cubic', 'quadratic',
            'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval']
-
-gamma = scipy.special.gamma
 
 
 def factorial(n):

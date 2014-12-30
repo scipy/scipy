@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
-from scipy.misc import factorial
+from scipy.special import factorial
 
 from scipy.lib.six import xrange
 

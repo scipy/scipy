@@ -11,7 +11,7 @@ from numpy import (atleast_1d, poly, polyval, roots, real, asarray, allclose,
                    zeros, sinh, append, concatenate, prod, ones)
 from numpy import mintypecode
 from scipy import special, optimize
-from scipy.misc import comb
+from scipy.special import comb
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'lp2lp', 'lp2hp', 'lp2bp', 'lp2bs', 'bilinear', 'iirdesign',

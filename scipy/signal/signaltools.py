@@ -20,7 +20,7 @@ from numpy import (allclose, angle, arange, argsort, array, asarray,
                    prod, product, r_, ravel, real_if_close, reshape,
                    roots, sort, sum, take, transpose, unique, where, zeros)
 import numpy as np
-from scipy.misc import factorial
+from scipy.special import factorial
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 

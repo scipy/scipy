@@ -3,16 +3,16 @@
 from __future__ import division, print_function, absolute_import
 
 from numpy import arange, add, array, eye, copy, sqrt
-from numpy.testing import TestCase, run_module_suite, assert_raises, \
-    assert_equal, assert_array_equal, assert_array_almost_equal, \
-    assert_allclose
+from numpy.testing import (TestCase, run_module_suite, assert_raises,
+    assert_equal, assert_array_equal, assert_array_almost_equal,
+    assert_allclose)
 
 from scipy.lib.six import xrange
 
-from scipy.misc import comb
-from scipy.linalg import toeplitz, hankel, circulant, hadamard, leslie, \
-                            companion, tri, triu, tril, kron, block_diag, \
-                            hilbert, invhilbert, pascal, invpascal, dft
+from scipy.special import comb
+from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie,
+                          companion, tri, triu, tril, kron, block_diag,
+                          hilbert, invhilbert, pascal, invpascal, dft)
 from scipy.fftpack import fft
 from numpy.linalg import cond
 

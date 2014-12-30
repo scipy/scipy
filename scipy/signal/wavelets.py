@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.dual import eig
-from scipy.misc import comb
+from scipy.special import comb
 from scipy import linspace, pi, exp
 from scipy.signal import convolve
 
