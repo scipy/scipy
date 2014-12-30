@@ -8,7 +8,6 @@ import subprocess
 import time
 import textwrap
 import tempfile
-import warnings
 
 from numpy.testing import dec
 
@@ -152,6 +151,7 @@ def set_mem_rlimit(max_mem):
         max_mem = min(max_mem, cur_limit[0])
 
     resource.setrlimit(resource.RLIMIT_AS, (max_mem, cur_limit[1]))
+
 
 if __name__ == "__main__":
     bench_run()

@@ -4,7 +4,7 @@ from functools import partial
 import time
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_
+from numpy.testing import assert_allclose, Tester
 
 from scipy import *
 from scipy.linalg import eigh, orth, cho_factor, cho_solve
@@ -123,3 +123,7 @@ def bench_lobpcg_sakurai():
         elapsed = time.clock() - tt
         yield (assert_allclose, w_eigh, desired_evs, 1e-7, 1e-5)
         print(fmt % (shape, m, 'eigh', elapsed))
+
+
+if __name__ == '__main__':
+    Tester().bench()

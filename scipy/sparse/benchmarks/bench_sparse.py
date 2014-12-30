@@ -9,7 +9,6 @@ from numpy import ones, array, asarray, empty, random, zeros
 
 from numpy.testing import Tester, TestCase
 
-import scipy
 from scipy import sparse
 from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, lil_matrix,
                           dok_matrix, rand, SparseEfficiencyWarning)
@@ -394,5 +393,6 @@ class BenchmarkSparse(TestCase):
         print('------------------------------------------------------------------------------')
         print('%14s | %14s | %14d | %14d | %10.3f' % (matrix1.shape, matrix2.shape, C1, C2, end-start))
 
+
 if __name__ == "__main__":
-    test = Tester(__file__).bench()
+    test = Tester().bench()

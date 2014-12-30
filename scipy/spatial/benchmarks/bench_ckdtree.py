@@ -181,4 +181,4 @@ class TestCountNeighbors(TestCase):
                 print('')
 
 if __name__ == "__main__":
-    run_module_suite()
+    Tester().bench()

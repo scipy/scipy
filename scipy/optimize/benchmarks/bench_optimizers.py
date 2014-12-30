@@ -191,14 +191,5 @@ class BenchSmoothUnbounded(TestCase):
         b.print_results()
 
 
-#def main():
-#    bench_rosenbrock()
-#    bench_simple_quadratic()
-#    bench_asymetric_quadratic()
-#    bench_sin_1d()
-#    bench_booth()
-#    bench_beale()
-#    bench_LJ()
-
 if __name__ == "__main__":
     Tester().bench(extra_argv=dict())

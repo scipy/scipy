@@ -8,7 +8,7 @@ import sys
 
 from numpy import linalg as nl
 from scipy import linalg as sl
-from numpy.testing import measure, rand, assert_
+from numpy.testing import measure, rand, assert_, Tester
 
 
 def random(size):
@@ -83,3 +83,7 @@ def bench_svd():
         sys.stdout.flush()
 
         print('   (secs for %s calls)' % (repeat))
+
+
+if __name__ == "__main__":
+    Tester().bench()

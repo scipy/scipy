@@ -8,7 +8,7 @@ from itertools import product
 import time
 
 import numpy as np
-from numpy.testing import Tester, TestCase, assert_allclose
+from numpy.testing import Tester
 
 from scipy.signal import convolve2d, correlate2d
 
@@ -46,3 +46,7 @@ def bench_convolve2d():
     print('time to compute 2d convolutions:')
     print(tm_total)
     print()
+
+
+if __name__ == '__main__':
+    Tester().bench()
