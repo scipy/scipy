@@ -1,5 +1,7 @@
 # After changing this file, check it on:
 #   http://lint.travis-ci.org/
+sudo: false
+cache: apt
 language: python
 matrix:
   include:
@@ -46,19 +48,20 @@ before_install:
   - free -m
   - df -h
   - ulimit -a
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq libatlas-dev libatlas-base-dev liblapack-dev gfortran
-  - sudo apt-get install -qq libgmp-dev libmpfr-dev
+  - apt-get update -qq
+  - apt-get install -qq libatlas-dev libatlas-base-dev liblapack-dev gfortran
+  - apt-get install -qq libgmp-dev libmpfr-dev
   - mkdir builds
   - pushd builds
   # Install gmpy2 dependencies
   - wget ftp://ftp.gnu.org/gnu/mpc/mpc-1.0.2.tar.gz
   - tar xzvf mpc-1.0.2.tar.gz
   - pushd mpc-1.0.2
-  - ./configure
+  - ./configure --prefix=$HOME/mpc
   - make
-  - sudo make install
+  - make install
   - popd
+  - export $PATH=$PATH:$HOME/mpc
   # End install gmpy2 dependencies
   # Speed up install by not compiling Cython
   - pip install --install-option="--no-cython-compile" Cython
