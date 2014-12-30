@@ -4,7 +4,9 @@ import numpy as np
 from numpy.linalg import LinAlgError
 from . import blas
 
-__all__ = ['LinAlgError', 'norm']
+__all__ = ['LinAlgError', 'norm',
+           'elementwise_norm', 'frobenius_norm', 'nuclear_norm',
+           'spectral_norm', 'schatten_norm', 'induced_norm', 'ky_fan_norm']
 
 _nrm2_prefix = {'f': 's', 'F': 'sc', 'D': 'dz'}
 
@@ -134,3 +136,114 @@ def _datacopied(arr, original):
     if not isinstance(original, np.ndarray) and hasattr(original, '__array__'):
         return False
     return arr.base is None
+
+
+from .decomp import _asarray_validated
+from .decomp_svd import svdvals
+
+
+def _euclidean_vector_norm(v):
+    if v.dtype.char in 'fdFD':
+        func_name = _nrm2_prefix.get(a.dtype.char, 'd') + 'nrm2'
+        nrm2 = getattr(blas, func_name)
+        return nrm2(v)
+    else:
+        return np.linalg.norm(v)
+
+
+def _asarray_2d_validated(A, check_finite=True):
+    A = _asarray_validated(A, check_finite=check_finite)
+    if A.ndim != 2:
+        raise ValueError('A 2d input array is required.')
+    return A
+
+
+def _as_int_validated(k):
+    if int(k) != k:
+        raise TypeError('expected an integer')
+    return int(k)
+
+
+def _check_axis_and_keepdims(axis, keepdims):
+    if axis is not None or keepdims is not None:
+        raise NotImplementedError('The axis and keepdims arguments '
+                                  'are not yet supported.')
+
+
+def elementwise_norm(A, p, axis=None, keepdims=None, check_finite=True):
+    _check_axis_and_keepdims(axis, keepdims)
+    if p < 1:
+        raise ValueError('p must be at least 1')
+    A = _asarray_validated(A, check_finite=check_finite)
+    if p == 1:
+        return np.absolute(A).sum()
+    elif p == 2:
+        return _euclidean_vector_norm(A.ravel())
+    elif p == np.inf:
+        return np.absolute(A).max()
+    else:
+        return np.power(A, p).sum() ** (1 / p)
+
+
+def frobenius_norm(A, axis=None, keepdims=None, check_finite=True):
+    _check_axis_and_keepdims(axis, keepdims)
+    A = _asarray_2d_validated(A, check_finite=check_finite)
+    return _euclidean_vector_norm(A.ravel())
+
+
+def nuclear_norm(A, axis=None, keepdims=None, check_finite=True):
+    _check_axis_and_keepdims(axis, keepdims)
+    A = _asarray_2d_validated(A, check_finite=check_finite)
+    return svdvals(A, check_finite=False).sum()
+
+
+def spectral_norm(A, axis=None, keepdims=None, check_finite=True):
+    _check_axis_and_keepdims(axis, keepdims)
+    A = _asarray_2d_validated(A, check_finite=check_finite)
+    return svdvals(A, check_finite=False).max()
+
+
+def schatten_norm(A, p, axis=None, keepdims=None, check_finite=True):
+    _check_axis_and_keepdims(axis, keepdims)
+    if p < 1:
+        raise ValueError('p must be at least 1')
+    if p == 1:
+        return nuclear_norm(A, check_finite=check_finite)
+    elif p == 2:
+        return frobenius_norm(A, check_finite=check_finite)
+    elif p == np.inf:
+        return spectral_norm(A, check_finite=check_finite)
+    else:
+        s = svdvals(A, check_finite=check_finite)
+        return elementwise_norm(s, p)
+
+
+def induced_norm(A, p, axis=None, keepdims=None, check_finite=True):
+    _check_axis_and_keepdims(axis, keepdims)
+    if p < 1:
+        raise ValueError('p must be at least 1')
+    if p == 1:
+        A = _asarray_2d_validated(A, check_finite=check_finite)
+        return np.absolute(A).sum(axis=0).max()
+    elif p == 2:
+        return spectral_norm(A, check_finite=check_finite)
+    elif p == np.inf:
+        return np.absolute(A).sum(axis=1).max()
+    else:
+        raise NotImplementedError('The induced norm has been implemented only '
+                                  'for p in {1, 2, inf} where inf means '
+                                  'the numpy.inf object.')
+
+
+def ky_fan_norm(A, k, axis=None, keepdims=None, check_finite=True):
+    _check_axis_and_keepdims(axis, keepdims)
+    k = _as_int_validated(k)
+    if k < 1:
+        raise ValueError('k must be at least 1')
+    A = _asarray_2d_validated(A, check_finite=check_finite)
+    # The singular values are already sorted from largest to smallest.
+    s = svdvals(A, check_finite=False)
+    if k >= s.shape[0]:
+        raise ValueError('The value of k must be less than the minimum '
+                         'of the width and height of the 2d input array.')
+    return s[:k].sum()
