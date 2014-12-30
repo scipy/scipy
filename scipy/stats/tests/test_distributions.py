@@ -1305,6 +1305,23 @@ class TestFrozen(TestCase):
         rndm = np.random.RandomState(1234)
         frozen.rvs(size=8, random_state=rndm)
 
+    def test_expect(self):
+        # smoke test the expect method of the frozen distribution
+        # only take a gamma w/loc and scale and poisson with loc specified
+        def func(x):
+            return x
+
+        gm = stats.gamma(a=2, loc=3, scale=4)
+        gm_val = gm.expect(func, lb=1, ub=2, conditional=True)
+        gamma_val = stats.gamma.expect(func, args=(2,), loc=3, scale=4,
+                                       lb=1, ub=2, conditional=True)
+        assert_allclose(gm_val, gamma_val)
+
+        p = stats.poisson(3, loc=4)
+        p_val = p.expect(func)
+        poisson_val = stats.poisson.expect(func, args=(3,), loc=4)
+        assert_allclose(p_val, poisson_val)
+
 
 class TestExpect(TestCase):
     # Test for expect method.

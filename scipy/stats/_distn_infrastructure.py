@@ -506,6 +506,21 @@ class rv_frozen(object):
     def interval(self, alpha):
         return self.dist.interval(alpha, *self.args, **self.kwds)
 
+    def expect(self, func=None, lb=None, ub=None, 
+                     conditional=False, **kwds):
+        # expect method only accepts shape parameters as positional args
+        # hence convert self.args, self.kwds, also loc/scale
+        # See the .expect method docstrings for the meaning of
+        # other parameters.
+        a, loc, scale = self.dist._parse_args(*self.args, **self.kwds)
+        if isinstance(self.dist, rv_discrete):
+            if kwds:
+                raise ValueError("Discrete expect does not accept **kwds.")
+            return self.dist.expect(func, a, loc, lb, ub, conditional)
+        else:
+            return self.dist.expect(func, a, loc, scale, lb, ub,
+                                    conditional, **kwds)
+
 
 def valarray(shape, value=nan, typecode=None):
     """Return an array of all value.
