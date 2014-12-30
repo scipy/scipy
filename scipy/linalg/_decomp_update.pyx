@@ -539,18 +539,28 @@ cdef void qr_block_row_delete(int m, int n, blas_t* q, int* qs,
             rot(m-p, index2(q, qs, p, j), qs[0], index2(q, qs, p, j+1), qs[0],
                 c, s.conjugate())
 
-cdef void qr_col_delete(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
-                        int k) nogil:
+cdef void qr_col_delete(int m, int o, int n, blas_t* q, int* qs, blas_t* r,
+                        int* rs, int k) nogil:
+    """
+        Here we support both full and economic decomposition, q is (m,o), and r
+        is (o, n).
+    """
     cdef int j
+    cdef int limit = min(o, n)
 
     for j in range(k, n-1):
-        copy(m, col(r, rs, j+1), rs[0], col(r, rs, j), rs[0])
+        copy(limit, col(r, rs, j+1), rs[0], col(r, rs, j), rs[0])
 
     hessenberg_qr(m, n-1, q, qs, r, rs, k)
 
-cdef int qr_block_col_delete(int m, int n, blas_t* q, int* qs,
+cdef int qr_block_col_delete(int m, int o, int n, blas_t* q, int* qs,
                               blas_t* r, int* rs, int k, int p) nogil:
+    """
+        Here we support both full and economic decomposition, q is (m,o), and r
+        is (o, n).
+    """
     cdef int j
+    cdef int limit = min(o, n)
     cdef blas_t* work
     cdef int worksize = max(m, n)
 
@@ -560,9 +570,9 @@ cdef int qr_block_col_delete(int m, int n, blas_t* q, int* qs,
 
     # move the columns to removed to the end
     for j in range(k, n-p):
-        copy(m, col(r, rs, j+p), rs[0], col(r, rs, j), rs[0])
+        copy(limit, col(r, rs, j+p), rs[0], col(r, rs, j), rs[0])
 
-    p_subdiag_qr(m, n-p, q, qs, r, rs, k, p, work)
+    p_subdiag_qr(m, o, n-p, q, qs, r, rs, k, p, work)
 
     libc.stdlib.free(work)
     return 0
@@ -921,15 +931,16 @@ cdef int qr_rank_p_update(int m, int n, int p, blas_t* q, int* qs, blas_t* r,
         axpy(n, 1, row(v, vs, j), vs[1], row(r, rs, j), rs[1])
 
     # now r has p subdiagonals, eliminate them with reflectors.
-    p_subdiag_qr(m, n, q, qs, r, rs, 0, p, work)
+    p_subdiag_qr(m, m, n, q, qs, r, rs, 0, p, work)
 
     libc.stdlib.free(work)
     return 0
 
 cdef void hessenberg_qr(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
                         int k) nogil:
-    """Reduce an upper hessenberg matrix r, to upper triangluar,
-    starting in row j.  Apply these transformation to q as well.
+    """Reduce an upper hessenberg matrix r, to upper triangluar, starting in
+       row j.  Apply these transformation to q as well. Both full and economic
+       decompositions are supported here. 
     """
     cdef int j
     cdef blas_t c, s
@@ -946,10 +957,11 @@ cdef void hessenberg_qr(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
         # update q
         rot(m, col(q, qs, j), qs[0], col(q, qs, j+1), qs[0], c, s.conjugate())
 
-cdef void p_subdiag_qr(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
+cdef void p_subdiag_qr(int m, int o, int n, blas_t* q, int* qs, blas_t* r, int* rs,
                        int k, int p, blas_t* work) nogil:
     """ Reduce a matrix r to upper triangular form by eliminating the lower p 
-        subdiagionals using reflectors.
+        subdiagionals using reflectors. Both full and economic decompositions
+        are supported here.  In either case, q is (m,o) and r is (o,n)
         
         q and r must be fortran order here, with work at least max(m,n) long.
     """
@@ -964,7 +976,7 @@ cdef void p_subdiag_qr(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
     # R now has p subdiagonal values to be removed starting from col k.
     for j in range(k, limit):
         # length of the reflector
-        last = min(p+1, m-j)
+        last = min(p+1, o-j)
         rjj = index2(r, rs, j, j)[0]
         larfg(last, &rjj, index2(r, rs, j+1, j), rs[0], &tau)
         index2(r, rs, j, j)[0] = 1
@@ -1391,9 +1403,9 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
 
     Parameters
     ----------
-    Q : array_like
+    Q : (M, M) or (M, N) array_like
         Unitary/orthogonal matrix from QR decomposition.
-    R : array_like
+    R : (M, N) or (N, N) array_like
         Upper trianglar matrix from QR decomposition.
     k : int
         index of the first row or column to delete.
@@ -1542,8 +1554,7 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
         else:
             q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qr,
                     NPY_ANYORDER, overwrite_qr, NPY_ANYORDER, check_finite)
-        if economic:
-            raise ValueError('economic mode decompositions are not supported.')
+        o = n if economic else m
         if not (-n <= k1 < n):
             raise ValueError('k is not a valid index')
         if k1 < 0:
@@ -1553,33 +1564,36 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
 
         if p1 == 1:
             if typecode == cnp.NPY_FLOAT:
-                qr_col_delete(m, n, <float*>extract(q1, qs), qs, 
+                qr_col_delete(m, o, n, <float*>extract(q1, qs), qs, 
                     <float*>extract(r1, rs), rs, k1)
             elif typecode == cnp.NPY_DOUBLE:
-                qr_col_delete(m, n, <double*>extract(q1, qs), qs, 
+                qr_col_delete(m, o, n, <double*>extract(q1, qs), qs, 
                     <double*>extract(r1, rs), rs, k1)
             elif typecode == cnp.NPY_CFLOAT:
-                qr_col_delete(m, n, <float_complex*>extract(q1, qs), qs, 
+                qr_col_delete(m, o, n, <float_complex*>extract(q1, qs), qs,
                     <float_complex*>extract(r1, rs), rs, k1)
             else:  # cnp.NPY_CDOUBLE:
-                qr_col_delete(m, n, <double_complex*>extract(q1, qs), qs, 
+                qr_col_delete(m, o, n, <double_complex*>extract(q1, qs), qs,
                     <double_complex*>extract(r1, rs), rs, k1)
         else:
             if typecode == cnp.NPY_FLOAT:
-                info = qr_block_col_delete(m, n, <float*>extract(q1, qs), qs,
+                info = qr_block_col_delete(m, o, n, <float*>extract(q1, qs), qs,
                     <float*>extract(r1, rs), rs, k1, p1)
             elif typecode == cnp.NPY_DOUBLE:
-                info = qr_block_col_delete(m, n, <double*>extract(q1, qs), qs,
+                info = qr_block_col_delete(m, o, n, <double*>extract(q1, qs), qs,
                     <double*>extract(r1, rs), rs, k1, p1)
             elif typecode == cnp.NPY_CFLOAT:
-                info = qr_block_col_delete(m, n, <float_complex*>extract(q1, qs), qs,
+                info = qr_block_col_delete(m, o, n, <float_complex*>extract(q1, qs), qs,
                     <float_complex*>extract(r1, rs), rs, k1, p1)
             else:  # cnp.NPY_CDOUBLE:
-                info = qr_block_col_delete(m, n, <double_complex*>extract(q1, qs), qs,
+                info = qr_block_col_delete(m, o, n, <double_complex*>extract(q1, qs), qs,
                     <double_complex*>extract(r1, rs), rs, k1, p1)
             if info == MEMORY_ERROR:
                 raise MemoryError('malloc failed')
-        return q1, r1[:,:-p]
+        if economic:
+            return q1[:, :-p], r1[:-p, :-p]
+        else:
+            return q1, r1[:, :-p]
     else:
         raise ValueError("which must be either 'row' or 'col'")
 

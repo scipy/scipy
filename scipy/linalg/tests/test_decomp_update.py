@@ -228,10 +228,27 @@ class BaseQRdelete(BaseQRdeltas):
         # (12, 7) - (7,7) = (5, 7) --> becomes fat
         self.base_economic_p_row_xxx(7)
 
-    # all row deletes and single column deletes should be able to
+    def test_economic_1_col(self):
+        a, q, r = self.generate('tall', 'economic')
+        for col in range(r.shape[1]):
+            q1, r1 = qr_delete(q, r, col, which='col', overwrite_qr=False)
+            a1 = np.delete(a, col, 1)
+            check_qr(q1, r1, a1, self.rtol, self.atol, False)
+
+    def test_economic_p_col(self):
+        a, q, r = self.generate('tall', 'economic')
+        for ndel in range(2, 6):
+            for col in range(r.shape[1]-ndel):
+                q1, r1 = qr_delete(q, r, col, ndel, which='col',
+                                   overwrite_qr=False)
+                a1 = np.delete(a, slice(col, col+ndel), 1)
+                check_qr(q1, r1, a1, self.rtol, self.atol, False)
+
+    # all full qr, row deletes and single column deletes should be able to
     # handle any non negative strides. (only row and column vector
     # operations are used.) p column delete require fortran ordered
-    # Q and R and will make a copy as necessary.
+    # Q and R and will make a copy as necessary.  Economic qr row deletes 
+    # requre a contigous q.
 
     def base_non_simple_strides(self, adjust_strides, ks, p, which, overwriteable):
         if which == 'row':
@@ -346,14 +363,15 @@ class BaseQRdelete(BaseQRdeltas):
                 a1 = np.delete(a, slice(k+a.shape[0], k+p+a.shape[1]), 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
-    def base_overwrite_qr(self, which, p, test_C, test_F):
+    def base_overwrite_qr(self, which, p, test_C, test_F, mode='full'):
+        assert_sqr = True if mode == 'full' else False
         if which == 'row':
             qind = (slice(p,None), slice(p,None))
             rind = (slice(p,None), slice(None))
         else:
             qind = (slice(None), slice(None))
             rind = (slice(None), slice(None,-p))
-        a, q0, r0 = self.generate('sqr')
+        a, q0, r0 = self.generate('sqr', mode)
         if p == 1:
             a1 = np.delete(a, 3, 0 if which == 'row' else 1)
         else:
@@ -363,14 +381,14 @@ class BaseQRdelete(BaseQRdeltas):
         q = q0.copy('F')
         r = r0.copy('F')
         q1, r1 = qr_delete(q, r, 3, p, which, False)
-        check_qr(q1, r1, a1, self.rtol, self.atol)
-        check_qr(q, r, a, self.rtol, self.atol)
+        check_qr(q1, r1, a1, self.rtol, self.atol, assert_sqr)
+        check_qr(q, r, a, self.rtol, self.atol, assert_sqr)
 
         if test_F:
             q = q0.copy('F')
             r = r0.copy('F')
             q2, r2 = qr_delete(q, r, 3, p, which, True)
-            check_qr(q2, r2, a1, self.rtol, self.atol)
+            check_qr(q2, r2, a1, self.rtol, self.atol, assert_sqr)
             # verify the overwriting
             assert_allclose(q2, q[qind], rtol=self.rtol, atol=self.atol)
             assert_allclose(r2, r[rind], rtol=self.rtol, atol=self.atol)
@@ -379,7 +397,7 @@ class BaseQRdelete(BaseQRdeltas):
             q = q0.copy('C')
             r = r0.copy('C')
             q3, r3 = qr_delete(q, r, 3, p, which, True)
-            check_qr(q3, r3, a1, self.rtol, self.atol)
+            check_qr(q3, r3, a1, self.rtol, self.atol, assert_sqr)
             assert_allclose(q3, q[qind], rtol=self.rtol, atol=self.atol)
             assert_allclose(r3, r[rind], rtol=self.rtol, atol=self.atol)
 
@@ -387,22 +405,27 @@ class BaseQRdelete(BaseQRdeltas):
         # any positively strided q and r.
         self.base_overwrite_qr('row', 1, True, True)
 
+    def test_overwrite_economic_qr_1_row(self):
+        # Any contiguous q and positively strided r.
+        self.base_overwrite_qr('row', 1, True, True, 'economic')
+
     def test_overwrite_qr_1_col(self):
         # any positively strided q and r.
+        # full and eco share code paths
         self.base_overwrite_qr('col', 1, True, True)
 
     def test_overwrite_qr_p_row(self):
         # any positively strided q and r.
         self.base_overwrite_qr('row', 3, True, True)
 
+    def test_overwrite_economic_qr_p_row(self):
+        # any contiguous q and positively strided r
+        self.base_overwrite_qr('row', 3, True, True, 'economic')
+
     def test_overwrite_qr_p_col(self):
         # only F orderd q and r can be overwritten for cols
+        # full and eco share code paths 
         self.base_overwrite_qr('col', 3, False, True)
-
-    def test_economic_qr(self):
-        a, q, r = self.generate('tall', mode='economic')
-        # only test row delete, this logic is shared.
-        assert_raises(ValueError, qr_delete, q, r, 0, 1, 'col')
 
     def test_bad_which(self):
         a, q, r = self.generate('sqr')
