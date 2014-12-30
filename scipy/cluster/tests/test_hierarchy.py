@@ -38,7 +38,7 @@ import numpy as np
 from numpy.testing import (TestCase, run_module_suite, dec, assert_raises,
                            assert_allclose, assert_equal, assert_)
 
-from scipy.lib.six import xrange
+from scipy.lib.six import xrange, u
 
 import scipy.cluster.hierarchy
 from scipy.cluster.hierarchy import (
@@ -72,7 +72,7 @@ class TestLinkage(object):
         assert_raises(ValueError, linkage, y)
 
     def test_linkage_tdist(self):
-        for method in ['single', 'complete', 'average', 'weighted', u'single']:
+        for method in ['single', 'complete', 'average', 'weighted', u('single')]:
             yield self.check_linkage_tdist, method
 
     def check_linkage_tdist(self, method):
