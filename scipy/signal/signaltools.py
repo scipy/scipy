@@ -2173,34 +2173,48 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     The following example demonstrates the option ``method="gust"``.
 
-    First we create a filter.
+    First, create a filter.
 
-    >>> b, a = signal.ellip(4, 0.01, 120, 0.15)  # Filter to be applied.
+    >>> b, a = signal.ellip(4, 0.01, 120, 0.125)  # Filter to be applied.
+    >>> np.random.seed(123456)
 
-    Apply the filter to a signal.
+    `sig` is a random input signal to be filtered.
 
-    >>> np.random.seed(12345)
-    >>> x = np.random.randn(400).cumsum()     # Signal to be filtered.
-    >>> y = signal.filtfilt(b, a, x, method="gust")  # Apply the filter.
-    >>> plt.plot(x, 'k-')
-    >>> plt.plot(y, 'r-', linewidth=3, alpha=0.5)
+    >>> n = 60
+    >>> sig = np.random.randn(n)**3 + 3*np.random.randn(n).cumsum()
+
+    Apply `filtfilt` to `sig`, once using the Gustafsson method, and
+    once using padding, and plot the results for comparison.
+
+    >>> fgust = signal.filtfilt(b, a, sig, method="gust")
+    >>> fpad = signal.filtfilt(b, a, sig, padlen=50)
+    >>> plt.plot(sig, 'k-', label='input')
+    >>> plt.plot(fgust, 'b-', linewidth=4, label='gust')
+    >>> plt.plot(fpad, 'c-', linewidth=1.5, label='pad')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
+    The `irlen` argument can be used to improve the performance
+    of Gustafsson's method.
 
     Estimate the impulse response length of the filter.
 
     >>> z, p, k = signal.tf2zpk(b, a)
-    >>> eps = 1e-8
+    >>> eps = 1e-9
     >>> r = np.max(np.abs(p))
     >>> approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
     >>> approx_impulse_len
-    104
+    137
 
-    Apply the filter again, this time using the `irlen` argument.
-    The difference between `y` and `y2` is small.  For long signals, using
-    `irlen` gives a significant performance improvement.
+    Apply the filter to a longer signal, with and without the `irlen`
+    argument.  The difference between `y1` and `y2` is small.  For long
+    signals, using `irlen` gives a significant performance improvement.
 
-    >>> y2 = signal.filtfilt(b, a, x, method="gust", irlen=approx_impulse_len)
-    >>> np.max(np.abs(y - y2))
-    1.9178905574790406e-08
+    >>> x = np.random.randn(5000)
+    >>> y1 = signal.filtfilt(b, a, x, method='gust')
+    >>> y2 = signal.filtfilt(b, a, x, method='gust', irlen=approx_impulse_len)
+    >>> print(np.max(np.abs(y1 - y2)))
+    1.80056858312e-10
 
     """
     b = np.atleast_1d(b)
