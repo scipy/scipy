@@ -38,11 +38,9 @@ from __future__ import division, print_function, absolute_import
 import os.path
 from scipy.lib.six import xrange
 
-from nose.tools import assert_true
-
 import numpy as np
 from numpy.linalg import norm
-from numpy.testing import (verbose, TestCase, run_module_suite,
+from numpy.testing import (verbose, TestCase, run_module_suite, assert_,
         assert_raises, assert_array_equal, assert_equal, assert_almost_equal,
         assert_allclose)
 
@@ -116,9 +114,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'euclidean')
         Y2 = cdist(X1, X2, 'test_euclidean')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_euclidean_random_unicode(self):
         eps = 1e-07
@@ -126,9 +122,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, u('euclidean'))
         Y2 = cdist(X1, X2, u('test_euclidean'))
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_sqeuclidean_random(self):
         eps = 1e-07
@@ -136,9 +130,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'sqeuclidean')
         Y2 = cdist(X1, X2, 'test_sqeuclidean')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_cityblock_random(self):
         eps = 1e-07
@@ -146,9 +138,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'cityblock')
         Y2 = cdist(X1, X2, 'test_cityblock')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_hamming_double_random(self):
         eps = 1e-07
@@ -156,9 +146,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'hamming')
         Y2 = cdist(X1, X2, 'test_hamming')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_hamming_bool_random(self):
         eps = 1e-07
@@ -166,9 +154,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'hamming')
         Y2 = cdist(X1, X2, 'test_hamming')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_jaccard_double_random(self):
         eps = 1e-07
@@ -176,9 +162,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'jaccard')
         Y2 = cdist(X1, X2, 'test_jaccard')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_jaccard_bool_random(self):
         eps = 1e-07
@@ -186,9 +170,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'jaccard')
         Y2 = cdist(X1, X2, 'test_jaccard')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_chebychev_random(self):
         eps = 1e-07
@@ -196,9 +178,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'chebychev')
         Y2 = cdist(X1, X2, 'test_chebychev')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_minkowski_random_p3d8(self):
         eps = 1e-07
@@ -206,9 +186,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'minkowski', p=3.8)
         Y2 = cdist(X1, X2, 'test_minkowski', p=3.8)
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_minkowski_random_p4d6(self):
         eps = 1e-07
@@ -216,9 +194,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'minkowski', p=4.6)
         Y2 = cdist(X1, X2, 'test_minkowski', p=4.6)
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_minkowski_random_p1d23(self):
         eps = 1e-07
@@ -226,9 +202,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'minkowski', p=1.23)
         Y2 = cdist(X1, X2, 'test_minkowski', p=1.23)
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_wminkowski_random_p3d8(self):
         eps = 1e-07
@@ -237,9 +211,7 @@ class TestCdist(TestCase):
         w = 1.0 / X1.std(axis=0)
         Y1 = cdist(X1, X2, 'wminkowski', p=3.8, w=w)
         Y2 = cdist(X1, X2, 'test_wminkowski', p=3.8, w=w)
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_wminkowski_random_p4d6(self):
         eps = 1e-07
@@ -248,9 +220,7 @@ class TestCdist(TestCase):
         w = 1.0 / X1.std(axis=0)
         Y1 = cdist(X1, X2, 'wminkowski', p=4.6, w=w)
         Y2 = cdist(X1, X2, 'test_wminkowski', p=4.6, w=w)
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_wminkowski_random_p1d23(self):
         eps = 1e-07
@@ -259,9 +229,7 @@ class TestCdist(TestCase):
         w = 1.0 / X1.std(axis=0)
         Y1 = cdist(X1, X2, 'wminkowski', p=1.23, w=w)
         Y2 = cdist(X1, X2, 'test_wminkowski', p=1.23, w=w)
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_seuclidean_random(self):
         eps = 1e-07
@@ -269,9 +237,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'seuclidean')
         Y2 = cdist(X1, X2, 'test_seuclidean')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_cosine_random(self):
         eps = 1e-07
@@ -279,9 +245,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'cosine')
         Y2 = cdist(X1, X2, 'test_cosine')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_correlation_random(self):
         eps = 1e-07
@@ -289,9 +253,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'correlation')
         Y2 = cdist(X1, X2, 'test_correlation')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_mahalanobis_random(self):
         eps = 1e-07
@@ -299,9 +261,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'mahalanobis')
         Y2 = cdist(X1, X2, 'test_mahalanobis')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_canberra_random(self):
         eps = 1e-07
@@ -309,9 +269,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'canberra')
         Y2 = cdist(X1, X2, 'test_canberra')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_braycurtis_random(self):
         eps = 1e-07
@@ -322,7 +280,7 @@ class TestCdist(TestCase):
         if verbose > 2:
             print(Y1, Y2)
             print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps)
 
     def test_cdist_yule_random(self):
         eps = 1e-07
@@ -330,9 +288,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'yule')
         Y2 = cdist(X1, X2, 'test_yule')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_matching_random(self):
         eps = 1e-07
@@ -340,9 +296,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'matching')
         Y2 = cdist(X1, X2, 'test_matching')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_kulsinski_random(self):
         eps = 1e-07
@@ -350,9 +304,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'kulsinski')
         Y2 = cdist(X1, X2, 'test_kulsinski')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_dice_random(self):
         eps = 1e-07
@@ -360,9 +312,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'dice')
         Y2 = cdist(X1, X2, 'test_dice')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_rogerstanimoto_random(self):
         eps = 1e-07
@@ -370,9 +320,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'rogerstanimoto')
         Y2 = cdist(X1, X2, 'test_rogerstanimoto')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_russellrao_random(self):
         eps = 1e-07
@@ -380,9 +328,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'russellrao')
         Y2 = cdist(X1, X2, 'test_russellrao')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_sokalmichener_random(self):
         eps = 1e-07
@@ -390,9 +336,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'sokalmichener')
         Y2 = cdist(X1, X2, 'test_sokalmichener')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_sokalsneath_random(self):
         eps = 1e-07
@@ -400,9 +344,7 @@ class TestCdist(TestCase):
         X2 = eo['cdist-X2'] < 0.5
         Y1 = cdist(X1, X2, 'sokalsneath')
         Y2 = cdist(X1, X2, 'test_sokalsneath')
-        if verbose > 2:
-            print((Y1-Y2).max())
-        self.assertTrue(within_tol(Y1, Y2, eps))
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
 
 class TestPdist(TestCase):
@@ -411,50 +353,43 @@ class TestPdist(TestCase):
         eps = 1e-07
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-euclidean']
-
         Y_test1 = pdist(X, 'euclidean')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_euclidean_random_u(self):
         eps = 1e-07
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-euclidean']
-
         Y_test1 = pdist(X, u('euclidean'))
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_euclidean_random_float32(self):
         eps = 1e-07
         X = np.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-euclidean']
-
         Y_test1 = pdist(X, 'euclidean')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_euclidean_random_nonC(self):
         eps = 1e-07
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-euclidean']
         Y_test2 = pdist(X, 'test_euclidean')
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_euclidean_iris_double(self):
         eps = 1e-07
         X = eo['iris']
         Y_right = eo['pdist-euclidean-iris']
-
         Y_test1 = pdist(X, 'euclidean')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_euclidean_iris_float32(self):
         eps = 1e-06
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-euclidean-iris']
-
         Y_test1 = pdist(X, 'euclidean')
-        if verbose > 2:
-            print(np.abs(Y_right - Y_test1).max())
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
 
     def test_pdist_euclidean_iris_nonC(self):
         # Test pdist(X, 'test_euclidean') [the non-C implementation] on the
@@ -463,23 +398,21 @@ class TestPdist(TestCase):
         X = eo['iris']
         Y_right = eo['pdist-euclidean-iris']
         Y_test2 = pdist(X, 'test_euclidean')
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_seuclidean_random(self):
         eps = 1e-05
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-seuclidean']
-
         Y_test1 = pdist(X, 'seuclidean')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_seuclidean_random_float32(self):
         eps = 1e-05
         X = np.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-seuclidean']
-
         Y_test1 = pdist(X, 'seuclidean')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_seuclidean_random_nonC(self):
         # Test pdist(X, 'test_sqeuclidean') [the non-C implementation]
@@ -487,24 +420,22 @@ class TestPdist(TestCase):
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-seuclidean']
         Y_test2 = pdist(X, 'test_sqeuclidean')
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_seuclidean_iris(self):
         eps = 1e-05
         X = eo['iris']
         Y_right = eo['pdist-seuclidean-iris']
-
         Y_test1 = pdist(X, 'seuclidean')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_seuclidean_iris_float32(self):
         # Tests pdist(X, 'seuclidean') on the Iris data set (float32).
         eps = 1e-05
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-seuclidean-iris']
-
         Y_test1 = pdist(X, 'seuclidean')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_seuclidean_iris_nonC(self):
         # Test pdist(X, 'test_seuclidean') [the non-C implementation] on the
@@ -513,22 +444,21 @@ class TestPdist(TestCase):
         X = eo['iris']
         Y_right = eo['pdist-seuclidean-iris']
         Y_test2 = pdist(X, 'test_sqeuclidean')
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_cosine_random(self):
         eps = 1e-08
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-cosine']
         Y_test1 = pdist(X, 'cosine')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_cosine_random_float32(self):
         eps = 1e-08
         X = np.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-cosine']
-
         Y_test1 = pdist(X, 'cosine')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_cosine_random_nonC(self):
         # Test pdist(X, 'test_cosine') [the non-C implementation]
@@ -536,71 +466,63 @@ class TestPdist(TestCase):
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-cosine']
         Y_test2 = pdist(X, 'test_cosine')
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_cosine_iris(self):
         eps = 1e-08
         X = eo['iris']
         Y_right = eo['pdist-cosine-iris']
-
         Y_test1 = pdist(X, 'cosine')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_cosine_iris_float32(self):
         eps = 1e-07
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-cosine-iris']
-
         Y_test1 = pdist(X, 'cosine')
-        if verbose > 2:
-            print(np.abs(Y_test1 - Y_right).max())
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
 
     def test_pdist_cosine_iris_nonC(self):
         eps = 1e-08
         X = eo['iris']
         Y_right = eo['pdist-cosine-iris']
         Y_test2 = pdist(X, 'test_cosine')
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_cityblock_random(self):
         eps = 1e-06
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-cityblock']
         Y_test1 = pdist(X, 'cityblock')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_cityblock_random_float32(self):
         eps = 1e-06
         X = np.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-cityblock']
         Y_test1 = pdist(X, 'cityblock')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_cityblock_random_nonC(self):
         eps = 1e-06
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-cityblock']
         Y_test2 = pdist(X, 'test_cityblock')
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_cityblock_iris(self):
         eps = 1e-14
         X = eo['iris']
         Y_right = eo['pdist-cityblock-iris']
-
         Y_test1 = pdist(X, 'cityblock')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_cityblock_iris_float32(self):
         eps = 1e-06
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-cityblock-iris']
-
         Y_test1 = pdist(X, 'cityblock')
-        if verbose > 2:
-            print("cityblock-iris-float32", np.abs(Y_test1 - Y_right).max())
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
 
     def test_pdist_cityblock_iris_nonC(self):
         # Test pdist(X, 'test_cityblock') [the non-C implementation] on the
@@ -609,123 +531,112 @@ class TestPdist(TestCase):
         X = eo['iris']
         Y_right = eo['pdist-cityblock-iris']
         Y_test2 = pdist(X, 'test_cityblock')
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_correlation_random(self):
         eps = 1e-07
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-correlation']
-
         Y_test1 = pdist(X, 'correlation')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_correlation_random_float32(self):
         eps = 1e-07
         X = np.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-correlation']
-
         Y_test1 = pdist(X, 'correlation')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_correlation_random_nonC(self):
         eps = 1e-07
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-correlation']
         Y_test2 = pdist(X, 'test_correlation')
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_correlation_iris(self):
         eps = 1e-08
         X = eo['iris']
         Y_right = eo['pdist-correlation-iris']
-
         Y_test1 = pdist(X, 'correlation')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_correlation_iris_float32(self):
         eps = 1e-07
         X = eo['iris']
         Y_right = np.float32(eo['pdist-correlation-iris'])
-
         Y_test1 = pdist(X, 'correlation')
-        if verbose > 2:
-            print("correlation-iris", np.abs(Y_test1 - Y_right).max())
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
 
     def test_pdist_correlation_iris_nonC(self):
         eps = 1e-08
         X = eo['iris']
         Y_right = eo['pdist-correlation-iris']
         Y_test2 = pdist(X, 'test_correlation')
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_minkowski_random(self):
         eps = 1e-05
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-minkowski-3.2']
-
         Y_test1 = pdist(X, 'minkowski', 3.2)
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_minkowski_random_float32(self):
         eps = 1e-05
         X = np.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-minkowski-3.2']
-
         Y_test1 = pdist(X, 'minkowski', 3.2)
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_minkowski_random_nonC(self):
         eps = 1e-05
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-minkowski-3.2']
         Y_test2 = pdist(X, 'test_minkowski', 3.2)
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_minkowski_3_2_iris(self):
         eps = 1e-07
         X = eo['iris']
         Y_right = eo['pdist-minkowski-3.2-iris']
         Y_test1 = pdist(X, 'minkowski', 3.2)
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_minkowski_3_2_iris_float32(self):
         eps = 1e-06
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-minkowski-3.2-iris']
         Y_test1 = pdist(X, 'minkowski', 3.2)
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_minkowski_3_2_iris_nonC(self):
         eps = 1e-07
         X = eo['iris']
         Y_right = eo['pdist-minkowski-3.2-iris']
         Y_test2 = pdist(X, 'test_minkowski', 3.2)
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_minkowski_5_8_iris(self):
         eps = 1e-07
         X = eo['iris']
         Y_right = eo['pdist-minkowski-5.8-iris']
         Y_test1 = pdist(X, 'minkowski', 5.8)
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_minkowski_5_8_iris_float32(self):
         eps = 1e-06
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-minkowski-5.8-iris']
-
         Y_test1 = pdist(X, 'minkowski', 5.8)
-        if verbose > 2:
-            print("minkowski-iris-5.8", np.abs(Y_test1 - Y_right).max())
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
 
     def test_pdist_minkowski_5_8_iris_nonC(self):
         eps = 1e-07
         X = eo['iris']
         Y_right = eo['pdist-minkowski-5.8-iris']
         Y_test2 = pdist(X, 'test_minkowski', 5.8)
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_wminkowski(self):
         x = np.array([[0.0, 0.0, 0.0],
@@ -755,139 +666,127 @@ class TestPdist(TestCase):
         eps = 1e-07
         X = eo['pdist-boolean-inp']
         Y_right = eo['pdist-hamming']
-
         Y_test1 = pdist(X, 'hamming')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_hamming_random_float32(self):
         eps = 1e-07
         X = np.float32(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-hamming']
-
         Y_test1 = pdist(X, 'hamming')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_hamming_random_nonC(self):
         eps = 1e-07
         X = eo['pdist-boolean-inp']
         Y_right = eo['pdist-hamming']
         Y_test2 = pdist(X, 'test_hamming')
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_dhamming_random(self):
         eps = 1e-07
         X = np.float64(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-hamming']
         Y_test1 = pdist(X, 'hamming')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_dhamming_random_float32(self):
         eps = 1e-07
         X = np.float32(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-hamming']
         Y_test1 = pdist(X, 'hamming')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_dhamming_random_nonC(self):
         eps = 1e-07
         X = np.float64(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-hamming']
         Y_test2 = pdist(X, 'test_hamming')
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_jaccard_random(self):
         eps = 1e-08
         X = eo['pdist-boolean-inp']
         Y_right = eo['pdist-jaccard']
-
         Y_test1 = pdist(X, 'jaccard')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_jaccard_random_float32(self):
         eps = 1e-08
         X = np.float32(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-jaccard']
-
         Y_test1 = pdist(X, 'jaccard')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_jaccard_random_nonC(self):
         eps = 1e-08
         X = eo['pdist-boolean-inp']
         Y_right = eo['pdist-jaccard']
         Y_test2 = pdist(X, 'test_jaccard')
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_djaccard_random(self):
         eps = 1e-08
         X = np.float64(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-jaccard']
-
         Y_test1 = pdist(X, 'jaccard')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_djaccard_random_float32(self):
         eps = 1e-08
         X = np.float32(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-jaccard']
-
         Y_test1 = pdist(X, 'jaccard')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_djaccard_random_nonC(self):
         eps = 1e-08
         X = np.float64(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-jaccard']
         Y_test2 = pdist(X, 'test_jaccard')
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_chebychev_random(self):
         eps = 1e-08
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-chebychev']
-
         Y_test1 = pdist(X, 'chebychev')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_chebychev_random_float32(self):
         eps = 1e-07
         X = np.float32(eo['pdist-double-inp'])
         Y_right = eo['pdist-chebychev']
-
         Y_test1 = pdist(X, 'chebychev')
-        if verbose > 2:
-            print("chebychev", np.abs(Y_test1 - Y_right).max())
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
 
     def test_pdist_chebychev_random_nonC(self):
         eps = 1e-08
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-chebychev']
         Y_test2 = pdist(X, 'test_chebychev')
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_chebychev_iris(self):
         eps = 1e-15
         X = eo['iris']
         Y_right = eo['pdist-chebychev-iris']
         Y_test1 = pdist(X, 'chebychev')
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps)
 
     def test_pdist_chebychev_iris_float32(self):
         eps = 1e-06
         X = np.float32(eo['iris'])
         Y_right = eo['pdist-chebychev-iris']
         Y_test1 = pdist(X, 'chebychev')
-        if verbose > 2:
-            print("chebychev-iris", np.abs(Y_test1 - Y_right).max())
-        self.assertTrue(within_tol(Y_test1, Y_right, eps))
+        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
 
     def test_pdist_chebychev_iris_nonC(self):
         eps = 1e-15
         X = eo['iris']
         Y_right = eo['pdist-chebychev-iris']
         Y_test2 = pdist(X, 'test_chebychev')
-        self.assertTrue(within_tol(Y_test2, Y_right, eps))
+        _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_matching_mtica1(self):
         # Test matching(*,*) with mtica example #1 (nums).
@@ -895,8 +794,8 @@ class TestPdist(TestCase):
                      np.array([1, 1, 0, 1, 1]))
         m2 = matching(np.array([1, 0, 1, 1, 0], dtype=np.bool),
                       np.array([1, 1, 0, 1, 1], dtype=np.bool))
-        self.assertTrue(np.abs(m - 0.6) <= 1e-10)
-        self.assertTrue(np.abs(m2 - 0.6) <= 1e-10)
+        assert_allclose(m, 0.6, rtol=0, atol=1e-10)
+        assert_allclose(m2, 0.6, rtol=0, atol=1e-10)
 
     def test_pdist_matching_mtica2(self):
         # Test matching(*,*) with mtica example #2.
@@ -904,8 +803,8 @@ class TestPdist(TestCase):
                      np.array([1, 1, 0]))
         m2 = matching(np.array([1, 0, 1], dtype=np.bool),
                       np.array([1, 1, 0], dtype=np.bool))
-        self.assertTrue(np.abs(m - (2.0/3.0)) <= 1e-10)
-        self.assertTrue(np.abs(m2 - (2.0/3.0)) <= 1e-10)
+        assert_allclose(m, 2/3, rtol=0, atol=1e-10)
+        assert_allclose(m2, 2/3, rtol=0, atol=1e-10)
 
     def test_pdist_matching_match(self):
         # Test pdist(X, 'matching') to see if the two implementations match on
@@ -921,24 +820,24 @@ class TestPdist(TestCase):
         if verbose > 2:
             print(np.abs(y1-y2).max())
             print(np.abs(y1-y3).max())
-        self.assertTrue(within_tol(y1, y2, eps))
-        self.assertTrue(within_tol(y2, y3, eps))
+        _assert_within_tol(y1, y2, eps)
+        _assert_within_tol(y2, y3, eps)
 
     def test_pdist_jaccard_mtica1(self):
         m = jaccard(np.array([1, 0, 1, 1, 0]),
                     np.array([1, 1, 0, 1, 1]))
         m2 = jaccard(np.array([1, 0, 1, 1, 0], dtype=np.bool),
                      np.array([1, 1, 0, 1, 1], dtype=np.bool))
-        self.assertTrue(np.abs(m - 0.6) <= 1e-10)
-        self.assertTrue(np.abs(m2 - 0.6) <= 1e-10)
+        assert_allclose(m, 0.6, rtol=0, atol=1e-10)
+        assert_allclose(m2, 0.6, rtol=0, atol=1e-10)
 
     def test_pdist_jaccard_mtica2(self):
         m = jaccard(np.array([1, 0, 1]),
                     np.array([1, 1, 0]))
         m2 = jaccard(np.array([1, 0, 1], dtype=np.bool),
                      np.array([1, 1, 0], dtype=np.bool))
-        self.assertTrue(np.abs(m - (2.0/3.0)) <= 1e-10)
-        self.assertTrue(np.abs(m2 - (2.0/3.0)) <= 1e-10)
+        assert_allclose(m, 2/3, rtol=0, atol=1e-10)
+        assert_allclose(m2, 2/3, rtol=0, atol=1e-10)
 
     def test_pdist_jaccard_match(self):
         # Test pdist(X, 'jaccard') to see if the two implementations match on
@@ -953,8 +852,8 @@ class TestPdist(TestCase):
         if verbose > 2:
             print(np.abs(y1-y2).max())
             print(np.abs(y2-y3).max())
-        self.assertTrue(within_tol(y1, y2, eps))
-        self.assertTrue(within_tol(y2, y3, eps))
+        _assert_within_tol(y1, y2, eps)
+        _assert_within_tol(y2, y3, eps)
 
     def test_pdist_yule_mtica1(self):
         m = yule(np.array([1, 0, 1, 1, 0]),
@@ -963,8 +862,8 @@ class TestPdist(TestCase):
                   np.array([1, 1, 0, 1, 1], dtype=np.bool))
         if verbose > 2:
             print(m)
-        self.assertTrue(np.abs(m - 2.0) <= 1e-10)
-        self.assertTrue(np.abs(m2 - 2.0) <= 1e-10)
+        assert_allclose(m, 2, rtol=0, atol=1e-10)
+        assert_allclose(m2, 2, rtol=0, atol=1e-10)
 
     def test_pdist_yule_mtica2(self):
         m = yule(np.array([1, 0, 1]),
@@ -973,8 +872,8 @@ class TestPdist(TestCase):
                   np.array([1, 1, 0], dtype=np.bool))
         if verbose > 2:
             print(m)
-        self.assertTrue(np.abs(m - 2.0) <= 1e-10)
-        self.assertTrue(np.abs(m2 - 2.0) <= 1e-10)
+        assert_allclose(m, 2, rtol=0, atol=1e-10)
+        assert_allclose(m2, 2, rtol=0, atol=1e-10)
 
     def test_pdist_yule_match(self):
         D = eo['random-bool-data']
@@ -987,8 +886,8 @@ class TestPdist(TestCase):
         if verbose > 2:
             print(np.abs(y1-y2).max())
             print(np.abs(y2-y3).max())
-        self.assertTrue(within_tol(y1, y2, eps))
-        self.assertTrue(within_tol(y2, y3, eps))
+        _assert_within_tol(y1, y2, eps)
+        _assert_within_tol(y2, y3, eps)
 
     def test_pdist_dice_mtica1(self):
         m = dice(np.array([1, 0, 1, 1, 0]),
@@ -997,8 +896,8 @@ class TestPdist(TestCase):
                   np.array([1, 1, 0, 1, 1], dtype=np.bool))
         if verbose > 2:
             print(m)
-        self.assertTrue(np.abs(m - (3.0/7.0)) <= 1e-10)
-        self.assertTrue(np.abs(m2 - (3.0/7.0)) <= 1e-10)
+        assert_allclose(m, 3/7, rtol=0, atol=1e-10)
+        assert_allclose(m2, 3/7, rtol=0, atol=1e-10)
 
     def test_pdist_dice_mtica2(self):
         m = dice(np.array([1, 0, 1]),
@@ -1007,8 +906,8 @@ class TestPdist(TestCase):
                   np.array([1, 1, 0], dtype=np.bool))
         if verbose > 2:
             print(m)
-        self.assertTrue(np.abs(m - 0.5) <= 1e-10)
-        self.assertTrue(np.abs(m2 - 0.5) <= 1e-10)
+        assert_allclose(m, 0.5, rtol=0, atol=1e-10)
+        assert_allclose(m2, 0.5, rtol=0, atol=1e-10)
 
     def test_pdist_dice_match(self):
         D = eo['random-bool-data']
@@ -1021,8 +920,8 @@ class TestPdist(TestCase):
         if verbose > 2:
             print(np.abs(y1-y2).max())
             print(np.abs(y2-y3).max())
-        self.assertTrue(within_tol(y1, y2, eps))
-        self.assertTrue(within_tol(y2, y3, eps))
+        _assert_within_tol(y1, y2, eps)
+        _assert_within_tol(y2, y3, eps)
 
     def test_pdist_sokalsneath_mtica1(self):
         m = sokalsneath(np.array([1, 0, 1, 1, 0]),
@@ -1031,8 +930,8 @@ class TestPdist(TestCase):
                          np.array([1, 1, 0, 1, 1], dtype=np.bool))
         if verbose > 2:
             print(m)
-        self.assertTrue(np.abs(m - (3.0/4.0)) <= 1e-10)
-        self.assertTrue(np.abs(m2 - (3.0/4.0)) <= 1e-10)
+        assert_allclose(m, 3/4, rtol=0, atol=1e-10)
+        assert_allclose(m2, 3/4, rtol=0, atol=1e-10)
 
     def test_pdist_sokalsneath_mtica2(self):
         m = sokalsneath(np.array([1, 0, 1]),
@@ -1041,8 +940,8 @@ class TestPdist(TestCase):
                          np.array([1, 1, 0], dtype=np.bool))
         if verbose > 2:
             print(m)
-        self.assertTrue(np.abs(m - (4.0/5.0)) <= 1e-10)
-        self.assertTrue(np.abs(m2 - (4.0/5.0)) <= 1e-10)
+        assert_allclose(m, 4/5, rtol=0, atol=1e-10)
+        assert_allclose(m2, 4/5, rtol=0, atol=1e-10)
 
     def test_pdist_sokalsneath_match(self):
         D = eo['random-bool-data']
@@ -1055,8 +954,8 @@ class TestPdist(TestCase):
         if verbose > 2:
             print(np.abs(y1-y2).max())
             print(np.abs(y2-y3).max())
-        self.assertTrue(within_tol(y1, y2, eps))
-        self.assertTrue(within_tol(y2, y3, eps))
+        _assert_within_tol(y1, y2, eps)
+        _assert_within_tol(y2, y3, eps)
 
     def test_pdist_rogerstanimoto_mtica1(self):
         m = rogerstanimoto(np.array([1, 0, 1, 1, 0]),
@@ -1065,8 +964,8 @@ class TestPdist(TestCase):
                             np.array([1, 1, 0, 1, 1], dtype=np.bool))
         if verbose > 2:
             print(m)
-        self.assertTrue(np.abs(m - (3.0/4.0)) <= 1e-10)
-        self.assertTrue(np.abs(m2 - (3.0/4.0)) <= 1e-10)
+        assert_allclose(m, 3/4, rtol=0, atol=1e-10)
+        assert_allclose(m2, 3/4, rtol=0, atol=1e-10)
 
     def test_pdist_rogerstanimoto_mtica2(self):
         m = rogerstanimoto(np.array([1, 0, 1]),
@@ -1075,8 +974,8 @@ class TestPdist(TestCase):
                             np.array([1, 1, 0], dtype=np.bool))
         if verbose > 2:
             print(m)
-        self.assertTrue(np.abs(m - (4.0/5.0)) <= 1e-10)
-        self.assertTrue(np.abs(m2 - (4.0/5.0)) <= 1e-10)
+        assert_allclose(m, 4/5, rtol=0, atol=1e-10)
+        assert_allclose(m2, 4/5, rtol=0, atol=1e-10)
 
     def test_pdist_rogerstanimoto_match(self):
         D = eo['random-bool-data']
@@ -1089,8 +988,8 @@ class TestPdist(TestCase):
         if verbose > 2:
             print(np.abs(y1-y2).max())
             print(np.abs(y2-y3).max())
-        self.assertTrue(within_tol(y1, y2, eps))
-        self.assertTrue(within_tol(y2, y3, eps))
+        _assert_within_tol(y1, y2, eps)
+        _assert_within_tol(y2, y3, eps)
 
     def test_pdist_russellrao_mtica1(self):
         m = russellrao(np.array([1, 0, 1, 1, 0]),
@@ -1099,8 +998,8 @@ class TestPdist(TestCase):
                         np.array([1, 1, 0, 1, 1], dtype=np.bool))
         if verbose > 2:
             print(m)
-        self.assertTrue(np.abs(m - (3.0/5.0)) <= 1e-10)
-        self.assertTrue(np.abs(m2 - (3.0/5.0)) <= 1e-10)
+        assert_allclose(m, 3/5, rtol=0, atol=1e-10)
+        assert_allclose(m2, 3/5, rtol=0, atol=1e-10)
 
     def test_pdist_russellrao_mtica2(self):
         m = russellrao(np.array([1, 0, 1]),
@@ -1109,8 +1008,8 @@ class TestPdist(TestCase):
                         np.array([1, 1, 0], dtype=np.bool))
         if verbose > 2:
             print(m)
-        self.assertTrue(np.abs(m - (2.0/3.0)) <= 1e-10)
-        self.assertTrue(np.abs(m2 - (2.0/3.0)) <= 1e-10)
+        assert_allclose(m, 2/3, rtol=0, atol=1e-10)
+        assert_allclose(m2, 2/3, rtol=0, atol=1e-10)
 
     def test_pdist_russellrao_match(self):
         D = eo['random-bool-data']
@@ -1123,8 +1022,8 @@ class TestPdist(TestCase):
         if verbose > 2:
             print(np.abs(y1-y2).max())
             print(np.abs(y2-y3).max())
-        self.assertTrue(within_tol(y1, y2, eps))
-        self.assertTrue(within_tol(y2, y3, eps))
+        _assert_within_tol(y1, y2, eps)
+        _assert_within_tol(y2, y3, eps)
 
     def test_pdist_sokalmichener_match(self):
         D = eo['random-bool-data']
@@ -1137,8 +1036,8 @@ class TestPdist(TestCase):
         if verbose > 2:
             print(np.abs(y1-y2).max())
             print(np.abs(y2-y3).max())
-        self.assertTrue(within_tol(y1, y2, eps))
-        self.assertTrue(within_tol(y2, y3, eps))
+        _assert_within_tol(y1, y2, eps)
+        _assert_within_tol(y2, y3, eps)
 
     def test_pdist_kulsinski_match(self):
         D = eo['random-bool-data']
@@ -1148,10 +1047,8 @@ class TestPdist(TestCase):
         y1 = pdist(D, "kulsinski")
         y2 = pdist(D, "test_kulsinski")
         y3 = pdist(np.bool_(D), "test_kulsinski")
-        if verbose > 2:
-            print(np.abs(y1-y2).max())
-        self.assertTrue(within_tol(y1, y2, eps))
-        self.assertTrue(within_tol(y2, y3, eps))
+        _assert_within_tol(y1, y2, eps, verbose > 2)
+        _assert_within_tol(y2, y3, eps)
 
     def test_pdist_canberra_match(self):
         D = eo['iris']
@@ -1160,9 +1057,7 @@ class TestPdist(TestCase):
         eps = 1e-10
         y1 = pdist(D, "canberra")
         y2 = pdist(D, "test_canberra")
-        if verbose > 2:
-            print(np.abs(y1-y2).max())
-        self.assertTrue(within_tol(y1, y2, eps))
+        _assert_within_tol(y1, y2, eps, verbose > 2)
 
     def test_pdist_canberra_ticket_711(self):
         # Test pdist(X, 'canberra') to see if Canberra gives the right result
@@ -1170,13 +1065,17 @@ class TestPdist(TestCase):
         eps = 1e-8
         pdist_y = pdist(([3.3], [3.4]), "canberra")
         right_y = 0.01492537
-        if verbose > 2:
-            print(np.abs(pdist_y-right_y).max())
-        self.assertTrue(within_tol(pdist_y, right_y, eps))
+        _assert_within_tol(pdist_y, right_y, eps, verbose > 2)
 
 
 def within_tol(a, b, tol):
     return np.abs(a - b).max() < tol
+
+
+def _assert_within_tol(a, b, atol, verbose_=False):
+    if verbose_:
+        print(np.abs(a-b).max())
+    assert_allclose(a, b, rtol=0, atol=atol)
 
 
 class TestSomeDistanceFunctions(TestCase):
@@ -1249,41 +1148,41 @@ class TestSquareForm(TestCase):
     def test_squareform_empty_matrix(self):
         A = np.zeros((0,0))
         rA = squareform(np.array(A, dtype='double'))
-        self.assertTrue(rA.shape == (0,))
+        assert_equal(rA.shape, (0,))
 
     def test_squareform_empty_vector(self):
         v = np.zeros((0,))
         rv = squareform(np.array(v, dtype='double'))
-        self.assertTrue(rv.shape == (1,1))
-        self.assertTrue(rv[0, 0] == 0)
+        assert_equal(rv.shape, (1,1))
+        assert_equal(rv[0, 0], 0)
 
     def test_squareform_1by1_matrix(self):
         A = np.zeros((1,1))
         rA = squareform(np.array(A, dtype='double'))
-        self.assertTrue(rA.shape == (0,))
+        assert_equal(rA.shape, (0,))
 
     def test_squareform_one_vector(self):
         v = np.ones((1,)) * 8.3
         rv = squareform(np.array(v, dtype='double'))
-        self.assertTrue(rv.shape == (2,2))
-        self.assertTrue(rv[0,1] == 8.3)
-        self.assertTrue(rv[1,0] == 8.3)
+        assert_equal(rv.shape, (2,2))
+        assert_equal(rv[0,1], 8.3)
+        assert_equal(rv[1,0], 8.3)
 
     def test_squareform_one_binary_vector(self):
         # Tests squareform on a 1x1 binary matrix; conversion to double was
         # causing problems (see pull request 73).
         v = np.ones((1,), dtype=np.bool)
         rv = squareform(v)
-        self.assertTrue(rv.shape == (2,2))
-        self.assertTrue(rv[0,1])
+        assert_equal(rv.shape, (2,2))
+        assert_(rv[0,1])
 
     def test_squareform_2by2_matrix(self):
         A = np.zeros((2,2))
         A[0,1] = 0.8
         A[1,0] = 0.8
         rA = squareform(np.array(A, dtype='double'))
-        self.assertTrue(rA.shape == (1,))
-        self.assertTrue(rA[0] == 0.8)
+        assert_equal(rA.shape, (1,))
+        assert_equal(rA[0], 0.8)
 
     def test_squareform_multi_matrix(self):
         for n in xrange(2, 5):
@@ -1292,23 +1191,23 @@ class TestSquareForm(TestCase):
     def check_squareform_multi_matrix(self, n):
         X = np.random.rand(n, 4)
         Y = pdist(X)
-        self.assertTrue(len(Y.shape) == 1)
+        assert_equal(len(Y.shape), 1)
         A = squareform(Y)
         Yr = squareform(A)
         s = A.shape
         k = 0
         if verbose >= 3:
             print(A.shape, Y.shape, Yr.shape)
-        self.assertTrue(len(s) == 2)
-        self.assertTrue(len(Yr.shape) == 1)
-        self.assertTrue(s[0] == s[1])
+        assert_equal(len(s), 2)
+        assert_equal(len(Yr.shape), 1)
+        assert_equal(s[0], s[1])
         for i in xrange(0, s[0]):
             for j in xrange(i+1, s[1]):
                 if i != j:
-                    self.assertTrue(A[i, j] == Y[k])
+                    assert_equal(A[i, j], Y[k])
                     k += 1
                 else:
-                    self.assertTrue(A[i, j] == 0)
+                    assert_equal(A[i, j], 0)
 
 
 class TestNumObsY(TestCase):
@@ -1317,23 +1216,23 @@ class TestNumObsY(TestCase):
         for n in xrange(2, 10):
             X = np.random.rand(n, 4)
             Y = pdist(X)
-            self.assertTrue(num_obs_y(Y) == n)
+            assert_equal(num_obs_y(Y), n)
 
     def test_num_obs_y_1(self):
         # Tests num_obs_y(y) on a condensed distance matrix over 1
         # observations. Expecting exception.
-        self.assertRaises(ValueError, self.check_y, 1)
+        assert_raises(ValueError, self.check_y, 1)
 
     def test_num_obs_y_2(self):
         # Tests num_obs_y(y) on a condensed distance matrix over 2
         # observations.
-        self.assertTrue(self.check_y(2))
+        assert_(self.check_y(2))
 
     def test_num_obs_y_3(self):
-        self.assertTrue(self.check_y(3))
+        assert_(self.check_y(3))
 
     def test_num_obs_y_4(self):
-        self.assertTrue(self.check_y(4))
+        assert_(self.check_y(4))
 
     def test_num_obs_y_5_10(self):
         for i in xrange(5, 16):
@@ -1347,10 +1246,10 @@ class TestNumObsY(TestCase):
             a.add(n*(n-1)/2)
         for i in xrange(5, 105):
             if i not in a:
-                self.assertRaises(ValueError, self.bad_y, i)
+                assert_raises(ValueError, self.bad_y, i)
 
     def minit(self, n):
-        self.assertTrue(self.check_y(n))
+        assert_(self.check_y(n))
 
     def bad_y(self, n):
         y = np.random.rand(n)
@@ -1372,24 +1271,24 @@ class TestNumObsDM(TestCase):
             A = squareform(Y)
             if verbose >= 3:
                 print(A.shape, Y.shape)
-            self.assertTrue(num_obs_dm(A) == n)
+            assert_equal(num_obs_dm(A), n)
 
     def test_num_obs_dm_0(self):
         # Tests num_obs_dm(D) on a 0x0 distance matrix. Expecting exception.
-        self.assertTrue(self.check_D(0))
+        assert_(self.check_D(0))
 
     def test_num_obs_dm_1(self):
         # Tests num_obs_dm(D) on a 1x1 distance matrix.
-        self.assertTrue(self.check_D(1))
+        assert_(self.check_D(1))
 
     def test_num_obs_dm_2(self):
-        self.assertTrue(self.check_D(2))
+        assert_(self.check_D(2))
 
     def test_num_obs_dm_3(self):
-        self.assertTrue(self.check_D(2))
+        assert_(self.check_D(2))
 
     def test_num_obs_dm_4(self):
-        self.assertTrue(self.check_D(4))
+        assert_(self.check_D(4))
 
     def check_D(self, n):
         return num_obs_dm(self.make_D(n)) == n
@@ -1407,77 +1306,77 @@ class TestIsValidDM(TestCase):
     def test_is_valid_dm_int16_array_E(self):
         # Tests is_valid_dm(*) on an int16 array. Exception expected.
         D = np.zeros((5, 5), dtype='i')
-        self.assertRaises(TypeError, is_valid_dm_throw, (D))
+        assert_raises(TypeError, is_valid_dm_throw, (D))
 
     def test_is_valid_dm_int16_array_F(self):
         D = np.zeros((5, 5), dtype='i')
-        self.assertTrue(is_valid_dm(D) == False)
+        assert_equal(is_valid_dm(D), False)
 
     def test_is_valid_dm_improper_shape_1D_E(self):
         D = np.zeros((5,), dtype=np.double)
-        self.assertRaises(ValueError, is_valid_dm_throw, (D))
+        assert_raises(ValueError, is_valid_dm_throw, (D))
 
     def test_is_valid_dm_improper_shape_1D_F(self):
         D = np.zeros((5,), dtype=np.double)
-        self.assertTrue(is_valid_dm(D) == False)
+        assert_equal(is_valid_dm(D), False)
 
     def test_is_valid_dm_improper_shape_3D_E(self):
         D = np.zeros((3,3,3), dtype=np.double)
-        self.assertRaises(ValueError, is_valid_dm_throw, (D))
+        assert_raises(ValueError, is_valid_dm_throw, (D))
 
     def test_is_valid_dm_improper_shape_3D_F(self):
         D = np.zeros((3,3,3), dtype=np.double)
-        self.assertTrue(is_valid_dm(D) == False)
+        assert_equal(is_valid_dm(D), False)
 
     def test_is_valid_dm_nonzero_diagonal_E(self):
         y = np.random.rand(10)
         D = squareform(y)
         for i in xrange(0, 5):
             D[i, i] = 2.0
-        self.assertRaises(ValueError, is_valid_dm_throw, (D))
+        assert_raises(ValueError, is_valid_dm_throw, (D))
 
     def test_is_valid_dm_nonzero_diagonal_F(self):
         y = np.random.rand(10)
         D = squareform(y)
         for i in xrange(0, 5):
             D[i, i] = 2.0
-        self.assertTrue(is_valid_dm(D) == False)
+        assert_equal(is_valid_dm(D), False)
 
     def test_is_valid_dm_asymmetric_E(self):
         y = np.random.rand(10)
         D = squareform(y)
         D[1,3] = D[3,1] + 1
-        self.assertRaises(ValueError, is_valid_dm_throw, (D))
+        assert_raises(ValueError, is_valid_dm_throw, (D))
 
     def test_is_valid_dm_asymmetric_F(self):
         y = np.random.rand(10)
         D = squareform(y)
         D[1,3] = D[3,1] + 1
-        self.assertTrue(is_valid_dm(D) == False)
+        assert_equal(is_valid_dm(D), False)
 
     def test_is_valid_dm_correct_1_by_1(self):
         D = np.zeros((1,1), dtype=np.double)
-        self.assertTrue(is_valid_dm(D) == True)
+        assert_equal(is_valid_dm(D), True)
 
     def test_is_valid_dm_correct_2_by_2(self):
         y = np.random.rand(1)
         D = squareform(y)
-        self.assertTrue(is_valid_dm(D) == True)
+        assert_equal(is_valid_dm(D), True)
 
     def test_is_valid_dm_correct_3_by_3(self):
         y = np.random.rand(3)
         D = squareform(y)
-        self.assertTrue(is_valid_dm(D) == True)
+        assert_equal(is_valid_dm(D), True)
 
     def test_is_valid_dm_correct_4_by_4(self):
         y = np.random.rand(6)
         D = squareform(y)
-        self.assertTrue(is_valid_dm(D) == True)
+        assert_equal(is_valid_dm(D), True)
 
     def test_is_valid_dm_correct_5_by_5(self):
         y = np.random.rand(10)
         D = squareform(y)
-        self.assertTrue(is_valid_dm(D) == True)
+        assert_equal(is_valid_dm(D), True)
 
 
 def is_valid_y_throw(y):
@@ -1491,43 +1390,43 @@ class TestIsValidY(TestCase):
 
     def test_is_valid_y_int16_array_E(self):
         y = np.zeros((10,), dtype='i')
-        self.assertRaises(TypeError, is_valid_y_throw, (y))
+        assert_raises(TypeError, is_valid_y_throw, (y))
 
     def test_is_valid_y_int16_array_F(self):
         y = np.zeros((10,), dtype='i')
-        self.assertTrue(is_valid_y(y) == False)
+        assert_equal(is_valid_y(y), False)
 
     def test_is_valid_y_improper_shape_2D_E(self):
         y = np.zeros((3,3,), dtype=np.double)
-        self.assertRaises(ValueError, is_valid_y_throw, (y))
+        assert_raises(ValueError, is_valid_y_throw, (y))
 
     def test_is_valid_y_improper_shape_2D_F(self):
         y = np.zeros((3,3,), dtype=np.double)
-        self.assertTrue(is_valid_y(y) == False)
+        assert_equal(is_valid_y(y), False)
 
     def test_is_valid_y_improper_shape_3D_E(self):
         y = np.zeros((3,3,3), dtype=np.double)
-        self.assertRaises(ValueError, is_valid_y_throw, (y))
+        assert_raises(ValueError, is_valid_y_throw, (y))
 
     def test_is_valid_y_improper_shape_3D_F(self):
         y = np.zeros((3,3,3), dtype=np.double)
-        self.assertTrue(is_valid_y(y) == False)
+        assert_equal(is_valid_y(y), False)
 
     def test_is_valid_y_correct_2_by_2(self):
         y = self.correct_n_by_n(2)
-        self.assertTrue(is_valid_y(y) == True)
+        assert_equal(is_valid_y(y), True)
 
     def test_is_valid_y_correct_3_by_3(self):
         y = self.correct_n_by_n(3)
-        self.assertTrue(is_valid_y(y) == True)
+        assert_equal(is_valid_y(y), True)
 
     def test_is_valid_y_correct_4_by_4(self):
         y = self.correct_n_by_n(4)
-        self.assertTrue(is_valid_y(y) == True)
+        assert_equal(is_valid_y(y), True)
 
     def test_is_valid_y_correct_5_by_5(self):
         y = self.correct_n_by_n(5)
-        self.assertTrue(is_valid_y(y) == True)
+        assert_equal(is_valid_y(y), True)
 
     def test_is_valid_y_2_100(self):
         a = set([])
@@ -1535,7 +1434,7 @@ class TestIsValidY(TestCase):
             a.add(n*(n-1)/2)
         for i in xrange(5, 105):
             if i not in a:
-                self.assertRaises(ValueError, self.bad_y, i)
+                assert_raises(ValueError, self.bad_y, i)
 
     def bad_y(self, n):
         y = np.random.rand(n)
@@ -1632,7 +1531,7 @@ def test_sqeuclidean_dtypes():
 
     for dtype in [np.int8, np.int16, np.int32, np.int64]:
         d = sqeuclidean(np.asarray(x, dtype=dtype), np.asarray(y, dtype=dtype))
-        assert_true(np.issubdtype(d.dtype, np.floating))
+        assert_(np.issubdtype(d.dtype, np.floating))
 
     for dtype in [np.uint8, np.uint16, np.uint32, np.uint64]:
         d1 = sqeuclidean([0], np.asarray([-1], dtype=dtype))
