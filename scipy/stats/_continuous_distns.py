@@ -528,11 +528,6 @@ class betaprime_gen(rv_continuous):
     def _cdf(self, x, a, b):
         return special.betainc(a, b, x/(1.+x))
 
-    def _cdf_skip(self, x, a, b):
-        # remove for now: special.hyp2f1 is incorrect for large a
-        x = where(x == 1.0, 1.0-1e-6, x)
-        return pow(x, a)*special.hyp2f1(a+b, a, 1+a, -x)/a/special.beta(a, b)
-
     def _munp(self, n, a, b):
         if (n == 1.0):
             return where(b > 1, a/(b-1.0), inf)
