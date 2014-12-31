@@ -11,7 +11,7 @@ from scipy.lib.six import string_types
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
            'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
-           'slepian', 'cosine', 'hann', 'get_window']
+           'slepian', 'cosine', 'hann', 'exponential', 'get_window']
 
 
 def boxcar(M, sym=True):
@@ -1390,6 +1390,82 @@ def cosine(M, sym=True):
     return w
 
 
+def exponential(M, center=None, tau=1., sym=True):
+    r"""Return an exponential (or Poisson) window.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    center : float, optional
+        Parameter defining the center location of the window function.
+        The default value if not given is ``center = (M-1) / 2``.
+        Changing this parameter makes sense for non-symmetric windows, only.
+    tau : float, optional
+        Parameter defining the decay.  For ``center = 0`` use ``tau = -(M-1) / ln(x)``
+        if ``x`` is the fraction of the window remaining at the end.
+    sym : bool, optional
+        When True (default), generates a symmetric window, for use in filter
+        design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if `M` is even and `sym` is True).
+
+    Notes
+    -----
+    The Exponential window is defined as
+
+    .. math::  w(n) = \exp^{-|n-center| / \tau}
+
+    References
+    ----------
+    S. Gade and H. Herlufsen, "Windows to FFT analysis (Part I)",
+    Technical Review 3, Bruel & Kjaer, 1987.
+
+    Examples
+    --------
+    Plot the window:
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> M = 50
+    >>> tau = -(M-1) / np.log(0.01)
+    >>> window = signal.exponential(M=M, center=10, tau=tau)
+    >>> plt.plot(window)
+    >>> plt.title("Exponential window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+    >>> plt.show()
+
+    """
+    if sym and center is not None:
+        raise ValueError("Parameter ``center`` can only be None for the "
+                         " (default) symmetric window")
+    if M < 1:
+        return np.array([])
+    if M == 1:
+        return np.ones(1, 'd')
+    odd = M % 2
+    if not sym and not odd:
+        M = M + 1
+    if sym:
+        center = (M-1) / 2
+    elif center is None:
+        center = (M-1) / 2
+
+    n = np.arange(0, M)
+    w = np.exp(-np.abs(n-center) / tau)
+    if not sym and not odd:
+        w = w[:-1]
+
+    return w
+
+
 def get_window(window, Nx, fftbins=True):
     """
     Return a window.
@@ -1413,8 +1489,8 @@ def get_window(window, Nx, fftbins=True):
     -----
     Window types:
 
-        boxcar, triang, blackman, hamming, hann, bartlett, flattop,
-        parzen, bohman, blackmanharris, nuttall, barthann,
+        boxcar, triang, blackman, hamming, hann, bartlett, exponential,
+        flattop, parzen, bohman, blackmanharris, nuttall, barthann,
         kaiser (needs beta), gaussian (needs std),
         general_gaussian (needs power, width),
         slepian (needs width), chebwin (needs attenuation)
@@ -1506,6 +1582,8 @@ def get_window(window, Nx, fftbins=True):
             winfunc = cosine
         elif winstr in ['chebwin', 'cheb']:
             winfunc = chebwin
+        elif winstr in ['exponential', 'poisson']:
+            winfunc = exponential
         else:
             raise ValueError("Unknown window type.")
 

@@ -202,6 +202,7 @@ Window functions
    boxcar            -- Boxcar window
    chebwin           -- Dolph-Chebyshev window
    cosine            -- Cosine window
+   exponential       -- Exponential window
    flattop           -- Flat top window
    gaussian          -- Gaussian window
    general_gaussian  -- Generalized Gaussian window
