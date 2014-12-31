@@ -149,7 +149,6 @@ Authors
 * Jacob Carey +
 * Thomas A Caswell
 * Helder Cesar +
-* ctokheim +
 * Björn Dahlgren +
 * Kevin Davies +
 * Yotam Doron +
@@ -158,9 +157,9 @@ Authors
 * Jesse Engel +
 * Rob Falck +
 * Corey Farwell +
+* Jaime Fernandez del Rio +
 * Clark Fitzgerald +
 * Tom Flannaghan +
-* Jaime Frio +
 * Chad Fulton +
 * Jochen Garcke +
 * François Garillot +
@@ -217,6 +216,7 @@ Authors
 * Brigitta Sipocz +
 * Alex Stewart +
 * Julian Taylor
+* Collin Tokheim +
 * James Tomlinson +
 * Benjamin Trendelkamp-Schroer +
 * Richard Tsai
