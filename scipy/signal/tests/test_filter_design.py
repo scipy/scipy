@@ -7,6 +7,7 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises, assert_equal, assert_,
                            run_module_suite, assert_allclose)
+from numpy import array, spacing, sin, pi, sort
 
 from scipy.signal import (tf2zpk, zpk2tf, tf2sos, sos2tf, sos2zpk, zpk2sos,
                           BadCoefficients, freqz, normalize,
@@ -15,8 +16,6 @@ from scipy.signal import (tf2zpk, zpk2tf, tf2sos, sos2tf, sos2zpk, zpk2sos,
                           cheb1ap, cheb2ap, ellipap, iirfilter, freqs,
                           lp2lp, lp2hp, lp2bp, lp2bs, bilinear)
 from scipy.signal.filter_design import _cplxreal, _cplxpair
-
-from numpy import array, spacing, sin, pi, sort
 
 
 class TestCplxPair(TestCase):
@@ -2038,7 +2037,7 @@ class TestIIRFilter(TestCase):
                 assert_equal(k, np.real(k))
 
                 b, a = iirfilter(N, 1.1, 1, 20, 'low', analog=True,
-                                    ftype=ftype, output='ba')
+                                 ftype=ftype, output='ba')
                 assert_(issubclass(b.dtype.type, np.floating))
                 assert_(issubclass(a.dtype.type, np.floating))
 

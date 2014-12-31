@@ -7,7 +7,7 @@ from numpy.testing import (
     TestCase, run_module_suite, assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
     assert_raises, assert_allclose, assert_, dec)
-from numpy import array, arange, sin, pi, spacing
+from numpy import array, arange
 import numpy as np
 
 from scipy.optimize import fmin

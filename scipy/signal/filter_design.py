@@ -561,7 +561,8 @@ def tf2sos(b, a, pairing='simple'):
     a : array_like
         Denominator polynomial coefficients.
     pairing : {'simple', 'keep_odd'}
-        The pairing method to use. See `zpk2sos`.
+        The method to use to combine pairs of poles and zeros into sections.
+        See `zpk2sos`.
 
     Returns
     -------
@@ -569,6 +570,10 @@ def tf2sos(b, a, pairing='simple'):
         Array of second-order filter coefficients, with shape
         ``(n_sections, 6)``. See `sosfilt` for the SOS filter format
         specification.
+
+    See Also
+    --------
+    zpk2sos, sosfilt
 
     Notes
     -----
@@ -579,10 +584,6 @@ def tf2sos(b, a, pairing='simple'):
     ZPK to SOS.
 
     .. versionadded:: 0.16.0
-
-    See Also
-    --------
-    zpk2sos, sosfilt
     """
     return zpk2sos(*tf2zpk(b, a), pairing=pairing)
 
@@ -679,7 +680,8 @@ def zpk2sos(z, p, k, pairing='simple'):
     k : float
         System gain.
     pairing : {'simple', 'keep_odd'}
-        The pairing method to use. See Notes below.
+        The method to use to combine pairs of poles and zeros into sections.
+        See Notes below.
 
     Returns
     -------
@@ -687,6 +689,10 @@ def zpk2sos(z, p, k, pairing='simple'):
         Array of second-order filter coefficients, with shape
         ``(n_sections, 6)``. See `sosfilt` for the SOS filter format
         specification.
+
+    See Also
+    --------
+    sosfilt
 
     Notes
     -----
@@ -696,14 +702,6 @@ def zpk2sos(z, p, k, pairing='simple'):
     section. This is done by pairing poles with the nearest zeros, starting
     with the poles closest to the unit circle.
 
-    .. versionadded:: 0.16.0
-
-    See Also
-    --------
-    sosfilt
-
-    Notes
-    -----
     *Algorithms*
 
     The current algorithms are designed specifically for use with digital
@@ -711,7 +709,10 @@ def zpk2sos(z, p, k, pairing='simple'):
     be sub-optimal.
 
     The steps in the ``pairing='simple'`` and ``pairing='keep_odd'``
-    algorithms are mostly shared, and are as follows:
+    algorithms are mostly shared. The ``simple`` algorithm attempts to
+    minimize the peak gain, while ``'keep_odd'`` minimizes peak gain under
+    the constraint that odd-order systems should retain one section
+    as first order. The algorithm steps and are as follows:
 
     As a pre-processing step, add poles or zeros to the origin as
     necessary to obtain the same number of poles and zeros for pairing.
@@ -719,7 +720,7 @@ def zpk2sos(z, p, k, pairing='simple'):
     add an additional pole and a zero at the origin. Note that with
     ``pairing == 'simple'``, we are guaranteed there are even numbers
     of real poles, complex poles, real zeros, and real poles to pair.
-    With `pairing == 'keep_odd'` we do not have this guarantee.
+    With ``pairing == 'keep_odd'`` we do not have this guarantee.
 
     These following steps are then iterated over until no more poles or
     zeros remain:
@@ -760,9 +761,10 @@ def zpk2sos(z, p, k, pairing='simple'):
                real pole closest to the unit circle, and then add the real
                zero closest to that pole.
 
-    .. [#] = This conditional can only be met for specific odd-order inputs
-             with the `pairing == 'keep_odd'` method.
+    .. [#] This conditional can only be met for specific odd-order inputs
+           with the ``pairing == 'keep_odd'`` method.
 
+    .. versionadded:: 0.16.0
     """
     # TODO in the near future:
     # 1. Add SOS capability to `filtfilt`, `freqz`, etc. somehow (#3259).
@@ -1124,10 +1126,6 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
         Second-order sections representation of the IIR filter.
         Only returned if ``output=='sos'``.
 
-    Notes
-    -----
-    The ``'sos'`` output parameter was added in 0.15.0.
-
     See Also
     --------
     butter : Filter design using order and critical points
@@ -1135,6 +1133,10 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
     buttord : Find order and critical points from passband and stopband spec
     cheb1ord, cheb2ord, ellipord
     iirfilter : General filter design using order and critical frequencies
+
+    Notes
+    -----
+    The ``'sos'`` output parameter was added in 0.16.0.
     """
     try:
         ordfunc = filter_dict[ftype][1]
@@ -1165,8 +1167,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     IIR digital and analog filter design given order and critical points.
 
     Design an Nth order digital or analog filter and return the filter
-    coefficients in (B,A) (numerator, denominator), (Z,P,K), or (SOS)
-    (second-order sections) form.
+    coefficients.
 
     Parameters
     ----------
@@ -1214,10 +1215,6 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         Second-order sections representation of the IIR filter.
         Only returned if ``output=='sos'``.
 
-    Notes
-    -----
-    The ``'sos'`` output parameter was added in 0.15.0.
-
     See Also
     --------
     butter : Filter design using order and critical points
@@ -1225,6 +1222,10 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     buttord : Find order and critical points from passband and stopband spec
     cheb1ord, cheb2ord, ellipord
     iirdesign : General filter design using passband and stopband spec
+
+    Notes
+    -----
+    The ``'sos'`` output parameter was added in 0.16.0.
 
     Examples
     --------
@@ -1662,7 +1663,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
     Butterworth digital and analog filter design.
 
     Design an Nth order digital or analog Butterworth filter and return
-    the filter coefficients in (B,A) or (Z,P,K) form.
+    the filter coefficients.
 
     Parameters
     ----------
@@ -1697,10 +1698,6 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
         Second-order sections representation of the IIR filter.
         Only returned if ``output=='sos'``.
 
-    Notes
-    -----
-    The ``'sos'`` output parameter was added in 0.15.0.
-
     See Also
     --------
     buttord
@@ -1709,6 +1706,8 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
     -----
     The Butterworth filter has maximally flat frequency response in the
     passband.
+
+    The ``'sos'`` output parameter was added in 0.16.0.
 
     Examples
     --------
@@ -1738,7 +1737,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
     Chebyshev type I digital and analog filter design.
 
     Design an Nth order digital or analog Chebyshev type I filter and
-    return the filter coefficients in (B,A) or (Z,P,K) form.
+    return the filter coefficients.
 
     Parameters
     ----------
@@ -1776,10 +1775,6 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
         Second-order sections representation of the IIR filter.
         Only returned if ``output=='sos'``.
 
-    Notes
-    -----
-    The ``'sos'`` output parameter was added in 0.15.0.
-
     See Also
     --------
     cheb1ord
@@ -1796,6 +1791,8 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
     The equiripple passband has N maxima or minima (for example, a
     5th-order filter has 3 maxima and 2 minima).  Consequently, the DC gain is
     unity for odd-order filters, or -rp dB for even-order filters.
+
+    The ``'sos'`` output parameter was added in 0.16.0.
 
     Examples
     --------
@@ -1826,7 +1823,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
     Chebyshev type II digital and analog filter design.
 
     Design an Nth order digital or analog Chebyshev type II filter and
-    return the filter coefficients in (B,A) or (Z,P,K) form.
+    return the filter coefficients.
 
     Parameters
     ----------
@@ -1864,10 +1861,6 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
         Second-order sections representation of the IIR filter.
         Only returned if ``output=='sos'``.
 
-    Notes
-    -----
-    The ``'sos'`` output parameter was added in 0.15.0.
-
     See Also
     --------
     cheb2ord
@@ -1879,6 +1872,8 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
     the stopband and increased ringing in the step response.
 
     Type II filters do not roll off as fast as Type I (`cheby1`).
+
+    The ``'sos'`` output parameter was added in 0.16.0.
 
     Examples
     --------
@@ -1909,7 +1904,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
     Elliptic (Cauer) digital and analog filter design.
 
     Design an Nth order digital or analog elliptic filter and return
-    the filter coefficients in (B,A) or (Z,P,K) form.
+    the filter coefficients.
 
     Parameters
     ----------
@@ -1950,10 +1945,6 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
         Second-order sections representation of the IIR filter.
         Only returned if ``output=='sos'``.
 
-    Notes
-    -----
-    The ``'sos'`` output parameter was added in 0.15.0.
-
     See Also
     --------
     ellipord
@@ -1973,6 +1964,8 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
     The equiripple passband has N maxima or minima (for example, a
     5th-order filter has 3 maxima and 2 minima).  Consequently, the DC gain is
     unity for odd-order filters, or -rp dB for even-order filters.
+
+    The ``'sos'`` output parameter was added in 0.16.0.
 
     Examples
     --------
@@ -2003,7 +1996,7 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
     """Bessel/Thomson digital and analog filter design.
 
     Design an Nth order digital or analog Bessel filter and return the
-    filter coefficients in (B,A) or (Z,P,K) form.
+    filter coefficients.
 
     Parameters
     ----------
@@ -2041,10 +2034,6 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
 
     Notes
     -----
-    The ``'sos'`` output parameter was added in 0.15.0.
-
-    Notes
-    -----
     Also known as a Thomson filter, the analog Bessel filter has maximally
     flat group delay and maximally linear phase response, with very little
     ringing in the step response.
@@ -2060,6 +2049,8 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
 
     For a given `Wn`, the lowpass and highpass filter have the same phase vs
     frequency curves; they are "phase-matched".
+
+    The ``'sos'`` output parameter was added in 0.16.0.
 
     Examples
     --------
