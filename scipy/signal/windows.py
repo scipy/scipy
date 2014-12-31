@@ -1391,7 +1391,7 @@ def cosine(M, sym=True):
 
 
 def exponential(M, N=0, tau=1, sym=True):
-    """Return an exponential (or Poisson) window.
+    r"""Return an exponential (or Poisson) window.
 
     Parameters
     ----------
@@ -1401,8 +1401,8 @@ def exponential(M, N=0, tau=1, sym=True):
     N : int
         Parameter defining the center location.
     tau : int
-        Parameter defining the decay. For N=0 use tau=-(M-1)/ln(x) if x is the fraction
-        of the window at the end (e.g. x=0.01 -> tau=-(M-1)/ln(0.01))
+        Parameter defining the decay. For `N=0` use `tau=-(M-1)/ln(x)` if `x` is the fraction
+        of the window at the end (e.g. `x=0.01` -> `tau=-(M-1)/ln(0.01)`)
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -1420,7 +1420,8 @@ def exponential(M, N=0, tau=1, sym=True):
 
     .. math::  w(n) = e^{-|n-N|} \frac{1}{tau}
 
-    See:
+    References
+    ----------
     Gade, Svend; Herlufsen, Henrik (1987). Technical Review No 3-1987:
     Windows to FFT analysis (Part I). Bruel & Kjaer.
 
@@ -1429,10 +1430,9 @@ def exponential(M, N=0, tau=1, sym=True):
     Plot the window:
 
     >>> import matplotlib.pyplot as plt
-    >>> M=50
-    >>> tau=-(M-1)/np.log(0.01)
-    >>> print(-np.log(0.01))
-    >>> window=exponential(M=M,N=0,tau=tau)
+    >>> M = 50
+    >>> tau = - (M - 1) / np.log(0.01)
+    >>> window = exponential(M = M, N = 0, tau = tau)
     >>> plt.plot(window)
     >>> plt.title("Exponential window")
     >>> plt.ylabel("Amplitude")
@@ -1478,8 +1478,8 @@ def get_window(window, Nx, fftbins=True):
     -----
     Window types:
 
-        boxcar, triang, blackman, hamming, hann, bartlett, flattop,
-        parzen, bohman, blackmanharris, nuttall, barthann,
+        boxcar, triang, blackman, hamming, hann, bartlett, exponential,
+        flattop, parzen, bohman, blackmanharris, nuttall, barthann,
         kaiser (needs beta), gaussian (needs std),
         general_gaussian (needs power, width),
         slepian (needs width), chebwin (needs attenuation)
@@ -1525,7 +1525,7 @@ def get_window(window, Nx, fftbins=True):
                           'general gaussian', 'general_gaussian',
                           'general gauss', 'general_gauss', 'ggs',
                           'slepian', 'optimal', 'slep', 'dss',
-                          'chebwin', 'cheb']:
+                          'chebwin', 'cheb', 'exponential', 'poisson']:
                 raise ValueError("The '" + window + "' window needs one or "
                                  "more parameters  -- pass a tuple.")
             else:
