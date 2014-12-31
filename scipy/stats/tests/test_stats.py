@@ -2040,6 +2040,16 @@ def test_ttest_rel():
                   x.reshape((2, 3, 4)))
 
 
+def _desc_stats(x1, x2, axis=0):
+    def _stats(x, axis=0):
+        x = np.asarray(x)
+        mu = np.mean(x, axis=axis)
+        std = np.std(x, axis=axis, ddof=1)
+        nobs = x.shape[axis]
+        return mu, std, nobs
+    return _stats(x1, axis) + _stats(x2, axis)
+
+
 def test_ttest_ind():
     # regression test
     tr = 1.0912746897927283
@@ -2053,10 +2063,20 @@ def test_ttest_ind():
 
     t,p = stats.ttest_ind(rvs1, rvs2, axis=0)
     assert_array_almost_equal([t,p],(tr,pr))
+    # test from_stats API
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*_desc_stats(rvs1,
+                                                                      rvs2)),
+                              [t, p])
     t,p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0)
     assert_array_almost_equal([t,p],tpr)
+    args = _desc_stats(rvs1_2D.T, rvs2_2D.T)
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*args),
+                              [t, p])
     t,p = stats.ttest_ind(rvs1_2D, rvs2_2D, axis=1)
     assert_array_almost_equal([t,p],tpr)
+    args = _desc_stats(rvs1_2D, rvs2_2D, axis=1)
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*args),
+                              [t, p])
 
     # test on 3 dimensions
     rvs1_3D = np.dstack([rvs1_2D,rvs1_2D,rvs1_2D])
@@ -2093,12 +2113,19 @@ def test_ttest_ind_with_uneq_var():
     tr = -0.68649512735572582
     t, p = stats.ttest_ind(a, b, equal_var=False)
     assert_array_almost_equal([t,p], [tr, pr])
+    # test from desc stats API
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*_desc_stats(a, b),
+                                                         equal_var=False),
+                              [t, p])
 
     a = (1, 2, 3, 4)
     pr = 0.84354139131608286
     tr = -0.2108663315950719
     t, p = stats.ttest_ind(a, b, equal_var=False)
     assert_array_almost_equal([t,p], [tr, pr])
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*_desc_stats(a, b),
+                                                         equal_var=False),
+                              [t, p])
 
     # regression test
     tr = 1.0912746897927283
@@ -2115,12 +2142,31 @@ def test_ttest_ind_with_uneq_var():
 
     t,p = stats.ttest_ind(rvs1, rvs2, axis=0, equal_var=False)
     assert_array_almost_equal([t,p],(tr,pr))
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*_desc_stats(rvs1,
+                                                                      rvs2),
+                                                         equal_var=False),
+                              (t, p))
+
     t,p = stats.ttest_ind(rvs1, rvs3, axis=0, equal_var=False)
     assert_array_almost_equal([t,p], (tr_uneq_n, pr_uneq_n))
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*_desc_stats(rvs1,
+                                                                      rvs3),
+                                                         equal_var=False),
+                              (t, p))
+
     t,p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, equal_var=False)
     assert_array_almost_equal([t,p],tpr)
+    args = _desc_stats(rvs1_2D.T, rvs2_2D.T)
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*args,
+                                                         equal_var=False),
+                              (t, p))
+
     t,p = stats.ttest_ind(rvs1_2D, rvs2_2D, axis=1, equal_var=False)
     assert_array_almost_equal([t,p],tpr)
+    args = _desc_stats(rvs1_2D, rvs2_2D, axis=1)
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*args,
+                                                         equal_var=False),
+                              (t, p))
 
     # test on 3 dimensions
     rvs1_3D = np.dstack([rvs1_2D,rvs1_2D,rvs1_2D])
@@ -2129,9 +2175,20 @@ def test_ttest_ind_with_uneq_var():
     assert_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
+    args = _desc_stats(rvs1_3D, rvs2_3D, axis=1)
+    t, p = stats.ttest_ind_from_stats(*args, equal_var=False)
+    assert_almost_equal(np.abs(t), np.abs(tr))
+    assert_array_almost_equal(np.abs(p), pr)
+    assert_equal(t.shape, (2, 3))
 
     t,p = stats.ttest_ind(np.rollaxis(rvs1_3D,2), np.rollaxis(rvs2_3D,2),
                                    axis=2, equal_var=False)
+    assert_array_almost_equal(np.abs(t), np.abs(tr))
+    assert_array_almost_equal(np.abs(p), pr)
+    assert_equal(t.shape, (3, 2))
+    args = _desc_stats(np.rollaxis(rvs1_3D, 2),
+                       np.rollaxis(rvs2_3D, 2), axis=2)
+    t, p = stats.ttest_ind_from_stats(*args, equal_var=False)
     assert_array_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
