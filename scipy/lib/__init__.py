@@ -1,16 +1,15 @@
 """
-Python wrappers to external libraries
-=====================================
+Module containing private utility functions
+===========================================
 
-- lapack -- wrappers for `LAPACK/ATLAS <http://netlib.org/lapack/>`_
-            libraries
-- blas -- wrappers for `BLAS/ATLAS <http://www.netlib.org/blas/>`_
-          libraries
+The ``scipy._lib`` namespace is empty (for now).  Tests for all
+utilities in submodules of ``_lib`` can be run with::
+
+    from scipy import _lib
+    _lib.test()
 
 """
 from __future__ import division, print_function, absolute_import
-
-__all__ = ['lapack','blas']
 
 from numpy.testing import Tester
 test = Tester().test

@@ -4,7 +4,6 @@ Recurse:
     integrate,
     interpolate,
     io,
-    lib,
     linalg,
     ndimage,
     odr,

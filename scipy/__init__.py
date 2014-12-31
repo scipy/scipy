@@ -22,9 +22,9 @@ Using any of these subpackages requires an explicit import.  For example,
  integrate                    --- Integration routines
  interpolate                  --- Interpolation Tools
  io                           --- Data input and output
- lib                          --- Python wrappers to external libraries
- lib.lapack                   --- Wrappers to LAPACK library
  linalg                       --- Linear algebra routines
+ linalg.blas                  --- Wrappers to BLAS library
+ linalg.lapack                --- Wrappers to LAPACK library
  misc                         --- Various utilities that don't have
                                   another home.
  ndimage                      --- n-dimensional image package
@@ -36,20 +36,11 @@ Using any of these subpackages requires an explicit import.  For example,
  sparse.linalg.dsolve         --- Linear Solvers
  sparse.linalg.dsolve.umfpack --- :Interface to the UMFPACK library:
                                   Conjugate Gradient Method (LOBPCG)
+ sparse.linalg.eigen          --- Sparse Eigenvalue Solvers
  sparse.linalg.eigen.lobpcg   --- Locally Optimal Block Preconditioned
-                                  Conjugate Gradient Method (LOBPCG) [*]
- special                      --- Airy Functions [*]
- lib.blas                     --- Wrappers to BLAS library [*]
- sparse.linalg.eigen          --- Sparse Eigenvalue Solvers [*]
- stats                        --- Statistical Functions [*]
- lib                          --- Python wrappers to external libraries
-                                  [*]
- lib.lapack                   --- Wrappers to LAPACK library [*]
- integrate                    --- Integration routines [*]
- ndimage                      --- n-dimensional image package [*]
- linalg                       --- Linear algebra routines [*]
+                                  Conjugate Gradient Method (LOBPCG)
  spatial                      --- Spatial data structures and algorithms
- special                      --- Airy Functions
+ special                      --- Special functions
  stats                        --- Statistical Functions
 
 Utility tools
