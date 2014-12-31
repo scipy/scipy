@@ -4,8 +4,9 @@ from __future__ import division, print_function, absolute_import
 from os import getcwd
 from os.path import realpath, abspath, dirname, isfile, join as pjoin, exists
 
-from numpy.testing import assert_, assert_equal
 from scipy.lib._tmpdirs import tempdir, in_tempdir, in_dir
+
+from numpy.testing import run_module_suite, assert_, assert_equal
 
 MY_PATH = abspath(__file__)
 MY_DIR = dirname(MY_PATH)
@@ -15,14 +16,15 @@ def test_tempdir():
     with tempdir() as tmpdir:
         fname = pjoin(tmpdir, 'example_file.txt')
         with open(fname, 'wt') as fobj:
-            _ = fobj.write('a string\\n')
+            fobj.write('a string\\n')
     assert_(not exists(tmpdir))
 
 
 def test_in_tempdir():
     my_cwd = getcwd()
     with in_tempdir() as tmpdir:
-        _ = open('test.txt', 'wt').write('some text')
+        with open('test.txt', 'wt') as f:
+            f.write('some text')
         assert_(isfile('test.txt'))
         assert_(isfile(pjoin(tmpdir, 'test.txt')))
     assert_(not exists(tmpdir))
@@ -38,5 +40,9 @@ def test_given_directory():
     with in_dir(MY_DIR) as tmpdir:
         assert_equal(tmpdir, MY_DIR)
         assert_equal(realpath(MY_DIR), realpath(abspath(getcwd())))
-    # We were deleting the Given directory!  Check not so now.
+    # We were deleting the given directory!  Check not so now.
     assert_(isfile(MY_PATH))
+
+
+if __name__ == "__main__":
+    run_module_suite()
