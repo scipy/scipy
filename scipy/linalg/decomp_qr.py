@@ -14,7 +14,7 @@ __all__ = ['qr', 'qr_multiply', 'rq']
 def safecall(f, name, *args, **kwargs):
     """Call a LAPACK routine, determining lwork automatically and handling
     error return values"""
-    lwork = kwargs.pop("lwork", None)
+    lwork = kwargs.get("lwork", None)
     if lwork is None:
         kwargs['lwork'] = -1
         ret = f(*args, **kwargs)

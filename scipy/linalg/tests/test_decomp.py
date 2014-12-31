@@ -1473,6 +1473,24 @@ class TestQR(TestCase):
         assert_array_almost_equal(dot(transpose(q),q),identity(3))
         assert_array_almost_equal(dot(q,r),a)
 
+    def test_lwork(self):
+        a = [[8,2,3],[2,9,3],[5,3,6]]
+        # Get comparison values
+        q,r = qr(a, lwork=None)
+
+        # Test against minimum valid lwork
+        q2,r2 = qr(a, lwork=3)
+        assert_array_almost_equal(q2,q)
+        assert_array_almost_equal(r2,r)
+
+        # Test against larger lwork
+        q3,r3 = qr(a, lwork=10)
+        assert_array_almost_equal(q3,q)
+        assert_array_almost_equal(r3,r)
+
+        # Test against invalid lwork
+        assert_raises(Exception, qr, (a,), {'lwork':0})
+        assert_raises(Exception, qr, (a,), {'lwork':2})
 
 class TestRQ(TestCase):
 
