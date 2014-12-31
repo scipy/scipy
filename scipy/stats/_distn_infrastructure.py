@@ -435,6 +435,15 @@ class rv_frozen(object):
         # a, b may be set in _argcheck, depending on *args, **kwds. Ouch.
         shapes, _, _ = self.dist._parse_args(*args, **kwds)
         self.dist._argcheck(*shapes)
+        self.a, self.b = self.dist.a, self.dist.b
+
+    @property
+    def random_state(self):
+        return self.dist._random_state
+
+    @random_state.setter
+    def random_state(self, seed):
+        self.dist._random_state = check_random_state(seed)
 
     def pdf(self, x):   # raises AttributeError in frozen discrete distribution
         return self.dist.pdf(x, *self.args, **self.kwds)
@@ -454,9 +463,9 @@ class rv_frozen(object):
     def isf(self, q):
         return self.dist.isf(q, *self.args, **self.kwds)
 
-    def rvs(self, size=None):
+    def rvs(self, size=None, random_state=None):
         kwds = self.kwds.copy()
-        kwds.update({'size': size})
+        kwds.update({'size': size, 'random_state': random_state})
         return self.dist.rvs(*self.args, **kwds)
 
     def sf(self, x):
@@ -496,6 +505,21 @@ class rv_frozen(object):
 
     def interval(self, alpha):
         return self.dist.interval(alpha, *self.args, **self.kwds)
+
+    def expect(self, func=None, lb=None, ub=None, 
+                     conditional=False, **kwds):
+        # expect method only accepts shape parameters as positional args
+        # hence convert self.args, self.kwds, also loc/scale
+        # See the .expect method docstrings for the meaning of
+        # other parameters.
+        a, loc, scale = self.dist._parse_args(*self.args, **self.kwds)
+        if isinstance(self.dist, rv_discrete):
+            if kwds:
+                raise ValueError("Discrete expect does not accept **kwds.")
+            return self.dist.expect(func, a, loc, lb, ub, conditional)
+        else:
+            return self.dist.expect(func, a, loc, scale, lb, ub,
+                                    conditional, **kwds)
 
 
 def valarray(shape, value=nan, typecode=None):
