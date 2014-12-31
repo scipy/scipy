@@ -644,6 +644,21 @@ class BaseQRinsert(BaseQRdeltas):
             a1 = np.insert(a, col*np.ones(3, np.intp), u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
+    def test_economic_1_row(self):
+        a, q, r, u = self.generate('tall', 'economic', 'row')
+        for row in range(r.shape[0]):
+            q1, r1 = qr_insert(q, r, u, row, overwrite_qru=False)
+            a1 = np.insert(a, row, u, 0)
+            check_qr(q1, r1, a1, self.rtol, self.atol, False)
+
+    def test_economic_p_row(self):
+        # tall + rows --> tall always
+        a, q, r, u = self.generate('tall', 'economic', 'row', 3)
+        for row in range(r.shape[0]):
+            q1, r1 = qr_insert(q, r, u, row, overwrite_qru=False)
+            a1 = np.insert(a, row*np.ones(3, np.intp), u, 0)
+            check_qr(q1, r1, a1, self.rtol, self.atol, False)
+
     def base_non_simple_strides(self, adjust_strides, k, p, which):
         for type in ['sqr', 'tall', 'fat']:
             a, q0, r0, u0 = self.generate(type, which=which, p=p)
@@ -794,8 +809,8 @@ class BaseQRinsert(BaseQRdeltas):
         assert_allclose(q2, q, rtol=self.rtol, atol=self.atol)
 
     def test_economic_qr(self):
-        a, q, r, u = self.generate('tall', which='row', mode='economic')
-        assert_raises(ValueError, qr_insert, q, r, u, 0)
+        a, q, r, u = self.generate('tall', which='col', mode='economic')
+        assert_raises(ValueError, qr_insert, q, r, u, 0, 'col')
 
     def test_empty_inputs(self):
         a, q, r, u = self.generate('sqr', which='row')

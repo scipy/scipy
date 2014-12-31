@@ -248,6 +248,17 @@ cdef inline void larf(char* side, int m, int n, blas_t* v, int incv, blas_t tau,
     else:
         lapack_pointers.zlarf(side, &m, &n, v, &incv, &tau, c, &ldc, work)
 
+cdef inline void ger(int m, int n, blas_t alpha, blas_t* x, int incx, blas_t* y,
+        int incy, blas_t* a, int lda) nogil:
+    if blas_t is float:
+        blas_pointers.sger(&m, &n, &alpha, x, &incx, y, &incy, a, &lda)
+    elif blas_t is double:
+        blas_pointers.dger(&m, &n, &alpha, x, &incx, y, &incy, a, &lda)
+    elif blas_t is float_complex:
+        blas_pointers.cgeru(&m, &n, &alpha, x, &incx, y, &incy, a, &lda)
+    else:
+        blas_pointers.zgeru(&m, &n, &alpha, x, &incx, y, &incy, a, &lda)
+
 cdef inline void gemv(char* trans, int m, int n, blas_t alpha, blas_t* a,
         int lda, blas_t* x, int incx, blas_t beta, blas_t* y, int incy) nogil:
     if blas_t is float:
@@ -577,6 +588,21 @@ cdef int qr_block_col_delete(int m, int o, int n, blas_t* q, int* qs,
     libc.stdlib.free(work)
     return 0
 
+cdef void thin_qr_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
+        int* rs, blas_t* u, int* us, int k) nogil:
+    cdef int j
+    cdef blas_t c, s
+
+    for j in range(n):
+        lartg(index2(r, rs, j, j), index1(u, us, j), &c, &s)
+        rot(n-j-1, index2(r, rs, j, j+1), rs[1], index1(u, us, j+1), us[0],
+                c, s)
+        rot(m, col(q, qs, j), qs[0], col(q, qs, n), qs[0], c, s.conjugate())
+
+    # permute q
+    for j in range(m-1, k, -1):
+        swap(n, row(q, qs, j), qs[1], row(q, qs, j-1), qs[1])
+
 cdef void qr_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
                         int k) nogil:
     cdef int j
@@ -585,15 +611,66 @@ cdef void qr_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
 
     for j in range(limit):
         lartg(index2(r, rs, j, j), index2(r, rs, m-1, j), &c, &s)
-
         rot(n-j-1, index2(r, rs, j, j+1), rs[1], index2(r, rs, m-1, j+1), rs[1],
-            c, s)
-
+                c, s)
         rot(m, col(q, qs, j), qs[0], col(q, qs, m-1), qs[0], c, s.conjugate())
 
     # permute q 
     for j in range(m-1, k, -1):
         swap(m, row(q, qs, j), qs[1], row(q, qs, j-1), qs[1])
+
+cdef int thin_qr_block_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
+        int* rs, blas_t* u, int* us, int k, int p) nogil:
+    # as below this should someday call lapack's xtpqrt.
+    cdef int j
+    cdef blas_t rjj, tau
+    cdef blas_t* work
+    cdef char* T = 'T'
+    cdef char* N = 'N'
+    cdef size_t worksize = m * sizeof(blas_t)
+
+    work = <blas_t*>libc.stdlib.malloc(worksize)
+    if not work:
+        return MEMORY_ERROR
+   
+    # possible FIX
+    # as this is written it requires F order q, r, and u.  But thats not 
+    # strictly necessary. C order should also work too with a little fiddling.
+    for j in range(n):
+        rjj = index2(r, rs, j, j)[0]
+        larfg(p+1, &rjj, col(u, us, j), us[0], &tau)
+
+        # here we apply the reflector by hand instead of calling larf
+        # since we need to apply it to a stack of r atop u, and these
+        # are separate.  This also permits the reflector to always be
+        # p+1 long, rather than having a max of n+p.
+        copy(n-j, index2(r, rs, j, j+1), rs[1], work, 1)
+        blas_t_conj(p, col(u, us, j), &us[0])
+        gemv(T, p, n-j-1, 1, index2(u, us, 0, j+1), us[1], col(u, us, j), us[0],
+             1, work, 1)
+        blas_t_conj(p, col(u, us, j), &us[0])
+        ger(p, n-j-1, -tau.conjugate(), col(u, us, j), us[0], work, 1,
+            index2(u, us, 0, j+1), us[1])
+        axpy(n-j-1, -tau.conjugate(), work, 1, index2(r, rs, j, j+1), rs[1])
+        index2(r, rs, j, j)[0] = rjj
+        
+        # now apply this reflector to q 
+        copy(m, col(q, qs, j), qs[0], work, 1)
+        gemv(N, m, p, 1, index2(q, qs, 0, n), qs[1], col(u, us, j), us[0],
+             1, work, 1)
+        blas_t_conj(p, col(u, us, j), &us[0])
+        ger(m, p, -tau, work, 1, col(u, us, j), us[0],
+            index2(q, qs, 0, n), qs[1])
+        axpy(m, -tau, work, 1, col(q, qs, j), qs[0])
+
+    # permute the rows of q, work columnwise, since q is fortran order
+    if k != m-p:
+        for j in range(n):
+            copy(m-k-p, index2(q, qs, k, j), qs[0], work, 1)
+            copy(p, index2(q, qs, m-p, j), qs[0], index2(q, qs, k, j), qs[0])
+            copy(m-k-p, work, 1, index2(q, qs, k+p, j), qs[0])
+
+    libc.stdlib.free(work)
 
 cdef int qr_block_row_insert(int m, int n, blas_t* q, int* qs,
                               blas_t* r, int* rs, int k, int p) nogil:
@@ -1598,7 +1675,7 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
         raise ValueError("which must be either 'row' or 'col'")
 
 @cython.embedsignature(True)
-def qr_insert(Q, R, u, k, which='row', overwrite_qu=True, check_finite=True):
+def qr_insert(Q, R, u, k, which='row', overwrite_qru=True, check_finite=True):
     """QR update on row or column insertions
 
     If ``A = Q R`` is the qr factorization of A, return the qr factorization
@@ -1617,7 +1694,7 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qu=True, check_finite=True):
         Index before which `u` is to be inserted.
     which: {'row', 'col'}, optional
         Determines if rows or columns will be inserted, defaults to 'row'
-    overwrite_qu : bool, optional
+    overwrite_qru : bool, optional
         If True, consume Q, and u, if possible, while performing the update,
         otherwise make copies as necessary. Defaults to True.
     check_finite : bool, optional
@@ -1695,21 +1772,20 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qu=True, check_finite=True):
 
     """
     cdef cnp.ndarray q1, r1, u1, qnew, rnew
-    cdef int k1 = k 
+    cdef int j, k1 = k 
     cdef int q_flags = NPY_ANYORDER
     cdef int u_flags = cnp.NPY_BEHAVED_NS | cnp.NPY_ELEMENTSTRIDES
     cdef int typecode, m, n, p, info
     cdef int qs[2]
     cdef void* rvoid
     cdef int rs[2]
+    cdef int us[2]
     cdef cnp.npy_intp shape[2]
     cdef bint economic
 
     if which == 'row':
         q1, r1, typecode, m, n, economic = validate_qr(Q, R, True, NPY_ANYORDER,
                 True, NPY_ANYORDER, check_finite)
-        if economic:
-            raise ValueError('economic mode decompositions are not supported.')
         u1 = PyArray_CheckFromAny(u, NULL, 0, 0, u_flags, NULL)
         if cnp.PyArray_TYPE(u1) != typecode:
             raise ValueError('u must have the same type as Q and R')
@@ -1728,62 +1804,124 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qu=True, check_finite=True):
                 raise ValueError('bad size u')
 
         u1 = validate_array(u1, check_finite)
+        if economic:
+            shape[0] = m+p
+            shape[1] = n+p
+            qnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
+            qnew[:-p,:-p] = q1
+            for j in range(p):
+                qnew[m+j, n+j] = 1
+            if not overwrite_qru:
+                r1 = r1.copy('F')
+                u1 = u1.copy('F')
 
-        shape[0] = m+p
-        shape[1] = m+p
-        qnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
-        shape[1] = n
-        rnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
-        
-        # doing this by hand is unlikely to be any quicker.
-        rnew[:m,:] = r1    
-        rnew[m:,:] = u1
-        qnew[:-p,:-p] = q1;
-        ind = np.arange(m,m+p)
-        qnew[ind,ind] = 1
-
-        if p == 1:
-            if typecode == cnp.NPY_FLOAT:
-                qr_row_insert(m+p, n, <float*>extract(qnew, qs), qs,
-                        <float*>extract(rnew, rs), rs, k1)
-            elif typecode == cnp.NPY_DOUBLE:
-                qr_row_insert(m+p, n, <double*>extract(qnew, qs), qs,
-                        <double*>extract(rnew, rs), rs, k1)
-            elif typecode == cnp.NPY_CFLOAT:
-                qr_row_insert(m+p, n, <float_complex*>extract(qnew, qs), qs,
-                        <float_complex*>extract(rnew, rs), rs, k1)
-            else:  # cnp.NPY_CDOUBLE:
-                qr_row_insert(m+p, n, <double_complex*>extract(qnew, qs), qs,
-                        <double_complex*>extract(rnew, rs), rs, k1)
+            if p == 1:
+                if typecode == cnp.NPY_FLOAT:
+                    thin_qr_row_insert(m+p, n,
+                            <float*>extract(qnew, qs), qs,
+                            <float*>extract(r1, rs), rs,
+                            <float*>extract(u1, us), us, k1)
+                elif typecode == cnp.NPY_DOUBLE:
+                    thin_qr_row_insert(m+p, n,
+                            <double*>extract(qnew, qs), qs,
+                            <double*>extract(r1, rs), rs,
+                            <double*>extract(u1, us), us, k1)
+                elif typecode == cnp.NPY_CFLOAT:
+                    thin_qr_row_insert(m+p, n,
+                            <float_complex*>extract(qnew, qs), qs,
+                            <float_complex*>extract(r1, rs), rs,
+                            <float_complex*>extract(u1, us), us, k1)
+                else:  # cnp.NPY_CDOUBLE:
+                    thin_qr_row_insert(m+p, n,
+                            <double_complex*>extract(qnew, qs), qs,
+                            <double_complex*>extract(r1, rs), rs,
+                            <double_complex*>extract(u1, us), us, k1)
+            else:
+                if not cnp.PyArray_CHKFLAGS(r1, cnp.NPY_F_CONTIGUOUS):
+                    r1 = PyArray_FromArraySafe(r1, NULL, cnp.NPY_F_CONTIGUOUS)
+                if not cnp.PyArray_CHKFLAGS(u1, cnp.NPY_F_CONTIGUOUS):
+                    u1 = PyArray_FromArraySafe(u1, NULL, cnp.NPY_F_CONTIGUOUS)
+                if typecode == cnp.NPY_FLOAT:
+                    thin_qr_block_row_insert(m+p, n,
+                            <float*>extract(qnew, qs), qs,
+                            <float*>extract(r1, rs), rs,
+                            <float*>extract(u1, us), us, k1, p)
+                elif typecode == cnp.NPY_DOUBLE:
+                    thin_qr_block_row_insert(m+p, n,
+                            <double*>extract(qnew, qs), qs,
+                            <double*>extract(r1, rs), rs,
+                            <double*>extract(u1, us), us, k1, p)
+                elif typecode == cnp.NPY_CFLOAT:
+                    thin_qr_block_row_insert(m+p, n,
+                            <float_complex*>extract(qnew, qs), qs,
+                            <float_complex*>extract(r1, rs), rs,
+                            <float_complex*>extract(u1, us), us, k1, p)
+                else:  # cnp.NPY_CDOUBLE:
+                    thin_qr_block_row_insert(m+p, n,
+                            <double_complex*>extract(qnew, qs), qs,
+                            <double_complex*>extract(r1, rs), rs,
+                            <double_complex*>extract(u1, us), us, k1, p)
+            return qnew[:, :-p], r1
         else:
-            if typecode == cnp.NPY_FLOAT:
-                info = qr_block_row_insert(m+p, n, <float*>extract(qnew, qs), qs,
-                        <float*>extract(rnew, rs), rs, k1, p)
-            elif typecode == cnp.NPY_DOUBLE:
-                info = qr_block_row_insert(m+p, n, <double*>extract(qnew, qs), qs,
-                        <double*>extract(rnew, rs), rs, k1, p)
-            elif typecode == cnp.NPY_CFLOAT:
-                info = qr_block_row_insert(m+p, n, <float_complex*>extract(qnew, qs),
-                        qs, <float_complex*>extract(rnew, rs), rs, k1, p)
-            else:  # cnp.NPY_CDOUBLE
-                info = qr_block_row_insert(m+p, n, <double_complex*>extract(qnew, qs),
-                        qs, <double_complex*>extract(rnew, rs), rs, k1, p)
-            if info == MEMORY_ERROR:
-                raise MemoryError('malloc failed')
-        return qnew, rnew
+            shape[0] = m+p
+            shape[1] = m+p
+            qnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
+            shape[1] = n
+            rnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
+            
+            # doing this by hand is unlikely to be any quicker.
+            rnew[:m,:] = r1    
+            rnew[m:,:] = u1
+            qnew[:-p,:-p] = q1;
+            ind = np.arange(m,m+p)
+            qnew[ind,ind] = 1
+
+            if p == 1:
+                if typecode == cnp.NPY_FLOAT:
+                    qr_row_insert(m+p, n, <float*>extract(qnew, qs), qs,
+                            <float*>extract(rnew, rs), rs, k1)
+                elif typecode == cnp.NPY_DOUBLE:
+                    qr_row_insert(m+p, n, <double*>extract(qnew, qs), qs,
+                            <double*>extract(rnew, rs), rs, k1)
+                elif typecode == cnp.NPY_CFLOAT:
+                    qr_row_insert(m+p, n, <float_complex*>extract(qnew, qs), qs,
+                            <float_complex*>extract(rnew, rs), rs, k1)
+                else:  # cnp.NPY_CDOUBLE:
+                    qr_row_insert(m+p, n, <double_complex*>extract(qnew, qs),
+                            qs, <double_complex*>extract(rnew, rs), rs, k1)
+            else:
+                if typecode == cnp.NPY_FLOAT:
+                    info = qr_block_row_insert(m+p, n,
+                            <float*>extract(qnew, qs), qs,
+                            <float*>extract(rnew, rs), rs, k1, p)
+                elif typecode == cnp.NPY_DOUBLE:
+                    info = qr_block_row_insert(m+p, n,
+                            <double*>extract(qnew, qs), qs,
+                            <double*>extract(rnew, rs), rs, k1, p)
+                elif typecode == cnp.NPY_CFLOAT:
+                    info = qr_block_row_insert(m+p, n,
+                            <float_complex*>extract(qnew, qs), qs,
+                            <float_complex*>extract(rnew, rs), rs, k1, p)
+                else:  # cnp.NPY_CDOUBLE
+                    info = qr_block_row_insert(m+p, n,
+                            <double_complex*>extract(qnew, qs), qs,
+                            <double_complex*>extract(rnew, rs), rs, k1, p)
+                if info == MEMORY_ERROR:
+                    raise MemoryError('malloc failed')
+            return qnew, rnew
 
     elif which == 'col':
         u1 = PyArray_CheckFromAny(u, NULL, 0, 0, u_flags, NULL)
         if u1.ndim == 2:
             q_flags = cnp.NPY_F_CONTIGUOUS
-        q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qu,
+        q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qru,
                 q_flags, True, NPY_ANYORDER, check_finite)
         if economic:
             raise ValueError('economic mode decompositions are not supported.')
         if not cnp.PyArray_ISONESEGMENT(q1):
             q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
 
-        if (not overwrite_qu and cnp.PyArray_CHKFLAGS(q1, cnp.NPY_C_CONTIGUOUS)
+        if (not overwrite_qru and cnp.PyArray_CHKFLAGS(q1, cnp.NPY_C_CONTIGUOUS)
             and (typecode == cnp.NPY_CFLOAT or typecode == cnp.NPY_CDOUBLE)):
             u_flags |= cnp.NPY_ENSURECOPY
             u1 = PyArray_FromArraySafe(u1, NULL, u_flags)
