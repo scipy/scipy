@@ -11,8 +11,8 @@ import operator
 
 import numpy as np
 
-from scipy.lib.six import zip as izip, xrange
-from scipy.lib.six import iteritems
+from scipy._lib.six import zip as izip, xrange
+from scipy._lib.six import iteritems
 
 from .base import spmatrix, isspmatrix
 from .sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,

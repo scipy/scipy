@@ -7,7 +7,7 @@ __all__ = ['csc_matrix', 'isspmatrix_csc']
 
 
 import numpy as np
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 from ._sparsetools import csc_tocsr
 from . import _sparsetools

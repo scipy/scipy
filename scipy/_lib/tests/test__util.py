@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.testing import assert_equal, assert_
 
-from scipy.lib._util import _aligned_zeros
+from scipy._lib._util import _aligned_zeros
 
 
 def test__aligned_zeros():

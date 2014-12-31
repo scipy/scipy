@@ -175,8 +175,8 @@ import numpy as np
 from . import _hierarchy
 import scipy.spatial.distance as distance
 
-from scipy.lib.six import string_types
-from scipy.lib.six import xrange
+from scipy._lib.six import string_types
+from scipy._lib.six import xrange
 
 _cpy_non_euclid_methods = {'single': 0, 'complete': 1, 'average': 2,
                            'weighted': 6}

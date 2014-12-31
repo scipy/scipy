@@ -13,7 +13,7 @@ from glob import glob
 from io import BytesIO
 from tempfile import mkdtemp
 
-from scipy.lib.six import u, text_type, string_types
+from scipy._lib.six import u, text_type, string_types
 
 import warnings
 import shutil

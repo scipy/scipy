@@ -1,6 +1,6 @@
 import numpy as np
 from ._fortran import *
-from scipy.lib._version import NumpyVersion
+from scipy._lib._version import NumpyVersion
 
 # Don't use deprecated Numpy C API.  Define this to a fixed version instead of
 # NPY_API_VERSION in order not to break compilation for released Scipy versions

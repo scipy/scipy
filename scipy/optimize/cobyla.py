@@ -13,7 +13,7 @@ Functions
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from scipy.lib.six import callable
+from scipy._lib.six import callable
 from scipy.optimize import _cobyla
 from .optimize import OptimizeResult, _check_unknown_options
 

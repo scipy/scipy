@@ -40,7 +40,7 @@ from numpy import ndarray
 import numpy.ma as ma
 from numpy.ma import masked, nomask
 
-from scipy.lib.six import iteritems
+from scipy._lib.six import iteritems
 
 import itertools
 import warnings

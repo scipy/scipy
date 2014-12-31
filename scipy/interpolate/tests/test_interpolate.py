@@ -9,8 +9,8 @@ from numpy.testing import (assert_, assert_equal, assert_almost_equal,
 from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
 
-from scipy.lib.six import xrange
-from scipy.lib._version import NumpyVersion
+from scipy._lib.six import xrange
+from scipy._lib._version import NumpyVersion
 
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          ppform, splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
@@ -19,7 +19,7 @@ from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
 
 from scipy.interpolate import _ppoly
 
-from scipy.lib._gcutils import assert_deallocated
+from scipy._lib._gcutils import assert_deallocated
 
 
 class TestInterp2D(TestCase):

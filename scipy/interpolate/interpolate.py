@@ -20,7 +20,7 @@ import warnings
 import functools
 import operator
 
-from scipy.lib.six import xrange, integer_types
+from scipy._lib.six import xrange, integer_types
 
 from . import fitpack
 from . import dfitpack

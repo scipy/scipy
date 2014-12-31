@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
-from scipy.lib.six import callable
+from scipy._lib.six import callable
 
 
 def binned_statistic(x, values, statistic='mean',

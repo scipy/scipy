@@ -7,7 +7,7 @@ from numpy.testing import assert_raises, assert_approx_equal, \
                           assert_allclose, assert_array_equal,\
                           assert_array_almost_equal_nulp, dec
 from scipy import signal, fftpack
-from scipy.lib._version import NumpyVersion
+from scipy._lib._version import NumpyVersion
 from scipy.signal import periodogram, welch, lombscargle
 
 

@@ -14,7 +14,7 @@ from numpy import (isscalar, r_, log, sum, around, unique, asarray,
                    pi, exp, ravel, angle, count_nonzero)
 from numpy.testing.decorators import setastest
 
-from scipy.lib.six import string_types
+from scipy._lib.six import string_types
 from scipy import optimize
 from scipy import special
 from . import statlib

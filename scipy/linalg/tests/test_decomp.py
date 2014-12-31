@@ -17,7 +17,7 @@ from numpy.testing import (TestCase, assert_equal, assert_array_almost_equal,
         assert_array_equal, assert_raises, assert_, assert_allclose,
         run_module_suite, dec)
 
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq,

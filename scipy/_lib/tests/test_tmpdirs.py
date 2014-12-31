@@ -4,7 +4,7 @@ from __future__ import division, print_function, absolute_import
 from os import getcwd
 from os.path import realpath, abspath, dirname, isfile, join as pjoin, exists
 
-from scipy.lib._tmpdirs import tempdir, in_tempdir, in_dir
+from scipy._lib._tmpdirs import tempdir, in_tempdir, in_dir
 
 from numpy.testing import run_module_suite, assert_, assert_equal
 

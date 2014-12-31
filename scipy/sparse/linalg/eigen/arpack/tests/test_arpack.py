@@ -23,7 +23,7 @@ from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
 
 from scipy.linalg import svd, hilbert
 
-from scipy.lib._gcutils import assert_deallocated
+from scipy._lib._gcutils import assert_deallocated
 
 
 # eigs() and eigsh() are called many times, so apply a filter for the warnings

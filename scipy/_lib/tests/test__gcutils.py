@@ -2,7 +2,7 @@
 """
 import gc
 
-from scipy.lib._gcutils import set_gc_state, gc_state, assert_deallocated, ReferenceError
+from scipy._lib._gcutils import set_gc_state, gc_state, assert_deallocated, ReferenceError
 
 from nose.tools import assert_equal, raises
 

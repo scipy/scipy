@@ -15,7 +15,7 @@ from __future__ import division, print_function, absolute_import
 
 from scipy.optimize import minpack2
 import numpy as np
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 __all__ = ['line_search_wolfe1', 'line_search_wolfe2',
            'scalar_search_wolfe1', 'scalar_search_wolfe2',

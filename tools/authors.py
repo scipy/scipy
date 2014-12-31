@@ -19,7 +19,7 @@ import os
 import subprocess
 
 try:
-    from scipy.lib.six import u, PY3
+    from scipy._lib.six import u, PY3
 except ImportError:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__),
                                     os.pardir, 'scipy', 'lib'))

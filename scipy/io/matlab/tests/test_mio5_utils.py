@@ -16,7 +16,7 @@ from nose.tools import assert_true, assert_false, \
 from numpy.testing import assert_array_equal, assert_array_almost_equal, \
      run_module_suite
 
-from scipy.lib.six import u
+from scipy._lib.six import u
 
 import scipy.io.matlab.byteordercodes as boc
 import scipy.io.matlab.streams as streams

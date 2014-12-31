@@ -10,7 +10,7 @@ from __future__ import division, print_function, absolute_import
 import sys
 import operator
 
-from scipy.lib.six import reduce
+from scipy._lib.six import reduce
 
 import numpy as np
 

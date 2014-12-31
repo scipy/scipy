@@ -9,7 +9,7 @@ __all__ = ['upcast','getdtype','isscalarlike','isintlike',
 import warnings
 import numpy as np
 
-from scipy.lib._version import NumpyVersion
+from scipy._lib._version import NumpyVersion
 
 # keep this list syncronized with sparsetools
 #supported_dtypes = ['bool', 'int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32',

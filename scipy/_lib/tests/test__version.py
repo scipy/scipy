@@ -1,5 +1,5 @@
 from numpy.testing import assert_, run_module_suite, assert_raises
-from scipy.lib._version import NumpyVersion
+from scipy._lib._version import NumpyVersion
 
 
 def test_main_versions():

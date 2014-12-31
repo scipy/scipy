@@ -103,7 +103,7 @@ else:
         raise ImportError(msg)
 
     from scipy.version import version as __version__
-    from scipy.lib._version import NumpyVersion as _NumpyVersion
+    from scipy._lib._version import NumpyVersion as _NumpyVersion
     if _NumpyVersion(__numpy_version__) < '1.6.2':
         import warnings
         warnings.warn("Numpy 1.6.2 or above is recommended for this version of "
