@@ -11,7 +11,7 @@ from scipy.lib.six import string_types
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
            'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
-           'slepian', 'cosine', 'hann', 'get_window']
+           'slepian', 'cosine', 'hann', 'exponential', 'get_window']
 
 
 def boxcar(M, sym=True):
@@ -1390,6 +1390,71 @@ def cosine(M, sym=True):
     return w
 
 
+def exponential(M, N=0, tau=1, sym=True):
+    """Return an exponential (or Poisson) window.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    N : int
+        Parameter defining the center location.
+    tau : int
+        Parameter defining the decay. For N=0 use tau=-(M-1)/ln(x) if x is the fraction
+        of the window at the end (e.g. x=0.01 -> tau=-(M-1)/ln(0.01))
+    sym : bool, optional
+        When True (default), generates a symmetric window, for use in filter
+        design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if `M` is even and `sym` is True).
+
+    Notes
+    -----
+    The Exponential window is defined as
+
+    .. math::  w(n) = e^{-|n-N|} \frac{1}{tau}
+
+    See:
+    Gade, Svend; Herlufsen, Henrik (1987). Technical Review No 3-1987:
+    Windows to FFT analysis (Part I). Bruel & Kjaer.
+
+    Examples
+    --------
+    Plot the window:
+
+    >>> import matplotlib.pyplot as plt
+    >>> M=50
+    >>> tau=-(M-1)/np.log(0.01)
+    >>> print(-np.log(0.01))
+    >>> window=exponential(M=M,N=0,tau=tau)
+    >>> plt.plot(window)
+    >>> plt.title("Exponential window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+    >>> plt.show()
+
+    """
+    if M < 1:
+        return np.array([])
+    if M == 1:
+        return np.ones(1, 'd')
+    odd = M % 2
+    if not sym and not odd:
+        M = M + 1
+    n = np.arange(0, M)
+    w = np.exp(-np.abs(n-N)/tau)
+    if not sym and not odd:
+        w = w[:-1]
+
+    return w
+
+
 def get_window(window, Nx, fftbins=True):
     """
     Return a window.
@@ -1506,6 +1571,8 @@ def get_window(window, Nx, fftbins=True):
             winfunc = cosine
         elif winstr in ['chebwin', 'cheb']:
             winfunc = chebwin
+        elif winstr in ['exponential', 'poisson']:
+            winfunc = exponential
         else:
             raise ValueError("Unknown window type.")
 
