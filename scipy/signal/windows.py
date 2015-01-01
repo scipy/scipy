@@ -1398,11 +1398,11 @@ def exponential(M, N=0, tau=1, sym=True):
     M : int
         Number of points in the output window. If zero or less, an empty
         array is returned.
-    N : int
+    N : int, optional
         Parameter defining the center location.
-    tau : int
-        Parameter defining the decay. For `N=0` use `tau=-(M-1)/ln(x)` if `x` is the fraction
-        of the window at the end (e.g. `x=0.01` -> `tau=-(M-1)/ln(0.01)`)
+    tau : int, optional
+        Parameter defining the decay.  For ``N=0`` use ``tau = -(M-1) / ln(x)``
+        if ``x`` is the fraction of the window at the end.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -1418,21 +1418,22 @@ def exponential(M, N=0, tau=1, sym=True):
     -----
     The Exponential window is defined as
 
-    .. math::  w(n) = e^{-|n-N|} \frac{1}{tau}
+    .. math::  w(n) = e^{-|n-N| \frac{1}{\tau}}
 
     References
     ----------
-    Gade, Svend; Herlufsen, Henrik (1987). Technical Review No 3-1987:
-    Windows to FFT analysis (Part I). Bruel & Kjaer.
+    S. Gade and H. Herlufsen, "Windows to FFT analysis (Part I)",
+    Technical Review 3, Bruel & Kjaer, 1987.
 
     Examples
     --------
     Plot the window:
 
+    >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> M = 50
-    >>> tau = - (M - 1) / np.log(0.01)
-    >>> window = exponential(M = M, N = 0, tau = tau)
+    >>> tau = -(M-1) / np.log(0.01)
+    >>> window = signal.exponential(M=M, N=10, tau=tau)
     >>> plt.plot(window)
     >>> plt.title("Exponential window")
     >>> plt.ylabel("Amplitude")
@@ -1447,8 +1448,9 @@ def exponential(M, N=0, tau=1, sym=True):
     odd = M % 2
     if not sym and not odd:
         M = M + 1
+
     n = np.arange(0, M)
-    w = np.exp(-np.abs(n-N)/tau)
+    w = np.exp(-np.abs(n-N) / tau)
     if not sym and not odd:
         w = w[:-1]
 
