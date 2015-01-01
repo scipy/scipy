@@ -34,6 +34,13 @@ static char const rcsid[] =
 
 #include "tnc.h"
 
+/* NPY_ARRAY_IN_ARRAY was introduced in numpy 1.7.0 */
+#if NPY_API_VERSION < 0x00000007
+    #define NPY_ARRAY_C_CONTIGUOUS    0x0001
+    #define NPY_ARRAY_ALIGNED         0x0100
+    #define NPY_ARRAY_IN_ARRAY (NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_ALIGNED)
+#endif
+
 typedef struct _pytnc_state
 {
   PyObject *py_function;

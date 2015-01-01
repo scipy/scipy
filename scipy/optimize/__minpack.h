@@ -645,7 +645,7 @@ static PyObject *minpack_chkder(PyObject *self, PyObject *args)
   if (n != PyArray_DIMS(ap_x)[0])
      PYERR(minpack_error,"Input data array (x) must have length n");
   x = (double *) PyArray_DATA(ap_x);
-  if (!ISCONTIGUOUS(ap_xp) || (PyArray_TYPE(ap_xp) != NPY_DOUBLE))
+  if (!PyArray_IS_C_CONTIGUOUS(ap_xp) || (PyArray_TYPE(ap_xp) != NPY_DOUBLE))
      PYERR(minpack_error,"Seventh argument (xp) must be contiguous array of type Float64.");
 
   if (mode == 1) {
@@ -657,7 +657,7 @@ static PyObject *minpack_chkder(PyObject *self, PyObject *args)
     CHKDER(&m, &n, x, fvec, fjac, &ldfjac, xp, fvecp, &mode, err);
   }
   else if (mode == 2) {
-    if (!ISCONTIGUOUS(ap_err) || (PyArray_TYPE(ap_err) != NPY_DOUBLE))
+    if (!PyArray_IS_C_CONTIGUOUS(ap_err) || (PyArray_TYPE(ap_err) != NPY_DOUBLE))
        PYERR(minpack_error,"Last argument (err) must be contiguous array of type Float64.");
     ap_fvec = (PyArrayObject *)PyArray_ContiguousFromObject(o_fvec,NPY_DOUBLE,1,1);
     ap_fjac = (PyArrayObject *)PyArray_ContiguousFromObject(o_fjac,NPY_DOUBLE,2,2);
