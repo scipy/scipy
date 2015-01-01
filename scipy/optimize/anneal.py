@@ -91,6 +91,12 @@ class base_schedule(object):
     def update_temp(self, x0):
         pass
 
+    def _violations(self, x):
+        above = x > self.upper
+        below = x < self.lower
+        vlts = above + below
+        return vlts
+
 
 #  A schedule due to Lester Ingber
 class fast_sa(base_schedule):
@@ -107,8 +113,18 @@ class fast_sa(base_schedule):
         u = squeeze(random.uniform(0.0, 1.0, size=self.dims))
         T = self.T
         y = sign(u-0.5)*T*((1+1.0/T)**abs(2*u-1)-1.0)
-        xc = y*(self.upper - self.lower)
+        delta = ones(self.dims) * (self.upper - self.lower)
+        xc = y*delta
         xnew = x0 + xc
+
+        while True:
+            _vlt = self._violations(xnew)
+            if any(_vlt):
+                u = squeeze(random.uniform(0, 1.0, size=(_vlt[_vlt].size,)))
+                y = sign(u-0.5)*T*((1+1.0/T)**abs(2*u-1)-1.0)
+                xnew[_vlt] = x0[_vlt] + y*delta[_vlt]
+            else:
+                break
         return xnew
 
     def update_temp(self):
@@ -123,6 +139,16 @@ class cauchy_sa(base_schedule):
         numbers = squeeze(random.uniform(-pi/2, pi/2, size=self.dims))
         xc = self.learn_rate * self.T * tan(numbers)
         xnew = x0 + xc
+
+        while True:
+            _vlt = self._violations(xnew)
+            if any(_vlt):
+                numbers = squeeze(random.uniform(-pi/2, pi/2,
+                    size=(_vlt[_vlt].size,)))
+                _xc = self.learn_rate * self.T * tan(numbers)
+                xnew[_vlt] = x0[_vlt] + _xc
+            else:
+                break
         return xnew
 
     def update_temp(self):
@@ -138,7 +164,15 @@ class boltzmann_sa(base_schedule):
         x0 = asarray(x0)
         xc = squeeze(random.normal(0, 1.0, size=self.dims))
 
-        xnew = x0 + xc*std*self.learn_rate
+        std_lrn_rate = ones(self.dims) * std * self.learn_rate
+        xnew = x0 + xc*std_lrn_rate
+        while True:
+            _vlt = self._violations(xnew)
+            if any(_vlt):
+                _xc = squeeze(random.normal(0, 1.0, size=(_vlt[_vlt].size,)))
+                xnew[_vlt] = x0[_vlt] + _xc*std_lrn_rate[_vlt]
+            else:
+                break
         return xnew
 
     def update_temp(self):
