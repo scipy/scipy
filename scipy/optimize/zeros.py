@@ -391,7 +391,7 @@ def brentq(f, a, b, args=(),
     constrained multivariate optimizers
       `fmin_l_bfgs_b`, `fmin_tnc`, `fmin_cobyla`
     global optimizers
-      `anneal`, `basinhopping`, `brute`, `differential_evolution`
+      `basinhopping`, `brute`, `differential_evolution`
     local scalar minimizers
       `fminbound`, `brent`, `golden`, `bracket`
     n-dimensional root-finding
@@ -490,7 +490,7 @@ def brenth(f, a, b, args=(),
 
     fmin_l_bfgs_b, fmin_tnc, fmin_cobyla : constrained multivariate optimizers
 
-    anneal, brute : global optimizers
+    basinhopping, differential_evolution, brute : global optimizers
 
     fminbound, brent, golden, bracket : local scalar minimizers
 

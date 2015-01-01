@@ -100,13 +100,11 @@ class MyCallBack(object):
 
 
 class TestBasinHopping(TestCase):
-    """ Tests for basinhopping """
+
     def setUp(self):
         """ Tests setup.
 
-        run tests based on the 1-D and 2-D functions described above.  These
-        are the same functions as used in the anneal algorithm with some
-        gradients added.
+        Run tests based on the 1-D and 2-D functions described above.
         """
         self.x0 = (1.0, [1.0, 1.0])
         self.sol = (-0.195, np.array([-0.195, -0.1]))
