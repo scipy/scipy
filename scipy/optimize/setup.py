@@ -34,10 +34,12 @@ def configuration(parent_package='',top_path=None):
                          **numpy_nodepr_api)
 
     lapack = get_info('lapack_opt')
-    if ('define_macros' in lapack) and (lapack['define_macros'] is not None):
-        lapack['define_macros'] = lapack['define_macros'] + numpy_nodepr_api['define_macros']
-    else:
-        lapack['define_macros'] = numpy_nodepr_api['define_macros']
+    if 'define_macros' in numpy_nodepr_api:
+        if ('define_macros' in lapack) and (lapack['define_macros'] is not None):
+            lapack['define_macros'] = (lapack['define_macros'] +
+                                       numpy_nodepr_api['define_macros'])
+        else:
+            lapack['define_macros'] = numpy_nodepr_api['define_macros']
     sources = ['lbfgsb.pyf', 'lbfgsb.f', 'linpack.f', 'timer.f']
     config.add_extension('_lbfgsb',
                          sources=[join('lbfgsb',x) for x in sources],
