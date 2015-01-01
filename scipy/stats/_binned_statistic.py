@@ -42,10 +42,12 @@ def binned_statistic(x, values, statistic='mean',
             represented by function([]), or NaN if this returns an error.
 
     bins : int or sequence of scalars, optional
-        If `bins` is an int, it defines the number of equal-width
-        bins in the given range (10, by default). If `bins` is a sequence,
-        it defines the bin edges, including the rightmost edge, allowing
-        for non-uniform bin widths.
+        If `bins` is an int, it defines the number of equal-width bins in the
+        given range (10, by default).  If `bins` is a sequence, it defines the
+        bin edges, including the rightmost edge, allowing for non-uniform bin
+        widths.  Values in `x` that are smaller than lowest bin are assigned to
+        bin number 1, values beyond the highest bin are assigned to bin number
+        ``len(bins)``.
     range : (float, float) or [(float, float)], optional
         The lower and upper range of the bins.  If not provided, range
         is simply ``(x.min(), x.max())``.  Values outside the range are
@@ -68,24 +70,44 @@ def binned_statistic(x, values, statistic='mean',
     Notes
     -----
     All but the last (righthand-most) bin is half-open.  In other words, if
-    `bins` is::
-
-      [1, 2, 3, 4]
-
-    then the first bin is ``[1, 2)`` (including 1, but excluding 2) and the
-    second ``[2, 3)``.  The last bin, however, is ``[3, 4]``, which *includes*
-    4.
+    `bins` is ``[1, 2, 3, 4]``, then the first bin is ``[1, 2)`` (including 1,
+    but excluding 2) and the second ``[2, 3)``.  The last bin, however, is
+    ``[3, 4]``, which *includes* 4.
 
     .. versionadded:: 0.11.0
 
     Examples
     --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    First a basic example:
+
     >>> stats.binned_statistic([1, 2, 1, 2, 4], np.arange(5), statistic='mean',
-    ... bins=3)
+    ...                        bins=3)
     (array([ 1.,  2.,  4.]), array([ 1.,  2.,  3.,  4.]), array([1, 2, 1, 2, 3]))
 
-    >>> stats.binned_statistic([1, 2, 1, 2, 4], np.arange(5), statistic='mean', bins=3)
-    (array([ 1.,  2.,  4.]), array([ 1.,  2.,  3.,  4.]), array([1, 2, 1, 2, 3]))
+    Now use ``bin_edges`` and ``binnumber`` to make a plot of a distribution
+    that shows the mean and distribution around that mean per bin, on top of a
+    regular histogram and the probability distribution function:
+
+    >>> x = np.linspace(0, 5, num=500)
+    >>> x_pdf = stats.maxwell.pdf(x)
+    >>> samples = stats.maxwell.rvs(size=10000)
+
+    >>> bin_means, bin_edges, binnumber = stats.binned_statistic(x, x_pdf,
+    ...         statistic='mean', bins=25)
+    >>> bin_width = (bin_edges[1] - bin_edges[0])
+    >>> bin_centers = bin_edges[1:] - bin_width/2
+
+    >>> plt.hist(samples, bins=50, normed=True, histtype='stepfilled', alpha=0.2,
+    ...          label='histogram of data')
+    >>> plt.plot(x, x_pdf, 'r-', label='analytical pdf')
+    >>> plt.hlines(bin_means, bin_edges[:-1], bin_edges[1:], colors='g', lw=2,
+    ...            label='binned statistic of data')
+    >>> plt.plot((binnumber - 0.5) * bin_width, x_pdf, 'g.', alpha=0.5)
+    >>> plt.legend(fontsize=10)
+    >>> plt.show()
 
     """
     try:
