@@ -25,7 +25,6 @@ from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                       _minimize_scalar_golden, MemoizeJac)
 from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
-from .anneal import _minimize_anneal
 
 # constrained minimization
 from .lbfgsb import _minimize_lbfgsb
@@ -168,10 +167,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     as the truncated Newton method). It uses a CG method to the compute the
     search direction. See also *TNC* method for a box-constrained
     minimization with a similar algorithm.
-
-    Method *Anneal* uses simulated annealing, which is a probabilistic
-    metaheuristic algorithm for global optimization. It uses no derivative
-    information from the function being optimized.
 
     Method *dogleg* uses the dog-leg trust-region algorithm [5]_
     for unconstrained minimization. This algorithm requires the gradient
@@ -345,15 +340,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     else:
         meth = method.lower()
 
-    # deprecated methods
-    if meth == 'anneal':
-        warn('Method %s is deprecated in scipy 0.14.0' % method,
-                DeprecationWarning)
     if options is None:
         options = {}
     # check if optional parameters are supported by the selected method
     # - jac
-    if meth in ['nelder-mead', 'powell', 'anneal', 'cobyla'] and bool(jac):
+    if meth in ['nelder-mead', 'powell', 'cobyla'] and bool(jac):
         warn('Method %s does not use gradient information (jac).' % method,
              RuntimeWarning)
     # - hess
@@ -376,10 +367,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - callback
-    if (meth in ['anneal', 'cobyla'] and callback is not None):
+    if (meth in ['cobyla'] and callback is not None):
         warn('Method %s does not support callback.' % method, RuntimeWarning)
     # - return_all
-    if (meth in ['anneal', 'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and
+    if (meth in ['l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and
             options.get('return_all', False)):
         warn('Method %s does not support the return_all option.' % method,
              RuntimeWarning)
@@ -397,8 +388,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         options = dict(options)
         if meth in ['nelder-mead', 'newton-cg', 'powell', 'tnc']:
             options.setdefault('xtol', tol)
-        if meth in ['nelder-mead', 'powell', 'anneal', 'l-bfgs-b', 'tnc',
-                    'slsqp']:
+        if meth in ['nelder-mead', 'powell', 'l-bfgs-b', 'tnc', 'slsqp']:
             options.setdefault('ftol', tol)
         if meth in ['bfgs', 'cg', 'l-bfgs-b', 'tnc', 'dogleg', 'trust-ncg']:
             options.setdefault('gtol', tol)
@@ -420,8 +410,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     elif meth == 'newton-cg':
         return _minimize_newtoncg(fun, x0, args, jac, hess, hessp, callback,
                                   **options)
-    elif meth == 'anneal':
-        return _minimize_anneal(fun, x0, args, **options)
     elif meth == 'l-bfgs-b':
         return _minimize_lbfgsb(fun, x0, args, jac, bounds,
                                 callback=callback, **options)

@@ -2440,8 +2440,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
 
     See Also
     --------
-    anneal : Another approach to seeking the global minimum of
-    multivariate, multimodal functions.
+    basinhopping, differential_evolution
 
     Notes
     -----
