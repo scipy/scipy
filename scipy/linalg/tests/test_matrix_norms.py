@@ -16,128 +16,148 @@ from scipy.linalg._matrix_norms import (
         elementwise_norm, frobenius_norm, nuclear_norm, spectral_norm,
         schatten_norm, induced_norm, ky_fan_norm)
 
-old_assert_almost_equal = assert_almost_equal
-
-
-# Copied from numpy.
-# For single precision, 'decimal' has been changed from 6 to 5
-# because the library my scipy svd calculation is slightly less precise
-# than the numpy svd calculation for one of the tests.
-def assert_almost_equal(a, b, **kw):
-    if np.asarray(a).dtype.type in (np.single, np.csingle):
-        decimal = 5
-    else:
-        decimal = 12
-    old_assert_almost_equal(a, b, decimal=decimal, **kw)
-
 
 class _TestMatrixNorms(object):
     # Test matrix norms without using the 'axis' or 'keepdims' keyword args.
     # These tests are copied from or inspired by numpy matrix norm tests.
 
-    def test_matrix_2x2(self):
+    def _assert_allclose(self, a, b):
+        # Customize the relative tolerance according to dtype.
+        assert_allclose(a, b, rtol=self.rtol, atol=0)
+
+    def _check_frobenius_norm(self, A, desired):
+        self._assert_allclose(frobenius_norm(A), desired)
+        self._assert_allclose(elementwise_norm(A, 2), desired)
+        self._assert_allclose(schatten_norm(A, 2), desired)
+        self._assert_allclose(scipy.linalg.norm(A), desired)
+        self._assert_allclose(scipy.linalg.norm(A, 'fro'), desired)
+        self._assert_allclose(np.linalg.norm(A), desired)
+        self._assert_allclose(np.linalg.norm(A, 'fro'), desired)
+
+    def _check_spectral_norm(self, A, desired):
+        self._assert_allclose(spectral_norm(A), desired)
+        self._assert_allclose(induced_norm(A, 2), desired)
+        self._assert_allclose(schatten_norm(A, np.inf), desired)
+        self._assert_allclose(ky_fan_norm(A, 1), desired)
+        self._assert_allclose(scipy.linalg.norm(A, 2), desired)
+        self._assert_allclose(np.linalg.norm(A, 2), desired)
+
+    def _check_nuclear_norm(self, A, desired):
+        self._assert_allclose(nuclear_norm(A), desired)
+        self._assert_allclose(schatten_norm(A, 1), desired)
+        self._assert_allclose(ky_fan_norm(A, min(A.shape)), desired)
+
+    def _check_max_absolute_row_sum_norm(self, A, desired):
+        self._assert_allclose(induced_norm(A, np.inf), desired)
+        self._assert_allclose(scipy.linalg.norm(A, np.inf), desired)
+        self._assert_allclose(np.linalg.norm(A, np.inf), desired)
+
+    def _check_max_absolute_column_sum_norm(self, A, desired):
+        self._assert_allclose(induced_norm(A, 1), desired)
+        self._assert_allclose(scipy.linalg.norm(A, 1), desired)
+        self._assert_allclose(np.linalg.norm(A, 1), desired)
+
+    def _check_uninteresting_schatten_norms(self, A):
+        for p in 1.2, 3:
+            s = scipy.linalg.svdvals(A)
+            desired = np.power(s, p).sum()**(1/p)
+            self._assert_allclose(schatten_norm(A, p), desired)
+
+    def _check_uninteresting_elementwise_norms(self, A):
+        for p in 1.2, 2:
+            desired = np.power(A, p).sum()**(1/p)
+            v = np.asarray(A).ravel()
+            self._assert_allclose(elementwise_norm(A, p), desired)
+            self._assert_allclose(elementwise_norm(v, p), desired)
+            self._assert_allclose(scipy.linalg.norm(v, p), desired)
+            self._assert_allclose(np.linalg.norm(v, p), desired)
+
+    def _check_uninteresting_ky_fan_norms(self, A):
+        for k in range(2, min(A.shape)):
+            s = scipy.linalg.svdvals(A)
+            desired = s[:k].sum()
+            self._assert_allclose(ky_fan_norm(A, k), desired)
+
+    def _check_parameterized_norms(self, A):
+        self._check_uninteresting_schatten_norms(A)
+        self._check_uninteresting_elementwise_norms(A)
+        self._check_uninteresting_ky_fan_norms(A)
+
+    def test_2x2(self):
         A = self.arraytype([[1, 3], [5, 7]], dtype=self.dt)
 
-        # Frobenius norm.
-        desired = 84**0.5
-        assert_almost_equal(frobenius_norm(A), desired)
-        assert_almost_equal(elementwise_norm(A, 2), desired)
-        assert_almost_equal(schatten_norm(A, 2), desired)
-        assert_almost_equal(scipy.linalg.norm(A), desired)
-        assert_almost_equal(scipy.linalg.norm(A, 'fro'), desired)
-        assert_almost_equal(np.linalg.norm(A), desired)
-        assert_almost_equal(np.linalg.norm(A, 'fro'), desired)
+        # Check special norms and parameterized norms.
+        self._check_frobenius_norm(A, 84**0.5)
+        self._check_spectral_norm(A, 9.1231056256176615)
+        self._check_nuclear_norm(A, 10.0)
+        self._check_max_absolute_row_sum_norm(A, 12.0)
+        self._check_max_absolute_column_sum_norm(A, 10.0)
+        self._check_parameterized_norms(A)
 
-        # Spectral norm.
-        desired = 9.1231056256176615
-        assert_almost_equal(spectral_norm(A), desired)
-        assert_almost_equal(induced_norm(A, 2), desired)
-        assert_almost_equal(schatten_norm(A, np.inf), desired)
-        assert_almost_equal(ky_fan_norm(A, 1), desired)
-        assert_almost_equal(scipy.linalg.norm(A, 2), desired)
-        assert_almost_equal(np.linalg.norm(A, 2), desired)
-
-        # Nuclear norm.
-        desired = 10.0
-        assert_almost_equal(nuclear_norm(A), desired)
-        assert_almost_equal(schatten_norm(A, 1), desired)
-        assert_almost_equal(ky_fan_norm(A, min(A.shape)), desired)
-
-        # Maximum absolute row sum norm.
-        desired = 12.0
-        assert_almost_equal(induced_norm(A, np.inf), desired)
-        assert_almost_equal(scipy.linalg.norm(A, np.inf), desired)
-        assert_almost_equal(np.linalg.norm(A, np.inf), desired)
-
-        # Maximum absolute column sum norm.
-        desired = 10.0
-        assert_almost_equal(induced_norm(A, 1), desired)
-        assert_almost_equal(scipy.linalg.norm(A, 1), desired)
-        assert_almost_equal(np.linalg.norm(A, 1), desired)
-
-        # Schatten p-norm for an uninteresting value of p.
-        p = 3
-        s = scipy.linalg.svdvals(A)
-        desired = np.power(s, p).sum()**(1/p)
-        assert_almost_equal(schatten_norm(A, p), desired)
-
-        # Elementwise p-norm for an uninteresting value of p.
-        p = 3
-        desired = np.power(A, p).sum()**(1/p)
-        v = np.asarray(A).ravel()
-        assert_almost_equal(elementwise_norm(A, p), desired)
-        assert_almost_equal(elementwise_norm(v, p), desired)
-        assert_almost_equal(scipy.linalg.norm(v, p), desired)
-        assert_almost_equal(np.linalg.norm(v, p), desired)
-
-
-    """
-    def test_matrix_3x3(self):
+    def test_3x3(self):
         # This test has been added because the 2x2 example
         # happened to have equal nuclear norm and induced 1-norm.
-        # The 1/10 scaling factor accommodates the absolute tolerance
-        # used in assert_almost_equal.
-        A = (1/10) * np.array([[1, 2, 3], [6, 0, 5], [3, 2, 1]], dtype=self.dt)
-        assert_almost_equal(norm(A), (1/10) * 89**0.5)
-        assert_almost_equal(norm(A, 'fro'), (1/10) * 89**0.5)
-        assert_almost_equal(norm(A, 'nuc'), 1.3366836911774836)
-        assert_almost_equal(norm(A, inf), 1.1)
-        assert_almost_equal(norm(A, -inf), 0.6)
-        assert_almost_equal(norm(A, 1), 1.0)
-        assert_almost_equal(norm(A, -1), 0.4)
-        assert_almost_equal(norm(A, 2), 0.88722940323461277)
-        assert_almost_equal(norm(A, -2), 0.19456584790481812)
+        # Also, for matrices smaller than 3x3 every ky-fan norm
+        # is either a spectral norm or a nuclear norm.
+        A = np.array([[1, 2, 3], [6, 0, 5], [3, 2, 1]], dtype=self.dt)
+
+        # Check special norms and parameterized norms.
+        self._check_frobenius_norm(A, 89**0.5)
+        self._check_spectral_norm(A, 8.8722940323461277)
+        self._check_nuclear_norm(A, 13.366836911774836)
+        self._check_max_absolute_row_sum_norm(A, 11.0)
+        self._check_max_absolute_column_sum_norm(A, 10.0)
+        self._check_parameterized_norms(A)
+
+    """
+    def test_2x3(self):
+        # Check norms of a rectangular matrix.
+        A = np.array([[1, 2, 3], [6, 0, 5]], dtype=self.dt)
+
+        # Check special norms and parameterized norms.
+        self._check_frobenius_norm(A, 89**0.5)
+        self._check_spectral_norm(A, 8.8722940323461277)
+        self._check_nuclear_norm(A, 13.366836911774836)
+        self._check_max_absolute_row_sum_norm(A, 11.0)
+        self._check_max_absolute_column_sum_norm(A, 10.0)
+        self._check_parameterized_norms(A)
     """
 
 
 class TestNormDoubleArray(_TestMatrixNorms):
     arraytype = np.array
     dt = np.double
+    rtol = 1e-12
 
 
 class TestNormSingleArray(_TestMatrixNorms):
     arraytype = np.array
     dt = np.float32
+    rtol = 1e-6
 
 
 class TestNormInt64Array(_TestMatrixNorms):
     arraytype = np.array
     dt = np.int64
+    rtol = 1e-12
 
 
 class TestNormDoubleMatrix(_TestMatrixNorms):
     arraytype = np.matrix
     dt = np.double
+    rtol = 1e-12
 
 
 class TestNormSingleMatrix(_TestMatrixNorms):
     arraytype = np.matrix
     dt = np.float32
+    rtol = 1e-6
 
 
 class TestNormInt64Matrix(_TestMatrixNorms):
     arraytype = np.matrix
     dt = np.int64
+    rtol = 1e-12
 
 
 if __name__ == "__main__":
