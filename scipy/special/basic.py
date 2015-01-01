@@ -4,19 +4,18 @@
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 from scipy.lib.six import xrange
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt,
-                   where, mgrid, cos, sin, exp, place, issubdtype, extract,
-                   less, vectorize, inexact, nan, zeros, atleast_1d, sinc)
+                   where, mgrid, sin, place, issubdtype, extract,
+                   less, inexact, nan, zeros, atleast_1d, sinc)
 from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta,
                       hankel1, hankel2, yv, kv, gammaln, ndtri, errprint, poch,
-                      binom, xlogy)
-from . import _ufuncs
-import types
+                      binom)
 from . import specfun
 from . import orthogonal
-import warnings
 
 __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'ber_zeros', 'bernoulli', 'berp_zeros', 'bessel_diff_formula',
@@ -43,8 +42,8 @@ class SpecialFunctionWarning(Warning):
 warnings.simplefilter("always", category=SpecialFunctionWarning)
 
 
-def diric(x,n):
-    """Returns the periodic sinc function, also called the Dirichlet function
+def diric(x, n):
+    """Return the periodic sinc function, also called the Dirichlet function.
 
     The Dirichlet function is defined as::
 
@@ -63,29 +62,54 @@ def diric(x,n):
     -------
     diric : ndarray
 
+    Examples
+    --------
+    >>> from scipy import special
+    >>> import matplotlib.pyplot as plt
+
+    >>> x = np.linspace(-8*np.pi, 8*np.pi, num=201)
+    >>> plt.figure(figsize=(8,8));
+    >>> for idx, n in enumerate([2,3,4,9]):
+    ...     plt.subplot(2, 2, idx+1)
+    ...     plt.plot(x, special.diric(x, n))
+    ...     plt.title('diric, n={}'.format(n))
+    >>> plt.show()
+
     """
-    x,n = asarray(x), asarray(n)
+    x, n = asarray(x), asarray(n)
     n = asarray(n + (x-x))
     x = asarray(x + (n-n))
     if issubdtype(x.dtype, inexact):
         ytype = x.dtype
     else:
         ytype = float
-    y = zeros(x.shape,ytype)
+    y = zeros(x.shape, ytype)
+
+    # empirical minval for 32, 64 or 128 bit float computations
+    # where sin(x/2) < minval, result is fixed at +1 or -1
+    if np.finfo(ytype).eps < 1e-18:
+        minval = 1e-11
+    elif np.finfo(ytype).eps < 1e-15:
+        minval = 1e-7
+    else:
+        minval = 1e-3
 
     mask1 = (n <= 0) | (n != floor(n))
-    place(y,mask1,nan)
+    place(y, mask1, nan)
 
-    z = asarray(x / 2.0 / pi)
-    mask2 = (1-mask1) & (z == floor(z))
-    zsub = extract(mask2,z)
-    nsub = extract(mask2,n)
-    place(y,mask2,pow(-1,zsub*(nsub-1)))
+    x /= 2.0
+    denom = sin(x)
+    mask2 = (1-mask1) & (abs(denom) < minval)
+    xsub = extract(mask2, x)
+    nsub = extract(mask2, n)
+    zsub = xsub / pi
+    place(y, mask2, pow(-1, np.round(zsub)*(nsub-1)))
 
     mask = (1-mask1) & (1-mask2)
-    xsub = extract(mask,x)
-    nsub = extract(mask,n)
-    place(y,mask,sin(nsub*xsub/2.0)/(nsub*sin(xsub/2.0)))
+    xsub = extract(mask, x)
+    nsub = extract(mask, n)
+    dsub = extract(mask, denom)
+    place(y, mask, sin(nsub*xsub)/(nsub*dsub))
     return y
 
 
@@ -1112,7 +1136,7 @@ def ellipk(m):
     ellipkinc : Incomplete elliptic integral of the first kind
     ellipe : Complete elliptic integral of the second kind
     ellipeinc : Incomplete elliptic integral of the second kind
- 
+
 
     """
     return ellipkm1(1 - asarray(m))
