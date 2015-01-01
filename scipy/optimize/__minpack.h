@@ -69,7 +69,7 @@ int raw_multipack_calling_function(int *n, double *x, double *fvec, int *iflag)
     *iflag = -1;
     return -1;
   }
-  memcpy(fvec, result_array->data, (*n)*sizeof(double));
+  memcpy(fvec, PyArray_DATA(result_array), (*n)*sizeof(double));
   Py_DECREF(result_array);
   return 0;
 
@@ -95,7 +95,7 @@ int jac_multipack_calling_function(int *n, double *x, double *fvec, double *fjac
       *iflag = -1;
       return -1;
     }
-    memcpy(fvec, result_array->data, (*n)*sizeof(double));
+    memcpy(fvec, PyArray_DATA(result_array), (*n)*sizeof(double));
   }
   else {         /* iflag == 2 */
     result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian, *n, x, multipack_extra_arguments, 2, minpack_error);
@@ -104,9 +104,9 @@ int jac_multipack_calling_function(int *n, double *x, double *fvec, double *fjac
       return -1;
     }
     if (multipack_jac_transpose == 1)
-      MATRIXC2F(fjac, result_array->data, *n, *ldfjac)
+      MATRIXC2F(fjac, PyArray_DATA(result_array), *n, *ldfjac)
     else
-      memcpy(fjac, result_array->data, (*n)*(*ldfjac)*sizeof(double));
+      memcpy(fjac, PyArray_DATA(result_array), (*n)*(*ldfjac)*sizeof(double));
   }
 
   Py_DECREF(result_array);
@@ -128,7 +128,7 @@ int raw_multipack_lm_function(int *m, int *n, double *x, double *fvec, int *ifla
     *iflag = -1;
     return -1;
   }
-  memcpy(fvec, result_array->data, (*m)*sizeof(double));
+  memcpy(fvec, PyArray_DATA(result_array), (*m)*sizeof(double));
   Py_DECREF(result_array);
   return 0;
 }
@@ -153,7 +153,7 @@ int jac_multipack_lm_function(int *m, int *n, double *x, double *fvec, double *f
       *iflag = -1;
       return -1;
     }
-    memcpy(fvec, result_array->data, (*m)*sizeof(double));
+    memcpy(fvec, PyArray_DATA(result_array), (*m)*sizeof(double));
   }
   else {         /* iflag == 2 */
     result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian, *n, x, multipack_extra_arguments, 2, minpack_error);
@@ -162,9 +162,9 @@ int jac_multipack_lm_function(int *m, int *n, double *x, double *fvec, double *f
       return -1;
     }
     if (multipack_jac_transpose == 1) 
-      MATRIXC2F(fjac, result_array->data, *n, *ldfjac)
+      MATRIXC2F(fjac, PyArray_DATA(result_array), *n, *ldfjac)
     else
-      memcpy(fjac, result_array->data, (*n)*(*ldfjac)*sizeof(double));
+      memcpy(fjac, PyArray_DATA(result_array), (*n)*(*ldfjac)*sizeof(double));
   }
 
   Py_DECREF(result_array);
@@ -191,7 +191,7 @@ int smjac_multipack_lm_function(int *m, int *n, double *x, double *fvec, double 
       *iflag = -1;
       return -1;
     }
-    memcpy(fvec, result_array->data, (*m)*sizeof(double));
+    memcpy(fvec, PyArray_DATA(result_array), (*m)*sizeof(double));
   }
   else {         /* iflag == i */
     /* append row number to argument list and call row-based jacobian */
@@ -215,7 +215,7 @@ int smjac_multipack_lm_function(int *m, int *n, double *x, double *fvec, double 
       *iflag = -1;
       return -1;
     }
-    memcpy(fjrow, result_array->data, (*n)*sizeof(double));
+    memcpy(fjrow, PyArray_DATA(result_array), (*n)*sizeof(double));
   }
 
   Py_DECREF(result_array);
@@ -251,8 +251,8 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
   /* Initial input vector */
   ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x0, NPY_DOUBLE, 1, 1);
   if (ap_x == NULL) goto fail;
-  x = (double *) ap_x->data;
-  n = ap_x->dimensions[0];
+  x = (double *) PyArray_DATA(ap_x);
+  n = PyArray_DIMS(ap_x)[0];
 
   lr = n * (n + 1) / 2;
   if (ml < 0) ml = n-1;
@@ -262,11 +262,11 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
   /* Setup array to hold the function evaluations */
   ap_fvec = (PyArrayObject *)call_python_function(fcn, n, x, extra_args, 1, minpack_error);
   if (ap_fvec == NULL) goto fail;
-  fvec = (double *) ap_fvec->data;
-  if (ap_fvec->nd == 0) 
+  fvec = (double *) PyArray_DATA(ap_fvec);
+  if (PyArray_NDIM(ap_fvec) == 0)
     n = 1;
-  else if (ap_fvec->dimensions[0] < n)
-    n = ap_fvec->dimensions[0];
+  else if (PyArray_DIMS(ap_fvec)[0] < n)
+    n = PyArray_DIMS(ap_fvec)[0];
 
   SET_DIAG(ap_diag,o_diag,mode);
 
@@ -277,9 +277,9 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
 
   if (ap_r == NULL || ap_qtf == NULL || ap_fjac ==NULL) goto fail;
 
-  r = (double *) ap_r->data;
-  qtf = (double *) ap_qtf->data;
-  fjac = (double *) ap_fjac->data;
+  r = (double *) PyArray_DATA(ap_r);
+  qtf = (double *) PyArray_DATA(ap_qtf);
+  fjac = (double *) PyArray_DATA(ap_fjac);
   ldfjac = dims[1];
 
   if ((wa = malloc(4*n * sizeof(double)))==NULL) {
@@ -354,8 +354,8 @@ static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
   /* Initial input vector */
   ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x0, NPY_DOUBLE, 1, 1);
   if (ap_x == NULL) goto fail;
-  x = (double *) ap_x->data;
-  n = ap_x->dimensions[0];
+  x = (double *) PyArray_DATA(ap_x);
+  n = PyArray_DIMS(ap_x)[0];
   lr = n * (n + 1) / 2;
 
   if (maxfev < 0) maxfev = 100*(n+1);
@@ -363,11 +363,11 @@ static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
   /* Setup array to hold the function evaluations */
   ap_fvec = (PyArrayObject *)call_python_function(fcn, n, x, extra_args, 1, minpack_error);
   if (ap_fvec == NULL) goto fail;
-  fvec = (double *) ap_fvec->data;
-  if (ap_fvec->nd == 0)
+  fvec = (double *) PyArray_DATA(ap_fvec);
+  if (PyArray_NDIM(ap_fvec) == 0)
     n = 1;
-  else if (ap_fvec->dimensions[0] < n)
-    n = ap_fvec->dimensions[0];
+  else if (PyArray_DIMS(ap_fvec)[0] < n)
+    n = PyArray_DIMS(ap_fvec)[0];
 
   SET_DIAG(ap_diag,o_diag,mode);
 
@@ -378,9 +378,9 @@ static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
 
   if (ap_r == NULL || ap_qtf == NULL || ap_fjac ==NULL) goto fail;
 
-  r = (double *) ap_r->data;
-  qtf = (double *) ap_qtf->data;
-  fjac = (double *) ap_fjac->data;
+  r = (double *) PyArray_DATA(ap_r);
+  qtf = (double *) PyArray_DATA(ap_qtf);
+  fjac = (double *) PyArray_DATA(ap_fjac);
 
   ldfjac = dims[1];
 
@@ -458,8 +458,8 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
   /* Initial input vector */
   ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x0, NPY_DOUBLE, 1, 1);
   if (ap_x == NULL) goto fail;
-  x = (double *) ap_x->data;
-  n = ap_x->dimensions[0];
+  x = (double *) PyArray_DATA(ap_x);
+  n = PyArray_DIMS(ap_x)[0];
   dims[0] = n;
 
   SET_DIAG(ap_diag,o_diag,mode);
@@ -469,8 +469,8 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
   /* Setup array to hold the function evaluations and find it's size*/
   ap_fvec = (PyArrayObject *)call_python_function(fcn, n, x, extra_args, 1, minpack_error);
   if (ap_fvec == NULL) goto fail;
-  fvec = (double *) ap_fvec->data;
-  m = (ap_fvec->nd > 0 ? ap_fvec->dimensions[0] : 1);
+  fvec = (double *) PyArray_DATA(ap_fvec);
+  m = (PyArray_NDIM(ap_fvec) > 0 ? PyArray_DIMS(ap_fvec)[0] : 1);
 
   dims[0] = n; dims[1] = m;
   ap_ipvt = (PyArrayObject *)PyArray_SimpleNew(1,&n,NPY_INT);
@@ -479,9 +479,9 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
 
   if (ap_ipvt == NULL || ap_qtf == NULL || ap_fjac ==NULL) goto fail;
 
-  ipvt = (int *) ap_ipvt->data;
-  qtf = (double *) ap_qtf->data;
-  fjac = (double *) ap_fjac->data;
+  ipvt = (int *) PyArray_DATA(ap_ipvt);
+  qtf = (double *) PyArray_DATA(ap_qtf);
+  fjac = (double *) PyArray_DATA(ap_fjac);
   ldfjac = dims[1];
   wa = (double *)malloc((3*n + m)* sizeof(double));
   if (wa == NULL) {
@@ -556,19 +556,19 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
   /* Initial input vector */
   ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x0, NPY_DOUBLE, 1, 1);
   if (ap_x == NULL) goto fail;
-  x = (double *) ap_x->data;
-  n = ap_x->dimensions[0];
+  x = (double *) PyArray_DATA(ap_x);
+  n = PyArray_DIMS(ap_x)[0];
 
   if (maxfev < 0) maxfev = 100*(n+1);
 
   /* Setup array to hold the function evaluations */
   ap_fvec = (PyArrayObject *)call_python_function(fcn, n, x, extra_args, 1, minpack_error);
   if (ap_fvec == NULL) goto fail;
-  fvec = (double *) ap_fvec->data;
+  fvec = (double *) PyArray_DATA(ap_fvec);
 
   SET_DIAG(ap_diag,o_diag,mode);
 
-  m = (ap_fvec->nd > 0 ? ap_fvec->dimensions[0] : 1);
+  m = (PyArray_NDIM(ap_fvec) > 0 ? PyArray_DIMS(ap_fvec)[0] : 1);
 
   dims[0] = n; dims[1] = m;
   ap_ipvt = (PyArrayObject *)PyArray_SimpleNew(1,&n,NPY_INT);
@@ -577,9 +577,9 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
 
   if (ap_ipvt == NULL || ap_qtf == NULL || ap_fjac ==NULL) goto fail;
 
-  ipvt = (int *) ap_ipvt->data;
-  qtf = (double *) ap_qtf->data;
-  fjac = (double *) ap_fjac->data;
+  ipvt = (int *) PyArray_DATA(ap_ipvt);
+  qtf = (double *) PyArray_DATA(ap_qtf);
+  fjac = (double *) PyArray_DATA(ap_fjac);
   ldfjac = dims[1];
   wa = (double *)malloc((3*n + m)* sizeof(double));
   if (wa == NULL) {
@@ -642,33 +642,33 @@ static PyObject *minpack_chkder(PyObject *self, PyObject *args)
 
   ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(o_x,NPY_DOUBLE,1,1);
   if (ap_x == NULL) goto fail;
-  if (n != ap_x->dimensions[0])
+  if (n != PyArray_DIMS(ap_x)[0])
      PYERR(minpack_error,"Input data array (x) must have length n");
-  x = (double *) ap_x -> data;
-  if (!ISCONTIGUOUS(ap_xp) || (ap_xp->descr->type_num != NPY_DOUBLE))
+  x = (double *) PyArray_DATA(ap_x);
+  if (!ISCONTIGUOUS(ap_xp) || (PyArray_TYPE(ap_xp) != NPY_DOUBLE))
      PYERR(minpack_error,"Seventh argument (xp) must be contiguous array of type Float64.");
 
   if (mode == 1) {
     fvec = NULL;
     fjac = NULL;
-    xp = (double *)ap_xp->data;
+    xp = (double *)PyArray_DATA(ap_xp);
     fvecp = NULL;
     err = NULL;
     CHKDER(&m, &n, x, fvec, fjac, &ldfjac, xp, fvecp, &mode, err);
   }
   else if (mode == 2) {
-    if (!ISCONTIGUOUS(ap_err) || (ap_err->descr->type_num != NPY_DOUBLE))
+    if (!ISCONTIGUOUS(ap_err) || (PyArray_TYPE(ap_err) != NPY_DOUBLE))
        PYERR(minpack_error,"Last argument (err) must be contiguous array of type Float64.");
     ap_fvec = (PyArrayObject *)PyArray_ContiguousFromObject(o_fvec,NPY_DOUBLE,1,1);
     ap_fjac = (PyArrayObject *)PyArray_ContiguousFromObject(o_fjac,NPY_DOUBLE,2,2);
     ap_fvecp = (PyArrayObject *)PyArray_ContiguousFromObject(o_fvecp,NPY_DOUBLE,1,1);
     if (ap_fvec == NULL || ap_fjac == NULL || ap_fvecp == NULL) goto fail;
 
-    fvec = (double *)ap_fvec -> data;
-    fjac = (double *)ap_fjac -> data;
-    xp = (double *)ap_xp->data;
-    fvecp = (double *)ap_fvecp -> data;
-    err = (double *)ap_err->data;    
+    fvec = (double *)PyArray_DATA(ap_fvec);
+    fjac = (double *)PyArray_DATA(ap_fjac);
+    xp = (double *)PyArray_DATA(ap_xp);
+    fvecp = (double *)PyArray_DATA(ap_fvecp);
+    err = (double *)PyArray_DATA(ap_err);
 
     CHKDER(&m, &n, x, fvec, fjac, &m, xp, fvecp, &mode, err);
 
