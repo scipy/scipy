@@ -24,6 +24,7 @@ from scipy.special import factorial
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 
+
 __all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
            'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
            'lfiltic', 'deconvolve', 'hilbert', 'hilbert2', 'cmplx_sort',
@@ -1884,28 +1885,215 @@ def lfilter_zi(b, a):
     return zi
 
 
-def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
+def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
+    """Forward-backward IIR filter that uses Gustafsson's method.
+
+    Apply the IIR filter defined by `(b,a)` to `x` twice, first forward
+    then backward, using Gustafsson's initial conditions [1]_.
+
+    Let ``y_fb`` be the result of filtering first forward and then backward,
+    and let ``y_bf`` be the result of filtering first backward then forward.
+    Gustafsson's method is to compute initial conditions for the forward
+    pass and the backward pass such that ``y_fb == y_bf``.
+
+    Parameters
+    ----------
+    b : scalar or 1-D ndarray
+        Numerator coefficients of the filter.
+    a : scalar or 1-D ndarray
+        Denominator coefficients of the filter.
+    x : ndarray
+        Data to be filtered.
+    axis : int, optional
+        Axis of `x` to be filtered.  Default is -1.
+    irlen : int or None, optional
+        The length of the nonnegligible part of the impulse response.
+        If `irlen` is None, or if the length of the signal is less than
+        ``2 * irlen``, then no part of the impulse response is ignored.
+
+    Returns
+    -------
+    y : ndarray
+        The filtered data.
+    x0 : ndarray
+        Initial condition for the forward filter.
+    x1 : ndarray
+        Initial condition for the backward filter.
+
+    Notes
+    -----
+    Typically the return values `x0` and `x1` are not needed by the
+    caller.  The intended use of these return values is in unit tests.
+
+    References
+    ----------
+    .. [1] F. Gustaffson. Determining the initial states in forward-backward
+           filtering. Transactions on Signal Processing, 46(4):988-992, 1996.
+
+    """
+    # In the comments, "Gustafsson's paper" and [1] refer to the
+    # paper referenced in the docstring.
+
+    b = np.atleast_1d(b)
+    a = np.atleast_1d(a)
+
+    order = max(len(b), len(a)) - 1
+    if order == 0:
+        # The filter is just scalar multiplication, with no state.
+        scale = (b[0] / a[0])**2
+        y = scale * x
+        return y, np.array([]), np.array([])
+
+    if axis != -1 or axis != x.ndim - 1:
+        # Move the axis containing the data to the end.
+        x = np.swapaxes(x, axis, x.ndim - 1)
+
+    # n is the number of samples in the data to be filtered.
+    n = x.shape[-1]
+
+    if irlen is None or n <= 2*irlen:
+        m = n
+    else:
+        m = irlen
+
+    # Create Obs, the observability matrix (called O in the paper).
+    # This matrix can be interpreted as the operator that propagates
+    # an arbitrary initial state to the output, assuming the input is
+    # zero.
+    # In Gustafsson's paper, the forward and backward filters are not
+    # necessarily the same, so he has both O_f and O_b.  We use the same
+    # filter in both directions, so we only need O. The same comment
+    # applies to S below.
+    Obs = np.zeros((m, order))
+    zi = np.zeros(order)
+    zi[0] = 1
+    Obs[:, 0] = lfilter(b, a, np.zeros(m), zi=zi)[0]
+    for k in range(1, order):
+        Obs[k:, k] = Obs[:-k, 0]
+
+    # Obsr is O^R (Gustafsson's notation for row-reversed O)
+    Obsr = Obs[::-1]
+
+    # Create S.  S is the matrix that applies the filter to the reversed
+    # propagated initial conditions.  That is,
+    #     out = S.dot(zi)
+    # is the same as
+    #     tmp, _ = lfilter(b, a, zeros(), zi=zi)  # Propagate ICs.
+    #     out = lfilter(b, a, tmp[::-1])          # Reverse and filter.
+
+    # Equations (5) & (6) of [1]
+    S = lfilter(b, a, Obs[::-1], axis=0)
+
+    # Sr is S^R (row-reversed S)
+    Sr = S[::-1]
+
+    # M is [(S^R - O), (O^R - S)]
+    if m == n:
+        M = np.hstack((Sr - Obs, Obsr - S))
+    else:
+        # Matrix described in section IV of [1].
+        M = np.zeros((2*m, 2*order))
+        M[:m, :order] = Sr - Obs
+        M[m:, order:] = Obsr - S
+
+    # Naive forward-backward and backward-forward filters.
+    # These have large transients because the filters use zero initial
+    # conditions.
+    y_f = lfilter(b, a, x)
+    y_fb = lfilter(b, a, y_f[..., ::-1])[..., ::-1]
+
+    y_b = lfilter(b, a, x[..., ::-1])[..., ::-1]
+    y_bf = lfilter(b, a, y_b)
+
+    delta_y_bf_fb = y_bf - y_fb
+    if m == n:
+        delta = delta_y_bf_fb
+    else:
+        start_m = delta_y_bf_fb[..., :m]
+        end_m = delta_y_bf_fb[..., -m:]
+        delta = np.concatenate((start_m, end_m), axis=-1)
+
+    # ic_opt holds the "optimal" initial conditions.
+    # The following code computes the result shown in the formula
+    # of the paper between equations (6) and (7).
+    if delta.ndim == 1:
+        ic_opt = linalg.lstsq(M, delta)[0]
+    else:
+        # Reshape delta so it can be used as an array of multiple
+        # right-hand-sides in linalg.lstsq.
+        delta2d = delta.reshape(-1, delta.shape[-1]).T
+        ic_opt0 = linalg.lstsq(M, delta2d)[0].T
+        ic_opt = ic_opt0.reshape(delta.shape[:-1] + (M.shape[-1],))
+
+    # Now compute the filtered signal using equation (7) of [1].
+    # First, form [S^R, O^R] and call it W.
+    if m == n:
+        W = np.hstack((Sr, Obsr))
+    else:
+        W = np.zeros((2*m, 2*order))
+        W[:m, :order] = Sr
+        W[m:, order:] = Obsr
+
+    # Equation (7) of [1] says
+    #     Y_fb^opt = Y_fb^0 + W * [x_0^opt; x_{N-1}^opt]
+    # `wic` is (almost) the product on the right.
+    # W has shape (m, 2*order), and ic_opt has shape (..., 2*order),
+    # so we can't use W.dot(ic_opt).  Instead, we dot ic_opt with W.T,
+    # so wic has shape (..., m).
+    wic = ic_opt.dot(W.T)
+
+    # `wic` is "almost" the product of W and the optimal ICs in equation
+    # (7)--if we're using a truncated impulse response (m < n), `wic`
+    # contains only the adjustments required for the ends of the signal.
+    # Here we form y_opt, taking this into account if necessary.
+    y_opt = y_fb
+    if m == n:
+        y_opt += wic
+    else:
+        y_opt[..., :m] += wic[..., :m]
+        y_opt[..., -m:] += wic[..., -m:]
+
+    x0 = ic_opt[..., :order]
+    x1 = ic_opt[..., -order:]
+    if axis != -1 or axis != x.ndim - 1:
+        # Restore the data axis to its original position.
+        x0 = np.swapaxes(x0, axis, x.ndim - 1)
+        x1 = np.swapaxes(x1, axis, x.ndim - 1)
+        y_opt = np.swapaxes(y_opt, axis, x.ndim - 1)
+
+    return y_opt, x0, x1
+
+
+def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
+             irlen=None):
     """
     A forward-backward filter.
 
-    This function applies a linear filter twice, once forward
-    and once backwards.  The combined filter has linear phase.
+    This function applies a linear filter twice, once forward and once
+    backwards.  The combined filter has linear phase.
 
-    Before applying the filter, the function can pad the data along the
-    given axis in one of three ways: odd, even or constant.  The odd
-    and even extensions have the corresponding symmetry about the end point
-    of the data.  The constant extension extends the data with the values
-    at end points.  On both the forward and backwards passes, the
-    initial condition of the filter is found by using `lfilter_zi` and
-    scaling it by the end point of the extended data.
+    The function provides options for handling the edges of the signal.
+
+    When `method` is "pad", the function pads the data along the given axis
+    in one of three ways: odd, even or constant.  The odd and even extensions
+    have the corresponding symmetry about the end point of the data.  The
+    constant extension extends the data with the values at the end points. On
+    both the forward and backward passes, the initial condition of the
+    filter is found by using `lfilter_zi` and scaling it by the end point of
+    the extended data.
+
+    When `method` is "gust", Gustafsson's method [1]_ is used.  Initial
+    conditions are chosen for the forward and backward passes so that the
+    forward-backward filter gives the same result as the backward-forward
+    filter.
 
     Parameters
     ----------
     b : (N,) array_like
         The numerator coefficient vector of the filter.
     a : (N,) array_like
-        The denominator coefficient vector of the filter.  If a[0]
-        is not 1, then both a and b are normalized by a[0].
+        The denominator coefficient vector of the filter.  If ``a[0]``
+        is not 1, then both `a` and `b` are normalized by ``a[0]``.
     x : array_like
         The array of data to be filtered.
     axis : int, optional
@@ -1918,9 +2106,20 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
         is 'odd'.
     padlen : int or None, optional
         The number of elements by which to extend `x` at both ends of
-        `axis` before applying the filter. This value must be less than
-        `x.shape[axis]-1`.  `padlen=0` implies no padding.
-        The default value is 3*max(len(a),len(b)).
+        `axis` before applying the filter.  This value must be less than
+        ``x.shape[axis] - 1``.  ``padlen=0`` implies no padding.
+        The default value is ``3 * max(len(a), len(b))``.
+    method : str, optional
+        Determines the method for handling the edges of the signal, either
+        "pad" or "gust".  When `method` is "pad", the signal is padded; the
+        type of padding is determined by `padtype` and `padlen`, and `irlen`
+        is ignored.  When `method` is "gust", Gustafsson's method is used,
+        and `padtype` and `padlen` are ignored.
+    irlen : int or None, optional
+        When `method` is "gust", `irlen` specifies the length of the
+        impulse response of the filter.  If `irlen` is None, no part
+        of the impulse response is ignored.  For a long signal, specifying
+        `irlen` can significantly improve the performance of the filter.
 
     Returns
     -------
@@ -1932,8 +2131,23 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     --------
     lfilter_zi, lfilter
 
+    Notes
+    -----
+    The option to use Gustaffson's method was added in scipy version 0.16.0.
+
+    References
+    ----------
+    .. [1] F. Gustaffson, "Determining the initial states in forward-backward
+           filtering", Transactions on Signal Processing, Vol. 46, pp. 988-992,
+           1996.
+
     Examples
     --------
+    The examples will use several functions from `scipy.signal`.
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
     First we create a one second signal that is the sum of two pure sine
     waves, with frequencies 5 Hz and 250 Hz, sampled at 2000 Hz.
 
@@ -1943,10 +2157,9 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     >>> x = xlow + xhigh
 
     Now create a lowpass Butterworth filter with a cutoff of 0.125 times
-    the Nyquist rate, or 125 Hz, and apply it to x with filtfilt.  The
-    result should be approximately xlow, with no phase shift.
+    the Nyquist rate, or 125 Hz, and apply it to ``x`` with `filtfilt`.
+    The result should be approximately ``xlow``, with no phase shift.
 
-    >>> from scipy import signal
     >>> b, a = signal.butter(8, 0.125)
     >>> y = signal.filtfilt(b, a, x, padlen=150)
     >>> np.abs(y - xlow).max()
@@ -1958,18 +2171,71 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     is reached.  In general, transient effects at the edges are
     unavoidable.
 
+    The following example demonstrates the option ``method="gust"``.
+
+    First, create a filter.
+
+    >>> b, a = signal.ellip(4, 0.01, 120, 0.125)  # Filter to be applied.
+    >>> np.random.seed(123456)
+
+    `sig` is a random input signal to be filtered.
+
+    >>> n = 60
+    >>> sig = np.random.randn(n)**3 + 3*np.random.randn(n).cumsum()
+
+    Apply `filtfilt` to `sig`, once using the Gustafsson method, and
+    once using padding, and plot the results for comparison.
+
+    >>> fgust = signal.filtfilt(b, a, sig, method="gust")
+    >>> fpad = signal.filtfilt(b, a, sig, padlen=50)
+    >>> plt.plot(sig, 'k-', label='input')
+    >>> plt.plot(fgust, 'b-', linewidth=4, label='gust')
+    >>> plt.plot(fpad, 'c-', linewidth=1.5, label='pad')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
+    The `irlen` argument can be used to improve the performance
+    of Gustafsson's method.
+
+    Estimate the impulse response length of the filter.
+
+    >>> z, p, k = signal.tf2zpk(b, a)
+    >>> eps = 1e-9
+    >>> r = np.max(np.abs(p))
+    >>> approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
+    >>> approx_impulse_len
+    137
+
+    Apply the filter to a longer signal, with and without the `irlen`
+    argument.  The difference between `y1` and `y2` is small.  For long
+    signals, using `irlen` gives a significant performance improvement.
+
+    >>> x = np.random.randn(5000)
+    >>> y1 = signal.filtfilt(b, a, x, method='gust')
+    >>> y2 = signal.filtfilt(b, a, x, method='gust', irlen=approx_impulse_len)
+    >>> print(np.max(np.abs(y1 - y2)))
+    1.80056858312e-10
+
     """
-
-    if padtype not in ['even', 'odd', 'constant', None]:
-        raise ValueError(("Unknown value '%s' given to padtype.  padtype must "
-                         "be 'even', 'odd', 'constant', or None.") %
-                         padtype)
-
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
     x = np.asarray(x)
 
+    if method not in ["pad", "gust"]:
+        raise ValueError("method must be 'pad' or 'gust'.")
+
+    if method == "gust":
+        y, z1, z2 = _filtfilt_gust(b, a, x, axis=axis, irlen=irlen)
+        return y
+
+    # `method` is "pad"...
+
     ntaps = max(len(a), len(b))
+
+    if padtype not in ['even', 'odd', 'constant', None]:
+        raise ValueError(("Unknown value '%s' given to padtype.  padtype "
+                          "must be 'even', 'odd', 'constant', or None.") %
+                         padtype)
 
     if padtype is None:
         padlen = 0

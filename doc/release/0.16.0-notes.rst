@@ -26,6 +26,12 @@ New features
 
 The function `scipy.linalg.invpascal` computes the inverse of a Pascal matrix.
 
+`scipy.signal` improvements
+---------------------------
+
+The option to use Gustafsson's method for choosing the initial conditions
+of the forward and backward passes was added to `scipy.signal.filtfilt`.
+
 `scipy.stats` improvements
 --------------------------
 
