@@ -19,9 +19,13 @@ from scipy.linalg._matrix_norms import (
 old_assert_almost_equal = assert_almost_equal
 
 
+# Copied from numpy.
+# For single precision, 'decimal' has been changed from 6 to 5
+# because the library my scipy svd calculation is slightly less precise
+# than the numpy svd calculation for one of the tests.
 def assert_almost_equal(a, b, **kw):
     if np.asarray(a).dtype.type in (np.single, np.csingle):
-        decimal = 6
+        decimal = 5
     else:
         decimal = 12
     old_assert_almost_equal(a, b, decimal=decimal, **kw)
@@ -32,45 +36,59 @@ class _TestMatrixNorms(object):
     # These tests are copied from or inspired by numpy matrix norm tests.
 
     def test_matrix_2x2(self):
-        for arraytype in np.matrix, np.array:
-            A = arraytype([[1, 3], [5, 7]], dtype=self.dt)
+        A = self.arraytype([[1, 3], [5, 7]], dtype=self.dt)
 
-            # Frobenius norm.
-            desired = 84**0.5
-            assert_almost_equal(frobenius_norm(A), desired)
-            assert_almost_equal(elementwise_norm(A, 2), desired)
-            assert_almost_equal(schatten_norm(A, 2), desired)
-            assert_almost_equal(scipy.linalg.norm(A), desired)
-            assert_almost_equal(scipy.linalg.norm(A, 'fro'), desired)
-            assert_almost_equal(np.linalg.norm(A), desired)
-            assert_almost_equal(np.linalg.norm(A, 'fro'), desired)
+        # Frobenius norm.
+        desired = 84**0.5
+        assert_almost_equal(frobenius_norm(A), desired)
+        assert_almost_equal(elementwise_norm(A, 2), desired)
+        assert_almost_equal(schatten_norm(A, 2), desired)
+        assert_almost_equal(scipy.linalg.norm(A), desired)
+        assert_almost_equal(scipy.linalg.norm(A, 'fro'), desired)
+        assert_almost_equal(np.linalg.norm(A), desired)
+        assert_almost_equal(np.linalg.norm(A, 'fro'), desired)
 
-            # Spectral norm.
-            desired = 9.1231056256176615
-            assert_almost_equal(spectral_norm(A), desired)
-            assert_almost_equal(induced_norm(A, 2), desired)
-            assert_almost_equal(schatten_norm(A, np.inf), desired)
-            assert_almost_equal(ky_fan_norm(A, 1), desired)
-            assert_almost_equal(scipy.linalg.norm(A, 2), desired)
-            assert_almost_equal(np.linalg.norm(A, 2), desired)
+        # Spectral norm.
+        desired = 9.1231056256176615
+        assert_almost_equal(spectral_norm(A), desired)
+        assert_almost_equal(induced_norm(A, 2), desired)
+        assert_almost_equal(schatten_norm(A, np.inf), desired)
+        assert_almost_equal(ky_fan_norm(A, 1), desired)
+        assert_almost_equal(scipy.linalg.norm(A, 2), desired)
+        assert_almost_equal(np.linalg.norm(A, 2), desired)
 
-            # Nuclear norm.
-            desired = 10.0
-            assert_almost_equal(nuclear_norm(A), desired)
-            assert_almost_equal(schatten_norm(A, 1), desired)
-            assert_almost_equal(ky_fan_norm(A, min(A.shape)), desired)
+        # Nuclear norm.
+        desired = 10.0
+        assert_almost_equal(nuclear_norm(A), desired)
+        assert_almost_equal(schatten_norm(A, 1), desired)
+        assert_almost_equal(ky_fan_norm(A, min(A.shape)), desired)
 
-            # Maximum absolute row sum norm.
-            desired = 12.0
-            assert_almost_equal(induced_norm(A, np.inf), desired)
-            assert_almost_equal(scipy.linalg.norm(A, np.inf), desired)
-            assert_almost_equal(np.linalg.norm(A, np.inf), desired)
+        # Maximum absolute row sum norm.
+        desired = 12.0
+        assert_almost_equal(induced_norm(A, np.inf), desired)
+        assert_almost_equal(scipy.linalg.norm(A, np.inf), desired)
+        assert_almost_equal(np.linalg.norm(A, np.inf), desired)
 
-            # Maximum absolute column sum norm.
-            desired = 10.0
-            assert_almost_equal(induced_norm(A, 1), desired)
-            assert_almost_equal(scipy.linalg.norm(A, 1), desired)
-            assert_almost_equal(np.linalg.norm(A, 1), desired)
+        # Maximum absolute column sum norm.
+        desired = 10.0
+        assert_almost_equal(induced_norm(A, 1), desired)
+        assert_almost_equal(scipy.linalg.norm(A, 1), desired)
+        assert_almost_equal(np.linalg.norm(A, 1), desired)
+
+        # Schatten p-norm for an uninteresting value of p.
+        p = 3
+        s = scipy.linalg.svdvals(A)
+        desired = np.power(s, p).sum()**(1/p)
+        assert_almost_equal(schatten_norm(A, p), desired)
+
+        # Elementwise p-norm for an uninteresting value of p.
+        p = 3
+        desired = np.power(A, p).sum()**(1/p)
+        v = np.asarray(A).ravel()
+        assert_almost_equal(elementwise_norm(A, p), desired)
+        assert_almost_equal(elementwise_norm(v, p), desired)
+        assert_almost_equal(scipy.linalg.norm(v, p), desired)
+        assert_almost_equal(np.linalg.norm(v, p), desired)
 
 
     """
@@ -92,19 +110,34 @@ class _TestMatrixNorms(object):
     """
 
 
-class TestNormDouble(_TestMatrixNorms):
+class TestNormDoubleArray(_TestMatrixNorms):
+    arraytype = np.array
     dt = np.double
-    dec = 12
 
 
-class TestNormSingle(_TestMatrixNorms):
+class TestNormSingleArray(_TestMatrixNorms):
+    arraytype = np.array
     dt = np.float32
-    dec = 6
 
 
-class TestNormInt64(_TestMatrixNorms):
+class TestNormInt64Array(_TestMatrixNorms):
+    arraytype = np.array
     dt = np.int64
-    dec = 12
+
+
+class TestNormDoubleMatrix(_TestMatrixNorms):
+    arraytype = np.matrix
+    dt = np.double
+
+
+class TestNormSingleMatrix(_TestMatrixNorms):
+    arraytype = np.matrix
+    dt = np.float32
+
+
+class TestNormInt64Matrix(_TestMatrixNorms):
+    arraytype = np.matrix
+    dt = np.int64
 
 
 if __name__ == "__main__":

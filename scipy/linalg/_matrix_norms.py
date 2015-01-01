@@ -84,7 +84,7 @@ def _parameterized_vector_norm(p, A, axis=None):
 
 
 def _simple_vector_p_norm(p, v):
-    return np.power(np.power(np.absolute(A), p).sum(axis=axis), 1/p)
+    return np.power(np.power(np.absolute(v), p).sum(), 1/p)
 
 
 def _sum_of_first_k(k, v):
@@ -328,7 +328,9 @@ def ky_fan_norm(A, k, axis=None, keepdims=None, check_finite=True):
             spectrum_length = min(A.shape)
         else:
             spectrum_length = min(A.shape[axis[0]], A.shape[axis[1]])
-        if k <= spectrum_length:
+        if k == spectrum_length:
+            return nuclear_norm(A, axis, keepdims, check_finite=False)
+        elif k < spectrum_length:
             # The singular values will be provided in decreasing order.
             op = partial(_sum_of_first_k, k)
             return _unitarily_invariant_norm(A, op, axis, keepdims)
