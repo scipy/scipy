@@ -1,3 +1,9 @@
+""" Compute matrix norms.
+
+Note that numpy.linalg.norm allows the 'axis' keyword argument in numpy 1.8+
+and allows the 'keepdims' keyword argument in numpy 1.10+.
+
+"""
 from __future__ import division, print_function, absolute_import
 
 from functools import partial
@@ -16,16 +22,31 @@ _npv = NumpyVersion(np.__version__)
 
 _nrm2_prefix = {'f': 's', 'F': 'sc', 'D': 'dz'}
 
-#TODO
-# strategy: do not special-case the euclidean norm here.
-# if > 1.8.0.dev is available then allow axes
-# if > 1.10.0.dev is available then allow keepdims
-# numpy multi-svd may be required
-# Except for elementwise norm, all norms here require exactly two axes.
-# The elementwise norm is flexible to support any number of axes,
-# and by default it uses all available axes.
+
+# This function is copied from numpy, with some modifications.
+def _multi_svd_norm(x, row_axis, col_axis, op):
+    """Compute functions of singular values of the 2-D matrices in `x`.
+
+    Parameters
+    ----------
+    x : ndarray
+    row_axis, col_axis : int
+        The axes of `x` that hold the 2-D matrices.
+    op : callable
+        This should reduce a 1d array of singular values to one number.
+    Returns
+    -------
+    result : float or ndarray
+        If `x` is 2-D, the return values is a float.
+        Otherwise, it is an array with ``x.ndim - 2`` dimensions.
+    """
+    if row_axis > col_axis:
+        row_axis -= 1
+    y = np.rollaxis(np.rollaxis(x, col_axis, x.ndim), row_axis, -1)
+    return np.apply_along_axis(op, -1, svdvals(y))
 
 
+#TODO remove this
 def _parameterized_vector_norm(p, A, axis=None):
     """
     Parameterized vector norm.
@@ -55,11 +76,19 @@ def _parameterized_vector_norm(p, A, axis=None):
     if p == 1:
         return np.absolute(A).sum(axis=axis)
     elif p == 2:
-        return np.sqrt((A.conj() * A).real.sum(axis=axis)
+        return np.sqrt((A.conj() * A).real.sum(axis=axis))
     elif p == np.inf:
         return np.absolute(A).max(axis=axis)
     else:
         return np.power(np.power(np.absolute(A), p).sum(axis=axis), 1/p)
+
+
+def _simple_vector_p_norm(p, v):
+    return np.power(np.power(np.absolute(A), p).sum(axis=axis), 1/p)
+
+
+def _sum_of_first_k(k, v):
+    return v[:k].sum()
 
 
 def _asarray_atleast2d_validated(A, check_finite):
@@ -69,6 +98,7 @@ def _asarray_atleast2d_validated(A, check_finite):
     return A
 
 
+#TODO unused? remove?
 def _euclidean_vector_norm(v):
     if v.dtype.char in 'fdFD':
         func_name = _nrm2_prefix.get(a.dtype.char, 'd') + 'nrm2'
@@ -143,8 +173,17 @@ def _checked_2d_axis(nd, axis):
     return axis
 
 
+def _restore_dims(shape, ret, axis):
+    # Restore dimensions for broadcasting.
+    if axis is None:
+        axis = (0, 1)
+    ret_shape = list(shape)
+    ret_shape[axis[0]] = 1
+    ret_shape[axis[1]] = 1
+    return np.reshape(ret, ret_shape)
 
-def _unsafe_elementwise_norm(A, p, axis=None, keepdims=None):
+
+def elementwise_norm(A, p, axis=None, keepdims=None, check_finite=True):
     """
     Elementwise norm.
 
@@ -177,6 +216,7 @@ def _unsafe_elementwise_norm(A, p, axis=None, keepdims=None):
     """
     if p < 1:
         raise ValueError('p must be at least 1')
+    A = _asarray_validated(A, check_finite=check_finite)
     axis = _checked_nd_axis(axis)
     kwargs = _checked_numpy_kwargs(axis, keepdims)
     if p == 1:
@@ -189,57 +229,85 @@ def _unsafe_elementwise_norm(A, p, axis=None, keepdims=None):
         return np.power(np.power(np.absolute(A), p).sum(**kwargs), 1/p)
 
 
-def elementwise_norm(A, p, axis=None, keepdims=None, check_finite=True):
-    A = _asarray_validated(A, check_finite=check_finite)
-    return _unsafe_elementwise_norm(A, p, axis=axis, keepdims=keepdims)
-
-
 def frobenius_norm(A, axis=None, keepdims=None, check_finite=True):
     A = _asarray_atleast2d_validated(A, check_finite)
     axis = _checked_2d_axis(A.ndim, axis)
-    return _unsafe_elementwise_norm(A, 2, axis=axis, keepdims=keepdims)
+    kwargs = _checked_numpy_kwargs(axis, keepdims)
+    original_shape = A.shape
+    A = np.sqrt((A.conj() * A).real.sum(**kwargs))
+    if keepdims:
+        A = _restore_dims(original_shape, A, axis)
+    return A
+
+
+def _unitarily_invariant_norm(A, op, axis, keepdims):
+    # This helper function does very little conversion or validation.
+    original_shape = A.shape
+    if axis is None:
+        A = op(svdvals(A, check_finite=False))
+    else:
+        row_axis, col_axis = axis
+        A = _multi_svd_norm(A, row_axis, col_axis, op)
+    if keepdims:
+        A = _restore_dims(original_shape, A, axis)
+    return A
 
 
 def nuclear_norm(A, axis=None, keepdims=None, check_finite=True):
     A = _asarray_atleast2d_validated(A, check_finite)
     axis = _checked_2d_axis(A.ndim, axis)
-    if axis is None and A.ndim == 2:
-        return svdvals(A, check_finite=False).sum()
-    else:
-
+    _checked_numpy_kwargs(axis, keepdims)
+    return _unitarily_invariant_norm(A, np.sum, axis, keepdims)
 
 
 def spectral_norm(A, axis=None, keepdims=None, check_finite=True):
     A = _asarray_atleast2d_validated(A, check_finite)
-    axis = _checked_2d_axis(axis)
-    return svdvals(A, check_finite=False).max()
+    axis = _checked_2d_axis(A.ndim, axis)
+    _checked_numpy_kwargs(axis, keepdims)
+    return _unitarily_invariant_norm(A, np.max, axis, keepdims)
 
 
 def schatten_norm(A, p, axis=None, keepdims=None, check_finite=True):
     if p < 1:
         raise ValueError('p must be at least 1')
     if p == 1:
-        return nuclear_norm(A, check_finite=check_finite)
+        return nuclear_norm(A, axis, keepdims, check_finite)
     elif p == 2:
-        return frobenius_norm(A, check_finite=check_finite)
+        return frobenius_norm(A, axis, keepdims, check_finite)
     elif p == np.inf:
-        return spectral_norm(A, check_finite=check_finite)
+        return spectral_norm(A, axis, keepdims, check_finite)
     else:
-        s = svdvals(A, check_finite=check_finite)
-        return elementwise_norm(s, p)
+        op = partial(_simple_vector_p_norm, p)
+        A = _asarray_atleast2d_validated(A, check_finite)
+        axis = _checked_2d_axis(A.ndim, axis)
+        _checked_numpy_kwargs(axis, keepdims)
+        return _unitarily_invariant_norm(A, op, axis, keepdims)
 
 
 def induced_norm(A, p, axis=None, keepdims=None, check_finite=True):
-    _check_axis_and_keepdims(axis, keepdims)
     if p < 1:
         raise ValueError('p must be at least 1')
-    if p == 1:
-        A = _asarray_2d_validated(A, check_finite=check_finite)
-        return np.absolute(A).sum(axis=0).max()
     elif p == 2:
-        return spectral_norm(A, check_finite=check_finite)
-    elif p == np.inf:
-        return np.absolute(A).sum(axis=1).max()
+        return spectral_norm(A, axis, keepdims, check_finite)
+    elif p in (1, np.inf):
+        original_shape = A.shape
+        A = _asarray_atleast2d_validated(A, check_finite)
+        axis = _checked_2d_axis(A.ndim, axis)
+        _checked_numpy_kwargs(axis, keepdims)
+        if axis is None:
+            axis = (0, 1)
+        row_axis, col_axis = axis
+        if p == 1:
+            if col_axis > row_axis:
+                col_axis -= 1
+            A = np.absolute(A).sum(axis=row_axis).max(axis=col_axis)
+        elif p == np.inf:
+            if row_axis > col_axis:
+                row_axis -= 1
+            A = np.absolute(A).sum(axis=col_axis).max(axis=row_axis)
+        if keepdims:
+            A = _restore_dims(original_shape, A, axis)
+        return A
     else:
         raise NotImplementedError('The induced norm has been implemented only '
                                   'for p in {1, 2, inf} where inf means '
@@ -247,14 +315,24 @@ def induced_norm(A, p, axis=None, keepdims=None, check_finite=True):
 
 
 def ky_fan_norm(A, k, axis=None, keepdims=None, check_finite=True):
-    _check_axis_and_keepdims(axis, keepdims)
     k = _as_int_validated(k)
     if k < 1:
         raise ValueError('k must be at least 1')
-    A = _asarray_2d_validated(A, check_finite=check_finite)
-    # The singular values are already sorted from largest to smallest.
-    s = svdvals(A, check_finite=False)
-    if k >= s.shape[0]:
-        raise ValueError('The value of k must be less than the minimum '
-                         'of the width and height of the 2d input array.')
-    return s[:k].sum()
+    elif k == 1:
+        return spectral_norm(A, axis, keepdims, check_finite)
+    else:
+        A = _asarray_atleast2d_validated(A, check_finite)
+        axis = _checked_2d_axis(A.ndim, axis)
+        _checked_numpy_kwargs(axis, keepdims)
+        if axis is None:
+            spectrum_length = min(A.shape)
+        else:
+            spectrum_length = min(A.shape[axis[0]], A.shape[axis[1]])
+        if k <= spectrum_length:
+            # The singular values will be provided in decreasing order.
+            op = partial(_sum_of_first_k, k)
+            return _unitarily_invariant_norm(A, op, axis, keepdims)
+        else:
+            raise ValueError('The integer k must be no greater '
+                             'than the minimum of the width and height '
+                             'of the input array.')

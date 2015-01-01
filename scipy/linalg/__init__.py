@@ -170,6 +170,7 @@ from .decomp_svd import *
 from .decomp_schur import *
 from ._decomp_polar import *
 from .matfuncs import *
+from ._matrix_norms import *
 from .blas import *
 from .lapack import *
 from .special_matrices import *
