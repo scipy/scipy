@@ -1488,6 +1488,11 @@ class TestQR(TestCase):
         assert_array_almost_equal(q3,q)
         assert_array_almost_equal(r3,r)
 
+        # Test against explicit lwork=-1
+        q4,r4 = qr(a, lwork=-1)
+        assert_array_almost_equal(q4,q)
+        assert_array_almost_equal(r4,r)
+
         # Test against invalid lwork
         assert_raises(Exception, qr, (a,), {'lwork':0})
         assert_raises(Exception, qr, (a,), {'lwork':2})
