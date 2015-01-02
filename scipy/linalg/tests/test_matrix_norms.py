@@ -64,7 +64,7 @@ class _TestMatrixNorms(object):
             self._assert_allclose(schatten_norm(A, p), desired)
 
     def _check_uninteresting_elementwise_norms(self, A):
-        for p in 1.2, 2:
+        for p in 1.2, 3:
             desired = np.power(A, p).sum()**(1/p)
             v = np.asarray(A).ravel()
             self._assert_allclose(elementwise_norm(A, p), desired)
@@ -87,7 +87,7 @@ class _TestMatrixNorms(object):
         A = self.arraytype([[1, 3], [5, 7]], dtype=self.dt)
 
         # Check special norms and parameterized norms.
-        self._check_frobenius_norm(A, 84**0.5)
+        self._check_frobenius_norm(A, np.sqrt(84))
         self._check_spectral_norm(A, 9.1231056256176615)
         self._check_nuclear_norm(A, 10.0)
         self._check_max_absolute_row_sum_norm(A, 12.0)
@@ -102,26 +102,24 @@ class _TestMatrixNorms(object):
         A = np.array([[1, 2, 3], [6, 0, 5], [3, 2, 1]], dtype=self.dt)
 
         # Check special norms and parameterized norms.
-        self._check_frobenius_norm(A, 89**0.5)
+        self._check_frobenius_norm(A, np.sqrt(89))
         self._check_spectral_norm(A, 8.8722940323461277)
         self._check_nuclear_norm(A, 13.366836911774836)
         self._check_max_absolute_row_sum_norm(A, 11.0)
         self._check_max_absolute_column_sum_norm(A, 10.0)
         self._check_parameterized_norms(A)
 
-    """
     def test_2x3(self):
         # Check norms of a rectangular matrix.
         A = np.array([[1, 2, 3], [6, 0, 5]], dtype=self.dt)
 
         # Check special norms and parameterized norms.
-        self._check_frobenius_norm(A, 89**0.5)
-        self._check_spectral_norm(A, 8.8722940323461277)
-        self._check_nuclear_norm(A, 13.366836911774836)
+        self._check_frobenius_norm(A, np.sqrt(75))
+        self._check_spectral_norm(A, 8.3075790106768661)
+        self._check_nuclear_norm(A, 10.753827358936125)
         self._check_max_absolute_row_sum_norm(A, 11.0)
-        self._check_max_absolute_column_sum_norm(A, 10.0)
+        self._check_max_absolute_column_sum_norm(A, 8.0)
         self._check_parameterized_norms(A)
-    """
 
 
 class TestNormDoubleArray(_TestMatrixNorms):
