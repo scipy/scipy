@@ -399,15 +399,23 @@ static PyObject *odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdic
   INIT_JAC_FUNC(fcn, Dfun, extra_args, col_deriv, odepack_error, jt);
 
   /* Initial input vector */
-  ap_y = (PyArrayObject *)PyArray_ContiguousFromObject(y0, NPY_DOUBLE, 0, 1);
+  ap_y = (PyArrayObject *)PyArray_ContiguousFromObject(y0, NPY_DOUBLE, 0, 0);
   if (ap_y == NULL) goto fail;
+  if (PyArray_NDIM(ap_y) > 1) {
+      PyErr_SetString(PyExc_ValueError, "Initial condition y0 must be one-dimensional.");
+      goto fail;
+  }
   y = (double *) ap_y->data;
   neq = PyArray_Size((PyObject *)ap_y);
   dims[1] = neq;
 
   /* Set of output times for integration */
-  ap_tout = (PyArrayObject *)PyArray_ContiguousFromObject(p_tout, NPY_DOUBLE, 0, 1);
+  ap_tout = (PyArrayObject *)PyArray_ContiguousFromObject(p_tout, NPY_DOUBLE, 0, 0);
   if (ap_tout == NULL) goto fail;
+  if (PyArray_NDIM(ap_tout) > 1) {
+      PyErr_SetString(PyExc_ValueError, "Output times t must be one-dimensional.");
+      goto fail;
+  }
   tout = (double *)ap_tout->data;
   ntimes = PyArray_Size((PyObject *)ap_tout);
   dims[0] = ntimes;
