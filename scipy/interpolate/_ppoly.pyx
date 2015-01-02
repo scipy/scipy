@@ -246,7 +246,7 @@ def integrate(double_or_complex[:,:,::1] c,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def real_roots(double[:,:,::1] c, double[::1] x, int report_discont,
+def real_roots(double[:,:,::1] c, double[::1] x, double y, int report_discont,
                int extrapolate):
     """
     Compute real roots of a real-valued piecewise polynomial function.
@@ -262,6 +262,8 @@ def real_roots(double[:,:,::1] c, double[::1] x, int report_discont,
     ----------
     c, x
         Polynomial coefficients, as above
+    y : float
+        Find roots of ``pp(x) == y``.
     report_discont : int, optional
         Whether to report discontinuities across zero at breakpoints
         as roots
@@ -308,7 +310,7 @@ def real_roots(double[:,:,::1] c, double[::1] x, int report_discont,
                             cur_roots.append(float(last_root))
 
                 # Compute first the complex roots
-                k = croots_poly1(c, interval, jp, wr, wi, &workspace)
+                k = croots_poly1(c, y, interval, jp, wr, wi, &workspace)
 
                 # Check for errors and identically zero values
                 if k == -1:
@@ -342,7 +344,7 @@ def real_roots(double[:,:,::1] c, double[::1] x, int report_discont,
                         continue
 
                     # Refine root by one Newton iteration
-                    f = evaluate_poly1(wr[i], c, interval, jp, 0)
+                    f = evaluate_poly1(wr[i], c, interval, jp, 0) - y
                     df = evaluate_poly1(wr[i], c, interval, jp, 1)
                     if df != 0:
                         dx = f/df
@@ -525,8 +527,8 @@ cdef double_or_complex evaluate_poly1(double s, double_or_complex[:,:,::1] c, in
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
-                      void **workspace):
+cdef int croots_poly1(double[:,:,::1] c, double y, int ci, int cj,
+                      double* wr, double* wi, void **workspace):
     """
     Find all complex roots of a local polynomial.
 
@@ -534,6 +536,8 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
     ----------
     c : ndarray, shape (k, m, n)
          Coefficients of polynomials of order k
+    y : float
+        right-hand side of ``pp(x) == y``.
     ci, cj : int
          Index of the local polynomial whose coefficients c[:,ci,cj] to use
     wr, wi : double*
@@ -560,7 +564,7 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
     """
     cdef double *a
     cdef double *work
-    cdef double a0, a1, a2, d, br, bi
+    cdef double a0, a1, a2, d, br, bi, cc
     cdef int lwork, n, i, j, order
     cdef int nworkspace, info
 
@@ -583,7 +587,7 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
     elif order == 1:
         # Low-order polynomial: a0*x + a1
         a0 = c[n-1-order,ci,cj]
-        a1 = c[n-1-order+1,ci,cj]
+        a1 = c[n-1-order+1,ci,cj] - y
         wr[0] = -a1 / a0
         wi[0] = 0
         return 1
@@ -591,7 +595,7 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
         # Low-order polynomial: a0*x**2 + a1*x + a2
         a0 = c[n-1-order,ci,cj]
         a1 = c[n-1-order+1,ci,cj]
-        a2 = c[n-1-order+2,ci,cj]
+        a2 = c[n-1-order+2,ci,cj] - y
 
         d = a1*a1 - 4*a0*a2
         if d < 0:
@@ -638,7 +642,10 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
     for j in range(order*order):
         a[j] = 0
     for j in range(order):
-        a[j + (order-1)*order] = -c[n-1-j,ci,cj]/c[n-1-order,ci,cj]
+        cc = c[n-1-j,ci,cj]
+        if j == 0:
+            cc -= y
+        a[j + (order-1)*order] = -cc / c[n-1-order,ci,cj]
         if j + 1 < order:
             a[j+1 + order*j] = 1
 
@@ -670,7 +677,7 @@ cdef int croots_poly1(double[:,:,::1] c, int ci, int cj, double* wr, double* wi,
     return order
 
 
-def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w):
+def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w, double y=0):
     """
     Find roots of polynomials.
 
@@ -706,7 +713,7 @@ def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w):
                 for k in range(c.shape[0]):
                     w[k,i,j] = nan
 
-                nroots = croots_poly1(c, i, j, wr, wi, &workspace)
+                nroots = croots_poly1(c, y, i, j, wr, wi, &workspace)
 
                 if nroots == -1:
                     continue
