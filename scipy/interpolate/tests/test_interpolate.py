@@ -671,7 +671,6 @@ class TestPPoly(TestCase):
         assert_equal(p.antiderivative().c, PPoly([[1], [0]], [0, 1]).c)
         assert_equal(p.antiderivative().x, PPoly([[1], [0]], [0, 1]).x)
 
-
     def test_antiderivative_regression_4355(self):
         # https://github.com/scipy/scipy/issues/4355
         p = PPoly([[1., 0.5]], [0, 1, 2])
