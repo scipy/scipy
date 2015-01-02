@@ -671,6 +671,16 @@ class TestPPoly(TestCase):
         assert_equal(p.antiderivative().c, PPoly([[1], [0]], [0, 1]).c)
         assert_equal(p.antiderivative().x, PPoly([[1], [0]], [0, 1]).x)
 
+
+    def test_antiderivative_regression_4355(self):
+        # https://github.com/scipy/scipy/issues/4355
+        p = PPoly([[1., 0.5]], [0, 1, 2])
+        q = p.antiderivative()
+        assert_equal(q.c, [[1, 0.5], [0, 1]])
+        assert_equal(q.x, [0, 1, 2])
+        assert_allclose(p.integrate(0, 2), 1.5)
+        assert_allclose(q(2) - q(0), 1.5)
+
     def test_antiderivative_simple(self):
         np.random.seed(1234)
         # [ p1(x) = 3*x**2 + 2*x + 1,
