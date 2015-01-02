@@ -44,7 +44,7 @@ void ode_function(int *n, double *t, double *y, double *ydot)
 {
  /* This is the function called from the Fortran code it should
         -- use call_python_function to get a multiarrayobject result
-	-- check for errors and return -1 if any
+	-- check for errors and set *n to -1 if any
  	-- otherwise place result of calculation in ydot
   */
 
@@ -64,13 +64,35 @@ void ode_function(int *n, double *t, double *y, double *ydot)
     return;
   }
   Py_DECREF(arg1);    /* arglist has reference */
-  
-  result_array = (PyArrayObject *)call_python_function(multipack_python_function, *n, y, arglist, 1, odepack_error);
+
+  result_array = (PyArrayObject *)call_python_function(multipack_python_function,
+                                                       *n, y, arglist, odepack_error);
   if (result_array == NULL) {
     *n = -1;
     Py_DECREF(arglist);
     return;
   }
+
+  if (PyArray_NDIM(result_array) > 1) {
+      *n = -1;
+      PyErr_Format(PyExc_RuntimeError,
+                   "The array return by func must be one-dimensional, but got ndim=%d.",
+                   PyArray_NDIM(result_array));
+      Py_DECREF(arglist);
+      Py_DECREF(result_array);
+      return;
+  }
+
+  if (PyArray_Size((PyObject *)result_array) != *n) {
+      PyErr_Format(PyExc_RuntimeError,
+                   "The size of the array returned by func (%ld) does not match the size of y0 (%d).",
+                   PyArray_Size((PyObject *)result_array), *n);
+      *n = -1;
+      Py_DECREF(arglist);
+      Py_DECREF(result_array);
+      return;
+  }
+
   memcpy(ydot, result_array->data, (*n)*sizeof(double));
   Py_DECREF(result_array);
   Py_DECREF(arglist);
@@ -127,7 +149,7 @@ int ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu, double
   PyArrayObject *result_array;
   PyObject *arglist, *arg1;
 
-  int ndim, nrows, ncols, j, k;
+  int ndim, nrows, ncols, dim_error;
   npy_intp *dims;
 
   /* Append t to argument list */
@@ -145,7 +167,7 @@ int ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu, double
   Py_DECREF(arg1);    /* arglist has reference */
 
   result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian, *n, y,
-                                                       arglist, 2, odepack_error);
+                                                       arglist, odepack_error);
   if (result_array == NULL) {
     *n = -1;
     Py_DECREF(arglist);
@@ -159,6 +181,7 @@ int ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu, double
   else {
       nrows = *n;
   }
+
   if (!multipack_jac_transpose) {
       int tmp;
       tmp = nrows;
@@ -167,27 +190,40 @@ int ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu, double
   }
 
   ndim = PyArray_NDIM(result_array);
-  if (ndim != 2) {
-      // XXX The code currently allows ndim to be 1 or 2.  I don't
-      // know why 1 is allowed.  Perhaps that is more natural for
-      // a scalar differential equation.  But then why not allow
-      // ndim = 0?  E.g.
-      //     def rhs(x, t):
-      //         return -100*x
-      //
-      //     def jac(x, t):
-      //         return -100
-      //
-      PyErr_Format(PyExc_RuntimeError, "The Jacobian array must be two dimensional, but got ndim=%d.", ndim);
+  if (ndim > 2) {
+      PyErr_Format(PyExc_RuntimeError,
+                   "The Jacobian array must be two dimensional, but got ndim=%d.",
+                   ndim);
       Py_DECREF(arglist);
       Py_DECREF(result_array);
       return -1;
   }
 
   dims = PyArray_DIMS(result_array);
-  if ((dims[0] != nrows) || (dims[1] != ncols)) {
-      PyErr_Format(PyExc_RuntimeError, "Expected a Jacobian array with shape (%d, %d), but got (%d, %d)",
-             nrows, ncols, dims[0], dims[1]);
+  dim_error = 0;
+  if (ndim == 0) {
+      if ((nrows != 1) || (ncols != 1)) {
+          dim_error = 1;
+      }
+  }
+  if (ndim == 1) {
+      if ((nrows != 1) || (dims[0] != ncols)) {
+          dim_error = 1;
+      }
+  }
+  if (ndim == 2) {
+      if ((dims[0] != nrows) || (dims[1] != ncols)) {
+          dim_error = 1;
+      }
+  }
+  if (dim_error) {
+      char *b = "";
+      if (multipack_jac_type == 4) {
+          b = "banded ";
+      }
+      PyErr_Format(PyExc_RuntimeError,
+                   "Expected a %sJacobian array with shape (%d, %d)",
+                   b, nrows, ncols);
       Py_DECREF(arglist);
       Py_DECREF(result_array);
       return -1;
@@ -223,17 +259,6 @@ int ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu, double
       copy_array_to_fortran(pd, *nrowpd, m, *n, (double *) result_array->data,
                             !multipack_jac_transpose);
   }
-
-#ifdef DEBUG
-  printf("jt = %d  tr = %d  *nrowpd = %d   *n = %d\n",
-         multipack_jac_type, multipack_jac_transpose, *nrowpd, *n);
-  for (j = 0; j < *n; ++j) {
-      for (k = 0; k < *nrowpd; ++k) {
-          printf(" %8.3f", *(pd + (*nrowpd)*j + k));
-      }
-      printf("\n");
-  }
-#endif
 
   Py_DECREF(arglist);
   Py_DECREF(result_array);
@@ -346,7 +371,13 @@ static PyObject *odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdic
 
   STORE_VARS();
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwdict, "OOO|OOiiiiOOOdddiiiii", kwlist, &fcn, &y0, &p_tout, &extra_args, &Dfun, &col_deriv, &ml, &mu, &full_output, &o_rtol, &o_atol, &o_tcrit, &h0, &hmax, &hmin, &ixpr, &mxstep, &mxhnil, &mxordn, &mxords)) return NULL;
+  if (!PyArg_ParseTupleAndKeywords(args, kwdict, "OOO|OOiiiiOOOdddiiiii", kwlist,
+                                   &fcn, &y0, &p_tout, &extra_args, &Dfun,
+                                   &col_deriv, &ml, &mu, &full_output, &o_rtol, &o_atol,
+                                   &o_tcrit, &h0, &hmax, &hmin, &ixpr, &mxstep, &mxhnil,
+                                   &mxordn, &mxords)) {
+    return NULL;
+  }
 
   if (o_tcrit == Py_None) {
     o_tcrit = NULL;

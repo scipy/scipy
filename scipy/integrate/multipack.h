@@ -105,8 +105,7 @@ static int multipack_jac_type;
 
 
 static PyObject *call_python_function(PyObject *func, npy_intp n, double *x,
-                                      PyObject *args, int dim,
-                                      PyObject *error_obj)
+                                      PyObject *args, PyObject *error_obj)
 {
   /*
     This is a generic function to call a python function that takes a 1-D
@@ -155,7 +154,7 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x,
   }
 
   result_array = (PyArrayObject *)PyArray_ContiguousFromObject(
-                                      result, NPY_DOUBLE, dim-1, dim);
+                                      result, NPY_DOUBLE, 0, 0);
   if (result_array == NULL) {
     goto fail;
   }
