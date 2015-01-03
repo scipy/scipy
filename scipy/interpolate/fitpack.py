@@ -30,8 +30,8 @@ __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
 import warnings
 import numpy as np
 from . import _fitpack
-from numpy import atleast_1d, array, ones, zeros, sqrt, ravel, transpose, \
-     dot, sin, cos, pi, arange, empty, iinfo, intc, asarray
+from numpy import (atleast_1d, array, ones, zeros, sqrt, ravel, transpose,
+                   empty, iinfo, intc, asarray)
 myasarray = atleast_1d
 
 # Try to replace _fitpack interface with
