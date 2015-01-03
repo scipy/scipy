@@ -882,7 +882,7 @@ class rv_generic(object):
         # extra gymnastics needed for a custom random_state
         if rndm is not None:
             random_state_saved = self._random_state
-            self._random_state = rndm
+            self._random_state = check_random_state(rndm)
 
         vals = self._rvs(*args)
         if self._size is not None:

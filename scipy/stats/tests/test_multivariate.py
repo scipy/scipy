@@ -765,7 +765,6 @@ class TestInvwishart(TestCase):
         assert_allclose(frozen_iw_rvs, manual_iw_rvs)
 
 
-
 def test_random_state_property():
     scale = np.eye(3)
     scale[0,1] = 0.5

@@ -252,6 +252,13 @@ _doc_callparams_note = \
     array_like.
     """
 
+_doc_random_state = """\
+random_state : None or int or np.random.RandomState instance, optional
+    If int or RandomState, use it for drawing the random variates.
+    If None (or np.random), the global np.random state is used.
+    Default is None.
+"""
+
 _doc_frozen_callparams = ""
 
 _doc_frozen_callparams_note = \
@@ -259,16 +266,66 @@ _doc_frozen_callparams_note = \
 
 docdict_params = {
     '_doc_default_callparams': _doc_default_callparams,
-    '_doc_callparams_note': _doc_callparams_note
+    '_doc_callparams_note': _doc_callparams_note,
+    '_doc_random_state': _doc_random_state
 }
 
 docdict_noparams = {
     '_doc_default_callparams': _doc_frozen_callparams,
-    '_doc_callparams_note': _doc_frozen_callparams_note
+    '_doc_callparams_note': _doc_frozen_callparams_note,
+    '_doc_random_state': _doc_random_state
 }
 
 
-class multivariate_normal_gen(object):
+class multi_rv_generic(object):
+    """
+    Class which encapsulates common functionality between all multivariate
+    distributions.
+
+    """
+    def __init__(self, seed=None):
+        super(multi_rv_generic, self).__init__()
+        self._random_state = check_random_state(seed)
+
+    @property
+    def random_state(self):
+        """ Get or set the RandomState object for generating random variates.
+
+        This can be either None or an existing RandomState object.
+
+        If None (or np.random), use the RandomState singleton used by np.random.
+        If already a RandomState instance, use it.
+        If an int, use a new RandomState instance seeded with seed.
+
+        """
+        return self._random_state
+
+    @random_state.setter
+    def random_state(self, seed):
+        self._random_state = check_random_state(seed)
+
+    def _get_random_state(self, random_state):
+        if random_state is not None:
+            return check_random_state(random_state)
+        else:
+            return self._random_state
+
+
+class multi_rv_frozen(object):
+    """
+    Class which encapsulates common functionality between all frozen
+    multivariate distributions.
+    """
+    @property
+    def random_state(self):
+        return self._dist._random_state
+
+    @random_state.setter
+    def random_state(self, seed):
+        self._dist._random_state = check_random_state(seed)
+
+
+class multivariate_normal_gen(multi_rv_generic):
     r"""
     A multivariate normal random variable.
 
@@ -277,13 +334,13 @@ class multivariate_normal_gen(object):
 
     Methods
     -------
-    pdf(x, mean=None, cov=1, allow_singular=False)
+    ``pdf(x, mean=None, cov=1, allow_singular=False)``
         Probability density function.
-    logpdf(x, mean=None, cov=1, allow_singular=False)
+    ``logpdf(x, mean=None, cov=1, allow_singular=False)``
         Log of the probability density function.
-    rvs(mean=None, cov=1, size=1, random_state=None)
+    ``rvs(mean=None, cov=1, size=1, random_state=None)``
         Draw random samples from a multivariate normal distribution.
-    entropy()
+    ``entropy()``
         Compute the differential entropy of the multivariate normal.
 
     Parameters
@@ -291,6 +348,7 @@ class multivariate_normal_gen(object):
     x : array_like
         Quantiles, with the last axis of `x` denoting the components.
     %(_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Alternatively, the object may be called (as a function) to fix the mean
     and covariance parameters, returning a "frozen" multivariate normal
@@ -350,8 +408,8 @@ class multivariate_normal_gen(object):
     """
 
     def __init__(self, seed=None):
+        super(multivariate_normal_gen, self).__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, docdict_params)
-        self._random_state = check_random_state(seed)
 
     def __call__(self, mean=None, cov=1, allow_singular=False, seed=None):
         """
@@ -363,23 +421,6 @@ class multivariate_normal_gen(object):
         return multivariate_normal_frozen(mean, cov,
                                           allow_singular=allow_singular,
                                           seed=seed)
-
-    @property
-    def random_state(self):
-        """ Get or set the RandomState object for generating random variates.
-
-        This can be either None or an existing RandomState object.
-
-        If None (or np.random), use the RandomState singleton used by np.random.
-        If already a RandomState instance, use it.
-        If an int, use a new RandomState instance seeded with seed.
-
-        """
-        return self._random_state
-
-    @random_state.setter
-    def random_state(self, seed):
-        self._random_state = check_random_state(seed)
 
     def _logpdf(self, x, mean, prec_U, log_det_cov, rank):
         """
@@ -469,10 +510,7 @@ class multivariate_normal_gen(object):
         %(_doc_default_callparams)s
         size : integer, optional
             Number of samples to draw (default 1).
-        random_state : None or int or np.random.RandomState instance, optional
-            If int or RandomState, use it for drawing the random variates.
-            If None (or np.random), the global np.random state is used.
-            Default is None.
+        %(_doc_random_state)s
 
         Returns
         -------
@@ -487,12 +525,8 @@ class multivariate_normal_gen(object):
         """
         dim, mean, cov = _process_parameters(None, mean, cov)
 
-        # extra gymnastics needed for a custom random_state
-        if random_state is not None:
-            random_state = check_random_state(random_state)
-            out = random_state.multivariate_normal(mean, cov, size)
-        else:
-            out = self._random_state.multivariate_normal(mean, cov, size)
+        random_state = self._get_random_state(random_state)
+        out = random_state.multivariate_normal(mean, cov, size)
         return _squeeze_output(out)
 
     def entropy(self, mean=None, cov=1):
@@ -521,7 +555,7 @@ class multivariate_normal_gen(object):
 multivariate_normal = multivariate_normal_gen()
 
 
-class multivariate_normal_frozen(object):
+class multivariate_normal_frozen(multi_rv_frozen):
     def __init__(self, mean=None, cov=1, allow_singular=False, seed=None):
         """
         Create a frozen multivariate normal distribution.
@@ -557,19 +591,19 @@ class multivariate_normal_frozen(object):
         """
         self.dim, self.mean, self.cov = _process_parameters(None, mean, cov)
         self.cov_info = _PSD(self.cov, allow_singular=allow_singular)
-        self._mnorm = multivariate_normal_gen(seed)
+        self._dist = multivariate_normal_gen(seed)
 
     def logpdf(self, x):
         x = _process_quantiles(x, self.dim)
-        out = self._mnorm._logpdf(x, self.mean, self.cov_info.U,
-                                  self.cov_info.log_pdet, self.cov_info.rank)
+        out = self._dist._logpdf(x, self.mean, self.cov_info.U,
+                                 self.cov_info.log_pdet, self.cov_info.rank)
         return _squeeze_output(out)
 
     def pdf(self, x):
         return np.exp(self.logpdf(x))
 
     def rvs(self, size=1, random_state=None):
-        return self._mnorm.rvs(self.mean, self.cov, size, random_state)
+        return self._dist.rvs(self.mean, self.cov, size, random_state)
 
     def entropy(self):
         """
@@ -606,10 +640,12 @@ _dirichlet_doc_frozen_callparams_note = \
 
 dirichlet_docdict_params = {
     '_dirichlet_doc_default_callparams': _dirichlet_doc_default_callparams,
+    '_doc_random_state': _doc_random_state
 }
 
 dirichlet_docdict_noparams = {
     '_dirichlet_doc_default_callparams': _dirichlet_doc_frozen_callparams,
+    '_doc_random_state': _doc_random_state
 }
 
 
@@ -676,7 +712,7 @@ def _lnB(alpha):
     return np.sum(gammaln(alpha)) - gammaln(np.sum(alpha))
 
 
-class dirichlet_gen(object):
+class dirichlet_gen(multi_rv_generic):
     r"""
     A Dirichlet random variable.
 
@@ -687,17 +723,17 @@ class dirichlet_gen(object):
 
     Methods
     -------
-    pdf(x, alpha)
+    ``pdf(x, alpha)``
         Probability density function.
-    logpdf(x, alpha)
+    ``logpdf(x, alpha)``
         Log of the probability density function.
-    rvs(alpha, size=1, random_state=None)
+    ``rvs(alpha, size=1, random_state=None)``
         Draw random samples from a Dirichlet distribution.
-    mean(alpha)
+    ``mean(alpha)``
         The mean of the Dirichlet distribution
-    var(alpha)
+    ``var(alpha)``
         The variance of the Dirichlet distribution
-    entropy(alpha)
+    ``entropy(alpha)``
         Compute the differential entropy of the multivariate normal.
 
     Parameters
@@ -705,6 +741,7 @@ class dirichlet_gen(object):
     x : array_like
         Quantiles, with the last axis of `x` denoting the components.
     %(_dirichlet_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Alternatively, the object may be called (as a function) to fix
     concentration parameters, returning a "frozen" Dirichlet
@@ -743,28 +780,11 @@ class dirichlet_gen(object):
     """
 
     def __init__(self, seed=None):
+        super(dirichlet_gen, self).__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, dirichlet_docdict_params)
-        self._random_state = check_random_state(seed)
 
     def __call__(self, alpha, seed=None):
         return dirichlet_frozen(alpha, seed=seed)
-
-    @property
-    def random_state(self):
-        """ Get or set the RandomState object for generating random variates.
-
-        This can be either None or an existing RandomState object.
-
-        If None (or np.random), use the RandomState singleton used by np.random.
-        If already a RandomState instance, use it.
-        If an int, use a new RandomState instance seeded with seed.
-
-        """
-        return self._random_state
-
-    @random_state.setter
-    def random_state(self, seed):
-        self._random_state = check_random_state(seed)
 
     def _logpdf(self, x, alpha):
         """
@@ -902,10 +922,7 @@ class dirichlet_gen(object):
         %(_dirichlet_doc_default_callparams)s
         size : int, optional
             Number of samples to draw (default 1).
-        random_state : None or int or np.random.RandomState instance, optional
-            If int or RandomState, use it for drawing the random variates.
-            If None (or np.random), the global np.random state is used.
-            Default is None.
+        %(_doc_random_state)s
 
         Returns
         -------
@@ -915,38 +932,35 @@ class dirichlet_gen(object):
 
         """
         alpha = _dirichlet_check_parameters(alpha)
-        if random_state is None:
-            return self._random_state.dirichlet(alpha, size=size)
-        else:
-            random_state = check_random_state(random_state)
-            return random_state.dirichlet(alpha, size=size)
+        random_state = self._get_random_state(random_state)
+        return random_state.dirichlet(alpha, size=size)
 
 
 dirichlet = dirichlet_gen()
 
 
-class dirichlet_frozen(object):
+class dirichlet_frozen(multi_rv_frozen):
     def __init__(self, alpha, seed=None):
         self.alpha = _dirichlet_check_parameters(alpha)
-        self._dirichlet = dirichlet_gen(seed)
+        self._dist = dirichlet_gen(seed)
 
     def logpdf(self, x):
-        return self._dirichlet.logpdf(x, self.alpha)
+        return self._dist.logpdf(x, self.alpha)
 
     def pdf(self, x):
-        return self._dirichlet.pdf(x, self.alpha)
+        return self._dist.pdf(x, self.alpha)
 
     def mean(self):
-        return self._dirichlet.mean(self.alpha)
+        return self._dist.mean(self.alpha)
 
     def var(self):
-        return self._dirichlet.var(self.alpha)
+        return self._dist.var(self.alpha)
 
     def entropy(self):
-        return self._dirichlet.entropy(self.alpha)
+        return self._dist.entropy(self.alpha)
 
     def rvs(self, size=1, random_state=None):
-        return self._dirichlet.rvs(self.alpha, size, random_state)
+        return self._dist.rvs(self.alpha, size, random_state)
 
 
 # Set frozen generator docstrings from corresponding docstrings in
@@ -976,16 +990,18 @@ _wishart_doc_frozen_callparams_note = \
 
 wishart_docdict_params = {
     '_doc_default_callparams': _wishart_doc_default_callparams,
-    '_doc_callparams_note': _wishart_doc_callparams_note
+    '_doc_callparams_note': _wishart_doc_callparams_note,
+    '_doc_random_state': _doc_random_state
 }
 
 wishart_docdict_noparams = {
     '_doc_default_callparams': _wishart_doc_frozen_callparams,
-    '_doc_callparams_note': _wishart_doc_frozen_callparams_note
+    '_doc_callparams_note': _wishart_doc_frozen_callparams_note,
+    '_doc_random_state': _doc_random_state
 }
 
 
-class wishart_gen(object):
+class wishart_gen(multi_rv_generic):
     r"""
     A Wishart random variable.
 
@@ -997,13 +1013,13 @@ class wishart_gen(object):
 
     Methods
     -------
-    pdf(x, df, scale)
+    ``pdf(x, df, scale)``
         Probability density function.
-    logpdf(x, df, scale)
+    ``logpdf(x, df, scale)``
         Log of the probability density function.
-    rvs(df, scale, size=1, random_state=None)
+    ``rvs(df, scale, size=1, random_state=None)``
         Draw random samples from a Wishart distribution.
-    entropy()
+    ``entropy()``
         Compute the differential entropy of the Wishart distribution.
 
     Parameters
@@ -1011,6 +1027,7 @@ class wishart_gen(object):
     x : array_like
         Quantiles, with the last axis of `x` denoting the components.
     %(_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Alternatively, the object may be called (as a function) to fix the degrees
     of freedom and scale parameters, returning a "frozen" Wishart random
@@ -1084,8 +1101,8 @@ class wishart_gen(object):
     """
 
     def __init__(self, seed=None):
+        super(wishart_gen, self).__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, wishart_docdict_params)
-        self._random_state = check_random_state(seed)
 
     def __call__(self, df=None, scale=None, seed=None):
         """
@@ -1095,23 +1112,6 @@ class wishart_gen(object):
 
         """
         return wishart_frozen(df, scale, seed)
-
-    @property
-    def random_state(self):
-        """ Get or set the RandomState object for generating random variates.
-
-        This can be either None or an existing RandomState object.
-
-        If None (or np.random), use the RandomState singleton used by np.random.
-        If already a RandomState instance, use it.
-        If an int, use a new RandomState instance seeded with seed.
-
-        """
-        return self._random_state
-
-    @random_state.setter
-    def random_state(self, seed):
-        self._random_state = check_random_state(seed)
 
     def _process_parameters(self, df, scale):
         if scale is None:
@@ -1461,10 +1461,7 @@ class wishart_gen(object):
             Scale matrix
         C : ndarray
             Cholesky factorization of the scale matrix, lower triangular.
-        random_state : None or int or np.random.RandomState instance, optional
-            If int or RandomState, use it for drawing the random variates.
-            If None (or np.random), the global np.random state is used.
-            Default is None.
+        %(_doc_random_state)s
 
         Notes
         -----
@@ -1472,10 +1469,7 @@ class wishart_gen(object):
         called directly; use 'rvs' instead.
 
         """
-        if random_state is not None:
-            random_state = check_random_state(random_state)
-        else:
-            random_state = self._random_state
+        random_state = self._get_random_state(random_state)
         # Calculate the matrices A, which are actually lower triangular
         # Cholesky factorizations of a matrix B such that B ~ W(df, I)
         A = self._standard_rvs(n, shape, dim, df, random_state)
@@ -1506,10 +1500,7 @@ class wishart_gen(object):
         %(_doc_default_callparams)s
         size : integer or iterable of integers, optional
             Number of samples to draw (default 1).
-        random_state : None or int or np.random.RandomState instance, optional
-            If int or RandomState, use it for drawing the random variates.
-            If None (or np.random), the global np.random state is used.
-            Default is None.
+        %(_doc_random_state)s
 
         Returns
         -------
@@ -1609,7 +1600,7 @@ class wishart_gen(object):
 wishart = wishart_gen()
 
 
-class wishart_frozen(object):
+class wishart_frozen(multi_rv_frozen):
     """
     Create a frozen Wishart distribution.
 
@@ -1628,41 +1619,41 @@ class wishart_frozen(object):
 
     """
     def __init__(self, df, scale, seed=None):
-        self._wishart = wishart_gen(seed)
-        self.dim, self.df, self.scale = self._wishart._process_parameters(
+        self._dist = wishart_gen(seed)
+        self.dim, self.df, self.scale = self._dist._process_parameters(
             df, scale)
-        self.C, self.log_det_scale = self._wishart._cholesky_logdet(self.scale)
+        self.C, self.log_det_scale = self._dist._cholesky_logdet(self.scale)
 
     def logpdf(self, x):
-        x = self._wishart._process_quantiles(x, self.dim)
+        x = self._dist._process_quantiles(x, self.dim)
 
-        out = self._wishart._logpdf(x, self.dim, self.df, self.scale,
-                                    self.log_det_scale, self.C)
+        out = self._dist._logpdf(x, self.dim, self.df, self.scale,
+                                 self.log_det_scale, self.C)
         return _squeeze_output(out)
 
     def pdf(self, x):
         return np.exp(self.logpdf(x))
 
     def mean(self):
-        out = self._wishart._mean(self.dim, self.df, self.scale)
+        out = self._dist._mean(self.dim, self.df, self.scale)
         return _squeeze_output(out)
 
     def mode(self):
-        out = self._wishart._mode(self.dim, self.df, self.scale)
+        out = self._dist._mode(self.dim, self.df, self.scale)
         return _squeeze_output(out) if out is not None else out
 
     def var(self):
-        out = self._wishart._var(self.dim, self.df, self.scale)
+        out = self._dist._var(self.dim, self.df, self.scale)
         return _squeeze_output(out)
 
     def rvs(self, size=1, random_state=None):
-        n, shape = self._wishart._process_size(size)
-        out = self._wishart._rvs(n, shape,
-                                 self.dim, self.df, self.C, random_state)
+        n, shape = self._dist._process_size(size)
+        out = self._dist._rvs(n, shape, self.dim, self.df,
+                              self.C, random_state)
         return _squeeze_output(out)
 
     def entropy(self):
-        return self._wishart._entropy(self.dim, self.df, self.log_det_scale)
+        return self._dist._entropy(self.dim, self.df, self.log_det_scale)
 
 # Set frozen generator docstrings from corresponding docstrings in
 # Wishart and fill in default strings in class docstrings
@@ -1752,11 +1743,11 @@ class invwishart_gen(wishart_gen):
 
     Methods
     -------
-    pdf(x, df, scale)
+    ``pdf(x, df, scale)``
         Probability density function.
-    logpdf(x, df, scale)
+    ``logpdf(x, df, scale)``
         Log of the probability density function.
-    rvs(df, scale, size=1, random_state=None)
+    ``rvs(df, scale, size=1, random_state=None)``
         Draw random samples from an inverse Wishart distribution.
 
     Parameters
@@ -1764,6 +1755,7 @@ class invwishart_gen(wishart_gen):
     x : array_like
         Quantiles, with the last axis of `x` denoting the components.
     %(_doc_default_callparams)s
+    %(_doc_random_state)s
 
     Alternatively, the object may be called (as a function) to fix the degrees
     of freedom and scale parameters, returning a "frozen" inverse Wishart
@@ -1840,8 +1832,8 @@ class invwishart_gen(wishart_gen):
     """
 
     def __init__(self, seed=None):
+        super(invwishart_gen, self).__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, wishart_docdict_params)
-        self._random_state = check_random_state(seed)
 
     def __call__(self, df=None, scale=None, seed=None):
         """
@@ -1851,23 +1843,6 @@ class invwishart_gen(wishart_gen):
 
         """
         return invwishart_frozen(df, scale, seed)
-
-    @property
-    def random_state(self):
-        """ Get or set the RandomState object for generating random variates.
-
-        This can be either None or an existing RandomState object.
-
-        If None (or np.random), use the RandomState singleton used by np.random.
-        If already a RandomState instance, use it.
-        If an int, use a new RandomState instance seeded with seed.
-
-        """
-        return self._random_state
-
-    @random_state.setter
-    def random_state(self, seed):
-        self._random_state = check_random_state(seed)
 
     def _logpdf(self, x, dim, df, scale, log_det_scale):
         """
@@ -2098,10 +2073,7 @@ class invwishart_gen(wishart_gen):
             Degrees of freedom
         C : ndarray
             Cholesky factorization of the scale matrix, lower triagular.
-        random_state : None or int or np.random.RandomState instance, optional
-            If int or RandomState, use it for drawing the random variates.
-            If None (or np.random), the global np.random state is used.
-            Default is None.
+        %(_doc_random_state)s
 
         Notes
         -----
@@ -2109,11 +2081,7 @@ class invwishart_gen(wishart_gen):
         called directly; use 'rvs' instead.
 
         """
-        if random_state is not None:
-            random_state = check_random_state(random_state)
-        else:
-            random_state = self._random_state
-
+        random_state = self._get_random_state(random_state)
         # Get random draws A such that A ~ W(df, I)
         A = super(invwishart_gen, self)._standard_rvs(n, shape, dim,
                                                       df, random_state)
@@ -2149,10 +2117,7 @@ class invwishart_gen(wishart_gen):
         %(_doc_default_callparams)s
         size : integer or iterable of integers, optional
             Number of samples to draw (default 1).
-        random_state : None or int or np.random.RandomState instance, optional
-            If int or RandomState, use it for drawing the random variates.
-            If None (or np.random), the global np.random state is used.
-            Default is None.
+        %(_doc_random_state)s
 
         Returns
         -------
@@ -2185,7 +2150,7 @@ class invwishart_gen(wishart_gen):
 
 invwishart = invwishart_gen()
 
-class invwishart_frozen(object):
+class invwishart_frozen(multi_rv_frozen):
     def __init__(self, df, scale, seed=None):
         """
         Create a frozen inverse Wishart distribution.
@@ -2204,8 +2169,8 @@ class invwishart_frozen(object):
             Default is None.
 
         """
-        self._invwishart = invwishart_gen(seed)
-        self.dim, self.df, self.scale = self._invwishart._process_parameters(
+        self._dist = invwishart_gen(seed)
+        self.dim, self.df, self.scale = self._dist._process_parameters(
             df, scale
         )
 
@@ -2221,31 +2186,31 @@ class invwishart_frozen(object):
         self.C = scipy.linalg.cholesky(self.inv_scale, lower=True)
 
     def logpdf(self, x):
-        x = self._invwishart._process_quantiles(x, self.dim)
-        out = self._invwishart._logpdf(x, self.dim, self.df, self.scale,
-                                       self.log_det_scale)
+        x = self._dist._process_quantiles(x, self.dim)
+        out = self._dist._logpdf(x, self.dim, self.df, self.scale,
+                                 self.log_det_scale)
         return _squeeze_output(out)
 
     def pdf(self, x):
         return np.exp(self.logpdf(x))
 
     def mean(self):
-        out = self._invwishart._mean(self.dim, self.df, self.scale)
+        out = self._dist._mean(self.dim, self.df, self.scale)
         return _squeeze_output(out) if out is not None else out
 
     def mode(self):
-        out = self._invwishart._mode(self.dim, self.df, self.scale)
+        out = self._dist._mode(self.dim, self.df, self.scale)
         return _squeeze_output(out)
 
     def var(self):
-        out = self._invwishart._var(self.dim, self.df, self.scale)
+        out = self._dist._var(self.dim, self.df, self.scale)
         return _squeeze_output(out) if out is not None else out
 
     def rvs(self, size=1, random_state=None):
-        n, shape = self._invwishart._process_size(size)
+        n, shape = self._dist._process_size(size)
 
-        out = self._invwishart._rvs(n, shape, self.dim, self.df,
-                                    self.C, random_state)
+        out = self._dist._rvs(n, shape, self.dim, self.df,
+                              self.C, random_state)
 
         return _squeeze_output(out)
 
