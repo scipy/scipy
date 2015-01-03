@@ -158,6 +158,13 @@ class LinearOperator(object):
         self.dtype = dtype
         self.shape = shape
 
+    def _init_dtype(self):
+        """Called from subclasses at the end of the __init__ routine.
+        """
+        if self.dtype is None:
+            v = np.zeros(self.shape[-1])
+            self.dtype = np.asarray(self.matvec(v)).dtype
+
     def _matmat(self, X):
         """Default matrix-matrix multiplication handler.
 
@@ -440,6 +447,8 @@ class _CustomLinearOperator(LinearOperator):
         self.__matvec_impl = matvec
         self.__rmatvec_impl = rmatvec
         self.__matmat_impl = matmat
+
+        self._init_dtype()
 
     def _matmat(self, X):
         if self.__matmat_impl is not None:
