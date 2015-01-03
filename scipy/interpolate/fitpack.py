@@ -887,7 +887,6 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
        Numerical Analysis, Oxford University Press, 1993.
 
     """
-    x,y,z = map(atleast_1d,[x,y,z])
     x,y,z = map(ravel,[x,y,z])  # ensure 1-d arrays.
     m = len(x)
     if not (m == len(y) == len(z)):
