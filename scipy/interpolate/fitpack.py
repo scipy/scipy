@@ -940,7 +940,6 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
         _surfit_cache['ty'] = atleast_1d(ty)
     tx,ty = _surfit_cache['tx'],_surfit_cache['ty']
     wrk = _surfit_cache['wrk']
-    iwrk = _surfit_cache['iwrk']
     u,v,km,ne = nxest-kx-1,nyest-ky-1,max(kx,ky)+1,max(nxest,nyest)
     bx,by = kx*v+ky+1,ky*u+kx+1
     b1,b2 = bx,bx+v-ky
