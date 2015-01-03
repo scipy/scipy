@@ -83,6 +83,7 @@ class _TestMatrixNorms(object):
         self._check_uninteresting_elementwise_norms(A)
         self._check_uninteresting_ky_fan_norms(A)
 
+    @dec.knownfailureif(True, 'empty norms are not yet allowed')
     def test_empty(self):
         A = self.arraytype([[]])
 
