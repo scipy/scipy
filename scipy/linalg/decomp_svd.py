@@ -7,6 +7,7 @@ from numpy import asarray_chkfinite, asarray, zeros, r_, diag
 # Local imports.
 from .misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
+from .decomp import _asarray_validated
 
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth']
 
@@ -84,10 +85,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     True
 
     """
-    if check_finite:
-        a1 = asarray_chkfinite(a)
-    else:
-        a1 = asarray(a)
+    a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     m,n = a1.shape
@@ -148,13 +146,9 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     diagsvd : Construct the Sigma matrix, given the vector s.
 
     """
-    if check_finite:
-        a1 = asarray_chkfinite(a)
-    else:
-        a1 = asarray(a)
+    a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
-    m,n = a1.shape
 
     if a1.size:
         return svd(a, compute_uv=0, overwrite_a=overwrite_a,
