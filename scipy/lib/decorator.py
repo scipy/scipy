@@ -37,23 +37,9 @@ __all__ = ["decorator", "FunctionMaker", "partial"]
 import sys
 import re
 import inspect
+from functools import partial
 
 from scipy.lib.six import exec_
-
-try:
-    from functools import partial
-except ImportError:  # for Python version < 2.5
-    class partial(object):
-        "A simple replacement of functools.partial"
-        def __init__(self, func, *args, **kw):
-            self.func = func
-            self.args = args
-            self.keywords = kw
-
-        def __call__(self, *otherargs, **otherkw):
-            kw = self.keywords.copy()
-            kw.update(otherkw)
-            return self.func(*(self.args + otherargs), **kw)
 
 if sys.version >= '3':
     from inspect import getfullargspec
