@@ -12,7 +12,6 @@ __all__ = [
     'UnivariateSpline',
     'InterpolatedUnivariateSpline',
     'LSQUnivariateSpline',
-
     'BivariateSpline',
     'LSQBivariateSpline',
     'SmoothBivariateSpline',
@@ -1054,11 +1053,6 @@ class LSQBivariateSpline(BivariateSpline):
         ``bbox=[min(x,tx),max(x,tx), min(y,ty),max(y,ty)]``.
     kx, ky : ints, optional
         Degrees of the bivariate spline. Default is 3.
-    s : float, optional
-        Positive smoothing factor defined for estimation condition:
-        ``sum((w[i]*(z[i]-s(x[i], y[i])))**2, axis=0) <= s``
-        Default ``s=len(w)`` which should be a good value if ``1/w[i]`` is an
-        estimate of the standard deviation of ``z[i]``.
     eps : float, optional
         A threshold for determining the effective rank of an over-determined
         linear system of equations. `eps` should have a value between 0 and 1,
