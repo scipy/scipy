@@ -50,6 +50,8 @@ with ``statsmodels.distributions.ExpandedNormal``.
 Backwards incompatible changes
 ==============================
 
+The deprecated global optimizer ``scipy.optimize.anneal`` was removed.
+
 
 Other changes
 =============

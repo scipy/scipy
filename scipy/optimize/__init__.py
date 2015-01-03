@@ -68,7 +68,6 @@ Global Optimization
 .. autosummary::
    :toctree: generated/
 
-   anneal - Simulated annealing
    basinhopping - Basinhopping stochastic optimizer
    brute - Brute force searching optimizer
    differential_evolution - stochastic minimization using differential evolution
@@ -177,7 +176,6 @@ from ._minimize import *
 from ._root import *
 from .minpack import *
 from .zeros import *
-from .anneal import *
 from .lbfgsb import fmin_l_bfgs_b
 from .tnc import fmin_tnc
 from .cobyla import fmin_cobyla

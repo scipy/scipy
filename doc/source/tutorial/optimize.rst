@@ -19,7 +19,7 @@ The module contains:
    functions (:func:`minimize`) using a variety of algorithms (e.g. BFGS,
    Nelder-Mead simplex, Newton Conjugate Gradient, COBYLA or SLSQP)
 
-2. Global (brute-force) optimization routines  (e.g., :func:`anneal`, :func:`basinhopping`, :func:`differential_evolution`)
+2. Global (brute-force) optimization routines  (e.g. :func:`basinhopping`, :func:`differential_evolution`)
 
 3. Least-squares minimization (:func:`leastsq`) and curve fitting
    (:func:`curve_fit`) algorithms
