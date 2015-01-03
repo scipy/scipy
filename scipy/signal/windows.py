@@ -1390,7 +1390,7 @@ def cosine(M, sym=True):
     return w
 
 
-def exponential(M, N=0, tau=1, sym=True):
+def exponential(M, N=None, tau=1., sym=True):
     r"""Return an exponential (or Poisson) window.
 
     Parameters
@@ -1398,9 +1398,11 @@ def exponential(M, N=0, tau=1, sym=True):
     M : int
         Number of points in the output window. If zero or less, an empty
         array is returned.
-    N : int, optional
-        Parameter defining the center location.
-    tau : int, optional
+    N : float, optional
+        Parameter defining the center location of the window function.
+        For ``sym = True``: ``N = (M-1) / 2``.
+        For ``sym = False``:  by default ``N = 0``.
+    tau : float, optional
         Parameter defining the decay.  For ``N=0`` use ``tau = -(M-1) / ln(x)``
         if ``x`` is the fraction of the window at the end.
     sym : bool, optional
@@ -1441,6 +1443,9 @@ def exponential(M, N=0, tau=1, sym=True):
     >>> plt.show()
 
     """
+    if sym and N is not None:
+        raise ValueError("Parameter ``N`` can only be None for the "
+                         " (default) symmetric window")
     if M < 1:
         return np.array([])
     if M == 1:
@@ -1448,6 +1453,10 @@ def exponential(M, N=0, tau=1, sym=True):
     odd = M % 2
     if not sym and not odd:
         M = M + 1
+    if sym:
+        N = (M-1) / 2
+    if not sym and N is None:
+        N = 0
 
     n = np.arange(0, M)
     w = np.exp(-np.abs(n-N) / tau)
@@ -1527,7 +1536,7 @@ def get_window(window, Nx, fftbins=True):
                           'general gaussian', 'general_gaussian',
                           'general gauss', 'general_gauss', 'ggs',
                           'slepian', 'optimal', 'slep', 'dss',
-                          'chebwin', 'cheb', 'exponential', 'poisson']:
+                          'chebwin', 'cheb']:
                 raise ValueError("The '" + window + "' window needs one or "
                                  "more parameters  -- pass a tuple.")
             else:
