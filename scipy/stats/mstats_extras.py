@@ -251,7 +251,6 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
         x = np.arange(1,n+1, dtype=float_) / n
         y = x - 1./n
         for (i,m) in enumerate(prob):
-            (m1,m2) = (m-1, n-m)
             W = betacdf(x,m-1,n-m) - betacdf(y,m-1,n-m)
             C1 = np.dot(W,data)
             C2 = np.dot(W,data**2)

@@ -730,8 +730,6 @@ def ttest_rel(a, b, axis=0):
     if a.size == 0 or b.size == 0:
         return (np.nan, np.nan)
 
-    (x1, x2) = (a.mean(axis), b.mean(axis))
-    (v1, v2) = (a.var(axis=axis, ddof=1), b.var(axis=axis, ddof=1))
     n = a.count(axis)
     df = (n-1.0)
     d = (a-b).astype('d')
