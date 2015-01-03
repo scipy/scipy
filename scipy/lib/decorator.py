@@ -32,7 +32,7 @@ from __future__ import division, print_function, absolute_import
 
 __version__ = '3.3.2'
 
-__all__ = ["decorator", "FunctionMaker", "partial"]
+__all__ = ["decorator", "FunctionMaker"]
 
 import sys
 import re
