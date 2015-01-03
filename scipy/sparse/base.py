@@ -332,7 +332,7 @@ class spmatrix(object):
             if other.shape != (N,) and other.shape != (N,1):
                 raise ValueError('dimension mismatch')
 
-            result = self._mul_vector(np.ravel(other))
+            result = self._mul_vector(np.asarray(other).ravel())
 
             if isinstance(other, np.matrix):
                 result = np.asmatrix(result)
