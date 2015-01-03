@@ -148,8 +148,19 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     diagsvd : Construct the Sigma matrix, given the vector s.
 
     """
-    return svd(a, compute_uv=0, overwrite_a=overwrite_a,
-                check_finite=check_finite)
+    if check_finite:
+        a1 = asarray_chkfinite(a)
+    else:
+        a1 = asarray(a)
+    if len(a1.shape) != 2:
+        raise ValueError('expected matrix')
+    m,n = a1.shape
+
+    if a1.size:
+        return svd(a, compute_uv=0, overwrite_a=overwrite_a,
+                check_finite=False)
+    else:
+        return numpy.empty(0)
 
 
 def diagsvd(s, M, N):
