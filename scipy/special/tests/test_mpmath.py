@@ -1015,14 +1015,16 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
             return mpmath.ellippi(0, phi, m)
         assert_mpmath_equal(sc.ellipkinc,
                             ellipkinc,
-                            [Arg(-1e3, 1e3), Arg(b=1.0)])
+                            [Arg(-1e3, 1e3), Arg(b=1.0)],
+                            ignore_inf_sign=True)
 
     def test_ellipkinc_largephi(self):
         def ellipkinc(phi, m):
             return mpmath.ellippi(0, phi, m)
         assert_mpmath_equal(sc.ellipkinc,
                             ellipkinc,
-                            [Arg(), Arg(b=1.0)])
+                            [Arg(), Arg(b=1.0)],
+                            ignore_inf_sign=True)
 
     def test_ellipfun_sn(self):
         # Oscillating function --- limit range of first argument; the

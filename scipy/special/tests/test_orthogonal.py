@@ -1,13 +1,14 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import (rand, TestCase, assert_array_almost_equal, 
-        assert_almost_equal, assert_allclose, assert_raises)
+from numpy.testing import (rand, TestCase, assert_array_almost_equal,
+                           assert_almost_equal, assert_allclose, assert_raises,
+                           run_module_suite)
 
 from scipy.lib.six import xrange
 import numpy as np
 from numpy import array, sqrt
 import scipy.special.orthogonal as orth
-from scipy.special import gamma, eval_hermite
+from scipy.special import gamma
 
 
 class TestCheby(TestCase):
@@ -310,7 +311,7 @@ def test_j_roots():
     verify_gauss_quad(roots(18.24, 27.3), evalf(18.24, 27.3), 100, atol=1e-13)
 
     verify_gauss_quad(roots(47.1, -0.2), evalf(47.1, -0.2), 5, atol=1e-13)
-    verify_gauss_quad(roots(47.1, -0.2), evalf(47.1, -0.2), 25, atol=1e-13)
+    verify_gauss_quad(roots(47.1, -0.2), evalf(47.1, -0.2), 25, atol=2e-13)
     verify_gauss_quad(roots(47.1, -0.2), evalf(47.1, -0.2), 100, atol=1e-11)
 
     verify_gauss_quad(roots(2.25, 68.9), evalf(2.25, 68.9), 5)
@@ -433,7 +434,7 @@ def test_cg_roots():
     verify_gauss_quad(root_func(50), eval_func(50), 25, atol=1e-12)
     verify_gauss_quad(root_func(50), eval_func(50), 100, atol=1e-11)
 
-    # this is a special case that the old code supported. 
+    # this is a special case that the old code supported.
     # when alpha = 0, the gegenbauer polynomial is uniformly 0. but it goes
     # to a scaled down copy of T_n(x) there.
     verify_gauss_quad(root_func(0), orth.eval_chebyt, 5)
@@ -598,3 +599,7 @@ def test_la_roots():
     assert_raises(ValueError, orth.la_roots, 0, 2)
     assert_raises(ValueError, orth.la_roots, 3.3, 2)
     assert_raises(ValueError, orth.la_roots, 3, -1.1)
+
+
+if __name__ == "__main__":
+    run_module_suite()

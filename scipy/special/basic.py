@@ -97,7 +97,7 @@ def diric(x, n):
     mask1 = (n <= 0) | (n != floor(n))
     place(y, mask1, nan)
 
-    x /= 2.0
+    x = x / 2
     denom = sin(x)
     mask2 = (1-mask1) & (abs(denom) < minval)
     xsub = extract(mask2, x)
