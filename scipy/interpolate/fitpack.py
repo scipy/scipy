@@ -32,7 +32,6 @@ import numpy as np
 from . import _fitpack
 from numpy import (atleast_1d, array, ones, zeros, sqrt, ravel, transpose,
                    empty, iinfo, intc, asarray)
-myasarray = atleast_1d
 
 # Try to replace _fitpack interface with
 #  f2py-generated version
@@ -227,7 +226,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
         _parcur_cache = {'t': array([],float), 'wrk': array([],float),
                          'iwrk':array([],intc),'u': array([],float),
                          'ub':0,'ue':1}
-    x = myasarray(x)
+    x = atleast_1d(x)
     idim,m = x.shape
     if per:
         for i in range(idim):
@@ -240,7 +239,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     if w is None:
         w = ones(m, float)
     else:
-        w = myasarray(w)
+        w = atleast_1d(w)
     ipar = (u is not None)
     if ipar:
         _parcur_cache['u'] = u
@@ -265,7 +264,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     if t is None and task == -1:
         raise TypeError('Knots must be given for task=-1')
     if t is not None:
-        _parcur_cache['t'] = myasarray(t)
+        _parcur_cache['t'] = atleast_1d(t)
     n = len(_parcur_cache['t'])
     if task == -1 and n < 2*k+2:
         raise TypeError('There must be at least 2*k+2 knots for task=-1')
@@ -446,14 +445,14 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     """
     if task <= 0:
         _curfit_cache = {}
-    x,y = map(myasarray,[x,y])
+    x,y = map(atleast_1d,[x,y])
     m = len(x)
     if w is None:
         w = ones(m,float)
         if s is None:
             s = 0.0
     else:
-        w = myasarray(w)
+        w = atleast_1d(w)
         if s is None:
             s = m-sqrt(2*m)
     if not len(w) == m:
@@ -782,7 +781,7 @@ def spalde(x,tck):
     if parametric:
         return _ntlist(list(map(lambda c,x=x,t=t,k=k:spalde(x,[t,c,k]),c)))
     else:
-        x = myasarray(x)
+        x = atleast_1d(x)
         if len(x) > 1:
             return list(map(lambda x,tck=tck:spalde(x,tck),x))
         d,ier = _fitpack._spalde(t,c,k,x[0])
@@ -888,7 +887,7 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
        Numerical Analysis, Oxford University Press, 1993.
 
     """
-    x,y,z = map(myasarray,[x,y,z])
+    x,y,z = map(atleast_1d,[x,y,z])
     x,y,z = map(ravel,[x,y,z])  # ensure 1-d arrays.
     m = len(x)
     if not (m == len(y) == len(z)):
@@ -896,7 +895,7 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
     if w is None:
         w = ones(m,float)
     else:
-        w = myasarray(w)
+        w = atleast_1d(w)
     if not len(w) == m:
         raise TypeError('len(w)=%d is not equal to m=%d' % (len(w), m))
     if xb is None:
@@ -914,12 +913,12 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
     if tx is None and task == -1:
         raise TypeError('Knots_x must be given for task=-1')
     if tx is not None:
-        _surfit_cache['tx'] = myasarray(tx)
+        _surfit_cache['tx'] = atleast_1d(tx)
     nx = len(_surfit_cache['tx'])
     if ty is None and task == -1:
         raise TypeError('K nots_y must be given for task=-1')
     if ty is not None:
-        _surfit_cache['ty'] = myasarray(ty)
+        _surfit_cache['ty'] = atleast_1d(ty)
     ny = len(_surfit_cache['ty'])
     if task == -1 and nx < 2*kx+2:
         raise TypeError('There must be at least 2*kx+2 knots_x for task=-1')
@@ -938,8 +937,8 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
         nxest = int(kx+sqrt(3*m))
         nyest = int(ky+sqrt(3*m))
     if task == -1:
-        _surfit_cache['tx'] = myasarray(tx)
-        _surfit_cache['ty'] = myasarray(ty)
+        _surfit_cache['tx'] = atleast_1d(tx)
+        _surfit_cache['ty'] = atleast_1d(ty)
     tx,ty = _surfit_cache['tx'],_surfit_cache['ty']
     wrk = _surfit_cache['wrk']
     iwrk = _surfit_cache['iwrk']
@@ -1036,7 +1035,7 @@ def bisplev(x,y,tck,dx=0,dy=0):
         raise ValueError("0 <= dx = %d < kx = %d must hold" % (dx,kx))
     if not (0 <= dy < ky):
         raise ValueError("0 <= dy = %d < ky = %d must hold" % (dy,ky))
-    x,y = map(myasarray,[x,y])
+    x,y = map(atleast_1d,[x,y])
     if (len(x.shape) != 1) or (len(y.shape) != 1):
         raise ValueError("First two entries should be rank-1 arrays.")
     z,ier = _fitpack._bispev(tx,ty,c,kx,ky,x,y,dx,dy)
