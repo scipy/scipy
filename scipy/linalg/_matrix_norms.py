@@ -46,43 +46,6 @@ def _multi_svd_norm(x, row_axis, col_axis, op):
     return np.apply_along_axis(op, -1, svdvals(y))
 
 
-#TODO remove this
-def _parameterized_vector_norm(p, A, axis=None):
-    """
-    Parameterized vector norm.
-
-    Parameters
-    ----------
-    p : float
-        The value of p defining the p-norm of the vector.
-    A : ndarray
-        The ndarray to be reduced.
-    axis : int
-        The axis to which the reduction should be applied.
-
-    Returns
-    -------
-    n : float or ndarray
-        Norm of the ndarray.
-
-    Notes
-    -----
-    This is used functionally in association with the _mult_svd_norm
-    to compute Schatten norms with p != 2.
-    The Schatten norm with p == 2 is the Frobenius norm,
-    in which case the svd is not required.
-
-    """
-    if p == 1:
-        return np.absolute(A).sum(axis=axis)
-    elif p == 2:
-        return np.sqrt((A.conj() * A).real.sum(axis=axis))
-    elif p == np.inf:
-        return np.absolute(A).max(axis=axis)
-    else:
-        return np.power(np.power(np.absolute(A), p).sum(axis=axis), 1/p)
-
-
 def _simple_vector_p_norm(p, v):
     return np.power(np.power(np.absolute(v), p).sum(), 1/p)
 
@@ -96,16 +59,6 @@ def _asarray_atleast2d_validated(A, check_finite):
     if A.ndim < 2:
         raise ValueError('Expected the ndarray to be at least 2d')
     return A
-
-
-#TODO unused? remove?
-def _euclidean_vector_norm(v):
-    if v.dtype.char in 'fdFD':
-        func_name = _nrm2_prefix.get(a.dtype.char, 'd') + 'nrm2'
-        nrm2 = getattr(blas, func_name)
-        return nrm2(v)
-    else:
-        return np.linalg.norm(v)
 
 
 def _as_int_validated(k):

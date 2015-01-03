@@ -83,6 +83,17 @@ class _TestMatrixNorms(object):
         self._check_uninteresting_elementwise_norms(A)
         self._check_uninteresting_ky_fan_norms(A)
 
+    def test_empty(self):
+        A = self.arraytype([[]])
+
+        # Check special norms and parameterized norms.
+        self._check_frobenius_norm(A, 0)
+        self._check_spectral_norm(A, 0)
+        self._check_nuclear_norm(A, 0)
+        self._check_max_absolute_row_sum_norm(A, 0)
+        self._check_max_absolute_column_sum_norm(A, 0)
+        self._check_parameterized_norms(A)
+
     def test_2x2(self):
         A = self.arraytype([[1, 3], [5, 7]], dtype=self.dt)
 
