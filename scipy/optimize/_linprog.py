@@ -518,8 +518,8 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     # Convert the input arguments to arrays (sized to zero if not provided)
     Aeq = np.asarray(A_eq) if A_eq is not None else np.empty([0, len(cc)])
     Aub = np.asarray(A_ub) if A_ub is not None else np.empty([0, len(cc)])
-    beq = np.ravel(np.asarray(b_eq)) if b_eq is not None else np.empty([0])
-    bub = np.ravel(np.asarray(b_ub)) if b_ub is not None else np.empty([0])
+    beq = np.asarray(b_eq).ravel() if b_eq is not None else np.empty([0])
+    bub = np.asarray(b_ub).ravel() if b_ub is not None else np.empty([0])
 
     # Analyze the bounds and determine what modifications to me made to
     # the constraints in order to accommodate them.
