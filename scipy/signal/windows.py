@@ -1400,8 +1400,9 @@ def exponential(M, N=None, tau=1., sym=True):
         array is returned.
     N : float, optional
         Parameter defining the center location of the window function.
-        For ``sym = True``: ``N = (M-1) / 2``.
-        For ``sym = False``:  by default ``N = 0``.
+        IF not given, then:
+          - for ``sym = True``: ``N = (M-1) / 2``.
+          - for ``sym = False``:  by default ``N = 0``.
     tau : float, optional
         Parameter defining the decay.  For ``N=0`` use ``tau = -(M-1) / ln(x)``
         if ``x`` is the fraction of the window at the end.
