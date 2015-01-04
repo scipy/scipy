@@ -520,22 +520,19 @@ class TestOptimize(object):
             return np.array([2*x*y**2 + 4*x**3, 2*x**2*y])
 
         for method in ['nelder-mead', 'powell', 'cg', 'bfgs',
-                       'newton-cg', 'anneal', 'l-bfgs-b', 'tnc',
+                       'newton-cg', 'l-bfgs-b', 'tnc',
                        'cobyla', 'slsqp']:
-            if method in ('nelder-mead', 'powell', 'anneal', 'cobyla'):
+            if method in ('nelder-mead', 'powell', 'cobyla'):
                 jac = None
             else:
                 jac = dfunc
 
-            with warnings.catch_warnings():
-                # suppress deprecation warning for 'anneal'
-                warnings.filterwarnings('ignore', category=DeprecationWarning)
-                sol1 = optimize.minimize(func, [1,1], jac=jac, tol=1e-10,
-                                         method=method)
-                sol2 = optimize.minimize(func, [1,1], jac=jac, tol=1.0,
-                                         method=method)
-                assert_(func(sol1.x) < func(sol2.x),
-                        "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
+            sol1 = optimize.minimize(func, [1,1], jac=jac, tol=1e-10,
+                                     method=method)
+            sol2 = optimize.minimize(func, [1,1], jac=jac, tol=1.0,
+                                     method=method)
+            assert_(func(sol1.x) < func(sol2.x),
+                    "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
 
     def test_no_increase(self):
         # Check that the solver doesn't return a value worse than the
@@ -553,7 +550,7 @@ class TestOptimize(object):
             x0 = np.array([2.0])
             f0 = func(x0)
             jac = bad_grad
-            if method in ['nelder-mead', 'powell', 'anneal', 'cobyla']:
+            if method in ['nelder-mead', 'powell', 'cobyla']:
                 jac = None
             sol = optimize.minimize(func, x0, jac=jac, method=method,
                                     options=dict(maxiter=20))
@@ -566,10 +563,6 @@ class TestOptimize(object):
                        'newton-cg', 'l-bfgs-b', 'tnc',
                        'cobyla', 'slsqp']:
             yield check, method
-
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=DeprecationWarning)
-            yield check, 'anneal'
 
     def test_slsqp_respect_bounds(self):
         # Regression test for gh-3108
