@@ -49,71 +49,55 @@ def _intc_overflow(x, msg=None):
     return intc(x)
 
 
-_iermess = {0: ["""\
-    The spline has a residual sum of squares fp such that """
-                """abs(fp-s)/s<=0.001""", None],
-            -1: ["""\
-    The spline is an interpolating spline (fp=0)""", None],
-            -2: ["""\
-    The spline is weighted least-squares polynomial of degree k.
-    fp gives the upper bound fp0 for the smoothing factor s""", None],
-            1: ["""\
-    The required storage space exceeds the available storage space.
-    Probable causes: data (x,y) size is too small or smoothing parameter """
-                """s is too small (fp>s).""", ValueError],
-            2: ["""\
-    A theoretically impossible results when finding a smoothin spline
-    with fp = s. Probably causes: s too small. (abs(fp-s)/s>0.001)""",
-                ValueError],
-            3: ["""\
-    The maximal number of iterations (20) allowed for finding smoothing
-    spline with fp=s has been reached. Probably causes: s too small.
-    (abs(fp-s)/s>0.001)""", ValueError],
-            10: ["""\
-    Error on input data""", ValueError],
-            'unknown': ["""\
-    An error occurred""", TypeError]}
+_iermess = {
+    0: ["The spline has a residual sum of squares fp such that "
+        "abs(fp-s)/s<=0.001", None],
+    -1: ["The spline is an interpolating spline (fp=0)", None],
+    -2: ["The spline is weighted least-squares polynomial of degree k.\n"
+         "fp gives the upper bound fp0 for the smoothing factor s", None],
+    1: ["The required storage space exceeds the available storage space.\n"
+        "Probable causes: data (x,y) size is too small or smoothing parameter"
+        "\ns is too small (fp>s).", ValueError],
+    2: ["A theoretically impossible result when finding a smoothing spline\n"
+        "with fp = s. Probable cause: s too small. (abs(fp-s)/s>0.001)",
+        ValueError],
+    3: ["The maximal number of iterations (20) allowed for finding smoothing\n"
+        "spline with fp=s has been reached. Probable cause: s too small.\n"
+        "(abs(fp-s)/s>0.001)", ValueError],
+    10: ["Error on input data", ValueError],
+    'unknown': ["An error occurred", TypeError]
+}
 
-_iermess2 = {0: ["""\
-    The spline has a residual sum of squares fp such that """
-                 """abs(fp-s)/s<=0.001""",
-                 None],
-             -1: ["""\
-    The spline is an interpolating spline (fp=0)""", None],
-             -2: ["""\
-    The spline is weighted least-squares polynomial of degree kx and ky.
-    fp gives the upper bound fp0 for the smoothing factor s""", None],
-             -3: ["""\
-    Warning. The coefficients of the spline have been computed as the minimal
-    norm least-squares solution of a rank deficient system.""", None],
-             1: ["""\
-    The required storage space exceeds the available storage space.
-    Probably causes: nxest or nyest too small or s is too small. (fp>s)""",
-                 ValueError],
-             2: ["""\
-    A theoretically impossible results when finding a smoothin spline
-    with fp = s. Probably causes: s too small or badly chosen eps.
-    (abs(fp-s)/s>0.001)""", ValueError],
-             3: ["""\
-    The maximal number of iterations (20) allowed for finding smoothing
-    spline with fp=s has been reached. Probably causes: s too small.
-    (abs(fp-s)/s>0.001)""", ValueError],
-             4: ["""\
-    No more knots can be added because the number of B-spline coefficients
-    already exceeds the number of data points m. Probably causes: either
-    s or m too small. (fp>s)""", ValueError],
-             5: ["""\
-    No more knots can be added because the additional knot would coincide
-    with an old one. Probably cause: s too small or too large a weight
-    to an inaccurate data point. (fp>s)""", ValueError],
-             10: ["""\
-    Error on input data""", ValueError],
-             11: ["""\
-    rwrk2 too small, i.e. there is not enough workspace for computing
-    the minimal least-squares solution of a rank deficient system of linear
-    equations.""", ValueError],
-             'unknown': ["""\
-    An error occurred""", TypeError]}
+_iermess2 = {
+    0: ["The spline has a residual sum of squares fp such that "
+        "abs(fp-s)/s<=0.001", None],
+    -1: ["The spline is an interpolating spline (fp=0)", None],
+    -2: ["The spline is weighted least-squares polynomial of degree kx and ky."
+         "\nfp gives the upper bound fp0 for the smoothing factor s", None],
+    -3: ["Warning. The coefficients of the spline have been computed as the\n"
+         "minimal norm least-squares solution of a rank deficient system.",
+         None],
+    1: ["The required storage space exceeds the available storage space.\n"
+        "Probable causes: nxest or nyest too small or s is too small. (fp>s)",
+        ValueError],
+    2: ["A theoretically impossible result when finding a smoothing spline\n"
+        "with fp = s. Probable causes: s too small or badly chosen eps.\n"
+        "(abs(fp-s)/s>0.001)", ValueError],
+    3: ["The maximal number of iterations (20) allowed for finding smoothing\n"
+        "spline with fp=s has been reached. Probable cause: s too small.\n"
+        "(abs(fp-s)/s>0.001)", ValueError],
+    4: ["No more knots can be added because the number of B-spline\n"
+        "coefficients already exceeds the number of data points m.\n"
+        "Probable causes: either s or m too small. (fp>s)", ValueError],
+    5: ["No more knots can be added because the additional knot would\n"
+        "coincide with an old one. Probable cause: s too small or too large\n"
+        "a weight to an inaccurate data point. (fp>s)", ValueError],
+    10: ["Error on input data", ValueError],
+    11: ["rwrk2 too small, i.e. there is not enough workspace for computing\n"
+         "the minimal least-squares solution of a rank deficient system of\n"
+         "linear equations.", ValueError],
+    'unknown': ["An error occurred", TypeError]
+}
 
 _parcur_cache = {'t': array([], float), 'wrk': array([], float),
                  'iwrk': array([], intc), 'u': array([], float),
