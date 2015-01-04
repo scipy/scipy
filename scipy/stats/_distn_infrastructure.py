@@ -404,7 +404,7 @@ def _skew(data):
     """
     skew is third central moment / variance**(1.5)
     """
-    data = np.ravel(data)
+    data = np.asarray(data).ravel()
     mu = data.mean()
     m2 = ((data - mu)**2).mean()
     m3 = ((data - mu)**3).mean()
@@ -415,7 +415,7 @@ def _kurtosis(data):
     """
     kurtosis is fourth central moment / variance**2 - 3
     """
-    data = np.ravel(data)
+    data = np.asarray(data).ravel()
     mu = data.mean()
     m2 = ((data - mu)**2).mean()
     m4 = ((data - mu)**4).mean()
