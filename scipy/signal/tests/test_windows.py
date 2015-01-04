@@ -28,7 +28,7 @@ window_funcs = [
     ('slepian', (2,)),
     ('cosine', ()),
     ('hann', ()),
-    ('exponential', (0, 1)),
+    ('exponential', ()),
     ]
 
 
