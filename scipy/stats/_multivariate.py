@@ -987,7 +987,7 @@ class wishart_gen(object):
 
         f(S) = \frac{|S|^{\frac{\nu - p - 1}{2}}}{2^{ \frac{\nu p}{2} }
                |\Sigma|^\frac{\nu}{2} \Gamma_p \left ( \frac{\nu}{2} \right )}
-               e^{-tr(\Sigma^{-1} S) / 2}
+               \exp\left( -tr(\Sigma^{-1} S) / 2 \right)
 
     If :math:`S \sim W_p(\nu, \Sigma)` (Wishart) then
     :math:`S^{-1} \sim W_p^{-1}(\nu, \Sigma^{-1})` (inverse Wishart).
@@ -1700,15 +1700,15 @@ class invwishart_gen(wishart_gen):
 
         f(S) = \frac{|\Sigma|^\frac{\nu}{2}}{2^{ \frac{\nu p}{2} }
                |S|^{\frac{\nu + p + 1}{2}} \Gamma_p \left(\frac{\nu}{2} \right)}
-               e^{-tr(\Sigma S^{-1}) / 2}
+               \exp\left( -tr(\Sigma S^{-1}) / 2 \right)
 
     If :math:`S \sim W_p^{-1}(\nu, \Psi)` (inverse Wishart) then
     :math:`S^{-1} \sim W_p(\nu, \Psi^{-1})` (Wishart).
 
     If the scale matrix is 1-dimensional and equal to one, then the inverse
     Wishart distribution :math:`W_1(\nu, 1)` collapses to the
-    inverse Gamma distribution with parameters :math:`shape = \frac{\nu}{2}`
-    and :math:`scale=\frac{1}{2}`.
+    inverse Gamma distribution with parameters shape = :math:`\frac{\nu}{2}`
+    and scale = :math:`\frac{1}{2}`.
 
     .. versionadded:: 0.16.0
 
