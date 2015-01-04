@@ -863,6 +863,21 @@ class TestBetaPrime(TestCase):
         assert_(np.isfinite(b.logpdf(x)).all())
         assert_allclose(b.pdf(x), np.exp(b.logpdf(x)))
 
+    def test_cdf(self):
+        # regression test for gh-4030: Implementation of 
+        # scipy.stats.betaprime.cdf()
+        x = stats.betaprime.cdf(0, 0.2, 0.3)
+        assert_equal(x, 0.0)
+
+        alpha, beta = 267, 1472
+        x = np.array([0.2, 0.5, 0.6])
+        cdfs = stats.betaprime.cdf(x, alpha, beta)
+        assert_(np.isfinite(cdfs).all())
+        
+        # check the new cdf implementation vs generic one:
+        gen_cdf = stats.rv_continuous._cdf_single
+        cdfs_g = [gen_cdf(stats.betaprime, val, alpha, beta) for val in x]
+        assert_allclose(cdfs, cdfs_g, atol=0, rtol=2e-12)
 
 class TestGamma(TestCase):
     def test_pdf(self):
