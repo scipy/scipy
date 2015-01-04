@@ -1221,8 +1221,9 @@ def _ppoly_eval_2(coeffs, breaks, xnew, fill=np.nan):
     b = breaks[-1]
     K = coeffs.shape[0]
 
+    xnew = np.asarray(xnew)
     saveshape = np.shape(xnew)
-    xnew = np.ravel(xnew)
+    xnew = xnew.ravel()
     res = np.empty_like(xnew)
     mask = (xnew >= a) & (xnew <= b)
     res[~mask] = fill
