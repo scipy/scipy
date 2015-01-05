@@ -14,7 +14,7 @@ import scipy
 import scipy.linalg
 from scipy.lib._version import NumpyVersion
 from scipy.linalg._matrix_norms import (
-        elementwise_norm, frobenius_norm, nuclear_norm, spectral_norm,
+        entrywise_norm, frobenius_norm, nuclear_norm, spectral_norm,
         schatten_norm, induced_norm, ky_fan_norm)
 
 
@@ -43,11 +43,11 @@ _pure_matrix_norms = [
 
 # Elementwise norms can be matrix norms but also generalize to other shapes.
 _matrix_norms = _pure_matrix_norms + [
-        _specialized_norm(elementwise_norm, 1.2),
-        _specialized_norm(elementwise_norm, 1),
-        _specialized_norm(elementwise_norm, 2),
-        _specialized_norm(elementwise_norm, 3),
-        _specialized_norm(elementwise_norm, np.inf)]
+        _specialized_norm(entrywise_norm, 1.2),
+        _specialized_norm(entrywise_norm, 1),
+        _specialized_norm(entrywise_norm, 2),
+        _specialized_norm(entrywise_norm, 3),
+        _specialized_norm(entrywise_norm, np.inf)]
 
 # Classify norms according to unitary invariance for testing.
 _unitarily_invariant_norms = [
@@ -62,15 +62,15 @@ _unitarily_invariant_norms = [
         _specialized_norm(schatten_norm, np.inf),
         _specialized_norm(ky_fan_norm, 1),
         _specialized_norm(ky_fan_norm, 2),
-        _specialized_norm(elementwise_norm, 2)]
+        _specialized_norm(entrywise_norm, 2)]
 
 _not_unitarily_invariant_norms = [
         _specialized_norm(induced_norm, 1),
         _specialized_norm(induced_norm, np.inf),
-        _specialized_norm(elementwise_norm, 1.2),
-        _specialized_norm(elementwise_norm, 1),
-        _specialized_norm(elementwise_norm, 3),
-        _specialized_norm(elementwise_norm, np.inf)]
+        _specialized_norm(entrywise_norm, 1.2),
+        _specialized_norm(entrywise_norm, 1),
+        _specialized_norm(entrywise_norm, 3),
+        _specialized_norm(entrywise_norm, np.inf)]
 
 # List some submultiplicative norms.
 _ordinary_submultiplicative_norms = _unitarily_invariant_norms + [
@@ -95,9 +95,9 @@ _bad_matrix_norms = [
         _specialized_norm(schatten_norm, -1),
         _specialized_norm(schatten_norm, 0),
         _specialized_norm(schatten_norm, 0.5),
-        _specialized_norm(elementwise_norm, -1),
-        _specialized_norm(elementwise_norm, 0),
-        _specialized_norm(elementwise_norm, 0.5)]
+        _specialized_norm(entrywise_norm, -1),
+        _specialized_norm(entrywise_norm, 0),
+        _specialized_norm(entrywise_norm, 0.5)]
 
 
 class _TestMatrixNorms(object):
@@ -110,7 +110,7 @@ class _TestMatrixNorms(object):
 
     def _check_frobenius_norm(self, A, desired):
         self._assert_allclose(frobenius_norm(A), desired)
-        self._assert_allclose(elementwise_norm(A, 2), desired)
+        self._assert_allclose(entrywise_norm(A, 2), desired)
         self._assert_allclose(schatten_norm(A, 2), desired)
         self._assert_allclose(scipy.linalg.norm(A), desired)
         self._assert_allclose(scipy.linalg.norm(A, 'fro'), desired)
@@ -146,12 +146,12 @@ class _TestMatrixNorms(object):
             desired = np.power(s, p).sum()**(1/p)
             self._assert_allclose(schatten_norm(A, p), desired)
 
-    def _check_uninteresting_elementwise_norms(self, A):
+    def _check_uninteresting_entrywise_norms(self, A):
         for p in 1.2, 3:
             desired = np.power(A, p).sum()**(1/p)
             v = np.asarray(A).ravel()
-            self._assert_allclose(elementwise_norm(A, p), desired)
-            self._assert_allclose(elementwise_norm(v, p), desired)
+            self._assert_allclose(entrywise_norm(A, p), desired)
+            self._assert_allclose(entrywise_norm(v, p), desired)
             self._assert_allclose(scipy.linalg.norm(v, p), desired)
             self._assert_allclose(np.linalg.norm(v, p), desired)
 
@@ -163,7 +163,7 @@ class _TestMatrixNorms(object):
 
     def _check_parameterized_norms(self, A):
         self._check_uninteresting_schatten_norms(A)
-        self._check_uninteresting_elementwise_norms(A)
+        self._check_uninteresting_entrywise_norms(A)
         self._check_uninteresting_ky_fan_norms(A)
 
     @dec.knownfailureif(True, 'empty norms are not yet allowed')

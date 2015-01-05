@@ -15,7 +15,7 @@ from scipy.lib._version import NumpyVersion
 from .decomp import _asarray_validated
 from .decomp_svd import svdvals
 
-__all__ = ['elementwise_norm', 'frobenius_norm', 'nuclear_norm',
+__all__ = ['entrywise_norm', 'frobenius_norm', 'nuclear_norm',
            'spectral_norm', 'schatten_norm', 'induced_norm', 'ky_fan_norm']
 
 _npv = NumpyVersion(np.__version__)
@@ -144,7 +144,7 @@ def _restore_dims(shape, ret, axis):
     return np.reshape(ret, ret_shape)
 
 
-def elementwise_norm(A, p, axis=None, keepdims=None, check_finite=True):
+def entrywise_norm(A, p, axis=None, keepdims=None, check_finite=True):
     """
     Elementwise norm.
 
@@ -159,8 +159,8 @@ def elementwise_norm(A, p, axis=None, keepdims=None, check_finite=True):
     axis : {int, tuple of ints, None}, optional
         If `axis` is an integer, it specifies the axis of `A` along which to
         compute the vector norms. If `axis` is a tuple, it specifies the
-        axes that hold ndarrays, and the elementwise norms of these arrays
-        are computed. If `axis` is None then the elementwise norm of
+        axes that hold ndarrays, and the entrywise norms of these arrays
+        are computed. If `axis` is None then the entrywise norm of
         the entire array is returned.
         Requires numpy 1.8+
     keepdims : bool, optional
