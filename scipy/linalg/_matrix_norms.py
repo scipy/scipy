@@ -23,7 +23,7 @@ _npv = NumpyVersion(np.__version__)
 
 # This function is copied from numpy, with some modifications.
 def _multi_svd_norm(x, row_axis, col_axis, op):
-    """Compute functions of singular values of the 2-D matrices in `x`.
+    r"""Compute functions of singular values of the 2-D matrices in `x`.
 
     Parameters
     ----------
@@ -87,7 +87,7 @@ def _checked_numpy_kwargs(axis, keepdims):
 
 
 def _checked_nd_axis(axis):
-    """
+    r"""
     Parameters
     ----------
     axis : {int, tuple of ints, None}, optional
@@ -104,7 +104,7 @@ def _checked_nd_axis(axis):
 
 
 def _checked_2d_axis(A, axis):
-    """
+    r"""
     Parameters
     ----------
     A : ndarray
@@ -145,8 +145,21 @@ def _restore_dims(shape, ret, axis):
 
 
 def entrywise_norm(A, p, axis=None, keepdims=None, check_finite=True):
-    """
-    Elementwise norm.
+    r"""
+    Compute the entrywise p-norm of an array.
+
+    Compute the vector p-norm of the flattened array.
+
+    .. math::
+
+       \lVert A \rVert_p
+           = \lVert \text{vec} \left( A \right) \rVert_p
+           = \left(
+                \sum_{i=1}^m
+                \sum_{j=1}^n
+                \lvert a_{ij} \rvert^p
+             \right)^{\frac{1}{p}}
+       
 
     Parameters
     ----------
@@ -196,11 +209,22 @@ def entrywise_norm(A, p, axis=None, keepdims=None, check_finite=True):
 
 
 def frobenius_norm(A, axis=None, keepdims=None, check_finite=True):
-    """
+    r"""
     Frobenius matrix norm.
 
+    Compute the vector 2-norm of the flattened matrix.
     This is the square root of the sum of the squares
     of the elements of the matrix.
+
+    .. math::
+
+       \lVert A \rVert_2
+           = \lVert \text{vec} \left( A \right) \rVert_2
+           = \left(
+                \sum_{i=1}^m
+                \sum_{j=1}^n
+                \lvert a_{ij} \rvert^2
+             \right)^{\frac{1}{2}}
 
     Parameters
     ----------
@@ -251,10 +275,16 @@ def _unitarily_invariant_norm(A, op, axis, keepdims):
 
 
 def nuclear_norm(A, axis=None, keepdims=None, check_finite=True):
-    """
+    r"""
     Compute the nuclear norm of a matrix.
 
     This is the sum of the singular values of the matrix.
+
+    .. math::
+
+       \lVert A \rVert_{*}
+           = \text{trace} \left( \sqrt{ A^{*} A } \right)
+           = \sum_{i=1}^{\min \left\{ m, n \right\}} \sigma_i
 
     Parameters
     ----------
@@ -288,10 +318,16 @@ def nuclear_norm(A, axis=None, keepdims=None, check_finite=True):
 
 
 def spectral_norm(A, axis=None, keepdims=None, check_finite=True):
-    """
+    r"""
     Compute the spectral norm of a matrix.
 
     This is the maximum singular value of the matrix.
+
+    .. math::
+
+       \lVert A \rVert_{2}
+           = \sqrt{ \lambda_{\max} \left( A^{*} A \right) }
+           = \sigma_{\max} \left( A \right)
 
     Parameters
     ----------
@@ -325,10 +361,18 @@ def spectral_norm(A, axis=None, keepdims=None, check_finite=True):
 
 
 def schatten_norm(A, p, axis=None, keepdims=None, check_finite=True):
-    """
-    Compute the Schatten norm of a matrix.
+    r"""
+    Compute the Schatten p-norm of a matrix.
 
     This is the p-norm of the vector of singular values of the matrix.
+
+    .. math::
+
+       \lVert A \rVert_p
+           = \left(
+                \sum_{i=1}^{\min \left\{ m, n \right\}}
+                \sigma_i^p
+             \right)^{\frac{1}{p}}
 
     Parameters
     ----------
@@ -375,8 +419,14 @@ def schatten_norm(A, p, axis=None, keepdims=None, check_finite=True):
 
 
 def induced_norm(A, p, axis=None, keepdims=None, check_finite=True):
-    """
-    Compute the induced norm of a matrix.
+    r"""
+    Compute the induced p-norm of a matrix.
+
+    .. math::
+
+        \lVert A \rVert_p = \sup_{x \neq 0} \dfrac
+            {\lVert A x \rVert_p}
+            {\lVert x \rVert_p}
 
     Parameters
     ----------
@@ -435,10 +485,17 @@ def induced_norm(A, p, axis=None, keepdims=None, check_finite=True):
 
 
 def ky_fan_norm(A, k, axis=None, keepdims=None, check_finite=True):
-    """
-    Compute the Ky-Fan norm of a matrix.
+    r"""
+    Compute the Ky-Fan k-norm of a matrix.
 
     This is the sum of the k largest singular values of the matrix.
+    So given singular values 
+    :math:`\sigma_1 \geq \sigma_2 \geq \cdots \geq \sigma_n \geq 0`,
+    the Ky-Fan k-norm is defined as follows.
+
+    .. math::
+
+       \lVert A \rVert_{k} = \sum_{i=1}^k \sigma_i
 
     Parameters
     ----------
