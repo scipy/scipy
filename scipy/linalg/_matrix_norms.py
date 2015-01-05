@@ -43,7 +43,8 @@ def _multi_svd_norm(x, row_axis, col_axis, op):
     if row_axis > col_axis:
         row_axis -= 1
     y = np.rollaxis(np.rollaxis(x, col_axis, x.ndim), row_axis, -1)
-    return np.apply_along_axis(op, -1, svdvals(y))
+    # svdvals is not yet flexible enough to replace svd here.
+    return np.apply_along_axis(op, -1, np.linalg.svd(y, compute_uv=0))
 
 
 def _simple_vector_p_norm(p, v):
@@ -62,8 +63,11 @@ def _asarray_atleast2d_validated(A, check_finite):
 
 
 def _as_int_validated(k):
-    if int(k) != k:
-        raise TypeError('expected an integer')
+    try:
+        if int(k) != k:
+            raise ValueError
+    except (OverflowError, ValueError):
+        raise ValueError('expected an integer')
     return int(k)
 
 
@@ -101,12 +105,12 @@ def _checked_nd_axis(axis):
     return axis
 
 
-def _checked_2d_axis(nd, axis):
+def _checked_2d_axis(A, axis):
     """
     Parameters
     ----------
-    nd : integer
-        ndim of the ndarray to be reduced
+    A : ndarray
+        The array to be reduced.
     axis : {length-2 tuple of ints, None}, optional
         Defines the axes of reduction.
 
@@ -117,13 +121,19 @@ def _checked_2d_axis(nd, axis):
 
     """
     if axis is None:
-        if nd > 2:
+        if A.ndim > 2:
             raise ValueError('To compute matrix norms given an array '
                              'with shape larger than 2d, a pair of axes '
                              'must be provided.')
-    elif not isinstance(axis, tuple) or len(axis) != 2:
-        raise TypeError("'axis' must be None or a length-2 tuple of integers")
-    return axis
+        return None
+    elif isinstance(axis, tuple) and len(axis) == 2:
+        if (0 <= axis[0] < A.ndim) and (0 <= axis[1] < A.ndim):
+            return axis
+        else:
+            raise ValueError('The array has ndim %s which is incompatible '
+                             'with the axis %s.' % (A.ndim, axis))
+    else:
+        raise ValueError("'axis' must be None or a length-2 tuple of integers")
 
 
 def _restore_dims(shape, ret, axis):
@@ -184,7 +194,7 @@ def elementwise_norm(A, p, axis=None, keepdims=None, check_finite=True):
 
 def frobenius_norm(A, axis=None, keepdims=None, check_finite=True):
     A = _asarray_atleast2d_validated(A, check_finite)
-    axis = _checked_2d_axis(A.ndim, axis)
+    axis = _checked_2d_axis(A, axis)
     kwargs = _checked_numpy_kwargs(axis, keepdims)
     original_shape = A.shape
     A = np.sqrt((A.conj() * A).real.sum(**kwargs))
@@ -208,14 +218,14 @@ def _unitarily_invariant_norm(A, op, axis, keepdims):
 
 def nuclear_norm(A, axis=None, keepdims=None, check_finite=True):
     A = _asarray_atleast2d_validated(A, check_finite)
-    axis = _checked_2d_axis(A.ndim, axis)
+    axis = _checked_2d_axis(A, axis)
     _checked_numpy_kwargs(axis, keepdims)
     return _unitarily_invariant_norm(A, np.sum, axis, keepdims)
 
 
 def spectral_norm(A, axis=None, keepdims=None, check_finite=True):
     A = _asarray_atleast2d_validated(A, check_finite)
-    axis = _checked_2d_axis(A.ndim, axis)
+    axis = _checked_2d_axis(A, axis)
     _checked_numpy_kwargs(axis, keepdims)
     return _unitarily_invariant_norm(A, np.max, axis, keepdims)
 
@@ -232,7 +242,7 @@ def schatten_norm(A, p, axis=None, keepdims=None, check_finite=True):
     else:
         op = partial(_simple_vector_p_norm, p)
         A = _asarray_atleast2d_validated(A, check_finite)
-        axis = _checked_2d_axis(A.ndim, axis)
+        axis = _checked_2d_axis(A, axis)
         _checked_numpy_kwargs(axis, keepdims)
         return _unitarily_invariant_norm(A, op, axis, keepdims)
 
@@ -243,10 +253,10 @@ def induced_norm(A, p, axis=None, keepdims=None, check_finite=True):
     elif p == 2:
         return spectral_norm(A, axis, keepdims, check_finite)
     elif p in (1, np.inf):
-        original_shape = A.shape
         A = _asarray_atleast2d_validated(A, check_finite)
-        axis = _checked_2d_axis(A.ndim, axis)
+        axis = _checked_2d_axis(A, axis)
         _checked_numpy_kwargs(axis, keepdims)
+        original_shape = A.shape
         if axis is None:
             axis = (0, 1)
         row_axis, col_axis = axis
@@ -262,9 +272,9 @@ def induced_norm(A, p, axis=None, keepdims=None, check_finite=True):
             A = _restore_dims(original_shape, A, axis)
         return A
     else:
-        raise NotImplementedError('The induced norm has been implemented only '
-                                  'for p in {1, 2, inf} where inf means '
-                                  'the numpy.inf object.')
+        raise ValueError('The induced norm has been implemented only '
+                         'for p in {1, 2, inf} where inf means '
+                         'the numpy.inf object.')
 
 
 def ky_fan_norm(A, k, axis=None, keepdims=None, check_finite=True):
@@ -275,7 +285,7 @@ def ky_fan_norm(A, k, axis=None, keepdims=None, check_finite=True):
         return spectral_norm(A, axis, keepdims, check_finite)
     else:
         A = _asarray_atleast2d_validated(A, check_finite)
-        axis = _checked_2d_axis(A.ndim, axis)
+        axis = _checked_2d_axis(A, axis)
         _checked_numpy_kwargs(axis, keepdims)
         if axis is None:
             spectrum_length = min(A.shape)
