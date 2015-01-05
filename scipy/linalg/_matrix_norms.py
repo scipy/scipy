@@ -454,6 +454,18 @@ def induced_norm(A, p, axis=None, keepdims=None, check_finite=True):
     n : float or ndarray
         Norm of the array.
 
+    Notes
+    -----
+    Only three induced p-norms have been implemented:
+    the 1-norm, the 2-norm and the infinity-norm [1]_.
+
+    References
+    ----------
+    .. [1] Julien M. Hendrickx and Alex Oleshevsky,
+           "Matrix p-Norms are NP-Hard to Approximate
+           if :math:`p \notin \left\{ 1, 2, \infty \right\}`"
+           http://arxiv.org/pdf/0908.1397v3.pdf
+
     """
     if p < 1:
         raise ValueError('p must be at least 1')
