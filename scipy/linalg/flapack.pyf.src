@@ -269,6 +269,17 @@ interface
      
    end subroutine <prefix2c>pbsv
 
+   subroutine <prefix>ptsv(n, nrhs, d, e, b, info)
+     callstatement (*f2py_func)(&n, &nrhs, d, e, b, &n, &info);
+     callprotoargument int*, int*, <ctype>*, <ctype>*, <ctype>*, int*, int*
+     integer intent(hide), depend(d) :: n = len(d)
+     integer intent(hide), depend(b) :: nrhs = shape(b, 1)
+     <real, double precision, \0, \1> dimension(*), intent(in,out,copy) :: d
+     <ftype> dimension(n-1), intent(in,out,copy,out=du), depend(d,n) :: e
+     <ftype> dimension(*,*), intent(in,out,copy,out=x), depend(d,n), check(shape(b,0)==n) :: b
+     integer intent(out) :: info
+   end subroutine <prefix>ptsv
+
    subroutine <prefix>gebal(scale,permute,n,a,m,lo,hi,pivscale,info)
    !
    ! ba,lo,hi,pivscale,info = gebal(a,scale=0,permute=0,overwrite_a=0)
@@ -369,6 +380,18 @@ interface
      intent(in,out,copy,out=x) b
      intent(in,out,copy,out=lub) ab
    end subroutine <prefix>gbsv
+
+   subroutine <prefix>gtsv(n, nrhs, dl, d, du, b, info)
+     callstatement (*f2py_func)(&n, &nrhs, dl, d, du, b, &n, &info);
+     callprotoargument int*, int*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, int*, int*
+     integer intent(hide), depend(d) :: n = len(d)
+     integer intent(hide), depend(b) :: nrhs = shape(b, 1)
+     <ftype> dimension(n-1), intent(in,out,copy,out=du2), depend(d,n) :: dl
+     <ftype> dimension(*), intent(in,out,copy) :: d
+     <ftype> dimension(n-1), intent(in,out,copy), depend(d,n) :: du
+     <ftype> dimension(*,*), intent(in,out,copy,out=x), depend(d,n), check(shape(b,0)==n) :: b
+     integer intent(out) :: info
+   end subroutine <prefix>gtsv
 
    subroutine <prefix>gesv(n,nrhs,a,piv,b,info)
 
