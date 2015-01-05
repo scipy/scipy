@@ -20,8 +20,6 @@ __all__ = ['elementwise_norm', 'frobenius_norm', 'nuclear_norm',
 
 _npv = NumpyVersion(np.__version__)
 
-_nrm2_prefix = {'f': 's', 'F': 'sc', 'D': 'dz'}
-
 
 # This function is copied from numpy, with some modifications.
 def _multi_svd_norm(x, row_axis, col_axis, op):
