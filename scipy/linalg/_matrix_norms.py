@@ -152,8 +152,8 @@ def elementwise_norm(A, p, axis=None, keepdims=None, check_finite=True):
 
     Parameters
     ----------
-    A : ndarray
-        The ndarray is assumed to have finite elements.
+    A : array_like
+        Input array.
     p : float
         A floating point number greater than or equal to 1.
         Infinity is allowed, and is represented by the numpy.inf object.
@@ -170,11 +170,16 @@ def elementwise_norm(A, p, axis=None, keepdims=None, check_finite=True):
         result as dimensions with size one.  With this option the result will
         broadcast correctly against the original `A`.
         Requires numpy 1.10+
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default: True
 
     Returns
     -------
     n : float or ndarray
-        Norm of the ndarray.
+        Norm of the array.
 
     """
     if p < 1:
@@ -193,6 +198,37 @@ def elementwise_norm(A, p, axis=None, keepdims=None, check_finite=True):
 
 
 def frobenius_norm(A, axis=None, keepdims=None, check_finite=True):
+    """
+    Frobenius matrix norm.
+
+    This is the square root of the sum of the squares
+    of the elements of the matrix.
+
+    Parameters
+    ----------
+    A : array_like
+        Input array.
+    axis : pair of ints, optional
+        If `axis` is a pair of ints, it specifies the axes that hold 2-D
+        matrices, and the norms of these matrices are computed.
+        Requires numpy 1.8+
+    keepdims : bool, optional
+        If this is set to True, the axes which are normed over are left in the
+        result as dimensions with size one.  With this option the result will
+        broadcast correctly against the original `A`.
+        Requires numpy 1.10+
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default: True
+
+    Returns
+    -------
+    n : float or ndarray
+        Norm of the array.
+
+    """
     A = _asarray_atleast2d_validated(A, check_finite)
     axis = _checked_2d_axis(A, axis)
     kwargs = _checked_numpy_kwargs(axis, keepdims)
@@ -217,6 +253,36 @@ def _unitarily_invariant_norm(A, op, axis, keepdims):
 
 
 def nuclear_norm(A, axis=None, keepdims=None, check_finite=True):
+    """
+    Compute the nuclear norm of a matrix.
+
+    This is the sum of the singular values of the matrix.
+
+    Parameters
+    ----------
+    A : array_like
+        Input array.
+    axis : pair of ints, optional
+        If `axis` is a pair of ints, it specifies the axes that hold 2-D
+        matrices, and the norms of these matrices are computed.
+        Requires numpy 1.8+
+    keepdims : bool, optional
+        If this is set to True, the axes which are normed over are left in the
+        result as dimensions with size one.  With this option the result will
+        broadcast correctly against the original `A`.
+        Requires numpy 1.10+
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default: True
+
+    Returns
+    -------
+    n : float or ndarray
+        Norm of the array.
+
+    """
     A = _asarray_atleast2d_validated(A, check_finite)
     axis = _checked_2d_axis(A, axis)
     _checked_numpy_kwargs(axis, keepdims)
@@ -224,6 +290,36 @@ def nuclear_norm(A, axis=None, keepdims=None, check_finite=True):
 
 
 def spectral_norm(A, axis=None, keepdims=None, check_finite=True):
+    """
+    Compute the spectral norm of a matrix.
+
+    This is the maximum singular value of the matrix.
+
+    Parameters
+    ----------
+    A : array_like
+        Input array.
+    axis : pair of ints, optional
+        If `axis` is a pair of ints, it specifies the axes that hold 2-D
+        matrices, and the norms of these matrices are computed.
+        Requires numpy 1.8+
+    keepdims : bool, optional
+        If this is set to True, the axes which are normed over are left in the
+        result as dimensions with size one.  With this option the result will
+        broadcast correctly against the original `A`.
+        Requires numpy 1.10+
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default: True
+
+    Returns
+    -------
+    n : float or ndarray
+        Norm of the array.
+
+    """
     A = _asarray_atleast2d_validated(A, check_finite)
     axis = _checked_2d_axis(A, axis)
     _checked_numpy_kwargs(axis, keepdims)
@@ -231,6 +327,39 @@ def spectral_norm(A, axis=None, keepdims=None, check_finite=True):
 
 
 def schatten_norm(A, p, axis=None, keepdims=None, check_finite=True):
+    """
+    Compute the Schatten norm of a matrix.
+
+    This is the p-norm of the vector of singular values of the matrix.
+
+    Parameters
+    ----------
+    A : array_like
+        Input array.
+    p : float
+        The Schatten norm corresponds to a vector p-norm
+        of the singular values of the matrix.
+    axis : pair of ints, optional
+        If `axis` is a pair of ints, it specifies the axes that hold 2-D
+        matrices, and the norms of these matrices are computed.
+        Requires numpy 1.8+
+    keepdims : bool, optional
+        If this is set to True, the axes which are normed over are left in the
+        result as dimensions with size one.  With this option the result will
+        broadcast correctly against the original `A`.
+        Requires numpy 1.10+
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default: True
+
+    Returns
+    -------
+    n : float or ndarray
+        Norm of the array.
+
+    """
     if p < 1:
         raise ValueError('p must be at least 1')
     if p == 1:
@@ -248,6 +377,36 @@ def schatten_norm(A, p, axis=None, keepdims=None, check_finite=True):
 
 
 def induced_norm(A, p, axis=None, keepdims=None, check_finite=True):
+    """
+    Compute the induced norm of a matrix.
+
+    Parameters
+    ----------
+    A : array_like
+        Input array.
+    p : float
+        The induced norm is computed with respect to a p-norm on vectors.
+    axis : pair of ints, optional
+        If `axis` is a pair of ints, it specifies the axes that hold 2-D
+        matrices, and the norms of these matrices are computed.
+        Requires numpy 1.8+
+    keepdims : bool, optional
+        If this is set to True, the axes which are normed over are left in the
+        result as dimensions with size one.  With this option the result will
+        broadcast correctly against the original `A`.
+        Requires numpy 1.10+
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default: True
+
+    Returns
+    -------
+    n : float or ndarray
+        Norm of the array.
+
+    """
     if p < 1:
         raise ValueError('p must be at least 1')
     elif p == 2:
@@ -278,6 +437,38 @@ def induced_norm(A, p, axis=None, keepdims=None, check_finite=True):
 
 
 def ky_fan_norm(A, k, axis=None, keepdims=None, check_finite=True):
+    """
+    Compute the Ky-Fan norm of a matrix.
+
+    This is the sum of the k largest singular values of the matrix.
+
+    Parameters
+    ----------
+    A : array_like
+        Input array.
+    k : int
+        The number of leading singular values to sum.
+    axis : pair of ints, optional
+        If `axis` is a pair of ints, it specifies the axes that hold 2-D
+        matrices, and the norms of these matrices are computed.
+        Requires numpy 1.8+
+    keepdims : bool, optional
+        If this is set to True, the axes which are normed over are left in the
+        result as dimensions with size one.  With this option the result will
+        broadcast correctly against the original `A`.
+        Requires numpy 1.10+
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default: True
+
+    Returns
+    -------
+    n : float or ndarray
+        Norm of the array.
+
+    """
     k = _as_int_validated(k)
     if k < 1:
         raise ValueError('k must be at least 1')
