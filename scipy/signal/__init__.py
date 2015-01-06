@@ -181,7 +181,8 @@ LTI Representations
    sos2zpk       -- second-order-sections to zero-pole-gain.
    sos2tf        -- second-order-sections to transfer function.
    cont2discrete -- continuous-time to discrete-time LTI conversion.
-
+   place         -- pole placement.
+   
 Waveforms
 =========
 
