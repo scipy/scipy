@@ -8,11 +8,149 @@ from numpy.testing import (assert_almost_equal, assert_equal,
                            run_module_suite)
 from scipy.signal.ltisys import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                                  bode, freqresp, impulse, step,
-                                 abcd_normalize)
+                                 abcd_normalize, place)
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
 
+class Test_place:
+    def compare_poles(self,P1,P2):
+        #ordering complex arrays is a nightmare, so brute force 
+        #the comparison. At least it is reliable if not efficient
+        P2=P2.copy()
+        for p1 in P1:
+            found=False
+            for p2_idx in range(P2.shape[0]):
+                if np.allclose([np.real(p1),np.imag(p1)],
+                                [np.real(P2[p2_idx]),np.imag(P2[p2_idx])],
+                                 0.1,1e-3):
+                    found=True
+                    np.delete(P2,p2_idx)
+                    break
+            if not found:
+                print(p1,P2)
+                return False
+        return True      
+        
+    def test_real(self):
+        #Test real pole placement using KNV and YT0 algorithm
+        #and example 1 in section 4 of the reference
+        #publication (see docstring of place)
+        A=np.array([1.380,-0.2077,6.715,-5.676,
+            -0.5814,-4.290,0,0.6750,
+            1.067,4.273,-6.654,5.893,
+            0.0480,4.273,1.343,-2.104]).reshape(4,4)
+        B=np.array([0,5.679,1.136,1.136,
+            0,0,-3.146,0]).reshape(4,2)
+        P=np.array((-0.2,-0.5,-5.0566,-8.6659))
+        
+        #check KNV computes correct K matrix
+        K1,P1=place(A,B,P, method="KNV0",return_poles=True)
+        e_val1,e_vec1=np.linalg.eig(A-np.dot(B,K1))
+        assert_equal(True, self.compare_poles(e_val1,P))
+        assert_equal(True, self.compare_poles(e_val1,P1))
 
+
+        #same for YT
+        K2,P2=place(A,B,P, method="YT", return_poles=True)
+        e_val2,e_vec2=np.linalg.eig(A-np.dot(B,K2))
+        assert_equal(True, self.compare_poles(e_val2,P))
+        assert_equal(True, self.compare_poles(e_val2,P2)) 
+        
+    
+    def test_complex1(self):
+        #Test complex pole placement on a
+        #linearized car model, taken from L. Jaulin,
+        #Automatique pour la robotique, Cours et
+        #Exercices, iSTE editions p 184/185
+        A=np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4)
+        B=np.array([0,0,0,0,1,0,0,1]).reshape(4,2)
+       
+        #test complex poles on YT
+        P=np.array((-3,-1,-2-1j,-2+1j))
+        K,P1=place(A,B,P,return_poles="True")
+        e_val1,_=np.linalg.eig(A-np.dot(B,K))
+        assert_equal(True, self.compare_poles(e_val1,P))
+        assert_equal(True, self.compare_poles(e_val1,P1))
+
+    
+    def test_complex2(self):
+        #need a 5x5 array to ensure YT handles properly when there 
+        #is only one real pole and several complex
+
+        A=np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0,
+                    0,0,0,5,0,0,0,0,9]).reshape(5,5)
+        B=np.array([0,0,0,0,1,0,0,1,2,3]).reshape(5,2)
+        P=np.array((-2,-3+1j,-3-1j,-1+1j,-1-1j))
+          
+        K,P1=place(A,B,P, return_poles="True")
+        e_val1,_=np.linalg.eig(A-np.dot(B,K))
+        assert_equal(True, self.compare_poles(e_val1,P))
+        assert_equal(True, self.compare_poles(e_val1,P1))
+        
+        #same test with an odd number of real poles > 1
+        #this is another specific case of YT
+        P=np.array((-2,-3,-4,-1+1j,-1-1j))
+          
+        K,P1=place(A,B,P, return_poles="True")
+        e_val1,_=np.linalg.eig(A-np.dot(B,K))
+        assert_equal(True, self.compare_poles(e_val1,P))
+        assert_equal(True, self.compare_poles(e_val1,P1))
+        
+        
+    def test_tricky_B(self):
+        #check we handle as we should the 1 column B matrices and
+        #n column B matrices (with n such as shape(A)=(n,n))
+        A=np.array([1.380,-0.2077,6.715,-5.676,
+            -0.5814,-4.290,0,0.6750,
+            1.067,4.273,-6.654,5.893,
+            0.0480,4.273,1.343,-2.104]).reshape(4,4)
+        B=np.array([0,5.679,1.136,1.136,
+            0,0,-3.146,0,
+            1,2,3,4,
+            5,6,7,8]).reshape(4,4)
+        P=np.array((-0.2,-0.5,-5.0566,-8.6659))
+        
+        #KNV or YT are not called here, it's a specific case with only
+        #one unique solution
+        K,P1=place(A,B,P, return_poles="True")
+        e_val1,_=np.linalg.eig(A-np.dot(B,K))
+        assert_equal(True, self.compare_poles(e_val1,P))
+        assert_equal(True, self.compare_poles(e_val1,P1))
+
+        #check with complex poles too as they trigger a specific case in
+        #the specific case :-)
+        P=np.array((-2+1j,-2-1j,-3,-2))
+        K,P1=place(A,B,P, return_poles="True")
+        e_val1,_=np.linalg.eig(A-np.dot(B,K))
+        assert_equal(True, self.compare_poles(e_val1,P))
+        assert_equal(True, self.compare_poles(e_val1,P1))
+
+
+        
+    
+    
+    def test_errors(self):
+        #test input mistakes from user
+        A=np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4)
+        B=np.array([0,0,0,0,1,0,0,1]).reshape(4,2)
+        
+        #should fail as rank(B) is two
+        assert_raises(ValueError, place, A, B, (-2,-2,-2,-2))
+
+        #should fail as a complex misses its conjugate
+        assert_raises(ValueError, place, A, B, (-2+1j,-2-1j,-2+3j,-2))
+
+        #should fail as A is not square
+        assert_raises(ValueError, place, A[:,:3], B, (-2,-3,-4,-5))
+        
+        #should fail as B has not the same number of lines as A
+        assert_raises(ValueError, place, A, B[:3,:], (-2,-3,-4,-5))
+        
+        #should fail as KNV0 does not support complex poles
+        assert_raises(ValueError, place, A, B, 
+                      (-2+1j,-2-1j,-2+3j,-2-3j),method="KNV0")
+    
+        
 class TestSS2TF:
 
     def tst_matrix_shapes(self, p, q, r):
