@@ -8,7 +8,7 @@ from numpy.testing import (assert_almost_equal, assert_equal,
                            run_module_suite)
 from scipy.signal.ltisys import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                                  bode, freqresp, impulse, step,
-                                 abcd_normalize, place)
+                                 abcd_normalize, place_poles)
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
 
@@ -44,14 +44,14 @@ class Test_place:
         P=np.array((-0.2,-0.5,-5.0566,-8.6659))
         
         #check KNV computes correct K matrix
-        K1,P1=place(A,B,P, method="KNV0",return_poles=True)
+        K1,P1=place_poles(A,B,P, method="KNV0",return_poles=True)
         e_val1,e_vec1=np.linalg.eig(A-np.dot(B,K1))
         assert_equal(True, self.compare_poles(e_val1,P))
         assert_equal(True, self.compare_poles(e_val1,P1))
 
 
         #same for YT
-        K2,P2=place(A,B,P, method="YT", return_poles=True)
+        K2,P2=place_poles(A,B,P, method="YT", return_poles=True)
         e_val2,e_vec2=np.linalg.eig(A-np.dot(B,K2))
         assert_equal(True, self.compare_poles(e_val2,P))
         assert_equal(True, self.compare_poles(e_val2,P2)) 
@@ -67,7 +67,7 @@ class Test_place:
        
         #test complex poles on YT
         P=np.array((-3,-1,-2-1j,-2+1j))
-        K,P1=place(A,B,P,return_poles="True")
+        K,P1=place_poles(A,B,P,return_poles="True")
         e_val1,_=np.linalg.eig(A-np.dot(B,K))
         assert_equal(True, self.compare_poles(e_val1,P))
         assert_equal(True, self.compare_poles(e_val1,P1))
@@ -82,7 +82,7 @@ class Test_place:
         B=np.array([0,0,0,0,1,0,0,1,2,3]).reshape(5,2)
         P=np.array((-2,-3+1j,-3-1j,-1+1j,-1-1j))
           
-        K,P1=place(A,B,P, return_poles="True")
+        K,P1=place_poles(A,B,P, return_poles="True")
         e_val1,_=np.linalg.eig(A-np.dot(B,K))
         assert_equal(True, self.compare_poles(e_val1,P))
         assert_equal(True, self.compare_poles(e_val1,P1))
@@ -91,7 +91,7 @@ class Test_place:
         #this is another specific case of YT
         P=np.array((-2,-3,-4,-1+1j,-1-1j))
           
-        K,P1=place(A,B,P, return_poles="True")
+        K,P1=place_poles(A,B,P, return_poles="True")
         e_val1,_=np.linalg.eig(A-np.dot(B,K))
         assert_equal(True, self.compare_poles(e_val1,P))
         assert_equal(True, self.compare_poles(e_val1,P1))
@@ -112,7 +112,7 @@ class Test_place:
         
         #KNV or YT are not called here, it's a specific case with only
         #one unique solution
-        K,P1=place(A,B,P, return_poles="True")
+        K,P1=place_poles(A,B,P, return_poles="True")
         e_val1,_=np.linalg.eig(A-np.dot(B,K))
         assert_equal(True, self.compare_poles(e_val1,P))
         assert_equal(True, self.compare_poles(e_val1,P1))
@@ -120,7 +120,7 @@ class Test_place:
         #check with complex poles too as they trigger a specific case in
         #the specific case :-)
         P=np.array((-2+1j,-2-1j,-3,-2))
-        K,P1=place(A,B,P, return_poles="True")
+        K,P1=place_poles(A,B,P, return_poles="True")
         e_val1,_=np.linalg.eig(A-np.dot(B,K))
         assert_equal(True, self.compare_poles(e_val1,P))
         assert_equal(True, self.compare_poles(e_val1,P1))
@@ -135,24 +135,24 @@ class Test_place:
         B=np.array([0,0,0,0,1,0,0,1]).reshape(4,2)
         
         #should fail as rank(B) is two
-        assert_raises(ValueError, place, A, B, (-2,-2,-2,-2))
+        assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2))
 
         #should fail, these poles can' be placed with this linear system
         #as they are way too close
 
-        assert_raises(ValueError, place, A, B, (-2,-2,-3,-3))
+        assert_raises(ValueError, place_poles, A, B, (-2,-2,-3,-3))
 
         #should fail as a complex misses its conjugate
-        assert_raises(ValueError, place, A, B, (-2+1j,-2-1j,-2+3j,-2))
+        assert_raises(ValueError, place_poles, A, B, (-2+1j,-2-1j,-2+3j,-2))
 
         #should fail as A is not square
-        assert_raises(ValueError, place, A[:,:3], B, (-2,-3,-4,-5))
+        assert_raises(ValueError, place_poles, A[:,:3], B, (-2,-3,-4,-5))
         
         #should fail as B has not the same number of lines as A
-        assert_raises(ValueError, place, A, B[:3,:], (-2,-3,-4,-5))
+        assert_raises(ValueError, place_poles, A, B[:3,:], (-2,-3,-4,-5))
         
         #should fail as KNV0 does not support complex poles
-        assert_raises(ValueError, place, A, B, 
+        assert_raises(ValueError, place_poles, A, B, 
                       (-2+1j,-2-1j,-2+3j,-2-3j),method="KNV0")
     
         
