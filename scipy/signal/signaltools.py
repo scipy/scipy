@@ -1908,13 +1908,14 @@ def sosfilt_zi(sos):
         Initial conditions suitable for use with ``sosfilt``, shape
         ``(n_sections, 2)``.
 
+    See Also
+    --------
+    sosfilt, zpk2sos
+
     Notes
     -----
     .. versionadded:: 0.16.0
 
-    See also
-    --------
-    sosfilt, zpk2sos
     """
     sos = np.asarray(sos)
     if sos.ndim != 2 or sos.shape[1] != 6:
