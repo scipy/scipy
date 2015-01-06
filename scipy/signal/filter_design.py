@@ -550,7 +550,7 @@ def zpk2tf(z, p, k):
     return b, a
 
 
-def tf2sos(b, a, pairing='simple'):
+def tf2sos(b, a, pairing='nearest'):
     """
     Return second-order sections from transfer function representation
 
@@ -560,7 +560,7 @@ def tf2sos(b, a, pairing='simple'):
         Numerator polynomial coefficients.
     a : array_like
         Denominator polynomial coefficients.
-    pairing : {'simple', 'keep_odd'}
+    pairing : {'nearest', 'keep_odd'}
         The method to use to combine pairs of poles and zeros into sections.
         See `zpk2sos`.
 
@@ -667,7 +667,7 @@ def _nearest_real_complex_idx(fro, to, which):
     return order[np.where(mask)[0][0]]
 
 
-def zpk2sos(z, p, k, pairing='simple'):
+def zpk2sos(z, p, k, pairing='nearest'):
     """
     Return second-order sections from zeros, poles, and gain of a system
 
@@ -679,7 +679,7 @@ def zpk2sos(z, p, k, pairing='simple'):
         Poles of the transfer function.
     k : float
         System gain.
-    pairing : {'simple', 'keep_odd'}
+    pairing : {'nearest', 'keep_odd'}
         The method to use to combine pairs of poles and zeros into sections.
         See Notes below.
 
@@ -708,21 +708,18 @@ def zpk2sos(z, p, k, pairing='simple'):
     filters. Although they can operate on analog filters, the results may
     be sub-optimal.
 
-    The steps in the ``pairing='simple'`` and ``pairing='keep_odd'``
-    algorithms are mostly shared. The ``simple`` algorithm attempts to
+    The steps in the ``pairing='nearest'`` and ``pairing='keep_odd'``
+    algorithms are mostly shared. The ``nearest`` algorithm attempts to
     minimize the peak gain, while ``'keep_odd'`` minimizes peak gain under
     the constraint that odd-order systems should retain one section
     as first order. The algorithm steps and are as follows:
 
     As a pre-processing step, add poles or zeros to the origin as
     necessary to obtain the same number of poles and zeros for pairing.
-    If ``pairing == 'simple'`` and there are an odd number of poles,
-    add an additional pole and a zero at the origin. Note that with
-    ``pairing == 'simple'``, we are guaranteed there are even numbers
-    of real poles, complex poles, real zeros, and real poles to pair.
-    With ``pairing == 'keep_odd'`` we do not have this guarantee.
+    If ``pairing == 'nearest'`` and there are an odd number of poles,
+    add an additional pole and a zero at the origin.
 
-    These following steps are then iterated over until no more poles or
+    The following steps are then iterated over until no more poles or
     zeros remain:
 
     1. Take the (next remaining) pole (complex or real) closest to the
@@ -774,7 +771,7 @@ def zpk2sos(z, p, k, pairing='simple'):
     # 4. Further optimizations of the section ordering / pole-zero pairing.
     # See the wiki for other potential issues.
 
-    valid_pairings = ['simple', 'keep_odd']
+    valid_pairings = ['nearest', 'keep_odd']
     if pairing not in valid_pairings:
         raise ValueError('pairing must be one of %s, not %s'
                          % (valid_pairings, pairing))
@@ -787,7 +784,7 @@ def zpk2sos(z, p, k, pairing='simple'):
     n_sections = (max(len(p), len(z)) + 1) // 2
     sos = zeros((n_sections, 6))
 
-    if len(p) % 2 == 1 and pairing == 'simple':
+    if len(p) % 2 == 1 and pairing == 'nearest':
         p = np.concatenate((p, [0.]))
         z = np.concatenate((z, [0.]))
     assert len(p) == len(z)

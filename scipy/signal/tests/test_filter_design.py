@@ -256,7 +256,7 @@ class TestTf2Sos(TestCase):
 class TestZpk2Sos(TestCase):
 
     def test_basic(self):
-        for pairing in ('simple', 'keep_odd'):
+        for pairing in ('nearest', 'keep_odd'):
             #
             # Cases that match octave
             #
@@ -304,7 +304,7 @@ class TestZpk2Sos(TestCase):
                 sos2 = [[1, -1.8, 0.82, 1, -1.5, 0.625],
                         [1, 0.9, 0, 1, -0.9, 0]]  # octave; MATLAB fails
                 assert_array_almost_equal(sos, sos2, decimal=4)
-            else:  # pairing == 'simple'
+            else:  # pairing == 'nearest'
                 sos2 = [[1, 0.9, 0, 1, -1.5, 0.625],
                         [1, -1.8, 0.82, 1, -0.9, 0]]  # our algorithm
                 assert_array_almost_equal(sos, sos2, decimal=4)
