@@ -1077,7 +1077,8 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
 
     Given passband and stopband frequencies and gains, construct an analog or
     digital IIR filter of minimum order for a given basic type.  Return the
-    output in numerator, denominator ('ba') or pole-zero ('zpk') form.
+    output in numerator, denominator ('ba'), pole-zero ('zpk') or second order
+    sections ('sos') form.
 
     Parameters
     ----------
