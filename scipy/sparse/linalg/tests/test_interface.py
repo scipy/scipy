@@ -245,10 +245,12 @@ def test_identity():
 
 def test_attributes():
     A = interface.aslinearoperator(np.arange(16).reshape(4, 4))
+
     def always_four_ones(x):
         x = np.asarray(x)
         assert_(x.shape == (3,) or x.shape == (3, 1))
         return np.ones(4)
+
     B = interface.LinearOperator(shape=(4, 3), matvec=always_four_ones)
 
     for op in [A, B, A * B, A.H, A + A, B + B, A ** 4]:
