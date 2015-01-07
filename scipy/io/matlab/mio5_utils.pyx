@@ -764,7 +764,7 @@ cdef class VarReader5:
         cdef size_t M, N, nnz
         rowind = self.read_numeric()
         indptr = self.read_numeric()
-        M,N = header.dims
+        M, N = header.dims
         indptr = indptr[:N+1]
         nnz = indptr[-1]
         if header.is_complex:
@@ -788,11 +788,9 @@ cdef class VarReader5:
         stored in column order, this gives the column corresponding
         to each rowind
         '''
-        rowind = rowind[:nnz]
-        data   = data[:nnz]
         return scipy.sparse.csc_matrix(
-            (data,rowind,indptr),
-            shape=(M,N))
+            (data[:nnz], rowind[:nnz], indptr),
+            shape=(M, N))
 
     cpdef cnp.ndarray read_char(self, VarHeader5 header):
         ''' Read char matrices from stream as arrays
