@@ -107,6 +107,7 @@ native_code = sys_is_le and '<' or '>'
 swapped_code = sys_is_le and '>' or '<'
 
 cdef cnp.dtype OPAQUE_DTYPE = mio5p.OPAQUE_DTYPE
+cdef cnp.dtype BOOL_DTYPE = np.dtype(np.bool)
 
 
 cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4):
@@ -403,13 +404,38 @@ cdef class VarReader5:
                 self.cstream.seek(8 - mod8, 1)
         return 0
 
-    cpdef cnp.ndarray read_numeric(self, int copy=True):
+    cpdef cnp.ndarray read_numeric(self, int copy=True, size_t nnz=-1):
         ''' Read numeric data element into ndarray
 
         Reads element, then casts to ndarray.
 
-        The type of the array is given by the ``mdtype`` returned via
-        ``read_element``.
+        The type of the array is usually given by the ``mdtype`` returned via
+        ``read_element``.  Sparse logical arrays are an exception, where the
+        type of the array may be ``np.bool`` even if the ``mdtype`` claims the
+        data is of float64 type.
+
+        Parameters
+        ----------
+        copy : bool, optional
+            Whether to copy the array before returning.  If False, return array
+            backed by bytes read from file.
+        nnz : int, optional
+            Number of non-zero values when reading numeric data from sparse
+            matrices.  -1 if not reading sparse matrices, or to disable check
+            for bytes data instead of declared data type (see Notes).
+
+        Returns
+        -------
+        arr : array
+            Numeric array
+
+        Notes
+        -----
+        MATLAB apparently likes to store sparse logical matrix data as bytes
+        instead of miDOUBLE (float64) data type, even though the data element
+        still declares its type as miDOUBLE.  We can guess this has happened by
+        looking for the length of the data compared to the expected number of
+        elements, using the `nnz` input parameter.
         '''
         cdef cnp.uint32_t mdtype, byte_count
         cdef void *data_ptr
@@ -418,7 +444,11 @@ cdef class VarReader5:
         cdef object data = self.read_element(
             &mdtype, &byte_count, <void **>&data_ptr, copy)
         cdef cnp.dtype dt = <cnp.dtype>self.dtypes[mdtype]
-        el_count = byte_count // dt.itemsize
+        if dt.itemsize != 1 and nnz != -1 and byte_count == nnz:
+            el_count = <cnp.npy_intp> nnz
+            dt = BOOL_DTYPE
+        else:
+            el_count = byte_count // dt.itemsize
         cdef int flags = 0
         if copy:
             flags = cnp.NPY_WRITEABLE
@@ -734,11 +764,16 @@ cdef class VarReader5:
         cdef size_t M, N, nnz
         rowind = self.read_numeric()
         indptr = self.read_numeric()
+        M,N = header.dims
+        indptr = indptr[:N+1]
+        nnz = indptr[-1]
         if header.is_complex:
             # avoid array copy to save memory
             data   = self.read_numeric(False)
             data_j = self.read_numeric(False)
             data = data + (data_j * 1j)
+        elif header.is_logical:
+            data = self.read_numeric(True, nnz)
         else:
             data = self.read_numeric()
         ''' From the matlab (TM) API documentation, last found here:
@@ -753,9 +788,6 @@ cdef class VarReader5:
         stored in column order, this gives the column corresponding
         to each rowind
         '''
-        M,N = header.dims
-        indptr = indptr[:N+1]
-        nnz = indptr[-1]
         rowind = rowind[:nnz]
         data   = data[:nnz]
         return scipy.sparse.csc_matrix(
