@@ -1179,33 +1179,35 @@ def _KNV0(B,ker_pole,transfer_matrix,j,poles):
     #if we QR this matrix in full mode Q=Q0|Q1
     #then Q1 will be a single column orthogonnal to
     #Q0, that's what we are looking for !
+    
+    #after merge of gh-4249 great speed improvements could be achived
+    #using QR updates instead of full QR in the line below
+    
     Q,R = linalg.qr(transfer_matrix_not_j, mode="full") 
     mat_ker_pj = dot(ker_pole[j],ker_pole[j].T)
     yj = dot(mat_ker_pj,Q[:,-1])
 
-    #if Q[:,-1] is "almost" orthogonnal to kerP[j] its
-    #projection into kerP[j] will yield a vector
-    #close to 0. As we are looking for a vector in kerP[j]
-    #simply stick with transfer_matrix_j (unless someone provides me with
-    #a better choice ? mailto: irvin DOT probst AT ensta-bretagne DOT fr)
+    #if Q[:,-1] is "almost" orthogonnal to ker_pole[j] its
+    #projection into ker_pole[j] will yield a vector
+    #close to 0. As we are looking for a vector in ker_pole[j]
+    #simply stick with transfer_matrix[:,j] (unless someone provides me with
+    #a better choice ?)
 
     if not allclose(yj,0):
         xj = yj/linalg.norm(yj)
-        if isreal(poles[j]):
-            transfer_matrix[:,j] = xj
-#        else:
-#            #KNV does not support complex poles, using YT technique
-#            #the two lines below seem to work 9 ou of 10 times but
-#            #it is not reliable enough.
-#            #if you have any idea on how to improve this mailto:
-#            #irvin DOT probst AT ensta-bretagne DOT fr
-            
-#            transfer_matrix[:,j]=real(xj)
-#            transfer_matrix[:,j+1]=imag(xj)
+        transfer_matrix[:,j] = xj
+        
+#        #KNV does not support complex poles, using YT technique
+#        #the two lines below seem to work 9 ou of 10 times but
+#        #it is not reliable enough.
+#        
+#        transfer_matrix[:,j]=real(xj)
+#        transfer_matrix[:,j+1]=imag(xj)
+#
 # ADD THIS at the beginning of this function if you wish to test complex support            
-#    removed the two lines below as complex are not supported    
 #    if ~np.isreal(P[j]) and (j>=B.shape[0]-1 or P[j]!=np.conj(P[j+1])):
 #        return
+# Problems arise when imag(xj)=>0 I have no idea on how to fix this
 
 def _YT_real(ker_pole,Q,transfer_matrix,i,j):
     """
@@ -1292,12 +1294,10 @@ def _YT_complex(ker_pole,Q,transfer_matrix,i,j):
 
     if not allclose(abs(e_val[e_val_idx[-1]]),abs(e_val[e_val_idx[-2]])):
         ker_pole_mu = dot(ker_pole_ij,mu1)
-        ker_pole_mu_star=dot(conj(mu1.T),conj(ker_pole_ij.T))
     else:
         mu1_mu2_matrix = hstack((mu1,mu2))     
         ker_pole_mu = dot(ker_pole_ij,mu1_mu2_matrix)
-        ker_pole_mu_star=dot(conj(mu1_mu2_matrix.T),conj(ker_pole_ij.T))
-    transfer_matrix_i_j = dot(dot(ker_pole_mu,ker_pole_mu_star),\
+    transfer_matrix_i_j = dot(dot(ker_pole_mu,conj(ker_pole_mu.T)),\
                             transfer_matrix_j_mo_transfer_matrix_j)
     
     if not allclose(transfer_matrix_i_j,0):
@@ -1345,6 +1345,9 @@ def _YT(B,ker_pole,transfer_matrix,j_main_loop,poles):
     #remove xi and xj form the base, same as QNV method 0 but we remove
     #two vectors instead of one    
     transfer_matrix_not_i_j = delete(transfer_matrix,(i,j),axis=1)
+    
+    #after merge of gh-4249 great speed improvements could be achived
+    #using QR updates instead of full QR in the line below
     Q,_ = linalg.qr(transfer_matrix_not_i_j, mode="full")
     
     if isreal(poles[i]):
@@ -1352,13 +1355,15 @@ def _YT(B,ker_pole,transfer_matrix,j_main_loop,poles):
     else:
         _YT_complex(ker_pole,Q,transfer_matrix,i,j) 
 
-def place_poles(A,B,poles, method="YT", maxtry=20, force_maxtry=False, return_poles=False):
+def place_poles(A,B,poles, method="YT", rtol=1e-3, max_try=20):
     """
     Compute K such as eigenvalues(A-dot(B,K))=P.    
     
     K is the gain matrix such as the plant described by the linear system AX+BU
     will have its closed-loop poles, i.e the eigenvalues A-B*K, as close as possible to
     those asked for in poles.
+    
+    SISO, MISO and MIMO systems are supported.
 
     Parameters
     ----------
@@ -1370,18 +1375,18 @@ def place_poles(A,B,poles, method="YT", maxtry=20, force_maxtry=False, return_po
         Desired real poles and/or complex conjugates poles.
         Complex poles are only supported with method="YT" (default)
     
-    method: string (default "YT") 
+    method: string (default "YT")
         Which method to choose to find K, see References and Notes.
         "KNV0": Kautsky, Nichols, Van Dooren update method 0
         "YT": Yang Tits 
     
-    maxtry: integer, optionnal (default 20)
-        Maximum number of iterations to compute K.
-        
-    force_matry: boolean, optional (default False)
-        By default K will be returned as soon as an iteration does not yield
-        any significant change on the determinant of the eigenvalues of A-BK.
-        If force_maxtry is set to True K will be returned after maxtry steps.
+    rtol: float, optionnal (default 1e-3)
+        After each iteration the determinant of the eigenvectors of A-B*K is
+        compared to its previous value, when it becomes lower than rtol the
+        algorithm stops.
+    
+    max_try: integer, optionnal (default 20)
+        Maximum number of iterations to compute the gain matrix.
         
 
     return_poles: boolean, optional (default False)
@@ -1411,19 +1416,23 @@ def place_poles(A,B,poles, method="YT", maxtry=20, force_maxtry=False, return_po
     supports complex poles whereas KNV does not in its original        
     version. Only update method 0 proposed by KNV has been implemented here
     hence the name "KNV0".
-    As the solution to this problem is not unique both methods try to make
-    the vectors in X "as orthogonnal as possible to the space spanned by the
-    remaining vectors" (page 1145 KNV) in order to maximise the determinant of
-    this matrix.
-    KNV extended to complex poles is used in Matlab's place function, YT is 
+    KNV extended to complex poles is used in Matlab's "place" function, YT is 
     distributed under a non-free licence by Slicot under the name "robpole".
     It is unclear and undocumented how KNV0 has been extended to complex poles
-    (help wanted), therefore only YT supports them in this implementation.
+    (Yang Tits claim in page 14 of their paper that their method can not be
+    used to extend KNV to complex poles), therefore only YT supports them in
+    this implementation.    
+    As the solution to the problem of pole placement is not unique for MIMO 
+    systems both methods start with a tentative transfer matrix which is
+    altered in various way to increase its determinant. Both methods have been
+    proven to converge to a stable solution, however depending on the way the
+    initial transfer matrix is chosen they will converge to different
+    solutions and therefore there is absolutely no guarantee that using "KNV0" 
+    will yield results similar to Matlab's or any other implementation of these
+    algorithms.
     Using the default method "YT" should be fine in most cases, "KNV0" is only
-    provided because it is needed by "YT" in some specific cases. However as 
-    the solution to the problem of pole placement is not unique "KNV0" and "YT"
-    may yield different solutions with sometimes a better conditioning of the
-    transfer matrix X using one method or the other.
+    provided because it is needed by "YT" in some specific cases. Furthermore
+    usually converges much faster than "KNV0".
     
     
     Example
@@ -1437,11 +1446,11 @@ def place_poles(A,B,poles, method="YT", maxtry=20, force_maxtry=False, return_po
     P=np.array((-0.2,-0.5,-5.0566,-8.6659))
         
     #compute K with KNV method 0
-    K1,P1=place(A,B,P, method="KNV0",return_poles=True)
+    K1,P1=place(A,B,P, method="KNV0")
     #compute K with YT    
-    K2,P2=place(A,B,P, return_poles=True)
-    #note K1 and K2 may differ as the solution is not unique
-
+    K2,P2=place(A,B,P)
+    #force 100 iterations
+    K3,P3=place(A,B,P,rtol=-1,maxtry=100)
 
     """
 
@@ -1508,7 +1517,7 @@ def place_poles(A,B,poles, method="YT", maxtry=20, force_maxtry=False, return_po
             Q,_ = linalg.qr(pole_space_j, mode="full")
             ker_pole_j = Q[:,pole_space_j.shape[1]:]
             #we want to select one vector in ker_pole_j to build the transfer
-            #matrix transfer_matrix
+            #matrix 
             #however qr returns sometimes vectors with zeros on the same
             #line for each pole and this yields very long convergence times.
             #Or some other times a set of vectors, one with zero imaginary 
@@ -1542,16 +1551,25 @@ def place_poles(A,B,poles, method="YT", maxtry=20, force_maxtry=False, return_po
 
         if B.shape[1] > 1:  # otherwise there is nothing we can optimize from transfer_matrix computed above
             stop = False
-            while maxtry > 0 and not stop:
-                transfer_matrix_before = transfer_matrix.copy()
+            nb_try=0
+            while nb_try < max_try and not stop:
+                det_transfer_matrixb=abs(linalg.det(transfer_matrix))
                 for j in range(B.shape[0]):
                     update_xj(B,ker_pole,transfer_matrix,j,poles)
-                if not force_maxtry:
-                    det_transfer_matrix = max(sqrt(spacing(1)),linalg.det(transfer_matrix))
-                    det_transfer_matrixb = linalg.det(transfer_matrix_before)
-                    if abs((det_transfer_matrix-det_transfer_matrixb)/det_transfer_matrix) < 1e-3:  # convergence test from YT page 21                       
-                        stop = True
-                maxtry -= 1
+                det_transfer_matrix = max(sqrt(spacing(1)),abs(linalg.det(transfer_matrix)))
+                cur_rtol=abs((det_transfer_matrix-det_transfer_matrixb)/det_transfer_matrix) 
+                if cur_rtol < rtol:  # convergence test from YT page 21                       
+                    stop = True
+                nb_try += 1
+            
+            if nb_try == max_try and rtol>0:
+                # if rtol<=0 the user has probably done that on purpose, 
+                # don't annoy him
+                err_msg=("Convergence was not reached after max_try iterations.\n"
+                        "You asked for a relative tolerance of %f at best we got %f"
+                        %(rtol,cur_rtol))
+                warnings.warn(err_msg)
+            
         #reconstruct transfer_matrix to match complex conjugate pairs, ie transfer_matrix_j/transfer_matrix_j+1
         #are Re(Complex_pole), Im(Complex_pole) now and will be
         #Re-Im/Re+Im after
@@ -1580,3 +1598,4 @@ def place_poles(A,B,poles, method="YT", maxtry=20, force_maxtry=False, return_po
     gain_matrix = real(gain_matrix) 
 
     return gain_matrix, linalg.eig(A-dot(B,gain_matrix))[0]
+    
