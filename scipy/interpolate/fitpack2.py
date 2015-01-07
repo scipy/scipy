@@ -1652,7 +1652,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
         ider[1], ider[3] = pole_flat
 
-        u, v = np.ravel(u), np.ravel(v)
+        u, v = np.asarray(u).ravel(), np.asarray(v).ravel()
         if not np.all(np.diff(u) > 0.0):
             raise TypeError('u must be strictly increasing')
         if not np.all(np.diff(v) > 0.0):
@@ -1672,7 +1672,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
             raise TypeError('if pole_continuity is False, so must be '
                             'pole_flat')
 
-        r = np.ravel(r)
+        r = np.asarray(r).ravel()
         nu, tu, nv, tv, c, fp, ier = dfitpack.regrid_smth_spher(iopt, ider,
                                        u.copy(), v.copy(), r.copy(), r0, r1, s)
 

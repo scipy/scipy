@@ -285,7 +285,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         y = np.empty(min(M,N), dtype=upcast(self.dtype))
         _sparsetools.bsr_diagonal(M//R, N//C, R, C,
                                   self.indptr, self.indices,
-                                  np.ravel(self.data), y)
+                                  self.data.ravel(), y)
         return y
 
     ##########################
@@ -379,10 +379,10 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         bsr_matmat_pass2(M//R, N//C, R, C, n,
                          self.indptr.astype(idx_dtype),
                          self.indices.astype(idx_dtype),
-                         np.ravel(self.data),
+                         self.data.ravel(),
                          other.indptr.astype(idx_dtype),
                          other.indices.astype(idx_dtype),
-                         np.ravel(other.data),
+                         other.data.ravel(),
                          indptr,
                          indices,
                          data)
@@ -561,10 +561,10 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         fn(self.shape[0]//R, self.shape[1]//C, R, C,
            self.indptr.astype(idx_dtype),
            self.indices.astype(idx_dtype),
-           np.ravel(self.data),
+           self.data.ravel(),
            other.indptr.astype(idx_dtype),
            other.indices.astype(idx_dtype),
-           np.ravel(other.data),
+           other.data.ravel(),
            indptr,
            indices,
            data)

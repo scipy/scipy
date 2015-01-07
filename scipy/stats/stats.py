@@ -211,23 +211,23 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
 
 
 def _chk_asarray(a, axis):
+    a = np.asarray(a)
     if axis is None:
-        a = np.ravel(a)
+        a = a.ravel()
         outaxis = 0
     else:
-        a = np.asarray(a)
         outaxis = axis
     return a, outaxis
 
 
 def _chk2_asarray(a, b, axis):
+    a = np.asarray(a)
+    b = np.asarray(b)
     if axis is None:
-        a = np.ravel(a)
-        b = np.ravel(b)
+        a = a.ravel()
+        b = b.ravel()
         outaxis = 0
     else:
-        a = np.asarray(a)
-        b = np.asarray(b)
         outaxis = axis
     return a, b, outaxis
 
@@ -623,7 +623,7 @@ def mode(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
-    scores = np.unique(np.ravel(a))       # get ALL unique values
+    scores = np.unique(a.ravel())       # get ALL unique values
     testshape = list(a.shape)
     testshape[axis] = 1
     oldmostfreq = np.zeros(testshape, dtype=a.dtype)
@@ -1177,7 +1177,7 @@ def skewtest(a, axis=0):
     """
     a, axis = _chk_asarray(a, axis)
     if axis is None:
-        a = np.ravel(a)
+        a = a.ravel()
         axis = 0
     b2 = skew(a, axis)
     n = float(a.shape[axis])
@@ -1691,7 +1691,7 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
     default if default limits is not set.
 
     """
-    a = np.ravel(a)
+    a = np.asarray(a).ravel()
     if defaultlimits is None:
         # no range given, so use values in `a`
         data_min = a.min()

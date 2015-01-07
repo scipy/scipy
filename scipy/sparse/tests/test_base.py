@@ -2427,7 +2427,7 @@ class _TestFancyIndexing:
 
     def test_fancy_indexing_regression_3087(self):
         mat = self.spmatrix(array([[1, 0, 0], [0,1,0], [1,0,0]]))
-        desired_cols = np.ravel(mat.sum(0)) > 0
+        desired_cols = np.asarray((mat.sum(0))).ravel() > 0
         assert_equal(mat[:, desired_cols].A, [[1, 0], [0, 1], [1, 0]])
 
     def test_fancy_indexing_seq_assign(self):

@@ -2172,8 +2172,9 @@ def spleval(xck, xnew, deriv=0):
 
     """
     (xj,cvals,k) = xck
+    xnew = np.asarray(xnew)
     oldshape = np.shape(xnew)
-    xx = np.ravel(xnew)
+    xx = xnew.ravel()
     sh = cvals.shape[1:]
     res = np.empty(xx.shape + sh, dtype=cvals.dtype)
     for index in np.ndindex(*sh):
