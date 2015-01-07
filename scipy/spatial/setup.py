@@ -14,6 +14,7 @@ def configuration(parent_package='', top_path=None):
 
     config.add_data_dir('tests')
 
+    # qhull
     qhull_src = ['geom2.c', 'geom.c', 'global.c', 'io.c', 'libqhull.c',
                  'mem.c', 'merge.c', 'poly2.c', 'poly.c', 'qset.c',
                  'random.c', 'rboxlib.c', 'stat.c', 'user.c', 'usermem.c',
@@ -31,9 +32,23 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('qhull',
                          sources=['qhull.c'] + qhull_src,
                          **cfg)
-
-    config.add_extension('ckdtree', sources=['ckdtree.c'])  # FIXME: cython
-
+    # cKDTree
+    ckdtree_src = ['ckdtree_query.cxx',
+                   'ckdtree_globals.cxx']
+    ckdtree_src = [join('ckdtree', 'src', x) for x in ckdtree_src]
+    
+    ckdtree_headers = ['ckdtree_decl.h', 
+                       'ckdtree_exc.h', 
+                       'ckdtree_methods.h',
+                       'ckdtree_utils.h']
+    ckdtree_headers = [join('ckdtree', 'src', x) for x in ckdtree_headers]
+    
+    ckdtree_dep = ['ckdtree.cxx'] + ckdtree_headers + ckdtree_src
+    config.add_extension('ckdtree',
+                         sources=[join('ckdtree', 'ckdtree.cxx')] + ckdtree_src,
+                         depends=ckdtree_dep,
+                         include_dirs=inc_dirs + [join('ckdtree','src')])
+    # _distance_wrap
     config.add_extension('_distance_wrap',
         sources=[join('src', 'distance_wrap.c')],
         depends=[join('src', 'distance_impl.h')],

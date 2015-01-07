@@ -2,7 +2,10 @@ HookFile: bscript
 
 Library:
     Extension: ckdtree
-        Sources: ckdtree.c
+        Sources: 
+            ckdtree/ckdtree.cxx
+            ckdtree/src/ckdtree_query.cxx
+            ckdtree/src/ckdtree_globals.cxx
     Extension: _distance_wrap
         Sources: src/distance_wrap.c
     Extension: qhull

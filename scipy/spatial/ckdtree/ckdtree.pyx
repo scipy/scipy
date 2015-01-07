@@ -1,19 +1,74 @@
 # Copyright Anne M. Archibald 2008
-# Additional contributions by Patrick Varilly and Sturla Molden
+# Additional contributions by Patrick Varilly and Sturla Molden 2012
+# Revision by Sturla Molden 2015
+# Balanced kd-tree construction written by Jake Vanderplas for scikit-learn
 # Released under the scipy license
+
+# distutils: language = c++
+
 import numpy as np
 import scipy.sparse
 
 cimport numpy as np
-cimport libc.stdlib as stdlib
+    
+from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
+
 cimport cython
+
+from multiprocessing import cpu_count
+import threading
 
 cdef extern from "limits.h":
     long LONG_MAX
-cdef np.float64_t infinity = np.inf
+    
+cdef extern from "ckdtree_cpp_methods.h":
+    int number_of_processors
+    np.float64_t infinity
+    np.float64_t dmax(np.float64_t x, np.float64_t y)
+    np.float64_t dabs(np.float64_t x)
+    np.float64_t _distance_p(np.float64_t *x, np.float64_t *y,
+                       np.float64_t p, np.intp_t k, np.float64_t upperbound)
+infinity = np.inf
+number_of_processors = cpu_count()
 
-__all__ = ['cKDTree']
+from libcpp.vector cimport vector
 
+__all__ = ['cKDTree', 'cKDTreeNode']
+
+    
+# Borrowed references
+# ===================
+
+cdef extern from *:
+    
+    struct ckdtree:
+        pass
+       
+cdef extern from "ckdtree_cpp_decl.h":
+    struct ckdtreenode:
+        np.intp_t split_dim
+        np.intp_t children
+        np.float64_t split
+        np.intp_t start_idx
+        np.intp_t end_idx
+        ckdtreenode *less
+        ckdtreenode *greater
+        np.intp_t _less
+        np.intp_t _greater
+    
+    
+# Pickle helper functions
+# ======================
+
+def new_object(obj):
+    return obj.__new__(obj)
+ 
+cdef extern from "ckdtree_cpp_utils.h": 
+    object pickle_tree_buffer(vector[ckdtreenode] *buf)    
+    object unpickle_tree_buffer(vector[ckdtreenode] *buf, object src)
+    ckdtreenode *tree_buffer_root(vector[ckdtreenode] *buf)
+    void *tree_buffer_pointer(vector[ckdtreenode] *buf)
+    
 
 # Notes on int and 64-bit cleanliness
 # ===================================
@@ -61,122 +116,8 @@ cdef inline int list_append(list results, np.intp_t i) except -1:
         # Other platforms
         results.append(i)
     return 0
-    
 
-
-# Priority queue
-# ==============
-cdef union heapcontents:    # FIXME: Unions are not always portable, verify this 
-    np.intp_t intdata     # union is never used in an ABI dependent way.
-    char* ptrdata
-
-cdef struct heapitem:
-    np.float64_t priority
-    heapcontents contents
-
-cdef class heap(object):
-    cdef np.intp_t n
-    cdef heapitem* heap
-    cdef np.intp_t space
-    
-    def __init__(heap self, np.intp_t initial_size):
-        cdef void *tmp
-        self.space = initial_size
-        self.heap = <heapitem*> NULL
-        tmp = stdlib.malloc(sizeof(heapitem)*self.space)
-        if tmp == NULL:
-            raise MemoryError
-        self.heap = <heapitem*> tmp  
-        self.n = 0
-
-    def __dealloc__(heap self):
-        if self.heap != <heapitem*> NULL:
-            stdlib.free(self.heap)
-
-    cdef inline int _resize(heap self, np.intp_t new_space) except -1:
-        cdef void *tmp
-        if new_space < self.n:
-            raise ValueError("Heap containing %d items cannot be resized to %d" % (int(self.n), int(new_space)))
-        self.space = new_space
-        tmp = stdlib.realloc(<void*>self.heap, new_space*sizeof(heapitem))
-        if tmp == NULL:
-            raise MemoryError
-        self.heap = <heapitem*> tmp
-        return 0
-
-    @cython.cdivision(True)
-    cdef inline int push(heap self, heapitem item) except -1:
-        cdef np.intp_t i
-        cdef heapitem t
-
-        self.n += 1
-        if self.n > self.space:
-            self._resize(2 * self.space + 1)
-            
-        i = self.n - 1
-        self.heap[i] = item
         
-        while i > 0 and self.heap[i].priority < self.heap[(i - 1) // 2].priority:
-            t = self.heap[(i - 1) // 2]
-            self.heap[(i - 1) // 2] = self.heap[i]
-            self.heap[i] = t
-            i = (i - 1) // 2
-        return 0
-    
-    
-    cdef heapitem peek(heap self):
-        return self.heap[0]
-    
-    
-    @cython.cdivision(True)
-    cdef int remove(heap self) except -1:
-        cdef heapitem t
-        cdef np.intp_t i, j, k, l
-    
-        self.heap[0] = self.heap[self.n-1]
-        self.n -= 1
-        # No point in freeing up space as the heap empties.
-        # The whole heap gets deallocated at the end of any query below
-        #if self.n < self.space//4 and self.space>40: #FIXME: magic number
-        #    self._resize(self.space // 2 + 1)
-        i=0
-        j=1
-        k=2
-        while ((j<self.n and 
-                    self.heap[i].priority > self.heap[j].priority or
-                k<self.n and 
-                    self.heap[i].priority > self.heap[k].priority)):
-            if k<self.n and self.heap[j].priority>self.heap[k].priority:
-                l = k
-            else:
-                l = j
-            t = self.heap[l]
-            self.heap[l] = self.heap[i]
-            self.heap[i] = t
-            i = l
-            j = 2*i+1
-            k = 2*i+2
-        return 0
-    
-    cdef int pop(heap self, heapitem *it) except -1:
-        it[0] = self.peek()
-        self.remove()
-        return 0
-
-
-# Utility functions
-# =================
-cdef inline np.float64_t dmax(np.float64_t x, np.float64_t y):
-    if x>y:
-        return x
-    else:
-        return y
-        
-cdef inline np.float64_t dabs(np.float64_t x):
-    if x>0:
-        return x
-    else:
-        return -x
         
 # Utility for building a coo matrix incrementally
 cdef class coo_entries:
@@ -226,44 +167,6 @@ cdef class coo_entries:
         self.n_max = self.n
         return scipy.sparse.coo_matrix((self.v, (self.i, self.j)),
                                        shape=shape)
-
-
-# Measuring distances
-# ===================
-cdef inline np.float64_t _distance_p(np.float64_t *x, np.float64_t *y,
-                                     np.float64_t p, np.intp_t k,
-                                     np.float64_t upperbound):
-    """Compute the distance between x and y
-
-    Computes the Minkowski p-distance to the power p between two points.
-    If the distance**p is larger than upperbound, then any number larger
-    than upperbound may be returned (the calculation is truncated).
-    """
-    cdef np.intp_t i
-    cdef np.float64_t r, z
-    r = 0
-    if p==2:
-        for i in range(k):
-            z = x[i] - y[i]
-            r += z*z
-            if r>upperbound:
-                return r 
-    elif p==infinity:
-        for i in range(k):
-            r = dmax(r,dabs(x[i]-y[i]))
-            if r>upperbound:
-                return r
-    elif p==1:
-        for i in range(k):
-            r += dabs(x[i]-y[i])
-            if r>upperbound:
-                return r
-    else:
-        for i in range(k):
-            r += dabs(x[i]-y[i])**p
-            if r>upperbound:
-                return r
-    return r
 
 
 # Interval arithmetic
@@ -412,7 +315,7 @@ cdef class RectRectDistanceTracker(object):
     cdef int _init_stack(self) except -1:
         cdef void *tmp
         self.stack_max_size = 10
-        tmp = stdlib.malloc(sizeof(RR_stack_item) *
+        tmp = PyMem_Malloc(sizeof(RR_stack_item) *
                             self.stack_max_size)
         if tmp == NULL:
             raise MemoryError
@@ -423,7 +326,7 @@ cdef class RectRectDistanceTracker(object):
     cdef int _resize_stack(self, np.intp_t new_max_size) except -1:
         cdef void *tmp
         self.stack_max_size = new_max_size
-        tmp = stdlib.realloc(<RR_stack_item*> self.stack,
+        tmp = PyMem_Realloc(<RR_stack_item*> self.stack,
                              new_max_size * sizeof(RR_stack_item))
         if tmp == NULL:
             raise MemoryError
@@ -431,8 +334,7 @@ cdef class RectRectDistanceTracker(object):
         return 0
     
     cdef int _free_stack(self) except -1:
-        if self.stack != <RR_stack_item*> NULL:
-            stdlib.free(self.stack)
+        PyMem_Free(self.stack)
         return 0
     
 
@@ -520,12 +422,12 @@ cdef class RectRectDistanceTracker(object):
 
     
     cdef inline int push_less_of(self, np.intp_t which,
-                                 innernode *node) except -1:
+                                 ckdtreenode *node) except -1:
         return self.push(which, LESS, node.split_dim, node.split)
 
     
     cdef inline int push_greater_of(self, np.intp_t which,
-                                    innernode *node) except -1:
+                                    ckdtreenode *node) except -1:
         return self.push(which, GREATER, node.split_dim, node.split)
 
     
@@ -592,7 +494,7 @@ cdef class PointRectDistanceTracker(object):
     cdef int _init_stack(self) except -1:
         cdef void *tmp
         self.stack_max_size = 10
-        tmp = stdlib.malloc(sizeof(RP_stack_item) *
+        tmp = PyMem_Malloc(sizeof(RP_stack_item) *
                             self.stack_max_size)
         if tmp == NULL:
             raise MemoryError
@@ -603,7 +505,7 @@ cdef class PointRectDistanceTracker(object):
     cdef int _resize_stack(self, np.intp_t new_max_size) except -1:
         cdef void *tmp
         self.stack_max_size = new_max_size
-        tmp = stdlib.realloc(<RP_stack_item*> self.stack,
+        tmp = PyMem_Realloc(<RP_stack_item*> self.stack,
                               new_max_size * sizeof(RP_stack_item))
         if tmp == NULL:
             raise MemoryError
@@ -611,8 +513,7 @@ cdef class PointRectDistanceTracker(object):
         return 0
     
     cdef int _free_stack(self) except -1:
-        if self.stack != <RP_stack_item*> NULL:
-            stdlib.free(self.stack)
+        PyMem_Free(self.stack)
         return 0
 
     cdef init(self, np.float64_t *pt, Rectangle rect,
@@ -688,11 +589,11 @@ cdef class PointRectDistanceTracker(object):
         return 0
 
     
-    cdef inline int push_less_of(self, innernode* node) except -1:
+    cdef inline int push_less_of(self, ckdtreenode* node) except -1:
         return self.push(LESS, node.split_dim, node.split)
 
     
-    cdef inline int push_greater_of(self, innernode* node) except -1:
+    cdef inline int push_greater_of(self, ckdtreenode* node) except -1:
         return self.push(GREATER, node.split_dim, node.split)
 
     
@@ -708,33 +609,196 @@ cdef class PointRectDistanceTracker(object):
         
         return 0
 
-# Tree structure
-# ==============
-cdef struct innernode:
-    np.intp_t split_dim
-    np.intp_t children
-    np.float64_t split
-    innernode* less
-    innernode* greater
+
+
+# Splitting routines for a balanced kd-tree
+# Code originally written by Jake Vanderplas for scikit-learn
+
+cdef inline void index_swap(np.intp_t *arr, np.intp_t i1, np.intp_t i2):
+    """swap the values at index i1 and i2 of arr"""
+    cdef np.intp_t tmp = arr[i1]
+    arr[i1] = arr[i2]
+    arr[i2] = tmp
     
-cdef struct leafnode:
-    np.intp_t split_dim
-    np.intp_t children
-    np.intp_t start_idx
-    np.intp_t end_idx
+cdef int partition_node_indices(np.float64_t *data,
+                                np.intp_t *node_indices,
+                                np.intp_t split_dim,
+                                np.intp_t split_index,
+                                np.intp_t n_features,
+                                np.intp_t n_points) except -1:
+    """Partition points in the node into two equal-sized groups.
+    Upon return, the values in node_indices will be rearranged such that
+    (assuming numpy-style indexing):
+        data[node_indices[0:split_index], split_dim]
+          <= data[node_indices[split_index], split_dim]
+    and
+        data[node_indices[split_index], split_dim]
+          <= data[node_indices[split_index:n_points], split_dim]
+    The algorithm is essentially a partial in-place quicksort around a
+    set pivot.
+    Parameters
+    ----------
+    data : double pointer
+        Pointer to a 2D array of the training data, of shape [N, n_features].
+        N must be greater than any of the values in node_indices.
+    node_indices : int pointer
+        Pointer to a 1D array of length n_points.  This lists the indices of
+        each of the points within the current node.  This will be modified
+        in-place.
+    split_dim : int
+        the dimension on which to split.  This will usually be computed via
+        the routine ``find_node_split_dim``
+    split_index : int
+        the index within node_indices around which to split the points.
+    Returns
+    -------
+    status : int
+        integer exit status.  On return, the contents of node_indices are
+        modified as noted above.
+    """
+    cdef np.intp_t left, right, midindex, i
+    cdef np.float_t d1, d2
+    left = 0
+    right = n_points - 1
+    
+    while True:
+        midindex = left
+        for i in range(left, right):
+            d1 = data[node_indices[i] * n_features + split_dim]
+            d2 = data[node_indices[right] * n_features + split_dim]
+            if d1 < d2:
+                index_swap(node_indices, i, midindex)
+                midindex += 1
+        index_swap(node_indices, midindex, right)
+        if midindex == split_index:
+            break
+        elif midindex < split_index:
+            left = midindex + 1
+        else:
+            right = midindex - 1
 
+    return 0
+    
+    
 
-# this is the standard trick for variable-size arrays:
-# malloc sizeof(nodeinfo)+self.m*sizeof(np.float64_t) bytes.
+# Tree structure exposed to Python
+# ================================
 
-cdef struct nodeinfo:
-    innernode* node
-    np.float64_t side_distances[0]  # FIXME: Only valid in C99, invalid C++ and C89
+cdef class cKDTreeNode:
+    """
+    class cKDTreeNode
+    
+    This class exposes a Python view of a node in the cKDTree class and contains
+    the following read-only attributes:
+    
+    level : int
+        The depth of the node. 0 is the level of the root node.
+        
+    split_dim : int
+        The dimension along which this node is split. If this value is -1  
+        the node is a leafnode in the kd-tree. Leafnodes are not split further
+        and scanned by brute force.
+        
+    split : float
+        The value used to separate split this node. Points with value >= split
+        in the split_dim dimension are sorted to the 'greater' subnode 
+        whereas those with value < split are sorted to the 'lesser' subnode.
+        
+    children : int
+        The number of data points sorted to this node.
+    
+    data_points : ndarray of float64
+        An array with the data points sorted to this node.
+    
+    indices : ndarray of intp
+        An array with the indices of the data points sorted to this node. The
+        indices refer to the position in the data set used to construct the
+        kd-tree.
+    
+    lesser : cKDTreeNode or None
+        Subnode with the 'lesser' data points. This attribute is None for
+        leafnodes.
+        
+    greater : cKDTreeNode or None
+        Subnode with the 'greater' data points. This attribute is None for
+        leafnodes.
+    """
+    cdef:
+        readonly np.intp_t    level
+        readonly np.intp_t    split_dim
+        readonly np.intp_t    children
+        readonly np.float64_t split
+        ckdtreenode           *_node
+        np.ndarray            _data
+        np.ndarray            _indices
+        
+    cdef void _setup(cKDTreeNode self):
+        self.split_dim = self._node.split_dim
+        self.children = self._node.children
+        self.split = self._node.split
+        
+    property data_points:   
+        def __get__(cKDTreeNode self):
+            return self._data[self.indices,:]
+                     
+    property indices:
+        def __get__(cKDTreeNode self):
+            cdef np.intp_t i, start, stop
+            if self.split_dim == -1:
+                start = self._node.start_idx
+                stop = self._node.end_idx
+                return self._indices[start:stop]
+            else:
+                return np.hstack([self.lesser.indices, 
+                           self.greater.indices])
+                           
+    property lesser:
+        def __get__(cKDTreeNode self):
+            if self.split_dim == -1:
+                return None
+            else:
+                n = cKDTreeNode()
+                n._node = self._node.less
+                n._data = self._data
+                n._indices = self._indices
+                n.level = self.level + 1
+                n._setup()
+                return n
+                
+    property greater:
+        def __get__(cKDTreeNode self):
+            if self.split_dim == -1:
+                return None
+            else:
+                n = cKDTreeNode()
+                n._node = self._node.greater
+                n._data = self._data
+                n._indices = self._indices
+                n.level = self.level + 1
+                n._setup()
+                return n
 
+    
+# Main cKDTree class
+# ==================
 
-# Main class
-# ==========
-cdef class cKDTree:
+cdef extern from "ckdtree_cpp_methods.h":
+
+    # External query methods in C++. These will internally
+    # release the GIL to avoid locking up the interpreter.
+       
+    object query_knn(const ckdtree *self, 
+                     np.float64_t *dd, 
+                     np.intp_t    *ii, 
+                     const np.float64_t *xx,
+                     const np.intp_t    n,
+                     const np.intp_t    k, 
+                     const np.float64_t eps, 
+                     const np.float64_t p, 
+                     const np.float64_t distance_upper_bound)         
+                     
+                      
+cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     """
     cKDTree(data, int leafsize=10)
 
@@ -769,28 +833,48 @@ cdef class cKDTree:
         The n data points of dimension m to be indexed. This array is 
         not copied unless this is necessary to produce a contiguous 
         array of doubles, and so modifying this data will result in 
-        bogus results.
-    leafsize : positive integer
+        bogus results. The data are also copied if the kd-tree is built
+        with copy_data=True.
+    leafsize : positive integer, optional
         The number of points at which the algorithm switches over to
-        brute-force.
-
+        brute-force. Default: 16.
+    compact_nodes : bool, optional    
+        If True, the kd-tree is built to shrink the hyperrectangles to
+        the actual data range. This usually gives a more compact tree and 
+        faster queries at the expense of longer build time. Default: True.
+    copy_data : bool, optional
+        If True the data is always copied to protect the kd-tree against 
+        data corruption. Default: False.
+    balanced_tree : bool, optional    
+        If True, the median is used to split the hyperrectangles instead of 
+        the midpoint. This usually gives a more compact tree and 
+        faster queries at the expense of longer build time. Default: True.
     """
 
-    cdef innernode* tree 
-    cdef readonly np.ndarray data
-    cdef np.float64_t* raw_data
-    cdef readonly np.intp_t n, m
-    cdef readonly np.intp_t leafsize
-    cdef readonly np.ndarray maxes
-    cdef np.float64_t* raw_maxes
-    cdef readonly np.ndarray mins
-    cdef np.float64_t* raw_mins
-    cdef np.ndarray indices
-    cdef np.intp_t* raw_indices
-
-    def __init__(cKDTree self, data, np.intp_t leafsize=10):
-        cdef np.ndarray[np.float64_t, ndim=2] data_arr = \
-            np.ascontiguousarray(data, dtype=np.float64)
+    cdef:
+        vector[ckdtreenode]      *tree_buffer
+        ckdtreenode              *ctree 
+        readonly cKDTreeNode     tree 
+        readonly np.ndarray      data
+        np.float64_t             *raw_data
+        readonly np.intp_t       n, m
+        readonly np.intp_t       leafsize
+        readonly np.ndarray      maxes
+        np.float64_t             *raw_maxes
+        readonly np.ndarray      mins
+        np.float64_t             *raw_mins
+        readonly np.ndarray      indices
+        np.intp_t                *raw_indices
+        np.ndarray               _median_workspace
+    
+    
+    def __init__(cKDTree self, data, np.intp_t leafsize=16, compact_nodes=True, copy_data=False, balanced_tree=True):
+        cdef np.ndarray[np.float64_t, ndim=2] data_arr
+        cdef np.float64_t *tmp
+        cdef int _median
+        data_arr = np.ascontiguousarray(data, dtype=np.float64)
+        if copy_data and (data_arr is data):
+            data_arr = data_arr.copy()
         self.data = data_arr
         self.n = data_arr.shape[0]
         self.m = data_arr.shape[1]
@@ -801,29 +885,90 @@ cdef class cKDTree:
         self.mins = np.ascontiguousarray(np.amin(self.data,axis=0), dtype=np.float64)
         self.indices = np.ascontiguousarray(np.arange(self.n,dtype=np.intp))
 
-        self.raw_data = <np.float64_t*>np.PyArray_DATA(self.data)
-        self.raw_maxes = <np.float64_t*>np.PyArray_DATA(self.maxes)
-        self.raw_mins = <np.float64_t*>np.PyArray_DATA(self.mins)
-        self.raw_indices = <np.intp_t*>np.PyArray_DATA(self.indices)
+        self.raw_data = <np.float64_t*> np.PyArray_DATA(self.data)
+        self.raw_maxes = <np.float64_t*> np.PyArray_DATA(self.maxes)
+        self.raw_mins = <np.float64_t*> np.PyArray_DATA(self.mins)
+        self.raw_indices = <np.intp_t*> np.PyArray_DATA(self.indices)
 
-        self.tree = self.__build(0, self.n, self.raw_maxes, self.raw_mins)
+        _median = 1 if balanced_tree else 0
+        if _median:
+            self._median_workspace = np.zeros(self.n)
+        
+        self.tree_buffer = new vector[ckdtreenode]()
+        
+        if not compact_nodes:
+             self.__build(0, self.n, self.raw_maxes, self.raw_mins, _median)
+        else:
+            try:
+                tmp = <np.float64_t*> PyMem_Malloc(self.m*2*sizeof(np.float64_t))
+                if tmp == NULL: raise MemoryError()
+                self.__build_compact(0, self.n, tmp, tmp+self.m, _median)
+            finally:
+                PyMem_Free(tmp)
+        self._median_workspace = None
+        
+        # set up the tree structure pointers
+        self.ctree = tree_buffer_root(self.tree_buffer)
+        self._post_init(self.ctree)
+        
+        # make the tree viewable from Python
+        self.tree = cKDTreeNode()
+        self.tree._node = self.ctree
+        self.tree._data = self.data
+        self.tree._indices = self.indices
+        self.tree.level = 0
+        self.tree._setup()
+        
+                
+    cdef int _post_init(cKDTree self, ckdtreenode *node) except -1:
+        # recurse the tree and re-initialize
+        # "less" and "greater" fields
+        if node.split_dim == -1:
+            # leafnode
+            node.less = NULL
+            node.greater = NULL
+        else:
+            node.less = self.ctree + node._less
+            node.greater = self.ctree + node._greater
+            self._post_init(node.less)
+            self._post_init(node.greater)
+        return 0
+        
 
-    cdef innernode* __build(cKDTree self, np.intp_t start_idx, np.intp_t end_idx,
-                            np.float64_t* maxes, np.float64_t* mins) except? <innernode*> NULL:
-        cdef leafnode* n
-        cdef innernode* ni
-        cdef np.intp_t i, j, t, p, q, d
-        cdef np.float64_t size, split, minval, maxval
-        cdef np.float64_t*mids
-        if end_idx-start_idx<=self.leafsize:
-            n = <leafnode*>stdlib.malloc(sizeof(leafnode))
-            if n == <leafnode*> NULL: 
-                raise MemoryError
+    def __deallocate__(cKDTree self):
+        del self.tree_vector
+
+
+    @cython.cdivision(True)
+    cdef np.intp_t __build(cKDTree self, np.intp_t start_idx, np.intp_t end_idx,
+                       np.float64_t *maxes, np.float64_t *mins, int _median) except -1:
+        cdef:
+            
+            ckdtreenode new_node
+            np.intp_t   node_index
+            np.intp_t   _less, _greater
+            ckdtreenode *n
+            ckdtreenode *root
+            
+            np.intp_t i, j, t, p, q, d
+            np.float64_t size, split, minval, maxval
+            np.float64_t *mids
+            np.float64_t *tmp_data_point
+        
+        # put a new node into the node stack
+        self.tree_buffer.push_back(new_node)
+        node_index = self.tree_buffer.size() - 1
+        root = tree_buffer_root(self.tree_buffer)
+        n = root + node_index
+                    
+        if end_idx-start_idx <= self.leafsize:
+            # below brute force limit
+            # return leafnode
             n.split_dim = -1
             n.children = end_idx - start_idx
             n.start_idx = start_idx
             n.end_idx = end_idx
-            return <innernode*>n
+            return node_index
         else:
             d = 0 
             size = 0
@@ -835,17 +980,32 @@ cdef class cKDTree:
             minval = mins[d]
             if maxval==minval:
                 # all points are identical; warn user?
-                n = <leafnode*>stdlib.malloc(sizeof(leafnode))
-                if n == <leafnode*> NULL: 
-                    raise MemoryError
+                # return leafnode
                 n.split_dim = -1
                 n.children = end_idx - start_idx
                 n.start_idx = start_idx
                 n.end_idx = end_idx
-                return <innernode*>n
+                return node_index
+                
+            # construct new inner node
+            if _median:
+                # split on median to create a balanced tree
+                # adopted from scikit-learn
+                i = (end_idx-start_idx)//2                                
+                partition_node_indices(self.raw_data,
+                                self.raw_indices + start_idx,
+                                d,
+                                i,
+                                self.m,
+                                end_idx-start_idx)               
+                p = start_idx + i
+                split = self.raw_data[self.raw_indices[p]*self.m+d]
 
-            split = (maxval+minval)/2
-
+            else:
+                # split with the sliding midpoint rule
+                # this is the default
+                split = (maxval+minval)/2
+    
             p = start_idx
             q = end_idx-1
             while p<=q:
@@ -886,272 +1046,187 @@ cdef class cKDTree:
                 self.raw_indices[end_idx-1] = self.raw_indices[j]
                 self.raw_indices[j] = t
                 p = end_idx-1
-                q = end_idx-2
-
-            # construct new node representation
-            ni = <innernode*>stdlib.malloc(sizeof(innernode))
-            if ni ==  <innernode*> NULL:
-                raise MemoryError
+                q = end_idx-2  
 
             try:
-                mids = <np.float64_t*>stdlib.malloc(sizeof(np.float64_t)*self.m)
+                mids = <np.float64_t*> PyMem_Malloc(sizeof(np.float64_t)*self.m)
                 if mids == <np.float64_t*> NULL:
                     raise MemoryError
                         
                 for i in range(self.m):
                     mids[i] = maxes[i]
                 mids[d] = split
-                ni.less = self.__build(start_idx,p,mids,mins)
-
+                _less = self.__build(start_idx,p,mids,mins,_median)
+                
                 for i in range(self.m):
                     mids[i] = mins[i]
                 mids[d] = split
-                ni.greater = self.__build(p,end_idx,maxes,mids)
-
-                ni.children = ni.less.children + ni.greater.children
+                _greater = self.__build(p,end_idx,maxes,mids,_median)
+                
+                root = tree_buffer_root(self.tree_buffer)
+                n = root + node_index # recompute because std::vector can reallocate
+                n._less = _less
+                n._greater = _greater
+                n.less = root + _less
+                n.greater = root + _greater
+                n.children = n.less.children + n.greater.children                
+                n.split_dim = d
+                n.split = split
             
-            except:
-                # free ni if it cannot be returned
-                if ni !=  <innernode*> NULL:
-                    stdlib.free(mids)
-                if mids != <np.float64_t*> NULL:
-                    stdlib.free(mids)
-                raise
+            finally:
+                PyMem_Free(mids)
+
+            return node_index
+
+
+    @cython.cdivision(True)
+    cdef np.intp_t __build_compact(cKDTree self, np.intp_t start_idx, 
+            np.intp_t end_idx, np.float64_t *mins, np.float64_t *maxes, 
+              int _median) except -1:
+
+        cdef: 
+            ckdtreenode new_node
+            np.intp_t   node_index
+            np.intp_t   _less, _greater
+            ckdtreenode *n
+            ckdtreenode *root
+            
+            np.intp_t i, j, t, p, q, d
+            np.float64_t size, split, minval, maxval
+            np.float64_t tmp
+            np.float64_t *tmp_data_point
+                
+        # put a new node into the node stack
+        self.tree_buffer.push_back(new_node)
+        node_index = self.tree_buffer.size() - 1
+        root = tree_buffer_root(self.tree_buffer)
+        n = root + node_index        
+        
+        if end_idx-start_idx <= self.leafsize:
+            # below brute force limit
+            # return leafnode
+            n.split_dim = -1
+            n.children = end_idx - start_idx
+            n.start_idx = start_idx
+            n.end_idx = end_idx
+            return node_index
+        else:
+            d = 0 
+            size = 0
+            # Recompute hyperrectangle bounds. This should lead to a more 
+            # compact kd-tree but comes at the expense of larger construction
+            # time. However, construction time is usually dwarfed by the
+            # query time by orders of magnitude.
+            tmp_data_point = self.raw_data + self.raw_indices[start_idx]*self.m
+            for i in range(self.m):
+                maxes[i] = tmp_data_point[i]
+                mins[i] = tmp_data_point[i]
+            for j in range(start_idx+1,end_idx):
+                tmp_data_point = self.raw_data + self.raw_indices[j]*self.m
+                for i in range(self.m):
+                    tmp = tmp_data_point[i]
+                    maxes[i] = maxes[i] if (maxes[i] > tmp) else tmp
+                    mins[i] = mins[i] if (mins[i] < tmp) else tmp
+            # split on the dimension with largest spread        
+            for i in range(self.m):
+                if maxes[i]-mins[i] > size:
+                    d = i
+                    size = maxes[i]-mins[i]
+            maxval = maxes[d]
+            minval = mins[d]
+            if maxval==minval:
+                # all points are identical; warn user?
+                # return leafnode
+                n.split_dim = -1
+                n.children = end_idx - start_idx
+                n.start_idx = start_idx
+                n.end_idx = end_idx
+                return node_index
+                
+            # construct new inner node
+            
+            if _median:  
+                # split on median to create a balanced tree
+                # adopted from scikit-learn
+                i = (end_idx-start_idx)//2                                
+                partition_node_indices(self.raw_data,
+                                self.raw_indices + start_idx,
+                                d,
+                                i,
+                                self.m,
+                                end_idx-start_idx)               
+                p = start_idx + i
+                split = self.raw_data[self.raw_indices[p]*self.m+d]
+             
             else:
-                if mids != <np.float64_t*> NULL:
-                    stdlib.free(mids)
+                # split with sliding midpoint rule
+                split = (maxval+minval)/2
+    
+            p = start_idx
+            q = end_idx-1
+            while p<=q:
+                if self.raw_data[self.raw_indices[p]*self.m+d]<split:
+                    p+=1
+                elif self.raw_data[self.raw_indices[q]*self.m+d]>=split:
+                    q-=1
+                else:
+                    t = self.raw_indices[p]
+                    self.raw_indices[p] = self.raw_indices[q]
+                    self.raw_indices[q] = t
+                    p+=1
+                    q-=1
+    
+            # slide midpoint if necessary
+            if p==start_idx:
+                # no points less than split
+                j = start_idx
+                split = self.raw_data[self.raw_indices[j]*self.m+d]
+                for i in range(start_idx+1, end_idx):
+                    if self.raw_data[self.raw_indices[i]*self.m+d]<split:
+                        j = i
+                        split = self.raw_data[self.raw_indices[j]*self.m+d]
+                t = self.raw_indices[start_idx]
+                self.raw_indices[start_idx] = self.raw_indices[j]
+                self.raw_indices[j] = t
+                p = start_idx+1
+                q = start_idx
+            elif p==end_idx:
+                # no points greater than split
+                j = end_idx-1
+                split = self.raw_data[self.raw_indices[j]*self.m+d]
+                for i in range(start_idx, end_idx-1):
+                    if self.raw_data[self.raw_indices[i]*self.m+d]>split:
+                        j = i
+                        split = self.raw_data[self.raw_indices[j]*self.m+d]
+                t = self.raw_indices[end_idx-1]
+                self.raw_indices[end_idx-1] = self.raw_indices[j]
+                self.raw_indices[j] = t
+                p = end_idx-1
+                q = end_idx-2  
 
-            ni.split_dim = d
-            ni.split = split
-            return ni
-                    
-    cdef __free_tree(cKDTree self, innernode* node):
-        if node.split_dim!=-1:
-            self.__free_tree(node.less)
-            self.__free_tree(node.greater)
-        stdlib.free(node)
-
-    def __dealloc__(cKDTree self):
-        if <np.intp_t>(self.tree) == 0:
-            # should happen only if __init__ was never called
-            return
-        self.__free_tree(self.tree)
+            _less = self.__build_compact(start_idx,p,mins,maxes,_median)
+            _greater = self.__build_compact(p,end_idx,mins,maxes,_median)
+                        
+            root = tree_buffer_root(self.tree_buffer)
+            n = root + node_index # recompute because std::vector can reallocate
+            n._less = _less
+            n._greater = _greater
+            n.less = root + _less
+            n.greater = root + _greater
+            n.children = n.less.children + n.greater.children                
+            n.split_dim = d
+            n.split = split
+            
+            return node_index
 
     # -----
     # query
     # -----
-
-    cdef int __query(cKDTree self, 
-            np.float64_t*result_distances, 
-            np.intp_t*result_indices, 
-            np.float64_t*x, 
-            np.intp_t k, 
-            np.float64_t eps, 
-            np.float64_t p, 
-            np.float64_t distance_upper_bound) except -1:
-
-        cdef heap q
-        cdef heap neighbors
-
-        cdef np.intp_t i, j
-        cdef np.float64_t t
-        cdef nodeinfo* inf
-        cdef nodeinfo* inf2
-        cdef np.float64_t d
-        cdef np.float64_t epsfac
-        cdef np.float64_t min_distance
-        cdef np.float64_t far_min_distance
-        cdef heapitem it, it2, neighbor
-        cdef leafnode* node
-        cdef innernode* inode
-        cdef innernode* near
-        cdef innernode* far
-        cdef np.float64_t* side_distances
-
-
-        # priority queue for chasing nodes
-        # entries are:
-        #  minimum distance between the cell and the target
-        #  distances between the nearest side of the cell and the target
-        #  the head node of the cell
-        q = heap(12)
-
-        # priority queue for the nearest neighbors
-        # furthest known neighbor first
-        # entries are (-distance**p, i)
-        neighbors = heap(k)
-
-        inf = inf2 = <nodeinfo*> NULL    
-
-        try:
-            # set up first nodeinfo
-            inf = <nodeinfo*>stdlib.malloc(sizeof(nodeinfo)+self.m*sizeof(np.float64_t))
-            if inf == <nodeinfo*> NULL:
-                raise MemoryError
-            inf.node = self.tree
-            for i in range(self.m):
-                inf.side_distances[i] = 0
-                t = x[i]-self.raw_maxes[i]
-                if t>inf.side_distances[i]:
-                    inf.side_distances[i] = t
-                else:
-                    t = self.raw_mins[i]-x[i]
-                    if t>inf.side_distances[i]:
-                        inf.side_distances[i] = t
-                if p!=1 and p!=infinity:
-                    inf.side_distances[i]=inf.side_distances[i]**p
-
-            # compute first distance
-            min_distance = 0.
-            for i in range(self.m):
-                if p==infinity:
-                    min_distance = dmax(min_distance,inf.side_distances[i])
-                else:
-                    min_distance += inf.side_distances[i]
-
-            # fiddle approximation factor
-            if eps==0:
-                epsfac=1
-            elif p==infinity:
-                epsfac = 1/(1+eps)
-            else:
-                epsfac = 1/(1+eps)**p
-
-            # internally we represent all distances as distance**p
-            if p!=infinity and distance_upper_bound!=infinity:
-                distance_upper_bound = distance_upper_bound**p
-
-            while True:
-                if inf.node.split_dim==-1:
-                    node = <leafnode*>inf.node
-
-                    # brute-force
-                    for i in range(node.start_idx,node.end_idx):
-                        d = _distance_p(
-                                self.raw_data+self.raw_indices[i]*self.m,
-                                x,p,self.m,distance_upper_bound)
-                            
-                        if d<distance_upper_bound:
-                            # replace furthest neighbor
-                            if neighbors.n==k:
-                                neighbors.remove()
-                            neighbor.priority = -d
-                            neighbor.contents.intdata = self.raw_indices[i]
-                            neighbors.push(neighbor)
-
-                            # adjust upper bound for efficiency
-                            if neighbors.n==k:
-                                distance_upper_bound = -neighbors.peek().priority
-                    
-                    # done with this node, get another
-                    stdlib.free(inf)
-                    inf = <nodeinfo*> NULL
-
-                    if q.n==0:
-                        # no more nodes to visit
-                        break
-                    else:
-                        q.pop(&it)
-                        inf = <nodeinfo*>it.contents.ptrdata
-                        min_distance = it.priority
-                else:
-                    inode = <innernode*>inf.node
-
-                    # we don't push cells that are too far onto the queue at all,
-                    # but since the distance_upper_bound decreases, we might get 
-                    # here even if the cell's too far
-                    if min_distance>distance_upper_bound*epsfac:
-
-                        # since this is the nearest cell, we're done, bail out
-                        stdlib.free(inf)
-                        inf = <nodeinfo*> NULL
-
-                        # free all the nodes still on the heap
-                        for i in range(q.n):
-                            stdlib.free(q.heap[i].contents.ptrdata)
-                            q.heap[i].contents.ptrdata = <char*> NULL
-                        break
-
-                    # set up children for searching
-                    if x[inode.split_dim]<inode.split:
-                        near = inode.less
-                        far = inode.greater
-                    else:
-                        near = inode.greater
-                        far = inode.less
-
-                    # near child is at the same distance as the current node
-                    # we're going here next, so no point pushing it on the queue
-                    # no need to recompute the distance or the side_distances
-                    inf.node = near
-
-                    # far child is further by an amount depending only
-                    # on the split value; compute its distance and side_distances
-                    # and push it on the queue if it's near enough
-                    inf2 = <nodeinfo*>stdlib.malloc(sizeof(nodeinfo)+self.m*sizeof(np.float64_t))
-                    if inf2 == <nodeinfo*> NULL:
-                        raise MemoryError
-            
-                    it2.contents.ptrdata = <char*> inf2
-                    inf2.node = far
-                    # most side distances unchanged
-                    for i in range(self.m):
-                        inf2.side_distances[i] = inf.side_distances[i]
-
-                    # one side distance changes
-                    # we can adjust the minimum distance without recomputing
-                    if p == infinity:
-                        # we never use side_distances in the l_infinity case
-                        # inf2.side_distances[inode.split_dim] = dabs(inode.split-x[inode.split_dim])
-                        far_min_distance = dmax(min_distance, dabs(inode.split-x[inode.split_dim]))
-                    elif p == 1:
-                        inf2.side_distances[inode.split_dim] = dabs(inode.split-x[inode.split_dim])
-                        far_min_distance = min_distance - \
-                            inf.side_distances[inode.split_dim] + \
-                            inf2.side_distances[inode.split_dim]
-                    else:
-                        inf2.side_distances[inode.split_dim] = dabs(inode.split - 
-                                                                    x[inode.split_dim])**p
-                        far_min_distance = min_distance - \
-                            inf.side_distances[inode.split_dim] + \
-                            inf2.side_distances[inode.split_dim]
-
-                    it2.priority = far_min_distance
-
-
-                    # far child might be too far, if so, don't bother pushing it
-                    if far_min_distance<=distance_upper_bound*epsfac:
-                        q.push(it2)
-                    else:
-                        stdlib.free(inf2)
-                        inf2 = <nodeinfo*> NULL
-                        # just in case
-                        it2.contents.ptrdata = <char*> NULL
-
-            # fill output arrays with sorted neighbors 
-            for i in range(neighbors.n-1,-1,-1):
-                neighbors.pop(&neighbor)
-                result_indices[i] = neighbor.contents.intdata
-                if p==1 or p==infinity:
-                    result_distances[i] = -neighbor.priority
-                else:
-                    result_distances[i] = (-neighbor.priority)**(1./p)
-
-            inf = inf2 = <nodeinfo*> NULL
-
-        finally:
-            if inf2 != <nodeinfo*> NULL:
-                stdlib.free(inf2)
-
-            if inf != <nodeinfo*> NULL:
-                stdlib.free(inf)
-
-        return 0
-
-
+    
     @cython.boundscheck(False)
     def query(cKDTree self, object x, np.intp_t k=1, np.float64_t eps=0,
-              np.float64_t p=2, np.float64_t distance_upper_bound=infinity):
+              np.float64_t p=2, np.float64_t distance_upper_bound=infinity,
+              np.intp_t n_jobs=1):
         """query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf)
         
         Query the kd-tree for nearest neighbors
@@ -1176,7 +1251,10 @@ cdef class cKDTree:
             tree searches, so if you are doing a series of nearest-neighbor
             queries, it may help to supply the distance to the nearest neighbor
             of the most recent point.
-
+        n_jobs : int, optional
+            Number of jobs to schedule for parallel processing. If -1 is given
+            all processors are used. Default: 1.
+                        
         Returns
         -------
         d : array of floats
@@ -1192,8 +1270,10 @@ cdef class cKDTree:
         cdef np.ndarray[np.intp_t, ndim=2] ii
         cdef np.ndarray[np.float64_t, ndim=2] dd
         cdef np.ndarray[np.float64_t, ndim=2] xx
-        cdef np.intp_t c, n, i, j
-        cdef np.ndarray x_arr = np.asarray(x, dtype=np.float64)
+                
+        cdef np.intp_t c, n, i, j, CHUNK
+        
+        x_arr = np.asarray(x, dtype=np.float64)
         if x_arr.ndim == 0 or x_arr.shape[x_arr.ndim - 1] != self.m:
             raise ValueError("x must consist of vectors of length %d but "
                              "has shape %s" % (int(self.m), np.shape(x)))
@@ -1211,10 +1291,45 @@ cdef class cKDTree:
         dd.fill(infinity)
         ii = np.empty((n,k),dtype=np.intp)
         ii.fill(self.n)
-        for c in range(n):
-            self.__query(&dd[c, 0], &ii[c, 0], &xx[c, 0],
-                         k, eps, p, distance_upper_bound)
-
+        
+        # Do the query in an external C++ function. 
+        # The GIL will be released in the external query function.
+        
+        if (n_jobs == -1): 
+            n_jobs = number_of_processors
+        
+        if n_jobs > 1:
+            # static scheduling without load balancing is good enough
+            CHUNK = n//n_jobs if n//n_jobs else n
+                             
+            def _thread_func(self,_dd,_ii,_xx,_j,n,CHUNK,p,k,eps,dub):
+                cdef np.intp_t j = _j
+                cdef np.ndarray[np.intp_t,ndim=2] ii = _ii
+                cdef np.ndarray[np.float64_t,ndim=2] dd = _dd
+                cdef np.ndarray[np.float64_t,ndim=2] xx = _xx
+                cdef np.intp_t start = j*CHUNK
+                cdef np.intp_t stop = start + CHUNK
+                stop = n if stop > n else stop
+                if start < n:
+                    query_knn(<ckdtree*>self, &dd[start,0], &ii[start,0], &xx[start,0], 
+                          stop-start, k, eps, p, dub)
+            
+            # There might be n_jobs+1 threads spawned here, but only n_jobs of 
+            # them will do significant work.
+            threads = [threading.Thread(target=_thread_func, 
+                        args=(self,dd,ii,xx,j,n,CHUNK,p,k,eps,distance_upper_bound))
+                             for j in range(1+(n//CHUNK))]
+            # Set the daemon flag so the process can be aborted, start all threads
+            # and wait for completion.
+            for t in threads:
+                t.daemon = True
+                t.start()
+            for t in threads: 
+                t.join()
+        else:
+            query_knn(<ckdtree*>self, &dd[0,0], &ii[0,0], &xx[0,0], 
+                n, k, eps, p, distance_upper_bound)
+                
         if single:
             if k==1:
                 if sizeof(long) < sizeof(np.intp_t):
@@ -1258,12 +1373,12 @@ cdef class cKDTree:
     # ----------------
     cdef int __query_ball_point_traverse_no_checking(cKDTree self,
                                                      list results,
-                                                     innernode* node) except -1:
-        cdef leafnode* lnode
+                                                     ckdtreenode *node) except -1:
+        cdef ckdtreenode *lnode
         cdef np.intp_t i
 
         if node.split_dim == -1:  # leaf node
-            lnode = <leafnode*> node
+            lnode = node
             for i in range(lnode.start_idx, lnode.end_idx):
                 list_append(results, self.raw_indices[i])
         else:
@@ -1276,9 +1391,9 @@ cdef class cKDTree:
     @cython.cdivision(True)
     cdef int __query_ball_point_traverse_checking(cKDTree self,
                                                   list results,
-                                                  innernode* node,
+                                                  ckdtreenode *node,
                                                   PointRectDistanceTracker tracker) except -1:
-        cdef leafnode* lnode
+        cdef ckdtreenode *lnode
         cdef np.float64_t d
         cdef np.intp_t i
 
@@ -1287,7 +1402,7 @@ cdef class cKDTree:
         elif tracker.max_distance < tracker.upper_bound / tracker.epsfac:
             self.__query_ball_point_traverse_no_checking(results, node)
         elif node.split_dim == -1:  # leaf node
-            lnode = <leafnode*>node
+            lnode = <ckdtreenode*>node
             # brute-force
             for i in range(lnode.start_idx, lnode.end_idx):
                 d = _distance_p(
@@ -1310,7 +1425,7 @@ cdef class cKDTree:
 
 
     cdef list __query_ball_point(cKDTree self,
-                                 np.float64_t* x,
+                                 np.float64_t *x,
                                  np.float64_t r,
                                  np.float64_t p,
                                  np.float64_t eps):
@@ -1321,7 +1436,7 @@ cdef class cKDTree:
         
         results = []
         self.__query_ball_point_traverse_checking(
-            results, self.tree, tracker)
+            results, self.ctree, tracker)
         return results
 
 
@@ -1391,18 +1506,18 @@ cdef class cKDTree:
     cdef int __query_ball_tree_traverse_no_checking(cKDTree self,
                                                     cKDTree other,
                                                     list results,
-                                                    innernode* node1,
-                                                    innernode* node2) except -1:
-        cdef leafnode *lnode1
-        cdef leafnode *lnode2
+                                                    ckdtreenode *node1,
+                                                    ckdtreenode *node2) except -1:
+        cdef ckdtreenode *lnode1
+        cdef ckdtreenode *lnode2
         cdef list results_i
         cdef np.intp_t i, j
         
         if node1.split_dim == -1:  # leaf node
-            lnode1 = <leafnode*>node1
+            lnode1 = node1
             
             if node2.split_dim == -1:  # leaf node
-                lnode2 = <leafnode*>node2
+                lnode2 = node2
                 
                 for i in range(lnode1.start_idx, lnode1.end_idx):
                     results_i = results[self.raw_indices[i]]
@@ -1424,11 +1539,11 @@ cdef class cKDTree:
     cdef int __query_ball_tree_traverse_checking(cKDTree self,
                                                  cKDTree other,
                                                  list results,
-                                                 innernode* node1,
-                                                 innernode* node2,
+                                                 ckdtreenode *node1,
+                                                 ckdtreenode *node2,
                                                  RectRectDistanceTracker tracker) except -1:
-        cdef leafnode *lnode1
-        cdef leafnode *lnode2
+        cdef ckdtreenode *lnode1
+        cdef ckdtreenode *lnode2
         cdef list results_i
         cdef np.float64_t d
         cdef np.intp_t i, j
@@ -1438,10 +1553,10 @@ cdef class cKDTree:
         elif tracker.max_distance < tracker.upper_bound / tracker.epsfac:
             self.__query_ball_tree_traverse_no_checking(other, results, node1, node2)
         elif node1.split_dim == -1:  # 1 is leaf node
-            lnode1 = <leafnode*>node1
+            lnode1 = node1
             
             if node2.split_dim == -1:  # 1 & 2 are leaves
-                lnode2 = <leafnode*>node2
+                lnode2 = node2
                 
                 # brute-force
                 for i in range(lnode1.start_idx, lnode1.end_idx):
@@ -1550,7 +1665,7 @@ cdef class cKDTree:
         
         results = [[] for i in range(self.n)]
         self.__query_ball_tree_traverse_checking(
-            other, results, self.tree, other.tree, tracker)
+            other, results, self.ctree, other.ctree, tracker)
 
         return results
 
@@ -1560,18 +1675,18 @@ cdef class cKDTree:
     # -----------
     cdef int __query_pairs_traverse_no_checking(cKDTree self,
                                                 set results,
-                                                innernode* node1,
-                                                innernode* node2) except -1:
-        cdef leafnode *lnode1
-        cdef leafnode *lnode2
+                                                ckdtreenode *node1,
+                                                ckdtreenode *node2) except -1:
+        cdef ckdtreenode *lnode1
+        cdef ckdtreenode *lnode2
         cdef list results_i
         cdef np.intp_t i, j, min_j
         
         if node1.split_dim == -1:  # leaf node
-            lnode1 = <leafnode*>node1
+            lnode1 = node1
             
             if node2.split_dim == -1:  # leaf node
-                lnode2 = <leafnode*>node2
+                lnode2 = node2
 
                 for i in range(lnode1.start_idx, lnode1.end_idx):
                     # Special care here to avoid duplicate pairs
@@ -1606,11 +1721,11 @@ cdef class cKDTree:
     @cython.cdivision(True)
     cdef int __query_pairs_traverse_checking(cKDTree self,
                                              set results,
-                                             innernode* node1,
-                                             innernode* node2,
+                                             ckdtreenode *node1,
+                                             ckdtreenode *node2,
                                              RectRectDistanceTracker tracker) except -1:
-        cdef leafnode *lnode1
-        cdef leafnode *lnode2
+        cdef ckdtreenode *lnode1
+        cdef ckdtreenode *lnode2
         cdef list results_i
         cdef np.float64_t d
         cdef np.intp_t i, j, min_j
@@ -1620,10 +1735,10 @@ cdef class cKDTree:
         elif tracker.max_distance < tracker.upper_bound / tracker.epsfac:
             self.__query_pairs_traverse_no_checking(results, node1, node2)
         elif node1.split_dim == -1:  # 1 is leaf node
-            lnode1 = <leafnode*>node1
+            lnode1 = node1
             
             if node2.split_dim == -1:  # 1 & 2 are leaves
-                lnode2 = <leafnode*>node2
+                lnode2 = node2
                 
                 # brute-force
                 for i in range(lnode1.start_idx, lnode1.end_idx):
@@ -1734,7 +1849,7 @@ cdef class cKDTree:
         
         results = set()
         self.__query_pairs_traverse_checking(
-            results, self.tree, self.tree, tracker)
+            results, self.ctree, self.ctree, tracker)
         
         return results
 
@@ -1744,15 +1859,15 @@ cdef class cKDTree:
     # ---------------
     cdef int __count_neighbors_traverse(cKDTree self,
                                         cKDTree other,
-                                        np.intp_t n_queries,
-                                        np.float64_t* r,
-                                        np.intp_t * results,
-                                        np.intp_t * idx,
-                                        innernode* node1,
-                                        innernode* node2,
+                                        np.intp_t     n_queries,
+                                        np.float64_t  *r,
+                                        np.intp_t     *results,
+                                        np.intp_t     *idx,
+                                        ckdtreenode   *node1,
+                                        ckdtreenode   *node2,
                                         RectRectDistanceTracker tracker) except -1:
-        cdef leafnode *lnode1
-        cdef leafnode *lnode2
+        cdef ckdtreenode *lnode1
+        cdef ckdtreenode *lnode2
         cdef np.float64_t d
         cdef np.intp_t *old_idx
         cdef np.intp_t old_n_queries, l, i, j
@@ -1776,9 +1891,9 @@ cdef class cKDTree:
         if n_queries > 0:
             # OK, need to probe a bit deeper
             if node1.split_dim == -1:  # 1 is leaf node
-                lnode1 = <leafnode*>node1
+                lnode1 = node1
                 if node2.split_dim == -1:  # 1 & 2 are leaves
-                    lnode2 = <leafnode*>node2
+                    lnode2 = node2
                     
                     # brute-force
                     for i in range(lnode1.start_idx, lnode1.end_idx):
@@ -1916,7 +2031,7 @@ cdef class cKDTree:
         idx = np.arange(n_queries, dtype=np.intp)
         self.__count_neighbors_traverse(other, n_queries,
                                         &real_r[0], &results[0], &idx[0],
-                                        self.tree, other.tree,
+                                        self.ctree, other.ctree,
                                         tracker)
         
         if r_ndim == 0:
@@ -1932,10 +2047,10 @@ cdef class cKDTree:
     # ----------------------
     cdef int __sparse_distance_matrix_traverse(cKDTree self, cKDTree other,
                                                coo_entries results,
-                                               innernode* node1, innernode* node2,
+                                               ckdtreenode *node1, ckdtreenode *node2,
                                                RectRectDistanceTracker tracker) except -1:
-        cdef leafnode *lnode1
-        cdef leafnode *lnode2
+        cdef ckdtreenode *lnode1
+        cdef ckdtreenode *lnode2
         cdef list results_i
         cdef np.float64_t d
         cdef np.intp_t i, j, min_j
@@ -1943,10 +2058,10 @@ cdef class cKDTree:
         if tracker.min_distance > tracker.upper_bound:
             return 0
         elif node1.split_dim == -1:  # 1 is leaf node
-            lnode1 = <leafnode*>node1
+            lnode1 = node1
             
             if node2.split_dim == -1:  # 1 & 2 are leaves
-                lnode2 = <leafnode*>node2
+                lnode2 = node2
                 
                 # brute-force
                 for i in range(lnode1.start_idx, lnode1.end_idx):
@@ -2065,7 +2180,48 @@ cdef class cKDTree:
         
         results = coo_entries()
         self.__sparse_distance_matrix_traverse(other, results,
-                                               self.tree, other.tree,
+                                               self.ctree, other.ctree,
                                                tracker)
         
         return results.to_matrix(shape=(self.n, other.n)).todok()
+
+        
+    def __reduce__(self):
+        return (new_object, (cKDTree,), self.__getstate__())
+
+    def __getstate__(cKDTree self):
+        cdef object state
+        cdef object tree = pickle_tree_buffer(self.tree_buffer)
+        state = (tree, self.data.copy(), self.n, self.m, self.leafsize,
+                      self.maxes, self.mins, self.indices.copy())
+        return state
+            
+    def __setstate__(cKDTree self, state):
+        cdef object tree
+        self.tree_buffer = new vector[ckdtreenode]()
+        
+        # unpack the state
+        (tree, self.data, self.n, self.m, self.leafsize, 
+            self.maxes, self.mins, self.indices) = state
+        
+        # copy kd-tree buffer 
+        unpickle_tree_buffer(self.tree_buffer, tree)    
+        
+        # set raw pointers
+        self.raw_data = <np.float64_t*>np.PyArray_DATA(self.data)
+        self.raw_maxes = <np.float64_t*>np.PyArray_DATA(self.maxes)
+        self.raw_mins = <np.float64_t*>np.PyArray_DATA(self.mins)
+        self.raw_indices = <np.intp_t*>np.PyArray_DATA(self.indices)
+        
+        # set up the tree structure pointers
+        self.ctree = tree_buffer_root(self.tree_buffer)
+        self._post_init(self.ctree)
+        
+        # make the tree viewable from Python
+        self.tree = cKDTreeNode()
+        self.tree._node = self.ctree
+        self.tree._data = self.data
+        self.tree._indices = self.indices
+        self.tree.level = 0
+        self.tree._setup() 
+
