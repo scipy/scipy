@@ -220,7 +220,7 @@ zfill(const PyArrayObject * x, intp nx, char *xzfilled, intp nxzfilled)
 {
     char *xzero;
     intp i, nxl;
-    PyArray_CopySwapFunc *copyswap = PyArray_DESCR(x)->f->copyswap;
+    PyArray_CopySwapFunc *copyswap = PyArray_DESCR((PyArrayObject *)x)->f->copyswap;
 
     nxl = PyArray_ITEMSIZE(x);
 
@@ -230,7 +230,9 @@ zfill(const PyArrayObject * x, intp nx, char *xzfilled, intp nxzfilled)
 
     if (nx > 0) {
         for (i = 0; i < nx; ++i) {
-            copyswap(xzfilled + i * nxl, PyArray_DATA(x) + i * nxl, 0, NULL);
+            copyswap(xzfilled + i * nxl,
+                     PyArray_DATA((PyArrayObject *)x) + i * nxl,
+                     0, NULL);
         }
     }
     for (i = nx; i < nxzfilled; ++i) {
@@ -257,12 +259,12 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
           const PyArrayObject * zf, PyArrayObject * y, int axis,
           BasicFilterFunction * filter_func)
 {
-    PyArrayIterObject *itx, *ity, *itzi, *itzf;
+    PyArrayIterObject *itx, *ity, *itzi = NULL, *itzf = NULL;
     intp nitx, i, nxl, nzfl, j;
     intp na, nb, nal, nbl;
     intp nfilt;
     char *azfilled, *bzfilled, *zfzfilled, *yoyo;
-    PyArray_CopySwapFunc *copyswap = PyArray_DESCR(x)->f->copyswap;
+    PyArray_CopySwapFunc *copyswap = PyArray_DESCR((PyArrayObject *)x)->f->copyswap;
 
     itx = (PyArrayIterObject *) PyArray_IterAllButAxis((PyObject *) x,
                                                        &axis);
@@ -295,9 +297,9 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
         }
     }
 
-    na = PyArray_SIZE(a);
+    na = PyArray_SIZE((PyArrayObject *)a);
     nal = PyArray_ITEMSIZE(a);
-    nb = PyArray_SIZE(b);
+    nb = PyArray_SIZE((PyArrayObject *)b);
     nbl = PyArray_ITEMSIZE(b);
 
     nfilt = na > nb ? na : nb;
