@@ -94,15 +94,6 @@ c
       dimension bands(4,5)
       common /jac/ bands
 
-      do 10 i = 1, 5
-          f(i) = 0.0D0
-          do 10 j = 1, 5
-              k = 2 + i - j
-              if ((k .gt. 0) .and. (k .lt. 5)) then
-                  f(i) = f(i) + bands(2+i-j,j)*y(j)
-              end if
- 10   continue
-
       f(1) = bands(2,1)*y(1) + bands(1,2)*y(2)
       f(2) = bands(3,1)*y(1) + bands(2,2)*y(2) + bands(1,3)*y(3)
       f(3) = bands(4,1)*y(1) + bands(3,2)*y(2) + bands(2,3)*y(3)
