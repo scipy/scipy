@@ -15,14 +15,10 @@ is granted under the SciPy License.
 
 #define PYERR(message) {PyErr_SetString(PyExc_ValueError, message); goto fail;}
 
-#define DATA(arr) ((arr)->data)
-#define DIMS(arr) ((arr)->dimensions)
-#define STRIDES(arr) ((arr)->strides)
-#define ELSIZE(arr) ((arr)->descr->elsize)
-#define OBJECTTYPE(arr) ((arr)->descr->type_num)
-#define BASEOBJ(arr) ((PyArrayObject *)((arr)->base))
-#define RANK(arr) ((arr)->nd)
-#define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
+#define DATA(arr) (PyArray_DATA(arr))
+#define DIMS(arr) (PyArray_DIMS(arr))
+#define STRIDES(arr) (PyArray_STRIDES(arr))
+#define RANK(arr) (PyArray_NDIM(arr))
 
 
 jmp_buf MALLOC_FAIL;
@@ -764,13 +760,13 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands, doubl
 
 static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2, char *sort_buffer, int nels2, int check, intp *loop_ind, intp *temp_ind, uintp *offset){ 
   int i, k, incr = 1;
-  int ndims = ap1->nd;
-  intp *dims2 = ap2->dimensions;
-  intp *dims1 = ap1->dimensions;
-  intp is1 = ap1->descr->elsize;
-  intp is2 = ap2->descr->elsize;
-  char *ip2 = ap2->data;
-  int elsize = ap1->descr->elsize;
+  int ndims = PyArray_NDIM(ap1);
+  intp *dims2 = PyArray_DIMS(ap2);
+  intp *dims1 = PyArray_DIMS(ap1);
+  intp is1 = PyArray_DESCR(ap1)->elsize;
+  intp is2 = PyArray_DESCR(ap2)->elsize;
+  char *ip2 = PyArray_DATA(ap2);
+  int elsize = PyArray_DESCR(ap1)->elsize;
   char *ptr;
 
   i = nels2;
@@ -787,7 +783,7 @@ static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2, char 
     temp_ind[k]++;
 
     if (!(check && index_out_of_bounds(temp_ind,dims1,ndims)) && \
-	memcmp(ip2, ptr, ap2->descr->elsize)) { 
+	memcmp(ip2, ptr, PyArray_DESCR(ap2)->elsize)) { 
       memcpy(sort_buffer, ip1, elsize);
       sort_buffer += elsize;
     } 
@@ -856,22 +852,22 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	ap2 = (PyArrayObject *)PyArray_ContiguousFromObject(op2, typenum, 0, 0);
 	if (ap2 == NULL) goto fail;
 
-	if (ap1->nd != ap2->nd) {
+	if (PyArray_NDIM(ap1) != PyArray_NDIM(ap2)) {
 	  PyErr_SetString(PyExc_ValueError, "All input arrays must have the same number of dimensions.");
 	  goto fail;
 	}
 
 	n2 = PyArray_Size((PyObject *)ap2);
 	n2_nonzero = 0;
-	ap2_ptr = ap2->data;
+	ap2_ptr = PyArray_DATA(ap2);
 	/* Find out the number of non-zero entries in domain (allows for
 	 *  different shapped rank-filters to be used besides just rectangles)
 	 */
 	zptr = PyArray_Zero(ap2);
 	if (zptr == NULL) goto fail;
 	for (k=0; k < n2; k++) {
-	  n2_nonzero += (memcmp(ap2_ptr,zptr,ap2->descr->elsize) != 0);
-	  ap2_ptr += ap2->descr->elsize;
+	  n2_nonzero += (memcmp(ap2_ptr,zptr,PyArray_DESCR(ap2)->elsize) != 0);
+	  ap2_ptr += PyArray_DESCR(ap2)->elsize;
 	}
 
 	if ((order >= n2_nonzero) || (order < 0)) {
@@ -879,28 +875,28 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	  goto fail;
 	}
 	
-	ret = (PyArrayObject *)PyArray_SimpleNew(ap1->nd, ap1->dimensions, typenum);
+	ret = (PyArrayObject *)PyArray_SimpleNew(PyArray_NDIM(ap1), PyArray_DIMS(ap1), typenum);
 	if (ret == NULL) goto fail;
 	
-	compare_func = compare_functions[ap1->descr->type_num];
+	compare_func = compare_functions[PyArray_TYPE(ap1)];
 	if (compare_func == NULL) {
 		PyErr_SetString(PyExc_ValueError, 
 			"order_filterND not available for this type");
 		goto fail;
 	}
 
-	is1 = ap1->descr->elsize;
+	is1 = PyArray_DESCR(ap1)->elsize;
 	
 	if (!(sort_buffer = malloc(n2_nonzero*is1))) goto fail;
 
-	op = ret->data; os = ret->descr->elsize;
+	op = PyArray_DATA(ret); os = PyArray_DESCR(ret)->elsize;
 
-	op = ret->data;
+	op = PyArray_DATA(ret);
 
-	bytes_in_array = ap1->nd*sizeof(intp);
+	bytes_in_array = PyArray_NDIM(ap1)*sizeof(intp);
 	mode_dep = malloc(bytes_in_array);
-	for (k = 0; k < ap1->nd; k++) { 
-	  mode_dep[k] = -((ap2->dimensions[k]-1) >> 1);
+	for (k = 0; k < PyArray_NDIM(ap1); k++) { 
+	  mode_dep[k] = -((PyArray_DIMS(ap2)[k]-1) >> 1);
 	}	
 
 	b_ind = (intp *)malloc(bytes_in_array);  /* loop variables */
@@ -910,9 +906,9 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	memset(ret_ind,0,bytes_in_array);
 	temp_ind = (intp *)malloc(bytes_in_array);
 	check_ind = (intp*)malloc(bytes_in_array);
-	offsets = (uintp *)malloc(ap1->nd*sizeof(uintp));
-	offsets2 = (intp *)malloc(ap1->nd*sizeof(intp));
-	offset1 = compute_offsets(offsets,offsets2,ap1->dimensions,ap2->dimensions,ret->dimensions,mode_dep,ap1->nd);
+	offsets = (uintp *)malloc(PyArray_NDIM(ap1)*sizeof(uintp));
+	offsets2 = (intp *)malloc(PyArray_NDIM(ap1)*sizeof(intp));
+	offset1 = compute_offsets(offsets,offsets2,PyArray_DIMS(ap1),PyArray_DIMS(ap2),PyArray_DIMS(ret),mode_dep,PyArray_NDIM(ap1));
 	/* The filtering proceeds by looping through the output array
 	   and for each value filling a buffer from the 
 	   element-by-element product of the two input arrays.  The buffer
@@ -934,9 +930,9 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	PyDataMem_FREE(zptr);
 	zptr = PyArray_Zero(ap1);
 	if (zptr == NULL) goto fail;
-	ap1_ptr = ap1->data + offset1*is1;
-	for (k=0; k < ap1->nd; k++) {a_ind[k] = mode_dep[k]; check_ind[k] = ap1->dimensions[k] - ap2->dimensions[k] - mode_dep[k] - 1;}
-	a_ind[ap1->nd-1]--;
+	ap1_ptr = PyArray_DATA(ap1) + offset1*is1;
+	for (k=0; k < PyArray_NDIM(ap1); k++) {a_ind[k] = mode_dep[k]; check_ind[k] = PyArray_DIMS(ap1)[k] - PyArray_DIMS(ap2)[k] - mode_dep[k] - 1;}
+	a_ind[PyArray_NDIM(ap1)-1]--;
 	i = PyArray_Size((PyObject *)ret);
 	while (i--) {
 	  /* Zero out the sort_buffer (has effect of zero-padding
@@ -947,9 +943,9 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	    ap2_ptr += is1;
 	  }
 	    
-	  k = ap1->nd - 1;
+	  k = PyArray_NDIM(ap1) - 1;
 	  while(--incr) {
-	    a_ind[k] -= ret->dimensions[k] - 1;   /* Return to start */
+	    a_ind[k] -= PyArray_DIMS(ret)[k] - 1;   /* Return to start */
 	    k--;
 	  }
 	  ap1_ptr += offsets2[k]*is1;
@@ -957,14 +953,14 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	  memcpy(temp_ind, a_ind, bytes_in_array);
 
 	  check = 0; k = -1;
-	  while(!check && (++k < ap1->nd))
+	  while(!check && (++k < PyArray_NDIM(ap1)))
 	    check = check || (ret_ind[k] < -mode_dep[k]) || (ret_ind[k] > check_ind[k]);
 
 	  fill_buffer(ap1_ptr,ap1,ap2,sort_buffer,n2,check,b_ind,temp_ind,offsets);
 	  qsort(sort_buffer, n2_nonzero, is1, compare_func);
 	  memcpy(op, sort_buffer + order*is1, os);
 
-	  incr = increment(ret_ind,ret->nd,ret->dimensions); /* increment index counter */
+	  incr = increment(ret_ind,PyArray_NDIM(ret),PyArray_DIMS(ret)); /* increment index counter */
 	  op += os;   /* increment to next output index */
 
 	}
@@ -1037,11 +1033,11 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
 	if (newfill == NULL) goto fail;
     }
 
-    aout_dimens = malloc(ain1->nd*sizeof(intp));
+    aout_dimens = malloc(PyArray_NDIM(ain1)*sizeof(intp));
     switch(mode & OUTSIZE_MASK) {
     case VALID:
-	for (i = 0; i < ain1->nd; i++) { 
-	    aout_dimens[i] = ain1->dimensions[i] - ain2->dimensions[i] + 1;
+	for (i = 0; i < PyArray_NDIM(ain1); i++) { 
+	    aout_dimens[i] = PyArray_DIMS(ain1)[i] - PyArray_DIMS(ain2)[i] + 1;
 	    if (aout_dimens[i] < 0) {
 		PyErr_SetString(PyExc_ValueError, "no part of the output is valid, use option 1 (same) or 2 (full) for third argument");
 		goto fail;
@@ -1049,10 +1045,10 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
 	}
 	break;
     case SAME:
-	for (i = 0; i < ain1->nd; i++) { aout_dimens[i] = ain1->dimensions[i];}
+	for (i = 0; i < PyArray_NDIM(ain1); i++) { aout_dimens[i] = PyArray_DIMS(ain1)[i];}
 	break;
     case FULL:
-	for (i = 0; i < ain1->nd; i++) { aout_dimens[i] = ain1->dimensions[i] + ain2->dimensions[i] - 1;}
+	for (i = 0; i < PyArray_NDIM(ain1); i++) { aout_dimens[i] = PyArray_DIMS(ain1)[i] + PyArray_DIMS(ain2)[i] - 1;}
 	break;
     default: 
 	PyErr_SetString(PyExc_ValueError, 
@@ -1060,7 +1056,7 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
 	goto fail;
     }
 	
-    aout = (PyArrayObject *)PyArray_SimpleNew(ain1->nd, aout_dimens, typenum);
+    aout = (PyArrayObject *)PyArray_SimpleNew(PyArray_NDIM(ain1), aout_dimens, typenum);
     if (aout == NULL) goto fail;
 
     flag = mode + boundary + (typenum << TYPE_SHIFT) + \
@@ -1167,8 +1163,8 @@ static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args) {
 	if (a_weight == NULL) goto fail;
 
 
-	numbands = a_des->dimensions[0];
-	if ((a_bands->dimensions[0] != 2*numbands) || (a_weight->dimensions[0] != numbands)) {
+	numbands = PyArray_DIMS(a_des)[0];
+	if ((PyArray_DIMS(a_bands)[0] != 2*numbands) || (PyArray_DIMS(a_weight)[0] != numbands)) {
 	  PyErr_SetString(PyExc_ValueError,
 			  "The inputs desired and weight must have same length.\n  The input bands must have twice this length.");
 	  goto fail;
@@ -1177,7 +1173,7 @@ static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args) {
       /* Check the bands input to see if it is monotonic, divide by 
 	 Hz to take from range 0 to 0.5 and check to see if in that range */ 
 
-	dptr = (double *)a_bands->data;
+	dptr = (double *)PyArray_DATA(a_bands);
 	oldvalue = 0;
 	for (k=0; k < 2*numbands; k++) {
 	  if (*dptr < oldvalue) {
@@ -1199,7 +1195,7 @@ static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args) {
 	h = (PyArrayObject *)PyArray_SimpleNew(1, &ret_dimens, NPY_DOUBLE);
 	if (h == NULL) goto fail;
 
-	err=pre_remez((double *)h->data, numtaps, numbands, (double *)a_bands->data, (double *)a_des->data, (double *)a_weight->data, type, maxiter, grid_density);
+	err=pre_remez((double *)PyArray_DATA(h), numtaps, numbands, (double *)PyArray_DATA(a_bands), (double *)PyArray_DATA(a_des), (double *)PyArray_DATA(a_weight), type, maxiter, grid_density);
         if (err < 0) {
 	  if (err == -1) {
             sprintf(mystr,"Failure to converge after %d iterations.\n      Design may still be correct.",maxiter);

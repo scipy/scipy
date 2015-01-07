@@ -4,14 +4,10 @@
 
 
 #define PYERR(message) do {PyErr_SetString(PyExc_ValueError, message); goto fail;} while(0)
-#define DATA(arr) ((arr)->data)
-#define DIMS(arr) ((arr)->dimensions)
-#define STRIDES(arr) ((arr)->strides)
-#define ELSIZE(arr) ((arr)->descr->elsize)
-#define OBJECTTYPE(arr) ((arr)->descr->type_num)
-#define BASEOBJ(arr) ((PyArrayObject *)((arr)->base))
-#define RANK(arr) ((arr)->nd)
-#define ISCONTIGUOUS(m) ((m)->flags & NPY_CONTIGUOUS)
+#define DATA(arr) (PyArray_DATA(arr))
+#define DIMS(arr) (PyArray_DIMS(arr))
+#define STRIDES(arr) (PyArray_STRIDES(arr))
+#define ELSIZE(arr) (PyArray_DESCR(arr)->elsize)
 
 static void convert_strides(npy_intp*,npy_intp*,int,int);
 
