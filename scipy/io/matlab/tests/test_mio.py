@@ -1069,7 +1069,7 @@ def test_logical_sparse():
     assert_(isinstance(log_sp, SP.csc_matrix))
     assert_equal(log_sp.dtype.type, np.bool_)
     assert_array_equal(log_sp.toarray(),
-                       [[True,  True,  True, False],
+                       [[True, True, True, False],
                         [False, False, True, False],
                         [False, False, True, False],
                         [False, False, False, False],
