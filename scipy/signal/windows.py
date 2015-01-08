@@ -1390,7 +1390,7 @@ def cosine(M, sym=True):
     return w
 
 
-def exponential(M, N=None, tau=1., sym=True):
+def exponential(M, center=None, tau=1., sym=True):
     r"""Return an exponential (or Poisson) window.
 
     Parameters
@@ -1398,13 +1398,12 @@ def exponential(M, N=None, tau=1., sym=True):
     M : int
         Number of points in the output window. If zero or less, an empty
         array is returned.
-    N : float, optional
+    center : float, optional
         Parameter defining the center location of the window function.
-        IF not given, then:
-          - for ``sym = True``: ``N = (M-1) / 2``.
-          - for ``sym = False``:  by default ``N = 0``.
+        The default value if not given is ``center = (M-1) / 2``.
+        Changing this parameter makes sense for non-symmetric windows, only.
     tau : float, optional
-        Parameter defining the decay.  For ``N=0`` use ``tau = -(M-1) / ln(x)``
+        Parameter defining the decay.  For ``center = 0`` use ``tau = -(M-1) / ln(x)``
         if ``x`` is the fraction of the window at the end.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
@@ -1421,7 +1420,7 @@ def exponential(M, N=None, tau=1., sym=True):
     -----
     The Exponential window is defined as
 
-    .. math::  w(n) = e^{-|n-N| \frac{1}{\tau}}
+    .. math::  w(n) = \exp^{-|n-center| / \tau}
 
     References
     ----------
@@ -1436,7 +1435,7 @@ def exponential(M, N=None, tau=1., sym=True):
     >>> import matplotlib.pyplot as plt
     >>> M = 50
     >>> tau = -(M-1) / np.log(0.01)
-    >>> window = signal.exponential(M=M, N=10, tau=tau)
+    >>> window = signal.exponential(M=M, center=10, tau=tau)
     >>> plt.plot(window)
     >>> plt.title("Exponential window")
     >>> plt.ylabel("Amplitude")
@@ -1444,8 +1443,8 @@ def exponential(M, N=None, tau=1., sym=True):
     >>> plt.show()
 
     """
-    if sym and N is not None:
-        raise ValueError("Parameter ``N`` can only be None for the "
+    if sym and center is not None:
+        raise ValueError("Parameter ``center`` can only be None for the "
                          " (default) symmetric window")
     if M < 1:
         return np.array([])
@@ -1455,12 +1454,12 @@ def exponential(M, N=None, tau=1., sym=True):
     if not sym and not odd:
         M = M + 1
     if sym:
-        N = (M-1) / 2
-    if not sym and N is None:
-        N = 0
+        center = (M-1) / 2
+    elif center is None:
+        center = (M-1) / 2
 
     n = np.arange(0, M)
-    w = np.exp(-np.abs(n-N) / tau)
+    w = np.exp(-np.abs(n-center) / tau)
     if not sym and not odd:
         w = w[:-1]
 
