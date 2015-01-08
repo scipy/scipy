@@ -2649,34 +2649,6 @@ def show_options(solver=None, method=None):
         direc : ndarray
             Initial set of direction vectors for the Powell method.
 
-    *Anneal* options:
-
-        ftol : float
-            Relative error in ``fun(x)`` acceptable for convergence.
-        schedule : str
-            Annealing schedule to use. One of: 'fast', 'cauchy' or
-            'boltzmann'.
-        T0 : float
-            Initial Temperature (estimated as 1.2 times the largest
-            cost-function deviation over random points in the range).
-        Tf : float
-            Final goal temperature.
-        maxfev : int
-            Maximum number of function evaluations to make.
-        maxaccept : int
-            Maximum changes to accept.
-        boltzmann : float
-            Boltzmann constant in acceptance test (increase for less
-            stringent test at each temperature).
-        learn_rate : float
-            Scale constant for adjusting guesses.
-        quench, m, n : float
-            Parameters to alter fast_sa schedule.
-        lower, upper : float or ndarray
-            Lower and upper bounds on `x`.
-        dwell : int
-            The number of times to search the space at each temperature.
-
     *L-BFGS-B* options:
 
         ftol : float
