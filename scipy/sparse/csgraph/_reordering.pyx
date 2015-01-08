@@ -95,8 +95,7 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     return perm
 
 
-
-def _node_degrees(
+cdef _node_degrees(
         np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
         np.ndarray[int32_or_int64, ndim=1, mode="c"] ptr,
         int num_rows):
@@ -128,9 +127,9 @@ def _reverse_cuthill_mckee(np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
     cdef unsigned int N = 0, N_old, level_start, level_end, temp
     cdef unsigned int zz, ii, jj, kk, ll, level_len
     cdef np.ndarray[int32_or_int64] order = np.zeros(num_rows, dtype=ind.dtype)
-    cdef np.ndarray[ITYPE_t] degree = _node_degrees(ind, ptr, num_rows).astype(ITYPE)
-    cdef np.ndarray[ITYPE_t] inds = np.argsort(degree).astype(ITYPE)
-    cdef np.ndarray[ITYPE_t] rev_inds = np.argsort(inds).astype(ITYPE)
+    cdef np.ndarray[ITYPE_t] degree = _node_degrees(ind, ptr, num_rows)
+    cdef np.ndarray[np.npy_intp] inds = np.argsort(degree)
+    cdef np.ndarray[np.npy_intp] rev_inds = np.argsort(inds)
     cdef np.ndarray[ITYPE_t] temp_degrees = np.zeros(np.max(degree), dtype=ITYPE)
     cdef int32_or_int64 i, j, seed, temp2
     
@@ -190,19 +189,23 @@ def _reverse_cuthill_mckee(np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
 def _maximum_bipartite_matching(
         np.ndarray[int32_or_int64, ndim=1, mode="c"] inds,
         np.ndarray[int32_or_int64, ndim=1, mode="c"] ptrs,
-        int n):
+        np.npy_intp n):
     """
     Maximum bipartite matching of a graph in CSC format.
     """
     cdef np.ndarray[int32_or_int64] visited = np.zeros(n, dtype=inds.dtype)
     cdef np.ndarray[ITYPE_t] queue = np.zeros(n, dtype=ITYPE)
     cdef np.ndarray[ITYPE_t] previous = np.zeros(n, dtype=ITYPE)
-    cdef np.ndarray[int32_or_int64] match = (-1 * np.ones(n)).astype(inds.dtype)
-    cdef np.ndarray[ITYPE_t] row_match = (-1 * np.ones(n)).astype(ITYPE)
+    cdef np.ndarray[int32_or_int64] match = np.empty(n, dtype=inds.dtype)
+    cdef np.ndarray[ITYPE_t] row_match = np.empty(n, dtype=ITYPE)
     cdef int queue_ptr, queue_col, ptr, i, j, queue_size
     cdef int col, next_num = 1
     cdef int32_or_int64 row, temp, eptr
-    
+
+    for i in range(n):
+        match[i] = -1
+        row_match[i] = -1
+
     for i in range(n):
         if match[i] == -1 and (ptrs[i] != ptrs[i + 1]):
             queue[0] = i
