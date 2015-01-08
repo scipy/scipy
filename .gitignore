@@ -153,7 +153,7 @@ scipy/linalg/flapack.pyf
 scipy/linalg/lapack_pointers.c
 scipy/linalg/src/id_dist/src/*_subr_*.f
 scipy/linalg/_cython_blas_wrappers.c
-scipy/linalg/_test_lapack_pointers.c
+scipy/linalg/_cython_lapack_wrappers.c
 scipy/ndimage/src/_ni_label.c
 scipy/optimize/cobyla/_cobylamodule.c
 scipy/optimize/lbfgsb/_lbfgsbmodule.c
