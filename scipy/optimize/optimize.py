@@ -44,7 +44,9 @@ _status_message = {'success': 'Optimization terminated successfully.',
                    'maxiter': 'Maximum number of iterations has been '
                               'exceeded.',
                    'pr_loss': 'Desired error not necessarily achieved due '
-                              'to precision loss.'}
+                              'to precision loss.',
+                   'halted': 'callback function requested stop early '
+                             'by returning True'}
 
 
 class MemoizeJac(object):
@@ -301,8 +303,9 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     args : tuple, optional
         Extra arguments passed to func, i.e. ``f(x,*args)``.
     callback : callable, optional
-        Called after each iteration, as callback(xk), where xk is the
-        current parameter vector.
+        Called after each iteration, as ``callback(xk)``, where xk is the
+        current parameter vector. If ``callback`` returns `True` the
+        minimization is halted.
     xtol : float, optional
         Relative error in xopt acceptable for convergence.
     ftol : number, optional
@@ -331,6 +334,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     warnflag : int
         1 : Maximum number of function evaluations made.
         2 : Maximum number of iterations reached.
+        3 : Callback function returned `True`.
     allvecs : list
         Solution at each iteration.
 
@@ -450,6 +454,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     sim = numpy.take(sim, ind, 0)
 
     iterations = 1
+    msg=''
 
     while (fcalls[0] < maxfun and iterations < maxiter):
         if (numpy.max(numpy.ravel(numpy.abs(sim[1:] - sim[0]))) <= xtol and
@@ -505,9 +510,15 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         ind = numpy.argsort(fsim)
         sim = numpy.take(sim, ind, 0)
         fsim = numpy.take(fsim, ind, 0)
-        if callback is not None:
-            callback(sim[0])
+
         iterations += 1
+
+        if callback is not None:
+            ret = callback(sim[0])
+            if ret is True:
+                msg = _status_message['halted']
+                break
+
         if retall:
             allvecs.append(sim[0])
 
@@ -523,6 +534,10 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     elif iterations >= maxiter:
         warnflag = 2
         msg = _status_message['maxiter']
+        if disp:
+            print('Warning: ' + msg)
+    elif msg == _status_message['halted']:
+        warnflag = 3
         if disp:
             print('Warning: ' + msg)
     else:
@@ -726,8 +741,9 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         If fprime is approximated, use this value for the step size.
     callback : callable, optional
         An optional user-supplied function to call after each
-        iteration.  Called as callback(xk), where xk is the
-        current parameter vector.
+        iteration.  Called as ``callback(xk)``, where xk is the
+        current parameter vector.  If ``callback`` returns `True`
+        the minimization is halted.
     maxiter : int, optional
         Maximum number of iterations to perform.
     full_output : bool, optional
@@ -755,6 +771,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     warnflag : integer
         1 : Maximum number of iterations exceeded.
         2 : Gradient and/or function calls not changing.
+        3 : Callback halted the minimization.
     allvecs  :  list
         `OptimizeResult` at each iteration.  Only returned if retall is True.
 
@@ -849,6 +866,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     sk = [2 * gtol]
     warnflag = 0
     gnorm = vecnorm(gfk, ord=norm)
+    msg = ''
     while (gnorm > gtol) and (k < maxiter):
         pk = -numpy.dot(Hk, gfk)
         try:
@@ -870,9 +888,15 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
         yk = gfkp1 - gfk
         gfk = gfkp1
-        if callback is not None:
-            callback(xk)
         k += 1
+
+        if callback is not None:
+            ret = callback(xk)
+            if ret is True:
+                msg = _status_message['halted']
+                warnflag = 3
+                break
+
         gnorm = vecnorm(gfk, ord=norm)
         if (gnorm <= gtol):
             break
@@ -883,7 +907,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             warnflag = 2
             break
 
-        try:  # this was handled in numeric, let it remaines for more safety
+        try:  # this was handled in numeric, let it remain for more safety
             rhok = 1.0 / (numpy.dot(yk, sk))
         except ZeroDivisionError:
             rhok = 1000.0
@@ -901,6 +925,15 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     fval = old_fval
     if warnflag == 2:
         msg = _status_message['pr_loss']
+        if disp:
+            print("Warning: " + msg)
+            print("         Current function value: %f" % fval)
+            print("         Iterations: %d" % k)
+            print("         Function evaluations: %d" % func_calls[0])
+            print("         Gradient evaluations: %d" % grad_calls[0])
+
+    elif warnflag == 3:
+        msg = _status_message['halted']
         if disp:
             print("Warning: " + msg)
             print("         Current function value: %f" % fval)
@@ -980,6 +1013,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     callback : callable, optional
         An optional user-supplied function, called after each iteration.
         Called as ``callback(xk)``, where ``xk`` is the current value of `x0`.
+        If ``callback`` returns `True` the minimization is halted.
 
     Returns
     -------
@@ -1003,6 +1037,8 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
 
         2 : Gradient and/or function calls were not changing.  May indicate
             that precision was lost, i.e., the routine did not converge.
+
+        3 : Callback halted minimization by returning `True`.
 
     allvecs : list of ndarray, optional
         List of arrays, containing the results at each iteration.
@@ -1154,6 +1190,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     warnflag = 0
     pk = -gfk
     gnorm = vecnorm(gfk, ord=norm)
+    msg = ''
     while (gnorm > gtol) and (k < maxiter):
         deltak = numpy.dot(gfk, gfk)
 
@@ -1176,9 +1213,15 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         pk = -gfkp1 + beta_k * pk
         gfk = gfkp1
         gnorm = vecnorm(gfk, ord=norm)
-        if callback is not None:
-            callback(xk)
+
         k += 1
+
+        if callback is not None:
+            ret = callback(xk)
+            if ret is True:
+                warnflag = 3
+                msg = _status_message['halted']
+                break
 
     fval = old_fval
     if warnflag == 2:
@@ -1193,6 +1236,14 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     elif k >= maxiter:
         warnflag = 1
         msg = _status_message['maxiter']
+        if disp:
+            print("Warning: " + msg)
+            print("         Current function value: %f" % fval)
+            print("         Iterations: %d" % k)
+            print("         Function evaluations: %d" % func_calls[0])
+            print("         Gradient evaluations: %d" % grad_calls[0])
+    elif warnflag == 3:
+        msg = _status_message['halted']
         if disp:
             print("Warning: " + msg)
             print("         Current function value: %f" % fval)
@@ -1243,8 +1294,9 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         If fhess is approximated, use this value for the step size.
     callback : callable, optional
         An optional user-supplied function which is called after
-        each iteration.  Called as callback(xk), where xk is the
-        current parameter vector.
+        each iteration.  Called as ``callback(xk)``, where xk is the
+        current parameter vector.  If ``callback`` returns `True`
+        the minimization is halted.
     avextol : float, optional
         Convergence is assumed when the average relative error in
         the minimizer falls below this amount.
@@ -1272,6 +1324,8 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     warnflag : int
         Warnings generated by the algorithm.
         1 : Maximum number of iterations exceeded.
+        2 : Line search failed to find a better solution.
+        3 : Callback halted minimization.
     allvecs : list
         The result at each iteration, if retall is True (see below).
 
@@ -1440,11 +1494,16 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
         update = alphak * pk
         xk = xk + update        # upcast if necessary
-        if callback is not None:
-            callback(xk)
         if retall:
             allvecs.append(xk)
         k += 1
+
+        if callback is not None:
+            ret = callback(xk)
+            if ret is True:
+                msg = _status_message['halted']
+                warnflag = 3
+                break
 
     fval = old_fval
     if warnflag == 2:
@@ -1466,6 +1525,16 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             print("         Function evaluations: %d" % fcalls[0])
             print("         Gradient evaluations: %d" % gcalls[0])
             print("         Hessian evaluations: %d" % hcalls)
+    elif warnflag == 3:
+        msg = _status_message['halted']
+        if disp:
+            print("Warning: " + msg)
+            print("         Current function value: %f" % fval)
+            print("         Iterations: %d" % k)
+            print("         Function evaluations: %d" % fcalls[0])
+            print("         Gradient evaluations: %d" % gcalls[0])
+            print("         Hessian evaluations: %d" % hcalls)
+
     else:
         msg = _status_message['success']
         if disp:
@@ -2142,7 +2211,8 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     callback : callable, optional
         An optional user-supplied function, called after each
         iteration.  Called as ``callback(xk)``, where ``xk`` is the
-        current parameter vector.
+        current parameter vector. If ``callback`` returns `True` the
+        minimization is halted.
     direc : ndarray, optional
         Initial direction set.
     xtol : float, optional
@@ -2177,6 +2247,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         Integer warning flag:
             1 : Maximum number of function evaluations.
             2 : Maximum number of iterations.
+            3 : Callback function returned `True`
     allvecs : list
         List of solutions at each iteration.
 
@@ -2290,6 +2361,7 @@ def _minimize_powell(func, x0, args=(), callback=None,
     x1 = x.copy()
     iter = 0
     ilist = list(range(N))
+    msg=''
     while True:
         fx = fval
         bigind = 0
@@ -2304,7 +2376,10 @@ def _minimize_powell(func, x0, args=(), callback=None,
                 bigind = i
         iter += 1
         if callback is not None:
-            callback(x)
+            ret = callback(x)
+            if ret is True:
+                msg = _status_message['halted']
+                break
         if retall:
             allvecs.append(x)
         bnd = ftol * (numpy.abs(fx) + numpy.abs(fval)) + 1e-20
@@ -2342,6 +2417,10 @@ def _minimize_powell(func, x0, args=(), callback=None,
     elif iter >= maxiter:
         warnflag = 2
         msg = _status_message['maxiter']
+        if disp:
+            print("Warning: " + msg)
+    elif msg == _status_message['halted']:
+        warnflag = 3
         if disp:
             print("Warning: " + msg)
     else:

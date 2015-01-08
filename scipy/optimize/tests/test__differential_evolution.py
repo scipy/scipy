@@ -6,6 +6,7 @@ from scipy.optimize._differentialevolution import DifferentialEvolutionSolver
 from scipy.optimize import differential_evolution
 import numpy as np
 from scipy.optimize import rosen
+from scipy.optimize.optimize import _status_message
 from numpy.testing import (assert_equal, TestCase, assert_allclose,
                            run_module_suite, assert_almost_equal,
                            assert_string_equal)
@@ -211,8 +212,7 @@ class TestDifferentialEvolutionSolver(TestCase):
         result = differential_evolution(rosen, bounds, callback=callback)
 
         assert_string_equal(result.message,
-                                'callback function requested stop early '
-                                'by returning True')
+                            _status_message['halted'])
 
     def test_args_tuple_is_passed(self):
         # test that the args tuple is passed to the cost function properly.

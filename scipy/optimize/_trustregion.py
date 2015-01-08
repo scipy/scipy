@@ -205,9 +205,13 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         # append the best guess, call back, increment the iteration count
         if return_all:
             allvecs.append(x)
-        if callback is not None:
-            callback(x)
         k += 1
+
+        if callback is not None:
+            ret = callback(x)
+            if ret is True:
+                warnflag = 4
+                break
 
         # check if the gradient is small enough to stop
         if m.jac_mag < gtol:
@@ -225,6 +229,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
             _status_message['maxiter'],
             'A bad approximation caused failure to predict improvement.',
             'A linalg error occurred, such as a non-psd Hessian.',
+            _status_message['halted']
             )
     if disp:
         if warnflag == 0:

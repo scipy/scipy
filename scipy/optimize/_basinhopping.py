@@ -6,6 +6,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy import cos, sin
 import scipy.optimize
+from scipy.optimize.optimize import _status_message
 import collections
 
 __all__ = ['basinhopping']
@@ -617,8 +618,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
             val = callback(bh.xtrial, bh.energy_trial, bh.accept)
             if val is not None:
                 if val:
-                    message = ["callback function requested stop early by"
-                               "returning True"]
+                    message = _status_message['halted']
                     break
 
         count += 1

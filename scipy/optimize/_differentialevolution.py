@@ -519,8 +519,7 @@ class DifferentialEvolutionSolver(object):
                                   convergence=self.tol / convergence) is True):
 
                 warning_flag = True
-                status_message = ('callback function requested stop early '
-                                  'by returning True')
+                status_message = _status_message['halted']
                 break
 
             if convergence < self.tol or warning_flag:

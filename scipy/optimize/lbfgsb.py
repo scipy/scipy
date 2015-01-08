@@ -40,7 +40,7 @@ from numpy import array, asarray, float64, int32, zeros
 from . import _lbfgsb
 from .optimize import (approx_fprime, MemoizeJac, OptimizeResult,
                        _check_unknown_options, wrap_function,
-                       _approx_fprime_helper)
+                       _approx_fprime_helper, _status_message)
 
 __all__ = ['fmin_l_bfgs_b']
 
@@ -106,7 +106,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         Maximum number of iterations.
     callback : callable, optional
         Called after each iteration, as ``callback(xk)``, where ``xk`` is the
-        current parameter vector.
+        current parameter vector. If ``callback`` returns `True` the
+        minimization is halted.
 
     Returns
     -------
@@ -121,7 +122,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
           - 0 if converged,
           - 1 if too many function evaluations or too many iterations,
-          - 2 if stopped for another reason, given in d['task']
+          - 2 if stopped for another reason, given in d['task'],
+          - 3 Callback stopped the minimization
 
         * d['grad'] is the gradient at the minimum (should be 0 ish)
         * d['funcalls'] is the number of function calls made.
@@ -298,7 +300,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     task[:] = 'START'
 
     n_iterations = 0
-
+    warnflag=0
     while 1:
         # x, f, g, wa, iwa, task, csave, lsave, isave, dsave = \
         _lbfgsb.setulb(m, x, low_bnd, upper_bnd, nbd, f, g, factr,
@@ -320,7 +322,10 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             else:
                 n_iterations += 1
                 if callback is not None:
-                    callback(x)
+                    ret = callback(x)
+                    if ret is True:
+                        warnflag = 3
+                        break
         else:
             break
 
@@ -331,6 +336,9 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         warnflag = 1
     elif n_iterations > maxiter:
         warnflag = 1
+    elif warnflag == 3:
+        task_str = _status_message['halted']
+        pass
     else:
         warnflag = 2
 

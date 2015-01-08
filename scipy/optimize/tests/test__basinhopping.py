@@ -10,6 +10,7 @@ import numpy as np
 from numpy import cos, sin
 
 from scipy.optimize import basinhopping
+from scipy.optimize.optimize import _status_message
 from scipy.optimize._basinhopping import (
     Storage, RandomDisplacement, Metropolis, AdaptiveStepsize)
 
@@ -237,7 +238,7 @@ class TestBasinHopping(TestCase):
         res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
                            niter=30, disp=self.disp, callback=callback)
         assert_(callback.been_called)
-        assert_("callback" in res.message[0])
+        assert_(res.message, _status_message['halted'])
         assert_equal(res.nit, 10)
 
     def test_minimizer_fail(self):

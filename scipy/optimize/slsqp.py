@@ -20,7 +20,8 @@ __all__ = ['approx_jacobian','fmin_slsqp']
 from scipy.optimize._slsqp import slsqp
 from numpy import zeros, array, linalg, append, asfarray, concatenate, finfo, \
                   sqrt, vstack, exp, inf, where, isfinite, atleast_1d
-from .optimize import wrap_function, OptimizeResult, _check_unknown_options
+from .optimize import (wrap_function, OptimizeResult, _check_unknown_options,
+                       _status_message)
 
 __docformat__ = "restructuredtext en"
 
@@ -136,7 +137,8 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
         The step size for finite-difference derivative estimates.
     callback : callable, optional
         Called after each iteration, as ``callback(x)``, where ``x`` is the
-        current parameter vector.
+        current parameter vector. If ``callback`` returns `True` the
+        minimization is halted.
 
     Returns
     -------
@@ -171,6 +173,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
          7 : Rank-deficient equality constraint subproblem HFTI
          8 : Positive directional derivative for linesearch
          9 : Iteration limit exceeded
+        10 : Callback function returned True
 
     Examples
     --------
@@ -292,7 +295,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                     6: "Singular matrix C in LSQ subproblem",
                     7: "Rank-deficient equality constraint subproblem HFTI",
                     8: "Positive directional derivative for linesearch",
-                    9: "Iteration limit exceeded"}
+                    9: "Iteration limit exceeded",
+                   10: "callback function requested stop early by returning True"}
 
     # Wrap func
     feval, func = wrap_function(func, args)
@@ -408,8 +412,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
         # call callback if major iteration has incremented
         if callback is not None and majiter > majiter_prev:
-            callback(x)
-
+            ret = callback(x)
+            if ret is True:
+                mode = 10
+                break
         # Print the status of the current iterate if iprint > 2 and the
         # major iteration has incremented
         if iprint >= 2 and majiter > majiter_prev:
