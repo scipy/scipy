@@ -115,7 +115,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         For method-specific options, see :func:`show_options()`.
     callback : callable, optional
         Called after each iteration, as ``callback(xk)``, where ``xk`` is the
-        current parameter vector.
+        current parameter vector.  If ``callback`` returns `True` then the
+        minimization is halted.
 
     Returns
     -------
