@@ -454,7 +454,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     sim = numpy.take(sim, ind, 0)
 
     iterations = 1
-    msg=''
+    msg = ''
 
     while (fcalls[0] < maxfun and iterations < maxiter):
         if (numpy.max(numpy.ravel(numpy.abs(sim[1:] - sim[0]))) <= xtol and
@@ -2361,7 +2361,7 @@ def _minimize_powell(func, x0, args=(), callback=None,
     x1 = x.copy()
     iter = 0
     ilist = list(range(N))
-    msg=''
+    msg = ''
     while True:
         fx = fval
         bigind = 0

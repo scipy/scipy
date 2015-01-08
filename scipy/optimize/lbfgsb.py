@@ -300,7 +300,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     task[:] = 'START'
 
     n_iterations = 0
-    warnflag=0
+    warnflag = 0
     while 1:
         # x, f, g, wa, iwa, task, csave, lsave, isave, dsave = \
         _lbfgsb.setulb(m, x, low_bnd, upper_bnd, nbd, f, g, factr,
