@@ -144,8 +144,8 @@ def configuration(parent_package='',top_path=None):
                          sources=['lapack_pointers.c'],
                          include_dirs=['.'])
 
-    config.add_extension('_test_blas_pointers',
-                         sources=['_test_blas_pointers.c'],
+    config.add_extension('_cython_blas_wrappers',
+                         sources=['_cython_blas_wrappers.c'],
                          include_dirs=['.'])
 
     config.add_extension('_test_lapack_pointers',
