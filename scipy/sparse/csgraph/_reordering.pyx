@@ -80,8 +80,8 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     38, no. 2, (2011).
 
     """
-    nrows = graph.shape[0]
-    if graph.shape[0] != graph.shape[1]:
+    cdef np.npy_intp nrows = graph.shape[0]
+    if nrows != graph.shape[1]:
         raise ValueError('Maximum bipartite matching requires a square matrix.')
     if isspmatrix_csr(graph) or isspmatrix_coo(graph):
         graph = graph.tocsc()
@@ -98,12 +98,12 @@ def maximum_bipartite_matching(graph, perm_type='row'):
 cdef _node_degrees(
         np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
         np.ndarray[int32_or_int64, ndim=1, mode="c"] ptr,
-        int num_rows):
+        np.npy_intp num_rows):
     """
     Find the degree of each node (matrix row) in a graph represented
     by a sparse CSR or CSC matrix.
     """
-    cdef unsigned int ii, jj
+    cdef np.npy_intp ii, jj
     cdef np.ndarray[int32_or_int64] degree = np.zeros(num_rows, dtype=ind.dtype)
     
     for ii in range(num_rows):
@@ -118,16 +118,16 @@ cdef _node_degrees(
 
 def _reverse_cuthill_mckee(np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
         np.ndarray[int32_or_int64, ndim=1, mode="c"] ptr,
-        int num_rows):
+        np.npy_intp num_rows):
     """
     Reverse Cuthill-McKee ordering of a sparse symmetric CSR or CSC matrix.  
     We follow the original Cuthill-McKee paper and always start the routine
     at a node of lowest degree for each connected component.
     """
-    cdef unsigned int N = 0, N_old, level_start, level_end, temp
-    cdef unsigned int zz, ii, jj, kk, ll, level_len
+    cdef np.npy_intp N = 0, N_old, level_start, level_end, temp
+    cdef np.npy_intp zz, ii, jj, kk, ll, level_len
     cdef np.ndarray[int32_or_int64] order = np.zeros(num_rows, dtype=ind.dtype)
-    cdef np.ndarray[ITYPE_t] degree = _node_degrees(ind, ptr, num_rows)
+    cdef np.ndarray[int32_or_int64] degree = _node_degrees(ind, ptr, num_rows)
     cdef np.ndarray[np.npy_intp] inds = np.argsort(degree)
     cdef np.ndarray[np.npy_intp] rev_inds = np.argsort(inds)
     cdef np.ndarray[ITYPE_t] temp_degrees = np.zeros(np.max(degree), dtype=ITYPE)
@@ -198,8 +198,8 @@ def _maximum_bipartite_matching(
     cdef np.ndarray[ITYPE_t] previous = np.zeros(n, dtype=ITYPE)
     cdef np.ndarray[int32_or_int64] match = np.empty(n, dtype=inds.dtype)
     cdef np.ndarray[ITYPE_t] row_match = np.empty(n, dtype=ITYPE)
-    cdef int queue_ptr, queue_col, ptr, i, j, queue_size
-    cdef int col, next_num = 1
+    cdef np.npy_intp queue_ptr, queue_col, ptr, i, j, queue_size
+    cdef np.npy_intp col, next_num = 1
     cdef int32_or_int64 row, temp, eptr
 
     for i in range(n):
