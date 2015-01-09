@@ -1331,20 +1331,24 @@ def _YT(B,ker_pole,transfer_matrix,j_main_loop,poles):
 
     #odd number of real poles
     if poles[isreal(poles)].shape[0] % 2:
-        if i < B.shape[0] and isreal(poles[i]):
-            if i == 0:
-                #only one real pole (and more complex to come 
-                #or we wouldn't be here anyway), what should be done here is
-                #unclear in the original paper so use KNV0 at least we're sure
-                #it will do no harm.
-                return _KNV0(B,ker_pole,transfer_matrix,i,poles)
-            elif j < B.shape[0] and ~isreal(poles[j]):
-                #we are on the last real pole switch with the first one
-                j = 0
-        else:  # both poles are complex but we are shifted on the right by one
-            i -= 1
-            j -= 1
-
+        if any(~isreal(poles)): #are there complex poles ?
+            if i < B.shape[0] and isreal(poles[i]):
+                if i == 0:
+                    #only one real pole (and more complex to come 
+                    #or we wouldn't be here anyway), what should be done here is
+                    #unclear in the original paper so use KNV0 at least we're sure
+                    #it will do no harm.
+                    return _KNV0(B,ker_pole,transfer_matrix,i,poles)
+                elif j < B.shape[0] and ~isreal(poles[j]):
+                    #we are on the last real pole switch with the first one
+                    j = 0
+            else:  # both poles are complex but we are shifted on the right by one        
+                i -= 1
+                j -= 1
+        else: #only real poles switch the last one with the first one
+            if i==B.shape[0]-1:
+                j=0
+                
     if j >= B.shape[0]:
         #nothing to be done
         return
@@ -1361,7 +1365,7 @@ def _YT(B,ker_pole,transfer_matrix,j_main_loop,poles):
     else:
         _YT_complex(ker_pole,Q,transfer_matrix,i,j) 
 
-def place_poles(A,B,poles, method="YT", rtol=1e-3, maxiter=20):
+def place_poles(A,B,poles, method="YT", rtol=1e-3, maxiter=30):
     """
     Compute K such as eigenvalues(A-dot(B,K))=P.    
     
@@ -1568,7 +1572,7 @@ def place_poles(A,B,poles, method="YT", rtol=1e-3, maxiter=20):
                     stop = True
                 nb_try += 1
             
-            if nb_try == maxiter and rtol>0:
+            if not stop and rtol>0:
                 # if rtol<=0 the user has probably done that on purpose, 
                 # don't annoy him
                 err_msg=("Convergence was not reached after maxiter iterations.\n"
