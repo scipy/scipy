@@ -26,6 +26,12 @@ Library:
     Extension: _solve_toeplitz
         Sources:
              _solve_toeplitz.c
+    Extension: _blas_subroutine_wrappers
+        Sources:
+	    _blas_subroutine_wrappers.f
+    Extension: _lapack_subroutine_wrappers
+        Sources:
+	    _lapack_subroutine_wrappers.f
     Extension: blas_pointers
         Sources:
             blas_pointers.c
