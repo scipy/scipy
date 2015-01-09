@@ -137,10 +137,25 @@ class Test_place:
         #should fail as rank(B) is two
         assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2))
 
-        #should fail, these poles can' be placed with this linear system
-        #as they are way too close
+        #Should not raise ValueError as the poles can be placed but should
+        #raise a warning as the congergence is not reached
+        with warnings.catch_warnings(record=True) as w:
+            place_poles(A, B, (-1,-2,-3,-4), rtol=1e-16)
+            assert len(w) == 1
+            assert issubclass(w[-1].category, UserWarning)
+            assert "Convergence was not reached after max_try iterations"\
+                    in str(w[-1].message)
 
-        assert_raises(ValueError, place_poles, A, B, (-2,-2,-3,-3),max_try=100)
+        #Should fail because these poles can't be placed on this system (too
+        #close) and we should also get a warning because the algorithm did not
+        #converge
+        with warnings.catch_warnings(record=True) as w:
+            assert_raises(ValueError, place_poles, A, B, (-2,-2,-3,-3))
+            assert len(w) == 1
+            assert issubclass(w[-1].category, UserWarning)
+            assert "Convergence was not reached after max_try iterations"\
+                    in str(w[-1].message)
+
 
         #should fail as a complex misses its conjugate
         assert_raises(ValueError, place_poles, A, B, (-2+1j,-2-1j,-2+3j,-2))
