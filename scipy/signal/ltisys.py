@@ -1584,8 +1584,11 @@ def place_poles(A,B,poles, method="YT", rtol=1e-3, maxiter=20):
         idx = 0  
         while idx < poles.shape[0]-1:
             if ~isreal(poles[idx]):
-                rel = transfer_matrix[:,idx]
+                rel = transfer_matrix[:,idx].copy()
                 img = transfer_matrix[:,idx+1]
+                #rel will be an array referencing a column of transfer_matrix
+                #if we don't copy() it will changer after the next line and
+                #and the line after will not yield the correct value
                 transfer_matrix[:,idx] = rel-1j*img
                 transfer_matrix[:,idx+1] = rel+1j*img
                 idx += 1  # skip next one

@@ -28,7 +28,7 @@ def _assert_poles_close(P1,P2, rtol=0.1, atol=1e-3):
                 np.delete(P2,p2_idx)
                 break
         if not found:
-            raise ValueError("Can't find pole "+p1+" in "+P2)
+            raise ValueError("Can't find pole "+str(p1)+" in "+str(P2))
 
 class Test_place:
     def test_real(self):
