@@ -136,6 +136,19 @@ def configuration(parent_package='',top_path=None):
 
     config.add_data_files('f2pyptr.h')
 
+    sources = ['_blas_subroutine_wrappers.f']
+    sources += get_g77_abi_wrappers(lapack_opt)
+    sources += get_sgemv_fix(lapack_opt)
+    config.add_extension('_blas_subroutine_wrappers',
+                         sources=sources,
+                         extra_info=lapack_opt)
+
+    sources = ['_lapack_subroutine_wrappers.f']
+    sources += get_g77_abi_wrappers(lapack_opt)
+    config.add_extension('_lapack_subroutine_wrappers',
+                         sources=sources,
+                         extra_info=lapack_opt)
+
     config.add_extension('blas_pointers',
                          sources=['blas_pointers.c'],
                          include_dirs=['.'])

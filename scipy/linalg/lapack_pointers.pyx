@@ -180,10 +180,35 @@ LAPACK Functions
 """
 
 from . import lapack
+from . import _lapack_subroutine_wrappers as wlapack
 
 cdef extern from "f2pyptr.h":
     void *f2py_ptr(object) except NULL
 
+# Use the subroutine wrappers for the
+# functions with specific return values.
+ctypedef d wdlamch_t(d *out, char *cmach) nogil
+ctypedef s wslamch_t(s *out, char *cmach) nogil
+
+# Get function pointers to the wrapper subroutines.
+cdef:
+    wdlamch_t *wdlamch = <wdlamch_t*>f2py_ptr(wlapack.dlamchwrapper._cpointer)
+    wslamch_t *wslamch = <wslamch_t*>f2py_ptr(wlapack.slamchwrapper._cpointer)
+
+# Define functions to get the return values from the wrapper subroutines.
+cdef d _dlamch(char *cmach) nogil:
+    cdef double out
+    wdlamch(&out, cmach)
+    return out
+
+cdef s _slamch(char *cmach) nogil:
+    cdef float out
+    wslamch(&out, cmach)
+    return out
+
+# When assigning the pointers for routines expected to return a value,
+# take the address of the wrapper function instead of getting the
+# cpointer attribute of the f2py wrapper.
 cdef:
     cgbsv_t *cgbsv = <cgbsv_t*>f2py_ptr(lapack.cgbsv._cpointer)
     cgbtrf_t *cgbtrf = <cgbtrf_t*>f2py_ptr(lapack.cgbtrf._cpointer)
@@ -246,7 +271,7 @@ cdef:
     dgetrs_t *dgetrs = <dgetrs_t*>f2py_ptr(lapack.dgetrs._cpointer)
     dgges_t *dgges = <dgges_t*>f2py_ptr(lapack.dgges._cpointer)
     dggev_t *dggev = <dggev_t*>f2py_ptr(lapack.dggev._cpointer)
-    dlamch_t *dlamch = <dlamch_t*>f2py_ptr(lapack.dlamch._cpointer)
+    dlamch_t *dlamch = &_dlamch
     dlaswp_t *dlaswp = <dlaswp_t*>f2py_ptr(lapack.dlaswp._cpointer)
     dlauum_t *dlauum = <dlauum_t*>f2py_ptr(lapack.dlauum._cpointer)
     dorgqr_t *dorgqr = <dorgqr_t*>f2py_ptr(lapack.dorgqr._cpointer)
@@ -290,7 +315,7 @@ cdef:
     sgetrs_t *sgetrs = <sgetrs_t*>f2py_ptr(lapack.sgetrs._cpointer)
     sgges_t *sgges = <sgges_t*>f2py_ptr(lapack.sgges._cpointer)
     sggev_t *sggev = <sggev_t*>f2py_ptr(lapack.sggev._cpointer)
-    slamch_t *slamch = <slamch_t*>f2py_ptr(lapack.wslamch._cpointer)
+    slamch_t *slamch = &_slamch
     slaswp_t *slaswp = <slaswp_t*>f2py_ptr(lapack.slaswp._cpointer)
     slauum_t *slauum = <slauum_t*>f2py_ptr(lapack.slauum._cpointer)
     sorgqr_t *sorgqr = <sorgqr_t*>f2py_ptr(lapack.sorgqr._cpointer)

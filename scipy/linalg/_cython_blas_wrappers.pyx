@@ -7,6 +7,33 @@ from scipy.linalg cimport blas_pointers as blas
 cdef inline bint is_contiguous(double[:,:] a, int axis):
     return (a.strides[axis] == sizeof(a[0,0]) or a.shape[axis] == 1)
 
+cpdef float complex cdotc(float complex[:] cx, float complex[:] cy):
+    cdef:
+        int n = cx.shape[0]
+        int incx = cx.strides[0] // sizeof(cx[0])
+        int incy = cy.strides[0] // sizeof(cy[0])
+    return blas.cdotc(&n, &cx[0], &incx, &cy[0], &incy)
+
+cpdef float complex cdotu(float complex[:] cx, float complex[:] cy):
+    cdef:
+        int n = cx.shape[0]
+        int incx = cx.strides[0] // sizeof(cx[0])
+        int incy = cy.strides[0] // sizeof(cy[0])
+    return blas.cdotu(&n, &cx[0], &incx, &cy[0], &incy)
+
+cpdef double dasum(double[:] dx):
+    cdef:
+        int n = dx.shape[0]
+        int incx = dx.strides[0] // sizeof(dx[0])
+    return blas.dasum(&n, &dx[0], &incx)
+
+cpdef double ddot(double[:] dx, double[:] dy):
+    cdef:
+        int n = dx.shape[0]
+        int incx = dx.strides[0] // sizeof(dx[0])
+        int incy = dy.strides[0] // sizeof(dy[0])
+    return blas.ddot(&n, &dx[0], &incx, &dy[0], &incy)
+
 cpdef int dgemm(double alpha, double[:,:] a, double[:,:] b, double beta,
                 double[:,:] c) except -1:
     cdef:
@@ -77,33 +104,6 @@ cpdef int dgemm(double alpha, double[:,:] a, double[:,:] b, double beta,
         raise ValueError("Input 'c' is neither C nor Fortran contiguous.")
     return 0
 
-cpdef float complex cdotc(float complex[:] cx, float complex[:] cy):
-    cdef:
-        int n = cx.shape[0]
-        int incx = cx.strides[0] // sizeof(cx[0])
-        int incy = cy.strides[0] // sizeof(cy[0])
-    return blas.cdotc(&n, &cx[0], &incx, &cy[0], &incy)
-
-cpdef float complex cdotu(float complex[:] cx, float complex[:] cy):
-    cdef:
-        int n = cx.shape[0]
-        int incx = cx.strides[0] // sizeof(cx[0])
-        int incy = cy.strides[0] // sizeof(cy[0])
-    return blas.cdotu(&n, &cx[0], &incx, &cy[0], &incy)
-
-cpdef double dasum(double[:] dx):
-    cdef:
-        int n = dx.shape[0]
-        int incx = dx.strides[0] // sizeof(dx[0])
-    return blas.dasum(&n, &dx[0], &incx)
-
-cpdef double ddot(double[:] dx, double[:] dy):
-    cdef:
-        int n = dx.shape[0]
-        int incx = dx.strides[0] // sizeof(dx[0])
-        int incy = dy.strides[0] // sizeof(dy[0])
-    return blas.ddot(&n, &dx[0], &incx, &dy[0], &incy)
-
 cpdef double dnrm2(double[:] x):
     cdef:
         int n = x.shape[0]
@@ -121,6 +121,30 @@ cpdef double dznrm2(double complex[:] x):
         int n = x.shape[0]
         int incx = x.strides[0] // sizeof(x[0])
     return blas.dznrm2(&n, &x[0], &incx)
+
+cpdef int icamax(float complex[:] cx):
+    cdef:
+        int n = cx.shape[0]
+        int incx = cx.strides[0] // sizeof(cx[0])
+    return blas.icamax(&n, &cx[0], &incx)
+
+cpdef int idamax(double[:] dx):
+    cdef:
+        int n = dx.shape[0]
+        int incx = dx.strides[0] // sizeof(dx[0])
+    return blas.idamax(&n, &dx[0], &incx)
+
+cpdef int isamax(float[:] sx):
+    cdef:
+        int n = sx.shape[0]
+        int incx = sx.strides[0] // sizeof(sx[0])
+    return blas.isamax(&n, &sx[0], &incx)
+
+cpdef int izamax(double complex[:] zx):
+    cdef:
+        int n = zx.shape[0]
+        int incx = zx.strides[0] // sizeof(zx[0])
+    return blas.izamax(&n, &zx[0], &incx)
 
 cpdef float sasum(float[:] sx):
     cdef:
