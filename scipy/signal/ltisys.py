@@ -1272,11 +1272,10 @@ def _YT_complex(ker_pole,Q,transfer_matrix,i,j):
     ur = sqrt(2)*Q[:,-2,newaxis]
     ui = sqrt(2)*Q[:,-1,newaxis]
     u = ur+1j*ui
-    v = conj(u)
 
     #step 2 page 20
     ker_pole_ij=ker_pole[i]
-    m = dot(dot(conj(ker_pole_ij.T),dot(u,v.T)-dot(v,u.T)),ker_pole_ij)
+    m = dot(dot(conj(ker_pole_ij.T),dot(u,conj(u).T)-dot(conj(u),u.T)),ker_pole_ij)
    
     #step 3 page 20
     e_val,e_vec = linalg.eig(m)
@@ -1289,8 +1288,9 @@ def _YT_complex(ker_pole,Q,transfer_matrix,i,j):
     #what follows is a rough python translation of the formulas
     #in section 6.2 page 20 (step 4)
     
-    #remember transfer_matrix_i has been split as transfer_matrix[i]=real(transfer_matrix_i)
-    #and transfer_matrix[j]=imag(transfer_matrix_i)
+    #remember transfer_matrix_i has been split as 
+    #transfer_matrix[i]=real(transfer_matrix_i) and 
+    #transfer_matrix[j]=imag(transfer_matrix_i)
     
     transfer_matrix_j_mo_transfer_matrix_j = transfer_matrix[:,i,newaxis]+\
                                             1j*transfer_matrix[:,j,newaxis]
@@ -1334,7 +1334,9 @@ def _YT(B,ker_pole,transfer_matrix,j_main_loop,poles):
         if i < B.shape[0] and isreal(poles[i]):
             if i == 0:
                 #only one real pole (and more complex to come 
-                #or we wouldn't be here anyway)
+                #or we wouldn't be here anyway), what should be done here is
+                #unclear in the original paper so use KNV0 at least we're sure
+                #it will do no harm.
                 return _KNV0(B,ker_pole,transfer_matrix,i,poles)
             elif j < B.shape[0] and ~isreal(poles[j]):
                 #we are on the last real pole switch with the first one
@@ -1472,6 +1474,9 @@ def place_poles(A,B,poles, method="YT", rtol=1e-3, maxiter=20):
     if B.shape[0] == matrix_rank(B):
         #if B is square and full rank there is only one solution 
         #such as (A+BK)=diag(P) i.e BK=diag(P)-A
+        #if B has as many lines as its rank (but not square) the solution
+        #is the same as above using least squares
+        # => use lstsq in both cases
         #for complex poles we use the following trick
         #
         # |a -b| has for eigenvalues a+b and a-b
@@ -1488,7 +1493,7 @@ def place_poles(A,B,poles, method="YT", rtol=1e-3, maxiter=20):
         while idx < poles.shape[0]:
             p = poles[idx]
             diag_poles[idx,idx] = real(p)
-            if ~isreal(p) and idx < poles.shape[0]-1:
+            if ~isreal(p):
                 diag_poles[idx,idx+1] = -imag(p)
                 diag_poles[idx+1,idx+1] = real(p)
                 diag_poles[idx+1,idx] = imag(p)
@@ -1497,7 +1502,7 @@ def place_poles(A,B,poles, method="YT", rtol=1e-3, maxiter=20):
         gain_matrix = linalg.lstsq(B,diag_poles-A)[0]
 
     else:        
-        #step A (p1144 KNV) and beginnig of step F: decompose dot(U1.T,A-P[i]*I).T
+        #step A (p1144 KNV) and begining of step F: decompose dot(U1.T,A-P[i]*I).T
         #and build our set of transfer_matrix vectors in the same loop
         ker_pole = []
         
@@ -1579,8 +1584,8 @@ def place_poles(A,B,poles, method="YT", rtol=1e-3, maxiter=20):
         idx = 0  
         while idx < poles.shape[0]-1:
             if ~isreal(poles[idx]):
-                rel = transfer_matrix[:,idx].copy()
-                img = transfer_matrix[:,idx+1].copy()
+                rel = transfer_matrix[:,idx]
+                img = transfer_matrix[:,idx+1]
                 transfer_matrix[:,idx] = rel-1j*img
                 transfer_matrix[:,idx+1] = rel+1j*img
                 idx += 1  # skip next one
@@ -1599,4 +1604,5 @@ def place_poles(A,B,poles, method="YT", rtol=1e-3, maxiter=20):
     gain_matrix = real(gain_matrix) 
 
     return gain_matrix, linalg.eig(A-dot(B,gain_matrix))[0]
+
 
