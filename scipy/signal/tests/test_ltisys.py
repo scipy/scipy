@@ -12,25 +12,25 @@ from scipy.signal.ltisys import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
 
+def _assert_poles_close(P1,P2, rtol=0.1, atol=1e-3):
+    """
+    Check each pole in P1 is close to a pole in P2 with a 10%
+    relative tolerance or 1e-3 absolute tolerance (useful for zero poles) 
+    """    
+    P2=P2.copy()
+    for p1 in P1:
+        found=False
+        for p2_idx in range(P2.shape[0]):
+            if np.allclose([np.real(p1),np.imag(p1)],
+                            [np.real(P2[p2_idx]),np.imag(P2[p2_idx])],
+                             rtol,atol):
+                found=True
+                np.delete(P2,p2_idx)
+                break
+        if not found:
+            raise ValueError("Can't find pole "+p1+" in "+P2)
+
 class Test_place:
-    def compare_poles(self,P1,P2):
-        #ordering complex arrays is a nightmare, so brute force 
-        #the comparison. At least it is reliable if not efficient
-        P2=P2.copy()
-        for p1 in P1:
-            found=False
-            for p2_idx in range(P2.shape[0]):
-                if np.allclose([np.real(p1),np.imag(p1)],
-                                [np.real(P2[p2_idx]),np.imag(P2[p2_idx])],
-                                 0.1,1e-3):
-                    found=True
-                    np.delete(P2,p2_idx)
-                    break
-            if not found:
-                print(p1,P2)
-                return False
-        return True      
-        
     def test_real(self):
         #Test real pole placement using KNV and YT0 algorithm
         #and example 1 in section 4 of the reference
@@ -46,15 +46,14 @@ class Test_place:
         #check KNV computes correct K matrix
         K1,P1=place_poles(A,B,P, method="KNV0")
         e_val1,e_vec1=np.linalg.eig(A-np.dot(B,K1))
-        assert_equal(True, self.compare_poles(e_val1,P))
-        assert_equal(True, self.compare_poles(e_val1,P1))
-
+        _assert_poles_close(e_val1,P)
+        _assert_poles_close(e_val1,P1)
 
         #same for YT
         K2,P2=place_poles(A,B,P, method="YT")
         e_val2,e_vec2=np.linalg.eig(A-np.dot(B,K2))
-        assert_equal(True, self.compare_poles(e_val2,P))
-        assert_equal(True, self.compare_poles(e_val2,P2)) 
+        _assert_poles_close(e_val2,P)
+        _assert_poles_close(e_val2,P2)
         
     
     def test_complex1(self):
@@ -69,8 +68,8 @@ class Test_place:
         P=np.array((-3,-1,-2-1j,-2+1j))
         K,P1=place_poles(A,B,P)
         e_val1,_=np.linalg.eig(A-np.dot(B,K))
-        assert_equal(True, self.compare_poles(e_val1,P))
-        assert_equal(True, self.compare_poles(e_val1,P1))
+        _assert_poles_close(e_val1,P)
+        _assert_poles_close(e_val1,P1)
 
     
     def test_complex2(self):
@@ -84,8 +83,9 @@ class Test_place:
           
         K,P1=place_poles(A,B,P)
         e_val1,_=np.linalg.eig(A-np.dot(B,K))
-        assert_equal(True, self.compare_poles(e_val1,P))
-        assert_equal(True, self.compare_poles(e_val1,P1))
+        _assert_poles_close(e_val1,P)
+        _assert_poles_close(e_val1,P1)
+
         
         #same test with an odd number of real poles > 1
         #this is another specific case of YT
@@ -93,8 +93,8 @@ class Test_place:
           
         K,P1=place_poles(A,B,P)
         e_val1,_=np.linalg.eig(A-np.dot(B,K))
-        assert_equal(True, self.compare_poles(e_val1,P))
-        assert_equal(True, self.compare_poles(e_val1,P1))
+        _assert_poles_close(e_val1,P)
+        _assert_poles_close(e_val1,P1)
         
         
     def test_tricky_B(self):
@@ -114,16 +114,16 @@ class Test_place:
         #one unique solution
         K,P1=place_poles(A,B,P)
         e_val1,_=np.linalg.eig(A-np.dot(B,K))
-        assert_equal(True, self.compare_poles(e_val1,P))
-        assert_equal(True, self.compare_poles(e_val1,P1))
+        _assert_poles_close(e_val1,P)
+        _assert_poles_close(e_val1,P1)
 
         #check with complex poles too as they trigger a specific case in
         #the specific case :-)
         P=np.array((-2+1j,-2-1j,-3,-2))
         K,P1=place_poles(A,B,P)
         e_val1,_=np.linalg.eig(A-np.dot(B,K))
-        assert_equal(True, self.compare_poles(e_val1,P))
-        assert_equal(True, self.compare_poles(e_val1,P1))
+        _assert_poles_close(e_val1,P)
+        _assert_poles_close(e_val1,P1)
 
 
         
