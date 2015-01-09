@@ -157,6 +157,9 @@ class Test_place:
         #should fail as a complex misses its conjugate
         assert_raises(ValueError, place_poles, A, B, (-2+1j,-2-1j,-2+3j,-2))
 
+        #should fail as poles are not in a 1D array-like
+        assert_raises(ValueError, place_poles, A, B, ((-2+1j,-2-1j,-2+3j,-2)))
+
         #should fail as A is not square
         assert_raises(ValueError, place_poles, A[:,:3], B, (-2,-3,-4,-5))
         
