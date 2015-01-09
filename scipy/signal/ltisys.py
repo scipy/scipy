@@ -1332,16 +1332,15 @@ def _YT(B,ker_pole,transfer_matrix,j_main_loop,poles):
     #odd number of real poles
     if poles[isreal(poles)].shape[0] % 2:
         if any(~isreal(poles)): #are there complex poles ?
-            if i < B.shape[0] and isreal(poles[i]):
-                if i == 0:
-                    #only one real pole (and more complex to come 
-                    #or we wouldn't be here anyway), what should be done here is
-                    #unclear in the original paper so use KNV0 at least we're sure
-                    #it will do no harm.
-                    return _KNV0(B,ker_pole,transfer_matrix,i,poles)
-                elif j < B.shape[0] and ~isreal(poles[j]):
-                    #we are on the last real pole switch with the first one
-                    j = 0
+            if i==0 and isreal(poles[0]) and ~isreal(poles[1]):
+                #only one real pole (and more complex to come 
+                #or we wouldn't be here anyway), what should be done here is
+                #unclear in the original paper so use KNV0 at least we're sure
+                #it will do no harm.
+                return _KNV0(B,ker_pole,transfer_matrix,i,poles)
+            elif j < B.shape[0] and ~isreal(poles[j]):
+                #we are on the last real pole switch with the first one
+                j = 0
             else:  # both poles are complex but we are shifted on the right by one        
                 i -= 1
                 j -= 1
