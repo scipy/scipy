@@ -1115,7 +1115,6 @@ def freqresp(system, w=None, n=10000):
 
     return w, h
     
-    
 def _valid_inputs(A,B,poles, method):
     """
     Check the poles come in complex conjugage pairs
@@ -1123,9 +1122,14 @@ def _valid_inputs(A,B,poles, method):
     Check the method chosen is compatible with provided poles
     Return update method to use and ordered poles
     """
-    
+
+    poles=array(poles)        
+
+    if len(poles.shape)>1:
+        raise ValueError("Poles must be a 1D array like.")    
+        
     #will raise ValueError if poles do not come in complex conjugates pairs   
-    poles = _order_complex_poles(poles)    
+    poles = _order_complex_poles(poles)   
     
     if len(A.shape) > 2:
         raise ValueError("A must be a 2D array/matrix.")
@@ -1355,7 +1359,7 @@ def _YT(B,ker_pole,transfer_matrix,j_main_loop,poles):
     else:
         _YT_complex(ker_pole,Q,transfer_matrix,i,j) 
 
-def place_poles(A,B,poles, method="YT", rtol=1e-3, max_try=20):
+def place_poles(A,B,poles, method="YT", rtol=1e-3, maxiter=20):
     """
     Compute K such as eigenvalues(A-dot(B,K))=P.    
     
@@ -1385,7 +1389,7 @@ def place_poles(A,B,poles, method="YT", rtol=1e-3, max_try=20):
         compared to its previous value, when it becomes lower than rtol the
         algorithm stops.
     
-    max_try: integer, optionnal (default 20)
+    maxiter: integer, optionnal (default 20)
         Maximum number of iterations to compute the gain matrix.
         
 
@@ -1453,9 +1457,6 @@ def place_poles(A,B,poles, method="YT", rtol=1e-3, max_try=20):
     K3,P3=place(A,B,P,rtol=-1,maxtry=100)
 
     """
-
-    #play it safe safe with whatever the users might pass as poles
-    poles = sort(array(poles).flatten())[::-1]  
 
     #move away all the inputs checking, it only adds noise to the code
     update_xj,poles = _valid_inputs(A,B,poles,method)
@@ -1552,7 +1553,7 @@ def place_poles(A,B,poles, method="YT", rtol=1e-3, max_try=20):
         if B.shape[1] > 1:  # otherwise there is nothing we can optimize from transfer_matrix computed above
             stop = False
             nb_try=0
-            while nb_try < max_try and not stop:
+            while nb_try < maxiter and not stop:
                 det_transfer_matrixb=abs(linalg.det(transfer_matrix))
                 for j in range(B.shape[0]):
                     update_xj(B,ker_pole,transfer_matrix,j,poles)
@@ -1562,10 +1563,10 @@ def place_poles(A,B,poles, method="YT", rtol=1e-3, max_try=20):
                     stop = True
                 nb_try += 1
             
-            if nb_try == max_try and rtol>0:
+            if nb_try == maxiter and rtol>0:
                 # if rtol<=0 the user has probably done that on purpose, 
                 # don't annoy him
-                err_msg=("Convergence was not reached after max_try iterations.\n"
+                err_msg=("Convergence was not reached after maxiter iterations.\n"
                         "You asked for a relative tolerance of %f at best we got %f"
                         %(rtol,cur_rtol))
                 warnings.warn(err_msg)
@@ -1598,4 +1599,4 @@ def place_poles(A,B,poles, method="YT", rtol=1e-3, max_try=20):
     gain_matrix = real(gain_matrix) 
 
     return gain_matrix, linalg.eig(A-dot(B,gain_matrix))[0]
-    
+

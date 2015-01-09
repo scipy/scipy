@@ -125,9 +125,6 @@ class Test_place:
         _assert_poles_close(e_val1,P)
         _assert_poles_close(e_val1,P1)
 
-
-        
-    
     
     def test_errors(self):
         #test input mistakes from user
@@ -143,17 +140,17 @@ class Test_place:
             place_poles(A, B, (-1,-2,-3,-4), rtol=1e-16)
             assert len(w) == 1
             assert issubclass(w[-1].category, UserWarning)
-            assert "Convergence was not reached after max_try iterations"\
+            assert "Convergence was not reached after maxiter iterations"\
                     in str(w[-1].message)
 
         #Should fail because these poles can't be placed on this system (too
-        #close) and we should also get a warning because the algorithm did not
+        #close) and should also raise a warning because the algorithm did not
         #converge
         with warnings.catch_warnings(record=True) as w:
             assert_raises(ValueError, place_poles, A, B, (-2,-2,-3,-3))
             assert len(w) == 1
             assert issubclass(w[-1].category, UserWarning)
-            assert "Convergence was not reached after max_try iterations"\
+            assert "Convergence was not reached after maxiter iterations"\
                     in str(w[-1].message)
 
 
