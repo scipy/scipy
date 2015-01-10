@@ -45,17 +45,12 @@ class TestPILUtil(TestCase):
     def test_imresize4(self):
         im = np.array([[1, 2],
                        [3, 4]])
-        res = np.array([[1., 1., 1.5, 2.],
-                        [1., 1., 1.5, 2.],
-                        [2., 2., 2.5, 3.],
-                        [3., 3., 3.5, 4.]], dtype=np.float32)
         # Check that resizing by target size, float and int are the same
         im2 = misc.imresize(im, (4,4), mode='F')  # output size
         im3 = misc.imresize(im, 2., mode='F')  # fraction
         im4 = misc.imresize(im, 200, mode='F')  # percentage
-        assert_equal(im2, res)
-        assert_equal(im3, res)
-        assert_equal(im4, res)
+        assert_equal(im2, im3)
+        assert_equal(im2, im4)
 
     def test_bytescale(self):
         x = np.array([0,1,2], np.uint8)
