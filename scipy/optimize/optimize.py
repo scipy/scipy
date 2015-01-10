@@ -928,7 +928,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     result = OptimizeResult(fun=fval, jac=gfk, hess_inv=Hk, nfev=func_calls[0],
                             njev=grad_calls[0], status=warnflag,
-                            success=(warnflag == 0), message=msg, x=xk)
+                            success=(warnflag == 0), message=msg, x=xk,
+                            nit=k)
     if retall:
         result['allvecs'] = allvecs
     return result
@@ -1210,7 +1211,8 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
 
     result = OptimizeResult(fun=fval, jac=gfk, nfev=func_calls[0],
                             njev=grad_calls[0], status=warnflag,
-                            success=(warnflag == 0), message=msg, x=xk)
+                            success=(warnflag == 0), message=msg, x=xk,
+                            nit=k)
     if retall:
         result['allvecs'] = allvecs
     return result
@@ -1478,7 +1480,8 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     result = OptimizeResult(fun=fval, jac=gfk, nfev=fcalls[0], njev=gcalls[0],
                             nhev=hcalls, status=warnflag,
-                            success=(warnflag == 0), message=msg, x=xk)
+                            success=(warnflag == 0), message=msg, x=xk,
+                            nit=k)
     if retall:
         result['allvecs'] = allvecs
     return result

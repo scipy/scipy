@@ -878,5 +878,37 @@ def test_minimize_multiple_constraints():
     assert_allclose(res.x, [125, 0, 0], atol=1e-10)
 
 
+class TestOptimizeResultAttributes(TestCase):
+    # Test that all minimizers return an OptimizeResult containing
+    # all the OptimizeResult attributes
+    def setUp(self):
+        self.x0 = [5, 5]
+        self.func = optimize.rosen
+        self.jac = optimize.rosen_der
+        self.hess = optimize.rosen_hess
+        self.hessp = optimize.rosen_hess_prod
+        self.bounds = [(0., 10.), (0., 10.)]
+
+    def test_attributes_present(self):
+        methods = ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG',
+                   'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP', 'dogleg',
+                   'trust-ncg']
+        attributes = ['nit', 'nfev', 'x', 'success', 'status', 'fun',
+                      'message']
+        skip = {'COBYLA': ['nit']}
+        for method in methods:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                res = optimize.minimize(self.func, self.x0, method=method,
+                                        jac=self.jac, hess=self.hess,
+                                        hessp=self.hessp)
+            for attribute in attributes:
+                if method in skip and attribute in skip[method]:
+                    continue
+
+                assert_(hasattr(res, attribute))
+
+
 if __name__ == "__main__":
     run_module_suite()
+
