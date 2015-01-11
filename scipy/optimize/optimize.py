@@ -3160,7 +3160,7 @@ def show_options(solver=None, method=None):
         disp : bool, optional
             Whether to print convergence process to stdout.
 
-        eta_stragegy : callable, optional
+        eta_strategy : callable, optional
             Choice of the ``eta_k`` parameter, which gives slack for growth
             of ``||F||**2``.  Called as ``eta_k = eta_strategy(k, x, F)`` with
             `k` the iteration number, `x` the current iterate and `F` the current

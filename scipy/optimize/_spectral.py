@@ -44,7 +44,7 @@ def _root_df_sane(func, x0, args=(), jac=None, ftol=1e-8, fatol=1e-300, maxfev=1
         Maximum number of function evaluations.
     disp : bool, optional
         Whether to print convergence process to stdout.
-    eta_stragegy : callable, optional
+    eta_strategy : callable, optional
         Choice of the ``eta_k`` parameter, which gives slack for growth
         of ``||F||**2``.  Called as ``eta_k = eta_strategy(k, x, F)`` with
         `k` the iteration number, `x` the current iterate and `F` the current
@@ -83,6 +83,7 @@ def _root_df_sane(func, x0, args=(), jac=None, ftol=1e-8, fatol=1e-300, maxfev=1
         #
         # Now, prod(1 + 1/(1 + k)**2, k=0..inf) = sinh(pi)/(2*pi) < inf.
         def eta_strategy(k, x, F):
+            # Avoid recomputing 2-norm of F by reusing f_k from the outer scope
             return f_k / (1 + k)**2
 
     func, x0, x0_shape, F_k, is_complex = _wrap_func(func, x0, args)

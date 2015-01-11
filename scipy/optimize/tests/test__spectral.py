@@ -25,12 +25,12 @@ def test_performance():
         dict(F=F_2, x0=x0_2, n=500, nit=11, nfev=11),
         dict(F=F_2, x0=x0_2, n=2000, nit=11, nfev=11),
         dict(F=F_4, x0=x0_4, n=999, nit=243, nfev=1188),
-        dict(F=F_6, x0=x0_6, n=100, nit=6, nfev=6),   # Results from dfsane.f; papers list nit=3, nfev=3
+        dict(F=F_6, x0=x0_6, n=100, nit=6, nfev=6),  # Results from dfsane.f; papers list nit=3, nfev=3
         dict(F=F_7, x0=x0_7, n=99, nit=23, nfev=29),  # Must have n%3==0, typo in papers?
-        dict(F=F_7, x0=x0_7, n=999, nit=23, nfev=29), # Must have n%3==0, typo in papers?
-        dict(F=F_9, x0=x0_9, n=100, nit=12, nfev=18), # Results from dfsane.f; papers list nit=nfev=6?
+        dict(F=F_7, x0=x0_7, n=999, nit=23, nfev=29),  # Must have n%3==0, typo in papers?
+        dict(F=F_9, x0=x0_9, n=100, nit=12, nfev=18),  # Results from dfsane.f; papers list nit=nfev=6?
         dict(F=F_9, x0=x0_9, n=1000, nit=12, nfev=18),
-        dict(F=F_10, x0=x0_10, n=1000, nit=5, nfev=5), # Results from dfsane.f; papers list nit=2, nfev=12
+        dict(F=F_10, x0=x0_10, n=1000, nit=5, nfev=5),  # Results from dfsane.f; papers list nit=2, nfev=12
     ]
 
     for problem in table_1:
