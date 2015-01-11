@@ -39,8 +39,42 @@ at time X for reason Y unless someone reviews it before then.
 
 Changes and new additions should be tested. Untested code is broken code.
 
-Who gets commit rights should always be discussed on the scipy-dev mailing list
-before the change is made.
+Who gets commit rights is decided by the core development team; changes in
+commit rights will then be announced on the scipy-dev mailing list.
+
+Who the core development team is comprised of is a little fuzzy - there are
+quite a few people who do have commit rights and would like to keep them but
+are no longer active.  To get an idea, look at the output of::
+
+    $ git shortlog --grep="Merge pull request" -a -c -s <current_release_minus_2>..upstream/master|sort -n
+
+and apply some common sense to it (and don't forget people who are still active
+but for some reason never merge PRs).
+
+
+Guidelines for committers
+-------------------------
+
+- When merging contributions, a committer is responsible for ensuring that
+  those meet the requirements outlined in `HACKING.txt`_. Also check that new
+  features and backwards compatibility breaks were discussed on the scipy-dev
+  mailing list.
+- New code goes in via a pull request.
+- Merge new code with the green button.  In case of merge conflicts, ask the PR
+  submitter to rebase (may require providing some git instructions).
+- Backports and trivial additions to finish a PR (really trivial, like a typo
+  or PEP8 fix) can be pushed directly.
+- For PRs that add new features or are in some way complex, wait at least a day
+  before merging it. That way, others get a chance to comment before the code
+  goes in.
+- Squashing commits or cleaning up commit messages of a PR that you consider
+  too messy is OK. Make sure though to retain the original author name when
+  doing this.
+- Make sure that the labels and milestone on a merged PR are set correctly.
+- When you want to reject a PR: if it's very obvious you can just close it and
+  explain why, if not obvious then it's a good idea to first explain why you
+  think the PR is not suitable for inclusion in Scipy and then let a second
+  committer comment or close.
 
 
 FAQ
@@ -49,18 +83,16 @@ Q: How can I keep track of pull requests (PRs) and comments on Github?
 
 A: Only people listed as committers get email notifications for new PRs. And
 they don't get it for comments unless they have commented themselves on that PR
-before.  There are RSS feeds though that can be followed by anyone:
-
-    - All chatter: http://new.scipy.org/scipy-chatter.xml
-    - Only new pull requests: http://new.scipy.org/scipy-pull.xml
+before.  Github does have a "Watch" feature that can be used to monitor
+activity on the repo.
 
 
 Q: How is this list of maintainers maintained, and how does one become a
 maintainer?
 
 A: This list is kept in the Scipy git repository.  Changes to it should be made
-by sending a pull request.  For some changes (such as adding a new maintainer)
-it is expected that these are discussed on the scipy-dev mailing list first.
+by sending a pull request.  For major changes it is expected that these are
+discussed on the scipy-dev mailing list first.
 To become a maintainer, someone should have an understanding of the code, have
 contributed at least a few features or bug fixes to that code, and express an
 interest in being a maintainer.
@@ -89,9 +121,6 @@ Maintainers:
 Status:
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.cluster>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.cluster&order=priority>`__
 
 
 scipy.constants
@@ -106,9 +135,6 @@ Status:
 The constants module is up-to-date (NIST 2010 CODATA) and has no known bugs.
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.constants>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.constants&order=priority>`__
 
 
 scipy.fftpack
@@ -124,9 +150,6 @@ The fftpack module is stable, with few known bugs and little development
 happening currently.
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.fftpack>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.fftpack&order=priority>`__
 
 
 scipy.integrate
@@ -134,14 +157,12 @@ scipy.integrate
 
 Maintainers:
 
-    - Travis Oliphant
+    - Pauli Virtanen
+    - Warren Weckesser
 
 Status:
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.integrate>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.integrate&order=priority>`__
 
 
 scipy.interpolate
@@ -149,15 +170,12 @@ scipy.interpolate
 
 Maintainers:
 
+    - Evgeni Burovski
     - Pauli Virtanen
-    - Travis Oliphant
 
 Status:
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.interpolate>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.interpolate&order=priority>`__
 
 
 scipy.io
@@ -179,9 +197,6 @@ as needed if the IDL file format evolves, or if there are any bugs discovered.
 There is no real need for any new features.
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.io>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.io&order=priority>`__
 
 scipy.linalg
 ````````````
@@ -189,13 +204,11 @@ scipy.linalg
 Maintainers:
 
     - Pauli Virtanen
+    - Alex Griffing
 
 Status:
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.linalg>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.linalg&order=priority>`__
 
 
 scipy.misc
@@ -208,9 +221,6 @@ Maintainers:
 Status:
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.misc>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.misc&order=priority>`__
 
 
 scipy.ndimage
@@ -224,9 +234,6 @@ Maintainers:
 Status:
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.ndimage>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.ndimage&order=priority>`__
 
 
 scipy.odr
@@ -237,9 +244,6 @@ Maintainers:
 Status:
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.odr>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.odr&order=priority>`__
 
 
 scipy.optimize
@@ -253,9 +257,6 @@ Maintainers:
 Status:
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.optimize>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.optimize&order=priority>`__
 
 
 scipy.signal
@@ -264,15 +265,12 @@ scipy.signal
 Maintainers:
 
     - Warren Weckesser
-    - David Cournapeau
-    - Travis Oliphant
+    - Ralf Gommers
+    - Eric Moore
 
 Status:
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.signal>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.signal&order=priority>`__
 
 
 scipy.sparse
@@ -280,15 +278,25 @@ scipy.sparse
 
 Maintainers:
 
-    - Jake Vanderplas
-    - Stefan van der Walt
+    - Pauli Virtanen
+    - Alex Griffing
 
 Status:
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.sparse>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.sparse&order=priority>`__
+
+
+scipy.sparse.csgraph
+````````````````````
+
+Maintainers:
+
+    - Jake Vanderplas
+
+Status:
+
+`Open tickets
+<https://github.com/scipy/scipy/issues?labels=scipy.sparse.csgraph>`__
 
 
 scipy.sparse.linalg
@@ -297,14 +305,12 @@ scipy.sparse.linalg
 Maintainers:
 
     - Pauli Virtanen
+    - Alex Griffing
     - Jake Vanderplas
 
 Status:
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.sparse.linalg>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.sparse.linalg&order=priority>`__
 
 
 scipy.spatial
@@ -318,9 +324,6 @@ Maintainers:
 Status:
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.spatial>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.spatial&order=priority>`__
 
 
 scipy.special
@@ -333,9 +336,6 @@ Maintainers:
 Status:
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.special>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.special&order=priority>`__
 
 
 scipy.stats
@@ -346,13 +346,11 @@ Maintainers:
     - Josef Perktold
     - Warren Weckesser
     - Ralf Gommers
+    - Evgeni Burovski
 
 Status:
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.stats>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.stats&order=priority>`__
 
 
 scipy.weave
@@ -360,13 +358,11 @@ scipy.weave
 
 Status:
 
-Weave is unmaintained, and only kept for backwards compatibility.
-For new development, it is recommended to use Cython.
+Weave is deprecated and will be removed before the 1.0 release.  It is now
+packaged as a separate (unmaintained) package: https://github.com/scipy/weave. 
+For new code, it is recommended to use Cython instead of Weave.
 
 `Open tickets <https://github.com/scipy/scipy/issues?labels=scipy.weave>`__
-| `RSS feed <http://projects.scipy.org/scipy/query?status=apply&status=needs_decision&
-status=needs_info&status=needs_review&status=needs_work&status=new&status=reopened
-&format=rss&component=scipy.weave&order=priority>`__
 
 
 
@@ -378,33 +374,16 @@ Websites
 
 Maintainers:
 
-    - Scott Sinclair (scipy.github.com)
+    - Pauli Virtanen
+    - Ralf Gommers
+    - Thomas Kluyver
+    - Scott Sinclair
 
 Status:
 
-The scipy.org website is currently a wiki.  The plan is to convert the
-main page and most important content to a Sphinx-based static site.
-Some progress has been made on this, visible at
-http://scipy.github.com.  Additional input is required on the site
-design, as well as where to host the content from the current site
-that won't be included in the new site.  Pull requests for this site
-should be made against https://github.com/scipy/scipy.org-new
-
-
-Documentation server/wiki
-`````````````````````````
-
-Maintainers:
-
-    - Pauli Virtanen
-    - Gael Varoquaux
-
-Trac
-````
-
-Maintainers:
-
-    - Pauli Virtanen
+The scipy.org site has been redesigned and is currently in good shape.
+It is hosted on a server maintained by Enthought.  Issues and pull requests 
+should be opened or sent to https://github.com/scipy/scipy.org
 
 
 Continuous Integration server
@@ -419,11 +398,16 @@ Build tools
 
 Maintainers:
 
-    - David Cournapeau (Bento)
+    - Ralf Gommers (Bento support)
+    - David Cournapeau
+    - Pauli Virtanen
 
 
 Other
 `````
 
-    - Release manager: Ralf Gommers
+    - Release manager: rotating role, Pauli Virtanen for 0.15.x
     - Planet SciPy: Gael Varoquaux
+
+
+.. _HACKING.txt: https://github.com/scipy/scipy/blob/master/HACKING.rst.txt
