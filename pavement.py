@@ -90,9 +90,6 @@ try:
     # This is duplicated from setup.py
     if os.path.exists('.git'):
         GIT_REVISION = setup_py.git_version()
-    elif os.path.exists('scipy/version.py'):
-        # must be a source distribution, use existing version file
-        from numpy.version import git_revision as GIT_REVISION
     else:
         GIT_REVISION = "Unknown"
 
@@ -104,6 +101,13 @@ try:
 finally:
     sys.path.pop(0)
 
+try:
+    # Ensure sensible file permissions
+    os.umask(0o022)
+except AttributeError:
+    # No umask on non-posix
+    pass
+
 
 #-----------------------------------
 # Things to be changed for a release
@@ -114,7 +118,7 @@ RELEASE = 'doc/release/0.15.0-notes.rst'
 
 # Start/end of the log (from git)
 LOG_START = 'v0.14.0'
-LOG_END = 'HEAD'
+LOG_END = 'v0.15.0'
 
 
 #-------------------------------------------------------
@@ -309,6 +313,9 @@ def tarball_name(type='gztar'):
 
 @task
 def sdist():
+    # Fix file permissions
+    sh('chmod a+rX -R *')
+
     # To be sure to bypass paver when building sdist... paver + scipy.distutils
     # do not play well together.
     sh('python setup.py sdist --formats=gztar,zip')
