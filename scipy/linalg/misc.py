@@ -8,7 +8,7 @@ from .lapack import get_lapack_funcs
 __all__ = ['LinAlgError', 'norm']
 
 
-def norm(a, ord=None):
+def norm(a, ord=None, axis=None, keepdims=False):
     """
     Matrix or vector norm.
 
@@ -19,15 +19,25 @@ def norm(a, ord=None):
     Parameters
     ----------
     a : (M,) or (M, N) array_like
-        Input array.
+        Input array.  If `axis` is None, `a` must be 1-D or 2-D.
     ord : {non-zero int, inf, -inf, 'fro'}, optional
         Order of the norm (see table under ``Notes``). inf means numpy's
-        `inf` object.
+        `inf` object
+    axis : {int, 2-tuple of ints, None}, optional
+        If `axis` is an integer, it specifies the axis of `a` along which to
+        compute the vector norms.  If `axis` is a 2-tuple, it specifies the
+        axes that hold 2-D matrices, and the matrix norms of these matrices
+        are computed.  If `axis` is None then either a vector norm (when `a`
+        is 1-D) or a matrix norm (when `a` is 2-D) is returned.
+    keepdims : bool, optional
+        If this is set to True, the axes which are normed over are left in the
+        result as dimensions with size one.  With this option the result will
+        broadcast correctly against the original `a`.
 
     Returns
     -------
-    norm : float
-        Norm of the matrix or vector.
+    n : float or ndarray
+        Norm of the matrix or vector(s).
 
     Notes
     -----
@@ -55,6 +65,10 @@ def norm(a, ord=None):
     The Frobenius norm is given by [1]_:
 
         :math:`||A||_F = [\\sum_{i,j} abs(a_{i,j})^2]^{1/2}`
+
+    The ``axis`` and ``keepdims`` arguments are passed directly to
+    ``numpy.linalg.norm`` and are only usable if they are supported
+    by the version of numpy in use.
 
     References
     ----------
@@ -113,16 +127,21 @@ def norm(a, ord=None):
     """
     # Differs from numpy only in non-finite handling and the use of blas.
     a = np.asarray_chkfinite(a)
-    if a.dtype.char in 'fdFD':
+
+    # Only use optimized norms if axis and keepdims are not specified.
+    if a.dtype.char in 'fdFD' and axis is None and not keepdims:
+
         if ord in (None, 2) and (a.ndim == 1):
             # use blas for fast and stable euclidean norm
             nrm2 = get_blas_funcs('nrm2', dtype=a.dtype)
             return nrm2(a)
 
-        if a.ndim == 2:
+        if a.ndim == 2 and axis is None and not keepdims:
             # Use lapack for a couple fast matrix norms.
             # For some reason the *lange frobenius norm is slow.
             lange_args = None
+            # Make sure this works if the user uses the axis keywords
+            # to apply the norm to the transpose.
             if ord == 1:
                 if np.isfortran(a):
                     lange_args = '1', a
@@ -137,6 +156,13 @@ def norm(a, ord=None):
                 lange = get_lapack_funcs('lange', dtype=a.dtype)
                 return lange(*lange_args)
 
+    # Filter out the axis and keepdims arguments if they aren't used so they
+    # are never inadvertently passed to a version of numpy that doesn't
+    # support them.
+    if axis is not None:
+        if keepdims:
+            return np.linalg.norm(a, ord=ord, axis=axis, keepdims=keepdims)
+        return np.linalg.norm(a, ord=ord, axis=axis)
     return np.linalg.norm(a, ord=ord)
 
 
