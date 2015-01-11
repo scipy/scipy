@@ -2,8 +2,6 @@
 SciPy 0.15.0 Release Notes
 ==========================
 
-.. note:: Scipy 0.15.0 is not released yet!
-
 .. contents::
 
 SciPy 0.15.0 is the culmination of 6 months of hard work. It contains
