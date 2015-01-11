@@ -15,7 +15,7 @@ class _NoConvergence(Exception):
 
 def _root_df_sane(func, x0, args=(), jac=None, ftol=1e-8, fatol=1e-300, maxfev=1000,
                   fnorm=None, callback=None, disp=False, M=None, eta_strategy=None,
-                  **unknown_options):
+                  sigma_eps=None, sigma_0=None, **unknown_options):
     r"""
     Solve nonlinear equation with the DF-SANE method
 
@@ -46,10 +46,16 @@ def _root_df_sane(func, x0, args=(), jac=None, ftol=1e-8, fatol=1e-300, maxfev=1
         Whether to print convergence process to stdout.
     eta_strategy : callable, optional
         Choice of the ``eta_k`` parameter, which gives slack for growth
-        of ``||F||**2``.  Called as ``eta_k = eta_strategy(k, x, F)`` with
+        of ``||F||_2**2``.  Called as ``eta_k = eta_strategy(k, x, F)`` with
         `k` the iteration number, `x` the current iterate and `F` the current
         residual. Should satisfy ``eta_k > 0`` and ``sum(eta, k=0..inf) < inf``.
-        Default: ``||F||**2 / (1 + k)**2``.
+        Default: ``||F||_2**2 / (1 + k)**1.2``.
+    sigma_eps : float, optional
+        The spectral coefficient is constrained to ``sigma_eps < sigma < 1/sigma_eps``.
+        Default: 1e-10
+    sigma_0 : float, optional
+        Initial spectral coefficient.
+        Default: 1.0
     M : int, optional
         Number of iterates to include in the nonmonotonic line search.
         Default: 10
@@ -67,10 +73,14 @@ def _root_df_sane(func, x0, args=(), jac=None, ftol=1e-8, fatol=1e-300, maxfev=1
         warnings.warn("DF-SANE solver does not use a Jacobian", category=OptimizeWarning)
 
     nexp = 2
-    sigma_eps = 1e-10
+    if sigma_eps is None:
+        sigma_eps = 1e-10
 
     if M is None:
         M = 10
+
+    if sigma_0 is None:
+        sigma_0 = 1.0
 
     if eta_strategy is None:
         # Different choice from [1], as their eta is not invariant
@@ -79,12 +89,12 @@ def _root_df_sane(func, x0, args=(), jac=None, ftol=1e-8, fatol=1e-300, maxfev=1
         # This choice satisfies the requirements in the paper.  f_k is
         # bounded: the maximum allowed by the line search is
         #
-        #     f_{k+1} = f_k * [1 + 1 / (1 + k)**2]
+        #     f_{k+1} = f_k * [1 + 1 / (1 + k)**a] ; a > 1
         #
-        # Now, prod(1 + 1/(1 + k)**2, k=0..inf) = sinh(pi)/(2*pi) < inf.
+        # Now, prod(1 + 1/(1 + k)**a, k=0..inf) = sinh(pi)/(2*pi) < inf.
         def eta_strategy(k, x, F):
             # Avoid recomputing 2-norm of F by reusing f_k from the outer scope
-            return f_k / (1 + k)**2
+            return f_k / (1 + k)**1.2
 
     func, x0, x0_shape, F_k, is_complex = _wrap_func(func, x0, args)
 
@@ -102,7 +112,7 @@ def _root_df_sane(func, x0, args=(), jac=None, ftol=1e-8, fatol=1e-300, maxfev=1
     k = 0
     x_k = x0
     f_k = np.linalg.norm(F_k)**nexp
-    sigma_k = 1.0
+    sigma_k = sigma_0
 
     if fnorm is None:
         def fnorm(F):

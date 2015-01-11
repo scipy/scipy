@@ -3167,6 +3167,14 @@ def show_options(solver=None, method=None):
             residual. Should satisfy ``eta_k > 0`` and ``sum(eta, k=0..inf) < inf``.
             Default: ``||F||**2 / (1 + k)**2``.
 
+        sigma_eps : float, optional
+            The spectral coefficient is constrained to ``sigma_eps < sigma < 1/sigma_eps``.
+            Default: 1e-10
+
+        sigma_0 : float, optional
+            Initial spectral coefficient.
+            Default: 1.0
+
         M : int, optional
             Number of iterates to include in the nonmonotonic line search.
             Default: 10
