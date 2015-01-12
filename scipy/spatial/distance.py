@@ -1240,8 +1240,9 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
         elif mstr in set(['minkowski', 'mi', 'm']):
             _distance_wrap.pdist_minkowski_wrap(_convert_to_double(X), dm, p)
         elif mstr in wmink_names:
+            w = _convert_to_double(np.asarray(w))
             _distance_wrap.pdist_weighted_minkowski_wrap(_convert_to_double(X),
-                                                         dm, p, np.asarray(w))
+                                                         dm, p, w)
         elif mstr in set(['seuclidean', 'se', 's']):
             if V is not None:
                 V = np.asarray(V, order='c')
