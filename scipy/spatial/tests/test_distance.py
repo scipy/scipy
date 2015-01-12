@@ -211,6 +211,16 @@ class TestCdist(TestCase):
         Y2 = cdist(X1, X2, 'test_wminkowski', p=3.8, w=w)
         _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
+    def test_cdist_wminkowski_int_weights(self):
+        # regression test when using integer weights
+        eps = 1e-07
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        w = np.arange(X1.shape[1])
+        Y1 = cdist(X1, X2, 'wminkowski', p=3.8, w=w)
+        Y2 = cdist(X1, X2, 'test_wminkowski', p=3.8, w=w)
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
+
     def test_cdist_wminkowski_random_p4d6(self):
         eps = 1e-07
         X1 = eo['cdist-X1']
@@ -659,6 +669,16 @@ class TestPdist(TestCase):
 
         dist = pdist(x, metric='wminkowski', w=[0.5, 1.0, 2.0], p=1)
         assert_allclose(dist, p1_expected, rtol=1e-14)
+
+    def test_pdist_wminkowski_int_weights(self):
+        # regression test for int weights
+        x = np.array([[0.0, 0.0, 0.0],
+                      [1.0, 0.0, 0.0],
+                      [0.0, 1.0, 0.0],
+                      [1.0, 1.0, 1.0]])
+        dist1 = pdist(x, metric='wminkowski', w=np.arange(3), p=1)
+        dist2 = pdist(x, metric='wminkowski', w=[0., 1., 2.], p=1)
+        assert_allclose(dist1, dist2, rtol=1e-14)
 
     def test_pdist_hamming_random(self):
         eps = 1e-07
