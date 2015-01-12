@@ -252,7 +252,15 @@ class TestCdist(TestCase):
         X1 = eo['cdist-X1']
         X2 = eo['cdist-X2']
         Y1 = cdist(X1, X2, 'cosine')
-        Y2 = cdist(X1, X2, 'test_cosine')
+
+        # Naive implementation
+        def norms(X):
+            # NumPy 1.7: np.linalg.norm(X, axis=1).reshape(-1, 1)
+            return np.asarray([np.linalg.norm(row)
+                               for row in X]).reshape(-1, 1)
+
+        Y2 = 1 - np.dot((X1 / norms(X1)), (X2 / norms(X2)).T)
+
         _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
     def test_cdist_correlation_random(self):
