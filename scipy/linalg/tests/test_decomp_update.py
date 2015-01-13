@@ -592,7 +592,7 @@ class BaseQRinsert(BaseQRdeltas):
         self.base_tall_p_col_xxx(3)
 
     def test_tall_p_col_sqr(self):
-        # 12x7 + 12x5 = 12x10 --> becomes sqr
+        # 12x7 + 12x5 = 12x12 --> becomes sqr
         self.base_tall_p_col_xxx(5)
 
     def test_tall_p_col_fat(self):
@@ -658,6 +658,36 @@ class BaseQRinsert(BaseQRdeltas):
             q1, r1 = qr_insert(q, r, u, row, overwrite_qru=False)
             a1 = np.insert(a, row*np.ones(3, np.intp), u, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol, False)
+
+    def test_economic_1_col(self):
+        a, q, r, u = self.generate('tall', 'economic',  which='col')
+        for col in range(r.shape[1]):
+            q1, r1 = qr_insert(q, r, u.copy(), col, 'col', False)
+            a1 = np.insert(a, col, u, 1)
+            check_qr(q1, r1, a1, self.rtol, self.atol, False)
+
+    # for column adds to economic matrices there are three cases to test
+    # eco + pcol --> eco
+    # eco + pcol --> sqr
+    # eco + pcol --> fat
+    def base_economic_p_col_xxx(self, p):
+        a, q, r, u = self.generate('tall', 'economic', which='col', p=p)
+        for col in range(r.shape[1]):
+            q1, r1 = qr_insert(q, r, u, col, 'col', False)
+            a1 = np.insert(a, col*np.ones(p, np.intp), u, 1)
+            check_qr(q1, r1, a1, self.rtol, self.atol, False)
+
+    def test_economic_p_col_eco(self):
+        # 12x7 + 12x3 = 12x10 --> stays eco
+        self.base_economic_p_col_xxx(3)
+
+    def test_economic_p_col_sqr(self):
+        # 12x7 + 12x5 = 12x12 --> becomes sqr
+        self.base_economic_p_col_xxx(5)
+
+    def test_economic_p_col_fat(self):
+        # 12x7 + 12x7 = 12x14 --> becomes fat
+        self.base_economic_p_col_xxx(7)
 
     def base_non_simple_strides(self, adjust_strides, k, p, which):
         for type in ['sqr', 'tall', 'fat']:
@@ -807,10 +837,6 @@ class BaseQRinsert(BaseQRdeltas):
         q2, r2 = qr_insert(q, r, u, 0, 'col', True)
         check_qr(q2, r2, a1, self.rtol, self.atol)
         assert_allclose(q2, q, rtol=self.rtol, atol=self.atol)
-
-    def test_economic_qr(self):
-        a, q, r, u = self.generate('tall', which='col', mode='economic')
-        assert_raises(ValueError, qr_insert, q, r, u, 0, 'col')
 
     def test_empty_inputs(self):
         a, q, r, u = self.generate('sqr', which='row')

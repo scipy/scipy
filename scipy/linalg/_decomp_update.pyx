@@ -723,6 +723,53 @@ cdef int qr_block_row_insert(int m, int n, blas_t* q, int* qs,
     libc.stdlib.free(work)
     return 0
 
+cdef void thin_qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
+        int* rs, blas_t* u, int* us, int k, int p_eco, int p_full,
+        blas_t* rcond) nogil:
+    # here q and r will always be fortran ordered since we have to allocate them
+    cdef int i, j, info
+    cdef blas_t c, sn 
+    cdef blas_t rc
+    cdef blas_t* s
+    cdef char* N = 'N'
+    cdef char* T = 'T'
+    cdef char* C = 'C'
+    cdef char* TC
+    
+    if blas_t is float or blas_t is double:
+        TC = T
+    else:
+        TC = C
+    
+    # on entry, Q and R have both been increased in size, Q via the appending
+    # columns of zeros, and R by the addition of both columns and rows of
+    # zeros.  In R, the new columns are located from column k to k + p. and 
+    # the new rows are at the bottom.  m and n refer to the size of the
+    # original system, not the new system.
+    
+    s = <blas_t*>libc.stdlib.malloc(2*(n+p_eco)*sizeof(blas_t))
+
+    for j in range(p_eco):
+        rc = rcond[0]
+        info = reorth(m, n+j, q, qs, True, col(u, us, j), us, s,  &rc)
+        #libc.stdio.printf('info = %d, rcond = %g\n', info, rc)
+        copy(m, col(u, us, j), us[0], col(q, qs, n+j), qs[0])
+        copy(n+j+1, s, 1, col(r, rs, k+j), rs[0]) 
+
+        for i in range(n-2+1, k-1, -1):
+            lartg(index2(r, rs, i+j, k+j), index2(r, rs, i+j+1, k+j), &c, &sn)
+            rot(n-i, index2(r, rs, i+j, i+p_eco+p_full), rs[1],
+                index2(r, rs, i+j+1, i+p_eco+p_full), rs[1], c, sn)
+            rot(m, col(q, qs, i+j), qs[0], col(q, qs, i+j+1), qs[0],
+                c, sn.conjugate())
+    libc.stdlib.free(s)
+    
+    if p_full > 0:
+        # if this is true, we have ensured the u is also F contiguous.
+        gemm(TC, N, m, p_full, m, 1, q, qs[1], col(u, us, p_eco), us[1], 0,
+             col(r, rs, k+p_eco), rs[1]) 
+        qr_block_col_insert(m, n+p_eco+p_full, q, qs, r, rs, k+p_eco, p_full)
+
 cdef void qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
                         int k) nogil:
     cdef int j
@@ -1775,13 +1822,15 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qru=True, check_finite=True):
     cdef int j, k1 = k 
     cdef int q_flags = NPY_ANYORDER
     cdef int u_flags = cnp.NPY_BEHAVED_NS | cnp.NPY_ELEMENTSTRIDES
-    cdef int typecode, m, n, p, info
+    cdef int typecode, m, n, p, info, p_eco, p_full
     cdef int qs[2]
     cdef void* rvoid
     cdef int rs[2]
     cdef int us[2]
     cdef cnp.npy_intp shape[2]
     cdef bint economic
+    cdef float frc = 0
+    cdef double drc = 0
 
     if which == 'row':
         q1, r1, typecode, m, n, economic = validate_qr(Q, R, True, NPY_ANYORDER,
@@ -1911,21 +1960,12 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qru=True, check_finite=True):
             return qnew, rnew
 
     elif which == 'col':
-        u1 = PyArray_CheckFromAny(u, NULL, 0, 0, u_flags, NULL)
-        if u1.ndim == 2:
-            q_flags = cnp.NPY_F_CONTIGUOUS
-        q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qru,
-                q_flags, True, NPY_ANYORDER, check_finite)
-        if economic:
-            raise ValueError('economic mode decompositions are not supported.')
-        if not cnp.PyArray_ISONESEGMENT(q1):
-            q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
-
-        if (not overwrite_qru and cnp.PyArray_CHKFLAGS(q1, cnp.NPY_C_CONTIGUOUS)
-            and (typecode == cnp.NPY_CFLOAT or typecode == cnp.NPY_CDOUBLE)):
+        q1, r1, typecode, m, n, economic = validate_qr(Q, R, True, NPY_ANYORDER,
+                True, NPY_ANYORDER, check_finite)
+        if not overwrite_qru:
             u_flags |= cnp.NPY_ENSURECOPY
-            u1 = PyArray_FromArraySafe(u1, NULL, u_flags)
-
+        u1 = PyArray_CheckFromAny(u, NULL, 0, 0, u_flags, NULL)
+            
         if cnp.PyArray_TYPE(u1) != typecode:
             raise ValueError('u must have the same type as Q and R')
         if not (-n <= k1 < n):
@@ -1933,63 +1973,109 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qru=True, check_finite=True):
         if k1 < 0:
             k1 += n
 
-        if u.shape[0] != m:
+        if u1.shape[0] != m:
             raise ValueError('bad size u')
-        if u.ndim == 2:
-            p = u.shape[1]
+        if u1.ndim == 2:
+            p = u1.shape[1]
         else:
             p = 1
+        if economic:
+            if n+p <= m:
+                p_eco = p
+                p_full = 0
+            else:
+                p_eco = m-n
+                p_full = p - p_eco
+                if not cnp.PyArray_CHKFLAGS(u1, cnp.NPY_F_CONTIGUOUS):
+                    u1 = PyArray_FromArraySafe(u1, NULL, cnp.NPY_F_CONTIGUOUS)
+            shape[0] = m
+            shape[1] = n+p_eco
+            qnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
+            qnew[:,:-p_eco] = q1
 
-        shape[0] = m
-        shape[1] = n+p
-        rnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
-
-        rnew[:,:k1] = r1[:,:k1]
-        rnew[:,k1+p:] = r1[:,k1:]
-
-        u1 = validate_array(u1, check_finite)
-        rvoid = extract(rnew, rs)
-        if p == 1:
-            form_qTu(q1, u1, rvoid, rs, k1)
-        else:
-            form_qTu(q1, u1, rvoid, rs, k1)
-        
-        if p == 1:
+            shape[0] = n+p_eco
+            shape[1] = n+p
+            rnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
+            rnew[:n,:k1] = r1[:,:k1]
+            rnew[:n,k1+p:] = r1[:,k1:]
+            u1 = validate_array(u1, check_finite)
             if typecode == cnp.NPY_FLOAT:
-                qr_col_insert(m, n+p, <float*>extract(q1, qs), qs,
-                        <float*>rvoid, rs, k1)
+                thin_qr_col_insert(m, n, <float*>extract(qnew, qs), qs,
+                        <float*>extract(rnew, rs), rs, <float*>extract(u1, us), us, k1, p_eco, p_full, &frc)
             elif typecode == cnp.NPY_DOUBLE:
-                qr_col_insert(m, n+p, <double*>extract(q1, qs), qs,
-                        <double*>rvoid, rs, k1)
+                thin_qr_col_insert(m, n, <double*>extract(qnew, qs), qs,
+                        <double*>extract(rnew, rs), rs, <double*>extract(u1, us), us, k1, p_eco, p_full, &drc)
             elif typecode == cnp.NPY_CFLOAT:
-                qr_col_insert(m, n+p, <float_complex*>extract(q1, qs), qs,
-                        <float_complex*>rvoid, rs, k1)
-            else:  # cnp.NPY_CDOUBLE
-                qr_col_insert(m, n+p, <double_complex*>extract(q1, qs), qs,
-                        <double_complex*>rvoid, rs, k1)
-        else:
-            if typecode == cnp.NPY_FLOAT:
-                info = qr_block_col_insert(m, n+p, <float*>extract(q1, qs), qs,
-                        <float*>rvoid, rs, k1, p)
-            elif typecode == cnp.NPY_DOUBLE:
-                info = qr_block_col_insert(m, n+p, <double*>extract(q1, qs), qs,
-                        <double*>rvoid, rs, k1, p)
-            elif typecode == cnp.NPY_CFLOAT:
-                info = qr_block_col_insert(m, n+p, <float_complex*>extract(q1, qs),
-                        qs, <float_complex*>rvoid, rs, k1, p)
+                thin_qr_col_insert(m, n, <float_complex*>extract(qnew, qs), qs,
+                        <float_complex*>extract(rnew, rs), rs, <float_complex*>extract(u1, us), us, k1, p_eco, p_full, <float_complex*>&frc)
             else:  # cnp.NPY_CDOUBLE:
-                info = qr_block_col_insert(m, n+p, <double_complex*>extract(q1, qs), 
-                        qs, <double_complex*>rvoid, rs, k1, p)
-            if info != 0:
-                if info > 0: 
-                    raise ValueError('The {0}th argument to ?geqrf was'
-                            'invalid'.format(info))
-                elif info < 0:
-                    raise ValueError('The {0}th argument to ?ormqr/?unmqr was'
-                            'invalid'.format(abs(info)))
-                elif info == MEMORY_ERROR:
-                    raise MemoryError('malloc failed')
-        return q1, rnew
+                thin_qr_col_insert(m, n, <double_complex*>extract(qnew, qs), qs,
+                        <double_complex*>extract(rnew, rs), rs, <double_complex*>extract(u1, us), us, k1, p_eco, p_full, <double_complex*>&drc)
+            return qnew, rnew
+        else:
+            if (not cnp.PyArray_ISONESEGMENT(q1)) or u1.ndim == 2:
+                q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
+            if (not overwrite_qru and cnp.PyArray_CHKFLAGS(q1, cnp.NPY_C_CONTIGUOUS)
+                and (typecode == cnp.NPY_CFLOAT or typecode == cnp.NPY_CDOUBLE)):
+                u_flags |= cnp.NPY_ENSURECOPY
+                u1 = PyArray_FromArraySafe(u1, NULL, u_flags)
+
+            shape[0] = m
+            shape[1] = n+p
+            rnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
+
+            rnew[:,:k1] = r1[:,:k1]
+            rnew[:,k1+p:] = r1[:,k1:]
+
+            u1 = validate_array(u1, check_finite)
+            rvoid = extract(rnew, rs)
+            if p == 1:
+                form_qTu(q1, u1, rvoid, rs, k1)
+            else:
+                form_qTu(q1, u1, rvoid, rs, k1)
+            if not overwrite_qru:
+                q1 = q1.copy('F')
+            
+            if p == 1:
+                if typecode == cnp.NPY_FLOAT:
+                    qr_col_insert(m, n+p, <float*>extract(q1, qs), qs,
+                            <float*>rvoid, rs, k1)
+                elif typecode == cnp.NPY_DOUBLE:
+                    qr_col_insert(m, n+p, <double*>extract(q1, qs), qs,
+                            <double*>rvoid, rs, k1)
+                elif typecode == cnp.NPY_CFLOAT:
+                    qr_col_insert(m, n+p, <float_complex*>extract(q1, qs), qs,
+                            <float_complex*>rvoid, rs, k1)
+                else:  # cnp.NPY_CDOUBLE
+                    qr_col_insert(m, n+p, <double_complex*>extract(q1, qs), qs,
+                            <double_complex*>rvoid, rs, k1)
+            else:
+                if typecode == cnp.NPY_FLOAT:
+                    info = qr_block_col_insert(m, n+p,
+                            <float*>extract(q1, qs), qs,
+                            <float*>rvoid, rs, k1, p)
+                elif typecode == cnp.NPY_DOUBLE:
+                    info = qr_block_col_insert(m, n+p,
+                            <double*>extract(q1, qs), qs,
+                            <double*>rvoid, rs, k1, p)
+                elif typecode == cnp.NPY_CFLOAT:
+                    info = qr_block_col_insert(m, n+p,
+                            <float_complex*>extract(q1, qs),
+                            qs, <float_complex*>rvoid, rs, k1, p)
+                else:  # cnp.NPY_CDOUBLE:
+                    info = qr_block_col_insert(m, n+p,
+                            <double_complex*>extract(q1, qs),
+                            qs, <double_complex*>rvoid, rs, k1, p)
+                if info != 0:
+                    if info > 0: 
+                        raise ValueError('The {0}th argument to ?geqrf was'
+                                'invalid'.format(info))
+                    elif info < 0:
+                        raise ValueError('The {0}th argument to ?ormqr/?unmqr was'
+                                'invalid'.format(abs(info)))
+                    elif info == MEMORY_ERROR:
+                        raise MemoryError('malloc failed')
+            return q1, rnew
     else:
         raise ValueError("which must be either 'row' or 'col'")
 
