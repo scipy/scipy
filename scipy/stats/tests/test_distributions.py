@@ -349,6 +349,15 @@ class TestHypergeom(TestCase):
         hgpmf = stats.hypergeom.pmf(2, tot, good, N)
         assert_almost_equal(hgpmf, 0.0010114963068932233, 11)
 
+    def test_args(self):
+        # test correct output for corner cases of arguments
+        # see gh-2325
+        assert_almost_equal(stats.hypergeom.pmf(0, 2, 1, 0), 1.0, 11)
+        assert_almost_equal(stats.hypergeom.pmf(1, 2, 1, 0), 0.0, 11)
+
+        assert_almost_equal(stats.hypergeom.pmf(0, 2, 0, 2), 1.0, 11)
+        assert_almost_equal(stats.hypergeom.pmf(1, 2, 1, 0), 0.0, 11)
+
     def test_cdf_above_one(self):
         # for some values of parameters, hypergeom cdf was >1, see gh-2238
         assert_(0 <= stats.hypergeom.cdf(30, 13397950, 4363, 12390) <= 1.0)
