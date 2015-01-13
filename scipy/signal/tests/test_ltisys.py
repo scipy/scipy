@@ -1,7 +1,5 @@
 from __future__ import division, print_function, absolute_import
-
 import warnings
-
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal,
                            assert_allclose, assert_raises,
@@ -17,14 +15,14 @@ def _assert_poles_close(P1,P2, rtol=0.1, atol=1e-3):
     Check each pole in P1 is close to a pole in P2 with a 10%
     relative tolerance or 1e-3 absolute tolerance (useful for zero poles) 
     """    
-    P2=P2.copy()
+    P2 = P2.copy()
     for p1 in P1:
-        found=False
+        found = False
         for p2_idx in range(P2.shape[0]):
             if np.allclose([np.real(p1),np.imag(p1)],
                             [np.real(P2[p2_idx]),np.imag(P2[p2_idx])],
                              rtol,atol):
-                found=True
+                found = True
                 np.delete(P2,p2_idx)
                 break
         if not found:
@@ -35,101 +33,96 @@ class Test_place:
         #Test real pole placement using KNV and YT0 algorithm
         #and example 1 in section 4 of the reference
         #publication (see docstring of place)
-        A=np.array([1.380,-0.2077,6.715,-5.676,
+        A = np.array([1.380,-0.2077,6.715,-5.676,
             -0.5814,-4.290,0,0.6750,
             1.067,4.273,-6.654,5.893,
             0.0480,4.273,1.343,-2.104]).reshape(4,4)
-        B=np.array([0,5.679,1.136,1.136,
+        B = np.array([0,5.679,1.136,1.136,
             0,0,-3.146,0]).reshape(4,2)
-        P=np.array((-0.2,-0.5,-5.0566,-8.6659))
+        P = np.array((-0.2,-0.5,-5.0566,-8.6659))
         
         #check KNV computes correct K matrix
-        K1,P1=place_poles(A,B,P, method="KNV0")
-        e_val1,e_vec1=np.linalg.eig(A-np.dot(B,K1))
+        K1,P1 = place_poles(A,B,P, method="KNV0")
+        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,K1))
         _assert_poles_close(e_val1,P)
         _assert_poles_close(e_val1,P1)
 
         #same for YT
-        K2,P2=place_poles(A,B,P, method="YT")
-        e_val2,e_vec2=np.linalg.eig(A-np.dot(B,K2))
+        K2,P2 = place_poles(A,B,P, method="YT")
+        e_val2,e_vec2 = np.linalg.eig(A-np.dot(B,K2))
         _assert_poles_close(e_val2,P)
         _assert_poles_close(e_val2,P2)
         
-    
     def test_complex1(self):
         #Test complex pole placement on a
         #linearized car model, taken from L. Jaulin,
         #Automatique pour la robotique, Cours et
         #Exercices, iSTE editions p 184/185
-        A=np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4)
-        B=np.array([0,0,0,0,1,0,0,1]).reshape(4,2)
+        A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4)
+        B = np.array([0,0,0,0,1,0,0,1]).reshape(4,2)
        
         #test complex poles on YT
-        P=np.array((-3,-1,-2-1j,-2+1j))
-        K,P1=place_poles(A,B,P)
-        e_val1,_=np.linalg.eig(A-np.dot(B,K))
+        P = np.array((-3,-1,-2-1j,-2+1j))
+        K,P1 = place_poles(A,B,P)
+        e_val1,_ = np.linalg.eig(A-np.dot(B,K))
         _assert_poles_close(e_val1,P)
         _assert_poles_close(e_val1,P1)
 
-    
     def test_complex2(self):
         #need a 5x5 array to ensure YT handles properly when there 
         #is only one real pole and several complex
 
-        A=np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0,
+        A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0,
                     0,0,0,5,0,0,0,0,9]).reshape(5,5)
-        B=np.array([0,0,0,0,1,0,0,1,2,3]).reshape(5,2)
-        P=np.array((-2,-3+1j,-3-1j,-1+1j,-1-1j))
+        B = np.array([0,0,0,0,1,0,0,1,2,3]).reshape(5,2)
+        P = np.array((-2,-3+1j,-3-1j,-1+1j,-1-1j))
           
-        K,P1=place_poles(A,B,P)
-        e_val1,_=np.linalg.eig(A-np.dot(B,K))
+        K,P1 = place_poles(A,B,P)
+        e_val1,_ = np.linalg.eig(A-np.dot(B,K))
         _assert_poles_close(e_val1,P)
         _assert_poles_close(e_val1,P1)
 
-        
         #same test with an odd number of real poles > 1
         #this is another specific case of YT
-        P=np.array((-2,-3,-4,-1+1j,-1-1j))
+        P = np.array((-2,-3,-4,-1+1j,-1-1j))
           
-        K,P1=place_poles(A,B,P)
-        e_val1,_=np.linalg.eig(A-np.dot(B,K))
+        K,P1 = place_poles(A,B,P)
+        e_val1,_ = np.linalg.eig(A-np.dot(B,K))
         _assert_poles_close(e_val1,P)
         _assert_poles_close(e_val1,P1)
-        
-        
+
     def test_tricky_B(self):
         #check we handle as we should the 1 column B matrices and
         #n column B matrices (with n such as shape(A)=(n,n))
-        A=np.array([1.380,-0.2077,6.715,-5.676,
+        A = np.array([1.380,-0.2077,6.715,-5.676,
             -0.5814,-4.290,0,0.6750,
             1.067,4.273,-6.654,5.893,
             0.0480,4.273,1.343,-2.104]).reshape(4,4)
-        B=np.array([0,5.679,1.136,1.136,
+        B = np.array([0,5.679,1.136,1.136,
             0,0,-3.146,0,
             1,2,3,4,
             5,6,7,8]).reshape(4,4)
-        P=np.array((-0.2,-0.5,-5.0566,-8.6659))
+        P = np.array((-0.2,-0.5,-5.0566,-8.6659))
         
         #KNV or YT are not called here, it's a specific case with only
         #one unique solution
-        K,P1=place_poles(A,B,P)
-        e_val1,_=np.linalg.eig(A-np.dot(B,K))
+        K,P1 = place_poles(A,B,P)
+        e_val1,_ = np.linalg.eig(A-np.dot(B,K))
         _assert_poles_close(e_val1,P)
         _assert_poles_close(e_val1,P1)
 
         #check with complex poles too as they trigger a specific case in
         #the specific case :-)
-        P=np.array((-2+1j,-2-1j,-3,-2))
-        K,P1=place_poles(A,B,P)
-        e_val1,_=np.linalg.eig(A-np.dot(B,K))
+        P = np.array((-2+1j,-2-1j,-3,-2))
+        K,P1 = place_poles(A,B,P)
+        e_val1,_ = np.linalg.eig(A-np.dot(B,K))
         _assert_poles_close(e_val1,P)
         _assert_poles_close(e_val1,P1)
 
-    
     def test_errors(self):
         #test input mistakes from user
-        A=np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4)
-        B=np.array([0,0,0,0,1,0,0,1]).reshape(4,2)
+        A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4)
+        B = np.array([0,0,0,0,1,0,0,1]).reshape(4,2)
         
         #should fail as rank(B) is two
         assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2))
@@ -153,7 +146,6 @@ class Test_place:
             assert "Convergence was not reached after maxiter iterations"\
                     in str(w[-1].message)
 
-
         #should fail as a complex misses its conjugate
         assert_raises(ValueError, place_poles, A, B, (-2+1j,-2-1j,-2+3j,-2))
 
@@ -169,8 +161,8 @@ class Test_place:
         #should fail as KNV0 does not support complex poles
         assert_raises(ValueError, place_poles, A, B, 
                       (-2+1j,-2-1j,-2+3j,-2-3j),method="KNV0")
-    
-        
+
+
 class TestSS2TF:
 
     def tst_matrix_shapes(self, p, q, r):
