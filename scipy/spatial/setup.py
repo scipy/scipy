@@ -37,6 +37,7 @@ def configuration(parent_package='', top_path=None):
 
     config.add_extension('_distance_wrap',
         sources=[join('src', 'distance_wrap.c')],
+        depends=[join('src', 'distance_impl.h')],
         include_dirs=[get_numpy_include_dirs()])
 
     return config
