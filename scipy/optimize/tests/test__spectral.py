@@ -98,7 +98,7 @@ def test_linear_definite():
     np.random.seed(1234)
     A = np.arange(n*n).reshape(n, n)
     A = A + n*n * np.diag(1 + np.arange(n))
-    assert np.linalg.eigvals(A).min() > 0
+    assert_(np.linalg.eigvals(A).min() > 0)
     b = np.arange(n) * 1.0
     check_solvability(A, b)
 
@@ -147,7 +147,7 @@ def x0_2(n):
     return x0
 
 def F_4(x, n):
-    assert n % 3 == 0
+    assert_equal(n % 3, 0)
     g = np.zeros([n])
     # Note: the first line is typoed in some of the references;
     # correct in original [Gasparo, Optimization Meth. 13, 79 (2000)]
@@ -157,7 +157,7 @@ def F_4(x, n):
     return g
 
 def x0_4(n):
-    assert n % 3 == 0
+    assert_equal(n % 3, 0)
     x0 = np.array([-1, 1/2, -1] * (n//3))
     return x0
 
@@ -170,7 +170,7 @@ def x0_6(n):
     return np.ones([n])
 
 def F_7(x, n):
-    assert n % 3 == 0
+    assert_equal(n % 3, 0)
 
     def phi(t):
         v = 0.5*t - 2
@@ -184,7 +184,7 @@ def F_7(x, n):
     return g
 
 def x0_7(n):
-    assert n % 3 == 0
+    assert_equal(n % 3, 0)
     return np.array([1e-3, 18, 1] * (n//3))
 
 def F_9(x, n):
