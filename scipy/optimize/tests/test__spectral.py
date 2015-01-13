@@ -4,7 +4,7 @@ import itertools
 
 import numpy as np
 from numpy import exp
-from numpy.testing import assert_
+from numpy.testing import assert_, assert_equal
 
 from scipy.optimize import root
 
@@ -116,7 +116,7 @@ def test_shape():
 
         sol = root(f, x, args=(arg,), method='DF-SANE')
         assert_(sol.success)
-        assert_(sol.x.shape == x.shape)
+        assert_equal(sol.x.shape, x.shape)
 
 
 # Some of the test functions and initial guesses listed in

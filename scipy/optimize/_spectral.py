@@ -14,8 +14,8 @@ class _NoConvergence(Exception):
 
 
 def _root_df_sane(func, x0, args=(), jac=None, ftol=1e-8, fatol=1e-300, maxfev=1000,
-                  fnorm=None, callback=None, disp=False, M=None, eta_strategy=None,
-                  sigma_eps=None, sigma_0=None, **unknown_options):
+                  fnorm=None, callback=None, disp=False, M=10, eta_strategy=None,
+                  sigma_eps=1e-10, sigma_0=1.0, **unknown_options):
     r"""
     Solve nonlinear equation with the DF-SANE method
 
@@ -49,7 +49,7 @@ def _root_df_sane(func, x0, args=(), jac=None, ftol=1e-8, fatol=1e-300, maxfev=1
         of ``||F||_2**2``.  Called as ``eta_k = eta_strategy(k, x, F)`` with
         `k` the iteration number, `x` the current iterate and `F` the current
         residual. Should satisfy ``eta_k > 0`` and ``sum(eta, k=0..inf) < inf``.
-        Default: ``||F||_2**2 / (1 + k)**1.2``.
+        Default: ``||F_0||_2**2 / (1 + k)**2`` where F_0 is the initial residual.
     sigma_eps : float, optional
         The spectral coefficient is constrained to ``sigma_eps < sigma < 1/sigma_eps``.
         Default: 1e-10
@@ -73,28 +73,13 @@ def _root_df_sane(func, x0, args=(), jac=None, ftol=1e-8, fatol=1e-300, maxfev=1
         warnings.warn("DF-SANE solver does not use a Jacobian", category=OptimizeWarning)
 
     nexp = 2
-    if sigma_eps is None:
-        sigma_eps = 1e-10
-
-    if M is None:
-        M = 10
-
-    if sigma_0 is None:
-        sigma_0 = 1.0
 
     if eta_strategy is None:
         # Different choice from [1], as their eta is not invariant
         # vs. scaling of F.
-        #
-        # This choice satisfies the requirements in the paper.  f_k is
-        # bounded: the maximum allowed by the line search is
-        #
-        #     f_{k+1} = f_k * [1 + 1 / (1 + k)**a] ; a > 1
-        #
-        # Now, prod(1 + 1/(1 + k)**a, k=0..inf) = sinh(pi)/(2*pi) < inf.
         def eta_strategy(k, x, F):
-            # Avoid recomputing 2-norm of F by reusing f_k from the outer scope
-            return f_k / (1 + k)**1.2
+            # Obtain squared 2-norm of the initial residual from the outer scope
+            return f_0 / (1 + k)**2
 
     func, x0, x0_shape, F_k, is_complex = _wrap_func(func, x0, args)
 
@@ -112,6 +97,7 @@ def _root_df_sane(func, x0, args=(), jac=None, ftol=1e-8, fatol=1e-300, maxfev=1
     k = 0
     x_k = x0
     f_k = np.linalg.norm(F_k)**nexp
+    f_0 = f_k
     sigma_k = sigma_0
 
     if fnorm is None:
