@@ -81,7 +81,7 @@ The example plots the FFT of the sum of two sines.
 .. plot::
 
     >>> from scipy.fftpack import fft
-    >>> # Number of samplepoints
+    >>> # Number of sample points
     >>> N = 600
     >>> # sample spacing
     >>> T = 1.0 / 800.0
@@ -96,19 +96,19 @@ The example plots the FFT of the sum of two sines.
 
 
 The FFT input signal is inherently truncated. This truncation can be modelled
-as multiplication of an inifinte signal with a rectangular window function. In
+as multiplication of an infinite signal with a rectangular window function. In
 the spectral domain this multiplication becomes convolution of the signal
-spectrum with the window function spectrum, being of form :math:`sin(x)/x`.
+spectrum with the window function spectrum, being of form :math:`\sin(x)/x`.
 This convolution is the cause of an effect called spectral leakage (see
 [WPW]_). Windowing the signal with a dedicated window function helps mitigate
 spectral leakage. The example below uses a Blackman window from scipy.signal
 and shows the effect of windowing (the zero component of the FFT has been
-truncated illustrative purposes).
+truncated for illustrative purposes).
 
 .. plot::
 
     >>> from scipy.fftpack import fft
-    >>> # Number of samplepoints
+    >>> # Number of sample points
     >>> N = 600
     >>> # sample spacing
     >>> T = 1.0 / 800.0
@@ -215,19 +215,19 @@ The example below demonstrates a 2-dimensional IFFT and plots the resulting
     >>> xf[0, N-5] = 1
     >>> Z = ifftn(xf)
     >>> ax1.imshow(xf, cmap=cm.Reds)
-    >>> ax4.imshow(np.real(Z), cmap=cm.binary)
+    >>> ax4.imshow(np.real(Z), cmap=cm.gray)
     >>> xf = np.zeros((N, N))
     >>> xf[5, 0] = 1
     >>> xf[N-5, 0] = 1
     >>> Z = ifftn(xf)
     >>> ax2.imshow(xf, cmap=cm.Reds)
-    >>> ax5.imshow(np.real(Z), cmap=cm.binary)
+    >>> ax5.imshow(np.real(Z), cmap=cm.gray)
     >>> xf = np.zeros((N, N))
     >>> xf[5, 10] = 1
     >>> xf[N-5, N-10] = 1
     >>> Z = ifftn(xf)
     >>> ax3.imshow(xf, cmap=cm.Reds)
-    >>> ax6.imshow(np.real(Z), cmap=cm.binary)
+    >>> ax6.imshow(np.real(Z), cmap=cm.gray)
     >>> plt.show()
 
 
