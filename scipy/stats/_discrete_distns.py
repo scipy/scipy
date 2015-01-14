@@ -297,7 +297,7 @@ class hypergeom_gen(rv_discrete):
         return self._random_state.hypergeometric(n, M-n, N, size=self._size)
 
     def _argcheck(self, M, n, N):
-        cond = rv_discrete._argcheck(self, M, n, N)
+        cond = (M > 0) & (n >= 0) & (N >= 0)
         cond &= (n <= M) & (N <= M)
         self.a = max(N-(M-n), 0)
         self.b = min(n, N)
