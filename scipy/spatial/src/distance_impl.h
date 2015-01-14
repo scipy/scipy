@@ -166,11 +166,27 @@ static NPY_INLINE double
 hamming_distance_double(const double *u, const double *v, npy_intp n)
 {
     double s = 0.0;
-    npy_intp i;
+    npy_intp i = 0;
+#ifdef __SSE2__
+    __m128d sv = _mm_setzero_pd();
+    __m128d one = _mm_set1_pd(1.);
 
-    for (i = 0; i < n; i++) {
+    for (; i < n - (n & 1); i+=2) {
+        __m128d uv = _mm_loadu_pd(&u[i]);
+        __m128d vv = _mm_loadu_pd(&v[i]);
+        /* all bit 1 if != else all bit 0 */
+        __m128d dv = _mm_cmpneq_pd(uv, vv);
+        /* mask 1 to 0 if all bit 0, else keep 1 */
+        __m128d oneorzero = _mm_and_pd(dv, one);
+        sv = _mm_add_pd(sv, oneorzero);
+    }
+    s = horizontal_add(sv);
+#endif
+
+    for (; i < n; i++) {
         s += (u[i] != v[i]);
     }
+
     return s / n;
 }
 
