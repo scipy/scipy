@@ -136,17 +136,6 @@ class Test_place:
             assert "Convergence was not reached after maxiter iterations"\
                     in str(w[-1].message)
 
-#IDK why this succeeds on travis ...
-#        #Should fail because these poles can't be placed on this system (too
-#        #close) and should also raise a warning because the algorithm did not
-#        #converge
-#        with warnings.catch_warnings(record=True) as w:
-#            assert_raises(ValueError, place_poles, A, B, (-2,-2,-3,-3))
-#            assert len(w) == 1
-#            assert issubclass(w[-1].category, UserWarning)
-#            assert "Convergence was not reached after maxiter iterations"\
-#                    in str(w[-1].message)
-
         #should fail as a complex misses its conjugate
         assert_raises(ValueError, place_poles, A, B, (-2+1j,-2-1j,-2+3j,-2))
 

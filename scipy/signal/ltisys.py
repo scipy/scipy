@@ -1146,12 +1146,12 @@ def _valid_inputs(A, B, poles, method):
             raise ValueError("at least one of the requested pole is repeated\
                             more than rank(B) times")
     #choose update method
-    update_xj = _YT
+    update_loop = _YT_loop
     if method == "KNV0":
-        update_xj = _KNV0
+        update_loop = _KNV0_loop
         if not all(isreal(poles)):
             raise ValueError("Complex poles are not supported by KNV0")
-    return update_xj, poles
+    return update_loop, poles
 
 
 def _order_complex_poles(poles):
@@ -1217,7 +1217,6 @@ def _YT_real(ker_pole, Q, transfer_matrix, i, j):
     """
     Applies algorithm from YT section 6.1 page 19 related to real pairs
     """
-
     #step 1 page 19
     u = Q[:, -2, newaxis]
     v = Q[:, -1, newaxis]
@@ -1279,7 +1278,6 @@ def _YT_complex(ker_pole, Q, transfer_matrix, i, j):
     """
     Applies algorithm from YT section 6.2 page 20 related to complex pairs
     """
-
     #step 1 page 20
     ur = sqrt(2)*Q[:, -2, newaxis]
     ui = sqrt(2)*Q[:, -1, newaxis]
@@ -1324,53 +1322,140 @@ def _YT_complex(ker_pole, Q, transfer_matrix, i, j):
         transfer_matrix[:, j] = imag(ker_pole_mu[:, 0])
 
 
-def _YT(B, ker_pole, transfer_matrix, j_main_loop, poles):
+def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
     """
     Algorithm "YT" Tits, Yang. Globally Convergent
     Algorithms for Robust Pole Assignment by State Feedback
     http://drum.lib.umd.edu/handle/1903/5598
     The poles P have to be sorted accordingly to section 6.2 page 20
     """
-    #to be compatible with KNV main loop and not mess up with
-    #yang tits indices from the paper
 
-    j = 1+2*j_main_loop
-    i = j-1
+    #the IEEE edition of Yang Tits paper gives useful information on the
+    #optimal update order for the real poles in order to minimize the number
+    #of times we have to loop over all poles, see page 1442
 
-    #odd number of real poles
-    if poles[isreal(poles)].shape[0] % 2:
-        if any(~isreal(poles)):  # are there complex poles ?
-            if i == 0 and isreal(poles[0]) and ~isreal(poles[1]):
-                #only one real pole (and more complex to come
-                #or we wouldn't be here anyway), what should be done here is
-                #unclear in the original paper so use KNV0 at least we're sure
-                #it will do no harm.
-                return _KNV0(B, ker_pole, transfer_matrix, i, poles)
-            elif j < B.shape[0] and isreal(poles[i]) and ~isreal(poles[j]):
-                #we are on the last real pole switch with the first one
-                j = 0
-            else:  # both poles are complex we are shifted on the right by one
-                i -= 1
-                j -= 1
-        else:  # only real poles switch the last one with the first one
-            if i == B.shape[0]-1:
-                j = 0
+    nb_real = poles[isreal(poles)].shape[0]
+    #hnb => Half Nb Real
+    hnb = nb_real//2
 
-    if j >= B.shape[0]:
-        #nothing to be done
-        return
-    #remove xi and xj form the base, same as QNV method 0 but we remove
-    #two vectors instead of one
-    transfer_matrix_not_i_j = delete(transfer_matrix, (i, j), axis=1)
+    #stick to the indices in the paper and then remove one to get numpy array
+    #index it is a bit easier to link the code to the paper this way even if it
+    #is not very clean. The paper is unclear about what should be done when
+    #there is only one real pole => use KNV0 on this real pole seem to work
 
-    #after merge of gh-4249 great speed improvements could be achived
-    #using QR updates instead of full QR in the line below
-    Q, _ = linalg.qr(transfer_matrix_not_i_j, mode="full")
+    update_order = [[nb_real], [1]]
+    r_comp = arange(nb_real+1, len(poles)+1, 2)
+    #step 1.a
+    r_p = arange(1, hnb+nb_real % 2)
+    update_order[0].extend(2*r_p)
+    update_order[1].extend(2*r_p+1)
+    #step 1.b
+    update_order[0].extend(r_comp)
+    update_order[1].extend(r_comp+1)
+    #step 1.c
+    r_p = arange(1, hnb+1)
+    update_order[0].extend(2*r_p-1)
+    update_order[1].extend(2*r_p)
+    if nb_real % 2:
+        update_order[0].append(nb_real)
+        update_order[1].append(1)
+    #step 1.d
+    update_order[0].extend(r_comp)
+    update_order[1].extend(r_comp+1)
+    #step 2.a
+    r_j = arange(2, hnb+nb_real % 2)
+    for j in r_j:
+        for i in range(1, hnb+1):
+            idx_1 = i+j
+            if idx_1 > nb_real:
+                idx_1 = i+j-nb_real
+            update_order[0].append(i)
+            update_order[1].append(idx_1)
+    #step 2.b
+    update_order[0].extend(r_comp)
+    update_order[1].extend(r_comp+1)
+    #step 2.c
+    r_j = arange(2, hnb+nb_real % 2)
+    for j in r_j:
+        for i in range(hnb+1, nb_real+1):
+            idx_1 = i+j
+            if idx_1 > nb_real:
+                idx_1 = i+j-nb_real
+            update_order[0].append(i)
+            update_order[1].append(idx_1)
+    #step 2.d
+    update_order[0].extend(r_comp)
+    update_order[1].extend(r_comp+1)
+    #step 3.a
+    for i in range(1, hnb+1):
+        update_order[0].append(i)
+        update_order[1].append(i+hnb)
+    #step 3.b
+    update_order[0].extend(r_comp)
+    update_order[1].extend(r_comp+1)
 
-    if isreal(poles[i]):
-        _YT_real(ker_pole, Q, transfer_matrix, i, j)
-    else:
-        _YT_complex(ker_pole, Q, transfer_matrix, i, j)
+    update_order = array(update_order).T-1
+    stop = False
+    nb_try = 0
+    while nb_try < maxiter and not stop:
+        det_transfer_matrixb = abs(linalg.det(transfer_matrix))
+        for i, j in update_order:
+            if i == j:
+                assert i == 0, "i!=0 for KNV call in YT"
+                _KNV0(B, ker_pole, transfer_matrix, i, poles)
+            else:
+                transfer_matrix_not_i_j = delete(transfer_matrix, (i, j),
+                                                 axis=1)
+                #after merge of gh-4249 great speed improvements could be
+                #achieved using QR updates instead of full QR in the line below
+                Q, _ = linalg.qr(transfer_matrix_not_i_j, mode="full")
+                if isreal(poles[i]):
+                    assert isreal(poles[j]), \
+                        "mixing real and complex in YT_real" +\
+                        str(poles)
+                    _YT_real(ker_pole, Q, transfer_matrix, i, j)
+                else:
+                    assert ~isreal(poles[j]),\
+                        "mixing real and complex in YT_complex" +\
+                        str(poles)
+                    _YT_complex(ker_pole, Q, transfer_matrix, i, j)
+        det_transfer_matrix = max(sqrt(spacing(1)),
+                                  abs(linalg.det(transfer_matrix)))
+        cur_rtol = abs(
+            (det_transfer_matrix -
+             det_transfer_matrixb) /
+            det_transfer_matrix)
+        if cur_rtol < rtol and det_transfer_matrix > sqrt(spacing(1)):
+            #convergence test from YT page 21
+            stop = True
+        nb_try += 1
+    return stop, cur_rtol
+
+
+def _KNV0_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
+    """
+    Loop over all poles one by one and apply KNV method 0 algorithm
+    """
+    #this method is useful only because we need to be able to call
+    #_KNV0 from YT without looping over all poles, otherwise it would
+    #have been fine to mix _KNV0_loop and _KNV0 in a single function
+    stop = False
+    nb_try = 0
+    while nb_try < maxiter and not stop:
+        det_transfer_matrixb = abs(linalg.det(transfer_matrix))
+        for j in range(B.shape[0]):
+            _KNV0(B, ker_pole, transfer_matrix, j, poles)
+        det_transfer_matrix = max(sqrt(spacing(1)),
+                                  abs(linalg.det(transfer_matrix)))
+        cur_rtol = abs(
+            (det_transfer_matrix -
+             det_transfer_matrixb) /
+            det_transfer_matrix)
+        if cur_rtol < rtol and det_transfer_matrix > sqrt(spacing(1)):
+            #convergence test from YT page 21
+            stop = True
+        nb_try += 1
+    return stop, cur_rtol
 
 
 def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
@@ -1475,7 +1560,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     """
 
     #move away all the inputs checking, it only adds noise to the code
-    update_xj, poles = _valid_inputs(A, B, poles, method)
+    update_loop, poles = _valid_inputs(A, B, poles, method)
 
     #Step A: QR decomposition of B page 1132 KNV
     u, z = linalg.qr(B, mode="full")
@@ -1572,22 +1657,8 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 transfer_matrix = hstack((transfer_matrix, transfer_matrix_j))
 
         if B.shape[1] > 1:  # otherwise there is nothing we can optimize
-            stop = False
-            nb_try = 0
-            while nb_try < maxiter and not stop:
-                det_transfer_matrixb = abs(linalg.det(transfer_matrix))
-                for j in range(B.shape[0]):
-                    update_xj(B, ker_pole, transfer_matrix, j, poles)
-                det_transfer_matrix = max(sqrt(spacing(1)),
-                                          abs(linalg.det(transfer_matrix)))
-                cur_rtol = abs(
-                    (det_transfer_matrix -
-                     det_transfer_matrixb) /
-                    det_transfer_matrix)
-                if cur_rtol < rtol:  # convergence test from YT page 21
-                    stop = True
-                nb_try += 1
-
+            stop, cur_rtol = update_loop(ker_pole, transfer_matrix, poles,
+                                         B, maxiter, rtol)
             if not stop and rtol > 0:
                 # if rtol<=0 the user has probably done that on purpose,
                 # don't annoy him
