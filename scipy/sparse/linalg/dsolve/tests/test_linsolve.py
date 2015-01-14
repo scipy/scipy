@@ -346,7 +346,8 @@ class TestSplu(object):
 
         # Now make a symmetric, and test that the two permutation vectors are
         # the same
-        a += a.T
+        # Note: a += a.T relies on undefined behavior.
+        a = a + a.T
         a_ = csc_matrix(a)
         lu = splu(a_)
         assert_array_equal(lu.perm_r, lu.perm_c)
