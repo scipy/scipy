@@ -53,6 +53,7 @@
             return NULL;                                                \
         }                                                               \
         else {                                                          \
+            NPY_BEGIN_ALLOW_THREADS;                                    \
             XA = (const type *)XA_->data;                               \
             XB = (const type *)XB_->data;                               \
             dm = (double *)dm_->data;                                   \
@@ -60,6 +61,7 @@
             mB = XB_->dimensions[0];                                    \
             n = XA_->dimensions[1];                                     \
             cdist_ ## name ## _ ## type(XA, XB, dm, mA, mB, n);         \
+            NPY_END_ALLOW_THREADS;                                      \
         }                                                               \
         return Py_BuildValue("d", 0.);                                  \
     }
@@ -101,6 +103,8 @@ static PyObject *cdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_THREADS_DEF;
+    NPY_BEGIN_THREADS;
     XA = (const double*)XA_->data;
     XB = (const double*)XB_->data;
     covinv = (const double*)covinv_->data;
@@ -111,10 +115,12 @@ static PyObject *cdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
 
     dimbuf = mahalanobis_dimbuf(n);
     if (!dimbuf) {
+      NPY_END_THREADS;
       return NULL;
     }
     cdist_mahalanobis(XA, XB, covinv, dimbuf, dm, mA, mB, n);
     free(dimbuf);
+    NPY_END_THREADS;
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -132,6 +138,7 @@ static PyObject *cdist_cosine_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     XA = (const double*)XA_->data;
     XB = (const double*)XB_->data;
     dm = (double*)dm_->data;
@@ -142,6 +149,7 @@ static PyObject *cdist_cosine_wrap(PyObject *self, PyObject *args) {
     n = XA_->dimensions[1];
 
     cdist_cosine(XA, XB, dm, mA, mB, n, normsA, normsB);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -158,6 +166,7 @@ static PyObject *cdist_seuclidean_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     XA = (const double*)XA_->data;
     XB = (const double*)XB_->data;
     dm = (double*)dm_->data;
@@ -167,6 +176,7 @@ static PyObject *cdist_seuclidean_wrap(PyObject *self, PyObject *args) {
     n = XA_->dimensions[1];
 
     cdist_seuclidean(XA, XB, var, dm, mA, mB, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -182,6 +192,7 @@ static PyObject *cdist_hamming_bool_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     XA = (const char*)XA_->data;
     XB = (const char*)XB_->data;
     dm = (double*)dm_->data;
@@ -190,6 +201,7 @@ static PyObject *cdist_hamming_bool_wrap(PyObject *self, PyObject *args) {
     n = XA_->dimensions[1];
 
     cdist_hamming_char(XA, XB, dm, mA, mB, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -205,6 +217,7 @@ static PyObject *cdist_jaccard_bool_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     XA = (const char*)XA_->data;
     XB = (const char*)XB_->data;
     dm = (double*)dm_->data;
@@ -213,6 +226,7 @@ static PyObject *cdist_jaccard_bool_wrap(PyObject *self, PyObject *args) {
     n = XA_->dimensions[1];
 
     cdist_jaccard_char(XA, XB, dm, mA, mB, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -230,6 +244,7 @@ static PyObject *cdist_minkowski_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     XA = (const double*)XA_->data;
     XB = (const double*)XB_->data;
     dm = (double*)dm_->data;
@@ -237,6 +252,7 @@ static PyObject *cdist_minkowski_wrap(PyObject *self, PyObject *args) {
     mB = XB_->dimensions[0];
     n = XA_->dimensions[1];
     cdist_minkowski(XA, XB, dm, mA, mB, n, p);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -255,6 +271,7 @@ static PyObject *cdist_weighted_minkowski_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     XA = (const double*)XA_->data;
     XB = (const double*)XB_->data;
     w = (const double*)w_->data;
@@ -263,6 +280,7 @@ static PyObject *cdist_weighted_minkowski_wrap(PyObject *self, PyObject *args) {
     mB = XB_->dimensions[0];
     n = XA_->dimensions[1];
     cdist_weighted_minkowski(XA, XB, dm, mA, mB, n, p, w);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -278,6 +296,7 @@ static PyObject *cdist_matching_bool_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     XA = (const char*)XA_->data;
     XB = (const char*)XB_->data;
     dm = (double*)dm_->data;
@@ -286,6 +305,7 @@ static PyObject *cdist_matching_bool_wrap(PyObject *self, PyObject *args) {
     n = XA_->dimensions[1];
 
     cdist_matching_char(XA, XB, dm, mA, mB, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("");
 }
@@ -301,6 +321,7 @@ static PyObject *cdist_dice_bool_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     XA = (const char*)XA_->data;
     XB = (const char*)XB_->data;
     dm = (double*)dm_->data;
@@ -309,6 +330,7 @@ static PyObject *cdist_dice_bool_wrap(PyObject *self, PyObject *args) {
     n = XA_->dimensions[1];
 
     cdist_dice_char(XA, XB, dm, mA, mB, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("");
 }
@@ -324,6 +346,7 @@ static PyObject *cdist_rogerstanimoto_bool_wrap(PyObject *self, PyObject *args) 
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     XA = (const char*)XA_->data;
     XB = (const char*)XB_->data;
     dm = (double*)dm_->data;
@@ -332,6 +355,7 @@ static PyObject *cdist_rogerstanimoto_bool_wrap(PyObject *self, PyObject *args) 
     n = XA_->dimensions[1];
 
     cdist_rogerstanimoto_char(XA, XB, dm, mA, mB, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("");
 }
@@ -347,6 +371,7 @@ static PyObject *cdist_russellrao_bool_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     XA = (const char*)XA_->data;
     XB = (const char*)XB_->data;
     dm = (double*)dm_->data;
@@ -355,6 +380,7 @@ static PyObject *cdist_russellrao_bool_wrap(PyObject *self, PyObject *args) {
     n = XA_->dimensions[1];
 
     cdist_russellrao_char(XA, XB, dm, mA, mB, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("");
 }
@@ -370,6 +396,7 @@ static PyObject *cdist_kulsinski_bool_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     XA = (const char*)XA_->data;
     XB = (const char*)XB_->data;
     dm = (double*)dm_->data;
@@ -378,6 +405,7 @@ static PyObject *cdist_kulsinski_bool_wrap(PyObject *self, PyObject *args) {
     n = XA_->dimensions[1];
 
     cdist_kulsinski_char(XA, XB, dm, mA, mB, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("");
 }
@@ -393,6 +421,7 @@ static PyObject *cdist_sokalmichener_bool_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     XA = (const char*)XA_->data;
     XB = (const char*)XB_->data;
     dm = (double*)dm_->data;
@@ -401,6 +430,7 @@ static PyObject *cdist_sokalmichener_bool_wrap(PyObject *self, PyObject *args) {
     n = XA_->dimensions[1];
 
     cdist_sokalmichener_char(XA, XB, dm, mA, mB, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("");
 }
@@ -416,6 +446,7 @@ static PyObject *cdist_sokalsneath_bool_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     XA = (const char*)XA_->data;
     XB = (const char*)XB_->data;
     dm = (double*)dm_->data;
@@ -424,6 +455,7 @@ static PyObject *cdist_sokalsneath_bool_wrap(PyObject *self, PyObject *args) {
     n = XA_->dimensions[1];
 
     cdist_sokalsneath_char(XA, XB, dm, mA, mB, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("");
 }
@@ -443,11 +475,13 @@ static PyObject *cdist_sokalsneath_bool_wrap(PyObject *self, PyObject *args) {
             return NULL;                                                \
         }                                                               \
         else {                                                          \
+            NPY_BEGIN_ALLOW_THREADS;                                    \
             X = (const double *)X_->data;                               \
             dm = (double *)dm_->data;                                   \
             m = X_->dimensions[0];                                      \
             n = X_->dimensions[1];                                      \
             pdist_ ## name ## _double(X, dm, m, n);                     \
+            NPY_END_ALLOW_THREADS;                                      \
         }                                                               \
         return Py_BuildValue("d", 0.);                                  \
     }
@@ -475,6 +509,8 @@ static PyObject *pdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_THREADS_DEF;
+    NPY_BEGIN_THREADS;
     X = (const double*)X_->data;
     covinv = (const double*)covinv_->data;
     dm = (double*)dm_->data;
@@ -483,11 +519,13 @@ static PyObject *pdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
 
     dimbuf = mahalanobis_dimbuf(n);
     if (!dimbuf) {
+        NPY_END_THREADS;
         return NULL;
     }
 
     pdist_mahalanobis(X, covinv, dimbuf, dm, m, n);
     free(dimbuf);
+    NPY_END_THREADS;
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -505,6 +543,7 @@ static PyObject *pdist_cosine_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     X = (const double*)X_->data;
     dm = (double*)dm_->data;
     norms = (const double*)norms_->data;
@@ -512,6 +551,7 @@ static PyObject *pdist_cosine_wrap(PyObject *self, PyObject *args) {
     n = X_->dimensions[1];
 
     pdist_cosine(X, dm, m, n, norms);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -528,6 +568,7 @@ static PyObject *pdist_seuclidean_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     X = (double*)X_->data;
     dm = (double*)dm_->data;
     var = (double*)var_->data;
@@ -535,6 +576,7 @@ static PyObject *pdist_seuclidean_wrap(PyObject *self, PyObject *args) {
     n = X_->dimensions[1];
 
     pdist_seuclidean(X, var, dm, m, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -550,12 +592,14 @@ static PyObject *pdist_hamming_bool_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     X = (const char*)X_->data;
     dm = (double*)dm_->data;
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
     pdist_hamming_char(X, dm, m, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -571,12 +615,14 @@ static PyObject *pdist_jaccard_bool_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     X = (const char*)X_->data;
     dm = (double*)dm_->data;
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
     pdist_jaccard_char(X, dm, m, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -593,12 +639,14 @@ static PyObject *pdist_minkowski_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     X = (double*)X_->data;
     dm = (double*)dm_->data;
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
     pdist_minkowski(X, dm, m, n, p);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -616,6 +664,7 @@ static PyObject *pdist_weighted_minkowski_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     X = (double*)X_->data;
     dm = (double*)dm_->data;
     w = (double*)w_->data;
@@ -623,6 +672,7 @@ static PyObject *pdist_weighted_minkowski_wrap(PyObject *self, PyObject *args) {
     n = X_->dimensions[1];
 
     pdist_weighted_minkowski(X, dm, m, n, p, w);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -639,12 +689,14 @@ static PyObject *pdist_yule_bool_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     X = (const char*)X_->data;
     dm = (double*)dm_->data;
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
     pdist_yule_bool_char(X, dm, m, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("");
 }
@@ -660,12 +712,14 @@ static PyObject *pdist_matching_bool_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     X = (const char*)X_->data;
     dm = (double*)dm_->data;
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
     pdist_matching_char(X, dm, m, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("");
 }
@@ -681,12 +735,14 @@ static PyObject *pdist_dice_bool_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     X = (const char*)X_->data;
     dm = (double*)dm_->data;
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
     pdist_dice_char(X, dm, m, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("");
 }
@@ -702,12 +758,14 @@ static PyObject *pdist_rogerstanimoto_bool_wrap(PyObject *self, PyObject *args) 
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     X = (const char*)X_->data;
     dm = (double*)dm_->data;
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
     pdist_rogerstanimoto_char(X, dm, m, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("");
 }
@@ -723,12 +781,14 @@ static PyObject *pdist_russellrao_bool_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     X = (const char*)X_->data;
     dm = (double*)dm_->data;
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
     pdist_russellrao_char(X, dm, m, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("");
 }
@@ -744,12 +804,14 @@ static PyObject *pdist_kulsinski_bool_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     X = (const char*)X_->data;
     dm = (double*)dm_->data;
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
     pdist_kulsinski_char(X, dm, m, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("");
 }
@@ -765,12 +827,14 @@ static PyObject *pdist_sokalmichener_bool_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     X = (const char*)X_->data;
     dm = (double*)dm_->data;
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
     pdist_sokalmichener_char(X, dm, m, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("");
 }
@@ -786,12 +850,14 @@ static PyObject *pdist_sokalsneath_bool_wrap(PyObject *self, PyObject *args) {
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     X = (const char*)X_->data;
     dm = (double*)dm_->data;
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
     pdist_sokalsneath_char(X, dm, m, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("");
 }
@@ -807,10 +873,12 @@ static PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args) 
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     M = (double*)M_->data;
     v = (const double*)v_->data;
     n = M_->dimensions[0];
     dist_to_squareform_from_vector(M, v, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("d", 0.0);
 }
@@ -826,10 +894,12 @@ static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args) 
     return 0;
   }
   else {
+    NPY_BEGIN_ALLOW_THREADS;
     M = (const double*)M_->data;
     v = (double*)v_->data;
     n = M_->dimensions[0];
     dist_to_vector_from_squareform(M, v, n);
+    NPY_END_ALLOW_THREADS;
   }
   return Py_BuildValue("d", 0.0);
 }

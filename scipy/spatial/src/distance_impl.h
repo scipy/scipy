@@ -32,16 +32,49 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef __SSE2__
+#include <emmintrin.h>
+
+static NPY_INLINE double horizontal_add(__m128d a)
+{
+    double r;
+    __m128d ha = _mm_unpackhi_pd(a, a);
+    a = _mm_add_sd(a, ha);
+    _mm_store_sd(&r, a);
+    return r;
+}
+#endif
+
 static NPY_INLINE double
 sqeuclidean_distance_double(const double *u, const double *v, npy_intp n)
 {
-    double s = 0.0, d;
-    npy_intp i;
+    double s = 0.0;
+    npy_intp i = 0;
+#ifdef __SSE2__
+    __m128d sv1 = _mm_setzero_pd();
+    __m128d sv2 = _mm_setzero_pd();
 
-    for (i = 0; i < n; i++) {
-        d = u[i] - v[i];
+    for (; i < n - (n & 3); i+=4) {
+        __m128d uv1 = _mm_loadu_pd(&u[i]);
+        __m128d vv1 = _mm_loadu_pd(&v[i]);
+        __m128d uv2 = _mm_loadu_pd(&u[i + 2]);
+        __m128d vv2 = _mm_loadu_pd(&v[i + 2]);
+        __m128d dv1 = _mm_sub_pd(uv1, vv1);
+        __m128d dv2 = _mm_sub_pd(uv2, vv2);
+        dv1 = _mm_mul_pd(dv1, dv1);
+        dv2 = _mm_mul_pd(dv2, dv2);
+        sv1 = _mm_add_pd(sv1, dv1);
+        sv2 = _mm_add_pd(sv2, dv2);
+    }
+    sv1 = _mm_add_pd(sv1, sv2);
+    s = horizontal_add(sv1);
+#endif
+
+    for (; i < n; i++) {
+        double d = u[i] - v[i];
         s += d * d;
     }
+
     return s;
 }
 
@@ -140,11 +173,34 @@ static NPY_INLINE double
 hamming_distance_double(const double *u, const double *v, npy_intp n)
 {
     double s = 0.0;
-    npy_intp i;
+    npy_intp i = 0;
+#ifdef __SSE2__
+    __m128d sv1 = _mm_setzero_pd();
+    __m128d sv2 = _mm_setzero_pd();
+    __m128d one = _mm_set1_pd(1.);
 
-    for (i = 0; i < n; i++) {
+    for (; i < n - (n & 3); i+=4) {
+        __m128d uv1 = _mm_loadu_pd(&u[i]);
+        __m128d vv1 = _mm_loadu_pd(&v[i]);
+        __m128d uv2 = _mm_loadu_pd(&u[i + 2]);
+        __m128d vv2 = _mm_loadu_pd(&v[i + 2]);
+        /* all bit 1 if != else all bit 0 */
+        __m128d dv1 = _mm_cmpneq_pd(uv1, vv1);
+        __m128d dv2 = _mm_cmpneq_pd(uv2, vv2);
+        /* mask 1 to 0 if all bit 0, else keep 1 */
+        __m128d oneorzero1 = _mm_and_pd(dv1, one);
+        __m128d oneorzero2 = _mm_and_pd(dv2, one);
+        sv1 = _mm_add_pd(sv1, oneorzero1);
+        sv2 = _mm_add_pd(sv2, oneorzero2);
+    }
+    sv1 = _mm_add_pd(sv1, sv2);
+    s = horizontal_add(sv1);
+#endif
+
+    for (; i < n; i++) {
         s += (u[i] != v[i]);
     }
+
     return s / n;
 }
 
@@ -305,11 +361,29 @@ static NPY_INLINE double
 dot_product(const double *u, const double *v, npy_intp n)
 {
     double s = 0.0;
-    npy_intp i;
+    npy_intp i = 0;
+#ifdef __SSE2__
+    __m128d sv1 = _mm_setzero_pd();
+    __m128d sv2 = _mm_setzero_pd();
 
-    for (i = 0; i < n; i++) {
+    for (; i < n - (n & 3); i+=4) {
+        __m128d uv1 = _mm_loadu_pd(&u[i]);
+        __m128d vv1 = _mm_loadu_pd(&v[i]);
+        __m128d uv2 = _mm_loadu_pd(&u[i + 2]);
+        __m128d vv2 = _mm_loadu_pd(&v[i + 2]);
+        __m128d dv1 = _mm_mul_pd(uv1, vv1);
+        __m128d dv2 = _mm_mul_pd(uv2, vv2);
+        sv1 = _mm_add_pd(sv1, dv1);
+        sv2 = _mm_add_pd(sv2, dv2);
+    }
+    sv1 = _mm_add_pd(sv1, sv2);
+    s = horizontal_add(sv1);
+#endif
+
+    for (; i < n; i++) {
         s += u[i] * v[i];
     }
+
     return s;
 }
 
@@ -324,13 +398,28 @@ static NPY_INLINE double
 seuclidean_distance(const double *var, const double *u, const double *v,
                     npy_intp n)
 {
-    double s = 0.0, d;
-    npy_intp i;
+    double s = 0.0;
+    npy_intp i = 0;
+#ifdef __SSE2__
+    __m128d sv = _mm_setzero_pd();
 
-    for (i = 0; i < n; i++) {
-        d = u[i] - v[i];
+    for (; i < n - (n & 1); i+=2) {
+        __m128d uv = _mm_loadu_pd(&u[i]);
+        __m128d vv = _mm_loadu_pd(&v[i]);
+        __m128d varv = _mm_loadu_pd(&var[i]);
+        __m128d dv = _mm_sub_pd(uv, vv);
+        dv = _mm_mul_pd(dv, dv);
+        dv = _mm_div_pd(dv, varv);
+        sv = _mm_add_pd(sv, dv);
+    }
+    s = horizontal_add(sv);
+#endif
+
+    for (; i < n; i++) {
+        double d = u[i] - v[i];
         s = s + (d * d) / var[i];
     }
+
     return sqrt(s);
 }
 
