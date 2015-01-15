@@ -65,7 +65,7 @@ class TestQuadrature(TestCase):
         assert_almost_equal(val, 47.474999999999, decimal=6)
 
         #testing for extended method:
-        sample = [1, 3, 4, 4.5 ,10, 5.5, 4.6, 2, 3]
+        sample = [1, 3, 4, 4.5, 10, 5.5, 4.6, 2, 3]
         diff = 2.5
         val = simps(sample, dx=diff, method='extended')
         #test when equidistant sample are given.
