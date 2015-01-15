@@ -1,4 +1,4 @@
-#include <Accelerate/Accelerate.h>
+#include "cblas.h"
 
 #define WRAP_F77(a) a##_
 
