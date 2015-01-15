@@ -50,12 +50,12 @@ class TestQuadrature(TestCase):
         #test for composite method
         #testing for 1-dimensional input
         x = [1, 2, 3, 4, 5]
-        val = simps(x)
+        val = simps(x, method='composite')
         assert_equal(val, 12.0)
 
         #test with 2-dimensional input
         x = [[1, 3, 4, 7, 8], [2, 2.5, 16, 4,7]]
-        val = simps(x)
+        val = simps(x, method='composite')
         assert_almost_equal(val, [19.0, 22.33333333], decimal=6)
 
         #testing for second method:
@@ -65,7 +65,7 @@ class TestQuadrature(TestCase):
         assert_almost_equal(val, 47.474999999999, decimal=6)
 
         #testing for extended method:
-        sample = [1, 3, 4, 4.5 ,10, 5.5, 4.6, 2, 3]
+        sample = [1, 3, 4, 4.5, 10, 5.5, 4.6, 2, 3]
         diff = 2.5
         val = simps(sample, dx=diff, method='extended')
         #test when equidistant sample are given.

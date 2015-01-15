@@ -327,11 +327,11 @@ def _basic_simps(y,start,stop,x,dx,axis):
 def simps(y, x=None, dx=1, axis=-1, even='avg', method='composite'):
     """
     Integrate y(x) using samples along the given axis and the composite
-    Simpson's rule.  If x is None, spacing of dx is assumed.
+    Simpson's rule. If x is None, spacing of dx is assumed.
 
-    If there are an even number of samples, N, then there are an odd
-    number of intervals (N-1), but Simpson's rule requires an even number
-    of intervals.  The parameter 'even' controls how this is handled.
+    If method is `composite` and if there are an even number of samples, N,
+    then there are an odd number of intervals (N-1), but Simpson's composite rule requires 
+    an even number of intervals.  The parameter 'even' controls how this is handled.
 
     Parameters
     ----------
@@ -346,19 +346,21 @@ def simps(y, x=None, dx=1, axis=-1, even='avg', method='composite'):
         Axis along which to integrate. Default is the last axis.
     even : {'avg', 'first', 'str'}, optional
         Only defined if method is `composite`
-        'avg' : Average two results:1) use the first N-2 intervals with
+
+        -'avg' : Average two results:1) use the first N-2 intervals with
                   a trapezoidal rule on the last interval and 2) use the last
                   N-2 intervals with a trapezoidal rule on the first interval.
 
-        'first' : Use Simpson's rule for the first N-2 intervals with
+        -'first' : Use Simpson's rule for the first N-2 intervals with
                 a trapezoidal rule on the last interval.
 
-        'last' : Use Simpson's rule for the last N-2 intervals with a
+        -'last' : Use Simpson's rule for the last N-2 intervals with a
                trapezoidal rule on the first interval.
     method : {'composite', 'extended', 'second'}, optional
-        'composite' : Uses composite method of Simpson's rule.
-        'second' : Uses Simpson's 3/8-th rule for calculating integral.
-        'extended' : Uses extended Simpson's rule for calculating integral.
+
+        -'composite' : Uses composite method of Simpson's rule.
+        -'second' : Uses Simpson's 3/8-th rule for calculating integral.
+        -'extended' : Uses extended Simpson's rule for calculating integral.
 
     See Also
     --------
@@ -383,6 +385,21 @@ def simps(y, x=None, dx=1, axis=-1, even='avg', method='composite'):
     If using method 'extended' and number of samples is less than 8
     they must be even. 
     If using method 'second' number of samples must be of the form 3*k+1 
+    
+    N = Number of samples.
+    Formula used in 'composite' method when number of samples is odd:-
+    .. :math::
+    `\[\frac{dx}{3} [y_0 + 4y_1 + 2y_2 + 4y_3 ... + 4y_{n-2} + y_{n-1}]`
+
+    Formula used in 'second' method:-
+    .. :math::
+    `\[\frac{3h}{8}[f(x_0) + 3f(x_1) + 3f(x_2) + 2f(x_3) + 3f(x_4) + 3f(x_5) + 2f(x_6) + ... + f(x_n)]`
+
+    Formula used in 'extended' method:-
+    .. :math::
+    `\[\frac{h}{48} [17f(x_{0}) + 59f(x_{1}) + 43f(x_{2}) + 49f(x_{3}) + \[\sum_{i=4}^{n-4} f(x_{i}) 
+        + 49f(x_{n-3}) + 43f(x_{n-2}) + 59f(x_{n-1}) + 17f(x_{n})]`
+
 
     """
     y = asarray(y)
@@ -391,10 +408,10 @@ def simps(y, x=None, dx=1, axis=-1, even='avg', method='composite'):
     last_dx = dx
     first_dx = dx
     returnshape = 0
-    n = N-1
+    k = N-1
     result = 0.0
     if method not in ['second', 'extended', 'composite']:
-        raise ValueError("If given, method must be either extended or second")
+        raise ValueError("If given, method must be either composite, extended or second")
     if x is not None:
         x = asarray(x)
         if len(x.shape) == 1:
@@ -426,7 +443,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg', method='composite'):
 
     # Implementing Simpson's 3/8-th rule.
     
-    if method is 'second' and (n % 3) != 0:
+    if method is 'second' and (k % 3) != 0:
         raise ValueError("If using Simpson's second rule, number of samples "
             "must be of the form 3*k+1.")
     if method is 'second':
@@ -436,12 +453,12 @@ def simps(y, x=None, dx=1, axis=-1, even='avg', method='composite'):
         all = (slice(None),)*nd
         #groups to be multiplied by 3
         step = 3
-        slice0 = tupleset(all, axis, slice(start+1, N-2, step))
-        slice1 = tupleset(all, axis, slice(start+2, N-1, step))
+        slice0 = tupleset(all, axis, slice(start+1, stop, step))
+        slice1 = tupleset(all, axis, slice(start+2, stop+1, step))
         #groups to be multiplied by 2
-        slice2 = tupleset(all, axis, slice(start+3, N-3, step))
+        slice2 = tupleset(all, axis, slice(start+3, stop-1, step))
         #group of first and last elements whose coefficient is 1:
-        slice3 = tupleset(all, axis, slice(start, N, n))
+        slice3 = tupleset(all, axis, slice(start, stop+2, k))
         #Applying Simpson's 3-8th formula:
         #Since different groups could have differnt number of elements, add.reduce function 
         #can't be directly applied here, as was applied in composite rule. 
@@ -463,13 +480,13 @@ def simps(y, x=None, dx=1, axis=-1, even='avg', method='composite'):
             raise ValueError("If method `extended` is used and "
                 "number of samples are less than 8 they must be even.")
         # group of first and last elements with coefficient 17.
-        slice0 = tupleset(all, axis, slice(start, stop, n))
+        slice0 = tupleset(all, axis, slice(start, stop, k))
         # group with coefficient of elements 59.
-        slice1 = tupleset(all, axis, slice(start+1, stop-1, n-2))
+        slice1 = tupleset(all, axis, slice(start+1, stop-1, k-2))
         # group with coefficint of elements 43.
-        slice2 = tupleset(all, axis, slice(start+2, stop-2, n-4))
+        slice2 = tupleset(all, axis, slice(start+2, stop-2, k-4))
         # group with coefficient of elements 49.
-        slice3 = tupleset(all, axis, slice(start+3, stop-3, n-6))
+        slice3 = tupleset(all, axis, slice(start+3, stop-3, k-6))
         # All left elemnents with coefficient 48.
         slice4 = tupleset(all, axis, slice(start+4, stop-4, 1))
         result0 = add.reduce(17*y[slice0],axis)
