@@ -131,39 +131,28 @@ def configuration(parent_package='',top_path=None):
 
     config.add_data_dir('benchmarks')
 
-    config.add_data_files('blas_pointers.pxd')
-    config.add_data_files('lapack_pointers.pxd')
+    # Cython BLAS/LAPACK
+    config.add_data_files('cython_blas.pxd')
+    config.add_data_files('cython_lapack.pxd')
 
-    config.add_data_files('f2pyptr.h')
-
-    sources = ['_blas_subroutine_wrappers.f']
+    sources = ['_blas_subroutine_wrappers.f', '_lapack_subroutine_wrappers.f']
     sources += get_g77_abi_wrappers(lapack_opt)
     sources += get_sgemv_fix(lapack_opt)
-    config.add_extension('_blas_subroutine_wrappers',
-                         sources=sources,
+    config.add_library('fwrappers', sources=sources)
+
+    config.add_extension('cython_blas',
+                         sources=['cython_blas.c'],
+                         depends=['fortran_defs.h', 'cython_blas.pxd', 'blas_pointers.pyx.in'],
+                         include_dirs=['.'],
+                         libraries=['fwrappers'],
                          extra_info=lapack_opt)
 
-    sources = ['_lapack_subroutine_wrappers.f']
-    sources += get_g77_abi_wrappers(lapack_opt)
-    config.add_extension('_lapack_subroutine_wrappers',
-                         sources=sources,
+    config.add_extension('cython_lapack',
+                         sources=['cython_lapack.c'],
+                         depends=['fortran_defs.h', 'cython_lapack.pxd', 'lapack_pointers.pyx.in'],
+                         include_dirs=['.'],
+                         libraries=['fwrappers'],
                          extra_info=lapack_opt)
-
-    config.add_extension('blas_pointers',
-                         sources=['blas_pointers.c'],
-                         include_dirs=['.'])
-
-    config.add_extension('lapack_pointers',
-                         sources=['lapack_pointers.c'],
-                         include_dirs=['.'])
-
-    config.add_extension('_cython_blas_wrappers',
-                         sources=['_cython_blas_wrappers.c'],
-                         include_dirs=['.'])
-
-    config.add_extension('_cython_lapack_wrappers',
-                         sources=['_cython_lapack_wrappers.c'],
-                         include_dirs=['.'])
 
     return config
 

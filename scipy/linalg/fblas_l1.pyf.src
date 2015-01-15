@@ -253,9 +253,8 @@ function sdot(n,x,offx,incx,y,offy,incy) result (xy)
   ! Computes a vector-vector dot product.
 
   fortranname wsdot
-  entry wsdot(n,x,offx,incx,y,offy,incy)
 
-  callstatement (*f2py_func)(&#name#,&n,x+offx,&incx,y+offy,&incy)
+  callstatement (*f2py_func)(&sdot,&n,x+offx,&incx,y+offy,&incy)
   callprotoargument float*,int*,float*,int*,float*,int*
 
   real dimension(*), intent(in) :: x
@@ -303,9 +302,8 @@ function <prefix2c>dotu(n,x,offx,incx,y,offy,incy) result(xy)
 
   <ftype2c> :: <prefix2c>dotu, xy
   fortranname w<prefix2c>dotu
-  entry w<prefix2c>dotu(n,x,offx,incx,y,offy,incy)
 
-  callstatement (*f2py_func)(&#name#,&n,x+offx,&incx,y+offy,&incy)
+  callstatement (*f2py_func)(&<prefix2c>dotu,&n,x+offx,&incx,y+offy,&incy)
   callprotoargument <ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*
 
   <ftype2c> dimension(*),intent(in) :: x
@@ -331,9 +329,8 @@ function <prefix2c>dotc(n,x,offx,incx,y,offy,incy) result(xy)
 
   <ftype2c> :: <prefix2c>dotc, xy
   fortranname w<prefix2c>dotc
-  entry w<prefix2c>dotc(n,x,offx,incx,y,offy,incy)
 
-  callstatement (*f2py_func)(&#name#,&n,x+offx,&incx,y+offy,&incy)
+  callstatement (*f2py_func)(&<prefix2c>dotc,&n,x+offx,&incx,y+offy,&incy)
   callprotoargument <ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*
 
   <ftype2c> dimension(*),intent(in) :: x
@@ -358,10 +355,9 @@ end function <prefix2c>dotc
 function <prefix3>nrm2(n,x,offx,incx) result(n2)
 
   fortranname w<prefix3>nrm2
-  entry w<prefix3>nrm2(n,x,offx,incx)
   <ftypereal3> <prefix3>nrm2, n2
 
-  callstatement (*f2py_func)(&#name#, &n,x+offx,&incx)
+  callstatement (*f2py_func)(&<prefix3>nrm2, &n,x+offx,&incx)
   callprotoargument <ctypereal3>*,int*,<ctype3>*,int*
 
   <ftype3> dimension(*),intent(in) :: x
@@ -404,9 +400,8 @@ function <prefix3>asum(n,x,offx,incx) result (s)
   ! Computes the sum of magnitudes of the vector elements
 
   fortranname w<prefix3>asum
-  entry w<prefix3>asum(n,x,offx,incx)
 
-  callstatement (*f2py_func)(&#name#,&n,x+offx,&incx)
+  callstatement (*f2py_func)(&<prefix3>asum,&n,x+offx,&incx)
   callprotoargument <ctypereal3>*,int*,<ctype3>*,int*
 
   <ftype3> dimension(*), intent(in) :: x

@@ -107,105 +107,125 @@ ctypedef int ztrmm_t(char *side, char *uplo, char *transa, char *diag, int *m, i
 ctypedef int ztrmv_t(char *uplo, char *trans, char *diag, int *n, z *a, int *lda, z *x, int *incx) nogil
 
 cdef:
-    caxpy_t *caxpy
-    ccopy_t *ccopy
-    cdotc_t *cdotc
-    cdotu_t *cdotu
-    cgemm_t *cgemm
-    cgemv_t *cgemv
-    cgerc_t *cgerc
-    cgeru_t *cgeru
-    chemm_t *chemm
-    chemv_t *chemv
-    cher_t *cher
-    cher2_t *cher2
-    cher2k_t *cher2k
-    cherk_t *cherk
-    crotg_t *crotg
-    cscal_t *cscal
-    csrot_t *csrot
-    csscal_t *csscal
-    cswap_t *cswap
-    csymm_t *csymm
-    csyr_t *csyr
-    csyr2k_t *csyr2k
-    csyrk_t *csyrk
-    ctrmm_t *ctrmm
-    ctrmv_t *ctrmv
-    dasum_t *dasum
-    daxpy_t *daxpy
-    dcopy_t *dcopy
-    ddot_t *ddot
-    dgemm_t *dgemm
-    dgemv_t *dgemv
-    dger_t *dger
-    dnrm2_t *dnrm2
-    drot_t *drot
-    drotg_t *drotg
-    drotm_t *drotm
-    drotmg_t *drotmg
-    dscal_t *dscal
-    dswap_t *dswap
-    dsymm_t *dsymm
-    dsymv_t *dsymv
-    dsyr_t *dsyr
-    dsyr2_t *dsyr2
-    dsyr2k_t *dsyr2k
-    dsyrk_t *dsyrk
-    dtrmm_t *dtrmm
-    dtrmv_t *dtrmv
-    dzasum_t *dzasum
-    dznrm2_t *dznrm2
-    icamax_t *icamax
-    idamax_t *idamax
-    isamax_t *isamax
-    izamax_t *izamax
-    sasum_t *sasum
-    saxpy_t *saxpy
-    scasum_t *scasum
-    scnrm2_t *scnrm2
-    scopy_t *scopy
-    sdot_t *sdot
-    sgemm_t *sgemm
-    sgemv_t *sgemv
-    sger_t *sger
-    snrm2_t *snrm2
-    srot_t *srot
-    srotg_t *srotg
-    srotm_t *srotm
-    srotmg_t *srotmg
-    sscal_t *sscal
-    sswap_t *sswap
-    ssymm_t *ssymm
-    ssymv_t *ssymv
-    ssyr_t *ssyr
-    ssyr2_t *ssyr2
-    ssyr2k_t *ssyr2k
-    ssyrk_t *ssyrk
-    strmm_t *strmm
-    strmv_t *strmv
-    zaxpy_t *zaxpy
-    zcopy_t *zcopy
-    zdotc_t *zdotc
-    zdotu_t *zdotu
-    zdrot_t *zdrot
-    zdscal_t *zdscal
-    zgemm_t *zgemm
-    zgemv_t *zgemv
-    zgerc_t *zgerc
-    zgeru_t *zgeru
-    zhemm_t *zhemm
-    zhemv_t *zhemv
-    zher_t *zher
-    zher2_t *zher2
-    zher2k_t *zher2k
-    zherk_t *zherk
-    zrotg_t *zrotg
-    zscal_t *zscal
-    zswap_t *zswap
-    zsymm_t *zsymm
-    zsyr_t *zsyr
-    zsyr2k_t *zsyr2k
-    zsyrk_t *zsyrk
-    ztrmm_t *ztrmm
-    ztrmv_t *ztrmv
+    caxpy_t *caxpy_f
+    ccopy_t *ccopy_f
+    cdotc_t *cdotc_f
+    cdotu_t *cdotu_f
+    cgemm_t *cgemm_f
+    cgemv_t *cgemv_f
+    cgerc_t *cgerc_f
+    cgeru_t *cgeru_f
+    chemm_t *chemm_f
+    chemv_t *chemv_f
+    cher_t *cher_f
+    cher2_t *cher2_f
+    cher2k_t *cher2k_f
+    cherk_t *cherk_f
+    crotg_t *crotg_f
+    cscal_t *cscal_f
+    csrot_t *csrot_f
+    csscal_t *csscal_f
+    cswap_t *cswap_f
+    csymm_t *csymm_f
+    csyr_t *csyr_f
+    csyr2k_t *csyr2k_f
+    csyrk_t *csyrk_f
+    ctrmm_t *ctrmm_f
+    ctrmv_t *ctrmv_f
+    dasum_t *dasum_f
+    daxpy_t *daxpy_f
+    dcopy_t *dcopy_f
+    ddot_t *ddot_f
+    dgemm_t *dgemm_f
+    dgemv_t *dgemv_f
+    dger_t *dger_f
+    dnrm2_t *dnrm2_f
+    drot_t *drot_f
+    drotg_t *drotg_f
+    drotm_t *drotm_f
+    drotmg_t *drotmg_f
+    dscal_t *dscal_f
+    dswap_t *dswap_f
+    dsymm_t *dsymm_f
+    dsymv_t *dsymv_f
+    dsyr_t *dsyr_f
+    dsyr2_t *dsyr2_f
+    dsyr2k_t *dsyr2k_f
+    dsyrk_t *dsyrk_f
+    dtrmm_t *dtrmm_f
+    dtrmv_t *dtrmv_f
+    dzasum_t *dzasum_f
+    dznrm2_t *dznrm2_f
+    icamax_t *icamax_f
+    idamax_t *idamax_f
+    isamax_t *isamax_f
+    izamax_t *izamax_f
+    sasum_t *sasum_f
+    saxpy_t *saxpy_f
+    scasum_t *scasum_f
+    scnrm2_t *scnrm2_f
+    scopy_t *scopy_f
+    sdot_t *sdot_f
+    sgemm_t *sgemm_f
+    sgemv_t *sgemv_f
+    sger_t *sger_f
+    snrm2_t *snrm2_f
+    srot_t *srot_f
+    srotg_t *srotg_f
+    srotm_t *srotm_f
+    srotmg_t *srotmg_f
+    sscal_t *sscal_f
+    sswap_t *sswap_f
+    ssymm_t *ssymm_f
+    ssymv_t *ssymv_f
+    ssyr_t *ssyr_f
+    ssyr2_t *ssyr2_f
+    ssyr2k_t *ssyr2k_f
+    ssyrk_t *ssyrk_f
+    strmm_t *strmm_f
+    strmv_t *strmv_f
+    zaxpy_t *zaxpy_f
+    zcopy_t *zcopy_f
+    zdotc_t *zdotc_f
+    zdotu_t *zdotu_f
+    zdrot_t *zdrot_f
+    zdscal_t *zdscal_f
+    zgemm_t *zgemm_f
+    zgemv_t *zgemv_f
+    zgerc_t *zgerc_f
+    zgeru_t *zgeru_f
+    zhemm_t *zhemm_f
+    zhemv_t *zhemv_f
+    zher_t *zher_f
+    zher2_t *zher2_f
+    zher2k_t *zher2k_f
+    zherk_t *zherk_f
+    zrotg_t *zrotg_f
+    zscal_t *zscal_f
+    zswap_t *zswap_f
+    zsymm_t *zsymm_f
+    zsyr_t *zsyr_f
+    zsyr2k_t *zsyr2k_f
+    zsyrk_t *zsyrk_f
+    ztrmm_t *ztrmm_f
+    ztrmv_t *ztrmv_f
+
+cpdef float complex cdotc(float complex[:] cx, float complex[:] cy)
+cpdef float complex cdotu(float complex[:] cx, float complex[:] cy)
+cpdef double dasum(double[:] dx)
+cpdef double ddot(double[:] dx, double[:] dy)
+cpdef int dgemm(double alpha, double[:,:] a, double[:,:] b, double beta, double[:,:] c) except -1
+cpdef double dnrm2(double[:] x)
+cpdef double dzasum(double complex[:] zx)
+cpdef double dznrm2(double complex[:] x)
+cpdef int icamax(float complex[:] cx)
+cpdef int idamax(double[:] dx)
+cpdef int isamax(float[:] sx)
+cpdef int izamax(double complex[:] zx)
+cpdef float sasum(float[:] sx)
+cpdef float scasum(float complex[:] cx)
+cpdef float scnrm2(float complex[:] x)
+cpdef float sdot(float[:] sx, float[:] sy)
+cpdef float snrm2(float[:] x)
+cpdef double complex zdotc(double complex[:] zx, double complex[:] zy)
+cpdef double complex zdotu(double complex[:] zx, double complex[:] zy)

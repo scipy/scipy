@@ -26,21 +26,11 @@ Library:
     Extension: _solve_toeplitz
         Sources:
              _solve_toeplitz.c
-    Extension: _blas_subroutine_wrappers
+    Extension: cython_blas
         Sources:
-	    _blas_subroutine_wrappers.f
-    Extension: _lapack_subroutine_wrappers
+            cython_blas.c
+            _blas_subroutine_wrappers.f
+    Extension: cython_lapack
         Sources:
-	    _lapack_subroutine_wrappers.f
-    Extension: blas_pointers
-        Sources:
-            blas_pointers.c
-    Extension: lapack_pointers
-        Sources:
-            lapack_pointers.c
-    Extension: _test_blas_pointers
-        Sources:
-            _test_blas_pointers.c
-    Extension: _test_lapack_pointers
-        Sources:
-            _test_lapack_pointers.c
+            cython_lapack.c
+            _lapack_subroutine_wrappers.f

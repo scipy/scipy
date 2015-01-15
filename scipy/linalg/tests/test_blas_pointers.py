@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import (TestCase, run_module_suite, assert_allclose,
                            assert_equal)
-import scipy.linalg._cython_blas_wrappers as blas
+import scipy.linalg.cython_blas as blas
 
 class test_dgemm(TestCase):
     
@@ -59,7 +59,7 @@ class test_wfunc_pointers(TestCase):
         assert_allclose(blas.cdotc(cx, cy), -17.6468753815+21.3718757629j, 5)
         assert_allclose(blas.cdotu(cx, cy), -6.11562538147+30.3156242371j, 5)
 
-        assert_equal(blas.icamax(cx), 2)
+        assert_equal(blas.icamax(cx), 3)
 
         assert_allclose(blas.scasum(cx), 18.625, 5)
         assert_allclose(blas.scnrm2(cx), 13.1796483994, 5)
@@ -84,14 +84,14 @@ class test_wfunc_pointers(TestCase):
         assert_allclose(blas.ddot(x[::2], y[::2]), 9.75, 10)
         assert_allclose(blas.dnrm2(x[::2]), 5.0249376297, 10)
 
-        assert_equal(blas.idamax(x), 0)
+        assert_equal(blas.idamax(x), 1)
 
     def test_float_args(self):
 
         x = np.array([5., -3, -.5], np.float32)
         y = np.array([2, 1, .5], np.float32)
 
-        assert_equal(blas.isamax(x), 0)
+        assert_equal(blas.isamax(x), 1)
 
         assert_allclose(blas.sasum(x), 8.5, 5)
         assert_allclose(blas.sdot(x, y), 6.75, 5)
@@ -106,7 +106,7 @@ class test_wfunc_pointers(TestCase):
         cx = np.array([.5 + 1.j, .25 - .375j, 13. - 4.j], np.complex128)
         cy = np.array([.875 + 2.j, .875 - .625j, -1. + 2.j], np.complex128)
 
-        assert_equal(blas.izamax(cx), 2)
+        assert_equal(blas.izamax(cx), 3)
 
         assert_allclose(blas.zdotc(cx, cy), -18.109375+22.296875j, 10)
         assert_allclose(blas.zdotu(cx, cy), -6.578125+31.390625j, 10)

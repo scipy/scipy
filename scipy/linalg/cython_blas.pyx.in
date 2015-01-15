@@ -1,0 +1,504 @@
+# cython: boundscheck = False
+# cython: wraparound = False
+# cython: cdivision = True
+"""
+BLAS Functions for Cython
+=========================
+
+Usable from Cython via::
+
+    cimport scipy.linalg.cython_blas
+
+Raw function pointers (Fortran-style pointer arguments):
+
+- caxpy_f
+- ccopy_f
+- cdotc_f
+- cdotu_f
+- cgemm_f
+- cgemv_f
+- cgerc_f
+- cgeru_f
+- chemm_f
+- chemv_f
+- cher_f
+- cher2_f
+- cher2k_f
+- cherk_f
+- crotg_f
+- cscal_f
+- csrot_f
+- csscal_f
+- cswap_f
+- csymm_f
+- csyr_f
+- csyr2k_f
+- csyrk_f
+- ctrmm_f
+- ctrmv_f
+- dasum_f
+- daxpy_f
+- dcopy_f
+- ddot_f
+- dgemm_f
+- dgemv_f
+- dger_f
+- dnrm2_f
+- drot_f
+- drotg_f
+- drotm_f
+- drotmg_f
+- dscal_f
+- dswap_f
+- dsymm_f
+- dsymv_f
+- dsyr_f
+- dsyr2_f
+- dsyr2k_f
+- dsyrk_f
+- dtrmm_f
+- dtrmv_f
+- dzasum_f
+- dznrm2_f
+- icamax_f
+- idamax_f
+- isamax_f
+- izamax_f
+- sasum_f
+- saxpy_f
+- scasum_f
+- scnrm2_f
+- scopy_f
+- sdot_f
+- sgemm_f
+- sgemv_f
+- sger_f
+- snrm2_f
+- srot_f
+- srotg_f
+- srotm_f
+- srotmg_f
+- sscal_f
+- sswap_f
+- ssymm_f
+- ssymv_f
+- ssyr_f
+- ssyr2_f
+- ssyr2k_f
+- ssyrk_f
+- strmm_f
+- strmv_f
+- zaxpy_f
+- zcopy_f
+- zdotc_f
+- zdotu_f
+- zdrot_f
+- zdscal_f
+- zgemm_f
+- zgemv_f
+- zgerc_f
+- zgeru_f
+- zhemm_f
+- zhemv_f
+- zher_f
+- zher2_f
+- zher2k_f
+- zherk_f
+- zrotg_f
+- zscal_f
+- zswap_f
+- zsymm_f
+- zsyr_f
+- zsyr2k_f
+- zsyrk_f
+- ztrmm_f
+- ztrmv_f
+
+Friendlier Cython interfaces:
+
+- cdotc
+- cdotu
+- dasum
+- ddot
+- dgemm
+- dnrm2
+- dzasum
+- dznrm2
+- icamax
+- idamax
+- isamax
+- izamax
+- sasum
+- scasum
+- scnrm2
+- sdot
+- snrm2
+- zdotc
+- zdotu
+
+"""
+
+#
+# Function pointers
+#
+
+cdef extern from "fortran_defs.h":
+    pass
+
+# Use the subroutine wrappers for the
+# functions with specific return values.
+ctypedef int wcdotc_t(c *out, int *n, c *cx, int *incx, c *cy, int *incy) nogil
+ctypedef int wcdotu_t(c *out, int *n, c *cx, int *incx, c *cy, int *incy) nogil
+ctypedef int wdasum_t(d *out, int *n, d *dx, int *incx) nogil
+ctypedef int wddot_t(d *out, int *n, d *dx, int *incx, d *dy, int *incy) nogil
+ctypedef int wdnrm2_t(d *out, int *n, d *x, int *incx) nogil
+ctypedef int wdzasum_t(d *out, int *n, z *zx, int *incx) nogil
+ctypedef int wdznrm2_t(d *out, int *n, z *x, int *incx) nogil
+ctypedef int wicamax_t(int *out, int *n, c *cx, int *incx) nogil
+ctypedef int widamax_t(int *out, int *n, d *dx, int *incx) nogil
+ctypedef int wisamax_t(int *out, int *n, s *sx, int *incx) nogil
+ctypedef int wizamax_t(int *out, int *n, z *zx, int *incx) nogil
+ctypedef int wsasum_t(s *out, int *n, s *sx, int *incx) nogil
+ctypedef int wscasum_t(s *out, int *n, c *cx, int *incx) nogil
+ctypedef int wscnrm2_t(s *out, int *n, c *x, int *incx) nogil
+ctypedef int wsdot_t(s *out, int *n, s *sx, int *incx, s *sy, int *incy) nogil
+ctypedef int wsnrm2_t(s *out, int *n, s *x, int *incx) nogil
+ctypedef int wzdotc_t(z *out, int *n, z *zx, int *incx, z *zy, int *incy) nogil
+ctypedef int wzdotu_t(z *out, int *n, z *zx, int *incx, z *zy, int *incy) nogil
+
+{{py:
+
+def wrap_fortran_function(signature):
+    import re
+    m = re.match(r'\s*([a-z]+)\s+([a-z0-9]+)\((.*)\)\s*$', signature)
+    assert m
+    ret_type, name, arg_sig = m.groups()
+    args = re.findall(r'\*([a-z]+)', arg_sig)
+    arg_list = ",".join(args)
+    wname = name + "wrapper"
+    return """
+cdef extern w{name}_t _fortran_{name} "F_FUNC({wname},{WNAME})"
+cdef {ret_type} _wrap_{name}({arg_sig}) nogil:
+    cdef {ret_type} out
+    _fortran_{name}(&out, {arg_list})
+    return out
+cdef {name}_t *{name}_f = &_wrap_{name}
+""".format(name=name, ret_type=ret_type, arg_sig=arg_sig, arg_list=arg_list,
+           wname=wname, WNAME=wname.upper())
+
+def wrap_fortran_subroutine(name):
+    return """
+cdef extern {name}_t _fortran_{name} "F_FUNC({name},{NAME})"
+cdef {name}_t *{name}_f = &_fortran_{name}
+""".format(name=name, NAME=name.upper())
+
+WRAPPED_FUNCTIONS = [
+    'c cdotc(int *n, c *cx, int *incx, c *cy, int *incy)',
+    'c cdotu(int *n, c *cx, int *incx, c *cy, int *incy)',
+    'd dasum(int *n, d *dx, int *incx)',
+    'd ddot(int *n, d *dx, int *incx, d *dy, int *incy)',
+    'd dnrm2(int *n, d *x, int *incx)',
+    'd dzasum(int *n, z *zx, int *incx)',
+    'd dznrm2(int *n, z *x, int *incx)',
+    'int icamax(int *n, c *cx, int *incx)',
+    'int idamax(int *n, d *dx, int *incx)',
+    'int isamax(int *n, s *sx, int *incx)',
+    'int izamax(int *n, z *zx, int *incx)',
+    's sasum(int *n, s *sx, int *incx)',
+    's scasum(int *n, c *cx, int *incx)',
+    's scnrm2(int *n, c *x, int *incx)',
+    's sdot(int *n, s *sx, int *incx, s *sy, int *incy)',
+    's snrm2(int *n, s *x, int *incx)',
+    'z zdotc(int *n, z *zx, int *incx, z *zy, int *incy)',
+    'z zdotu(int *n, z *zx, int *incx, z *zy, int *incy)'
+]
+
+WRAPPED_SUBROUTINES = [
+    'caxpy',
+    'ccopy',
+    'cgemm',
+    'cgemv',
+    'cgerc',
+    'cgeru',
+    'chemm',
+    'chemv',
+    'cher',
+    'cher2',
+    'cher2k',
+    'cherk',
+    'crotg',
+    'cscal',
+    'csrot',
+    'csscal',
+    'cswap',
+    'csymm',
+    'csyr',
+    'csyr2k',
+    'csyrk',
+    'ctrmm',
+    'ctrmv',
+    'daxpy',
+    'dcopy',
+    'dgemm',
+    'dgemv',
+    'dger',
+    'drot',
+    'drotg',
+    'drotm',
+    'drotmg',
+    'dscal',
+    'dswap',
+    'dsymm',
+    'dsymv',
+    'dsyr',
+    'dsyr2',
+    'dsyr2k',
+    'dsyrk',
+    'dtrmm',
+    'dtrmv',
+    'saxpy',
+    'scopy',
+    'sgemm',
+    'sgemv',
+    'sger',
+    'srot',
+    'srotg',
+    'srotm',
+    'srotmg',
+    'sscal',
+    'sswap',
+    'ssymm',
+    'ssymv',
+    'ssyr',
+    'ssyr2',
+    'ssyr2k',
+    'ssyrk',
+    'strmm',
+    'strmv',
+    'zaxpy',
+    'zcopy',
+    'zdrot',
+    'zdscal',
+    'zgemm',
+    'zgemv',
+    'zgerc',
+    'zgeru',
+    'zhemm',
+    'zhemv',
+    'zher',
+    'zher2',
+    'zher2k',
+    'zherk',
+    'zrotg',
+    'zscal',
+    'zswap',
+    'zsymm',
+    'zsyr',
+    'zsyr2k',
+    'zsyrk',
+    'ztrmm',
+    'ztrmv',
+]
+
+}}
+
+{{for sig in WRAPPED_FUNCTIONS}}
+{{wrap_fortran_function(sig)}}
+{{endfor}}
+
+{{for name in WRAPPED_SUBROUTINES}}
+{{wrap_fortran_subroutine(name)}}
+{{endfor}}
+
+
+#
+# Friendly wrappers
+#
+
+cdef inline bint is_contiguous(double[:,:] a, int axis):
+    return (a.strides[axis] == sizeof(a[0,0]) or a.shape[axis] == 1)
+
+cpdef float complex cdotc(float complex[:] cx, float complex[:] cy):
+    cdef:
+        int n = cx.shape[0]
+        int incx = cx.strides[0] // sizeof(cx[0])
+        int incy = cy.strides[0] // sizeof(cy[0])
+    return cdotc_f(&n, &cx[0], &incx, &cy[0], &incy)
+
+cpdef float complex cdotu(float complex[:] cx, float complex[:] cy):
+    cdef:
+        int n = cx.shape[0]
+        int incx = cx.strides[0] // sizeof(cx[0])
+        int incy = cy.strides[0] // sizeof(cy[0])
+    return cdotu_f(&n, &cx[0], &incx, &cy[0], &incy)
+
+cpdef double dasum(double[:] dx):
+    cdef:
+        int n = dx.shape[0]
+        int incx = dx.strides[0] // sizeof(dx[0])
+    return dasum_f(&n, &dx[0], &incx)
+
+cpdef double ddot(double[:] dx, double[:] dy):
+    cdef:
+        int n = dx.shape[0]
+        int incx = dx.strides[0] // sizeof(dx[0])
+        int incy = dy.strides[0] // sizeof(dy[0])
+    return ddot_f(&n, &dx[0], &incx, &dy[0], &incy)
+
+cpdef int dgemm(double alpha, double[:,:] a, double[:,:] b, double beta,
+                double[:,:] c) except -1:
+    cdef:
+        char *transa
+        char *transb
+        int m, n, k, lda, ldb, ldc
+        double *a0=&a[0,0]
+        double *b0=&b[0,0]
+        double *c0=&c[0,0]
+    # In the case that c is C contiguous, swap a and b and
+    # swap whether or not each of them is transposed.
+    # This can be done because a.dot(b) = b.T.dot(a.T).T.
+    if is_contiguous(c, 1):
+        if is_contiguous(a, 1):
+            transb = 'n'
+            ldb = (&a[1,0]) - a0 if a.shape[0] > 1 else 1
+        elif is_contiguous(a, 0):
+            transb = 't'
+            ldb = (&a[0,1]) - a0 if a.shape[1] > 1 else 1
+        else:
+            raise ValueError("Input 'a' is neither C nor Fortran contiguous.")
+        if is_contiguous(b, 1):
+            transa = 'n'
+            lda = (&b[1,0]) - b0 if b.shape[0] > 1 else 1
+        elif is_contiguous(b, 0):
+            transa = 't'
+            lda = (&b[0,1]) - b0 if b.shape[1] > 1 else 1
+        else:
+            raise ValueError("Input 'b' is neither C nor Fortran contiguous.")
+        k = b.shape[0]
+        if k != a.shape[1]:
+            raise ValueError("Shape mismatch in input arrays.")
+        m = b.shape[1]
+        n = a.shape[0]
+        if n != c.shape[0] or m != c.shape[1]:
+            raise ValueError("Output array does not have the correct shape.")
+        ldc = (&c[1,0]) - c0 if c.shape[0] > 1 else 1
+        dgemm_f(transa, transb, &m, &n, &k, &alpha, b0, &lda, a0,
+                   &ldb, &beta, c0, &ldc)
+    elif is_contiguous(c, 0):
+        if is_contiguous(a, 1):
+            transa = 't'
+            lda = (&a[1,0]) - a0 if a.shape[0] > 1 else 1
+        elif is_contiguous(a, 0):
+            transa = 'n'
+            lda = (&a[0,1]) - a0 if a.shape[1] > 1 else 1
+        else:
+            raise ValueError("Input 'a' is neither C nor Fortran contiguous.")
+        if is_contiguous(b, 1):
+            transb = 't'
+            ldb = (&b[1,0]) - b0 if b.shape[0] > 1 else 1
+        elif is_contiguous(b, 0):
+            transb = 'n'
+            ldb = (&b[0,1]) - b0 if b.shape[1] > 1 else 1
+        else:
+            raise ValueError("Input 'b' is neither C nor Fortran contiguous.")
+        m = a.shape[0]
+        k = a.shape[1]
+        if k != b.shape[0]:
+            raise ValueError("Shape mismatch in input arrays.")
+        n = b.shape[1]
+        if m != c.shape[0] or n != c.shape[1]:
+            raise ValueError("Output array does not have the correct shape.")
+        ldc = (&c[0,1]) - c0 if c.shape[1] > 1 else 1
+        dgemm_f(transa, transb, &m, &n, &k, &alpha, a0, &lda, b0,
+                   &ldb, &beta, c0, &ldc)
+    else:
+        raise ValueError("Input 'c' is neither C nor Fortran contiguous.")
+    return 0
+
+cpdef double dnrm2(double[:] x):
+    cdef:
+        int n = x.shape[0]
+        int incx = x.strides[0] // sizeof(x[0])
+    return dnrm2_f(&n, &x[0], &incx)
+
+cpdef double dzasum(double complex[:] zx):
+    cdef:
+        int n = zx.shape[0]
+        int incx = zx.strides[0] // sizeof(zx[0])
+    return dzasum_f(&n, &zx[0], &incx)
+
+cpdef double dznrm2(double complex[:] x):
+    cdef:
+        int n = x.shape[0]
+        int incx = x.strides[0] // sizeof(x[0])
+    return dznrm2_f(&n, &x[0], &incx)
+
+cpdef int icamax(float complex[:] cx):
+    cdef:
+        int n = cx.shape[0]
+        int incx = cx.strides[0] // sizeof(cx[0])
+    return icamax_f(&n, &cx[0], &incx)
+
+cpdef int idamax(double[:] dx):
+    cdef:
+        int n = dx.shape[0]
+        int incx = dx.strides[0] // sizeof(dx[0])
+    return idamax_f(&n, &dx[0], &incx)
+
+cpdef int isamax(float[:] sx):
+    cdef:
+        int n = sx.shape[0]
+        int incx = sx.strides[0] // sizeof(sx[0])
+    return isamax_f(&n, &sx[0], &incx)
+
+cpdef int izamax(double complex[:] zx):
+    cdef:
+        int n = zx.shape[0]
+        int incx = zx.strides[0] // sizeof(zx[0])
+    return izamax_f(&n, &zx[0], &incx)
+
+cpdef float sasum(float[:] sx):
+    cdef:
+        int n = sx.shape[0]
+        int incx = sx.shape[0] // sizeof(sx[0])
+    return sasum_f(&n, &sx[0], &incx)
+
+cpdef float scasum(float complex[:] cx):
+    cdef:
+        int n = cx.shape[0]
+        int incx = cx.strides[0] // sizeof(cx[0])
+    return scasum_f(&n, &cx[0], &incx)
+
+cpdef float scnrm2(float complex[:] x):
+    cdef:
+        int n = x.shape[0]
+        int incx = x.strides[0] // sizeof(x[0])
+    return scnrm2_f(&n, &x[0], &incx)
+
+cpdef float sdot(float[:] sx, float[:] sy):
+    cdef:
+        int n = sx.shape[0]
+        int incx = sx.strides[0] // sizeof(sx[0])
+        int incy = sy.strides[0] // sizeof(sy[0])
+    return sdot_f(&n, &sx[0], &incx, &sy[0], &incy)
+
+cpdef float snrm2(float[:] x):
+    cdef:
+        int n = x.shape[0]
+        int incx = x.shape[0] // sizeof(x[0])
+    return snrm2_f(&n, &x[0], &incx)
+
+cpdef double complex zdotc(double complex[:] zx, double complex[:] zy):
+    cdef:
+        int n = zx.shape[0]
+        int incx = zx.strides[0] // sizeof(zx[0])
+        int incy = zy.strides[0] // sizeof(zy[0])
+    return zdotc_f(&n, &zx[0], &incx, &zy[0], &incy)
+
+cpdef double complex zdotu(double complex[:] zx, double complex[:] zy):
+    cdef:
+        int n = zx.shape[0]
+        int incx = zx.strides[0] // sizeof(zx[0])
+        int incy = zy.strides[0] // sizeof(zy[0])
+    return zdotu_f(&n, &zx[0], &incx, &zy[0], &incy)
+

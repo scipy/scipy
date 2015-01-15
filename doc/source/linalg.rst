@@ -4,7 +4,7 @@
    :hidden:
 
    linalg.blas
-   linalg.blas_pointers
    linalg.lapack
-   linalg.lapack_pointers
+   linalg.cython_blas
+   linalg.cython_lapack
    linalg.interpolative

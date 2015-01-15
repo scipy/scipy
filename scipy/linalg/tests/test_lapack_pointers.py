@@ -1,5 +1,5 @@
 from numpy.testing import TestCase, run_module_suite, assert_allclose
-from scipy.linalg import _cython_lapack_wrappers as cython_lapack
+from scipy.linalg import cython_lapack as cython_lapack
 from scipy.linalg import lapack
 
 
