@@ -1470,7 +1470,6 @@ def squareform(X, force="no", checks=True):
         _distance_wrap.to_squareform_from_vector_wrap(M, X)
 
         # Return the distance matrix.
-        M = M + M.transpose()
         return M
     elif len(s) == 2:
         if s[0] != s[1]:

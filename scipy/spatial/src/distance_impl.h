@@ -474,13 +474,15 @@ pdist_weighted_minkowski(const double *X, double *dm, npy_intp m, npy_intp n,
 static NPY_INLINE void
 dist_to_squareform_from_vector(double *M, const double *v, npy_intp n)
 {
-    double *it;
+    double *it, *it2;
     npy_intp i, j;
 
     for (i = 0; i < n - 1; i++) {
-        it = M + (i * n) + i + 1;
-        for (j = i + 1; j < n; j++, it++, v++) {
+        it  = M + (i * n) + i + 1;
+        it2 = M + (i+1)*n + i;
+        for (j = i + 1; j < n; j++, it++, it2 += n, v++) {
             *it = *v;
+            *it2 = *v;
         }
     }
 }
