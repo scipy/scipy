@@ -314,13 +314,6 @@ dot_product(const double *u, const double *v, npy_intp n)
 }
 
 static NPY_INLINE double
-cosine_distance(const double *u, const double *v, npy_intp n,
-                double nu, double nv)
-{
-    return 1.0 - (dot_product(u, v, n) / (nu * nv));
-}
-
-static NPY_INLINE double
 seuclidean_distance(const double *var, const double *u, const double *v,
                     npy_intp n)
 {
@@ -426,7 +419,7 @@ pdist_cosine(const double *X, double *dm, npy_intp m, npy_intp n,
         for (j = i + 1; j < m; j++, dm++) {
             u = X + (n * i);
             v = X + (n * j);
-            *dm = cosine_distance(u, v, n, norms[i], norms[j]);
+            *dm = 1. - dot_product(u, v, n) / (norms[i] * norms[j]);
         }
     }
 }
@@ -528,23 +521,6 @@ cdist_mahalanobis(const double *XA, const double *XB,
         }
     }
     dimbuf2 = 0;
-}
-
-static NPY_INLINE void
-cdist_cosine(const double *XA, const double *XB, double *dm,
-             npy_intp mA, npy_intp mB, npy_intp n,
-             const double *normsA, const double *normsB)
-{
-    const double *u, *v;
-    npy_intp i, j;
-
-    for (i = 0; i < mA; i++) {
-        for (j = 0; j < mB; j++, dm++) {
-            u = XA + (n * i);
-            v = XB + (n * j);
-            *dm = cosine_distance(u, v, n, normsA[i], normsB[j]);
-        }
-    }
 }
 
 static NPY_INLINE void
