@@ -290,7 +290,6 @@ class TestFBLAS2Simple(TestCase):
 
             a = np.zeros((4,4), 'f' if p == 's' else 'd', 'F')
             b = f(1.0, x, a=a, overwrite_a=True)
-            assert_(a is b)
             assert_allclose(a, resx, rtol=rtol)
 
             b = f(2.0, x, a=a)
@@ -318,7 +317,6 @@ class TestFBLAS2Simple(TestCase):
 
             a = np.zeros((4,4), 'F' if p == 'c' else 'D', 'F')
             b = f(1.0, z, a=a, overwrite_a=True)
-            assert_(a is b)
             assert_allclose(a, resz, rtol=rtol)
 
             b = f(2.0, z, a=a)
@@ -346,7 +344,6 @@ class TestFBLAS2Simple(TestCase):
 
             a = np.zeros((4,4), 'F' if p == 'c' else 'D', 'F')
             b = f(1.0, z, a=a, overwrite_a=True)
-            assert_(a is b)
             assert_allclose(a, rehz, rtol=rtol)
 
             b = f(2.0, z, a=a)
@@ -388,7 +385,6 @@ class TestFBLAS2Simple(TestCase):
 
             a = np.zeros((4,4), 'f' if p == 's' else 'd', 'F')
             b = f(1.0, x, y, a=a, overwrite_a=True)
-            assert_(a is b)
             assert_allclose(a, resxy, rtol=rtol)
 
             b = f(2.0, x, y, a=a)
@@ -437,7 +433,6 @@ class TestFBLAS2Simple(TestCase):
 
             a = np.zeros((4,4), 'F' if p == 'c' else 'D', 'F')
             b = f(1.0, x, y, a=a, overwrite_a=True)
-            assert_(a is b)
             assert_allclose(a, resxy, rtol=rtol)
 
             b = f(2.0, x, y, a=a)
