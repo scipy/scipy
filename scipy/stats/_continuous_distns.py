@@ -3227,19 +3227,19 @@ class lomax_gen(rv_continuous):
         return c*1.0/(1.0+x)**(c+1.0)
 
     def _logpdf(self, x, c):
-        return log(c) - (c+1)*log(1+x)
+        return log(c) - (c+1)*special.log1p(x)
 
     def _cdf(self, x, c):
-        return 1.0-1.0/(1.0+x)**c
+        return -special.expm1(-c*special.log1p(x))
 
     def _sf(self, x, c):
-        return 1.0/(1.0+x)**c
+        return exp(-c*special.log1p(x))
 
     def _logsf(self, x, c):
-        return -c*log(1+x)
+        return -c*special.log1p(x)
 
     def _ppf(self, q, c):
-        return pow(1.0-q, -1.0/c)-1
+        return special.expm1(-special.log1p(-q)/c)
 
     def _stats(self, c):
         mu, mu2, g1, g2 = pareto.stats(c, loc=-1.0, moments='mvsk')

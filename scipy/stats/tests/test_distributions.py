@@ -2168,6 +2168,10 @@ def test_infinite_input():
     assert_almost_equal(stats.skellam.sf(np.inf, 10, 11), 0)
     assert_almost_equal(stats.ncx2._cdf(np.inf, 8, 0.1), 1)
 
+def test_lomax_accuracy():
+    # regression test for gh-4033
+    p = stats.lomax.ppf(stats.lomax.cdf(1e-100,1),1)
+    assert_equal(p, 1e-100)
 
 if __name__ == "__main__":
     run_module_suite()
