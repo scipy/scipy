@@ -332,7 +332,7 @@ def cwt(data, wavelet, widths):
     Returns
     -------
     cwt: (M, N) ndarray
-        Will have shape of (len(data), len(widths)).
+        Will have shape of (len(widths), len(data)).
 
     Notes
     -----
