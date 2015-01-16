@@ -22,6 +22,8 @@ from scipy.stats import norm
 
 from scipy.integrate import romb
 
+from common_tests import check_random_state_property
+
 
 class TestMultivariateNormal(TestCase):
     def test_input_shape(self):
@@ -761,6 +763,20 @@ class TestInvwishart(TestCase):
         assert_allclose(frozen_w_rvs, manual_w_rvs)
         assert_allclose(iw_rvs, manual_iw_rvs)
         assert_allclose(frozen_iw_rvs, manual_iw_rvs)
+
+
+def test_random_state_property():
+    scale = np.eye(3)
+    scale[0,1] = 0.5
+    scale[1,0] = 0.5
+    dists = [
+        [multivariate_normal, ()],
+        [dirichlet, (np.array([1.]), )],
+        [wishart, (10, scale)],
+        [invwishart, (10, scale)]
+    ]
+    for distfn, args in dists:
+        check_random_state_property(distfn, args)
 
 
 if __name__ == "__main__":
