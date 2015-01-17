@@ -28,7 +28,7 @@ def _create_sparse_poisson2d(n):
     return P2d
 
 
-class BenchmarkConjuateGradientSolver(TestCase):
+class BenchmarkSparseLinearSolver(TestCase):
 
     def bench_spsolve(self):
         np.random.seed(1234)
