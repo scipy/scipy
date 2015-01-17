@@ -2049,7 +2049,30 @@ def _desc_stats(x1, x2, axis=0):
         return mu, std, nobs
     return _stats(x1, axis) + _stats(x2, axis)
 
+def test_ttest_perm():
+    
+    def _parametric_ttest(mat, cats):
+        rows,cols = mat.shape
+        pvalues = np.zeros(rows)
+        test_stats = np.zeros(rows)
+        for r in range(rows):
+            values = mat[r,:].transpose()
+            T, _ =  stats.ttest_ind(values[cats==0], values[cats==1], equal_var = False)
+            test_stats[r] = T
+        return test_stats
+    
+    N = 20
+    mat = np.array(
+        np.matrix(np.vstack((
+            np.hstack((np.arange((3*N)/4), np.arange(N/4)+100)),
+            np.random.random(N))),dtype=np.float32))
+    cats = np.hstack((np.zeros((3*N)/4),np.ones(N/4)))
+    nv_t_stats = _parametric_ttest(mat, cats)
+    np_t_stats, pvalues = stats.ttest_perm(mat, cats)
+    assert_array_almost_equal(nv_t_stats, np_t_stats, 5)
 
+
+    
 def test_ttest_ind():
     # regression test
     tr = 1.0912746897927283
