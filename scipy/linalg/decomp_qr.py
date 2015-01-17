@@ -14,8 +14,8 @@ __all__ = ['qr', 'qr_multiply', 'rq']
 def safecall(f, name, *args, **kwargs):
     """Call a LAPACK routine, determining lwork automatically and handling
     error return values"""
-    lwork = kwargs.pop("lwork", None)
-    if lwork is None:
+    lwork = kwargs.get("lwork", None)
+    if lwork in (None, -1):
         kwargs['lwork'] = -1
         ret = f(*args, **kwargs)
         kwargs['lwork'] = ret[-2][0].real.astype(numpy.int)
@@ -374,14 +374,8 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
     gerqf, = get_lapack_funcs(('gerqf',), (a1,))
-    if lwork is None or lwork == -1:
-        # get optimal work array
-        rq, tau, work, info = gerqf(a1, lwork=-1, overwrite_a=1)
-        lwork = work[0].real.astype(numpy.int)
-    rq, tau, work, info = gerqf(a1, lwork=lwork, overwrite_a=overwrite_a)
-    if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal gerqf'
-                                                                    % -info)
+    rq, tau = safecall(gerqf, 'gerqf', a1, lwork=lwork,
+                       overwrite_a=overwrite_a)
     if not mode == 'economic' or N < M:
         R = numpy.triu(rq, N-M)
     else:
@@ -393,24 +387,15 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
     gor_un_grq, = get_lapack_funcs(('orgrq',), (rq,))
 
     if N < M:
-        # get optimal work array
-        Q, work, info = gor_un_grq(rq[-N:], tau, lwork=-1, overwrite_a=1)
-        lwork = work[0].real.astype(numpy.int)
-        Q, work, info = gor_un_grq(rq[-N:], tau, lwork=lwork, overwrite_a=1)
+        Q, = safecall(gor_un_grq, "gorgrq/gungrq", rq[-N:], tau, lwork=lwork,
+                      overwrite_a=1)
     elif mode == 'economic':
-        # get optimal work array
-        Q, work, info = gor_un_grq(rq, tau, lwork=-1, overwrite_a=1)
-        lwork = work[0].real.astype(numpy.int)
-        Q, work, info = gor_un_grq(rq, tau, lwork=lwork, overwrite_a=1)
+        Q, = safecall(gor_un_grq, "gorgrq/gungrq", rq, tau, lwork=lwork,
+                      overwrite_a=1)
     else:
         rq1 = numpy.empty((N, N), dtype=rq.dtype)
         rq1[-M:] = rq
-        # get optimal work array
-        Q, work, info = gor_un_grq(rq1, tau, lwork=-1, overwrite_a=1)
-        lwork = work[0].real.astype(numpy.int)
-        Q, work, info = gor_un_grq(rq1, tau, lwork=lwork, overwrite_a=1)
+        Q, = safecall(gor_un_grq, "gorgrq/gungrq", rq1, tau, lwork=lwork,
+                      overwrite_a=1)
 
-    if info < 0:
-        raise ValueError("illegal value in %d-th argument of internal orgrq"
-                                                                    % -info)
     return R, Q
