@@ -1461,7 +1461,6 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
                 #Q, _ = np.linalg.qr(transfer_matrix_not_i_j, mode="complete")
                 Q, _ = s_qr(transfer_matrix_not_i_j, mode="full")
                 
-                
                 if np.isreal(poles[i]):
                     if not np.isreal(poles[j]):
                         msg = "mixing real and complex in YT_real" + str(poles)
@@ -1711,7 +1710,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
         gain_matrix = np.linalg.lstsq(B, diag_poles-A)[0]
         transfer_matrix = np.eye(A.shape[0])
         cur_rtol = 0
-        nb_iter=0
+        nb_iter = 0
     else:
         # step A (p1144 KNV) and begining of step F: decompose
         # dot(U1.T, A-P[i]*I).T and build our set of transfer_matrix vectors
@@ -1825,4 +1824,3 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     full_state_feedback.nb_iter = nb_iter    
 
     return full_state_feedback
-
