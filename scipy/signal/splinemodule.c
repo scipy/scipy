@@ -7,7 +7,7 @@
 #define DATA(arr) (PyArray_DATA(arr))
 #define DIMS(arr) (PyArray_DIMS(arr))
 #define STRIDES(arr) (PyArray_STRIDES(arr))
-#define ELSIZE(arr) (PyArray_DESCR(arr)->elsize)
+#define ELSIZE(arr) (PyArray_ITEMSIZE(arr))
 
 static void convert_strides(npy_intp*,npy_intp*,int,int);
 

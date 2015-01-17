@@ -777,10 +777,10 @@ static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2,
   int ndims = PyArray_NDIM(ap1);
   intp *dims2 = PyArray_DIMS(ap2);
   intp *dims1 = PyArray_DIMS(ap1);
-  intp is1 = PyArray_DESCR(ap1)->elsize;
-  intp is2 = PyArray_DESCR(ap2)->elsize;
+  intp is1 = PyArray_ITEMSIZE(ap1);
+  intp is2 = PyArray_ITEMSIZE(ap2);
   char *ip2 = PyArray_DATA(ap2);
-  int elsize = PyArray_DESCR(ap1)->elsize;
+  int elsize = PyArray_ITEMSIZE(ap1);
   char *ptr;
 
   i = nels2;
@@ -797,7 +797,7 @@ static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2,
     temp_ind[k]++;
 
     if (!(check && index_out_of_bounds(temp_ind,dims1,ndims)) && \
-	memcmp(ip2, ptr, PyArray_DESCR(ap2)->elsize)) { 
+	memcmp(ip2, ptr, PyArray_ITEMSIZE(ap2))) {
       memcpy(sort_buffer, ip1, elsize);
       sort_buffer += elsize;
     } 
@@ -883,8 +883,8 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	zptr = PyArray_Zero(ap2);
 	if (zptr == NULL) goto fail;
 	for (k=0; k < n2; k++) {
-	  n2_nonzero += (memcmp(ap2_ptr,zptr,PyArray_DESCR(ap2)->elsize) != 0);
-	  ap2_ptr += PyArray_DESCR(ap2)->elsize;
+	  n2_nonzero += (memcmp(ap2_ptr,zptr,PyArray_ITEMSIZE(ap2)) != 0);
+	  ap2_ptr += PyArray_ITEMSIZE(ap2);
 	}
 
 	if ((order >= n2_nonzero) || (order < 0)) {
@@ -905,11 +905,11 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 		goto fail;
 	}
 
-	is1 = PyArray_DESCR(ap1)->elsize;
+	is1 = PyArray_ITEMSIZE(ap1);
 	
 	if (!(sort_buffer = malloc(n2_nonzero*is1))) goto fail;
 
-	op = PyArray_DATA(ret); os = PyArray_DESCR(ret)->elsize;
+	op = PyArray_DATA(ret); os = PyArray_ITEMSIZE(ret);
 
 	op = PyArray_DATA(ret);
 
