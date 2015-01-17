@@ -3498,7 +3498,7 @@ def ttest_perm(a, b, axis=0, permutations = 1000):
     using permutation methods
 
     This test is an equivalent to scipy.stats.ttest_ind, except it doesn't require the
-    normality assumption since it uses a permutation test.
+    normality assumption since it uses a permutation test .
 
     Parameters
     ----------
@@ -3521,26 +3521,24 @@ def ttest_perm(a, b, axis=0, permutations = 1000):
         The two-tailed p-value.
 
     """
+    mat = a
     assert len(a.shape) == 2
     r, c = a.shape
-    mat = np.matrix(a)
     if axis == 0: # Test with respect to rows
         assert len(b) == c
     else:
         assert len(b) == r
-        mat = mat.transpose()
+        mat = a.transpose()
 
     perms = _init_categorical_perms(b, permutations=1000)
-    perms = np.matrix(perms)
     num_cats = 2
     _, c = perms.shape
     permutations = (c - num_cats) / num_cats
     
     ## Perform matrix multiplication on data matrix
     ## and calculate sums and squared sums
-    _sums  = mat * perms
-    _sums2 = np.multiply(mat, mat) * perms
-
+    _sums  = np.dot(mat, perms)
+    _sums2 = np.dot( np.multiply(mat, mat), perms)
     ## Calculate means and sample variances
     tot =  perms.sum(axis = 0)
     _avgs  = _sums / tot
@@ -3550,11 +3548,12 @@ def ttest_perm(a, b, axis=0, permutations = 1000):
     
     ## Calculate the t statistic
     idx = np.arange(0, (permutations+1)*num_cats, num_cats, dtype=np.int32)
-    denom  = np.sqrt(_samp_vars[:, idx+1] / tot[:,idx+1]  + _samp_vars[:, idx] / tot[:,idx])
+    denom  = np.sqrt( np.divide(_samp_vars[:, idx+1], tot[idx+1])  +
+                      np.divide(_samp_vars[:, idx], tot[idx]))
     t_stat = np.divide(_avgs[:, idx] - _avgs[:, idx+1], denom)
     ## Calculate the p-values
-    cmps =  abs(t_stat[:,1:]) >= abs(t_stat[:,0])
-    pvalues = (cmps.sum(axis = 1) + 1.)/(permutations + 1.)
+    cmps =  abs(t_stat[:,1:].transpose()) >= abs(t_stat[:,0])
+    pvalues = (cmps.sum(axis = 0) + 1.)/(permutations + 1.)
         
     return map(np.array, map(np.ravel, [t_stat[:, 0],pvalues]))
 
