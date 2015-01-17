@@ -31,16 +31,20 @@ All functions
    cgebal
    cgees
    cgeev
+   cgeev_lwork
    cgegv
    cgehrd
+   cgehrd_lwork
    cgelss
    cgeqp3
    cgeqrf
    cgerqf
    cgesdd
+   cgesdd_lwork
    cgesv
    cgetrf
    cgetri
+   cgetri_lwork
    cgetrs
    cgges
    cggev
@@ -73,16 +77,20 @@ All functions
    dgebal
    dgees
    dgeev
+   dgeev_lwork
    dgegv
    dgehrd
+   dgehrd_lwork
    dgelss
    dgeqp3
    dgeqrf
    dgerqf
    dgesdd
+   dgesdd_lwork
    dgesv
    dgetrf
    dgetri
+   dgetri_lwork
    dgetrs
    dgges
    dggev
@@ -117,16 +125,20 @@ All functions
    sgebal
    sgees
    sgeev
+   sgeev_lwork
    sgegv
    sgehrd
+   sgehrd_lwork
    sgelss
    sgeqp3
    sgeqrf
    sgerqf
    sgesdd
+   sgesdd_lwork
    sgesv
    sgetrf
    sgetri
+   sgetri_lwork
    sgetrs
    sgges
    sggev
@@ -161,16 +173,20 @@ All functions
    zgebal
    zgees
    zgeev
+   zgeev_lwork
    zgegv
    zgehrd
+   zgehrd_lwork
    zgelss
    zgeqp3
    zgeqrf
    zgerqf
    zgesdd
+   zgesdd_lwork
    zgesv
    zgetrf
    zgetri
+   zgetri_lwork
    zgetrs
    zgges
    zggev
