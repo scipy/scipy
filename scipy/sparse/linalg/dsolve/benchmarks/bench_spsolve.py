@@ -32,7 +32,7 @@ class BenchmarkConjuateGradientSolver(TestCase):
 
     def bench_spsolve(self):
         np.random.seed(1234)
-        n = 40
+        n = 30
         P_sparse = _create_sparse_poisson2d(n).tocsc()
         P_dense = P_sparse.A
         rows = P_dense.shape[0]
@@ -51,10 +51,11 @@ class BenchmarkConjuateGradientSolver(TestCase):
         # vary between (n*n, 1) and (n*n, 1000).
         # The time to construct these matrices will not count
         # towards the time reported in the benchmarks.
-        b_column_counts = (10, 30, 100, 300, 1000)
-        b_full = np.random.randn(rows, max(b_column_counts))
-        b_dense_list = [b_full[:, :c] for c in b_column_counts]
-        b_sparse_list = [sparse.csr_matrix(b) for b in b_dense_list]
+        b_column_counts = (10, 30, 100, 300, 1000, 3000)
+        max_cols = max(b_column_counts)
+        b_max = sparse.rand(rows, max_cols, density=0.05, format='csc')
+        b_sparse_list = [b_max[:, :c] for c in b_column_counts]
+        b_dense_list = [b.A for b in b_sparse_list]
         repeats = 10
         for i, b_column_count in enumerate(b_column_counts):
             b_dense = b_dense_list[i]
