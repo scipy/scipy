@@ -18,9 +18,11 @@ extern int number_of_processors;
 
 #include <cmath>
 
-// Utility functions
-// =================
-
+/*
+ * Utility functions
+ * =================
+ */
+ 
 inline npy_float64 
 dmax(const npy_float64 x, const npy_float64 y) 
 {
@@ -40,19 +42,23 @@ dabs(const npy_float64 x)
 }
 
 
-// Measuring distances
-// ===================
-
+/*
+ * Measuring distances
+ * ===================
+ */
+ 
 inline npy_float64 
 _distance_p(const npy_float64 *x, const npy_float64 *y,
             const npy_float64 p, const npy_intp k,
             const npy_float64 upperbound)
 {    
-    // Compute the distance between x and y
-    //
-    // Computes the Minkowski p-distance to the power p between two points.
-    // If the distance**p is larger than upperbound, then any number larger
-    // than upperbound may be returned (the calculation is truncated).
+   /*
+    * Compute the distance between x and y
+    *
+    * Computes the Minkowski p-distance to the power p between two points.
+    * If the distance**p is larger than upperbound, then any number larger
+    * than upperbound may be returned (the calculation is truncated).
+    */
     
     npy_intp i;
     npy_float64 r, z;
@@ -64,19 +70,22 @@ _distance_p(const npy_float64 *x, const npy_float64 *y,
             if (r>upperbound)
                 return r;
         }
-    } else if (p==infinity) {
+    } 
+    else if (p==infinity) {
         for (i=0; i<k; ++i) {
             r = dmax(r,dabs(x[i]-y[i]));
             if (r>upperbound)
                 return r;
         }
-    } else if (p==1.) {
+    } 
+    else if (p==1.) {
         for (i=0; i<k; ++i) {
             r += dabs(x[i]-y[i]);
             if (r>upperbound)
                 return r;
         }
-    } else {
+    } 
+    else {
         for (i=0; i<k; ++i) {
             r += std::pow(dabs(x[i]-y[i]),p);
             if (r>upperbound)
@@ -100,8 +109,7 @@ query_knn(const ckdtree     *self,
           const npy_float64  distance_upper_bound);
           
 
-// Other query methods can follow here when they are 
-// implemented
+// Other query methods can follow here when they are implemented
           
 #endif
 

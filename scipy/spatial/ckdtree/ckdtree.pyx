@@ -33,7 +33,7 @@ number_of_processors = cpu_count()
 
 from libcpp.vector cimport vector
 
-__all__ = ['cKDTree', 'cKDTreeNode']
+__all__ = ['cKDTree']
 
     
 # Borrowed references
@@ -627,6 +627,7 @@ cdef int partition_node_indices(np.float64_t *data,
                                 np.intp_t n_features,
                                 np.intp_t n_points) except -1:
     """Partition points in the node into two equal-sized groups.
+    
     Upon return, the values in node_indices will be rearranged such that
     (assuming numpy-style indexing):
         data[node_indices[0:split_index], split_dim]
@@ -636,6 +637,7 @@ cdef int partition_node_indices(np.float64_t *data,
           <= data[node_indices[split_index:n_points], split_dim]
     The algorithm is essentially a partial in-place quicksort around a
     set pivot.
+    
     Parameters
     ----------
     data : double pointer
@@ -688,8 +690,11 @@ cdef class cKDTreeNode:
     """
     class cKDTreeNode
     
-    This class exposes a Python view of a node in the cKDTree class and contains
-    the following read-only attributes:
+    This class exposes a Python view of a node in the cKDTree object. All
+    attributes are read-only.
+    
+    Attributes
+    ----------
     
     level : int
         The depth of the node. 0 is the level of the root node.
@@ -868,7 +873,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         np.ndarray               _median_workspace
     
     
-    def __init__(cKDTree self, data, np.intp_t leafsize=16, compact_nodes=True, copy_data=False, balanced_tree=True):
+    def __init__(cKDTree self, data, np.intp_t leafsize=16, compact_nodes=True, 
+            copy_data=False, balanced_tree=True):
         cdef np.ndarray[np.float64_t, ndim=2] data_arr
         cdef np.float64_t *tmp
         cdef int _median
@@ -941,7 +947,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
     @cython.cdivision(True)
     cdef np.intp_t __build(cKDTree self, np.intp_t start_idx, np.intp_t end_idx,
-                       np.float64_t *maxes, np.float64_t *mins, int _median) except -1:
+                       np.float64_t *maxes, np.float64_t *mins, int _median)\
+                       except -1:
         cdef:
             
             ckdtreenode new_node
@@ -1064,8 +1071,11 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 _greater = self.__build(p,end_idx,maxes,mids,_median)
                 
                 root = tree_buffer_root(self.tree_buffer)
-                n = root + node_index # recompute because std::vector can reallocate
-                n._less = _less
+                # recompute n because std::vector can
+                # reallocate its internal buffer
+                n = root + node_index
+                # fill in entries
+                n._less = _less 
                 n._greater = _greater
                 n.less = root + _less
                 n.greater = root + _greater
@@ -1208,7 +1218,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             _greater = self.__build_compact(p,end_idx,mins,maxes,_median)
                         
             root = tree_buffer_root(self.tree_buffer)
-            n = root + node_index # recompute because std::vector can reallocate
+            # recompute n because std::vector can reallocate
+            # its internal buffer
+            n = root + node_index
+            # fill in entries
             n._less = _less
             n._greater = _greater
             n.less = root + _less
@@ -1227,7 +1240,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     def query(cKDTree self, object x, np.intp_t k=1, np.float64_t eps=0,
               np.float64_t p=2, np.float64_t distance_upper_bound=infinity,
               np.intp_t n_jobs=1):
-        """query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf)
+        """query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, n_jobs=1)
         
         Query the kd-tree for nearest neighbors
 
@@ -1238,7 +1251,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         k : integer
             The number of nearest neighbors to return.
         eps : non-negative float
-            Return approximate nearest neighbors; the kth returned value 
+            Return approximate nearest neighbors; the k-th returned value 
             is guaranteed to be no further than (1+eps) times the 
             distance to the real k-th nearest neighbor.
         p : float, 1<=p<=infinity
@@ -1311,16 +1324,16 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 cdef np.intp_t stop = start + CHUNK
                 stop = n if stop > n else stop
                 if start < n:
-                    query_knn(<ckdtree*>self, &dd[start,0], &ii[start,0], &xx[start,0], 
-                          stop-start, k, eps, p, dub)
+                    query_knn(<ckdtree*>self, &dd[start,0], &ii[start,0], 
+                        &xx[start,0], stop-start, k, eps, p, dub)
             
             # There might be n_jobs+1 threads spawned here, but only n_jobs of 
             # them will do significant work.
             threads = [threading.Thread(target=_thread_func, 
                         args=(self,dd,ii,xx,j,n,CHUNK,p,k,eps,distance_upper_bound))
                              for j in range(1+(n//CHUNK))]
-            # Set the daemon flag so the process can be aborted, start all threads
-            # and wait for completion.
+            # Set the daemon flag so the process can be aborted, 
+            # start all threads and wait for completion.
             for t in threads:
                 t.daemon = True
                 t.start()

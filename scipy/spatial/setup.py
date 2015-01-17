@@ -34,7 +34,8 @@ def configuration(parent_package='', top_path=None):
                          **cfg)
     # cKDTree
     ckdtree_src = ['ckdtree_query.cxx',
-                   'ckdtree_globals.cxx']
+                   'ckdtree_globals.cxx',
+                   'ckdtree_cpp_exc.cxx']
     ckdtree_src = [join('ckdtree', 'src', x) for x in ckdtree_src]
     
     ckdtree_headers = ['ckdtree_decl.h', 

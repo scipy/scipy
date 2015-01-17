@@ -1,8 +1,8 @@
-
-// Nearest neighbor query in C++ for cKDTree
-// Written by Sturla Molden 2015
-// SciPy license
-
+/*
+ * Nearest neighbor query in C++ for cKDTree
+ * Written by Sturla Molden 2015
+ * SciPy license
+ */
 
 #define NPY_NO_DEPRECATED_API NPY_1_9_API_VERSION
 #include <Python.h>
@@ -25,15 +25,11 @@
 #include "ckdtree_cpp_methods.h"
 #include "ckdtree_cpp_exc.h"
 
-
-#define THROW_BAD_ALLOC {std::bad_alloc exception; throw exception;}
-
-
-#include <iostream>
-
-// Priority queue
-// ==============
-
+/*
+ * Priority queue
+ * ==============
+ */
+ 
 union heapcontents {
     npy_intp intdata;
     void     *ptrdata;
@@ -46,7 +42,6 @@ struct heapitem {
 
 struct heap {
 
-    //heapitem *_heap;
     std::vector<heapitem> _heap;
     npy_intp n;
     npy_intp space;
@@ -81,10 +76,12 @@ struct heap {
         npy_intp i, j, k, l, nn;    
         _heap[0] = _heap[n-1];
         n--;
-        // No point in freeing up space as the heap empties.
-        // The whole heap gets deallocated at the end of any 
-        // query below. Just keep the space to avoid unneccesary
-        // reallocs.
+        /*
+         * No point in freeing up space as the heap empties.
+         * The whole heap gets deallocated at the end of any 
+         * query below. Just keep the space to avoid unneccesary
+         * reallocs.
+         */
         nn = n;        
         i=0;
         j=1; 
@@ -112,9 +109,11 @@ struct heap {
 };
 
 
-// nodeinfo
-// ========
-
+/*
+ * nodeinfo
+ * ========
+ */
+ 
 struct nodeinfo {
     nodeinfo           *next;
     nodeinfo           *prev;
@@ -122,10 +121,11 @@ struct nodeinfo {
     npy_float64        side_distances[1]; // the good old struct hack       
 };        
 
-
-// Memory pool for nodeinfo structs
-// ================================
-
+/*
+ * Memory pool for nodeinfo structs
+ * ================================
+ */
+ 
 struct nodeinfo_pool {
 
     std::vector<char*> pool;
@@ -177,22 +177,25 @@ __query_single_point(const ckdtree *self,
                      npy_float64  distance_upper_bound,
                      const npy_float64 infinity)
 {                
-    // memory pool to allocate and automatically reclaim
-    // nodeinfo structs
+    // memory pool to allocate and automatically reclaim nodeinfo structs
     nodeinfo_pool nipool(self->m);
     
-    // priority queue for chasing nodes
-    // entries are:
-    //  minimum distance between the cell and the target
-    //  distances between the nearest side of the cell and the target
-    //  the head node of the cell        
+    /*
+     * priority queue for chasing nodes
+     * entries are:
+     *  - minimum distance between the cell and the target
+     *  - distances between the nearest side of the cell and the target
+     *    the head node of the cell 
+     */
     heap q(12);
     
-    //  priority queue for chasing nodes
-    //  entries are:
-    //  minimum distance between the cell and the target
-    //  distances between the nearest side of the cell and the target
-    //  the head node of the cell
+    /*
+     *  priority queue for chasing nodes
+     *  entries are:
+     *   - minimum distance between the cell and the target
+     *   - distances between the nearest side of the cell and the target
+     *     the head node of the cell
+     */
     heap neighbors(k);
     
     npy_intp      i, m = self->m;
@@ -276,18 +279,22 @@ __query_single_point(const ckdtree *self,
             if (q.n == 0) {
                 // no more nodes to visit
                 break;
-            } else {
+            } 
+            else {
                 it = q.pop();
                 inf = (nodeinfo*)(it.contents.ptrdata);
                 min_distance = it.priority;
             }
             
-        } else {
+        } 
+        else {
             inode = inf->node;
 
-            // we don't push cells that are too far onto the queue at all,
-            // but since the distance_upper_bound decreases, we might get 
-            // here even if the cell's too far
+            /*
+             * we don't push cells that are too far onto the queue at all,
+             * but since the distance_upper_bound decreases, we might get 
+             * here even if the cell's too far
+             */
             if (min_distance > distance_upper_bound*epsfac) {
                 // since this is the nearest cell, we're done, bail out 
                 break;
@@ -296,18 +303,23 @@ __query_single_point(const ckdtree *self,
             if (x[inode->split_dim] < inode->split) {
                 near = inode->less;
                 far = inode->greater;
-            } else {
+            } 
+            else {
                 near = inode->greater;
                 far = inode->less;
             }
-            // near child is at the same distance as the current node
-            // we're going here next, so no point pushing it on the queue
-            // no need to recompute the distance or the side_distances
+            /*
+             * near child is at the same distance as the current node
+             * we're going here next, so no point pushing it on the queue
+             * no need to recompute the distance or the side_distances
+             */
             inf->node = near;
 
-            // far child is further by an amount depending only
-            // on the split value; compute its distance and side_distances
-            // and push it on the queue if it's near enough
+            /*
+             * far child is further by an amount depending only
+             * on the split value; compute its distance and side_distances
+             * and push it on the queue if it's near enough
+             */
             inf2 = nipool.allocate();
             inf2->node = far;
             
@@ -318,27 +330,36 @@ __query_single_point(const ckdtree *self,
                 inf2->side_distances[i] = inf->side_distances[i];
             }
 
-            // one side distance changes
-            // we can adjust the minimum distance without recomputing
+            /*
+             * one side distance changes
+             * we can adjust the minimum distance without recomputing
+             */
             if (NPY_LIKELY(p==2.)) {
-                // Euclidian distances is the more likely, so speed up
-                // access to this option
+                /* 
+                 * Euclidian distances is the more likely, so speed up
+                 * access to this option
+                 */
                 npy_float64 tmp = inode->split - x[inode->split_dim];
                 inf2->side_distances[inode->split_dim] = tmp*tmp;
                 far_min_distance = min_distance - 
                     inf->side_distances[inode->split_dim] +
                         inf2->side_distances[inode->split_dim];
-            } else if (p == infinity) {
-                // we never use side_distances in the l_infinity case
-                // so skip filling it in
-                // inf2->side_distances[inode->split_dim] = dabs(inode->split-x[inode->split_dim])
+            } 
+            else if (p == infinity) {
+                /*
+                 * we never use side_distances in the l_infinity case
+                 * so skip filling it in
+                 * inf2->side_distances[inode->split_dim] = dabs(inode->split-x[inode->split_dim])
+                 */
                 far_min_distance = dmax(min_distance, dabs(inode->split-x[inode->split_dim]));
-            } else if (p == 1.) {
+            } 
+            else if (p == 1.) {
                 inf2->side_distances[inode->split_dim] = dabs(inode->split-x[inode->split_dim]);
                 far_min_distance = min_distance - 
                     inf->side_distances[inode->split_dim] + 
                         inf2->side_distances[inode->split_dim];
-            } else {
+            } 
+            else {
                 inf2->side_distances[inode->split_dim] = std::pow(dabs(inode->split - 
                                                             x[inode->split_dim]),p);
                 far_min_distance = min_distance - 
