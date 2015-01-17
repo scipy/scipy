@@ -38,18 +38,13 @@
  *           SCHOOL OF INFORMATION TECHNOLOGY & ENGINEERING
  *           GEORGE MASON UNIVERSITY
  *           FAIRFAX, VA 22030
- */
-
-/*
+ *
  * Conversion into C by Elisabeth Nguyen & Jean-Sebastien Roy
  * Modifications by Jean-Sebastien Roy, 2001-2002
+ *
+ * SciPy version derived from TNC 1.3:
+ * $Jeannot: tnc.c,v 1.205 2005/01/28 18:27:31 js Exp $
  */
-
-static char const rcsid[] =
-    "@(#) $Jeannot: tnc.c,v 1.205 2005/01/28 18:27:31 js Exp $";
-
-static char const copyright[] =
-    "(c) 2002-2003, Jean-Sebastien Roy (js@jeannot.org)";
 
 #include <math.h>
 #include <stdio.h>
@@ -257,12 +252,6 @@ int tnc(int n, double x[], double *f, double g[], tnc_function * function,
         nfeval = &nfeval_local;
     }
     *nfeval = 0;
-
-    /* Version info */
-    if (messages & TNC_MSG_VERS) {
-        fprintf(stderr, "tnc: Version %s, %s\n", TNC_VERSION, copyright);
-        fprintf(stderr, "tnc: RCS ID: %s\n", rcsid);
-    }
 
     /* Check for errors in the input parameters */
     if (n == 0) {
