@@ -2,7 +2,9 @@
 calc_lwork was an internal module in Scipy and has been removed.
 
 Several functions in scipy.linalg.lapack have *_lwork variants
-that perform the lwork calculation, starting from Scipy >= 0.15.0.
+that perform the lwork calculation (from Scipy >= 0.15.0), or
+allow passing in LWORK=-1 argument to perform the computation.
+
 """
 
 from __future__ import division, print_function, absolute_import
