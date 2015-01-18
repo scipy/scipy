@@ -14,7 +14,7 @@ __all__ = ['minimize', 'minimize_scalar']
 
 from warnings import warn
 
-from numpy import any
+import numpy as np
 
 from scipy.lib.six import callable
 
@@ -321,6 +321,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     It should converge to the theoretical solution (1.4 ,1.7).
 
     """
+    x0 = np.asarray(x0)
+    if x0.dtype.kind in np.typecodes["AllInteger"]:
+        x0 = np.asarray(x0, dtype=float)
 
     if not isinstance(args, tuple):
         args = (args,)
@@ -356,10 +359,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                 'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
     if (meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg', 'dogleg',
-                 'trust-ncg'] and (bounds is not None or any(constraints))):
+                 'trust-ncg'] and (bounds is not None or np.any(constraints))):
         warn('Method %s cannot handle constraints nor bounds.' % method,
              RuntimeWarning)
-    if meth in ['l-bfgs-b', 'tnc'] and any(constraints):
+    if meth in ['l-bfgs-b', 'tnc'] and np.any(constraints):
         warn('Method %s cannot handle constraints.' % method,
              RuntimeWarning)
     if meth == 'cobyla' and bounds is not None:
