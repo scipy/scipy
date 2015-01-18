@@ -189,7 +189,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             i[i < 0] += self.shape[0]
 
         min_j = j.min()
-        if min_j < -self.shape[0] or j.max() >= self.shape[1]:
+        if min_j < -self.shape[1] or j.max() >= self.shape[1]:
             raise IndexError('index (%d) out of range -%d to %d)' %
                              (j.min(), self.shape[1], self.shape[1]-1))
         if min_j < 0:
@@ -264,7 +264,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             i[i < 0] += self.shape[0]
 
         min_j = j.min()
-        if min_j < -self.shape[0] or j.max() >= self.shape[1]:
+        if min_j < -self.shape[1] or j.max() >= self.shape[1]:
             raise IndexError('index (%d) out of range -%d to %d)' %
                              (j.min(), self.shape[1], self.shape[1]-1))
         if min_j < 0:
