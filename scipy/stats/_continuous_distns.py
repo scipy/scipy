@@ -3764,16 +3764,16 @@ class truncexpon_gen(rv_continuous):
         return (b > 0)
 
     def _pdf(self, x, b):
-        return exp(-x)/(1-exp(-b))
+        return exp(-x)/(-special.expm1(-b))
 
     def _logpdf(self, x, b):
-        return -x - log(1-exp(-b))
+        return -x - log(-special.expm1(-b))
 
     def _cdf(self, x, b):
-        return (1.0-exp(-x))/(1-exp(-b))
+        return special.expm1(-x)/special.expm1(-b)
 
     def _ppf(self, q, b):
-        return -log(1-q+q*exp(-b))
+        return -special.log1p(q*special.expm1(-b))
 
     def _munp(self, n, b):
         # wrong answer with formula, same as in continuous.pdf
