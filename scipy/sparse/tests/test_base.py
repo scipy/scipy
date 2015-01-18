@@ -559,13 +559,6 @@ class _TestCommon:
         assert_raises(ValueError, self.spmatrix, (3,-1))
         assert_raises(ValueError, self.spmatrix, (-1,-1))
 
-    def test_negative_index_assignment(self):
-        # Regression test for github issue 4428.
-        for dtype in self.checked_dtypes:
-            a = self.spmatrix((3, 10), dtype=dtype)
-            a[0, -4] = 1
-            assert_equal(a[0, -4], 1)
-
     def test_repr(self):
         repr(self.datsp)
 
@@ -1900,6 +1893,17 @@ class _TestGetSet:
                         assert_raises(TypeError, A.__setitem__, (0,0), v)
 
         for dtype in supported_dtypes:
+            yield check, np.dtype(dtype)
+
+    def test_negative_index_assignment(self):
+        # Regression test for github issue 4428.
+
+        def check(dtype):
+            A = self.spmatrix((3, 10), dtype=dtype)
+            A[0, -4] = 1
+            assert_equal(A[0, -4], 1)
+
+        for dtype in self.checked_dtypes:
             yield check, np.dtype(dtype)
 
     def test_scalar_assign_2(self):
@@ -3598,10 +3602,6 @@ class TestCOO(sparse_test_class(getset=False,
     def test_iterator(self):
         pass
 
-    @dec.knownfailureif(True, "COO does not support item assignment")
-    def test_negative_index_assignment(self):
-        pass
-
     def test_todia_all_zeros(self):
         zeros = [[0, 0]]
         dia = coo_matrix(zeros).todia()
@@ -3656,10 +3656,6 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         assert_equal(m.offsets.dtype, np.int64)
         m.setdiag((3,), k=3)
         assert_equal(m.offsets.dtype, np.int64)
-
-    @dec.knownfailureif(True, "DIA does not support item assignment")
-    def test_negative_index_assignment(self):
-        pass
 
 
 class TestBSR(sparse_test_class(getset=False,
@@ -3736,10 +3732,6 @@ class TestBSR(sparse_test_class(getset=False,
         A = bsr_matrix(arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5))
         x = arange(A.shape[1]*6).reshape(-1,6)
         assert_equal(A*x, A.todense()*x)
-
-    @dec.knownfailureif(True, "BSR does not implement this assignment")
-    def test_negative_index_assignment(self):
-        pass
 
     @dec.knownfailureif(True, "BSR not implemented")
     def test_iterator(self):
