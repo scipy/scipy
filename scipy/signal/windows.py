@@ -1404,7 +1404,7 @@ def exponential(M, center=None, tau=1., sym=True):
         Changing this parameter makes sense for non-symmetric windows, only.
     tau : float, optional
         Parameter defining the decay.  For ``center = 0`` use ``tau = -(M-1) / ln(x)``
-        if ``x`` is the fraction of the window at the end.
+        if ``x`` is the fraction of the window remaining at the end.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
