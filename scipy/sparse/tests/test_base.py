@@ -3737,7 +3737,7 @@ class TestBSR(sparse_test_class(getset=False,
         x = arange(A.shape[1]*6).reshape(-1,6)
         assert_equal(A*x, A.todense()*x)
 
-    @dec.knownfailureif(True, "BSR does not this assignment")
+    @dec.knownfailureif(True, "BSR does not implement this assignment")
     def test_negative_index_assignment(self):
         pass
 
