@@ -174,7 +174,7 @@ static logical removeConstraint(double gtpnew, double gnorm,
                                 double fLastConstraint, double g[],
                                 int pivot[], int n);
 
-static void project(int n, double x[], int pivot[]);
+static void project(int n, double x[], const int pivot[]);
 
 static int hessianTimesVector(double v[], double gv[], int n,
                               double x[], double g[],
@@ -201,18 +201,20 @@ static int initPreconditioner(double diagb[], double emat[], int n,
                               double yr[], logical upd1);
 
 /* Scaling */
-static void coercex(int n, double x[], double low[], double up[]);
-static void unscalex(int n, double x[], double xscale[], double xoffset[]);
-static void scaleg(int n, double g[], double xscale[], double fscale);
-static void scalex(int n, double x[], double xscale[], double xoffset[]);
-static void projectConstants(int n, double x[], double xscale[]);
+static void coercex(int n, double x[], const double low[], const double up[]);
+static void unscalex(int n, double x[], const double xscale[],
+                     const double xoffset[]);
+static void scaleg(int n, double g[], const double xscale[], double fscale);
+static void scalex(int n, double x[], const double xscale[],
+                   const double xoffset[]);
+static void projectConstants(int n, double x[], const double xscale[]);
 
 /* Special blas for incx=incy=1 */
-static double ddot1(int n, double dx[], double dy[]);
-static void dxpy1(int n, double dx[], double dy[]);
-static void daxpy1(int n, double da, double dx[], double dy[]);
-static void dcopy1(int n, double dx[], double dy[]);
-static double dnrm21(int n, double dx[]);
+static double ddot1(int n, const double dx[], const double dy[]);
+static void dxpy1(int n, const double dx[], double dy[]);
+static void daxpy1(int n, double da, const double dx[], double dy[]);
+static void dcopy1(int n, const double dx[], double dy[]);
+static double dnrm21(int n, const double dx[]);
 
 /* additionnal blas-like functions */
 static void dneg1(int n, double v[]);
@@ -429,7 +431,7 @@ int tnc(int n, double x[], double *f, double g[], tnc_function * function,
 }
 
 /* Coerce x into bounds */
-static void coercex(int n, double x[], double low[], double up[])
+static void coercex(int n, double x[], const double low[], const double up[])
 {
     int i;
 
@@ -444,7 +446,8 @@ static void coercex(int n, double x[], double low[], double up[])
 }
 
 /* Unscale x */
-static void unscalex(int n, double x[], double xscale[], double xoffset[])
+static void unscalex(int n, double x[], const double xscale[],
+                     const double xoffset[])
 {
     int i;
     for (i = 0; i < n; i++) {
@@ -453,7 +456,8 @@ static void unscalex(int n, double x[], double xscale[], double xoffset[])
 }
 
 /* Scale x */
-static void scalex(int n, double x[], double xscale[], double xoffset[])
+static void scalex(int n, double x[], const double xscale[],
+                   const double xoffset[])
 {
     int i;
     for (i = 0; i < n; i++) {
@@ -464,7 +468,7 @@ static void scalex(int n, double x[], double xscale[], double xoffset[])
 }
 
 /* Scale g */
-static void scaleg(int n, double g[], double xscale[], double fscale)
+static void scaleg(int n, double g[], const double xscale[], double fscale)
 {
     int i;
     for (i = 0; i < n; i++) {
@@ -938,7 +942,7 @@ static void printCurrentIteration(int n, double f, double g[], int niter,
 /*
  * Set x[i] = 0.0 if direction i is currently constrained
  */
-static void project(int n, double x[], int pivot[])
+static void project(int n, double x[], const int pivot[])
 {
     int i;
     for (i = 0; i < n; i++) {
@@ -951,7 +955,7 @@ static void project(int n, double x[], int pivot[])
 /*
  * Set x[i] = 0.0 if direction i is constant
  */
-static void projectConstants(int n, double x[], double xscale[])
+static void projectConstants(int n, double x[], const double xscale[])
 {
     int i;
     for (i = 0; i < n; i++) {
@@ -1985,7 +1989,7 @@ static getptc_rc getptcIter(double big, double
 /* Blas like routines */
 
 /* dy+=dx */
-static void dxpy1(int n, double dx[], double dy[])
+static void dxpy1(int n, const double dx[], double dy[])
 {
     int i;
     for (i = 0; i < n; i++) {
@@ -1994,7 +1998,7 @@ static void dxpy1(int n, double dx[], double dy[])
 }
 
 /* dy+=da*dx */
-static void daxpy1(int n, double da, double dx[], double dy[])
+static void daxpy1(int n, double da, const double dx[], double dy[])
 {
     int i;
     for (i = 0; i < n; i++) {
@@ -2004,7 +2008,7 @@ static void daxpy1(int n, double da, double dx[], double dy[])
 
 /* Copy dx -> dy */
 /* Could use memcpy */
-static void dcopy1(int n, double dx[], double dy[])
+static void dcopy1(int n, const double dx[], double dy[])
 {
     int i;
     for (i = 0; i < n; i++) {
@@ -2022,7 +2026,7 @@ static void dneg1(int n, double v[])
 }
 
 /* Dot product */
-static double ddot1(int n, double dx[], double dy[])
+static double ddot1(int n, const double dx[], const double dy[])
 {
     int i;
     double dtemp = 0.0;
@@ -2033,7 +2037,7 @@ static double ddot1(int n, double dx[], double dy[])
 }
 
 /* Euclidian norm */
-static double dnrm21(int n, double dx[])
+static double dnrm21(int n, const double dx[])
 {
     int i;
     double dssq = 1.0, dscale = 0.0;
