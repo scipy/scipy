@@ -86,7 +86,7 @@ from numpy.compat import asbytes, asstr
 
 import scipy.sparse
 
-from scipy.lib.six import string_types
+from scipy._lib.six import string_types
 
 from .byteordercodes import native_code, swapped_code
 

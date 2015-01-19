@@ -7,7 +7,7 @@ from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
 from numpy.testing import (assert_, TestCase, run_module_suite, dec,
         assert_allclose, assert_array_less, assert_almost_equal)
 from scipy.integrate import quad, dblquad, tplquad, nquad
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 try:
     import ctypes

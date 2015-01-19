@@ -10,7 +10,7 @@ from numpy.compat import asbytes, asstr
 
 import scipy.sparse
 
-from scipy.lib.six import string_types
+from scipy._lib.six import string_types
 
 from .miobase import (MatFileReader, docfiller, matdims, read_dtype,
                       convert_dtypes, arr_to_chars, arr_dtype_number)

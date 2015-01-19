@@ -2,8 +2,8 @@ from __future__ import division, print_function, absolute_import
 
 import math
 import numpy as np
-from scipy.lib.six import xrange
-from scipy.lib.six import string_types
+from scipy._lib.six import xrange
+from scipy._lib.six import string_types
 
 
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',

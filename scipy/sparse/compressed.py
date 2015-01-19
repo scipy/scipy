@@ -7,7 +7,7 @@ from warnings import warn
 import operator
 
 import numpy as np
-from scipy.lib.six import xrange, zip as izip
+from scipy._lib.six import xrange, zip as izip
 
 from .base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from .data import _data_matrix, _minmax_mixin

@@ -11,7 +11,7 @@ import numpy as np
 import math
 import warnings
 
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 
 class AccuracyWarning(Warning):

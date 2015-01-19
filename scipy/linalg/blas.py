@@ -163,11 +163,6 @@ empty_module = None
 from scipy.linalg._fblas import *
 del empty_module
 
-# Backward compatibility
-from scipy.lib._util import DeprecatedImport as _DeprecatedImport
-cblas = _DeprecatedImport("scipy.linalg.blas.cblas", "scipy.linalg.blas")
-fblas = _DeprecatedImport("scipy.linalg.blas.fblas", "scipy.linalg.blas")
-
 # 'd' will be default for 'i',..
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z', 'G':'z'}
 

@@ -22,7 +22,7 @@ import numpy as np
 from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, \
         isfinite, inexact, nonzero, iscomplexobj, cast, flatnonzero, conj
 # Local imports
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 from .misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs
 from .blas import get_blas_funcs

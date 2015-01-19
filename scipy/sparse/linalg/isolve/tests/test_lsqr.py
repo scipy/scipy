@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import assert_, assert_equal, assert_array_almost_equal
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 import scipy.sparse
 import scipy.sparse.linalg

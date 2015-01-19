@@ -69,8 +69,8 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import numpy as np
 
-from scipy.lib.six import callable, string_types
-from scipy.lib.six import xrange
+from scipy._lib.six import callable, string_types
+from scipy._lib.six import xrange
 
 from . import _distance_wrap
 from ..linalg import norm

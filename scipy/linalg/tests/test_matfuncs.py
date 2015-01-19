@@ -18,7 +18,7 @@ from numpy.testing import (TestCase, run_module_suite,
         assert_array_almost_equal, assert_array_almost_equal_nulp,
         assert_allclose, assert_, decorators)
 
-from scipy.lib._numpy_compat import _assert_warns
+from scipy._lib._numpy_compat import _assert_warns
 
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,

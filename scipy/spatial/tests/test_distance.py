@@ -36,7 +36,7 @@
 from __future__ import division, print_function, absolute_import
 
 import os.path
-from scipy.lib.six import xrange, u
+from scipy._lib.six import xrange, u
 
 import numpy as np
 from numpy.linalg import norm

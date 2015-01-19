@@ -7,8 +7,8 @@ import warnings
 import threading
 
 from . import sigtools
-from scipy.lib.six import callable
-from scipy.lib._version import NumpyVersion
+from scipy._lib.six import callable
+from scipy._lib._version import NumpyVersion
 from scipy import linalg
 from scipy.fftpack import (fft, ifft, ifftshift, fft2, ifft2, fftn,
                            ifftn, fftfreq)

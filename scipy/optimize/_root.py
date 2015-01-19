@@ -11,7 +11,7 @@ __all__ = ['root']
 
 import numpy as np
 
-from scipy.lib.six import callable
+from scipy._lib.six import callable
 
 from warnings import warn
 

@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy.testing as npt
 import numpy as np
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 from scipy import stats
 from common_tests import (check_normalization, check_moment, check_mean_expect,

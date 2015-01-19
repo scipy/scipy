@@ -7,7 +7,7 @@ import warnings
 
 import numpy as np
 
-from scipy.lib._version import NumpyVersion
+from scipy._lib._version import NumpyVersion
 
 if NumpyVersion(np.__version__) > '1.7.0.dev':
     _assert_warns = np.testing.assert_warns

@@ -8,7 +8,7 @@ work; they don't recognize anything like alpha/beta/rc/dev versions.
 
 import re
 
-from scipy.lib.six import string_types
+from scipy._lib.six import string_types
 
 
 __all__ = ['NumpyVersion']
@@ -44,7 +44,7 @@ class NumpyVersion():
 
     Examples
     --------
-    >>> from scipy.lib._version import NumpyVersion
+    >>> from scipy._lib._version import NumpyVersion
     >>> if NumpyVersion(np.__version__) < '1.7.0'):
     ...     print('skip')
     skip

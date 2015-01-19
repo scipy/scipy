@@ -4,7 +4,7 @@
 #
 from __future__ import division, print_function, absolute_import
 
-from scipy.lib.six import string_types, exec_
+from scipy._lib.six import string_types, exec_
 
 import sys
 import keyword
@@ -15,7 +15,7 @@ import warnings
 
 from scipy.misc import doccer
 from ._distr_params import distcont, distdiscrete
-from scipy.lib._util import check_random_state
+from scipy._lib._util import check_random_state
 
 from scipy.special import (comb, chndtr, gammaln, hyp0f1,
                            entr, kl_div)

@@ -174,13 +174,13 @@ import warnings
 import math
 from collections import namedtuple
 
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 # friedmanchisquare patch uses python sum
 pysum = sum  # save it before it gets overwritten
 
 # Scipy imports.
-from scipy.lib.six import callable, string_types
+from scipy._lib.six import callable, string_types
 from numpy import array, asarray, ma, zeros, sum
 import scipy.special as special
 import scipy.linalg as linalg

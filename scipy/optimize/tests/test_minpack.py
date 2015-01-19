@@ -14,7 +14,7 @@ from numpy import array, float64, matrix
 from scipy import optimize
 from scipy.special import lambertw
 from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
-from scipy.lib._numpy_compat import _assert_warns
+from scipy._lib._numpy_compat import _assert_warns
 from scipy.optimize import OptimizeWarning
 
 

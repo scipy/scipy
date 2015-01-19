@@ -16,7 +16,7 @@ from warnings import warn
 
 import numpy as np
 
-from scipy.lib.six import callable
+from scipy._lib.six import callable
 
 # unconstrained minimization
 from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,

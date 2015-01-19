@@ -6,7 +6,7 @@ import warnings
 import numpy as np
 from scipy import special, linalg
 from scipy.fftpack import fft
-from scipy.lib.six import string_types
+from scipy._lib.six import string_types
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',

@@ -16,7 +16,7 @@ import sys
 
 import numpy as np
 from numpy.testing import assert_allclose
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 from scipy.linalg import inv, eigh, cho_factor, cho_solve, cholesky
 from scipy.sparse.linalg import aslinearoperator, LinearOperator
 

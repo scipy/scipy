@@ -23,7 +23,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 # Scipy imports.
-from scipy.lib.six import callable, string_types
+from scipy._lib.six import callable, string_types
 from scipy import linalg, special
 
 from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \

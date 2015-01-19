@@ -6,7 +6,7 @@ from numpy.testing import (assert_array_equal, assert_almost_equal,
 
 from scipy.misc import pade, logsumexp, face, ascent
 
-from scipy.lib._version import NumpyVersion
+from scipy._lib._version import NumpyVersion
 
 
 def test_pade_trivial():

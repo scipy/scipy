@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 from scipy.special import factorial
 
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 
 __all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator",

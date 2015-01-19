@@ -10,7 +10,7 @@ from .windows import get_window
 from ._spectral import lombscargle
 import warnings
 
-from scipy.lib.six import string_types
+from scipy._lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle']
 

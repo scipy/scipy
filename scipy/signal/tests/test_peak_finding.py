@@ -7,7 +7,7 @@ from numpy.testing import (TestCase, run_module_suite, assert_equal,
     assert_array_equal, assert_)
 from scipy.signal._peak_finding import (argrelmax, argrelmin,
     find_peaks_cwt, _identify_ridge_lines)
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 
 def _gen_gaussians(center_locs, sigmas, total_length):
