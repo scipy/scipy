@@ -187,12 +187,12 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     elif meth == 'lm':
         sol = _root_leastsq(fun, x0, args=args, jac=jac, **options)
     elif meth == 'df-sane':
-        sol = _root_df_sane(fun, x0, args=args, jac=jac, **options)
+        _warn_jac_unused(jac, method)
+        sol = _root_df_sane(fun, x0, args=args, callback=callback,
+                            **options)
     elif meth in ('broyden1', 'broyden2', 'anderson', 'linearmixing',
                   'diagbroyden', 'excitingmixing', 'krylov'):
-        if jac is not None:
-            warn('Method %s does not use the jacobian (jac).' % method,
-                 RuntimeWarning)
+        _warn_jac_unused(jac, method)
         sol = _root_nonlin_solve(fun, x0, args=args, jac=jac,
                                  _method=meth, _callback=callback,
                                  **options)
@@ -200,6 +200,12 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         raise ValueError('Unknown solver %s' % method)
 
     return sol
+
+
+def _warn_jac_unused(jac, method):
+    if jac is not None:
+        warn('Method %s does not use the jacobian (jac).' % (method,),
+             RuntimeWarning)
 
 
 def _root_leastsq(func, x0, args=(), jac=None,

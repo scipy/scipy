@@ -36,7 +36,8 @@ def test_performance():
     ]
 
     # Check also scaling invariance
-    for xscale, yscale in itertools.product([1.0, 1e-10, 1e10], [1.0, 1e-10, 1e10]):
+    for xscale, yscale, line_search in itertools.product([1.0, 1e-10, 1e10], [1.0, 1e-10, 1e10],
+                                                         ['cruz', 'cheng']):
         for problem in table_1:
             n = problem['n']
             func = lambda x, n: yscale*problem['F'](x/xscale, n)
@@ -51,11 +52,12 @@ def test_performance():
             with np.errstate(over='ignore'):
                 sol = root(func, x0, args=args,
                            options=dict(ftol=0, fatol=fatol, maxfev=problem['nfev'] + 1,
-                                        sigma_0=sigma_0, sigma_eps=sigma_eps),
+                                        sigma_0=sigma_0, sigma_eps=sigma_eps,
+                                        line_search=line_search),
                            method='DF-SANE')
 
-            err_msg = repr([xscale, yscale, problem, np.linalg.norm(func(sol.x, n)), fatol,
-                            sol.success, sol.nit, sol.nfev])
+            err_msg = repr([xscale, yscale, line_search, problem, np.linalg.norm(func(sol.x, n)),
+                            fatol, sol.success, sol.nit, sol.nfev])
             assert_(sol.success, err_msg)
             assert_(sol.nfev <= problem['nfev'] + 1, err_msg)  # nfev+1: dfsane.f doesn't count first eval
             assert_(sol.nit <= problem['nit'], err_msg)
@@ -84,11 +86,12 @@ def test_linear_definite():
     # For linear systems F(x) = A x - b = 0, with A positive or
     # negative definite, the solution is strongly isolated.
 
-    def check_solvability(A, b):
+    def check_solvability(A, b, line_search='cruz'):
         func = lambda x: A.dot(x) - b
         xp = np.linalg.solve(A, b)
         eps = np.linalg.norm(func(xp)) * 1e3
-        sol = root(func, b, options=dict(fatol=eps, ftol=0, maxfev=17523), method='DF-SANE')
+        sol = root(func, b, options=dict(fatol=eps, ftol=0, maxfev=17523, line_search=line_search),
+                   method='DF-SANE')
         assert_(sol.success)
         assert_(np.linalg.norm(func(sol.x)) <= eps)
 
@@ -100,10 +103,12 @@ def test_linear_definite():
     A = A + n*n * np.diag(1 + np.arange(n))
     assert_(np.linalg.eigvals(A).min() > 0)
     b = np.arange(n) * 1.0
-    check_solvability(A, b)
+    check_solvability(A, b, 'cruz')
+    check_solvability(A, b, 'cheng')
 
     # Test linear neg.def. system
-    check_solvability(-A, b)
+    check_solvability(-A, b, 'cruz')
+    check_solvability(-A, b, 'cheng')
 
 
 def test_shape():
