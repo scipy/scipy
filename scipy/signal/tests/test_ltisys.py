@@ -10,7 +10,7 @@ from scipy.signal.ltisys import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
 
-def _assert_poles_close(P1,P2, rtol=0.1, atol=1e-3):
+def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
     """
     Check each pole in P1 is close to a pole in P2 with a 10%
     relative tolerance or 1e-3 absolute tolerance (useful for zero poles) 
