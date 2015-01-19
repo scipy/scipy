@@ -38,6 +38,22 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              callback=None, options=None):
     """
     Minimization of scalar function of one or more variables.
+     
+    In general, the optimization problems are of the form:
+    
+    minimize f(x)
+    
+    subject to:
+    
+        ``g_i(x) >= 0``, i = 1,...,m
+        ``h_j(x)  = 0``, j = 1,...,p
+    
+    Where x is a vector of one or more variables.
+    ``g_i(x)`` are the inequality constraints.
+    ``h_j(x)`` are the equality constrains.
+    
+    Optionally, the lower and upper bounds for each element in x can also be specified 
+    using the `bounds` argument.
 
     Parameters
     ----------
