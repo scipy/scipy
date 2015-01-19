@@ -1895,6 +1895,17 @@ class _TestGetSet:
         for dtype in supported_dtypes:
             yield check, np.dtype(dtype)
 
+    def test_negative_index_assignment(self):
+        # Regression test for github issue 4428.
+
+        def check(dtype):
+            A = self.spmatrix((3, 10), dtype=dtype)
+            A[0, -4] = 1
+            assert_equal(A[0, -4], 1)
+
+        for dtype in self.checked_dtypes:
+            yield check, np.dtype(dtype)
+
     def test_scalar_assign_2(self):
         n, m = (5, 10)
 
