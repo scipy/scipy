@@ -32,16 +32,31 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "simd.h"
+
 static NPY_INLINE double
 sqeuclidean_distance_double(const double *u, const double *v, npy_intp n)
 {
-    double s = 0.0, d;
+    double s;
     npy_intp i;
 
-    for (i = 0; i < n; i++) {
-        d = u[i] - v[i];
+#ifdef SCIPY_SIMD
+    Double2 acc = {0, 0};
+    for (i = 0; i < n - (n & 1); i += 2) {
+        Double2 d = (Double2){u[i], u[i + 1]} - (Double2){v[i], v[i + 1]};
+        acc += d * d;
+    }
+    s = acc[0] + acc[1];
+    if (i < n) {
+        double d = u[i] - v[i];
         s += d * d;
     }
+#else
+    for (i = 0, s = 0.; i < n; i++) {
+        double d = u[i] - v[i];
+        s += d * d;
+    }
+#endif
     return s;
 }
 
@@ -300,16 +315,25 @@ jaccard_distance_char(const char *u, const char *v, npy_intp n)
     return num / denom;
 }
 
-/* XXX shouldn't we use BLAS for this? */
 static NPY_INLINE double
 dot_product(const double *u, const double *v, npy_intp n)
 {
-    double s = 0.0;
-    npy_intp i;
+    double s = 0.;
+    npy_intp i = 0;
 
-    for (i = 0; i < n; i++) {
+#ifdef SCIPY_SIMD
+    Double4 acc = {0, 0, 0, 0};
+    for (i = 0; i < n - (n & 2); i += 4) {
+        acc +=    (Double4){u[i], u[i + 1], u[i + 2], u[i + 3]}
+                * (Double4){v[i], v[i + 1], v[i + 2], v[i + 3]};
+    }
+    s = acc[0] + acc[1] + acc[2] + acc[3];
+#endif
+
+    for (; i < n; i++) {
         s += u[i] * v[i];
     }
+
     return s;
 }
 
