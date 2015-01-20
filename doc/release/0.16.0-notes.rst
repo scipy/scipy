@@ -38,6 +38,12 @@ of the forward and backward passes was added to `scipy.signal.filtfilt`.
 The Wishart distribution and its inverse have been added, as
 `scipy.stats.wishart` and `scipy.stats.invwishart`.
 
+`scipy.optimize` improvements
+-----------------------------
+
+A new derivative-free method DF-SANE has been added to the nonlinear equation
+system solving function `scipy.optimize.root`.
+
 
 Deprecated features
 ===================
