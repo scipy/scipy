@@ -1168,12 +1168,12 @@ def _order_complex_poles(poles):
     compare sets of poles.
     """
     ordered_poles = np.sort(poles[np.isreal(poles)])
-    im_poles=[]
+    im_poles = []
     for p in poles[np.imag(poles) < 0]:
         if np.conj(p) in poles:
             im_poles.extend((p, np.conj(p)))
 
-    ordered_poles=np.hstack((ordered_poles, np.sort(im_poles)))
+    ordered_poles = np.hstack((ordered_poles, np.sort(im_poles)))
     
     if poles.shape[0] != len(ordered_poles):
         raise ValueError("Complex poles must come with their conjugates")
@@ -1628,7 +1628,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     update_loop, poles = _valid_inputs(A, B, poles, method)
 
     #the current value of the relative tolerance we achieved
-    cur_rtol=np.nan
+    cur_rtol = np.nan
 
     # Step A: QR decomposition of B page 1132 KNV
     u, z = np.linalg.qr(B, mode="complete")
@@ -1665,8 +1665,8 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 idx += 1  # skip next one
             idx += 1
         gain_matrix = np.linalg.lstsq(B, diag_poles-A)[0]
-        transfer_matrix=np.eye(A.shape[0])
-        cur_rtol=0
+        transfer_matrix = np.eye(A.shape[0])
+        cur_rtol = 0
     else:
         # step A (p1144 KNV) and begining of step F: decompose
         # dot(U1.T, A-P[i]*I).T and build our set of transfer_matrix vectors
@@ -1768,11 +1768,14 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     closed_loop_sys=Bunch()
     closed_loop_sys.K=gain_matrix
     closed_loop_sys.computed_poles=_order_complex_poles(
+    closed_loop_sys = Bunch()
+    closed_loop_sys.K = gain_matrix
+    closed_loop_sys.computed_poles = _order_complex_poles(
         np.linalg.eig(A-np.dot(B, gain_matrix))[0]
         )
-    closed_loop_sys.requested_poles=poles
-    closed_loop_sys.X=transfer_matrix
-    closed_loop_sys.rtol=cur_rtol
+    closed_loop_sys.requested_poles = poles
+    closed_loop_sys.X = transfer_matrix
+    closed_loop_sys.rtol = cur_rtol
 
     return closed_loop_sys
 
