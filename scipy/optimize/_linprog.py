@@ -469,23 +469,24 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     The input for this problem is as follows:
 
+    >>> from scipy.optimize import linprog
     >>> c = [-1, 4]
     >>> A = [[-3, 1], [1, 2]]
     >>> b = [6, 4]
     >>> x0_bnds = (None, None)
     >>> x1_bnds = (-3, None)
-    >>> res = linprog(c, A, b, bounds=(x0_bnds, x1_bnds), options={"disp":True})
+    >>> res = linprog(c, A, b, bounds=(x0_bnds, x1_bnds))
     >>> print(res)
     Optimization terminated successfully.
-         Current function value: 11.428571
-         Iterations: 2
+         Current function value: -22.000000
+         Iterations: 1
     status: 0
-    success: True
-    fun: 11.428571428571429
-    x: array([-1.14285714,  2.57142857])
-    slack: array([], dtype=np.float64)
+    x: array([ 10.,  -3.])
+    slack: array([ 39.,   0.])
+    nit: 1
     message: 'Optimization terminated successfully.'
-    nit: 2
+    fun: -22.0
+    success: True
 
     References
     ----------
