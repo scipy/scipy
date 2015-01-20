@@ -1775,9 +1775,6 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     # K still contains complex with ~=0j imaginary parts, get rid of them
     gain_matrix = np.real(gain_matrix)
     
-    closed_loop_sys=Bunch()
-    closed_loop_sys.K=gain_matrix
-    closed_loop_sys.computed_poles=_order_complex_poles(
     closed_loop_sys = Bunch()
     closed_loop_sys.gain_matrix = gain_matrix
     closed_loop_sys.computed_poles = _order_complex_poles(
