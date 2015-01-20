@@ -2050,23 +2050,47 @@ def _desc_stats(x1, x2, axis=0):
     return _stats(x1, axis) + _stats(x2, axis)
 
 def test_ttest_perm():
-    
-    def _parametric_ttest(mat, cats):
-        rows,cols = mat.shape
-        pvalues = np.zeros(rows)
-        test_stats = np.zeros(rows)
-        for r in range(rows):
-            values = mat[r,:].transpose()
-            T, _ =  stats.ttest_ind(values[cats==0], values[cats==1], equal_var = False)
-            test_stats[r] = T
-        return test_stats
-    
+
+    ## Test on horizontal dimension
     N = 20
     a = np.vstack((np.arange((3*N)/4),np.random.random((3*N)/4)))
-    b = np.vstack((np.arange(N/4)+100,np.random.random((3*N)/4)))
-    nv_t_stats, pvalues = ttest_ind(a, b, equal_var=False)
-    np_t_stats, pvalues = ttest_ind(a, b, equal_var=False, permutations=1000)
-    assert_array_almost_equal(nv_t_stats, np_t_stats, 5)
+    b = np.vstack((np.arange(N/4)+100,np.random.random(N/4)))
+    p_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False,
+                                          permutations=1000)
+    
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+
+    ## Test on vertical dimension
+    N = 20
+    a = np.vstack((np.arange((3*N)/4),np.random.random((3*N)/4))).transpose()
+    b = np.vstack((np.arange(N/4)+100,np.random.random(N/4))).transpose()
+    p_t_stats, pvalues = stats.ttest_ind(a, b, axis=0, equal_var=False)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, axis=0, equal_var=False,
+                                          permutations=1000)
+    
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+
+    ## Test on 1 dimensional case
+    N = 20
+    a = np.arange((3*N)/4)
+    b = np.arange(N/4)+100
+    p_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False,
+                                          permutations=1000)
+    
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+
+    ## Test equal variance
+    N = 20
+    a = np.arange(N/2)
+    b = np.arange(N/2)+100
+    p_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=True)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=True,
+                                          permutations=1000)
+    
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+
 
 
     
