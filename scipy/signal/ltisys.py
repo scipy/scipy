@@ -27,7 +27,7 @@ from numpy import (r_, eye, real, atleast_1d, atleast_2d, poly,
                    dot, transpose, ones, zeros_like, linspace, nan_to_num)
 
 from scipy import integrate, interpolate, linalg
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 
@@ -35,7 +35,7 @@ from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
            'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
            'freqresp', 'place_poles']
-           
+
 def tf2ss(num, den):
     """Transfer function to state-space representation.
 
@@ -1113,12 +1113,14 @@ def freqresp(system, w=None, n=10000):
     w, h = freqs(sys.num.ravel(), sys.den, worN=worN)
 
     return w, h
-    
+
+
 #this class will be used by place_poles to return its results
 #see http://code.activestate.com/recipes/52308/
 class Bunch:
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
+
 
 def _valid_inputs(A, B, poles, method, rtol, maxiter):
     """
@@ -1152,9 +1154,9 @@ def _valid_inputs(A, B, poles, method, rtol, maxiter):
                              "more than rank(B) times")
     # Choose update method
     update_loop = _YT_loop
-    if method not in {'KNV0','YT'}:
-        raise ValueError("The method keyword must be one ''YT'' or ''KNV0''")
-        
+    if method not in ('KNV0','YT'):
+        raise ValueError("The method keyword must be one of 'YT' or 'KNV0'")
+
     if method == "KNV0":
         update_loop = _KNV0_loop
         if not all(np.isreal(poles)):
@@ -1166,9 +1168,10 @@ def _valid_inputs(A, B, poles, method, rtol, maxiter):
     #we do not check rtol <= 0 as the user can use a negative rtol to
     #force maxiter iterations
     if rtol > 1:
-        raise ValueError("rtol can not be greater than 1") 
+        raise ValueError("rtol can not be greater than 1")
 
     return update_loop, poles
+
 
 def _order_complex_poles(poles):
     """
@@ -1184,7 +1187,7 @@ def _order_complex_poles(poles):
             im_poles.extend((p, np.conj(p)))
 
     ordered_poles = np.hstack((ordered_poles, im_poles))
-    
+
     if poles.shape[0] != len(ordered_poles):
         raise ValueError("Complex poles must come with their conjugates")
     return ordered_poles
@@ -1244,7 +1247,7 @@ def _YT_real(ker_pole, Q, transfer_matrix, i, j):
     v = Q[:, -1, np.newaxis]
 
     # step 2 page 19
-    m = np.dot(np.dot(ker_pole[i].T, np.dot(u, v.T) - 
+    m = np.dot(np.dot(ker_pole[i].T, np.dot(u, v.T) -
         np.dot(v, u.T)), ker_pole[j])
 
     # step 3 page 19
@@ -1266,7 +1269,7 @@ def _YT_real(ker_pole, Q, transfer_matrix, i, j):
         ker_pole_mu_nu = np.vstack((ker_pole_imo_mu1, ker_pole_i_nu1))
     else:
         ker_pole_ij = np.vstack((
-                                np.hstack((ker_pole[i], 
+                                np.hstack((ker_pole[i],
                                            np.zeros(ker_pole[i].shape))),
                                 np.hstack((np.zeros(ker_pole[j].shape),
                                                     ker_pole[j]))
@@ -1331,7 +1334,7 @@ def _YT_complex(ker_pole, Q, transfer_matrix, i, j):
         transfer_matrix[:, i, np.newaxis] +
         1j*transfer_matrix[:, j, np.newaxis]
         )
-    if not np.allclose(np.abs(e_val[e_val_idx[-1]]), 
+    if not np.allclose(np.abs(e_val[e_val_idx[-1]]),
                               np.abs(e_val[e_val_idx[-2]])):
         ker_pole_mu = np.dot(ker_pole_ij, mu1)
     else:
@@ -1546,7 +1549,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 The transfer matrix such as ``X * diag(poles) * inv(X) = A - B*K``
                 (see Notes)
             rtol : float
-                The relative tolerance achieved on ''det(X)'' (see Notes). 
+                The relative tolerance achieved on ''det(X)'' (see Notes).
                 rtol will be ''np.nan'' if the optimisation algorithms can not
                 run, i.e when ''B.shape[1]==1''
 
@@ -1626,7 +1629,8 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     >>> t = np.linspace(0, 2*np.pi, num=401)
     >>> plt.figure()
     >>> plt.plot(np.cos(t), np.sin(t), 'k--')  # unit circle
-    >>> plt.plot(close_loop.requested_poles.real, close_loop.requested_poles.imag, 'ro', label='Desired poles')
+    >>> plt.plot(close_loop.requested_poles.real, close_loop.requested_poles.imag,
+    ...          'ro', label='Desired poles')
     >>> plt.plot(close_loop.computed_poles.real, close_loop.computed_poles.imag, 'bx',
     ...          label='Computed poles (YT)')
     >>> plt.legend()
@@ -1774,7 +1778,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     gain_matrix = -gain_matrix
     # K still contains complex with ~=0j imaginary parts, get rid of them
     gain_matrix = np.real(gain_matrix)
-    
+
     closed_loop_sys = Bunch()
     closed_loop_sys.gain_matrix = gain_matrix
     closed_loop_sys.computed_poles = _order_complex_poles(
@@ -1783,6 +1787,6 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     closed_loop_sys.requested_poles = poles
     closed_loop_sys.X = transfer_matrix
     closed_loop_sys.rtol = cur_rtol
-    
+
     return closed_loop_sys
 
