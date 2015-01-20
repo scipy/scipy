@@ -3142,6 +3142,49 @@ def show_options(solver=None, method=None):
 
                 See `scipy.sparse.linalg.lgmres` for details.
 
+    *df-sane* options:
+
+        ftol : float, optional
+            Relative norm tolerance.
+
+        fatol : float, optional
+            Absolute norm tolerance.
+            Algorithm terminates when ``||func(x)|| < fatol + ftol ||func(x_0)||``.
+
+        fnorm : callable, optional
+            Norm to use in the convergence check. If None, 2-norm is used.
+
+        maxfev : int, optional
+            Maximum number of function evaluations.
+
+        disp : bool, optional
+            Whether to print convergence process to stdout.
+
+        eta_strategy : callable, optional
+            Choice of the ``eta_k`` parameter, which gives slack for growth
+            of ``||F||**2``.  Called as ``eta_k = eta_strategy(k, x, F)`` with
+            `k` the iteration number, `x` the current iterate and `F` the current
+            residual. Should satisfy ``eta_k > 0`` and ``sum(eta, k=0..inf) < inf``.
+            Default: ``||F||**2 / (1 + k)**2``.
+
+        sigma_eps : float, optional
+            The spectral coefficient is constrained to ``sigma_eps < sigma < 1/sigma_eps``.
+            Default: 1e-10
+
+        sigma_0 : float, optional
+            Initial spectral coefficient.
+            Default: 1.0
+
+        M : int, optional
+            Number of iterates to include in the nonmonotonic line search.
+            Default: 10
+
+        line_search : {'cruz', 'cheng'}
+            Type of line search to employ. 'cruz' is the original one defined in
+            [Martinez & Raydan. Math. Comp. 75, 1429 (2006)], 'cheng' is
+            a modified search defined in [Cheng & Li. IMA J. Numer. Anal. 29, 814 (2009)].
+            Default: 'cruz'
+
     **linprog options**
 
     *simplex* options:
