@@ -2082,6 +2082,16 @@ def test_ttest_perm():
     
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
 
+    ## Test just arrays
+    N = 20
+    a = range(int((3*N)/4))
+    b = range(100,int(N/4)+100)
+    p_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False,
+                                          permutations=1000)
+    
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+
     ## Test equal variance
     N = 20
     a = np.arange(N/2)

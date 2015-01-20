@@ -3364,7 +3364,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return _ttest_ind_from_stats(mean1, mean2, denom, df)
 
     
-def ttest_ind(a, b, axis=0, equal_var=True, permutations=0):
+def ttest_ind(a, b, axis=None, equal_var=True, permutations=0):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
