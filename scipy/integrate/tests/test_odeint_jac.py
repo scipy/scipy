@@ -6,7 +6,6 @@ import scipy.integrate._test_odeint_banded as banded5x5
 
 
 def rhs(y, t):
-    n = len(y)
     dydt = np.zeros_like(y)
     banded5x5.banded5x5(t, y, dydt)
     return dydt
