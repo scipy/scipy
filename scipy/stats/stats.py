@@ -3466,7 +3466,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None):
     if a.size == 0 or b.size == 0:
         return (np.nan, np.nan)
 
-    if permutations != None:
+    if permutations is not None:
         mat = np.concatenate((a, b), axis=axis)
         cats = np.hstack((np.zeros(a.shape[axis]), np.ones(b.shape[axis])))
         return _permutation_ttest(mat, cats,
