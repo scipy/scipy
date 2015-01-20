@@ -1120,7 +1120,7 @@ class Bunch:
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
 
-def _valid_inputs(A, B, poles, method):
+def _valid_inputs(A, B, poles, method, rtol, maxiter):
     """
     Check the poles come in complex conjugage pairs
     Check shapes of A, B and poles are compatible.
@@ -1151,15 +1151,23 @@ def _valid_inputs(A, B, poles, method):
             raise ValueError("at least one of the requested pole is repeated "
                              "more than rank(B) times")
     # Choose update method
-    update_loop = _YT_loop
     if method not in {'KNV0','YT'}:
         raise ValueError("The method keyword must be one ''YT'' or ''KNV0''")
-        
+    
+    update_loop = _YT_loop        
     if method == "KNV0":
         update_loop = _KNV0_loop
         if not all(np.isreal(poles)):
             raise ValueError("Complex poles are not supported by KNV0")
 
+    if maxiter < 1:
+        raise ValueError("maxiter must be at least equal to 1")
+
+    #we do not check rtol <= 0 as the user can use a negative rtol to
+    #force maxiter iterations
+    if rtol > 1:
+        raise ValueError("rtol can not be greater than 1")
+    
     return update_loop, poles
 
 
@@ -1628,7 +1636,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
 
     """
     # Move away all the inputs checking, it only adds noise to the code
-    update_loop, poles = _valid_inputs(A, B, poles, method)
+    update_loop, poles = _valid_inputs(A, B, poles, method, rtol, maxiter)
 
     #the current value of the relative tolerance we achieved
     cur_rtol = np.nan

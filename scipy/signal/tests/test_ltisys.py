@@ -132,7 +132,7 @@ class Test_place:
         #check rtol is set to 0 as it should
         assert_equal(res.rtol,0)
         
-        #now test with a B matrix with only one column
+        #now test with a B matrix with only one column (no optimisation)
         B = B[:,0].reshape(4,1)
         P = np.array((-2+1j,-2-1j,-3,-2))
         res = place_poles(A,B,P)
@@ -152,6 +152,14 @@ class Test_place:
         #should fail as the method keyword is invalid
         assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2),
                       method="foo")        
+
+        #should fail as the rtol is greater than 1
+        assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2),
+                      rtol=42)        
+
+        #should fail as maxiter is smaller than 1
+        assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2),
+                      maxiter=-42)        
         
         #should fail as rank(B) is two
         assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2))
