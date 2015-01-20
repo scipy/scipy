@@ -12,8 +12,10 @@ import scipy.linalg as linalg
 
 def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
     """
-    Check each pole in P1 is close to a pole in P2 with a 10%
-    relative tolerance or 1e-3 absolute tolerance (useful for zero poles) 
+    Check each pole in P1 is close to a pole in P2 with a 1e-8
+    relative tolerance or 1e-8 absolute tolerance (useful for zero poles). 
+    These tolerance are very scrict but the systems tested are known to 
+    accept these poles so we should not be far from what is requested.    
     """    
     P2 = P2.copy()
     for p1 in P1:
@@ -42,17 +44,19 @@ class Test_place:
         P = np.array((-0.2,-0.5,-5.0566,-8.6659))
         
         #check KNV computes correct K matrix
-        K1,P1 = place_poles(A,B,P, method="KNV0")
-        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,K1))
-        _assert_poles_close(e_val1,P)
-        _assert_poles_close(e_val1,P1)
+        res = place_poles(A,B,P, method="KNV0")
+        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.K))
+        _assert_poles_close(e_val1,res.requested_poles)
+        _assert_poles_close(e_val1,res.computed_poles)
+        _assert_poles_close(P,res.requested_poles)
 
         #same for YT
-        K2,P2 = place_poles(A,B,P, method="YT")
-        e_val2,e_vec2 = np.linalg.eig(A-np.dot(B,K2))
-        _assert_poles_close(e_val2,P)
-        _assert_poles_close(e_val2,P2)
-        
+        res = place_poles(A,B,P, method="YT")
+        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.K))
+        _assert_poles_close(e_val1,res.requested_poles)
+        _assert_poles_close(e_val1,res.computed_poles)
+        _assert_poles_close(P,res.requested_poles)
+                
     def test_complex1(self):
         #Test complex pole placement on a
         #linearized car model, taken from L. Jaulin,
@@ -63,10 +67,11 @@ class Test_place:
        
         #test complex poles on YT
         P = np.array((-3,-1,-2-1j,-2+1j))
-        K,P1 = place_poles(A,B,P)
-        e_val1,_ = np.linalg.eig(A-np.dot(B,K))
-        _assert_poles_close(e_val1,P)
-        _assert_poles_close(e_val1,P1)
+        res = place_poles(A,B,P, method="YT")
+        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.K))
+        _assert_poles_close(e_val1,res.requested_poles)
+        _assert_poles_close(e_val1,res.computed_poles)
+        _assert_poles_close(P,res.requested_poles)
 
     def test_complex2(self):
         #need a 5x5 array to ensure YT handles properly when there 
@@ -77,19 +82,21 @@ class Test_place:
         B = np.array([0,0,0,0,1,0,0,1,2,3]).reshape(5,2)
         P = np.array((-2,-3+1j,-3-1j,-1+1j,-1-1j))
           
-        K,P1 = place_poles(A,B,P)
-        e_val1,_ = np.linalg.eig(A-np.dot(B,K))
-        _assert_poles_close(e_val1,P)
-        _assert_poles_close(e_val1,P1)
+        res = place_poles(A,B,P)
+        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.K))
+        _assert_poles_close(e_val1,res.requested_poles)
+        _assert_poles_close(e_val1,res.computed_poles)
+        _assert_poles_close(P,res.requested_poles)
 
         #same test with an odd number of real poles > 1
         #this is another specific case of YT
         P = np.array((-2,-3,-4,-1+1j,-1-1j))
           
-        K,P1 = place_poles(A,B,P)
-        e_val1,_ = np.linalg.eig(A-np.dot(B,K))
-        _assert_poles_close(e_val1,P)
-        _assert_poles_close(e_val1,P1)
+        res = place_poles(A,B,P)
+        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.K))
+        _assert_poles_close(e_val1,res.requested_poles)
+        _assert_poles_close(e_val1,res.computed_poles)
+        _assert_poles_close(P,res.requested_poles)
 
     def test_tricky_B(self):
         #check we handle as we should the 1 column B matrices and
@@ -106,18 +113,20 @@ class Test_place:
         
         #KNV or YT are not called here, it's a specific case with only
         #one unique solution
-        K,P1 = place_poles(A,B,P)
-        e_val1,_ = np.linalg.eig(A-np.dot(B,K))
-        _assert_poles_close(e_val1,P)
-        _assert_poles_close(e_val1,P1)
+        res = place_poles(A,B,P)
+        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.K))
+        _assert_poles_close(e_val1,res.requested_poles)
+        _assert_poles_close(e_val1,res.computed_poles)
+        _assert_poles_close(P,res.requested_poles)
 
         #check with complex poles too as they trigger a specific case in
         #the specific case :-)
         P = np.array((-2+1j,-2-1j,-3,-2))
-        K,P1 = place_poles(A,B,P)
-        e_val1,_ = np.linalg.eig(A-np.dot(B,K))
-        _assert_poles_close(e_val1,P)
-        _assert_poles_close(e_val1,P1)
+        res = place_poles(A,B,P)
+        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.K))
+        _assert_poles_close(e_val1,res.requested_poles)
+        _assert_poles_close(e_val1,res.computed_poles)
+        _assert_poles_close(P,res.requested_poles)
 
     def test_errors(self):
         #test input mistakes from user

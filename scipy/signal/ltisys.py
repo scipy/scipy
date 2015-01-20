@@ -35,8 +35,7 @@ from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
            'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
            'freqresp', 'place_poles']
-
-
+           
 def tf2ss(num, den):
     """Transfer function to state-space representation.
 
@@ -1115,6 +1114,12 @@ def freqresp(system, w=None, n=10000):
 
     return w, h
     
+#this class will be used by place_poles to return its results
+#see http://code.activestate.com/recipes/52308/
+class Bunch:
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
+
 def _valid_inputs(A, B, poles, method):
     """
     Check the poles come in complex conjugage pairs
@@ -1159,14 +1164,20 @@ def _order_complex_poles(poles):
     """
     Check we have complex conjugates pairs and reorder P according to YT, ie
     real_poles, complex_i, conjugate complex_i, ....
+    The lexicographic sort on the complex poles is added to help the user to
+    compare sets of poles.
     """
-    ordered_poles = list(np.sort(poles[np.isreal(poles)]))
+    ordered_poles = np.sort(poles[np.isreal(poles)])
+    im_poles=[]
     for p in poles[np.imag(poles) < 0]:
         if np.conj(p) in poles:
-            ordered_poles.extend((p, np.conj(p)))
+            im_poles.extend((p, np.conj(p)))
+
+    ordered_poles=np.hstack((ordered_poles, np.sort(im_poles)))
+    
     if poles.shape[0] != len(ordered_poles):
         raise ValueError("Complex poles must come with their conjugates")
-    return np.array(ordered_poles)
+    return ordered_poles
 
 
 def _KNV0(B, ker_pole, transfer_matrix, j, poles):
@@ -1187,7 +1198,7 @@ def _KNV0(B, ker_pole, transfer_matrix, j, poles):
     #after merge of gh-4249 great speed improvements could be achived
     #using QR updates instead of full QR in the line below
 
-    Q, R = np.linalg.qr(transfer_matrix_not_j, mode="full")
+    Q, R = np.linalg.qr(transfer_matrix_not_j, mode="complete")
     mat_ker_pj = np.dot(ker_pole[j], ker_pole[j].T)
     yj = np.dot(mat_ker_pj, Q[:, -1])
 
@@ -1423,7 +1434,7 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
                                                     axis=1)
                 # after merge of gh-4249 great speed improvements could be
                 # achieved using QR updates instead of full QR in the line below
-                Q, _ = np.linalg.qr(transfer_matrix_not_i_j, mode="full")
+                Q, _ = np.linalg.qr(transfer_matrix_not_i_j, mode="complete")
                 if np.isreal(poles[i]):
                     if not np.isreal(poles[j]):
                         msg = "mixing real and complex in YT_real" + str(poles)
@@ -1435,8 +1446,8 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
                         raise RuntimeError(msg)
                     _YT_complex(ker_pole, Q, transfer_matrix, i, j)
 
-        det_transfer_matrix = np.max(np.sqrt(np.spacing(1)),
-                                  np.abs(np.linalg.det(transfer_matrix)))
+        det_transfer_matrix = np.max((np.sqrt(np.spacing(1)),
+                                  np.abs(np.linalg.det(transfer_matrix))))
         cur_rtol = np.abs(
             (det_transfer_matrix -
              det_transfer_matrixb) /
@@ -1462,9 +1473,9 @@ def _KNV0_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
         for j in range(B.shape[0]):
             _KNV0(B, ker_pole, transfer_matrix, j, poles)
 
-        det_transfer_matrix = max(np.sqrt(np.spacing(1)),
-                                  abs(np.linalg.det(transfer_matrix)))
-        cur_rtol = abs((det_transfer_matrix - det_transfer_matrixb) /
+        det_transfer_matrix = np.max((np.sqrt(np.spacing(1)),
+                                  np.abs(np.linalg.det(transfer_matrix))))
+        cur_rtol = np.abs((det_transfer_matrix - det_transfer_matrixb) /
                        det_transfer_matrix)
         if cur_rtol < rtol and det_transfer_matrix > np.sqrt(np.spacing(1)):
             # Convergence test from YT page 21
@@ -1476,7 +1487,7 @@ def _KNV0_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
 
 def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     """
-    Compute K such as eigenvalues(A-dot(B, K))=P.
+    Compute K such as eigenvalues(A-dot(B, K))=poles.
 
     K is the gain matrix such as the plant described by the linear system AX+BU
     will have its closed-loop poles, i.e the eigenvalues ``A - B*K``, as close as
@@ -1509,11 +1520,25 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
 
     Returns
     -------
-    K : 1-D ndarray
-        The closed loop matrix such as the eigenvalues of ``A - BK`` are as
-        close as possible to the requested poles.
-    Pa : 1-D ndarray
-        The poles corresponding to ``A - BK``.
+    closed_loop_sys : Bunch object
+        closed_loop_sys is composed of:
+            K : 1D ndarray
+                The closed loop matrix such as the eigenvalues of A-BK are as
+                close as possible to the requested poles P.
+            computed_poles : 1D ndarray
+                The poles corresponding to A-BK sorted as first the real poles
+                in increasing order, then the complex congugates in
+                lexicographic order.
+            requested_poles : 1D ndarray
+                The poles the algorithm was asked to place sorted as above,
+                they may differ from what was achieved.
+            X : 2D ndarray
+                The transfer matrix such as ``X * diag(poles) * inv(X) = A - B*K``
+                (see Notes)
+            rtol : float
+                The relative tolerance achieved on ''det(X)'' (see Notes). 
+                rtol will be ''np.nan'' if the optimisation algorithms can not
+                run, i.e when ''B.shape[1]==1''
 
     Notes
     -----
@@ -1568,27 +1593,31 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     >>> P = np.array((-0.2, -0.5, -5.0566, -8.6659))
 
     Now compute K with KNV method 0, with the default YT method and with the YT
-    method while forcing 100 iterations of the algorithm:
+    method while forcing 100 iterations of the algorithm and print the gain
+    matrix after each call.
 
     >>> from scipy import signal
-    >>> K1, P1 = signal.place_poles(A, B, P, method='KNV0')
-    >>> K2, P2 = signal.place_poles(A, B, P, method='YT')
-    >>> K3, P3 = signal.place_poles(A, B, P, rtol=-1, maxiter=100)
+    >>> close_loop1 = signal.place_poles(A, B, P, method='KNV0')
+    >>> print(close_loop1.K)
+    >>> close_loop2 = signal.place_poles(A, B, P, method='YT')
+    >>> print(close_loop2.K)
+    >>> close_loop3 = signal.place_poles(A, B, P, rtol=-1, maxiter=100)
+    >>> print(close_loop3.K)
 
     Now a simple example for complex poles:
 
     >>> A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4) / 3.
     >>> B = np.array([0,0,0,0,1,0,0,1]).reshape(4,2)
     >>> P = np.array([-3, -1, -2-1j, -2+1j]) / 3.
-    >>> gain_matrix, computed_poles = signal.place_poles(A, B, P, method='YT')
+    >>> close_loop = signal.place_poles(A, B, P, method='YT')
 
     We can plot the desired and computed poles in the complex plane:
 
     >>> t = np.linspace(0, 2*np.pi, num=401)
     >>> plt.figure()
     >>> plt.plot(np.cos(t), np.sin(t), 'k--')  # unit circle
-    >>> plt.plot(P.real, P.imag, 'ro', label='Desired poles')
-    >>> plt.plot(computed_poles.real, computed_poles.imag, 'bx',
+    >>> plt.plot(close_loop.requested_poles.real, close_loop.requested_poles.imag, 'ro', label='Desired poles')
+    >>> plt.plot(close_loop.computed_poles.real, close_loop.computed_poles.imag, 'bx',
     ...          label='Computed poles (YT)')
     >>> plt.legend()
     >>> plt.grid()
@@ -1598,8 +1627,11 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     # Move away all the inputs checking, it only adds noise to the code
     update_loop, poles = _valid_inputs(A, B, poles, method)
 
+    #the current value of the relative tolerance we achieved
+    cur_rtol=np.nan
+
     # Step A: QR decomposition of B page 1132 KNV
-    u, z = np.linalg.qr(B, mode="full")
+    u, z = np.linalg.qr(B, mode="complete")
     u0 = u[:, :B.shape[1]]
     u1 = u[:, B.shape[1]:]
     z = z[:B.shape[1], :]
@@ -1633,6 +1665,8 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 idx += 1  # skip next one
             idx += 1
         gain_matrix = np.linalg.lstsq(B, diag_poles-A)[0]
+        transfer_matrix=np.eye(A.shape[0])
+        cur_rtol=0
     else:
         # step A (p1144 KNV) and begining of step F: decompose
         # dot(U1.T, A-P[i]*I).T and build our set of transfer_matrix vectors
@@ -1652,9 +1686,9 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             # after QR Q=Q0|Q1
             # only Q0 is used to reconstruct  the qr'ed (dot Q, R) matrix.
             # Q1 is orthogonnal to Q0 and will be multiplied by the zeros in
-            # R when using mode "full". In default mode Q1 and the zeros
+            # R when using mode "complete". In default mode Q1 and the zeros
             # in R are not computed
-            Q, _ = np.linalg.qr(pole_space_j, mode="full")
+            Q, _ = np.linalg.qr(pole_space_j, mode="complete")
             ker_pole_j = Q[:, pole_space_j.shape[1]:]
 
             # We want to select one vector in ker_pole_j to build the transfer
@@ -1730,6 +1764,15 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     gain_matrix = -gain_matrix
     # K still contains complex with ~=0j imaginary parts, get rid of them
     gain_matrix = np.real(gain_matrix)
+    
+    closed_loop_sys=Bunch()
+    closed_loop_sys.K=gain_matrix
+    closed_loop_sys.computed_poles=_order_complex_poles(
+        np.linalg.eig(A-np.dot(B, gain_matrix))[0]
+        )
+    closed_loop_sys.requested_poles=poles
+    closed_loop_sys.X=transfer_matrix
+    closed_loop_sys.rtol=cur_rtol
 
-    return gain_matrix, np.linalg.eig(A-np.dot(B, gain_matrix))[0]
+    return closed_loop_sys
 
