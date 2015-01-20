@@ -45,14 +45,14 @@ class Test_place:
         
         #check KNV computes correct K matrix
         res = place_poles(A,B,P, method="KNV0")
-        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.K))
+        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.gain_matrix))
         _assert_poles_close(e_val1,res.requested_poles)
         _assert_poles_close(e_val1,res.computed_poles)
         _assert_poles_close(P,res.requested_poles)
 
         #same for YT
         res = place_poles(A,B,P, method="YT")
-        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.K))
+        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.gain_matrix))
         _assert_poles_close(e_val1,res.requested_poles)
         _assert_poles_close(e_val1,res.computed_poles)
         _assert_poles_close(P,res.requested_poles)
@@ -68,7 +68,7 @@ class Test_place:
         #test complex poles on YT
         P = np.array((-3,-1,-2-1j,-2+1j))
         res = place_poles(A,B,P, method="YT")
-        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.K))
+        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.gain_matrix))
         _assert_poles_close(e_val1,res.requested_poles)
         _assert_poles_close(e_val1,res.computed_poles)
         _assert_poles_close(P,res.requested_poles)
@@ -83,7 +83,7 @@ class Test_place:
         P = np.array((-2,-3+1j,-3-1j,-1+1j,-1-1j))
           
         res = place_poles(A,B,P)
-        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.K))
+        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.gain_matrix))
         _assert_poles_close(e_val1,res.requested_poles)
         _assert_poles_close(e_val1,res.computed_poles)
         _assert_poles_close(P,res.requested_poles)
@@ -93,7 +93,7 @@ class Test_place:
         P = np.array((-2,-3,-4,-1+1j,-1-1j))
           
         res = place_poles(A,B,P)
-        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.K))
+        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.gain_matrix))
         _assert_poles_close(e_val1,res.requested_poles)
         _assert_poles_close(e_val1,res.computed_poles)
         _assert_poles_close(P,res.requested_poles)
@@ -114,24 +114,52 @@ class Test_place:
         #KNV or YT are not called here, it's a specific case with only
         #one unique solution
         res = place_poles(A,B,P)
-        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.K))
+        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.gain_matrix))
         _assert_poles_close(e_val1,res.requested_poles)
         _assert_poles_close(e_val1,res.computed_poles)
         _assert_poles_close(P,res.requested_poles)
+        #check rtol is set to 0 as it should
+        assert_equal(res.rtol,0)
 
         #check with complex poles too as they trigger a specific case in
         #the specific case :-)
         P = np.array((-2+1j,-2-1j,-3,-2))
         res = place_poles(A,B,P)
-        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.K))
+        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.gain_matrix))
         _assert_poles_close(e_val1,res.requested_poles)
         _assert_poles_close(e_val1,res.computed_poles)
         _assert_poles_close(P,res.requested_poles)
+        #check rtol is set to 0 as it should
+        assert_equal(res.rtol,0)
+        
+        #now test with a B matrix with only one column (no optimisation)
+        B = B[:,0].reshape(4,1)
+        P = np.array((-2+1j,-2-1j,-3,-2))
+        res = place_poles(A,B,P)
+        e_val1,e_vec1 = np.linalg.eig(A-np.dot(B,res.gain_matrix))
+        _assert_poles_close(e_val1,res.requested_poles)
+        _assert_poles_close(e_val1,res.computed_poles)
+        _assert_poles_close(P,res.requested_poles)   
+        #rtol is meaningless here as we can't optimize anything, check it is
+        #set to NaN as expected        
+        assert_equal(res.rtol,np.nan)
 
     def test_errors(self):
         #test input mistakes from user
         A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4)
         B = np.array([0,0,0,0,1,0,0,1]).reshape(4,2)
+        
+        #should fail as the method keyword is invalid
+        assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2),
+                      method="foo")        
+
+        #should fail as the rtol is greater than 1
+        assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2),
+                      rtol=42)        
+
+        #should fail as maxiter is smaller than 1
+        assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2),
+                      maxiter=-42)        
         
         #should fail as rank(B) is two
         assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2))
