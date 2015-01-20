@@ -31,8 +31,6 @@ from scipy.lib.six import xrange
 
 from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 
-from .filter_design import tf2zpk, zpk2tf, normalize, freqs
-
 
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
            'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
