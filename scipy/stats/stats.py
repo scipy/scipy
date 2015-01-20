@@ -3458,8 +3458,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=1):
         return (np.nan, np.nan)
 
     if permutations > 1:
-        mat = np.concatenate( (a, b), axis=axis)
-        cats = np.hstack( (np.zeros( a.shape[axis] ), np.ones( b.shape[axis] )) )
+        mat = np.concatenate((a, b), axis=axis)
+        cats = np.hstack((np.zeros(a.shape[axis]), np.ones(b.shape[axis])))
         return _permutation_ttest(mat, cats,
                                   axis=axis,
                                   equal_var=equal_var,
@@ -3491,7 +3491,7 @@ def _init_categorical_perms(cats, permutations=1000):
     Note: This can only handle binary classes now
     """
     c = len(cats)
-    num_cats = len(np.unique(cats)) # Number of distinct categories
+    num_cats = len(np.unique(cats))  # Number of distinct categories
     copy_cats = copy.deepcopy(cats)
     perms = np.array(np.zeros((c, num_cats*(permutations+1)), dtype=cats.dtype))
     for m in range(permutations+1):
@@ -3500,7 +3500,7 @@ def _init_categorical_perms(cats, permutations=1000):
         np.random.shuffle(copy_cats)
     return perms
 
-def _permutation_ttest(mat, cats, axis=0, permutations = 1000, equal_var = True):
+def _permutation_ttest(mat, cats, axis=0, permutations=1000, equal_var=True):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores
     using permutation methods
@@ -3532,7 +3532,7 @@ def _permutation_ttest(mat, cats, axis=0, permutations = 1000, equal_var = True)
     
     if axis == 0:
         mat = mat.transpose()
-    if len(mat.shape) < 2: # Handle 1-D arrays
+    if len(mat.shape) < 2:  # Handle 1-D arrays
         mat = mat.reshape((1, len(mat)))
     perms = _init_categorical_perms(cats, permutations=1000)
     num_cats = 2
@@ -3541,20 +3541,20 @@ def _permutation_ttest(mat, cats, axis=0, permutations = 1000, equal_var = True)
     
     ## Perform matrix multiplication on data matrix
     ## and calculate sums and squared sums
-    _sums  = np.dot(mat, perms)
-    _sums2 = np.dot( np.multiply(mat, mat), perms)
+    _sums = np.dot(mat, perms)
+    _sums2 = np.dot(np.multiply(mat, mat), perms)
     
     ## Calculate means and sample variances
-    tot =  perms.sum(axis = 0)
-    _avgs  = _sums / tot
+    tot = perms.sum(axis=0)
+    _avgs = _sums / tot
     _avgs2 = _sums2 / tot
-    _vars  = _avgs2 - np.multiply(_avgs, _avgs)
-    _samp_vars =  np.multiply(tot, _vars) / (tot-1)
+    _vars = _avgs2 - np.multiply(_avgs, _avgs)
+    _samp_vars = np.multiply(tot, _vars) / (tot-1)
     idx = np.arange(0, (permutations+1) * num_cats, num_cats, dtype=np.int32)    
     ## Calculate the t statistic
     if not equal_var:
-        denom  = np.sqrt( np.divide(_samp_vars[:, idx+1], tot[idx+1])  +
-                          np.divide(_samp_vars[:, idx], tot[idx]))
+        denom = np.sqrt(np.divide(_samp_vars[:, idx+1], tot[idx+1]) +
+                         np.divide(_samp_vars[:, idx], tot[idx]))
     else:
         df = tot[idx] + tot[idx+1] - 2
         svar = ((tot[idx+1] - 1) * _samp_vars[:, idx+1] + (tot[idx] - 1) * _samp_vars[:, idx]) / df
@@ -3563,8 +3563,8 @@ def _permutation_ttest(mat, cats, axis=0, permutations = 1000, equal_var = True)
     t_stat = np.divide(_avgs[:, idx] - _avgs[:, idx+1], denom)
     
     ## Calculate the p-values
-    cmps =  abs(t_stat[:, 1:].transpose()) >= abs(t_stat[:, 0])
-    pvalues = (cmps.sum(axis = 0) + 1.) / (permutations + 1.)
+    cmps = abs(t_stat[:, 1:].transpose()) >= abs(t_stat[:, 0])
+    pvalues = (cmps.sum(axis=0) + 1.) / (permutations + 1.)
     
     return t_stat[:, 0], pvalues
 
