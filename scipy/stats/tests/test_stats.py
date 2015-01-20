@@ -2091,8 +2091,6 @@ def test_ttest_perm():
     
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
 
-
-
     
 def test_ttest_ind():
     # regression test
