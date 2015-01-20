@@ -225,17 +225,23 @@ class MatFile5Reader(MatFileReader):
         if stream is None:
             stream = self._stream
 
+        buf = bytearray(8)
+        unpack_2uint32 = struct.Struct(self._endian + "2I").unpack
+        complex_pattern = 1 << 11
+        global_pattern = 1 << 10
+        logical_pattern = 1 << 9
+
         while True:
             entry_start = stream.tell()
-            raw_header0 = stream.read(4)
-            if not raw_header0:
+            if stream.readinto(buf) < 8:
                 return
-            header0, = self._unpack("I", raw_header0)
-            nbytes, mdtype = divmod(header0, 0x10000)
-            if not nbytes:
-                mdtype = header0
-                nbytes, = self._unpack("I", stream.read(4))
-            entry_end = stream.tell() + nbytes
+            mdtype, nbytes = unpack_2uint32(buf)
+            small_tag = mdtype >= 0x10000
+            if small_tag:
+                nbytes, mdtype = divmod(mdtype, 0x10000)
+                entry_end = stream.tell() + nbytes - 4
+            else:
+                entry_end = stream.tell() + nbytes
 
             if mdtype == miCOMPRESSED:
                 try:
@@ -250,9 +256,13 @@ class MatFile5Reader(MatFileReader):
                         raise ValueError("Invalid compressed data")
 
             elif mdtype in mdtypes_template:
+                # This is the only small-tag case
                 dtype = self._endian + mdtypes_template[mdtype]
-                data = bytearray(nbytes)
-                stream.readinto(data)
+                if small_tag:
+                    data = buf[4 : 4 + nbytes]
+                else:
+                    data = bytearray(nbytes)
+                    stream.readinto(data)
                 self._check_and_pad_stream(stream, entry_end)
                 yield np.frombuffer(data, dtype)
 
@@ -267,12 +277,12 @@ class MatFile5Reader(MatFileReader):
                     continue
                 else:
                     flags, nzmax = flags
-                dims, name = list(islice(reader, 2))
+                dims, name = islice(reader, 2)
                 name, = self._as_identifiers(name) or [""]
                 matrix_cls = flags % 0x100
-                f_complex = flags & (1 << 11)
-                f_global = flags & (1 << 10)
-                f_logical = flags & (1 << 9)
+                f_complex = flags & complex_pattern
+                f_global = flags & global_pattern
+                f_logical = flags & logical_pattern
 
                 if info_only:
                     if matrix_cls == mxCHAR_CLASS:
@@ -386,12 +396,13 @@ class MatFile5Reader(MatFileReader):
                 raise ValueError("Unsupported mdtype: {}".format(mdtype))
 
     def _check_and_pad_stream(self, stream, entry_end):
-        unread = entry_end - stream.tell()
+        at = stream.tell()
+        unread = entry_end - at
         if unread > 0:
             raise ValueError("{} bytes not read".format(unread))
-        elif unread < 0:
+        elif unread <= -4:
             raise ValueError("Over-read {} bytes".format(-unread))
-        stream.seek((-stream.tell()) % 8, 1)  # Padding.
+        stream.seek((-at) % 8, 1)  # Padding.
 
     def list_variables(self):
         '''list variables from stream

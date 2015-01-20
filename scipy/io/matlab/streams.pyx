@@ -140,7 +140,7 @@ cdef class ZlibInputStream(GenericStream):
         self._total_position = 0
         self._read_bytes = 0
 
-    cpdef int _fill_buffer(self) except -1:
+    cdef int _fill_buffer(self) except -1:
         cdef size_t read_size
         cdef bytes block
 
@@ -225,7 +225,7 @@ cdef class ZlibInputStream(GenericStream):
             if self._buffer_size == 0:
                 break
 
-            size = min(new_pos - self._total_position, 
+            size = min(new_pos - self._total_position,
                        self._buffer_size - self._buffer_position)
 
             self._total_position += size
