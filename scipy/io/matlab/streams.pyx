@@ -61,15 +61,17 @@ cdef class GenericStream:
     def read(self, n_bytes):
         return self.fobj.read(n_bytes)
 
-    cdef int read_into(self, void *buf, size_t n) except -1:
+    cpdef int readinto(self, char[:] buf) except -1:
         """ Read n bytes from stream into pre-allocated buffer `buf`
         """
         cdef char *p
-        cdef size_t read_size, count
+        cdef size_t read_size, count, n = buf.size
+        if not n:
+            return 0
 
         # Read data to buf in BLOCK_SIZE blocks
         count = 0
-        p = <char*>buf
+        p = &buf[0]
         while count < n:
             read_size = min(n - count, BLOCK_SIZE)
             data = self.fobj.read(read_size)
@@ -94,7 +96,8 @@ cdef class GenericStream:
             return data
 
         cdef object d_copy = pyalloc_v(n, pp)
-        self.read_into(pp[0], n)
+        if n:
+            self.readinto(<char[:n]>pp[0])
         return d_copy
 
 
@@ -137,12 +140,12 @@ cdef class ZlibInputStream(GenericStream):
         self._total_position = 0
         self._read_bytes = 0
 
-    cdef _fill_buffer(self):
+    cpdef int _fill_buffer(self) except -1:
         cdef size_t read_size
         cdef bytes block
 
         if self._buffer_position < self._buffer_size:
-            return
+            return 0
 
         read_size = min(BLOCK_SIZE, self._max_length - self._read_bytes)
 
@@ -156,14 +159,16 @@ cdef class ZlibInputStream(GenericStream):
             self._buffer = self._decompressor.decompress(block)
         self._buffer_size = len(self._buffer)
 
-    cdef int read_into(self, void *buf, size_t n) except -1:
+    cpdef int readinto(self, char[:] buf) except -1:
         """Read n bytes from stream into pre-allocated buffer `buf`
         """
         cdef char *dstp
         cdef char *srcp
-        cdef size_t read_size, count, size
+        cdef size_t read_size, count, size, n = buf.size
+        if not n:
+            return 0
 
-        dstp = <char*>buf
+        dstp = &buf[0]
         count = 0
         while count < n:
             self._fill_buffer()
@@ -187,7 +192,7 @@ cdef class ZlibInputStream(GenericStream):
     cdef object read_string(self, size_t n, void **pp, int copy=True):
         """Make new memory, wrap with object"""
         cdef object d_copy = pyalloc_v(n, pp)
-        return d_copy[:self.read_into(pp[0], n)]
+        return d_copy[:self.readinto(<char[:n]>pp[0])] if n else d_copy
 
     def read(self, n_bytes):
         cdef void *p
@@ -230,7 +235,7 @@ cdef class ZlibInputStream(GenericStream):
 
 
 cdef class cStringStream(GenericStream):
-    
+
     cpdef int seek(self, long int offset, int whence=0) except -1:
         cdef char *ptr
         if whence == 1 and offset >=0: # forward, from here
@@ -239,16 +244,18 @@ cdef class cStringStream(GenericStream):
         else: # use python interface
             return GenericStream.seek(self, offset, whence)
 
-    cdef int read_into(self, void *buf, size_t n) except -1:
+    cpdef int readinto(self, char[:] buf) except -1:
         """ Read n bytes from stream into pre-allocated buffer `buf`
         """
         cdef:
-            size_t n_red
+            size_t n_red, n = buf.size
             char* d_ptr
+        if not n:
+            return 0
         n_red = StringIO_cread(self.fobj, &d_ptr, n)
         if n_red != n:
             raise IOError('could not read bytes')
-        memcpy(buf, <void *>d_ptr, n)
+        memcpy(&buf[0], <void *>d_ptr, n)
         return 0
 
     cdef object read_string(self, size_t n, void **pp, int copy=True):
@@ -288,7 +295,7 @@ cdef class FileStream(GenericStream):
            negative for backward
         whence : int
            `whence` can be:
-           
+
            * 0 - from beginning of file (`offset` should be >=0)
            * 1 - from current file position
            * 2 - from end of file (`offset` nearly always <=0)
@@ -308,13 +315,13 @@ cdef class FileStream(GenericStream):
             raise IOError("Invalid file position.")
         return position
 
-    cdef int read_into(self, void *buf, size_t n) except -1:
+    cpdef int readinto(self, char[:] buf) except -1:
         """ Read n bytes from stream into pre-allocated buffer `buf`
         """
-        cdef:
-            size_t n_red
-            char* d_ptr
-        n_red = fread(buf, 1, n, self.file)
+        cdef size_t n_red, n = buf.size
+        if not n:
+            return 0
+        n_red = fread(&buf[0], 1, n, self.file)
         if n_red != n:
             raise IOError('Could not read bytes')
         return 0
@@ -328,12 +335,12 @@ cdef class FileStream(GenericStream):
         return obj
 
 
-def _read_into(GenericStream st, size_t n):
+def _readinto(GenericStream st, size_t n):
     # for testing only.  Use st.read instead
-    cdef char * d_ptr
+    cdef char *d_ptr
     my_str = b' ' * n
     d_ptr = my_str
-    st.read_into(d_ptr, n)
+    st.readinto(<char[:n]>d_ptr)
     return my_str
 
 

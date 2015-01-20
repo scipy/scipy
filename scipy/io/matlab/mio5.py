@@ -251,9 +251,10 @@ class MatFile5Reader(MatFileReader):
 
             elif mdtype in mdtypes_template:
                 dtype = self._endian + mdtypes_template[mdtype]
-                data = stream.read(nbytes)
+                data = bytearray(nbytes)
+                stream.readinto(data)
                 self._check_and_pad_stream(stream, entry_end)
-                yield np.fromstring(data, dtype)
+                yield np.frombuffer(data, dtype)
 
             elif mdtype == miMATRIX:
                 reader = self._read_iter(stream)
@@ -356,9 +357,9 @@ class MatFile5Reader(MatFileReader):
                              np.bool if f_logical else
                              mclass_dtypes_template[matrix_cls])
 
-                pr = pr.astype(dtype)
+                pr = pr.astype(dtype, copy=False)
                 if f_complex:
-                    pi = next(reader).astype(dtype)
+                    pi = next(reader).astype(dtype, copy=False)
                     pr = pr + 1j * pi
 
                 if matrix_cls == mxCHAR_CLASS:

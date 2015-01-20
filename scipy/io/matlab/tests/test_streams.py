@@ -19,15 +19,14 @@ from tempfile import mkstemp
 
 import numpy as np
 
-from nose.tools import assert_true, assert_false, \
-     assert_equal, assert_raises
+from nose.tools import assert_true, assert_false, assert_equal, assert_raises
 
-from numpy.testing import assert_array_equal, assert_array_almost_equal, \
-     run_module_suite
+from numpy.testing import (assert_array_equal, assert_array_almost_equal,
+                           run_module_suite)
 
-from scipy.io.matlab.streams import make_stream, \
-    GenericStream, cStringStream, FileStream, ZlibInputStream, \
-    _read_into, _read_string
+from scipy.io.matlab.streams import (
+    GenericStream, cStringStream, FileStream, ZlibInputStream,
+    make_stream, _readinto, _read_string)
 
 
 fs = None
@@ -94,11 +93,11 @@ def test_read():
         yield assert_equal, res, b'a\x00st'
         # read into
         st.seek(0)
-        res = _read_into(st, 4)
+        res = _readinto(st, 4)
         yield assert_equal, res, b'a\x00st'
-        res = _read_into(st, 4)
+        res = _readinto(st, 4)
         yield assert_equal, res, b'ring'
-        yield assert_raises, IOError, _read_into, st, 2
+        yield assert_raises, IOError, _readinto, st, 2
         # read alloc
         st.seek(0)
         res = _read_string(st, 4)

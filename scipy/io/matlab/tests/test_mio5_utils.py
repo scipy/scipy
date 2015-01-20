@@ -111,7 +111,7 @@ def test_read_stream():
     tag_str = tag.tostring()
     str_io = cStringIO(tag_str)
     st = streams.make_stream(str_io)
-    s = streams._read_into(st, tag.itemsize)
+    s = streams._readinto(st, tag.itemsize)
     yield assert_equal, s, tag.tostring()
 
 
