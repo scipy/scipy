@@ -71,5 +71,6 @@ def check_odeint(jactype):
 def test_odeint_full_jac():
     check_odeint(JACTYPE_FULL)
 
+
 def test_odeint_banded_jac():
     check_odeint(JACTYPE_BANDED)
