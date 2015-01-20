@@ -202,7 +202,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
            'kendalltau', 'linregress', 'theilslopes', 'ttest_1samp',
-           'ttest_ind', 'ttest_ind_from_stats', 'ttest_perm', 'ttest_rel', 'kstest',
+           'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'zprob', 'chisqprob', 'ksprob', 'fprob', 'betai',
@@ -3363,7 +3363,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return _ttest_ind_from_stats(mean1, mean2, denom, df)
 
     
-def ttest_ind(a, b, axis=0, equal_var=True):
+def ttest_ind(a, b, axis=0, equal_var=True, permutations=1):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
@@ -3384,7 +3384,9 @@ def ttest_ind(a, b, axis=0, equal_var=True):
         that assumes equal population variances [1]_.
         If False, perform Welch's t-test, which does not assume equal
         population variance [2]_.
-
+    permutations : int, optional
+        If permutations > 1, then a permutation test will be conducted to
+        calculate the p-values
         .. versionadded:: 0.11.0
 
     Returns
@@ -3460,14 +3462,18 @@ def ttest_ind(a, b, axis=0, equal_var=True):
     n1 = a.shape[axis]
     n2 = b.shape[axis]
 
-    if equal_var:
-        df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
+    if permutations > 1:
+        mat = np.concatenate( (a, b), axis=axis)
+        cats = np.hstack( np.zeros( a.shape[axis] ), np.ones( b.shape[axis] ))
+        return _permutation_ttest(mat, cats, axis, equal_var, permutations)
     else:
-        df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
-
-    return _ttest_ind_from_stats(np.mean(a, axis),
-                                 np.mean(b, axis),
-                                 denom, df)
+        if equal_var:
+            df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
+        else:
+            df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
+        return _ttest_ind_from_stats(np.mean(a, axis),
+                                     np.mean(b, axis),
+                                     denom, df)
 
 
 def _init_categorical_perms(cats, permutations=1000):
@@ -3483,7 +3489,6 @@ def _init_categorical_perms(cats, permutations=1000):
     """
     c = len(cats)
     num_cats = len(np.unique(cats)) # Number of distinct categories
-    assert num_cats == 2
     copy_cats = copy.deepcopy(cats)
     perms = np.array(np.zeros((c, num_cats*(permutations+1)), dtype=cats.dtype))
     for m in range(permutations+1):
@@ -3492,7 +3497,7 @@ def _init_categorical_perms(cats, permutations=1000):
         np.random.shuffle(copy_cats)
     return perms
 
-def ttest_perm(a, b, axis=0, permutations = 1000):
+def _permutation_ttest(a, b, axis=0, permutations = 1000, equal_var = True):
     """
     Calculates the Welch's T-test for the means of TWO INDEPENDENT samples of scores
     using permutation methods
@@ -3519,8 +3524,8 @@ def ttest_perm(a, b, axis=0, permutations = 1000):
         The calculated t-statistic.
     prob : float or array
         The two-tailed p-value.
-
     """
+    
     mat = a
     assert len(a.shape) == 2
     r, c = a.shape
@@ -3539,23 +3544,29 @@ def ttest_perm(a, b, axis=0, permutations = 1000):
     ## and calculate sums and squared sums
     _sums  = np.dot(mat, perms)
     _sums2 = np.dot( np.multiply(mat, mat), perms)
+    
     ## Calculate means and sample variances
     tot =  perms.sum(axis = 0)
     _avgs  = _sums / tot
     _avgs2 = _sums2 / tot
     _vars  = _avgs2 - np.multiply(_avgs, _avgs)
     _samp_vars =  np.multiply(tot, _vars) / (tot-1)
-    
+    idx = np.arange(0, (permutations+1)*num_cats, num_cats, dtype=np.int32)    
     ## Calculate the t statistic
-    idx = np.arange(0, (permutations+1)*num_cats, num_cats, dtype=np.int32)
-    denom  = np.sqrt( np.divide(_samp_vars[:, idx+1], tot[idx+1])  +
-                      np.divide(_samp_vars[:, idx], tot[idx]))
+    if not equal_var:
+        denom  = np.sqrt( np.divide(_samp_vars[:, idx+1], tot[idx+1])  +
+                          np.divide(_samp_vars[:, idx], tot[idx]))
+    else:
+        df = tot[idx] + tot[idx+1] - 2
+        svar = ((tot[idx+1] - 1) * _samp_vars[:, idx+1] + (tot[idx] - 1) * _samp_vars[:, idx]) / fdf
+        denom = np.sqrt(svar * (1.0 / tot[idx+1] + 1.0 / tot[idx]))        
     t_stat = np.divide(_avgs[:, idx] - _avgs[:, idx+1], denom)
+    
     ## Calculate the p-values
-    cmps =  abs(t_stat[:,1:].transpose()) >= abs(t_stat[:,0])
-    pvalues = (cmps.sum(axis = 0) + 1.)/(permutations + 1.)
+    cmps =  abs(t_stat[:, 1:].transpose()) >= abs(t_stat[:, 0])
+    pvalues = (cmps.sum(axis = 0) + 1.) / (permutations + 1.)
         
-    return map(np.array, map(np.ravel, [t_stat[:, 0],pvalues]))
+    return map(np.array, map(np.ravel, [t_stat[:, 0], pvalues]))
 
 
 def ttest_rel(a, b, axis=0):

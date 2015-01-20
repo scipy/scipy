@@ -2062,13 +2062,10 @@ def test_ttest_perm():
         return test_stats
     
     N = 20
-    mat = np.array(
-        np.matrix(np.vstack((
-            np.hstack((np.arange((3*N)/4), np.arange(N/4)+100)),
-            np.random.random(N))),dtype=np.float32))
-    cats = np.hstack((np.zeros((3*N)/4),np.ones(N/4)))
-    nv_t_stats = _parametric_ttest(mat, cats)
-    np_t_stats, pvalues = stats.ttest_perm(mat, cats)
+    a = np.vstack((np.arange((3*N)/4),np.random.random((3*N)/4)))
+    b = np.vstack((np.arange(N/4)+100,np.random.random((3*N)/4)))
+    nv_t_stats, pvalues = ttest_ind(a, b, equal_var=False)
+    np_t_stats, pvalues = ttest_ind(a, b, equal_var=False, permutations=1000)
     assert_array_almost_equal(nv_t_stats, np_t_stats, 5)
 
 
