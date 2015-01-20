@@ -5,16 +5,16 @@ import warnings
 import numpy as np
 from numpy import array, finfo, arange, eye, all, unique, ones, dot, matrix
 import numpy.random as random
-from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal, \
-    assert_raises, assert_almost_equal, assert_equal, assert_array_equal, assert_, \
-    assert_allclose
+from numpy.testing import (TestCase, run_module_suite,
+        assert_array_almost_equal, assert_raises, assert_almost_equal,
+        assert_equal, assert_array_equal, assert_, assert_allclose)
 
 import scipy.linalg
 from scipy.linalg import norm, inv
-from scipy.sparse import spdiags, SparseEfficiencyWarning, csc_matrix, csr_matrix, \
-     isspmatrix, dok_matrix, lil_matrix, bsr_matrix
-from scipy.sparse.linalg.dsolve import spsolve, use_solver, splu, spilu, \
-     MatrixRankWarning, _superlu
+from scipy.sparse import (spdiags, SparseEfficiencyWarning, csc_matrix,
+        csr_matrix, isspmatrix, dok_matrix, lil_matrix, bsr_matrix)
+from scipy.sparse.linalg.dsolve import (spsolve, use_solver, splu, spilu,
+        MatrixRankWarning, _superlu)
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
@@ -226,6 +226,21 @@ class TestLinsolve(TestCase):
                 assert_raises((ValueError, TypeError), _superlu.gssv,
                               N, A.nnz, A.data, A.indices, badop(A.indptr),
                               b, int(spmatrix == csc_matrix), err_msg=msg)
+
+    def test_sparsity_preservation(self):
+        ident = csc_matrix([
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]])
+        b = csc_matrix([
+            [0, 1],
+            [1, 0],
+            [0, 0]])
+        x = spsolve(ident, b)
+        assert_equal(ident.nnz, 3)
+        assert_equal(b.nnz, 2)
+        assert_equal(x.nnz, 2)
+        assert_allclose(x.A, b.A, atol=1e-12, rtol=1e-12)
 
 
 class TestSplu(object):
