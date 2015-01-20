@@ -1152,6 +1152,9 @@ def _valid_inputs(A, B, poles, method):
                              "more than rank(B) times")
     # Choose update method
     update_loop = _YT_loop
+    if method not in {'KNV0','YT'}:
+        raise ValueError("The method keyword must be one ''YT'' or ''KNV0''")
+        
     if method == "KNV0":
         update_loop = _KNV0_loop
         if not all(np.isreal(poles)):
