@@ -629,15 +629,13 @@ def test_odeint_banded_jacobian():
         return c.T.copy(order='C')
 
     def bjac_rows(y, t, c):
-        return np.row_stack((
-                    np.r_[0, np.diag(c, 1)],
-                    np.diag(c),
-                    np.r_[np.diag(c, -1), 0],
-                    np.r_[np.diag(c, -2), 0, 0],
-                    ))
+        jac = np.row_stack((np.r_[0, np.diag(c, 1)],
+                            np.diag(c),
+                            np.r_[np.diag(c, -1), 0],
+                            np.r_[np.diag(c, -2), 0, 0]))
+        return jac
 
     def bjac_cols(y, t, c):
-        #return np.column_stack((np.r_[0, np.diag(c, 1)], np.diag(c)))
         return bjac_rows(y, t, c).T.copy(order='C')
 
     c = array([[-205, 0.01, 0.00, 0.0],
