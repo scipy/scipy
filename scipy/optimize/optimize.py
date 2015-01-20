@@ -3179,11 +3179,16 @@ def show_options(solver=None, method=None):
             Number of iterates to include in the nonmonotonic line search.
             Default: 10
 
-        line_search : {'cruz', 'cheng'}
+        line_search : {'cruz', 'cheng'}, optional
             Type of line search to employ. 'cruz' is the original one defined in
             [Martinez & Raydan. Math. Comp. 75, 1429 (2006)], 'cheng' is
             a modified search defined in [Cheng & Li. IMA J. Numer. Anal. 29, 814 (2009)].
             Default: 'cruz'
+
+        stagnation_limit : int, optional
+            If merit function does not decrease in `stagnation_limit` iterations,
+            terminate with failure.
+            Default: 100
 
     **linprog options**
 

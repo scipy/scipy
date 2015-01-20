@@ -124,6 +124,18 @@ def test_shape():
         assert_equal(sol.x.shape, x.shape)
 
 
+def test_stagnation():
+    def f(x):
+        return 1 + np.random.rand()
+
+    np.random.seed(1234)
+    sol = root(f, [0], options=dict(fatol=1e-6, ftol=0, maxfev=10000, stagnation_limit=20),
+               method='df-sane')
+    assert_(not sol.success)
+    assert_equal(sol.message, "convergence stagnated")
+    assert_(sol.nfev < 1000, repr(sol.nfev))
+
+
 # Some of the test functions and initial guesses listed in
 # [W. La Cruz, M. Raydan. Optimization Methods and Software, 18, 583 (2003)]
 

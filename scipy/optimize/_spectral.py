@@ -16,7 +16,8 @@ class _NoConvergence(Exception):
 
 def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
                   fnorm=None, callback=None, disp=False, M=10, eta_strategy=None,
-                  sigma_eps=1e-10, sigma_0=1.0, line_search='cruz', **unknown_options):
+                  sigma_eps=1e-10, sigma_0=1.0, line_search='cruz',
+                  stagnation_limit=100, **unknown_options):
     r"""
     Solve nonlinear equation with the DF-SANE method
 
@@ -58,7 +59,11 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
     M : int, optional
         Number of iterates to include in the 'cruz' nonmonotonic line search.
         Default: 10
-    line_search : {'cruz', 'cheng'}
+    stagnation_limit : int, optional
+        If merit function does not decrease in `stagnation_limit` iterations,
+        terminate with failure.
+        Default: 100
+    line_search : {'cruz', 'cheng'}, optional
         Type of line search to employ. 'cruz' is the original one defined in [1],
         'cheng' is a modified search defined in [3].
         Default: 'cruz'
@@ -110,6 +115,10 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
     Q = 1.0
     C = f_0
 
+    # Track improvement
+    last_improved_k = 0
+    last_improved_f = f_0
+
     converged = False
     message = "too many function evaluations required"
 
@@ -122,10 +131,19 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
         if callback is not None:
             callback(x_k, F_k)
 
+        # Check convergence
         if F_k_norm < ftol * F_0_norm + fatol:
             # Converged!
             message = "successful convergence"
             converged = True
+            break
+
+        if f_k < last_improved_f:
+            last_improved_f = f_k
+            last_improved_k = k
+        elif k - last_improved_k > stagnation_limit:
+            message = "convergence stagnated"
+            converged = False
             break
 
         # Control spectral parameter, from [2]
