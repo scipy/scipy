@@ -1532,8 +1532,8 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     -------
     closed_loop_sys : Bunch object
         closed_loop_sys is composed of:
-            K : 1D ndarray
-                The closed loop matrix such as the eigenvalues of A-BK are as
+            gain_matrix : 1D ndarray
+                The closed loop matrix K such as the eigenvalues of A-BK are as
                 close as possible to the requested poles P.
             computed_poles : 1D ndarray
                 The poles corresponding to A-BK sorted as first the real poles
@@ -1779,7 +1779,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     closed_loop_sys.K=gain_matrix
     closed_loop_sys.computed_poles=_order_complex_poles(
     closed_loop_sys = Bunch()
-    closed_loop_sys.K = gain_matrix
+    closed_loop_sys.gain_matrix = gain_matrix
     closed_loop_sys.computed_poles = _order_complex_poles(
         np.linalg.eig(A-np.dot(B, gain_matrix))[0]
         )
