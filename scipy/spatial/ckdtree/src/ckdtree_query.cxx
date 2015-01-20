@@ -259,28 +259,45 @@ __query_single_point(const ckdtree *self,
 
     for(;;) {
         if (inf->node->split_dim == -1) {
+        
+            npy_intp start_idx = node->start_idx;
+            npy_intp end_idx = node->end_idx;
+        
             node = inf->node;
 
             // brute-force
-            for (i=node->start_idx; i<node->end_idx; ++i) {
-                d = _distance_p(
-                        self->raw_data+self->raw_indices[i]*m,
-                        x,p,m,distance_upper_bound);
-                    
-                if (d < distance_upper_bound) {
-                    // replace furthest neighbor
-                    if (neighbors.n == k)
-                          neighbors.remove();
-                    neighbor.priority = -d;
-                    neighbor.contents.intdata = self->raw_indices[i];
-                    neighbors.push(neighbor);
-
-                    // adjust upper bound for efficiency
-                    if (neighbors.n == k)
-                        distance_upper_bound = -neighbors.peek().priority;
+            {
+                npy_intp start_idx = node->start_idx;
+                npy_intp end_idx = node->end_idx;
+                const npy_float64 *raw_data = self->raw_data;
+                const npy_intp *raw_indices = self->raw_indices;
+                
+                prefetch_datapoint(raw_data+raw_indices[start_idx]*m, m);
+                if (start_idx < end_idx)
+                    prefetch_datapoint(raw_data+raw_indices[start_idx+1]*m, m);
+                
+                for (i=start_idx; i<end_idx; ++i) {
+                       
+                    if (i < end_idx-2)
+                        prefetch_datapoint(raw_data+raw_indices[i+2]*m, m);
+                
+                    d = _distance_p(raw_data+raw_indices[i]*m, x, p, m, 
+                            distance_upper_bound);
+                        
+                    if (d < distance_upper_bound) {
+                        // replace furthest neighbor
+                        if (neighbors.n == k)
+                              neighbors.remove();
+                        neighbor.priority = -d;
+                        neighbor.contents.intdata = self->raw_indices[i];
+                        neighbors.push(neighbor);
+    
+                        // adjust upper bound for efficiency
+                        if (neighbors.n == k)
+                            distance_upper_bound = -neighbors.peek().priority;
+                    }
                 }
             }
-            
             // done with this node, get another                
             if (q.n == 0) {
                 // no more nodes to visit
@@ -416,7 +433,8 @@ query_knn(const ckdtree      *self,
                 const npy_float64 *xx_row = xx + (i*m);                
                 __query_single_point(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity);
             }    
-        } catch(...) {
+        } 
+        catch(...) {
             translate_cpp_exception_with_gil();
         }
     }
