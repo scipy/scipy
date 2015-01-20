@@ -1151,10 +1151,10 @@ def _valid_inputs(A, B, poles, method, rtol, maxiter):
             raise ValueError("at least one of the requested pole is repeated "
                              "more than rank(B) times")
     # Choose update method
+    update_loop = _YT_loop
     if method not in {'KNV0','YT'}:
         raise ValueError("The method keyword must be one ''YT'' or ''KNV0''")
-    
-    update_loop = _YT_loop        
+        
     if method == "KNV0":
         update_loop = _KNV0_loop
         if not all(np.isreal(poles)):
@@ -1166,10 +1166,9 @@ def _valid_inputs(A, B, poles, method, rtol, maxiter):
     #we do not check rtol <= 0 as the user can use a negative rtol to
     #force maxiter iterations
     if rtol > 1:
-        raise ValueError("rtol can not be greater than 1")
-    
-    return update_loop, poles
+        raise ValueError("rtol can not be greater than 1") 
 
+    return update_loop, poles
 
 def _order_complex_poles(poles):
     """
@@ -1180,11 +1179,11 @@ def _order_complex_poles(poles):
     """
     ordered_poles = np.sort(poles[np.isreal(poles)])
     im_poles = []
-    for p in poles[np.imag(poles) < 0]:
+    for p in np.sort(poles[np.imag(poles) < 0]):
         if np.conj(p) in poles:
             im_poles.extend((p, np.conj(p)))
 
-    ordered_poles = np.hstack((ordered_poles, np.sort(im_poles)))
+    ordered_poles = np.hstack((ordered_poles, im_poles))
     
     if poles.shape[0] != len(ordered_poles):
         raise ValueError("Complex poles must come with their conjugates")
@@ -1787,6 +1786,6 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     closed_loop_sys.requested_poles = poles
     closed_loop_sys.X = transfer_matrix
     closed_loop_sys.rtol = cur_rtol
-
+    
     return closed_loop_sys
 
