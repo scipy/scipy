@@ -3347,6 +3347,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     Notes
     -----
+    
     .. versionadded:: 0.16.0
 
     References
@@ -3407,11 +3408,19 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=1):
     If the p-value is smaller than the threshold, e.g. 1%, 5% or 10%,
     then we reject the null hypothesis of equal averages.
 
+    When a permutation test is performed, the labels are permutated.
+    Each element in each of the samples is assigned a label - 0 corresponding
+    to the first sample and 1 corresponding to the second sample.
+    A vector of these labels is permutated multiple times and these
+    permutations are used to calculate the permutation test.
+    
     References
     ----------
     .. [1] http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
 
     .. [2] http://en.wikipedia.org/wiki/Welch%27s_t_test
+
+    .. [3] http://en.wikipedia.org/wiki/Resampling_%28statistics%29
 
     Examples
     --------
@@ -3539,19 +3548,19 @@ def _permutation_ttest(mat, cats, axis=0, permutations=1000, equal_var=True):
     _, c = perms.shape
     permutations = (c - num_cats) / num_cats
     
-    ## Perform matrix multiplication on data matrix
-    ## and calculate sums and squared sums
+    # Perform matrix multiplication on data matrix
+    # and calculate sums and squared sums
     _sums = np.dot(mat, perms)
     _sums2 = np.dot(np.multiply(mat, mat), perms)
     
-    ## Calculate means and sample variances
+    # Calculate means and sample variances
     tot = perms.sum(axis=0)
     _avgs = _sums / tot
     _avgs2 = _sums2 / tot
     _vars = _avgs2 - np.multiply(_avgs, _avgs)
     _samp_vars = np.multiply(tot, _vars) / (tot-1)
     idx = np.arange(0, (permutations+1) * num_cats, num_cats, dtype=np.int32)    
-    ## Calculate the t statistic
+    # Calculate the t statistic
     if not equal_var:
         denom = np.sqrt(np.divide(_samp_vars[:, idx+1], tot[idx+1]) +
                          np.divide(_samp_vars[:, idx], tot[idx]))
@@ -3562,7 +3571,7 @@ def _permutation_ttest(mat, cats, axis=0, permutations=1000, equal_var=True):
         
     t_stat = np.divide(_avgs[:, idx] - _avgs[:, idx+1], denom)
     
-    ## Calculate the p-values
+    # Calculate the p-values
     cmps = abs(t_stat[:, 1:].transpose()) >= abs(t_stat[:, 0])
     pvalues = (cmps.sum(axis=0) + 1.) / (permutations + 1.)
     
