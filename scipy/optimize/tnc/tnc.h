@@ -38,14 +38,13 @@
  *           SCHOOL OF INFORMATION TECHNOLOGY & ENGINEERING
  *           GEORGE MASON UNIVERSITY
  *           FAIRFAX, VA 22030
+ *
+ * The SciPy version was derived from TNC 1.3:
+ * $Jeannot: tnc.h,v 1.55 2005/01/28 18:27:31 js Exp $
  */
-
-/* $Jeannot: tnc.h,v 1.55 2005/01/28 18:27:31 js Exp $ */
 
 #ifndef _TNC_
 #define _TNC_
-
-#define TNC_VERSION "1.3"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,11 +57,9 @@ typedef enum {
   TNC_MSG_NONE = 0, /* No messages */
   TNC_MSG_ITER = 1, /* One line per iteration */
   TNC_MSG_INFO = 2, /* Informational messages */
-  TNC_MSG_VERS = 4, /* Version info */
   TNC_MSG_EXIT = 8, /* Exit reasons */
 
-  TNC_MSG_ALL = TNC_MSG_ITER | TNC_MSG_INFO
-    | TNC_MSG_VERS | TNC_MSG_EXIT /* All messages */
+  TNC_MSG_ALL = TNC_MSG_ITER | TNC_MSG_INFO | TNC_MSG_EXIT /* All messages */
 } tnc_message;
 
 /*

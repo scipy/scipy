@@ -39,7 +39,7 @@ def configuration(parent_package='',top_path=None):
 
     # odepack
     odepack_libs = ['odepack','mach'] + lapack_libs
-    
+
     config.add_extension('_odepack',
                          sources=['_odepackmodule.c'],
                          libraries=odepack_libs,

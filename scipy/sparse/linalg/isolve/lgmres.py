@@ -4,7 +4,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 from scipy.linalg import get_blas_funcs
 from .utils import make_system
 

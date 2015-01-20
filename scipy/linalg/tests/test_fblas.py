@@ -12,7 +12,7 @@ from numpy import float32, float64, complex64, complex128, arange, array, \
                   zeros, shape, transpose, newaxis, common_type, conjugate
 from scipy.linalg import _fblas as fblas
 
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 from numpy.testing import TestCase, run_module_suite, assert_array_equal, \
     assert_allclose, assert_array_almost_equal, assert_

@@ -7,7 +7,7 @@ import numpy as np
 import scipy.linalg
 from scipy.misc import doccer
 from scipy.special import gammaln, psi, multigammaln
-from scipy.lib._util import check_random_state
+from scipy._lib._util import check_random_state
 
 
 __all__ = ['multivariate_normal', 'dirichlet', 'wishart', 'invwishart']

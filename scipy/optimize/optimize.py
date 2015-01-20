@@ -29,7 +29,7 @@ __docformat__ = "restructuredtext en"
 
 import warnings
 import numpy
-from scipy.lib.six import callable
+from scipy._lib.six import callable
 from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
                    vectorize, asarray, sqrt, Inf, asfarray, isinf)
 import numpy as np

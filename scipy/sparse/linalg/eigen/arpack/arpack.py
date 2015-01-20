@@ -50,7 +50,7 @@ from scipy.sparse import eye, isspmatrix, isspmatrix_csr
 from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse.sputils import isdense
 from scipy.sparse.linalg import gmres, splu
-from scipy.lib._util import _aligned_zeros
+from scipy._lib._util import _aligned_zeros
 
 
 _type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z'}

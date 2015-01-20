@@ -11,7 +11,7 @@ from numpy import (exp, log, asarray, arange, newaxis, hstack, product, array,
                    zeros, eye, poly1d, r_, sum, fromstring, isfinite,
                    squeeze, amax, reshape)
 
-from scipy.lib._version import NumpyVersion
+from scipy._lib._version import NumpyVersion
 
 __all__ = ['logsumexp', 'central_diff_weights', 'derivative', 'pade', 'lena',
            'ascent', 'face']

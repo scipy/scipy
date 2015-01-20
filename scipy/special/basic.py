@@ -7,7 +7,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt,
                    where, mgrid, sin, place, issubdtype, extract,
                    less, inexact, nan, zeros, atleast_1d, sinc)

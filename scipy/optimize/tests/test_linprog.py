@@ -8,7 +8,7 @@ from numpy.testing import (assert_, assert_array_almost_equal, assert_allclose,
         assert_almost_equal, assert_raises, assert_equal, run_module_suite)
 
 from scipy.optimize import linprog, OptimizeWarning
-from scipy.lib._numpy_compat import _assert_warns
+from scipy._lib._numpy_compat import _assert_warns
 
 
 def lpgen_2d(m,n):

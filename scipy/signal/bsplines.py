@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 from numpy import (logical_and, asarray, pi, zeros_like,
                    piecewise, array, arctan2, tan, zeros, arange, floor)
 from numpy.core.umath import (sqrt, exp, greater, less, cos, add, sin,

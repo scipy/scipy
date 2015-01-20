@@ -8,7 +8,7 @@ import sys
 
 import numpy as np
 
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 from .sputils import isdense, isscalarlike, isintlike
 
 

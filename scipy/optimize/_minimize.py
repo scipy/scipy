@@ -14,9 +14,9 @@ __all__ = ['minimize', 'minimize_scalar']
 
 from warnings import warn
 
-from numpy import any
+import numpy as np
 
-from scipy.lib.six import callable
+from scipy._lib.six import callable
 
 # unconstrained minimization
 from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
@@ -38,6 +38,22 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              callback=None, options=None):
     """
     Minimization of scalar function of one or more variables.
+     
+    In general, the optimization problems are of the form:
+    
+    minimize f(x)
+    
+    subject to:
+    
+        ``g_i(x) >= 0``, i = 1,...,m
+        ``h_j(x)  = 0``, j = 1,...,p
+    
+    Where x is a vector of one or more variables.
+    ``g_i(x)`` are the inequality constraints.
+    ``h_j(x)`` are the equality constrains.
+    
+    Optionally, the lower and upper bounds for each element in x can also be specified 
+    using the `bounds` argument.
 
     Parameters
     ----------
@@ -321,6 +337,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     It should converge to the theoretical solution (1.4 ,1.7).
 
     """
+    x0 = np.asarray(x0)
+    if x0.dtype.kind in np.typecodes["AllInteger"]:
+        x0 = np.asarray(x0, dtype=float)
 
     if not isinstance(args, tuple):
         args = (args,)
@@ -356,10 +375,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                 'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
     if (meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg', 'dogleg',
-                 'trust-ncg'] and (bounds is not None or any(constraints))):
+                 'trust-ncg'] and (bounds is not None or np.any(constraints))):
         warn('Method %s cannot handle constraints nor bounds.' % method,
              RuntimeWarning)
-    if meth in ['l-bfgs-b', 'tnc'] and any(constraints):
+    if meth in ['l-bfgs-b', 'tnc'] and np.any(constraints):
         warn('Method %s cannot handle constraints.' % method,
              RuntimeWarning)
     if meth == 'cobyla' and bounds is not None:

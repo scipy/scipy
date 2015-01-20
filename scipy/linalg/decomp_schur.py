@@ -4,7 +4,7 @@ from __future__ import division, print_function, absolute_import
 import numpy
 from numpy import asarray_chkfinite, single, asarray
 
-from scipy.lib.six import callable
+from scipy._lib.six import callable
 
 # Local imports.
 from . import misc

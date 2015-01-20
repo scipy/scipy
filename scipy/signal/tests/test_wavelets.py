@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_array_equal, assert_array_almost_equal, assert_array_less, assert_
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 from scipy.signal import wavelets
 

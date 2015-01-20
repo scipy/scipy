@@ -1,9 +1,0 @@
-HookFile: bscript
-
-Library:
-    Extension: flapack
-        Sources: flapack.pyf.src
-    Extension: clapack
-        Sources: clapack.pyf.src
-    Extension: calc_lwork
-        Sources: calc_lwork.f

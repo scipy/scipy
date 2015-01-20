@@ -12,7 +12,7 @@ from numpy.testing import assert_raises, assert_equal, dec, run_module_suite, as
 from scipy.sparse import (_sparsetools, coo_matrix, csr_matrix, csc_matrix,
                           bsr_matrix, dia_matrix)
 from scipy.sparse.sputils import supported_dtypes
-from scipy.lib.decorator import decorator
+from scipy._lib.decorator import decorator
 
 
 @decorator

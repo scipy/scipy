@@ -52,6 +52,14 @@ Backwards incompatible changes
 
 The deprecated global optimizer ``scipy.optimize.anneal`` was removed.
 
+The following deprecated modules have been removed: ``scipy.lib.blas``,
+``scipy.lib.lapack``, ``scipy.linalg.cblas``, ``scipy.linalg.fblas``,
+``scipy.linalg.clapack``, ``scipy.linalg.flapack``.  They had been deprecated
+since Scipy 0.12.0, the functionality should be accessed as `scipy.linalg.blas`
+and `scipy.linalg.lapack`.
+
+The deprecated function ``scipy.special.all_mat`` has been removed.
+
 
 Other changes
 =============

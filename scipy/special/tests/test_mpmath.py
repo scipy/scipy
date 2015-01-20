@@ -15,7 +15,7 @@ from numpy.testing import dec, run_module_suite
 from numpy import pi
 
 import scipy.special as sc
-from scipy.lib.six import reraise, with_metaclass
+from scipy._lib.six import reraise, with_metaclass
 from scipy.special._testutils import FuncData, assert_func_equal
 
 try:

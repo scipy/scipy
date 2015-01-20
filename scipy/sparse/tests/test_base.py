@@ -24,7 +24,7 @@ import operator
 import contextlib
 
 import numpy as np
-from scipy.lib.six import xrange, zip as izip
+from scipy._lib.six import xrange, zip as izip
 from numpy import (arange, zeros, array, dot, matrix, asmatrix, asarray,
                    vstack, ndarray, transpose, diag, kron, inf, conjugate,
                    int8, ComplexWarning)
@@ -43,8 +43,8 @@ from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
 from scipy.sparse.sputils import supported_dtypes, isscalarlike, get_index_dtype
 from scipy.sparse.linalg import splu, expm, inv
 
-from scipy.lib._version import NumpyVersion
-from scipy.lib.decorator import decorator
+from scipy._lib._version import NumpyVersion
+from scipy._lib.decorator import decorator
 
 import nose
 
@@ -1893,6 +1893,17 @@ class _TestGetSet:
                         assert_raises(TypeError, A.__setitem__, (0,0), v)
 
         for dtype in supported_dtypes:
+            yield check, np.dtype(dtype)
+
+    def test_negative_index_assignment(self):
+        # Regression test for github issue 4428.
+
+        def check(dtype):
+            A = self.spmatrix((3, 10), dtype=dtype)
+            A[0, -4] = 1
+            assert_equal(A[0, -4], 1)
+
+        for dtype in self.checked_dtypes:
             yield check, np.dtype(dtype)
 
     def test_scalar_assign_2(self):

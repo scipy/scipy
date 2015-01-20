@@ -56,7 +56,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         The square matrix A will be converted into CSC or CSR form
     b : ndarray or sparse matrix
         The matrix or vector representing the right hand side of the equation.
-        If a vector, b.size must
+        If a vector, b.size must be (n,) or (n, 1)
     permc_spec : str, optional
         How to permute the columns of the matrix for sparsity preservation.
         (default: 'COLAMD')
@@ -67,7 +67,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         - ``COLAMD``: approximate minimum degree column ordering
     use_umfpack : bool (optional)
         if True (default) then use umfpack for the solution.  This is
-        only referenced if b is a vector.
+        only referenced if b is a vector and ``scikit-umfpack`` is installed.
 
     Returns
     -------

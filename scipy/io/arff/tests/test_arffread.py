@@ -18,7 +18,7 @@ from numpy.testing import (TestCase, assert_array_almost_equal, assert_array_equ
 
 from scipy.io.arff.arffread import loadarff
 from scipy.io.arff.arffread import read_header, parse_type, ParseArffError
-from scipy.lib._version import NumpyVersion
+from scipy._lib._version import NumpyVersion
 
 
 data_path = pjoin(os.path.dirname(__file__), 'data')

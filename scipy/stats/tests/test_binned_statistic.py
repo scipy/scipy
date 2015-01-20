@@ -5,7 +5,7 @@ from numpy.testing import assert_array_almost_equal, run_module_suite
 from scipy.stats import (binned_statistic, binned_statistic_2d,
                          binned_statistic_dd)
 
-from scipy.lib.six import u
+from scipy._lib.six import u
 
 
 class TestBinnedStatistic(object):

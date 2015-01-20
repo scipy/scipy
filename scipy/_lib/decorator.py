@@ -39,7 +39,7 @@ import re
 import inspect
 from functools import partial
 
-from scipy.lib.six import exec_
+from scipy._lib.six import exec_
 
 if sys.version >= '3':
     from inspect import getfullargspec

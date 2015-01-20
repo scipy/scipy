@@ -20,7 +20,7 @@ from numpy import (product, zeros, array, dot, transpose, ones,
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 from numpy import (r_, eye, real, atleast_1d, atleast_2d, poly,
                    squeeze, diag, asarray)
 

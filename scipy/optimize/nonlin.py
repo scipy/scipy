@@ -114,8 +114,8 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 import numpy as np
-from scipy.lib.six import callable, exec_
-from scipy.lib.six import xrange
+from scipy._lib.six import callable, exec_
+from scipy._lib.six import xrange
 from scipy.linalg import norm, solve, inv, qr, svd, LinAlgError
 from numpy import asarray, dot, vdot
 import scipy.sparse.linalg

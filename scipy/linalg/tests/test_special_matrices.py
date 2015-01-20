@@ -7,7 +7,7 @@ from numpy.testing import (TestCase, run_module_suite, assert_raises,
     assert_equal, assert_array_equal, assert_array_almost_equal,
     assert_allclose)
 
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 from scipy.special import comb
 from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie,

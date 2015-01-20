@@ -8,7 +8,7 @@ from numpy import asarray_chkfinite
 from .misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
 
-from scipy.lib.six import callable
+from scipy._lib.six import callable
 
 __all__ = ['qz']
 
