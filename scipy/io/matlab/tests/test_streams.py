@@ -152,7 +152,7 @@ class TestZlibInputStream(object):
         stream.read(len(data))
         assert_equal(compressed_stream.tell(), len(compressed_data))
 
-        assert_raises(IOError, stream.read, 1)
+        assert_equal(stream.read(1), b"")
 
     def test_seek(self):
         compressed_stream, compressed_data_len, data = self._get_data(1024)
@@ -182,7 +182,7 @@ class TestZlibInputStream(object):
         assert_raises(ValueError, stream.seek, 1, 123)
 
         stream.seek(10000, 1)
-        assert_raises(IOError, stream.read, 12)
+        assert_equal(stream.read(12), b"")
 
     def test_all_data_read(self):
         compressed_stream, compressed_data_len, data = self._get_data(1024)

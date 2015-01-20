@@ -72,39 +72,46 @@ script I was working with.
 # Small fragments of current code adapted from matfile.py by Heiko
 # Henkelmann
 
+from collections import namedtuple
+from io import BytesIO
+from itertools import islice
 import os
-import time
+import struct
 import sys
+import time
+import warnings
 import zlib
 
-from io import BytesIO
-
-import warnings
-
 import numpy as np
-from numpy.compat import asbytes, asstr
+from numpy.compat import asbytes
 
 import scipy.sparse
 
-from scipy.lib.six import string_types
+from scipy.lib.six import string_types, unichr as chr
 
+from . import byteordercodes as boc
 from .byteordercodes import native_code, swapped_code
 
-from .miobase import (MatFileReader, docfiller, matdims, read_dtype,
-                      arr_to_chars, arr_dtype_number, MatWriteError,
-                      MatReadError, MatReadWarning)
+from .miobase import (MatFileReader, docfiller, matdims, arr_to_chars,
+                      arr_dtype_number, MatWriteError, MatReadError,
+                      MatReadWarning)
 
 # Reader object for matlab 5 format variables
-from .mio5_utils import VarReader5
+from .mio5_utils import squeeze_element
 
 # Constants and helper objects
-from .mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
-                          NP_TO_MXTYPES, miCOMPRESSED, miMATRIX, miINT8, miUTF8,
-                          miUINT32, mxCELL_CLASS, mxSTRUCT_CLASS,
-                          mxOBJECT_CLASS, mxCHAR_CLASS, mxSPARSE_CLASS,
-                          mxDOUBLE_CLASS, mclass_info)
+from .mio5_params import (
+    MatlabObject, MatlabFunction, MatlabOpaque, MDTYPES, NP_TO_MTYPES,
+    mclass_dtypes_template, mdtypes_template, NP_TO_MXTYPES, miCOMPRESSED,
+    miMATRIX, miINT8, miUTF8, miUINT32, mxCELL_CLASS, mxSTRUCT_CLASS,
+    mxOBJECT_CLASS, mxCHAR_CLASS, mxSPARSE_CLASS, mxDOUBLE_CLASS,
+    mxFUNCTION_CLASS, mxOPAQUE_CLASS, mclass_info, mat_struct)
 
 from .streams import ZlibInputStream
+
+
+MatlabArray = namedtuple("MatlabArray", "name data is_global")
+MatInfo = namedtuple("MatInfo", "name shape info stream data_position nzmax")
 
 
 class MatFile5Reader(MatFileReader):
@@ -122,14 +129,13 @@ class MatFile5Reader(MatFileReader):
        array_from_header(self)
 
     and added interface::
-
        set_stream(self, stream)
        read_full_tag(self)
+    ''' # FIXME
 
-    '''
     @docfiller
     def __init__(self,
-                 mat_stream,
+                 stream,
                  byte_order=None,
                  mat_dtype=False,
                  squeeze_me=False,
@@ -137,8 +143,7 @@ class MatFile5Reader(MatFileReader):
                  matlab_compatible=False,
                  struct_as_record=True,
                  verify_compressed_data_integrity=True,
-                 uint16_codec=None
-                 ):
+                 uint16_codec=None): # FIXME
         '''Initializer for matlab 5 file format reader
 
     %(matstream_arg)s
@@ -147,112 +152,235 @@ class MatFile5Reader(MatFileReader):
     uint16_codec : {None, string}
         Set codec to use for uint16 char arrays (e.g. 'utf-8').
         Use system default codec if None
+        ''' # FIXME
+
+        self._stream = stream
+        self._read_header()
+
+        if (byte_order is not None and
+            boc.to_numpy_code(byte_order) != self._endian):
+            raise ValueError("Incompatible byte order")
+        self._mat_dtype = mat_dtype
+        self._squeeze_me = squeeze_me
+        self._chars_as_strings = chars_as_strings
+        if matlab_compatible:
+            self.set_matlab_compatible()
+        self._struct_as_record = struct_as_record
+        self._verify_compressed_data_integrity = (
+            verify_compressed_data_integrity)
+        self._uint16_codec = uint16_codec or sys.getdefaultencoding()
+
+    def minimat_reader(self, **kwargs):
+        self._stream.seek(self._subsys_offset)
+        data = next(self._read_iter()).data.tostring()
+        if data[4:8] != b"\0" * 4:
+            raise ValueError("Invalid padding of function workspace")
+        reader = type(self)(BytesIO(b"\0" * 124 + data[:4] + data[8:], **kwargs))
+        # The minimat does not always declare sizes properly.
+        reader._check_and_pad_stream = (
+            lambda stream, _: stream.seek((-stream.tell()) % 8, 1))
+        return reader
+
+    def set_matlab_compatible(self):
+        ''' Sets options to return arrays as MATLAB loads them '''
+        self._mat_dtype = True
+        self._squeeze_me = False
+        self._chars_as_strings = False
+
+    def _prepare_stream(self):
+        self._stream.seek(128)
+
+    def close(self):
+        self._stream.close()
+
+    def _read_header(self):
+        self._stream.seek(0)
+        self._header = self._stream.read(128)
+        self._desc = self._header[:116]
+        self._endian = {b"IM": "<", b"MI": ">"}[self._header[126:128]]
+        self._subsys_offset, ver = self._unpack("QH", self._header[116:126])
+        if ver != 0x0100:
+            raise ValueError("Unsupported version: {:#04x}".format(ver))
+        self._version = "1.0"
+
+    def _unpack(self, fmt, data):
+        return struct.unpack(self._endian + fmt, data)
+
+    @staticmethod
+    def _as_identifiers(data):
+        return [  # Extra call to str to avoid returning unicode on Python 2.
+            name for name in str(data.tostring().decode("ascii")).split("\0")
+            if name]
+
+    def _read_iter(self, stream=None, info_only=None, load_only=None):
+        if stream is None:
+            stream = self._stream
+
+        while True:
+            entry_start = stream.tell()
+            raw_header0 = stream.read(4)
+            if not raw_header0:
+                return
+            header0, = self._unpack("I", raw_header0)
+            nbytes, mdtype = divmod(header0, 0x10000)
+            if not nbytes:
+                mdtype = header0
+                nbytes, = self._unpack("I", stream.read(4))
+            entry_end = stream.tell() + nbytes
+
+            if mdtype == miCOMPRESSED:
+                try:
+                    for entry in self._read_iter(
+                        ZlibInputStream(stream, nbytes),
+                        info_only=info_only, load_only=load_only):
+                        yield entry
+                except ValueError:
+                    if not self._verify_compressed_data_integrity:
+                        yield None
+                    else:
+                        raise ValueError("Invalid compressed data")
+
+            elif mdtype in mdtypes_template:
+                dtype = self._endian + mdtypes_template[mdtype]
+                data = stream.read(nbytes)
+                self._check_and_pad_stream(stream, entry_end)
+                yield np.fromstring(data, dtype)
+
+            elif mdtype == miMATRIX:
+                reader = self._read_iter(stream)
+
+                flags = next(reader)
+                if isinstance(flags, MatlabArray):
+                    # This can only occur while reading the function workspace.
+                    self._check_and_pad_stream(stream, entry_end)
+                    yield flags
+                    continue
+                else:
+                    flags, nzmax = flags
+                dims, name = list(islice(reader, 2))
+                name, = self._as_identifiers(name) or [""]
+                matrix_cls = flags % 0x100
+                f_complex = flags & (1 << 11)
+                f_global = flags & (1 << 10)
+                f_logical = flags & (1 << 9)
+
+                if info_only:
+                    if matrix_cls == mxCHAR_CLASS:
+                        dims = dims[:-1]
+                    class_info = (
+                        "logical" if f_logical else mclass_info[matrix_cls])
+                    stream.seek(entry_end)
+                    self._check_and_pad_stream(stream, entry_end)
+                    yield MatInfo(name, dims, class_info, stream,
+                                  slice(entry_start, entry_end), nzmax)
+                    continue
+
+                if load_only is not None and name not in load_only:
+                    stream.seek(entry_end)
+                    self._check_and_pad_stream(stream, entry_end)
+                    yield None
+                    continue
+
+                if matrix_cls == mxCELL_CLASS:
+                    dtype = object
+                    pr = np.empty(np.product(dims), dtype=dtype)
+                    pr[:] = [entry.data for entry in
+                             islice(reader, int(np.product(dims)))]
+                elif matrix_cls in [mxSTRUCT_CLASS, mxOBJECT_CLASS]:
+                    # Struct: field name length, field names
+                    # Object: class name, field name length, field names
+                    if matrix_cls == mxOBJECT_CLASS:
+                        classname, = self._as_identifiers(next(reader))
+                    next(reader)  # Drop field name length.
+                    fields = self._as_identifiers(next(reader))
+                    dtype = ([(field, object) for field in fields]
+                             if fields else object)
+                    print("DT", dtype)
+                    pr = np.empty(np.product(dims), dtype=dtype)
+                    for p in pr:
+                        for field in fields:
+                            p[field] = next(reader).data
+                    if matrix_cls == mxOBJECT_CLASS:
+                        pr = MatlabObject(pr, classname)
+                    elif not self._struct_as_record:
+                        # Deprecated
+                        pr2 = np.empty_like(pr, dtype=object)
+                        dtype = object
+                        for i, entry in enumerate(pr):
+                            pr2[i] = obj = mat_struct()
+                            obj._fieldnames = fields
+                            obj.__dict__.update(zip(fields, entry))
+                        pr = pr2
+                elif matrix_cls == mxSPARSE_CLASS:
+                    ir, jc, pr = islice(reader, 3)
+                    dtype = np.float64
+                elif matrix_cls == mxFUNCTION_CLASS:
+                    pr = MatlabFunction(next(reader).data)
+                    dtype = object
+                elif matrix_cls == mxOPAQUE_CLASS:
+                    opaque_components = []
+                    while stream.tell() < entry_end:
+                        opaque_components.append(next(reader))
+                    pr = MatlabOpaque(
+                        np.empty(dims, dtype=[
+                            ("s{}".format(i), "O")
+                            for i in range(len(opaque_components))]))
+                    for i, component in enumerate(opaque_components):
+                        pr[()]["s{}".format(i)] = component
+                    dtype = object
+                else:
+                    pr = next(reader)
+                    dtype = (pr.dtype if not self._mat_dtype else
+                             np.bool if f_logical else
+                             mclass_dtypes_template[matrix_cls])
+
+                pr = pr.astype(dtype)
+                if f_complex:
+                    pi = next(reader).astype(dtype)
+                    pr = pr + 1j * pi
+
+                if matrix_cls == mxCHAR_CLASS:
+                    joiner = "".join if self._chars_as_strings else list
+                    # Group according to last dimension, cast to strings,
+                    # (join if required), reshape.
+                    aux_dims = -1 if all(dims) else 0, dims[-1]
+                    final_dims = ((0,) if not all(dims) else
+                                  dims[:-1] if self._chars_as_strings else
+                                  dims)
+                    array = np.array(
+                        [joiner(map(chr, line))
+                         for line in pr.reshape(aux_dims, order="F").tolist()],
+                        dtype="U").reshape(final_dims)
+                elif matrix_cls == mxSPARSE_CLASS:
+                    array = scipy.sparse.csc_matrix((pr, ir, jc), shape=dims)
+                else:
+                    array = pr.reshape(dims, order="F")
+
+                self._check_and_pad_stream(stream, entry_end)
+                yield MatlabArray(name, array, f_global)
+
+            else:
+                raise ValueError("Unsupported mdtype: {}".format(mdtype))
+
+    def _check_and_pad_stream(self, stream, entry_end):
+        unread = entry_end - stream.tell()
+        if unread > 0:
+            raise ValueError("{} bytes not read".format(unread))
+        elif unread < 0:
+            raise ValueError("Over-read {} bytes".format(-unread))
+        stream.seek((-stream.tell()) % 8, 1)  # Padding.
+
+    def list_variables(self):
+        '''list variables from stream
         '''
-        super(MatFile5Reader, self).__init__(
-            mat_stream,
-            byte_order,
-            mat_dtype,
-            squeeze_me,
-            chars_as_strings,
-            matlab_compatible,
-            struct_as_record,
-            verify_compressed_data_integrity
-            )
-        # Set uint16 codec
-        if not uint16_codec:
-            uint16_codec = sys.getdefaultencoding()
-        self.uint16_codec = uint16_codec
-        # placeholders for readers - see initialize_read method
-        self._file_reader = None
-        self._matrix_reader = None
-
-    def guess_byte_order(self):
-        ''' Guess byte order.
-        Sets stream pointer to 0 '''
-        self.mat_stream.seek(126)
-        mi = self.mat_stream.read(2)
-        self.mat_stream.seek(0)
-        return mi == b'IM' and '<' or '>'
-
-    def read_file_header(self):
-        ''' Read in mat 5 file header '''
-        hdict = {}
-        hdr_dtype = MDTYPES[self.byte_order]['dtypes']['file_header']
-        hdr = read_dtype(self.mat_stream, hdr_dtype)
-        hdict['__header__'] = hdr['description'].item().strip(b' \t\n\000')
-        v_major = hdr['version'] >> 8
-        v_minor = hdr['version'] & 0xFF
-        hdict['__version__'] = '%d.%d' % (v_major, v_minor)
-        return hdict
-
-    def initialize_read(self):
-        ''' Run when beginning read of variables
-
-        Sets up readers from parameters in `self`
-        '''
-        # reader for top level stream.  We need this extra top-level
-        # reader because we use the matrix_reader object to contain
-        # compressed matrices (so they have their own stream)
-        self._file_reader = VarReader5(self)
-        # reader for matrix streams
-        self._matrix_reader = VarReader5(self)
-
-    def read_var_header(self):
-        ''' Read header, return header, next position
-
-        Header has to define at least .name and .is_global
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        -------
-        header : object
-           object that can be passed to self.read_var_array, and that
-           has attributes .name and .is_global
-        next_position : int
-           position in stream of next variable
-        '''
-        mdtype, byte_count = self._file_reader.read_full_tag()
-        if not byte_count > 0:
-            raise ValueError("Did not read any bytes")
-        next_pos = self.mat_stream.tell() + byte_count
-        if mdtype == miCOMPRESSED:
-            # Make new stream from compressed data
-            stream = ZlibInputStream(self.mat_stream, byte_count)
-            self._matrix_reader.set_stream(stream)
-            check_stream_limit = self.verify_compressed_data_integrity
-            mdtype, byte_count = self._matrix_reader.read_full_tag()
-        else:
-            check_stream_limit = False
-            self._matrix_reader.set_stream(self.mat_stream)
-        if not mdtype == miMATRIX:
-            raise TypeError('Expecting miMATRIX type here, got %d' % mdtype)
-        header = self._matrix_reader.read_header(check_stream_limit)
-        return header, next_pos
-
-    def read_var_array(self, header, process=True):
-        ''' Read array, given `header`
-
-        Parameters
-        ----------
-        header : header object
-           object with fields defining variable header
-        process : {True, False} bool, optional
-           If True, apply recursive post-processing during loading of
-           array.
-
-        Returns
-        -------
-        arr : array
-           array with post-processing applied or not according to
-           `process`.
-        '''
-        return self._matrix_reader.array_from_header(header, process)
+        self._prepare_stream()
+        infos = []
+        for info in self._read_iter(info_only=True):
+            infos.append(info[:3])
+        return infos
 
     def get_variables(self, variable_names=None):
-        ''' get variables from stream as dictionary
+        '''get variables from stream as dictionary
 
         variable_names   - optional list of variable names to get
 
@@ -260,75 +388,37 @@ class MatFile5Reader(MatFileReader):
         '''
         if isinstance(variable_names, string_types):
             variable_names = [variable_names]
-        elif variable_names is not None:
-            variable_names = list(variable_names)
-
-        self.mat_stream.seek(0)
-        # Here we pass all the parameters in self to the reading objects
-        self.initialize_read()
-        mdict = self.read_file_header()
-        mdict['__globals__'] = []
-        while not self.end_of_stream():
-            hdr, next_position = self.read_var_header()
-            name = asstr(hdr.name)
-            if name in mdict:
-                warnings.warn('Duplicate variable name "%s" in stream'
-                              ' - replacing previous with new\n'
-                              'Consider mio5.varmats_from_mat to split '
-                              'file into single variable files' % name,
-                              MatReadWarning, stacklevel=2)
-            if name == '':
-                # can only be a matlab 7 function workspace
-                name = '__function_workspace__'
-                # We want to keep this raw because mat_dtype processing
-                # will break the format (uint8 as mxDOUBLE_CLASS)
-                process = False
-            else:
-                process = True
-            if variable_names and name not in variable_names:
-                self.mat_stream.seek(next_position)
+        self._prepare_stream()
+        variables = {"__header__": self._desc,
+                     "__globals__": [],  # FIXME Not covered by tests.
+                     "__version__": self._version}
+        for entry in self._read_iter(load_only=variable_names):
+            if entry is None:
                 continue
-            try:
-                res = self.read_var_array(hdr, process)
-            except MatReadError as err:
+            if not isinstance(entry, MatlabArray):
+                raise ValueError("Expected miMATRIX, got {}".format(entry))
+            if entry.is_global:
+                variables["__global__"].append(entry.name)
+            name = entry.name or "__function_workspace__"
+            if name in variables:
                 warnings.warn(
-                    'Unreadable variable "%s", because "%s"' %
-                    (name, err),
-                    Warning, stacklevel=2)
-                res = "Read error: %s" % err
-            self.mat_stream.seek(next_position)
-            mdict[name] = res
-            if hdr.is_global:
-                mdict['__globals__'].append(name)
-            if variable_names:
-                variable_names.remove(name)
-                if len(variable_names) == 0:
-                    break
-        return mdict
+                    'Duplicate variable name "{}" in stream - replacing '
+                    'previous with new.  Consider mio5.varmats_from_mat to '
+                    'split file into single variable files'.format(name),
+                    MatReadWarning, stacklevel=2)
+            variables[name] = (squeeze_element(entry.data)
+                               if self._squeeze_me else entry.data)
+        return variables
 
-    def list_variables(self):
-        ''' list variables from stream '''
-        self.mat_stream.seek(0)
-        # Here we pass all the parameters in self to the reading objects
-        self.initialize_read()
-        self.read_file_header()
-        vars = []
-        while not self.end_of_stream():
-            hdr, next_position = self.read_var_header()
-            name = asstr(hdr.name)
-            if name == '':
-                # can only be a matlab 7 function workspace
-                name = '__function_workspace__'
-
-            shape = self._matrix_reader.shape_from_header(hdr)
-            if hdr.is_logical:
-                info = 'logical'
-            else:
-                info = mclass_info.get(hdr.mclass, 'unknown')
-            vars.append((name, shape, info))
-
-            self.mat_stream.seek(next_position)
-        return vars
+    def get_varmats(self):
+        self._prepare_stream()
+        infos = []
+        for info in self._read_iter(info_only=True):
+            info.stream.seek(info.data_position.start)
+            raw = info.stream.read(
+                info.data_position.stop - info.data_position.start)
+            infos.append((info.name, BytesIO(self._header + raw)))
+        return infos
 
 
 def varmats_from_mat(file_obj):
@@ -372,32 +462,7 @@ def varmats_from_mat(file_obj):
     >>> sorted([name for name, str_obj in varmats])
     ['a', 'b']
     """
-    rdr = MatFile5Reader(file_obj)
-    file_obj.seek(0)
-    # Raw read of top-level file header
-    hdr_len = MDTYPES[native_code]['dtypes']['file_header'].itemsize
-    raw_hdr = file_obj.read(hdr_len)
-    # Initialize variable reading
-    file_obj.seek(0)
-    rdr.initialize_read()
-    mdict = rdr.read_file_header()
-    next_position = file_obj.tell()
-    named_mats = []
-    while not rdr.end_of_stream():
-        start_position = next_position
-        hdr, next_position = rdr.read_var_header()
-        name = asstr(hdr.name)
-        # Read raw variable string
-        file_obj.seek(start_position)
-        byte_count = next_position - start_position
-        var_str = file_obj.read(byte_count)
-        # write to stringio object
-        out_obj = BytesIO()
-        out_obj.write(raw_hdr)
-        out_obj.write(var_str)
-        out_obj.seek(0)
-        named_mats.append((name, out_obj))
-    return named_mats
+    return MatFile5Reader(file_obj).get_varmats()
 
 
 def to_writeable(source):

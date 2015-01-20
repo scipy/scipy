@@ -67,7 +67,8 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
 
 
 @docfiller
-def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
+def loadmat(file_name, mdict=None, appendmat=True, variable_names=None,
+            **kwargs):
     """
     Load MATLAB file
 
@@ -130,7 +131,6 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     HDF5 / 7.3 interface here.
 
     """
-    variable_names = kwargs.pop('variable_names', None)
     MR = mat_reader_factory(file_name, appendmat, **kwargs)
     matfile_dict = MR.get_variables(variable_names)
     if mdict is not None:
@@ -138,7 +138,7 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     else:
         mdict = matfile_dict
     if isinstance(file_name, string_types):
-        MR.mat_stream.close()
+        MR.close()
     return mdict
 
 
@@ -247,5 +247,5 @@ def whosmat(file_name, appendmat=True, **kwargs):
     ML = mat_reader_factory(file_name, **kwargs)
     variables = ML.list_variables()
     if isinstance(file_name, string_types):
-        ML.mat_stream.close()
+        ML.close()
     return variables

@@ -9,6 +9,3 @@ cdef inline object pyalloc_v(Py_ssize_t n, void **pp):
     cdef object ob = PyBytes_FromStringAndSize(NULL, n)
     pp[0] = <void*> PyBytes_AS_STRING(ob)
     return ob
-
-
-

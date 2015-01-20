@@ -40,7 +40,7 @@ cdef extern from "py3k.h":
     int npy_PyFile_DupClose(object file, FILE *handle) except -1
     int npy_PyFile_Check(object file)
 
-       
+
 # initialize cStringIO
 PycString_IMPORT
 
@@ -54,7 +54,7 @@ cdef class GenericStream:
     cpdef int seek(self, long int offset, int whence=0) except -1:
         self.fobj.seek(offset, whence)
         return 0
-        
+
     cpdef long int tell(self) except -1:
         return self.fobj.tell()
 
@@ -182,16 +182,12 @@ cdef class ZlibInputStream(GenericStream):
 
         self._total_position += count
 
-        if count != n:
-            raise IOError('could not read bytes')
-
-        return 0
+        return count
 
     cdef object read_string(self, size_t n, void **pp, int copy=True):
         """Make new memory, wrap with object"""
         cdef object d_copy = pyalloc_v(n, pp)
-        self.read_into(pp[0], n)
-        return d_copy
+        return d_copy[:self.read_into(pp[0], n)]
 
     def read(self, n_bytes):
         cdef void *p
@@ -270,7 +266,7 @@ cdef class cStringStream(GenericStream):
         memcpy(pp[0], d_ptr, n)
         return obj
 
-   
+
 cdef class FileStream(GenericStream):
     cdef FILE* file
 
@@ -331,6 +327,7 @@ cdef class FileStream(GenericStream):
             raise IOError('could not read bytes')
         return obj
 
+
 def _read_into(GenericStream st, size_t n):
     # for testing only.  Use st.read instead
     cdef char * d_ptr
@@ -363,5 +360,3 @@ cpdef GenericStream make_stream(object fobj):
     elif isinstance(fobj, GenericStream):
         return fobj
     return GenericStream(fobj)
-
-

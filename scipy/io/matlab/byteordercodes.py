@@ -9,14 +9,14 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 
-sys_is_le = sys.byteorder == 'little'
-native_code = sys_is_le and '<' or '>'
-swapped_code = sys_is_le and '>' or '<'
+sys_is_le = sys.byteorder == "little"
+native_code = "<" if sys_is_le else ">"
+swapped_code = ">" if sys_is_le else "<"
 
-aliases = {'little': ('little', '<', 'l', 'le'),
-           'big': ('big', '>', 'b', 'be'),
-           'native': ('native', '='),
-           'swapped': ('swapped', 'S')}
+aliases = {"little": "<", "<": "<", "l": "<", "le": "<",
+           "big": ">", ">": ">", "b": ">", "be": ">",
+           None: native_code, "native": native_code, "=": native_code,
+           "swapped": swapped_code, "s": swapped_code}
 
 
 def to_numpy_code(code):
@@ -54,17 +54,8 @@ def to_numpy_code(code):
     True
 
     """
-    code = code.lower()
-    if code is None:
-        return native_code
-    if code in aliases['little']:
-        return '<'
-    elif code in aliases['big']:
-        return '>'
-    elif code in aliases['native']:
-        return native_code
-    elif code in aliases['swapped']:
-        return swapped_code
-    else:
+    try:
+        return aliases[code.lower() if code else code]
+    except KeyError:
         raise ValueError(
             'We cannot handle byte order %s' % code)

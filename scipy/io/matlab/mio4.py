@@ -312,6 +312,9 @@ class MatFile4Reader(MatFileReader):
         super(MatFile4Reader, self).__init__(mat_stream, *args, **kwargs)
         self._matrix_reader = None
 
+    def close(self):
+        self.mat_stream.close()
+
     def guess_byte_order(self):
         self.mat_stream.seek(0)
         mopt = read_dtype(self.mat_stream, np.dtype('i4'))
