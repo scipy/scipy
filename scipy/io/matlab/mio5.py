@@ -114,6 +114,19 @@ MatlabArray = namedtuple("MatlabArray", "name data is_global")
 MatInfo = namedtuple("MatInfo", "name shape info stream data_position nzmax")
 
 
+class MatlabClass:
+    def __init__(self, package, name, defaults):
+        if package:
+            self.name = package + "." + name
+        else:
+            self.name = name
+        self.defaults = defaults
+
+
+ObjStub = namedtuple("ObjStub", "cls seg2 seg4 id")
+Obj = namedtuple("Obj", "cls props id")
+
+
 class MatFile5Reader(MatFileReader):
     ''' Reader for Mat 5 mat files
     Adds the following attribute to base class
@@ -169,17 +182,8 @@ class MatFile5Reader(MatFileReader):
         self._verify_compressed_data_integrity = (
             verify_compressed_data_integrity)
         self._uint16_codec = uint16_codec or sys.getdefaultencoding()
-
-    def minimat_reader(self, **kwargs):
-        self._stream.seek(self._subsys_offset)
-        data = next(self._read_iter()).data.tostring()
-        if data[4:8] != b"\0" * 4:
-            raise ValueError("Invalid padding of function workspace")
-        reader = type(self)(BytesIO(b"\0" * 124 + data[:4] + data[8:], **kwargs))
-        # The minimat does not always declare sizes properly.
-        reader._check_and_pad_stream = (
-            lambda stream, _: stream.seek((-stream.tell()) % 8, 1))
-        return reader
+        self._workspace = []
+        self._is_minimat = False
 
     def set_matlab_compatible(self):
         ''' Sets options to return arrays as MATLAB loads them '''
@@ -199,12 +203,17 @@ class MatFile5Reader(MatFileReader):
         self._desc = self._header[:116]
         self._endian = {b"IM": "<", b"MI": ">"}[self._header[126:128]]
         self._subsys_offset, ver = self._unpack("QH", self._header[116:126])
+        if self._subsys_offset == 0x2020202020202020:
+            self._subsys_offset = 0
         if ver != 0x0100:
             raise ValueError("Unsupported version: {:#04x}".format(ver))
         self._version = "1.0"
 
     def _unpack(self, fmt, data):
         return struct.unpack(self._endian + fmt, data)
+
+    def _unpack_from(self, fmt, data, offset):
+        return struct.unpack_from(self._endian + fmt, data, offset)
 
     @staticmethod
     def _as_identifiers(data):
@@ -295,7 +304,6 @@ class MatFile5Reader(MatFileReader):
                     fields = self._as_identifiers(next(reader))
                     dtype = ([(field, object) for field in fields]
                              if fields else object)
-                    print("DT", dtype)
                     pr = np.empty(np.product(dims), dtype=dtype)
                     for p in pr:
                         for field in fields:
@@ -318,16 +326,30 @@ class MatFile5Reader(MatFileReader):
                     pr = MatlabFunction(next(reader).data)
                     dtype = object
                 elif matrix_cls == mxOPAQUE_CLASS:
+                    # MATLAB stores the object name where the dims should be and
+                    # the dims... somewhere I don't know.  FIXME
+                    name, = self._as_identifiers(dims) or ("",)
+                    dims = []
                     opaque_components = []
                     while stream.tell() < entry_end:
                         opaque_components.append(next(reader))
-                    pr = MatlabOpaque(
-                        np.empty(dims, dtype=[
-                            ("s{}".format(i), "O")
-                            for i in range(len(opaque_components))]))
-                    for i, component in enumerate(opaque_components):
-                        pr[()]["s{}".format(i)] = component
-                    dtype = object
+                    if self._is_minimat:
+                        pr = MatlabOpaque(
+                            np.empty(dims, dtype=[
+                                ("s{}".format(i), "O")
+                                for i in range(len(opaque_components))]))
+                        for i, component in enumerate(opaque_components):
+                            pr[()]["s{}".format(i)] = component
+                        dtype = pr.dtype
+                    else:
+                        classname, ver_indices = opaque_components
+                        ver_indices, = ver_indices.data.T.tolist()
+                        if ver_indices[:4] != [0xdd000000, 2, 1, 1]:
+                            raise ValueError("Unsupported opaque format: {}".
+                                             format(ver_indices))
+                        object_id, class_id = ver_indices[4:]
+                        pr = self._workspace[object_id].props
+                        dtype = pr.dtype
                 else:
                     pr = next(reader)
                     dtype = (pr.dtype if not self._mat_dtype else
@@ -388,6 +410,7 @@ class MatFile5Reader(MatFileReader):
         '''
         if isinstance(variable_names, string_types):
             variable_names = [variable_names]
+        self._workspace = self._read_minimat()
         self._prepare_stream()
         variables = {"__header__": self._desc,
                      "__globals__": [],  # FIXME Not covered by tests.
@@ -419,6 +442,125 @@ class MatFile5Reader(MatFileReader):
                 info.data_position.stop - info.data_position.start)
             infos.append((info.name, BytesIO(self._header + raw)))
         return infos
+
+    def _read_minimat(self):
+        if not self._subsys_offset:
+            return
+        self._stream.seek(self._subsys_offset)
+        data = next(self._read_iter()).data.tostring()
+        if data[4:8] != b"\0" * 4:
+            raise ValueError("Invalid padding of function workspace")
+        reader = type(self)(BytesIO(b"\0" * 124 + data[:4] + data[8:]))
+        # Opaque entries may be other things than references.
+        reader._is_minimat = True
+        # The minimat does not always declare sizes properly.
+        reader._check_and_pad_stream = (
+            lambda stream, _: stream.seek((-stream.tell()) % 8, 1))
+
+        entry, = reader._read_iter()
+        data = entry.data
+        name, fw = data["MCOS"].item().item()
+        assert self._as_identifiers(name) == ["FileWrapper__"]
+        segments = fw.data[0][0].tostring()
+        heap = fw.data[1:-2]
+        defaults = fw.data[-2].item()
+        headers = self._unpack("10L", segments[:0x28])
+        assert headers[0] == 2 and headers[8:] == (0, 0)
+        n_str = headers[1]
+        # Strings
+        strs = [""]
+        off = 0x28
+        for _ in range(n_str):
+            next_off = segments.find(b"\0", off)
+            strs.append(segments[off:next_off].decode("ascii"))
+            off = next_off + 1
+        # Segment 1
+        clss = []
+        off = headers[2]
+        for default in defaults:
+            pkg_idx, name_idx, _1, _2 = self._unpack_from("4L", segments, off)
+            assert _1 == _2 == 0
+            clss.append(MatlabClass(
+                strs[pkg_idx], strs[name_idx], default.item()))
+            off += 16
+        # Segment 2
+        assert off == headers[3]
+        props2, off = self._parse_props(strs, segments, off, headers[4], heap)
+        # Segment 3
+        assert off == headers[4]
+        objs = []
+        off = headers[4]
+        while off < headers[5]:
+            cls_idx, _1, _2, seg2_idx, seg4_idx, obj_idx = self._unpack_from(
+                "6L", segments, off)
+            assert _1 == _2 == 0
+            objs.append(ObjStub(clss[cls_idx], seg2_idx, seg4_idx, obj_idx))
+            off += 24
+        # Segment 4
+        assert off == headers[5]
+        props4, off = self._parse_props(strs, segments, off, headers[6], heap)
+        # Segment 5, keep Python2 happy.
+        assert off == headers[6]
+        assert set(segments[headers[6]:headers[7]]) == set(b"\0")
+        # Resolve properties
+        real_objs = [None]
+        for obj in objs[1:]:
+            obj_props = obj.cls.defaults.copy()
+            dtype = obj_props.dtype
+            names = dtype.names or []
+            fields = dtype.fields or []
+            extra_fields = []
+            for k, v in props2[obj.seg2].items():
+                if k in fields:
+                    obj_props[k] = v
+                else:
+                    extra_fields.append(k)
+            if extra_fields:
+                # Extra call to str to keep Python 2 happy.
+                dtype = np.dtype(
+                    [(field_name,) + dtype.fields[field_name]
+                     for field_name in names] +
+                    [(str(field_name), "O") for field_name in extra_fields])
+                new_props = np.empty((1, 1), dtype)
+                for k in names:
+                    new_props[k] = obj_props[k]
+                for k, v in props2[obj.seg2].items():
+                    new_props[k] = v
+                obj_props = new_props
+            for k, v in props4[obj.seg4].items():
+                obj_props[k] = v
+            real_objs.append(Obj(obj.cls.name, obj_props, obj.id))
+        # Resolve cross_references
+        # FIXME
+        # References are represented as [0xdd000000 2 1 1 objname classname]
+        # but how to distinguish them from normal arrays?
+        # Some of them are in segment 2 but others (those also saved in the
+        # MAT?) are in segment 4.
+        return real_objs
+
+    def _parse_props(self, strs, segments, off, until, heap):
+        props = []
+        while off < until:
+            n_props, = self._unpack_from("L", segments, off)
+            d = {}
+            off += 4
+            for _ in range(n_props):
+                name_idx, flag, heap_idx = self._unpack_from("3L", segments, off)
+                off += 12
+                if flag == 0:
+                    value = strs[heap_idx]
+                elif flag == 1:
+                    value = heap[heap_idx]
+                elif flag == 2:
+                    assert heap_idx in [0, 1]
+                    value = bool(heap_idx)
+                else:
+                    raise ValueError("Unknown flag")
+                assert strs[name_idx] not in d
+                d[strs[name_idx]] = value
+            off += (-off) % 8
+            props.append(d)
+        return props or [{}], off
 
 
 def varmats_from_mat(file_obj):
