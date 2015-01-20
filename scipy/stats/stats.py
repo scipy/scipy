@@ -3364,7 +3364,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return _ttest_ind_from_stats(mean1, mean2, denom, df)
 
     
-def ttest_ind(a, b, axis=None, equal_var=True, permutations=0):
+def ttest_ind(a, b, axis=0, equal_var=True, permutations=None):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
@@ -3466,7 +3466,7 @@ def ttest_ind(a, b, axis=None, equal_var=True, permutations=0):
     if a.size == 0 or b.size == 0:
         return (np.nan, np.nan)
 
-    if permutations > 0:
+    if permutations != None:
         mat = np.concatenate((a, b), axis=axis)
         cats = np.hstack((np.zeros(a.shape[axis]), np.ones(b.shape[axis])))
         return _permutation_ttest(mat, cats,
