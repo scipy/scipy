@@ -2053,6 +2053,7 @@ def test_ttest_perm():
 
     ## Test on horizontal dimension
     N = 20
+    np.random.seed(0)
     a = np.vstack((np.arange((3*N)/4),np.random.random((3*N)/4)))
     b = np.vstack((np.arange(N/4) + 100,np.random.random(N/4)))
     p_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False)
