@@ -3364,7 +3364,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return _ttest_ind_from_stats(mean1, mean2, denom, df)
 
     
-def ttest_ind(a, b, axis=0, equal_var=True, permutations=1):
+def ttest_ind(a, b, axis=0, equal_var=True, permutations=0):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
@@ -3386,7 +3386,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=1):
         If False, perform Welch's t-test, which does not assume equal
         population variance [2]_.
     permutations : int, optional
-        If permutations > 1, then a permutation test will be conducted to
+        If permutations > 0, then a permutation test will be conducted to
         calculate the p-values
         .. versionadded:: 0.11.0
 
@@ -3466,7 +3466,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=1):
     if a.size == 0 or b.size == 0:
         return (np.nan, np.nan)
 
-    if permutations > 1:
+    if permutations > 0:
         mat = np.concatenate((a, b), axis=axis)
         cats = np.hstack((np.zeros(a.shape[axis]), np.ones(b.shape[axis])))
         return _permutation_ttest(mat, cats,
