@@ -35,8 +35,7 @@ from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
            'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
            'freqresp', 'place_poles']
-
-
+           
 def tf2ss(num, den):
     """Transfer function to state-space representation.
 
@@ -1509,11 +1508,22 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
 
     Returns
     -------
-    K : 1-D ndarray
-        The closed loop matrix such as the eigenvalues of ``A - BK`` are as
-        close as possible to the requested poles.
-    Pa : 1-D ndarray
-        The poles corresponding to ``A - BK``.
+    closed_loop_sys : Bunch object
+        closed_loop_sys is composed of:
+            K : 1D ndarray
+                The closed loop matrix such as the eigenvalues of A-BK are as close
+                as possible to the requested poles P.
+            poles : 1D ndarray
+                The poles corresponding to A-BK sorted according to Tits and Yang [2_],
+                e.g first the real poles in increasing order, then the complex congugates
+                in lexicographic order.
+            requested_poles : 1D ndarray
+                The poles the algorithm was asked to place sorted as above, they might
+                differ from what was achieved.
+            X : 2D ndarray
+                The transfer matrix such as ``X * diag(poles) * inv(X) = A - B*K`` (see Notes)
+            rtol : float
+                The relative tolerance achieved on ''det(X)'' (see Notes)          
 
     Notes
     -----
@@ -1633,6 +1643,8 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 idx += 1  # skip next one
             idx += 1
         gain_matrix = np.linalg.lstsq(B, diag_poles-A)[0]
+        transfer_matrix=np.eye(A.shape)
+        cur_rtol=0
     else:
         # step A (p1144 KNV) and begining of step F: decompose
         # dot(U1.T, A-P[i]*I).T and build our set of transfer_matrix vectors
@@ -1730,6 +1742,15 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     gain_matrix = -gain_matrix
     # K still contains complex with ~=0j imaginary parts, get rid of them
     gain_matrix = np.real(gain_matrix)
+    
+    closed_loop_sys=Bunch()
+    closed_loop_sys.K=gain_matrix
+    closed_loop_sys.poles=_order_complex_poles(
+        np.linalg.eig(A-np.dot(B, gain_matrix))[0]
+        )
+    closed_loop_sys.requested_poles=poles
+    closed_loop_sys.X=transfer_matrix
+    closed_loop_sys.rtol=cur_rtol
 
-    return gain_matrix, np.linalg.eig(A-np.dot(B, gain_matrix))[0]
+    return closed_loop_sys
 
