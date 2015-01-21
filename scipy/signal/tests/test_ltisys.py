@@ -82,7 +82,7 @@ class TestPlacePoles(TestCase):
                       0,0,0,5,0,0,0,0,9]).reshape(5,5)
         B = np.array([0,0,0,0,1,0,0,1,2,3]).reshape(5,2)
         P = np.array([-2, -3+1j, -3-1j, -1+1j, -1-1j])
-        res = place_poles(A,B,P)
+        place_poles(A,B,P)
 
         # same test with an odd number of real poles > 1
         # this is another specific case of YT
@@ -101,7 +101,7 @@ class TestPlacePoles(TestCase):
         # KNV or YT are not called here, it's a specific case with only
         # one unique solution
         P = np.array([-0.2, -0.5, -5.0566, -8.6659])
-        fsf=self._check(A, B, P)
+        fsf = self._check(A, B, P)
         #rtol and nb_iter should be set to 0 as the solution is unique
         assert_equal(fsf.rtol,0)        
         assert_equal(fsf.nb_iter,0)        
@@ -109,14 +109,14 @@ class TestPlacePoles(TestCase):
         # check with complex poles too as they trigger a specific case in
         # the specific case :-)
         P = np.array((-2+1j,-2-1j,-3,-2))
-        fsf=self._check(A, B, P)
+        fsf = self._check(A, B, P)
         assert_equal(fsf.rtol,0)        
         assert_equal(fsf.nb_iter,0)       
         
         #now test with a B matrix with only one column (no optimisation)
         B = B[:,0].reshape(4,1)
         P = np.array((-2+1j,-2-1j,-3,-2))
-        fsf=self._check(A, B, P)
+        fsf = self._check(A, B, P)
         
         #rtol and nb_iter are meaningless here as we can't optimize anything,
         #check they are set to NaN as expected         
@@ -146,7 +146,7 @@ class TestPlacePoles(TestCase):
         # Should not raise ValueError as the poles can be placed but should
         # raise a warning as the convergence is not reached
         with warnings.catch_warnings(record=True) as w:
-            fsf=place_poles(A, B, (-1,-2,-3,-4), rtol=1e-16, maxiter=42)
+            fsf = place_poles(A, B, (-1,-2,-3,-4), rtol=1e-16, maxiter=42)
             assert_(len(w) == 1)
             assert_(issubclass(w[-1].category, UserWarning))
             assert_("Convergence was not reached after maxiter iterations"
