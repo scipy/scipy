@@ -71,6 +71,8 @@ All functions
    cungqr
    cungrq
    cunmqr
+   cgtsv
+   cptsv
    dgbsv
    dgbtrf
    dgbtrs
@@ -119,6 +121,8 @@ All functions
    dtrsyl
    dtrtri
    dtrtrs
+   dgtsv
+   dptsv
    sgbsv
    sgbtrf
    sgbtrs
@@ -167,6 +171,8 @@ All functions
    strsyl
    strtri
    strtrs
+   sgtsv
+   sptsv
    zgbsv
    zgbtrf
    zgbtrs
@@ -213,6 +219,8 @@ All functions
    zungqr
    zungrq
    zunmqr
+   zgtsv
+   zptsv
 
 """
 #
