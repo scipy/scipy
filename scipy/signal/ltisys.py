@@ -1550,7 +1550,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
         full_state_feedback is composed of:
             gain_matrix : 1D ndarray
                 The closed loop matrix K such as the eigenvalues of A-BK are as
-                close as possible to the requested poles P.
+                close as possible to the requested poles.
             computed_poles : 1D ndarray
                 The poles corresponding to A-BK sorted as first the real poles
                 in increasing order, then the complex congugates in
@@ -1559,7 +1559,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 The poles the algorithm was asked to place sorted as above,
                 they may differ from what was achieved.
             X : 2D ndarray
-                The transfer matrix such as ``X * diag(poles) * inv(X) = A - B*K``
+                The transfer matrix such as ``X * diag(poles) = (A - B*K)*X``
                 (see Notes)
             rtol : float
                 The relative tolerance achieved on ''det(X)'' (see Notes).
@@ -1575,11 +1575,11 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     -----
     The Tits and Yang (YT), [2]_ paper is an update of the original Kautsky et
     al. (KNV) paper [1]_.  KNV relies on rank-1 updates to find the transfer
-    matrix X such that ``X * diag(poles) * inv(X) = A - B*K``, whereas YT uses
-    rank-2 updates. This yields faster convergence to a solution, furthermore
-    the YT algorithm supports complex poles whereas KNV does not in its
-    original version.  Only update method 0 proposed by KNV has been implemented
-    here, hence the name ``'KNV0'``.
+    matrix X such that ``X * diag(poles) = (A - B*K)*X``, whereas YT uses
+    rank-2 updates. This yields on average more robust solutions (see [2]_ 
+    pp 21-22), furthermore the YT algorithm supports complex poles whereas KNV
+    does not in its original version.  Only update method 0 proposed by KNV has
+    been implemented here, hence the name ``'KNV0'``.
 
     KNV extended to complex poles is used in Matlab's ``place`` function, YT is
     distributed under a non-free licence by Slicot under the name ``robpole``.
