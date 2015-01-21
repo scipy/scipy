@@ -1736,7 +1736,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
 
             #to debug with numpy qr uncomment the line below
             #Q, _ = np.linalg.qr(pole_space_j, mode="complete")
-            Q, _ = np.linalg.qr(pole_space_j, mode="full")
+            Q, _ = s_qr(pole_space_j, mode="full")
 
             ker_pole_j = Q[:, pole_space_j.shape[1]:]
 
