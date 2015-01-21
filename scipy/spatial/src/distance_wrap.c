@@ -32,6 +32,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if !defined(__clang__) && defined(__GNUC__) && defined(__GNUC_MINOR__)
+#if __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4)
+/* enable auto-vectorizer */
+#pragma GCC optimize("tree-vectorize")
+/* float associativity required to vectorize reductions */
+#pragma GCC optimize("unsafe-math-optimizations")
+/* maybe 5% gain, manual unrolling with more accumulators would be better */
+#pragma GCC optimize("unroll-loops")
+#endif
+#endif
+
 #include <math.h>
 #include <stdlib.h>
 #include <Python.h>
