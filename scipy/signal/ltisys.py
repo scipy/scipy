@@ -21,6 +21,12 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import numpy as np
 
+#np.linalg.qr fails on some tests with LinAlgError: zgeqrf returns -7
+#use scipy's qr until this is solved
+
+from scipy.linalg import qr as s_qr
+
+
 import numpy
 from numpy import (r_, eye, real, atleast_1d, atleast_2d, poly,
                    squeeze, diag, asarray, product, zeros, array,
@@ -1211,7 +1217,10 @@ def _KNV0(B, ker_pole, transfer_matrix, j, poles):
     #after merge of gh-4249 great speed improvements could be achived
     #using QR updates instead of full QR in the line below
 
-    Q, R = np.linalg.qr(transfer_matrix_not_j, mode="complete")
+    #to debug with numpy qr uncomment the line below
+    #Q, R = np.linalg.qr(transfer_matrix_not_j, mode="complete")
+    Q, R = s_qr(transfer_matrix_not_j, mode="full")
+
     mat_ker_pj = np.dot(ker_pole[j], ker_pole[j].T)
     yj = np.dot(mat_ker_pj, Q[:, -1])
 
@@ -1447,7 +1456,12 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
                                                     axis=1)
                 # after merge of gh-4249 great speed improvements could be
                 # achieved using QR updates instead of full QR in the line below
-                Q, _ = np.linalg.qr(transfer_matrix_not_i_j, mode="complete")
+                
+                #to debug with numpy qr uncomment the line below
+                #Q, _ = np.linalg.qr(transfer_matrix_not_i_j, mode="complete")
+                Q, _ = s_qr(transfer_matrix_not_i_j, mode="full")
+                
+                
                 if np.isreal(poles[i]):
                     if not np.isreal(poles[j]):
                         msg = "mixing real and complex in YT_real" + str(poles)
@@ -1652,7 +1666,10 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     cur_rtol = np.nan
 
     # Step A: QR decomposition of B page 1132 KNV
-    u, z = np.linalg.qr(B, mode="complete")
+
+    #to debug with numpy qr uncomment the line below
+    #u, z = np.linalg.qr(B, mode="complete")
+    u, z = s_qr(B, mode="full")
     u0 = u[:, :B.shape[1]]
     u1 = u[:, B.shape[1]:]
     z = z[:B.shape[1], :]
@@ -1709,7 +1726,11 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             # Q1 is orthogonnal to Q0 and will be multiplied by the zeros in
             # R when using mode "complete". In default mode Q1 and the zeros
             # in R are not computed
-            Q, _ = np.linalg.qr(pole_space_j, mode="complete")
+
+            #to debug with numpy qr uncomment the line below
+            #Q, _ = np.linalg.qr(pole_space_j, mode="complete")
+            Q, _ = s_qr(pole_space_j, mode="full")
+
             ker_pole_j = Q[:, pole_space_j.shape[1]:]
 
             # We want to select one vector in ker_pole_j to build the transfer
