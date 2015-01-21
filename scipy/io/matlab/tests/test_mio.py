@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: latin-1 -*-
+# -*- coding: utf-8 -*-
 ''' Nose test generators
 
 Need function load / save / roundtrip tests
