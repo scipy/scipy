@@ -2061,7 +2061,7 @@ def test_ttest_perm():
                                           permutations=1000)
     
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
-    assert_array_almost_equal(pvalues, array([ 0.000999  ,  0.65634366]))
+    assert_array_almost_equal(pvalues, array([0.000999, 0.65634366]))
     
     ## Test on vertical dimension
     N = 20
@@ -2073,7 +2073,7 @@ def test_ttest_perm():
                                           permutations=1000)
     
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
-    assert_array_almost_equal(pvalues, array([ 0.000999  ,  0.65634366]))
+    assert_array_almost_equal(pvalues, array([0.000999, 0.65634366]))
 
     ## Test on 1 dimensional case
     N = 20
@@ -2085,7 +2085,7 @@ def test_ttest_perm():
                                           permutations=1000)
 
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
-    assert_array_almost_equal(pvalues, array([ 0.000999]))
+    assert_array_almost_equal(pvalues, array([0.000999]))
     
     ## Test just arrays
     N = 20
@@ -2097,7 +2097,7 @@ def test_ttest_perm():
                                           permutations=1000)
     
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
-    assert_array_almost_equal(pvalues, array([ 0.000999]))
+    assert_array_almost_equal(pvalues, array([0.000999]))
     
     ## Test equal variance
     N = 20
@@ -2108,7 +2108,7 @@ def test_ttest_perm():
     np_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=True,
                                           permutations=1000)
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
-    assert_array_almost_equal(pvalues, array([ 0.000999]))
+    assert_array_almost_equal(pvalues, array([0.000999]))
     
 def test_ttest_ind():
     # regression test
