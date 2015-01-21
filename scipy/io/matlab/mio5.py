@@ -659,7 +659,25 @@ class VarWriter5(object):
         arr : ndarray
             ndarray of dtype.type ``string_`` or ``unicode_``
         codec : {'ascii', 'utf8', 'utf16', 'utf32'}, optional
-            String identifying codec with which to save unicode data.
+            String identifying codec with which to save unicode data.  In
+            practice you will nearly always want 'utf16' (see Notes).
+
+        Notes
+        -----
+        MATLAB claims to support UTF8, UTF16 and UTF32, but in practice, the
+        MATLAB application does not seem to be able to read multi-byte encoded
+        characters in UTF8 or UTF16. It also appears to be unable to read UTF32
+        strings with unicode characters (code-points) greater than 16 bits
+        (outside the unicode Basic Multilingual Plane - BMP).  This makes UTF32
+        completely useless compared to UTF16, and leaves UTF8 only able to
+        encode ASCII.
+
+        See: http://blog.omega-prime.co.uk/?p=150 for an analysis.
+
+        Although this method supports unicode output in MATLAB's UTF8, UTF16,
+        UTF32 formats, in practice we always call this method with ``utf16`` as
+        value for `codec`, accepting that, if there are any code points outside
+        the BMP, MATLAB won't be able to read the output file.
         '''
         if arr.size == 0 or np.all(arr == ''):
             # This an empty string array or a string array containing
