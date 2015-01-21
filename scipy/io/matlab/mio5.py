@@ -100,9 +100,9 @@ from .mio5_utils import VarReader5
 # Constants and helper objects
 from .mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
                           NP_TO_MXTYPES, miCOMPRESSED, miMATRIX, miINT8,
-                          miUTF8, miUINT32, mxCELL_CLASS, mxSTRUCT_CLASS,
-                          mxOBJECT_CLASS, mxCHAR_CLASS, mxSPARSE_CLASS,
-                          mxDOUBLE_CLASS, mclass_info)
+                          miUTF8, miUTF16, miUTF32, miUINT32, mxCELL_CLASS,
+                          mxSTRUCT_CLASS, mxOBJECT_CLASS, mxCHAR_CLASS,
+                          mxSPARSE_CLASS, mxDOUBLE_CLASS, mclass_info)
 
 from .streams import ZlibInputStream
 
@@ -618,7 +618,7 @@ class VarWriter5(object):
             self.write_cells(narr)
         elif narr.dtype.kind in ('U', 'S'):
             if self.unicode_strings:
-                codec = 'UTF8'
+                codec = 'utf16'
             else:
                 codec = 'ascii'
             self.write_char(narr, codec)
@@ -653,6 +653,13 @@ class VarWriter5(object):
 
     def write_char(self, arr, codec='ascii'):
         ''' Write string array `arr` with given `codec`
+
+        Parameters
+        ----------
+        arr : ndarray
+            ndarray of dtype.type ``string_`` or ``unicode_``
+        codec : {'ascii', 'utf8', 'utf16', 'utf32'}, optional
+            String identifying codec with which to save unicode data.
         '''
         if arr.size == 0 or np.all(arr == ''):
             # This an empty string array or a string array containing
@@ -677,7 +684,7 @@ class VarWriter5(object):
         # may have a different length
         shape = arr.shape
         self.write_header(shape, mxCHAR_CLASS)
-        if arr.dtype.kind == 'U' and arr.size:
+        if arr.dtype.kind == 'U' and arr.size:  # non-empty unicode input
             # Make one long string from all the characters.  We need to
             # transpose here, because we're flattening the array, before
             # we write the bytes.  The bytes have to be written in
@@ -686,13 +693,17 @@ class VarWriter5(object):
             st_arr = np.ndarray(shape=(),
                                 dtype=arr_dtype_number(arr, n_chars),
                                 buffer=arr.T.copy())  # Fortran order
-            # Recode with codec to give byte string
+            # Output MATLAB data type, endian specific version of codec
+            mdtype, codec = _CODEC_STRS[codec]
+            # Encode with endian-specific version of codec to give byte string
             st = st_arr.item().encode(codec)
             # Reconstruct as one-dimensional byte array
             arr = np.ndarray(shape=(len(st),),
                              dtype='S1',
                              buffer=st)
-        self.write_element(arr, mdtype=miUTF8)
+        else:  # empty string or not unicode
+            mdtype = miUTF8
+        self.write_element(arr, mdtype=mdtype)
 
     def write_sparse(self, arr):
         ''' Sparse matrices are 2D
@@ -760,6 +771,14 @@ class VarWriter5(object):
         self.write_element(np.array(arr.classname, dtype='S'),
                            mdtype=miINT8)
         self._write_items(arr)
+
+
+# Lookup returning MATLAB data type, endian-specific codec for codec
+_ENDIAN_SUFFIX = 'LE' if sys.byteorder == 'little' else 'BE'
+_CODEC_STRS = {'utf8': (miUTF8, 'UTF8'),
+               'ascii': (miUTF8, 'ascii'),
+               'utf16': (miUTF16, 'UTF-16' + _ENDIAN_SUFFIX),
+               'utf32': (miUTF32, 'UTF-32' + _ENDIAN_SUFFIX)}
 
 
 class MatFile5Writer(object):

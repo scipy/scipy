@@ -1195,5 +1195,21 @@ def test_empty_mat_error():
     assert_raises(MatReadError, loadmat, sio)
 
 
+def test_unicode_utf16():
+    # Test we save unicode data as utf16, not utf8
+    # See https://github.com/scipy/scipy/issues/4431
+    sio = BytesIO()
+    savemat(sio, {'char': u('Python')})
+    reader = MatFile5Reader(sio)
+    reader.initialize_read()
+    reader.read_file_header()
+    hdr, _ = reader.read_var_header()
+    # Confirm this is a string matrix
+    assert_equal(hdr.mclass, mio5p.mxCHAR_CLASS)
+    # Get the mdtype of the string, check its miUTF16
+    mdtype, byte_count, tag_data = reader._matrix_reader.read_tag()
+    assert_equal(mdtype, mio5p.miUTF16)
+
+
 if __name__ == "__main__":
     run_module_suite()
