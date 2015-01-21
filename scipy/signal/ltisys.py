@@ -1535,11 +1535,11 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             - 'KNV0': Kautsky, Nichols, Van Dooren update method 0
 
         See References and Notes for details on the algorithms.
-
     rtol: float, optional
         After each iteration the determinant of the eigenvectors of
-        ``A - B*K`` is compared to its previous value, when it becomes lower
-        than `rtol` the algorithm stops.  Default is 1e-3.
+        ``A - B*K`` is compared to its previous value, when the relative
+        error between these two values becomes lower than `rtol` the algorithm
+        stops.  Default is 1e-3.
     maxiter: int, optional
         Maximum number of iterations to compute the gain matrix.
         Default is 30.
