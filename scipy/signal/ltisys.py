@@ -1599,7 +1599,8 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
 
     Using the default method ``'YT'`` should be fine in most cases; ``'KNV0'``
     is only provided because it is needed by ``'YT'`` in some specific cases.
-    Furthermore ``'YT'`` usually converges much faster than ``'KNV0'``.
+    Furthermore ``'YT'`` gives on average more robust results than ``'KNV0'``
+    when ''abs(det(X))'' is used as a robustness indicator.
 
     References
     ----------
