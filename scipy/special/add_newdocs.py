@@ -1035,14 +1035,14 @@ add_newdoc('scipy.special', 'expit',
     Returns
     -------
     out : ndarray
-        An ndarray of the same shape as x. Its entries
-        are expit of the corresponding entry of x.
+        An ndarray of the same shape as x. Each entry is the expit
+        of the corresponding entry of x.
 
     Notes
     -----
-    As a ufunc logit takes a number of optional
-    keyword arguments. For more information
-    see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
+    As a ufunc, expit takes a number of optional keyword arguments.
+    For more information, see
+    `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
 
     .. versionadded:: 0.10.0
 
@@ -1968,14 +1968,14 @@ add_newdoc('scipy.special', 'logit',
     Returns
     -------
     out : ndarray
-        An ndarray of the same shape as x. Its entries
-        are logit of the corresponding entry of x.
+        An ndarray of the same shape as x. Each entry is the logit
+        of the corresponding entry of x.
 
     Notes
     -----
-    As a ufunc logit takes a number of optional
-    keyword arguments. For more information
-    see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
+    As a ufunc, logit takes a number of optional keyword arguments.
+    For more information, see
+    `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
 
     .. versionadded:: 0.10.0
 
