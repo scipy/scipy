@@ -1601,6 +1601,9 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     is only provided because it is needed by ``'YT'`` in some specific cases.
     Furthermore ``'YT'`` gives on average more robust results than ``'KNV0'``
     when ''abs(det(X))'' is used as a robustness indicator.
+      
+    [2]_ is available as a technical report on the following URL: 
+    http://drum.lib.umd.edu/handle/1903/5598
 
     References
     ----------
