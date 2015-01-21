@@ -2061,9 +2061,11 @@ def test_ttest_perm():
                                           permutations=1000)
     
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
-
+    assert_array_almost_equal(pvalues, array([ 0.000999  ,  0.65634366]))
+    
     ## Test on vertical dimension
     N = 20
+    np.random.seed(0)
     a = np.vstack((np.arange((3*N)/4),np.random.random((3*N)/4))).transpose()
     b = np.vstack((np.arange(N/4) + 100,np.random.random(N/4))).transpose()
     p_t_stats, pvalues = stats.ttest_ind(a, b, axis=0, equal_var=False)
@@ -2071,19 +2073,23 @@ def test_ttest_perm():
                                           permutations=1000)
     
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+    assert_array_almost_equal(pvalues, array([ 0.000999  ,  0.65634366]))
 
     ## Test on 1 dimensional case
     N = 20
+    np.random.seed(0)
     a = np.arange((3*N)/4)
     b = np.arange(N/4) + 100
     p_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False)
     np_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False,
                                           permutations=1000)
-    
-    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
 
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+    assert_array_almost_equal(pvalues, array([ 0.000999]))
+    
     ## Test just arrays
     N = 20
+    np.random.seed(0)
     a = range(int((3*N)/4))
     b = range(100,int(N/4)+100)
     p_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False)
@@ -2091,17 +2097,18 @@ def test_ttest_perm():
                                           permutations=1000)
     
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
-
+    assert_array_almost_equal(pvalues, array([ 0.000999]))
+    
     ## Test equal variance
     N = 20
+    np.random.seed(0)
     a = np.arange(N/2)
     b = np.arange(N/2) + 100
     p_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=True)
     np_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=True,
                                           permutations=1000)
-    
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
-
+    assert_array_almost_equal(pvalues, array([ 0.000999]))
     
 def test_ttest_ind():
     # regression test
