@@ -1547,8 +1547,8 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
 
     Returns
     -------
-    closed_loop_sys : Bunch object
-        closed_loop_sys is composed of:
+    full_state_feedback : Bunch object
+        full_state_feedback is composed of:
             gain_matrix : 1D ndarray
                 The closed loop matrix K such as the eigenvalues of A-BK are as
                 close as possible to the requested poles P.
@@ -1624,35 +1624,35 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     after each call.
 
     >>> from scipy import signal
-    >>> close_loop1 = signal.place_poles(A, B, P, method='KNV0')
-    >>> print(close_loop1.gain_matrix)
-    >>> close_loop2 = signal.place_poles(A, B, P, method='YT')
-    >>> print(close_loop2.computed_poles)
-    >>> close_loop3 = signal.place_poles(A, B, P, rtol=-1, maxiter=100)
-    >>> print(close_loop3.X)
+    >>> fsf1 = signal.place_poles(A, B, P, method='KNV0')
+    >>> print(fsf1.gain_matrix)
+    >>> fsf2 = signal.place_poles(A, B, P, method='YT')
+    >>> print(fsf2.computed_poles)
+    >>> fsf3 = signal.place_poles(A, B, P, rtol=-1, maxiter=100)
+    >>> print(fsf3.X)
 
     The absolute value of the determinant of X is a good indicator to check the
     robustness of the results, both ``'KNV0'`` and ``'YT'`` aim at maximizing
     it. Below a comparison of the robustness of the results above:
 
-    >>> abs(np.linalg.det(close_loop1.X))<abs(np.linalg.det(close_loop2.X))
-    >>> abs(np.linalg.det(close_loop2.X))<abs(np.linalg.det(close_loop3.X))
+    >>> abs(np.linalg.det(fsf1.X))<abs(np.linalg.det(fsf2.X))
+    >>> abs(np.linalg.det(fsf2.X))<abs(np.linalg.det(fsf3.X))
 
     Now a simple example for complex poles:
 
     >>> A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4) / 3.
     >>> B = np.array([0,0,0,0,1,0,0,1]).reshape(4,2)
     >>> P = np.array([-3, -1, -2-1j, -2+1j]) / 3.
-    >>> close_loop = signal.place_poles(A, B, P, method='YT')
+    >>> fsf = signal.place_poles(A, B, P, method='YT')
 
     We can plot the desired and computed poles in the complex plane:
 
     >>> t = np.linspace(0, 2*np.pi, num=401)
     >>> plt.figure()
     >>> plt.plot(np.cos(t), np.sin(t), 'k--')  # unit circle
-    >>> plt.plot(close_loop.requested_poles.real, close_loop.requested_poles.imag,
+    >>> plt.plot(fsf.requested_poles.real, fsf.requested_poles.imag,
     ...          'ro', label='Desired poles')
-    >>> plt.plot(close_loop.computed_poles.real, close_loop.computed_poles.imag, 'bx',
+    >>> plt.plot(fsf.computed_poles.real, fsf.computed_poles.imag, 'bx',
     ...          label='Computed poles (YT)')
     >>> plt.legend()
     >>> plt.grid()
@@ -1807,14 +1807,14 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     # K still contains complex with ~=0j imaginary parts, get rid of them
     gain_matrix = np.real(gain_matrix)
 
-    closed_loop_sys = Bunch()
-    closed_loop_sys.gain_matrix = gain_matrix
-    closed_loop_sys.computed_poles = _order_complex_poles(
+    full_state_feedback = Bunch()
+    full_state_feedback.gain_matrix = gain_matrix
+    full_state_feedback.computed_poles = _order_complex_poles(
         np.linalg.eig(A-np.dot(B, gain_matrix))[0]
         )
-    closed_loop_sys.requested_poles = poles
-    closed_loop_sys.X = transfer_matrix
-    closed_loop_sys.rtol = cur_rtol
+    full_state_feedback.requested_poles = poles
+    full_state_feedback.X = transfer_matrix
+    full_state_feedback.rtol = cur_rtol
 
-    return closed_loop_sys
+    return full_state_feedback
 
