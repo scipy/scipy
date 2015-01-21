@@ -140,6 +140,17 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     LinAlgError
         If SVD computation does not converge.
 
+    Notes
+    -----
+    ``svdvals(a)`` only differs from ``svd(a, compute_uv=False)`` by its
+    handling of the edge case of empty ``a``, where it returns an
+    empty sequence:
+
+    >>> a = np.empty((0, 2))
+    >>> from scipy.linalg import svdvals
+    >>> svdvals(a)
+    array([], dtype=float64)
+
     See also
     --------
     svd : Compute the full singular value decomposition of a matrix.
