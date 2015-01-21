@@ -221,17 +221,25 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
                 " l+u+1 (%d) does not equal ab.shape[0] (%d)" % (l+u+1, ab.shape[0]))
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
-
-    gbsv, = get_lapack_funcs(('gbsv',), (a1, b1))
-    a2 = np.zeros((2*l+u+1, a1.shape[1]), dtype=gbsv.dtype)
-    a2[l:,:] = a1
-    lu, piv, x, info = gbsv(l, u, a2, b1, overwrite_ab=True,
-                                                overwrite_b=overwrite_b)
+    if l == u == 1:
+        overwrite_ab = overwrite_ab or _datacopied(b1, b)
+        gtsv, = get_lapack_funcs(('gtsv',), (a1, b1))
+        du = a1[0,1:]
+        d = a1[1,:]
+        dl = a1[2,:-1]
+        du2, d, du, x, info = gtsv(dl, d, du, b, overwrite_ab, overwrite_ab,
+                                   overwrite_ab, overwrite_b)
+    else:
+        gbsv, = get_lapack_funcs(('gbsv',), (a1, b1))
+        a2 = np.zeros((2*l+u+1, a1.shape[1]), dtype=gbsv.dtype)
+        a2[l:,:] = a1
+        lu, piv, x, info = gbsv(l, u, a2, b1, overwrite_ab=True,
+                                                    overwrite_b=overwrite_b)
     if info == 0:
         return x
     if info > 0:
         raise LinAlgError("singular matrix")
-    raise ValueError('illegal value in %d-th argument of internal gbsv' % -info)
+    raise ValueError('illegal value in %d-th argument of internal gbsv/gtsv' % -info)
 
 
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
@@ -283,15 +291,28 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
         of `b`.
 
     """
-    ab = _asarray_validated(ab, check_finite=check_finite)
-    b = _asarray_validated(b, check_finite=check_finite)
+    a1 = _asarray_validated(ab, check_finite=check_finite)
+    b1 = _asarray_validated(b, check_finite=check_finite)
     # Validate shapes.
-    if ab.shape[-1] != b.shape[0]:
+    if a1.shape[-1] != b1.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
 
-    pbsv, = get_lapack_funcs(('pbsv',), (ab, b))
-    c, x, info = pbsv(ab, b, lower=lower, overwrite_ab=overwrite_ab,
-                                            overwrite_b=overwrite_b)
+    overwrite_b = overwrite_b or _datacopied(b1, b)
+    overwrite_ab = overwrite_ab or _datacopied(a1, ab)
+    
+    if a1.shape[0] == 2:
+        ptsv, = get_lapack_funcs(('ptsv',), (a1, b1))
+        if lower:
+            d = a1[0,:].real
+            e = a1[1,:-1]
+        else:
+            d = a1[1,:].real
+            e = a1[0,1:].conj()
+        d, du, x, info = ptsv(d, e, b1, overwrite_ab, overwrite_ab, overwrite_b)
+    else:
+        pbsv, = get_lapack_funcs(('pbsv',), (a1, b1))
+        c, x, info = pbsv(a1, b1, lower=lower, overwrite_ab=overwrite_ab,
+                                                overwrite_b=overwrite_b)
     if info > 0:
         raise LinAlgError("%d-th leading minor not positive definite" % info)
     if info < 0:
