@@ -1606,16 +1606,23 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     >>> P = np.array((-0.2, -0.5, -5.0566, -8.6659))
 
     Now compute K with KNV method 0, with the default YT method and with the YT
-    method while forcing 100 iterations of the algorithm and print the gain
-    matrix after each call.
+    method while forcing 100 iterations of the algorithm and print some results
+    after each call.
 
     >>> from scipy import signal
     >>> close_loop1 = signal.place_poles(A, B, P, method='KNV0')
-    >>> print(close_loop1.K)
+    >>> print(close_loop1.gain_matrix)
     >>> close_loop2 = signal.place_poles(A, B, P, method='YT')
-    >>> print(close_loop2.K)
+    >>> print(close_loop2.computed_poles)
     >>> close_loop3 = signal.place_poles(A, B, P, rtol=-1, maxiter=100)
-    >>> print(close_loop3.K)
+    >>> print(close_loop3.X)
+
+    The absolute value of the determinant of X is a good indicator to check the
+    robustness of the results, both ``'KNV0'`` and ``'YT'`` aim at maximizing
+    it. Below a comparison of the robustness of the results above:
+
+    >>> abs(np.linalg.det(close_loop1.X))<abs(np.linalg.det(close_loop2.X))
+    >>> abs(np.linalg.det(close_loop2.X))<abs(np.linalg.det(close_loop3.X))
 
     Now a simple example for complex poles:
 
