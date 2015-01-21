@@ -1483,7 +1483,7 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
             # Convergence test from YT page 21
             stop = True
         nb_try += 1
-    return stop, cur_rtol
+    return stop, cur_rtol, nb_try
 
 
 def _KNV0_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
@@ -1509,7 +1509,7 @@ def _KNV0_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
             stop = True
 
         nb_try += 1
-    return stop, cur_rtol
+    return stop, cur_rtol, nb_try
 
 
 def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
@@ -1566,6 +1566,11 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 The relative tolerance achieved on ''det(X)'' (see Notes).
                 rtol will be ''np.nan'' if the optimisation algorithms can not
                 run, i.e when ''B.shape[1]==1''
+            nb_iter : int
+                The number of iterations performed before converving. nb_iter
+                will be ''np.nan'' if the optimisation algorithms can not
+                run, i.e when ''B.shape[1]==1' or ''0'' when the solution is
+                unique.
 
     Notes
     -----
@@ -1664,9 +1669,10 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
 
     #the current value of the relative tolerance we achieved
     cur_rtol = np.nan
-
-    # Step A: QR decomposition of B page 1132 KNV
-
+    #the number of iterations needed before converging
+    nb_iter = np.nan
+    
+    # Step A: QR decomposition of B page 1132 KN
     #to debug with numpy qr uncomment the line below
     #u, z = np.linalg.qr(B, mode="complete")
     u, z = s_qr(B, mode="full")
@@ -1705,6 +1711,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
         gain_matrix = np.linalg.lstsq(B, diag_poles-A)[0]
         transfer_matrix = np.eye(A.shape[0])
         cur_rtol = 0
+        nb_iter=0
     else:
         # step A (p1144 KNV) and begining of step F: decompose
         # dot(U1.T, A-P[i]*I).T and build our set of transfer_matrix vectors
@@ -1765,8 +1772,8 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 transfer_matrix = np.hstack((transfer_matrix, transfer_matrix_j))
 
         if B.shape[1] > 1:  # otherwise there is nothing we can optimize
-            stop, cur_rtol = update_loop(ker_pole, transfer_matrix, poles,
-                                         B, maxiter, rtol)
+            stop, cur_rtol, nb_iter = update_loop(ker_pole, transfer_matrix,
+                                                  poles, B, maxiter, rtol)
             if not stop and rtol > 0:
                 # if rtol<=0 the user has probably done that on purpose,
                 # don't annoy him
@@ -1815,6 +1822,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     full_state_feedback.requested_poles = poles
     full_state_feedback.X = transfer_matrix
     full_state_feedback.rtol = cur_rtol
+    full_state_feedback.nb_iter = nb_iter    
 
     return full_state_feedback
 
