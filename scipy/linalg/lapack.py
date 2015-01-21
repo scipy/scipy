@@ -25,202 +25,263 @@ All functions
 .. autosummary::
    :toctree: generated/
 
-   cgbsv
-   cgbtrf
-   cgbtrs
-   cgebal
-   cgees
-   cgeev
-   cgeev_lwork
-   cgegv
-   cgehrd
-   cgehrd_lwork
-   cgelss
-   cgeqp3
-   cgeqrf
-   cgerqf
-   cgesdd
-   cgesdd_lwork
-   cgesv
-   cgetrf
-   cgetri
-   cgetri_lwork
-   cgetrs
-   cgges
-   cggev
-   chbevd
-   chbevx
-   cheev
-   cheevd
-   cheevr
-   chegv
-   chegvd
-   chegvx
-   claswp
-   clauum
-   cpbsv
-   cpbtrf
-   cpbtrs
-   cposv
-   cpotrf
-   cpotri
-   cpotrs
-   ctrsyl
-   ctrtri
-   ctrtrs
-   cungqr
-   cungrq
-   cunmqr
-   cgtsv
-   cptsv
-   dgbsv
-   dgbtrf
-   dgbtrs
-   dgebal
-   dgees
-   dgeev
-   dgeev_lwork
-   dgegv
-   dgehrd
-   dgehrd_lwork
-   dgelss
-   dgeqp3
-   dgeqrf
-   dgerqf
-   dgesdd
-   dgesdd_lwork
-   dgesv
-   dgetrf
-   dgetri
-   dgetri_lwork
-   dgetrs
-   dgges
-   dggev
-   dlamch
-   dlaswp
-   dlauum
-   dorgqr
-   dorgrq
-   dormqr
-   dpbsv
-   dpbtrf
-   dpbtrs
-   dposv
-   dpotrf
-   dpotri
-   dpotrs
-   dsbev
-   dsbevd
-   dsbevx
-   dsyev
-   dsyevd
-   dsyevr
-   dsygv
-   dsygvd
-   dsygvx
-   dtrsyl
-   dtrtri
-   dtrtrs
-   dgtsv
-   dptsv
+
    sgbsv
-   sgbtrf
-   sgbtrs
-   sgebal
-   sgees
-   sgeev
-   sgeev_lwork
-   sgegv
-   sgehrd
-   sgehrd_lwork
-   sgelss
-   sgeqp3
-   sgeqrf
-   sgerqf
-   sgesdd
-   sgesdd_lwork
-   sgesv
-   sgetrf
-   sgetri
-   sgetri_lwork
-   sgetrs
-   sgges
-   sggev
-   slamch
-   slaswp
-   slauum
-   sorgqr
-   sorgrq
-   sormqr
-   spbsv
-   spbtrf
-   spbtrs
-   sposv
-   spotrf
-   spotri
-   spotrs
-   ssbev
-   ssbevd
-   ssbevx
-   ssyev
-   ssyevd
-   ssyevr
-   ssygv
-   ssygvd
-   ssygvx
-   strsyl
-   strtri
-   strtrs
-   sgtsv
-   sptsv
+   dgbsv
+   cgbsv
    zgbsv
+
+   sgbtrf
+   dgbtrf
+   cgbtrf
    zgbtrf
+
+   sgbtrs
+   dgbtrs
+   cgbtrs
    zgbtrs
+
+   sgebal
+   dgebal
+   cgebal
    zgebal
+
+   sgees
+   dgees
+   cgees
    zgees
+
+   sgeev
+   dgeev
+   cgeev
    zgeev
+
+   sgeev_lwork
+   dgeev_lwork
+   cgeev_lwork
    zgeev_lwork
+
+   sgegv
+   dgegv
+   cgegv
    zgegv
+
+   sgehrd
+   dgehrd
+   cgehrd
    zgehrd
+
+   sgehrd_lwork
+   dgehrd_lwork
+   cgehrd_lwork
    zgehrd_lwork
+
+   sgelss
+   dgelss
+   cgelss
    zgelss
+
+   sgeqp3
+   dgeqp3
+   cgeqp3
    zgeqp3
+
+   sgeqrf
+   dgeqrf
+   cgeqrf
    zgeqrf
+
+   sgerqf
+   dgerqf
+   cgerqf
    zgerqf
+
+   sgesdd
+   dgesdd
+   cgesdd
    zgesdd
+
+   sgesdd_lwork
+   dgesdd_lwork
+   cgesdd_lwork
    zgesdd_lwork
+
+   sgesv
+   dgesv
+   cgesv
    zgesv
+
+   sgetrf
+   dgetrf
+   cgetrf
    zgetrf
+
+   sgetri
+   dgetri
+   cgetri
    zgetri
+
+   sgetri_lwork
+   dgetri_lwork
+   cgetri_lwork
    zgetri_lwork
+
+   sgetrs
+   dgetrs
+   cgetrs
    zgetrs
+
+   sgges
+   dgges
+   cgges
    zgges
+
+   sggev
+   dggev
+   cggev
    zggev
+
+   chbevd
    zhbevd
+
+   chbevx
    zhbevx
+
+   cheev
    zheev
+
+   cheevd
    zheevd
+
+   cheevr
    zheevr
+
+   chegv
    zhegv
+
+   chegvd
    zhegvd
+
+   chegvx
    zhegvx
+
+   slaswp
+   dlaswp
+   claswp
    zlaswp
+
+   slauum
+   dlauum
+   clauum
    zlauum
+
+   spbsv
+   dpbsv
+   cpbsv
    zpbsv
+
+   spbtrf
+   dpbtrf
+   cpbtrf
    zpbtrf
+
+   spbtrs
+   dpbtrs
+   cpbtrs
    zpbtrs
+
+   sposv
+   dposv
+   cposv
    zposv
+
+   spotrf
+   dpotrf
+   cpotrf
    zpotrf
+
+   spotri
+   dpotri
+   cpotri
    zpotri
+
+   spotrs
+   dpotrs
+   cpotrs
    zpotrs
+
+   strsyl
+   dtrsyl
+   ctrsyl
    ztrsyl
+
+   strtri
+   dtrtri
+   ctrtri
    ztrtri
+
+   strtrs
+   dtrtrs
+   ctrtrs
    ztrtrs
+
+   cungqr
    zungqr
+
+   cungrq
    zungrq
+
+   cunmqr
    zunmqr
+
+   sgtsv
+   dgtsv
+   cgtsv
    zgtsv
+
+   sptsv
+   dptsv
+   cptsv
    zptsv
+
+   slamch
+   dlamch
+
+   sorgqr
+   dorgqr
+
+   sorgrq
+   dorgrq
+
+   sormqr
+   dormqr
+
+   ssbev
+   dsbev
+
+   ssbevd
+   dsbevd
+
+   ssbevx
+   dsbevx
+
+   ssyev
+   dsyev
+
+   ssyevd
+   dsyevd
+
+   ssyevr
+   dsyevr
+
+   ssygv
+   dsygv
+
+   ssygvd
+   dsygvd
+
+   ssygvx
+   dsygvx
 
 """
 #
