@@ -518,6 +518,8 @@ def medfilt(volume, kernel_size=None, reflect=False):
         If True, `volume` is reflection-padded along its boundaries prior to
         filtering.
 
+        .. versionadded:: 0.16.0
+
     Returns
     -------
     out : ndarray
@@ -812,6 +814,8 @@ def medfilt2d(input, kernel_size=3, reflect=False):
     reflect : bool
         If False, `input` is zero-padded prior to filtering.
         If True, `input` is reflection-padded prior to filtering.
+
+        .. versionadded:: 0.16.0
 
     Returns
     -------
