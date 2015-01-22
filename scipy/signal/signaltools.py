@@ -496,7 +496,7 @@ def order_filter(a, domain, rank):
     return sigtools._order_filterND(a, domain, rank)
 
 
-def medfilt(volume, kernel_size=None):
+def medfilt(volume, kernel_size=None, reflect=False):
     """
     Perform a median filter on an N-dimensional array.
 
@@ -512,6 +512,11 @@ def medfilt(volume, kernel_size=None):
         window in each dimension.  Elements of `kernel_size` should be odd.
         If `kernel_size` is a scalar, then this scalar is used as the size in
         each dimension. Default size is 3 for each dimension.
+    reflect : bool
+        If False, `volume` is zero-padded along its boundaries prior to
+        filtering.
+        If True, `volume` is reflection-padded along its boundaries prior to
+        filtering.
 
     Returns
     -------
@@ -531,11 +536,31 @@ def medfilt(volume, kernel_size=None):
         if (kernel_size[k] % 2) != 1:
             raise ValueError("Each element of kernel_size should be odd.")
 
+    r_slice = [Ellipsis] * len(volume.shape)
+
+    has_padding = False
+    if reflect:
+        r_shape = []
+        for k in range(len(volume.shape)):
+            width = kernel_size[k] // 2
+            r_shape.append((width, width))
+            if width > 0:
+                r_slice[k] = slice(width, -width)
+                has_padding = True
+
+        volume = np.pad(volume, r_shape, mode='reflect')
+
     domain = ones(kernel_size)
 
     numels = product(kernel_size, axis=0)
     order = numels // 2
-    return sigtools._order_filterND(volume, domain, order)
+
+    result = sigtools._order_filterND(volume, domain, order)
+
+    if has_padding:
+        return result[r_slice]
+    else:
+        return result
 
 
 def wiener(im, mysize=None, noise=None):
@@ -767,7 +792,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     return out
 
 
-def medfilt2d(input, kernel_size=3):
+def medfilt2d(input, kernel_size=3, reflect=False):
     """
     Median filter a 2-dimensional array.
 
@@ -784,6 +809,9 @@ def medfilt2d(input, kernel_size=3):
         `kernel_size` should be odd.  If `kernel_size` is a scalar,
         then this scalar is used as the size in each dimension.
         Default is a kernel of size (3, 3).
+    reflect : bool
+        If False, `input` is zero-padded prior to filtering.
+        If True, `input` is reflection-padded prior to filtering.
 
     Returns
     -------
@@ -803,7 +831,25 @@ def medfilt2d(input, kernel_size=3):
         if (size % 2) != 1:
             raise ValueError("Each element of kernel_size should be odd.")
 
-    return sigtools._medfilt2d(image, kernel_size)
+    r_slice = [Ellipsis] * 2
+
+    has_padding = False
+    if reflect:
+        r_shape = []
+        for k in range(2):
+            width = kernel_size[k] // 2
+            r_shape.append((width, width))
+            if width > 0:
+                r_slice[k] = slice(width, -width)
+                has_padding = True
+
+        image = np.pad(image, r_shape, mode='reflect')
+
+    result = sigtools._medfilt2d(image, kernel_size)
+    if has_padding:
+        return result[r_slice]
+    else:
+        return result
 
 
 def lfilter(b, a, x, axis=-1, zi=None):
