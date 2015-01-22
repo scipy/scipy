@@ -15,11 +15,6 @@ is granted under the SciPy License.
 
 #define PYERR(message) {PyErr_SetString(PyExc_ValueError, message); goto fail;}
 
-#define DATA(arr) (PyArray_DATA(arr))
-#define DIMS(arr) (PyArray_DIMS(arr))
-#define STRIDES(arr) (PyArray_STRIDES(arr))
-#define RANK(arr) (PyArray_NDIM(arr))
-
 
 jmp_buf MALLOC_FAIL;
 
@@ -1102,16 +1097,16 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
     flag = mode + boundary + (typenum << TYPE_SHIFT) + \
       (flip != 0) * FLIP_MASK;
     
-    ret = pylab_convolve_2d (DATA(ain1),      /* Input data Ns[0] x Ns[1] */
-		             STRIDES(ain1),   /* Input strides */
-		             DATA(aout),      /* Output data */
-		             STRIDES(aout),   /* Ouput strides */
-		             DATA(ain2),      /* coefficients in filter */
-		             STRIDES(ain2),   /* coefficients strides */ 
-		             DIMS(ain2),      /* Size of kernel Nwin[2] */
-			     DIMS(ain1),      /* Size of image Ns[0] x Ns[1] */
-		             flag,            /* convolution parameters */
-		             DATA(newfill));  /* fill value */
+    ret = pylab_convolve_2d (PyArray_DATA(ain1),      /* Input data Ns[0] x Ns[1] */
+		             PyArray_STRIDES(ain1),   /* Input strides */
+		             PyArray_DATA(aout),      /* Output data */
+		             PyArray_STRIDES(aout),   /* Ouput strides */
+		             PyArray_DATA(ain2),      /* coefficients in filter */
+		             PyArray_STRIDES(ain2),   /* coefficients strides */ 
+		             PyArray_DIMS(ain2),      /* Size of kernel Nwin[2] */
+			     PyArray_DIMS(ain1),      /* Size of image Ns[0] x Ns[1] */
+		             flag,                    /* convolution parameters */
+		             PyArray_DATA(newfill));  /* fill value */
 
 
     switch (ret) {
@@ -1296,13 +1291,13 @@ static PyObject *sigtools_median2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
     if (size != NULL) {
 	a_size = (PyArrayObject *)PyArray_ContiguousFromObject(size, NPY_INTP, 1, 1);
 	if (a_size == NULL) goto fail;
-	if ((RANK(a_size) != 1) || (DIMS(a_size)[0] < 2)) 
+	if ((PyArray_NDIM(a_size) != 1) || (PyArray_DIMS(a_size)[0] < 2)) 
 	    PYERR("Size must be a length two sequence");
-	Nwin[0] = ((intp *)DATA(a_size))[0];
-	Nwin[1] = ((intp *)DATA(a_size))[1];
+	Nwin[0] = ((intp *)PyArray_DATA(a_size))[0];
+	Nwin[1] = ((intp *)PyArray_DATA(a_size))[1];
     }  
 
-    a_out = (PyArrayObject *)PyArray_SimpleNew(2,DIMS(a_image),typenum);
+    a_out = (PyArrayObject *)PyArray_SimpleNew(2, PyArray_DIMS(a_image), typenum);
     if (a_out == NULL) goto fail;
 
     if (setjmp(MALLOC_FAIL)) {
@@ -1311,16 +1306,19 @@ static PyObject *sigtools_median2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
     else {
 	switch (typenum) {
 	case NPY_UBYTE:
-	    b_medfilt2((unsigned char *)DATA(a_image), (unsigned char *)DATA(a_out),
-                       Nwin, DIMS(a_image));
+	    b_medfilt2((unsigned char *)PyArray_DATA(a_image),
+                       (unsigned char *)PyArray_DATA(a_out),
+                       Nwin, PyArray_DIMS(a_image));
 	    break;
 	case NPY_FLOAT:
-	    f_medfilt2((float *)DATA(a_image), (float *)DATA(a_out), Nwin,
-                       DIMS(a_image));
+	    f_medfilt2((float *)PyArray_DATA(a_image),
+                       (float *)PyArray_DATA(a_out), Nwin,
+                       PyArray_DIMS(a_image));
 	    break;
 	case NPY_DOUBLE:
-	    d_medfilt2((double *)DATA(a_image), (double *)DATA(a_out), Nwin,
-                       DIMS(a_image));
+	    d_medfilt2((double *)PyArray_DATA(a_image),
+                       (double *)PyArray_DATA(a_out), Nwin,
+                       PyArray_DIMS(a_image));
 	    break;
 	default:
 	  PYERR("2D median filter only supports Int8, Float32, and Float64.");
