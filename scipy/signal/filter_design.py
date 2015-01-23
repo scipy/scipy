@@ -762,6 +762,71 @@ def zpk2sos(z, p, k, pairing='nearest'):
            with the ``pairing == 'keep_odd'`` method.
 
     .. versionadded:: 0.16.0
+
+    Examples
+    --------
+
+    Design a 6th order low-pass elliptic digital filter for a system with a
+    sampling rate of 8000 Hz that has a pass-band corner frequency of
+    1000 Hz.  The ripple in the pass-band should not exceed 0.087 dB, and
+    the attenuation in the stop-band should be at least 90 dB.
+
+    In the following call to `signal.ellip`, we could use ``output='sos'``,
+    but for this example, we'll use ``output='zpk'``, and then convert to SOS
+    format with `zpk2sos`:
+
+    >>> from scipy import signal
+    >>> z, p, k = signal.ellip(6, 0.087, 90, 1000/(0.5*8000), output='zpk')
+
+    Now convert to SOS format.
+
+    >>> sos = signal.zpk2sos(z, p, k)
+
+    The coefficents of the numerators of the sections:
+
+    >>> sos[:, :3]
+    array([[ 0.0014154 ,  0.00248707,  0.0014154 ],
+           [ 1.        ,  0.72965193,  1.        ],
+           [ 1.        ,  0.17594966,  1.        ]])
+
+    The symmetry in the coefficients occurs because all the zeros are on the
+    unit circle.
+
+    The coefficients of the denominators of the sections:
+
+    >>> sos[:, 3:]
+    array([[ 1.        , -1.32543251,  0.46989499],
+           [ 1.        , -1.26117915,  0.6262586 ],
+           [ 1.        , -1.25707217,  0.86199667]])
+
+    The next example shows the effect of the `pairing` option.  We have a
+    system with three poles and three zeros, so the SOS array will have
+    shape (2, 6).  The means there is, in effect, an extra pole and an extra
+    zero at the origin in the SOS representation.
+
+    >>> z1 = np.array([-1, -0.5-0.5j, -0.5+0.5j])
+    >>> p1 = np.array([0.75, 0.8+0.1j, 0.8-0.1j])
+
+    With ``pairing='nearest'`` (the default), we obtain
+
+    >>> signal.zpk2sos(z1, p1, 1)
+    array([[ 1.  ,  1.  ,  0.5 ,  1.  , -0.75,  0.  ],
+           [ 1.  ,  1.  ,  0.  ,  1.  , -1.6 ,  0.65]])
+
+    The first section has the zeros {-0.5-0.05j, -0.5+0.5j} and the poles
+    {0, 0.75}, and the second section has the zeros {-1, 0} and poles
+    {0.8+0.1j, 0.8-0.1j}.  Note that the extra pole and zero at the origin
+    have been assigned to different sections.
+
+    With ``pairing='keep_odd'``, we obtain:
+
+    >>> signal.zpk2sos(z1, p1, 1, pairing='keep_odd')
+    array([[ 1.  ,  1.  ,  0.  ,  1.  , -0.75,  0.  ],
+           [ 1.  ,  1.  ,  0.5 ,  1.  , -1.6 ,  0.65]])
+
+    The extra pole and zero at the origin are in the same section.
+    The first section is, in effect, a first-order section.
+
     """
     # TODO in the near future:
     # 1. Add SOS capability to `filtfilt`, `freqz`, etc. somehow (#3259).
