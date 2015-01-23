@@ -1266,11 +1266,16 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
         How to determine the returned root if multiple roots are within
         `tol` of each other.
 
-          'max': pick the maximum of those roots.
+          - 'max': pick the maximum of those roots.
+          - 'min': pick the minimum of those roots.
+          - 'avg': take the average of those roots.
 
-          'min': pick the minimum of those roots.
-
-          'avg': take the average of those roots.
+    Returns
+    -------
+    b : ndarray
+        Numerator polynomial coefficients.
+    a : ndarray
+        Denominator polynomial coefficients.
 
     See Also
     --------
@@ -1329,6 +1334,13 @@ def residue(b, a, tol=1e-3, rtype='avg'):
           r[i]      r[i+1]              r[i+n-1]
         -------- + ----------- + ... + -----------
         (s-p[i])  (s-p[i])**2          (s-p[i])**n
+
+    Parameters
+    ----------
+    b : array_like
+        Numerator polynomial coefficients.
+    a : array_like
+        Denominator polynomial coefficients.
 
     Returns
     -------
@@ -1404,6 +1416,22 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
         -------------- + ------------------ + ... + ------------------
         (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
 
+    Parameters
+    ----------
+    b : array_like
+        Numerator polynomial coefficients.
+    a : array_like
+        Denominator polynomial coefficients.
+
+    Returns
+    -------
+    r : ndarray
+        Residues.
+    p : ndarray
+        Poles.
+    k : ndarray
+        Coefficients of the direct polynomial term.
+
     See also
     --------
     invresz, unique_roots
@@ -1477,6 +1505,31 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
              r[i]              r[i+1]                    r[i+n-1]
         -------------- + ------------------ + ... + ------------------
         (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
+
+    Parameters
+    ----------
+    r : array_like
+        Residues.
+    p : array_like
+        Poles.
+    k : array_like
+        Coefficients of the direct polynomial term.
+    tol : float, optional
+        The tolerance for two roots to be considered equal. Default is 1e-3.
+    rtype : {'max', 'min, 'avg'}, optional
+        How to determine the returned root if multiple roots are within
+        `tol` of each other.
+
+          - 'max': pick the maximum of those roots.
+          - 'min': pick the minimum of those roots.
+          - 'avg': take the average of those roots.
+
+    Returns
+    -------
+    b : ndarray
+        Numerator polynomial coefficients.
+    a : ndarray
+        Denominator polynomial coefficients.
 
     See Also
     --------
