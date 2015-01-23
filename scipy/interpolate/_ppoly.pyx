@@ -38,7 +38,7 @@ def evaluate(double_or_complex[:,:,::1] c,
              double[::1] x,
              double[::1] xp,
              int dx,
-             int extrapolate,
+             bint extrapolate,
              double_or_complex[:,::1] out):
     """
     Evaluate a piecewise polynomial.
@@ -56,8 +56,8 @@ def evaluate(double_or_complex[:,:,::1] c,
     dx : int
         Order of derivative to evaluate.  The derivative is evaluated
         piecewise and may have discontinuities.
-    extrapolate : int, optional
-        Whether to extrapolate to out-of-bounds points based on first
+    extrapolate : bint, optional
+        Whether to extrapolate to ouf-of-bounds points based on first
         and last intervals, or to return NaNs.
     out : ndarray, shape (r, n)
         Value of each polynomial at each of the input points.
@@ -171,7 +171,7 @@ def integrate(double_or_complex[:,:,::1] c,
               double[::1] x,
               double a,
               double b,
-              int extrapolate,
+              bint extrapolate,
               double_or_complex[::1] out):
     """
     Compute integral over a piecewise polynomial.
@@ -186,8 +186,8 @@ def integrate(double_or_complex[:,:,::1] c,
         Start point of integration.
     b : double
         End point of integration.
-    extrapolate : int, optional
-        Whether to extrapolate to out-of-bounds points based on first
+    extrapolate : bint, optional
+        Whether to extrapolate to ouf-of-bounds points based on first
         and last intervals, or to return NaNs.
     out : ndarray, shape (n,)
         Integral of the piecewise polynomial, assuming the polynomial
@@ -246,8 +246,8 @@ def integrate(double_or_complex[:,:,::1] c,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def real_roots(double[:,:,::1] c, double[::1] x, double y, int report_discont,
-               int extrapolate):
+def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
+               bint extrapolate):
     """
     Compute real roots of a real-valued piecewise polynomial function.
 
@@ -264,10 +264,10 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, int report_discont,
         Polynomial coefficients, as above
     y : float
         Find roots of ``pp(x) == y``.
-    report_discont : int, optional
+    report_discont : bint, optional
         Whether to report discontinuities across zero at breakpoints
         as roots
-    extrapolate : int, optional
+    extrapolate : bint, optional
         Whether to consider roots obtained by extrapolating based
         on first and last intervals.
 
@@ -387,7 +387,7 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, int report_discont,
 cdef int find_interval(double[::1] x,
                        double xval,
                        int prev_interval=0,
-                       int extrapolate=1) nogil:
+                       bint extrapolate=1) nogil:
     """
     Find an interval such that x[interval] <= xval < x[interval+1]
     or interval == 0 and xval < x[0]
@@ -401,7 +401,7 @@ cdef int find_interval(double[::1] x,
         Point to find
     prev_interval : int, optional
         Interval where a previous point was found
-    extrapolate : int, optional
+    extrapolate : bint, optional
         Whether to return the last of the first interval if the
         point is out-of-bounds. 
 
@@ -853,7 +853,7 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
              double[::1] x,
              double[::1] xp,
              int nu,
-             int extrapolate,
+             bint extrapolate,
              double_or_complex[:,::1] out):
     """
     Evaluate a piecewise polynomial in the Bernstein basis.
@@ -871,8 +871,8 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
     nu : int
         Order of derivative to evaluate.  The derivative is evaluated
         piecewise and may have discontinuities.
-    extrapolate : int, optional
-        Whether to extrapolate to out-of-bounds points based on first
+    extrapolate : bint, optional
+        Whether to extrapolate to ouf-of-bounds points based on first
         and last intervals, or to return NaNs.
     out : ndarray, shape (r, n)
         Value of each polynomial at each of the input points.
