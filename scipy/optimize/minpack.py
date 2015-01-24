@@ -701,7 +701,7 @@ def _fixpoint_steffensen(func, x0, args=(), xtol=1e-8, xatol=1e-300, maxiter=500
         if callback is not None:
             callback(p0.reshape(x0_shape))
         p1 = np.asarray(func(p0.reshape(x0_shape), *args)).ravel()
-        p2 = np.asarray(func(p1.reshape(x0_shape), *args)).flatten() # make a copy
+        p2 = np.asarray(func(p1.reshape(x0_shape), *args)).flatten()  # make a copy
         d = p2 - 2.0 * p1 + p0
         m = (d == 0)
         p = p2

@@ -92,8 +92,10 @@ class TestFixPoint(object):
     def _check_array_basic1(self, method):
         # f(x) = c * x**2; fixed point should be x=1/c or x=0
         opts = dict()
+
         def func(x, c):
             return c * x**2
+
         c = np.array([0.75, 1.0, 1.25])
         x0 = [1.1, 1.15, 0.9]
         olderr = np.seterr(all='ignore')
