@@ -20,14 +20,8 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
     r"""
     Solve nonlinear equation with the DF-SANE method
 
-    Parameters
-    ----------
-    func : callable
-        Function whose root to find
-    x0 : ndarray
-        Initial guess
-    args : tuple
-        Extra parameters to `func`
+    Options
+    -------
     ftol : float, optional
         Relative norm tolerance.
     fatol : float, optional
@@ -35,20 +29,16 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
         Algorithm terminates when ``||func(x)|| < fatol + ftol ||func(x_0)||``.
     fnorm : callable, optional
         Norm to use in the convergence check. If None, 2-norm is used.
-    callback : callable, optional
-        Callback function to call on each iteration. Called as
-        ``callable(x, f)`` where ``x`` is the current iterate and
-        ``f`` the residual.
     maxfev : int, optional
         Maximum number of function evaluations.
     disp : bool, optional
         Whether to print convergence process to stdout.
     eta_strategy : callable, optional
         Choice of the ``eta_k`` parameter, which gives slack for growth
-        of ``||F||_2**2``.  Called as ``eta_k = eta_strategy(k, x, F)`` with
+        of ``||F||**2``.  Called as ``eta_k = eta_strategy(k, x, F)`` with
         `k` the iteration number, `x` the current iterate and `F` the current
         residual. Should satisfy ``eta_k > 0`` and ``sum(eta, k=0..inf) < inf``.
-        Default: ``||F_0||_2**2 / (1 + k)**2`` where F_0 is the initial residual.
+        Default: ``||F||**2 / (1 + k)**2``.
     sigma_eps : float, optional
         The spectral coefficient is constrained to ``sigma_eps < sigma < 1/sigma_eps``.
         Default: 1e-10
@@ -56,11 +46,12 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
         Initial spectral coefficient.
         Default: 1.0
     M : int, optional
-        Number of iterates to include in the 'cruz' nonmonotonic line search.
+        Number of iterates to include in the nonmonotonic line search.
         Default: 10
     line_search : {'cruz', 'cheng'}
-        Type of line search to employ. 'cruz' is the original one defined in [1],
-        'cheng' is a modified search defined in [3].
+        Type of line search to employ. 'cruz' is the original one defined in
+        [Martinez & Raydan. Math. Comp. 75, 1429 (2006)], 'cheng' is
+        a modified search defined in [Cheng & Li. IMA J. Numer. Anal. 29, 814 (2009)].
         Default: 'cruz'
 
     References
