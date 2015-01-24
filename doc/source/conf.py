@@ -17,10 +17,11 @@ needs_sphinx = '1.1'
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 
 sys.path.insert(0, os.path.abspath('../sphinxext'))
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'numpydoc',
               'sphinx.ext.intersphinx', 'sphinx.ext.coverage',
-              'sphinx.ext.autosummary']
+              'sphinx.ext.autosummary', 'scipyoptdoc']
 
 # Determine if the matplotlib has a recent enough version of the
 # plot_directive.
