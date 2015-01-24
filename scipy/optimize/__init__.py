@@ -18,6 +18,30 @@ Local Optimization
    minimize_scalar - Unified interface for minimizers of univariate functions
    OptimizeResult - The optimization result returned by some optimizers
 
+The `minimize` function supports the following methods:
+
+.. toctree::
+
+   optimize.minimize-neldermead
+   optimize.minimize-powell
+   optimize.minimize-cg
+   optimize.minimize-bfgs
+   optimize.minimize-newtoncg
+   optimize.minimize-lbfgsb
+   optimize.minimize-tnc
+   optimize.minimize-cobyla
+   optimize.minimize-slsqp
+   optimize.minimize-dogleg
+   optimize.minimize-trustncg
+
+The `minimize_scalar` function supports the following methods:
+
+.. toctree::
+
+   optimize.minimize_scalar-brent
+   optimize.minimize_scalar-bounded
+   optimize.minimize_scalar-golden
+
 The specific optimization method interfaces below in this subsection are
 not recommended for use in new scripts; all of these methods are accessible
 via a newer, more consistent interface provided by the functions above.
@@ -125,6 +149,21 @@ General nonlinear solvers:
    broyden1 - Broyden's first method
    broyden2 - Broyden's second method
 
+The `root` function supports the following methods:
+
+.. toctree::
+
+   optimize.root-hybr
+   optimize.root-lm
+   optimize.root-broyden1
+   optimize.root-broyden2
+   optimize.root-anderson
+   optimize.root-linearmixing
+   optimize.root-diagbroyden
+   optimize.root-excitingmixing
+   optimize.root-krylov
+   optimize.root-dfsane
+
 Large-scale nonlinear solvers:
 
 .. autosummary::
@@ -153,6 +192,13 @@ Simplex Algorithm:
    :toctree: generated/
 
    linprog -- Linear programming using the simplex algorithm
+
+The `linprog` function supports the following methods:
+
+.. toctree::
+
+   optimize.linprog-simplex
+
 
 Utility Functions
 =================
