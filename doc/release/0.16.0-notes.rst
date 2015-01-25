@@ -37,7 +37,8 @@ was added.  The new functions are:
 * `scipy.signal.sos2tf`
 * `scipy.signal.sos2zpk`
 * `scipy.signal.tf2sos`
-* `scipy.signal.zpk2sos`.
+* `scipy.signal.zpk2sos`
+* `scipy.signal.sosfreqz`
 
 Additionally, the filter design functions `iirdesign`, `iirfilter`, `butter`,
 `cheby1`, `cheby2`, `ellip`, and `bessel` can return the filter in the SOS

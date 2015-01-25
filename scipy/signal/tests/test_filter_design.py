@@ -2,20 +2,36 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 
+from distutils.version import LooseVersion
 import numpy as np
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises, assert_equal, assert_,
-                           run_module_suite, assert_allclose)
+                           run_module_suite, assert_allclose, dec)
 from numpy import array, spacing, sin, pi, sort
 
 from scipy.signal import (tf2zpk, zpk2tf, tf2sos, sos2tf, sos2zpk, zpk2sos,
-                          BadCoefficients, freqz, normalize,
+                          BadCoefficients, freqz, sosfreqz, normalize,
                           buttord, cheby1, cheby2, ellip, cheb1ord, cheb2ord,
                           ellipord, butter, bessel, buttap, besselap,
                           cheb1ap, cheb2ap, ellipap, iirfilter, freqs,
                           lp2lp, lp2hp, lp2bp, lp2bs, bilinear)
 from scipy.signal.filter_design import _cplxreal, _cplxpair
+
+try:
+    import mpmath
+except ImportError:
+    try:
+        import sympy.mpmath as mpmath
+    except ImportError:
+        mpmath = None
+
+
+def mpmath_check(min_ver):
+    if mpmath is None:
+        return dec.skipif(True, "mpmath is not installed")
+    return dec.skipif(LooseVersion(mpmath.__version__) < LooseVersion(min_ver),
+                      "mpmath version >= %s required" % min_ver)
 
 
 class TestCplxPair(TestCase):
@@ -420,6 +436,49 @@ class TestFreqz(TestCase):
         assert_raises(ZeroDivisionError,
                       freqz, [1.0], worN=8, plot=lambda w, h: 1 / 0)
         freqz([1.0], worN=8, plot=plot)
+
+
+class TestSosFreqz(TestCase):
+
+    def test_sosfreqz_basic(self):
+        # Compare the results of freqz and sosfreqz for a low order
+        # Butterworth filter.
+
+        N = 500
+
+        b, a = butter(4, 0.2)
+        sos = butter(4, 0.2, output='sos')
+        w, h = freqz(b, a, worN=N)
+        w2, h2 = sosfreqz(sos, worN=N)
+        assert_equal(w2, w)
+        assert_allclose(h2, h, rtol=1e-10, atol=1e-14)
+
+        b, a = ellip(3, 1, 30, (0.2, 0.3), btype='bandpass')
+        sos = ellip(3, 1, 30, (0.2, 0.3), btype='bandpass', output='sos')
+        w, h = freqz(b, a, worN=N)
+        w2, h2 = sosfreqz(sos, worN=N)
+        assert_equal(w2, w)
+        assert_allclose(h2, h, rtol=1e-10, atol=1e-14)
+
+    @mpmath_check("0.10")
+    def test_sos_freqz_against_mp(self):
+        # Compare the result of sosfreqz applied to a high order Butterworth
+        # filter against the result computed using mpmath.  (signal.freqz fails
+        # miserably with such high order filters.)
+        import mpsig
+        N = 500
+        order = 25
+        Wn = 0.15
+        mpmath.mp.dps = 80
+        z_mp, p_mp, k_mp = mpsig.butter_lp(order, Wn)
+        w_mp, h_mp = mpsig.zpkfreqz(z_mp, p_mp, k_mp, N)
+        w_mp = np.array([float(x) for x in w_mp])
+        h_mp = np.array([complex(x) for x in h_mp])
+
+        sos = butter(order, Wn, output='sos')
+        w, h = sosfreqz(sos, worN=N)
+        assert_allclose(w, w_mp, rtol=1e-12, atol=1e-14)
+        assert_allclose(h, h_mp, rtol=1e-12, atol=1e-14)
 
 
 class TestNormalize(TestCase):
