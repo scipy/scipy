@@ -85,7 +85,7 @@ def main(argv):
     parser.add_argument("--mode", "-m", default="fast",
                         help="'fast', 'full', or something that could be "
                              "passed to nosetests -A [default: fast]")
-    parser.add_argument("--submodule", "-s", default=None,
+    parser.add_argument("--submodule", "-s", nargs="+", default=None,
                         help="Submodule whose tests to run (cluster, constants, ...)")
     parser.add_argument("--pythonpath", "-p", default=None,
                         help="Paths to prepend to PYTHONPATH")
@@ -168,17 +168,20 @@ def main(argv):
 
     if args.build_only:
         sys.exit(0)
-    elif args.submodule:
-        modname = PROJECT_MODULE + '.' + args.submodule
-        try:
-            __import__(modname)
-            if args.bench:
-                test = sys.modules[modname].bench
-            else:
-                test = sys.modules[modname].test
-        except (ImportError, KeyError, AttributeError) as e:
-            print("Cannot run tests for %s (%s)" % (modname, e))
-            sys.exit(2)
+    elif args.submodule is not None:
+        test_objects = []
+        for submodule in args.submodule:
+            modname = PROJECT_MODULE + '.' + submodule
+            try:
+                __import__(modname)
+                if args.bench:
+                    test = sys.modules[modname].bench
+                else:
+                    test = sys.modules[modname].test
+                test_objects.append(test)
+            except (ImportError, KeyError, AttributeError) as e:
+                print("Cannot run tests for %s (%s)" % (modname, e))
+                sys.exit(2)
     elif args.tests:
         def fix_test_path(x):
             # fix up test path
@@ -198,48 +201,56 @@ def main(argv):
                 return Tester(tests[0]).bench(*a, **kw)
             else:
                 return Tester(tests[0]).test(*a, **kw)
+        test_objects = [test]
     else:
         __import__(PROJECT_MODULE)
         if args.bench:
             test = sys.modules[PROJECT_MODULE].bench
         else:
             test = sys.modules[PROJECT_MODULE].test
+        test_objects = [test]
 
-    # Run the tests under build/test
-    try:
-        shutil.rmtree(test_dir)
-    except OSError:
-        pass
-    try:
-        os.makedirs(test_dir)
-    except OSError:
-        pass
+    results = []
+    for test_object in test_objects:
 
-    shutil.copyfile(os.path.join(ROOT_DIR, '.coveragerc'),
-                    os.path.join(test_dir, '.coveragerc'))
+        # Run the tests under build/test
+        try:
+            shutil.rmtree(test_dir)
+        except OSError:
+            pass
+        try:
+            os.makedirs(test_dir)
+        except OSError:
+            pass
 
-    cwd = os.getcwd()
-    try:
-        os.chdir(test_dir)
-        if args.bench:
-            result = test(args.mode,
-                          verbose=args.verbose,
-                          extra_argv=extra_argv)
-        else:
-            result = test(args.mode,
-                          verbose=args.verbose,
-                          extra_argv=extra_argv,
-                          doctests=args.doctests,
-                          coverage=args.coverage)
-    finally:
-        os.chdir(cwd)
+        shutil.copyfile(os.path.join(ROOT_DIR, '.coveragerc'),
+                        os.path.join(test_dir, '.coveragerc'))
 
-    if isinstance(result, bool):
-        sys.exit(0 if result else 1)
-    elif result.wasSuccessful():
-        sys.exit(0)
-    else:
-        sys.exit(1)
+        cwd = os.getcwd()
+        try:
+            os.chdir(test_dir)
+            if args.bench:
+                result = test_object(args.mode,
+                              verbose=args.verbose,
+                              extra_argv=extra_argv)
+            else:
+                result = test_object(args.mode,
+                              verbose=args.verbose,
+                              extra_argv=extra_argv,
+                              doctests=args.doctests,
+                              coverage=args.coverage)
+            results.append(result)
+        finally:
+            os.chdir(cwd)
+
+    for result in results:
+        if isinstance(result, bool):
+            if not result:
+                sys.exit(1)
+        elif not result.wasSuccessful():
+            sys.exit(1)
+
+    sys.exit(0)
 
 
 def build_project(args):

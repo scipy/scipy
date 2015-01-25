@@ -17,12 +17,12 @@ matrix:
     - python: 3.4
       env:
         - TESTMODE=fast
-        - COVERAGE=
+        - SUBMODULE=
         - NUMPYSPEC=numpy
     - python: 3.3
       env:
         - TESTMODE=fast
-        - COVERAGE=
+        - SUBMODULE=
         - NUMPYSPEC=numpy
     - python: 3.2
       env:
@@ -32,17 +32,23 @@ matrix:
     - python: 2.7
       env:
         - TESTMODE=full
-        - COVERAGE=--coverage
+        - SUBMODULE="-s special"
+        - NUMPYSPEC=numpy        
+    - python: 2.7
+      env:
+        - TESTMODE=full
+        - SUBMODULE="-s sparse cluster constants fftpack integrate interpolate io lib linalg misc ndimage odr optimize signal spatial stats weave"
         - NUMPYSPEC=numpy        
     - python: 2.6
       env:
         - TESTMODE=fast
+        - SUBMODULE=
         - OPTIMIZE=-OO
         - NUMPYSPEC="numpy==1.6.2"
     - python: 2.7
       env:
         - TESTMODE=fast
-        - COVERAGE=
+        - SUBMODULE=
         - NPY_RELAXED_STRIDES_CHECKING=1
         - NUMPYSPEC="git+git://github.com/numpy/numpy.git@v1.9.1"
 before_install:
@@ -70,15 +76,12 @@ before_install:
   - pip install $NUMPYSPEC
   - pip install nose mpmath argparse
   - pip install gmpy2  # speeds up mpmath (scipy.special tests)
-  - if [ "${TESTMODE}" == "full" ]; then pip install coverage coveralls; fi
   - python -V
   - popd
 script:
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
-  - python $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE
+  - python $OPTIMIZE runtests.py -g -m $TESTMODE $SUBMODULE
 notifications:
   # Perhaps we should have status emails sent to the mailing list, but
   # let's wait to see what people think before turning that on.
   email: false
-after_success:
-    - if [ "${TESTMODE}" == "full" ]; then pushd build/testenv/lib/python*/site-packages/ && cp ../../../../test/.coverage . && coveralls && popd; fi
